@@ -630,6 +630,61 @@ namespace LambdaEngine
 
 			m_DirtyDescriptorSetTextures.clear();
 		}
+
+		if (m_DirtyDescriptorSetDrawArgs.size() > 0)
+		{
+			for (Resource* pResource : m_DirtyDescriptorSetDrawArgs)
+			{
+				for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)
+				{
+					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
+
+					auto drawArgsMaskToArgsIt = pResource->DrawArgs.MaskToArgs.find(pRenderStage->DrawArgsMask);
+					pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
+					
+					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					{
+						DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
+						DescriptorSet** ppNewDrawArgsPerFrame = nullptr;
+
+						if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
+						{
+							ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet*[drawArgsMaskToArgsIt->second.Args.GetSize()];
+						}
+						else
+						{
+							ppNewDrawArgsPerFrame = ppPrevDrawArgsPerFrame;
+						}
+
+						for (uint32 d = 0; d < drawArgsMaskToArgsIt->second.Args.GetSize(); d++)
+						{
+							if (d < pRenderStage->NumDrawArgsPerFrame)
+							{
+								DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
+								m_pDescriptorSetsToDestroy[b].PushBack(pSrcDescriptorSet);
+							}
+
+							DescriptorSet* pWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, m_pDescriptorHeap);
+
+							static uint64 offset = 0;
+
+							const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
+							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.VertexBufferSize, 0, 1, pResourceBinding->DescriptorType);
+							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.InstanceBufferSize, 1, 1, pResourceBinding->DescriptorType);
+
+							ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
+						}
+
+						pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
+					}
+
+					pRenderStage->NumDrawArgsPerFrame = drawArgsMaskToArgsIt->second.Args.GetSize();
+				}
+			}
+
+			m_DirtyDescriptorSetDrawArgs.clear();
+		}
 	}
 
 	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
@@ -944,10 +999,23 @@ namespace LambdaEngine
 
 					if (pRenderStage->ppBufferDescriptorSets != nullptr)
 						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
+
+					if (pRenderStage->pppDrawArgDescriptorSets != nullptr)
+					{
+						DescriptorSet** ppDrawArgDescriptorSets = pRenderStage->pppDrawArgDescriptorSets[b];
+
+						for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
+						{
+							SAFERELEASE(ppDrawArgDescriptorSets[d]);
+						}
+
+						SAFEDELETE_ARRAY(ppDrawArgDescriptorSets);
+					}
 				}
 				
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
+				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
 				SAFERELEASE(pRenderStage->pRenderPass);
 				SAFERELEASE(pRenderStage->pDisabledRenderPass);
@@ -987,7 +1055,7 @@ namespace LambdaEngine
 
 	bool RenderGraph::CreateDescriptorHeap()
 	{
-		constexpr uint32 DESCRIPTOR_COUNT = 1024;
+		constexpr uint32 DESCRIPTOR_COUNT = 4096;
 
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount						= DESCRIPTOR_COUNT;
@@ -1471,6 +1539,9 @@ namespace LambdaEngine
 			bufferDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			uint32 bufferDescriptorBindingIndex = 0;
 
+			TArray<DescriptorBindingDesc> drawArgDescriptorSetDescriptions;
+			drawArgDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+
 			TArray<RenderPassAttachmentDesc>								renderPassAttachmentDescriptions;
 			RenderPassAttachmentDesc										renderPassDepthStencilDescription;
 			TArray<ETextureState>											renderPassRenderTargetStates;
@@ -1478,13 +1549,15 @@ namespace LambdaEngine
 			TArray<std::pair<Resource*, ETextureState>>						renderStageRenderTargets;
 			Resource*														pDepthStencilResource = nullptr;
 			TArray<std::tuple<Resource*, ETextureState, EDescriptorType>>	renderStageTextureResources;
-			TArray<std::tuple<Resource*, ETextureState, EDescriptorType>>	renderStageBufferResources;
+			TArray<std::tuple<Resource*, EDescriptorType>>					renderStageBufferResources;
+			TArray<std::tuple<Resource*, EDescriptorType>>					renderStageDrawArgResources;
 			renderPassAttachmentDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderPassRenderTargetStates.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderPassBlendAttachmentStates.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageRenderTargets.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageTextureResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageBufferResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+			renderStageDrawArgResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
 			float32						renderPassAttachmentsWidth			= 0;
 			float32						renderPassAttachmentsHeight			= 0;
@@ -1615,206 +1688,218 @@ namespace LambdaEngine
 					}
 				}
 
-				//Draw Args are not bound to any of the normal Descriptor Sets but are handled in a special manner
-				if (pResource->Type != ERenderGraphResourceType::SCENE_DRAW_ARGS)
+				//Descriptors
+				if (ResourceStateNeedsDescriptor(pResourceStateDesc->BindingType))
 				{
-					//Descriptors
-					if (ResourceStateNeedsDescriptor(pResourceStateDesc->BindingType))
+					EDescriptorType descriptorType		= CalculateResourceStateDescriptorType(pResource->Type, pResourceStateDesc->BindingType);
+
+					if (descriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 					{
-						EDescriptorType descriptorType		= CalculateResourceStateDescriptorType(pResource->Type, pResourceStateDesc->BindingType);
-
-						if (descriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
-						{
-							LOG_ERROR("[RenderGraph]: Descriptor Type for Resource State with name \"%s\" could not be found", pResourceStateDesc->ResourceName.c_str());
-							return false;
-						}
-
-						DescriptorBindingDesc descriptorBinding = {};
-						descriptorBinding.DescriptorType		= descriptorType;
-						descriptorBinding.ShaderStageMask		= pipelineStageMask;
-
-						if (pResource->Type == ERenderGraphResourceType::TEXTURE)
-						{
-							ETextureState textureState = CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType, pResource->Texture.Format);
-
-							uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
-
-							descriptorBinding.DescriptorCount	= actualSubResourceCount;
-							descriptorBinding.Binding			= textureDescriptorBindingIndex++;
-
-							textureDescriptorSetDescriptions.PushBack(descriptorBinding);
-							renderStageTextureResources.PushBack(std::make_tuple(pResource, textureState, descriptorType));
-						}
-						else
-						{
-							descriptorBinding.DescriptorCount	= pResource->SubResourceCount;
-							descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
-
-							bufferDescriptorSetDescriptions.PushBack(descriptorBinding);
-							renderStageBufferResources.PushBack(std::make_tuple(pResource, ETextureState::TEXTURE_STATE_UNKNOWN, descriptorType));
-						}
+						LOG_ERROR("[RenderGraph]: Descriptor Type for Resource State with name \"%s\" could not be found", pResourceStateDesc->ResourceName.c_str());
+						return false;
 					}
-					//RenderPass Attachments
-					else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
+
+					DescriptorBindingDesc descriptorBinding = {};
+					descriptorBinding.DescriptorType		= descriptorType;
+					descriptorBinding.ShaderStageMask		= pipelineStageMask;
+
+					if (pResource->Type == ERenderGraphResourceType::TEXTURE)
 					{
-						if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
+						ETextureState textureState = CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType, pResource->Texture.Format);
+
+						uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
+
+						descriptorBinding.DescriptorCount	= actualSubResourceCount;
+						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
+
+						textureDescriptorSetDescriptions.PushBack(descriptorBinding);
+						renderStageTextureResources.PushBack(std::make_tuple(pResource, textureState, descriptorType));
+					}
+					else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
+					{
+						//Vertex Buffer
+						descriptorBinding.DescriptorCount	= 1;
+						descriptorBinding.Binding			= 0;
+
+						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+
+						//Instance Buffer
+						descriptorBinding.DescriptorCount	= 1;
+						descriptorBinding.Binding			= 1;
+
+						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+
+						renderStageDrawArgResources.PushBack(std::make_tuple(pResource, descriptorType));
+					}
+					else
+					{
+						descriptorBinding.DescriptorCount	= pResource->SubResourceCount;
+						descriptorBinding.Binding			= bufferDescriptorBindingIndex++;
+
+						bufferDescriptorSetDescriptions.PushBack(descriptorBinding);
+						renderStageBufferResources.PushBack(std::make_tuple(pResource, descriptorType));
+					}
+				}
+				//RenderPass Attachments
+				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
+				{
+					if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
+					{
+						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
+						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
+						return false;
+					}
+
+					float32						xDimVariable;
+					float32						yDimVariable;
+					ERenderGraphDimensionType	xDimType;
+					ERenderGraphDimensionType	yDimType;
+
+					if (!pResource->IsBackBuffer)
+					{
+						auto resourceUpdateDescIt = m_InternalResourceUpdateDescriptions.find(pResourceStateDesc->ResourceName);
+
+						if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
 						{
-							//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
-							LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
 							return false;
 						}
 
-						float32						xDimVariable;
-						float32						yDimVariable;
-						ERenderGraphDimensionType	xDimType;
-						ERenderGraphDimensionType	yDimType;
+						xDimVariable	= resourceUpdateDescIt->second.TextureUpdate.XDimVariable;
+						yDimVariable	= resourceUpdateDescIt->second.TextureUpdate.YDimVariable;
+						xDimType		= resourceUpdateDescIt->second.TextureUpdate.XDimType;
+						yDimType		= resourceUpdateDescIt->second.TextureUpdate.YDimType;
+					}
+					else
+					{
+						xDimVariable	= 1.0f;
+						yDimVariable	= 1.0f;
+						xDimType		= ERenderGraphDimensionType::RELATIVE;
+						yDimType		= ERenderGraphDimensionType::RELATIVE;
+					}
 
-						if (!pResource->IsBackBuffer)
+					//Just use the width to check if its ever been set
+					if (renderPassAttachmentsWidth == 0)
+					{
+						renderPassAttachmentsWidth			= xDimVariable;
+						renderPassAttachmentsHeight			= yDimVariable;
+						renderPassAttachmentDimensionTypeX	= xDimType;
+						renderPassAttachmentDimensionTypeY	= yDimType;
+					}
+					else
+					{
+						bool success = true;
+
+						if (renderPassAttachmentsWidth != xDimVariable)
 						{
-							auto resourceUpdateDescIt = m_InternalResourceUpdateDescriptions.find(pResourceStateDesc->ResourceName);
-
-							if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
-							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
-								return false;
-							}
-
-							xDimVariable	= resourceUpdateDescIt->second.TextureUpdate.XDimVariable;
-							yDimVariable	= resourceUpdateDescIt->second.TextureUpdate.YDimVariable;
-							xDimType		= resourceUpdateDescIt->second.TextureUpdate.XDimType;
-							yDimType		= resourceUpdateDescIt->second.TextureUpdate.YDimType;
-						}
-						else
-						{
-							xDimVariable	= 1.0f;
-							yDimVariable	= 1.0f;
-							xDimType		= ERenderGraphDimensionType::RELATIVE;
-							yDimType		= ERenderGraphDimensionType::RELATIVE;
-						}
-
-						//Just use the width to check if its ever been set
-						if (renderPassAttachmentsWidth == 0)
-						{
-							renderPassAttachmentsWidth			= xDimVariable;
-							renderPassAttachmentsHeight			= yDimVariable;
-							renderPassAttachmentDimensionTypeX	= xDimType;
-							renderPassAttachmentDimensionTypeY	= yDimType;
-						}
-						else
-						{
-							bool success = true;
-
-							if (renderPassAttachmentsWidth != xDimVariable)
-							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
-									pResourceStateDesc->ResourceName.c_str(), 
-									xDimVariable,
-									renderPassAttachmentsWidth);
-								success = false;
-							}
-
-							if (renderPassAttachmentsHeight != yDimVariable)
-							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
-									pResourceStateDesc->ResourceName.c_str(),
-									yDimVariable,
-									renderPassAttachmentsHeight);
-								success = false;
-							}
-
-							if (renderPassAttachmentDimensionTypeX != xDimType)
-							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
-									pResourceStateDesc->ResourceName.c_str(),
-									RenderGraphDimensionTypeToString(xDimType),
-									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
-								success = false;
-							}
-
-							if (renderPassAttachmentDimensionTypeY != yDimType)
-							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
-									pResourceStateDesc->ResourceName.c_str(),
-									RenderGraphDimensionTypeToString(yDimType),
-									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
-								success = false;
-							}
-
-							if (!success)
-								return false;
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
+								pResourceStateDesc->ResourceName.c_str(), 
+								xDimVariable,
+								renderPassAttachmentsWidth);
+							success = false;
 						}
 
-						pResource->Texture.UsedAsRenderTarget = true;
-
-						uint32 executionCountFromResource = pResource->Texture.PerSubImageTextureViews.GetSize();
-
-						if (pResource->BackBufferBound) executionCountFromResource /= m_BackBufferCount;
-
-						if (renderStageExecutionCount == 1)
+						if (renderPassAttachmentsHeight != yDimVariable)
 						{
-							renderStageExecutionCount = executionCountFromResource;
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
+								pResourceStateDesc->ResourceName.c_str(),
+								yDimVariable,
+								renderPassAttachmentsHeight);
+							success = false;
 						}
-						else if (executionCountFromResource > 1 && executionCountFromResource != renderStageExecutionCount)
+
+						if (renderPassAttachmentDimensionTypeX != xDimType)
 						{
-							LOG_ERROR("[RenderGraph]: Resource %s is used as RenderPass Attachment and requires execution count %d, but execution count for this RenderStage has been set to %d from another resource",
-								pResource->Name.c_str(),
-								executionCountFromResource,
-								renderStageExecutionCount);
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+								pResourceStateDesc->ResourceName.c_str(),
+								RenderGraphDimensionTypeToString(xDimType),
+								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
+							success = false;
+						}
+
+						if (renderPassAttachmentDimensionTypeY != yDimType)
+						{
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+								pResourceStateDesc->ResourceName.c_str(),
+								RenderGraphDimensionTypeToString(yDimType),
+								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
+							success = false;
+						}
+
+						if (!success)
 							return false;
-						}
+					}
 
-						bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
+					pResource->Texture.UsedAsRenderTarget = true;
 
-						ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
-						ETextureState finalState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.NextBindingType, pResource->Texture.Format);
+					uint32 executionCountFromResource = pResource->Texture.PerSubImageTextureViews.GetSize();
 
-						ELoadOp loadOp = ELoadOp::LOAD_OP_LOAD;
+					if (pResource->BackBufferBound) executionCountFromResource /= m_BackBufferCount;
 
-						if (initialState == ETextureState::TEXTURE_STATE_DONT_CARE ||
-							initialState == ETextureState::TEXTURE_STATE_UNKNOWN ||
-							!pResourceStateDesc->AttachmentSynchronizations.PrevSameFrame)
-						{
-							loadOp = ELoadOp::LOAD_OP_CLEAR;
-						}
+					if (renderStageExecutionCount == 1)
+					{
+						renderStageExecutionCount = executionCountFromResource;
+					}
+					else if (executionCountFromResource > 1 && executionCountFromResource != renderStageExecutionCount)
+					{
+						LOG_ERROR("[RenderGraph]: Resource %s is used as RenderPass Attachment and requires execution count %d, but execution count for this RenderStage has been set to %d from another resource",
+							pResource->Name.c_str(),
+							executionCountFromResource,
+							renderStageExecutionCount);
+						return false;
+					}
 
-						if (isColorAttachment)
-						{
-							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-							renderPassAttachmentDesc.Format			= pResource->Texture.Format;
-							renderPassAttachmentDesc.SampleCount	= 1;
-							renderPassAttachmentDesc.LoadOp			= loadOp;
-							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
-							renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
-							renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
-							renderPassAttachmentDesc.InitialState	= initialState;
-							renderPassAttachmentDesc.FinalState		= finalState;
+					bool isColorAttachment = pResource->Texture.Format != EFormat::FORMAT_D24_UNORM_S8_UINT;
 
-							renderPassAttachmentDescriptions.PushBack(renderPassAttachmentDesc);
+					ETextureState initialState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.PrevBindingType, pResource->Texture.Format);
+					ETextureState finalState	= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->AttachmentSynchronizations.NextBindingType, pResource->Texture.Format);
 
-							renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
+					ELoadOp loadOp = ELoadOp::LOAD_OP_LOAD;
 
-							BlendAttachmentStateDesc blendAttachmentState = {};
-							blendAttachmentState.BlendEnabled			= false;
-							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+					if (initialState == ETextureState::TEXTURE_STATE_DONT_CARE ||
+						initialState == ETextureState::TEXTURE_STATE_UNKNOWN ||
+						!pResourceStateDesc->AttachmentSynchronizations.PrevSameFrame)
+					{
+						loadOp = ELoadOp::LOAD_OP_CLEAR;
+					}
 
-							renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
-							renderStageRenderTargets.PushBack(std::make_pair(pResource, finalState));
-						}
-						else
-						{
-							RenderPassAttachmentDesc renderPassAttachmentDesc = {};
-							renderPassAttachmentDesc.Format			= pResource->Texture.Format;
-							renderPassAttachmentDesc.SampleCount	= 1;
-							renderPassAttachmentDesc.LoadOp			= loadOp;
-							renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
-							renderPassAttachmentDesc.StencilLoadOp	= loadOp;
-							renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_STORE;
-							renderPassAttachmentDesc.InitialState	= initialState;
-							renderPassAttachmentDesc.FinalState		= finalState;
+					if (isColorAttachment)
+					{
+						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
+						renderPassAttachmentDesc.Format			= pResource->Texture.Format;
+						renderPassAttachmentDesc.SampleCount	= 1;
+						renderPassAttachmentDesc.LoadOp			= loadOp;
+						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
+						renderPassAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+						renderPassAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+						renderPassAttachmentDesc.InitialState	= initialState;
+						renderPassAttachmentDesc.FinalState		= finalState;
 
-							renderPassDepthStencilDescription = renderPassAttachmentDesc;
-							pDepthStencilResource = pResource;
-						}
+						renderPassAttachmentDescriptions.PushBack(renderPassAttachmentDesc);
+
+						renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
+
+						BlendAttachmentStateDesc blendAttachmentState = {};
+						blendAttachmentState.BlendEnabled			= false;
+						blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+
+						renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
+						renderStageRenderTargets.PushBack(std::make_pair(pResource, finalState));
+					}
+					else
+					{
+						RenderPassAttachmentDesc renderPassAttachmentDesc = {};
+						renderPassAttachmentDesc.Format			= pResource->Texture.Format;
+						renderPassAttachmentDesc.SampleCount	= 1;
+						renderPassAttachmentDesc.LoadOp			= loadOp;
+						renderPassAttachmentDesc.StoreOp		= EStoreOp::STORE_OP_STORE;
+						renderPassAttachmentDesc.StencilLoadOp	= loadOp;
+						renderPassAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_STORE;
+						renderPassAttachmentDesc.InitialState	= initialState;
+						renderPassAttachmentDesc.FinalState		= finalState;
+
+						renderPassDepthStencilDescription = renderPassAttachmentDesc;
+						pDepthStencilResource = pResource;
 					}
 				}
 			}
@@ -1988,23 +2073,8 @@ namespace LambdaEngine
 							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a non-zero DrawArgsMask set to that binding");
 							return false;
 						}
-
-						DescriptorBindingDesc vertexBufferDescriptorBinding = {};
-						vertexBufferDescriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-						vertexBufferDescriptorBinding.DescriptorCount	= 1;
-						vertexBufferDescriptorBinding.Binding			= 0;
-						vertexBufferDescriptorBinding.ShaderStageMask	= pipelineStageMask;
-
-						DescriptorBindingDesc instanceBufferDescriptorBinding = {};
-						instanceBufferDescriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-						instanceBufferDescriptorBinding.DescriptorCount	= 1;
-						instanceBufferDescriptorBinding.Binding			= 1;
-						instanceBufferDescriptorBinding.ShaderStageMask	= pipelineStageMask;
-
 						DescriptorSetLayoutDesc descriptorSetLayout = {};
-						descriptorSetLayout.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR;
-						descriptorSetLayout.DescriptorBindings.PushBack(vertexBufferDescriptorBinding);
-						descriptorSetLayout.DescriptorBindings.PushBack(instanceBufferDescriptorBinding);
+						descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetDescriptions;
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
@@ -2049,6 +2119,8 @@ namespace LambdaEngine
 
 					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 					{
+						pRenderStage->pppDrawArgDescriptorSets = DBG_NEW DescriptorSet**[m_BackBufferCount];
+
 						pRenderStage->DrawSetIndex = setIndex;
 						setIndex++;
 					}
@@ -2257,9 +2329,23 @@ namespace LambdaEngine
 
 					ResourceBinding resourceBinding = {};
 					resourceBinding.pRenderStage	= pRenderStage;
-					resourceBinding.DescriptorType	= std::get<2>(resourceTuple);
+					resourceBinding.DescriptorType	= std::get<1>(resourceTuple);
 					resourceBinding.Binding			= r;
-					resourceBinding.TextureState	= std::get<1>(resourceTuple);
+					resourceBinding.TextureState	= ETextureState::TEXTURE_STATE_UNKNOWN;
+
+					pResource->ResourceBindings.PushBack(resourceBinding);
+				}
+
+				for (uint32 r = 0; r < renderStageDrawArgResources.GetSize(); r++)
+				{
+					auto& resourceTuple = renderStageDrawArgResources[r];
+					Resource* pResource = std::get<0>(resourceTuple);
+
+					ResourceBinding resourceBinding = {};
+					resourceBinding.pRenderStage	= pRenderStage;
+					resourceBinding.DescriptorType	= std::get<1>(resourceTuple);
+					resourceBinding.Binding			= r;
+					resourceBinding.TextureState	= ETextureState::TEXTURE_STATE_UNKNOWN;
 
 					pResource->ResourceBindings.PushBack(resourceBinding);
 				}
@@ -2909,6 +2995,8 @@ namespace LambdaEngine
 					intialBarriers.PushBack(initialIndexBufferTransitionBarrier);
 				}
 			}
+
+			m_DirtyDescriptorSetDrawArgs.insert(pResource);
 		}
 		else
 		{
@@ -3235,15 +3323,10 @@ namespace LambdaEngine
 		uint32 frameBufferWidth		= 0;
 		uint32 frameBufferHeight	= 0;
 
-		const DrawArg* pDrawArgs = nullptr;
-		uint32 numDrawArgs = 0;
-
+		DescriptorSet** ppDrawArgsDescriptorSetsPerFrame = nullptr;
+		
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
-		{
-			const TArray<DrawArg>& drawArgs = pRenderStage->pDrawArgsResource->DrawArgs.MaskToArgs[pRenderStage->DrawArgsMask].Args;
-			pDrawArgs	= drawArgs.GetData();
-			numDrawArgs = drawArgs.GetSize();
-		}
+			ppDrawArgsDescriptorSetsPerFrame = pRenderStage->pppDrawArgDescriptorSets[m_ModFrameIndex];
 
 		for (uint32 r = 0; r < pRenderStage->ExecutionCount; r++)
 		{
@@ -3332,17 +3415,13 @@ namespace LambdaEngine
 
 				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 				{
-					for (uint32 d = 0; d < numDrawArgs; d++)
+					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
 					{
-						const DrawArg& drawArg = pDrawArgs[d];
+						const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
 
 						pGraphicsCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-						//Assume pDrawDescriptorSet != nullptr
-						uint64 offset = 0;
-						pGraphicsCommandList->PushBufferDescriptorWriteGraphics(pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, &drawArg.pVertexBuffer, &offset, &drawArg.VertexBufferSize, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-						pGraphicsCommandList->PushBufferDescriptorWriteGraphics(pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, &drawArg.pInstanceBuffer, &offset, &drawArg.InstanceBufferSize, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-
+						pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
 						pGraphicsCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 					}
 				}
