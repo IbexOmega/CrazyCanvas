@@ -56,7 +56,7 @@ namespace LambdaEngine
 	* Deleter functors
 	*/
 	template<typename T>
-	struct TDeleter
+	struct TDelete
 	{
 		void operator()(T* pPtr)
 		{
@@ -65,7 +65,7 @@ namespace LambdaEngine
 	};
 
 	template<typename T>
-	struct TDeleter<T[]>
+	struct TDelete<T[]>
 	{
 		void operator()(T* pPtr)
 		{
@@ -76,11 +76,11 @@ namespace LambdaEngine
 	/*
 	* Base class for TWeak- and TSharedPtr
 	*/
-	template<typename T, typename TDeleter>
+	template<typename T, typename D>
 	class TPtrBase
 	{
 	public:
-		template<typename TOther, typename TOtherDeleter>
+		template<typename TOther, typename DOther>
 		friend class TPtrBase;
 
 		FORCEINLINE T* Get() const noexcept
@@ -129,7 +129,8 @@ namespace LambdaEngine
 			, m_pCounter(nullptr)
 			, m_Deleter()
 		{
-			static_assert(std::is_invocable<TDeleter, T*>(), "TDeleter must be a callable");
+			static_assert(std::is_array_v<T> == std::is_array_v<D>, "Scalar types must have scalar TDelete");
+			static_assert(std::is_invocable<D, T*>(), "TDelete must be a callable");
 		}
 
 		FORCEINLINE void InternalAddStrongRef() noexcept
@@ -216,8 +217,8 @@ namespace LambdaEngine
 			other.m_pCounter = nullptr;
 		}
 
-		template<typename TOther, typename TOtherDeleter>
-		FORCEINLINE void InternalMove(TPtrBase<TOther, TOtherDeleter>&& other) noexcept
+		template<typename TOther, typename DOther>
+		FORCEINLINE void InternalMove(TPtrBase<TOther, DOther>&& other) noexcept
 		{
 			static_assert(std::is_convertible<TOther*, T*>());
 
@@ -252,8 +253,8 @@ namespace LambdaEngine
 			InternalAddStrongRef();
 		}
 
-		template<typename TOther, typename TOtherDeleter>
-		FORCEINLINE void InternalConstructStrong(const TPtrBase<TOther, TOtherDeleter>& other)
+		template<typename TOther, typename DOther>
+		FORCEINLINE void InternalConstructStrong(const TPtrBase<TOther, DOther>& other)
 		{
 			static_assert(std::is_convertible<TOther*, T*>());
 
@@ -286,8 +287,8 @@ namespace LambdaEngine
 			InternalAddWeakRef();
 		}
 
-		template<typename TOther, typename TOtherDeleter>
-		FORCEINLINE void InternalConstructWeak(const TPtrBase<TOther, TOtherDeleter>& other)
+		template<typename TOther, typename DOther>
+		FORCEINLINE void InternalConstructWeak(const TPtrBase<TOther, DOther>& other)
 		{
 			static_assert(std::is_convertible<TOther*, T*>());
 
@@ -317,7 +318,7 @@ namespace LambdaEngine
 	protected:
 		T* m_pPtr;
 		PtrControlBlock* m_pCounter;
-		TDeleter m_Deleter;
+		D m_Deleter;
 	};
 
 	/*
@@ -330,9 +331,9 @@ namespace LambdaEngine
 	* TSharedPtr - RefCounted Pointer for scalar pointers
 	*/
 	template<typename T>
-	class TSharedPtr : public TPtrBase<T, TDeleter<T>>
+	class TSharedPtr : public TPtrBase<T, TDelete<T>>
 	{
-		using TBase = TPtrBase<T, TDeleter<T>>;
+		using TBase = TPtrBase<T, TDelete<T>>;
 
 	public:
 		FORCEINLINE TSharedPtr() noexcept
@@ -517,9 +518,9 @@ namespace LambdaEngine
 	* TSharedPtr - RefCounted Pointer for array pointers
 	*/
 	template<typename T>
-	class TSharedPtr<T[]> : public TPtrBase<T, TDeleter<T[]>>
+	class TSharedPtr<T[]> : public TPtrBase<T, TDelete<T[]>>
 	{
-		using TBase = TPtrBase<T, TDeleter<T[]>>;
+		using TBase = TPtrBase<T, TDelete<T[]>>;
 
 	public:
 		FORCEINLINE TSharedPtr() noexcept
@@ -700,9 +701,9 @@ namespace LambdaEngine
 	* TWeakPtr - Weak Pointer similar for scalar types
 	*/
 	template<typename T>
-	class TWeakPtr : public TPtrBase<T, TDeleter<T>>
+	class TWeakPtr : public TPtrBase<T, TDelete<T>>
 	{
-		using TBase = TPtrBase<T, TDeleter<T>>;
+		using TBase = TPtrBase<T, TDelete<T>>;
 
 	public:
 		FORCEINLINE TWeakPtr() noexcept
@@ -880,9 +881,9 @@ namespace LambdaEngine
 	* TWeakPtr - Weak Pointer for array types
 	*/
 	template<typename T>
-	class TWeakPtr<T[]> : public TPtrBase<T, TDeleter<T[]>>
+	class TWeakPtr<T[]> : public TPtrBase<T, TDelete<T[]>>
 	{
-		using TBase = TPtrBase<T, TDeleter<T[]>>;
+		using TBase = TPtrBase<T, TDelete<T[]>>;
 
 	public:
 		FORCEINLINE TWeakPtr() noexcept
@@ -1056,7 +1057,7 @@ namespace LambdaEngine
 	* Creates a new object together with a SharedPtr
 	*/
 	template<typename T, typename... TArgs>
-	std::enable_if_t<std::is_pointer_v<T>, TSharedPtr<T>> MakeShared(TArgs&&... args) noexcept
+	std::enable_if_t<!std::is_array_v<T>, TSharedPtr<T>> MakeShared(TArgs&&... args) noexcept
 	{
 		T* pRefCountedPtr = DBG_NEW T(Forward<TArgs>(args)...);
 		return Move(TSharedPtr<T>(pRefCountedPtr));
@@ -1066,7 +1067,7 @@ namespace LambdaEngine
 	* Creates a new object together with a SharedPtr
 	*/
 	template<typename T>
-	std::enable_if_t<std::is_unbounded_array_v<T>, TSharedPtr<T>> MakeShared(uint32 size) noexcept
+	std::enable_if_t<std::is_array_v<T>, TSharedPtr<T>> MakeShared(uint32 size) noexcept
 	{
 		using TType = TRemoveExtent<T>;
 
