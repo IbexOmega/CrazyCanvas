@@ -50,6 +50,8 @@
 #include <argh/argh.h>
 #include <imgui.h>
 
+#include "Containers/TSharedPtr.h"
+
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;
@@ -71,6 +73,9 @@ Sandbox::Sandbox()
 	: Game()
 {
 	using namespace LambdaEngine;
+
+	TSharedPtr<int32[]> ptr0 = MakeShared<int32[]>(50);
+	TUniquePtr<int32[]> ptr1 = MakeUnique<int32[]>(50);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
 	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");

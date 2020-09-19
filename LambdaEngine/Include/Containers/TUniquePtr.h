@@ -4,7 +4,7 @@
 namespace LambdaEngine
 {
 	/*
-	* TUniquePtr - SmartPointer similar to std::unique_ptr
+	* TUniquePtr - SmartPointer for scalar types
 	*/
 	template<typename T>
 	class TUniquePtr
@@ -164,7 +164,7 @@ namespace LambdaEngine
 	};
 
 	/*
-	* TUniquePtr - Array specialization
+	* TUniquePtr - SmartPointer for array types
 	*/
 	template<typename T>
 	class TUniquePtr<T[]>
@@ -323,9 +323,21 @@ namespace LambdaEngine
 	* Creates a new object together with a UniquePtr
 	*/
 	template<typename T, typename... TArgs>
-	TUniquePtr<T> MakeUnique(TArgs&&... args) noexcept
+	std::enable_if_t<std::is_pointer_v<T>, TUniquePtr<T>> MakeUnique(TArgs&&... args) noexcept
 	{
-		T* UniquePtr = DBG_NEW T(Forward<TArgs>(args)...);
-		return Move(TUniquePtr<T>(UniquePtr));
+		T* pUniquePtr = DBG_NEW T(Forward<TArgs>(args)...);
+		return Move(TUniquePtr<T>(pUniquePtr));
+	}
+
+	/*
+	* Creates a new object together with a SharedPtr
+	*/
+	template<typename T>
+	std::enable_if_t<std::is_unbounded_array_v<T>, TUniquePtr<T>> MakeUnique(uint32 size) noexcept
+	{
+		using TType = TRemoveExtent<T>;
+
+		TType* pUniquePtr = DBG_NEW TType[size];
+		return Move(TUniquePtr<T>(pUniquePtr));
 	}
 }
