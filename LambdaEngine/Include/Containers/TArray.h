@@ -20,10 +20,10 @@ namespace LambdaEngine
 		typedef uint32 SizeType;
 
 		/*
-		* IteratorBase
+		* TIterator
 		*/
 		template<typename TIteratorType>
-		class IteratorBase
+		class TIterator
 		{
 			friend class TArray;
 
@@ -34,9 +34,9 @@ namespace LambdaEngine
 			using pointer			= TIteratorType*;
 			using reference			= TIteratorType&;
 
-			~IteratorBase() = default;
+			~TIterator() = default;
 
-			FORCEINLINE IteratorBase(TIteratorType* ptr = nullptr)
+			FORCEINLINE TIterator(TIteratorType* ptr = nullptr)
 				: m_Ptr(ptr)
 			{
 			}
@@ -51,110 +51,115 @@ namespace LambdaEngine
 				return *m_Ptr;
 			}
 
-			FORCEINLINE IteratorBase operator++()
+			FORCEINLINE TIterator operator++()
 			{
 				m_Ptr++;
 				return *this;
 			}
 
-			FORCEINLINE IteratorBase operator++(int32)
+			FORCEINLINE TIterator operator++(int32)
 			{
-				IteratorBase Temp = *this;
+				TIterator Temp = *this;
 				m_Ptr++;
 				return Temp;
 			}
 
-			FORCEINLINE IteratorBase operator--()
+			FORCEINLINE TIterator operator--()
 			{
 				m_Ptr--;
 				return *this;
 			}
 
-			FORCEINLINE IteratorBase operator--(int32)
+			FORCEINLINE TIterator operator--(int32)
 			{
-				IteratorBase Temp = *this;
+				TIterator Temp = *this;
 				m_Ptr--;
 				return Temp;
 			}
 
-			FORCEINLINE IteratorBase operator+(int32 offset) const
+			FORCEINLINE TIterator operator+(int32 offset) const
 			{
-				IteratorBase Temp = *this;
+				TIterator Temp = *this;
 				return Temp += offset;
 			}
 
-			FORCEINLINE IteratorBase operator-(int32 offset) const
+			FORCEINLINE TIterator operator-(int32 offset) const
 			{
-				IteratorBase Temp = *this;
+				TIterator Temp = *this;
 				return Temp -= offset;
 			}
 
-			FORCEINLINE difference_type operator-(IteratorBase other) const
+			FORCEINLINE difference_type operator-(TIterator other) const
 			{
 				return static_cast<difference_type>(m_Ptr - other.m_Ptr);
 			}
 
-			FORCEINLINE IteratorBase& operator+=(int32 offset)
+			FORCEINLINE TIterator& operator+=(int32 offset)
 			{
 				m_Ptr += offset;
 				return *this;
 			}
 
-			FORCEINLINE IteratorBase& operator-=(int32 offset)
+			FORCEINLINE TIterator& operator-=(int32 offset)
 			{
 				m_Ptr -= offset;
 				return *this;
 			}
 
-			FORCEINLINE bool operator==(const IteratorBase& other) const
+			FORCEINLINE bool operator==(const TIterator& other) const
 			{
 				return (m_Ptr == other.m_Ptr);
 			}
 
-			FORCEINLINE bool operator!=(const IteratorBase& other) const
+			FORCEINLINE bool operator!=(const TIterator& other) const
 			{
 				return (m_Ptr != other.m_Ptr);
 			}
 
-			FORCEINLINE bool operator<(const IteratorBase& other) const
+			FORCEINLINE bool operator<(const TIterator& other) const
 			{
 				return m_Ptr < other.m_Ptr;
 			}
 
-			FORCEINLINE bool operator<=(const IteratorBase& other) const
+			FORCEINLINE bool operator<=(const TIterator& other) const
 			{
 				return m_Ptr <= other.m_Ptr;
 			}
 
-			FORCEINLINE bool operator>(const IteratorBase& other) const
+			FORCEINLINE bool operator>(const TIterator& other) const
 			{
 				return m_Ptr > other.m_Ptr;
 			}
 
-			FORCEINLINE bool operator>=(const IteratorBase& other) const
+			FORCEINLINE bool operator>=(const TIterator& other) const
 			{
 				return m_Ptr >= other.m_Ptr;
+			}
+
+			FORCEINLINE operator TIterator<const TIteratorType>() const
+			{
+				return TIterator<const TIteratorType>(m_Ptr);
 			}
 
 		protected:
 			TIteratorType* m_Ptr;
 		};
 
-		typedef IteratorBase<T>			Iterator;
-		typedef IteratorBase<const T>	ConstIterator;
+		typedef TIterator<T>		Iterator;
+		typedef TIterator<const T>	ConstIterator;
 
 		/*
 		* Reverse Iterator: Stores for example End(), but will reference End() - 1
 		*/
 		template<typename TIteratorType>
-		class ReverseIteratorBase
+		class TReverseIterator
 		{
 			friend class TArray;
 
 		public:
-			~ReverseIteratorBase() = default;
+			~TReverseIterator() = default;
 
-			FORCEINLINE ReverseIteratorBase(TIteratorType* ptr = nullptr)
+			FORCEINLINE TReverseIterator(TIteratorType* ptr = nullptr)
 				: m_Ptr(ptr)
 			{
 			}
@@ -169,72 +174,77 @@ namespace LambdaEngine
 				return *(m_Ptr - 1);
 			}
 
-			FORCEINLINE ReverseIteratorBase operator++()
+			FORCEINLINE TReverseIterator operator++()
 			{
 				m_Ptr--;
 				return *this;
 			}
 
-			FORCEINLINE ReverseIteratorBase operator++(int32)
+			FORCEINLINE TReverseIterator operator++(int32)
 			{
-				ReverseIteratorBase Temp = *this;
+				TReverseIterator Temp = *this;
 				m_Ptr--;
 				return Temp;
 			}
 
-			FORCEINLINE ReverseIteratorBase operator--()
+			FORCEINLINE TReverseIterator operator--()
 			{
 				m_Ptr++;
 				return *this;
 			}
 
-			FORCEINLINE ReverseIteratorBase operator--(int32)
+			FORCEINLINE TReverseIterator operator--(int32)
 			{
-				ReverseIteratorBase Temp = *this;
+				TReverseIterator Temp = *this;
 				m_Ptr++;
 				return Temp;
 			}
 
-			FORCEINLINE ReverseIteratorBase operator+(int32 offset) const
+			FORCEINLINE TReverseIterator operator+(int32 offset) const
 			{
-				ReverseIteratorBase Temp = *this;
+				TReverseIterator Temp = *this;
 				return Temp += offset;
 			}
 
-			FORCEINLINE ReverseIteratorBase operator-(int32 offset) const
+			FORCEINLINE TReverseIterator operator-(int32 offset) const
 			{
-				ReverseIteratorBase Temp = *this;
+				TReverseIterator Temp = *this;
 				return Temp -= offset;
 			}
 
-			FORCEINLINE ReverseIteratorBase& operator+=(int32 offset)
+			FORCEINLINE TReverseIterator& operator+=(int32 offset)
 			{
 				m_Ptr -= offset;
 				return *this;
 			}
 
-			FORCEINLINE ReverseIteratorBase& operator-=(int32 offset)
+			FORCEINLINE TReverseIterator& operator-=(int32 offset)
 			{
 				m_Ptr += offset;
 				return *this;
 			}
 
-			FORCEINLINE bool operator==(const ReverseIteratorBase& other) const
+			FORCEINLINE bool operator==(const TReverseIterator& other) const
 			{
 				return (m_Ptr == other.m_Ptr);
 			}
 
-			FORCEINLINE bool operator!=(const ReverseIteratorBase& other) const
+			FORCEINLINE bool operator!=(const TReverseIterator& other) const
 			{
 				return (m_Ptr != other.m_Ptr);
+			}
+
+			FORCEINLINE operator TReverseIterator<const TIteratorType>() const
+			{
+				return TReverseIterator<const TIteratorType>(m_Ptr);
 			}
 
 		protected:
 			TIteratorType* m_Ptr;
 		};
 
-		typedef ReverseIteratorBase<T>			ReverseIterator;
-		typedef ReverseIteratorBase<const T>	ReverseConstIterator;
+		typedef TReverseIterator<T>			ReverseIterator;
+		typedef TReverseIterator<const T>	ReverseConstIterator;
 
 		/*
 		* TArray API
