@@ -89,7 +89,10 @@ namespace LambdaEngine
 
 			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "RT_TEST.lrg", IMGUI_ENABLED))
 			{
-				return false;
+				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
+
+				renderGraphStructure = {};
+				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
@@ -498,7 +501,7 @@ namespace LambdaEngine
 		{
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= materialSlot;
+			asInstance.MaterialSlot		= materialSlot;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
 			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED | RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;

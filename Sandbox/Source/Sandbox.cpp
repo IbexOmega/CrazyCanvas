@@ -80,19 +80,6 @@ Sandbox::Sandbox()
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-	CreateFreeCameraEntity(cameraDesc);
-
 	LoadRendererResources();
 
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(SandboxState), STATE_TRANSITION::PUSH);
@@ -122,7 +109,7 @@ Sandbox::Sandbox()
 		});
 
 	ConsoleCommand cmd3;
-	cmd3.Init("show_debug_window", false);
+	cmd3.Init("show_debug_window", true);
 	cmd3.AddArg(Arg::EType::BOOL);
 	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
 	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
@@ -182,9 +169,7 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	{
 		RenderAPI::GetGraphicsQueue()->Flush();
 		RenderAPI::GetComputeQueue()->Flush();
-		EventQueue::SendEvent(ShaderRecompileEvent())
-		ResourceManager::ReloadAllShaders();
-		PipelineStateManager::ReloadPipelineStates();
+		EventQueue::SendEvent(ShaderRecompileEvent());
 	}
 
 	return true;

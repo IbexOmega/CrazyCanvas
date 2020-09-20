@@ -16,11 +16,11 @@ layout(location = 6) in vec4        in_PrevClipPosition;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneNormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneAOMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneRoughnessMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_SceneMetallicMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_AOMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_RoughnessMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MAX_UNIQUE_MATERIALS];
 
 layout(location = 0) out vec3 out_Albedo;
 layout(location = 1) out vec3 out_AO_Rough_Metal;
@@ -36,11 +36,11 @@ void main()
 
     mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo 	    = 		texture(u_SceneAlbedoMaps[in_MaterialSlot],      texCoord).rgb;
-	vec3 sampledNormal 	    =       texture(u_SceneNormalMaps[in_MaterialSlot],      texCoord).rgb;
-	float sampledAO 		=       texture(u_SceneAOMaps[in_MaterialSlot],          texCoord).r;
-	float sampledMetallic 	=       texture(u_SceneMetallicMaps[in_MaterialSlot],    texCoord).r;
-	float sampledRoughness  =       texture(u_SceneRoughnessMaps[in_MaterialSlot],   texCoord).r;
+	vec3 sampledAlbedo 	    = 		texture(u_AlbedoMaps[in_MaterialSlot],      texCoord).rgb;
+	vec3 sampledNormal 	    =       texture(u_NormalMaps[in_MaterialSlot],      texCoord).rgb;
+	float sampledAO 		=       texture(u_AOMaps[in_MaterialSlot],          texCoord).r;
+	float sampledMetallic 	=       texture(u_MetallicMaps[in_MaterialSlot],    texCoord).r;
+	float sampledRoughness  =       texture(u_RoughnessMaps[in_MaterialSlot],   texCoord).r;
 	
 	vec3 shadingNormal 	   	= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal 			= normalize(TBN * normalize(shadingNormal));

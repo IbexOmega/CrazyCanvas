@@ -5,14 +5,10 @@
 
 #include "../Helpers.glsl"
 #include "../Defines.glsl"
+#include "RayTracingInclude.glsl"
 
-struct SPrimaryPayload
-{
-	float Distance;
-};
-
-layout(binding = 0,     set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
-layout(binding = 1,     set = BUFFER_SET_INDEX) uniform accelerationStructureEXT                                u_TLAS;
+layout(binding = 0,     set = BUFFER_SET_INDEX) uniform accelerationStructureEXT                                u_TLAS;
+layout(binding = 1,     set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
 
 layout(binding = 0,    set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D u_OutputTexture;
 
@@ -51,5 +47,5 @@ void main()
     //Send Ray
     traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
 
-    imageStore(u_OutputTexture, pixelCoords, vec4(vec3(s_PrimaryPayload.Distance), 1.0f));
+    imageStore(u_OutputTexture, pixelCoords, vec4(s_PrimaryPayload.Albedo, 1.0f));
 }

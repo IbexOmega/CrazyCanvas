@@ -62,7 +62,7 @@ namespace LambdaEngine
 			g_Clock.Tick();
 
 			// Update
-			Timestamp delta = g_Clock.GetDeltaTime();
+			const Timestamp& delta = g_Clock.GetDeltaTime();
 			isRunning = Tick(delta);
 
 			// Fixed update
