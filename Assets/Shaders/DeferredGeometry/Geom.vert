@@ -12,12 +12,13 @@ layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
 
 layout(location = 0) out flat uint out_MaterialSlot;
-layout(location = 1) out vec3 out_Normal;
-layout(location = 2) out vec3 out_Tangent;
-layout(location = 3) out vec3 out_Bitangent;
-layout(location = 4) out vec2 out_TexCoord;
-layout(location = 5) out vec4 out_ClipPosition;
-layout(location = 6) out vec4 out_PrevClipPosition;
+layout(location = 1) out vec3 out_WorldPosition;
+layout(location = 2) out vec3 out_Normal;
+layout(location = 3) out vec3 out_Tangent;
+layout(location = 4) out vec3 out_Bitangent;
+layout(location = 5) out vec2 out_TexCoord;
+layout(location = 6) out vec4 out_ClipPosition;
+layout(location = 7) out vec4 out_PrevClipPosition;
 
 void main()
 {
@@ -33,6 +34,7 @@ void main()
 	vec3 bitangent 	        = normalize(cross(normal, tangent));
 
     out_MaterialSlot        = instance.MaterialSlot;
+    out_WorldPosition       = worldPosition.xyz;
 	out_Normal 			    = normal;
 	out_Tangent 		    = tangent;
 	out_Bitangent 		    = bitangent;

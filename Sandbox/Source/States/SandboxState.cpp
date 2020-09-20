@@ -37,21 +37,53 @@ void SandboxState::Init()
 	cameraDesc.Position = glm::vec3(0.f, 3.f, 0.f);
 	CreateFreeCameraEntity(cameraDesc);
 
-	// Load scene
-	TArray<MeshComponent> meshComponents;
-	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
-
-	const glm::vec3 position(0.0f, 0.0f, 0.0f);
-	const glm::vec3 scale(0.01f);
-
 	ECSCore* pECS = ECSCore::GetInstance();
-	for (const MeshComponent& meshComponent : meshComponents)
+
+	// Load scene
 	{
-		Entity entity = ECSCore::GetInstance()->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { position, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		TArray<MeshComponent> meshComponents;
+		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+
+		const glm::vec3 position(0.0f, 0.0f, 0.0f);
+		const glm::vec3 scale(0.01f);
+
+		for (const MeshComponent& meshComponent : meshComponents)
+		{
+			Entity entity = ECSCore::GetInstance()->CreateEntity();
+			pECS->AddComponent<PositionComponent>(entity, { position, true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		}
+	}
+
+	//Mirrors
+	{
+		MaterialProperties mirrorProperties = {};
+		mirrorProperties.Roughness = 0.0f;
+
+		MeshComponent meshComponent;
+		meshComponent.MeshGUID = GUID_MESH_QUAD;
+		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Mirror Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			mirrorProperties);
+
+		constexpr const uint32 NUM_MIRRORS = 6;
+		for (uint32 i = 0; i < NUM_MIRRORS; i++)
+		{
+			Entity entity = ECSCore::GetInstance()->CreateEntity();
+
+			float32 sign = pow(-1.0f, i % 2);
+			pECS->AddComponent<PositionComponent>(entity, { glm::vec3(3.0f * (float32(i / 2) - float32(NUM_MIRRORS) / 2.0f), 2.0f, 1.5f * sign), true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(-sign * 90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
+			pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		}
 	}
 }
 

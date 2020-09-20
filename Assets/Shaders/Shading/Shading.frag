@@ -10,11 +10,11 @@ layout(location = 0) in vec2 in_TexCoord;
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer  { SPerFrameBuffer val; }    u_PerFrameBuffer;
 //layout(binding = 1, set = BUFFER_SET_INDEX) uniform LightsBuffer	{ SLightsBuffer val; }		u_LightsBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_Albedo;
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_AORoughMetal;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_CompactNormals;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_Velocity;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DepthStencil;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferPosition;
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferAlbedo;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferAORoughMetalValid;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferCompactNormal;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferVelocity;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -23,14 +23,12 @@ void main()
     SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
     //SLightsBuffer lightBuffer       = u_LightsBuffer.val;
 
-    float sampledDepth      = texture(u_DepthStencil, in_TexCoord).r;
-    SPositions positions    = CalculatePositionsFromDepth(in_TexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+    vec3 worldPos       = texture(u_GBufferPosition, in_TexCoord).rgb;
+    vec3 albedo         = texture(u_GBufferAlbedo, in_TexCoord).rgb;
+    vec3 aoRoughMetal   = texture(u_GBufferAORoughMetalValid, in_TexCoord).rgb;
 
-    vec3 albedo     = texture(u_Albedo, in_TexCoord).rgb;
-    vec4 aoRoughMetal = texture(u_AORoughMetal, in_TexCoord);
-
-    vec3 N = normalize(OctToDir(texture(u_CompactNormals, in_TexCoord).xy));
-    vec3 V = normalize(perFrameBuffer.Position.xyz - positions.WorldPos);
+    vec3 N = normalize(OctToDir(texture(u_GBufferCompactNormal, in_TexCoord).xy));
+    vec3 V = normalize(perFrameBuffer.CameraPosition.xyz - worldPos);
 
     vec3 Lo = vec3(0.0f);
     vec3 F0 = vec3(0.04f);

@@ -78,9 +78,8 @@ layout(binding = 12,    set = TEXTURE_SET_INDEX, rgba32f) restrict uniform image
 layout(binding = 13,    set = TEXTURE_SET_INDEX, r16f)    restrict uniform image2D   		        u_History;
 
 
-SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition, mat4 cameraViewInv)
+SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)
 {
-	vec4 u_CameraOrigin = cameraViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	vec3 origDirection = normalize(hitPosition - cameraPosition);
 
     SRayDirections rayDirections;

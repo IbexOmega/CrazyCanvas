@@ -87,7 +87,7 @@ namespace LambdaEngine
 
 			String prefix = m_RayTracingEnabled ? "RT_" : "";
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "RT_TEST.lrg", IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "RT_DEFERRED_PBR.lrg", IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
@@ -483,6 +483,7 @@ namespace LambdaEngine
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
 				m_MaterialsResourceDirty = true;
+				m_MaterialsPropertiesBufferDirty = true;
 			}
 			else
 			{

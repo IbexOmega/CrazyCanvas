@@ -110,14 +110,14 @@ namespace LambdaEngine
 
 	bool PipelineStateManager::Init()
 	{
-		EventQueue::RegisterEventHandler<PipelineStateRecompileEvent>(&OnShaderRecompileEvent);
+		EventQueue::RegisterEventHandler<PipelineStateRecompileEvent>(&OnPipelineStateRecompileEvent);
 
 		return true;
 	}
 
 	bool PipelineStateManager::Release()
 	{
-		EventQueue::UnregisterEventHandler<PipelineStateRecompileEvent>(&OnShaderRecompileEvent);
+		EventQueue::UnregisterEventHandler<PipelineStateRecompileEvent>(&OnPipelineStateRecompileEvent);
 
 		s_GraphicsPipelineStateDescriptions.clear();
 		s_ComputePipelineStateDescriptions.clear();
@@ -212,8 +212,12 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	bool PipelineStateManager::OnShaderRecompileEvent(const PipelineStateRecompileEvent& event)
+	bool PipelineStateManager::OnPipelineStateRecompileEvent(const PipelineStateRecompileEvent& event)
 	{
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
+
 		for (auto it = s_PipelineStates.begin(); it != s_PipelineStates.end(); it++)
 		{
 			PipelineState* pNewPipelineState = nullptr;
@@ -252,7 +256,8 @@ namespace LambdaEngine
 			it->second = pNewPipelineState;
 		}
 
-		EventQueue::SendEvent(PipelineStatesRecompiledEvent());
+		PipelineStatesRecompiledEvent recompiledEvent = {};
+		EventQueue::SendEventImmediate(recompiledEvent);
 
 		return true;
 	}

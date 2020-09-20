@@ -128,7 +128,8 @@ namespace LambdaEngine
         case EFormat::FORMAT_R8G8B8A8_UNORM:
         case EFormat::FORMAT_B8G8R8A8_UNORM:
         case EFormat::FORMAT_R8G8B8A8_SNORM:		
-		case EFormat::FORMAT_R16G16_SFLOAT:			return 4;
+		case EFormat::FORMAT_R16G16_SFLOAT:			
+		case EFormat::FORMAT_R11G11B10_SFLOAT:		return 4;
 		case EFormat::FORMAT_R32G32_SFLOAT:
         case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
         case EFormat::FORMAT_R32G32B32A32_SFLOAT:	
@@ -148,6 +149,7 @@ namespace LambdaEngine
 		case EFormat::FORMAT_R8G8B8A8_SNORM:		return "FORMAT_R8G8B8A8_SNORM";
 		case EFormat::FORMAT_R16G16_SFLOAT:			return "FORMAT_R16G16_SFLOAT";
 		case EFormat::FORMAT_R32G32_SFLOAT:			return "FORMAT_R32G32_SFLOAT";
+		case EFormat::FORMAT_R11G11B10_SFLOAT:		return "FORMAT_R11G11B10_SFLOAT";
 		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return "FORMAT_R16G16B16A16_SFLOAT";
 		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return "FORMAT_R32G32B32A32_SFLOAT";
 		case EFormat::FORMAT_R32G32B32A32_UINT:		return "FORMAT_R32G32B32A32_UINT";
@@ -165,6 +167,7 @@ namespace LambdaEngine
 		else if (string == "FORMAT_R8G8B8A8_SNORM")			return EFormat::FORMAT_R8G8B8A8_SNORM;
 		else if (string == "FORMAT_R16G16_SFLOAT")			return EFormat::FORMAT_R16G16_SFLOAT;
 		else if (string == "FORMAT_R32G32_SFLOAT")			return EFormat::FORMAT_R32G32_SFLOAT;
+		else if (string == "FORMAT_R11G11B10_SFLOAT")		return EFormat::FORMAT_R11G11B10_SFLOAT;
 		else if (string == "FORMAT_R16G16B16A16_SFLOAT")	return EFormat::FORMAT_R16G16B16A16_SFLOAT;
 		else if (string == "FORMAT_R32G32B32A32_SFLOAT")	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
 		else if (string == "FORMAT_R32G32B32A32_UINT")		return EFormat::FORMAT_R32G32B32A32_UINT;

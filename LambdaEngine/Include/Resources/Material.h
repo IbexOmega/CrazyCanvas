@@ -17,14 +17,14 @@ namespace LambdaEngine
 		{
 			glm::vec4 Albedo;
 
-			float Ambient;
+			float AO;
 			float Metallic;
 			float Roughness;
 
-			float EmissionStrength;
+			float Unused;
 		};
 
-		float Properties[8] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f };
+		float Properties[8] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f };
 	};
 
 	struct Material

@@ -10,19 +10,11 @@
 
 struct SRayHitDescription
 {
-    vec3    ShadingNormal;
-    vec3    GeometricNormal;
+    vec3    Position;
+    vec3    Normal;
     vec2    TexCoord;
     uint    MaterialIndex;
 };
-
-layout(binding = 2,     set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
-
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_AOMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_RoughnessMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MAX_UNIQUE_MATERIALS];
 
 layout(buffer_reference, buffer_reference_align = 16) buffer VertexBuffer 
 {
@@ -71,8 +63,8 @@ SRayHitDescription CalculateHitData()
 	shadingNormal           = TBN * shadingNormal;
 
     SRayHitDescription hitDescription;
-    hitDescription.ShadingNormal    = shadingNormal;
-    hitDescription.GeometricNormal  = N;
+    hitDescription.Position         = gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
+    hitDescription.Normal           = shadingNormal;
     hitDescription.TexCoord         = texCoord;
     hitDescription.MaterialIndex    = materialIndex;
 
@@ -81,26 +73,24 @@ SRayHitDescription CalculateHitData()
 
 void main() 
 {
-   SRayHitDescription hitDescription = CalculateHitData();
-
-   	vec3 hitPos = gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
+    SRayHitDescription hitDescription = CalculateHitData();
 
 	SMaterialParameters materialParameters = u_MaterialParameters.val[hitDescription.MaterialIndex];
 
-	vec3 sampledAlbedo 		=		texture(u_AlbedoMaps[hitDescription.MaterialIndex],    hitDescription.TexCoord).rgb;
+	vec3 sampledAlbedo 		=		texture(u_AlbedoMaps[hitDescription.MaterialIndex],     hitDescription.TexCoord).rgb;
     float sampledAO 		=       texture(u_AOMaps[hitDescription.MaterialIndex],         hitDescription.TexCoord).r;
 	float sampledMetallic 	= 		texture(u_MetallicMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
 	float sampledRoughness 	= 		texture(u_RoughnessMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
 
     vec3 albedo       		= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+    float ao   		        = 		materialParameters.AO * sampledAO;
 	float roughness   		= 		materialParameters.Roughness * sampledRoughness;
     float metallic    		= 		materialParameters.Metallic * sampledMetallic;
 
-	s_PrimaryPayload.HitPosition		= hitPos;
-	s_PrimaryPayload.ShadingNormal		= hitDescription.ShadingNormal;
-	s_PrimaryPayload.GeometricNormal	= hitDescription.GeometricNormal;
+	s_PrimaryPayload.HitPosition		= hitDescription.Position;
+	s_PrimaryPayload.Normal		        = hitDescription.Normal;
 	s_PrimaryPayload.Albedo			    = albedo;
-    s_PrimaryPayload.Roughness			= sampledAO;
+    s_PrimaryPayload.AO			        = ao;
 	s_PrimaryPayload.Roughness			= roughness;
 	s_PrimaryPayload.Metallic			= metallic;
 	s_PrimaryPayload.Distance			= gl_HitTEXT;

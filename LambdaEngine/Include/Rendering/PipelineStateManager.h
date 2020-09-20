@@ -108,7 +108,7 @@ namespace LambdaEngine
 		static PipelineState* GetPipelineState(uint64 id);
 
 	private:
-		static bool OnShaderRecompileEvent(const PipelineStateRecompileEvent& event);
+		static bool OnPipelineStateRecompileEvent(const PipelineStateRecompileEvent& event);
 
 	private:
 		static uint64													s_CurrentPipelineIndex;

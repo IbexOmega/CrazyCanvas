@@ -7,11 +7,6 @@
 #include "../Defines.glsl"
 #include "RayTracingInclude.glsl"
 
-layout(binding = 0,     set = BUFFER_SET_INDEX) uniform accelerationStructureEXT                                u_TLAS;
-layout(binding = 1,     set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
-
-layout(binding = 0,    set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D u_OutputTexture;
-
 layout(location = 0) rayPayloadEXT SPrimaryPayload s_PrimaryPayload;
 
 void GenerateCameraRay(in vec2 d, out vec3 origin, out vec3 direction)
@@ -30,11 +25,27 @@ void main()
 	vec2 screenTexCoord     = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
 	vec2 d                  = screenTexCoord * 2.0f - 1.0f;
 
-    //Define Shadow Ray Parameters
-    vec3 origin;// = vec3(0.0f, 2.0f, 0.0f);
-    vec3 direction;
-    GenerateCameraRay(d, origin, direction);
+    //Sample required
+    vec4 aoRoughMetalValid  = imageLoad(u_GBufferAORoughMetalValid, pixelCoords);
+    float roughness         = aoRoughMetalValid.g;
+    float valid             = aoRoughMetalValid.a;
 
+    //Return early if roughness is non-zero
+    if (roughness > 0.0f || valid < 1.0f)
+        return;
+
+    //Sample GBuffer
+    vec3 worldPosition  = imageLoad(u_GBufferPosition, pixelCoords).xyz;
+    vec3 normal         = normalize(OctToDir(imageLoad(u_GBufferCompactNormal, pixelCoords).xy));
+
+    //Setup convenience variables
+    SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
+
+    SRayDirections rayDirections = CalculateRayDirections(worldPosition, normal, perFrameBuffer.CameraPosition.xyz);
+    
+    //Setup Ray Tracing Parameters
+    vec3            origin              = worldPosition + normal * RAY_NORMAL_OFFSET;
+    vec3            direction           = rayDirections.ReflDir;
     const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
     const uint 		cullMask           	= 0xFF;
     const uint 		sbtRecordOffset    	= 0;
@@ -47,5 +58,11 @@ void main()
     //Send Ray
     traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
 
-    imageStore(u_OutputTexture, pixelCoords, vec4(s_PrimaryPayload.Albedo, 1.0f));
+    if (s_PrimaryPayload.Distance > 0.0f)
+    {
+        imageStore(u_GBufferPosition,           pixelCoords, vec4(s_PrimaryPayload.HitPosition, 1.0f));
+        imageStore(u_GBufferAlbedo,             pixelCoords, vec4(s_PrimaryPayload.Albedo, 1.0f));
+        imageStore(u_GBufferAORoughMetalValid,  pixelCoords, vec4(s_PrimaryPayload.AO, s_PrimaryPayload.Roughness, s_PrimaryPayload.Metallic, 1.0f));
+        imageStore(u_GBufferCompactNormal,      pixelCoords, vec4(DirToOct(s_PrimaryPayload.Normal), 1.0f, 1.0f));
+    }
 }
