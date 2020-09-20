@@ -60,7 +60,7 @@ namespace LambdaEngine
 	{
 		using TType = T;
 
-		FORCEINLINE void operator()(T* pPtr)
+		FORCEINLINE void operator()(TType* pPtr)
 		{
 			delete pPtr;
 		}
@@ -71,7 +71,7 @@ namespace LambdaEngine
 	{
 		using TType = TRemoveExtent<T>;
 
-		FORCEINLINE void operator()(T* pPtr)
+		FORCEINLINE void operator()(TType* pPtr)
 		{
 			delete[] pPtr;
 		}
