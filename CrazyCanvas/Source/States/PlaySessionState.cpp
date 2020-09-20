@@ -42,5 +42,5 @@ void PlaySessionState::Init()
 	}
 }
 
-void PlaySessionState::Tick(float)
+void PlaySessionState::Tick(LambdaEngine::Timestamp)
 {}
