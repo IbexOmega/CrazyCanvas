@@ -76,7 +76,7 @@ namespace LambdaEngine
 
 	private:
 		void SaveResults();
-		std::string GetTimeUnitName();
+		std::string GetTimeUnitName() const;
 
 	private:
 		// Timestamps

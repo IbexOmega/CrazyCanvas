@@ -71,7 +71,6 @@ void TrackSystem::UpdateTrack(Timestamp deltaTime, Entity entity, PositionCompon
 		return;
 	}
 
-	glm::vec3 oldPos = posComp.Position;
 	posComp.Position = glm::catmullRom(
 		trackComp.Track[splineIndices.x],
 		trackComp.Track[splineIndices.y],
@@ -84,10 +83,9 @@ void TrackSystem::UpdateTrack(Timestamp deltaTime, Entity entity, PositionCompon
 	rotComp.Quaternion = glm::quatLookAtLH(dir, glm::vec3(0.f, -1.f, 0.f)); // Update the Quaternion so that it matches the direction. (This is not used within this system)
 }
 
-glm::vec3 TrackSystem::GetCurrentGradient(const glm::uvec4& splineIndices, TrackComponent& camTrackComp) const
+glm::vec3 TrackSystem::GetCurrentGradient(const glm::uvec4& splineIndices, const TrackComponent& camTrackComp)
 {
 	const float tt = camTrackComp.CurrentTrackT * camTrackComp.CurrentTrackT;
-	const float ttt = tt * camTrackComp.CurrentTrackT;
 
 	const float weight1 = -3.0f * tt + 4.0f * camTrackComp.CurrentTrackT - 1.0f;
 	const float weight2 = 9.0f * tt - 10.0f * camTrackComp.CurrentTrackT;
@@ -102,12 +100,12 @@ glm::uvec4 TrackSystem::GetCurrentSplineIndices(TrackComponent& camTrackComp) co
 	return {
 		std::max(0, (int)camTrackComp.CurrentTrackIndex - 1),
 		camTrackComp.CurrentTrackIndex,
-		std::min(camTrackComp.Track.size() - 1, camTrackComp.CurrentTrackIndex + 1),
-		std::min(camTrackComp.Track.size() - 1, camTrackComp.CurrentTrackIndex + 2)
+		std::min(camTrackComp.Track.GetSize() - 1, camTrackComp.CurrentTrackIndex + 1),
+		std::min(camTrackComp.Track.GetSize() - 1, camTrackComp.CurrentTrackIndex + 2)
 	};
 }
 
-bool LambdaEngine::TrackSystem::HasReachedEnd(TrackComponent& camTrackComp) const
+bool LambdaEngine::TrackSystem::HasReachedEnd(const TrackComponent& camTrackComp)
 {
-	return  camTrackComp.CurrentTrackIndex == camTrackComp.Track.size() - 1;
+	return camTrackComp.CurrentTrackIndex == camTrackComp.Track.GetSize() - 1;
 }

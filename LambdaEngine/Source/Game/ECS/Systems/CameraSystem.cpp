@@ -22,9 +22,9 @@ namespace LambdaEngine
 	bool CameraSystem::Init()
 	{
 		TransformComponents transformComponents;
-		transformComponents.Position.Permissions	= R;
-		transformComponents.Scale.Permissions		= R;
-		transformComponents.Rotation.Permissions	= R;
+		transformComponents.Position.Permissions	= RW;
+		transformComponents.Scale.Permissions		= NDA;
+		transformComponents.Rotation.Permissions	= RW;
 
 		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
@@ -33,7 +33,7 @@ namespace LambdaEngine
 			{
 				{{{RW, CameraComponent::s_TID}, {RW, ViewProjectionMatricesComponent::s_TID}}, {&transformComponents}, &m_CameraEntities}
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{RW, FreeCameraComponent::s_TID}} };
+			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::s_TID}} };
 			systemReg.Phase = g_LastPhase-1;
 
 			RegisterSystem(systemReg);
@@ -62,7 +62,7 @@ namespace LambdaEngine
 				const uint16 width = window->GetWidth();
 				const uint16 height = window->GetHeight();
 				camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
-				
+
 				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
 					HandleInput(deltaTime, entity, posComp, rotComp, pFreeCameraComponents->GetData(entity));
 
@@ -87,11 +87,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void CameraSystem::HandleInput(Timestamp delta, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, FreeCameraComponent& freeCamComp)
+	void CameraSystem::HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
 	{
-		constexpr float CAMERA_MOUSE_SPEED = 10.0f;
-
-		float32 dt = float32(delta.AsSeconds());
+		float32 dt = float32(deltaTime.AsSeconds());
 
 		glm::vec3 translation = {
 				float(Input::IsKeyDown(EKey::KEY_D) - Input::IsKeyDown(EKey::KEY_A)),	// X: Right
