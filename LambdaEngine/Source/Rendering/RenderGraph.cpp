@@ -2310,7 +2310,7 @@ namespace LambdaEngine
 
 							for (RenderPassAttachmentDesc& attachmentDesc : disabledRenderPassDesc.Attachments)
 							{
-								attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
+								if (attachmentDesc.InitialState != ETextureState::TEXTURE_STATE_UNKNOWN) attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
 								if (attachmentDesc.StencilLoadOp != ELoadOp::LOAD_OP_DONT_CARE) attachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_LOAD;
 							}
 

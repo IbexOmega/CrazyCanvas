@@ -220,10 +220,10 @@ namespace LambdaEngine
 
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
-		void UpdateShaderRecords();
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
 		void UpdateLightsBuffer(CommandList* pCommandList);
+		void UpdateShaderRecords();
 		void BuildBLASs(CommandList* pCommandList);
 		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
@@ -244,9 +244,10 @@ namespace LambdaEngine
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
 
-		bool						m_DirtyLights = false;
-		bool						m_DirectionalExist = false;
-		LightBuffer					m_DirectionalLight;
+		bool						m_LightsDirty			= true;
+		bool						m_LightsResourceDirty	= false;
+		bool						m_DirectionalExist		= false;
+		LightBuffer					m_LightBufferData;
 		THashTable<Entity, uint32>	m_EntityToPointLight;
 		THashTable<uint32, Entity>	m_PointLightToEntity;
 		TArray<PointLight>			m_PointLights;

@@ -85,7 +85,7 @@ void main()
             break;
 
         reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
-    }    
+    }
 
     if (writeToOutput)
     {
