@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Game/State.h"
+#include "ECS/Entity.h"
 
 namespace LambdaEngine
 {
@@ -22,4 +23,7 @@ public:
 	void Pause();
 
 	void Tick(float dt);
+private:
+	LambdaEngine::Entity m_DirLight;
+	LambdaEngine::Entity m_PointLights[100];
 };

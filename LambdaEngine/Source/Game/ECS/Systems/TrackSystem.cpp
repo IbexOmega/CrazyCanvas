@@ -102,12 +102,12 @@ glm::uvec4 TrackSystem::GetCurrentSplineIndices(TrackComponent& camTrackComp) co
 	return {
 		std::max(0, (int)camTrackComp.CurrentTrackIndex - 1),
 		camTrackComp.CurrentTrackIndex,
-		std::min(camTrackComp.Track.size() - 1, camTrackComp.CurrentTrackIndex + 1),
-		std::min(camTrackComp.Track.size() - 1, camTrackComp.CurrentTrackIndex + 2)
+		std::min(camTrackComp.Track.GetSize() - 1U, camTrackComp.CurrentTrackIndex + 1),
+		std::min(camTrackComp.Track.GetSize() - 1U, camTrackComp.CurrentTrackIndex + 2)
 	};
 }
 
 bool LambdaEngine::TrackSystem::HasReachedEnd(TrackComponent& camTrackComp) const
 {
-	return  camTrackComp.CurrentTrackIndex == camTrackComp.Track.size() - 1;
+	return  camTrackComp.CurrentTrackIndex == camTrackComp.Track.GetSize() - 1;
 }

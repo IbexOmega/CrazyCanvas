@@ -230,6 +230,38 @@ namespace LambdaEngine
 		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
 		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
 
+		ComponentArray<PointLightComponent>* pPointLightComponents = pECSCore->GetComponentArray<PointLightComponent>();
+		for (Entity entity : m_PointLightEntities.GetIDs())
+		{
+			auto& pointLight = pPointLightComponents->GetData(entity);
+			auto& position = pPositionComponents->GetData(entity);
+			if (position.Dirty)
+			{
+				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity);
+			}
+		}
+
+		ComponentArray<DirectionalLightComponent>* pDirLightComponents = pECSCore->GetComponentArray<DirectionalLightComponent>();
+		for (Entity entity : m_DirectionalLightEntities.GetIDs())
+		{
+			auto& dirLight = pDirLightComponents->GetData(entity);
+			auto& rotation = pRotationComponents->GetData(entity);
+			if (rotation.Dirty)
+			{
+				UpdateDirectionalLight(entity, dirLight.ColorIntensity, rotation.Quaternion);
+			}
+		}
+
+		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		for (Entity entity : m_CameraEntities.GetIDs())
+		{
+			auto& cameraComp = pCameraComponents->GetData(entity);
+			if (cameraComp.IsActive)
+			{
+				UpdateCamera(entity);
+			}
+		}
+
 		for (Entity entity : m_DynamicEntities.GetIDs())
 		{
 			auto& positionComp	= pPositionComponents->GetData(entity);
@@ -247,17 +279,6 @@ namespace LambdaEngine
 				positionComp.Dirty	= false;
 				rotationComp.Dirty	= false;
 				scaleComp.Dirty		= false;
-			}
-		}
-
-		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
-
-		for (Entity entity : m_CameraEntities.GetIDs())
-		{
-			auto& cameraComp = pCameraComponents->GetData(entity);
-			if (cameraComp.IsActive)
-			{
-				UpdateCamera(entity);
 			}
 		}
 	}
@@ -354,11 +375,13 @@ namespace LambdaEngine
 			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
 			m_DirectionalLight.ColorIntensity = pointLightComp.ColorIntensity;
-			m_DirectionalLight.Direction = glm::rotate(rotation.Quaternion, { 1.0f, 0.0f, 0.0f });
+			m_DirectionalLight.Direction = GetForward(rotation.Quaternion);
 
 			m_DirectionalExist = true;
 			m_DirtyLights = true;
 		}
+		else
+			LOG_WARNING("Multiple directional lights not supported!");
 	}
 
 	void RenderSystem::OnPointLightEntityAdded(Entity entity)
@@ -380,6 +403,7 @@ namespace LambdaEngine
 
 	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
 	{
+		m_DirectionalLight.ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
 		m_DirtyLights = true;
 	}
@@ -559,6 +583,28 @@ namespace LambdaEngine
 		{
 			m_DirtyDrawArgs.insert(drawArgHash);
 		}
+	}
+
+	void RenderSystem::UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction)
+	{
+		m_DirectionalLight.ColorIntensity = colorIntensity;
+		m_DirectionalLight.Direction = GetForward(direction);
+		m_DirtyLights = true;
+	}
+
+	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity)
+	{
+		if (m_EntityToPointLight.find(entity) == m_EntityToPointLight.end())
+		{
+			LOG_ERROR("Entity non-existing in PointLight map!");
+			return;
+		}
+		uint32 index = m_EntityToPointLight[entity];
+
+		m_PointLights[index].ColorIntensity = colorIntensity;
+		m_PointLights[index].Position = position;
+		
+		m_DirtyLights = true;
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)

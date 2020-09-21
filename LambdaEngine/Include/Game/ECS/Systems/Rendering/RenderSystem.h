@@ -201,6 +201,8 @@ namespace LambdaEngine
 
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
 
+		void UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction);
+		void UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity);
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
 
