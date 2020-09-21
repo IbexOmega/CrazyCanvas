@@ -117,11 +117,11 @@ void SandboxState::Init()
 		}
 
 		// Directional Light
-		{
-			m_DirLight = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
-			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-		}
+		//{
+		//	m_DirLight = ECSCore::GetInstance()->CreateEntity();
+		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
+		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
+		//}
 		
 		// Add PointLights
 		/*{
@@ -184,7 +184,7 @@ void SandboxState::Init()
 			}
 		}*/
 
-		/*{
+		{
 			constexpr uint32 POINT_LIGHT_COUNT = 30;
 
 			const float PI = glm::pi<float>();
@@ -241,7 +241,7 @@ void SandboxState::Init()
 				ECSCore::GetInstance()->AddComponent<DynamicComponent>(m_PointLights[i], DynamicComponent());
 				ECSCore::GetInstance()->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
 			}
-		}*/
+		}
 	}
 
 	// Load Scene SceneManager::Get("SceneName").Load()

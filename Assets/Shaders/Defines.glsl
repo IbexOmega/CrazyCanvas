@@ -84,7 +84,8 @@ struct SPointLight
 {
     vec4    ColorIntensity;
     vec3    Position;
-    uint    padding;
+    uint    Padding;
+    mat4    ProjView;
 };
 
 struct SLightsBuffer
@@ -92,6 +93,7 @@ struct SLightsBuffer
     vec4        DirL_ColorIntensity;
 	vec3        DirL_Direction;
     uint		PointLightCount;
+    mat4        DirL_ProjView;
 };
 
 struct SPerFrameBuffer
