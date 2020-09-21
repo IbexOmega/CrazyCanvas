@@ -11,9 +11,9 @@ namespace LambdaEngine
 		return NetworkUtils::Init();
 	}
 
-	void MacNetworkUtils::Release()
+	void MacNetworkUtils::PreRelease()
 	{
-		NetworkUtils::Release();
+		NetworkUtils::PreRelease();
 	}
 
 	void MacNetworkUtils::PostRelease()

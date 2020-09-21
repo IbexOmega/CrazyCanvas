@@ -1,105 +1,83 @@
 #include "Networking/API/NetworkDiscovery.h"
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/IClientHandler.h"
 #include "Networking/API/INetworkDiscoveryServer.h"
 #include "Networking/API/INetworkDiscoveryClient.h"
+#include "Networking/API/UDP/ServerNetworkDiscovery.h"
+#include "Networking/API/UDP/ClientNetworkDiscovery.h"
+
 
 namespace LambdaEngine
 {
-	NetworkDiscovery NetworkDiscovery::s_Instance;
+	ServerNetworkDiscovery* NetworkDiscovery::s_pServer = nullptr;
+	ClientNetworkDiscovery* NetworkDiscovery::s_pClient = nullptr;
+	SpinLock NetworkDiscovery::s_Lock;
 
-	NetworkDiscovery::NetworkDiscovery() : 
-		m_pServer(nullptr),
-		m_Lock()
+	bool NetworkDiscovery::EnableServer(const String& nameOfGame, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler, uint16 portOfBroadcastServer)
 	{
-
-	}
-
-	bool NetworkDiscovery::EnableServer(uint16 portOfGameServer, INetworkDiscoveryServer* pHandler, uint16 portOfBroadcastServer)
-	{
-		std::scoped_lock<SpinLock> lock(s_Instance.m_Lock);
-		if (!s_Instance.m_pServer)
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		if (!s_pServer)
 		{
-			s_Instance.m_pServer = DBG_NEW ServerNetworkDiscovery();
-			return s_Instance.m_pServer->Start(IPEndPoint(IPAddress::ANY, portOfBroadcastServer), portOfGameServer, pHandler);
+			s_pServer = DBG_NEW ServerNetworkDiscovery();
+			return s_pServer->Start(IPEndPoint(IPAddress::ANY, portOfBroadcastServer), nameOfGame, portOfGameServer, pHandler);
 		}
 		return false;
 	}
 
 	void NetworkDiscovery::DisableServer()
 	{
-		std::scoped_lock<SpinLock> lock(s_Instance.m_Lock);
-		if (s_Instance.m_pServer)
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		if (s_pServer)
 		{
-			s_Instance.m_pServer->Release();
-			s_Instance.m_pServer = nullptr;
+			s_pServer->Release();
+			s_pServer = nullptr;
 		}
 	}
 
 	bool NetworkDiscovery::IsServerEnabled()
 	{
-		return s_Instance.m_pServer;
+		return s_pServer;
 	}
 
-	bool NetworkDiscovery::EnableClient(INetworkDiscoveryClient* pHandler)
+	bool NetworkDiscovery::EnableClient(const String& nameOfGame, INetworkDiscoveryClient* pHandler, uint16 portOfBroadcastServer, Timestamp searchInterval)
 	{
-		UNREFERENCED_VARIABLE(pHandler);
-		return true;
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		if (!s_pClient)
+		{
+			s_pClient = DBG_NEW ClientNetworkDiscovery();
+			return s_pClient->Connect(IPEndPoint(IPAddress::BROADCAST, portOfBroadcastServer), nameOfGame, pHandler, searchInterval);
+		}
+		return false;
 	}
 
 	void NetworkDiscovery::DisableClient()
 	{
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		if (s_pClient)
+		{
+			s_pClient->Release();
+			s_pClient = nullptr;
+		}
 	}
 
 	bool NetworkDiscovery::IsClientEnabled()
 	{
-		return false;
+		return s_pClient;
 	}
 
-	void NetworkDiscovery::FixedTick(Timestamp delta)
+	void NetworkDiscovery::FixedTickStatic(Timestamp delta)
 	{
-		UNREFERENCED_VARIABLE(delta);
-	}
-
-	IClientRemoteHandler* NetworkDiscovery::CreateClientHandler()
-	{
-		return this;
-	}
-
-	void NetworkDiscovery::OnConnecting(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-	}
-
-	void NetworkDiscovery::OnConnected(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-	}
-
-	void NetworkDiscovery::OnDisconnecting(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-	}
-
-	void NetworkDiscovery::OnDisconnected(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-	}
-
-	void NetworkDiscovery::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-		UNREFERENCED_VARIABLE(pPacket);
-	}
-
-	void NetworkDiscovery::OnClientReleased(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-	}
-
-	void NetworkDiscovery::OnServerFull(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
+		if (s_pClient || s_pServer)
+		{
+			std::scoped_lock<SpinLock> lock(s_Lock);
+			if (s_pClient)
+			{
+				s_pClient->Tick(delta);
+			}
+			else if (s_pClient)
+			{
+				s_pClient->Tick(delta);
+			}
+		}
 	}
 
 	void NetworkDiscovery::ReleaseStatic()

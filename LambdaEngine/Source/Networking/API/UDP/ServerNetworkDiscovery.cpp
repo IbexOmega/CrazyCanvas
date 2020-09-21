@@ -1,6 +1,7 @@
 #include "Networking/API/UDP/ServerNetworkDiscovery.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/BinaryEncoder.h"
+#include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/INetworkDiscoveryServer.h"
 
 namespace LambdaEngine
@@ -9,21 +10,27 @@ namespace LambdaEngine
 		m_pSocket(nullptr),
 		m_SegmentPool(8),
 		m_PortOfGameServer(0),
-		m_pHandler(nullptr)
+		m_pHandler(nullptr),
+		m_IPEndPoint(),
+		m_Transceiver(),
+		m_Statistics(),
+		m_Lock(),
+		m_NameOfGame()
 	{
 
 	}
 
 	ServerNetworkDiscovery::~ServerNetworkDiscovery()
 	{
-
+		LOG_INFO("[ServerNetworkDiscovery]: Released");
 	}
 
-	bool ServerNetworkDiscovery::Start(const IPEndPoint& endPoint, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler)
+	bool ServerNetworkDiscovery::Start(const IPEndPoint& endPoint, const String& nameOfGame, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler)
 	{
 		if (!ThreadsAreRunning() && ThreadsHasTerminated())
 		{
 			m_IPEndPoint = endPoint;
+			m_NameOfGame = nameOfGame;
 			m_PortOfGameServer = portOfGameServer;
 			m_pHandler = pHandler;
 			if (StartThreads())
@@ -61,7 +68,7 @@ namespace LambdaEngine
 		{
 			if (m_pSocket->Bind(m_IPEndPoint))
 			{
-				m_Transciver.SetSocket(m_pSocket);
+				m_Transceiver.SetSocket(m_pSocket);
 				LOG_INFO("[ServerNetworkDiscovery]: Started %s", m_IPEndPoint.ToString().c_str());
 				return true;
 			}
@@ -107,33 +114,45 @@ namespace LambdaEngine
 
 		while (!ShouldTerminate())
 		{
-			if (!m_Transciver.ReceiveBegin(sender))
+			if (!m_Transceiver.ReceiveBegin(sender))
 				continue;
 			
 			TArray<NetworkSegment*> packets;
 			TArray<uint32> acks;
 
-			if (m_Transciver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
-				HandleReceivedPacket(packets[0]);
+			if (m_Transceiver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
+				HandleReceivedPacket(sender, packets[0]);
 
 			m_SegmentPool.FreeSegments(packets);
 		}
 	}
 
-	void ServerNetworkDiscovery::HandleReceivedPacket(NetworkSegment* pPacket)
+	void ServerNetworkDiscovery::HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket)
 	{
 		if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_DISCOVERY)
 		{
-			TQueue<NetworkSegment*> packets;
-			TSet<uint32> reliableUIDs;
-			NetworkSegment* pResponse = m_SegmentPool.RequestFreeSegment();
-			packets.push(pResponse);
-			BinaryEncoder encoder(pResponse);
+			BinaryDecoder decoder(pPacket);
+			if (decoder.ReadString() == m_NameOfGame)
+			{
+				TQueue<NetworkSegment*> packets;
+				TSet<uint32> reliableUIDs;
 
-			encoder.WriteUInt16(m_PortOfGameServer);
-			m_pHandler->OnNetworkDiscoveryPreTransmit(encoder);
+#ifdef LAMBDA_DEBUG
+				NetworkSegment* pResponse = m_SegmentPool.RequestFreeSegment("ClientNetworkDiscovery");
+#else
+				NetworkSegment* pResponse = m_SegmentPool.RequestFreeSegment();
+#endif
 
-			m_Transciver.Transmit(&m_SegmentPool, packets, reliableUIDs, m_IPEndPoint, &m_Statistics);
+				pResponse->GetHeader().Type = NetworkSegment::TYPE_NETWORK_DISCOVERY;
+				packets.push(pResponse);
+
+				BinaryEncoder encoder(pResponse);
+				encoder.WriteString(m_NameOfGame);
+				encoder.WriteUInt16(m_PortOfGameServer);
+				m_pHandler->OnNetworkDiscoveryPreTransmit(encoder);
+
+				m_Transceiver.Transmit(&m_SegmentPool, packets, reliableUIDs, sender, &m_Statistics);
+			}
 		}
 	}
 }

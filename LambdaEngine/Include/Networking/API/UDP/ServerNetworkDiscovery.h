@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LambdaEngine.h"
+#include "Containers/String.h"
 
 #include "Time/API/Timestamp.h"
 
@@ -24,7 +24,7 @@ namespace LambdaEngine
         DECL_UNIQUE_CLASS(ServerNetworkDiscovery);
         virtual ~ServerNetworkDiscovery();
 
-        bool Start(const IPEndPoint& endPoint, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler);
+        bool Start(const IPEndPoint& endPoint, const String& nameOfGame, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler);
         void Stop(const std::string& reason);
         void Release();
         bool IsRunning();
@@ -39,16 +39,17 @@ namespace LambdaEngine
         virtual void RunTransmitter() override;
         virtual void RunReceiver() override;
 
-        void HandleReceivedPacket(NetworkSegment* pPacket);
+        void HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket);
 
     private:
         ISocketUDP* m_pSocket;
         IPEndPoint m_IPEndPoint;
-        PacketTransceiverUDP m_Transciver;
+        PacketTransceiverUDP m_Transceiver;
         NetworkStatistics m_Statistics;
         SegmentPool m_SegmentPool;
         SpinLock m_Lock;
         uint16 m_PortOfGameServer;
+        String m_NameOfGame;
         INetworkDiscoveryServer* m_pHandler;
     };
 }

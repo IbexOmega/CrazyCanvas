@@ -24,9 +24,9 @@ namespace LambdaEngine
 		return NetworkUtils::Init();
 	}
 
-	void Win32NetworkUtils::Release()
+	void Win32NetworkUtils::PreRelease()
 	{
-		NetworkUtils::Release();
+		NetworkUtils::PreRelease();
 	}
 
 	void Win32NetworkUtils::PostRelease()

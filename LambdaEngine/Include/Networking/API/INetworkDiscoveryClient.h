@@ -2,6 +2,8 @@
 
 #include "LambdaEngine.h"
 
+#include "Networking/API/BinaryDecoder.h"
+
 namespace LambdaEngine
 {
 	class NetworkSegment;
@@ -11,6 +13,6 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(INetworkDiscoveryClient);
 
-		virtual void OnServerFound(NetworkSegment* pPacket) = 0;
+		virtual void OnServerFound(BinaryDecoder decoder, uint16 portOfGameServer) = 0;
 	};
 }
