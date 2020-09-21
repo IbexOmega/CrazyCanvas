@@ -35,7 +35,7 @@ Server::Server()
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
 	desc.PoolSize		= 1024;
-	desc.Protocol		= EProtocol::TCP;
+	desc.Protocol		= EProtocol::UDP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
 	desc.UsePingSystem	= true;
