@@ -153,7 +153,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, requiredDrawArgs))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgs))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
@@ -221,7 +221,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, requiredDrawArgs))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgs))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
@@ -1580,7 +1580,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, TSet<uint32>& requiredDrawArgs)
+	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<uint32>& requiredDrawArgs)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
 		m_RenderStageMap.reserve(m_RenderStageCount);
@@ -2047,9 +2047,17 @@ namespace LambdaEngine
 				}
 				else
 				{
-					//Todo: Implement Custom Custom Renderer
-					/*pCustomRenderer = pRenderStageDesc->CustomRenderer.pCustomRenderer;
-					m_CustomRenderers.PushBack(pRenderStageDesc->CustomRenderer.pCustomRenderer);*/
+					auto customRendererIt = std::find_if(customRenderers.Begin(), customRenderers.End(), [pRenderStageDesc](const ICustomRenderer* pCustomRenderer) { return pRenderStageDesc->Name == pCustomRenderer->GetName(); });
+
+					if (customRendererIt == customRenderers.end())
+					{
+						LOG_ERROR("[RenderGraph]: Custom Renderer %s could not be found among Custom Renderers");
+						pRenderStage->TriggerType = ERenderStageExecutionTrigger::DISABLED;
+					}
+					else
+					{
+						pCustomRenderer = *customRendererIt;
+					}
 				}
 
 				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
