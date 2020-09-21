@@ -7,7 +7,6 @@
 
 namespace LambdaEngine
 {
-	class NetworkSegment;
 
 	class LAMBDA_API INetworkDiscoveryClient
 	{
