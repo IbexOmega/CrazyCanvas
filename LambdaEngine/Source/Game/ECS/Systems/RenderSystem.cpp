@@ -1130,7 +1130,7 @@ namespace LambdaEngine
 				m_DirtyASInstanceBuffers.insert(pDirtyBLAS);
 			}
 
-			m_DirtyBLASs.clear();
+			//m_DirtyBLASs.clear();
 		}
 	}
 
@@ -1177,14 +1177,14 @@ namespace LambdaEngine
 			pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pASInstanceBuffer, 0, requiredBufferSize);
 		}
 
-		m_DirtyASInstanceBuffers.clear();
+		//m_DirtyASInstanceBuffers.clear();
 	}
 
 	void RenderSystem::BuildTLAS(CommandList* pCommandList)
 	{
 		if (m_TLASDirty)
 		{
-			m_TLASDirty = false;
+			//m_TLASDirty = false;
 			m_CompleteInstanceBufferPendingCopies.Clear();
 
 			uint32 newInstanceCount = 0;
