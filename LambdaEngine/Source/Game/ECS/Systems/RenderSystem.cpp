@@ -87,7 +87,7 @@ namespace LambdaEngine
 
 			String prefix = m_RayTracingEnabled ? "RT_" : "";
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, prefix + EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 

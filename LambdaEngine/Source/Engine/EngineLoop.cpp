@@ -98,7 +98,7 @@ namespace LambdaEngine
 		AudioSystem::Tick();
 
 		CameraSystem::GetInstance().MainThreadTick(delta);
-		StateManager::GetInstance()->Tick(dt);
+		StateManager::GetInstance()->Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
