@@ -34,7 +34,7 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled = true;//deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
+		m_RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 
 		TransformComponents transformComponents;
 		transformComponents.Position.Permissions	= R;
@@ -87,7 +87,7 @@ namespace LambdaEngine
 
 			String prefix = m_RayTracingEnabled ? "RT_" : "";
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "RT_DEFERRED_PBR.lrg", IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
@@ -505,7 +505,7 @@ namespace LambdaEngine
 			asInstance.MaterialSlot		= materialSlot;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
-			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED | RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
@@ -620,18 +620,18 @@ namespace LambdaEngine
 	void RenderSystem::UpdateCamera(Entity entity)
 	{
 		ViewProjectionMatricesComponent& viewProjComp = ECSCore::GetInstance()->GetComponent<ViewProjectionMatricesComponent>(entity);
-		PositionComponent& posComp = ECSCore::GetInstance()->GetComponent<PositionComponent>(entity);
-		RotationComponent& rotComp = ECSCore::GetInstance()->GetComponent<RotationComponent>(entity);
-		CameraComponent& camComp = ECSCore::GetInstance()->GetComponent<CameraComponent>(entity);
-		m_PerFrameData.CamData.View = viewProjComp.View;
-		m_PerFrameData.CamData.Projection = viewProjComp.Projection;
-		m_PerFrameData.CamData.PrevProjection = glm::mat4(1.0f);
-		m_PerFrameData.CamData.PrevView = glm::mat4(1.0f);
-		m_PerFrameData.CamData.ViewInv = camComp.ViewInv;
-		m_PerFrameData.CamData.ProjectionInv = camComp.ProjectionInv;
-		m_PerFrameData.CamData.Position = glm::vec4(posComp.Position, 0.f);
-		m_PerFrameData.CamData.Up = glm::vec4(GetUp(rotComp.Quaternion), 0.f);
-		m_PerFrameData.CamData.Jitter = camComp.Jitter;
+		PositionComponent& posComp	= ECSCore::GetInstance()->GetComponent<PositionComponent>(entity);
+		RotationComponent& rotComp	= ECSCore::GetInstance()->GetComponent<RotationComponent>(entity);
+		CameraComponent& camComp	= ECSCore::GetInstance()->GetComponent<CameraComponent>(entity);
+		m_PerFrameData.CamData.PrevView			= m_PerFrameData.CamData.View;
+		m_PerFrameData.CamData.PrevProjection	= m_PerFrameData.CamData.Projection;
+		m_PerFrameData.CamData.View				= viewProjComp.View;
+		m_PerFrameData.CamData.Projection		= viewProjComp.Projection;
+		m_PerFrameData.CamData.ViewInv			= camComp.ViewInv;
+		m_PerFrameData.CamData.ProjectionInv	= camComp.ProjectionInv;
+		m_PerFrameData.CamData.Position			= glm::vec4(posComp.Position, 0.f);
+		m_PerFrameData.CamData.Up				= glm::vec4(GetUp(rotComp.Quaternion), 0.f);
+		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 	}
 
 	void RenderSystem::CleanBuffers()

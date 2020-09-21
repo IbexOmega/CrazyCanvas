@@ -442,7 +442,7 @@
                     "src_stage": ""
                 },
                 {
-                    "name": "G_BUFFER_ALBEDO_ALBEDO",
+                    "name": "G_BUFFER_ALBEDO",
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
@@ -579,7 +579,7 @@
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
-                    "name": "G_BUFFER_ALBEDO_ALBEDO",
+                    "name": "G_BUFFER_ALBEDO",
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "COMBINED_SAMPLER",
