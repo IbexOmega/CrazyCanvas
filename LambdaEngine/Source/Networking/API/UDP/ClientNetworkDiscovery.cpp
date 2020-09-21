@@ -140,6 +140,8 @@ namespace LambdaEngine
 
 	void ClientNetworkDiscovery::OnReleaseRequested(const std::string& reason)
 	{
+		UNREFERENCED_VARIABLE(reason);
+
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		if (m_pSocket)
 			m_pSocket->Close();
@@ -159,6 +161,8 @@ namespace LambdaEngine
 
 	void ClientNetworkDiscovery::Tick(Timestamp delta)
 	{
+		UNREFERENCED_VARIABLE(delta);
+
 		if (EngineLoop::GetTimeSinceStart() - m_TimeOfLastSearch > m_SearchInterval)
 		{
 			m_TimeOfLastSearch = EngineLoop::GetTimeSinceStart();
