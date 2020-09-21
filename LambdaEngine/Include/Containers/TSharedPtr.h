@@ -1126,7 +1126,7 @@ namespace LambdaEngine
 
 	// static_cast
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> StaticCast(const TSharedPtr<T1>& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> StaticCast(const TSharedPtr<T1>& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
@@ -1135,7 +1135,7 @@ namespace LambdaEngine
 	}
 
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> StaticCast(TSharedPtr<T1>&& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> StaticCast(TSharedPtr<T1>&& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
@@ -1145,7 +1145,7 @@ namespace LambdaEngine
 
 	// const_cast
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> ConstCast(const TSharedPtr<T1>& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> ConstCast(const TSharedPtr<T1>& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
@@ -1154,7 +1154,7 @@ namespace LambdaEngine
 	}
 
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> ConstCast(TSharedPtr<T1>&& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> ConstCast(TSharedPtr<T1>&& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
@@ -1164,7 +1164,7 @@ namespace LambdaEngine
 
 	// reinterpret_cast
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> ReinterpretCast(const TSharedPtr<T1>& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> ReinterpretCast(const TSharedPtr<T1>& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
@@ -1173,7 +1173,7 @@ namespace LambdaEngine
 	}
 
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> ReinterpretCast(TSharedPtr<T1>&& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> ReinterpretCast(TSharedPtr<T1>&& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
@@ -1183,7 +1183,7 @@ namespace LambdaEngine
 
 	// dynamic_cast
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> DynamicCast(const TSharedPtr<T1>& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> DynamicCast(const TSharedPtr<T1>& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
@@ -1192,7 +1192,7 @@ namespace LambdaEngine
 	}
 
 	template<typename T0, typename T1>
-	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T0>, TSharedPtr<T0>> DynamicCast(TSharedPtr<T1>&& pPointer)
+	std::enable_if_t<std::is_array_v<T0> == std::is_array_v<T1>, TSharedPtr<T0>> DynamicCast(TSharedPtr<T1>&& pPointer)
 	{
 		using TType = TRemoveExtent<T0>;
 		
