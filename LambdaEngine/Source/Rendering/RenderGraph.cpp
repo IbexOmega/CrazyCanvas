@@ -1525,6 +1525,13 @@ namespace LambdaEngine
 			if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 			{
 				pRenderStage->DrawType = pRenderStageDesc->Graphics.DrawType;
+				if (pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
+				{
+					if (!pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty())
+					{
+						pRenderStage->DrawType = ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING;
+					}
+				}
 			}
 
 			pRenderStage->Dimensions.x = glm::max<uint32>(1, pRenderStage->Dimensions.x);
@@ -2120,6 +2127,10 @@ namespace LambdaEngine
 					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 					{
 						pRenderStage->pppDrawArgDescriptorSets = DBG_NEW DescriptorSet**[m_BackBufferCount];
+						for (uint32 i = 0; i < m_BackBufferCount; i++)
+						{
+							pRenderStage->pppDrawArgDescriptorSets[i] = nullptr;
+						}
 
 						pRenderStage->DrawSetIndex = setIndex;
 						setIndex++;
@@ -3324,9 +3335,10 @@ namespace LambdaEngine
 		uint32 frameBufferHeight	= 0;
 
 		DescriptorSet** ppDrawArgsDescriptorSetsPerFrame = nullptr;
-		
-		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
+		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING)
+		{
 			ppDrawArgsDescriptorSetsPerFrame = pRenderStage->pppDrawArgDescriptorSets[m_ModFrameIndex];
+		}
 
 		for (uint32 r = 0; r < pRenderStage->ExecutionCount; r++)
 		{
@@ -3421,9 +3433,22 @@ namespace LambdaEngine
 
 						pGraphicsCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-						pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+						if (ppDrawArgsDescriptorSetsPerFrame)
+						{
+							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+						}
+
 						pGraphicsCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 					}
+				}
+				else if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING)
+				{
+					if (ppDrawArgsDescriptorSetsPerFrame)
+					{
+						pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[0], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+					}
+
+					pGraphicsCommandList->DispatchMesh(3, 0);
 				}
 				else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
 				{

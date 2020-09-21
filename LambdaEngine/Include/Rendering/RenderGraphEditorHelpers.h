@@ -286,6 +286,7 @@ namespace LambdaEngine
 		switch (index)
 		{
 		case 0: return ERenderStageDrawType::SCENE_INSTANCES;
+		case 4: return ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING;
 		case 1: return ERenderStageDrawType::FULLSCREEN_QUAD;
 		case 2: return ERenderStageDrawType::CUBE;
 		}
@@ -297,9 +298,10 @@ namespace LambdaEngine
 	{
 		switch (drawType)
 		{
-		case ERenderStageDrawType::SCENE_INSTANCES:	return 0;
-		case ERenderStageDrawType::FULLSCREEN_QUAD:	return 1;
-		case ERenderStageDrawType::CUBE:			return 2;
+		case ERenderStageDrawType::SCENE_INSTANCES:					return 0;
+		case ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING:	return 4;
+		case ERenderStageDrawType::FULLSCREEN_QUAD:					return 1;
+		case ERenderStageDrawType::CUBE:							return 2;
 		}
 
 		return -1;

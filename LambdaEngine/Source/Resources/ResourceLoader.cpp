@@ -28,7 +28,7 @@
 #include <assimp/postprocess.h>
 
 #define MAX_PRIMS 126
-#define MAX_VERTS 32
+#define MAX_VERTS 64
 
 namespace LambdaEngine
 {
@@ -138,6 +138,17 @@ namespace LambdaEngine
 		defaultBuiltInResources.limits.generalVariableIndexing				= true;
 		defaultBuiltInResources.limits.generalConstantMatrixVectorIndexing	= true;
 
+		// Mesh shaders
+		defaultBuiltInResources.maxMeshWorkGroupSizeX_NV	= 32;
+		defaultBuiltInResources.maxMeshWorkGroupSizeY_NV	= 1;
+		defaultBuiltInResources.maxMeshWorkGroupSizeZ_NV	= 1;
+		defaultBuiltInResources.maxTaskWorkGroupSizeX_NV	= 32;
+		defaultBuiltInResources.maxTaskWorkGroupSizeY_NV	= 1;
+		defaultBuiltInResources.maxTaskWorkGroupSizeZ_NV	= 1;
+		defaultBuiltInResources.maxMeshOutputVerticesNV		= 256;
+		defaultBuiltInResources.maxMeshOutputPrimitivesNV	= 512;
+		defaultBuiltInResources.maxMeshViewCountNV			= 4;
+
 		return &defaultBuiltInResources;
 	}
 
@@ -172,13 +183,29 @@ namespace LambdaEngine
 	/*
 	* Helpers
 	*/
-	static void ConvertBackslashes(std::string& string)
+	static void ConvertSlashes(std::string& string)
 	{
-		size_t pos = string.find_first_of('\\');
-		while (pos != std::string::npos)
 		{
-			string.replace(pos, 1, 1, '/');
-			pos = string.find_first_of('\\', pos + 1);
+			size_t pos = string.find_first_of('\\');
+			while (pos != std::string::npos)
+			{
+				string.replace(pos, 1, 1, '/');
+				pos = string.find_first_of('\\', pos + 1);
+			}
+		}
+
+		{
+			size_t pos = string.find_first_of('/');
+			while (pos != std::string::npos)
+			{
+				size_t afterPos = pos + 1;
+				if (string[afterPos] == '/')
+				{
+					string.erase(string.begin() + afterPos);
+				}
+
+				pos = string.find_first_of('/', afterPos);
+			}
 		}
 	}
 	
@@ -249,7 +276,7 @@ namespace LambdaEngine
 			pMaterial->GetTexture(type, index, &str);
 
 			String name = str.C_Str();
-			ConvertBackslashes(name);
+			ConvertSlashes(name);
 
 			auto loadedTexture = context.LoadedTextures.find(name);
 			if (loadedTexture == context.LoadedTextures.end())
@@ -468,7 +495,7 @@ namespace LambdaEngine
 		loadedMeshComponents	= Move(context.LoadedMeshComponent);
 		loadedMeshes			= Move(context.Meshes);
 
-		return true;
+ 		return true;
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath)
@@ -524,6 +551,46 @@ namespace LambdaEngine
 		pMesh->IndexCount		= numIndices;
 
 		GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+		
+		LOG_INFO("--------------------------------------------");
+		LOG_INFO("UniqueIndexCount=%d", pMesh->UniqueIndexCount);
+		for (uint32 index = 0; index < pMesh->UniqueIndexCount; index++)
+		{
+			LOG_INFO("[%d]=%d", index, pMesh->pUniqueIndices[index]);
+		}
+
+		LOG_INFO("IndexCount=%d", pMesh->IndexCount);
+		for (uint32 index = 0; index < pMesh->IndexCount; index++)
+		{
+			LOG_INFO("[%d]=%d", index, pMesh->pIndexArray[index]);
+		}
+
+		LOG_INFO("PrimitiveIndexCount=%d", pMesh->PrimitiveIndexCount);
+		for (uint32 index = 0; index < pMesh->IndexCount; index++)
+		{
+			LOG_INFO("[%d]=%d", index, pMesh->pPrimitiveIndices[index]);
+		}
+
+		LOG_INFO("VertexCount=%d", pMesh->VertexCount);
+		LOG_INFO("MeshletCount=%d", pMesh->MeshletCount);
+		for (uint32 meshlet = 0; meshlet < pMesh->MeshletCount; meshlet++)
+		{
+			Meshlet& m = pMesh->pMeshletArray[meshlet];
+			LOG_INFO("Meshlet[%d]", meshlet);
+			LOG_INFO("PrimCount=%d", m.PrimCount);
+			LOG_INFO("PrimOffset=%d", m.PrimOffset);
+			LOG_INFO("VertCount=%d", m.VertCount);
+			LOG_INFO("VertOffset=%d", m.VertOffset);
+			
+			LOG_INFO("Primitive Indices: ", meshlet);
+			for (uint32 prim = 0; prim < m.PrimCount; prim++)
+			{
+				uint32 index = pMesh->pPrimitiveIndices[m.PrimOffset + prim];
+				LOG_INFO("[%d]=%d", prim, index);
+			}
+		}
+		LOG_INFO("--------------------------------------------");
+
 		return pMesh;
 	}
 
@@ -805,29 +872,32 @@ namespace LambdaEngine
 
 	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
 	{
+		String file = filepath;
+		ConvertSlashes(file);
+
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
 
 		TArray<uint32> sourceSPIRV;
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
-			if (!ReadDataFromFile(filepath, "r", &pShaderRawSource, &shaderRawSourceSize))
+			if (!ReadDataFromFile(file, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", file.c_str());
 				return nullptr;
 			}
 			
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV(file, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
 				return nullptr;
 			}
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
-			if (!ReadDataFromFile(filepath, "rb", &pShaderRawSource, &shaderRawSourceSize))
+			if (!ReadDataFromFile(file, "rb", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", file.c_str());
 				return nullptr;
 			}
 			
@@ -838,7 +908,7 @@ namespace LambdaEngine
 		const uint32 sourceSize = static_cast<uint32>(sourceSPIRV.GetSize()) * sizeof(uint32);
 
 		ShaderDesc shaderDesc = { };
-		shaderDesc.DebugName	= filepath;
+		shaderDesc.DebugName	= file;
 		shaderDesc.Source		= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
 		shaderDesc.EntryPoint	= entryPoint;
 		shaderDesc.Stage		= stage;
@@ -979,9 +1049,9 @@ namespace LambdaEngine
 		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
 
 		//Todo: Fetch this
-		int32 clientInputSemanticsVersion							    = 100;
-		glslang::EShTargetClientVersion vulkanClientVersion				= glslang::EShTargetVulkan_1_2;
-		glslang::EShTargetLanguageVersion targetVersion					= glslang::EShTargetSpv_1_5;
+		int32 clientInputSemanticsVersion					= 100;
+		glslang::EShTargetClientVersion vulkanClientVersion	= glslang::EShTargetVulkan_1_2;
+		glslang::EShTargetLanguageVersion targetVersion		= glslang::EShTargetSpv_1_5;
 
 		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
@@ -989,7 +1059,7 @@ namespace LambdaEngine
 
 		const TBuiltInResource* pResources	= GetDefaultBuiltInResources();
 		EShMessages messages				= static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
-		const int defaultVersion			= 110;
+		const int defaultVersion			= 450;
 
 		DirStackFileIncluder includer;
 
@@ -1598,13 +1668,13 @@ namespace LambdaEngine
 			pMesh->pMeshletArray[i].VertCount = static_cast<uint32>(builtMeshlets[i].UniqueVertexIndices.GetSize());
 			uniqueVertexIndexCount += static_cast<uint32>(builtMeshlets[i].UniqueVertexIndices.GetSize());
 
-			pMesh->pMeshletArray[i].VertOffset = primitiveIndexCount;
-			pMesh->pMeshletArray[i].VertCount = static_cast<uint32>(builtMeshlets[i].PrimitiveIndices.GetSize());
+			pMesh->pMeshletArray[i].PrimOffset = primitiveIndexCount;
+			pMesh->pMeshletArray[i].PrimCount = static_cast<uint32>(builtMeshlets[i].PrimitiveIndices.GetSize());
 			primitiveIndexCount += static_cast<uint32>(builtMeshlets[i].PrimitiveIndices.GetSize());
 		}
 
-		pMesh->PrimitiveIndexCount = primitiveIndexCount;
-		pMesh->pPrimitiveIndices = DBG_NEW Mesh::IndexType[primitiveIndexCount];
+		pMesh->PrimitiveIndexCount = primitiveIndexCount * 3;
+		pMesh->pPrimitiveIndices = DBG_NEW Mesh::IndexType[pMesh->PrimitiveIndexCount];
 		pMesh->UniqueIndexCount = uniqueVertexIndexCount;
 		pMesh->pUniqueIndices = DBG_NEW Mesh::IndexType[uniqueVertexIndexCount];
 
@@ -1614,7 +1684,19 @@ namespace LambdaEngine
 		{
 			uint32 localPrimitiveIndexCount = builtMeshlets[i].PrimitiveIndices.GetSize();
 			uint32 localUniqueVertexIndexCount = builtMeshlets[i].UniqueVertexIndices.GetSize();
-			memcpy(pPrimitiveIndices, builtMeshlets[i].PrimitiveIndices.GetData(), sizeof(Mesh::IndexType) * localPrimitiveIndexCount);
+			
+			for (uint32 j = 0; j < localPrimitiveIndexCount; j++)
+			{
+				uint32 index = builtMeshlets[i].PrimitiveIndices[j].i0;
+				pPrimitiveIndices[(j * 3) + 0] = index;
+
+				index = builtMeshlets[i].PrimitiveIndices[j].i1;
+				pPrimitiveIndices[(j * 3) + 1] = index;
+				
+				index = builtMeshlets[i].PrimitiveIndices[j].i2;
+				pPrimitiveIndices[(j * 3) + 2] = index;
+			}
+			
 			memcpy(pUniqueIndices, builtMeshlets[i].UniqueVertexIndices.GetData(), sizeof(Mesh::IndexType) * localUniqueVertexIndexCount);
 			pPrimitiveIndices += localPrimitiveIndexCount;
 			pUniqueIndices += localUniqueVertexIndexCount;
