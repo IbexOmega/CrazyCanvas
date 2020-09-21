@@ -78,6 +78,10 @@ namespace LambdaEngine
 		uint32	MaxMeshOutputPrimitives;
 		uint32	MaxMeshViewCount;
 		uint32	MaxRecursionDepth;
+		uint32	MaxDrawMeshTasksCount;
+		uint32	MaxTaskOutputCount;
+		uint32	MaxMeshWorkGroupInvocations;
+		uint32	MaxTaskWorkGroupInvocations;
 		bool	RayTracing;
 		bool	MeshShaders;
 		bool	GeometryShaders;

@@ -31,74 +31,74 @@ const float MAX_TEMPORAL_FRAMES = 256.0f;
 
 struct SPositions
 {
-    vec3 WorldPos; 
-    vec3 ViewPos;
+	vec3 WorldPos; 
+	vec3 ViewPos;
 };
 
 struct SVertex
 {
-    vec4    Position;
-    vec4    Normal;
-    vec4    Tangent;
-    vec4    TexCoord;
+	vec4    Position;
+	vec4    Normal;
+	vec4    Tangent;
+	vec4    TexCoord;
 };
 
 struct SMeshlet
 {
-    uint VertCount;
-    uint VertOffset;
-    uint PrimCount;
-    uint PrimOffset;
+	uint VertCount;
+	uint VertOffset;
+	uint PrimCount;
+	uint PrimOffset;
 };
 
 struct SPrimaryInstance
 {
-    mat3x4  Transform;
-    uint    Mask_IndirectArgIndex;
-    uint    SBTRecordOffset_Flags;
-    uint    AccelerationStructureHandleTop32;
-    uint    AccelerationStructureHandleBottom32;
+	mat3x4  Transform;
+	uint    Mask_IndirectArgIndex;
+	uint    SBTRecordOffset_Flags;
+	uint    AccelerationStructureHandleTop32;
+	uint    AccelerationStructureHandleBottom32;
 };
 
 struct SInstance
 {
-    mat4    Transform;
-    mat4    PrevTransform;
-    uint    MaterialSlot;
-    uint    Padding0;
-    uint    Padding1;
-    uint    Padding2;
+	mat4    Transform;
+	mat4    PrevTransform;
+	uint    MaterialSlot;
+	uint    Padding0;
+	uint    Padding1;
+	uint    Padding2;
 };
 
 struct SIndirectArg
 {
-    uint	IndexCount;
-    uint	InstanceCount;
-    uint	FirstIndex;
-    int	    VertexOffset;
-    uint	FirstInstance;
-    
-    uint	MaterialIndex;
+	uint	IndexCount;
+	uint	InstanceCount;
+	uint	FirstIndex;
+	int	    VertexOffset;
+	uint	FirstInstance;
+	
+	uint	MaterialIndex;
 };
 
 struct SAreaLight
 {
-    uint    InstanceIndex;
-    uint    Type;
-    uvec2   Padding;
+	uint    InstanceIndex;
+	uint    Type;
+	uvec2   Padding;
 };
 
 struct SLightsBuffer
 {
-    vec4        DirL_Direction;
+	vec4        DirL_Direction;
 	vec4        DirL_EmittedRadiance;
-    SAreaLight  AreaLights[MAX_NUM_AREA_LIGHTS];
-    uint        AreaLightCount;
+	SAreaLight  AreaLights[MAX_NUM_AREA_LIGHTS];
+	uint        AreaLightCount;
 };
 
 struct SPerFrameBuffer
 {
-    mat4 Projection;
+	mat4 Projection;
 	mat4 View;
 	mat4 PrevProjection;
 	mat4 PrevView;
@@ -107,26 +107,26 @@ struct SPerFrameBuffer
 	vec4 CameraPosition;
 	vec4 CameraRight;
 	vec4 CameraUp;
-    vec2 Jitter;
+	vec2 Jitter;
 
-    uint FrameIndex;
-    uint RandomSeed;
+	uint FrameIndex;
+	uint RandomSeed;
 };
 
 struct SMaterialParameters
 {
-    vec4    Albedo;
-    float   AO;
-    float   Metallic;
-    float   Roughness;
-    float   Unused;
+	vec4    Albedo;
+	float   AO;
+	float   Metallic;
+	float   Roughness;
+	float   Unused;
 };
 
 struct SShapeSample
 {
-    vec3    Position;
-    vec3    Normal;
-    float   PDF;
+	vec3    Position;
+	vec3    Normal;
+	float   PDF;
 };
 
 #endif

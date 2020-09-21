@@ -1672,9 +1672,13 @@ namespace LambdaEngine
 			memcpy(&m_DeviceFeatures.MaxMeshWorkGroupSize, MeshShaderProperties.maxMeshWorkGroupSize, sizeof(uint32) * 3);
 			memcpy(&m_DeviceFeatures.MaxTaskWorkGroupSize, MeshShaderProperties.maxTaskWorkGroupSize, sizeof(uint32) * 3);
 
-			m_DeviceFeatures.MaxMeshViewCount			= MeshShaderProperties.maxMeshMultiviewViewCount;
-			m_DeviceFeatures.MaxMeshOutputVertices		= MeshShaderProperties.maxMeshOutputVertices;
-			m_DeviceFeatures.MaxMeshOutputPrimitives	= MeshShaderProperties.maxMeshOutputPrimitives;
+			m_DeviceFeatures.MaxMeshViewCount				= MeshShaderProperties.maxMeshMultiviewViewCount;
+			m_DeviceFeatures.MaxMeshOutputVertices			= MeshShaderProperties.maxMeshOutputVertices;
+			m_DeviceFeatures.MaxMeshOutputPrimitives		= MeshShaderProperties.maxMeshOutputPrimitives;
+			m_DeviceFeatures.MaxDrawMeshTasksCount			= MeshShaderProperties.maxDrawMeshTasksCount;
+			m_DeviceFeatures.MaxTaskOutputCount				= MeshShaderProperties.maxTaskOutputCount;
+			m_DeviceFeatures.MaxMeshWorkGroupInvocations	= MeshShaderProperties.maxMeshWorkGroupInvocations;
+			m_DeviceFeatures.MaxTaskWorkGroupInvocations	= MeshShaderProperties.maxTaskWorkGroupInvocations;
 		}
 	}
 

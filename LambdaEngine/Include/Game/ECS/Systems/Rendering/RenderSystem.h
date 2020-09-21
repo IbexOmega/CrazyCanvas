@@ -99,10 +99,16 @@ namespace LambdaEngine
 			AccelerationStructure* pBLAS		= nullptr;
 			SBTRecord ShaderRecord			= {};
 
-			Buffer* pVertexBuffer			= nullptr;
-			uint32	VertexCount				= 0;
-			Buffer* pIndexBuffer			= nullptr;
-			uint32	IndexCount				= 0;
+			Buffer* pVertexBuffer		= nullptr;
+			uint32	VertexCount			= 0;
+			Buffer* pIndexBuffer		= nullptr;
+			uint32	IndexCount			= 0;
+			Buffer* pUniqueIndices		= nullptr;
+			uint32	UniqueIndexCount	= 0;
+			Buffer* pPrimitiveIndices	= nullptr;
+			uint32	PrimtiveIndexCount	= 0;
+			Buffer* pMeshlets			= nullptr;
+			uint32	MeshletCount		= 0;
 
 			Buffer* pASInstanceBuffer			= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];

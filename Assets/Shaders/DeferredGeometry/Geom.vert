@@ -28,18 +28,18 @@ void main()
 	vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
 	vec4 prevWorldPosition  = instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
-    vec3 normal 	        = normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+	vec3 normal 	        = normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
 	vec3 tangent            = normalize((instance.Transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent 	        = normalize(cross(normal, tangent));
 
-    out_MaterialSlot        = instance.MaterialSlot;
-    out_WorldPosition       = worldPosition.xyz;
+	out_MaterialSlot        = instance.MaterialSlot;
+	out_WorldPosition       = worldPosition.xyz;
 	out_Normal 			    = normal;
 	out_Tangent 		    = tangent;
 	out_Bitangent 		    = bitangent;
 	out_TexCoord 		    = vertex.TexCoord.xy;
-    out_ClipPosition        = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
-    out_PrevClipPosition    = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
+	out_ClipPosition        = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
+	out_PrevClipPosition    = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
 
 	gl_Position = out_ClipPosition;
 }

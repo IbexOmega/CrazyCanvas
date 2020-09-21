@@ -11,12 +11,13 @@ layout(triangles, max_vertices = 64, max_primitives = 126) out;
 
 // Output block for vertices
 layout(location = 0) out flat uint	out_MaterialSlot[];
-layout(location = 1) out vec3		out_Normal[];
-layout(location = 2) out vec3		out_Tangent[];
-layout(location = 3) out vec3		out_Bitangent[];
-layout(location = 4) out vec2		out_TexCoord[];
-layout(location = 5) out vec4		out_ClipPosition[];
-layout(location = 6) out vec4		out_PrevClipPosition[];
+layout(location = 1) out vec3		out_WorldPosition[];
+layout(location = 2) out vec3		out_Normal[];
+layout(location = 3) out vec3		out_Tangent[];
+layout(location = 4) out vec3		out_Bitangent[];
+layout(location = 5) out vec2		out_TexCoord[];
+layout(location = 6) out vec4		out_ClipPosition[];
+layout(location = 7) out vec4		out_PrevClipPosition[];
 
 // Constant data
 const vec3 POSITIONS[3] = 
@@ -32,16 +33,16 @@ layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 	SPerFrameBuffer Val;
 } u_PerFrameBuffer;
 
-// Vertex data
-layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices
-{ 
-	SVertex val[]; 
-} b_Vertices;
-
-layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances
-{ 
-	SInstance val[]; 
-} b_Instances;
+//// Vertex data
+//layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices
+//{ 
+//	SVertex val[]; 
+//} b_Vertices;
+//
+//layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances
+//{ 
+//	SInstance val[]; 
+//} b_Instances;
 
 /*
 * Main
@@ -59,6 +60,7 @@ void main()
 	vec4 worldPosition = vec4(POSITIONS[threadID], 1.0f);
 
 	// Material
+	out_WorldPosition[threadID]	= worldPosition.xyz;
 	out_MaterialSlot[threadID]	= 0;
 	out_Normal[threadID]		= normalize(normal);
 	out_Tangent[threadID]		= normalize(tangent);

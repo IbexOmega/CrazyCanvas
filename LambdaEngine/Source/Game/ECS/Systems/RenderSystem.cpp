@@ -184,6 +184,9 @@ namespace LambdaEngine
 		for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 		{
 			SAFERELEASE(meshAndInstancesIt->second.pBLAS);
+			SAFERELEASE(meshAndInstancesIt->second.pPrimitiveIndices);
+			SAFERELEASE(meshAndInstancesIt->second.pUniqueIndices);
+			SAFERELEASE(meshAndInstancesIt->second.pMeshlets);
 			SAFERELEASE(meshAndInstancesIt->second.pVertexBuffer);
 			SAFERELEASE(meshAndInstancesIt->second.pIndexBuffer);
 			SAFERELEASE(meshAndInstancesIt->second.pASInstanceBuffer);
@@ -370,7 +373,7 @@ namespace LambdaEngine
 
 				MeshEntry meshEntry = {};
 
-				//Vertices
+				// Vertices
 				{
 					BufferDesc vertexStagingBufferDesc = {};
 					vertexStagingBufferDesc.DebugName	= "Vertex Staging Buffer";
@@ -397,13 +400,13 @@ namespace LambdaEngine
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexStagingBuffer);
 				}
 
-				//Indices
+				// Indices
 				{
 					BufferDesc indexStagingBufferDesc = {};
 					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
 					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(uint32);
+					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(Mesh::IndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
@@ -422,6 +425,87 @@ namespace LambdaEngine
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
+				}
+
+				// Meshlet
+				{
+					BufferDesc meshletStagingBufferDesc = {};
+					meshletStagingBufferDesc.DebugName		= "Meshlet Staging Buffer";
+					meshletStagingBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					meshletStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					meshletStagingBufferDesc.SizeInBytes	= pMesh->MeshletCount * sizeof(Meshlet);
+
+					Buffer* pMeshletStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&meshletStagingBufferDesc);
+
+					void* pMapped = pMeshletStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pMeshletArray, meshletStagingBufferDesc.SizeInBytes);
+					pMeshletStagingBuffer->Unmap();
+
+					BufferDesc meshletBufferDesc = {};
+					meshletBufferDesc.DebugName		= "Meshlet Buffer";
+					meshletBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+					meshletBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
+					meshletBufferDesc.SizeInBytes	= meshletStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
+					meshEntry.MeshletCount = pMesh->MeshletCount;
+
+					m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pMeshletStagingBuffer);
+				}
+
+				// Unique Indices
+				{
+					BufferDesc uniqueIndicesStagingBufferDesc = {};
+					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
+					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndexCount * sizeof(Mesh::IndexType);
+
+					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
+
+					void* pMapped = pUniqueIndicesStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pUniqueIndices, uniqueIndicesStagingBufferDesc.SizeInBytes);
+					pUniqueIndicesStagingBuffer->Unmap();
+
+					BufferDesc uniqueIndicesBufferDesc = {};
+					uniqueIndicesBufferDesc.DebugName	= "Unique Indices Buffer";
+					uniqueIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+					uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
+					meshEntry.UniqueIndexCount = pMesh->UniqueIndexCount;
+
+					m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pUniqueIndicesStagingBuffer);
+				}
+
+				// Primitive indicies
+				{
+					BufferDesc primitiveIndicesStagingBufferDesc = {};
+					primitiveIndicesStagingBufferDesc.DebugName		= "Primitive Indices Staging Buffer";
+					primitiveIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					primitiveIndicesStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndexCount * sizeof(Mesh::IndexType);
+
+					Buffer* pPrimitiveIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesStagingBufferDesc);
+
+					void* pMapped = pPrimitiveIndicesStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pPrimitiveIndices, primitiveIndicesStagingBufferDesc.SizeInBytes);
+					pPrimitiveIndicesStagingBuffer->Unmap();
+
+					BufferDesc primitiveIndicesBufferDesc = {};
+					primitiveIndicesBufferDesc.DebugName	= "Primitive Indices Buffer";
+					primitiveIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+					primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
+					meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndexCount;
+
+					m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pPrimitiveIndicesStagingBuffer);
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
