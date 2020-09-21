@@ -1,14 +1,12 @@
 #include "States/SandboxState.h"
-#include "Log/Log.h"
 
-#include "Resources/ResourceManager.h"
-
+#include "Application/API/CommonApplication.h"
 #include "ECS/ECSCore.h"
-
-#include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Engine/EngineConfig.h"
 #include "Game/ECS/Components/Physics/Transform.h"
-
-using namespace LambdaEngine;
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Input/API/Input.h"
 
 SandboxState::SandboxState()
 {
@@ -26,78 +24,67 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
-	// Create Systems
+	using namespace LambdaEngine;
 
-	//Scene
+	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+
+	CameraDesc cameraDesc = {};
+	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
+	cameraDesc.Width		= window->GetWidth();
+	cameraDesc.Height		= window->GetHeight();
+	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
+	cameraDesc.Position = glm::vec3(0.f, 3.f, 0.f);
+	CreateFreeCameraEntity(cameraDesc);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	// Load scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
+		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
 
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
+		const glm::vec3 position(0.0f, 0.0f, 0.0f);
+		const glm::vec3 scale(0.01f);
 
-		for (uint32 i = 0; i < meshComponents.GetSize(); i++)
+		for (const MeshComponent& meshComponent : meshComponents)
 		{
-			//m_pScene->AddGameObject(entityID, meshComponents[i], transform, true, false);
-
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { position, true });
-			ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { scale, true });
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			ECSCore::GetInstance()->AddComponent<MeshComponent>(entity, meshComponents[i]);
-			ECSCore::GetInstance()->AddComponent<StaticComponent>(entity, StaticComponent());
+			pECS->AddComponent<PositionComponent>(entity, { position, true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
 
-	//Sphere Grid
+	//Mirrors
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		MaterialProperties mirrorProperties = {};
+		mirrorProperties.Roughness = 0.0f;
 
-		uint32 gridRadius = 5;
+		MeshComponent meshComponent;
+		meshComponent.MeshGUID = GUID_MESH_QUAD;
+		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Mirror Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			mirrorProperties);
 
-		for (uint32 y = 0; y < gridRadius; y++)
+		constexpr const uint32 NUM_MIRRORS = 6;
+		for (uint32 i = 0; i < NUM_MIRRORS; i++)
 		{
-			float32 roughness = y / float32(gridRadius - 1);
+			Entity entity = ECSCore::GetInstance()->CreateEntity();
 
-			for (uint32 x = 0; x < gridRadius; x++)
-			{
-				float32 metallic = x / float32(gridRadius - 1);
-
-				MaterialProperties materialProperties;
-				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness = roughness;
-				materialProperties.Metallic = metallic;
-
-				MeshComponent sphereMeshComp = {};
-				sphereMeshComp.MeshGUID = sphereMeshGUID;
-				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					materialProperties);
-
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
-				glm::vec3 scale(1.0f);
-
-				Entity entity = ECSCore::GetInstance()->CreateEntity();
-				ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { position, true });
-				ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { scale, true });
-				ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-				ECSCore::GetInstance()->AddComponent<MeshComponent>(entity, sphereMeshComp);
-				ECSCore::GetInstance()->AddComponent<StaticComponent>(entity, StaticComponent());
-			}
+			float32 sign = pow(-1.0f, i % 2);
+			pECS->AddComponent<PositionComponent>(entity, { glm::vec3(3.0f * (float32(i / 2) - float32(NUM_MIRRORS) / 2.0f), 2.0f, 1.5f * sign), true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(-sign * 90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
+			pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
-
-	// Load Scene SceneManager::Get("SceneName").Load()
-
-	// Use HelperClass to create additional entities
-
-	// EntityIndex index = HelperClass::CreatePlayer(
 }
 
 void SandboxState::Resume()
@@ -114,7 +101,7 @@ void SandboxState::Pause()
 	// Unload Page
 }
 
-void SandboxState::Tick(float dt)
+void SandboxState::Tick(LambdaEngine::Timestamp)
 {
 	// Update State specfic objects
 }

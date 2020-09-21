@@ -9,6 +9,21 @@ namespace LambdaEngine
 	static std::unordered_map<EventType, TArray<EventHandler>, EventTypeHasher> g_EventHandlers;
 	static SpinLock g_EventHandlersSpinlock;
 
+	static TArray<EventHandler> GetEventHandlerOfType(EventType type)
+	{
+		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
+		
+		auto handlers = g_EventHandlers.find(type);
+		if (handlers != g_EventHandlers.end())
+		{
+			return handlers->second;
+		}
+		else
+		{
+			return TArray<EventHandler>();
+		}
+	}
+
 	/*
 	* EventQueue
 	*/
@@ -82,7 +97,8 @@ namespace LambdaEngine
 	
 	bool EventQueue::SendEventImmediate(Event& event)
 	{
-		InternalSendEvent(event);
+		TArray<EventHandler> handlers = GetEventHandlerOfType(event.GetType());
+		InternalSendEventToHandlers(event, handlers);
 		return event.IsConsumed;
 	}
 	
@@ -104,31 +120,23 @@ namespace LambdaEngine
 		for (auto& containerPair : containersToProcess)
 		{
 			EventContainerProxy& container = containerPair.second;
+			TArray<EventHandler> handlers = GetEventHandlerOfType(containerPair.first);
 			for (uint32 i = 0; i < container.Size(); i++)
 			{
-				InternalSendEvent(container[i]);
+				InternalSendEventToHandlers(container[i], handlers);
 			}
 			container.Clear();
 		}
 	}
 	
-	void EventQueue::InternalSendEvent(Event& event)
+	void EventQueue::InternalSendEventToHandlers(Event& event, const TArray<EventHandler>& handlers)
 	{
-		EventType eventType = event.GetType();
-
-		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
-
-		auto handlerPair = g_EventHandlers.find(eventType);
-		if (handlerPair != g_EventHandlers.end())
+		for (const EventHandler& handler : handlers)
 		{
-			TArray<EventHandler> eventHandlers = handlerPair->second;
-			for (EventHandler& handler : eventHandlers)
+			// If true then set that this element is consumed
+			if (handler(event))
 			{
-				// If true then set that this element is consumed
-				if (handler(event))
-				{
-					event.IsConsumed = true;
-				}
+				event.IsConsumed = true;
 			}
 		}
 	}

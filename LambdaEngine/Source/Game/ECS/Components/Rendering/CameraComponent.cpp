@@ -33,7 +33,7 @@ namespace LambdaEngine
 		return entity;
 	}
 
-	Entity CreateCameraTrackEntity(const LambdaEngine::CameraDesc& cameraDesc, const std::vector<glm::vec3>& track)
+	Entity CreateCameraTrackEntity(const LambdaEngine::CameraDesc& cameraDesc, const TArray<glm::vec3>& track)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		Entity entity = pECS->CreateEntity();

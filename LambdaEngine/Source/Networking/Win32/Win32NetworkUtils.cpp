@@ -26,9 +26,14 @@ namespace LambdaEngine
 
 	void Win32NetworkUtils::Release()
 	{
+		NetworkUtils::Release();
+	}
+
+	void Win32NetworkUtils::PostRelease()
+	{
+		NetworkUtils::PostRelease();
 		WSACleanup();
 		LOG_INFO("[Winsock2]: Released");
-		NetworkUtils::Release();
 	}
 
 	ISocketTCP* Win32NetworkUtils::CreateSocketTCP()

@@ -20,6 +20,7 @@
 #include "Input/API/Input.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
+#include "Physics/PhysicsSystem.h"
 
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
@@ -62,7 +63,7 @@ namespace LambdaEngine
 			g_Clock.Tick();
 
 			// Update
-			Timestamp delta = g_Clock.GetDeltaTime();
+			const Timestamp& delta = g_Clock.GetDeltaTime();
 			isRunning = Tick(delta);
 
 			// Fixed update
@@ -79,8 +80,7 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		float32 dt = (float32)delta.AsSeconds();
-		RuntimeStats::SetFrameTime(dt);
+		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 		Input::Tick();
 
 		GameConsole::Get().Tick();
@@ -99,8 +99,8 @@ namespace LambdaEngine
 		AudioSystem::Tick();
 
 		CameraSystem::GetInstance().MainThreadTick(delta);
+		StateManager::GetInstance()->Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
-		StateManager::GetInstance()->Tick(dt);
 		Game::Get().Tick(delta);
 
 		RenderSystem::GetInstance().Render();
@@ -193,6 +193,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!PhysicsSystem::GetInstance()->Init())
+		{
+			return false;
+		}
+
 		if (!CameraSystem::GetInstance().Init())
 		{
 			return false;
@@ -262,9 +267,9 @@ namespace LambdaEngine
 
 	bool EngineLoop::PostRelease()
 	{
-		Thread::Release();
-
 		PlatformNetworkUtils::Release();
+		Thread::Release();
+		PlatformNetworkUtils::PostRelease();
 
 		if (!CommonApplication::PostRelease())
 		{

@@ -17,8 +17,8 @@ namespace LambdaEngine
 		virtual void SetSocket(ISocket* pSocket) override;
 
 	protected:
-		virtual bool Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) override;
-		virtual bool Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) override;
+		virtual bool TransmitData(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) override;
+		virtual bool ReceiveData(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) override;
 		virtual void OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) override;
 
 	private:

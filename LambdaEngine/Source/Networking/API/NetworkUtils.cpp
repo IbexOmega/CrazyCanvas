@@ -28,6 +28,11 @@ namespace LambdaEngine
 
 	void NetworkUtils::Release()
 	{
+		NetworkDiscovery::ReleaseStatic();
+	}
+
+	void NetworkUtils::PostRelease()
+	{
 		IPAddress::ReleaseStatic();
 	}
 

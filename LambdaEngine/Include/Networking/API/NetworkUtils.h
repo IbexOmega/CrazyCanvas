@@ -12,6 +12,7 @@
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/NetworkDiscovery.h"
 
 #include "Time/API/Timestamp.h"
 
@@ -58,5 +59,6 @@ namespace LambdaEngine
 		static void Tick(Timestamp dt);
 		static void FixedTick(Timestamp dt);
 		static void Release();
+		static void PostRelease();
 	};
 }

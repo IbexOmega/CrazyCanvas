@@ -15,7 +15,7 @@ namespace LambdaEngine
 	{
 		IClientHandler* Handler = nullptr;
 		EProtocol Protocol		= EProtocol::UDP;
-		Timestamp PingInterval = Timestamp::Seconds(1);
+		Timestamp PingInterval	= Timestamp::Seconds(1);
 		Timestamp PingTimeout	= Timestamp::Seconds(3);
 		bool UsePingSystem		= true;
 	};

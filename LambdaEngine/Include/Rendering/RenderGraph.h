@@ -22,6 +22,8 @@
 #include "Time/API/Timestamp.h"
 
 #include "Application/API/Events/WindowEvents.h"
+#include "Application/API/Events/DebugEvents.h"
+#include "Application/API/Events/RenderEvents.h"
 
 namespace LambdaEngine
 {
@@ -43,14 +45,14 @@ namespace LambdaEngine
 	class Sampler;
 	class Buffer;
 	class Fence;
-	class Scene;
+	class SBT;
 
 	struct RenderGraphDesc
 	{
 		String Name											= "Render Graph";
 		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
 		uint32 BackBufferCount								= 3;
-		uint32 MaxTexturesPerDescriptorSet					= 1;
+    TArray<ICustomRenderer*>	CustomRenderers;
 	};
 
 	struct PushConstantsUpdate
@@ -249,7 +251,9 @@ namespace LambdaEngine
 			ERenderStageDrawType	DrawType					= ERenderStageDrawType::NONE;
 
 			uint64					PipelineStateID				= 0;
+			PipelineState*			pPipelineState				= nullptr;
 			PipelineLayout*			pPipelineLayout				= nullptr;
+			SBT*					pSBT						= nullptr;
 			DescriptorSet**			ppBufferDescriptorSets		= nullptr; //# m_BackBufferCount
 			uint32					BufferSetIndex				= 0;
 			DescriptorSet**			ppTextureDescriptorSets		= nullptr; //# m_BackBufferCount
@@ -301,33 +305,68 @@ namespace LambdaEngine
 		~RenderGraph();
 
 		bool Init(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs);
+
+		/*
+		* Recreates the Render Graph according to pDesc.
+		* Discoveres overlapping resources from the current Render Graph and the new Render Graph and reuses them.
+		*/
 		bool Recreate(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs);
 
+		/*
+		* Adds a Create Handler to this Render Graph, all IRenderGraphCreateHandler::OnRenderGraphRecreate
+		* gets called when RenderGraph::Recreate is called.
+		* This can get used to initialize new resources in the Render Graph.
+		*/
 		void AddCreateHandler(IRenderGraphCreateHandler* pCreateHandler);
-		//This needs a better solution, only used to be able to get Indirect Arg Offsets
-		void SetScene(Scene* pScene);
 
 		/*
 		* Updates a resource in the Render Graph, can be called at any time
 		*	desc - The ResourceUpdateDesc, only the Update Parameters for the given update type should be set
 		*/
 		void UpdateResource(const ResourceUpdateDesc* pDesc);
+		/*
+		* Updates Push Constants for a given Render Stage, PushConstantsUpdate::DataSize needs to be less than or equal to the
+		* RenderStage::ExternalPushConstants.MaxDataSize which is set depending on the Bindings and type of Render Stage
+		*/
 		void UpdatePushConstants(const PushConstantsUpdate* pDesc);
+		/*
+		* Updates the global SBT which is used for all Ray Tracing calls, each SBTRecord should contain addresses to valid Buffers
+		*/
+		void UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords);
+		/*
+		* Updates the dimensions of a RenderStage, will only set the dimensions which are set to EXTERNAL
+		*/
 		void UpdateRenderStageDimensions(const String& renderStageName, uint32 x, uint32 y, uint32 z = 0);
+		/*
+		* Updates the dimensions of a resource, will only set the dimensions which are set to EXTERNAL
+		*/
 		void UpdateResourceDimensions(const String& resourceName, uint32 x, uint32 y = 0);
 
+		/*
+		* Triggers a Render Stage which has a TriggerType of Triggered
+		*/
 		void TriggerRenderStage(const String& renderStageName);
 
-		void GetAndIncrementFence(Fence** ppFence, uint64* pSignalValue);
-
 		/*
-		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets, the RenderGraph will wait for device idle if it needs to
+		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets
 		*/
 		void Update();
 
+		/*
+		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.
+		*	If the RenderGraph writes to the Back Buffer it is safe to present the Back Buffer after Render has returned.
+		*/
 		void Render(uint64 modFrameIndex, uint32 backBufferIndex);
 
+		/*
+		* Acquires a general purpose Graphics Command List, this will then be executed before all other Render Stages & Synchronization Stages.
+		*	-----NOT THREADSAFE-----
+		*/
 		CommandList* AcquireGraphicsCopyCommandList();
+		/*
+		* Acquires a general purpose Compute Command List, this will then be executed before all other Render Stages & Synchronization Stages.
+		*	-----NOT THREADSAFE-----
+		*/
 		CommandList* AcquireComputeCopyCommandList();
 
 		bool GetResourceTextures(const char* pResourceName, Texture* const ** pppTexture, uint32* pTextureView)									const;
@@ -336,16 +375,19 @@ namespace LambdaEngine
 		bool GetResourceBuffers(const char* pResourceName, Buffer* const ** pppBuffers, uint32* pBufferCount)									const;
 		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)					const;
 
-		bool OnWindowResized(const WindowResizedEvent& windowEvent);
-
 	private:
+		bool OnWindowResized(const WindowResizedEvent& windowEvent);
+		bool OnPreSwapChainRecreated(const PreSwapChainRecreatedEvent& swapChainEvent);
+		bool OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& swapChainEvent);
+		bool OnPipelineStatesRecompiled(const PipelineStatesRecompiledEvent& event);
+
 		void ReleasePipelineStages();
 
 		bool CreateFence();
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, TSet<uint32>& requiredDrawArgs);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<uint32>& requiredDrawArgs);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<uint32>& requiredDrawArgs);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 
@@ -367,15 +409,13 @@ namespace LambdaEngine
 			CommandList* pComputeCommandList, 
 			CommandList** ppFirstExecutionStage, 
 			CommandList** ppSecondExecutionStage);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, PipelineState* pPipelineState, CommandAllocator* pGraphicsCommandAllocator, CommandList* pGraphicsCommandList, CommandList** ppExecutionStage);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, PipelineState* pPipelineState, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, PipelineState* pPipelineState, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
+		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, CommandAllocator* pGraphicsCommandAllocator, CommandList* pGraphicsCommandList, CommandList** ppExecutionStage);
+		void ExecuteComputeRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
+		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
 
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
 		DeviceAllocator*								m_pDeviceAllocator					= nullptr;
-
-		const Scene*									m_pScene							= nullptr;
 
 		DescriptorHeap*									m_pDescriptorHeap					= nullptr;
 
@@ -386,7 +426,6 @@ namespace LambdaEngine
 		uint64											m_ModFrameIndex						= 0;
 		uint32											m_BackBufferIndex					= 0;
 		uint32											m_BackBufferCount					= 0;
-		uint32											m_MaxTexturesPerDescriptorSet		= 0;
 
 		Fence*											m_pFence							= nullptr;
 		uint64											m_SignalValue						= 1;
@@ -410,6 +449,7 @@ namespace LambdaEngine
 		RenderStage*									m_pRenderStages						= nullptr;
 		uint32											m_RenderStageCount					= 0;
 		TSet<uint32>									m_WindowRelativeRenderStages;		// Contains Render Stage Indices that have Dimension Variables that depend on the current Window Size
+		TArray<SBTRecord>								m_GlobalShaderRecords;
 
 		SynchronizationStage*							m_pSynchronizationStages			= nullptr;
 		uint32											m_SynchronizationStageCount			= 0;
@@ -424,7 +464,7 @@ namespace LambdaEngine
 		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
 		TSet<Resource*>									m_DirtyDescriptorSetDrawArgs;
 
-		TArray<DescriptorSet*>*							m_pDescriptorSetsToDestroy;
+		TArray<DeviceChild*>*							m_pDeviceResourcesToDestroy;
 
 		TArray<IRenderGraphCreateHandler*>				m_CreateHandlers;
 	};
