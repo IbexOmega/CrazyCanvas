@@ -16,10 +16,10 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime) override final;
 
-		static PhysicsSystem* GetInstance() { return &s_PhysicsSystem; }
+		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
 	private:
-		static PhysicsSystem s_PhysicsSystem;
+		static PhysicsSystem s_Instance;
 
 	private:
 		btDbvtBroadphase m_BroadphaseInterface;

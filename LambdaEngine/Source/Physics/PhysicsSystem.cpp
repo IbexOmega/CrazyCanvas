@@ -2,10 +2,12 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 
-#define GRAVITATIONAL_ACCELERATION 9.82
+#define GRAVITATIONAL_ACCELERATION 9.82f
 
 namespace LambdaEngine
 {
+	PhysicsSystem PhysicsSystem::s_Instance;
+
 	PhysicsSystem::PhysicsSystem()
 		:m_pCollisionDispatcher(nullptr),
 		m_pDynamicsWorld(nullptr)
@@ -25,7 +27,7 @@ namespace LambdaEngine
 	bool PhysicsSystem::Init()
 	{
 		m_pCollisionDispatcher = DBG_NEW btCollisionDispatcher(&m_CollisionConfiguration);
-		m_pDynamicsWorld = DBG_NEW btDiscreteDynamicsWorld(
+		m_pDynamicsWorld = new btDiscreteDynamicsWorld(
 			m_pCollisionDispatcher,
 			&m_BroadphaseInterface,
 			&m_ConstraintSolver,
@@ -45,6 +47,7 @@ namespace LambdaEngine
 
 	void PhysicsSystem::Tick(Timestamp deltaTime)
 	{
-		m_pDynamicsWorld->stepSimulation(deltaTime.AsSeconds());
+		const btScalar deltaBT = (float)deltaTime.AsSeconds();
+		m_pDynamicsWorld->stepSimulation(deltaBT);
 	}
 }
