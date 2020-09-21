@@ -63,9 +63,9 @@ Client::~Client()
 		m_pClient->Release();
 }
 
-void Client::OnServerFound(LambdaEngine::BinaryDecoder decoder, uint16 portOfGameServer)
+void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const LambdaEngine::IPEndPoint& endPoint)
 {
-	LOG_MESSAGE("OnServerFound(%d)", portOfGameServer);
+	LOG_MESSAGE("OnServerFound(%s)", endPoint.ToString().c_str());
 }
 
 void Client::OnConnecting(IClient* pClient)

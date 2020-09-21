@@ -6,7 +6,8 @@
 
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/IClientHandler.h"
-#include "Networking/API/INetworkDiscoveryClient.h"
+
+#include "Networking/API/UDP/INetworkDiscoveryClient.h"
 
 namespace LambdaEngine
 {
@@ -25,7 +26,7 @@ public:
 	Client();
 	~Client();
 
-	virtual void OnServerFound(LambdaEngine::BinaryDecoder decoder, uint16 portOfGameServer) override;
+	virtual void OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const LambdaEngine::IPEndPoint& endPoint) override;
 
 	virtual void OnConnecting(LambdaEngine::IClient* pClient) override;
 	virtual void OnConnected(LambdaEngine::IClient* pClient) override;

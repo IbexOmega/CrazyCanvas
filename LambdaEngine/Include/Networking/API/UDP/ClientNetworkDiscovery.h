@@ -5,9 +5,10 @@
 #include "Time/API/Timestamp.h"
 
 #include "Networking/API/NetWorker.h"
-#include "Networking/API/UDP/PacketTransceiverUDP.h"
 #include "Networking/API/NetworkStatistics.h"
 #include "Networking/API/SegmentPool.h"
+
+#include "Networking/API/UDP/PacketTransceiverUDP.h"
 
 namespace LambdaEngine
 {
@@ -37,7 +38,7 @@ namespace LambdaEngine
 	private:
 		ClientNetworkDiscovery();
 
-		void HandleReceivedPacket(NetworkSegment* pPacket);
+		void HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket);
 		void Tick(Timestamp delta);
 
 	private:

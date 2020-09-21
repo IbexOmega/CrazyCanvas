@@ -1,6 +1,6 @@
 #include "Networking/API/UDP/ClientNetworkDiscovery.h"
+#include "Networking/API/UDP/INetworkDiscoveryClient.h"
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/INetworkDiscoveryClient.h"
 
 #include "Engine/EngineLoop.h"
 
@@ -113,7 +113,7 @@ namespace LambdaEngine
 			TArray<uint32> acks;
 
 			if (m_Transceiver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
-				HandleReceivedPacket(packets[0]);
+				HandleReceivedPacket(sender, packets[0]);
 
 			m_SegmentPool.FreeSegments(packets);
 		}
@@ -147,14 +147,14 @@ namespace LambdaEngine
 			m_pSocket->Close();
 	}
 
-	void ClientNetworkDiscovery::HandleReceivedPacket(NetworkSegment* pPacket)
+	void ClientNetworkDiscovery::HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket)
 	{
 		if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_DISCOVERY)
 		{
 			BinaryDecoder decoder(pPacket);
 			if (decoder.ReadString() == m_NameOfGame)
 			{
-				m_pHandler->OnServerFound(decoder, decoder.ReadUInt16());
+				m_pHandler->OnServerFound(decoder, IPEndPoint(sender.GetAddress(), decoder.ReadUInt16()));
 			}
 		}
 	}

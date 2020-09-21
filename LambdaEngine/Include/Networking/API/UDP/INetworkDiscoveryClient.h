@@ -3,6 +3,7 @@
 #include "LambdaEngine.h"
 
 #include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/IPEndPoint.h"
 
 namespace LambdaEngine
 {
@@ -13,6 +14,6 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(INetworkDiscoveryClient);
 
-		virtual void OnServerFound(BinaryDecoder decoder, uint16 portOfGameServer) = 0;
+		virtual void OnServerFound(const BinaryDecoder& decoder, const IPEndPoint& endPoint) = 0;
 	};
 }

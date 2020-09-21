@@ -1,9 +1,9 @@
-#include "Networking/API/NetworkDiscovery.h"
-#include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/INetworkDiscoveryServer.h"
-#include "Networking/API/INetworkDiscoveryClient.h"
+#include "Networking/API/UDP/NetworkDiscovery.h"
+#include "Networking/API/UDP/INetworkDiscoveryServer.h"
+#include "Networking/API/UDP/INetworkDiscoveryClient.h"
 #include "Networking/API/UDP/ServerNetworkDiscovery.h"
 #include "Networking/API/UDP/ClientNetworkDiscovery.h"
+#include "Networking/API/PlatformNetworkUtils.h"
 
 
 namespace LambdaEngine

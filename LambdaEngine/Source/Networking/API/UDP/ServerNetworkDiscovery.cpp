@@ -1,8 +1,8 @@
 #include "Networking/API/UDP/ServerNetworkDiscovery.h"
+#include "Networking/API/UDP/INetworkDiscoveryServer.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
-#include "Networking/API/INetworkDiscoveryServer.h"
 
 namespace LambdaEngine
 {

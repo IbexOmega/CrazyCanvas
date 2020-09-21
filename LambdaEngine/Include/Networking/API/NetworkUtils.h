@@ -12,7 +12,7 @@
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
-#include "Networking/API/NetworkDiscovery.h"
+#include "Networking/API/UDP/NetworkDiscovery.h"
 
 #include "Time/API/Timestamp.h"
 
