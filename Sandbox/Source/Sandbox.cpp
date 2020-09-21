@@ -31,6 +31,7 @@
 #include "Application/API/CommonApplication.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/DebugEvents.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -80,22 +81,6 @@ Sandbox::Sandbox()
 	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
-
-	ShaderReflection shaderReflection;
-	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
-
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-	CreateFreeCameraEntity(cameraDesc);
 
 	LoadRendererResources();
 
@@ -184,10 +169,8 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 	if (event.Key == EKey::KEY_5)
 	{
-		RenderAPI::GetGraphicsQueue()->Flush();
-		RenderAPI::GetComputeQueue()->Flush();
-		ResourceManager::ReloadAllShaders();
-		PipelineStateManager::ReloadPipelineStates();
+		EventQueue::SendEvent(ShaderRecompileEvent());
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
 
 	return true;

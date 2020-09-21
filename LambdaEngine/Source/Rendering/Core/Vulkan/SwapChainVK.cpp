@@ -18,6 +18,7 @@
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/RenderEvents.h"
 
 namespace LambdaEngine
 {
@@ -540,8 +541,18 @@ namespace LambdaEngine
 		RenderAPI::GetComputeQueue()->Flush();
 		RenderAPI::GetCopyQueue()->Flush();
 
+		PreSwapChainRecreatedEvent preEvent = {};
+		EventQueue::SendEventImmediate(preEvent);
 		ReleaseInternal();
-		return InitInternal();
+
+		if (InitInternal())
+		{
+			PostSwapChainRecreatedEvent postEvent = {};
+			EventQueue::SendEventImmediate(postEvent);
+			return true;
+		}
+
+		return false;
 	}
 
 	Texture* SwapChainVK::GetBuffer(uint32 bufferIndex)

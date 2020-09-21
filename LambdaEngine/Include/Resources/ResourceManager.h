@@ -6,6 +6,8 @@
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
+#include "Application/API/Events/DebugEvents.h"
+
 namespace LambdaEngine
 {
 	union ShaderConstant;
@@ -20,10 +22,9 @@ namespace LambdaEngine
 
 	//Material
 	constexpr GUID_Lambda GUID_MATERIAL_DEFAULT				= GUID_MESH_QUAD + 1;
-	constexpr GUID_Lambda GUID_MATERIAL_DEFAULT_EMISSIVE	= GUID_MATERIAL_DEFAULT + 1;
 
 	//Textures
-	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_COLOR_MAP	= GUID_MATERIAL_DEFAULT_EMISSIVE + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_COLOR_MAP	= GUID_MATERIAL_DEFAULT + 1;
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_NORMAL_MAP	= GUID_TEXTURE_DEFAULT_COLOR_MAP + 1;
 
 	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
@@ -148,8 +149,6 @@ namespace LambdaEngine
 		*/
 		static GUID_Lambda LoadSoundEffectFromFile(const String& filename);
 
-		static void ReloadAllShaders();
-
 		static GUID_Lambda					GetMeshGUID(const String& name);
 		static GUID_Lambda					GetMaterialGUID(const String& name);
 		static GUID_Lambda					GetTextureGUID(const String& name);
@@ -160,7 +159,6 @@ namespace LambdaEngine
 		static Material*					GetMaterial(GUID_Lambda guid);
 		static Texture*						GetTexture(GUID_Lambda guid);
 		static TextureView*					GetTextureView(GUID_Lambda guid);
-		static TextureView*					GetCubeTextureView(GUID_Lambda guid);
 		static Shader*						GetShader(GUID_Lambda guid);
 		static ISoundEffect3D*				GetSoundEffect(GUID_Lambda guid);
 
@@ -178,6 +176,8 @@ namespace LambdaEngine
 		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect3D*>&	GetSoundEffectGUIDMap()		{ return s_SoundEffects; }
 
 	private:
+		static bool OnShaderRecompileEvent(const ShaderRecompileEvent& event);
+
 		static GUID_Lambda RegisterLoadedMesh(const String& name, Mesh* pMesh);
 		static GUID_Lambda RegisterLoadedMaterial(const String& name, Material* pMaterial);
 		static GUID_Lambda RegisterLoadedTexture(Texture* pTexture);

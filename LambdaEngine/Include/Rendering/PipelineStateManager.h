@@ -12,6 +12,8 @@
 #include "Rendering/Core/API/PipelineLayout.h"
 #include "Rendering/Core/API/RenderPass.h"
 
+#include "Application/API/Events/DebugEvents.h"
+
 namespace LambdaEngine
 {
 	struct ManagedShaderModule
@@ -105,7 +107,8 @@ namespace LambdaEngine
 
 		static PipelineState* GetPipelineState(uint64 id);
 
-		static void ReloadPipelineStates();
+	private:
+		static bool OnPipelineStateRecompileEvent(const PipelineStateRecompileEvent& event);
 
 	private:
 		static uint64													s_CurrentPipelineIndex;
