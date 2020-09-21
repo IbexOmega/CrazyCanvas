@@ -110,7 +110,7 @@ void Server::FixedTick(Timestamp delta)
 
 void Server::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
 {
-
+	UNREFERENCED_VARIABLE(encoder);
 }
 
 namespace LambdaEngine

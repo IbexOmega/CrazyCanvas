@@ -43,22 +43,7 @@ namespace LambdaEngine
 
 	bool NetworkDiscovery::EnableClient(INetworkDiscoveryClient* pHandler)
 	{
-		/*std::scoped_lock<SpinLock> lock(s_Instance.m_Lock);
-		if (!s_Instance.m_pClient)
-		{
-			ClientDesc desc		= {};
-			desc.Handler		= &s_Instance;
-			desc.MaxRetries		= 0;
-			desc.PoolSize		= 128;
-			desc.Protocol		= EProtocol::UDP;
-			desc.PingInterval	= Timestamp::Seconds(8);
-			desc.PingTimeout	= Timestamp::Seconds(3);
-			desc.UsePingSystem	= true;
-
-			s_Instance.m_pHandlerClient = pHandler;
-			s_Instance.m_pClient = static_cast<ClientUDP*>(NetworkUtils::CreateClient(desc));
-			return s_Instance.m_pClient->Connect(IPEndPoint(IPAddress::BROADCAST, 4450));
-		}*/
+		UNREFERENCED_VARIABLE(pHandler);
 		return true;
 	}
 
