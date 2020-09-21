@@ -21,5 +21,5 @@ public:
 	void Resume();
 	void Pause();
 
-	void Tick(float dt);
+	void Tick(LambdaEngine::Timestamp delta);
 };

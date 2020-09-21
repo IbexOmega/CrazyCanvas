@@ -14,7 +14,7 @@ public:
 	void Resume() override final {};
 	void Pause() override final {};
 
-	void Tick(float dt) override final;
+	void Tick(LambdaEngine::Timestamp delta) override final;
 
 private:
 	static void PrintBenchmarkResults();

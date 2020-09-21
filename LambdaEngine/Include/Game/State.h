@@ -18,6 +18,6 @@ namespace LambdaEngine
         virtual void Resume() = 0;
         virtual void Pause() = 0;
 
-        virtual void Tick(float dt) = 0;
+        virtual void Tick(Timestamp delta) = 0;
     };
 }
