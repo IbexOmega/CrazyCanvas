@@ -162,7 +162,7 @@ namespace LambdaEngine
 
 		struct LightBuffer
 		{
-			glm::vec4	ColorIntensity	= glm::vec4(1.0f);
+			glm::vec4	ColorIntensity	= glm::vec4(0.0f);
 			glm::vec3	Direction		= glm::vec3(1.0f);
 			uint32		PointLightCount = 0U;
 			// PointLight PointLights[] unbounded

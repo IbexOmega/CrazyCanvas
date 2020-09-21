@@ -49,41 +49,42 @@ void main()
     F0 = mix(F0, albedo, aoRoughMetalValid.b);
 
 	// Directional Light
-	vec3 L = normalize(lightBuffer.DirL_Direction);
-	vec3 H = normalize(V + L);
+	{
+		vec3 L = normalize(lightBuffer.DirL_Direction);
+		vec3 H = normalize(V + L);
 
-	vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-	vec3 incomingRadiance    = outgoingRadiance;
+		vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
+		vec3 incomingRadiance    = outgoingRadiance;
 
-	float NDF   = Distribution(N, H, aoRoughMetalValid.g);
-	float G     = Geometry(N, V, L, aoRoughMetalValid.g);
-	vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
+		float NDF   = Distribution(N, H, aoRoughMetalValid.g);
+		float G     = Geometry(N, V, L, aoRoughMetalValid.g);
+		vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
 
-	vec3 nominator      = NDF * G * F;
-	float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
-	vec3 specular       = nominator / max(denominator, 0.001f);
+		vec3 nominator      = NDF * G * F;
+		float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
+		vec3 specular       = nominator / max(denominator, 0.001f);
 
-	vec3 kS = F;
-	vec3 kD = vec3(1.0f) - kS;
+		vec3 kS = F;
+		vec3 kD = vec3(1.0f) - kS;
 
-	kD *= 1.0 - aoRoughMetalValid.b;
+		kD *= 1.0 - aoRoughMetalValid.b;
 
-	float NdotL = max(dot(N, L), 0.0f);
+		float NdotL = max(dot(N, L), 0.0f);
 
-	Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
+		Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
+	}
 
 	//Point Light Loop
 	for (uint i = 0; i < lightBuffer.PointLightCount; ++i)
 	{
 		SPointLight light = b_LightsBuffer.pointLights[i];
 
-		vec3 L = light.Position - worldPos;
-		vec3 H = normalize(V + L);
-
-		float distance      = length(L);
+		vec3 L = (light.Position - worldPos);
+		float distance = length(L);
 		L = normalize(L);
+		vec3 H = normalize(V + L);
 		
-		float attenuation   = 1.0f / (distance * distance);
+		float attenuation   	= 1.0f / (distance * distance);
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance * attenuation;
 	

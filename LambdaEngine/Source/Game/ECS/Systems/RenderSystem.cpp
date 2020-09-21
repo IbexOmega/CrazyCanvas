@@ -647,6 +647,9 @@ namespace LambdaEngine
 		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex);
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
+		// Delete instanceKey it will not be used anymore
+		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
+
 		//Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.RasterInstances.IsEmpty())
 		{

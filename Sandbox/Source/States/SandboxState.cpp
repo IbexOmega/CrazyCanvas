@@ -125,7 +125,7 @@ void SandboxState::Init()
 		}*/
 		
 		// Add PointLights
-		/*{
+		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
@@ -134,28 +134,19 @@ void SandboxState::Init()
 				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
 			};
 
+			const glm::vec3 startPosition[3] =
+			{
+				{4.0f, 0.0f, 5.0f},
+				{-4.0f, 0.0f, 5.0f},
+				{0.0f, 0.0f, 6.0f},
+			};
+
 			const float PI = glm::pi<float>();
 			const float RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				TArray<glm::vec3> lightPath;
-				lightPath.Reserve(36);
 				float positive = std::pow(-1.0, i);
 
-				glm::vec3 startPosition(0.0f, 0.0f, 5.0f);
-				for (uint32 y = 0; y < 6; y++)
-				{
-					float angle = 0.f;
-					for (uint32 x = 0; x < 6; x++)
-					{
-						glm::vec3 position = startPosition;
-						angle += positive * (2.0f * PI / 6.0f);
-						position.x += std::cos(angle) * RADIUS;
-						position.z += std::sin(angle) * RADIUS;
-						position.y += 1.0f + y * 0.5f + i * 2.0f;
-						lightPath.PushBack(position);
-					}
-				}
 
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;
@@ -175,16 +166,15 @@ void SandboxState::Init()
 					materialProperties);
 
 				m_PointLights[i] = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(m_PointLights[i], { {0.0f, 0.0f, 0.0f}, true });
+				pECS->AddComponent<PositionComponent>(m_PointLights[i], { startPosition[i], true });
 				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
 				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
 				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
-				pECS->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
 			}
-		}*/
+		}
 
-		{
+		/*{
 			constexpr uint32 POINT_LIGHT_COUNT = 30;
 
 			const float PI = glm::pi<float>();
@@ -240,11 +230,11 @@ void SandboxState::Init()
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
 				pECS->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
 			}
-		}
+		}*/
 	}
 
 	//Mirrors
-	{
+	/*{
 		MaterialProperties mirrorProperties = {};
 		mirrorProperties.Roughness = 0.0f;
 
@@ -270,7 +260,7 @@ void SandboxState::Init()
 			pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
-	}
+	}*/
 
 	// Load Scene SceneManager::Get("SceneName").Load()
 
@@ -296,18 +286,4 @@ void SandboxState::Pause()
 void SandboxState::Tick(LambdaEngine::Timestamp delta)
 {
 	// Update State specfic objects
-	static float timer = 0;
-	static int removedIndex = 0;
-
-	timer += delta.AsSeconds();
-	
-	ECSCore* ecsCore = ECSCore::GetInstance();
-	ecsCore->RemoveEntity(m_PointLights[0]);
-
-	//if (timer > 0.5f && removedIndex < 30)
-	//{
-	//	ecsCore->RemoveEntity(m_PointLights[removedIndex++]);
-
-	//	timer = 0.0f;
-	//}
 }
