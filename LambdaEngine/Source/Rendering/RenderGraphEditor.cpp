@@ -1366,7 +1366,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(ImGui::CalcTextSize("         ").x + ImGui::GetFrameHeight() * 2 + 4.0f);
 				ImGui::InputInt("##Render Stage Frame Offset", &pRenderStage->FrameOffset);
-				pRenderStage->FrameDelay = glm::clamp<uint32>(pRenderStage->FrameDelay, 0, pRenderStage->FrameDelay);
+				pRenderStage->FrameOffset = glm::clamp<uint32>(pRenderStage->FrameOffset, 0, pRenderStage->FrameDelay);
 			}
 
 			ImGui::Text("Allow Overriding of Binding Types:");

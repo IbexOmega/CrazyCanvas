@@ -618,10 +618,10 @@ namespace LambdaEngine
 		}
 
 		ConsoleCommand& cmd = it->second.first;
-#ifndef LAMBDA_DEBUG
+#ifndef LAMBDA_DEVELOPMENT
 		if (cmd.IsDebug())
 		{
-			PushError("Command '" + token + "' not found.");
+			PushError("Command '" + token + "' is debug only.");
 			return 0;
 		}
 #endif

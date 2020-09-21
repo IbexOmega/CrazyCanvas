@@ -21,6 +21,8 @@
 
 #include "Math/Random.h"
 
+#include <argh/argh.h>
+
 using namespace LambdaEngine;
 
 Server::Server() : 
@@ -35,11 +37,11 @@ Server::Server() :
 	desc.Handler		= this;
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
-	desc.PoolSize		= 1024;
-	desc.Protocol		= EProtocol::TCP;
+	desc.PoolSize		= 32000;
+	desc.Protocol		= EProtocol::UDP;
 	desc.PingInterval	= Timestamp::Seconds(1);
 	desc.PingTimeout	= Timestamp::Seconds(3);
-	desc.UsePingSystem	= true;
+	desc.UsePingSystem	= false;
 
 	m_pServer = NetworkUtils::CreateServer(desc);
 	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));*/
@@ -113,8 +115,9 @@ void Server::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Server* pServer = DBG_NEW Server();
 		return pServer;
 	}

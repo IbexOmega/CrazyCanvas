@@ -20,10 +20,14 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
 
+#include <argh/argh.h>
+
 using namespace LambdaEngine;
 
 Client::Client() :
-	m_pClient(nullptr)
+	m_pClient(nullptr),
+	m_IsBenchmarking(false),
+	m_BenchmarkPackets(0)
 {
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
@@ -32,11 +36,11 @@ Client::Client() :
 	PlatformConsole::SetTitle("Client Console");
 
     ClientDesc desc = {};
-    desc.PoolSize               = 512;
+    desc.PoolSize               = 2048;
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::TCP;
+    desc.Protocol               = EProtocol::UDP;
 	desc.PingInterval			= Timestamp::Seconds(1);
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= true;
@@ -126,8 +130,9 @@ bool Client::OnKeyPressed(const KeyPressedEvent& event)
 		else
 			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444));
 	}
-	else
+	else if(event.Key == EKey::KEY_HOME)
 	{
+		m_IsBenchmarking = true;
 	}
 
 	return false;
@@ -137,19 +142,42 @@ void Client::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
+	if (m_pClient->IsConnected() && m_IsBenchmarking)
+	{
+		RunningBenchMark();
+	}
 	NetworkDebugger::RenderStatistics(m_pClient);
 }
 
 void Client::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+
 }
+
+void Client::RunningBenchMark()
+{
+	if (m_BenchmarkPackets++ < 100000)
+	{
+		NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteUInt32(m_BenchmarkPackets);
+		m_pClient->SendReliable(pPacket, this);
+	}
+	else
+	{
+		m_IsBenchmarking = false;
+		m_BenchmarkPackets = 0;
+	}
+}
+
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& parser)
 	{
-		Client* pClient = DBG_NEW Client();		
+		UNREFERENCED_VARIABLE(parser);
+		Client* pClient = DBG_NEW Client();
 		return pClient;
 	}
 }

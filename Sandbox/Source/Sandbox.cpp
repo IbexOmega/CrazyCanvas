@@ -31,12 +31,14 @@
 #include "Application/API/CommonApplication.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/DebugEvents.h"
 
 #include "Engine/EngineConfig.h"
 
 #include "Game/GameConsole.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/StateManager.h"
 #include "States/SandboxState.h"
 
@@ -47,7 +49,10 @@
 #include "Math/Random.h"
 #include "Debug/Profiler.h"
 
+#include <argh/argh.h>
 #include <imgui.h>
+
+#include "Containers/TSharedPtr.h"
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
@@ -77,30 +82,9 @@ Sandbox::Sandbox()
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
-	ShaderReflection shaderReflection;
-	ResourceLoader::CreateShaderReflection("../Assets/Shaders/Raygen.rgen", FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL, &shaderReflection);
-
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-
-	m_pCamera = DBG_NEW Camera();
-
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-
-	m_pCamera->Init(cameraDesc);
-
 	LoadRendererResources();
 
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW(SandboxState), STATE_TRANSITION::PUSH);
-
-	RenderSystem::GetInstance().SetCamera(m_pCamera);
 
 	if (IMGUI_ENABLED)
 	{
@@ -160,7 +144,6 @@ Sandbox::~Sandbox()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
 	SAFEDELETE(m_pScene);
-	SAFEDELETE(m_pCamera);
 
 	SAFEDELETE(m_pRenderGraphEditor);
 
@@ -186,10 +169,8 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 	if (event.Key == EKey::KEY_5)
 	{
-		RenderAPI::GetGraphicsQueue()->Flush();
-		RenderAPI::GetComputeQueue()->Flush();
-		ResourceManager::ReloadAllShaders();
-		PipelineStateManager::ReloadPipelineStates();
+		EventQueue::SendEvent(ShaderRecompileEvent());
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
 
 	return true;
@@ -200,15 +181,13 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 	using namespace LambdaEngine;
 
 	m_pRenderGraphEditor->Update();
+	Profiler::Tick(delta);
 	Render(delta);
 }
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
-
-	m_pCamera->HandleInput(delta);
-	m_pCamera->Update();
 }
 
 void Sandbox::Render(LambdaEngine::Timestamp delta)
@@ -227,7 +206,7 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 
 			if (m_DebuggingWindow)
 			{
-				Profiler::Render(delta);
+				Profiler::Render();
 			}
 
 			if (m_ShowTextureDebuggingWindow)
@@ -291,8 +270,9 @@ void Sandbox::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
 
 namespace LambdaEngine
 {
-	Game* CreateGame()
+	Game* CreateGame(const argh::parser& flagParser)
 	{
+		UNREFERENCED_VARIABLE(flagParser);
 		Sandbox* pSandbox = DBG_NEW Sandbox();
 		return pSandbox;
 	}
@@ -410,7 +390,7 @@ bool Sandbox::LoadRendererResources()
 		pushConstantUpdate.DataSize			= sizeof(pointLightPushConstantData);
 
 		pushConstantUpdate.RenderStageName	= "POINT_LIGHT_SHADOWMAPS";
-		
+
 		RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushConstantUpdate);
 
 		pushConstantUpdate.RenderStageName	= "DEMO";

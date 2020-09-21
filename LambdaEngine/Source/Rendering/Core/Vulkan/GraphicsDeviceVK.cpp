@@ -28,6 +28,7 @@
 #include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/SBTVK.h"
 
 #define ENABLE_IF_SUPPORTED(feature) feature = feature && true;
 
@@ -86,7 +87,6 @@ namespace LambdaEngine
 		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
-		Extension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
@@ -348,7 +348,9 @@ namespace LambdaEngine
 		VALIDATE(deviceMemory != VK_NULL_HANDLE);
 
 		vkFreeMemory(Device, deviceMemory, nullptr);
+
 		m_UsedAllocations--;
+		D_LOG_INFO("[GraphicsDeviceVK]: Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 	}
 
 	void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
@@ -457,11 +459,20 @@ namespace LambdaEngine
 						{
 							VkMemoryPropertyFlags propFlag = memProp2.memoryProperties.memoryTypes[typeIdx].propertyFlags;
 							if ((propFlag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
-								pMemoryStat[i].MemoryTypeName = "Special Memory"; // Memory that is directly mappable on the GPU
+							{
+								pMemoryStat[i].MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+								pMemoryStat[i].MemoryTypeName 	= "Special Memory"; // Memory that is directly mappable on the GPU
+							}
 							else if ((propFlag & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) && (propFlag & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
-								pMemoryStat[i].MemoryTypeName = "Shared GPU Memory"; // Memory that is mappable on the CPU
+							{
+								pMemoryStat[i].MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+								pMemoryStat[i].MemoryTypeName 	= "Shared GPU Memory"; // Memory that is mappable on the CPU
+							}
 							else if (propFlag & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-								pMemoryStat[i].MemoryTypeName = "Dedicated GPU Memory"; // Non-mappable memory on the GPU (VRAM)
+							{
+								pMemoryStat[i].MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+								pMemoryStat[i].MemoryTypeName 	= "Dedicated GPU Memory"; // Non-mappable memory on the GPU (VRAM)
+							}
 							else
 								pMemoryStat[i].MemoryTypeName = "Memory heap does not match known memory types";
 						}
@@ -584,12 +595,12 @@ namespace LambdaEngine
 		}
 	}
 
-	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const
+	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
-		if (!pPipelineState->Init(pCommandQueue, pDesc))
+		if (!pPipelineState->Init(pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;
@@ -597,6 +608,22 @@ namespace LambdaEngine
 		else
 		{
 			return pPipelineState;
+		}
+	}
+
+	SBT* GraphicsDeviceVK::CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const
+	{
+		VALIDATE(pDesc != nullptr);
+
+		SBTVK* pSBT = DBG_NEW SBTVK(this);
+		if (!pSBT->Init(pCommandQueue, pDesc))
+		{
+			pSBT->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pSBT;
 		}
 	}
 

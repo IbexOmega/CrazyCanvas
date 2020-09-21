@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Containers/TArray.h"
+#include "Time/API/Timestamp.h"
 
 #include <stack>
 #include <vector>
@@ -31,7 +32,7 @@ namespace LambdaEngine
         void EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting);
         void EnqueueStatePop() { EnqueueStateTransition(nullptr, STATE_TRANSITION::POP); }
 
-        void Tick(float dt);
+        void Tick(Timestamp delta);
 
         static StateManager* GetInstance() { return &s_Instance; }
 

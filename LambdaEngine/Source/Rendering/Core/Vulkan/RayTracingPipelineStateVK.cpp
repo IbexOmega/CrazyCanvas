@@ -9,18 +9,12 @@
 #include "Rendering/Core/Vulkan/BufferVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 
-#include "Rendering/RenderAPI.h"
-
 #include "Math/MathUtilities.h"
 
 namespace LambdaEngine
 {
 	RayTracingPipelineStateVK::RayTracingPipelineStateVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
-		, m_RaygenBufferRegion()
-		, m_HitBufferRegion()
-		, m_MissBufferRegion()
-		, m_CallableBufferRegion()
 	{
 	}
 
@@ -31,14 +25,9 @@ namespace LambdaEngine
 			vkDestroyPipeline(m_pDevice->Device, m_Pipeline, nullptr);
 			m_Pipeline = VK_NULL_HANDLE;
 		}
-
-		m_RaygenBufferRegion	= {};
-		m_HitBufferRegion		= {};
-		m_MissBufferRegion		= {};
-		m_CallableBufferRegion	= {};
 	}
 
-	bool RayTracingPipelineStateVK::Init(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc)
+	bool RayTracingPipelineStateVK::Init(const RayTracingPipelineStateDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
 		
@@ -93,6 +82,8 @@ namespace LambdaEngine
 			shaderGroupCreateInfo.anyHitShader			= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.closestHitShader		= static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
 			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
+
+			m_HitShaderCount = pDesc->ClosestHitShaders.GetSize();
 		}
 
 		// Miss Shaders
@@ -108,6 +99,8 @@ namespace LambdaEngine
 			shaderGroupCreateInfo.anyHitShader			= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.closestHitShader		= VK_SHADER_UNUSED_NV;
 			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
+
+			m_MissShaderCount = pDesc->ClosestHitShaders.GetSize();
 		}
 
 		VkPipelineLibraryCreateInfoKHR rayTracingPipelineLibrariesInfo = {};
@@ -143,94 +136,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		uint64 shaderGroupBaseAlignment = m_pDevice->RayTracingProperties.shaderGroupBaseAlignment;
-		uint64 shaderGroupHandleSize	= m_pDevice->RayTracingProperties.shaderGroupHandleSize;
-
-		VkDeviceSize raygenUnalignedOffset	= 0;
-		VkDeviceSize raygenAlignedOffset	= 0;
-		VkDeviceSize raygenSize				= shaderGroupHandleSize;
-		VkDeviceSize raygenStride			= shaderGroupHandleSize;
-
-		VkDeviceSize hitUnalignedOffset		= raygenUnalignedOffset + raygenSize;
-		VkDeviceSize hitAlignedOffset		= AlignUp(raygenAlignedOffset + raygenSize, shaderGroupBaseAlignment);
-		VkDeviceSize hitSize				= VkDeviceSize(pDesc->ClosestHitShaders.GetSize()) * VkDeviceSize(shaderGroupHandleSize);
-		VkDeviceSize hitStride				= shaderGroupHandleSize;
-
-		VkDeviceSize missUnalignedOffset	= hitUnalignedOffset + hitSize;
-		VkDeviceSize missAlignedOffset		= AlignUp(hitAlignedOffset + hitSize, shaderGroupBaseAlignment);
-		VkDeviceSize missSize				= VkDeviceSize(pDesc->MissShaders.GetSize()) * VkDeviceSize(shaderGroupHandleSize);
-		VkDeviceSize missStride				= shaderGroupHandleSize;
-		
-		uint64 shaderHandleStorageSize		= missUnalignedOffset + missSize;
-		uint64 sbtSize						= missAlignedOffset + missSize;
-
-		BufferDesc shaderHandleStorageDesc = {};
-		shaderHandleStorageDesc.DebugName		= "Shader Handle Storage";
-		shaderHandleStorageDesc.Flags			= BUFFER_FLAG_COPY_SRC;
-		shaderHandleStorageDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		shaderHandleStorageDesc.SizeInBytes		= shaderHandleStorageSize;
-
-		m_ShaderHandleStorageBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&shaderHandleStorageDesc));
-
-		void* pMapped = m_ShaderHandleStorageBuffer->Map();
-		result = m_pDevice->vkGetRayTracingShaderGroupHandlesKHR(m_pDevice->Device, m_Pipeline, 0, static_cast<uint32>(shaderGroups.GetSize()), shaderHandleStorageSize, pMapped);
-		if (result!= VK_SUCCESS)
-		{
-			if (!pDesc->DebugName.empty())
-			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->DebugName.c_str());
-			}
-			else
-			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed");
-			}
-			
-			return false;
-		}
-
-		m_ShaderHandleStorageBuffer->Unmap();
-
-		CommandAllocator* pCommandAllocator = m_pDevice->CreateCommandAllocator("Ray Tracing Pipeline SBT Copy", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-		CommandListDesc commandListDesc = {};
-		commandListDesc.DebugName		= "Ray Tracing Pipeline Command List";
-		commandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-
-		CommandList* pCommandList = m_pDevice->CreateCommandList(pCommandAllocator, &commandListDesc);
-
-		BufferDesc sbtDesc = {};
-		sbtDesc.DebugName	= "Shader Binding Table";
-		sbtDesc.Flags		= BUFFER_FLAG_COPY_DST | BUFFER_FLAG_RAY_TRACING;
-		sbtDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-		sbtDesc.SizeInBytes	= sbtSize;
-
-		m_SBT = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&sbtDesc));
-		pCommandAllocator->Reset();
-
-		pCommandList->Begin(nullptr);
-		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), raygenUnalignedOffset,	m_SBT.Get(), raygenAlignedOffset,	raygenSize);
-		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), hitUnalignedOffset,		m_SBT.Get(), hitAlignedOffset,		hitSize);
-		pCommandList->CopyBuffer(m_ShaderHandleStorageBuffer.Get(), missUnalignedOffset,	m_SBT.Get(), missAlignedOffset,		missSize);
-		pCommandList->End();
-
-		pCommandQueue->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN , nullptr, 0, nullptr, 0);
-
-		VkBuffer sbtBuffer = m_SBT->GetBuffer();
-		m_RaygenBufferRegion.buffer		= sbtBuffer;
-		m_RaygenBufferRegion.offset		= raygenAlignedOffset;
-		m_RaygenBufferRegion.size		= raygenSize;
-		m_RaygenBufferRegion.stride		= raygenStride;
-
-		m_HitBufferRegion.buffer		= sbtBuffer;
-		m_HitBufferRegion.offset		= hitAlignedOffset;
-		m_HitBufferRegion.size			= hitSize;
-		m_HitBufferRegion.stride		= hitStride;
-
-		m_MissBufferRegion.buffer		= sbtBuffer;
-		m_MissBufferRegion.offset		= missAlignedOffset;
-		m_MissBufferRegion.size			= missSize;
-		m_MissBufferRegion.stride		= missStride;
-
 		SetName(pDesc->DebugName);
 		if (!pDesc->DebugName.empty())
 		{
@@ -240,10 +145,6 @@ namespace LambdaEngine
 		{
 			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline");
 		}
-
-		RenderAPI::GetComputeQueue()->Flush();
-		SAFERELEASE(pCommandAllocator);
-		SAFERELEASE(pCommandList);
 
 		return true;
 	}

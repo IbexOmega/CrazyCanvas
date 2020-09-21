@@ -13,8 +13,15 @@ namespace LambdaEngine
 
     float GetPitch(const glm::vec3& forward)
     {
-        glm::vec3 right = glm::normalize(glm::cross(forward, g_DefaultForward));
-        return glm::orientedAngle(g_DefaultForward, forward, right);
+        const glm::vec3 right = glm::normalize(glm::cross(forward, g_DefaultUp));
+        const glm::vec3 forwardXZ = glm::normalize(glm::vec3(forward.x, 0.0f, forward.z));
+        return glm::orientedAngle(forwardXZ, forward, right);
+    }
+
+    float GetYaw(const glm::vec3& forward)
+    {
+        const glm::vec3 forwardXZ = glm::normalize(glm::vec3(forward.x, 0.0f, forward.z));
+        return glm::orientedAngle(g_DefaultForward, forwardXZ, g_DefaultUp);
     }
 
     void RotateAroundPoint(const glm::vec3& P, glm::vec3& V, const glm::vec3& axis, float angle)

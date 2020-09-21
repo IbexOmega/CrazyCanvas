@@ -9,6 +9,7 @@
 
 namespace LambdaEngine
 {
+	struct SBTDesc;
 	struct FenceDesc;
 	struct ShaderDesc;
 	struct BufferDesc;
@@ -27,7 +28,7 @@ namespace LambdaEngine
 	struct AccelerationStructureDesc;
 	struct RayTracingPipelineStateDesc;
 
-	class Fence;
+	class SBT;
 	class Fence;
 	class Shader;
 	class Buffer;
@@ -91,9 +92,10 @@ namespace LambdaEngine
 	*/
 	struct GraphicsDeviceMemoryStatistics
 	{
-		uint64 TotalBytesReserved = 0;
-		uint64 TotalBytesAllocated = 0;
-		std::string MemoryTypeName = "";
+		uint64 TotalBytesReserved	= 0;
+		uint64 TotalBytesAllocated	= 0;
+		std::string MemoryTypeName	= "";
+		EMemoryType MemoryType		= EMemoryType::MEMORY_TYPE_NONE;
 	};
 
 	/*
@@ -122,9 +124,11 @@ namespace LambdaEngine
 
 		virtual SwapChain*	CreateSwapChain(const SwapChainDesc* pDesc)	const = 0;
 
-		virtual PipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc)										const = 0;
-		virtual PipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 										const = 0;
-		virtual PipelineState*	CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc)	const = 0;
+		virtual PipelineState*	CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc)		const = 0;
+		virtual PipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 		const = 0;
+		virtual PipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc)	const = 0;
+
+		virtual SBT* CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const = 0;
 		
 		virtual AccelerationStructure*	CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const = 0;
 		
