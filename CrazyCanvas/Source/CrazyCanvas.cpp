@@ -27,10 +27,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	LoadRendererResources();
 
 	State* pStartingState = nullptr;
-	if (flagParser[{"-b", "--benchmark"}])
-		pStartingState = DBG_NEW BenchmarkState();
-	else
-		pStartingState = DBG_NEW PlaySessionState();
+	pStartingState = DBG_NEW BenchmarkState();
+	//if (flagParser[{"-b", "--benchmark"}])
+	//	pStartingState = DBG_NEW BenchmarkState();
+	//else
+	//	pStartingState = DBG_NEW PlaySessionState();
 	
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }
