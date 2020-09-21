@@ -387,7 +387,7 @@ namespace LambdaEngine
 		bool CreateDescriptorHeap();
 		bool CreateCopyCommandLists();
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*> customRenderers, TSet<uint32>& requiredDrawArgs);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<uint32>& requiredDrawArgs);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<uint32>& requiredDrawArgs);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 
