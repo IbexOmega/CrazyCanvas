@@ -11,6 +11,7 @@ BENCHMARK_RESULTS_PATH_RT_OFF   = 'CrazyCanvas/benchmark_results_rt_off.json'
 CHART_NAMES = [
     'AverageFPS',
     'PeakRAM',
+    'PeakVRAM',
     'AverageVRAM'
 ]
 

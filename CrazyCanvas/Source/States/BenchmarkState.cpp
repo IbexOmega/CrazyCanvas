@@ -103,6 +103,8 @@ void BenchmarkState::PrintBenchmarkResults()
 	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
 	writer.String("PeakRAM");
 	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
+	writer.String("PeakVRAM");
+	writer.Double(pGPUProfiler->GetPeakDeviceMemory() / MB);
 	writer.String("AverageVRAM");
 	writer.Double(pGPUProfiler->GetAverageDeviceMemory() / MB);
 
