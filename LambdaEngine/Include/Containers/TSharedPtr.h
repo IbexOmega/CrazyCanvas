@@ -99,12 +99,12 @@ namespace LambdaEngine
 
 		FORCEINLINE uint32 GetStrongReferences() const noexcept
 		{
-			return m_Counter ? m_Counter->GetStrongReferences() : 0;
+			return m_pCounter ? m_pCounter->GetStrongReferences() : 0;
 		}
 
 		FORCEINLINE uint32 GetWeakReferences() const noexcept
 		{
-			return m_Counter ? m_Counter->GetWeakReferences() : 0;
+			return m_pCounter ? m_pCounter->GetWeakReferences() : 0;
 		}
 
 		FORCEINLINE T* const* operator&() const noexcept
@@ -130,7 +130,7 @@ namespace LambdaEngine
 	protected:
 		FORCEINLINE TPtrBase() noexcept
 			: m_pPtr(nullptr)
-			, m_Counter(nullptr)
+			, m_pCounter(nullptr)
 		{
 			static_assert(std::is_array_v<T> == std::is_array_v<D>, "Scalar types must have scalar TDelete");
 			static_assert(std::is_invocable<D, T*>(), "TDelete must be a callable");
@@ -141,8 +141,8 @@ namespace LambdaEngine
 			// If the object has a pointer there must be a Counter or something went wrong
 			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->AddStrongRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->AddStrongRef();
 			}
 		}
 
@@ -151,8 +151,8 @@ namespace LambdaEngine
 			// If the object has a pointer there must be a Counter or something went wrong
 			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->AddWeakRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->AddWeakRef();
 			}
 		}
 
@@ -161,15 +161,17 @@ namespace LambdaEngine
 			// If the object has a pointer there must be a Counter or something went wrong
 			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->ReleaseStrongRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->ReleaseStrongRef();
 
 				// When releasing the last strong reference we can destroy the pointer and counter
-				if (m_Counter->GetStrongReferences() <= 0)
+				PtrControlBlock::RefType strongRefs = m_pCounter->GetStrongReferences();
+				PtrControlBlock::RefType weakRefs 	= m_pCounter->GetWeakReferences();
+				if (strongRefs <= 0)
 				{
-					if (m_Counter->GetWeakReferences() <= 0)
+					if (weakRefs <= 0)
 					{
-						delete m_Counter;
+						delete m_pCounter;
 					}
 					
 					m_Deleter(m_pPtr);
@@ -183,14 +185,14 @@ namespace LambdaEngine
 			// If the object has a pointer there must be a Counter or something went wrong
 			if (m_pPtr)
 			{
-				VALIDATE(m_Counter != nullptr);
-				m_Counter->ReleaseWeakRef();
+				VALIDATE(m_pCounter != nullptr);
+				m_pCounter->ReleaseWeakRef();
 				
-				PtrControlBlock::RefType strongRefs = m_Counter->GetStrongReferences();
-				PtrControlBlock::RefType weakRefs 	= m_Counter->GetWeakReferences();
+				PtrControlBlock::RefType strongRefs = m_pCounter->GetStrongReferences();
+				PtrControlBlock::RefType weakRefs 	= m_pCounter->GetWeakReferences();
 				if (weakRefs <= 0 && strongRefs <= 0)
 				{
-					delete m_Counter;
+					delete m_pCounter;
 				}
 			}
 		}
@@ -198,22 +200,22 @@ namespace LambdaEngine
 		FORCEINLINE void InternalSwap(TPtrBase& other) noexcept
 		{
 			T* pTempPtr = m_pPtr;
-			PtrControlBlock* pTempBlock = m_Counter;
+			PtrControlBlock* pTempBlock = m_pCounter;
 
 			m_pPtr		= other.m_pPtr;
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 
 			other.m_pPtr	= pTempPtr;
-			other.m_Counter	= pTempBlock;
+			other.m_pCounter	= pTempBlock;
 		}
 
 		FORCEINLINE void InternalMove(TPtrBase&& other) noexcept
 		{
 			m_pPtr		= other.m_pPtr;
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 
 			other.m_pPtr	= nullptr;
-			other.m_Counter	= nullptr;
+			other.m_pCounter	= nullptr;
 		}
 
 		template<typename TOther, typename DOther>
@@ -222,33 +224,33 @@ namespace LambdaEngine
 			static_assert(std::is_convertible<TOther*, T*>());
 
 			m_pPtr		= static_cast<TOther*>(other.m_pPtr);
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 
 			other.m_pPtr	= nullptr;
-			other.m_Counter	= nullptr;
+			other.m_pCounter	= nullptr;
 		}
 
 		FORCEINLINE void InternalConstructStrong(T* pPtr)
 		{
 			m_pPtr		= pPtr;
-			m_Counter	= new PtrControlBlock();
+			m_pCounter	= DBG_NEW PtrControlBlock();
 			InternalAddStrongRef();
 		}
 
 		template<typename TOther, typename DOther>
 		FORCEINLINE void InternalConstructStrong(TOther* pPtr)
 		{
-			static_assert(std:: <TOther*, T*>());
+			static_assert(std::is_convertible<TOther*, T*>());
 
 			m_pPtr		= static_cast<T*>(pPtr);
-			m_Counter = new PtrControlBlock();
+			m_pCounter = DBG_NEW PtrControlBlock();
 			InternalAddStrongRef();
 		}
 
 		FORCEINLINE void InternalConstructStrong(const TPtrBase& other)
 		{
 			m_pPtr		= other.m_pPtr;
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 			InternalAddStrongRef();
 		}
 
@@ -258,7 +260,7 @@ namespace LambdaEngine
 			static_assert(std::is_convertible<TOther*, T*>());
 
 			m_pPtr		= static_cast<T*>(other.m_pPtr);
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 			InternalAddStrongRef();
 		}
 		
@@ -266,7 +268,7 @@ namespace LambdaEngine
 		FORCEINLINE void InternalConstructStrong(const TPtrBase<TOther, DOther>& other, T* pPtr)
 		{
 			m_pPtr		= pPtr;
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 			InternalAddStrongRef();
 		}
 		
@@ -274,15 +276,15 @@ namespace LambdaEngine
 		FORCEINLINE void InternalConstructStrong(TPtrBase<TOther, DOther>&& other, T* pPtr)
 		{
 			m_pPtr		= pPtr;
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 			other.m_pPtr	= nullptr;
-			other.m_Counter	= nullptr;
+			other.m_pCounter	= nullptr;
 		}
 
 		FORCEINLINE void InternalConstructWeak(T* pPtr)
 		{
 			m_pPtr		= pPtr;
-			m_Counter	= new PtrControlBlock();
+			m_pCounter	= DBG_NEW PtrControlBlock();
 			InternalAddWeakRef();
 		}
 
@@ -292,14 +294,14 @@ namespace LambdaEngine
 			static_assert(std::is_convertible<TOther*, T*>());
 
 			m_pPtr	= static_cast<T*>(pPtr);
-			m_Counter = new PtrControlBlock();
+			m_pCounter = DBG_NEW PtrControlBlock();
 			InternalAddWeakRef();
 		}
 
 		FORCEINLINE void InternalConstructWeak(const TPtrBase& other)
 		{
 			m_pPtr	= other.m_pPtr;
-			m_Counter = other.m_Counter;
+			m_pCounter = other.m_pCounter;
 			InternalAddWeakRef();
 		}
 
@@ -309,7 +311,7 @@ namespace LambdaEngine
 			static_assert(std::is_convertible<TOther*, T*>());
 
 			m_pPtr		= static_cast<T*>(other.m_pPtr);
-			m_Counter	= other.m_Counter;
+			m_pCounter	= other.m_pCounter;
 			InternalAddWeakRef();
 		}
 
@@ -328,12 +330,12 @@ namespace LambdaEngine
 		FORCEINLINE void InternalClear() noexcept
 		{
 			m_pPtr	= nullptr;
-			m_Counter = nullptr;
+			m_pCounter = nullptr;
 		}
 
 	protected:
 		T* m_pPtr;
-		PtrControlBlock* m_Counter;
+		PtrControlBlock* m_pCounter;
 		D m_Deleter;
 	};
 
@@ -1105,7 +1107,7 @@ namespace LambdaEngine
 	template<typename T, typename... TArgs>
 	std::enable_if_t<!std::is_array_v<T>, TSharedPtr<T>> MakeShared(TArgs&&... Args) noexcept
 	{
-		T* pRefCountedPtr = new T(Forward<TArgs>(Args)...);
+		T* pRefCountedPtr = DBG_NEW T(Forward<TArgs>(Args)...);
 		return ::Move(TSharedPtr<T>(pRefCountedPtr));
 	}
 
@@ -1114,7 +1116,7 @@ namespace LambdaEngine
 	{
 		using TType = TRemoveExtent<T>;
 
-		TType* pRefCountedPtr = new TType[size];
+		TType* pRefCountedPtr = DBG_NEW TType[size];
 		return ::Move(TSharedPtr<T>(pRefCountedPtr));
 	}
 
@@ -1197,5 +1199,4 @@ namespace LambdaEngine
 		TType* pRawPointer = dynamic_cast<TType*>(pPointer.Get());
 		return ::Move(TSharedPtr<T0>(::Move(pPointer), pRawPointer));
 	}
-
 }
