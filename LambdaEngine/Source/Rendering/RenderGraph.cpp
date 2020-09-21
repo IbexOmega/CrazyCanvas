@@ -1747,11 +1747,12 @@ namespace LambdaEngine
 						auto maskToBuffersIt = pResource->DrawArgs.MaskToArgs.find(pResourceStateDesc->DrawArgsMask);
 						if (maskToBuffersIt == pResource->DrawArgs.MaskToArgs.end())
 						{
+							pResource->LastPipelineStageOfFirstRenderStage = lastPipelineStageFlags;
 							DrawArgsData drawArgsData = {};
 							drawArgsData.InitialTransitionBarrierTemplate.pBuffer				= nullptr;
 							drawArgsData.InitialTransitionBarrierTemplate.QueueBefore			= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 							drawArgsData.InitialTransitionBarrierTemplate.QueueAfter			= drawArgsData.InitialTransitionBarrierTemplate.QueueBefore;
-							drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+							drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 							drawArgsData.InitialTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);
 
 							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
@@ -3117,6 +3118,48 @@ namespace LambdaEngine
 					initialIndexBufferTransitionBarrier.Offset			= 0;
 					initialIndexBufferTransitionBarrier.SizeInBytes		= pDrawArg->IndexCount * sizeof(uint32);
 					intialBarriers.PushBack(initialIndexBufferTransitionBarrier);
+				}
+			}
+
+			//Transfer to Initial State
+			if (!intialBarriers.IsEmpty())
+			{
+				FPipelineStageFlags srcPipelineStage = pResource->LastPipelineStageOfFirstRenderStage;
+				FPipelineStageFlags dstPipelineStage = pResource->LastPipelineStageOfFirstRenderStage;
+
+				if (intialBarriers[0].QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
+				{
+					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
+
+					if (!pCommandList->IsBegin())
+					{
+						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
+						pCommandList->Begin(nullptr);
+					}
+
+					uint32 remaining = intialBarriers.GetSize() % MAX_BUFFER_BARRIERS;
+					uint32 i = 0;
+					for(; i < floor(intialBarriers.GetSize()/ MAX_BUFFER_BARRIERS); i++)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i*MAX_BUFFER_BARRIERS], MAX_BUFFER_BARRIERS);
+					if(remaining != 0)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i*MAX_BUFFER_BARRIERS], remaining);
+				}
+				else if (intialBarriers[0].QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
+				{
+					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
+
+					if (!pCommandList->IsBegin())
+					{
+						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
+						pCommandList->Begin(nullptr);
+					}
+
+					uint32 remaining = intialBarriers.GetSize() % MAX_BUFFER_BARRIERS;
+					uint32 i = 0;
+					for (; i < floor(intialBarriers.GetSize() / MAX_BUFFER_BARRIERS); i++)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i * MAX_BUFFER_BARRIERS], MAX_BUFFER_BARRIERS);
+					if (remaining != 0)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i * MAX_BUFFER_BARRIERS], remaining);
 				}
 			}
 
