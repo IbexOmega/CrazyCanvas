@@ -47,4 +47,5 @@ private:
 
 	LambdaEngine::ClientBase* m_pClient;
 	bool m_IsBenchmarking;
+	uint32 m_BenchmarkPackets;
 };

@@ -22,12 +22,10 @@
 
 using namespace LambdaEngine;
 
-
-uint32 gBenchmarkPackets = 0;
-
 Client::Client() :
 	m_pClient(nullptr),
-	m_IsBenchmarking(false)
+	m_IsBenchmarking(false),
+	m_BenchmarkPackets(0)
 {
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
@@ -157,17 +155,17 @@ void Client::FixedTick(Timestamp delta)
 
 void Client::RunningBenchMark()
 {
-	if (gBenchmarkPackets++ < 100000)
+	if (m_BenchmarkPackets++ < 100000)
 	{
 		NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
 		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt32(gBenchmarkPackets);
+		encoder.WriteUInt32(m_BenchmarkPackets);
 		m_pClient->SendReliable(pPacket, this);
 	}
 	else
 	{
 		m_IsBenchmarking = false;
-		gBenchmarkPackets = 0;
+		m_BenchmarkPackets = 0;
 	}
 }
 
