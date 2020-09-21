@@ -16,6 +16,11 @@ namespace LambdaEngine
 		NetworkUtils::Release();
 	}
 
+	void MacNetworkUtils::PostRelease()
+	{
+		NetworkUtils::PostRelease();
+	}
+
 	ISocketTCP* MacNetworkUtils::CreateSocketTCP()
 	{
 		return new MacSocketTCP();

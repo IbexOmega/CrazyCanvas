@@ -28,6 +28,7 @@ namespace LambdaEngine
 
         static bool Init();
         static void Release();
+        static void PostRelease();
 	};
 
     typedef MacNetworkUtils PlatformNetworkUtils;
