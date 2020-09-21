@@ -1,6 +1,7 @@
 #pragma once
 #include "Networking/API/IServerHandler.h"
-#include "Networking/API/IClientRemoteHandler.h"
+#include "Networking/API/IClientHandler.h"
+#include "Networking/API/UDP/ServerNetworkDiscovery.h"
 
 #include "Threading/API/SpinLock.h"
 
@@ -9,14 +10,24 @@
 namespace LambdaEngine
 {
 	class ServerUDP;
-	class INetworkDiscoveryHandler;
+	class ClientUDP;
+	class INetworkDiscoveryServer;
+	class INetworkDiscoveryClient;
 
-	class NetworkDiscovery : protected IServerHandler, protected IClientRemoteHandler
+	class NetworkDiscovery : protected IServerHandler, protected IClientHandler
 	{
+		friend class NetworkUtils;
+
 	public:
 		DECL_UNIQUE_CLASS(NetworkDiscovery);
 
-		static bool EnableDiscovery(INetworkDiscoveryHandler* pHandler);
+		static bool EnableServer(uint16 portOfGameServer, INetworkDiscoveryServer* pHandler, uint16 portOfBroadcastServer = 4450);
+		static void DisableServer();
+		static bool IsServerEnabled();
+
+		static bool EnableClient(INetworkDiscoveryClient* pHandler);
+		static void DisableClient();
+		static bool IsClientEnabled();
 
 	protected:
 		virtual IClientRemoteHandler* CreateClientHandler() override;
@@ -27,17 +38,19 @@ namespace LambdaEngine
 		virtual void OnDisconnected(IClient* pClient) override;
 		virtual void OnPacketReceived(IClient* pClient, NetworkSegment* pPacket) override;
 		virtual void OnClientReleased(IClient* pClient) override;
+		virtual void OnServerFull(IClient* pClient) override;
 
 	private:
 		NetworkDiscovery();
 
-		void FixedTick(Timestamp delta);
+	private:
+		static void FixedTick(Timestamp delta);
+		static void ReleaseStatic();
 
 	private:
-		ServerUDP* m_pServer;
+		ServerNetworkDiscovery* m_pServer;
+		ClientUDP* m_pClient;
 		SpinLock m_Lock;
-		Timestamp m_TimestampOfLastTransmit;
-		INetworkDiscoveryHandler* m_pHandler;
 
 	private:
 		static NetworkDiscovery s_Instance;

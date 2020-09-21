@@ -255,9 +255,9 @@ namespace LambdaEngine
 
 	bool EngineLoop::PostRelease()
 	{
-		Thread::Release();
-
 		PlatformNetworkUtils::Release();
+		Thread::Release();
+		PlatformNetworkUtils::PostRelease();
 
 		if (!CommonApplication::PostRelease())
 		{
