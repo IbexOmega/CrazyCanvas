@@ -23,7 +23,7 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_AOMaps[MAX_UNIQ
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_RoughnessMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MAX_UNIQUE_MATERIALS];
 
-layout(location = 0) out vec3 out_Position;
+layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;
 layout(location = 2) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 3) out vec2 out_Compact_Normal;
@@ -53,7 +53,7 @@ void main()
 	vec2 prevNDC 		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
 	//0
-	out_Position				= in_WorldPosition;
+	out_Position				= vec4(in_WorldPosition, 0.0f);
 
     //1
     vec3 storedAlbedo         	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));

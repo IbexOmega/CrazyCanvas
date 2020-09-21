@@ -131,7 +131,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R11G11B10_SFLOAT",
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",

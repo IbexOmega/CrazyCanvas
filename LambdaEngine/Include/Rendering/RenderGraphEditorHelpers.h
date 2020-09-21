@@ -33,7 +33,7 @@ namespace LambdaEngine
 		case 5:		return EFormat::FORMAT_R16G16_SFLOAT;
 		case 6:		return EFormat::FORMAT_R16G16B16A16_SFLOAT;
 		case 7:		return EFormat::FORMAT_R32G32_SFLOAT;
-		case 8:		return EFormat::FORMAT_R11G11B10_SFLOAT;
+		case 8:		return EFormat::FORMAT_R11G11B10_UFLOAT;
 		case 9:		return EFormat::FORMAT_R32G32B32A32_UINT;
 		case 10:	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
 		case 11:	return EFormat::FORMAT_D24_UNORM_S8_UINT;
@@ -54,7 +54,7 @@ namespace LambdaEngine
 		case EFormat::FORMAT_R16G16_SFLOAT:			return 5;
 		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 6;
 		case EFormat::FORMAT_R32G32_SFLOAT:			return 7;
-		case EFormat::FORMAT_R11G11B10_SFLOAT:		return 8;
+		case EFormat::FORMAT_R11G11B10_UFLOAT:		return 8;
 		case EFormat::FORMAT_R32G32B32A32_UINT:		return 9;
 		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 10;
 		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 11;
