@@ -29,7 +29,7 @@ namespace LambdaEngine
 
         static bool Init();
         static void Release();
-		static void PostRelease();
+        static void PostRelease();
 	};
 
     typedef Win32NetworkUtils PlatformNetworkUtils;
