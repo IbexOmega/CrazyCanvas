@@ -101,7 +101,7 @@ void SandboxState::Pause()
 	// Unload Page
 }
 
-void SandboxState::Tick(float dt)
+void SandboxState::Tick(LambdaEngine::Timestamp)
 {
 	// Update State specfic objects
 }

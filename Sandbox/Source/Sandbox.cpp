@@ -52,6 +52,8 @@
 #include <argh/argh.h>
 #include <imgui.h>
 
+#include "Containers/TSharedPtr.h"
+
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_B			= 1.0f;

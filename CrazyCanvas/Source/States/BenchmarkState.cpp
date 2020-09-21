@@ -1,6 +1,7 @@
 #include "States/BenchmarkState.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Debug/GPUProfiler.h"
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -71,8 +72,10 @@ void BenchmarkState::Init()
 	}
 }
 
-void BenchmarkState::Tick(float dt)
+void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 {
+	LambdaEngine::GPUProfiler::Get()->Tick(delta);
+
 	if (LambdaEngine::TrackSystem::GetInstance().HasReachedEnd(m_Camera))
 	{
 		PrintBenchmarkResults();
@@ -88,6 +91,8 @@ void BenchmarkState::PrintBenchmarkResults()
 
 	constexpr const float MB = 1000000.0f;
 
+	const GPUProfiler* pGPUProfiler = GPUProfiler::Get();
+
 	StringBuffer jsonStringBuffer;
 	PrettyWriter<StringBuffer> writer(jsonStringBuffer);
 
@@ -97,6 +102,10 @@ void BenchmarkState::PrintBenchmarkResults()
 	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
 	writer.String("PeakRAM");
 	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
+	writer.String("PeakVRAM");
+	writer.Double(pGPUProfiler->GetPeakDeviceMemory() / MB);
+	writer.String("AverageVRAM");
+	writer.Double(pGPUProfiler->GetAverageDeviceMemory() / MB);
 
 	writer.EndObject();
 

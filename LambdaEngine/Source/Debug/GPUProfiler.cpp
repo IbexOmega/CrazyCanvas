@@ -362,12 +362,12 @@ namespace LambdaEngine
 #endif
 	}
 
-	uint64 GPUProfiler::GetAverageDeviceMemory()
+	uint64 GPUProfiler::GetAverageDeviceMemory() const
 	{
 		return m_AverageDeviceMemory;
 	}
 
-	uint64 GPUProfiler::GetPeakDeviceMemory()
+	uint64 GPUProfiler::GetPeakDeviceMemory() const
 	{
 		return m_PeakDeviceMemory;
 	}

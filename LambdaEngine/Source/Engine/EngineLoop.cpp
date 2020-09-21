@@ -79,8 +79,7 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		float32 dt = (float32)delta.AsSeconds();
-		RuntimeStats::SetFrameTime(dt);
+		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 		Input::Tick();
 
 		GameConsole::Get().Tick();

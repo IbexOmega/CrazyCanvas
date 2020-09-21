@@ -297,6 +297,7 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/",
 			"Dependencies/assimp/include",
+			"Dependencies/bullet/src",
 			"Dependencies/imgui",
 			"Dependencies/imnodes",
 			"Dependencies/glm",
@@ -337,7 +338,10 @@ workspace "LambdaEngine"
 				"Dependencies/imgui-node-editor/lib",
 
 				-- Assimp
-				"Dependencies/assimp/bin"
+				"Dependencies/assimp/bin",
+
+				-- Bullet physics
+				"Dependencies/bullet/lib"
 			}
 
 			sysincludedirs
@@ -369,6 +373,10 @@ workspace "LambdaEngine"
 				"/debug/assimp-vc142-mtd.lib",
 				"/debug/IrrXMLd.lib",
 				"/debug/zlibstaticd.lib",
+
+				"/debug/BulletCollision_vs2010_x64_debug.lib",
+				"/debug/BulletDynamics_vs2010_x64_debug.lib",
+				"/debug/LinearMath_vs2010_x64_debug.lib"
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
@@ -388,6 +396,11 @@ workspace "LambdaEngine"
 				"/release/assimp-vc142-mt.lib",
 				"/release/IrrXML.lib",
 				"/release/zlibstatic.lib",
+
+				-- Bullet
+				"/release/BulletCollision_vs2010_x64_release.lib",
+				"/release/BulletDynamics_vs2010_x64_release.lib",
+				"/release/LinearMath_vs2010_x64_release.lib"
 			}
 		-- Mac
 		filter { "system:macosx" }
