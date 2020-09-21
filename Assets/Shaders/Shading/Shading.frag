@@ -41,6 +41,30 @@ void main()
 
 	F0 = mix(F0, albedo, aoRoughMetal.b);
 
+	// Directional Light
+	vec3 L = normalize(lightBuffer.DirL_Direction);
+	vec3 H = normalize(V + L);
+
+	vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
+	vec3 incomingRadiance    = outgoingRadiance;
+
+	float NDF   = Distribution(N, H, aoRoughMetal.g);
+	float G     = Geometry(N, V, L, aoRoughMetal.g);
+	vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
+
+	vec3 nominator      = NDF * G * F;
+	float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
+	vec3 specular       = nominator / max(denominator, 0.001f);
+
+	vec3 kS = F;
+	vec3 kD = vec3(1.0f) - kS;
+
+	kD *= 1.0 - aoRoughMetal.b;
+
+	float NdotL = max(dot(N, L), 0.0f);
+
+	Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
+
 	//Point Light Loop
 	for (uint i = 0; i < lightBuffer.PointLightCount; ++i)
 	{
