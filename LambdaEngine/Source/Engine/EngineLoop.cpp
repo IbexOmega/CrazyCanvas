@@ -20,6 +20,7 @@
 #include "Input/API/Input.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
+#include "Physics/PhysicsSystem.h"
 
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
@@ -189,6 +190,11 @@ namespace LambdaEngine
 		}
 
 		if (!RenderSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!PhysicsSystem::GetInstance()->Init())
 		{
 			return false;
 		}
