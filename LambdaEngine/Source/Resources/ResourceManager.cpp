@@ -6,6 +6,8 @@
 
 #include "Rendering/RenderAPI.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Containers/TUniquePtr.h"
 
 #include <utility>
@@ -37,11 +39,15 @@ namespace LambdaEngine
 	{
 		InitDefaultResources();
 
+		EventQueue::RegisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
+
 		return true;
 	}
 
 	bool ResourceManager::Release()
 	{
+		EventQueue::UnregisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
+
 		SAFEDELETE_ALL(s_Meshes);
 		SAFEDELETE_ALL(s_Materials);
 		SAFERELEASE_ALL(s_Textures);
@@ -193,17 +199,17 @@ namespace LambdaEngine
 
 		(*ppMappedMaterial) = DBG_NEW Material();
 
-		Texture* pAlbedoMap = albedoMap != GUID_NONE ? s_Textures[albedoMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pNormalMap = normalMap != GUID_NONE ? s_Textures[normalMap] : s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		Texture* pAmbientOcclusionMap = ambientOcclusionMap != GUID_NONE ? s_Textures[ambientOcclusionMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pMetallicMap = metallicMap != GUID_NONE ? s_Textures[metallicMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pRoughnessMap = roughnessMap != GUID_NONE ? s_Textures[roughnessMap] : s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pAlbedoMap						= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pNormalMap						= normalMap				!= GUID_NONE ? s_Textures[normalMap]				: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		Texture* pAmbientOcclusionMap			= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]		: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pMetallicMap					= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pRoughnessMap					= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-		TextureView* pAlbedoMapView = albedoMap != GUID_NONE ? s_TextureViews[albedoMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pNormalMapView = normalMap != GUID_NONE ? s_TextureViews[normalMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		TextureView* pAmbientOcclusionMapView = ambientOcclusionMap != GUID_NONE ? s_TextureViews[ambientOcclusionMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pMetallicMapView = metallicMap != GUID_NONE ? s_TextureViews[metallicMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pRoughnessMapView = roughnessMap != GUID_NONE ? s_TextureViews[roughnessMap] : s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pAlbedoMapView				= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pNormalMapView				= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		TextureView* pAmbientOcclusionMapView	= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pMetallicMapView			= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pRoughnessMapView			= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
 		(*ppMappedMaterial)->Properties = properties;
 
@@ -399,25 +405,6 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	void ResourceManager::ReloadAllShaders()
-	{
-		for (auto it = s_Shaders.begin(); it != s_Shaders.end(); it++)
-		{
-			if (it->second != nullptr)
-			{
-				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
-
-				Shader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
-
-				if (pShader != nullptr)
-				{
-					SAFERELEASE(it->second);
-					it->second = pShader;
-				}
-			}
-		}
-	}
-
 	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
 	{
 		return GetGUID(s_MeshNamesToGUIDs, name);
@@ -507,6 +494,27 @@ namespace LambdaEngine
 
 		D_LOG_WARNING("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
 		return nullptr;
+	}
+
+	bool ResourceManager::OnShaderRecompileEvent(const ShaderRecompileEvent& event)
+	{
+		for (auto it = s_Shaders.begin(); it != s_Shaders.end(); it++)
+		{
+			if (it->second != nullptr)
+			{
+				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
+
+				Shader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
+
+				if (pShader != nullptr)
+				{
+					SAFERELEASE(it->second);
+					it->second = pShader;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	GUID_Lambda ResourceManager::RegisterLoadedMesh(const String& name, Mesh* pResource)
@@ -671,26 +679,6 @@ namespace LambdaEngine
 
 			s_MaterialNamesToGUIDs["Default Material"]	= GUID_MATERIAL_DEFAULT;
 			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;
-		}
-
-		{
-			Material* pDefaultEmissiveMaterial = DBG_NEW Material();
-			pDefaultEmissiveMaterial->pAlbedoMap					= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pDefaultEmissiveMaterial->pNormalMap					= s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-			pDefaultEmissiveMaterial->pAmbientOcclusionMap			= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pDefaultEmissiveMaterial->pMetallicMap					= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pDefaultEmissiveMaterial->pRoughnessMap					= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-
-			pDefaultEmissiveMaterial->pAlbedoMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pDefaultEmissiveMaterial->pNormalMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-			pDefaultEmissiveMaterial->pAmbientOcclusionMapView		= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pDefaultEmissiveMaterial->pMetallicMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pDefaultEmissiveMaterial->pRoughnessMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-
-			pDefaultEmissiveMaterial->Properties.EmissionStrength	= DEFAULT_EMISSIVE_EMISSION_STRENGTH;
-
-			s_MaterialNamesToGUIDs["Default Emissive Material"] = GUID_MATERIAL_DEFAULT_EMISSIVE;
-			s_Materials[GUID_MATERIAL_DEFAULT_EMISSIVE] = pDefaultEmissiveMaterial;
 		}
 	}
 }

@@ -5,8 +5,7 @@ namespace LambdaEngine
 	ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
 
 	ECSCore::ECSCore()
-		:m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry),
-		m_DeltaTime(0.0f)
+		:m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry)
 	{}
 
 	void ECSCore::Release()

@@ -31,6 +31,7 @@
 #include "Application/API/CommonApplication.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/DebugEvents.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -50,6 +51,8 @@
 
 #include <argh/argh.h>
 #include <imgui.h>
+
+#include "Containers/TSharedPtr.h"
 
 constexpr const float DEFAULT_DIR_LIGHT_R			= 1.0f;
 constexpr const float DEFAULT_DIR_LIGHT_G			= 1.0f;
@@ -78,9 +81,6 @@ Sandbox::Sandbox()
 	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
-
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
 	LoadRendererResources();
 
@@ -169,10 +169,8 @@ bool Sandbox::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 	if (event.Key == EKey::KEY_5)
 	{
-		RenderAPI::GetGraphicsQueue()->Flush();
-		RenderAPI::GetComputeQueue()->Flush();
-		ResourceManager::ReloadAllShaders();
-		PipelineStateManager::ReloadPipelineStates();
+		EventQueue::SendEvent(ShaderRecompileEvent());
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
 
 	return true;

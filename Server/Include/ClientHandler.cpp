@@ -4,10 +4,12 @@
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/BinaryEncoder.h"
+#include "Engine/EngineLoop.h"
 
 #include "Log/Log.h"
 
-ClientHandler::ClientHandler()
+ClientHandler::ClientHandler() :
+	m_Counter(0)
 {
 
 }
@@ -49,19 +51,39 @@ void ClientHandler::OnDisconnected(LambdaEngine::IClient* pClient)
 void ClientHandler::OnPacketReceived(LambdaEngine::IClient* pClient, LambdaEngine::NetworkSegment* pPacket)
 {
 	UNREFERENCED_VARIABLE(pClient);
-	UNREFERENCED_VARIABLE(pPacket);
 
 	using namespace LambdaEngine;
 
-	LOG_MESSAGE("OnPacketReceived()");
+	//LOG_MESSAGE("OnPacketReceived()");
 
 	LambdaEngine::BinaryDecoder decoder(pPacket);
-	if (counter + 1 != decoder.ReadUInt32())
+	
+	uint32 recievedNumber = decoder.ReadUInt32();
+
+	if (m_Counter + 1 == recievedNumber)
 	{
-		//DEBUGBREAK();
+		m_Counter = recievedNumber;
+		//LOG_MESSAGE("%d", recievedNumber);
 	}
-	counter++;
-	LOG_MESSAGE("%d", (int)counter);
+	else
+	{
+		DEBUGBREAK();
+	}
+
+	if (recievedNumber == 1)
+	{
+		LOG_MESSAGE("Benchmark Timer Started.");
+		m_BenchMarkTimer = EngineLoop::GetTimeSinceStart();
+	}
+	else if (recievedNumber == 100000)
+	{
+		m_BenchMarkTimer = EngineLoop::GetTimeSinceStart() - m_BenchMarkTimer;
+		LOG_MESSAGE("Benchmark Timer Ended.");
+		LOG_MESSAGE("Bytes Received during benchmark: %d", pClient->GetStatistics()->GetBytesReceived());
+		LOG_MESSAGE("Benchmark Timer: %f", m_BenchMarkTimer.AsSeconds());
+	}
+
+	//LOG_MESSAGE("%d", (int)m_Counter);
 }
 
 void ClientHandler::OnClientReleased(LambdaEngine::IClient* pClient)

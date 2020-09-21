@@ -31,10 +31,11 @@ namespace LambdaEngine
 	struct AccelerationStructureInstance
 	{
 		glm::mat3x4						Transform;
-		uint32							CustomIndex						: 24;
-		uint32							Mask							: 8;
-		uint32							SBTRecordOffset					: 24;
-		FAccelerationStructureFlags		Flags							: 8;
+		uint32							MaterialSlot		: 8;
+		uint32							Unused				: 16;
+		uint32							Mask				: 8;
+		uint32							SBTRecordOffset		: 24;
+		FAccelerationStructureFlags		Flags				: 8;
 		uint64							AccelerationStructureAddress;
 	};
 

@@ -1,5 +1,4 @@
 #include "States/SandboxState.h"
-#include "Log/Log.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -13,6 +12,9 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Input/API/Input.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Systems/TrackSystem.h"
@@ -39,6 +41,7 @@ void SandboxState::Init()
 {
 	// Create Systems
 	TrackSystem::GetInstance().Init();
+	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Create Camera
 	{
@@ -61,14 +64,13 @@ void SandboxState::Init()
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
 		glm::vec3 scale(1.0f);
 
-		for (uint32 i = 0; i < meshComponents.GetSize(); i++)
+		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { position, true });
-			ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { scale, true });
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			ECSCore::GetInstance()->AddComponent<MeshComponent>(entity, meshComponents[i]);
-			ECSCore::GetInstance()->AddComponent<StaticComponent>(entity, StaticComponent());
+			pECS->AddComponent<PositionComponent>(entity, { position, true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
 
@@ -105,12 +107,11 @@ void SandboxState::Init()
 				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
 				glm::vec3 scale(1.0f);
 
-				Entity entity = ECSCore::GetInstance()->CreateEntity();
-				ECSCore::GetInstance()->AddComponent<PositionComponent>(entity, { position, true });
-				ECSCore::GetInstance()->AddComponent<ScaleComponent>(entity, { scale, true });
-				ECSCore::GetInstance()->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-				ECSCore::GetInstance()->AddComponent<MeshComponent>(entity, sphereMeshComp);
-				ECSCore::GetInstance()->AddComponent<StaticComponent>(entity, StaticComponent());
+				Entity entity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(entity, { position, true });
+				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
 			}
 			
 			
@@ -173,14 +174,13 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				m_PointLights[i] = ECSCore::GetInstance()->CreateEntity();
-				ECSCore::GetInstance()->AddComponent<PositionComponent>(m_PointLights[i], { {0.0f, 0.0f, 0.0f}, true });
-				ECSCore::GetInstance()->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
-				ECSCore::GetInstance()->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
-				ECSCore::GetInstance()->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
-				ECSCore::GetInstance()->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
-				ECSCore::GetInstance()->AddComponent<DynamicComponent>(m_PointLights[i], DynamicComponent());
-				ECSCore::GetInstance()->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
+				m_PointLights[i] = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(m_PointLights[i], { {0.0f, 0.0f, 0.0f}, true });
+				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
+				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
+				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
+				pECS->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
 			}
 		}*/
 
@@ -232,15 +232,43 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				m_PointLights[i] = ECSCore::GetInstance()->CreateEntity();
-				ECSCore::GetInstance()->AddComponent<PositionComponent>(m_PointLights[i], { {0.0f, 0.0f, 0.0f}, true });
-				ECSCore::GetInstance()->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
-				ECSCore::GetInstance()->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
-				ECSCore::GetInstance()->AddComponent<PointLightComponent>(m_PointLights[i], ptComp);
-				ECSCore::GetInstance()->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
-				ECSCore::GetInstance()->AddComponent<DynamicComponent>(m_PointLights[i], DynamicComponent());
-				ECSCore::GetInstance()->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
+				m_PointLights[i] = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(m_PointLights[i], { {0.0f, 0.0f, 0.0f}, true });
+				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
+				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PointLightComponent>(m_PointLights[i], ptComp);
+				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
+				pECS->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
 			}
+		}
+	}
+
+	//Mirrors
+	{
+		MaterialProperties mirrorProperties = {};
+		mirrorProperties.Roughness = 0.0f;
+
+		MeshComponent meshComponent;
+		meshComponent.MeshGUID = GUID_MESH_QUAD;
+		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Mirror Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			mirrorProperties);
+
+		constexpr const uint32 NUM_MIRRORS = 6;
+		for (uint32 i = 0; i < NUM_MIRRORS; i++)
+		{
+			Entity entity = ECSCore::GetInstance()->CreateEntity();
+
+			float32 sign = pow(-1.0f, i % 2);
+			pECS->AddComponent<PositionComponent>(entity, { glm::vec3(3.0f * (float32(i / 2) - float32(NUM_MIRRORS) / 2.0f), 2.0f, 1.5f * sign), true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(-sign * 90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
+			pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
 
@@ -265,19 +293,21 @@ void SandboxState::Pause()
 	// Unload Page
 }
 
-void SandboxState::Tick(float dt)
+void SandboxState::Tick(LambdaEngine::Timestamp delta)
 {
 	// Update State specfic objects
 	static float timer = 0;
 	static int removedIndex = 0;
 
-	timer += dt;
+	timer += delta.AsSeconds();
+	
+	ECSCore* ecsCore = ECSCore::GetInstance();
+	ecsCore->RemoveEntity(m_PointLights[0]);
 
-	if (timer > 0.5f && removedIndex < 30)
-	{
-		ECSCore* ecsCore = ECSCore::GetInstance();
-		ecsCore->RemoveEntity(m_PointLights[removedIndex++]);
+	//if (timer > 0.5f && removedIndex < 30)
+	//{
+	//	ecsCore->RemoveEntity(m_PointLights[removedIndex++]);
 
-		timer = 0.0f;
-	}
+	//	timer = 0.0f;
+	//}
 }

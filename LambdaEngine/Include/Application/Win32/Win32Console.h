@@ -19,6 +19,7 @@ namespace LambdaEngine
 		static void PrintLineV(const char* pFormat, va_list args);
 
 		static void Clear();
+		static void ClearLastLine();
 
 		static void SetTitle(const char* pTitle);
 		static void SetColor(EConsoleColor);

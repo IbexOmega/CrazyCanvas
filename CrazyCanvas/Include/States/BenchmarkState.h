@@ -6,15 +6,15 @@
 class BenchmarkState : public LambdaEngine::State
 {
 public:
-	BenchmarkState();
-	~BenchmarkState();
+	BenchmarkState() = default;
+	~BenchmarkState() = default;
 
 	void Init() override final;
 
 	void Resume() override final {};
 	void Pause() override final {};
 
-	void Tick(float dt) override final;
+	void Tick(LambdaEngine::Timestamp delta) override final;
 
 private:
 	static void PrintBenchmarkResults();

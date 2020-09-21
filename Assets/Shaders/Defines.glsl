@@ -102,9 +102,9 @@ struct SPerFrameBuffer
 	mat4 PrevView;
 	mat4 ViewInv;
 	mat4 ProjectionInv;
-	vec4 Position;
-	vec4 Right;
-	vec4 Up;
+	vec4 CameraPosition;
+	vec4 CameraRight;
+	vec4 CameraUp;
     vec2 Jitter;
 
     uint FrameIndex;
@@ -114,10 +114,10 @@ struct SPerFrameBuffer
 struct SMaterialParameters
 {
     vec4    Albedo;
-    float   Ambient;
+    float   AO;
     float   Metallic;
     float   Roughness;
-    float   EmissionStrength;
+    float   Unused;
 };
 
 struct SShapeSample

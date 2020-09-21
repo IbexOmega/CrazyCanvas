@@ -62,7 +62,7 @@ namespace LambdaEngine
 			g_Clock.Tick();
 
 			// Update
-			Timestamp delta = g_Clock.GetDeltaTime();
+			const Timestamp& delta = g_Clock.GetDeltaTime();
 			isRunning = Tick(delta);
 
 			// Fixed update
@@ -79,8 +79,7 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		float32 dt = (float32)delta.AsSeconds();
-		RuntimeStats::SetFrameTime(dt);
+		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 		Input::Tick();
 
 		GameConsole::Get().Tick();
@@ -99,8 +98,8 @@ namespace LambdaEngine
 		AudioSystem::Tick();
 
 		CameraSystem::GetInstance().MainThreadTick(delta);
+		StateManager::GetInstance()->Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
-		StateManager::GetInstance()->Tick(dt);
 		Game::Get().Tick(delta);
 
 		RenderSystem::GetInstance().Render();
