@@ -124,15 +124,16 @@ namespace LambdaEngine
 		return m_TerminationApproved;
 	}
 
-	bool ClientRemoteBase::SendUnreliable(NetworkSegment* packet)
+	bool ClientRemoteBase::SendUnreliable(NetworkSegment* pPacket)
 	{
 		if (!IsConnected())
 		{
 			LOG_WARNING("[ClientRemoteBase]: Can not send packet before a connection has been established");
+			GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
 			return false;
 		}
 
-		GetPacketManager()->EnqueueSegmentUnreliable(packet);
+		GetPacketManager()->EnqueueSegmentUnreliable(pPacket);
 		return true;
 	}
 
@@ -141,6 +142,7 @@ namespace LambdaEngine
 		if (!IsConnected())
 		{
 			LOG_WARNING("[ClientRemoteBase]: Can not send packet before a connection has been established");
+			GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
 			return false;
 		}
 
@@ -205,7 +207,9 @@ namespace LambdaEngine
 				{
 					for (NetworkSegment* pPacket : packets)
 					{
-						if (pPacket->GetType() != NetworkSegment::TYPE_CONNNECT && pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE)
+						if (pPacket->GetType() != NetworkSegment::TYPE_CONNNECT
+							&& pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE
+							&& pPacket->GetType() != NetworkSegment::TYPE_DISCONNECT)
 						{
 							Disconnect("Expected Connect Packets");
 							break;

@@ -43,7 +43,7 @@ Client::Client() :
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
 	}

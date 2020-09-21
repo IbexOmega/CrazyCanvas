@@ -1,6 +1,7 @@
 #include "Networking/API/NetworkDiscovery.h"
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/IClientHandler.h"
+#include "Networking/API/INetworkDiscoveryHandler.h"
 
 namespace LambdaEngine
 {
@@ -13,7 +14,7 @@ namespace LambdaEngine
 
 	}
 
-	bool NetworkDiscovery::EnableDiscovery()
+	bool NetworkDiscovery::EnableDiscovery(INetworkDiscoveryHandler* pHandler)
 	{
 		std::scoped_lock<SpinLock> lock(s_Instance.m_Lock);
 		if (!s_Instance.m_pServer)
@@ -28,6 +29,7 @@ namespace LambdaEngine
 			desc.PingTimeout	= Timestamp::Seconds(3);
 			desc.UsePingSystem	= true;
 
+			s_Instance.m_pHandler = pHandler;
 			s_Instance.m_pServer = static_cast<ServerUDP*>(NetworkUtils::CreateServer(desc));
 			return s_Instance.m_pServer->Start(IPEndPoint(IPAddress::ANY, 4450));
 		}
@@ -42,6 +44,14 @@ namespace LambdaEngine
 		if (EngineLoop::GetTimeSinceStart() - m_TimestampOfLastTransmit >= interval)
 		{
 			m_TimestampOfLastTransmit = EngineLoop::GetTimeSinceStart();
+			const ClientMap& clients = s_Instance.m_pServer->GetClients();
+			if (!clients.empty())
+			{
+				ClientRemoteBase* pClient = clients.begin()->second;
+				NetworkSegment* pSegment = pClient->GetFreePacket(NetworkSegment::TYPE_NETWORK_DISCOVERY);
+				s_Instance.m_pHandler->OnNetworkDiscoveryPreTransmit(pSegment);
+				pClient->SendReliableBroadcast(pSegment);
+			}
 		}
 	}
 

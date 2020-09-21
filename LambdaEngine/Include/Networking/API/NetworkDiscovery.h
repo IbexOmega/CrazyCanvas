@@ -9,13 +9,14 @@
 namespace LambdaEngine
 {
 	class ServerUDP;
+	class INetworkDiscoveryHandler;
 
 	class NetworkDiscovery : protected IServerHandler, protected IClientRemoteHandler
 	{
 	public:
 		DECL_UNIQUE_CLASS(NetworkDiscovery);
 
-		static bool EnableDiscovery();
+		static bool EnableDiscovery(INetworkDiscoveryHandler* pHandler);
 
 	protected:
 		virtual IClientRemoteHandler* CreateClientHandler() override;
@@ -36,6 +37,7 @@ namespace LambdaEngine
 		ServerUDP* m_pServer;
 		SpinLock m_Lock;
 		Timestamp m_TimestampOfLastTransmit;
+		INetworkDiscoveryHandler* m_pHandler;
 
 	private:
 		static NetworkDiscovery s_Instance;
