@@ -299,7 +299,7 @@ namespace LambdaEngine
 		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
 		String							RenderStageName		= "";
 		bool							Removable			= true;
-		uint32							DrawArgsMask		= 0xFFFFFFFF;
+		uint32							DrawArgsMask		= UINT32_MAX;
 		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
 		int32							InputLinkIndex		= -1;
 		TSet<int32>						OutputLinkIndices;
@@ -682,7 +682,7 @@ namespace LambdaEngine
 
 	FORCEINLINE FPipelineStageFlag FindLastPipelineStage(uint32 pipelineStageMask)
 	{
-		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM)						return FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM;
 
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
@@ -690,7 +690,7 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_SHADING_RATE_TEXTURE;
 
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD;
-		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RAY_TRACING_SHADER;
 
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_CONDITIONAL_RENDERING;
 
@@ -699,7 +699,7 @@ namespace LambdaEngine
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_HOST)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HOST;
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY)							return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY;
 
-		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)				return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
+		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER)					return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER;
 
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 		if (pipelineStageMask & FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS)			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_LATE_FRAGMENT_TESTS;
