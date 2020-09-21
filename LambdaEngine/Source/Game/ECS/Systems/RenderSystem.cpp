@@ -518,6 +518,8 @@ namespace LambdaEngine
 		instance.MaterialSlot		= materialSlot;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
+		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
+
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
 		//Todo: This needs to come from the Entity in some way
@@ -555,16 +557,22 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+			std::swap(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex, meshAndInstancesIt->second.ASInstances.Begin() + meshAndInstancesIt->second.ASInstances.GetSize() - 1);
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
 		}
 
-		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+		std::swap(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex, meshAndInstancesIt->second.RasterInstances.Begin() + meshAndInstancesIt->second.RasterInstances.GetSize() - 1);
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
+		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		std::swap(meshAndInstancesIt->second.EntityIDs.Begin() + instanceKeyIt->second.InstanceIndex, meshAndInstancesIt->second.EntityIDs.Begin() + meshAndInstancesIt->second.EntityIDs.GetSize() - 1);
+
+		m_EntityIDsToInstanceKey.erase(entity);
+		m_EntityIDsToInstanceKey.erase(swappedEntityID);
+
 		//Unload Mesh, Todo: Should we always do this?
-		if (meshAndInstancesIt->second.RasterInstances.IsEmpty())
+		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexBuffer);
@@ -1019,7 +1027,6 @@ namespace LambdaEngine
 		//AS Instances
 		for (MeshEntry* pDirtyInstanceBufferEntry : m_DirtyASInstanceBuffers)
 		{
-
 			uint32 requiredBufferSize = pDirtyInstanceBufferEntry->ASInstances.GetSize() * sizeof(AccelerationStructureInstance);
 
 			Buffer* pStagingBuffer = pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex];
@@ -1029,10 +1036,10 @@ namespace LambdaEngine
 				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName = "AS Instance Staging Buffer";
-				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				bufferDesc.SizeInBytes = requiredBufferSize;
+				bufferDesc.DebugName	= "AS Instance Staging Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 				pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
@@ -1047,10 +1054,10 @@ namespace LambdaEngine
 				if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pASInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName = "AS Instance Buffer";
-				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST;
-				bufferDesc.SizeInBytes = requiredBufferSize;
+				bufferDesc.DebugName	= "AS Instance Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST;
+				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				pDirtyInstanceBufferEntry->pASInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
