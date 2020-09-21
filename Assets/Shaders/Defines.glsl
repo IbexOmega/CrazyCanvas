@@ -43,6 +43,14 @@ struct SVertex
     vec4    TexCoord;
 };
 
+struct SMeshlet
+{
+    uint VertCount;
+    uint VertOffset;
+    uint PrimCount;
+    uint PrimOffset;
+};
+
 struct SPrimaryInstance
 {
     mat3x4  Transform;

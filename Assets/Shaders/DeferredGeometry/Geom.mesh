@@ -32,6 +32,17 @@ layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 	SPerFrameBuffer Val;
 } u_PerFrameBuffer;
 
+// Vertex data
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices
+{ 
+	SVertex val[]; 
+} b_Vertices;
+
+layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances
+{ 
+	SInstance val[]; 
+} b_Instances;
+
 /*
 * Main
 */
