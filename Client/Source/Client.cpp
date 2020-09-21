@@ -157,7 +157,7 @@ void Client::FixedTick(Timestamp delta)
 
 void Client::RunningBenchMark()
 {
-	if (gBenchmarkPackets++ < 10000)
+	if (gBenchmarkPackets++ < 100000)
 	{
 		NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
 		BinaryEncoder encoder(pPacket);
@@ -167,6 +167,7 @@ void Client::RunningBenchMark()
 	else
 	{
 		m_IsBenchmarking = false;
+		gBenchmarkPackets = 0;
 	}
 }
 
