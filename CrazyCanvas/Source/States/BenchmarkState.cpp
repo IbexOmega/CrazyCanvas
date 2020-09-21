@@ -19,13 +19,6 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
-BenchmarkState::BenchmarkState()
-{}
-
-BenchmarkState::~BenchmarkState()
-{
-}
-
 void BenchmarkState::Init()
 {
 	using namespace LambdaEngine;
@@ -35,7 +28,7 @@ void BenchmarkState::Init()
 
 	TrackSystem::GetInstance().Init();
 
-	std::vector<glm::vec3> cameraTrack = {
+	TArray<glm::vec3> cameraTrack = {
 		{-2.0f, 1.6f, 1.0f},
 		{9.8f, 1.6f, 0.8f},
 		{9.4f, 1.6f, -3.8f},

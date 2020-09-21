@@ -29,9 +29,9 @@ namespace LambdaEngine
 
 		void UpdateTrack(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp);
 
-		glm::vec3 GetCurrentGradient(const glm::uvec4& splineIndices, TrackComponent& camTrackComp) const;
+		static glm::vec3 GetCurrentGradient(const glm::uvec4& splineIndices, const TrackComponent& camTrackComp);
 		glm::uvec4 GetCurrentSplineIndices(TrackComponent& camTrackComp) const;
-		bool HasReachedEnd(TrackComponent& camTrackComp) const;
+		static bool HasReachedEnd(const TrackComponent& camTrackComp);
 
 	private:
 		IDVector	m_CameraEntities;
