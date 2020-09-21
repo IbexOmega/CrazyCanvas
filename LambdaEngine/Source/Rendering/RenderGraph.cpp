@@ -2045,7 +2045,7 @@ namespace LambdaEngine
 						pCustomRenderer = *imGuiRenderStageIt;
 					}
 				}
-				else 
+				else
 				{
 					auto customRendererIt = std::find_if(customRenderers.Begin(), customRenderers.End(), [pRenderStageDesc](const ICustomRenderer* pCustomRenderer) { return pRenderStageDesc->Name == pCustomRenderer->GetName(); });
 
@@ -2067,7 +2067,7 @@ namespace LambdaEngine
 
 				if (!pCustomRenderer->RenderGraphInit(&customRendererInitDesc))
 				{
-					LOG_ERROR("[RenderGraph]: Could not initialize Custom Renderer");
+					LOG_ERROR("[RenderGraph] Could not initialize Custom Renderer");
 					return false;
 				}
 

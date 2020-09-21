@@ -49,10 +49,10 @@ namespace LambdaEngine
 
 	struct RenderGraphDesc
 	{
-		String						Name						= "Render Graph";
-		RenderGraphStructureDesc*	pRenderGraphStructureDesc	= nullptr;
-		uint32						BackBufferCount				= 3;
-		TArray<ICustomRenderer*>	CustomRenderers;
+		String Name											= "Render Graph";
+		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
+		uint32 BackBufferCount								= 3;
+    TArray<ICustomRenderer*>	CustomRenderers;
 	};
 
 	struct PushConstantsUpdate

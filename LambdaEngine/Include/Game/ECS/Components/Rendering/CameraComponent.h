@@ -42,5 +42,5 @@ namespace LambdaEngine
 
 	Entity CreateFreeCameraEntity(const CameraDesc& cameraDesc);
 
-	Entity CreateCameraTrackEntity(const CameraDesc& cameraDesc, const std::vector<glm::vec3>& track);
+	Entity CreateCameraTrackEntity(const CameraDesc& cameraDesc, const TArray<glm::vec3>& track);
 }
