@@ -16,10 +16,10 @@ public:
 	SandboxState(LambdaEngine::State* pOther);
 	~SandboxState();
 
-	void Init();
+	void Init() override final;
 
-	void Resume();
-	void Pause();
+	void Resume() override final;
+	void Pause() override final;
 
 	void Tick(LambdaEngine::Timestamp delta);
 };

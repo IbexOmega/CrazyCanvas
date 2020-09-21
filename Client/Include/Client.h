@@ -41,6 +41,11 @@ public:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 private:
+	void RunningBenchMark();
+
+private:
 
 	LambdaEngine::ClientBase* m_pClient;
+	bool m_IsBenchmarking;
+	uint32 m_BenchmarkPackets;
 };

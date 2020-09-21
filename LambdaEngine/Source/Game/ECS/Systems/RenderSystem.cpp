@@ -213,7 +213,7 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppMaterialParametersStagingBuffers[b]);
 			SAFERELEASE(m_ppPerFrameStagingBuffers[b]);
 			SAFERELEASE(m_ppStaticStagingInstanceBuffers[b]);
-		}				
+		}
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
 
@@ -243,7 +243,7 @@ namespace LambdaEngine
 		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
 		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
 
-		for (Entity entity : m_RenderableEntities.GetIDs())
+		for (Entity entity : m_RenderableEntities)
 		{
 			auto& positionComp	= pPositionComponents->GetData(entity);
 			auto& rotationComp	= pRotationComponents->GetData(entity);
@@ -267,7 +267,7 @@ namespace LambdaEngine
 
 		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
 
-		for (Entity entity : m_CameraEntities.GetIDs())
+		for (Entity entity : m_CameraEntities)
 		{
 			auto& cameraComp = pCameraComponents->GetData(entity);
 			if (cameraComp.IsActive)
@@ -519,7 +519,7 @@ namespace LambdaEngine
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
-		
+
 		//Todo: This needs to come from the Entity in some way
 		uint32 drawArgHash = TEMP_DRAW_ARG_MASK;
 		if (m_RequiredDrawArgs.count(drawArgHash))
@@ -527,7 +527,7 @@ namespace LambdaEngine
 			m_DirtyDrawArgs.insert(drawArgHash);
 		}
 	}
-	
+
 	void RenderSystem::RemoveEntityInstance(Entity entity)
 	{
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
@@ -671,7 +671,7 @@ namespace LambdaEngine
 			UpdateShaderRecords();
 		}
 
-		//Update Raster Instance Data 
+		//Update Raster Instance Data
 		{
 			UpdateRasterInstanceBuffers(pGraphicsCommandList);
 		}
@@ -1019,7 +1019,7 @@ namespace LambdaEngine
 		//AS Instances
 		for (MeshEntry* pDirtyInstanceBufferEntry : m_DirtyASInstanceBuffers)
 		{
-			
+
 			uint32 requiredBufferSize = pDirtyInstanceBufferEntry->ASInstances.GetSize() * sizeof(AccelerationStructureInstance);
 
 			Buffer* pStagingBuffer = pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex];
@@ -1083,7 +1083,7 @@ namespace LambdaEngine
 
 				newInstanceCount += instanceCount;
 			}
-			
+
 			if (newInstanceCount == 0)
 				return;
 

@@ -27,13 +27,13 @@ namespace LambdaEngine
 	private:
 		CameraSystem() = default;
 
-		void HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, FreeCameraComponent& freeCamComp);
+		void HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp);
 
 	private:
 		IDVector	m_CameraEntities;
 		bool		m_CIsPressed	= false;
 		bool		m_MouseEnabled	= false;
-		
+
 		bool		m_VisbilityChanged = false;
 		glm::ivec2	m_NewMousePos;
 
