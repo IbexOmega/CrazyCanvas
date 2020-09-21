@@ -49,7 +49,7 @@ namespace LambdaEngine
 		ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
 		ComponentArray<FreeCameraComponent>* pFreeCameraComponents = pECSCore->GetComponentArray<FreeCameraComponent>();
 
-		for (Entity entity : m_CameraEntities.GetIDs())
+		for (Entity entity : m_CameraEntities)
 		{
 			auto& camComp = pCameraComponents->GetData(entity);
 			if (camComp.IsActive)
@@ -62,7 +62,7 @@ namespace LambdaEngine
 				const uint16 width = window->GetWidth();
 				const uint16 height = window->GetHeight();
 				camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
-				
+
 				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
 					HandleInput(deltaTime, entity, posComp, rotComp, pFreeCameraComponents->GetData(entity));
 

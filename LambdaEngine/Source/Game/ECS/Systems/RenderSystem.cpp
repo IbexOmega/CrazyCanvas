@@ -223,7 +223,7 @@ namespace LambdaEngine
 		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
 		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
 
-		for (Entity entity : m_DynamicEntities.GetIDs())
+		for (Entity entity : m_DynamicEntities)
 		{
 			auto& positionComp	= pPositionComponents->GetData(entity);
 			auto& rotationComp	= pRotationComponents->GetData(entity);

@@ -33,7 +33,7 @@ namespace LambdaEngine
 		IDVector	m_CameraEntities;
 		bool		m_CIsPressed	= false;
 		bool		m_MouseEnabled	= false;
-		
+
 		bool		m_VisbilityChanged = false;
 		glm::ivec2	m_NewMousePos;
 
