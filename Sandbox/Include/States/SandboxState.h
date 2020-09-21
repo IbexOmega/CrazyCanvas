@@ -2,10 +2,14 @@
 
 #include "Game/State.h"
 
+#include "ECS/ECSCore.h"
+#include "Containers/TArray.h"
+
+#include "Application/API/Events/KeyEvents.h"
+
 namespace LambdaEngine
 {
 	class StateManager;
-	class ECSCore;
 	class Scene;
 }
 
@@ -22,4 +26,11 @@ public:
 	void Pause() override final;
 
 	void Tick(LambdaEngine::Timestamp delta);
+
+private:
+	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
+
+private:
+	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
+
 };

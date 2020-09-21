@@ -557,16 +557,19 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			std::swap(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex, meshAndInstancesIt->second.ASInstances.Begin() + meshAndInstancesIt->second.ASInstances.GetSize() - 1);
+			meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.ASInstances[meshAndInstancesIt->second.ASInstances.GetSize() - 1];
+			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + (meshAndInstancesIt->second.ASInstances.GetSize() - 1));
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
 		}
 
-		std::swap(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex, meshAndInstancesIt->second.RasterInstances.Begin() + meshAndInstancesIt->second.RasterInstances.GetSize() - 1);
+		meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.RasterInstances[meshAndInstancesIt->second.RasterInstances.GetSize() - 1];
+		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + (meshAndInstancesIt->second.RasterInstances.GetSize() - 1));
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
 		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
-		std::swap(meshAndInstancesIt->second.EntityIDs.Begin() + instanceKeyIt->second.InstanceIndex, meshAndInstancesIt->second.EntityIDs.Begin() + meshAndInstancesIt->second.EntityIDs.GetSize() - 1);
+		meshAndInstancesIt->second.EntityIDs[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		meshAndInstancesIt->second.EntityIDs.Erase(meshAndInstancesIt->second.EntityIDs.Begin() + (meshAndInstancesIt->second.EntityIDs.GetSize() - 1));
 
 		m_EntityIDsToInstanceKey.erase(entity);
 		m_EntityIDsToInstanceKey.erase(swappedEntityID);

@@ -7,6 +7,8 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Input/API/Input.h"
+#include "Math/Random.h"
+#include "Application/API/Events/EventQueue.h"
 
 SandboxState::SandboxState()
 {
@@ -25,6 +27,8 @@ SandboxState::~SandboxState()
 void SandboxState::Init()
 {
 	using namespace LambdaEngine;
+
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
@@ -54,6 +58,7 @@ void SandboxState::Init()
 			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			m_Entities.PushBack(entity);
 		}
 	}
 
@@ -83,6 +88,7 @@ void SandboxState::Init()
 			pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(-sign * 90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
 			pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			m_Entities.PushBack(entity);
 		}
 	}
 }
@@ -104,4 +110,19 @@ void SandboxState::Pause()
 void SandboxState::Tick(LambdaEngine::Timestamp)
 {
 	// Update State specfic objects
+}
+
+bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	if (event.Key == EKey::KEY_6)
+	{
+		int32 entityIndex = Random::Int32(0, int32(m_Entities.GetSize()));
+		Entity entity = m_Entities[entityIndex];
+		m_Entities.Erase(m_Entities.Begin() + entityIndex);
+		ECSCore::GetInstance()->RemoveEntity(entity);
+	}
+
+	return true;
 }
