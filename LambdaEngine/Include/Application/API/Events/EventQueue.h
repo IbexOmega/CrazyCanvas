@@ -12,9 +12,12 @@ namespace LambdaEngine
 	struct EventContainer
 	{
 	public:
+		using Iterator = Event*;
+		using ConstIterator = const Event*;
+
 		virtual ~EventContainer() = default;
 
-		inline EventContainer(EventType eventType)
+		inline EventContainer(EventType eventType) noexcept
 			: ContainerEventType(eventType)
 		{
 		}
@@ -41,20 +44,20 @@ namespace LambdaEngine
 	struct TEventContainer : public EventContainer
 	{
 	public:
-		inline TEventContainer(uint32 size = 1)
+		inline TEventContainer(uint32 size = 1) noexcept
 			: EventContainer(TEvent::GetStaticType())
 			, Events()
 		{
 			Events.Reserve(size);
 		}
 
-		inline TEventContainer(const TEventContainer& other)
+		inline TEventContainer(const TEventContainer& other) noexcept
 			: EventContainer(TEvent::GetStaticType())
 			, Events(other.Events)
 		{
 		}
 
-		inline TEventContainer(TEventContainer&& other)
+		inline TEventContainer(TEventContainer&& other) noexcept
 			: EventContainer(TEvent::GetStaticType())
 			, Events(std::move(other.Events))
 		{
@@ -110,7 +113,7 @@ namespace LambdaEngine
 	struct EventContainerProxy
 	{
 	public:
-		inline EventContainerProxy()
+		inline EventContainerProxy() noexcept
 			: m_StackBuffer()
 			, m_pContainer(nullptr)
 		{
@@ -118,7 +121,7 @@ namespace LambdaEngine
 			m_pContainer = nullptr;
 		}
 
-		inline EventContainerProxy(const EventContainerProxy& other)
+		inline EventContainerProxy(const EventContainerProxy& other) noexcept
 			: m_StackBuffer()
 			, m_pContainer(nullptr)
 		{
@@ -133,7 +136,7 @@ namespace LambdaEngine
 			}
 		}
 
-		inline EventContainerProxy(EventContainerProxy&& other)
+		inline EventContainerProxy(EventContainerProxy&& other) noexcept
 			: m_StackBuffer()
 			, m_pContainer(nullptr)
 		{
@@ -328,7 +331,7 @@ namespace LambdaEngine
 		static void Tick();
 
 	private:
-		static void InternalSendEvent(Event& event);
+		static void InternalSendEventToHandlers(Event& event, const TArray<EventHandler>& handlers);
 
 	private:
 		using EventTable = std::unordered_map<EventType, EventContainerProxy, EventTypeHasher>;

@@ -4,6 +4,7 @@
 
 namespace LambdaEngine
 {
+	class SBT;
 	class Buffer;
 	class Sampler;
 	class Texture;
@@ -201,7 +202,7 @@ namespace LambdaEngine
 		virtual void BindComputePipeline(const PipelineState* pPipeline)	= 0;
 		virtual void BindRayTracingPipeline(PipelineState* pPipeline)		= 0;
 
-		virtual void TraceRays(uint32 width, uint32 height, uint32 depth) = 0;
+		virtual void TraceRays(const SBT* pSBT, uint32 width, uint32 height, uint32 depth) = 0;
 		
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) = 0;
 

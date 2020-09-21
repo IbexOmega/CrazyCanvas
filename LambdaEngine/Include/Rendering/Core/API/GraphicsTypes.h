@@ -22,14 +22,10 @@ namespace LambdaEngine
 	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
 	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
 	constexpr const uint32 MAX_PUSH_CONSTANT_SIZE		= 128;
-	constexpr const uint32 EXTERNAL_SUBPASS				= 0xFFFFFFFF;
+	constexpr const uint32 EXTERNAL_SUBPASS				= UINT32_MAX;
 	constexpr const uint32 MAX_UNIQUE_MATERIALS			= 32;
 	constexpr const uint32 BACK_BUFFER_COUNT			= 3;
-#ifdef LAMBDA_PLATFORM_MACOS
-	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 8;
-#else
-	constexpr const uint32 MAX_TEXTURES_PER_DESCRIPTOR_SET = 256;
-#endif
+
 	// Determines if a resource should be allocated by a deviceallocator or via a seperate allocation
 	constexpr const uint32 LARGE_TEXTURE_ALLOCATION_SIZE				= MEGA_BYTE(64);
 	constexpr const uint32 LARGE_BUFFER_ALLOCATION_SIZE					= MEGA_BYTE(8);
@@ -52,13 +48,14 @@ namespace LambdaEngine
 		FORMAT_R16_SFLOAT				= 2,
 		FORMAT_R16G16_SFLOAT			= 3,
 		FORMAT_R32G32_SFLOAT			= 4,
-		FORMAT_R8G8B8A8_UNORM			= 5,
-		FORMAT_B8G8R8A8_UNORM			= 6,
-		FORMAT_R8G8B8A8_SNORM			= 7,
-		FORMAT_R16G16B16A16_SFLOAT		= 8,
-		FORMAT_R32G32B32A32_SFLOAT		= 9,
-		FORMAT_R32G32B32A32_UINT		= 10,
-		FORMAT_D24_UNORM_S8_UINT		= 11,
+		FORMAT_R11G11B10_UFLOAT			= 5,
+		FORMAT_R8G8B8A8_UNORM			= 6,
+		FORMAT_B8G8R8A8_UNORM			= 7,
+		FORMAT_R8G8B8A8_SNORM			= 8,
+		FORMAT_R16G16B16A16_SFLOAT		= 9,
+		FORMAT_R32G32B32A32_SFLOAT		= 10,
+		FORMAT_R32G32B32A32_UINT		= 11,
+		FORMAT_D24_UNORM_S8_UINT		= 12,
 	};
 
 	enum class EIndexType
@@ -445,8 +442,8 @@ namespace LambdaEngine
 		QUERY_PIPELINE_STATISTICS_FLAG_COMPUTE_SHADER_INVOCATIONS					= FLAG(11),
 	};
 
-	typedef uint32 FAcceleratioStructureInstanceFlags;
-	enum FAcceleratioStructureInstanceFlag : FAcceleratioStructureInstanceFlags
+	typedef uint32 FAccelerationStructureInstanceFlags;
+	enum FAccelerationStructureInstanceFlag : FAccelerationStructureInstanceFlags
 	{
 		RAY_TRACING_INSTANCE_FLAG_NONE				= 0,
 		RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED	= FLAG(0),
@@ -502,5 +499,11 @@ namespace LambdaEngine
 		uint32		CompareMask		= 0x00000000;
 		uint32		WriteMask		= 0x00000000;
 		uint32		Reference		= 0x00000000;
+	};
+
+	struct SBTRecord
+	{
+		uint64	VertexBufferAddress		= 0;
+		uint64	IndexBufferAddress		= 0;
 	};
 }
