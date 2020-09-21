@@ -36,6 +36,7 @@ namespace LambdaEngine
 		virtual EClientState GetState() const override;
 		virtual const NetworkStatistics* GetStatistics() const override;
 		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
+		bool SendUnreliableBroadcast(NetworkSegment* pPacket);
 
 	protected:		
 		ClientRemoteBase(const ClientRemoteDesc& desc);

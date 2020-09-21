@@ -152,7 +152,7 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_DEVICE_INTERFACE(PipelineState);
-		
+
 		/*
 		* Returns the API-specific handle to the underlaying texture-resource
 		*	return - Returns a valid handle on success otherwise zero

@@ -6,6 +6,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/GraphicsTypes.h"
 
 #include <glm/glm.hpp>
 #include <imgui.h>
@@ -42,20 +43,44 @@ namespace LambdaEngine
 		m_MemoryStats.Resize(statCount);
 	}
 
-	void GPUProfiler::Render(LambdaEngine::Timestamp delta)
+	void GPUProfiler::Tick(LambdaEngine::Timestamp delta)
+	{
+		// Update timings
+		m_TimeSinceUpdate += delta.AsSeconds();
+
+		// Get memory statistics
+		if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
+		{
+			uint32 statCount = m_MemoryStats.GetSize();
+			RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
+
+			// Update average and peak GPU memory
+			uint64 memoryUsage = 0;
+			for (auto& stats : m_MemoryStats)
+			{
+				if (stats.MemoryType == EMemoryType::MEMORY_TYPE_GPU)
+				{
+					memoryUsage += stats.TotalBytesAllocated;
+				}
+			}
+
+			if (memoryUsage > m_PeakDeviceMemory)
+				m_PeakDeviceMemory = memoryUsage;
+
+			// Calculate moving average
+			m_AverageDeviceMemory = (memoryUsage + m_AverageCount * m_AverageDeviceMemory) / (m_AverageCount + 1);
+			m_AverageCount++;
+		}
+	}
+
+	void GPUProfiler::Render()
 	{
 		if (ImGui::CollapsingHeader("GPU Statistics", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Indent(10.0f);
 			// Profiler (Which has the instance of GPUProfiler) begins the ImGui window
-			m_TimeSinceUpdate += delta.AsMilliSeconds();
 
 			// Memory display
-			if (m_TimeSinceUpdate > 1 / m_UpdateFreq)
-			{
-				uint32 statCount = m_MemoryStats.GetSize();
-				RenderAPI::GetDevice()->QueryDeviceMemoryStatistics(&statCount, m_MemoryStats);
-			}
 			static const char* items[] = { "B", "KB", "MB", "GB" };
 			static int itemSelected = 2;
 			static float byteDivider = 1;
@@ -74,12 +99,22 @@ namespace LambdaEngine
 				ImGui::ProgressBar(percentage, ImVec2(-1.0f, 0.0f), buf);
 			}
 
+			ImGui::Text("Average Device Memory Usage: %.3f", m_AverageDeviceMemory / byteDivider);
+			ImGui::Text("Peak Device Memory Usage: %.3f", m_PeakDeviceMemory / byteDivider);
+
+			if(ImGui::Button("Reset Memory Counts"))
+			{
+				m_PeakDeviceMemory		= 0;
+				m_AverageCount			= 0;
+				m_AverageDeviceMemory	= 0;
+			}
+
 #ifdef LAMBDA_DEBUG
 			// Timestamp display
-			if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps") && m_TimeSinceUpdate > 1 / m_UpdateFreq)
+			if (m_TimestampCount != 0 && ImGui::CollapsingHeader("Timestamps"))
 			{
 				ImGui::Indent(10.0f);
-				ImGui::SliderFloat("Update frequency", &m_UpdateFreq, 1.0f, 144.0f);
+				ImGui::SliderFloat("Update frequency", &m_UpdateFreq, 0.10f, 60.0f);
 
 				// Enable/disable graph update
 				ImGui::Checkbox("Update graphs", &m_EnableGraph);
@@ -325,6 +360,16 @@ namespace LambdaEngine
 #ifdef LAMBDA_DEBUG
 		pCommandList->ResetQuery(m_pPipelineStatHeap, 0, 6);
 #endif
+	}
+
+	uint64 GPUProfiler::GetAverageDeviceMemory() const
+	{
+		return m_AverageDeviceMemory;
+	}
+
+	uint64 GPUProfiler::GetPeakDeviceMemory() const
+	{
+		return m_PeakDeviceMemory;
 	}
 
 	GPUProfiler* GPUProfiler::Get()

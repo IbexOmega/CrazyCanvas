@@ -46,7 +46,8 @@ namespace LambdaEngine
 		GPUProfiler operator=(GPUProfiler& other) = delete;
 
 		void Init(TimeUnit timeUnit);
-		void Render(LambdaEngine::Timestamp delta);
+		void Tick(LambdaEngine::Timestamp delta);
+		void Render();
 		void Release();
 
 		// Create timestamps per command list
@@ -66,6 +67,9 @@ namespace LambdaEngine
 		void EndGraphicsPipelineStat(CommandList* pCommandList);
 		void GetGraphicsPipelineStat();
 		void ResetGraphicsPipelineStat(CommandList* pCommandList);
+
+		uint64 GetAverageDeviceMemory() const;
+		uint64 GetPeakDeviceMemory() const;
 
 	public:
 		static GPUProfiler* Get();
@@ -97,9 +101,10 @@ namespace LambdaEngine
 		THashTable<CommandList*, bool> m_ShouldGetTimestamps;
 
 		// Memory usage
-		uint32 m_MaxVram = 0;
-		uint32 m_CurrentVram = 0;
 		TArray<GraphicsDeviceMemoryStatistics> m_MemoryStats;
+		uint64 m_AverageDeviceMemory = 0;
+		uint64 m_AverageCount = 0;
+		uint64 m_PeakDeviceMemory = 0;
 
 		// Pipeline statistics
 		QueryHeap* m_pPipelineStatHeap = nullptr;

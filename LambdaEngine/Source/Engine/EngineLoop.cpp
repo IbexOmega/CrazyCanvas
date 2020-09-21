@@ -36,6 +36,7 @@
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Systems/CameraSystem.h"
 
 namespace LambdaEngine
 {
@@ -61,7 +62,7 @@ namespace LambdaEngine
 			g_Clock.Tick();
 
 			// Update
-			Timestamp delta = g_Clock.GetDeltaTime();
+			const Timestamp& delta = g_Clock.GetDeltaTime();
 			isRunning = Tick(delta);
 
 			// Fixed update
@@ -78,8 +79,7 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		float32 dt = (float32)delta.AsSeconds();
-		RuntimeStats::SetFrameTime(dt);
+		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 		Input::Tick();
 
 		GameConsole::Get().Tick();
@@ -97,8 +97,9 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
-		ECSCore::GetInstance()->Tick(dt);
-		StateManager::GetInstance()->Tick(dt);
+		CameraSystem::GetInstance().MainThreadTick(delta);
+		StateManager::GetInstance()->Tick(delta);
+		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
 		RenderSystem::GetInstance().Render();
@@ -185,8 +186,13 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-		
+
 		if (!RenderSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!CameraSystem::GetInstance().Init())
 		{
 			return false;
 		}
@@ -243,13 +249,13 @@ namespace LambdaEngine
 		}
 
 		EventQueue::UnregisterAll();
+		ECSCore::Release();
 
 		if (!ThreadPool::Release())
 		{
 			return false;
 		}
 
-		ECSCore::Release();
 		return true;
 	}
 

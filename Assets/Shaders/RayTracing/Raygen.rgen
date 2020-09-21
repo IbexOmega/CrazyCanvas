@@ -1,0 +1,97 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_ray_tracing : enable
+//#extension GL_EXT_debug_printf : enable
+
+#include "../Helpers.glsl"
+#include "../Defines.glsl"
+#include "RayTracingInclude.glsl"
+
+layout(location = 0) rayPayloadEXT SPrimaryPayload s_PrimaryPayload;
+
+void GenerateCameraRay(in vec2 d, out vec3 origin, out vec3 direction)
+{
+    SPerFrameBuffer perFrameBuffer = u_PerFrameBuffer.val;
+    origin      = (perFrameBuffer.ViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
+    vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1.0f, 1.0f);
+    direction   = (perFrameBuffer.ViewInv * vec4(normalize(target.xyz), 0.0f)).xyz;
+}
+
+void main()
+{
+    //Calculate Screen Coords
+	const ivec2 pixelCoords = ivec2(gl_LaunchIDEXT.xy);
+	const vec2 pixelCenter  = vec2(pixelCoords) + vec2(0.5f);
+	vec2 screenTexCoord     = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
+	vec2 d                  = screenTexCoord * 2.0f - 1.0f;
+
+    //Sample required
+    vec4 aoRoughMetalValid  = imageLoad(u_GBufferAORoughMetalValid, pixelCoords);
+    float roughness         = aoRoughMetalValid.g;
+    float valid             = aoRoughMetalValid.a;
+
+    if (valid < 1.0f)
+        return;
+
+    //Setup convenience variables
+    SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
+
+    //Calculate World Position
+    float sampledDepth      = texelFetch(u_GBufferDepthStencil, pixelCoords, 0).r;
+    SPositions positions    = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+
+    //Sample GBuffer
+    vec3 worldPosition      = imageLoad(u_GBufferPosition, pixelCoords).xyz;
+    vec3 normal             = normalize(OctToDir(imageLoad(u_GBufferCompactNormal, pixelCoords).xy));
+
+    //Initialize required parameters for first bounce
+    s_PrimaryPayload.HitPosition	= positions.WorldPos;
+    s_PrimaryPayload.Normal		    = normal;
+    s_PrimaryPayload.Roughness		= roughness;
+    s_PrimaryPayload.Distance       = 1.0f;
+
+    //Calculate a mirror reflection direction
+    SRayDirections rayDirections = CalculateRayDirections(s_PrimaryPayload.HitPosition, normal, perFrameBuffer.CameraPosition.xyz);
+    vec3 reflDir = rayDirections.ReflDir;
+
+    const uint MAX_BOUNCES = 8;
+    bool writeToOutput     = false;
+
+    const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+    const uint 		cullMask           	= 0xFF;
+    const uint 		sbtRecordOffset    	= 0;
+    const uint 		sbtRecordStride    	= 0;
+    const uint 		missIndex          	= 0;
+    const float 	Tmin              	= 0.001f;
+    const float 	Tmax              	= 10000.0f;
+    const int 		payload       		= 0;
+
+    uint b = 0;
+
+    //Since we only handle perfect mirror reflections we can just overwrite material parameters
+    for (; b < MAX_BOUNCES && s_PrimaryPayload.Roughness == 0.0f; b++)
+    {
+        writeToOutput = true;
+        
+        //Setup Ray Tracing Parameters
+        vec3 origin    = s_PrimaryPayload.HitPosition + s_PrimaryPayload.Normal * RAY_NORMAL_OFFSET;
+        vec3 direction = reflDir;
+        
+        //Send Ray
+        traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
+
+        //Break if we missed geometry (we don't want to reflect of the skybox)
+        if (s_PrimaryPayload.Distance < EPSILON)
+            break;
+
+        reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
+    }    
+
+    if (writeToOutput)
+    {
+        imageStore(u_GBufferPosition,           pixelCoords, vec4(s_PrimaryPayload.HitPosition, 1.0f));
+        imageStore(u_GBufferAlbedo,             pixelCoords, vec4(s_PrimaryPayload.Albedo * float(MAX_BOUNCES - b) / float(MAX_BOUNCES), 1.0f));
+        imageStore(u_GBufferAORoughMetalValid,  pixelCoords, vec4(s_PrimaryPayload.AO, s_PrimaryPayload.Roughness, s_PrimaryPayload.Metallic, step(Tmin, s_PrimaryPayload.Distance)));
+        imageStore(u_GBufferCompactNormal,      pixelCoords, vec4(DirToOct(s_PrimaryPayload.Normal), 1.0f, 1.0f));
+    }
+}

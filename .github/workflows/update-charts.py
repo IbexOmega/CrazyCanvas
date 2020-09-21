@@ -7,6 +7,14 @@ REPO_DIR            = 'docs'
 BENCHMARK_RESULTS_PATH_RT_ON    = 'CrazyCanvas/benchmark_results_rt_on.json'
 BENCHMARK_RESULTS_PATH_RT_OFF   = 'CrazyCanvas/benchmark_results_rt_off.json'
 
+# Using this relies on the fact that the fields in benchmark results files match their charts' names
+CHART_NAMES = [
+    'AverageFPS',
+    'PeakRAM',
+    'PeakVRAM',
+    'AverageVRAM'
+]
+
 def print_help(helpString, args):
     print('Intended usage:')
     print(helpString)
@@ -45,16 +53,6 @@ def update_commit_data(chartData, commit_ID):
         'timestamp': commitInfo['commit']['author']['date']
     }
 
-def update_average_fps_chart(chartData, rt_on_results, rt_off_results, commit_ID):
-    chartData['commitIDs'].append(commit_ID)
-    chartData['rtOn'].append(rt_on_results['AverageFPS'])
-    chartData['rtOff'].append(rt_off_results['AverageFPS'])
-
-def update_peak_memory_usage_chart(chartData, rt_on_results, rt_off_results, commit_ID):
-    chartData['commitIDs'].append(commit_ID)
-    chartData['rtOn'].append(rt_on_results['PeakMemoryUsage'])
-    chartData['rtOff'].append(rt_off_results['PeakMemoryUsage'])
-
 def update_charts(commit_ID, repo_dir):
     print(f'Updating charts in {repo_dir}/_data/')
 
@@ -69,8 +67,13 @@ def update_charts(commit_ID, repo_dir):
     with open(f'{repo_dir}/_data/charts.json', 'r+') as chartsFile:
         chartsData = json.load(chartsFile)
         update_commit_data(chartsData, commit_ID)
-        update_average_fps_chart(chartsData['AverageFPS'], rt_on_results, rt_off_results, commit_ID)
-        update_peak_memory_usage_chart(chartsData['PeakMemoryUsage'], rt_on_results, rt_off_results, commit_ID)
+
+        for chartName in CHART_NAMES:
+            chartData = chartsData[chartName]
+            chartData['commitIDs'].append(commit_ID)
+            chartData['rtOn'].append(rt_on_results[chartName])
+            chartData['rtOff'].append(rt_off_results[chartName])
+
         chartsFile.seek(0)
         json.dump(chartsData, chartsFile, indent=4)
         chartsFile.truncate()

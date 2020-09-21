@@ -295,15 +295,17 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
-			"Dependencies/glm",
+			"Dependencies/",
 			"Dependencies/assimp/include",
-			"Dependencies/WavLib",
+			"Dependencies/bullet/src",
 			"Dependencies/imgui",
-			"Dependencies/stb",
-			"Dependencies/glslang/include",
 			"Dependencies/imnodes",
-			"Dependencies/rapidjson/include",
+			"Dependencies/glm",
+			"Dependencies/glslang/include",
 			"Dependencies/ordered-map/include",
+			"Dependencies/rapidjson/include",
+			"Dependencies/stb",
+			"Dependencies/WavLib",
 		}
 
 		links
@@ -336,7 +338,10 @@ workspace "LambdaEngine"
 				"Dependencies/imgui-node-editor/lib",
 
 				-- Assimp
-				"Dependencies/assimp/bin"
+				"Dependencies/assimp/bin",
+
+				-- Bullet physics
+				"Dependencies/bullet/lib"
 			}
 
 			sysincludedirs
@@ -368,6 +373,10 @@ workspace "LambdaEngine"
 				"/debug/assimp-vc142-mtd.lib",
 				"/debug/IrrXMLd.lib",
 				"/debug/zlibstaticd.lib",
+
+				"/debug/BulletCollision_vs2010_x64_debug.lib",
+				"/debug/BulletDynamics_vs2010_x64_debug.lib",
+				"/debug/LinearMath_vs2010_x64_debug.lib"
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
@@ -387,6 +396,11 @@ workspace "LambdaEngine"
 				"/release/assimp-vc142-mt.lib",
 				"/release/IrrXML.lib",
 				"/release/zlibstatic.lib",
+
+				-- Bullet
+				"/release/BulletCollision_vs2010_x64_release.lib",
+				"/release/BulletDynamics_vs2010_x64_release.lib",
+				"/release/LinearMath_vs2010_x64_release.lib"
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -478,6 +492,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
@@ -530,6 +545,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
@@ -582,6 +598,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
@@ -633,6 +650,7 @@ workspace "LambdaEngine"
 
 		sysincludedirs
 		{
+			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
