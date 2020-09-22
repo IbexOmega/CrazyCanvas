@@ -88,11 +88,12 @@ namespace LambdaEngine
 		// Swap the removed component with the last component.
 		m_Data[currentIndex] = m_Data.GetBack();
 		m_IDs[currentIndex] = m_IDs.GetBack();
-		m_Data.PopBack();
-		m_IDs.PopBack();
 
 		// Update entity-index maps.
 		m_EntityToIndex[m_IDs.GetBack()] = currentIndex;
+
+		m_Data.PopBack();
+		m_IDs.PopBack();
 
 		// Remove the deleted component's entry.
 		m_EntityToIndex.erase(entity);

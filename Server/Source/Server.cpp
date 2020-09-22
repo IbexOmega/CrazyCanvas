@@ -25,14 +25,15 @@
 
 using namespace LambdaEngine;
 
-Server::Server()
+Server::Server() : 
+	m_pServer(nullptr)
 {
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	ServerDesc desc = {};
+	/*ServerDesc desc = {};
 	desc.Handler		= this;
 	desc.MaxRetries		= 10;
 	desc.MaxClients		= 10;
@@ -43,15 +44,19 @@ Server::Server()
 	desc.UsePingSystem	= false;
 
 	m_pServer = NetworkUtils::CreateServer(desc);
-	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));*/
 
 	//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
+
+	NetworkDiscovery::EnableServer("Crazy Canvas", 4444, this);
 }
 
 Server::~Server()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
-	m_pServer->Release();
+
+	if(m_pServer)
+		m_pServer->Release();
 }
 
 LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
@@ -81,7 +86,8 @@ void Server::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
-	NetworkDebugger::RenderStatistics(m_pServer);
+	if (m_pServer)
+		NetworkDebugger::RenderStatistics(m_pServer);
 }
 
 void Server::FixedTick(Timestamp delta)
@@ -89,7 +95,7 @@ void Server::FixedTick(Timestamp delta)
 	UNREFERENCED_VARIABLE(delta);
 
 	// Simulate first Remote client broadcasting
-	if (m_pServer->GetClientCount() > 0)
+	if (m_pServer && m_pServer->GetClientCount() > 0)
 	{
 		ClientRemoteBase* pClient = m_pServer->GetClients().begin()->second;
 		if (pClient->IsConnected())
@@ -100,6 +106,11 @@ void Server::FixedTick(Timestamp delta)
 			pClient->SendUnreliableBroadcast(pPacket);
 		}
 	}
+}
+
+void Server::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
+{
+	UNREFERENCED_VARIABLE(encoder);
 }
 
 namespace LambdaEngine

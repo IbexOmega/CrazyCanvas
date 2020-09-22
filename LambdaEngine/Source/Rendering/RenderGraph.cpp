@@ -613,7 +613,7 @@ namespace LambdaEngine
 						}
 						else
 						{
-							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1.0f : pResource->SubResourceCount;
+							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount;
 
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
@@ -973,6 +973,8 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnPreSwapChainRecreated(const PreSwapChainRecreatedEvent& swapChainEvent)
 	{
+		UNREFERENCED_VARIABLE(swapChainEvent);
+
 		auto backBufferResourceIt = m_ResourceMap.find(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
 
 		if (backBufferResourceIt != m_ResourceMap.end())
@@ -983,7 +985,7 @@ namespace LambdaEngine
 				{
 					binding.pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
 				}
-				else
+				else if (binding.DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 				{
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{
@@ -1002,6 +1004,8 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& swapChainEvent)
 	{
+		UNREFERENCED_VARIABLE(swapChainEvent);
+
 		auto backBufferResourceIt = m_ResourceMap.find(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
 
 		if (backBufferResourceIt != m_ResourceMap.end())
@@ -1037,6 +1041,8 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnPipelineStatesRecompiled(const PipelineStatesRecompiledEvent& event)
 	{
+		UNREFERENCED_VARIABLE(event);
+
 		for (uint32 r = 0; r < m_RenderStageCount; r++)
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[r];
@@ -2310,7 +2316,7 @@ namespace LambdaEngine
 
 							for (RenderPassAttachmentDesc& attachmentDesc : disabledRenderPassDesc.Attachments)
 							{
-								attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
+								if (attachmentDesc.InitialState != ETextureState::TEXTURE_STATE_UNKNOWN) attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
 								if (attachmentDesc.StencilLoadOp != ELoadOp::LOAD_OP_DONT_CARE) attachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_LOAD;
 							}
 

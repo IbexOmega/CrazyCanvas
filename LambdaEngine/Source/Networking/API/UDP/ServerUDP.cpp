@@ -14,8 +14,7 @@ namespace LambdaEngine
 {
 	ServerUDP::ServerUDP(const ServerDesc& desc) :
 		ServerBase(desc),
-		m_Transciver(),
-		m_PacketLoss(0.0f)
+		m_Transciver()
 	{
 		
 	}
