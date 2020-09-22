@@ -96,6 +96,6 @@ namespace LambdaEngine
 		m_IDs.PopBack();
 
 		// Remove the deleted component's entry.
-		m_EntityToIndex.erase(entity);
+		m_EntityToIndex.erase(indexItr);
 	}
 }
