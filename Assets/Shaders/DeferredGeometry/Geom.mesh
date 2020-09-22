@@ -6,7 +6,7 @@
 #include "../Defines.glsl"
 
 // Number of threads
-layout(local_size_x = 3, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 layout(triangles, max_vertices = 64, max_primitives = 126) out;
 
 // Output block for vertices
@@ -64,34 +64,46 @@ layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndi
 */
 void main()
 {
-	uint threadID	= gl_LocalInvocationID.x;
+	uint meshletID	= gl_WorkGroupID.x;
+	SMeshlet meshlet = b_Meshlets.Val[meshletID];
+	SInstance instance = b_Instances.Val[0];
+
 	mat4 projection	= u_PerFrameBuffer.Val.Projection;
 	mat4 view		= u_PerFrameBuffer.Val.View;
 	
-	const vec3 normal	= vec3(0.0f, 0.0f, 1.0f);
-	const vec3 tangent	= vec3(1.0f, 0.0f, 0.0f);
-
 	// Per vertex
-	vec4 worldPosition = vec4(POSITIONS[threadID], 1.0f);
+	uint indexCount = meshlet.PrimCount * 3;
+	uint indexOffset = meshlet.PrimOffset * 3;
+	for (uint index = 0; index < indexCount; index++)
+	{
+		uint uniqueIndex = b_PrimitiveIndices.Val[indexOffset + index];
+		uint vertexIndex = b_UniqueIndices.Val[uniqueIndex] + meshlet.VertOffset;
 
-	// Material
-	out_WorldPosition[threadID]	= worldPosition.xyz;
-	out_MaterialSlot[threadID]	= 0;
-	out_Normal[threadID]		= normalize(normal);
-	out_Tangent[threadID]		= normalize(tangent);
-	out_Bitangent[threadID]		= normalize(cross(tangent, normal));
-	out_TexCoord[threadID]		= vec2(worldPosition.x + 1.0f, worldPosition.y + 1.0f) / vec2(2.0f);
+		SVertex vertex		= b_Vertices.Val[vertexIndex];
+		vec4 worldPosition	= vec4(vertex.Position.xyz, 1.0f);
+		vec3 normal			= vertex.Normal.xyz;
+		vec3 tangent		= vertex.Tangent.xyz;
+		vec2 texcoord		= vertex.TexCoord.xy;
+
+		// Material
+		out_WorldPosition[index]	= worldPosition.xyz;
+		out_MaterialSlot[index]		= 0;
+		out_Normal[index]			= normalize(normal);
+		out_Tangent[index]			= normalize(tangent);
+		out_Bitangent[index]		= normalize(cross(tangent, normal));
+		out_TexCoord[index]			= texcoord;
 		
-	vec4 clipPosition = projection * view * worldPosition;
-	out_ClipPosition[threadID]		= clipPosition;
-	out_PrevClipPosition[threadID]	= clipPosition;
+		vec4 clipPosition = projection * view * worldPosition;
+		out_ClipPosition[index]		= clipPosition;
+		out_PrevClipPosition[index]	= clipPosition;
 
-	// Position
-	gl_MeshVerticesNV[threadID].gl_Position = clipPosition;
+		// Position
+		gl_MeshVerticesNV[index].gl_Position = clipPosition;
 
-	// Triangle indices
-	gl_PrimitiveIndicesNV[threadID] = threadID;
+		// Triangle indices
+		gl_PrimitiveIndicesNV[index] = index;
+	}
 	
 	// Number of triangles
-	gl_PrimitiveCountNV = 1;
+	gl_PrimitiveCountNV = meshlet.PrimCount;
 }

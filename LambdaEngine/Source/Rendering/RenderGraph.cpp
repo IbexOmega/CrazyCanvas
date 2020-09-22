@@ -676,6 +676,12 @@ namespace LambdaEngine
 							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
 							VALIDATE(drawArg.pInstanceBuffer);
 							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
+							VALIDATE(drawArg.pMeshletBuffer);
+							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
+							VALIDATE(drawArg.pUniqueIndicesBuffer);
+							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
+							VALIDATE(drawArg.pPrimitiveIndices);
+							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
 
 							ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 						}
@@ -3657,12 +3663,23 @@ namespace LambdaEngine
 				}
 				else if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING)
 				{
-					if (ppDrawArgsDescriptorSetsPerFrame)
+					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
 					{
-						pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[0], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
-					}
+						const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
+						if (ppDrawArgsDescriptorSetsPerFrame)
+						{
+							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+						}
 
-					pGraphicsCommandList->DispatchMesh(3, 0);
+						if (drawArg.MeshletCount > 32)
+						{
+							pGraphicsCommandList->DispatchMesh(32, 0);
+						}
+						else
+						{
+							pGraphicsCommandList->DispatchMesh(drawArg.MeshletCount, 0);
+						}
+					}
 				}
 				else if (pRenderStage->DrawType == ERenderStageDrawType::FULLSCREEN_QUAD)
 				{
