@@ -134,6 +134,7 @@ void SandboxState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
+				m_Entities.PushBack(entity);
 				pECS->AddComponent<PositionComponent>(entity, { position, true });
 				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
@@ -195,6 +196,7 @@ void SandboxState::Init()
 					materialProperties);
 
 				m_PointLights[i] = pECS->CreateEntity();
+				m_Entities.PushBack(m_PointLights[i]);
 				pECS->AddComponent<PositionComponent>(m_PointLights[i], { startPosition[i], true });
 				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
 				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });

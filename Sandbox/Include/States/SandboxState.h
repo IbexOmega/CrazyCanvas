@@ -27,7 +27,12 @@ public:
 	void Pause() override final;
 
 	void Tick(LambdaEngine::Timestamp delta);
+
+private:
+	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
+
 private:
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[100];
+	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 };
