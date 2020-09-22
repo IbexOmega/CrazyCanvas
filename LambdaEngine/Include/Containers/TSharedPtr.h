@@ -17,6 +17,12 @@ namespace LambdaEngine
 		{
 		}
 
+		inline ~PtrControlBlock()
+		{
+			m_WeakReferences = 0;
+			m_StrongReferences = 0;
+		}
+
 		FORCEINLINE RefType AddWeakRef() noexcept
 		{
 			return m_WeakReferences++;
@@ -164,12 +170,14 @@ namespace LambdaEngine
 				// When releasing the last strong reference we can destroy the pointer and counter
 				if (m_pCounter->GetStrongReferences() <= 0)
 				{
+					// Delete object
+					m_Deleter(m_pPtr);
+
+					// Delete counter
 					if (m_pCounter->GetWeakReferences() <= 0)
 					{
 						delete m_pCounter;
 					}
-
-					m_Deleter(m_pPtr);
 				}
 			}
 

@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(KeyPressedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("KeyPressedEvent=") + KeyToString(Key);
 		}
@@ -48,7 +48,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(KeyReleasedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("KeyReleasedEvent=") + KeyToString(Key);
 		}
@@ -72,7 +72,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(KeyTypedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("KeyTypedEvent=") + GetPrintableChar();
 		}

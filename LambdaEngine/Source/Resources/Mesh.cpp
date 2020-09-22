@@ -497,8 +497,6 @@ namespace LambdaEngine
 					}
 
 					output.EmplaceBack();
-					pCurr->PrimitiveIndices.ShrinkToFit();
-					pCurr->UniqueVertexIndices.ShrinkToFit();
 					pCurr = &output.GetBack();
 				}
 				else
@@ -519,8 +517,6 @@ namespace LambdaEngine
 					candidateCheck.clear();
 
 					output.EmplaceBack();
-					pCurr->PrimitiveIndices.ShrinkToFit();
-					pCurr->UniqueVertexIndices.ShrinkToFit();
 					pCurr = &output.GetBack();
 				}
 			}
