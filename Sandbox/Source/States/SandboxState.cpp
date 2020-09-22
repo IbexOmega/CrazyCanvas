@@ -331,7 +331,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 	if (event.Key == EKey::KEY_6)
 	{
-		int32 entityIndex = Random::Int32(0, int32(m_Entities.GetSize()));
+		int32 entityIndex = Random::Int32(0, int32(m_Entities.GetSize() - 1));
 		Entity entity = m_Entities[entityIndex];
 		m_Entities.Erase(m_Entities.Begin() + entityIndex);
 		ECSCore::GetInstance()->RemoveEntity(entity);
