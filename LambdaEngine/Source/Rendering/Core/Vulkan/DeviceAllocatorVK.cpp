@@ -191,6 +191,7 @@ namespace LambdaEngine
 				}
 
 				pBestFit->pNext = pNewBlock;
+				VALIDATE(ValidateChain());
 				VALIDATE(ValidateBlock(pNewBlock));
 
 #ifdef LAMBDA_DEBUG
@@ -203,6 +204,7 @@ namespace LambdaEngine
 			pBestFit->TotalSizeInBytes = paddedSizeInBytes;
 			pBestFit->IsFree = false;
 
+			VALIDATE(ValidateChain());
 			VALIDATE(ValidateBlock(pBestFit));
 
 			// Setup allocation
@@ -222,6 +224,7 @@ namespace LambdaEngine
 
 			DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
 			VALIDATE(pBlock != nullptr);
+			VALIDATE(ValidateChain());
 			VALIDATE(ValidateBlock(pBlock));
 
 			pBlock->IsFree = true;
@@ -244,6 +247,8 @@ namespace LambdaEngine
 				}
 			}
 
+			VALIDATE(ValidateChain());
+
 			DeviceMemoryBlockVK* pNext = pBlock->pNext;
 			if (pNext)
 			{
@@ -262,6 +267,7 @@ namespace LambdaEngine
 				}
 			}
 
+			VALIDATE(ValidateChain());
 			VALIDATE(ValidateNoOverlap());
 
 			pAllocation->Memory = VK_NULL_HANDLE;
@@ -382,6 +388,37 @@ namespace LambdaEngine
 				}
 
 				pIterator = pIterator->pNext;
+			}
+
+			return true;
+		}
+
+		bool ValidateChain() const
+		{
+			TArray<DeviceMemoryBlockVK*> traversedBlocks;
+
+			// Traverse all the blocks and put them into an array in order
+			DeviceMemoryBlockVK* pIterator = m_pHead;
+			DeviceMemoryBlockVK* pTail = nullptr;
+			while (pIterator != nullptr)
+			{
+				traversedBlocks.EmplaceBack(pIterator);
+				pTail = pIterator;
+				pIterator = pIterator->pNext;
+			}
+
+			/* When we have reached the tail we start going backwards and check so 
+			that the order in the array is the same as when we traversed forward*/
+			while (pTail != nullptr)
+			{
+				// In case this fails our chain is not valid
+				if (pTail != traversedBlocks.GetBack())
+				{
+					return false;
+				}
+
+				traversedBlocks.PopBack();
+				pTail = pTail->pPrevious;
 			}
 
 			return true;
