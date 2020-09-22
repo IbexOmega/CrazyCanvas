@@ -143,8 +143,6 @@ Sandbox::~Sandbox()
 
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &Sandbox::OnKeyPressed));
 
-	SAFEDELETE(m_pScene);
-
 	SAFEDELETE(m_pRenderGraphEditor);
 }
 
@@ -185,11 +183,14 @@ void Sandbox::Tick(LambdaEngine::Timestamp delta)
 
 void Sandbox::FixedTick(LambdaEngine::Timestamp delta)
 {
+	UNREFERENCED_VARIABLE(delta);
+
 	using namespace LambdaEngine;
 }
 
 void Sandbox::Render(LambdaEngine::Timestamp delta)
 {
+	UNREFERENCED_VARIABLE(delta);
 	using namespace LambdaEngine;
 
 	if (IMGUI_ENABLED)

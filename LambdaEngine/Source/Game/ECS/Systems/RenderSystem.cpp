@@ -244,6 +244,8 @@ namespace LambdaEngine
 
 	void RenderSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
 		ComponentArray<PositionComponent>*	pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
@@ -402,6 +404,8 @@ namespace LambdaEngine
 
 	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		m_LightBufferData.ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
 		m_LightsDirty = true;
@@ -665,6 +669,8 @@ namespace LambdaEngine
 
 	void RenderSystem::UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		m_LightBufferData.ColorIntensity	= colorIntensity;
 		m_LightBufferData.Direction			= GetForward(direction);
 		m_LightsDirty = true;
@@ -749,6 +755,8 @@ namespace LambdaEngine
 
 	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
 	{
+		UNREFERENCED_VARIABLE(mask);
+
 		for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 		{
 			//Todo: Check Key (or whatever we end up using)
@@ -1160,7 +1168,7 @@ namespace LambdaEngine
 			size_t lightBufferSize			= dirLightBufferSize + pointLightsBufferSize;
 
 			// Set point light count
-			m_LightBufferData.PointLightCount = pointLightCount;
+			m_LightBufferData.PointLightCount = uint32(pointLightCount);
 
 			Buffer* pCurrentStagingBuffer = m_ppLightsStagingBuffer[m_ModFrameIndex];
 
