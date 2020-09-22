@@ -121,6 +121,7 @@ void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 
 	if (pPacket->GetType() == TYPE_ADD_ENTITY)
 	{
+		uint32 reliableUID = pPacket->GetReliableUID();
 		BinaryDecoder decoder(pPacket);
 		bool isMyEntity = decoder.ReadBool();
 		glm::vec3 pos = decoder.ReadVec3();
@@ -136,7 +137,7 @@ void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 			{ RW, MeshComponent::s_TID } ,
 			{ RW, NetworkComponent::s_TID }
 		};
-		addEntityJob.Function = [isMyEntity, pos, color, this]
+		addEntityJob.Function = [isMyEntity, pos, color, reliableUID, this]
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 
@@ -148,7 +149,7 @@ void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 			MeshComponent meshComponent;
 			meshComponent.MeshGUID = m_MeshSphereGUID;
 			meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"Mirror Material",
+				"Mirror Material " + std::to_string(reliableUID),
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,

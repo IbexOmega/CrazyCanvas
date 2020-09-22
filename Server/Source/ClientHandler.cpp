@@ -56,7 +56,7 @@ void ClientHandler::OnConnected(LambdaEngine::IClient* pClient)
 
 	colorIndex++;
 	m_Position = position;
-	position.x += 2.0f;
+	position.x += 1.0f;
 
 
 
@@ -84,21 +84,22 @@ void ClientHandler::OnConnected(LambdaEngine::IClient* pClient)
 	{
 		if (clientPair.second != pClientRemote)
 		{
-			pPacket = clientPair.second->GetFreePacket(TYPE_ADD_ENTITY);
-			encoder = BinaryEncoder(pPacket);
-			encoder.WriteBool(false);
-			encoder.WriteVec3(m_Position);
-			encoder.WriteVec3(m_Color);
-			clientPair.second->SendReliable(pPacket, this);
+			//Send to everyone already connected
+			NetworkSegment* pPacket2 = clientPair.second->GetFreePacket(TYPE_ADD_ENTITY);
+			BinaryEncoder encoder2(pPacket2);
+			encoder2.WriteBool(false);
+			encoder2.WriteVec3(m_Position);
+			encoder2.WriteVec3(m_Color);
+			clientPair.second->SendReliable(pPacket2, this);
 
+			//Send everyone to my self
 			ClientHandler* pHandler = (ClientHandler*)clientPair.second->GetHandler();
-
-			pPacket = pClient->GetFreePacket(TYPE_ADD_ENTITY);
-			encoder = BinaryEncoder(pPacket);
-			encoder.WriteBool(false);
-			encoder.WriteVec3(pHandler->m_Position);
-			encoder.WriteVec3(pHandler->m_Color);
-			pClient->SendReliable(pPacket, this);
+			NetworkSegment* pPacket3 = pClient->GetFreePacket(TYPE_ADD_ENTITY);
+			BinaryEncoder encoder3(pPacket3);
+			encoder3.WriteBool(false);
+			encoder3.WriteVec3(pHandler->m_Position);
+			encoder3.WriteVec3(pHandler->m_Color);
+			pClient->SendReliable(pPacket3, this);
 		}
 	}
 }
