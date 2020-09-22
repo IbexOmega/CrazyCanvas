@@ -25,11 +25,22 @@
 
 #include "Resources/ResourceManager.h"
 
+#include "Game/GameConsole.h"
+
 namespace LambdaEngine
 {
 
-	PhysicsRenderer::PhysicsRenderer()
+	PhysicsRenderer::PhysicsRenderer(GraphicsDevice* pGraphicsDevice)
 	{
+		m_pGraphicsDevice = pGraphicsDevice;
+
+		ConsoleCommand cmdTest;
+		cmdTest.Init("physics_render_line", true);
+		cmdTest.AddDescription("Renders a test line for physics renderer");
+		GameConsole::Get().BindCommand(cmdTest, [this](GameConsole::CallbackInput& input)->void
+			{
+				drawLine({ 0.0f, 0.0f, 0.0f }, { 10.f, 10.f, 10.f }, { 1.0f, 0.0f, 0.0f });
+			});
 	}
 
 	PhysicsRenderer::~PhysicsRenderer()
@@ -92,10 +103,9 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_DescriptorSet->WriteTextureDescriptors(&m_FontTextureView, &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 		uint64 offset 	= 0;
-		uint64 size 	= sizeof(VertexData);
-		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 3, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+		uint64 size 	= pDesc->VertexBufferSize; //sizeof(VertexData);
+		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		return true;
 	}
@@ -180,10 +190,15 @@ namespace LambdaEngine
 
 	void PhysicsRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppTextureViews);
-		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(backBufferBound);
+
+		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+		{
+			for (uint32 i = 0; i < count;  i++)
+			{
+				m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+			}
+		}
 	}
 
 	void PhysicsRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
@@ -195,7 +210,7 @@ namespace LambdaEngine
 			auto bufferIt = m_BufferResourceNameDescriptorSetsMap.find(resourceName);
 			if (bufferIt == m_BufferResourceNameDescriptorSetsMap.end())
 			{
-				// If resource doesn't exsist, create descriptor and write it
+				// If resource doesn't exist, create descriptor and write it
 				TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_BufferResourceNameDescriptorSetsMap[resourceName];
 				if (backBufferBound)
 				{
@@ -337,7 +352,7 @@ namespace LambdaEngine
 			uniformCopyBuffer->Unmap();
 			indexCopyBuffer->Unmap();
 			pGraphicsCommandList->CopyBuffer(uniformCopyBuffer.Get(), 0, m_UniformBuffer.Get(), 0, uniformBufferSize);
-			pGraphicsCommandList->CopyBuffer(indexCopyBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indexBufferSize);			
+			pGraphicsCommandList->CopyBuffer(indexCopyBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indexBufferSize);
 		}
 
 		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
@@ -351,11 +366,24 @@ namespace LambdaEngine
 		viewport.y			= 0.0f;
 		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
 
+		ScissorRect scissorRect = {};
+		scissorRect.Width 	= width;
+		scissorRect.Height 	= height;
+		pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
+
 		pGraphicsCommandList->BindIndexBuffer(m_IndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT32);
 
 		pGraphicsCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
-		pGraphicsCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
+		if(m_BufferResourceNameDescriptorSetsMap.contains(PER_FRAME_BUFFER))
+		{
+			auto& descriptorSets = m_BufferResourceNameDescriptorSetsMap[PER_FRAME_BUFFER];
+			pGraphicsCommandList->BindDescriptorSetGraphics(descriptorSets[0].Get(), m_PipelineLayout.Get(), 0);
+		}
+
+		pGraphicsCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+
+
 
 		pGraphicsCommandList->DrawIndexInstanced(m_Verticies.GetSize(), m_Verticies.GetSize() / 2, 0, 0, 0);
 
@@ -364,8 +392,8 @@ namespace LambdaEngine
 
 		(*ppPrimaryExecutionStage) = pGraphicsCommandList;
 
-		// Empty the now drawn vertex list
-		m_Verticies.Clear();
+		// TODO: When bullet calls the drawLines, a clear on the verticies might be needed
+		//m_Verticies.Clear();
 	}
 
 	bool PhysicsRenderer::CreateCopyCommandList()
@@ -404,7 +432,7 @@ namespace LambdaEngine
 		indexBufferDesc.DebugName	= "Physics Renderer Index Buffer";
 		indexBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		indexBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
-		indexBufferDesc.SizeInBytes	= vertexBufferSize;
+		indexBufferDesc.SizeInBytes	= indexBufferSize;
 		
 		m_IndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc);
 		if (!m_IndexBuffer)
@@ -454,8 +482,8 @@ namespace LambdaEngine
 		BufferDesc uniformBufferDesc = {};
 		uniformBufferDesc.DebugName		= "Physics Renderer Uniform Buffer";
 		uniformBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-		uniformBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-		uniformBufferDesc.SizeInBytes	= sizeof(VertexData);
+		uniformBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+		uniformBufferDesc.SizeInBytes	= vertexBufferSize;
 
 		m_UniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformBufferDesc);
 		if (!m_UniformBuffer)
@@ -468,14 +496,23 @@ namespace LambdaEngine
 
 	bool PhysicsRenderer::CreatePipelineLayout()
 	{
-		DescriptorBindingDesc descriptorBindingDesc = {};
-		descriptorBindingDesc.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		descriptorBindingDesc.DescriptorCount	= 1;
-		descriptorBindingDesc.Binding			= 0;
-		descriptorBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		DescriptorBindingDesc perFrameBufferDesc = {};
+		perFrameBufferDesc.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		perFrameBufferDesc.DescriptorCount	= 1;
+		perFrameBufferDesc.Binding			= 0;
+		perFrameBufferDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		
+		DescriptorBindingDesc ssboBindingDesc = {};
+		ssboBindingDesc.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		ssboBindingDesc.DescriptorCount	= 1;
+		ssboBindingDesc.Binding			= 0;
+		ssboBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc = {};
-		descriptorSetLayoutDesc.DescriptorBindings		= { descriptorBindingDesc };
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
+		descriptorSetLayoutDesc1.DescriptorBindings		= { perFrameBufferDesc };
+
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
+		descriptorSetLayoutDesc2.DescriptorBindings		= { ssboBindingDesc };
 
 		// ConstantRangeDesc constantRangeVertexDesc = { };
 		// constantRangeVertexDesc.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
@@ -491,7 +528,7 @@ namespace LambdaEngine
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName			= "Physics Renderer Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc };
+		pipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
 		// pipelineLayoutDesc.ConstantRanges		= { pConstantRanges[0], pConstantRanges[1] };
 
 		m_PipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
@@ -502,13 +539,13 @@ namespace LambdaEngine
 	bool PhysicsRenderer::CreateDescriptorSet()
 	{
 		DescriptorHeapInfo descriptorCountDesc = { };
-		descriptorCountDesc.SamplerDescriptorCount					= 1;
-		descriptorCountDesc.TextureDescriptorCount					= 1;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 64;
+		descriptorCountDesc.SamplerDescriptorCount					= 0;
+		descriptorCountDesc.TextureDescriptorCount					= 0;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 0;
 		descriptorCountDesc.ConstantBufferDescriptorCount			= 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount	= 1;
-		descriptorCountDesc.UnorderedAccessTextureDescriptorCount	= 1;
-		descriptorCountDesc.AccelerationStructureDescriptorCount	= 1;
+		descriptorCountDesc.UnorderedAccessTextureDescriptorCount	= 0;
+		descriptorCountDesc.AccelerationStructureDescriptorCount	= 0;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName			= "Physics Renderer Descriptor Heap";
@@ -521,7 +558,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Physics Renderer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+		m_DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Physics Renderer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
 
 		return m_DescriptorSet != nullptr;
 	}
@@ -589,6 +626,9 @@ namespace LambdaEngine
 		pipelineStateDesc.DepthStencilState.CompareOp			= ECompareOp::COMPARE_OP_NEVER;
 		pipelineStateDesc.DepthStencilState.DepthTestEnable		= false;
 		pipelineStateDesc.DepthStencilState.DepthWriteEnable	= false;
+
+		pipelineStateDesc.RasterizerState.LineWidth		= 1.f;
+		pipelineStateDesc.RasterizerState.PolygonMode 	= EPolygonMode::POLYGON_MODE_LINE;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{

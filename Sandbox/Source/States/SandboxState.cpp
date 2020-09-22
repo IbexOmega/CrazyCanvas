@@ -42,7 +42,7 @@ void SandboxState::Init()
 	// Load scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(0.01f);

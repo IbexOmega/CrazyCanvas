@@ -6,7 +6,7 @@
     "FixedTimestep": 60,
     "RayTracingEnabled": false,
     "ShowRenderGraph": false,
-    "RenderGraphName": "DEFERRED_PBR.lrg",
+    "RenderGraphName": "RENDER_PHYSICS_TEST.lrg",
     "ShowDemo": false,
     "Debugging": false,
     "CameraFOV": 90.0,

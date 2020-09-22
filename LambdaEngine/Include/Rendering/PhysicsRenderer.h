@@ -39,10 +39,10 @@ namespace LambdaEngine
 		glm::vec4 Color;
 	};
 
-	class PhysicsRenderer : public btIDebugDraw, ICustomRenderer
+	class PhysicsRenderer : public btIDebugDraw, public ICustomRenderer
 	{
 	public:
-		PhysicsRenderer();
+		PhysicsRenderer(GraphicsDevice* pGraphicsDevice);
 		virtual ~PhysicsRenderer();
 
 		bool init(const PhysicsRendererDesc* pDesc);
@@ -66,9 +66,9 @@ namespace LambdaEngine
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
-		FORCEINLINE virtual const String& GetName() const  override
+		FORCEINLINE virtual const String& GetName() const override
 		{
-			static String name = RENDER_GRAPH_IMGUI_STAGE_NAME;
+			static String name = RENDER_GRAPH_PHYSICS_DEBUG_STAGE;
 			return name;
 		}
 
@@ -98,7 +98,7 @@ namespace LambdaEngine
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
 
 	private:
-		int m_DebugMode = 0;
+		int m_DebugMode = 1;
 
 		const GraphicsDevice*	m_pGraphicsDevice = nullptr;
 

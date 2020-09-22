@@ -12,6 +12,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
+#include "Rendering/PhysicsRenderer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -95,10 +96,19 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
+			// TODO: Delete physics renderer on release
+			PhysicsRenderer* pPhysicsRenderer			= DBG_NEW PhysicsRenderer(RenderAPI::GetDevice());
+			PhysicsRendererDesc physicsRendererDesc = {};
+			physicsRendererDesc.BackBufferCount			= BACK_BUFFER_COUNT;
+			physicsRendererDesc.VertexBufferSize		= MEGA_BYTE(8);
+			physicsRendererDesc.IndexBufferSize			= MEGA_BYTE(8);
+			pPhysicsRenderer->init(&physicsRendererDesc);
+
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.CustomRenderers				= { pPhysicsRenderer };
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
