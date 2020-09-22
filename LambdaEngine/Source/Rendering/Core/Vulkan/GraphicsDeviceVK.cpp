@@ -171,45 +171,45 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::AllocateBufferMemory(AllocationVK* pAllocation, FBufferFlags bufferFlags, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
 	{
-		//VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
-		//if (alignedSize < LARGE_BUFFER_ALLOCATION_SIZE)
-		//{
-		//	// Mask out buffer flags that does not describe a type
-		//	const FBufferFlags discardedFlagsMask = ~(FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC);
-		//	const FBufferFlags flags = bufferFlags & discardedFlagsMask;
+		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
+		if (alignedSize < LARGE_BUFFER_ALLOCATION_SIZE)
+		{
+			// Mask out buffer flags that does not describe a type
+			const FBufferFlags discardedFlagsMask = ~(FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC);
+			const FBufferFlags flags = bufferFlags & discardedFlagsMask;
 
-		//	DeviceAllocatorVK* pAllocator = nullptr;
-		//	if (flags == FBufferFlag::BUFFER_FLAG_VERTEX_BUFFER)
-		//	{
-		//		pAllocator = m_pVBAllocator;
-		//	}
-		//	else if (flags == FBufferFlag::BUFFER_FLAG_INDEX_BUFFER)
-		//	{
-		//		pAllocator = m_pIBAllocator;
-		//	}
-		//	else if (flags == FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
-		//	{
-		//		pAllocator = m_pUAAllocator;
-		//	}
-		//	else if (flags == FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER)
-		//	{
-		//		pAllocator = m_pCBAllocator;
-		//	}
-		//	else
-		//	{
-		//		pAllocator = m_pBufferAllocator;
-		//	}
+			DeviceAllocatorVK* pAllocator = nullptr;
+			if (flags == FBufferFlag::BUFFER_FLAG_VERTEX_BUFFER)
+			{
+				pAllocator = m_pVBAllocator;
+			}
+			else if (flags == FBufferFlag::BUFFER_FLAG_INDEX_BUFFER)
+			{
+				pAllocator = m_pIBAllocator;
+			}
+			else if (flags == FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER)
+			{
+				pAllocator = m_pUAAllocator;
+			}
+			else if (flags == FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER)
+			{
+				pAllocator = m_pCBAllocator;
+			}
+			else
+			{
+				pAllocator = m_pBufferAllocator;
+			}
 
-		//	VALIDATE(pAllocator != nullptr);
-		//	return pAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
-		//}
-		//else
-		//{
+			VALIDATE(pAllocator != nullptr);
+			return pAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
+		}
+		else
+		{
 			pAllocation->Offset = 0;
 			pAllocation->pAllocator = nullptr;
 			pAllocation->pBlock = nullptr;
 			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
-		//}
+		}
 	}
 
 	bool GraphicsDeviceVK::AllocateAccelerationStructureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
@@ -217,37 +217,37 @@ namespace LambdaEngine
 		VALIDATE(m_pAccelerationStructureAllocator != nullptr);
 		VALIDATE(pAllocation != nullptr);
 
-		//VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
-		//if (alignedSize >= LARGE_ACCELERATION_STRUCTURE_ALLOCATION_SIZE)
-		//{
+		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
+		if (alignedSize >= LARGE_ACCELERATION_STRUCTURE_ALLOCATION_SIZE)
+		{
 			pAllocation->Offset = 0;
 			pAllocation->pAllocator = nullptr;
 			pAllocation->pBlock = nullptr;
 			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
-		//}
-		//else
-		//{
-		//	return m_pAccelerationStructureAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
-		//}
+		}
+		else
+		{
+			return m_pAccelerationStructureAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
+		}
 	}
 
 	bool GraphicsDeviceVK::AllocateTextureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
 	{
-		//VALIDATE(m_pTextureAllocator != nullptr);
-		//VALIDATE(pAllocation != nullptr);
-		//
-		//VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
-		//if (alignedSize >= LARGE_TEXTURE_ALLOCATION_SIZE)
-		//{
+		VALIDATE(m_pTextureAllocator != nullptr);
+		VALIDATE(pAllocation != nullptr);
+		
+		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
+		if (alignedSize >= LARGE_TEXTURE_ALLOCATION_SIZE)
+		{
 			pAllocation->Offset = 0;
 			pAllocation->pAllocator = nullptr;
 			pAllocation->pBlock = nullptr;
 			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
-		//}
-		//else
-		//{
-		//	return m_pTextureAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
-		//}
+		}
+		else
+		{
+			return m_pTextureAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
+		}
 	}
 
 	bool GraphicsDeviceVK::FreeMemory(AllocationVK* pAllocation) const

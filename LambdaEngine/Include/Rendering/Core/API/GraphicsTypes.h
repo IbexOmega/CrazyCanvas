@@ -27,7 +27,7 @@ namespace LambdaEngine
 	constexpr const uint32 BACK_BUFFER_COUNT			= 3;
 
 	// Determines if a resource should be allocated by a deviceallocator or via a seperate allocation
-	constexpr const uint32 LARGE_TEXTURE_ALLOCATION_SIZE				= MEGA_BYTE(64);
+	constexpr const uint32 LARGE_TEXTURE_ALLOCATION_SIZE				= MEGA_BYTE(128);
 	constexpr const uint32 LARGE_BUFFER_ALLOCATION_SIZE					= MEGA_BYTE(8);
 	constexpr const uint32 LARGE_ACCELERATION_STRUCTURE_ALLOCATION_SIZE	= MEGA_BYTE(8);
 

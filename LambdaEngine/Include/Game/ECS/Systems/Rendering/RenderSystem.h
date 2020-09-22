@@ -104,7 +104,8 @@ namespace LambdaEngine
 			Buffer* pIndexBuffer			= nullptr;
 			uint32	IndexCount				= 0;
 
-			Buffer* pASInstanceBuffer			= nullptr;
+			
+			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<AccelerationStructureInstance> ASInstances;
 
@@ -307,11 +308,6 @@ namespace LambdaEngine
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
-		//Temp
-		CommandAllocator*			m_pGraphicsCommandAllocator;
-		CommandAllocator*			m_pComputeCommandAllocator;
-		CommandList*				m_pGraphicsCommandList;
-		CommandList*				m_pComputeCommandList;
 	private:
 		static RenderSystem		s_Instance;
 	};
