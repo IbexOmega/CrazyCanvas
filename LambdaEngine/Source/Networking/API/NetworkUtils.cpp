@@ -24,9 +24,10 @@ namespace LambdaEngine
 	{
 		ServerBase::FixedTickStatic(dt);
 		ClientBase::FixedTickStatic(dt);
+		NetworkDiscovery::FixedTickStatic(dt);
 	}
 
-	void NetworkUtils::Release()
+	void NetworkUtils::PreRelease()
 	{
 		NetworkDiscovery::ReleaseStatic();
 	}

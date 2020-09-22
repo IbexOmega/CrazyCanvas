@@ -35,7 +35,7 @@ Client::Client() :
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
 	PlatformConsole::SetTitle("Client Console");
 
-    ClientDesc desc = {};
+    /*ClientDesc desc = {};
     desc.PoolSize               = 2048;
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
@@ -50,14 +50,22 @@ Client::Client() :
 	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
-	}
+	}*/
+
+	NetworkDiscovery::EnableClient("Crazy Canvas", this);
 }
 
 Client::~Client()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
-	m_pClient->Release();
+	if(m_pClient)
+		m_pClient->Release();
+}
+
+void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const LambdaEngine::IPEndPoint& endPoint)
+{
+	LOG_MESSAGE("OnServerFound(%s)", endPoint.ToString().c_str());
 }
 
 void Client::OnConnecting(IClient* pClient)
@@ -142,11 +150,14 @@ void Client::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
-	if (m_pClient->IsConnected() && m_IsBenchmarking)
+	if (m_pClient)
 	{
-		RunningBenchMark();
+		if (m_pClient->IsConnected() && m_IsBenchmarking)
+		{
+			RunningBenchMark();
+		}
+		NetworkDebugger::RenderStatistics(m_pClient);
 	}
-	NetworkDebugger::RenderStatistics(m_pClient);
 }
 
 void Client::FixedTick(Timestamp delta)
