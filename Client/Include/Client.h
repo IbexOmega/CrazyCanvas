@@ -42,6 +42,7 @@ public:
 
 private:
 	void RunningBenchMark();
+	bool LoadRendererResources();
 
 private:
 
