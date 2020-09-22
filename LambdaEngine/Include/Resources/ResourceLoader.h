@@ -24,7 +24,6 @@ namespace LambdaEngine
 	class LAMBDA_API ResourceLoader
 	{
 	public:
-
 		static bool Init();
 		static bool Release();
 

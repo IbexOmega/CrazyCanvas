@@ -402,6 +402,8 @@ namespace LambdaEngine
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
 		if (alignedSize >= m_PageSize)
 		{
+			pAllocation->pBlock		= nullptr;
+			pAllocation->pAllocator	= nullptr;
 			return false;
 		}
 

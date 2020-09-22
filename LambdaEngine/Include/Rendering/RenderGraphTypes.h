@@ -252,13 +252,15 @@ namespace LambdaEngine
 
 	struct DrawArg
 	{
-		Buffer* pVertexBuffer		= nullptr;
-		uint64	VertexBufferSize	= 0;
-		Buffer* pIndexBuffer		= nullptr;
-		uint32	IndexCount			= 0;
-		Buffer* pInstanceBuffer		= nullptr;
-		uint64	InstanceBufferSize	= 0;
-		uint32	InstanceCount		= 0;
+		Buffer* pVertexBuffer			= nullptr;
+		Buffer* pIndexBuffer			= nullptr;
+		Buffer* pInstanceBuffer			= nullptr;
+		Buffer* pMeshletBuffer			= nullptr;
+		Buffer* pUniqueIndicesBuffer	= nullptr;
+		Buffer* pPrimitiveIndices		= nullptr;
+		uint32	InstanceCount			= 0;
+		uint32	IndexCount				= 0;
+		uint32	MeshletCount			= 0;
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

@@ -12,14 +12,14 @@
 
 #define MAX_UNIQUE_MATERIALS 32
 
-const float INV_PI 		    = 1.0f / 3.14159265359f;
-const float FOUR_PI         = 12.5663706144f;
-const float TWO_PI          = 6.28318530718f;
-const float PI 		        = 3.14159265359f;
-const float PI_OVER_TWO     = 1.57079632679f;
-const float PI_OVER_FOUR    = 0.78539816330f;
-const float EPSILON         = 0.001f;
-const float GAMMA           = 2.2f;
+const float INV_PI			= 1.0f / 3.14159265359f;
+const float FOUR_PI			= 12.5663706144f;
+const float TWO_PI			= 6.28318530718f;
+const float PI 				= 3.14159265359f;
+const float PI_OVER_TWO		= 1.57079632679f;
+const float PI_OVER_FOUR	= 0.78539816330f;
+const float EPSILON			= 0.001f;
+const float GAMMA			= 2.2f;
 
 const float MAX_TEMPORAL_FRAMES = 256.0f;
 
@@ -37,10 +37,10 @@ struct SPositions
 
 struct SVertex
 {
-	vec4    Position;
-	vec4    Normal;
-	vec4    Tangent;
-	vec4    TexCoord;
+	vec4 Position;
+	vec4 Normal;
+	vec4 Tangent;
+	vec4 TexCoord;
 };
 
 struct SMeshlet
@@ -53,21 +53,21 @@ struct SMeshlet
 
 struct SPrimaryInstance
 {
-	mat3x4  Transform;
-	uint    Mask_IndirectArgIndex;
-	uint    SBTRecordOffset_Flags;
-	uint    AccelerationStructureHandleTop32;
-	uint    AccelerationStructureHandleBottom32;
+	mat3x4	Transform;
+	uint	Mask_IndirectArgIndex;
+	uint	SBTRecordOffset_Flags;
+	uint	AccelerationStructureHandleTop32;
+	uint	AccelerationStructureHandleBottom32;
 };
 
 struct SInstance
 {
-	mat4    Transform;
-	mat4    PrevTransform;
-	uint    MaterialSlot;
-	uint    Padding0;
-	uint    Padding1;
-	uint    Padding2;
+	mat4 Transform;
+	mat4 PrevTransform;
+	uint MaterialSlot;
+	uint Padding0;
+	uint Padding1;
+	uint Padding2;
 };
 
 struct SIndirectArg
@@ -75,7 +75,7 @@ struct SIndirectArg
 	uint	IndexCount;
 	uint	InstanceCount;
 	uint	FirstIndex;
-	int	    VertexOffset;
+	int		VertexOffset;
 	uint	FirstInstance;
 	
 	uint	MaterialIndex;
@@ -83,17 +83,17 @@ struct SIndirectArg
 
 struct SAreaLight
 {
-	uint    InstanceIndex;
-	uint    Type;
-	uvec2   Padding;
+	uint	InstanceIndex;
+	uint	Type;
+	uvec2	Padding;
 };
 
 struct SLightsBuffer
 {
-	vec4        DirL_Direction;
-	vec4        DirL_EmittedRadiance;
-	SAreaLight  AreaLights[MAX_NUM_AREA_LIGHTS];
-	uint        AreaLightCount;
+	vec4		DirL_Direction;
+	vec4		DirL_EmittedRadiance;
+	SAreaLight	AreaLights[MAX_NUM_AREA_LIGHTS];
+	uint		AreaLightCount;
 };
 
 struct SPerFrameBuffer
@@ -115,18 +115,18 @@ struct SPerFrameBuffer
 
 struct SMaterialParameters
 {
-	vec4    Albedo;
-	float   AO;
-	float   Metallic;
-	float   Roughness;
-	float   Unused;
+	vec4	Albedo;
+	float	AO;
+	float	Metallic;
+	float	Roughness;
+	float	Unused;
 };
 
 struct SShapeSample
 {
-	vec3    Position;
-	vec3    Normal;
-	float   PDF;
+	vec3	Position;
+	vec3	Normal;
+	float	PDF;
 };
 
 #endif

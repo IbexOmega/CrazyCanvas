@@ -672,8 +672,10 @@ namespace LambdaEngine
 							static uint64 offset = 0;
 
 							const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
-							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.VertexBufferSize, 0, 1, pResourceBinding->DescriptorType);
-							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.InstanceBufferSize, 1, 1, pResourceBinding->DescriptorType);
+							VALIDATE(drawArg.pVertexBuffer);
+							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
+							VALIDATE(drawArg.pInstanceBuffer);
+							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
 
 							ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 						}
@@ -1824,16 +1826,29 @@ namespace LambdaEngine
 					}
 					else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 					{
-						//Vertex Buffer
+						// Vertex Buffer
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 0;
-
 						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
 
-						//Instance Buffer
+						// Instance Buffer
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 1;
+						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
 
+						// Meshlet Buffer
+						descriptorBinding.DescriptorCount	= 1;
+						descriptorBinding.Binding			= 2;
+						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+
+						// Unique Indices Buffer
+						descriptorBinding.DescriptorCount	= 1;
+						descriptorBinding.Binding			= 3;
+						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+
+						// Primitive Indices Buffer
+						descriptorBinding.DescriptorCount	= 1;
+						descriptorBinding.Binding			= 4;
 						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
 
 						renderStageDrawArgResources.PushBack(std::make_tuple(pResource, descriptorType));
@@ -2172,11 +2187,12 @@ namespace LambdaEngine
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
-					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
+					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || 
+						pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING)
 					{
 						if (pRenderStage->pDrawArgsResource == nullptr)
 						{
-							LOG_ERROR("[RenderGraph]: A RenderStage of DrawType SCENE_INSTANCES must have a binding of typ SCENE_DRAW_BUFFERS");
+							LOG_ERROR("[RenderGraph]: A RenderStage of DrawType SCENE_INSTANCES and SCENE_INSTANCES_MESH_SHADING must have a binding of typ SCENE_DRAW_BUFFERS");
 							return false;
 						}
 					}
@@ -3068,26 +3084,62 @@ namespace LambdaEngine
 					{
 						DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
-						//Vertex Buffer
+						// Vertex Buffer
 						{
+							VALIDATE(pDrawArg->pVertexBuffer);
+
 							bufferBarrierTemplate.pBuffer		= pDrawArg->pVertexBuffer;
-							bufferBarrierTemplate.SizeInBytes	= pDrawArg->VertexBufferSize;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pVertexBuffer->GetDesc().SizeInBytes;
 							bufferBarrierTemplate.Offset		= 0;
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
 
-						//Instance Buffer
+						// Instance Buffer
 						{
+							VALIDATE(pDrawArg->pInstanceBuffer);
+
 							bufferBarrierTemplate.pBuffer		= pDrawArg->pInstanceBuffer;
-							bufferBarrierTemplate.SizeInBytes	= pDrawArg->InstanceCount;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pInstanceBuffer->GetDesc().SizeInBytes;
 							bufferBarrierTemplate.Offset		= 0;
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
 
-						//Index Buffer
+						// Index Buffer
 						{
+							VALIDATE(pDrawArg->pIndexBuffer);
+
 							bufferBarrierTemplate.pBuffer		= pDrawArg->pIndexBuffer;
-							bufferBarrierTemplate.SizeInBytes	= pDrawArg->IndexCount * sizeof(uint32);
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pIndexBuffer->GetDesc().SizeInBytes;
+							bufferBarrierTemplate.Offset		= 0;
+							drawBufferBarriers.PushBack(bufferBarrierTemplate);
+						}
+
+						// Meshlet Buffer
+						{
+							VALIDATE(pDrawArg->pMeshletBuffer);
+
+							bufferBarrierTemplate.pBuffer		= pDrawArg->pMeshletBuffer;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pMeshletBuffer->GetDesc().SizeInBytes;
+							bufferBarrierTemplate.Offset		= 0;
+							drawBufferBarriers.PushBack(bufferBarrierTemplate);
+						}
+
+						// UniqueIndices Buffer
+						{
+							VALIDATE(pDrawArg->pUniqueIndicesBuffer);
+
+							bufferBarrierTemplate.pBuffer		= pDrawArg->pUniqueIndicesBuffer;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pUniqueIndicesBuffer->GetDesc().SizeInBytes;
+							bufferBarrierTemplate.Offset		= 0;
+							drawBufferBarriers.PushBack(bufferBarrierTemplate);
+						}
+
+						// PrimitiveIndices Buffer
+						{
+							VALIDATE(pDrawArg->pPrimitiveIndices);
+
+							bufferBarrierTemplate.pBuffer		= pDrawArg->pPrimitiveIndices;
+							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
 							bufferBarrierTemplate.Offset		= 0;
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
@@ -3103,31 +3155,70 @@ namespace LambdaEngine
 			{
 				DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
-				//Vertex Buffer
+				// Vertex Buffer
 				{
+					VALIDATE(pDrawArg->pVertexBuffer);
+
 					PipelineBufferBarrierDesc initialVertexBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
 					initialVertexBufferTransitionBarrier.pBuffer		= pDrawArg->pVertexBuffer;
 					initialVertexBufferTransitionBarrier.Offset			= 0;
-					initialVertexBufferTransitionBarrier.SizeInBytes	= pDrawArg->VertexBufferSize;
+					initialVertexBufferTransitionBarrier.SizeInBytes	= pDrawArg->pVertexBuffer->GetDesc().SizeInBytes;
 					intialBarriers.PushBack(initialVertexBufferTransitionBarrier);
 				}
 
-				//Instance Buffer
+				// Instance Buffer
 				{
+					VALIDATE(pDrawArg->pInstanceBuffer);
+
 					PipelineBufferBarrierDesc initialInstanceBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
 					initialInstanceBufferTransitionBarrier.pBuffer		= pDrawArg->pInstanceBuffer;
 					initialInstanceBufferTransitionBarrier.Offset		= 0;
-					initialInstanceBufferTransitionBarrier.SizeInBytes	= pDrawArg->InstanceBufferSize;
+					initialInstanceBufferTransitionBarrier.SizeInBytes	= pDrawArg->pInstanceBuffer->GetDesc().SizeInBytes;
 					intialBarriers.PushBack(initialInstanceBufferTransitionBarrier);
 				}
 
-				//Index Buffer
+				// Index Buffer
 				{
+					VALIDATE(pDrawArg->pIndexBuffer);
+
 					PipelineBufferBarrierDesc initialIndexBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
-					initialIndexBufferTransitionBarrier.pBuffer			= pDrawArg->pIndexBuffer;
-					initialIndexBufferTransitionBarrier.Offset			= 0;
-					initialIndexBufferTransitionBarrier.SizeInBytes		= pDrawArg->IndexCount * sizeof(uint32);
+					initialIndexBufferTransitionBarrier.pBuffer		= pDrawArg->pIndexBuffer;
+					initialIndexBufferTransitionBarrier.Offset		= 0;
+					initialIndexBufferTransitionBarrier.SizeInBytes	= pDrawArg->pIndexBuffer->GetDesc().SizeInBytes;
 					intialBarriers.PushBack(initialIndexBufferTransitionBarrier);
+				}
+
+				// Meshlet Buffer
+				{
+					VALIDATE(pDrawArg->pMeshletBuffer);
+
+					PipelineBufferBarrierDesc initialMeshletBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+					initialMeshletBufferTransitionBarrier.pBuffer		= pDrawArg->pMeshletBuffer;
+					initialMeshletBufferTransitionBarrier.Offset		= 0;
+					initialMeshletBufferTransitionBarrier.SizeInBytes	= pDrawArg->pMeshletBuffer->GetDesc().SizeInBytes;
+					intialBarriers.PushBack(initialMeshletBufferTransitionBarrier);
+				}
+
+				// Unique Indices Buffer
+				{
+					VALIDATE(pDrawArg->pUniqueIndicesBuffer);
+
+					PipelineBufferBarrierDesc initialUniqueIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+					initialUniqueIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pUniqueIndicesBuffer;
+					initialUniqueIndicesBufferTransitionBarrier.Offset		= 0;
+					initialUniqueIndicesBufferTransitionBarrier.SizeInBytes = pDrawArg->pUniqueIndicesBuffer->GetDesc().SizeInBytes;
+					intialBarriers.PushBack(initialUniqueIndicesBufferTransitionBarrier);
+				}
+
+				// Primitive Indices Buffer
+				{
+					VALIDATE(pDrawArg->pPrimitiveIndices);
+
+					PipelineBufferBarrierDesc initialPrimitiveIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+					initialPrimitiveIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pPrimitiveIndices;
+					initialPrimitiveIndicesBufferTransitionBarrier.Offset		= 0;
+					initialPrimitiveIndicesBufferTransitionBarrier.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
+					intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
 				}
 			}
 

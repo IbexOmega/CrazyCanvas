@@ -358,6 +358,13 @@
             },
             "resource_states": [
                 {
+                    "name": "SCENE_DRAW_ARGS",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
                     "draw_args_mask": 4294967295,

@@ -888,15 +888,21 @@ namespace LambdaEngine
 	{
 		for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 		{
-			//Todo: Check Key (or whatever we end up using)
+			// Todo: Check Key (or whatever we end up using)
 			DrawArg drawArg = {};
-			drawArg.pVertexBuffer		= meshAndInstancesIt->second.pVertexBuffer;
-			drawArg.VertexBufferSize	= meshAndInstancesIt->second.pVertexBuffer->GetDesc().SizeInBytes;
-			drawArg.pIndexBuffer		= meshAndInstancesIt->second.pIndexBuffer;
-			drawArg.IndexCount			= meshAndInstancesIt->second.IndexCount;
-			drawArg.pInstanceBuffer		= meshAndInstancesIt->second.pRasterInstanceBuffer;
-			drawArg.InstanceBufferSize	= meshAndInstancesIt->second.pRasterInstanceBuffer->GetDesc().SizeInBytes;
-			drawArg.InstanceCount		= meshAndInstancesIt->second.RasterInstances.GetSize();
+			drawArg.pVertexBuffer	= meshAndInstancesIt->second.pVertexBuffer;
+
+			drawArg.pIndexBuffer	= meshAndInstancesIt->second.pIndexBuffer;
+			drawArg.IndexCount		= meshAndInstancesIt->second.IndexCount;
+			
+			drawArg.pInstanceBuffer	= meshAndInstancesIt->second.pRasterInstanceBuffer;
+			drawArg.InstanceCount	= meshAndInstancesIt->second.RasterInstances.GetSize();
+			
+			drawArg.pMeshletBuffer			= meshAndInstancesIt->second.pMeshlets;
+			drawArg.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
+			drawArg.pUniqueIndicesBuffer	= meshAndInstancesIt->second.pUniqueIndices;
+			drawArg.pPrimitiveIndices		= meshAndInstancesIt->second.pPrimitiveIndices;
+
 			drawArgs.PushBack(drawArg);
 		}
 	}
