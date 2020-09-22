@@ -48,7 +48,7 @@ Server::Server() :
 
 	//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 
-	NetworkDiscovery::EnableServer(4444, this);
+	NetworkDiscovery::EnableServer("Crazy Canvas", 4444, this);
 }
 
 Server::~Server()

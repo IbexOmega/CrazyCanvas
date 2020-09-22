@@ -217,6 +217,8 @@ namespace LambdaEngine
 		RenderAPI::GetComputeQueue()->Flush();
 		RenderAPI::GetCopyQueue()->Flush();
 
+		PlatformNetworkUtils::PreRelease();
+
 		return true;
 	}
 
@@ -267,7 +269,6 @@ namespace LambdaEngine
 
 	bool EngineLoop::PostRelease()
 	{
-		PlatformNetworkUtils::Release();
 		Thread::Release();
 		PlatformNetworkUtils::PostRelease();
 
