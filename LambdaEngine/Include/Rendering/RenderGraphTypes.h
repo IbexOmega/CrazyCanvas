@@ -12,6 +12,8 @@ namespace LambdaEngine
 {
 	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
 
+	constexpr const char* RENDER_GRAPH_PHYSICS_DEBUG_STAGE		= "RENDER_STAGE_PHYSICS_DEBUG";
+
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT	= "BACK_BUFFER_TEXTURE";
 
 	constexpr const char* PER_FRAME_BUFFER						= "PER_FRAME_BUFFER";
