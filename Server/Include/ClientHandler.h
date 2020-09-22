@@ -4,6 +4,7 @@
 
 #include "Networking/API/IClientRemoteHandler.h"
 #include "Networking/API/IPacketListener.h"
+#include "Time/API/Timestamp.h"
 
 namespace LambdaEngine
 {
@@ -29,5 +30,6 @@ public:
 	virtual void OnPacketMaxTriesReached(LambdaEngine::NetworkSegment* pPacket, uint8 retries) override;
 
 private:
-	int counter = 0;
+	LambdaEngine::Timestamp m_BenchMarkTimer;
+	uint32 m_Counter = 0;
 };

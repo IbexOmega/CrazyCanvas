@@ -15,6 +15,7 @@
 #include "Containers/TStack.h"
 #include "Containers/IDVector.h"
 
+#include "Rendering/Core/API/GraphicsTypes.h"
 #include "Rendering/Core/API/SwapChain.h"
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
@@ -22,6 +23,7 @@
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/AccelerationStructure.h"
 
 #include "Rendering/RenderGraphTypes.h"
 
@@ -53,7 +55,6 @@ namespace LambdaEngine
 		struct MeshKey
 		{
 			GUID_Lambda		MeshGUID;
-			bool			IsStatic;
 			bool			IsAnimated;
 			Entity			EntityID;
 			mutable size_t	Hash = 0;
@@ -73,9 +74,6 @@ namespace LambdaEngine
 			bool operator==(const MeshKey& other) const
 			{
 				if (MeshGUID != other.MeshGUID)
-					return false;
-
-				if (IsStatic != other.IsStatic)
 					return false;
 
 				if (IsAnimated)
@@ -98,13 +96,21 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
+			AccelerationStructure* pBLAS		= nullptr;
+			SBTRecord ShaderRecord			= {};
+
 			Buffer* pVertexBuffer			= nullptr;
+			uint32	VertexCount				= 0;
 			Buffer* pIndexBuffer			= nullptr;
 			uint32	IndexCount				= 0;
 
-			Buffer* pInstanceBuffer			= nullptr;
-			Buffer* pInstanceStagingBuffer	= nullptr;
-			TArray<Instance> Instances;
+			Buffer* pASInstanceBuffer			= nullptr;
+			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
+			TArray<AccelerationStructureInstance> ASInstances;
+
+			Buffer* pRasterInstanceBuffer			= nullptr;
+			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
+			TArray<Instance> RasterInstances;
 		};
 
 		struct InstanceKey
@@ -116,8 +122,10 @@ namespace LambdaEngine
 		struct PendingBufferUpdate
 		{
 			Buffer* pSrcBuffer	= nullptr;
+			uint64	SrcOffset	= 0;
 			Buffer* pDstBuffer	= nullptr;
-			uint64 SizeInBytes	= 0;
+			uint64	DstOffset	= 0;
+			uint64	SizeInBytes	= 0;
 		};
 
 		using MeshAndInstancesMap	= THashTable<MeshKey, MeshEntry, MeshKeyHasher>;
@@ -151,7 +159,6 @@ namespace LambdaEngine
 		~RenderSystem() = default;
 
 		bool Init();
-
 		bool Release();
 
 		void Tick(Timestamp deltaTime) override final;
@@ -174,11 +181,11 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
-		void OnStaticEntityAdded(Entity entity);
-		void OnDynamicEntityAdded(Entity entity);
-		void RemoveEntityInstance(Entity entity);
+		void OnEntityAdded(Entity entity);
+		void OnEntityRemoved(Entity entity);
 
-		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
+		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
+		void RemoveEntityInstance(Entity entity);
 
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
@@ -189,13 +196,16 @@ namespace LambdaEngine
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
-		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
+		void UpdateShaderRecords();
+		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
+		void BuildBLASs(CommandList* pCommandList);
+		void UpdateASInstanceBuffers(CommandList* pCommandList);
+		void BuildTLAS(CommandList* pCommandList);
 
 	private:
-		IDVector				m_StaticEntities;
-		IDVector				m_DynamicEntities;
+		IDVector				m_RenderableEntities;
 		IDVector				m_CameraEntities;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
@@ -206,12 +216,12 @@ namespace LambdaEngine
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
-
-		//Data Supplied to the RenderGraph
+		//Mesh/Instance/Entity
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
+		//Materials
 		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
@@ -223,22 +233,41 @@ namespace LambdaEngine
 		TextureView*		m_ppRoughnessMapViews[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppMetallicMapViews[MAX_UNIQUE_MATERIALS];
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
-		Buffer*				m_pMaterialParametersStagingBuffer		= nullptr;
+		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
+		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*				m_pMaterialParametersBuffer				= nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
 
-		TSet<MeshEntry*>	m_DirtyInstanceBuffers;
-		TArray<Buffer*>		m_BuffersToRemove[BACK_BUFFER_COUNT];
-		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
-
+		//Per Frame
 		PerFrameBuffer		m_PerFrameData;
-		Buffer*				m_pPerFrameStagingBuffer	= nullptr;
+		Buffer*				m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*				m_pPerFrameBuffer			= nullptr;
 
+		//Draw Args
 		TSet<uint32>		m_RequiredDrawArgs;
-		TSet<uint32>		m_DirtyDrawArgs;
-		bool				m_PerFrameResourceDirty		= true;
-		bool				m_MaterialsResourceDirty	= true;
+
+		//Ray Tracing
+		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
+		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
+		uint32					m_MaxInstances					= 0;
+		AccelerationStructure*	m_pTLAS							= nullptr;
+		TArray<PendingBufferUpdate> m_CompleteInstanceBufferPendingCopies;
+		TArray<SBTRecord> m_SBTRecords;
+
+		//Pending/Dirty
+		bool						m_SBTRecordsDirty					= true;
+		bool						m_RenderGraphSBTRecordsDirty		= true;
+		bool						m_MaterialsPropertiesBufferDirty	= true;
+		bool						m_MaterialsResourceDirty			= true;
+		bool						m_PerFrameResourceDirty				= true;
+		TSet<uint32>				m_DirtyDrawArgs;
+		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
+		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
+		TSet<MeshEntry*>			m_DirtyBLASs;
+		bool						m_TLASDirty							= true;
+		bool						m_TLASResourceDirty					= false;
+		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
+		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 	private:
 		static RenderSystem		s_Instance;

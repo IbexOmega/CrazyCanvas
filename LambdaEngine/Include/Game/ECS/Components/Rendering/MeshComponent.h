@@ -12,15 +12,5 @@ namespace LambdaEngine
 		GUID_Lambda MeshGUID;
 		GUID_Lambda MaterialGUID;
 	};
-
-	struct StaticComponent
-	{
-		DECL_COMPONENT(StaticComponent);
-	};
-
-	struct DynamicComponent
-	{
-		DECL_COMPONENT(DynamicComponent);
-	};
 }
 

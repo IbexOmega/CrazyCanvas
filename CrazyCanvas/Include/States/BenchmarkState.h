@@ -6,8 +6,8 @@
 class BenchmarkState : public LambdaEngine::State
 {
 public:
-	BenchmarkState();
-	~BenchmarkState();
+	BenchmarkState() = default;
+	~BenchmarkState() = default;
 
 	void Init() override final;
 

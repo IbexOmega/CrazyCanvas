@@ -423,7 +423,7 @@ namespace LambdaEngine
 #endif
 	}
 
-	std::string GPUProfiler::GetTimeUnitName()
+	std::string GPUProfiler::GetTimeUnitName() const
 	{
 		std::string buf;
 		switch (m_TimeUnit) {
