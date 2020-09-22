@@ -280,7 +280,7 @@ namespace LambdaEngine
 			VALIDATE(pAllocation->pBlock != nullptr);
 			VALIDATE(ValidateBlock(pAllocation->pBlock));
 
-			if (m_MappingCount <= 0)
+			if (m_MappingCount == 0)
 			{
 				vkMapMemory(m_pDevice->Device, m_DeviceMemory, 0, VK_WHOLE_SIZE, 0, (void**)&m_pHostMemory);
 			}
@@ -302,7 +302,7 @@ namespace LambdaEngine
 			UNREFERENCED_VARIABLE(pAllocation);
 
 			m_MappingCount--;
-			if (m_MappingCount <= 0)
+			if (m_MappingCount == 0)
 			{
 				vkUnmapMemory(m_pDevice->Device, m_DeviceMemory);
 				m_MappingCount = 0;
@@ -342,7 +342,7 @@ namespace LambdaEngine
 		/*
 		 * Debug tools
 		 */
-		bool ValidateBlock(DeviceMemoryBlockVK* pBlock)
+		bool ValidateBlock(DeviceMemoryBlockVK* pBlock) const
 		{
 			DeviceMemoryBlockVK* pIterator = m_pHead;
 			while (pIterator != nullptr)
@@ -365,7 +365,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		bool ValidateNoOverlap()
+		bool ValidateNoOverlap() const
 		{
 			DeviceMemoryBlockVK* pIterator = m_pHead;
 			while (pIterator != nullptr)
@@ -408,6 +408,11 @@ namespace LambdaEngine
 
 	DeviceAllocatorVK::DeviceAllocatorVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
+		, m_Pages()
+		, m_DeviceProperties()
+		, m_PageSize()
+		, m_DebugName()
+		, m_Lock()
 	{
 	}
 
