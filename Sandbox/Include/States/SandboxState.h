@@ -7,7 +7,6 @@ namespace LambdaEngine
 {
 	class StateManager;
 	class ECSCore;
-	class Scene;
 }
 
 class SandboxState : public LambdaEngine::State

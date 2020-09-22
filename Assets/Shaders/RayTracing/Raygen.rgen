@@ -76,7 +76,8 @@ void main()
         //Setup Ray Tracing Parameters
         vec3 origin    = s_PrimaryPayload.HitPosition + s_PrimaryPayload.Normal * RAY_NORMAL_OFFSET;
         vec3 direction = reflDir;
-        
+        //GenerateCameraRay(d, origin, direction);
+
         //Send Ray
         traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
 

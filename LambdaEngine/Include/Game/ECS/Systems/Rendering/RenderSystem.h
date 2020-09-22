@@ -104,7 +104,8 @@ namespace LambdaEngine
 			Buffer* pIndexBuffer			= nullptr;
 			uint32	IndexCount				= 0;
 
-			Buffer* pASInstanceBuffer			= nullptr;
+			
+			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<AccelerationStructureInstance> ASInstances;
 
@@ -180,9 +181,6 @@ namespace LambdaEngine
 
 		bool Render();
 
-		CommandList* AcquireGraphicsCopyCommandList();
-		CommandList* AcquireComputeCopyCommandList();
-
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
@@ -214,10 +212,9 @@ namespace LambdaEngine
 		void UpdateCamera(Entity entity);
 
 		void CleanBuffers();
-		void UpdateBuffers();
-		void UpdateRenderGraph();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
+		void UpdateBuffers();
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
@@ -227,6 +224,8 @@ namespace LambdaEngine
 		void BuildBLASs(CommandList* pCommandList);
 		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
+
+		void UpdateRenderGraph();
 
 	private:
 

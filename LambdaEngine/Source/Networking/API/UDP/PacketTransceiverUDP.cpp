@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 	}
 
-	bool PacketTransceiverUDP::Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint)
+	bool PacketTransceiverUDP::TransmitData(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& ipEndPoint)
 	{
 		#ifndef LAMBDA_CONFIG_PRODUCTION
 		if (m_TransmittingLossRatio > 0.0f && Random::Float32() <= m_TransmittingLossRatio)
@@ -36,7 +36,7 @@ namespace LambdaEngine
 		return m_pSocket->SendTo(pBuffer, bytesToSend, bytesSent, ipEndPoint);
 	}
 
-	bool PacketTransceiverUDP::Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
+	bool PacketTransceiverUDP::ReceiveData(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& pIPEndPoint)
 	{
 		if (!m_pSocket->ReceiveFrom(pBuffer, size, bytesReceived, pIPEndPoint))
 			return false;

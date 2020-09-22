@@ -54,8 +54,6 @@ private:
 	bool LoadRendererResources();
 
 private:
-	LambdaEngine::Scene*					m_pScene				= nullptr;
-
 	LambdaEngine::RenderGraphEditor*		m_pRenderGraphEditor	= nullptr;
 
 	LambdaEngine::TArray<InstanceIndexAndTransform>		m_InstanceIndicesAndTransforms;

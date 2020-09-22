@@ -5,6 +5,8 @@
 
 #include "Networking/API/IServerHandler.h"
 
+#include "Networking/API/UDP/INetworkDiscoveryServer.h"
+
 namespace LambdaEngine
 {
 	class ServerBase;
@@ -14,7 +16,8 @@ namespace LambdaEngine
 
 class Server : 
 	public LambdaEngine::Game,
-	public LambdaEngine::IServerHandler
+	public LambdaEngine::IServerHandler,
+	public LambdaEngine::INetworkDiscoveryServer
 {
 public:
 	Server();
@@ -25,6 +28,8 @@ public:
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta)        override;
 	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+
+	virtual void OnNetworkDiscoveryPreTransmit(const LambdaEngine::BinaryEncoder& encoder) override;
 
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
