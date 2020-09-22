@@ -53,6 +53,9 @@ Client::Client() :
 
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW NetworkingState(), STATE_TRANSITION::PUSH);
 
+	m_MeshSphereGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+
+
     ClientDesc desc = {};
     desc.PoolSize               = 1024;
     desc.MaxRetries             = 10;
@@ -119,33 +122,49 @@ void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	if (pPacket->GetType() == TYPE_ADD_ENTITY)
 	{
 		BinaryDecoder decoder(pPacket);
-		decoder.ReadBool();
+		bool isMyEntity = decoder.ReadBool();
 		glm::vec3 pos = decoder.ReadVec3();
+		glm::vec3 color = decoder.ReadVec3();
 
-		ECSCore* pECS = ECSCore::GetInstance();
+		
+		Job addEntityJob;
+		addEntityJob.Components =
+		{
+			{ RW, PositionComponent::s_TID } ,
+			{ RW, RotationComponent::s_TID } ,
+			{ RW, ScaleComponent::s_TID } ,
+			{ RW, MeshComponent::s_TID } ,
+			{ RW, NetworkComponent::s_TID }
+		};
+		addEntityJob.Function = [isMyEntity, pos, color, this]
+		{
+			ECSCore* pECS = ECSCore::GetInstance();
 
-		MaterialProperties materialProperties = {};
-		materialProperties.Roughness = 0.1f;
-		materialProperties.Metallic = 0.0f;
-		materialProperties.Albedo = glm::vec4(decoder.ReadVec3(), 1.0f);
+			MaterialProperties materialProperties = {};
+			materialProperties.Roughness = 0.1f;
+			materialProperties.Metallic = 0.0f;
+			materialProperties.Albedo = glm::vec4(color, 1.0f);
 
-		MeshComponent meshComponent;
-		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Mirror Material",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
+			MeshComponent meshComponent;
+			meshComponent.MeshGUID = m_MeshSphereGUID;
+			meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+				"Mirror Material",
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				materialProperties);
 
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { pos, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<NetworkComponent>(entity, {});
+			Entity entity = pECS->CreateEntity();
+			pECS->AddComponent<PositionComponent>(entity,	{ pos, true });
+			pECS->AddComponent<RotationComponent>(entity,	{ glm::identity<glm::quat>(), true });
+			pECS->AddComponent<ScaleComponent>(entity,		{ glm::vec3(1.0f), true });
+			pECS->AddComponent<MeshComponent>(entity,		meshComponent);
+			pECS->AddComponent<NetworkComponent>(entity,	{});
+		};
+		
+		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
 	}
 }
 

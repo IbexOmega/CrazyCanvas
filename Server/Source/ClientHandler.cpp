@@ -84,7 +84,7 @@ void ClientHandler::OnConnected(LambdaEngine::IClient* pClient)
 	{
 		if (clientPair.second != pClientRemote)
 		{
-			pPacket = pClient->GetFreePacket(TYPE_ADD_ENTITY);
+			pPacket = clientPair.second->GetFreePacket(TYPE_ADD_ENTITY);
 			encoder = BinaryEncoder(pPacket);
 			encoder.WriteBool(false);
 			encoder.WriteVec3(m_Position);

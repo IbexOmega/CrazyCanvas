@@ -61,7 +61,7 @@ namespace LambdaEngine
     void JobScheduler::ScheduleJob(const Job& job, uint32_t phase)
     {
         m_Lock.lock();
-        phase = phase == CURRENT_PHASE ? m_CurrentPhase : phase;
+        phase = phase == CURRENT_PHASE ? std::min(m_CurrentPhase, g_PhaseCount) : phase;
         m_Jobs[phase].EmplaceBack(job);
         m_JobIndices[phase].PushBack(m_Jobs[phase].GetSize() - 1u);
 
