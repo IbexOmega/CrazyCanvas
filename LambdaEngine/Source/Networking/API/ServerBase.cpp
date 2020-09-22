@@ -55,6 +55,10 @@ namespace LambdaEngine
 
 		{
 			std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+			for (ClientRemoteBase* pClient : m_ClientsToAdd)
+			{
+				pClient->ReleaseByServer();
+			}
 			m_ClientsToAdd.Clear();
 			m_ClientsToRemove.Clear();
 		}
@@ -118,14 +122,12 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		bool result = true;
 
-		// Send original
 		if (!pClient->SendReliable(pPacket, pListener))
 			result = false;
 
 		for (auto& pair : m_Clients)
 		{ 
-			// Send to rest
-			if (pair.second != pClient) 
+			if (pair.second != pClient)
 			{
 				NetworkSegment* pPacketDuplicate = pair.second->GetFreePacket(pPacket->GetType());
 				pPacket->CopyTo(pPacketDuplicate);
@@ -142,13 +144,11 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		bool result = true;
 
-		// Send original
 		if (!pClient->SendUnreliable(pPacket))
 			result = false;
 
 		for (auto& pair : m_Clients)
 		{
-			// Send to rest
 			if (pair.second != pClient)
 			{
 				NetworkSegment* pPacketDuplicate = pair.second->GetFreePacket(pPacket->GetType());
@@ -170,10 +170,14 @@ namespace LambdaEngine
 			return pIterator->second;
 		}
 
-		for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
+		if (!m_ClientsToAdd.IsEmpty())
 		{
-			if (m_ClientsToAdd[i]->GetEndPoint() == endPoint)
-				return m_ClientsToAdd[i];
+			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
+			for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
+			{
+				if (m_ClientsToAdd[i]->GetEndPoint() == endPoint)
+					return m_ClientsToAdd[i];
+			}
 		}
 
 		return nullptr;
@@ -193,7 +197,8 @@ namespace LambdaEngine
 		}
 		else
 		{
-			RegisterClient(pClient);
+			std::scoped_lock<SpinLock> lock(m_LockClientVectors);
+			m_ClientsToAdd.PushBack(pClient);
 		}
 	}
 
@@ -236,30 +241,33 @@ namespace LambdaEngine
 		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
 		{
 			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
-			for (uint32 i = 0; i < m_ClientsToAdd.GetSize(); i++)
+			for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
 			{
-				LOG_INFO("[ServerBase]: Client Registered");
-				m_Clients.insert({ m_ClientsToAdd[i]->GetEndPoint(), m_ClientsToAdd[i] });
+				m_ClientsToAdd[i]->Tick(delta);
+				if (m_ClientsToAdd[i]->IsConnected())
+				{
+					LOG_INFO("[ServerBase]: Client Registered");
+					m_Clients.insert({ m_ClientsToAdd[i]->GetEndPoint(), m_ClientsToAdd[i] });
+					m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
+				}
 			}
 
 			for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
 			{
 				LOG_INFO("[ServerBase]: Client Unregistered");
+
+				for (int32 j = m_ClientsToAdd.GetSize() - 1; j >= 0; j--)
+					if (m_ClientsToAdd[j] == m_ClientsToRemove[i])
+						m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
+
 				m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
 				m_ClientsToRemove[i]->OnTerminationApproved();
 			}
 
-			m_ClientsToAdd.Clear();
 			m_ClientsToRemove.Clear();
 		}
 
 		Flush();
-	}
-
-	void ServerBase::RegisterClient(ClientRemoteBase* pClient)
-	{
-		std::scoped_lock<SpinLock> lock(m_LockClientVectors);
-		m_ClientsToAdd.PushBack(pClient);
 	}
 
 	void ServerBase::RunTransmitter()
@@ -270,8 +278,13 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> lock(m_LockClients);
 				for (auto& pair : m_Clients)
-				{
 					pair.second->TransmitPackets();
+
+				if (!m_ClientsToAdd.IsEmpty())
+				{
+					std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
+					for (ClientRemoteBase* pClient : m_ClientsToAdd)
+						pClient->TransmitPackets();
 				}
 			}
 		}

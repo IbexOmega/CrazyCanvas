@@ -21,7 +21,12 @@ namespace LambdaEngine
 		{
 		}
 
-		FORCEINLINE TUniquePtr(T* pPtr) noexcept
+		FORCEINLINE TUniquePtr(std::nullptr_t) noexcept
+			: m_pPtr(nullptr)
+		{
+		}
+
+		FORCEINLINE explicit TUniquePtr(T* pPtr) noexcept
 			: m_pPtr(pPtr)
 		{
 		}
@@ -181,7 +186,12 @@ namespace LambdaEngine
 		{
 		}
 
-		FORCEINLINE TUniquePtr(T* pPtr) noexcept
+		FORCEINLINE TUniquePtr(std::nullptr_t) noexcept
+			: m_pPtr(nullptr)
+		{
+		}
+
+		FORCEINLINE explicit TUniquePtr(T* pPtr) noexcept
 			: m_pPtr(pPtr)
 		{
 		}

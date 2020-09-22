@@ -31,5 +31,5 @@ public:
 
 private:
 	LambdaEngine::Timestamp m_BenchMarkTimer;
-	int m_Counter = 0;
+	uint32 m_Counter = 0;
 };
