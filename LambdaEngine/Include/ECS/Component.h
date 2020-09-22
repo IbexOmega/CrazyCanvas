@@ -4,13 +4,30 @@
 
 #include <typeindex>
 
+namespace LambdaEngine
+{
+	struct _Internal
+	{
+		static uint32 s_Generator;
+	};
+}
+
 #define TID(type) std::type_index(typeid(type))
+#define GENERATE_MASK() (1 << (_Internal::s_Generator++))
 
 #define DECL_COMPONENT(Component)		\
-	static std::type_index s_TID
+	static std::type_index s_TID;		\
+	static uint32 s_DrawArgMask
 
-#define INIT_COMPONENT(Component)		\
-	std::type_index Component::s_TID = TID(Component)
+#define DECL_DRAW_ARG_COMPONENT(Component)	DECL_COMPONENT(Component)
+
+#define INIT_COMPONENT(Component)						\
+	std::type_index Component::s_TID = TID(Component);  \
+	uint32 Component::s_DrawArgMask = 0
+
+#define INIT_DRAW_ARG_COMPONENT(Component)						\
+	std::type_index Component::s_TID = TID(Component);  \
+	uint32 Component::s_DrawArgMask = GENERATE_MASK();
 
 namespace LambdaEngine
 {

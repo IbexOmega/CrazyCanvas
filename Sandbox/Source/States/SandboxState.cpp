@@ -5,6 +5,8 @@
 #include "Engine/EngineConfig.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
+#include "Game/ECS/Components/Misc/MaskComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Input/API/Input.h"
 
@@ -84,6 +86,43 @@ void SandboxState::Init()
 			pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
+	}
+
+	// Plane for painting.
+	{
+		MaterialProperties mirrorProperties = {};
+		mirrorProperties.Roughness = 1.f;
+		mirrorProperties.Metallic = 0.f;
+
+		MeshComponent meshComponent;
+		meshComponent.MeshGUID = GUID_MESH_QUAD;
+		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Mirror Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			mirrorProperties);
+
+		MeshPaintComponent meshPaintComponent;
+		const uint32 width = 512;
+		const uint32 height = 512;
+		char* data = DBG_NEW char[width*height*4];
+		memset(data, 0, width * height * 4);
+		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("PlaneUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
+		SAFEDELETE_ARRAY(data);
+
+		MaskComponent maskComponent;
+		maskComponent.Mask = 0x00000000;
+
+		Entity entity = ECSCore::GetInstance()->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { {0.f, 0.f, 0.f}, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::mat4>(), true });
+		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
+		pECS->AddComponent<MaskComponent>(entity, maskComponent);
 	}
 }
 

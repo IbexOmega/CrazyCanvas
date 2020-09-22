@@ -21,14 +21,14 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Misc/MaskComponent.h"
+#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
 
 #include "Engine/EngineConfig.h"
 
 namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
-
-	constexpr const uint32 TEMP_DRAW_ARG_MASK = UINT32_MAX;
 
 	bool RenderSystem::Init()
 	{
@@ -49,6 +49,8 @@ namespace LambdaEngine
 				{{{RW, MeshComponent::s_TID}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
 				{{{RW, ViewProjectionMatricesComponent::s_TID}, {R, CameraComponent::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
+			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, MaskComponent::s_TID}} };
+			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, MeshPaintComponent::s_TID}} };
 			systemReg.Phase = g_LastPhase;
 
 			RegisterSystem(systemReg);
@@ -520,8 +522,17 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		//Todo: This needs to come from the Entity in some way
-		uint32 drawArgHash = TEMP_DRAW_ARG_MASK;
+		// Fetch the draw arg mask from the entity if it has a mask component.
+		uint32 drawArgHash = UINT32_MAX;
+		ComponentArray<MaskComponent>* pMaskComponents = ECSCore::GetInstance()->GetComponentArray<MaskComponent>();
+		if (pMaskComponents && pMaskComponents->HasComponent(entity))
+			drawArgHash = pMaskComponents->GetData(entity).Mask;
+
+		GUID_Lambda texture = GUID_NONE;
+		ComponentArray<MeshPaintComponent>* pMeshPaintComponents = ECSCore::GetInstance()->GetComponentArray<MeshPaintComponent>();
+		if (pMeshPaintComponents && pMeshPaintComponents->HasComponent(entity))
+			texture = pMeshPaintComponents->GetData(entity).UnwrappedTexture;
+
 		if (m_RequiredDrawArgs.count(drawArgHash))
 		{
 			m_DirtyDrawArgs.insert(drawArgHash);
