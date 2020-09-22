@@ -698,9 +698,6 @@ namespace LambdaEngine
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
 
-		std::vector<uint32> sourceSPIRV;
-		uint32 sourceSPIRVSize = 0;
-
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
 			if (!ReadDataFromFile(filepath, "r", &pShaderRawSource, &shaderRawSourceSize))
@@ -714,8 +711,6 @@ namespace LambdaEngine
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
 				return false;
 			}
-
-			sourceSPIRVSize = uint32(sourceSPIRV.size() * sizeof(uint32));
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
@@ -765,6 +760,7 @@ namespace LambdaEngine
 		if (read == 0)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", filepath.c_str());
+			fclose(pFile);
 			return false;
 		}
 		else
@@ -1014,8 +1010,8 @@ namespace LambdaEngine
 					n0 = glm::normalize(glm::cross(e0, e1));
 				}
 
-				float32 bestDot = -2.0f;
 				{
+					float32 bestDot = -2.0f;
 					EdgeEntry* pPrev = pFoundPrev;
 					for (EdgeEntry* pCurrent = pFound; pCurrent != nullptr; pPrev = pCurrent, pCurrent = pCurrent->pNext)
 					{
@@ -1579,7 +1575,7 @@ namespace LambdaEngine
 			LoadVertices(pMesh, pMeshAI);
 			LoadIndices(pMesh, pMeshAI);
 
-			if (context.pMaterials && pMeshAI->mMaterialIndex >= 0)
+			if (context.pMaterials)
 			{
 				LoadMaterial(context, pScene, pMeshAI);
 			}
