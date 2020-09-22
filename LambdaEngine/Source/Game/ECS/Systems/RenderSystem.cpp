@@ -36,7 +36,7 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
+		m_RayTracingEnabled = true;// deviceFeatures.RayTracing&& EngineConfig::GetBoolProperty("RayTracingEnabled");
 
 		TransformComponents transformComponents;
 		transformComponents.Position.Permissions	= R;
@@ -91,7 +91,7 @@ namespace LambdaEngine
 
 			String prefix = m_RayTracingEnabled ? "RT_" : "";
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, prefix + EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "RT_DEFERRED_PBR.lrg", IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
@@ -600,7 +600,7 @@ namespace LambdaEngine
 			asInstance.CustomIndex		= materialSlot;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
-			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED;// RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
@@ -1053,10 +1053,10 @@ namespace LambdaEngine
 				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName = "AS Instance Staging Buffer";
-				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				bufferDesc.SizeInBytes = requiredBufferSize;
+				bufferDesc.DebugName	= "AS Instance Staging Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 				pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
@@ -1071,19 +1071,19 @@ namespace LambdaEngine
 				if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pASInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName = "AS Instance Buffer";
-				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST;
-				bufferDesc.SizeInBytes = requiredBufferSize;
+				bufferDesc.DebugName	= "AS Instance Buffer";
+				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_RAY_TRACING | /*FBufferFlag::BUFFER_FLAG_COPY_SRC |*/ FBufferFlag::BUFFER_FLAG_COPY_DST;
+				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				pDirtyInstanceBufferEntry->pASInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
 
-			pMapped = pDirtyInstanceBufferEntry->pASInstanceBuffer->Map();
-			memcpy(pMapped, pDirtyInstanceBufferEntry->ASInstances.GetData(), requiredBufferSize);
-			pDirtyInstanceBufferEntry->pASInstanceBuffer->Unmap();
+			//pMapped = pDirtyInstanceBufferEntry->pASInstanceBuffer->Map();
+			//memcpy(pMapped, pDirtyInstanceBufferEntry->ASInstances.GetData(), requiredBufferSize);
+			//pDirtyInstanceBufferEntry->pASInstanceBuffer->Unmap();
 
-			//pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pASInstanceBuffer, 0, requiredBufferSize);
+			pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pASInstanceBuffer, 0, requiredBufferSize);
 		}
 
 		m_DirtyASInstanceBuffers.clear();
@@ -1094,64 +1094,66 @@ namespace LambdaEngine
 		if (m_TLASDirty)
 		{
 			m_TLASDirty = false;
-			m_CompleteInstanceBufferPendingCopies.Clear();
-			TArray<AccelerationStructureInstance> temp;
+			//m_CompleteInstanceBufferPendingCopies.Clear();
+			////TArray<AccelerationStructureInstance> temp;
 
-			uint32 newInstanceCount = 0;
+			//uint32 newInstanceCount = 0;
 
-			for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
-			{
-				uint32 instanceCount = meshAndInstancesIt->second.ASInstances.GetSize();
-
-				PendingBufferUpdate copyToCompleteInstanceBuffer = {};
-				copyToCompleteInstanceBuffer.pSrcBuffer		= meshAndInstancesIt->second.pASInstanceBuffer;
-				copyToCompleteInstanceBuffer.SrcOffset		= 0;
-				copyToCompleteInstanceBuffer.DstOffset		= newInstanceCount * sizeof(AccelerationStructureInstance);
-				copyToCompleteInstanceBuffer.SizeInBytes	= instanceCount * sizeof(AccelerationStructureInstance);
-				m_CompleteInstanceBufferPendingCopies.PushBack(copyToCompleteInstanceBuffer);
-
-				for (const AccelerationStructureInstance& as : meshAndInstancesIt->second.ASInstances)
-					temp.PushBack(as);
-
-				newInstanceCount += instanceCount;
-			}
-
-			if (newInstanceCount == 0)
-				return;
-
-			uint32 requiredCompleteInstancesBufferSize = newInstanceCount * sizeof(AccelerationStructureInstance);
-
-			if (m_pCompleteInstanceBuffer == nullptr || m_pCompleteInstanceBuffer->GetDesc().SizeInBytes < requiredCompleteInstancesBufferSize)
-			{
-				if (m_pCompleteInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pCompleteInstanceBuffer);
-
-				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Complete Instance Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
-				bufferDesc.SizeInBytes	= requiredCompleteInstancesBufferSize;
-
-				m_pCompleteInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			}
-
-			void* pMapped = m_pCompleteInstanceBuffer->Map();
-			memcpy(pMapped, temp.GetData(), temp.GetSize() * sizeof(AccelerationStructureInstance));
-			m_pCompleteInstanceBuffer->Unmap();
-
-			//for (const PendingBufferUpdate& pendingUpdate : m_CompleteInstanceBufferPendingCopies)
+			//for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 			//{
-			//	pCommandList->CopyBuffer(pendingUpdate.pSrcBuffer, pendingUpdate.SrcOffset, m_pCompleteInstanceBuffer, pendingUpdate.DstOffset, pendingUpdate.SizeInBytes);
-			//	
+			//	uint32 instanceCount = meshAndInstancesIt->second.ASInstances.GetSize();
+
+			//	PendingBufferUpdate copyToCompleteInstanceBuffer = {};
+			//	copyToCompleteInstanceBuffer.pSrcBuffer		= meshAndInstancesIt->second.pASInstanceBuffer;
+			//	copyToCompleteInstanceBuffer.SrcOffset		= 0;
+			//	copyToCompleteInstanceBuffer.DstOffset		= newInstanceCount * sizeof(AccelerationStructureInstance);
+			//	copyToCompleteInstanceBuffer.SizeInBytes	= instanceCount * sizeof(AccelerationStructureInstance);
+			//	m_CompleteInstanceBufferPendingCopies.PushBack(copyToCompleteInstanceBuffer);
+
+			//	//for (const AccelerationStructureInstance& as : meshAndInstancesIt->second.ASInstances)
+			//	//	temp.PushBack(as);
+
+			//	newInstanceCount += instanceCount;
 			//}
+
+			//if (newInstanceCount == 0)
+			//	return;
+
+			//uint32 requiredCompleteInstancesBufferSize = newInstanceCount * sizeof(AccelerationStructureInstance);
+
+			//if (m_pCompleteInstanceBuffer == nullptr || m_pCompleteInstanceBuffer->GetDesc().SizeInBytes < requiredCompleteInstancesBufferSize)
+			//{
+			//	if (m_pCompleteInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pCompleteInstanceBuffer);
+
+			//	BufferDesc bufferDesc = {};
+			//	bufferDesc.DebugName	= "Complete Instance Buffer";
+			//	bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			//	bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+			//	bufferDesc.SizeInBytes	= requiredCompleteInstancesBufferSize;
+
+			//	m_pCompleteInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			//}
+
+			//void* pMapped = m_pCompleteInstanceBuffer->Map();
+			//memcpy(pMapped, temp.GetData(), temp.GetSize() * sizeof(AccelerationStructureInstance));
+			//m_pCompleteInstanceBuffer->Unmap();
+
+			/*for (const PendingBufferUpdate& pendingUpdate : m_CompleteInstanceBufferPendingCopies)
+			{
+				pCommandList->CopyBuffer(pendingUpdate.pSrcBuffer, pendingUpdate.SrcOffset, m_pCompleteInstanceBuffer, pendingUpdate.DstOffset, pendingUpdate.SizeInBytes);
+			}*/
+
+			if (m_MeshAndInstancesMap.empty())
+				return;
 
 			bool update = true;
 
 			//Recreate TLAS completely if oldInstanceCount != newInstanceCount
-			if (m_MaxInstances < newInstanceCount)
+			if (m_MaxInstances < m_MeshAndInstancesMap.begin()->second.ASInstances.GetSize()/*newInstanceCount*/)
 			{
 				if (m_pTLAS != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pTLAS);
 
-				m_MaxInstances = newInstanceCount;
+				m_MaxInstances = m_MeshAndInstancesMap.begin()->second.ASInstances.GetSize();
 
 				AccelerationStructureDesc createTLASDesc = {};
 				createTLASDesc.DebugName		= "TLAS";
@@ -1170,10 +1172,10 @@ namespace LambdaEngine
 			{
 				BuildTopLevelAccelerationStructureDesc buildTLASDesc = {};
 				buildTLASDesc.pAccelerationStructure	= m_pTLAS;
-				buildTLASDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				buildTLASDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE; //FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 				buildTLASDesc.Update					= update;
-				buildTLASDesc.pInstanceBuffer			= m_pCompleteInstanceBuffer;
-				buildTLASDesc.InstanceCount				= newInstanceCount;
+				buildTLASDesc.pInstanceBuffer			= m_MeshAndInstancesMap.begin()->second.pASInstanceBuffer;
+				buildTLASDesc.InstanceCount				= m_MeshAndInstancesMap.begin()->second.ASInstances.GetSize();
 
 				pCommandList->BuildTopLevelAccelerationStructure(&buildTLASDesc);
 			}

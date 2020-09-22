@@ -983,7 +983,7 @@ namespace LambdaEngine
 				{
 					binding.pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
 				}
-				else
+				else if (binding.DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 				{
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{

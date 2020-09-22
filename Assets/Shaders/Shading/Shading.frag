@@ -112,5 +112,5 @@ void main()
 	color = color / (color + vec3(1.0f));
 	color = pow(color, vec3(1.0f / GAMMA));
 
-	out_Color = vec4(worldPos, 1.0f);
+	out_Color = vec4(color, 1.0f);
 }
