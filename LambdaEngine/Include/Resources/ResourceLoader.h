@@ -2,6 +2,7 @@
 #include "Audio/API/IAudioDevice.h"
 
 #include "Containers/TArray.h"
+#include "Containers/THashTable.h"
 
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/Texture.h"
@@ -19,8 +20,36 @@ namespace glslang
 	class TIntermediate;
 }
 
+struct aiMesh;
+struct aiNode;
+struct aiScene;
+
 namespace LambdaEngine
 {
+	/*	SceneLoadRequest contains information needed to begin loading a scene. It is also used to specify whether to
+		skip loading optional resources by setting fields to nullptr. */
+	struct SceneLoadRequest {
+		String Filepath;
+		int32 AssimpFlags;
+		TArray<Mesh*>&			Meshes;
+		TArray<MeshComponent>&	MeshComponents;
+		// Either both materials and textures are nullptr, or they are both non-null pointers
+		TArray<Material*>*		pMaterials;
+		TArray<Texture*>*		pTextures;
+	};
+
+	// SceneLoadingContext is internally created from a SceneLoadRequest.
+	struct SceneLoadingContext
+	{
+		String DirectoryPath;
+		TArray<Mesh*>&			Meshes;
+		TArray<MeshComponent>&	MeshComponents;
+		TArray<Material*>*		pMaterials;
+		TArray<Texture*>*		pTextures;
+		THashTable<String, Texture*> LoadedTextures;
+		THashTable<uint32, uint32> MaterialIndices;
+	};
+
 	class LAMBDA_API ResourceLoader
 	{
 	public:
@@ -36,7 +65,7 @@ namespace LambdaEngine
 		*	loadedTextures			- A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& loadedMeshComponents, TArray<Mesh*>& loadedMeshes, TArray<Material*>& loadedMaterials, TArray<Texture*>& loadedTextures);
+		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Material*>& materials, TArray<Texture*>& textures);
 
 		/*
 		* Load a mesh from file
@@ -124,6 +153,13 @@ namespace LambdaEngine
 		static ISoundEffect3D* LoadSoundEffectFromFile(const String& filepath);
 
 	private:
+		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
+		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
+		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene);
+		static void GenerateMeshlets(Mesh* pMesh, uint32 maxVerts, uint32 maxPrims);
+
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
 		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection);
