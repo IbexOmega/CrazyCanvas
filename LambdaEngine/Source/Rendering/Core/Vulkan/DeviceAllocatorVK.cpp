@@ -354,6 +354,7 @@ namespace LambdaEngine
 				pIterator = pIterator->pNext;
 			}
 
+#ifdef LAMBDA_DEBUG
 			for (DeviceMemoryBlockVK* pBlockIt : AllBlocks)
 			{
 				if (pBlock == pBlockIt)
@@ -361,6 +362,7 @@ namespace LambdaEngine
 					DEBUGBREAK();
 				}
 			}
+#endif
 
 			return false;
 		}
