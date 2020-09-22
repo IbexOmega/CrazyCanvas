@@ -1391,6 +1391,148 @@ namespace LambdaEngine
 		}
 	}
 
+	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
+	{
+		pMesh->pVertexArray = DBG_NEW Vertex[pMeshAI->mNumVertices];
+		pMesh->VertexCount = pMeshAI->mNumVertices;
+
+		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
+		{
+			Vertex vertex;
+			vertex.Position.x = pMeshAI->mVertices[vertexIdx].x;
+			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
+			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
+
+			if (pMeshAI->HasNormals())
+			{
+				vertex.Normal.x = pMeshAI->mNormals[vertexIdx].x;
+				vertex.Normal.y = pMeshAI->mNormals[vertexIdx].y;
+				vertex.Normal.z = pMeshAI->mNormals[vertexIdx].z;
+			}
+
+			if (pMeshAI->HasTangentsAndBitangents())
+			{
+				vertex.Tangent.x = pMeshAI->mTangents[vertexIdx].x;
+				vertex.Tangent.y = pMeshAI->mTangents[vertexIdx].y;
+				vertex.Tangent.z = pMeshAI->mTangents[vertexIdx].z;
+			}
+
+			if (pMeshAI->HasTextureCoords(0))
+			{
+				vertex.TexCoord.x = pMeshAI->mTextureCoords[0][vertexIdx].x;
+				vertex.TexCoord.y = pMeshAI->mTextureCoords[0][vertexIdx].y;
+			}
+
+			pMesh->pVertexArray[vertexIdx] = vertex;
+		}
+	}
+
+	void ResourceLoader::LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI)
+	{
+		VALIDATE(pMeshAI->HasFaces());
+
+		TArray<uint32> indices;
+		indices.Reserve(pMeshAI->mNumFaces * 3);
+		for (uint32 faceIdx = 0; faceIdx < pMeshAI->mNumFaces; faceIdx++)
+		{
+			aiFace face = pMeshAI->mFaces[faceIdx];
+			for (uint32 indexIdx = 0; indexIdx < face.mNumIndices; indexIdx++)
+			{
+				indices.EmplaceBack(face.mIndices[indexIdx]);
+			}
+		}
+
+		pMesh->pIndexArray = DBG_NEW uint32[indices.GetSize()];
+		memcpy(pMesh->pIndexArray, indices.GetData(), sizeof(uint32) * indices.GetSize());
+
+		pMesh->IndexCount = indices.GetSize();
+	}
+
+	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
+	{
+		auto mat = context.MaterialIndices.find(pMeshAI->mMaterialIndex);
+		if (mat == context.MaterialIndices.end())
+		{
+			Material*	pMaterial	= DBG_NEW Material();
+			aiMaterial* pMaterialAI	= pSceneAI->mMaterials[pMeshAI->mMaterialIndex];
+#if 0
+			for (uint32 t = 0; t < aiTextureType_UNKNOWN; t++)
+			{
+				uint32 count = pAiMaterial->GetTextureCount(aiTextureType(t));
+				if (count > 0)
+				{
+					LOG_WARNING("Material %d has %d textures of type: %d", pMesh->mMaterialIndex, count, t);
+					for (uint32 m = 0; m < count; m++)
+					{
+						aiString str;
+						pAiMaterial->GetTexture(aiTextureType(t), m, &str);
+
+						LOG_WARNING("#%d path=%s", m, str.C_Str());
+					}
+				}
+			}
+#endif
+			// Albedo
+			aiColor4D diffuse;
+			if (aiGetMaterialColor(pMaterialAI, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
+			{
+				pMaterial->Properties.Albedo.r = diffuse.r;
+				pMaterial->Properties.Albedo.g = diffuse.g;
+				pMaterial->Properties.Albedo.b = diffuse.b;
+				pMaterial->Properties.Albedo.a = diffuse.a;
+			}
+			else
+			{
+				pMaterial->Properties.Albedo.r = 1.0f;
+				pMaterial->Properties.Albedo.g = 1.0f;
+				pMaterial->Properties.Albedo.b = 1.0f;
+				pMaterial->Properties.Albedo.a = 1.0f;
+			}
+
+			// Albedo
+			pMaterial->pAlbedoMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_BASE_COLOR, 0);
+			if (!pMaterial->pAlbedoMap)
+			{
+				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_DIFFUSE, 0);
+			}
+
+			// Normal
+			pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_NORMAL_CAMERA, 0);
+			if (!pMaterial->pNormalMap)
+			{
+				pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_NORMALS, 0);
+			}
+			if (!pMaterial->pNormalMap)
+			{
+				pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_HEIGHT, 0);
+			}
+
+			// AO
+			pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_AMBIENT_OCCLUSION, 0);
+			if (!pMaterial->pAmbientOcclusionMap)
+			{
+				pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_AMBIENT, 0);
+			}
+
+			// Metallic
+			pMaterial->pMetallicMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_METALNESS, 0);
+			if (!pMaterial->pMetallicMap)
+			{
+				pMaterial->pMetallicMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_REFLECTION, 0);
+			}
+
+			// Roughness
+			pMaterial->pRoughnessMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_DIFFUSE_ROUGHNESS, 0);
+			if (!pMaterial->pRoughnessMap)
+			{
+				pMaterial->pRoughnessMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_SHININESS, 0);
+			}
+
+			context.pMaterials->EmplaceBack(pMaterial);
+			context.MaterialIndices[pMeshAI->mMaterialIndex] = context.pMaterials->GetSize() - 1;
+		}
+	}
+
 	bool ResourceLoader::LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest)
 	{
 		// Find the directory path
@@ -1427,157 +1569,33 @@ namespace LambdaEngine
 
 	void ResourceLoader::ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
 	{
-		for (uint32 i = 0; i < pNode->mNumMeshes; i++)
+		context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
+
+		for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
 		{
-			aiMesh* pMesh = pScene->mMeshes[pNode->mMeshes[i]];
+			Mesh* pMesh = DBG_NEW Mesh;
+			aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
-			TArray<Vertex> vertices;
-			for (uint32 j = 0; j < pMesh->mNumVertices; j++)
+			LoadVertices(pMesh, pMeshAI);
+			LoadIndices(pMesh, pMeshAI);
+
+			if (context.pMaterials && pMeshAI->mMaterialIndex >= 0)
 			{
-				Vertex vertex;
-				vertex.Position.x = pMesh->mVertices[j].x;
-				vertex.Position.y = pMesh->mVertices[j].y;
-				vertex.Position.z = pMesh->mVertices[j].z;
-
-				if (pMesh->HasNormals())
-				{
-					vertex.Normal.x = pMesh->mNormals[j].x;
-					vertex.Normal.y = pMesh->mNormals[j].y;
-					vertex.Normal.z = pMesh->mNormals[j].z;
-				}
-
-				if (pMesh->HasTangentsAndBitangents())
-				{
-					vertex.Tangent.x = pMesh->mTangents[j].x;
-					vertex.Tangent.y = pMesh->mTangents[j].y;
-					vertex.Tangent.z = pMesh->mTangents[j].z;
-				}
-
-				if (pMesh->HasTextureCoords(0))
-				{
-					vertex.TexCoord.x = pMesh->mTextureCoords[0][j].x;
-					vertex.TexCoord.y = pMesh->mTextureCoords[0][j].y;
-				}
-
-				vertices.PushBack(vertex);
+				LoadMaterial(context, pScene, pMeshAI);
 			}
 
-			VALIDATE(pMesh->HasFaces());
+			GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+			context.Meshes.EmplaceBack(pMesh);
 
-			TArray<uint32> indices;
-			for (uint32 f = 0; f < pMesh->mNumFaces; f++)
-			{
-				aiFace face = pMesh->mFaces[f];
-				for (uint32 j = 0; j < face.mNumIndices; j++)
-				{
-					indices.EmplaceBack(face.mIndices[j]);
-				}
-			}
-
-			vertices.ShrinkToFit();
-			indices.ShrinkToFit();
-
-			if (context.pMaterials && pMesh->mMaterialIndex >= 0)
-			{
-				auto mat = context.MaterialIndices.find(pMesh->mMaterialIndex);
-				if (mat == context.MaterialIndices.end())
-				{
-					Material*	pMaterial	= DBG_NEW Material();
-					aiMaterial* pAiMaterial	= pScene->mMaterials[pMesh->mMaterialIndex];
-#if 0
-					for (uint32 t = 0; t < aiTextureType_UNKNOWN; t++)
-					{
-						uint32 count = pAiMaterial->GetTextureCount(aiTextureType(t));
-						if (count > 0)
-						{
-							LOG_WARNING("Material %d has %d textures of type: %d", pMesh->mMaterialIndex, count, t);
-							for (uint32 m = 0; m < count; m++)
-							{
-								aiString str;
-								pAiMaterial->GetTexture(aiTextureType(t), m, &str);
-
-								LOG_WARNING("#%d path=%s", m, str.C_Str());
-							}
-						}
-					}
-#endif
-					// Albedo
-					aiColor4D diffuse;
-					if (aiGetMaterialColor(pAiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
-					{
-						pMaterial->Properties.Albedo.r = diffuse.r;
-						pMaterial->Properties.Albedo.g = diffuse.g;
-						pMaterial->Properties.Albedo.b = diffuse.b;
-						pMaterial->Properties.Albedo.a = diffuse.a;
-					}
-					else
-					{
-						pMaterial->Properties.Albedo.r = 1.0f;
-						pMaterial->Properties.Albedo.g = 1.0f;
-						pMaterial->Properties.Albedo.b = 1.0f;
-						pMaterial->Properties.Albedo.a = 1.0f;
-					}
-
-					// Albedo
-					pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_BASE_COLOR, 0);
-					if (!pMaterial->pAlbedoMap)
-					{
-						pMaterial->pAlbedoMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE, 0);
-					}
-
-					// Normal
-					pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMAL_CAMERA, 0);
-					if (!pMaterial->pNormalMap)
-					{
-						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_NORMALS, 0);
-					}
-					if (!pMaterial->pNormalMap)
-					{
-						pMaterial->pNormalMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_HEIGHT, 0);
-					}
-
-					// AO
-					pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT_OCCLUSION, 0);
-					if (!pMaterial->pAmbientOcclusionMap)
-					{
-						pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_AMBIENT, 0);
-					}
-
-					// Metallic
-					pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_METALNESS, 0);
-					if (!pMaterial->pMetallicMap)
-					{
-						pMaterial->pMetallicMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_REFLECTION, 0);
-					}
-
-					// Roughness
-					pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0);
-					if (!pMaterial->pRoughnessMap)
-					{
-						pMaterial->pRoughnessMap = LoadAssimpTexture(context, pAiMaterial, aiTextureType_SHININESS, 0);
-					}
-
-					context.pMaterials->EmplaceBack(pMaterial);
-					context.MaterialIndices[pMesh->mMaterialIndex] = context.pMaterials->GetSize() - 1;
-				}
-			}
-
-			Mesh* pNewMesh = ResourceLoader::LoadMeshFromMemory(vertices.GetData(), vertices.GetSize(), indices.GetData(), indices.GetSize());
-			if (pNewMesh)
-			{
-				context.Meshes.EmplaceBack(pNewMesh);
-
-				MeshComponent newMeshComponent;
-				newMeshComponent.MeshGUID		= context.Meshes.GetSize() - 1;
-				newMeshComponent.MaterialGUID	= context.MaterialIndices[pMesh->mMaterialIndex];
-				context.MeshComponents.PushBack(newMeshComponent);
-			}
-
+			MeshComponent newMeshComponent;
+			newMeshComponent.MeshGUID		= context.Meshes.GetSize() - 1;
+			newMeshComponent.MaterialGUID	= context.MaterialIndices[pMeshAI->mMaterialIndex];
+			context.MeshComponents.PushBack(newMeshComponent);
 		}
 
-		for (uint32 i = 0; i < pNode->mNumChildren; i++)
+		for (uint32 childIdx = 0; childIdx < pNode->mNumChildren; childIdx++)
 		{
-			ProcessAssimpNode(context, pNode->mChildren[i], pScene);
+			ProcessAssimpNode(context, pNode->mChildren[childIdx], pScene);
 		}
 	}
 
@@ -1612,12 +1630,12 @@ namespace LambdaEngine
 
 		Mesh::IndexType* pUniqueIndices = pMesh->pUniqueIndices;
 		Mesh::IndexType* pPrimitiveIndices = pMesh->pPrimitiveIndices;
-		for (uint32 i = 0; i < meshletCount; i++)
+		for (const InlineMeshlet& builtMeshlet : builtMeshlets)
 		{
-			uint32 localPrimitiveIndexCount = builtMeshlets[i].PrimitiveIndices.GetSize();
-			uint32 localUniqueVertexIndexCount = builtMeshlets[i].UniqueVertexIndices.GetSize();
-			memcpy(pPrimitiveIndices, builtMeshlets[i].PrimitiveIndices.GetData(), sizeof(Mesh::IndexType) * localPrimitiveIndexCount);
-			memcpy(pUniqueIndices, builtMeshlets[i].UniqueVertexIndices.GetData(), sizeof(Mesh::IndexType) * localUniqueVertexIndexCount);
+			uint32 localPrimitiveIndexCount = builtMeshlet.PrimitiveIndices.GetSize();
+			uint32 localUniqueVertexIndexCount = builtMeshlet.UniqueVertexIndices.GetSize();
+			memcpy(pPrimitiveIndices, builtMeshlet.PrimitiveIndices.GetData(), sizeof(Mesh::IndexType) * localPrimitiveIndexCount);
+			memcpy(pUniqueIndices, builtMeshlet.UniqueVertexIndices.GetData(), sizeof(Mesh::IndexType) * localUniqueVertexIndexCount);
 			pPrimitiveIndices += localPrimitiveIndexCount;
 			pUniqueIndices += localUniqueVertexIndexCount;
 		}

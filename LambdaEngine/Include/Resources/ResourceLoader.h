@@ -20,6 +20,7 @@ namespace glslang
 	class TIntermediate;
 }
 
+struct aiMesh;
 struct aiNode;
 struct aiScene;
 
@@ -153,6 +154,9 @@ namespace LambdaEngine
 		static ISoundEffect3D* LoadSoundEffectFromFile(const String& filepath);
 
 	private:
+		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
 		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene);
 		static void GenerateMeshlets(Mesh* pMesh, uint32 maxVerts, uint32 maxPrims);
