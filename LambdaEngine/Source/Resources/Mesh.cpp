@@ -601,5 +601,46 @@ namespace LambdaEngine
 			pPrimitiveIndices += (localPrimitiveIndexCount * 3);
 			pUniqueIndices += localUniqueVertexIndexCount;
 		}
+
+		//LOG_INFO("--------------------------------------------");
+		//LOG_INFO("UniqueIndexCount=%u", pMesh->UniqueIndexCount);
+		//for (uint32 index = 0; index < pMesh->UniqueIndexCount; index++)
+		//{
+		//	LOG_INFO("[%u]=%u", index, pMesh->pUniqueIndices[index]);
+		//}
+
+		//LOG_INFO("IndexCount=%u", pMesh->IndexCount);
+		//for (uint32 index = 0; index < pMesh->IndexCount; index++)
+		//{
+		//	LOG_INFO("[%u]=%u", index, pMesh->pIndexArray[index]);
+		//}
+
+		//LOG_INFO("PrimitiveIndexCount=%d", pMesh->PrimitiveIndexCount);
+		//for (uint32 index = 0; index < pMesh->IndexCount; index++)
+		//{
+		//	LOG_INFO("[%u]=%u", index, pMesh->pPrimitiveIndices[index]);
+		//}
+
+		//LOG_INFO("VertexCount=%u", pMesh->VertexCount);
+		//LOG_INFO("MeshletCount=%u", pMesh->MeshletCount);
+		//for (uint32 meshlet = 0; meshlet < pMesh->MeshletCount; meshlet++)
+		//{
+		//	Meshlet& m = pMesh->pMeshletArray[meshlet];
+		//	LOG_INFO("Meshlet[%u]", meshlet);
+		//	LOG_INFO("PrimCount=%u", m.PrimCount);
+		//	LOG_INFO("PrimOffset=%u", m.PrimOffset);
+		//	LOG_INFO("VertCount=%u", m.VertCount);
+		//	LOG_INFO("VertOffset=%u", m.VertOffset);
+		//	
+		//	LOG_INFO("Primitive Indices: ", meshlet);
+		//	uint32 indexOffset = m.PrimOffset * 3;
+		//	uint32 indexCount = m.PrimCount * 3;
+		//	for (uint32 prim = 0; prim < indexCount; prim++)
+		//	{
+		//		uint32 index = pMesh->pPrimitiveIndices[indexOffset + prim];
+		//		LOG_INFO("[%u]=%u", prim, index);
+		//	}
+		//}
+		//LOG_INFO("--------------------------------------------");
 	}
 }

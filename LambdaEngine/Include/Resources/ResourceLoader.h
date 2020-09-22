@@ -158,7 +158,6 @@ namespace LambdaEngine
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
 		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene);
-		static void GenerateMeshlets(Mesh* pMesh, uint32 maxVerts, uint32 maxPrims);
 
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
