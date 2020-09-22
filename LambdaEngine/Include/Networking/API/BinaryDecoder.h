@@ -1,7 +1,10 @@
 #pragma once
 
 #include "LambdaEngine.h"
+
 #include "Containers/String.h"
+
+#include "Math/Math.h"
 
 namespace LambdaEngine
 {
@@ -25,7 +28,12 @@ namespace LambdaEngine
 		void ReadFloat64(float64& value);
 		void ReadBool(bool& value);
 		void ReadString(std::string& value);
-		void ReadBuffer(char* buffer, uint16 bytesToRead);
+		void ReadBuffer(uint8* buffer, uint16 bytesToRead);
+
+		void ReadVec2(glm::vec2& value);
+		void ReadVec3(glm::vec3& value);
+		void ReadVec4(glm::vec4& value);
+
 
 		int8		ReadInt8();
 		uint8		ReadUInt8();
@@ -39,6 +47,10 @@ namespace LambdaEngine
 		float64		ReadFloat64();
 		bool		ReadBool();
 		std::string ReadString();
+
+		glm::vec2 ReadVec2();
+		glm::vec3 ReadVec3();
+		glm::vec4 ReadVec4();
 
 	private:
 		const NetworkSegment* m_pNetworkPacket;

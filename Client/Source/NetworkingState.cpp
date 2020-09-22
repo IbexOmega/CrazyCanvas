@@ -45,7 +45,7 @@ void NetworkingState::Init()
 	}
 
 	//Create Balls
-	{
+	/*{
 		MaterialProperties materialProperties = {};
 		materialProperties.Roughness	= 0.1f;
 		materialProperties.Metallic	= 0.0f;
@@ -68,7 +68,7 @@ void NetworkingState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		pECS->AddComponent<NetworkComponent>(entity, {});
-	}
+	}*/
 }
 
 void NetworkingState::Tick(LambdaEngine::Timestamp)

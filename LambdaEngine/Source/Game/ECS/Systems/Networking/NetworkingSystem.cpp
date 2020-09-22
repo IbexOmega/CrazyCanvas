@@ -32,7 +32,7 @@ namespace LambdaEngine
 
 	void NetworkingSystem::Tick(Timestamp deltaTime)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
+		/*ECSCore* pECS = ECSCore::GetInstance();
 
 		auto* pComponents = pECS->GetComponentArray<PositionComponent>();
 
@@ -41,6 +41,6 @@ namespace LambdaEngine
 			auto& positionComponent = pComponents->GetData(entity);
 			positionComponent.Position.x += 0.1f * deltaTime.AsSeconds();
 			positionComponent.Dirty = true;
-		}
+		}*/
 	}
 }

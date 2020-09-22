@@ -23,12 +23,18 @@
 #include "Game/StateManager.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Networking/NetworkComponent.h"
+
+#include "ECS/ECSCore.h"
 
 #include "Rendering/RenderGraph.h"
 
 #include "NetworkingState.h"
 
 #include <argh/argh.h>
+
+#define TYPE_ADD_ENTITY 1
 
 using namespace LambdaEngine;
 
@@ -47,8 +53,8 @@ Client::Client() :
 
 	StateManager::GetInstance()->EnqueueStateTransition(DBG_NEW NetworkingState(), STATE_TRANSITION::PUSH);
 
-    /*ClientDesc desc = {};
-    desc.PoolSize               = 2048;
+    ClientDesc desc = {};
+    desc.PoolSize               = 1024;
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
@@ -62,9 +68,9 @@ Client::Client() :
 	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
-	}*/
+	}
 
-	NetworkDiscovery::EnableClient("Crazy Canvas", this);
+	//NetworkDiscovery::EnableClient("Crazy Canvas", this);
 }
 
 Client::~Client()
@@ -109,6 +115,38 @@ void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	UNREFERENCED_VARIABLE(pClient);
 	UNREFERENCED_VARIABLE(pPacket);
 	LOG_MESSAGE("OnPacketReceived(%s)", pPacket->ToString().c_str());
+
+	if (pPacket->GetType() == TYPE_ADD_ENTITY)
+	{
+		BinaryDecoder decoder(pPacket);
+		decoder.ReadBool();
+		glm::vec3 pos = decoder.ReadVec3();
+
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		MaterialProperties materialProperties = {};
+		materialProperties.Roughness = 0.1f;
+		materialProperties.Metallic = 0.0f;
+		materialProperties.Albedo = glm::vec4(decoder.ReadVec3(), 1.0f);
+
+		MeshComponent meshComponent;
+		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Mirror Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { pos, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		pECS->AddComponent<NetworkComponent>(entity, {});
+	}
 }
 
 void Client::OnServerFull(IClient* pClient)
@@ -197,32 +235,6 @@ void Client::RunningBenchMark()
 bool Client::LoadRendererResources()
 {
 	using namespace LambdaEngine;
-
-	/*{
-		String blueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
-
-		for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
-		{
-			char str[5];
-			snprintf(str, 5, "%04d", i);
-			blueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
-		}
-
-		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false);
-
-		Texture* pBlueNoiseTexture = ResourceManager::GetTexture(blueNoiseID);
-		TextureView* pBlueNoiseTextureView = ResourceManager::GetTextureView(blueNoiseID);
-
-		Sampler* pNearestSampler = Sampler::GetNearestSampler();
-
-		ResourceUpdateDesc blueNoiseUpdateDesc = {};
-		blueNoiseUpdateDesc.ResourceName = "BLUE_NOISE_LUT";
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures = &pBlueNoiseTexture;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pBlueNoiseTextureView;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
-
-		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
-	}*/
 
 	// For Skybox RenderGraph
 	{

@@ -15,6 +15,7 @@ namespace LambdaEngine
 	class NetworkSegment;
 	class IPacketListener;
 	class NetworkStatistics;
+	class IClientRemoteHandler;
 
 	enum EClientState
 	{
@@ -42,6 +43,7 @@ namespace LambdaEngine
 		virtual const NetworkStatistics* GetStatistics() const = 0;
 		virtual PacketManagerBase* GetPacketManager() = 0;
 		virtual const PacketManagerBase* GetPacketManager() const = 0;
+		virtual IClientRemoteHandler* GetHandler() = 0;
 
 		static std::string StateToString(EClientState state)
 		{
