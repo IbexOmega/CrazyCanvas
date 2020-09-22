@@ -27,8 +27,8 @@ namespace LambdaEngine
 		static IPAddress* CreateIPAddress(const std::string& address, uint64 hash);
 
         static bool Init();
-        static void Release();
-        static void PostRelease();
+        static void PreRelease();
+		static void PostRelease();
 	};
 
     typedef MacNetworkUtils PlatformNetworkUtils;

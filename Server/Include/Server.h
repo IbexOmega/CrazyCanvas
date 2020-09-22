@@ -4,7 +4,8 @@
 #include "Application/API/Events/KeyEvents.h"
 
 #include "Networking/API/IServerHandler.h"
-#include "Networking/API/INetworkDiscoveryServer.h"
+
+#include "Networking/API/UDP/INetworkDiscoveryServer.h"
 
 namespace LambdaEngine
 {
