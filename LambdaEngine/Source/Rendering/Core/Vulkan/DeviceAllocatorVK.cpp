@@ -89,6 +89,8 @@ namespace LambdaEngine
 		
 		bool Init(uint64 sizeInBytes)
 		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
+
 			VkResult result = m_pDevice->AllocateMemory(&m_DeviceMemory, sizeInBytes, m_MemoryIndex);
 			if (result != VK_SUCCESS)
 			{
@@ -102,12 +104,17 @@ namespace LambdaEngine
 				m_pHead->TotalSizeInBytes   = sizeInBytes;
 				m_pHead->SizeInBytes        = sizeInBytes;
 				
+#ifdef LAMBDA_DEVELOPMENT
+				AllBlocks.EmplaceBack(m_pHead);
+#endif
 				return true;
 			}
 		}
 		
 		bool Allocate(AllocationVK* pAllocation, VkDeviceSize sizeInBytes, VkDeviceSize alignment, VkDeviceSize pageGranularity)
 		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
+
 			VALIDATE(pAllocation != nullptr);
 			
 			uint64 paddedOffset = 0;
@@ -115,7 +122,6 @@ namespace LambdaEngine
 			
 			// Find a suitable block
 			DeviceMemoryBlockVK* pBestFit = nullptr;
-			
 			VALIDATE(ValidateBlock(m_pHead));
 
 			for (DeviceMemoryBlockVK* pIterator = m_pHead; pIterator != nullptr; pIterator = pIterator->pNext)
@@ -179,7 +185,17 @@ namespace LambdaEngine
 				pNewBlock->TotalSizeInBytes = pNewBlock->SizeInBytes;
 				pNewBlock->IsFree           = true;
 				
+				if (pBestFit->pNext)
+				{
+					pBestFit->pNext->pPrevious = pNewBlock;
+				}
+
 				pBestFit->pNext = pNewBlock;
+				VALIDATE(ValidateBlock(pNewBlock));
+
+#ifdef LAMBDA_DEVELOPMENT
+				AllBlocks.EmplaceBack(pNewBlock);
+#endif
 			}
 			
 			// Set new attributes of block
@@ -187,6 +203,8 @@ namespace LambdaEngine
 			pBestFit->TotalSizeInBytes  = paddedSizeInBytes;
 			pBestFit->IsFree            = false;
 			
+			VALIDATE(ValidateBlock(pBestFit));
+
 			// Setup allocation
 			pAllocation->Memory = m_DeviceMemory;
 			pAllocation->Offset = paddedOffset;
@@ -199,14 +217,14 @@ namespace LambdaEngine
 		
 		bool Free(AllocationVK* pAllocation)
 		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
 			VALIDATE(pAllocation != nullptr);
 
 			DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
-			pBlock->IsFree = true;
-
 			VALIDATE(pBlock != nullptr);
 			VALIDATE(ValidateBlock(pBlock));
-			
+
+			pBlock->IsFree = true;
 			DeviceMemoryBlockVK* pPrevious = pBlock->pPrevious;
 			if (pPrevious)
 			{
@@ -249,12 +267,15 @@ namespace LambdaEngine
 			pAllocation->Memory = VK_NULL_HANDLE;
 			pAllocation->Offset = 0;
 			pAllocation->pBlock = nullptr;
+			pAllocation->pAllocator = nullptr;
 
 			return true;
 		}
 		
 		void* Map(const AllocationVK* pAllocation)
 		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
+
 			VALIDATE(pAllocation            != nullptr);
 			VALIDATE(pAllocation->pBlock    != nullptr);
 			VALIDATE(ValidateBlock(pAllocation->pBlock));
@@ -272,6 +293,8 @@ namespace LambdaEngine
 		
 		void Unmap(const AllocationVK* pAllocation)
 		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
+
 			VALIDATE(pAllocation != nullptr);
 			VALIDATE(pAllocation->pBlock != nullptr);
 			VALIDATE(ValidateBlock(pAllocation->pBlock));
@@ -288,6 +311,7 @@ namespace LambdaEngine
 
 		void SetName(const String& debugName)
 		{
+			std::scoped_lock<SpinLock> lock(m_Lock);
 			m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_DeviceMemory), VK_OBJECT_TYPE_DEVICE_MEMORY);
 		}
 		
@@ -306,6 +330,7 @@ namespace LambdaEngine
 		{
 			VALIDATE(aSize > 0);
 			VALIDATE(pageGranularity > 0);
+			VALIDATE(aOffset + aSize <= bOffset);
 			
 			VkDeviceSize aEnd       = aOffset + (aSize - 1);
 			VkDeviceSize aEndPage   = aEnd & ~(pageGranularity - 1);
@@ -327,6 +352,14 @@ namespace LambdaEngine
 					return true;
 				}
 				pIterator = pIterator->pNext;
+			}
+
+			for (DeviceMemoryBlockVK* pBlockIt : AllBlocks)
+			{
+				if (pBlock == pBlockIt)
+				{
+					DEBUGBREAK();
+				}
 			}
 			
 			return false;
@@ -362,6 +395,11 @@ namespace LambdaEngine
 		byte* m_pHostMemory = nullptr;
 		VkDeviceMemory m_DeviceMemory = VK_NULL_HANDLE;
 		uint32 m_MappingCount  = 0;
+
+		SpinLock m_Lock;
+#ifdef LAMBDA_DEVELOPMENT
+		TArray<DeviceMemoryBlockVK*> AllBlocks;
+#endif
 	};
 
 	/*
