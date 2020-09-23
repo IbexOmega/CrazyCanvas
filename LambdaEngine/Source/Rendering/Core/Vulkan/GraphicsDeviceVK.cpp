@@ -28,6 +28,7 @@
 #include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/ShaderVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/SBTVK.h"
 
 #define ENABLE_IF_SUPPORTED(feature) feature = feature && true;
 
@@ -40,7 +41,6 @@ namespace LambdaEngine
 	{
 		ValidationLayer("REQ_V_L_BASE"),
 		ValidationLayer("VK_LAYER_KHRONOS_validation"),
-		//ValidationLayer("VK_LAYER_RENDERDOC_Capture"),
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -63,7 +63,6 @@ namespace LambdaEngine
 	constexpr Extension OPTIONAL_INSTANCE_EXTENSIONS[]
 	{
 		Extension("OPT_I_E_BASE"),
-		Extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME),
 	};
 
 	constexpr Extension REQUIRED_DEVICE_EXTENSIONS[]
@@ -75,15 +74,10 @@ namespace LambdaEngine
 	constexpr Extension OPTIONAL_DEVICE_EXTENSIONS[]
 	{
 		Extension("OPT_D_E_BASE"),
-		Extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME),
-		Extension(VK_KHR_MAINTENANCE3_EXTENSION_NAME),
-		Extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME),
-		Extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME),
 		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
-		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
@@ -219,7 +213,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::AllocateAccelerationStructureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
 	{
-		VALIDATE(m_pTextureAllocator != nullptr);
+		VALIDATE(m_pAccelerationStructureAllocator != nullptr);
 		VALIDATE(pAllocation != nullptr);
 
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
@@ -594,12 +588,12 @@ namespace LambdaEngine
 		}
 	}
 
-	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const
+	PipelineState* GraphicsDeviceVK::CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
 		RayTracingPipelineStateVK* pPipelineState = DBG_NEW RayTracingPipelineStateVK(this);
-		if (!pPipelineState->Init(pCommandQueue, pDesc))
+		if (!pPipelineState->Init(pDesc))
 		{
 			pPipelineState->Release();
 			return nullptr;
@@ -607,6 +601,22 @@ namespace LambdaEngine
 		else
 		{
 			return pPipelineState;
+		}
+	}
+
+	SBT* GraphicsDeviceVK::CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const
+	{
+		VALIDATE(pDesc != nullptr);
+
+		SBTVK* pSBT = DBG_NEW SBTVK(this);
+		if (!pSBT->Init(pCommandQueue, pDesc))
+		{
+			pSBT->Release();
+			return nullptr;
+		}
+		else
+		{
+			return pSBT;
 		}
 	}
 
@@ -836,17 +846,17 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst) const
 	{
-		DescriptorSetVK*        pDstVk            = reinterpret_cast<DescriptorSetVK*>(pDst);
-		const DescriptorSetVK*    pSrcVk            = reinterpret_cast<const DescriptorSetVK*>(pSrc);
-		uint32                    bindingCount    = pSrcVk->GetDescriptorBindingDescCount();
+		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*	pSrcVk			= reinterpret_cast<const DescriptorSetVK*>(pSrc);
+		uint32					bindingCount	= pSrcVk->GetDescriptorBindingDescCount();
 
 		VkCopyDescriptorSet copyDescriptorSet = {};
-		copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-		copyDescriptorSet.pNext                = nullptr;
-		copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
-		copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
-		copyDescriptorSet.srcArrayElement    = 0;
-		copyDescriptorSet.dstArrayElement    = 0;
+		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext				= nullptr;
+		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement	= 0;
+		copyDescriptorSet.dstArrayElement	= 0;
 
 		TArray<VkCopyDescriptorSet> descriptorSetCopies;
 		descriptorSetCopies.Reserve(bindingCount);
@@ -854,9 +864,9 @@ namespace LambdaEngine
 		{
 			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
 
-			copyDescriptorSet.descriptorCount    = binding.DescriptorCount;
-			copyDescriptorSet.srcBinding        = binding.Binding;
-			copyDescriptorSet.dstBinding        = copyDescriptorSet.srcBinding;
+			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
+			copyDescriptorSet.srcBinding		= binding.Binding;
+			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
@@ -1623,12 +1633,6 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkWaitSemaphores);
 			GET_DEVICE_PROC_ADDR(Device, vkSignalSemaphore);
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
-		}
-
-		// Buffer Address
-		if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
-		{
-			GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
 		}
 
 		// Mesh Shaders

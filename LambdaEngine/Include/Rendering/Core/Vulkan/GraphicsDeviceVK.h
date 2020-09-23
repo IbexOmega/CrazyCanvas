@@ -113,7 +113,9 @@ namespace LambdaEngine
 
 		virtual PipelineState* CreateGraphicsPipelineState(const GraphicsPipelineStateDesc* pDesc) const override final;
 		virtual PipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) const override final;
-		virtual PipelineState* CreateRayTracingPipelineState(CommandQueue* pCommandQueue, const RayTracingPipelineStateDesc* pDesc) const override final;
+		virtual PipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const override final;
+
+		virtual SBT* CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const override final;
 
 		virtual AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const override final;
 
@@ -188,9 +190,6 @@ namespace LambdaEngine
 
 		//PushDescriptorSet
 		PFN_vkCmdPushDescriptorSetKHR						vkCmdPushDescriptorSetKHR						= nullptr;
-
-		// Buffer Addresses
-		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
 
 		// Timeline-Semaphores
 		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;

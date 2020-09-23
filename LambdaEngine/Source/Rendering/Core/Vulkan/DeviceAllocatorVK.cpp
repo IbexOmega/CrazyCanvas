@@ -163,6 +163,10 @@ namespace LambdaEngine
 			
 			if (pBestFit == nullptr)
 			{
+				pAllocation->pBlock = nullptr;
+				pAllocation->pAllocator = nullptr;
+				pAllocation->Offset = 0;
+				pAllocation->Memory = 0;
 				return false;
 			}
 			
@@ -304,7 +308,6 @@ namespace LambdaEngine
 	private:
 		bool IsAliasing(VkDeviceSize aOffset, VkDeviceSize aSize, VkDeviceSize bOffset, VkDeviceSize pageGranularity)
 		{
-			VALIDATE((aOffset + aSize) <= bOffset);
 			VALIDATE(aSize > 0);
 			VALIDATE(pageGranularity > 0);
 			
@@ -395,6 +398,7 @@ namespace LambdaEngine
 	bool DeviceAllocatorVK::Allocate(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex)
 	{
 		VALIDATE(pAllocation != nullptr);
+		VALIDATE(sizeInBytes > 0);
 		
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		
@@ -402,6 +406,10 @@ namespace LambdaEngine
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
 		if (alignedSize >= m_PageSize)
 		{
+			pAllocation->pBlock = nullptr;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->Offset = 0;
+			pAllocation->Memory = 0;
 			return false;
 		}
 
@@ -425,6 +433,10 @@ namespace LambdaEngine
 		DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, this, uint32(m_Pages.GetSize()), memoryIndex);
 		if (!pNewMemoryPage->Init(m_PageSize))
 		{
+			pAllocation->pBlock = nullptr;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->Offset = 0;
+			pAllocation->Memory = 0;
 			SAFEDELETE(pNewMemoryPage);
 			return false;
 		}

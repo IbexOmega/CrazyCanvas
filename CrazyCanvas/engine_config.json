@@ -4,9 +4,9 @@
         1080
     ],
     "FixedTimestep": 60,
-    "RayTracingEnabled": true,
+    "RayTracingEnabled": false,
     "ShowRenderGraph": false,
-    "RenderGraphName": "LIGHT.lrg",
+    "RenderGraphName": "DEFERRED_PBR.lrg",
     "ShowDemo": false,
     "Debugging": false,
     "CameraFOV": 90.0,

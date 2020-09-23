@@ -3,6 +3,4 @@
 namespace LambdaEngine
 {
 	INIT_COMPONENT(MeshComponent);
-	INIT_COMPONENT(StaticComponent);
-	INIT_COMPONENT(DynamicComponent);
 }

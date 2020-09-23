@@ -362,12 +362,12 @@ namespace LambdaEngine
 #endif
 	}
 
-	uint64 GPUProfiler::GetAverageDeviceMemory()
+	uint64 GPUProfiler::GetAverageDeviceMemory() const
 	{
 		return m_AverageDeviceMemory;
 	}
 
-	uint64 GPUProfiler::GetPeakDeviceMemory()
+	uint64 GPUProfiler::GetPeakDeviceMemory() const
 	{
 		return m_PeakDeviceMemory;
 	}
@@ -423,7 +423,7 @@ namespace LambdaEngine
 #endif
 	}
 
-	std::string GPUProfiler::GetTimeUnitName()
+	std::string GPUProfiler::GetTimeUnitName() const
 	{
 		std::string buf;
 		switch (m_TimeUnit) {

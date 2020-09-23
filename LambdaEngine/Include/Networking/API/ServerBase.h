@@ -62,7 +62,6 @@ namespace LambdaEngine
         virtual void RunTransmitter() override;
 
         virtual void Tick(Timestamp delta);
-        void RegisterClient(ClientRemoteBase* pClient);
         ClientRemoteBase* GetClient(const IPEndPoint& endPoint);
         void HandleNewConnection(ClientRemoteBase* pClient);
 

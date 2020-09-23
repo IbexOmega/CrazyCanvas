@@ -68,15 +68,15 @@ namespace LambdaEngine
 		void GetGraphicsPipelineStat();
 		void ResetGraphicsPipelineStat(CommandList* pCommandList);
 
-		uint64 GetAverageDeviceMemory();
-		uint64 GetPeakDeviceMemory();
+		uint64 GetAverageDeviceMemory() const;
+		uint64 GetPeakDeviceMemory() const;
 
 	public:
 		static GPUProfiler* Get();
 
 	private:
 		void SaveResults();
-		std::string GetTimeUnitName();
+		std::string GetTimeUnitName() const;
 
 	private:
 		// Timestamps

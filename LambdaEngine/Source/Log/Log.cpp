@@ -25,7 +25,7 @@ namespace LambdaEngine
 		va_end(args);
 	}
 
-	void Log::PrintV(ELogSeverity severity, const char* pFormat, va_list args)
+	void Log::PrintV(ELogSeverity severity, const char* pFormat, va_list vaArgs)
 	{
 		if (severity == ELogSeverity::LOG_INFO)
 		{
@@ -44,18 +44,43 @@ namespace LambdaEngine
 			static SpinLock bufferLock;
 			std::scoped_lock<SpinLock> lock(bufferLock);
 
-			constexpr const uint32 BUFFER_SIZE = 2048;
-			static char buffer[BUFFER_SIZE];
+			static String buffer;
+			static String lastMessage;
 
-			ZERO_MEMORY(buffer, sizeof(buffer));
+			// Check length of formated string and resize buffer
+			va_list vaCopy;
+			va_copy(vaCopy, vaArgs);
+			int length = vsnprintf(nullptr, 0, pFormat, vaCopy);
+			va_end(vaCopy);
 
-			vsnprintf(buffer, BUFFER_SIZE - 1, pFormat, args);
-			PlatformConsole::PrintLine(buffer);
+			buffer.resize(length);
+			// Since we reserve 1 more char than length this should be safe to do
+			vsnprintf(buffer.data(), buffer.size() + 1, pFormat, vaArgs);
 
+			// Print message
 			if (s_DebuggerOutputEnabled)
 			{
-				PlatformMisc::OutputDebugString(buffer);
+				PlatformMisc::OutputDebugString(buffer.c_str());
 			}
+
+			// Check if last message is the same
+			static ELogSeverity lastSeverity;
+			static uint32 messageCount = 1;
+			if (lastMessage != buffer || lastSeverity != severity)
+			{
+				lastMessage = buffer;
+				lastSeverity = severity;
+				messageCount = 1;
+			}
+			else
+			{
+				messageCount++;
+				buffer += " (x" + std::to_string(messageCount) + " Times)";
+
+				PlatformConsole::ClearLastLine();
+			}
+
+			PlatformConsole::PrintLine(buffer.c_str());
 		}
 
 		if (severity != ELogSeverity::LOG_MESSAGE)
@@ -74,12 +99,12 @@ namespace LambdaEngine
 		va_end(args);
 	}
 
-	void Log::PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list args)
+	void Log::PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list vaArgs)
 	{
 		PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
 		PlatformConsole::Print("CRITICAL ERROR IN '%s': ", pFunction);
 		PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
 
-		PrintV(ELogSeverity::LOG_ERROR, pFormat, args);
+		PrintV(ELogSeverity::LOG_ERROR, pFormat, vaArgs);
 	}
 }

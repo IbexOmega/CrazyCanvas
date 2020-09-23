@@ -25,7 +25,9 @@
 using namespace LambdaEngine;
 
 Client::Client() :
-	m_pClient(nullptr)
+	m_pClient(nullptr),
+	m_IsBenchmarking(false),
+	m_BenchmarkPackets(0)
 {
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
@@ -33,29 +35,37 @@ Client::Client() :
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Client");
 	PlatformConsole::SetTitle("Client Console");
 
-    ClientDesc desc = {};
-    desc.PoolSize               = 512;
+    /*ClientDesc desc = {};
+    desc.PoolSize               = 2048;
     desc.MaxRetries             = 10;
     desc.ResendRTTMultiplier    = 2.0F;
     desc.Handler                = this;
-    desc.Protocol               = EProtocol::TCP;
+    desc.Protocol               = EProtocol::UDP;
 	desc.PingInterval			= Timestamp::Seconds(1);
 	desc.PingTimeout			= Timestamp::Seconds(3);
 	desc.UsePingSystem			= true;
 
 	m_pClient = NetworkUtils::CreateClient(desc);
 
-	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444)))
+	if (!m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.0.104"), 4444)))
 	{
 		LOG_ERROR("Failed to connect!");
-	}
+	}*/
+
+	NetworkDiscovery::EnableClient("Crazy Canvas", this);
 }
 
 Client::~Client()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
-	m_pClient->Release();
+	if(m_pClient)
+		m_pClient->Release();
+}
+
+void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const LambdaEngine::IPEndPoint& endPoint)
+{
+	LOG_MESSAGE("OnServerFound(%s)", endPoint.ToString().c_str());
 }
 
 void Client::OnConnecting(IClient* pClient)
@@ -128,8 +138,9 @@ bool Client::OnKeyPressed(const KeyPressedEvent& event)
 		else
 			m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444));
 	}
-	else
+	else if(event.Key == EKey::KEY_HOME)
 	{
+		m_IsBenchmarking = true;
 	}
 
 	return false;
@@ -139,13 +150,38 @@ void Client::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 
-	NetworkDebugger::RenderStatistics(m_pClient);
+	if (m_pClient)
+	{
+		if (m_pClient->IsConnected() && m_IsBenchmarking)
+		{
+			RunningBenchMark();
+		}
+		NetworkDebugger::RenderStatistics(m_pClient);
+	}
 }
 
 void Client::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+
 }
+
+void Client::RunningBenchMark()
+{
+	if (m_BenchmarkPackets++ < 100000)
+	{
+		NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteUInt32(m_BenchmarkPackets);
+		m_pClient->SendReliable(pPacket, this);
+	}
+	else
+	{
+		m_IsBenchmarking = false;
+		m_BenchmarkPackets = 0;
+	}
+}
+
 
 namespace LambdaEngine
 {
