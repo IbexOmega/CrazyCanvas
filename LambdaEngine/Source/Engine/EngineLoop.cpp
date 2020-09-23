@@ -20,6 +20,7 @@
 #include "Input/API/Input.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
+#include "Physics/PhysicsSystem.h"
 
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
@@ -192,6 +193,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!PhysicsSystem::GetInstance()->Init())
+		{
+			return false;
+		}
+
 		if (!CameraSystem::GetInstance().Init())
 		{
 			return false;
@@ -210,6 +216,8 @@ namespace LambdaEngine
 		RenderAPI::GetGraphicsQueue()->Flush();
 		RenderAPI::GetComputeQueue()->Flush();
 		RenderAPI::GetCopyQueue()->Flush();
+
+		PlatformNetworkUtils::PreRelease();
 
 		return true;
 	}
@@ -262,8 +270,7 @@ namespace LambdaEngine
 	bool EngineLoop::PostRelease()
 	{
 		Thread::Release();
-
-		PlatformNetworkUtils::Release();
+		PlatformNetworkUtils::PostRelease();
 
 		if (!CommonApplication::PostRelease())
 		{

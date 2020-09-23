@@ -33,6 +33,5 @@ namespace LambdaEngine
 
 	private:
 		PacketTransceiverUDP m_Transciver;
-		float m_PacketLoss;
 	};
 }

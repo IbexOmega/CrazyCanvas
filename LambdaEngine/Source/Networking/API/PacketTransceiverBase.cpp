@@ -35,7 +35,7 @@ namespace LambdaEngine
 
 		pStatistics->RegisterBytesSent(bytesWritten);
 
-		if (!Transmit(m_pSendBuffer, bytesWritten, bytesTransmitted, ipEndPoint))
+		if (!TransmitData(m_pSendBuffer, bytesWritten, bytesTransmitted, ipEndPoint))
 			return -1;
 		else if (bytesWritten != bytesTransmitted)
 			return -1;
@@ -49,7 +49,7 @@ namespace LambdaEngine
 	{
 		m_BytesReceived = 0;
 
-		if (!Receive(m_pReceiveBuffer, UINT16_MAX, m_BytesReceived, sender))
+		if (!ReceiveData(m_pReceiveBuffer, UINT16_MAX, m_BytesReceived, sender))
 			return false;
 
 		return m_BytesReceived > 0;
