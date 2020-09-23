@@ -53,8 +53,13 @@ namespace LambdaEngine
 
 	PhysicsRenderer::~PhysicsRenderer()
 	{
-		SAFERELEASE(m_IndexBuffer);
-		SAFERELEASE(m_UniformBuffer);
+		// PipelineStateManager::ReleasePipelineState(m_PipelineStateID);
+		// SAFERELEASE(m_CopyCommandAllocator);
+		// SAFERELEASE(m_CopyCommandList);
+		// SAFERELEASE(m_UniformBuffer);
+		// SAFERELEASE()
+
+		m_Verticies.Clear();
 	}
 
 	bool PhysicsRenderer::init(const PhysicsRendererDesc* pDesc)
@@ -132,11 +137,6 @@ namespace LambdaEngine
 		toData.Position		= { to.getX(), to.getY(), to.getZ(), 1.0f };
 		toData.Color		= { color.getX(), color.getY(), color.getZ(), 1.0f };
 		m_Verticies.PushBack(toData);
-
-		VertexData temp		= {};
-		temp.Position		= { 10.f, 0.f, 10.f, 1.0};
-		temp.Color			= { color.getX(), color.getY(), color.getZ(), 1.0f };
-		m_Verticies.PushBack(temp);
 	}
 
 	void PhysicsRenderer::drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor)
@@ -180,7 +180,7 @@ namespace LambdaEngine
 
 		VALIDATE(pPreInitDesc->ColorAttachmentCount == 1);
 
-		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0]))
+		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0], &pPreInitDesc->pDepthStencilAttachmentDesc[0]))
 		{
 			LOG_ERROR("[Physics Renderer]: Failed to create RenderPass");
 			return false;
@@ -213,6 +213,11 @@ namespace LambdaEngine
 			{
 				m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
 			}
+		}
+		// Might be a bit too hard coded
+		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+		{
+			m_DepthStencilBuffer = MakeSharedRef(ppTextureViews[0]);
 		}
 	}
 
@@ -321,7 +326,7 @@ namespace LambdaEngine
 		beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
 		beginRenderPassDesc.ppRenderTargets		= &backBuffer;
 		beginRenderPassDesc.RenderTargetCount	= 1;
-		beginRenderPassDesc.pDepthStencil		= nullptr;
+		beginRenderPassDesc.pDepthStencil		= m_DepthStencilBuffer.Get();
 		beginRenderPassDesc.Width				= width;
 		beginRenderPassDesc.Height				= height;
 		beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
@@ -350,24 +355,14 @@ namespace LambdaEngine
 		// Transfer data to copy buffers then the GPU buffers
 		{
 			TSharedRef<Buffer> uniformCopyBuffer = m_UniformCopyBuffers[modFrameIndex];
-			TSharedRef<Buffer> indexCopyBuffer = m_IndexCopyBuffers[modFrameIndex];
 
 			uint32 uniformBufferSize	= m_Verticies.GetSize() * sizeof(VertexData);
-			uint32 indexBufferSize		= 0;
 			byte* pUniformMapping		= reinterpret_cast<byte*>(uniformCopyBuffer->Map());
-			byte* pIndexMapping			= reinterpret_cast<byte*>(indexCopyBuffer->Map());
 
 			memcpy(pUniformMapping, m_Verticies.GetData(), uniformBufferSize);
-			for (uint32 i = 0; i < m_Verticies.GetSize(); i++)
-			{
-				memcpy(pIndexMapping + indexBufferSize, &i, sizeof(uint32));
-				indexBufferSize += sizeof(uint32);
-			}
 
 			uniformCopyBuffer->Unmap();
-			indexCopyBuffer->Unmap();
 			pGraphicsCommandList->CopyBuffer(uniformCopyBuffer.Get(), 0, m_UniformBuffer.Get(), 0, uniformBufferSize);
-			pGraphicsCommandList->CopyBuffer(indexCopyBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indexBufferSize);
 		}
 
 		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
@@ -386,8 +381,6 @@ namespace LambdaEngine
 		scissorRect.Height 	= height;
 		pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		// pGraphicsCommandList->BindIndexBuffer(m_IndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT32);
-
 		pGraphicsCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
 		if(m_BufferResourceNameDescriptorSetsMap.contains(PER_FRAME_BUFFER))
@@ -398,7 +391,6 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 1);
 
-		// pGraphicsCommandList->DrawIndexInstanced(m_Verticies.GetSize(), m_Verticies.GetSize() / 2, 0, 0, 0);
 		pGraphicsCommandList->DrawInstanced(m_Verticies.GetSize(), m_Verticies.GetSize(), 0, 0);
 
 		pGraphicsCommandList->EndRenderPass();
@@ -430,62 +422,22 @@ namespace LambdaEngine
 
 	bool PhysicsRenderer::CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize)
 	{
-		// BufferDesc vertexBufferDesc = {};
-		// vertexBufferDesc.DebugName		= "Physics Renderer Vertex Buffer";
-		// vertexBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-		// vertexBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_VERTEX_BUFFER;
-		// vertexBufferDesc.SizeInBytes	= vertexBufferSize;
-
-		// m_VertexBuffer = m_pGraphicsDevice->CreateBuffer(&vertexBufferDesc);
-		// if (!m_VertexBuffer)
-		// {
-		// 	return false;
-		// }
-
-		BufferDesc indexBufferDesc = {};
-		indexBufferDesc.DebugName	= "Physics Renderer Index Buffer";
-		indexBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-		indexBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
-		indexBufferDesc.SizeInBytes	= indexBufferSize;
-		
-		m_IndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc);
-		if (!m_IndexBuffer)
-		{
-			return false;
-		}
-
-		// BufferDesc vertexCopyBufferDesc = {};
-		// vertexCopyBufferDesc.DebugName		= "Physics Renderer Vertex Copy Buffer";
-		// vertexCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		// vertexCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		// vertexCopyBufferDesc.SizeInBytes	= vertexBufferSize;
-
 		BufferDesc uniformCopyBufferDesc = {};
 		uniformCopyBufferDesc.DebugName		= "Physics Renderer Uniform Copy Buffer";
 		uniformCopyBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		uniformCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 		uniformCopyBufferDesc.SizeInBytes	= vertexBufferSize;
 
-		BufferDesc indexCopyBufferDesc = {};
-		indexCopyBufferDesc.DebugName	= "Physics Renderer Index Copy Buffer";
-		indexCopyBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		indexCopyBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		indexCopyBufferDesc.SizeInBytes	= indexBufferSize;
-
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		// m_VertexCopyBuffers.Resize(backBufferCount);
 		m_UniformCopyBuffers.Resize(backBufferCount);
-		m_IndexCopyBuffers.Resize(backBufferCount);
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
 			// TSharedRef<Buffer> vertexBuffer = m_pGraphicsDevice->CreateBuffer(&vertexCopyBufferDesc);
 			TSharedRef<Buffer> uniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformCopyBufferDesc);
-			TSharedRef<Buffer> indexBuffer = m_pGraphicsDevice->CreateBuffer(&indexCopyBufferDesc);
-			if (uniformBuffer != nullptr && indexBuffer != nullptr)
+			if (uniformBuffer != nullptr)
 			{
-				// m_VertexCopyBuffers[b] = vertexBuffer;
 				m_UniformCopyBuffers[b] = uniformBuffer;
-				m_IndexCopyBuffers[b] = indexBuffer;
 			}
 			else
 			{
@@ -584,7 +536,7 @@ namespace LambdaEngine
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 
-	bool PhysicsRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)
+	bool PhysicsRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
@@ -596,9 +548,11 @@ namespace LambdaEngine
 		colorAttachmentDesc.InitialState	= pBackBufferAttachmentDesc->InitialState;
 		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
 
+		RenderPassAttachmentDesc depthAttachmentDesc = *pDepthStencilAttachmentDesc;
+
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
+		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
@@ -610,7 +564,7 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName			= "Physics Renderer Render Pass";
-		renderPassDesc.Attachments			= { colorAttachmentDesc };
+		renderPassDesc.Attachments			= { colorAttachmentDesc, depthAttachmentDesc };
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 
@@ -642,6 +596,9 @@ namespace LambdaEngine
 		pipelineStateDesc.RasterizerState.LineWidth		= 1.f;
 		pipelineStateDesc.RasterizerState.PolygonMode 	= EPolygonMode::POLYGON_MODE_LINE;
 		pipelineStateDesc.RasterizerState.CullMode		= ECullMode::CULL_MODE_NONE;
+
+		pipelineStateDesc.DepthStencilState = {};
+		pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{

@@ -28,6 +28,7 @@ namespace LambdaEngine
 	*/
 	struct PhysicsRendererDesc
 	{
+		// TODO: Update to match the implementation
 		uint32 BackBufferCount = 0;
 		uint32 VertexBufferSize = 0;
 		uint32 IndexBufferSize = 0;
@@ -92,7 +93,7 @@ namespace LambdaEngine
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
-		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
+		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
@@ -105,6 +106,7 @@ namespace LambdaEngine
 		TArray<VertexData> m_Verticies;
 
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		TSharedRef<const TextureView>			m_DepthStencilBuffer;
 
 		TSharedRef<CommandAllocator>	m_CopyCommandAllocator	= nullptr;
 		TSharedRef<CommandList>			m_CopyCommandList		= nullptr;
@@ -119,11 +121,7 @@ namespace LambdaEngine
 
 		TSharedRef<RenderPass> m_RenderPass = nullptr;
 
-		// TArray<TSharedRef<Buffer>> m_VertexCopyBuffers;
 		TArray<TSharedRef<Buffer>> m_UniformCopyBuffers;
-		TArray<TSharedRef<Buffer>> m_IndexCopyBuffers;
-		// TSharedRef<Buffer> m_VertexBuffer	= nullptr;
-		TSharedRef<Buffer> m_IndexBuffer	= nullptr;
 		TSharedRef<Buffer> m_UniformBuffer	= nullptr;
 
 		TSharedRef<Texture>		m_FontTexture		= nullptr;
