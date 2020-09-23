@@ -7,6 +7,7 @@
 
 #include <glm/gtx/euler_angles.hpp>
 #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 #include "Log/Log.h"
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Window.h"
@@ -92,9 +93,9 @@ namespace LambdaEngine
 		float32 dt = float32(deltaTime.AsSeconds());
 
 		glm::vec3 translation = {
-				float(Input::IsKeyDown(EKey::KEY_D) - Input::IsKeyDown(EKey::KEY_A)),	// X: Right
-				float(Input::IsKeyDown(EKey::KEY_Q) - Input::IsKeyDown(EKey::KEY_E)),	// Y: Up
-				float(Input::IsKeyDown(EKey::KEY_W) - Input::IsKeyDown(EKey::KEY_S))	// Z: Forward
+				float(InputActionSystem::IsActive("CAM_RIGHT")	 - InputActionSystem::IsActive("CAM_LEFT")),	// X: Right
+				float(InputActionSystem::IsActive("CAM_DOWN")    - InputActionSystem::IsActive("CAM_UP")),		// Y: Up
+				float(InputActionSystem::IsActive("CAM_FORWARD") - InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
 		};
 
 		const glm::vec3 forward = GetForward(rotComp.Quaternion);
@@ -102,17 +103,17 @@ namespace LambdaEngine
 
 		if (glm::length2(translation) > glm::epsilon<float>())
 		{
-			const float shiftSpeedFactor = Input::IsKeyDown(EKey::KEY_LEFT_SHIFT) ? 2.0f : 1.0f;
+			const float shiftSpeedFactor = InputActionSystem::IsActive("CAM_SPEED_MODIFIER") ? 2.0f : 1.0f;
 			translation = glm::normalize(translation) * freeCamComp.SpeedFactor * shiftSpeedFactor * dt;
 
 			posComp.Position += translation.x * right + translation.y * GetUp(rotComp.Quaternion) + translation.z * forward;
 		}
 
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-		float addedPitch	= dt * float(Input::IsKeyDown(EKey::KEY_DOWN) - Input::IsKeyDown(EKey::KEY_UP));
-		float addedYaw		= dt * float(Input::IsKeyDown(EKey::KEY_LEFT) - Input::IsKeyDown(EKey::KEY_RIGHT));
+		float addedPitch	= dt * float(InputActionSystem::IsActive("CAM_ROT_DOWN") - InputActionSystem::IsActive("CAM_ROT_UP"));
+		float addedYaw		= dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
 
-		if (Input::IsKeyDown(EKey::KEY_C))
+		if (InputActionSystem::IsActive("TOGGLE_MOUSE"))
 		{
 			if (!m_CIsPressed)
 			{
@@ -121,7 +122,7 @@ namespace LambdaEngine
 				m_CIsPressed		= true;
 			}
 		}
-		else if (Input::IsKeyUp(EKey::KEY_C))
+		else 
 		{
 			m_CIsPressed = false;
 		}
