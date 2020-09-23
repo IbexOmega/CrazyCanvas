@@ -33,7 +33,7 @@ void PlaySessionState::Init()
 	ECSCore* pECS = ECSCore::GetInstance();
 	for (const MeshComponent& meshComponent : meshComponents)
 	{
-		Entity entity = ECSCore::GetInstance()->CreateEntity();
+		const Entity entity = ECSCore::GetInstance()->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { position, true });
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<ScaleComponent>(entity, { scale, true });

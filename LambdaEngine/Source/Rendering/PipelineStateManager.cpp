@@ -167,7 +167,6 @@ namespace LambdaEngine
 	uint64 PipelineStateManager::CreateRayTracingPipelineState(const ManagedRayTracingPipelineStateDesc* pDesc)
 	{
 		RayTracingPipelineStateDesc pipelineDesc = pDesc->GetDesc();
-		CommandQueue*	pCommandQueue	= RenderAPI::GetComputeQueue();
 		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
@@ -214,6 +213,8 @@ namespace LambdaEngine
 
 	bool PipelineStateManager::OnPipelineStateRecompileEvent(const PipelineStateRecompileEvent& event)
 	{
+		UNREFERENCED_VARIABLE(event);
+
 		RenderAPI::GetGraphicsQueue()->Flush();
 		RenderAPI::GetComputeQueue()->Flush();
 		RenderAPI::GetCopyQueue()->Flush();
@@ -247,7 +248,6 @@ namespace LambdaEngine
 					const ManagedRayTracingPipelineStateDesc* pPipelineDesc = &s_RayTracingPipelineStateDescriptions[it->first];
 					RayTracingPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 
-					CommandQueue* pCommandQueue	= RenderAPI::GetComputeQueue();
 					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 					break;
 				}

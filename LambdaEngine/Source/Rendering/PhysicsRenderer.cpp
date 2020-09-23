@@ -56,6 +56,7 @@ namespace LambdaEngine
 		m_Verticies.Clear();
 	}
 
+	// TODO: Update struct to match current implementation
 	bool PhysicsRenderer::init(const PhysicsRendererDesc* pDesc)
 	{
 		VALIDATE(pDesc);
@@ -520,7 +521,7 @@ namespace LambdaEngine
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT;
+		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
@@ -567,6 +568,7 @@ namespace LambdaEngine
 
 		pipelineStateDesc.DepthStencilState = {};
 		pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
+		pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{

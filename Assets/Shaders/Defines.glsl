@@ -80,12 +80,18 @@ struct SAreaLight
     uvec2   Padding;
 };
 
+struct SPointLight
+{
+    vec4    ColorIntensity;
+    vec3    Position;
+    uint    Padding;
+};
+
 struct SLightsBuffer
 {
-    vec4        DirL_Direction;
-	vec4        DirL_EmittedRadiance;
-    SAreaLight  AreaLights[MAX_NUM_AREA_LIGHTS];
-    uint        AreaLightCount;
+    vec4        DirL_ColorIntensity;
+	vec3        DirL_Direction;
+    uint		PointLightCount;
 };
 
 struct SPerFrameBuffer
