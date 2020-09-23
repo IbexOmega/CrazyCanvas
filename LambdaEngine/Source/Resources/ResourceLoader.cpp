@@ -180,11 +180,11 @@ namespace LambdaEngine
 	/*
 	* Helpers
 	*/
-	static void ConvertSlashes(std::string& string)
+	static void ConvertSlashes(String& string)
 	{
 		{
 			size_t pos = string.find_first_of('\\');
-			while (pos != std::string::npos)
+			while (pos != String::npos)
 			{
 				string.replace(pos, 1, 1, '/');
 				pos = string.find_first_of('\\', pos + 1);
@@ -193,7 +193,7 @@ namespace LambdaEngine
 
 		{
 			size_t pos = string.find_first_of('/');
-			while (pos != std::string::npos)
+			while (pos != String::npos)
 			{
 				size_t afterPos = pos + 1;
 				if (string[afterPos] == '/')
@@ -204,6 +204,35 @@ namespace LambdaEngine
 				pos = string.find_first_of('/', afterPos);
 			}
 		}
+	}
+
+	static String ConvertSlashes(const String& string)
+	{
+		String result = string;
+		{
+			size_t pos = result.find_first_of('\\');
+			while (pos != std::string::npos)
+			{
+				result.replace(pos, 1, 1, '/');
+				pos = result.find_first_of('\\', pos + 1);
+			}
+		}
+
+		{
+			size_t pos = result.find_first_of('/');
+			while (pos != std::string::npos)
+			{
+				size_t afterPos = pos + 1;
+				if (result[afterPos] == '/')
+				{
+					result.erase(result.begin() + afterPos);
+				}
+
+				pos = result.find_first_of('/', afterPos);
+			}
+		}
+
+		return result;
 	}
 
 	// Removes extra data after the fileending (Some materials has extra data after file ending)
@@ -268,7 +297,8 @@ namespace LambdaEngine
 			aiString str;
 			pMaterial->GetTexture(type, index, &str);
 
-			String name = ConvertSlashes(str.C_Str());
+			String name = str.C_Str();
+			ConvertSlashes(name);
 			RemoveExtraData(name);
 
 			auto loadedTexture = context.LoadedTextures.find(name);
