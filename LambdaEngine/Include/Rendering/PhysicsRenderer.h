@@ -28,10 +28,8 @@ namespace LambdaEngine
 	*/
 	struct PhysicsRendererDesc
 	{
-		// TODO: Update to match the implementation
 		uint32 BackBufferCount = 0;
-		uint32 VertexBufferSize = 0;
-		uint32 IndexBufferSize = 0;
+		uint32 VerticiesBufferSize = 0;
 	};
 
 	struct VertexData
@@ -87,7 +85,7 @@ namespace LambdaEngine
 
 	private:
 		bool CreateCopyCommandList();
-		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
+		bool CreateBuffers(uint32 verticiesBufferSize);
 		//bool CreateTextures();
 		//bool CreateSamplers();
 		bool CreatePipelineLayout();

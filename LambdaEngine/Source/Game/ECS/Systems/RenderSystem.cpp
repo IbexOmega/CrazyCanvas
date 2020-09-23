@@ -112,8 +112,7 @@ namespace LambdaEngine
 				m_pPhysicsRenderer = DBG_NEW PhysicsRenderer(RenderAPI::GetDevice());
 				PhysicsRendererDesc physicsRendererDesc = {};
 				physicsRendererDesc.BackBufferCount = BACK_BUFFER_COUNT;
-				physicsRendererDesc.VertexBufferSize = MEGA_BYTE(1);
-				physicsRendererDesc.IndexBufferSize = MEGA_BYTE(1);
+				physicsRendererDesc.VerticiesBufferSize = MEGA_BYTE(1);
 				m_pPhysicsRenderer->init(&physicsRendererDesc);
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pPhysicsRenderer);

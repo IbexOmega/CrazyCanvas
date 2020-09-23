@@ -56,7 +56,6 @@ namespace LambdaEngine
 		m_Verticies.Clear();
 	}
 
-	// TODO: Update struct to match current implementation
 	bool PhysicsRenderer::init(const PhysicsRendererDesc* pDesc)
 	{
 		VALIDATE(pDesc);
@@ -77,7 +76,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateBuffers(pDesc->VertexBufferSize, pDesc->IndexBufferSize))
+		if (!CreateBuffers(pDesc->VerticiesBufferSize))
 		{
 			LOG_ERROR("[PhysicsRenderer]: Failed to create buffers");
 			return false;
@@ -102,7 +101,7 @@ namespace LambdaEngine
 		}
 
 		uint64 offset 	= 0;
-		uint64 size 	= pDesc->VertexBufferSize;
+		uint64 size 	= pDesc->VerticiesBufferSize;
 		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		return true;
@@ -402,13 +401,13 @@ namespace LambdaEngine
 		return m_CopyCommandList != nullptr;
 	}
 
-	bool PhysicsRenderer::CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize)
+	bool PhysicsRenderer::CreateBuffers(uint32 verticiesBufferSize)
 	{
 		BufferDesc uniformCopyBufferDesc = {};
 		uniformCopyBufferDesc.DebugName		= "Physics Renderer Uniform Copy Buffer";
 		uniformCopyBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		uniformCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		uniformCopyBufferDesc.SizeInBytes	= vertexBufferSize;
+		uniformCopyBufferDesc.SizeInBytes	= verticiesBufferSize;
 
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		// m_VertexCopyBuffers.Resize(backBufferCount);
@@ -431,7 +430,7 @@ namespace LambdaEngine
 		uniformBufferDesc.DebugName		= "Physics Renderer Uniform Buffer";
 		uniformBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		uniformBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-		uniformBufferDesc.SizeInBytes	= vertexBufferSize;
+		uniformBufferDesc.SizeInBytes	= verticiesBufferSize;
 
 		m_UniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformBufferDesc);
 		if (!m_UniformBuffer)
