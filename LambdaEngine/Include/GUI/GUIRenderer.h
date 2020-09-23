@@ -16,27 +16,27 @@ namespace LambdaEngine
 
 		//Noesis::RenderDevice
 		/// Creates render target surface with given dimensions and number of samples
-		virtual Noesis::Ptr<Noesis::RenderTarget> CreateRenderTarget(const char* label, uint32_t width, uint32_t height, uint32_t sampleCount) override final;
+		virtual Noesis::Ptr<Noesis::RenderTarget> CreateRenderTarget(const char* pLabel, uint32_t width, uint32_t height, uint32_t sampleCount) override final;
 
 		/// Creates render target sharing transient (stencil, colorAA) buffers with the given surface
-		virtual Noesis::Ptr<Noesis::RenderTarget> CloneRenderTarget(const char* label, Noesis::RenderTarget* surface) override final;
+		virtual Noesis::Ptr<Noesis::RenderTarget> CloneRenderTarget(const char* pLabel, Noesis::RenderTarget* pSurface) override final;
 
 		/// Creates texture with given dimensions and format. For immutable textures, the content of
 		/// each mipmap is given in 'data'. The passed data is tightly packed (no extra pitch). When 
 		/// 'data' is null the texture is considered dynamic and will be updated using UpdateTexture()
-		virtual Noesis::Ptr<Noesis::Texture> CreateTexture(const char* label, uint32_t width, uint32_t height,
-			uint32_t numLevels, Noesis::TextureFormat::Enum format, const void** data) override final;
+		virtual Noesis::Ptr<Noesis::Texture> CreateTexture(const char* pLabel, uint32_t width, uint32_t height,
+			uint32_t numLevels, Noesis::TextureFormat::Enum format, const void** ppData) override final;
 
 		/// Updates texture mipmap copying the given data to desired position. The passed data is
 		/// tightly packed (no extra pitch). Origin is located at the left of the first scanline
-		virtual void UpdateTexture(Noesis::Texture* texture, uint32_t level, uint32_t x, uint32_t y,
-			uint32_t width, uint32_t height, const void* data) override final;
+		virtual void UpdateTexture(Noesis::Texture* pTexture, uint32_t level, uint32_t x, uint32_t y,
+			uint32_t width, uint32_t height, const void* pData) override final;
 
 		/// Begins rendering offscreen or onscreen commands
 		virtual void BeginRender(bool offscreen) override final;
 
 		/// Binds render target and sets viewport to cover the entire surface
-		virtual void SetRenderTarget(Noesis::RenderTarget* surface) override final;
+		virtual void SetRenderTarget(Noesis::RenderTarget* pSurface) override final;
 
 		/// Clears the given region to transparent (#000000) and sets the scissor rectangle to fit it.
 		/// Until next call to EndTile() all rendering commands will only update the extents of the tile
@@ -46,7 +46,7 @@ namespace LambdaEngine
 		virtual void EndTile() override final;
 
 		/// Resolves multisample render target
-		virtual void ResolveRenderTarget(Noesis::RenderTarget* surface, const Noesis::Tile* tiles, uint32_t numTiles) override final;
+		virtual void ResolveRenderTarget(Noesis::RenderTarget* pSurface, const Noesis::Tile* pTiles, uint32_t numTiles) override final;
 
 		/// Ends rendering
 		virtual void EndRender() override final;
@@ -98,5 +98,12 @@ namespace LambdaEngine
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; };
 
 		FORCEINLINE virtual const String& GetName() const override final { return RENDER_GRAPH_NOESIS_GUI_STAGE_NAME; }
+
+	private:
+
+		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
+
+		uint32 m_ModFrameIndex = 0;
+
 	};
 }

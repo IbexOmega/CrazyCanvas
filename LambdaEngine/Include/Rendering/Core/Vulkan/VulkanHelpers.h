@@ -29,6 +29,7 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
+		case EFormat::FORMAT_R8_UNORM:				return VK_FORMAT_R8_UNORM;
 		case EFormat::FORMAT_R16_UNORM:				return VK_FORMAT_R16_UNORM;
 		case EFormat::FORMAT_R16_SFLOAT:			return VK_FORMAT_R16_SFLOAT;
 		case EFormat::FORMAT_R16G16_SFLOAT:			return VK_FORMAT_R16G16_SFLOAT;

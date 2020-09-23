@@ -121,7 +121,8 @@ namespace LambdaEngine
 	FORCEINLINE uint32 TextureFormatStride(EFormat format)
 	{
 		switch (format)
-		{		
+		{
+		case EFormat::FORMAT_R8_UNORM:				return 1;
         case EFormat::FORMAT_R16_SFLOAT:				
         case EFormat::FORMAT_R16_UNORM:				return 2;
         case EFormat::FORMAT_D24_UNORM_S8_UINT:
@@ -142,6 +143,7 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
+		case EFormat::FORMAT_R8_UNORM:				return "FORMAT_R8_UNORM";
 		case EFormat::FORMAT_R16_UNORM:				return "FORMAT_R16_UNORM";
 		case EFormat::FORMAT_R16_SFLOAT:			return "FORMAT_R16_SFLOAT";
 		case EFormat::FORMAT_R8G8B8A8_UNORM:		return "FORMAT_R8G8B8A8_UNORM";
@@ -160,7 +162,8 @@ namespace LambdaEngine
 
 	FORCEINLINE EFormat TextureFormatFromString(const String& string)
 	{
-		if		(string == "FORMAT_R16_UNORM")				return EFormat::FORMAT_R16_UNORM;
+		if		(string == "FORMAT_R8_UNORM")				return EFormat::FORMAT_R8_UNORM;
+		else if	(string == "FORMAT_R16_UNORM")				return EFormat::FORMAT_R16_UNORM;
 		else if (string == "FORMAT_R16_SFLOAT")				return EFormat::FORMAT_R16_SFLOAT;
 		else if (string == "FORMAT_R8G8B8A8_UNORM")			return EFormat::FORMAT_R8G8B8A8_UNORM;
 		else if (string == "FORMAT_B8G8R8A8_UNORM")			return EFormat::FORMAT_B8G8R8A8_UNORM;
