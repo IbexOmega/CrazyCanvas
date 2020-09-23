@@ -39,8 +39,15 @@ namespace LambdaEngine
 		}
 
 	public:
-		FORCEINLINE static Sampler* GetLinearSampler()	{ return s_pLinearSampler; }
-		FORCEINLINE static Sampler* GetNearestSampler() { return s_pNearestSampler; }
+		FORCEINLINE static Sampler* GetLinearSampler()	
+		{ 
+			return s_pLinearSampler; 
+		}
+
+		FORCEINLINE static Sampler* GetNearestSampler() 
+		{ 
+			return s_pNearestSampler; 
+		}
 
 	private:
 		static bool InitDefaults();

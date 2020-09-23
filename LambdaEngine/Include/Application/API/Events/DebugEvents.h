@@ -16,7 +16,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(ShaderRecompileEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("ShaderRecompileEvent");
 		}
@@ -36,7 +36,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(PipelineStateRecompileEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("PipelineStateRecompileEvent");
 		}
@@ -56,7 +56,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(PipelineStatesRecompiledEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("PipelineStatesRecompiledEvent");
 		}
