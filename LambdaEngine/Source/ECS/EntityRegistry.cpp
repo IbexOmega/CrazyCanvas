@@ -1,5 +1,7 @@
 #include "ECS/EntityRegistry.h"
 
+#include "ECS/ComponentType.h"
+
 #include "Log/Log.h"
 #include <mutex>
 
@@ -10,7 +12,7 @@ namespace LambdaEngine
 		AddPage();
 	}
 
-	void EntityRegistry::RegisterComponentType(Entity entity, std::type_index componentType)
+	void EntityRegistry::RegisterComponentType(Entity entity, const ComponentType* pComponentType)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
@@ -18,40 +20,40 @@ namespace LambdaEngine
 		if (!topPage.HasElement(entity))
 		{
 			// Initialize a new set
-			topPage.PushBack({ componentType }, entity);
+			topPage.PushBack({ pComponentType }, entity);
 		}
 		else
 		{
 			// Add the component type to the set
-			topPage.IndexID(entity).insert(componentType);
+			topPage.IndexID(entity).insert(pComponentType);
 		}
 	}
 
-	void EntityRegistry::DeregisterComponentType(Entity entity, std::type_index componentType)
+	void EntityRegistry::DeregisterComponentType(Entity entity, const ComponentType* pComponentType)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		EntityRegistryPage& topPage = m_EntityPages.top();
 		if (!topPage.HasElement(entity))
 		{
-			LOG_WARNING("Attempted to deregister a component type (%s) from an unregistered entity: %ld", componentType.name(), entity);
+			LOG_WARNING("Attempted to deregister a component type (%s) from an unregistered entity: %ld", pComponentType->GetName(), entity);
 		}
 		else
 		{
-			topPage.IndexID(entity).erase(componentType);
+			topPage.IndexID(entity).erase(pComponentType);
 		}
 	}
 
-	bool EntityRegistry::EntityHasTypes(Entity entity, const TArray<std::type_index>& queryTypes) const
+	bool EntityRegistry::EntityHasTypes(Entity entity, const TArray<const ComponentType*>& queryTypes) const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		const EntityRegistryPage& topPage = m_EntityPages.top();
-		const std::unordered_set<std::type_index>& entityTypes = topPage.IndexID(entity);
+		const std::unordered_set<const ComponentType*>& entityTypes = topPage.IndexID(entity);
 
-		for (std::type_index type : queryTypes)
+		for (const ComponentType* pComponentType : queryTypes)
 		{
-			auto got = entityTypes.find(type);
+			auto got = entityTypes.find(pComponentType);
 			if (got == entityTypes.end())
 			{
 				return false;

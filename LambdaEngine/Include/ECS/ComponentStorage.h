@@ -25,21 +25,21 @@ namespace LambdaEngine
 		template<typename Comp>
 		Comp& GetComponent(Entity entity);
 
-		bool DeleteComponent(Entity entity, std::type_index componentType);
+		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
 		template<typename Comp>
 		bool HasType() const;
 
-		bool HasType(std::type_index componentType) const;
+		bool HasType(const ComponentType* pComponentType) const;
 
-		IComponentArray* GetComponentArray(std::type_index componentType);
-		const IComponentArray* GetComponentArray(std::type_index componentType) const;
+		IComponentArray* GetComponentArray(const ComponentType* pComponentType);
+		const IComponentArray* GetComponentArray(const ComponentType* pComponentType) const;
 
 		template<typename Comp>
 		ComponentArray<Comp>* GetComponentArray();
 
 	private:
-		std::unordered_map<std::type_index, uint32> m_CompTypeToArrayMap;
+		std::unordered_map<const ComponentType*, uint32> m_CompTypeToArrayMap;
 
 		TArray<IComponentArray*> m_ComponentArrays;
 	};
@@ -47,10 +47,10 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline void ComponentStorage::RegisterComponentType()
 	{
-		std::type_index id = Comp::s_TID;
-		VALIDATE_MSG(m_CompTypeToArrayMap.find(id) == m_CompTypeToArrayMap.end(), "Trying to register a component that already exists!");
+		const ComponentType* pComponentType = Comp::Type();
+		VALIDATE_MSG(m_CompTypeToArrayMap.find(pComponentType) == m_CompTypeToArrayMap.end(), "Trying to register a component that already exists!");
 
-		m_CompTypeToArrayMap[id] = m_ComponentArrays.GetSize();
+		m_CompTypeToArrayMap[pComponentType] = m_ComponentArrays.GetSize();
 		ComponentArray<Comp>* compArray = DBG_NEW ComponentArray<Comp>();
 		m_ComponentArrays.PushBack(compArray);
 	}
@@ -87,17 +87,17 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline bool ComponentStorage::HasType() const
 	{
-		return m_CompTypeToArrayMap.find(Comp::s_TID) != m_CompTypeToArrayMap.end();
+		return m_CompTypeToArrayMap.find(Comp::Type()) != m_CompTypeToArrayMap.end();
 	}
 
-	inline bool ComponentStorage::HasType(std::type_index componentType) const
+	inline bool ComponentStorage::HasType(const ComponentType* pComponentType) const
 	{
-		return m_CompTypeToArrayMap.find(componentType) != m_CompTypeToArrayMap.end();
+		return m_CompTypeToArrayMap.find(pComponentType) != m_CompTypeToArrayMap.end();
 	}
 
 	template<typename Comp>
 	inline ComponentArray<Comp>* ComponentStorage::GetComponentArray()
 	{
-		return static_cast<ComponentArray<Comp>*>(GetComponentArray(Comp::s_TID));
+		return static_cast<ComponentArray<Comp>*>(GetComponentArray(Comp::Type()));
 	}
 }

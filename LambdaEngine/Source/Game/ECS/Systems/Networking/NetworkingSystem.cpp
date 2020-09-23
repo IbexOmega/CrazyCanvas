@@ -20,7 +20,7 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, NetworkComponent::s_TID}}, {&transformComponents}, &m_NetworkEntities}
+				{{{RW, NetworkComponent::Type()}}, {&transformComponents}, &m_NetworkEntities}
 			};
 			systemReg.Phase = 0;
 
@@ -32,9 +32,19 @@ namespace LambdaEngine
 
 	void NetworkingSystem::Tick(Timestamp deltaTime)
 	{
-		/*ECSCore* pECS = ECSCore::GetInstance();
+		ECSCore* pECS = ECSCore::GetInstance();
 
-		auto* pComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pComponents = pECS->GetComponentArray<NetworkComponent>();
+
+		for (Entity entity : m_NetworkEntities)
+		{
+			auto& networkComponent = pComponents->GetData(entity);
+			 
+			//const ComponentType& type = networkComponent.s_Type;
+			//LOG_MESSAGE(type.GetName().c_str());
+		}
+
+		/*auto* pComponents = pECS->GetComponentArray<PositionComponent>();
 
 		for (Entity entity : m_NetworkEntities)
 		{

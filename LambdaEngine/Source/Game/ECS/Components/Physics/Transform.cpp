@@ -6,11 +6,6 @@
 
 namespace LambdaEngine
 {
-    INIT_COMPONENT(PositionComponent);
-    INIT_COMPONENT(ScaleComponent);
-    INIT_COMPONENT(RotationComponent);
-    INIT_COMPONENT(WorldMatrixComponent);
-
     float GetPitch(const glm::vec3& forward)
     {
         const glm::vec3 right = glm::normalize(glm::cross(forward, g_DefaultUp));
