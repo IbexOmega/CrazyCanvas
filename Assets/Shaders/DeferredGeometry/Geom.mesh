@@ -18,7 +18,6 @@ layout(location = 4) out vec3		out_Bitangent[];
 layout(location = 5) out vec2		out_TexCoord[];
 layout(location = 6) out vec4		out_ClipPosition[];
 layout(location = 7) out vec4		out_PrevClipPosition[];
-layout(location = 8) out vec4		out_Color[];
 
 // Constant data
 const vec3 POSITIONS[3] = 
@@ -61,21 +60,20 @@ layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndi
 } b_PrimitiveIndices;
 
 // Color table for drawing each meshlet with a different color.
-//
-#define MAX_COLORS 10
-vec3 meshletcolors[MAX_COLORS] = 
-{
-	vec3(1.0f, 0.0f, 0.0f), 
-	vec3(0.0f, 1.0f, 0.0f),
-	vec3(0.0f, 0.0f, 1.0f),
-	vec3(1.0f, 1.0f, 0.0f),
-	vec3(1.0f, 0.0f, 1.0f),
-	vec3(0.0f, 1.0f, 1.0f),
-	vec3(1.0f, 0.5f, 0.0f),
-	vec3(0.5f, 1.0f, 0.0f),
-	vec3(0.0f, 0.5f, 1.0f),
-	vec3(1.0f, 1.0f, 1.0f)
-};
+//#define MAX_COLORS 10
+//const vec3 meshletcolors[MAX_COLORS] = 
+//{
+//	vec3(1.0f, 0.0f, 0.0f), 
+//	vec3(0.0f, 1.0f, 0.0f),
+//	vec3(0.0f, 0.0f, 1.0f),
+//	vec3(1.0f, 1.0f, 0.0f),
+//	vec3(1.0f, 0.0f, 1.0f),
+//	vec3(0.0f, 1.0f, 1.0f),
+//	vec3(1.0f, 0.5f, 0.0f),
+//	vec3(0.5f, 1.0f, 0.0f),
+//	vec3(0.0f, 0.5f, 1.0f),
+//	vec3(1.0f, 1.0f, 1.0f)
+//};
 
 /*
 * Main
@@ -96,7 +94,7 @@ void main()
 	mat4 transform	= instance.Transform;
 	
 	// Per vertex
-	vec4 color = vec4(meshletcolors[meshletID % MAX_COLORS], 1.0f);
+	//vec4 color = vec4(meshletcolors[meshletID % MAX_COLORS], 1.0f);
 	for (uint vert = 0; vert < meshlet.VertCount; vert++)
 	{
 		uint vertexIndex = b_UniqueIndices.Val[vert + meshlet.VertOffset];
@@ -118,8 +116,6 @@ void main()
 		vec4 clipPosition = projection * view * worldPosition;
 		out_ClipPosition[vert]		= clipPosition;
 		out_PrevClipPosition[vert]	= clipPosition;
-
-		out_Color[vert] = color;
 
 		// Position
 		gl_MeshVerticesNV[vert].gl_Position = clipPosition;

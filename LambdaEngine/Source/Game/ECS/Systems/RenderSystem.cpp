@@ -34,7 +34,8 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
+		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
+		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty("MeshShadersEnabled");
 
 		TransformComponents transformComponents;
 		transformComponents.Position.Permissions	= R;
@@ -85,9 +86,21 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			String prefix = m_RayTracingEnabled ? "RT_" : "";
+			String prefix	= m_RayTracingEnabled ? "RT_" : "";
+			String postfix	= m_MeshShadersEnabled? "_MESH" : "";
+			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
+			size_t pos = renderGraphName.find_first_of(".lrg");
+			if (pos != String::npos)
+			{
+				renderGraphName.insert(pos, postfix);
+			}
+			else
+			{
+				renderGraphName += postfix + ".lrg";
+			}
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, prefix + EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
+			renderGraphName = prefix + renderGraphName;
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
@@ -828,37 +841,37 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
+			TArray<Sampler*> linearSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetLinearSampler());
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
 			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
 			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			ResourceUpdateDesc aoMapsUpdateDesc = {};
 			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
 			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
 			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= linearSamplers.GetData();
 
 			ResourceUpdateDesc metallicMapsUpdateDesc = {};
 			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
 			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
 			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
 			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);

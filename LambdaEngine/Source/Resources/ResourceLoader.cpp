@@ -846,7 +846,9 @@ namespace LambdaEngine
 
 		if (!shader.parse(pResources, defaultVersion, false, messages, includer))
 		{
-			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+			const char* pShaderInfoLog = shader.getInfoLog();
+			const char* pShaderDebugInfo = shader.getInfoDebugLog();
+			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), pShaderInfoLog, pShaderDebugInfo);
 			return false;
 		}
 

@@ -14,7 +14,6 @@ layout(location = 4) in vec3        in_Bitangent;
 layout(location = 5) in vec2        in_TexCoord;
 layout(location = 6) in vec4        in_ClipPosition;
 layout(location = 7) in vec4        in_PrevClipPosition;
-layout(location = 8) in vec4        in_Color;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
 
@@ -58,7 +57,7 @@ void main()
 
 	//1
 	vec3 storedAlbedo         	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo 				  	= in_Color.rgb;
+	out_Albedo 				  	= storedAlbedo;
 
 	//2
 	float storedAO            	= materialParameters.AO * sampledAO;

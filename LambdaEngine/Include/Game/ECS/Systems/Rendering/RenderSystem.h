@@ -222,6 +222,7 @@ namespace LambdaEngine
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
+		bool					m_MeshShadersEnabled = false;
 		//Mesh/Instance/Entity
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
