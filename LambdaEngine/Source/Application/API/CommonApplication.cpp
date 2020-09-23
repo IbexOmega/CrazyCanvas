@@ -18,14 +18,10 @@ namespace LambdaEngine
 	CommonApplication::CommonApplication()
 		: ApplicationEventHandler()
 	{
-		VALIDATE(s_CommonApplication == nullptr);
-		s_CommonApplication = this;
 	}
 
 	CommonApplication::~CommonApplication()
 	{
-		VALIDATE(s_CommonApplication != nullptr);
-		s_CommonApplication = nullptr;
 	}
 
 	bool CommonApplication::Create(Application* pApplication)
@@ -226,10 +222,9 @@ namespace LambdaEngine
 		}
 
 		// Create application
-		CommonApplication* pApplication = DBG_NEW CommonApplication();
-		if (!pApplication->Create(pPlatformApplication))
+		s_CommonApplication = DBG_NEW CommonApplication();
+		if (!s_CommonApplication->Create(pPlatformApplication))
 		{
-			DELETE_OBJECT(pApplication);
 			return false;
 		}
 

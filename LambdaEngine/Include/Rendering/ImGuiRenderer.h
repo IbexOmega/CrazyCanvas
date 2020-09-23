@@ -9,6 +9,10 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Core/API/DescriptorHeap.h"
+#include "Core/API/DescriptorSet.h"
+#include "Core/API/CommandList.h"
+
 struct ImGuiContext;
 
 namespace LambdaEngine

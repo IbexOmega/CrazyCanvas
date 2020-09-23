@@ -23,7 +23,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(WindowFocusChangedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("WindowFocusChangedEvent=") + std::to_string(HasFocus);
 		}
@@ -48,7 +48,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(WindowMovedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("WindowMovedEvent=[x, ") + std::to_string(Position.x) + ", y=" + std::to_string(Position.y) + "]";
 		}
@@ -79,7 +79,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(WindowResizedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("WindowResizedEvent=[Width, ") + std::to_string(Width) + ", Height=" + std::to_string(Height) + "]";
 		}
@@ -105,7 +105,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(MouseLeftWindowEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return "MouseLeftWindowEvent";
 		}
@@ -128,7 +128,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(MouseEnteredWindowEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return "MouseEnteredWindowEvent";
 		}
@@ -151,7 +151,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(WindowClosedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return "WindowClosedEvent";
 		}
