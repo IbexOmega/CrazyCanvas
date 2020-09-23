@@ -124,11 +124,6 @@ namespace LambdaEngine
 		TArray<TSharedRef<Buffer>> m_UniformCopyBuffers;
 		TSharedRef<Buffer> m_UniformBuffer	= nullptr;
 
-		TSharedRef<Texture>		m_FontTexture		= nullptr;
-		TSharedRef<TextureView>	m_FontTextureView	= nullptr;
-
-		TSharedRef<Sampler> m_Sampler = nullptr;
-
 		THashTable<String, TArray<TSharedRef<DescriptorSet>>>		m_BufferResourceNameDescriptorSetsMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};

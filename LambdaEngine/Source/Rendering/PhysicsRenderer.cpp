@@ -53,12 +53,6 @@ namespace LambdaEngine
 
 	PhysicsRenderer::~PhysicsRenderer()
 	{
-		// PipelineStateManager::ReleasePipelineState(m_PipelineStateID);
-		// SAFERELEASE(m_CopyCommandAllocator);
-		// SAFERELEASE(m_CopyCommandList);
-		// SAFERELEASE(m_UniformBuffer);
-		// SAFERELEASE()
-
 		m_Verticies.Clear();
 	}
 
