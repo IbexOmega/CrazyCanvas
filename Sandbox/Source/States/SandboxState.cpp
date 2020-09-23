@@ -62,6 +62,26 @@ void SandboxState::Init()
 		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
 
+	// Load scene
+	//{
+	//	TArray<MeshComponent> meshComponents;
+	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+
+	//	const glm::vec3 position(0.0f, 0.0f, 0.0f);
+	//	const glm::vec3 scale(0.01f);
+
+	//	for (const MeshComponent& meshComponent : meshComponents)
+	//	{
+	//		Entity entity = ECSCore::GetInstance()->CreateEntity();
+	//		pECS->AddComponent<PositionComponent>(entity, { position, true });
+	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	//		m_Entities.PushBack(entity);
+	//	}
+	//}
+
+
 	//Scene
 	{
 		TArray<MeshComponent> meshComponents;
@@ -81,24 +101,6 @@ void SandboxState::Init()
 			m_Entities.PushBack(entity);
 		}
 	}
-
-	// Load scene
-	//{
-	//	TArray<MeshComponent> meshComponents;
-	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
-
-	//	const glm::vec3 position(0.0f, 0.0f, 0.0f);
-	//	const glm::vec3 scale(0.01f);
-
-	//	for (const MeshComponent& meshComponent : meshComponents)
-	//	{
-	//		Entity entity = ECSCore::GetInstance()->CreateEntity();
-	//		pECS->AddComponent<PositionComponent>(entity, { position, true });
-	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	//	}
-	//}
 
 	//Sphere Grid
 	{

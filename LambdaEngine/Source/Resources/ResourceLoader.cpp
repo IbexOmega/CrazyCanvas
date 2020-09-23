@@ -347,17 +347,12 @@ namespace LambdaEngine
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
-		Vertex* pVertexArray = DBG_NEW Vertex[numVertices];
-		memcpy(pVertexArray, pVertices, sizeof(Vertex) * numVertices);
-
-		uint32* pIndexArray = DBG_NEW uint32[numIndices];
-		memcpy(pIndexArray, pIndices, sizeof(uint32) * numIndices);
-
 		Mesh* pMesh = DBG_NEW Mesh();
-		pMesh->pVertexArray		= pVertexArray;
-		pMesh->pIndexArray		= pIndexArray;
-		pMesh->VertexCount		= numVertices;
-		pMesh->IndexCount		= numIndices;
+		pMesh->Vertices.Resize(numVertices);
+		memcpy(pMesh->Vertices.GetData(), pVertices, sizeof(Vertex) * numVertices);
+
+		pMesh->Indices.Resize(numVertices);
+		memcpy(pMesh->Indices.GetData(), pIndices, sizeof(uint32) * numIndices);
 
 		MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
 		return pMesh;
@@ -903,9 +898,7 @@ namespace LambdaEngine
 
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
-		pMesh->pVertexArray = DBG_NEW Vertex[pMeshAI->mNumVertices];
-		pMesh->VertexCount = pMeshAI->mNumVertices;
-
+		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
 			Vertex vertex;
@@ -933,7 +926,7 @@ namespace LambdaEngine
 				vertex.TexCoord.y = pMeshAI->mTextureCoords[0][vertexIdx].y;
 			}
 
-			pMesh->pVertexArray[vertexIdx] = vertex;
+			pMesh->Vertices[vertexIdx] = vertex;
 		}
 	}
 
@@ -941,7 +934,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pMeshAI->HasFaces());
 
-		TArray<uint32> indices;
+		TArray<Mesh::IndexType> indices;
 		indices.Reserve(pMeshAI->mNumFaces * 3);
 		for (uint32 faceIdx = 0; faceIdx < pMeshAI->mNumFaces; faceIdx++)
 		{
@@ -952,10 +945,8 @@ namespace LambdaEngine
 			}
 		}
 
-		pMesh->pIndexArray = DBG_NEW uint32[indices.GetSize()];
-		memcpy(pMesh->pIndexArray, indices.GetData(), sizeof(uint32) * indices.GetSize());
-
-		pMesh->IndexCount = indices.GetSize();
+		pMesh->Indices.Resize(indices.GetSize());
+		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(Mesh::IndexType) * indices.GetSize());
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)

@@ -6,8 +6,12 @@
 #include "../Defines.glsl"
 
 // Number of threads
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-layout(triangles, max_vertices = 64, max_primitives = 126) out;
+#define NUM_THREADS 32
+#define MAX_VERTICES 64
+#define MAX_PRIMITIVES 124
+
+layout(local_size_x = NUM_THREADS, local_size_y = 1, local_size_z = 1) in;
+layout(triangles, max_vertices = MAX_VERTICES, max_primitives = MAX_PRIMITIVES) out;
 
 // Output block for vertices
 layout(location = 0) out flat uint	out_MaterialSlot[];
@@ -81,6 +85,7 @@ layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndi
 void main()
 {
 	// Calculate meshletID and instanceID
+	uint threadID = gl_LocalInvocationID.x;
 	uint totalMeshletID	= gl_WorkGroupID.x;
 	uint meshletCount	= b_Instances.Val[0].MeshletCount; // Just use 0 since all instances have the same meshlet count
 	uint meshletID		= totalMeshletID % meshletCount;
@@ -95,22 +100,22 @@ void main()
 	
 	// Per vertex
 	//vec4 color = vec4(meshletcolors[meshletID % MAX_COLORS], 1.0f);
-	for (uint vert = 0; vert < meshlet.VertCount; vert++)
+	for (uint vert = threadID; vert < meshlet.VertCount; vert += NUM_THREADS)
 	{
 		uint vertexIndex = b_UniqueIndices.Val[vert + meshlet.VertOffset];
 		SVertex vertex = b_Vertices.Val[vertexIndex];
 
 		vec4 worldPosition	= transform * vec4(vertex.Position.xyz, 1.0f);
-		vec3 normal			= (transform * vec4(vertex.Normal.xyz, 0.0f)).xyz;
-		vec3 tangent		= (transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz;
+		vec3 normal			= normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+		vec3 tangent		= normalize((transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 		vec2 texcoord		= vertex.TexCoord.xy;
 
 		// Material
 		out_WorldPosition[vert]	= worldPosition.xyz;
 		out_MaterialSlot[vert]	= instance.MaterialSlot;
-		out_Normal[vert]		= normalize(normal);
-		out_Tangent[vert]		= normalize(tangent);
-		out_Bitangent[vert]		= normalize(cross(tangent, normal));
+		out_Normal[vert]		= normal;
+		out_Tangent[vert]		= tangent;
+		out_Bitangent[vert]		= cross(tangent, normal);
 		out_TexCoord[vert]		= texcoord;
 		
 		vec4 clipPosition = projection * view * worldPosition;
@@ -122,12 +127,22 @@ void main()
 	}
 
 	// Per Index
-	uint indexCount = meshlet.PrimCount * 3;
-	uint indexOffset = meshlet.PrimOffset * 3;
-	for (uint index = 0; index < indexCount; index++)
+	const uint MASK = 0xff;
+	const uint primCount	= meshlet.PrimCount;	//((meshlet.PrimCount * 3) + 3) / 4;
+	const uint primOffset	= meshlet.PrimOffset;	//((meshlet.PrimOffset * 3) + 3) / 4;
+	for (uint primitive = threadID; primitive < meshlet.PrimCount; primitive += NUM_THREADS)
 	{
-		uint primitiveIndex = b_PrimitiveIndices.Val[index + indexOffset];
-		gl_PrimitiveIndicesNV[index] = primitiveIndex;
+		uint primitiveIndex = b_PrimitiveIndices.Val[primitive + primOffset];
+		uint i0 = primitiveIndex & MASK;
+		uint i1 = (primitiveIndex >> 8) & MASK;
+		uint i2 = (primitiveIndex >> 16) & MASK;
+
+		uint index = primitive * 3;
+		gl_PrimitiveIndicesNV[index]		= i0;
+		gl_PrimitiveIndicesNV[index + 1]	= i1;
+		gl_PrimitiveIndicesNV[index + 2]	= i2;
+
+		//writePackedPrimitiveIndices4x8NV(primitive * 4, primitiveIndex);
 	}
 
 	// Number of triangles
