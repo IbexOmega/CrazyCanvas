@@ -169,6 +169,10 @@ namespace LambdaEngine
 
 			if (pBestFit == nullptr)
 			{
+				pAllocation->pBlock = nullptr;
+				pAllocation->pAllocator = nullptr;
+				pAllocation->Offset = 0;
+				pAllocation->Memory = 0;
 				return false;
 			}
 
@@ -484,6 +488,10 @@ namespace LambdaEngine
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
 		if (alignedSize >= m_PageSize)
 		{
+			pAllocation->pBlock = nullptr;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->Offset = 0;
+			pAllocation->Memory = 0;
 			return false;
 		}
 
@@ -507,6 +515,10 @@ namespace LambdaEngine
 		DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, this, uint32(m_Pages.GetSize()), memoryIndex);
 		if (!pNewMemoryPage->Init(m_PageSize))
 		{
+			pAllocation->pBlock = nullptr;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->Offset = 0;
+			pAllocation->Memory = 0;
 			SAFEDELETE(pNewMemoryPage);
 			return false;
 		}
