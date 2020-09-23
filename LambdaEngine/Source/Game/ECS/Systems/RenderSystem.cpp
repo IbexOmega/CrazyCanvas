@@ -96,19 +96,18 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
-			// TODO: Delete physics renderer on release
-			PhysicsRenderer* pPhysicsRenderer			= DBG_NEW PhysicsRenderer(RenderAPI::GetDevice());
+			m_pPhysicsRenderer = DBG_NEW PhysicsRenderer(RenderAPI::GetDevice());
 			PhysicsRendererDesc physicsRendererDesc = {};
 			physicsRendererDesc.BackBufferCount			= BACK_BUFFER_COUNT;
 			physicsRendererDesc.VertexBufferSize		= MEGA_BYTE(8);
 			physicsRendererDesc.IndexBufferSize			= MEGA_BYTE(8);
-			pPhysicsRenderer->init(&physicsRendererDesc);
+			m_pPhysicsRenderer->init(&physicsRendererDesc);
 
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
-			renderGraphDesc.CustomRenderers				= { pPhysicsRenderer };
+			renderGraphDesc.CustomRenderers				= { m_pPhysicsRenderer };
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
@@ -205,6 +204,7 @@ namespace LambdaEngine
 				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
+		SAFEDELETE(m_pPhysicsRenderer);
 
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
@@ -226,6 +226,7 @@ namespace LambdaEngine
 		}
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
+
 
 		SAFEDELETE(m_pRenderGraph);
 

@@ -3,7 +3,7 @@
 
 layout(location = 0) in vec4 fragColor;
 
-layout(location = 1) out vec4 finalColor;
+layout(location = 0) out vec4 finalColor;
 
 void main()
 {

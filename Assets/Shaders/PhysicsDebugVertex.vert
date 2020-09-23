@@ -22,8 +22,9 @@ layout (binding = 0, set = 1) restrict readonly buffer vertexBuffer
 
 layout (location = 0) out vec4 fragColor;
 
+
 void main()
 {
     fragColor = vertices[gl_VertexIndex].Color;
-    gl_Position = perFrameBuffer.View * perFrameBuffer.Projection * vec4(vertices[gl_VertexIndex].Position.xyz, 1.0);
+    gl_Position = perFrameBuffer.Projection * perFrameBuffer.View * vec4(vertices[gl_VertexIndex].Position.xyz, 1.0);
 }

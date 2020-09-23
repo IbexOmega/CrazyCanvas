@@ -525,7 +525,7 @@
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS"
+                    "src_stage": "RENDER_STAGE_PHYSICS_DEBUG"
                 },
                 {
                     "name": "BACK_BUFFER_TEXTURE",
@@ -629,7 +629,7 @@
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
             "draw_type": "SCENE_INSTANCES",
-            "depth_test_enabled": false,
+            "depth_test_enabled": true,
             "cull_mode": "CULL_MODE_NONE",
             "polygon_mode": "POLYGON_MODE_LINE",
             "primitive_topology": "PRIMITIVE_TOPOLOGY_LINE_LIST",
@@ -656,6 +656,13 @@
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SHADING_PASS"
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": "DEFERRED_GEOMETRY_PASS"
                 }
             ]
         }
