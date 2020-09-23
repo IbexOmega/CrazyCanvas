@@ -82,18 +82,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		// if (!CreateTextures())
-		// {
-		// 	LOG_ERROR("[PhysicsRenderer]: Failed to create textures");
-		// 	return false;
-		// }
-
-		// if (!CreateSamplers())
-		// {
-		// 	LOG_ERROR("[PhysicsRenderer]: Failed to create samplers");
-		// 	return false;
-		// }
-
 		if (!CreatePipelineLayout())
 		{
 			LOG_ERROR("[PhysicsRenderer]: Failed to create PipelineLayout");
@@ -113,7 +101,7 @@ namespace LambdaEngine
 		}
 
 		uint64 offset 	= 0;
-		uint64 size 	= pDesc->VertexBufferSize; //sizeof(VertexData);
+		uint64 size 	= pDesc->VertexBufferSize;
 		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		return true;
@@ -160,11 +148,12 @@ namespace LambdaEngine
 
 	void PhysicsRenderer::reportErrorWarning(const char* warningString)
 	{
-		LOG_WARNING("[Physics Renderer]: %s", warningString);
+		LOG_WARNING("[Physics Renderer (Bullet)]: %s", warningString);
 	}
 
 	void PhysicsRenderer::draw3dText(const btVector3& location, const char* textString)
 	{
+		LOG_INFO("[Physics Renderer (Bullet)]: %s at (%f, %f, %f)", textString, location.getX(), location.getY(), location.getZ());
 	}
 
 	// Custom renderer implementaion
@@ -217,8 +206,6 @@ namespace LambdaEngine
 
 	void PhysicsRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
-		// TODO: Ask Herman if I done goofed or done good
-
 		if (count == 1 || backBufferBound)
 		{
 			auto bufferIt = m_BufferResourceNameDescriptorSetsMap.find(resourceName);
@@ -474,22 +461,9 @@ namespace LambdaEngine
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
 		descriptorSetLayoutDesc2.DescriptorBindings		= { ssboBindingDesc };
 
-		// ConstantRangeDesc constantRangeVertexDesc = { };
-		// constantRangeVertexDesc.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		// constantRangeVertexDesc.SizeInBytes			= 4 * sizeof(float32);
-		// constantRangeVertexDesc.OffsetInBytes		= 0;
-
-		// ConstantRangeDesc constantRangePixelDesc = { };
-		// constantRangePixelDesc.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		// constantRangePixelDesc.SizeInBytes		= 8 * sizeof(float32) + sizeof(uint32);
-		// constantRangePixelDesc.OffsetInBytes	= constantRangeVertexDesc.SizeInBytes;
-
-		// ConstantRangeDesc pConstantRanges[2] = { constantRangeVertexDesc, constantRangePixelDesc };
-
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName			= "Physics Renderer Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
-		// pipelineLayoutDesc.ConstantRanges		= { pConstantRanges[0], pConstantRanges[1] };
 
 		m_PipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 
