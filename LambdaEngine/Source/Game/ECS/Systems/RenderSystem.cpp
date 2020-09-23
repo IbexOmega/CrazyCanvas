@@ -340,9 +340,13 @@ namespace LambdaEngine
 			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
 		}
 
-		m_DirtyDrawArgs				= m_RequiredDrawArgs;
-		m_PerFrameResourceDirty		= true;
-		m_MaterialsResourceDirty	= true;
+		m_DirtyDrawArgs						= m_RequiredDrawArgs;
+		m_PerFrameResourceDirty				= true;
+		m_MaterialsResourceDirty			= true;
+		m_MaterialsPropertiesBufferDirty	= true;
+		m_RenderGraphSBTRecordsDirty		= true;
+		m_LightsResourceDirty				= true;
+
 		UpdateRenderGraph();
 	}
 
