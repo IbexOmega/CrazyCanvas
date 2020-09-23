@@ -60,8 +60,8 @@ void TrackSystem::UpdateTrack(Timestamp deltaTime, Entity entity, PositionCompon
 	glm::uvec4 splineIndices = GetCurrentSplineIndices(trackComp);
 	const float tPerSecond = cameraSpeed / glm::length(GetCurrentGradient(splineIndices, trackComp));
 
-	trackComp.CurrentTrackT += deltaTime.AsSeconds() * tPerSecond;
-	trackComp.CurrentTrackIndex += std::min(1ULL, (size_t)trackComp.CurrentTrackT);
+	trackComp.CurrentTrackT += float32(deltaTime.AsSeconds()) * tPerSecond;
+	trackComp.CurrentTrackIndex += uint32(std::min(1ULL, (size_t)trackComp.CurrentTrackT));
 	splineIndices = GetCurrentSplineIndices(trackComp);
 	trackComp.CurrentTrackT = std::modf(trackComp.CurrentTrackT, &trackComp.CurrentTrackT); // Remove integer part
 

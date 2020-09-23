@@ -24,12 +24,13 @@ namespace LambdaEngine
 
 	void ECSCore::RemoveEntity(Entity entity)
 	{
+		std::scoped_lock<SpinLock> lock(m_LockRemoveEntity);
 		m_EntitiesToDelete.PushBack(entity);
 	}
 
 	void ECSCore::ScheduleJobASAP(const Job& job)
 	{
-		m_JobScheduler.ScheduleJob(job, CURRENT_PHASE);
+		m_JobScheduler.ScheduleJobASAP(job);
 	}
 
 	void ECSCore::ScheduleJobPostFrame(const Job& job)
@@ -145,12 +146,7 @@ namespace LambdaEngine
 
 	bool ECSCore::DeleteComponent(Entity entity, const ComponentType* componentType)
 	{
-		if (m_ComponentStorage.DeleteComponent(entity, componentType))
-		{
-			m_EntityPublisher.UnpublishComponent(entity, componentType);
-			return true;
-		}
-
-		return false;
+		m_EntityPublisher.UnpublishComponent(entity, componentType);
+		return m_ComponentStorage.DeleteComponent(entity, componentType);
 	}
 }

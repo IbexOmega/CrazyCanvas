@@ -28,7 +28,7 @@ namespace LambdaEngine
 
             newSub.pSubscriber = subReq.pSubscriber;
             newSub.OnEntityAdded = subReq.OnEntityAdded;
-            newSub.OnEntityRemoved = subReq.OnEntityRemoved;
+            newSub.OnEntityRemoval = subReq.OnEntityRemoval;
 
             newSub.ComponentTypes.Reserve(componentRegs.GetSize());
             for (const ComponentAccess& componentReg : componentRegs)
@@ -170,10 +170,8 @@ namespace LambdaEngine
                 continue;
             }
 
-            if (sysSub.OnEntityRemoved)
-            {
-                sysSub.OnEntityRemoved(entityID);
-            }
+            if (sysSub.OnEntityRemoval)
+                sysSub.OnEntityRemoval(entityID);
 
             sysSub.pSubscriber->Pop(entityID);
 

@@ -52,7 +52,7 @@ namespace LambdaEngine
 		String Name											= "Render Graph";
 		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
 		uint32 BackBufferCount								= 3;
-    TArray<ICustomRenderer*>	CustomRenderers;
+		TArray<ICustomRenderer*>	CustomRenderers;
 	};
 
 	struct PushConstantsUpdate
@@ -415,7 +415,7 @@ namespace LambdaEngine
 
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
-		DeviceAllocator*								m_pDeviceAllocator					= nullptr;
+		GraphicsDeviceFeatureDesc						m_Features;
 
 		DescriptorHeap*									m_pDescriptorHeap					= nullptr;
 
