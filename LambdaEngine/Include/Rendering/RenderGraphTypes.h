@@ -65,7 +65,7 @@ namespace LambdaEngine
 	{
 		NONE							= 0,
 		SCENE_INSTANCES					= 1,
-		SCENE_INSTANCES_MESH_SHADING	= 4,
+		SCENE_INSTANCES_MESH_SHADER	= 4,
 		FULLSCREEN_QUAD					= 2,
 		CUBE							= 3,
 	};
@@ -790,7 +790,7 @@ namespace LambdaEngine
 		switch (drawType)
 		{
 		case ERenderStageDrawType::SCENE_INSTANCES:					return "SCENE_INSTANCES";
-		case ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING:	return "SCENE_INSTANCES_MESH_SHADING";
+		case ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER:	return "SCENE_INSTANCES_MESH_SHADER";
 		case ERenderStageDrawType::FULLSCREEN_QUAD:					return "FULLSCREEN_QUAD";
 		case ERenderStageDrawType::CUBE:							return "CUBE";
 		default:													return "NONE";
@@ -800,7 +800,7 @@ namespace LambdaEngine
 	FORCEINLINE ERenderStageDrawType RenderStageDrawTypeFromString(const String& string)
 	{
 		if (string == "SCENE_INSTANCES")				return ERenderStageDrawType::SCENE_INSTANCES;
-		if (string == "SCENE_INSTANCES_MESH_SHADING")	return ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING;
+		if (string == "SCENE_INSTANCES_MESH_SHADER")	return ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER;
 		if (string == "FULLSCREEN_QUAD")				return ERenderStageDrawType::FULLSCREEN_QUAD;
 		if (string == "CUBE")							return ERenderStageDrawType::CUBE;
 		return ERenderStageDrawType::NONE;

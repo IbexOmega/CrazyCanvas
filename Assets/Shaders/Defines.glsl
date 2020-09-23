@@ -65,9 +65,9 @@ struct SInstance
 	mat4 Transform;
 	mat4 PrevTransform;
 	uint MaterialSlot;
+	uint MeshletCount;
 	uint Padding0;
 	uint Padding1;
-	uint Padding2;
 };
 
 struct SIndirectArg

@@ -597,9 +597,10 @@ namespace LambdaEngine
 		}
 
 		Instance instance = {};
-		instance.Transform			= transform;
-		instance.PrevTransform		= transform;
-		instance.MaterialSlot		= materialSlot;
+		instance.Transform		= transform;
+		instance.PrevTransform	= transform;
+		instance.MaterialSlot	= materialSlot;
+		instance.MeshletCount	= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);

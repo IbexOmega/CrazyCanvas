@@ -47,9 +47,9 @@ namespace LambdaEngine
 			glm::mat4	Transform		= glm::mat4(1.0f);
 			glm::mat4	PrevTransform	= glm::mat4(1.0f);
 			uint32		MaterialSlot	= 0;
+			uint32		MeshletCount	= 0;
 			uint32		Padding0;
 			uint32		Padding1;
-			uint32		Padding2;
 		};
 
 		struct MeshKey

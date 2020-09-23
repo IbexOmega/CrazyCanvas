@@ -18,6 +18,7 @@ layout(location = 4) out vec3		out_Bitangent[];
 layout(location = 5) out vec2		out_TexCoord[];
 layout(location = 6) out vec4		out_ClipPosition[];
 layout(location = 7) out vec4		out_PrevClipPosition[];
+layout(location = 8) out vec4		out_Color[];
 
 // Constant data
 const vec3 POSITIONS[3] = 
@@ -59,25 +60,48 @@ layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndi
 	uint Val[];
 } b_PrimitiveIndices;
 
+// Color table for drawing each meshlet with a different color.
+//
+#define MAX_COLORS 10
+vec3 meshletcolors[MAX_COLORS] = 
+{
+	vec3(1.0f, 0.0f, 0.0f), 
+	vec3(0.0f, 1.0f, 0.0f),
+	vec3(0.0f, 0.0f, 1.0f),
+	vec3(1.0f, 1.0f, 0.0f),
+	vec3(1.0f, 0.0f, 1.0f),
+	vec3(0.0f, 1.0f, 1.0f),
+	vec3(1.0f, 0.5f, 0.0f),
+	vec3(0.5f, 1.0f, 0.0f),
+	vec3(0.0f, 0.5f, 1.0f),
+	vec3(1.0f, 1.0f, 1.0f)
+};
+
 /*
 * Main
 */
 void main()
 {
-	uint meshletID	= gl_WorkGroupID.x;
-	SMeshlet meshlet = b_Meshlets.Val[meshletID];
-	SInstance instance = b_Instances.Val[0];
+	// Calculate meshletID and instanceID
+	uint totalMeshletID	= gl_WorkGroupID.x;
+	uint meshletCount	= b_Instances.Val[0].MeshletCount; // Just use 0 since all instances have the same meshlet count
+	uint meshletID		= totalMeshletID % meshletCount;
+	uint instanceID		= totalMeshletID / meshletCount;
 
+	// Get data
+	SMeshlet	meshlet		= b_Meshlets.Val[meshletID];
+	SInstance	instance	= b_Instances.Val[instanceID];
 	mat4 projection	= u_PerFrameBuffer.Val.Projection;
 	mat4 view		= u_PerFrameBuffer.Val.View;
 	mat4 transform	= instance.Transform;
 	
 	// Per vertex
+	vec4 color = vec4(meshletcolors[meshletID % MAX_COLORS], 1.0f);
 	for (uint vert = 0; vert < meshlet.VertCount; vert++)
 	{
 		uint vertexIndex = b_UniqueIndices.Val[vert + meshlet.VertOffset];
+		SVertex vertex = b_Vertices.Val[vertexIndex];
 
-		SVertex vertex		= b_Vertices.Val[vertexIndex];
 		vec4 worldPosition	= transform * vec4(vertex.Position.xyz, 1.0f);
 		vec3 normal			= (transform * vec4(vertex.Normal.xyz, 0.0f)).xyz;
 		vec3 tangent		= (transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz;
@@ -94,6 +118,8 @@ void main()
 		vec4 clipPosition = projection * view * worldPosition;
 		out_ClipPosition[vert]		= clipPosition;
 		out_PrevClipPosition[vert]	= clipPosition;
+
+		out_Color[vert] = color;
 
 		// Position
 		gl_MeshVerticesNV[vert].gl_Position = clipPosition;

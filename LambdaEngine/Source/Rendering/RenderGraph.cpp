@@ -44,6 +44,9 @@ namespace LambdaEngine
 	RenderGraph::RenderGraph(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
+		VALIDATE(m_pGraphicsDevice != nullptr);
+		m_pGraphicsDevice->QueryDeviceFeatures(&m_Features);
+
 		EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &RenderGraph::OnWindowResized);
 		EventQueue::RegisterEventHandler<PreSwapChainRecreatedEvent>(this, &RenderGraph::OnPreSwapChainRecreated);
 		EventQueue::RegisterEventHandler<PostSwapChainRecreatedEvent>(this, &RenderGraph::OnPostSwapChainRecreated);
@@ -1637,7 +1640,7 @@ namespace LambdaEngine
 				{
 					if (!pRenderStageDesc->Graphics.Shaders.MeshShaderName.empty())
 					{
-						pRenderStage->DrawType = ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING;
+						pRenderStage->DrawType = ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER;
 					}
 				}
 			}
@@ -2194,11 +2197,11 @@ namespace LambdaEngine
 					}
 
 					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || 
-						pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING)
+						pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 					{
 						if (pRenderStage->pDrawArgsResource == nullptr)
 						{
-							LOG_ERROR("[RenderGraph]: A RenderStage of DrawType SCENE_INSTANCES and SCENE_INSTANCES_MESH_SHADING must have a binding of typ SCENE_DRAW_BUFFERS");
+							LOG_ERROR("[RenderGraph]: A RenderStage of DrawType SCENE_INSTANCES and SCENE_INSTANCES_MESH_SHADER must have a binding of typ SCENE_DRAW_BUFFERS");
 							return false;
 						}
 					}
@@ -3555,7 +3558,7 @@ namespace LambdaEngine
 		uint32 frameBufferHeight	= 0;
 
 		DescriptorSet** ppDrawArgsDescriptorSetsPerFrame = nullptr;
-		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING)
+		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 		{
 			ppDrawArgsDescriptorSetsPerFrame = pRenderStage->pppDrawArgDescriptorSets[m_ModFrameIndex];
 		}
@@ -3638,7 +3641,6 @@ namespace LambdaEngine
 				pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 				PushConstants* pDrawIterationPushConstants = &pRenderStage->pInternalPushConstants[DRAW_ITERATION_PUSH_CONSTANTS_INDEX];
-
 				if (pDrawIterationPushConstants->MaxDataSize == sizeof(uint32))
 				{
 					memcpy(pDrawIterationPushConstants->pData, &r, sizeof(uint32));
@@ -3650,7 +3652,6 @@ namespace LambdaEngine
 					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
 					{
 						const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
-
 						pGraphicsCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 						if (ppDrawArgsDescriptorSetsPerFrame)
@@ -3661,7 +3662,7 @@ namespace LambdaEngine
 						pGraphicsCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 					}
 				}
-				else if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADING)
+				else if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 				{
 					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
 					{
@@ -3671,13 +3672,24 @@ namespace LambdaEngine
 							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
 						}
 
-						if (drawArg.MeshletCount > 32)
+						const uint32 maxTaskCount = m_Features.MaxDrawMeshTasksCount;
+						const uint32 totalMeshletCount = drawArg.MeshletCount * drawArg.InstanceCount;
+						if (totalMeshletCount > maxTaskCount)
 						{
-							pGraphicsCommandList->DispatchMesh(32, 0);
+							int32 meshletsLeft	= static_cast<int32>(totalMeshletCount);
+							int32 meshletOffset = 0;
+							while (meshletsLeft > 0)
+							{
+								int32 meshletCount = std::min<int32>(maxTaskCount, meshletsLeft);
+								pGraphicsCommandList->DispatchMesh(meshletCount, meshletOffset);
+
+								meshletOffset += meshletCount;
+								meshletsLeft -= meshletCount;
+							}
 						}
 						else
 						{
-							pGraphicsCommandList->DispatchMesh(drawArg.MeshletCount, 0);
+							pGraphicsCommandList->DispatchMesh(totalMeshletCount, 0);
 						}
 					}
 				}
