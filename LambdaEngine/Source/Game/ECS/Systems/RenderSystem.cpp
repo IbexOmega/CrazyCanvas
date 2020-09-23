@@ -586,7 +586,7 @@ namespace LambdaEngine
 			asInstance.CustomIndex		= materialSlot;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
-			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED;// RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
