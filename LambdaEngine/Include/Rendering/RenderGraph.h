@@ -415,7 +415,7 @@ namespace LambdaEngine
 
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
-		DeviceAllocator*								m_pDeviceAllocator					= nullptr;
+		GraphicsDeviceFeatureDesc						m_Features;
 
 		DescriptorHeap*									m_pDescriptorHeap					= nullptr;
 

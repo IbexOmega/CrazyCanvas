@@ -17,6 +17,12 @@ namespace LambdaEngine
 		{
 		}
 
+		inline ~PtrControlBlock()
+		{
+			m_WeakReferences = 0;
+			m_StrongReferences = 0;
+		}
+
 		FORCEINLINE RefType AddWeakRef() noexcept
 		{
 			return m_WeakReferences++;
@@ -169,12 +175,15 @@ namespace LambdaEngine
 				PtrControlBlock::RefType weakRefs 	= m_pCounter->GetWeakReferences();
 				if (strongRefs <= 0)
 				{
+					// Delete object
+					m_Deleter(m_pPtr);
+
+					// Delete counter
 					if (weakRefs <= 0)
 					{
 						delete m_pCounter;
 					}
 					
-					m_Deleter(m_pPtr);
 					InternalClear();
 				}
 			}

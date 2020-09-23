@@ -20,7 +20,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(MouseButtonClickedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("MouseButtonClickedEvent=[=") + ButtonToString(Button);
 		}
@@ -45,7 +45,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(MouseButtonReleasedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("MouseButtonReleasedEvent=[=") + ButtonToString(Button);
 		}
@@ -70,7 +70,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(MouseScrolledEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("MouseScrolledEvent=[Horizontal=") + std::to_string(DeltaX) + ", Vertical=" + std::to_string(DeltaY) + "]";
 		}
@@ -94,7 +94,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(MouseMovedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("MouseMovedEvent=[") + std::to_string(Position.x) + ", " + std::to_string(Position.y) + "]";
 		}
@@ -121,8 +121,8 @@ namespace LambdaEngine
 		}
 
 		DECLARE_EVENT_TYPE(RawMouseMovedEvent);
-
-		virtual String ToString() const
+		 
+		virtual String ToString() const override
 		{
 			return String("RawMouseMovedEvent=[") + std::to_string(DeltaX) + ", " + std::to_string(DeltaY) + "]";
 		}
