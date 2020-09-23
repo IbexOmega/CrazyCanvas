@@ -38,13 +38,13 @@ namespace LambdaEngine
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 		m_RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 
-		TransformComponents transformComponents;
-		transformComponents.Position.Permissions	= R;
-		transformComponents.Scale.Permissions		= R;
-		transformComponents.Rotation.Permissions	= R;
-
 		// Subscribe on Static Entities & Dynamic Entities
 		{
+			TransformComponents transformComponents;
+			transformComponents.Position.Permissions	= R;
+			transformComponents.Scale.Permissions		= R;
+			transformComponents.Rotation.Permissions	= R;
+
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
@@ -394,7 +394,7 @@ namespace LambdaEngine
 
 		auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
 		auto& position = pECSCore->GetComponent<PositionComponent>(entity);
-	
+
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
@@ -629,7 +629,9 @@ namespace LambdaEngine
 			return;
 		}
 
-		const Instance& rasterInstance = meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
+		const uint32 instanceIndex = instanceKeyIt->second.InstanceIndex;
+		TArray<LambdaEngine::RenderSystem::Instance>& rasterInstances = meshAndInstancesIt->second.RasterInstances;
+		const Instance& rasterInstance = rasterInstances[instanceIndex];
 
 		//Update Material Instance Counts
 		{
@@ -638,22 +640,24 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.ASInstances[meshAndInstancesIt->second.ASInstances.GetSize() - 1];
-			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + (meshAndInstancesIt->second.ASInstances.GetSize() - 1));
+			TArray<AccelerationStructureInstance>& asInstances = meshAndInstancesIt->second.ASInstances;
+			asInstances[instanceIndex] = asInstances.GetBack();
+			asInstances.PopBack();
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
 		}
 
-		meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.RasterInstances[meshAndInstancesIt->second.RasterInstances.GetSize() - 1];
-		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + (meshAndInstancesIt->second.RasterInstances.GetSize() - 1));
+		rasterInstances[instanceIndex] = rasterInstances.GetBack();
+		rasterInstances.PopBack();
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
-		meshAndInstancesIt->second.EntityIDs[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
-		meshAndInstancesIt->second.EntityIDs.Erase(meshAndInstancesIt->second.EntityIDs.Begin() + (meshAndInstancesIt->second.EntityIDs.GetSize() - 1));
+		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
+		meshAndInstancesIt->second.EntityIDs[instanceIndex] = swappedEntityID;
+		meshAndInstancesIt->second.EntityIDs.PopBack();
 
-		m_EntityIDsToInstanceKey.erase(entity);
-		m_EntityIDsToInstanceKey.erase(swappedEntityID);
+		auto swappedInstanceKeyIt = m_EntityIDsToInstanceKey.find(swappedEntityID);
+		swappedInstanceKeyIt->second.InstanceIndex = instanceKeyIt->second.InstanceIndex;
+		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
 
 		//Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
@@ -676,7 +680,7 @@ namespace LambdaEngine
 			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
 			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
 			auto dirtyBLASToRemove = std::find_if(m_DirtyBLASs.begin(), m_DirtyBLASs.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
-			
+
 			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end()) m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
 			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end()) m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
 			if (dirtyBLASToRemove != m_DirtyBLASs.end()) m_DirtyBLASs.erase(dirtyBLASToRemove);
@@ -705,7 +709,7 @@ namespace LambdaEngine
 
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
-		
+
 		m_LightsDirty = true;
 	}
 
