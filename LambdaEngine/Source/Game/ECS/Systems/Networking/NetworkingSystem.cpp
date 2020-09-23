@@ -32,14 +32,14 @@ namespace LambdaEngine
 
 	void NetworkingSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		auto* pComponents = pECS->GetComponentArray<NetworkComponent>();
 
 		for (Entity entity : m_NetworkEntities)
 		{
-			auto& networkComponent = pComponents->GetData(entity);
-			 
 			//const ComponentType& type = networkComponent.s_Type;
 			//LOG_MESSAGE(type.GetName().c_str());
 		}
