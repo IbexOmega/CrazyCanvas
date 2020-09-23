@@ -100,6 +100,14 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
+
+			RenderGraphDesc renderGraphDesc = {};
+			renderGraphDesc.Name						= "Default Rendergraph";
+			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
+			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.CustomRenderers				= { };
+
+#ifdef ENABLE_PHYSICS_RENDERING
 			m_pPhysicsRenderer = DBG_NEW PhysicsRenderer(RenderAPI::GetDevice());
 			PhysicsRendererDesc physicsRendererDesc = {};
 			physicsRendererDesc.BackBufferCount			= BACK_BUFFER_COUNT;
@@ -107,11 +115,8 @@ namespace LambdaEngine
 			physicsRendererDesc.IndexBufferSize			= MEGA_BYTE(1);
 			m_pPhysicsRenderer->init(&physicsRendererDesc);
 
-			RenderGraphDesc renderGraphDesc = {};
-			renderGraphDesc.Name						= "Default Rendergraph";
-			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
-			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
-			renderGraphDesc.CustomRenderers				= { m_pPhysicsRenderer };
+			renderGraphDesc.CustomRenderers.PushBack(m_pPhysicsRenderer);
+#endif
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
