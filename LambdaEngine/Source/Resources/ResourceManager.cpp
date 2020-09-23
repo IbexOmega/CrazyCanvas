@@ -491,7 +491,7 @@ namespace LambdaEngine
 		samplerDesc.MinLOD				= 0.0f;
 		samplerDesc.MaxLOD				= FLT32_MAX;
 
-		Sampler* sampler = RenderAPI::GetDevice()->CreateSampler(&samplerDesc);
+		TSharedRef<Sampler> sampler = RenderAPI::GetDevice()->CreateSampler(&samplerDesc);
 
 		//-------------- Create Pipelinelayout
 		DescriptorBindingDesc ubo_roughness_mat = { };
