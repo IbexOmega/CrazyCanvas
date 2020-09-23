@@ -39,11 +39,11 @@ namespace LambdaEngine
         m_EnqueuedTransitionAction = transitionSetting;
     }
 
-    void StateManager::Tick(float dt)
+    void StateManager::Tick(Timestamp delta)
     {
         if (!m_States.empty())
         {
-            m_States.top()->Tick(dt);
+            m_States.top()->Tick(delta);
         }
 
         if (m_pEnqueuedState)

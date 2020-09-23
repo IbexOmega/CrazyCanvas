@@ -19,6 +19,7 @@ namespace LambdaEngine
 		FORCEINLINE Timestamp(Timestamp&& other)
 			: m_NanoSeconds(other.m_NanoSeconds)
 		{
+			other.m_NanoSeconds = 0;
 		}
 
 		FORCEINLINE Timestamp(const Timestamp& other)
@@ -52,6 +53,13 @@ namespace LambdaEngine
 		FORCEINLINE Timestamp& operator=(const Timestamp& other)
 		{
 			m_NanoSeconds = other.m_NanoSeconds;
+			return *this;
+		}
+
+		FORCEINLINE Timestamp& operator=(Timestamp&& other) noexcept
+		{
+			m_NanoSeconds = other.m_NanoSeconds;
+			other.m_NanoSeconds = 0;
 			return *this;
 		}
 

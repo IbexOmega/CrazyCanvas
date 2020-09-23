@@ -28,7 +28,7 @@ namespace LambdaEngine
 	class LAMBDA_API ComponentArray : public IComponentArray
 	{
 	public:
-		ComponentArray();
+		ComponentArray() = default;
 		virtual ~ComponentArray() = default;
 
 		Comp& Insert(Entity entity, const Comp& comp);
@@ -46,43 +46,27 @@ namespace LambdaEngine
 		TArray<Comp> m_Data;
 		TArray<uint32> m_IDs;
 		std::unordered_map<Entity, uint32> m_EntityToIndex;
-		uint32 m_Size = 0;
-		uint32 m_Capacity = 64;
 	};
-
-	template<typename Comp>
-	inline ComponentArray<Comp>::ComponentArray()
-	{
-		m_Data.Resize(m_Capacity);
-		m_IDs.Resize(m_Capacity);
-	}
 
 	template<typename Comp>
 	inline Comp& ComponentArray<Comp>::Insert(Entity entity, const Comp& comp)
 	{
-		VALIDATE_MSG(m_EntityToIndex.find(entity) == m_EntityToIndex.end(), "Trying to add a component that already exists!");
-
-		// Resize if more data is added.
-		if (m_Size+1 > m_Data.GetSize())
-		{
-			m_Data.Resize(m_Size + m_Capacity);
-			m_IDs.Resize(m_Size + m_Capacity);
-		}
+		auto indexItr = m_EntityToIndex.find(entity);
+		VALIDATE_MSG(indexItr == m_EntityToIndex.end(), "Trying to add a component that already exists!");
 
 		// Get new index and add the component to that position.
-		uint32 newIndex = m_Size++;
+		uint32 newIndex = m_Data.GetSize();
 		m_EntityToIndex[entity] = newIndex;
-		m_Data[newIndex] = comp;
-		m_IDs[newIndex] = entity;
-		return m_Data[newIndex];
+		m_IDs.PushBack(entity);
+		return m_Data.PushBack(comp);
 	}
 
 	template<typename Comp>
 	inline Comp& ComponentArray<Comp>::GetData(Entity entity)
 	{
-		VALIDATE_MSG(m_EntityToIndex.find(entity) != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
-		uint32 index = m_EntityToIndex[entity];
-		return m_Data[index];
+		auto indexItr = m_EntityToIndex.find(entity);
+		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
+		return m_Data[indexItr->second];
 	}
 
 	template<typename Comp>
@@ -96,18 +80,22 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline void ComponentArray<Comp>::Remove(Entity entity)
 	{
-		VALIDATE_MSG(m_EntityToIndex.find(entity) != m_EntityToIndex.end(), "Trying to remove a component that does not exist!");
+		auto indexItr = m_EntityToIndex.find(entity);
+		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to remove a component that does not exist!");
+
+		uint32 currentIndex = indexItr->second;
 
 		// Swap the removed component with the last component.
-		uint32 currentIndex = m_EntityToIndex[entity];
-		uint32 lastIndex = --m_Size;
-		m_Data[currentIndex] = m_Data[lastIndex];
-		m_IDs[currentIndex] = m_IDs[lastIndex];
+		m_Data[currentIndex] = m_Data.GetBack();
+		m_IDs[currentIndex] = m_IDs.GetBack();
 
 		// Update entity-index maps.
-		m_EntityToIndex[m_IDs[lastIndex]] = currentIndex;
+		m_EntityToIndex[m_IDs.GetBack()] = currentIndex;
+
+		m_Data.PopBack();
+		m_IDs.PopBack();
 
 		// Remove the deleted component's entry.
-		m_EntityToIndex.erase(entity);
+		m_EntityToIndex.erase(indexItr);
 	}
 }

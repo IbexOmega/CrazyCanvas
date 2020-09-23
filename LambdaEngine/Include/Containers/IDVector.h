@@ -2,243 +2,232 @@
 
 #include "Containers/IDContainer.h"
 #include "Containers/TArray.h"
+#include "Containers/THashTable.h"
 
 #include <queue>
 
 namespace LambdaEngine
 {
-    /*
-        Extends a vector to be able to:
-        * Use IDs to index elements
-        * Pop elements in the middle of the array without breaking ID-index relation
+	/*
+		Extends a vector to be able to:
+		* Use IDs to index elements
+		* Pop elements anywhere in the array without breaking ID-index relation
 
-        Stores elements, index for each ID and ID for each element
+		IDD: ID Data
+	*/
 
-        IDD: ID Data
-    */
+	template <typename T>
+	class IDDVector : public IDContainer
+	{
+	public:
+		IDDVector() = default;
+		~IDDVector() = default;
 
-    template <typename T>
-    class IDDVector : public IDContainer
-    {
-    public:
-        IDDVector() = default;
-        ~IDDVector() = default;
+		// Index vector directly
+		T operator[](uint32 index) const
+		{
+			return m_Data[index];
+		}
 
-        // Index vector directly
-        T operator[](uint32 index) const
-        {
-            return m_Data[index];
-        }
+		T& operator[](uint32 index)
+		{
+			return m_Data[index];
+		}
 
-        T& operator[](uint32 index)
-        {
-            return m_Data[index];
-        }
+		// Index vector using ID, assumes ID is linked to an element
+		const T& IndexID(uint32 ID) const
+		{
+			auto indexItr = m_IDToIndex.find(ID);
+			VALIDATE_MSG(indexItr != m_IDToIndex.end(), "Attempted to index using an unregistered ID: %d", ID);
 
-        // Index vector using ID, assumes ID is linked to an element
-        const T& IndexID(uint32 ID) const
-        {
-            return m_Data[m_Indices[ID]];
-        }
+			return m_Data[indexItr->second];
+		}
 
-        T& IndexID(uint32 ID)
-        {
-            return m_Data[m_Indices[ID]];
-        }
+		T& IndexID(uint32 ID)
+		{
+			auto indexItr = m_IDToIndex.find(ID);
+			VALIDATE_MSG(indexItr != m_IDToIndex.end(), "Attempted to index using an unregistered ID: %d", ID);
 
-        void PushBack(const T& newElement, uint32 ID)
-        {
-            m_Data.PushBack(newElement);
-            m_IDs.PushBack(ID);
+			return m_Data[indexItr->second];
+		}
 
-            // Link element ID to index, resize ID vector in case ID is larger than the vector's size
-            if (m_Indices.GetSize() < ID + 1)
-            {
-                m_Indices.Resize(ID + 1);
-            }
+		void PushBack(const T& newElement, uint32 ID)
+		{
+			m_Data.PushBack(newElement);
+			m_IDs.PushBack(ID);
+			m_IDToIndex[ID] = m_Data.GetSize() - 1;
+		}
 
-            m_Indices[ID] = m_Data.GetSize() - 1;
-        }
+		void Pop(uint32 ID) override final
+		{
+			auto popIndexItr = m_IDToIndex.find(ID);
+			VALIDATE_MSG(popIndexItr != m_IDToIndex.end(), "Attempted to pop a non-existing element, ID: %d", ID);
 
-        void Pop(uint32 ID) override final
-        {
-            uint32 popIndex = m_Indices[ID];
+			m_Data[popIndexItr->second] = m_Data.GetBack();
+			m_IDs[popIndexItr->second] = m_IDs.GetBack();
 
-            if (popIndex < m_Data.GetSize() - 1)
-            {
-                // Replace to be popped element with the rear element
-                m_Data[popIndex] = m_Data.GetBack();
-                m_IDs[popIndex] = m_IDs.GetBack();
+			m_IDToIndex[m_IDs.GetBack()] = popIndexItr->second;
 
-                m_Indices[m_IDs.GetBack()] = popIndex;
-            }
+			m_Data.PopBack();
+			m_IDs.PopBack();
 
-            m_Data.PopBack();
-            m_IDs.PopBack();
+			m_IDToIndex.erase(popIndexItr);
+		}
 
-            if (m_Data.IsEmpty())
-            {
-                m_Indices.Clear();
-            }
+		void Clear()
+		{
+			m_Data.Clear();
+			m_IDs.Clear();
+			m_IDToIndex.clear();
+		}
 
-            // The rear elements in the indices vector might point at deleted elements, clean them up
-            while (m_Indices.GetSize() > m_Data.GetSize() && m_Indices.GetBack() >= m_Data.GetSize())
-            {
-                m_Indices.PopBack();
-            }
-        }
+		bool HasElement(uint32 ID) const override final
+		{
+			return m_IDToIndex.contains(ID);
+		}
 
-        void Clear()
-        {
-            m_Data.Clear();
-            m_IDs.Clear();
-            m_Indices.Clear();
-        }
+		uint32 Size() const override final
+		{
+			return m_Data.GetSize();
+		}
 
-        bool HasElement(uint32 ID) const override final
-        {
-            // Check if the ID pointed at by indices[ID] is the same as the parameter ID
-            return ID < m_Indices.GetSize() && ID == m_IDs[m_Indices[ID]];
-        }
+		bool Empty() const
+		{
+			return m_Data.IsEmpty();
+		}
 
-        uint32 Size() const override final
-        {
-            return m_Data.GetSize();
-        }
+		TArray<T>& GetVec()
+		{
+			return m_Data;
+		}
 
-        bool Empty() const
-        {
-            return m_Data.IsEmpty();
-        }
+		const TArray<T>& GetVec() const
+		{
+			return m_Data;
+		}
 
-        TArray<T>& GetVec()
-        {
-            return this->m_Data;
-        }
+		const TArray<uint32>& GetIDs() const override final
+		{
+			return m_IDs;
+		}
 
-        const TArray<T>& GetVec() const
-        {
-            return this->m_Data;
-        }
+		T& Back()
+		{
+			return m_Data.GetBack();
+		}
 
-        const TArray<uint32>& GetIDs() const override final
-        {
-            return this->m_IDs;
-        }
+		typename TArray<T>::Iterator begin() noexcept
+		{
+			return m_Data.begin();
+		}
 
-        T& Back()
-        {
-            return this->m_Data.GetBack();
-        }
+		typename TArray<T>::Iterator end() noexcept
+		{
+			return m_Data.end();
+		}
 
-    private:
-        TArray<T> m_Data;
+		typename TArray<T>::ConstIterator begin() const noexcept
+		{
+			return m_Data.begin();
+		}
 
-        /*
-            Stores indices to the main vector, use entity IDs to index it, eg:
-            T myElement = vec[indices[ID]];
-            or
-            uint32 entityIndex = indices[entityID];
-        */
-        TArray<uint32> m_Indices;
+		typename TArray<T>::ConstIterator end() const noexcept
+		{
+			return m_Data.end();
+		}
 
-        // Stores index for each ID, eg. ids[5] == vec[5].id (had vec's elements contained IDs)
-        TArray<uint32> m_IDs;
-    };
+	private:
+		TArray<T> m_Data;
+		// The ID for each data element. Stored separately from the main data for cache-friendliness.
+		TArray<uint32> m_IDs;
 
-    class IDVector : public IDContainer
-    {
-    public:
-        IDVector() {}
-        ~IDVector() {}
+		// Maps IDs to indices to the data array
+		THashTable<uint32, uint32> m_IDToIndex;
+	};
 
-        uint32 operator[](uint32 index) const
-        {
-            return m_IDs[index];
-        }
+	class IDVector : public IDContainer
+	{
+	public:
+		IDVector() = default;
+		~IDVector() = default;
 
-        void PushBack(uint32 ID)
-        {
-            m_IDs.PushBack(ID);
+		uint32 operator[](uint32 index) const
+		{
+			return m_IDs[index];
+		}
 
-            // Link element ID to index, resize ID vector in case ID is larger than the vector's size
-            if (m_Indices.GetSize() < ID + 1)
-            {
-                m_Indices.Resize(ID + 1);
-            }
+		void PushBack(uint32 ID)
+		{
+			m_IDs.PushBack(ID);
+			m_IDToIndex.insert({ID, m_IDs.GetSize() - 1});
+		}
 
-            m_Indices[ID] = m_Indices.GetSize() - 1;
-        }
+		void Pop(uint32 ID) override final
+		{
+			auto popIndexItr = m_IDToIndex.find(ID);
+			VALIDATE_MSG(popIndexItr != m_IDToIndex.end(), "Attempted to pop a non-existing element, ID: %d", ID);
 
-        void Pop(uint32 ID) override final
-        {
-            uint32 popIndex = m_Indices[ID];
+			m_IDs[popIndexItr->second] = m_IDs.GetBack();
+			m_IDToIndex[m_IDs.GetBack()] = popIndexItr->second;
+			m_IDs.PopBack();
 
-            if (popIndex < m_IDs.GetSize() - 1)
-            {
-                // Replace to be popped element with the rear element
-                m_IDs[popIndex] = m_IDs.GetBack();
+			m_IDToIndex.erase(popIndexItr);
+		}
 
-                m_Indices[m_IDs.GetBack()] = popIndex;
-            }
+		void Clear()
+		{
+			m_IDs.Clear();
+			m_IDToIndex.clear();
+		}
 
-            m_IDs.PopBack();
+		bool HasElement(uint32 ID) const override final
+		{
+			return m_IDToIndex.contains(ID);
+		}
 
-            if (m_IDs.IsEmpty())
-            {
-                m_Indices.Clear();
-            }
+		uint32 Size() const override final
+		{
+			return m_IDs.GetSize();
+		}
 
-            // The rear elements in the indices vector might point at deleted elements, clean them up
-            while (m_Indices.GetSize() > m_IDs.GetSize() && m_Indices.GetBack() >= m_IDs.GetSize())
-            {
-                m_Indices.PopBack();
-            }
-        }
+		bool Empty() const
+		{
+			return m_IDs.IsEmpty();
+		}
 
-        void Clear()
-        {
-            m_IDs.Clear();
-            m_Indices.Clear();
-        }
+		const TArray<uint32>& GetIDs() const override final
+		{
+			return m_IDs;
+		}
 
-        bool HasElement(uint32 ID) const override final
-        {
-            // Check if the ID pointed at by indices[ID] is the same as the parameter ID
-            return ID < m_Indices.GetSize() && ID == m_IDs[m_Indices[ID]];
-        }
+		uint32 Back()
+		{
+			return m_IDs.GetBack();
+		}
 
-        uint32 Size() const override final
-        {
-            return m_IDs.GetSize();
-        }
+		typename TArray<uint32>::Iterator begin() noexcept
+		{
+			return m_IDs.begin();
+		}
 
-        bool Empty() const
-        {
-            return m_IDs.IsEmpty();
-        }
+		typename TArray<uint32>::Iterator end() noexcept
+		{
+			return m_IDs.end();
+		}
 
-        const TArray<uint32>& GetIDs() const override final
-        {
-            return m_IDs;
-        }
+		typename TArray<uint32>::ConstIterator begin() const noexcept
+		{
+			return m_IDs.begin();
+		}
 
-        uint32 Back()
-        {
-            return m_IDs.GetBack();
-        }
+		typename TArray<uint32>::ConstIterator end() const noexcept
+		{
+			return m_IDs.end();
+		}
 
-    private:
-        /*
-            Stores indices to the main vector, use entity IDs to index it, eg:
-            T myElement = vec[indices[ID]];
-            or
-            uint32 entityIndex = indices[entityID];
-        */
-        TArray<uint32> m_Indices;
-
-        // Stores index for each ID, eg. ids[5] == vec[5].id (had vec's elements contained IDs)
-        TArray<uint32> m_IDs;
-    };
+	private:
+		TArray<uint32> m_IDs;
+		// Maps IDs to indices to the ID array
+		THashTable<uint32, uint32> m_IDToIndex;
+	};
 }
-

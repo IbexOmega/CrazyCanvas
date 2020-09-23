@@ -18,6 +18,7 @@
 #include "Rendering/Core/Vulkan/QueryHeapVK.h"
 #include "Rendering/Core/Vulkan/AccelerationStructureVK.h"
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
+#include "Rendering/Core/Vulkan/SBTVK.h"
 
 #ifdef LAMBDA_DEBUG
 	#define LAMBDA_VULKAN_CHECKS_ENABLED 1
@@ -517,7 +518,7 @@ namespace LambdaEngine
 	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)
 	{
 		VALIDATE(pBufferBarriers		!= nullptr);
-		VALIDATE(bufferBarrierCount	< MAX_BUFFER_BARRIERS);
+		VALIDATE(bufferBarrierCount	<= MAX_BUFFER_BARRIERS);
 
 		BufferVK* pVkBuffer = nullptr;
 		for (uint32 i = 0; i < bufferBarrierCount; i++)
@@ -770,15 +771,17 @@ namespace LambdaEngine
 		vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_CurrentRayTracingPipeline->GetPipeline());
 	}
 
-	void CommandListVK::TraceRays(uint32 width, uint32 height, uint32 depth)
+	void CommandListVK::TraceRays(const SBT* pSBT, uint32 width, uint32 height, uint32 depth)
 	{
 		CHECK_COMPUTE(m_Allocator);
 		VALIDATE(m_pDevice->vkCmdTraceRaysKHR);
 
-		const VkStridedBufferRegionKHR* pRaygen		= m_CurrentRayTracingPipeline->GetRaygenBufferRegion();
-		const VkStridedBufferRegionKHR* pMiss		= m_CurrentRayTracingPipeline->GetMissBufferRegion();
-		const VkStridedBufferRegionKHR* pHit		= m_CurrentRayTracingPipeline->GetHitBufferRegion();
-		const VkStridedBufferRegionKHR* pCallable	= m_CurrentRayTracingPipeline->GetCallableBufferRegion();
+		const SBTVK* pSBTVK = reinterpret_cast<const SBTVK*>(pSBT);
+
+		const VkStridedBufferRegionKHR* pRaygen		= pSBTVK->GetRaygenBufferRegion();
+		const VkStridedBufferRegionKHR* pMiss		= pSBTVK->GetMissBufferRegion();
+		const VkStridedBufferRegionKHR* pHit		= pSBTVK->GetHitBufferRegion();
+		const VkStridedBufferRegionKHR* pCallable	= pSBTVK->GetCallableBufferRegion();
 		
 		// Start by flushing barriers
 		FlushDeferredBarriers();

@@ -33,14 +33,13 @@ void PlaySessionState::Init()
 	ECSCore* pECS = ECSCore::GetInstance();
 	for (const MeshComponent& meshComponent : meshComponents)
 	{
-		Entity entity = ECSCore::GetInstance()->CreateEntity();
+		const Entity entity = ECSCore::GetInstance()->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { position, true });
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<StaticComponent>(entity, StaticComponent());
 	}
 }
 
-void PlaySessionState::Tick(float)
+void PlaySessionState::Tick(LambdaEngine::Timestamp)
 {}

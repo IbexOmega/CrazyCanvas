@@ -7,6 +7,8 @@
 
 #include "Log/Log.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 namespace LambdaEngine
 {
 	uint64													PipelineStateManager::s_CurrentPipelineIndex = 0;
@@ -108,11 +110,15 @@ namespace LambdaEngine
 
 	bool PipelineStateManager::Init()
 	{
+		EventQueue::RegisterEventHandler<PipelineStateRecompileEvent>(&OnPipelineStateRecompileEvent);
+
 		return true;
 	}
 
 	bool PipelineStateManager::Release()
 	{
+		EventQueue::UnregisterEventHandler<PipelineStateRecompileEvent>(&OnPipelineStateRecompileEvent);
+
 		s_GraphicsPipelineStateDescriptions.clear();
 		s_ComputePipelineStateDescriptions.clear();
 		s_RayTracingPipelineStateDescriptions.clear();
@@ -161,8 +167,7 @@ namespace LambdaEngine
 	uint64 PipelineStateManager::CreateRayTracingPipelineState(const ManagedRayTracingPipelineStateDesc* pDesc)
 	{
 		RayTracingPipelineStateDesc pipelineDesc = pDesc->GetDesc();
-		CommandQueue*	pCommandQueue	= RenderAPI::GetComputeQueue();
-		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
+		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
 			uint64 pipelineIndex = s_CurrentPipelineIndex++;
@@ -206,8 +211,14 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	void PipelineStateManager::ReloadPipelineStates()
+	bool PipelineStateManager::OnPipelineStateRecompileEvent(const PipelineStateRecompileEvent& event)
 	{
+		UNREFERENCED_VARIABLE(event);
+
+		RenderAPI::GetGraphicsQueue()->Flush();
+		RenderAPI::GetComputeQueue()->Flush();
+		RenderAPI::GetCopyQueue()->Flush();
+
 		for (auto it = s_PipelineStates.begin(); it != s_PipelineStates.end(); it++)
 		{
 			PipelineState* pNewPipelineState = nullptr;
@@ -237,13 +248,17 @@ namespace LambdaEngine
 					const ManagedRayTracingPipelineStateDesc* pPipelineDesc = &s_RayTracingPipelineStateDescriptions[it->first];
 					RayTracingPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 
-					CommandQueue* pCommandQueue	= RenderAPI::GetComputeQueue();
-					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(pCommandQueue, &pipelineDesc);
+					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 					break;
 				}
 			}
 
 			it->second = pNewPipelineState;
 		}
+
+		PipelineStatesRecompiledEvent recompiledEvent = {};
+		EventQueue::SendEventImmediate(recompiledEvent);
+
+		return true;
 	}
 }

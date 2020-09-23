@@ -15,6 +15,7 @@
 #include "Containers/TStack.h"
 #include "Containers/IDVector.h"
 
+#include "Rendering/Core/API/GraphicsTypes.h"
 #include "Rendering/Core/API/SwapChain.h"
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
@@ -22,6 +23,7 @@
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/AccelerationStructure.h"
 
 #include "Rendering/RenderGraphTypes.h"
 
@@ -53,7 +55,6 @@ namespace LambdaEngine
 		struct MeshKey
 		{
 			GUID_Lambda		MeshGUID;
-			bool			IsStatic;
 			bool			IsAnimated;
 			Entity			EntityID;
 			mutable size_t	Hash = 0;
@@ -73,9 +74,6 @@ namespace LambdaEngine
 			bool operator==(const MeshKey& other) const
 			{
 				if (MeshGUID != other.MeshGUID)
-					return false;
-
-				if (IsStatic != other.IsStatic)
 					return false;
 
 				if (IsAnimated)
@@ -98,13 +96,24 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
+			AccelerationStructure* pBLAS		= nullptr;
+			SBTRecord ShaderRecord			= {};
+
 			Buffer* pVertexBuffer			= nullptr;
+			uint32	VertexCount				= 0;
 			Buffer* pIndexBuffer			= nullptr;
 			uint32	IndexCount				= 0;
 
-			Buffer* pInstanceBuffer			= nullptr;
-			Buffer* pInstanceStagingBuffer	= nullptr;
-			TArray<Instance> Instances;
+			
+			Buffer* pASInstanceBuffer		= nullptr;
+			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
+			TArray<AccelerationStructureInstance> ASInstances;
+
+			Buffer* pRasterInstanceBuffer			= nullptr;
+			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
+			TArray<Instance> RasterInstances;
+
+			TArray<Entity> EntityIDs;
 		};
 
 		struct InstanceKey
@@ -116,8 +125,10 @@ namespace LambdaEngine
 		struct PendingBufferUpdate
 		{
 			Buffer* pSrcBuffer	= nullptr;
+			uint64	SrcOffset	= 0;
 			Buffer* pDstBuffer	= nullptr;
-			uint64 SizeInBytes	= 0;
+			uint64	DstOffset	= 0;
+			uint64	SizeInBytes	= 0;
 		};
 
 		using MeshAndInstancesMap	= THashTable<MeshKey, MeshEntry, MeshKeyHasher>;
@@ -125,16 +136,16 @@ namespace LambdaEngine
 
 		struct CameraData
 		{
-			glm::mat4 Projection = glm::mat4(1.0f);
-			glm::mat4 View = glm::mat4(1.0f);
-			glm::mat4 PrevProjection = glm::mat4(1.0f);
-			glm::mat4 PrevView = glm::mat4(1.0f);
-			glm::mat4 ViewInv = glm::mat4(1.0f);
-			glm::mat4 ProjectionInv = glm::mat4(1.0f);
-			glm::vec4 Position = glm::vec4(0.0f);
-			glm::vec4 Right = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-			glm::vec4 Up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec2 Jitter = glm::vec2(0.0f);
+			glm::mat4 Projection		= glm::mat4(1.0f);
+			glm::mat4 View				= glm::mat4(1.0f);
+			glm::mat4 PrevProjection	= glm::mat4(1.0f);
+			glm::mat4 PrevView			= glm::mat4(1.0f);
+			glm::mat4 ViewInv			= glm::mat4(1.0f);
+			glm::mat4 ProjectionInv		= glm::mat4(1.0f);
+			glm::vec4 Position			= glm::vec4(0.0f);
+			glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec2 Jitter			= glm::vec2(0.0f);
 		};
 
 		struct PerFrameBuffer
@@ -145,21 +156,32 @@ namespace LambdaEngine
 			uint32 RandomSeed;
 		};
 
+		struct PointLight
+		{
+			glm::vec4	ColorIntensity	= glm::vec4(1.0f);
+			glm::vec3	Position		= glm::vec3(0.0f);
+			uint32		Padding0;
+		};
+
+		struct LightBuffer
+		{
+			glm::vec4	ColorIntensity	= glm::vec4(0.0f);
+			glm::vec3	Direction		= glm::vec3(1.0f);
+			uint32		PointLightCount = 0U;
+			// PointLight PointLights[] unbounded
+		};
+
 	public:
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
 		~RenderSystem() = default;
 
 		bool Init();
-
 		bool Release();
 
 		void Tick(Timestamp deltaTime) override final;
 
 		bool Render();
-
-		CommandList* AcquireGraphicsCopyCommandList();
-		CommandList* AcquireComputeCopyCommandList();
 
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 
@@ -174,28 +196,44 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
-		void OnStaticEntityAdded(Entity entity);
-		void OnDynamicEntityAdded(Entity entity);
+		void OnEntityAdded(Entity entity);
+		void OnEntityRemoved(Entity entity);
+
+		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
+		
+		void OnDirectionalEntityAdded(Entity entity);
+		void OnPointLightEntityAdded(Entity entity);
+
+		void OnDirectionalEntityRemoved(Entity entity);
+		void OnPointLightEntityRemoved(Entity entity);
+
 		void RemoveEntityInstance(Entity entity);
-
-		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isStatic, bool animated);
-
+		void UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction);
+		void UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity);
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
 
 		void CleanBuffers();
-		void UpdateBuffers();
-		void UpdateRenderGraph();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
+		void UpdateBuffers();
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
-		void UpdateInstanceBuffers(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
+		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
+		void UpdateLightsBuffer(CommandList* pCommandList);
+		void UpdateShaderRecords();
+		void BuildBLASs(CommandList* pCommandList);
+		void UpdateASInstanceBuffers(CommandList* pCommandList);
+		void BuildTLAS(CommandList* pCommandList);
+
+		void UpdateRenderGraph();
 
 	private:
-		IDVector				m_StaticEntities;
-		IDVector				m_DynamicEntities;
+
+		IDVector				m_DirectionalLightEntities;
+		IDVector				m_PointLightEntities;
+		IDVector				m_RenderableEntities;
 		IDVector				m_CameraEntities;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
@@ -207,11 +245,20 @@ namespace LambdaEngine
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
 
+		bool						m_LightsDirty			= true;
+		bool						m_LightsResourceDirty	= false;
+		bool						m_DirectionalExist		= false;
+		LightBuffer					m_LightBufferData;
+		THashTable<Entity, uint32>	m_EntityToPointLight;
+		THashTable<uint32, Entity>	m_PointLightToEntity;
+		TArray<PointLight>			m_PointLights;
+
 		//Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
+		//Materials
 		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
@@ -223,22 +270,45 @@ namespace LambdaEngine
 		TextureView*		m_ppRoughnessMapViews[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppMetallicMapViews[MAX_UNIQUE_MATERIALS];
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
-		Buffer*				m_pMaterialParametersStagingBuffer		= nullptr;
+		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
+		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*				m_pMaterialParametersBuffer				= nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
 
-		TSet<MeshEntry*>	m_DirtyInstanceBuffers;
-		TArray<Buffer*>		m_BuffersToRemove[BACK_BUFFER_COUNT];
-		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
-
+		//Per Frame
 		PerFrameBuffer		m_PerFrameData;
-		Buffer*				m_pPerFrameStagingBuffer	= nullptr;
+
+
+		Buffer*				m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
+		Buffer*				m_pLightsBuffer								= nullptr;
+		Buffer*				m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*				m_pPerFrameBuffer			= nullptr;
 
+		//Draw Args
 		TSet<uint32>		m_RequiredDrawArgs;
-		TSet<uint32>		m_DirtyDrawArgs;
-		bool				m_PerFrameResourceDirty		= true;
-		bool				m_MaterialsResourceDirty	= true;
+
+		//Ray Tracing
+		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
+		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
+		uint32					m_MaxInstances					= 0;
+		AccelerationStructure*	m_pTLAS							= nullptr;
+		TArray<PendingBufferUpdate> m_CompleteInstanceBufferPendingCopies;
+		TArray<SBTRecord> m_SBTRecords;
+
+		//Pending/Dirty
+		bool						m_SBTRecordsDirty					= true;
+		bool						m_RenderGraphSBTRecordsDirty		= true;
+		bool						m_MaterialsPropertiesBufferDirty	= true;
+		bool						m_MaterialsResourceDirty			= true;
+		bool						m_PerFrameResourceDirty				= true;
+		TSet<uint32>				m_DirtyDrawArgs;
+		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
+		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
+		TSet<MeshEntry*>			m_DirtyBLASs;
+		bool						m_TLASDirty							= true;
+		bool						m_TLASResourceDirty					= false;
+		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
+		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 	private:
 		static RenderSystem		s_Instance;

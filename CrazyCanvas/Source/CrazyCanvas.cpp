@@ -31,7 +31,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		pStartingState = DBG_NEW BenchmarkState();
 	else
 		pStartingState = DBG_NEW PlaySessionState();
-	
+
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }
 
@@ -40,15 +40,11 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 	Render(delta);
 }
 
-void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
-{
-	float32 dt = (float32)delta.AsSeconds();
-}
+void CrazyCanvas::FixedTick(LambdaEngine::Timestamp)
+{}
 
-void CrazyCanvas::Render(LambdaEngine::Timestamp delta)
-{
-
-}
+void CrazyCanvas::Render(LambdaEngine::Timestamp)
+{}
 
 namespace LambdaEngine
 {

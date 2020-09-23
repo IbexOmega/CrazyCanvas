@@ -5,8 +5,7 @@ namespace LambdaEngine
 	ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
 
 	ECSCore::ECSCore()
-		:m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry),
-		m_DeltaTime(0.0f)
+		:m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry)
 	{}
 
 	void ECSCore::Release()
@@ -25,12 +24,13 @@ namespace LambdaEngine
 
 	void ECSCore::RemoveEntity(Entity entity)
 	{
+		std::scoped_lock<SpinLock> lock(m_LockRemoveEntity);
 		m_EntitiesToDelete.PushBack(entity);
 	}
 
 	void ECSCore::ScheduleJobASAP(const Job& job)
 	{
-		m_JobScheduler.ScheduleJob(job, CURRENT_PHASE);
+		m_JobScheduler.ScheduleJobASAP(job);
 	}
 
 	void ECSCore::ScheduleJobPostFrame(const Job& job)
