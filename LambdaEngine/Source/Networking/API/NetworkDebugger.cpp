@@ -86,7 +86,7 @@ namespace LambdaEngine
 			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 			if (ImGui::Begin("Network Statistics", NULL))
 			{
-				ImGui::Columns((int)(s_PingValues.size() + 1), "ClientColumns");
+				ImGui::Columns((int)s_PingValues.size() + 1, "ClientColumns");
 				ImGui::Text("Client Info"); ImGui::NextColumn();
 
 				for (int i = 0; i < s_PingValues.size(); i++)
