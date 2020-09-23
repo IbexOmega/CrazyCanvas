@@ -544,6 +544,13 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
                     "name": "G_BUFFER_ALBEDO",
                     "removable": true,
                     "draw_args_mask": 4294967295,
