@@ -169,6 +169,10 @@ namespace LambdaEngine
 
 			if (pBestFit == nullptr)
 			{
+				pAllocation->pBlock = nullptr;
+				pAllocation->pAllocator = nullptr;
+				pAllocation->Offset = 0;
+				pAllocation->Memory = 0;
 				return false;
 			}
 
@@ -191,6 +195,7 @@ namespace LambdaEngine
 				}
 
 				pBestFit->pNext = pNewBlock;
+				VALIDATE(ValidateChain());
 				VALIDATE(ValidateBlock(pNewBlock));
 
 #ifdef LAMBDA_DEBUG
@@ -203,6 +208,7 @@ namespace LambdaEngine
 			pBestFit->TotalSizeInBytes = paddedSizeInBytes;
 			pBestFit->IsFree = false;
 
+			VALIDATE(ValidateChain());
 			VALIDATE(ValidateBlock(pBestFit));
 
 			// Setup allocation
@@ -222,6 +228,7 @@ namespace LambdaEngine
 
 			DeviceMemoryBlockVK* pBlock = pAllocation->pBlock;
 			VALIDATE(pBlock != nullptr);
+			VALIDATE(ValidateChain());
 			VALIDATE(ValidateBlock(pBlock));
 
 			pBlock->IsFree = true;
@@ -244,6 +251,8 @@ namespace LambdaEngine
 				}
 			}
 
+			VALIDATE(ValidateChain());
+
 			DeviceMemoryBlockVK* pNext = pBlock->pNext;
 			if (pNext)
 			{
@@ -262,6 +271,7 @@ namespace LambdaEngine
 				}
 			}
 
+			VALIDATE(ValidateChain());
 			VALIDATE(ValidateNoOverlap());
 
 			pAllocation->Memory = VK_NULL_HANDLE;
@@ -387,6 +397,37 @@ namespace LambdaEngine
 			return true;
 		}
 
+		bool ValidateChain() const
+		{
+			TArray<DeviceMemoryBlockVK*> traversedBlocks;
+
+			// Traverse all the blocks and put them into an array in order
+			DeviceMemoryBlockVK* pIterator = m_pHead;
+			DeviceMemoryBlockVK* pTail = nullptr;
+			while (pIterator != nullptr)
+			{
+				traversedBlocks.EmplaceBack(pIterator);
+				pTail = pIterator;
+				pIterator = pIterator->pNext;
+			}
+
+			/* When we have reached the tail we start going backwards and check so 
+			that the order in the array is the same as when we traversed forward*/
+			while (pTail != nullptr)
+			{
+				// In case this fails our chain is not valid
+				if (pTail != traversedBlocks.GetBack())
+				{
+					return false;
+				}
+
+				traversedBlocks.PopBack();
+				pTail = pTail->pPrevious;
+			}
+
+			return true;
+		}
+
 	private:
 		const GraphicsDeviceVK* const m_pDevice;
 		DeviceAllocatorVK* const m_pOwningAllocator;
@@ -447,8 +488,10 @@ namespace LambdaEngine
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
 		if (alignedSize >= m_PageSize)
 		{
-			pAllocation->pBlock		= nullptr;
-			pAllocation->pAllocator	= nullptr;
+			pAllocation->pBlock = nullptr;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->Offset = 0;
+			pAllocation->Memory = 0;
 			return false;
 		}
 
@@ -472,6 +515,10 @@ namespace LambdaEngine
 		DeviceMemoryPageVK* pNewMemoryPage = DBG_NEW DeviceMemoryPageVK(m_pDevice, this, uint32(m_Pages.GetSize()), memoryIndex);
 		if (!pNewMemoryPage->Init(m_PageSize))
 		{
+			pAllocation->pBlock = nullptr;
+			pAllocation->pAllocator = nullptr;
+			pAllocation->Offset = 0;
+			pAllocation->Memory = 0;
 			SAFEDELETE(pNewMemoryPage);
 			return false;
 		}

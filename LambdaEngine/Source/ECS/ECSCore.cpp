@@ -24,12 +24,13 @@ namespace LambdaEngine
 
 	void ECSCore::RemoveEntity(Entity entity)
 	{
+		std::scoped_lock<SpinLock> lock(m_LockRemoveEntity);
 		m_EntitiesToDelete.PushBack(entity);
 	}
 
 	void ECSCore::ScheduleJobASAP(const Job& job)
 	{
-		m_JobScheduler.ScheduleJob(job, CURRENT_PHASE);
+		m_JobScheduler.ScheduleJobASAP(job);
 	}
 
 	void ECSCore::ScheduleJobPostFrame(const Job& job)

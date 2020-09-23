@@ -616,7 +616,7 @@ namespace LambdaEngine
 						}
 						else
 						{
-							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1.0f : pResource->SubResourceCount;
+							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1U : pResource->SubResourceCount;
 
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
@@ -984,6 +984,8 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnPreSwapChainRecreated(const PreSwapChainRecreatedEvent& swapChainEvent)
 	{
+		UNREFERENCED_VARIABLE(swapChainEvent);
+
 		auto backBufferResourceIt = m_ResourceMap.find(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
 
 		if (backBufferResourceIt != m_ResourceMap.end())
@@ -994,7 +996,7 @@ namespace LambdaEngine
 				{
 					binding.pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
 				}
-				else
+				else if (binding.DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 				{
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{
@@ -1013,6 +1015,8 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& swapChainEvent)
 	{
+		UNREFERENCED_VARIABLE(swapChainEvent);
+
 		auto backBufferResourceIt = m_ResourceMap.find(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
 
 		if (backBufferResourceIt != m_ResourceMap.end())
@@ -1048,6 +1052,8 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnPipelineStatesRecompiled(const PipelineStatesRecompiledEvent& event)
 	{
+		UNREFERENCED_VARIABLE(event);
+
 		for (uint32 r = 0; r < m_RenderStageCount; r++)
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[r];
@@ -1765,11 +1771,12 @@ namespace LambdaEngine
 						auto maskToBuffersIt = pResource->DrawArgs.MaskToArgs.find(pResourceStateDesc->DrawArgsMask);
 						if (maskToBuffersIt == pResource->DrawArgs.MaskToArgs.end())
 						{
+							pResource->LastPipelineStageOfFirstRenderStage = lastPipelineStageFlags;
 							DrawArgsData drawArgsData = {};
 							drawArgsData.InitialTransitionBarrierTemplate.pBuffer				= nullptr;
 							drawArgsData.InitialTransitionBarrierTemplate.QueueBefore			= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 							drawArgsData.InitialTransitionBarrierTemplate.QueueAfter			= drawArgsData.InitialTransitionBarrierTemplate.QueueBefore;
-							drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+							drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 							drawArgsData.InitialTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);
 
 							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
@@ -2346,7 +2353,7 @@ namespace LambdaEngine
 
 							for (RenderPassAttachmentDesc& attachmentDesc : disabledRenderPassDesc.Attachments)
 							{
-								attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
+								if (attachmentDesc.InitialState != ETextureState::TEXTURE_STATE_UNKNOWN) attachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
 								if (attachmentDesc.StencilLoadOp != ELoadOp::LOAD_OP_DONT_CARE) attachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_LOAD;
 							}
 
@@ -3228,6 +3235,48 @@ namespace LambdaEngine
 					initialPrimitiveIndicesBufferTransitionBarrier.Offset		= 0;
 					initialPrimitiveIndicesBufferTransitionBarrier.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
 					intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
+				}
+			}
+
+			//Transfer to Initial State
+			if (!intialBarriers.IsEmpty())
+			{
+				FPipelineStageFlags srcPipelineStage = pResource->LastPipelineStageOfFirstRenderStage;
+				FPipelineStageFlags dstPipelineStage = pResource->LastPipelineStageOfFirstRenderStage;
+
+				if (intialBarriers[0].QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
+				{
+					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
+
+					if (!pCommandList->IsBegin())
+					{
+						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
+						pCommandList->Begin(nullptr);
+					}
+
+					uint32 remaining = intialBarriers.GetSize() % MAX_BUFFER_BARRIERS;
+					uint32 i = 0;
+					for(; i < floor(intialBarriers.GetSize()/ MAX_BUFFER_BARRIERS); i++)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i*MAX_BUFFER_BARRIERS], MAX_BUFFER_BARRIERS);
+					if(remaining != 0)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i*MAX_BUFFER_BARRIERS], remaining);
+				}
+				else if (intialBarriers[0].QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
+				{
+					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
+
+					if (!pCommandList->IsBegin())
+					{
+						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
+						pCommandList->Begin(nullptr);
+					}
+
+					uint32 remaining = intialBarriers.GetSize() % MAX_BUFFER_BARRIERS;
+					uint32 i = 0;
+					for (; i < floor(intialBarriers.GetSize() / MAX_BUFFER_BARRIERS); i++)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i * MAX_BUFFER_BARRIERS], MAX_BUFFER_BARRIERS);
+					if (remaining != 0)
+						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i * MAX_BUFFER_BARRIERS], remaining);
 				}
 			}
 

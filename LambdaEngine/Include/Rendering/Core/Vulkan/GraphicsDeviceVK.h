@@ -190,9 +190,6 @@ namespace LambdaEngine
 		//PushDescriptorSet
 		PFN_vkCmdPushDescriptorSetKHR						vkCmdPushDescriptorSetKHR						= nullptr;
 
-		// Buffer Addresses
-		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
-
 		// Timeline-Semaphores
 		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
 		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;

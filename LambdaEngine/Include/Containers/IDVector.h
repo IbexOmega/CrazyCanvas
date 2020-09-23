@@ -64,9 +64,11 @@ namespace LambdaEngine
 			VALIDATE_MSG(popIndexItr != m_IDToIndex.end(), "Attempted to pop a non-existing element, ID: %d", ID);
 
 			m_Data[popIndexItr->second] = m_Data.GetBack();
-			m_Data.PopBack();
-
 			m_IDs[popIndexItr->second] = m_IDs.GetBack();
+
+			m_IDToIndex[m_IDs.GetBack()] = popIndexItr->second;
+
+			m_Data.PopBack();
 			m_IDs.PopBack();
 
 			m_IDToIndex.erase(popIndexItr);
@@ -166,6 +168,7 @@ namespace LambdaEngine
 			VALIDATE_MSG(popIndexItr != m_IDToIndex.end(), "Attempted to pop a non-existing element, ID: %d", ID);
 
 			m_IDs[popIndexItr->second] = m_IDs.GetBack();
+			m_IDToIndex[m_IDs.GetBack()] = popIndexItr->second;
 			m_IDs.PopBack();
 
 			m_IDToIndex.erase(popIndexItr);
