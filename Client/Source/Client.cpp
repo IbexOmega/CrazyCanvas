@@ -5,6 +5,7 @@
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -131,6 +132,30 @@ void Client::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 
 bool Client::OnKeyPressed(const KeyPressedEvent& event)
 {
+
+	if (InputActionSystem::IsActive("PLAYER_FORWARD"))
+	{
+		LOG_INFO("PLAYER_FORWARD ACTIVE");
+	}
+	else if (InputActionSystem::IsActive("PLAYER_BACKWARD"))
+	{
+		LOG_INFO("PLAYER_BACKWARD ACTIVE");
+	}
+	else if (InputActionSystem::IsActive("PLAYER_LEFT"))
+	{
+		LOG_INFO("PLAYER_LEFT ACTIVE");
+	}
+	else if (InputActionSystem::IsActive("PLAYER_RIGHT"))
+	{
+		LOG_INFO("PLAYER_RIGHT ACTIVE");
+	}
+	else if (InputActionSystem::IsActive("CHANGE_KEYBINDING"))
+	{
+		LOG_INFO("CHANGE_KEYBINDING ACTIVE");
+		InputActionSystem::ChangeKeyBinding("PLAYER_FORWARD", EKey::KEY_UP);
+	}
+
+
 	if (event.Key == EKey::KEY_ENTER)
 	{
 		if (m_pClient->IsConnected())

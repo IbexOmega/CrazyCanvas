@@ -77,6 +77,21 @@ namespace LambdaEngine
 		return true;
 	}
 
+	bool InputActionSystem::ChangeKeyBinding(String action, EKey key)
+	{
+		auto itr = m_CurrentKeyBindings.find(action);
+
+		if (itr != m_CurrentKeyBindings.end()) {
+			itr->second = key;
+			LOG_INFO("Action %s has changed keybinding to %s\n",
+				action.c_str(), KeyToString(key));
+			return true;
+		}
+
+		LOG_ERROR("Action %s is not defined.", action.c_str());
+		return false;
+	}
+
 	bool InputActionSystem::IsActive(String action)
 	{
 		EKey keyPressed = m_CurrentKeyBindings.at(action);

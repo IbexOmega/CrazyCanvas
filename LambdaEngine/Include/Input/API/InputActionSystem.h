@@ -13,6 +13,7 @@ namespace LambdaEngine
 
 		static bool LoadFromFile();
 		static bool WriteToFile();
+		static bool ChangeKeyBinding(String action, EKey key);
 		static bool IsActive(String action);
 
 	private:
