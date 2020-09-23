@@ -14,6 +14,9 @@ layout(location = 4) in vec3        in_Bitangent;
 layout(location = 5) in vec2        in_TexCoord;
 layout(location = 6) in vec4        in_ClipPosition;
 layout(location = 7) in vec4        in_PrevClipPosition;
+layout(location = 8) in vec3        in_CameraPosition;
+layout(location = 9) in vec3        in_CameraDirection;
+layout(location = 10) in vec3       in_CameraViewPosition;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
 
@@ -22,6 +25,7 @@ layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[MAX_
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_AOMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_RoughnessMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_UnwrappedTexture;
 
 layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;
@@ -74,12 +78,14 @@ void main()
 	vec2 screenVelocity 	  	= (prevNDC - currentNDC);// + in_CameraJitter;
 	out_Velocity              	= vec2(screenVelocity); 
 
-    const vec3 TARGET_POS = vec3(0.f, 0.f, 0.f);
-    const float BRUSH_SIZE = 1.f;
+    float depth = in_ClipPosition.z;
+    vec3 targetPosition = in_CameraPosition;
+    vec3 projectedPosition = targetPosition + in_CameraDirection*depth;
+    const float BRUSH_SIZE = 0.5f;
 
     // 5
-    if(length(in_WorldPosition-TARGET_POS) <= BRUSH_SIZE)
+    if(length(in_WorldPosition-projectedPosition) <= BRUSH_SIZE)
         out_MaskTexture = vec4(1.f, 1.f, 1.f, 1.f);
-    else
-        out_MaskTexture = vec4(0.f, 0.f, 0.f, 1.f);
+    //else
+    out_MaskTexture = texture(u_UnwrappedTexture, texCoord);
 }

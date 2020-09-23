@@ -86,6 +86,7 @@ void SandboxState::Init()
 
 	// Simple Scene (One object, One texture)
 	{
+		/*
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("bunny.obj");
 
 		MaterialProperties materialProperties;
@@ -104,8 +105,8 @@ void SandboxState::Init()
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		glm::vec3 position(0.f, 0.f, 1.0f);
-		glm::vec3 scale(1.0f);
+		glm::vec3 position(0.f, 0.f, 0.0f);
+		glm::vec3 scale(1.f);
 
 		Entity entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -113,7 +114,7 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-
+		*/
 	}
 
 	// Load scene
@@ -407,6 +408,55 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		m_Entities.Erase(m_Entities.Begin() + entityIndex);
 		ECSCore::GetInstance()->RemoveEntity(entity);
 	}
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	auto CreateEntity = [pECS, this](const std::string& mesh)->Entity
+	{
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile(mesh);
+
+		MaterialProperties materialProperties;
+		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		materialProperties.Roughness = 0.5f;
+		materialProperties.Metallic = 0.5f;
+
+		MeshComponent sphereMeshComp = {};
+		sphereMeshComp.MeshGUID = sphereMeshGUID;
+		sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Default r: " + std::to_string(materialProperties.Roughness) + " m: " + std::to_string(materialProperties.Metallic),
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		glm::vec3 position(0.f, 0.f, 0.0f);
+		glm::vec3 scale(1.f);
+
+		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
+		pECS->AddComponent<PositionComponent>(entity, { position, true });
+		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+
+		return entity;
+	};
+
+	static bool down = false;
+	static bool first = true;
+	static uint32 s_Counter = 0;
+	static Entity s_Entity = 0;
+	static std::string s_Meshes[] = {"cube.obj", "quad.obj", "bunny.obj"};
+	if (event.Key == EKey::KEY_G && !down)
+	{
+		if (!first) { m_Entities.PopBack(); pECS->RemoveEntity(s_Entity); }
+		s_Entity = CreateEntity(s_Meshes[(s_Counter++) % 3]);
+		down = true;
+		first = false;
+	}
+	else down = false;
 
 	return true;
 }

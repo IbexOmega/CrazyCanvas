@@ -1047,6 +1047,9 @@ namespace LambdaEngine
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[r];
 
+			if (pRenderStage->UsesCustomRenderer)
+				continue;
+
 			pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 
 			if (pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)

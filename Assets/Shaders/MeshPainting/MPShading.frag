@@ -36,6 +36,9 @@ void main()
 
     vec3 paintMask          = texture(u_MaskTexture, in_TexCoord).rgb;
 
+    out_Color = vec4(paintMask, 1.f);
+    return;
+
     if (aoRoughMetalValid.a < 1.0f)
     {
         vec3 color = albedo / (albedo + vec3(1.0f));
