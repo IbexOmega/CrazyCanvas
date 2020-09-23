@@ -65,7 +65,7 @@ void SandboxState::Init()
 	}
 
 	//Scene
-	{
+	/*{
 		TArray<MeshComponent> meshComponents;
 		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
 
@@ -82,6 +82,38 @@ void SandboxState::Init()
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 			m_Entities.PushBack(entity);
 		}
+	}*/
+
+	// Simple Scene (One object, One texture)
+	{
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("bunny.obj");
+
+		MaterialProperties materialProperties;
+		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		materialProperties.Roughness = 0.5f;
+		materialProperties.Metallic = 0.5f;
+
+		MeshComponent sphereMeshComp = {};
+		sphereMeshComp.MeshGUID = sphereMeshGUID;
+		sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Default r: " + std::to_string(materialProperties.Roughness) + " m: " + std::to_string(materialProperties.Metallic),
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		glm::vec3 position(0.f, 0.f, 1.0f);
+		glm::vec3 scale(1.0f);
+
+		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
+		pECS->AddComponent<PositionComponent>(entity, { position, true });
+		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+
 	}
 
 	// Load scene
@@ -104,7 +136,7 @@ void SandboxState::Init()
 
 	//Sphere Grid
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		/*uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 		uint32 gridRadius = 5;
 
@@ -147,7 +179,7 @@ void SandboxState::Init()
 				transform *= glm::toMat4(glm::identity<glm::quat>());
 				transform = glm::scale(transform, scale);
 			}
-		}
+		}*/
 
 		// Directional Light
 		{
@@ -157,7 +189,7 @@ void SandboxState::Init()
 		}
 		
 		// Add PointLights
-		{
+		/*{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
@@ -205,7 +237,7 @@ void SandboxState::Init()
 				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
 			}
-		}
+		}*/
 
 		/*{
 			constexpr uint32 POINT_LIGHT_COUNT = 30;
@@ -359,9 +391,9 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	// Update State specfic objects
 	ECSCore* pECSCore = ECSCore::GetInstance();
 
-	RotationComponent& rotationComp = pECSCore->GetComponent<RotationComponent>(m_DirLight);
+	/*RotationComponent& rotationComp = pECSCore->GetComponent<RotationComponent>(m_DirLight);
 	rotationComp.Quaternion		= glm::rotate(rotationComp.Quaternion, glm::pi<float32>() * float32(delta.AsSeconds()) * 0.1f, glm::vec3(1.0f, 1.0f, 0.0f));
-	rotationComp.Dirty			= true;
+	rotationComp.Dirty			= true;*/
 }
 
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
