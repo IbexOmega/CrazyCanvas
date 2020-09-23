@@ -613,7 +613,7 @@ namespace LambdaEngine
 						}
 						else
 						{
-							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount;
+							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1U : pResource->SubResourceCount;
 
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
