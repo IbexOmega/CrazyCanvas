@@ -1,6 +1,8 @@
 #pragma once
 #include "LambdaEngine.h"
 #include "Containers/THashTable.h"
+#include "Containers/String.h"
+
 
 namespace LambdaEngine
 {
