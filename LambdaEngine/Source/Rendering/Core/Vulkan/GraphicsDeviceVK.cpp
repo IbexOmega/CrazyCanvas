@@ -41,7 +41,6 @@ namespace LambdaEngine
 	{
 		ValidationLayer("REQ_V_L_BASE"),
 		ValidationLayer("VK_LAYER_KHRONOS_validation"),
-		//ValidationLayer("VK_LAYER_RENDERDOC_Capture")
 	};
 
 	constexpr ValidationLayer OPTIONAL_VALIDATION_LAYERS[]
@@ -64,7 +63,6 @@ namespace LambdaEngine
 	constexpr Extension OPTIONAL_INSTANCE_EXTENSIONS[]
 	{
 		Extension("OPT_I_E_BASE"),
-		Extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME),
 	};
 
 	constexpr Extension REQUIRED_DEVICE_EXTENSIONS[]
@@ -76,15 +74,10 @@ namespace LambdaEngine
 	constexpr Extension OPTIONAL_DEVICE_EXTENSIONS[]
 	{
 		Extension("OPT_D_E_BASE"),
-		Extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME),
-		Extension(VK_KHR_MAINTENANCE3_EXTENSION_NAME),
-		Extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME),
-		Extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME),
 		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
 		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
-		Extension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
@@ -220,7 +213,7 @@ namespace LambdaEngine
 
 	bool GraphicsDeviceVK::AllocateAccelerationStructureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
 	{
-		VALIDATE(m_pTextureAllocator != nullptr);
+		VALIDATE(m_pAccelerationStructureAllocator != nullptr);
 		VALIDATE(pAllocation != nullptr);
 
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
@@ -853,17 +846,17 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::CopyDescriptorSet(const DescriptorSet* pSrc, DescriptorSet* pDst) const
 	{
-		DescriptorSetVK*        pDstVk            = reinterpret_cast<DescriptorSetVK*>(pDst);
-		const DescriptorSetVK*    pSrcVk            = reinterpret_cast<const DescriptorSetVK*>(pSrc);
-		uint32                    bindingCount    = pSrcVk->GetDescriptorBindingDescCount();
+		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
+		const DescriptorSetVK*	pSrcVk			= reinterpret_cast<const DescriptorSetVK*>(pSrc);
+		uint32					bindingCount	= pSrcVk->GetDescriptorBindingDescCount();
 
 		VkCopyDescriptorSet copyDescriptorSet = {};
-		copyDescriptorSet.sType                = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-		copyDescriptorSet.pNext                = nullptr;
-		copyDescriptorSet.dstSet            = pDstVk->GetDescriptorSet();
-		copyDescriptorSet.srcSet            = pSrcVk->GetDescriptorSet();
-		copyDescriptorSet.srcArrayElement    = 0;
-		copyDescriptorSet.dstArrayElement    = 0;
+		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+		copyDescriptorSet.pNext				= nullptr;
+		copyDescriptorSet.dstSet			= pDstVk->GetDescriptorSet();
+		copyDescriptorSet.srcSet			= pSrcVk->GetDescriptorSet();
+		copyDescriptorSet.srcArrayElement	= 0;
+		copyDescriptorSet.dstArrayElement	= 0;
 
 		TArray<VkCopyDescriptorSet> descriptorSetCopies;
 		descriptorSetCopies.Reserve(bindingCount);
@@ -871,9 +864,9 @@ namespace LambdaEngine
 		{
 			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
 
-			copyDescriptorSet.descriptorCount    = binding.DescriptorCount;
-			copyDescriptorSet.srcBinding        = binding.Binding;
-			copyDescriptorSet.dstBinding        = copyDescriptorSet.srcBinding;
+			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
+			copyDescriptorSet.srcBinding		= binding.Binding;
+			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
@@ -1155,7 +1148,6 @@ namespace LambdaEngine
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
-
 		vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_DeviceFeaturesVk);
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
@@ -1185,55 +1177,60 @@ namespace LambdaEngine
 			queueCreateInfos.PushBack(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceRayTracingFeaturesKHR	supportedRayTracingFeatures		= {};
-		VkPhysicalDeviceVulkan12Features		supportedDeviceFeatures12		= {};
-		VkPhysicalDeviceVulkan11Features		supportedDeviceFeatures11		= {};
-		VkPhysicalDeviceFeatures				supportedDeviceFeatures10;
+		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = {};
+		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+		supportedMeshShaderFeatures.pNext = nullptr;
 
-		{
-			VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-			supportedRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = {};
+		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		supportedRayTracingFeatures.pNext = &supportedMeshShaderFeatures;
 
-			supportedDeviceFeatures12.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-			supportedDeviceFeatures12.pNext			= &supportedRayTracingFeatures;
+		VkPhysicalDeviceVulkan12Features supportedDeviceFeatures12 = {};
+		supportedDeviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		supportedDeviceFeatures12.pNext = &supportedRayTracingFeatures;
 
-			supportedDeviceFeatures11.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-			supportedDeviceFeatures11.pNext		= &supportedDeviceFeatures12;
+		VkPhysicalDeviceVulkan11Features supportedDeviceFeatures11 = {};
+		supportedDeviceFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		supportedDeviceFeatures11.pNext = &supportedDeviceFeatures12;
 
-			deviceFeatures2.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-			deviceFeatures2.pNext					= &supportedDeviceFeatures11;
+		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+		deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures2.pNext = &supportedDeviceFeatures11;
 
-			vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
+		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
 
-			supportedDeviceFeatures10 = deviceFeatures2.features;
-		}
+		VkPhysicalDeviceFeatures supportedDeviceFeatures10;
+		supportedDeviceFeatures10 = deviceFeatures2.features;
 
+		VkPhysicalDeviceMeshShaderFeaturesNV enabledMeshShaderFeatures = {};
+		enabledMeshShaderFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+		enabledMeshShaderFeatures.pNext			= nullptr;
+		enabledMeshShaderFeatures.meshShader	= supportedMeshShaderFeatures.meshShader;
+		enabledMeshShaderFeatures.taskShader	= supportedMeshShaderFeatures.taskShader;
 
 		VkPhysicalDeviceRayTracingFeaturesKHR enabledRayTracingFeatures = {};
-		enabledRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		enabledRayTracingFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		enabledRayTracingFeatures.pNext			= &enabledMeshShaderFeatures;
+		enabledRayTracingFeatures.rayTracing	= supportedRayTracingFeatures.rayTracing;
 
 		VkPhysicalDeviceVulkan12Features enabledDeviceFeatures12 = {};
-		enabledDeviceFeatures12.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		enabledDeviceFeatures12.pNext		= &enabledRayTracingFeatures;
+		enabledDeviceFeatures12.sType				= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		enabledDeviceFeatures12.pNext				= &enabledRayTracingFeatures;
+		enabledDeviceFeatures12.bufferDeviceAddress	= supportedDeviceFeatures12.bufferDeviceAddress;
+		enabledDeviceFeatures12.timelineSemaphore	= supportedDeviceFeatures12.timelineSemaphore;
+		enabledDeviceFeatures12.descriptorIndexing	= supportedDeviceFeatures12.descriptorIndexing;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
-		enabledDeviceFeatures11.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-		enabledDeviceFeatures11.pNext		= &enabledDeviceFeatures12;
+		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		enabledDeviceFeatures11.pNext	= &enabledDeviceFeatures12;
 
 		VkPhysicalDeviceFeatures enabledDeviceFeatures10 = {};
-
-		enabledRayTracingFeatures.rayTracing						= supportedRayTracingFeatures.rayTracing;
-
-		enabledDeviceFeatures12.bufferDeviceAddress					= supportedDeviceFeatures12.bufferDeviceAddress;
-		enabledDeviceFeatures12.timelineSemaphore					= supportedDeviceFeatures12.timelineSemaphore;
-		enabledDeviceFeatures12.descriptorIndexing					= supportedDeviceFeatures12.descriptorIndexing;
-
-		enabledDeviceFeatures10.fillModeNonSolid					= supportedDeviceFeatures10.fillModeNonSolid;
-		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics		= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;
-		enabledDeviceFeatures10.fragmentStoresAndAtomics			= supportedDeviceFeatures10.fragmentStoresAndAtomics;
-		enabledDeviceFeatures10.multiDrawIndirect					= supportedDeviceFeatures10.multiDrawIndirect;
-		enabledDeviceFeatures10.pipelineStatisticsQuery				= supportedDeviceFeatures10.pipelineStatisticsQuery;
-		enabledDeviceFeatures10.imageCubeArray						= supportedDeviceFeatures10.imageCubeArray;
+		enabledDeviceFeatures10.fillModeNonSolid				= supportedDeviceFeatures10.fillModeNonSolid;
+		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics	= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;
+		enabledDeviceFeatures10.fragmentStoresAndAtomics		= supportedDeviceFeatures10.fragmentStoresAndAtomics;
+		enabledDeviceFeatures10.multiDrawIndirect				= supportedDeviceFeatures10.multiDrawIndirect;
+		enabledDeviceFeatures10.pipelineStatisticsQuery			= supportedDeviceFeatures10.pipelineStatisticsQuery;
+		enabledDeviceFeatures10.imageCubeArray					= supportedDeviceFeatures10.imageCubeArray;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -1626,6 +1623,8 @@ namespace LambdaEngine
 			deviceProps2.pNext = &RayTracingProperties;
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
+
+			m_DeviceFeatures.MaxRecursionDepth = RayTracingProperties.maxRecursionDepth;
 		}
 
 		//PushDescriptorSet
@@ -1642,18 +1641,31 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkGetSemaphoreCounterValue);
 		}
 
-		// Buffer Address
-		if (IsDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
-		{
-			GET_DEVICE_PROC_ADDR(Device, vkGetBufferDeviceAddress);
-		}
-
 		// Mesh Shaders
 		if (IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME))
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksNV);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectNV);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectCountNV);
+
+			MeshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV;
+			MeshShaderProperties.pNext = nullptr;
+
+			VkPhysicalDeviceProperties2 deviceProperties2;
+			deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			deviceProperties2.pNext = &MeshShaderProperties;
+			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProperties2);
+
+			memcpy(&m_DeviceFeatures.MaxMeshWorkGroupSize, MeshShaderProperties.maxMeshWorkGroupSize, sizeof(uint32) * 3);
+			memcpy(&m_DeviceFeatures.MaxTaskWorkGroupSize, MeshShaderProperties.maxTaskWorkGroupSize, sizeof(uint32) * 3);
+
+			m_DeviceFeatures.MaxMeshViewCount				= MeshShaderProperties.maxMeshMultiviewViewCount;
+			m_DeviceFeatures.MaxMeshOutputVertices			= MeshShaderProperties.maxMeshOutputVertices;
+			m_DeviceFeatures.MaxMeshOutputPrimitives		= MeshShaderProperties.maxMeshOutputPrimitives;
+			m_DeviceFeatures.MaxDrawMeshTasksCount			= MeshShaderProperties.maxDrawMeshTasksCount;
+			m_DeviceFeatures.MaxTaskOutputCount				= MeshShaderProperties.maxTaskOutputCount;
+			m_DeviceFeatures.MaxMeshWorkGroupInvocations	= MeshShaderProperties.maxMeshWorkGroupInvocations;
+			m_DeviceFeatures.MaxTaskWorkGroupInvocations	= MeshShaderProperties.maxTaskWorkGroupInvocations;
 		}
 	}
 

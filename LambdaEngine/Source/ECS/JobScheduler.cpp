@@ -51,7 +51,8 @@ namespace LambdaEngine
                 {
                     SetPhase(m_CurrentPhase + 1u);
                 }
-            } else
+            }
+            else
             {
                 m_ScheduleTimeoutCvar.wait(uLock);
             }
@@ -60,19 +61,26 @@ namespace LambdaEngine
 
     void JobScheduler::ScheduleJob(const Job& job, uint32_t phase)
     {
-        m_Lock.lock();
-        phase = phase == CURRENT_PHASE ? std::min(m_CurrentPhase, g_PhaseCount) : phase;
+        std::scoped_lock<std::mutex> lock(m_Lock);
         m_Jobs[phase].EmplaceBack(job);
         m_JobIndices[phase].PushBack(m_Jobs[phase].GetSize() - 1u);
 
         m_ScheduleTimeoutCvar.notify_all();
-        m_Lock.unlock();
+    }
+
+    void JobScheduler::ScheduleJobASAP(const Job& job)
+    {
+        std::scoped_lock<std::mutex> lock(m_Lock);
+        uint32 phase = m_CurrentPhase >= m_Jobs.size() ? 0u : m_CurrentPhase;
+        m_Jobs[phase].EmplaceBack(job);
+        m_JobIndices[phase].PushBack(m_Jobs[phase].GetSize() - 1u);
+
+        m_ScheduleTimeoutCvar.notify_all();
     }
 
     void JobScheduler::ScheduleJobs(const TArray<Job>& jobs, uint32_t phase)
     {
-        m_Lock.lock();
-        phase = phase == CURRENT_PHASE ? m_CurrentPhase : phase;
+        std::scoped_lock<std::mutex> lock(m_Lock);
 
         // Push jobs
         uint32 oldJobsCount = m_Jobs[phase].GetSize();
@@ -86,27 +94,22 @@ namespace LambdaEngine
         std::iota(&jobIndices[oldIndicesCount - 1u], &jobIndices.GetBack(), oldJobsCount);
 
         m_ScheduleTimeoutCvar.notify_all();
-
-        m_Lock.unlock();
     }
 
     uint32 JobScheduler::ScheduleRegularJob(const Job& job, uint32_t phase)
     {
-        m_Lock.lock();
+        std::scoped_lock<std::mutex> lock(m_Lock);
 
         uint32 jobID = m_RegularJobIDGenerator.GenID();
         m_RegularJobs[phase].PushBack(job, jobID);
-
-        m_Lock.unlock();
 
         return jobID;
     }
 
     void JobScheduler::DescheduleRegularJob(uint32 phase, uint32 jobID)
     {
-        m_Lock.lock();
+        std::scoped_lock<std::mutex> lock(m_Lock);
         m_RegularJobs[phase].Pop(jobID);
-        m_Lock.unlock();
     }
 
     const Job* JobScheduler::FindExecutableJob()

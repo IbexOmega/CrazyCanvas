@@ -142,7 +142,6 @@ namespace LambdaEngine
 		bool SetEnabledValidationLayers();
 		bool SetEnabledInstanceExtensions();
 
-
 		int32 RatePhysicalDevice(VkPhysicalDevice physicalDevice);
 		void CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice);
@@ -191,15 +190,14 @@ namespace LambdaEngine
 		//PushDescriptorSet
 		PFN_vkCmdPushDescriptorSetKHR						vkCmdPushDescriptorSetKHR						= nullptr;
 
-		// Buffer Addresses
-		PFN_vkGetBufferDeviceAddress	vkGetBufferDeviceAddress = nullptr;
-
 		// Timeline-Semaphores
 		PFN_vkWaitSemaphores			vkWaitSemaphores			= nullptr;
 		PFN_vkSignalSemaphore			vkSignalSemaphore			= nullptr;
 		PFN_vkGetSemaphoreCounterValue	vkGetSemaphoreCounterValue	= nullptr;
 
 		// Mesh Shaders
+		VkPhysicalDeviceMeshShaderPropertiesNV MeshShaderProperties;
+
 		PFN_vkCmdDrawMeshTasksNV				vkCmdDrawMeshTasksNV				= nullptr;
 		PFN_vkCmdDrawMeshTasksIndirectNV		vkCmdDrawMeshTasksIndirectNV		= nullptr;
 		PFN_vkCmdDrawMeshTasksIndirectCountNV	vkCmdDrawMeshTasksIndirectCountNV	= nullptr;

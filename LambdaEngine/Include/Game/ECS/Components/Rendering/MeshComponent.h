@@ -2,8 +2,6 @@
 
 #include "ECS/Component.h"
 
-#include <typeindex>
-
 namespace LambdaEngine
 {
 	struct MeshComponent

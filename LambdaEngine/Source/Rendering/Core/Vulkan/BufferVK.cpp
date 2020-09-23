@@ -134,10 +134,7 @@ namespace LambdaEngine
 		deviceAdressInfo.pNext  = nullptr;
 		deviceAdressInfo.buffer = m_Buffer;
 
-		if (m_pDevice->vkGetBufferDeviceAddress)
-		{
-			m_DeviceAddress = m_pDevice->vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo);
-		}
+		m_DeviceAddress = vkGetBufferDeviceAddress(m_pDevice->Device, &deviceAdressInfo);
 
 		return true;
 	}
