@@ -149,6 +149,11 @@ namespace LambdaEngine
 		*/
 		static GUID_Lambda LoadSoundEffectFromFile(const String& filename);
 
+		/*
+		* Combine PBR materials into one texture
+		*/
+		static void CombineMaterials(Material* material);
+
 		static GUID_Lambda					GetMeshGUID(const String& name);
 		static GUID_Lambda					GetMaterialGUID(const String& name);
 		static GUID_Lambda					GetTextureGUID(const String& name);

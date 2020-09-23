@@ -181,7 +181,7 @@ namespace LambdaEngine
 			pos = string.find_first_of('\\', pos + 1);
 		}
 	}
-	
+
 	/*
 	* ResourceLoader
 	*/
@@ -434,18 +434,18 @@ namespace LambdaEngine
 
 		int32 assimpFlags =
 			aiProcess_FlipUVs					|
-			aiProcess_CalcTangentSpace			| 
-			aiProcess_FindInstances				| 
-			aiProcess_GenSmoothNormals			| 
-			aiProcess_JoinIdenticalVertices		| 
-			aiProcess_ImproveCacheLocality		| 
-			aiProcess_LimitBoneWeights			| 
-			aiProcess_RemoveRedundantMaterials	| 
-			aiProcess_SplitLargeMeshes			| 
-			aiProcess_Triangulate				| 
-			aiProcess_GenUVCoords				| 
-			aiProcess_SortByPType				| 
-			aiProcess_FindDegenerates			| 
+			aiProcess_CalcTangentSpace			|
+			aiProcess_FindInstances				|
+			aiProcess_GenSmoothNormals			|
+			aiProcess_JoinIdenticalVertices		|
+			aiProcess_ImproveCacheLocality		|
+			aiProcess_LimitBoneWeights			|
+			aiProcess_RemoveRedundantMaterials	|
+			aiProcess_SplitLargeMeshes			|
+			aiProcess_Triangulate				|
+			aiProcess_GenUVCoords				|
+			aiProcess_SortByPType				|
+			aiProcess_FindDegenerates			|
 			aiProcess_FindInvalidData;
 
 		Assimp::Importer importer;
@@ -699,7 +699,7 @@ namespace LambdaEngine
 
 		uint32 pixelDataSize = width * height * TextureFormatStride(format);
 
-		BufferDesc bufferDesc	= {};
+		BufferDesc bufferDesc	= { };
 		bufferDesc.DebugName	= "Texture Copy Buffer";
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
@@ -816,7 +816,7 @@ namespace LambdaEngine
 				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
 				return nullptr;
 			}
-			
+
 			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
@@ -830,7 +830,7 @@ namespace LambdaEngine
 				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
 				return nullptr;
 			}
-			
+
 			sourceSPIRV.Resize(static_cast<uint32>(glm::ceil(static_cast<float32>(shaderRawSourceSize) / sizeof(uint32))));
 			memcpy(sourceSPIRV.GetData(), pShaderRawSource, shaderRawSourceSize);
 		}
@@ -959,7 +959,7 @@ namespace LambdaEngine
 		{
 			pData[read] = '\0';
 		}
-		
+
 		(*ppData)		= pData;
 		(*pDataSize)	= length;
 
@@ -1023,7 +1023,7 @@ namespace LambdaEngine
 			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
-		
+
 		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
 
 		if (pSourceSPIRV != nullptr)
