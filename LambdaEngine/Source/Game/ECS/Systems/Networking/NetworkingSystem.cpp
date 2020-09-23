@@ -32,6 +32,7 @@ namespace LambdaEngine
 
 	void NetworkingSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
 		/*ECSCore* pECS = ECSCore::GetInstance();
 
 		auto* pComponents = pECS->GetComponentArray<PositionComponent>();
