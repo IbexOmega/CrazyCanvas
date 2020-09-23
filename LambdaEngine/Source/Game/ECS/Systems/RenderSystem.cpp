@@ -178,7 +178,7 @@ namespace LambdaEngine
 			}
 		}
 
-		m_DirtyLights = true; // Initilise Light buffer to avoid validation layer errors
+		m_LightsDirty = true; // Initilise Light buffer to avoid validation layer errors
 		UpdateBuffers();
 
 		return true;
@@ -377,8 +377,8 @@ namespace LambdaEngine
 			auto& pointLightComp = pECSCore->GetComponent<DirectionalLightComponent>(entity);
 			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
-			m_LightBufferData.ColorIntensity	= pointLightComp.ColorIntensity;
-			m_LightBufferData.Direction			= GetForward(rotation.Quaternion);
+			m_LightBufferData.DirL_ColorIntensity	= pointLightComp.ColorIntensity;
+			m_LightBufferData.DirL_Direction		= GetForward(rotation.Quaternion);
 
 			m_DirectionalExist = true;
 			m_LightsDirty = true;
@@ -409,7 +409,7 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(entity);
 
-		m_LightBufferData.ColorIntensity = glm::vec4(0.f);
+		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
 		m_LightsDirty = true;
 	}
@@ -674,18 +674,15 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(entity);
 
-		m_LightBufferData.ColorIntensity	= colorIntensity;
-		m_LightBufferData.Direction			= GetForward(direction);
-
-		m_DirectionalLight.DirL_ColorIntensity = colorIntensity;
-		m_DirectionalLight.DirL_Direction = GetForward(direction);
+		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
+		m_LightBufferData.DirL_Direction			= GetForward(direction);
 
 		const int width = 1024;
 
-		m_DirectionalLight.DirL_ProjViews = glm::ortho(0, 1024, 1024, 0, 0, 100);
-		m_DirectionalLight.DirL_ProjViews *= glm::lookAt({ 0.0f, 0.0f, 0.0f }, m_DirectionalLight.DirL_Direction, g_DefaultUp);
+		m_LightBufferData.DirL_ProjViews = glm::ortho(0, 1024, 1024, 0, 0, 100);
+		m_LightBufferData.DirL_ProjViews *= glm::lookAt({ 0.0f, 0.0f, 0.0f }, m_LightBufferData.DirL_Direction, g_DefaultUp);
 
-		m_DirtyLights = true;
+		m_LightsDirty = true;
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity)
