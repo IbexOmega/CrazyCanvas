@@ -306,6 +306,7 @@ workspace "LambdaEngine"
 			"Dependencies/rapidjson/include",
 			"Dependencies/stb",
 			"Dependencies/WavLib",
+			"Dependencies/NoesisGUI/Include",
 		}
 
 		links
@@ -341,7 +342,10 @@ workspace "LambdaEngine"
 				"Dependencies/assimp/bin",
 
 				-- Bullet physics
-				"Dependencies/bullet/lib"
+				"Dependencies/bullet/lib",
+				
+				-- NoesisGUI
+				"Dependencies/NoesisGUI/Lib",
 			}
 
 			sysincludedirs
@@ -373,10 +377,14 @@ workspace "LambdaEngine"
 				"/debug/assimp-vc142-mtd.lib",
 				"/debug/IrrXMLd.lib",
 				"/debug/zlibstaticd.lib",
-
+				
+				--Bullet
 				"/debug/BulletCollision_vs2010_x64_debug.lib",
 				"/debug/BulletDynamics_vs2010_x64_debug.lib",
-				"/debug/LinearMath_vs2010_x64_debug.lib"
+				"/debug/LinearMath_vs2010_x64_debug.lib",
+				
+				--NoesisGUI
+				"Noesis.lib",
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
@@ -400,7 +408,10 @@ workspace "LambdaEngine"
 				-- Bullet
 				"/release/BulletCollision_vs2010_x64_release.lib",
 				"/release/BulletDynamics_vs2010_x64_release.lib",
-				"/release/LinearMath_vs2010_x64_release.lib"
+				"/release/LinearMath_vs2010_x64_release.lib",
+				
+				--NoesisGUI
+				"Noesis.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }

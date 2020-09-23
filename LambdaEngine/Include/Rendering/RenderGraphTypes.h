@@ -11,6 +11,7 @@
 namespace LambdaEngine
 {
 	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
+	constexpr const char* RENDER_GRAPH_NOESIS_GUI_STAGE_NAME	= "RENDER_STAGE_NOESIS_GUI";
 
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT	= "BACK_BUFFER_TEXTURE";
 
