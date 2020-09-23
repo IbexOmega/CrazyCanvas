@@ -1,33 +1,22 @@
 #pragma once
 #include "Input/API/InputState.h"
 #include "Containers/THashTable.h"
+#include <rapidjson/document.h>
 
 namespace LambdaEngine
 {
-	enum EAction {
-		PLAYER_FORWARD,
-		PLAYER_BACKWARD,
-		PLAYER_LEFT,
-		PLAYER_RIGHT,
-		// more actions to come...
-	};
 
 	class LAMBDA_API InputActionSystem
 	{
 	public:
 		DECL_STATIC_CLASS(InputActionSystem);
 
-		// TODO: Read keymapping from file
-		static bool IsActive(EAction action);
-
-		FORCEINLINE static InputActionSystem* GetDevice()
-		{
-			return s_pInputActionSystem;
-		}
+		static bool LoadFromFile();
+		static bool WriteToFile();
+		static bool IsActive(String action);
 
 	private:
-		static InputActionSystem* s_pInputActionSystem;
-		static std::unordered_map<EAction, EKey> m_KeyMapping;
+		static THashTable<String, EKey> m_CurrentKeyBindings;
+		static rapidjson::Document s_ConfigDocument;
 	};
-
 }
