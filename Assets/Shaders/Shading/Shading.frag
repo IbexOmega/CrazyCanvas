@@ -7,7 +7,10 @@
 
 layout(location = 0) in vec2 in_TexCoord;
 
-layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer  { SPerFrameBuffer val; } u_PerFrameBuffer;
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+{ 
+    SPerFrameBuffer val; 
+} u_PerFrameBuffer;
 layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
 	SLightsBuffer val; 
