@@ -311,9 +311,9 @@ void SandboxState::Pause()
 void SandboxState::Tick(LambdaEngine::Timestamp delta)
 {
 	// Update State specfic objects
-	ECSCore* pECSCore = ECSCore::GetInstance();
+	/*ECSCore* pECSCore = ECSCore::GetInstance();
 
 	RotationComponent& rotationComp = pECSCore->GetComponent<RotationComponent>(m_DirLight);
 	rotationComp.Quaternion		= glm::rotate(rotationComp.Quaternion, glm::pi<float32>() * float32(delta.AsSeconds()) * 0.1f, glm::vec3(1.0f, 1.0f, 0.0f));
-	rotationComp.Dirty			= true;
+	rotationComp.Dirty			= true;*/
 }

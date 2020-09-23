@@ -23,6 +23,8 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferAORough
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferCompactNormal;
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferVelocity;
 
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_DirLShadowMap;
+
 layout(location = 0) out vec4 out_Color;
 
 void main()
@@ -115,5 +117,5 @@ void main()
 	color = color / (color + vec3(1.0f));
 	color = pow(color, vec3(1.0f / GAMMA));
 
-	out_Color = vec4(color, 1.0f);
+	out_Color = vec4(color, 1.0f); //
 }

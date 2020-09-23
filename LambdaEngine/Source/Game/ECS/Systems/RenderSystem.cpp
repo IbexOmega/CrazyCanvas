@@ -271,7 +271,7 @@ namespace LambdaEngine
 			auto& rotation = pRotationComponents->GetData(entity);
 			if (rotation.Dirty)
 			{
-				UpdateDirectionalLight(entity, dirLight.ColorIntensity, rotation.Quaternion);
+				UpdateDirectionalLight(dirLight.ColorIntensity, rotation.Quaternion);
 			}
 		}
 
@@ -377,11 +377,12 @@ namespace LambdaEngine
 			auto& pointLightComp = pECSCore->GetComponent<DirectionalLightComponent>(entity);
 			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
-			m_LightBufferData.DirL_ColorIntensity	= pointLightComp.ColorIntensity;
-			m_LightBufferData.DirL_Direction		= GetForward(rotation.Quaternion);
+	/*		m_LightBufferData.DirL_ColorIntensity	= pointLightComp.ColorIntensity;
+			m_LightBufferData.DirL_Direction		= GetForward(rotation.Quaternion);*/
+
+			UpdateDirectionalLight(pointLightComp.ColorIntensity, rotation.Quaternion);
 
 			m_DirectionalExist = true;
-			m_LightsDirty = true;
 		}
 		else
 		{
@@ -670,16 +671,14 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction)
+	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::quat& direction)
 	{
-		UNREFERENCED_VARIABLE(entity);
-
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
-		m_LightBufferData.DirL_Direction			= GetForward(direction);
+		m_LightBufferData.DirL_Direction		= GetForward(direction);
 
 		const int width = 1024;
 
-		m_LightBufferData.DirL_ProjViews = glm::ortho(0, 1024, 1024, 0, 0, 100);
+		m_LightBufferData.DirL_ProjViews = glm::ortho(0, 1024, 1024, 0, 0, 1000);
 		m_LightBufferData.DirL_ProjViews *= glm::lookAt({ 0.0f, 0.0f, 0.0f }, m_LightBufferData.DirL_Direction, g_DefaultUp);
 
 		m_LightsDirty = true;

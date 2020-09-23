@@ -166,7 +166,7 @@ namespace LambdaEngine
 		{
 			glm::vec4	DirL_ColorIntensity	= glm::vec4(0.0f);
 			glm::vec3	DirL_Direction		= glm::vec3(1.0f);
-			uint32		PointLightCount = 0U;
+			uint32		PointLightCount		= 0U;
 			glm::mat4	DirL_ProjViews;
 			// PointLight PointLights[] unbounded
 		};
@@ -208,7 +208,7 @@ namespace LambdaEngine
 		void OnPointLightEntityRemoved(Entity entity);
 
 		void RemoveEntityInstance(Entity entity);
-		void UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction);
+		void UpdateDirectionalLight(glm::vec4& colorIntensity, glm::quat& direction);
 		void UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity);
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
