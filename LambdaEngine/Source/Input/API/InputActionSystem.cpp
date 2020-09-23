@@ -94,8 +94,17 @@ namespace LambdaEngine
 
 	bool InputActionSystem::IsActive(String action)
 	{
-		EKey keyPressed = m_CurrentKeyBindings.at(action);
-		return Input::IsKeyDown(keyPressed);
+
+		auto itr = m_CurrentKeyBindings.find(action);
+
+		if (itr != m_CurrentKeyBindings.end()) {
+			EKey keyPressed = itr->second;
+			return Input::IsKeyDown(keyPressed);
+		}
+
+		LOG_ERROR("Action %s is not defined.", action.c_str());
+		return false;
+
 	}
 
 }
