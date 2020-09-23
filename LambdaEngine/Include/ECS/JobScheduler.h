@@ -10,8 +10,6 @@
 #include <mutex>
 #include <unordered_set>
 
-#define CURRENT_PHASE UINT32_MAX
-
 namespace LambdaEngine
 {
     class JobScheduler
@@ -22,12 +20,13 @@ namespace LambdaEngine
 
         void Tick();
 
-        void ScheduleJob(const Job& job, uint32_t phase = CURRENT_PHASE);
-        void ScheduleJobs(const TArray<Job>& jobs, uint32_t phase = CURRENT_PHASE);
+        void ScheduleJob(const Job& job, uint32_t phase);
+        void ScheduleJobASAP(const Job& job);
+        void ScheduleJobs(const TArray<Job>& jobs, uint32_t phase);
 
         /*  scheduleRegularJob schedules a job that is performed each frame, until it is explicitly deregistered using the job ID.
             Returns the job ID. */
-        uint32 ScheduleRegularJob(const Job& job, uint32_t phase = CURRENT_PHASE);
+        uint32 ScheduleRegularJob(const Job& job, uint32_t phase);
         void DescheduleRegularJob(uint32 phase, uint32 jobID);
 
         // Schedules an advance to the next phase

@@ -15,6 +15,7 @@ namespace LambdaEngine
 	class NetworkSegment;
 	class NetworkStatistics;
 	class ISocket;
+	class SegmentPool;
 
 	class LAMBDA_API PacketTransceiverBase
 	{
@@ -28,13 +29,12 @@ namespace LambdaEngine
 		virtual void SetSocket(ISocket* pSocket) = 0;
 
 	protected:
-		virtual bool Transmit(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) = 0;
-		virtual bool Receive(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) = 0;
+		virtual bool TransmitData(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) = 0;
+		virtual bool ReceiveData(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) = 0;
 		virtual void OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) = 0;
 
 	private:
 		static bool ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics);
-
 
 	private:
 		int32 m_BytesReceived;

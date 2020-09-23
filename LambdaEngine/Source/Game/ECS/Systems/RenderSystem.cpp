@@ -21,6 +21,8 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Rendering/PointLightComponent.h"
+#include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -47,6 +49,8 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{{{RW, MeshComponent::s_TID}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, DirectionalLightComponent::s_TID}, {R, RotationComponent::s_TID}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, PointLightComponent::s_TID}, {R, PositionComponent::s_TID}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
 				{{{RW, ViewProjectionMatricesComponent::s_TID}, {R, CameraComponent::s_TID}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -140,7 +144,7 @@ namespace LambdaEngine
 			BufferDesc perFrameBufferDesc = {};
 			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
 			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
-			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;;
+			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
@@ -186,8 +190,8 @@ namespace LambdaEngine
 			SAFERELEASE(meshAndInstancesIt->second.pBLAS);
 			SAFERELEASE(meshAndInstancesIt->second.pVertexBuffer);
 			SAFERELEASE(meshAndInstancesIt->second.pIndexBuffer);
-			SAFERELEASE(meshAndInstancesIt->second.pASInstanceBuffer);
 			SAFERELEASE(meshAndInstancesIt->second.pRasterInstanceBuffer);
+			SAFERELEASE(meshAndInstancesIt->second.pASInstanceBuffer);
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
@@ -213,9 +217,12 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppMaterialParametersStagingBuffers[b]);
 			SAFERELEASE(m_ppPerFrameStagingBuffers[b]);
 			SAFERELEASE(m_ppStaticStagingInstanceBuffers[b]);
+			SAFERELEASE(m_ppLightsStagingBuffer[b]);
 		}
+
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
+		SAFERELEASE(m_pLightsBuffer);
 
 		SAFEDELETE(m_pRenderGraph);
 
@@ -237,11 +244,45 @@ namespace LambdaEngine
 
 	void RenderSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
 		ComponentArray<PositionComponent>*	pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
 		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
+
+		ComponentArray<PointLightComponent>* pPointLightComponents = pECSCore->GetComponentArray<PointLightComponent>();
+		for (Entity entity : m_PointLightEntities.GetIDs())
+		{
+			auto& pointLight = pPointLightComponents->GetData(entity);
+			auto& position = pPositionComponents->GetData(entity);
+			if (position.Dirty)
+			{
+				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity);
+			}
+		}
+
+		ComponentArray<DirectionalLightComponent>* pDirLightComponents = pECSCore->GetComponentArray<DirectionalLightComponent>();
+		for (Entity entity : m_DirectionalLightEntities.GetIDs())
+		{
+			auto& dirLight = pDirLightComponents->GetData(entity);
+			auto& rotation = pRotationComponents->GetData(entity);
+			if (rotation.Dirty)
+			{
+				UpdateDirectionalLight(entity, dirLight.ColorIntensity, rotation.Quaternion);
+			}
+		}
+
+		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		for (Entity entity : m_CameraEntities.GetIDs())
+		{
+			auto& cameraComp = pCameraComponents->GetData(entity);
+			if (cameraComp.IsActive)
+			{
+				UpdateCamera(entity);
+			}
+		}
 
 		for (Entity entity : m_RenderableEntities)
 		{
@@ -262,17 +303,6 @@ namespace LambdaEngine
 				positionComp.Dirty	= false;
 				rotationComp.Dirty	= false;
 				scaleComp.Dirty		= false;
-			}
-		}
-
-		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
-
-		for (Entity entity : m_CameraEntities)
-		{
-			auto& cameraComp = pCameraComponents->GetData(entity);
-			if (cameraComp.IsActive)
-			{
-				UpdateCamera(entity);
 			}
 		}
 	}
@@ -297,20 +327,10 @@ namespace LambdaEngine
 		return true;
 	}
 
-	CommandList* RenderSystem::AcquireGraphicsCopyCommandList()
-	{
-		return m_pRenderGraph->AcquireGraphicsCopyCommandList();
-	}
-
-	CommandList* RenderSystem::AcquireComputeCopyCommandList()
-	{
-		return m_pRenderGraph->AcquireGraphicsCopyCommandList();;
-	}
-
 	void RenderSystem::SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc)
 	{
 		RenderGraphDesc renderGraphDesc = {};
-		renderGraphDesc.Name = name;
+		renderGraphDesc.Name						= name;
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 
@@ -345,6 +365,67 @@ namespace LambdaEngine
 	void RenderSystem::OnEntityRemoved(Entity entity)
 	{
 		RemoveEntityInstance(entity);
+	}
+
+	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
+	{
+		if (!m_DirectionalExist)
+		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+
+			auto& pointLightComp = pECSCore->GetComponent<DirectionalLightComponent>(entity);
+			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
+
+			m_LightBufferData.ColorIntensity	= pointLightComp.ColorIntensity;
+			m_LightBufferData.Direction			= GetForward(rotation.Quaternion);
+
+			m_DirectionalExist = true;
+			m_LightsDirty = true;
+		}
+		else
+		{
+			LOG_WARNING("Multiple directional lights not supported!");
+		}
+	}
+
+	void RenderSystem::OnPointLightEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+
+		auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
+		auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+	
+		uint32 pointLightIndex = m_PointLights.GetSize();
+		m_EntityToPointLight[entity] = pointLightIndex;
+		m_PointLightToEntity[pointLightIndex] = entity;
+
+		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLightComp.ColorIntensity, .Position = position.Position});
+
+		m_LightsDirty = true;
+	}
+
+	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+
+		m_LightBufferData.ColorIntensity = glm::vec4(0.f);
+		m_DirectionalExist = false;
+		m_LightsDirty = true;
+	}
+
+	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
+	{
+		uint32 lastIndex = m_PointLights.GetSize() - 1U;
+		uint32 lastEntity = m_PointLightToEntity[lastIndex];
+		uint32 currentIndex = m_EntityToPointLight[entity];
+
+		m_PointLights[currentIndex] = m_PointLights[lastIndex];
+		m_EntityToPointLight[lastEntity] = currentIndex;
+
+		m_EntityToPointLight.erase(entity);
+		m_PointLights.PopBack();
+
+		m_LightsDirty = true;
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated)
@@ -502,7 +583,7 @@ namespace LambdaEngine
 		{
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);
-			asInstance.MaterialSlot		= materialSlot;
+			asInstance.CustomIndex		= materialSlot;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
 			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
@@ -517,6 +598,8 @@ namespace LambdaEngine
 		instance.PrevTransform		= transform;
 		instance.MaterialSlot		= materialSlot;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
+
+		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
@@ -555,22 +638,31 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+			meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.ASInstances[meshAndInstancesIt->second.ASInstances.GetSize() - 1];
+			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + (meshAndInstancesIt->second.ASInstances.GetSize() - 1));
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
 		}
 
-		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+		meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.RasterInstances[meshAndInstancesIt->second.RasterInstances.GetSize() - 1];
+		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + (meshAndInstancesIt->second.RasterInstances.GetSize() - 1));
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
+		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		meshAndInstancesIt->second.EntityIDs[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		meshAndInstancesIt->second.EntityIDs.Erase(meshAndInstancesIt->second.EntityIDs.Begin() + (meshAndInstancesIt->second.EntityIDs.GetSize() - 1));
+
+		m_EntityIDsToInstanceKey.erase(entity);
+		m_EntityIDsToInstanceKey.erase(swappedEntityID);
+
 		//Unload Mesh, Todo: Should we always do this?
-		if (meshAndInstancesIt->second.RasterInstances.IsEmpty())
+		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexBuffer);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pIndexBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pRasterInstanceBuffer);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
@@ -581,8 +673,40 @@ namespace LambdaEngine
 			m_DirtyDrawArgs = m_RequiredDrawArgs;
 			m_SBTRecordsDirty = true;
 
+			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			auto dirtyBLASToRemove = std::find_if(m_DirtyBLASs.begin(), m_DirtyBLASs.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			
+			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end()) m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
+			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end()) m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
+			if (dirtyBLASToRemove != m_DirtyBLASs.end()) m_DirtyBLASs.erase(dirtyBLASToRemove);
+
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
 		}
+	}
+
+	void RenderSystem::UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction)
+	{
+		UNREFERENCED_VARIABLE(entity);
+
+		m_LightBufferData.ColorIntensity	= colorIntensity;
+		m_LightBufferData.Direction			= GetForward(direction);
+		m_LightsDirty = true;
+	}
+
+	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity)
+	{
+		if (m_EntityToPointLight.find(entity) == m_EntityToPointLight.end())
+		{
+			LOG_ERROR("Entity non-existing in PointLight map!");
+			return;
+		}
+		uint32 index = m_EntityToPointLight[entity];
+
+		m_PointLights[index].ColorIntensity = colorIntensity;
+		m_PointLights[index].Position = position;
+		
+		m_LightsDirty = true;
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
@@ -647,6 +771,25 @@ namespace LambdaEngine
 		resourcesToRemove.Clear();
 	}
 
+	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
+	{
+		UNREFERENCED_VARIABLE(mask);
+
+		for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
+		{
+			//Todo: Check Key (or whatever we end up using)
+			DrawArg drawArg = {};
+			drawArg.pVertexBuffer		= meshAndInstancesIt->second.pVertexBuffer;
+			drawArg.VertexBufferSize	= meshAndInstancesIt->second.pVertexBuffer->GetDesc().SizeInBytes;
+			drawArg.pIndexBuffer		= meshAndInstancesIt->second.pIndexBuffer;
+			drawArg.IndexCount			= meshAndInstancesIt->second.IndexCount;
+			drawArg.pInstanceBuffer		= meshAndInstancesIt->second.pRasterInstanceBuffer;
+			drawArg.InstanceBufferSize	= meshAndInstancesIt->second.pRasterInstanceBuffer->GetDesc().SizeInBytes;
+			drawArg.InstanceCount		= meshAndInstancesIt->second.RasterInstances.GetSize();
+			drawArgs.PushBack(drawArg);
+		}
+	}
+
 	void RenderSystem::UpdateBuffers()
 	{
 		CommandList* pGraphicsCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
@@ -665,15 +808,14 @@ namespace LambdaEngine
 			UpdatePerFrameBuffer(pGraphicsCommandList);
 		}
 
-		//Update SBT Records (must be done before UpdateInstanceBuffers and BuildTLAS)
-		if (m_RayTracingEnabled)
-		{
-			UpdateShaderRecords();
-		}
-
 		//Update Raster Instance Data
 		{
 			UpdateRasterInstanceBuffers(pGraphicsCommandList);
+		}
+
+		// Update Light Data
+		{
+			UpdateLightsBuffer(pGraphicsCommandList);
 		}
 
 		//Update Empty MaterialData
@@ -684,136 +826,10 @@ namespace LambdaEngine
 		//Update Acceleration Structures
 		if (m_RayTracingEnabled)
 		{
+			UpdateShaderRecords();
 			BuildBLASs(pComputeCommandList);
 			UpdateASInstanceBuffers(pComputeCommandList);
 			BuildTLAS(pComputeCommandList);
-		}
-	}
-
-	void RenderSystem::UpdateRenderGraph()
-	{
-		//Should we check for Draw Args to be removed here?
-
-		if (!m_DirtyDrawArgs.empty())
-		{
-			for (uint32 drawArgMask : m_DirtyDrawArgs)
-			{
-				TArray<DrawArg> drawArgs;
-				CreateDrawArgs(drawArgs, drawArgMask);
-
-				//Create Resource Update for RenderGraph
-				ResourceUpdateDesc resourceUpdateDesc					= {};
-				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
-				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
-
-				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-			}
-
-			m_DirtyDrawArgs.clear();
-		}
-
-		if (m_RenderGraphSBTRecordsDirty)
-		{
-			if (!m_SBTRecords.IsEmpty())
-			{
-				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords);
-			}
-
-			m_RenderGraphSBTRecordsDirty = false;
-		}
-
-		if (m_PerFrameResourceDirty)
-		{
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-
-			m_PerFrameResourceDirty = false;
-		}
-
-		if (m_MaterialsResourceDirty)
-		{
-			ResourceUpdateDesc resourceUpdateDesc				= {};
-			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-
-			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
-
-			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
-
-			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
-
-			ResourceUpdateDesc aoMapsUpdateDesc = {};
-			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
-
-			ResourceUpdateDesc metallicMapsUpdateDesc = {};
-			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
-
-			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
-
-			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
-
-			m_MaterialsResourceDirty = false;
-		}
-
-		if (m_RayTracingEnabled)
-		{
-			if (m_TLASResourceDirty)
-			{
-				//Create Resource Update for RenderGraph
-				ResourceUpdateDesc resourceUpdateDesc					= {};
-				resourceUpdateDesc.ResourceName							= SCENE_TLAS;
-				resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= m_pTLAS;
-
-				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-
-				m_TLASResourceDirty = false;
-			}
-		}
-	}
-
-	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
-	{
-		for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
-		{
-			//Todo: Check Key (or whatever we end up using)
-			DrawArg drawArg = {};
-			drawArg.pVertexBuffer		= meshAndInstancesIt->second.pVertexBuffer;
-			drawArg.VertexBufferSize	= meshAndInstancesIt->second.pVertexBuffer->GetDesc().SizeInBytes;
-			drawArg.pIndexBuffer		= meshAndInstancesIt->second.pIndexBuffer;
-			drawArg.IndexCount			= meshAndInstancesIt->second.IndexCount;
-			drawArg.pInstanceBuffer		= meshAndInstancesIt->second.pRasterInstanceBuffer;
-			drawArg.InstanceBufferSize	= meshAndInstancesIt->second.pRasterInstanceBuffer->GetDesc().SizeInBytes;
-			drawArg.InstanceCount		= meshAndInstancesIt->second.RasterInstances.GetSize();
-			drawArgs.PushBack(drawArg);
 		}
 	}
 
@@ -890,31 +906,6 @@ namespace LambdaEngine
 		pCommandList->CopyBuffer(pPerFrameStagingBuffer, 0, m_pPerFrameBuffer, 0, sizeof(PerFrameBuffer));
 	}
 
-	void RenderSystem::UpdateShaderRecords()
-	{
-		if (m_SBTRecordsDirty)
-		{
-			m_SBTRecords.Clear();
-
-			for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
-			{
-				uint32 shaderRecordOffset = m_SBTRecords.GetSize();
-
-				for (AccelerationStructureInstance& asInstance : meshAndInstancesIt->second.ASInstances)
-				{
-					asInstance.SBTRecordOffset = shaderRecordOffset;
-				}
-
-				m_SBTRecords.PushBack(meshAndInstancesIt->second.ShaderRecord);
-				m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
-			}
-
-			m_SBTRecordsDirty = false;
-			m_TLASDirty = true;
-			m_RenderGraphSBTRecordsDirty = true;
-		}
-	}
-
 	void RenderSystem::UpdateMaterialPropertiesBuffer(CommandList* pCommandList)
 	{
 		if (m_MaterialsPropertiesBufferDirty)
@@ -957,6 +948,31 @@ namespace LambdaEngine
 			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 
 			m_MaterialsPropertiesBufferDirty = false;
+		}
+	}
+
+	void RenderSystem::UpdateShaderRecords()
+	{
+		if (m_SBTRecordsDirty)
+		{
+			m_SBTRecords.Clear();
+
+			for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
+			{
+				uint32 shaderRecordOffset = m_SBTRecords.GetSize();
+
+				for (AccelerationStructureInstance& asInstance : meshAndInstancesIt->second.ASInstances)
+				{
+					asInstance.SBTRecordOffset = shaderRecordOffset;
+				}
+
+				m_SBTRecords.PushBack(meshAndInstancesIt->second.ShaderRecord);
+				m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
+			}
+
+			m_SBTRecordsDirty = false;
+			m_TLASDirty = true;
+			m_RenderGraphSBTRecordsDirty = true;
 		}
 	}
 
@@ -1010,55 +1026,68 @@ namespace LambdaEngine
 				m_DirtyASInstanceBuffers.insert(pDirtyBLAS);
 			}
 
+			//This is required to sync up BLAS building with TLAS building, to make sure that the BLAS is built before the TLAS
+			PipelineMemoryBarrierDesc memoryBarrier = {};
+			memoryBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			memoryBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			pCommandList->PipelineMemoryBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &memoryBarrier, 1);
+
 			m_DirtyBLASs.clear();
 		}
 	}
 
 	void RenderSystem::UpdateASInstanceBuffers(CommandList* pCommandList)
 	{
-		//AS Instances
-		for (MeshEntry* pDirtyInstanceBufferEntry : m_DirtyASInstanceBuffers)
+		if (!m_DirtyASInstanceBuffers.empty())
 		{
-
-			uint32 requiredBufferSize = pDirtyInstanceBufferEntry->ASInstances.GetSize() * sizeof(AccelerationStructureInstance);
-
-			Buffer* pStagingBuffer = pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex];
-
-			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			//AS Instances
+			for (MeshEntry* pDirtyInstanceBufferEntry : m_DirtyASInstanceBuffers)
 			{
-				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+				uint32 requiredBufferSize = pDirtyInstanceBufferEntry->ASInstances.GetSize() * sizeof(AccelerationStructureInstance);
 
-				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName = "AS Instance Staging Buffer";
-				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				bufferDesc.SizeInBytes = requiredBufferSize;
+				Buffer* pStagingBuffer = pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex];
 
-				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "AS Instance Staging Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+					pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+				}
+
+				void* pMapped = pStagingBuffer->Map();
+				memcpy(pMapped, pDirtyInstanceBufferEntry->ASInstances.GetData(), requiredBufferSize);
+				pStagingBuffer->Unmap();
+
+				if (pDirtyInstanceBufferEntry->pASInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pASInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pASInstanceBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "AS Instance Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					pDirtyInstanceBufferEntry->pASInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				}
+
+				pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pASInstanceBuffer, 0, requiredBufferSize);
 			}
 
-			void* pMapped = pStagingBuffer->Map();
-			memcpy(pMapped, pDirtyInstanceBufferEntry->ASInstances.GetData(), requiredBufferSize);
-			pStagingBuffer->Unmap();
+			PipelineMemoryBarrierDesc memoryBarrier = {};
+			memoryBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			memoryBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+			pCommandList->PipelineMemoryBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD, &memoryBarrier, 1);
 
-			if (pDirtyInstanceBufferEntry->pASInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pASInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
-			{
-				if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pASInstanceBuffer);
-
-				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName = "AS Instance Buffer";
-				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST;
-				bufferDesc.SizeInBytes = requiredBufferSize;
-
-				pDirtyInstanceBufferEntry->pASInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			}
-
-			pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pASInstanceBuffer, 0, requiredBufferSize);
+			m_DirtyASInstanceBuffers.clear();
 		}
-
-		m_DirtyASInstanceBuffers.clear();
 	}
 
 	void RenderSystem::BuildTLAS(CommandList* pCommandList)
@@ -1107,6 +1136,9 @@ namespace LambdaEngine
 				pCommandList->CopyBuffer(pendingUpdate.pSrcBuffer, pendingUpdate.SrcOffset, m_pCompleteInstanceBuffer, pendingUpdate.DstOffset, pendingUpdate.SizeInBytes);
 			}
 
+			if (m_MeshAndInstancesMap.empty())
+				return;
+
 			bool update = true;
 
 			//Recreate TLAS completely if oldInstanceCount != newInstanceCount
@@ -1139,6 +1171,180 @@ namespace LambdaEngine
 				buildTLASDesc.InstanceCount				= newInstanceCount;
 
 				pCommandList->BuildTopLevelAccelerationStructure(&buildTLASDesc);
+			}
+		}
+	}
+
+	void RenderSystem::UpdateLightsBuffer(CommandList* pCommandList)
+	{
+		// Light Buffer Initilization
+		if (m_LightsDirty)
+		{
+			size_t pointLightCount			= m_PointLights.GetSize();
+			size_t dirLightBufferSize		= sizeof(LightBuffer);
+			size_t pointLightsBufferSize	= sizeof(PointLight) * pointLightCount;
+			size_t lightBufferSize			= dirLightBufferSize + pointLightsBufferSize;
+
+			// Set point light count
+			m_LightBufferData.PointLightCount = uint32(pointLightCount);
+
+			Buffer* pCurrentStagingBuffer = m_ppLightsStagingBuffer[m_ModFrameIndex];
+
+			if (pCurrentStagingBuffer == nullptr || pCurrentStagingBuffer->GetDesc().SizeInBytes < lightBufferSize)
+			{
+				if (pCurrentStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pCurrentStagingBuffer);
+
+				BufferDesc lightCopyBufferDesc = {};
+				lightCopyBufferDesc.DebugName		= "Lights Copy Buffer";
+				lightCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				lightCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				lightCopyBufferDesc.SizeInBytes		= lightBufferSize;
+
+				pCurrentStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightCopyBufferDesc);
+				m_ppLightsStagingBuffer[m_ModFrameIndex] = pCurrentStagingBuffer;
+			}
+
+			void* pMapped = pCurrentStagingBuffer->Map();
+			memcpy(pMapped, &m_LightBufferData, dirLightBufferSize);
+			if (pointLightsBufferSize > 0) memcpy((uint8*)pMapped + dirLightBufferSize, m_PointLights.GetData(), pointLightsBufferSize);
+			pCurrentStagingBuffer->Unmap();
+
+			if (m_pLightsBuffer == nullptr || m_pLightsBuffer->GetDesc().SizeInBytes < lightBufferSize)
+			{
+				if (m_pLightsBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pLightsBuffer);
+
+				BufferDesc lightBufferDesc = {};
+				lightBufferDesc.DebugName		= "Lights Buffer";
+				lightBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+				lightBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+				lightBufferDesc.SizeInBytes		= lightBufferSize;
+
+				m_pLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightBufferDesc);
+
+				m_LightsResourceDirty = true;
+			}
+
+			pCommandList->CopyBuffer(pCurrentStagingBuffer, 0, m_pLightsBuffer, 0, lightBufferSize);
+			m_LightsDirty = false;
+		}
+	}
+
+	void RenderSystem::UpdateRenderGraph()
+	{
+		//Should we check for Draw Args to be removed here?
+
+		if (!m_DirtyDrawArgs.empty())
+		{
+			for (uint32 drawArgMask : m_DirtyDrawArgs)
+			{
+				TArray<DrawArg> drawArgs;
+				CreateDrawArgs(drawArgs, drawArgMask);
+
+				//Create Resource Update for RenderGraph
+				ResourceUpdateDesc resourceUpdateDesc					= {};
+				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
+
+				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+			}
+
+			m_DirtyDrawArgs.clear();
+		}
+
+		if (m_RenderGraphSBTRecordsDirty)
+		{
+			if (!m_SBTRecords.IsEmpty())
+			{
+				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords);
+			}
+
+			m_RenderGraphSBTRecordsDirty = false;
+		}
+
+		if (m_PerFrameResourceDirty)
+		{
+			ResourceUpdateDesc resourceUpdateDesc				= {};
+			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			m_PerFrameResourceDirty = false;
+		}
+
+		if (m_LightsResourceDirty)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			m_LightsResourceDirty = false;
+		}
+
+		if (m_MaterialsResourceDirty)
+		{
+			ResourceUpdateDesc resourceUpdateDesc				= {};
+			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
+
+			ResourceUpdateDesc albedoMapsUpdateDesc = {};
+			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc normalMapsUpdateDesc = {};
+			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc aoMapsUpdateDesc = {};
+			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
+
+			ResourceUpdateDesc metallicMapsUpdateDesc = {};
+			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+
+			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
+			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
+
+			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
+
+			m_MaterialsResourceDirty = false;
+		}
+
+		if (m_RayTracingEnabled)
+		{
+			if (m_TLASResourceDirty)
+			{
+				//Create Resource Update for RenderGraph
+				ResourceUpdateDesc resourceUpdateDesc					= {};
+				resourceUpdateDesc.ResourceName							= SCENE_TLAS;
+				resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= m_pTLAS;
+
+				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+				m_TLASResourceDirty = false;
 			}
 		}
 	}
