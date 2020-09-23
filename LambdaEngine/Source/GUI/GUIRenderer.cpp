@@ -1,5 +1,8 @@
 #include "GUI/GUIRenderer.h"
 
+#include "GUI/GUIRenderTarget.h"
+#include "GUI/GUITexture.h"
+
 namespace LambdaEngine
 {
 	GUIRenderer::GUIRenderer()
