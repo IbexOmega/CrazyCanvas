@@ -599,6 +599,8 @@ namespace LambdaEngine
 		instance.MaterialSlot		= materialSlot;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
+		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
+
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
 		//Todo: This needs to come from the Entity in some way
@@ -636,19 +638,25 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+			meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.ASInstances[meshAndInstancesIt->second.ASInstances.GetSize() - 1];
+			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + (meshAndInstancesIt->second.ASInstances.GetSize() - 1));
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
 		}
 
-		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+		meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.RasterInstances[meshAndInstancesIt->second.RasterInstances.GetSize() - 1];
+		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + (meshAndInstancesIt->second.RasterInstances.GetSize() - 1));
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		// Delete instanceKey it will not be used anymore
-		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
+		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		meshAndInstancesIt->second.EntityIDs[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		meshAndInstancesIt->second.EntityIDs.Erase(meshAndInstancesIt->second.EntityIDs.Begin() + (meshAndInstancesIt->second.EntityIDs.GetSize() - 1));
+
+		m_EntityIDsToInstanceKey.erase(entity);
+		m_EntityIDsToInstanceKey.erase(swappedEntityID);
 
 		//Unload Mesh, Todo: Should we always do this?
-		if (meshAndInstancesIt->second.RasterInstances.IsEmpty())
+		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexBuffer);
@@ -664,6 +672,14 @@ namespace LambdaEngine
 
 			m_DirtyDrawArgs = m_RequiredDrawArgs;
 			m_SBTRecordsDirty = true;
+
+			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			auto dirtyBLASToRemove = std::find_if(m_DirtyBLASs.begin(), m_DirtyBLASs.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			
+			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end()) m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
+			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end()) m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
+			if (dirtyBLASToRemove != m_DirtyBLASs.end()) m_DirtyBLASs.erase(dirtyBLASToRemove);
 
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
 		}

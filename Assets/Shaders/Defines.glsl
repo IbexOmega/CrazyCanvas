@@ -84,7 +84,7 @@ struct SPointLight
 {
     vec4    ColorIntensity;
     vec3    Position;
-    uint    padding;
+    uint    Padding;
 };
 
 struct SLightsBuffer

@@ -112,6 +112,8 @@ namespace LambdaEngine
 			Buffer* pRasterInstanceBuffer			= nullptr;
 			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<Instance> RasterInstances;
+
+			TArray<Entity> EntityIDs;
 		};
 
 		struct InstanceKey
@@ -134,16 +136,16 @@ namespace LambdaEngine
 
 		struct CameraData
 		{
-			glm::mat4 Projection = glm::mat4(1.0f);
-			glm::mat4 View = glm::mat4(1.0f);
-			glm::mat4 PrevProjection = glm::mat4(1.0f);
-			glm::mat4 PrevView = glm::mat4(1.0f);
-			glm::mat4 ViewInv = glm::mat4(1.0f);
-			glm::mat4 ProjectionInv = glm::mat4(1.0f);
-			glm::vec4 Position = glm::vec4(0.0f);
-			glm::vec4 Right = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-			glm::vec4 Up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec2 Jitter = glm::vec2(0.0f);
+			glm::mat4 Projection		= glm::mat4(1.0f);
+			glm::mat4 View				= glm::mat4(1.0f);
+			glm::mat4 PrevProjection	= glm::mat4(1.0f);
+			glm::mat4 PrevView			= glm::mat4(1.0f);
+			glm::mat4 ViewInv			= glm::mat4(1.0f);
+			glm::mat4 ProjectionInv		= glm::mat4(1.0f);
+			glm::vec4 Position			= glm::vec4(0.0f);
+			glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec2 Jitter			= glm::vec2(0.0f);
 		};
 
 		struct PerFrameBuffer
