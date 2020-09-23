@@ -678,6 +678,13 @@ namespace LambdaEngine
 							ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 						}
 
+						//If drawArgsMaskToArgsIt->second.Args.GetSize() is smaller than pRenderStage->NumDrawArgsPerFrame then some Descriptor Sets are not destroyed that should be destroyed
+						for (uint32 d = drawArgsMaskToArgsIt->second.Args.GetSize(); d < pRenderStage->NumDrawArgsPerFrame; d++)
+						{
+							DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
+							m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+						}
+
 						pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
 					}
 
