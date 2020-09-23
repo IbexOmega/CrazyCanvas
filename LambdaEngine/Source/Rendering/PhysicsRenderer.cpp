@@ -29,9 +29,29 @@
 
 namespace LambdaEngine
 {
+	PhysicsRenderer* PhysicsRenderer::s_pInstance = nullptr;
 
-	PhysicsRenderer::PhysicsRenderer(GraphicsDevice* pGraphicsDevice)
+	PhysicsRenderer::PhysicsRenderer()
 	{
+		VALIDATE(s_pInstance == nullptr);
+		s_pInstance = this;
+	}
+
+	PhysicsRenderer::~PhysicsRenderer()
+	{
+		VALIDATE(s_pInstance != nullptr);
+		s_pInstance = nullptr;
+
+		m_Verticies.Clear();
+	}
+
+	bool PhysicsRenderer::init(GraphicsDevice* pGraphicsDevice, const PhysicsRendererDesc* pDesc)
+	{
+		VALIDATE(pDesc);
+
+		uint32 backBufferCount = pDesc->BackBufferCount;
+		m_BackBuffers.Resize(backBufferCount);
+
 		m_pGraphicsDevice = pGraphicsDevice;
 
 		ConsoleCommand cmdTest;
@@ -49,26 +69,6 @@ namespace LambdaEngine
 					{ input.Arguments[3].Value.Float32, input.Arguments[4].Value.Float32, input.Arguments[5].Value.Float32 },
 					{ 1.0f, 0.0f, 0.0f });
 			});
-	}
-
-	PhysicsRenderer::~PhysicsRenderer()
-	{
-		m_Verticies.Clear();
-	}
-
-	bool PhysicsRenderer::init(const PhysicsRendererDesc* pDesc)
-	{
-		VALIDATE(pDesc);
-
-		uint32 backBufferCount = pDesc->BackBufferCount;
-		m_BackBuffers.Resize(backBufferCount);
-
-		// TODO: Check if bullet physics is enabled or initialized
-		// if (BulletPhysicsIsNotInitialized())
-		// {
-		// 	LOG_ERROR("[BulletPhysics]: Failed to initialize BulletPhysics");
-		// 	return false;
-		// }
 
 		if (!CreateCopyCommandList())
 		{
@@ -382,6 +382,13 @@ namespace LambdaEngine
 		// TODO: When bullet calls the drawLines, a clear on the verticies might be needed
 		//m_Verticies.Clear();
 	}
+
+	PhysicsRenderer* PhysicsRenderer::Get()
+	{
+		VALIDATE(s_pInstance != nullptr);
+		return s_pInstance;
+	}
+
 
 	bool PhysicsRenderer::CreateCopyCommandList()
 	{

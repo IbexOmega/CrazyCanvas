@@ -41,10 +41,10 @@ namespace LambdaEngine
 	class PhysicsRenderer : public btIDebugDraw, public ICustomRenderer
 	{
 	public:
-		PhysicsRenderer(GraphicsDevice* pGraphicsDevice);
+		PhysicsRenderer();
 		virtual ~PhysicsRenderer();
 
-		bool init(const PhysicsRendererDesc* pDesc);
+		bool init(GraphicsDevice* pGraphicsDevice, const PhysicsRendererDesc* pDesc);
 
 		// Custom Renderer implementations
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
@@ -82,6 +82,9 @@ namespace LambdaEngine
 		virtual void draw3dText(const btVector3& location, const char* textString) override final;
 		virtual void setDebugMode(int debugMode) override final { m_DebugMode = debugMode; }
 		virtual int getDebugMode() const override final { return m_DebugMode; }
+
+	public:
+		static PhysicsRenderer* Get();
 
 	private:
 		bool CreateCopyCommandList();
@@ -124,6 +127,9 @@ namespace LambdaEngine
 
 		THashTable<String, TArray<TSharedRef<DescriptorSet>>>		m_BufferResourceNameDescriptorSetsMap;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
+
+	private:
+		static PhysicsRenderer* s_pInstance;
 	};
 
 }
