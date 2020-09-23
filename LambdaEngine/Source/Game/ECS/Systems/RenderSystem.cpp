@@ -383,7 +383,9 @@ namespace LambdaEngine
 			m_LightsDirty = true;
 		}
 		else
+		{
 			LOG_WARNING("Multiple directional lights not supported!");
+		}
 	}
 
 	void RenderSystem::OnPointLightEntityAdded(Entity entity)
