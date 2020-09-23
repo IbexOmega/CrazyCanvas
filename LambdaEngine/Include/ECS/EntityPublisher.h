@@ -25,7 +25,7 @@ namespace LambdaEngine
         // Optional: Called after an entity was added due to the subscription
         std::function<void(Entity)> OnEntityAdded;
         // Optional: Called before an entity was removed
-        std::function<void(Entity)> OnEntityRemoved;
+        std::function<void(Entity)> OnEntityRemoval;
     };
 
     // Indices for subscription storage

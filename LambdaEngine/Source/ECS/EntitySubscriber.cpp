@@ -4,10 +4,10 @@
 
 namespace LambdaEngine
 {
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(TArray<ComponentAccess> componentAccesses, const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoved)
+    EntitySubscriptionRegistration::EntitySubscriptionRegistration(TArray<ComponentAccess> componentAccesses, const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
         :pSubscriber(pSubscriber),
         OnEntityAdded(onEntityAdded),
-        OnEntityRemoved(onEntityRemoved)
+        OnEntityRemoval(onEntityRemoval)
     {
         // Add the component accesses in the component groups to the component accesses vector
         for (const IComponentGroup* pComponentGroup : componentGroups)
@@ -19,12 +19,12 @@ namespace LambdaEngine
         ComponentAccesses = componentAccesses;
     }
 
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoved)
-        :EntitySubscriptionRegistration(componentAccesses, {}, pSubscriber, onEntityAdded, onEntityRemoved)
+    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
+        :EntitySubscriptionRegistration(componentAccesses, {}, pSubscriber, onEntityAdded, onEntityRemoval)
     {}
 
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoved)
-        :EntitySubscriptionRegistration({}, componentGroups, pSubscriber, onEntityAdded, onEntityRemoved)
+    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
+        :EntitySubscriptionRegistration({}, componentGroups, pSubscriber, onEntityAdded, onEntityRemoval)
     {}
 
     EntitySubscriber::~EntitySubscriber()
