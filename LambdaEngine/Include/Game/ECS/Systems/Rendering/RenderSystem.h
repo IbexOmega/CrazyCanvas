@@ -28,7 +28,7 @@
 #include "Rendering/RenderGraphTypes.h"
 
 // When physics rendering is enabled, a render graph with the render stage needs to be used
-#define ENABLE_PHYSICS_RENDERING 0
+#define ENABLE_PHYSICS_RENDERING 1
 
 namespace LambdaEngine
 {

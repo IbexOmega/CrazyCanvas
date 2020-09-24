@@ -104,7 +104,86 @@ namespace LambdaEngine
 		uint64 size 	= pDesc->VerticiesBufferSize;
 		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
+		// TEMP TEST
+		// TArray<glm::vec3> testVecs;
+		// glm::vec3 testCol = { 0.0f, 1.0f, 0.0f };
+		// testVecs.PushBack({0.0f, 0.0f, 0.0f});
+		// testVecs.PushBack({1.0f, 0.0f, 0.0f});
+		// testVecs.PushBack({0.0f, 0.0f, 0.0f});
+		// testVecs.PushBack({0.0f, 0.0f, 1.0f});
+		// AddLineGroup(testVecs, testCol);
+
+		DrawLine({0.0f, 0.0f, 0.0f,}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
+		DrawLine({0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+		DrawLine({0.0f, 0.0f, 0.0f,}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f});
+
 		return true;
+	}
+
+	// TODO (maybe): Update m_LineGroups to contain an index to the m_Verticies array instead of keeping extra copies of the data
+	uint32 PhysicsRenderer::AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color)
+	{
+		uint32 ID = m_LineGroups.size();
+		TArray<VertexData>& vertexPoints = m_LineGroups[ID];
+		uint32 size = points.GetSize();
+
+		// If points did not contain an equal amount of points, don't use the last point to avoid wrong drawings
+		if (size % 2 != 0)
+		{
+			size--;
+			LOG_INFO("[Physics Renderer]: AddLineGroup recived an uneven amount of points. When adding points the number of points should be divideable by two.");
+		}
+
+		vertexPoints.Resize(size);
+		for (uint32 p = 0; p < size; p++)
+		{
+			vertexPoints[p].Position 	= glm::vec4(points[p], 1.0f);
+			vertexPoints[p].Color		= glm::vec4(color, 1.0f);
+		}
+
+		return ID;
+	}
+
+	uint32 PhysicsRenderer::UpdateLineGroup(uint32 ID, const TArray<glm::vec3>& points, const glm::vec3& color)
+	{
+		if (m_LineGroups.contains(ID))
+		{
+			TArray<VertexData>& vertexPoints = m_LineGroups[ID];
+			if (points.GetSize() > vertexPoints.GetSize())
+			{
+				// Resize vector. This might affect the rendering stage
+				LOG_WARNING("[Physics Renderer]: UpdateLineGroup currently only supports update of array points of the same size. If a new size is wanted, remove and add a new line group.");
+			}
+			else if (points.GetSize() < vertexPoints.GetSize())
+			{
+				LOG_WARNING("[Physics Renderer]: UpdateLineGroup currently only supports update of array points of the same size. If a new size is wanted, remove and add a new line group.");
+			}
+			else
+			{
+				for (uint32 p = 0; p < vertexPoints.GetSize(); p++)
+				{
+					vertexPoints[p].Position 	= glm::vec4(points[p], 1.0f);
+					vertexPoints[p].Color		= glm::vec4(color, 1.0f);
+				}
+			}
+			return ID;
+		}
+		else
+		{
+			return AddLineGroup(points, color);
+		}
+	}
+
+	void PhysicsRenderer::RemoveLineGroup(uint32 ID)
+	{
+		if (m_LineGroups.contains(ID))
+		{
+			m_LineGroups.erase(ID);
+		}
+		else
+		{
+			return;
+		}
 	}
 
 	void PhysicsRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
@@ -306,7 +385,7 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.x			= 0;
 		beginRenderPassDesc.Offset.y			= 0;
 
-		if (m_Verticies.GetSize() == 0 || m_DebugMode == 0)
+		if (m_LineGroups.size() == 0)
 		{
 			pGraphicsCommandAllocator->Reset();
 			pGraphicsCommandList->Begin(nullptr);
@@ -324,16 +403,30 @@ namespace LambdaEngine
 		pGraphicsCommandList->Begin(nullptr);
 
 		// Transfer data to copy buffers then the GPU buffers
+		uint32 drawCount = 0;
 		{
 			TSharedRef<Buffer> uniformCopyBuffer = m_UniformCopyBuffers[modFrameIndex];
 
-			uint32 uniformBufferSize	= m_Verticies.GetSize() * sizeof(VertexData);
-			byte* pUniformMapping		= reinterpret_cast<byte*>(uniformCopyBuffer->Map());
+			uint32 totalBufferSize 	= 0;
+			byte* pUniformMapping	= reinterpret_cast<byte*>(uniformCopyBuffer->Map());
 
-			memcpy(pUniformMapping, m_Verticies.GetData(), uniformBufferSize);
+			for (auto& lineGroup : m_LineGroups)
+			{
+				const uint32 currentBufferSize = lineGroup.second.GetSize() * sizeof(VertexData);
+				memcpy(pUniformMapping + totalBufferSize, lineGroup.second.GetData(), currentBufferSize);
+				totalBufferSize += currentBufferSize;
+				drawCount += lineGroup.second.GetSize();
+			}
+
+			if (m_Verticies.GetSize() > 0)
+			{
+				memcpy(pUniformMapping + totalBufferSize, m_Verticies.GetData(), m_Verticies.GetSize() * sizeof(VertexData));
+				totalBufferSize += m_Verticies.GetSize() * sizeof(VertexData);
+				drawCount += m_Verticies.GetSize();
+			}
 
 			uniformCopyBuffer->Unmap();
-			pGraphicsCommandList->CopyBuffer(uniformCopyBuffer.Get(), 0, m_UniformBuffer.Get(), 0, uniformBufferSize);
+			pGraphicsCommandList->CopyBuffer(uniformCopyBuffer.Get(), 0, m_UniformBuffer.Get(), 0, totalBufferSize);
 		}
 
 		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
@@ -362,7 +455,7 @@ namespace LambdaEngine
 
 		pGraphicsCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 1);
 
-		pGraphicsCommandList->DrawInstanced(m_Verticies.GetSize(), m_Verticies.GetSize(), 0, 0);
+		pGraphicsCommandList->DrawInstanced(drawCount, drawCount, 0, 0);
 
 		pGraphicsCommandList->EndRenderPass();
 		pGraphicsCommandList->End();

@@ -72,6 +72,31 @@ namespace LambdaEngine
 
 
 		// DebugDraw implementations
+
+
+		/*
+		* Adds a line group to be rendered. The number of lines is equal to points.GetSize() / 2
+		*	points - Array of points to be added to renderer
+		*	color - Color the lines should be
+		*	return - Returns an ID to be used when removing or updating the set of points using Update- or RemoveLineGroup
+		*/
+		uint32 AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color);
+
+		/*
+		* Update a previously added group using the ID of the points - If ID does not exist, uses AddLineGroup
+		*	ID - Identification of the set of points to be updated
+		*	points - Array of points to be updated
+		*	color - Color the lines should be
+		*	return - Returns an ID to be used when removing or updating the set of points using Update- or RemoveLineGroup
+		*/
+		uint32 UpdateLineGroup(uint32 ID, const TArray<glm::vec3>& points, const glm::vec3& color);
+
+		/*
+		* Remove a previously added group using the ID of the points
+		*	ID - Identification of the set of points to be removed
+		*/
+		void RemoveLineGroup(uint32 ID);
+
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color);
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor);
 		//void DrawSphere(const btVecglm::vec3tor3& p, float radius, const glm::vec3& color);
@@ -95,10 +120,9 @@ namespace LambdaEngine
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
 
 	private:
-		int m_DebugMode = 1;
-
 		const GraphicsDevice*	m_pGraphicsDevice = nullptr;
 
+		THashTable<uint32, TArray<VertexData>> m_LineGroups;
 		TArray<VertexData> m_Verticies;
 
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
