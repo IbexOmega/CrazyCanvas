@@ -467,7 +467,9 @@ namespace LambdaEngine
 								pMemoryStat[i].MemoryTypeName 	= "Dedicated GPU Memory"; // Non-mappable memory on the GPU (VRAM)
 							}
 							else
+							{
 								pMemoryStat[i].MemoryTypeName = "Memory heap does not match known memory types";
+							}
 						}
 					}
 				}
