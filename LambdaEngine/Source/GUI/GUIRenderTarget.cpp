@@ -41,12 +41,29 @@ namespace LambdaEngine
 			LOG_ERROR("[GUIRenderTarget]: Failed to create Depth Stencil Texture");
 			return false;
 		}
-
+		
 		if (!CreateRenderPass(pDesc))
 		{
 			LOG_ERROR("[GUIRenderTarget]: Failed to create RenderPass");
 			return false;
 		}
+
+		ClearColorDesc* pColorClearColorDesc	= &m_pClearColorDesc[0];
+		ClearColorDesc* pResolveClearColorDesc	= &m_pClearColorDesc[1];
+		ClearColorDesc* pClearDepthStencilDesc	= &m_pClearColorDesc[2];
+
+		pColorClearColorDesc->Color[0] = 0.0f;
+		pColorClearColorDesc->Color[1] = 0.0f;
+		pColorClearColorDesc->Color[2] = 0.0f;
+		pColorClearColorDesc->Color[3] = 0.0f;
+
+		pResolveClearColorDesc->Color[0] = 0.0f;
+		pResolveClearColorDesc->Color[1] = 0.0f;
+		pResolveClearColorDesc->Color[2] = 0.0f;
+		pResolveClearColorDesc->Color[3] = 0.0f;
+
+		pClearDepthStencilDesc->Depth	= 1.0f;
+		pClearDepthStencilDesc->Stencil = 0;
 
 		m_Desc = *pDesc;
 
@@ -144,6 +161,12 @@ namespace LambdaEngine
 				LOG_ERROR("[GUIRenderTarget]: Failed to create Resolve Texture View");
 				return false;
 			}
+		}
+
+		//Render Targets
+		{
+			m_ppRenderTargets[0] = m_pColorTextureView;
+			m_ppRenderTargets[1] = m_pResolveTextureView;
 		}
 
 		//Init GUITexture

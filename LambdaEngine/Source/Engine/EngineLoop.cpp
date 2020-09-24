@@ -26,6 +26,7 @@
 #include "Threading/API/ThreadPool.h"
 
 #include "Rendering/RenderAPI.h"
+#include "Rendering/StagingBufferCache.h"
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
@@ -248,6 +249,11 @@ namespace LambdaEngine
 		}
 
 		if (!ResourceLoader::Release())
+		{
+			return false;
+		}
+
+		if (!StagingBufferCache::Release())
 		{
 			return false;
 		}

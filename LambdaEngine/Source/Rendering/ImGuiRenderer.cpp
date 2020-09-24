@@ -53,14 +53,17 @@ namespace LambdaEngine
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
 
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		if (m_ppRenderCommandLists != nullptr && m_ppRenderCommandAllocators != nullptr)
 		{
-			SAFERELEASE(m_ppRenderCommandLists[b]);
-			SAFERELEASE(m_ppRenderCommandAllocators[b]);
-		}
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppRenderCommandLists[b]);
+				SAFERELEASE(m_ppRenderCommandAllocators[b]);
+			}
 
-		SAFEDELETE_ARRAY(m_ppRenderCommandLists);
-		SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
+			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+		}
 
 		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
 		EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);

@@ -12,6 +12,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
+#include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -330,6 +331,7 @@ namespace LambdaEngine
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
+		StagingBufferCache::PreRender();
 		CleanBuffers();
 		UpdateBuffers();
 		UpdateRenderGraph();

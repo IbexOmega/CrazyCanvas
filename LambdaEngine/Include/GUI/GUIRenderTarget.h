@@ -2,6 +2,8 @@
 
 #include "NsRender/RenderTarget.h"
 
+#include "Rendering/Core/API/CommandList.h"
+
 #include "GUITexture.h"
 
 namespace LambdaEngine
@@ -32,6 +34,12 @@ namespace LambdaEngine
 
 		FORCEINLINE const GUIRenderTargetDesc* GetDesc() const { return &m_Desc; }
 
+		FORCEINLINE RenderPass* GetRenderPass() { return m_pRenderPass; }
+		FORCEINLINE TextureView** GetRenderTargets() { return m_ppRenderTargets; }
+		FORCEINLINE TextureView* GetDepthStencil() { return m_pDepthStencilTextureView; }
+		FORCEINLINE const ClearColorDesc* GetClearColors() const { return m_pClearColorDesc; }
+		FORCEINLINE uint32 GetClearColorCount() const { return ARR_SIZE(m_pClearColorDesc); }
+
 	private:
 		bool CreateColorTextures(const GUIRenderTargetDesc* pDesc);
 		bool CreateDepthStencilTexture(const GUIRenderTargetDesc* pDesc);
@@ -47,8 +55,12 @@ namespace LambdaEngine
 		Texture*		m_pResolveTexture		= nullptr;
 		TextureView*	m_pResolveTextureView	= nullptr;
 
+		TextureView*	m_ppRenderTargets[2];
+
 		Texture*		m_pDepthStencilTexture		= nullptr;
 		TextureView*	m_pDepthStencilTextureView	= nullptr;
+
+		ClearColorDesc	m_pClearColorDesc[3];
 
 		GUIRenderTargetDesc m_Desc = { };
 	};

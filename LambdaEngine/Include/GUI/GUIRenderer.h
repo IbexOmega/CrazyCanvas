@@ -77,13 +77,9 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void Render(
-			CommandAllocator* pGraphicsCommandAllocator, 
-			CommandList* pGraphicsCommandList, 
-			CommandAllocator* pComputeCommandAllocator, 
-			CommandList* pComputeCommandList, 
 			uint32 modFrameIndex, 
 			uint32 backBufferIndex, 
-			CommandList** ppPrimaryExecutionStage, 
+			CommandList** ppFirstExecutionStage, 
 			CommandList** ppSecondaryExecutionStage) override final;
 
 		/// Retrieves device render capabilities
@@ -102,12 +98,24 @@ namespace LambdaEngine
 		FORCEINLINE virtual const String& GetName() const override final { return RENDER_GRAPH_NOESIS_GUI_STAGE_NAME; }
 
 	private:
-		CommandAllocator**	m_ppGUICommandAllocator	= nullptr;
-		CommandList**		m_ppGUICommandList		= nullptr;
+		CommandList* BeginOrGetCommandList();
+
+		bool CreateCommandLists();
+
+	private:
+		CommandAllocator**	m_ppRenderCommandAllocators	= nullptr;
+		CommandList**		m_ppRenderCommandLists		= nullptr;
 
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
 
+		uint32 m_BackBufferCount = 0;
 		uint32 m_ModFrameIndex = 0;
 
+		Buffer* m_pVertexStagingBuffer	= nullptr;
+		Buffer* m_pIndexStagingBuffer	= nullptr;
+
+		Buffer* m_pVertexBuffer	= nullptr;
+		Buffer* m_pIndexBuffer	= nullptr;
+		TArray<Buffer*>* m_pBuffersToRemove;
 	};
 }
