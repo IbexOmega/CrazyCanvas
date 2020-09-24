@@ -416,17 +416,17 @@ namespace LambdaEngine
 		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
 	}
 
-	void CommandListVK::TransitionBarrier(Texture* Resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState)
+	void CommandListVK::TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState)
 	{
-		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(Resource);
+		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(resource);
 		const TextureDesc& desc = pTextureVk->GetDesc();
 
-		TransitionBarrier(Resource, srcStage, dstStage, srcAccessMask, destAccessMask, 0, desc.ArrayCount, beforeState, afterState);
+		TransitionBarrier(resource, srcStage, dstStage, srcAccessMask, destAccessMask, 0, desc.ArrayCount, beforeState, afterState);
 	}
 
-	void CommandListVK::TransitionBarrier(Texture* Resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState)
+	void CommandListVK::TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState)
 	{
-		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(Resource);
+		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(resource);
 		const TextureDesc& desc = pTextureVk->GetDesc();
 
 		VkImageLayout oldLayout = ConvertTextureState(beforeState);
@@ -445,6 +445,49 @@ namespace LambdaEngine
 		imageBarrier.subresourceRange.levelCount		= desc.Miplevels;
 		imageBarrier.subresourceRange.baseArrayLayer	= arrayIndex;
 		imageBarrier.subresourceRange.layerCount		= arrayCount;
+		imageBarrier.srcAccessMask						= ConvertMemoryAccessFlags(srcAccessMask);
+		imageBarrier.dstAccessMask						= ConvertMemoryAccessFlags(destAccessMask);
+
+		// Find suitable barrier batch
+		DeferredImageBarrier deferredBarrier;
+		deferredBarrier.SrcStages	= ConvertPipelineStageMask(srcStage);
+		deferredBarrier.DestStages	= ConvertPipelineStageMask(dstStage);
+		if (!m_DeferredBarriers.IsEmpty())
+		{
+			for (DeferredImageBarrier& barrier : m_DeferredBarriers)
+			{
+				if (barrier.HasCompatableStages(deferredBarrier))
+				{
+					barrier.Barriers.EmplaceBack(imageBarrier);
+					break;
+				}
+			}
+		}
+		else
+		{
+			deferredBarrier.Barriers.EmplaceBack(imageBarrier);
+			m_DeferredBarriers.EmplaceBack(Move(deferredBarrier));
+		}
+	}
+
+	void CommandListVK::QueueTranserBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ECommandQueueType srcQueue, ECommandQueueType dstQueue)
+	{
+		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(resource);
+		const TextureDesc& desc = pTextureVk->GetDesc();
+
+		// Create barrier
+		VkImageMemoryBarrier imageBarrier = { };
+		imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		imageBarrier.pNext								= nullptr;
+		imageBarrier.image								= pTextureVk->GetImage();
+		imageBarrier.srcQueueFamilyIndex				= m_pDevice->GetQueueFamilyIndexFromQueueType(srcQueue);
+		imageBarrier.dstQueueFamilyIndex				= m_pDevice->GetQueueFamilyIndexFromQueueType(dstQueue);
+		imageBarrier.oldLayout							= VK_IMAGE_LAYOUT_UNDEFINED;
+		imageBarrier.newLayout							= VK_IMAGE_LAYOUT_UNDEFINED;
+		imageBarrier.subresourceRange.baseMipLevel		= 0;
+		imageBarrier.subresourceRange.levelCount		= desc.Miplevels;
+		imageBarrier.subresourceRange.baseArrayLayer	= 0;
+		imageBarrier.subresourceRange.layerCount		= desc.ArrayCount;
 		imageBarrier.srcAccessMask						= ConvertMemoryAccessFlags(srcAccessMask);
 		imageBarrier.dstAccessMask						= ConvertMemoryAccessFlags(destAccessMask);
 

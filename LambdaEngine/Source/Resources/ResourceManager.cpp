@@ -13,6 +13,7 @@
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/Fence.h"
 #include "Rendering/PipelineStateManager.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -424,15 +425,25 @@ namespace LambdaEngine
 		largestHeight = std::max(pMaterial->pMetallicMap->GetDesc().Height, std::max(pMaterial->pRoughnessMap->GetDesc().Height, pMaterial->pAmbientOcclusionMap->GetDesc().Height));
 
 		//-------------- Create Command List
-		CommandAllocator* cmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		CommandAllocator* computeCmdAllocator	= RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		CommandAllocator* graphicsCmdAllocator	= RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
 		CommandListDesc commandListDesc = {};
 		commandListDesc.DebugName		= "Compute Command List";
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-		CommandList* cmdList = RenderAPI::GetDevice()->CreateCommandList(cmdAllocator, &commandListDesc);
-		cmdList->Begin(nullptr);
+		CommandList* computeCmdList		= RenderAPI::GetDevice()->CreateCommandList(computeCmdAllocator, &commandListDesc);
+		
+		commandListDesc.DebugName = "Graphics Command List";
+		CommandList* graphicsCmdList = RenderAPI::GetDevice()->CreateCommandList(graphicsCmdAllocator, &commandListDesc);
+		computeCmdList->Begin(nullptr);
+
+		FenceDesc fenceDesc = {};
+		fenceDesc.DebugName = "CombineMaterials Fence";
+		fenceDesc.InitalValue = 0;
+
+		Fence* pFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
 
 		//-------------- Create Textures
 		uint32_t miplevels = 1u;
@@ -440,7 +451,7 @@ namespace LambdaEngine
 		miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
 
 		TextureDesc textureDesc = { };
-		textureDesc.DebugName	= "Combine Material Texture Desc";
+		textureDesc.DebugName	= "Combine Material Texture";
 		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
@@ -455,7 +466,7 @@ namespace LambdaEngine
 		Texture* pTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 
 		TextureViewDesc textureViewDesc;
-		textureViewDesc.DebugName = "";
+		textureViewDesc.DebugName = "Combine Material TextureView";
 		textureViewDesc.pTexture = pTexture;
 		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
 		textureViewDesc.Format = EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -464,7 +475,6 @@ namespace LambdaEngine
 		textureViewDesc.ArrayCount = 1;
 		textureViewDesc.Miplevel = 0;
 		textureViewDesc.ArrayIndex = 0;
-
 
 		TextureView* textureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
@@ -488,7 +498,7 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.ArrayIndex			= 0;
 		transitionToCopyDstBarrier.ArrayCount			= textureDesc.ArrayCount;
 
-		cmdList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+		computeCmdList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
 		//-------------- Create Sampler
 		SamplerDesc samplerDesc = { };
@@ -584,18 +594,30 @@ namespace LambdaEngine
 		computePipelineStateDesc.Shader				= shaderModuleDesc;
 
 		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
-		cmdList->BindDescriptorSetCompute(pDescriptorSet, pPipelineLayout, 0);
-		cmdList->BindComputePipeline(pPipelineState);
+		computeCmdList->BindDescriptorSetCompute(pDescriptorSet, pPipelineLayout, 0);
+		computeCmdList->BindComputePipeline(pPipelineState);
 
+		computeCmdList->Dispatch(largestWidth, largestHeight, 1);
 
-		cmdList->Dispatch(largestWidth, largestHeight, 1);
-		//cmdList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		computeCmdList->QueueTranserBarrier(pTexture, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, 
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
-		cmdList->End();
-		RenderAPI::GetComputeQueue()->ExecuteCommandLists(&cmdList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-		RenderAPI::GetComputeQueue()->Flush();
+		computeCmdList->End();
+		RenderAPI::GetComputeQueue()->ExecuteCommandLists(&computeCmdList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, pFence, 1);
+
+		graphicsCmdList->Begin(nullptr);
+
+		graphicsCmdList->QueueTranserBarrier(pTexture, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
+		graphicsCmdList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+		graphicsCmdList->End();
+
+		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&graphicsCmdList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, pFence, 1, pFence, 2);
+		pFence->Wait(2, UINT64_MAX);
+
 		pMaterial->pCombinedMaterialsView = textureView;
-		RenderAPI::GetDevice()->Release();
 	}
 
 	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
