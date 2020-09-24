@@ -9,5 +9,6 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(DirectionalLightComponent);
 		glm::vec4	ColorIntensity;
+		bool		Dirty = true;
 	};
 }

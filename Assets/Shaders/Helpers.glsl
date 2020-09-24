@@ -359,4 +359,33 @@ float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
 	return (nf * f) / (fSqrd + g * g);
 }
 
+float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir, sampler2D shadowMap)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	projCoords = projCoords * 0.5 + 0.5;
+
+	if (projCoords.z > 1.0)
+	{
+		return 0.0f;
+	}
+
+	float closestDepth = texture(shadowMap, projCoords.xy).r;
+	float currentDepth = projCoords.z;
+
+	float bias = max(0.05 * (1.0 - dot(fragNormal, lightDir)), 0.005); 
+    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+}
+
+float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap)
+{
+    vec3 fragToLight  = fragPos - lightPos;
+
+	float farPlane = 10.0f;
+	float closestDepth = texture(shadowMap, fragToLight).r * farPlane;
+	float currentDepth = length(fragToLight);
+
+	float bias = 0.05;
+    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+}
+
 #endif

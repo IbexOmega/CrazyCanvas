@@ -26,6 +26,8 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Game/GameConsole.h"
+
 namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
@@ -258,9 +260,10 @@ namespace LambdaEngine
 		{
 			auto& pointLight = pPointLightComponents->GetData(entity);
 			auto& position = pPositionComponents->GetData(entity);
-			if (position.Dirty)
+			if (pointLight.Dirty || position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity);
+				pointLight.Dirty = false;
 			}
 		}
 
@@ -268,10 +271,12 @@ namespace LambdaEngine
 		for (Entity entity : m_DirectionalLightEntities.GetIDs())
 		{
 			auto& dirLight = pDirLightComponents->GetData(entity);
+			auto& position = pPositionComponents->GetData(entity);
 			auto& rotation = pRotationComponents->GetData(entity);
-			if (rotation.Dirty)
+			if (dirLight.Dirty || rotation.Dirty)
 			{
-				UpdateDirectionalLight(dirLight.ColorIntensity, rotation.Quaternion);
+				UpdateDirectionalLight(dirLight.ColorIntensity, position.Position, rotation.Quaternion);
+				dirLight.Dirty = false;
 			}
 		}
 
@@ -375,12 +380,10 @@ namespace LambdaEngine
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
 			auto& pointLightComp = pECSCore->GetComponent<DirectionalLightComponent>(entity);
+			auto& position = pECSCore->GetComponent<PositionComponent>(entity);
 			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
-	/*		m_LightBufferData.DirL_ColorIntensity	= pointLightComp.ColorIntensity;
-			m_LightBufferData.DirL_Direction		= GetForward(rotation.Quaternion);*/
-
-			UpdateDirectionalLight(pointLightComp.ColorIntensity, rotation.Quaternion);
+			UpdateDirectionalLight(pointLightComp.ColorIntensity, position.Position, rotation.Quaternion);
 
 			m_DirectionalExist = true;
 		}
@@ -671,16 +674,20 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::quat& direction)
+
+	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
-		m_LightBufferData.DirL_Direction		= GetForward(direction);
+		m_LightBufferData.DirL_Direction = GetForward(direction);
 
-		const int width = 1024;
+		static bool command = false;
+		static float depth = 20.0f;
+		static float width = 10.0f;
 
-		m_LightBufferData.DirL_ProjViews = glm::ortho(0, 1024, 1024, 0, 0, 1000);
-		m_LightBufferData.DirL_ProjViews *= glm::lookAt({ 0.0f, 0.0f, 0.0f }, m_LightBufferData.DirL_Direction, g_DefaultUp);
+		m_LightBufferData.DirL_ProjViews = glm::ortho(-width, width, -width, width, -10.0f, depth);
+		m_LightBufferData.DirL_ProjViews *= glm::lookAt(m_LightBufferData.DirL_Direction, glm::vec3(0.0f), g_DefaultUp);
 
+		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsDirty = true;
 	}
 
@@ -696,6 +703,38 @@ namespace LambdaEngine
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
 		
+		constexpr uint32 PROJECTIONS = 6;
+		constexpr float FOV = 90.f;
+		constexpr float ASPECT_RATIO = 1.0f;
+		constexpr float NEAR = 0.1f;
+		constexpr float FAR = 10.0f;
+		const glm::vec3 directions[6] =
+		{
+			{1.0f, 0.0f, 0.0f},
+			{-1.0f, 0.0f, 0.0f},
+			{0.0f, 1.0f, 0.0f},
+			{0.0f, -1.0f, 0.0f},
+			{0.0f, 0.0f, 1.0f},
+			{0.0f, 0.0f, -1.0f},
+		};
+
+		const glm::vec3 defaultUp[6] =
+		{
+			g_DefaultUp,
+			g_DefaultUp,
+			{0.0f, 0.0f, 1.0f},
+			{0.0f, 0.0f, -1.0f},
+			g_DefaultUp,
+			g_DefaultUp,
+		};
+
+		for (uint32 p = 0; p < PROJECTIONS; p++)
+		{
+			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, NEAR, FAR);
+			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
+		}
+
+		m_pRenderGraph->TriggerRenderStage("POINTL_SHADOW");
 		m_LightsDirty = true;
 	}
 

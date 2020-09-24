@@ -8,5 +8,6 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(PointLightComponent);
 		glm::vec4	ColorIntensity;
+		bool		Dirty = true;
 	};
 }
