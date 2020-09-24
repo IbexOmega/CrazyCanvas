@@ -85,6 +85,15 @@ namespace LambdaEngine
 		NEAREST					= 2,
 	};
 
+	enum class ERenderGraphSamplerAddressMode : uint8
+	{
+		NONE				= 0,
+		REPEAT				= 1,
+		CLAMP_TO_EDGE		= 2,
+		CLAMP_TO_BORDER		= 3,
+	};
+
+
 	enum class ERenderGraphTextureType : uint8
 	{
 		TEXTURE_2D				= 0,
@@ -109,18 +118,19 @@ namespace LambdaEngine
 		//Texture Specific
 		struct
 		{
-			ERenderGraphTextureType		TextureType				= ERenderGraphTextureType::TEXTURE_2D;
-			EFormat						TextureFormat			= EFormat::FORMAT_NONE;
-			bool						IsOfArrayType			= false;
-			ERenderGraphDimensionType	XDimType				= ERenderGraphDimensionType::RELATIVE;
-			ERenderGraphDimensionType	YDimType				= ERenderGraphDimensionType::RELATIVE;
-			float32						XDimVariable			= 1.0f;
-			float32						YDimVariable			= 1.0f;
-			int32						SampleCount				= 1;
-			int32						MiplevelCount			= 1;
-			ERenderGraphSamplerType		SamplerType				= ERenderGraphSamplerType::LINEAR;
-			FTextureFlags				TextureFlags			= FTextureFlag::TEXTURE_FLAG_NONE;
-			FTextureViewFlags			TextureViewFlags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
+			ERenderGraphTextureType			TextureType					= ERenderGraphTextureType::TEXTURE_2D;
+			EFormat							TextureFormat				= EFormat::FORMAT_NONE;
+			bool							IsOfArrayType				= false;
+			ERenderGraphDimensionType		XDimType					= ERenderGraphDimensionType::RELATIVE;
+			ERenderGraphDimensionType		YDimType					= ERenderGraphDimensionType::RELATIVE;
+			float32							XDimVariable				= 1.0f;
+			float32							YDimVariable				= 1.0f;
+			int32							SampleCount					= 1;
+			int32							MiplevelCount				= 1;
+			ERenderGraphSamplerType			SamplerType					= ERenderGraphSamplerType::LINEAR;
+			ERenderGraphSamplerAddressMode	SamplerAddressMode			= ERenderGraphSamplerAddressMode::REPEAT;
+			FTextureFlags					TextureFlags				= FTextureFlag::TEXTURE_FLAG_NONE;
+			FTextureViewFlags				TextureViewFlags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
 		} TextureParams;
 
 		//Buffer Specific
@@ -936,16 +946,16 @@ namespace LambdaEngine
 	{
 		switch (samplerType)
 		{
-			case ERenderGraphSamplerType::LINEAR:		return "LINEAR";
-			case ERenderGraphSamplerType::NEAREST:		return "NEAREST";
-			default:									return "NONE";
+			case ERenderGraphSamplerType::LINEAR:			return "LINEAR";
+			case ERenderGraphSamplerType::NEAREST:			return "NEAREST";
+			default:										return "NONE";
 		}
 	}
 
 	FORCEINLINE ERenderGraphSamplerType RenderGraphSamplerTypeFromString(const String& string)
 	{
-		if		(string == "LINEAR")		return ERenderGraphSamplerType::LINEAR;
-		else if (string == "NEAREST")		return ERenderGraphSamplerType::NEAREST;
+		if		(string == "LINEAR")			return ERenderGraphSamplerType::LINEAR;
+		else if (string == "NEAREST")			return ERenderGraphSamplerType::NEAREST;
 
 		return ERenderGraphSamplerType::NONE;
 	}
@@ -959,6 +969,38 @@ namespace LambdaEngine
 		}
 
 		return EFilterType::FILTER_TYPE_NONE;
+	}
+
+	FORCEINLINE const char* RenderGraphSamplerAddressModeToString(ERenderGraphSamplerAddressMode samplerAddressMode)
+	{
+		switch (samplerAddressMode)
+		{
+		case ERenderGraphSamplerAddressMode::REPEAT:				return "REPEAT";
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE:			return "CLAMP_TO_EDGE";
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER:		return "CLAMP_TO_EDGE";
+		default:													return "NONE";
+		}
+	}
+
+	FORCEINLINE ERenderGraphSamplerAddressMode RenderGraphSamplerAddressModeFromString(const String& string)
+	{
+		if (string == "REPEAT")						return ERenderGraphSamplerAddressMode::REPEAT;
+		else if (string == "CLAMP_TO_EDGE")			return ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE;
+		else if (string == "CLAMP_TO_BORDER")		return ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER;
+
+		return ERenderGraphSamplerAddressMode::NONE;
+	}
+
+	FORCEINLINE ESamplerAddressMode RenderGraphSamplerAddressMode(ERenderGraphSamplerAddressMode samplerAddressMode)
+	{
+		switch (samplerAddressMode)
+		{
+		case ERenderGraphSamplerAddressMode::REPEAT				:	return ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE		:	return ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER	:	return ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		}
+
+		return ESamplerAddressMode::SAMPLER_ADDRESS_MODE_NONE;
 	}
 
 	FORCEINLINE EMipmapMode RenderGraphSamplerToMipmapMode(ERenderGraphSamplerType samplerType)

@@ -103,6 +103,13 @@ namespace LambdaEngine
 		"NEAREST",
 	};
 
+	constexpr const char* SAMPLER_ADDRESS_NAMES[] =
+	{
+		"REPEAT",
+		"CLAMP_TO_EDGE",
+		"CLAMP_TO_BORDER",
+	};
+
 	ERenderGraphSamplerType SamplerTypeIndexToSamplerType(int32 index)
 	{
 		switch (index)
@@ -120,6 +127,30 @@ namespace LambdaEngine
 		{
 		case ERenderGraphSamplerType::LINEAR:	return 0;
 		case ERenderGraphSamplerType::NEAREST:	return 1;
+		}
+
+		return -1;
+	}
+
+	ERenderGraphSamplerAddressMode SamplerTypeIndexToSamplerAddressMode(int32 index)
+	{
+		switch (index)
+		{
+		case 0: return ERenderGraphSamplerAddressMode::REPEAT;
+		case 1: return ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE;
+		case 2: return ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER;
+		}
+
+		return ERenderGraphSamplerAddressMode::NONE;
+	}
+
+	int32 SamplerTypeToSamplerAddressModeIndex(ERenderGraphSamplerAddressMode samplerType)
+	{
+		switch (samplerType)
+		{
+		case ERenderGraphSamplerAddressMode::REPEAT:			return 0;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE:		return 1;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER:	return 2;
 		}
 
 		return -1;

@@ -987,8 +987,16 @@ namespace LambdaEngine
 						pResource->TextureParams.SamplerType = SamplerTypeIndexToSamplerType(samplerTypeIndex);
 					}
 
-					int32 memoryTypeIndex = MemoryTypeToMemoryTypeIndex(pResource->MemoryType);
+					int32 samplerAddresModeIndex = SamplerTypeToSamplerAddressModeIndex(pResource->TextureParams.SamplerAddressMode);
 
+					ImGui::Text("Sampler Address Mode: ");
+					ImGui::SameLine();
+					if (ImGui::Combo("##Sampler Address Mode", &samplerAddresModeIndex, SAMPLER_ADDRESS_NAMES, ARR_SIZE(SAMPLER_ADDRESS_NAMES)))
+					{
+						pResource->TextureParams.SamplerAddressMode = SamplerTypeIndexToSamplerAddressMode(samplerAddresModeIndex);
+					}
+
+					int32 memoryTypeIndex = MemoryTypeToMemoryTypeIndex(pResource->MemoryType);
 					ImGui::Text("Memory Type: ");
 					ImGui::SameLine();
 					if (ImGui::Combo("##Memory Type", &memoryTypeIndex, MEMORY_TYPE_NAMES, ARR_SIZE(MEMORY_TYPE_NAMES)))
