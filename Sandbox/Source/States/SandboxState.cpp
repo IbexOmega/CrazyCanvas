@@ -15,6 +15,8 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Input/API/Input.h"
+#include "Math/Random.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Systems/TrackSystem.h"
@@ -45,6 +47,7 @@ void SandboxState::Init()
 {
 	// Create Systems
 	TrackSystem::GetInstance().Init();
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Create Camera
@@ -59,14 +62,13 @@ void SandboxState::Init()
 		CreateFreeCameraEntity(cameraDesc);
 	}
 
-	//Scene
+	// Load scene
 	//{
 	//	TArray<MeshComponent> meshComponents;
-	//	ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
+	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
 
-	//	glm::vec3 position(0.0f, 0.0f, 0.0f);
-	//	glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-	//	glm::vec3 scale(1.0f);
+	//	const glm::vec3 position(0.0f, 0.0f, 0.0f);
+	//	const glm::vec3 scale(0.01f);
 
 	//	for (const MeshComponent& meshComponent : meshComponents)
 	//	{
@@ -75,16 +77,19 @@ void SandboxState::Init()
 	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	//		m_Entities.PushBack(entity);
 	//	}
 	//}
 
-	// Load scene
+
+	//Scene
 	//{
 	//	TArray<MeshComponent> meshComponents;
-	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+	//	ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
 
-	//	const glm::vec3 position(0.0f, 0.0f, 0.0f);
-	//	const glm::vec3 scale(0.01f);
+	//	glm::vec3 position(0.0f, 0.0f, 0.0f);
+	//	glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+	//	glm::vec3 scale(1.0f);
 
 	//	for (const MeshComponent& meshComponent : meshComponents)
 	//	{
@@ -136,6 +141,7 @@ void SandboxState::Init()
 					pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 					pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 					pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				m_Entities.PushBack(entity);
 
 
 					glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
@@ -214,6 +220,7 @@ void SandboxState::Init()
 					materialProperties);
 
 				m_PointLights[i] = pECS->CreateEntity();
+				m_Entities.PushBack(m_PointLights[i]);
 				pECS->AddComponent<PositionComponent>(m_PointLights[i], { startPosition[i], true });
 				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
 				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
@@ -335,4 +342,19 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	//RotationComponent& rotationComp = pECSCore->GetComponent<RotationComponent>(m_DirLight);
 	//rotationComp.Quaternion		= glm::rotate(rotationComp.Quaternion, glm::pi<float32>() * float32(delta.AsSeconds()) * 0.1f, glm::vec3(0.0f, 0.0f, 1.0f));
 	//rotationComp.Dirty			= true;
+}
+
+bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	if (event.Key == EKey::KEY_6)
+	{
+		int32 entityIndex = Random::Int32(0, int32(m_Entities.GetSize() - 1));
+		Entity entity = m_Entities[entityIndex];
+		m_Entities.Erase(m_Entities.Begin() + entityIndex);
+		ECSCore::GetInstance()->RemoveEntity(entity);
+	}
+
+	return true;
 }

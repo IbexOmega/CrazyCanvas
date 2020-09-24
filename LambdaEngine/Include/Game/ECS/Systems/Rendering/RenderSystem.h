@@ -47,9 +47,9 @@ namespace LambdaEngine
 			glm::mat4	Transform		= glm::mat4(1.0f);
 			glm::mat4	PrevTransform	= glm::mat4(1.0f);
 			uint32		MaterialSlot	= 0;
+			uint32		MeshletCount	= 0;
 			uint32		Padding0;
 			uint32		Padding1;
-			uint32		Padding2;
 		};
 
 		struct MeshKey
@@ -99,10 +99,16 @@ namespace LambdaEngine
 			AccelerationStructure* pBLAS		= nullptr;
 			SBTRecord ShaderRecord			= {};
 
-			Buffer* pVertexBuffer			= nullptr;
-			uint32	VertexCount				= 0;
-			Buffer* pIndexBuffer			= nullptr;
-			uint32	IndexCount				= 0;
+			Buffer* pVertexBuffer		= nullptr;
+			uint32	VertexCount			= 0;
+			Buffer* pIndexBuffer		= nullptr;
+			uint32	IndexCount			= 0;
+			Buffer* pUniqueIndices		= nullptr;
+			uint32	UniqueIndexCount	= 0;
+			Buffer* pPrimitiveIndices	= nullptr;
+			uint32	PrimtiveIndexCount	= 0;
+			Buffer* pMeshlets			= nullptr;
+			uint32	MeshletCount		= 0;
 
 			
 			Buffer* pASInstanceBuffer		= nullptr;
@@ -112,6 +118,8 @@ namespace LambdaEngine
 			Buffer* pRasterInstanceBuffer			= nullptr;
 			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<Instance> RasterInstances;
+
+			TArray<Entity> EntityIDs;
 		};
 
 		struct InstanceKey
@@ -134,16 +142,16 @@ namespace LambdaEngine
 
 		struct CameraData
 		{
-			glm::mat4 Projection = glm::mat4(1.0f);
-			glm::mat4 View = glm::mat4(1.0f);
-			glm::mat4 PrevProjection = glm::mat4(1.0f);
-			glm::mat4 PrevView = glm::mat4(1.0f);
-			glm::mat4 ViewInv = glm::mat4(1.0f);
-			glm::mat4 ProjectionInv = glm::mat4(1.0f);
-			glm::vec4 Position = glm::vec4(0.0f);
-			glm::vec4 Right = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-			glm::vec4 Up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec2 Jitter = glm::vec2(0.0f);
+			glm::mat4 Projection		= glm::mat4(1.0f);
+			glm::mat4 View				= glm::mat4(1.0f);
+			glm::mat4 PrevProjection	= glm::mat4(1.0f);
+			glm::mat4 PrevView			= glm::mat4(1.0f);
+			glm::mat4 ViewInv			= glm::mat4(1.0f);
+			glm::mat4 ProjectionInv		= glm::mat4(1.0f);
+			glm::vec4 Position			= glm::vec4(0.0f);
+			glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+			glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+			glm::vec2 Jitter			= glm::vec2(0.0f);
 		};
 
 		struct PerFrameBuffer
@@ -244,7 +252,8 @@ namespace LambdaEngine
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
-
+		bool					m_MeshShadersEnabled = false;
+		//Mesh/Instance/Entity
 		bool						m_LightsDirty			= true;
 		bool						m_LightsResourceDirty	= false;
 		bool						m_DirectionalExist		= false;

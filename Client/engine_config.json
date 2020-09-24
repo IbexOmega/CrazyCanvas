@@ -1,15 +1,15 @@
 {
-    "WindowSize": [
-        300,
-        150
-    ],
-    "FixedTimestep": 60,
-    "RayTracingEnabled": false,
-    "RenderGraphName": "",
-    "ShowRenderGraph": false,
-    "ShowDemo": false,
-    "Debugging": false,
-    "CameraFOV": 90.0,
-    "CameraNearPlane": 0.001,
-    "CameraFarPlane": 1000.0
+  "WindowSize": [
+    800,
+    600
+  ],
+  "FixedTimestep": 60,
+  "RayTracingEnabled": false,
+  "RenderGraphName": "DEFERRED_PBR.lrg",
+  "ShowRenderGraph": false,
+  "ShowDemo": false,
+  "Debugging": false,
+  "CameraFOV": 90.0,
+  "CameraNearPlane": 0.001,
+  "CameraFarPlane": 1000.0
 }
