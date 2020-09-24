@@ -33,12 +33,12 @@ namespace LambdaEngine
 		return m_Header.Type;
 	}
 
-	char* NetworkSegment::GetBuffer()
+	uint8* NetworkSegment::GetBuffer()
 	{
 		return m_pBuffer;
 	}
 
-	const char* NetworkSegment::GetBufferReadOnly() const
+	const uint8* NetworkSegment::GetBufferReadOnly() const
 	{
 		return m_pBuffer;
 	}

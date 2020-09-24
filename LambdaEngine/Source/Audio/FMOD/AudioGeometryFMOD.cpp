@@ -45,13 +45,12 @@ namespace LambdaEngine
 			const Mesh* pMesh = pDesc->ppMeshes[m];
 			glm::mat4 transform = pDesc->pTransforms != nullptr ? pDesc->pTransforms[m] : glm::mat4(1.0f);
 
-			numVertices += pMesh->IndexCount;
-
-			for (uint32 i = 0; i < pMesh->IndexCount; i += 3)
+			numVertices += pMesh->Indices.GetSize();
+			for (uint32 i = 0; i < pMesh->Indices.GetSize(); i += 3)
 			{
-				glm::vec3 v0Pos = transform * glm::vec4(pMesh->pVertexArray[pMesh->pIndexArray[i + 0]].Position, 1.0f);
-				glm::vec3 v1Pos = transform * glm::vec4(pMesh->pVertexArray[pMesh->pIndexArray[i + 1]].Position, 1.0f);
-				glm::vec3 v2Pos = transform * glm::vec4(pMesh->pVertexArray[pMesh->pIndexArray[i + 2]].Position, 1.0f);
+				glm::vec3 v0Pos = transform * glm::vec4(pMesh->Vertices[pMesh->Indices[i + 0]].Position, 1.0f);
+				glm::vec3 v1Pos = transform * glm::vec4(pMesh->Vertices[pMesh->Indices[i + 1]].Position, 1.0f);
+				glm::vec3 v2Pos = transform * glm::vec4(pMesh->Vertices[pMesh->Indices[i + 2]].Position, 1.0f);
 
 				FMOD_VECTOR fmodV0 = { v0Pos.x, v0Pos.y, v0Pos.z };
 				FMOD_VECTOR fmodV1 = { v1Pos.x, v1Pos.y, v1Pos.z };
