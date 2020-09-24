@@ -477,12 +477,12 @@ namespace LambdaEngine
 					vertexStagingBufferDesc.DebugName	= "Vertex Staging Buffer";
 					vertexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					vertexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					vertexStagingBufferDesc.SizeInBytes = pMesh->VertexCount * sizeof(Vertex);
+					vertexStagingBufferDesc.SizeInBytes = pMesh->Vertices.GetSize() * sizeof(Vertex);
 
 					Buffer* pVertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexStagingBufferDesc);
 
 					void* pMapped = pVertexStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pVertexArray, vertexStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->Vertices.GetData(), vertexStagingBufferDesc.SizeInBytes);
 					pVertexStagingBuffer->Unmap();
 
 					BufferDesc vertexBufferDesc = {};
@@ -492,7 +492,7 @@ namespace LambdaEngine
 					vertexBufferDesc.SizeInBytes	= vertexStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
-					meshEntry.VertexCount	= pMesh->VertexCount;
+					meshEntry.VertexCount	= pMesh->Vertices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexStagingBuffer);
@@ -504,12 +504,12 @@ namespace LambdaEngine
 					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
 					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(Mesh::IndexType);
+					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(Mesh::IndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
 					void* pMapped = pIndexStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pIndexArray, indexStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->Indices.GetData(), indexStagingBufferDesc.SizeInBytes);
 					pIndexStagingBuffer->Unmap();
 
 					BufferDesc indexBufferDesc = {};
@@ -519,7 +519,7 @@ namespace LambdaEngine
 					indexBufferDesc.SizeInBytes		= indexStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pIndexBuffer	= RenderAPI::GetDevice()->CreateBuffer(&indexBufferDesc);
-					meshEntry.IndexCount	= pMesh->IndexCount;
+					meshEntry.IndexCount	= pMesh->Indices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
@@ -531,12 +531,12 @@ namespace LambdaEngine
 					meshletStagingBufferDesc.DebugName		= "Meshlet Staging Buffer";
 					meshletStagingBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					meshletStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					meshletStagingBufferDesc.SizeInBytes	= pMesh->MeshletCount * sizeof(Meshlet);
+					meshletStagingBufferDesc.SizeInBytes	= pMesh->Meshlets.GetSize() * sizeof(Meshlet);
 
 					Buffer* pMeshletStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&meshletStagingBufferDesc);
 
 					void* pMapped = pMeshletStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pMeshletArray, meshletStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->Meshlets.GetData(), meshletStagingBufferDesc.SizeInBytes);
 					pMeshletStagingBuffer->Unmap();
 
 					BufferDesc meshletBufferDesc = {};
@@ -546,7 +546,7 @@ namespace LambdaEngine
 					meshletBufferDesc.SizeInBytes	= meshletStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
-					meshEntry.MeshletCount = pMesh->MeshletCount;
+					meshEntry.MeshletCount = pMesh->Meshlets.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pMeshletStagingBuffer);
@@ -558,12 +558,12 @@ namespace LambdaEngine
 					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
 					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndexCount * sizeof(Mesh::IndexType);
+					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(Mesh::IndexType);
 
 					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
 
 					void* pMapped = pUniqueIndicesStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pUniqueIndices, uniqueIndicesStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->UniqueIndices.GetData(), uniqueIndicesStagingBufferDesc.SizeInBytes);
 					pUniqueIndicesStagingBuffer->Unmap();
 
 					BufferDesc uniqueIndicesBufferDesc = {};
@@ -573,7 +573,7 @@ namespace LambdaEngine
 					uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
-					meshEntry.UniqueIndexCount = pMesh->UniqueIndexCount;
+					meshEntry.UniqueIndexCount = pMesh->UniqueIndices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pUniqueIndicesStagingBuffer);
@@ -585,12 +585,12 @@ namespace LambdaEngine
 					primitiveIndicesStagingBufferDesc.DebugName		= "Primitive Indices Staging Buffer";
 					primitiveIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					primitiveIndicesStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndexCount * sizeof(Mesh::IndexType);
+					primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndices.GetSize() * sizeof(PackedTriangle);
 
 					Buffer* pPrimitiveIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesStagingBufferDesc);
 
 					void* pMapped = pPrimitiveIndicesStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pPrimitiveIndices, primitiveIndicesStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->PrimitiveIndices.GetData(), primitiveIndicesStagingBufferDesc.SizeInBytes);
 					pPrimitiveIndicesStagingBuffer->Unmap();
 
 					BufferDesc primitiveIndicesBufferDesc = {};
@@ -600,7 +600,7 @@ namespace LambdaEngine
 					primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
-					meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndexCount;
+					meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pPrimitiveIndicesStagingBuffer);
