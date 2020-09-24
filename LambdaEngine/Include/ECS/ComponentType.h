@@ -40,7 +40,7 @@ namespace std
 	template<>
 	struct hash<const LambdaEngine::ComponentType*>
 	{
-		size_t operator()(const LambdaEngine::ComponentType* componentType) const
+		size_t operator()(const LambdaEngine::ComponentType* pComponentType) const
 		{
 			return pComponentType->GetHash();
 		}

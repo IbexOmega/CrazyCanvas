@@ -124,6 +124,27 @@
             }
         },
         {
+            "name": "G_BUFFER_POSITION",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": false,
+            "type_params": {
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D",
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "memory_type": "MEMORY_TYPE_GPU"
+            }
+        },
+        {
             "name": "G_BUFFER_ALBEDO",
             "type": "TEXTURE",
             "back_buffer_bound": false,
@@ -140,7 +161,7 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
+                "sampler_type": "NEAREST",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -161,7 +182,7 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
+                "sampler_type": "NEAREST",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -173,7 +194,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
+                "texture_format": "FORMAT_R10G10B10A2_UNORM",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
@@ -182,7 +203,7 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
+                "sampler_type": "NEAREST",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -203,7 +224,7 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
+                "sampler_type": "NEAREST",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -224,7 +245,7 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
+                "sampler_type": "NEAREST",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -414,6 +435,13 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
+                    "name": "G_BUFFER_POSITION",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": ""
+                },
+                {
                     "name": "G_BUFFER_ALBEDO",
                     "removable": true,
                     "draw_args_mask": 4294967295,
@@ -549,6 +577,13 @@
                     "draw_args_mask": 4294967295,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "G_BUFFER_POSITION",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "G_BUFFER_ALBEDO",
