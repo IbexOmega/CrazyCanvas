@@ -216,7 +216,7 @@ namespace LambdaEngine
 		}
 
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
-		{ 
+		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
 			return false;
 		}
@@ -644,7 +644,7 @@ namespace LambdaEngine
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.MaskToArgs.find(pRenderStage->DrawArgsMask);
 					pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
-					
+
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{
 						DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
@@ -728,10 +728,10 @@ namespace LambdaEngine
 						pCustomRenderer->Render(
 							pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],
 							pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],
-							pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex], 
-							pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	
-							uint32(m_ModFrameIndex), 
-							m_BackBufferIndex, 
+							pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],
+							pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],
+							uint32(m_ModFrameIndex),
+							m_BackBufferIndex,
 							&m_ppExecutionStages[currentExecutionStage],
 							&m_ppExecutionStages[currentExecutionStage + 1]);
 
@@ -1111,7 +1111,7 @@ namespace LambdaEngine
 						SAFEDELETE_ARRAY(ppDrawArgDescriptorSets);
 					}
 				}
-				
+
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets);
@@ -1328,13 +1328,13 @@ namespace LambdaEngine
 			else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 			{
 				newResource.Type = ERenderGraphResourceType::BUFFER;
-				
+
 				newResource.Buffer.Buffers.Resize(newResource.SubResourceCount);
 				newResource.Buffer.Offsets.Resize(newResource.SubResourceCount);
 				newResource.Buffer.SizesInBytes.Resize(newResource.SubResourceCount);
 			}
 			else if (pResourceDesc->Type == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
-			{ 
+			{
 				newResource.Type = ERenderGraphResourceType::ACCELERATION_STRUCTURE;
 			}
 
@@ -1344,7 +1344,7 @@ namespace LambdaEngine
 				//Internal
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
-					
+
 					newResource.OwnershipType				= newResource.IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
 					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
 					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;
@@ -1466,7 +1466,7 @@ namespace LambdaEngine
 					alreadyExists = alreadyExists && newResource.Texture.PerImageTextureViews.GetSize()		== previousResource.Texture.PerImageTextureViews.GetSize();
 					alreadyExists = alreadyExists && newResource.Texture.PerSubImageTextureViews.GetSize()	== previousResource.Texture.PerSubImageTextureViews.GetSize();
 					alreadyExists = alreadyExists && newResource.Texture.Samplers.GetSize()					== previousResource.Texture.Samplers.GetSize();
-					
+
 					previousResource.Texture.InitialTransitionBarriers.Clear();
 
 					//If the resource is discovered as nonexisiting here, we need to release internal subresources
@@ -1892,8 +1892,8 @@ namespace LambdaEngine
 
 						if (renderPassAttachmentsWidth != xDimVariable)
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
-								pResourceStateDesc->ResourceName.c_str(), 
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d",
+								pResourceStateDesc->ResourceName.c_str(),
 								xDimVariable,
 								renderPassAttachmentsWidth);
 							success = false;
@@ -2127,7 +2127,7 @@ namespace LambdaEngine
 						pPushConstants->pData		= DBG_NEW byte[DRAW_ITERATION_PUSH_CONSTANTS_SIZE];
 						pPushConstants->DataSize	= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
-						pPushConstants->MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;	
+						pPushConstants->MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 
 						externalMaxSize -= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 					}
@@ -2244,7 +2244,7 @@ namespace LambdaEngine
 						pShaderConstants = &shaderConstantsIt->second;
 					}
 				}
-				
+
 
 				//Create Pipeline State
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
@@ -2342,7 +2342,7 @@ namespace LambdaEngine
 					pipelineDesc.PipelineLayout			= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.MaxRecursionDepth		= 1;
 					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
-					
+
 					if (pShaderConstants != nullptr)
 					{
 						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
@@ -2498,7 +2498,7 @@ namespace LambdaEngine
 
 				FPipelineStageFlags	prevLastPipelineStage;
 
-				
+
 				if (prevRenderStageIt == m_RenderStageMap.end())
 				{
 					if (pResourceSynchronizationDesc->PrevRenderStage == "PRESENT")
@@ -2720,7 +2720,7 @@ namespace LambdaEngine
 			{
 				m_ExecutionStageCount += 2;
 				pipelineStageName = "Synchronization Stage " + std::to_string(pPipelineStageDesc->StageIndex);
-			}			
+			}
 
 			pPipelineStage->Type		= pPipelineStageDesc->Type;
 			pPipelineStage->StageIndex	= pPipelineStageDesc->StageIndex;
@@ -3447,7 +3447,7 @@ namespace LambdaEngine
 		uint32 frameBufferHeight	= 0;
 
 		DescriptorSet** ppDrawArgsDescriptorSetsPerFrame = nullptr;
-		
+
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 			ppDrawArgsDescriptorSetsPerFrame = pRenderStage->pppDrawArgDescriptorSets[m_ModFrameIndex];
 
@@ -3510,7 +3510,7 @@ namespace LambdaEngine
 
 				clearColorCount++;
 			}
-				
+
 			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 			{
 				BeginRenderPassDesc beginRenderPassDesc = { };

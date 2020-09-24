@@ -13,11 +13,11 @@ layout(binding = 3, set = 0, rgba8) uniform writeonly image2D u_OutputImage;
 
 void main()
 {
-    vec4 roughness = texture2D(u_RoughnessMaterial, gl_GlobalInvocationID.xy);
-    vec4 metallic = texture2D(u_MetallicMaterial, gl_GlobalInvocationID.xy);
-    vec4 ao = texture2D(u_AOMaterial, gl_GlobalInvocationID.xy);
+    vec4 roughness = texelFetch(u_RoughnessMaterial, ivec2(gl_GlobalInvocationID.xy), 0);
+    vec4 metallic = texelFetch(u_MetallicMaterial, ivec2(gl_GlobalInvocationID.xy), 0);
+    vec4 ao = texelFetch(u_AOMaterial, ivec2(gl_GlobalInvocationID.xy), 0);
 
     vec4 combined_material = vec4(roughness.r, metallic.g, ao.b, 1.0f);
 
-    imageStore(u_OutputImage, gl_GlobalInvocationID.xy, combined_material);
+    imageStore(u_OutputImage, ivec2(gl_GlobalInvocationID.xy), combined_material);
 }

@@ -444,7 +444,7 @@ namespace LambdaEngine
 		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.Flags		= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+		textureDesc.Flags		= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
 		textureDesc.Width		= largestWidth;
 		textureDesc.Height		= largestHeight;
 		textureDesc.Depth		= 1;
@@ -453,6 +453,20 @@ namespace LambdaEngine
 		textureDesc.SampleCount = 1;
 
 		Texture* pTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.DebugName = "";
+		textureViewDesc.pTexture = pTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+		textureViewDesc.Format = EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		textureViewDesc.MiplevelCount = miplevels;
+		textureViewDesc.ArrayCount = 1;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.ArrayIndex = 0;
+
+
+		TextureView* textureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		if (pTexture == nullptr)
 		{
@@ -544,16 +558,20 @@ namespace LambdaEngine
 
 		DescriptorSet* pDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Combine Material Descriptor Set", pPipelineLayout, 0, descriptorHeap);
 		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pRoughnessMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pMetallicMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pAmbientOcclusionMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pMetallicMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pAmbientOcclusionMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+		pDescriptorSet->WriteTextureDescriptors(&textureView, &sampler, ETextureState::TEXTURE_STATE_GENERAL, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE);
 		//-------------- Create Shaders
-		GUID_Lambda computeShaderGUID = LoadShaderFromFile("CombineMaterial.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		GUID_Lambda computeShaderGUID = LoadShaderFromFile("CombineMaterial.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+
+		s_Shaders[computeShaderGUID]->GetDesc().Source;
 
 		ShaderDesc shaderDesc;
 		shaderDesc.DebugName	= "Combine Material Shader Desc";
 		shaderDesc.EntryPoint	= "main";
 		shaderDesc.Stage		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 		shaderDesc.Lang			= EShaderLang::SHADER_LANG_GLSL;
+		shaderDesc.Source		= s_Shaders[computeShaderGUID]->GetDesc().Source;
 
 		Shader* shader = RenderAPI::GetDevice()->CreateShader(&shaderDesc);
 
@@ -565,14 +583,18 @@ namespace LambdaEngine
 		computePipelineStateDesc.pPipelineLayout	= pPipelineLayout;
 		computePipelineStateDesc.Shader				= shaderModuleDesc;
 
-
 		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
 		cmdList->BindDescriptorSetCompute(pDescriptorSet, pPipelineLayout, 0);
 		cmdList->BindComputePipeline(pPipelineState);
 
+
+		cmdList->Dispatch(largestWidth, largestHeight, 1);
+		//cmdList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
 		cmdList->End();
-		cmdList->Dispatch(1, 1, 1);
-		cmdList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		RenderAPI::GetComputeQueue()->ExecuteCommandLists(&cmdList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+		RenderAPI::GetComputeQueue()->Flush();
+		pMaterial->pCombinedMaterialsView = textureView;
 		RenderAPI::GetDevice()->Release();
 	}
 
@@ -847,6 +869,7 @@ namespace LambdaEngine
 			pDefaultMaterial->pAmbientOcclusionMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pMetallicMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pRoughnessMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pCombinedMaterialsView =	s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
 			s_MaterialNamesToGUIDs["Default Material"]	= GUID_MATERIAL_DEFAULT;
 			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;
