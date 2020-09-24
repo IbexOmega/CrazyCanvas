@@ -654,7 +654,8 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
-			"Dependencies/PhysX/include"
+			"Dependencies/PhysX/include",
+			"Dependencies/rapidjson/include",
 		}
 
 		-- Files

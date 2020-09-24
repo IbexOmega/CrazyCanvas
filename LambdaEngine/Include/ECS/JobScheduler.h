@@ -63,7 +63,7 @@ namespace LambdaEngine
 
         // Maps component TIDs to the amount of jobs are reading from them.
         // A zero read count means the component type is being written to.
-        THashTable<std::type_index, uint32> m_ProcessingComponents;
+        THashTable<const ComponentType*, uint32> m_ProcessingComponents;
 
         // Used to join threads executing jobs once the current phase's jobs have all been scheduled
         TArray<uint32> m_ThreadHandles;

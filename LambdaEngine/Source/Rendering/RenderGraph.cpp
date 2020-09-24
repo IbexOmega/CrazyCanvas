@@ -150,6 +150,12 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!CreateProfiler(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions.GetSize()))
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Profiler", pDesc->Name.c_str());
+			return false;
+		}
+
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
@@ -216,6 +222,12 @@ namespace LambdaEngine
 			}
 
 			ReleasePipelineStages();
+		}
+
+		if (!CreateProfiler(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions.GetSize()))
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Profiler", pDesc->Name.c_str());
+			return false;
 		}
 
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
@@ -689,6 +701,13 @@ namespace LambdaEngine
 							ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 						}
 
+						//If drawArgsMaskToArgsIt->second.Args.GetSize() is smaller than pRenderStage->NumDrawArgsPerFrame then some Descriptor Sets are not destroyed that should be destroyed
+						for (uint32 d = drawArgsMaskToArgsIt->second.Args.GetSize(); d < pRenderStage->NumDrawArgsPerFrame; d++)
+						{
+							DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
+							m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+						}
+
 						pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
 					}
 
@@ -737,10 +756,6 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 
 						pCustomRenderer->Render(
-							pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],
-							pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],
-							pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex], 
-							pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	
 							uint32(m_ModFrameIndex), 
 							m_BackBufferIndex, 
 							&m_ppExecutionStages[currentExecutionStage],
@@ -1084,18 +1099,29 @@ namespace LambdaEngine
 		{
 			PipelineStage* pPipelineStage = &m_pPipelineStages[i];
 
-			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			if (pPipelineStage->ppComputeCommandAllocators != nullptr)
 			{
-				SAFERELEASE(pPipelineStage->ppComputeCommandAllocators[b]);
-				SAFERELEASE(pPipelineStage->ppGraphicsCommandAllocators[b]);
-				SAFERELEASE(pPipelineStage->ppComputeCommandLists[b]);
-				SAFERELEASE(pPipelineStage->ppGraphicsCommandLists[b]);
+				for (uint32 b = 0; b < m_BackBufferCount; b++)
+				{
+					SAFERELEASE(pPipelineStage->ppComputeCommandAllocators[b]);
+					SAFERELEASE(pPipelineStage->ppComputeCommandLists[b]);
+				}
+
+				SAFEDELETE_ARRAY(pPipelineStage->ppComputeCommandAllocators);
+				SAFEDELETE_ARRAY(pPipelineStage->ppComputeCommandLists);
 			}
 
-			SAFEDELETE_ARRAY(pPipelineStage->ppComputeCommandAllocators);
-			SAFEDELETE_ARRAY(pPipelineStage->ppGraphicsCommandAllocators);
-			SAFEDELETE_ARRAY(pPipelineStage->ppComputeCommandLists);
-			SAFEDELETE_ARRAY(pPipelineStage->ppGraphicsCommandLists);
+			if (pPipelineStage->ppGraphicsCommandAllocators != nullptr)
+			{
+				for (uint32 b = 0; b < m_BackBufferCount; b++)
+				{
+					SAFERELEASE(pPipelineStage->ppGraphicsCommandAllocators[b]);
+					SAFERELEASE(pPipelineStage->ppGraphicsCommandLists[b]);
+				}
+
+				SAFEDELETE_ARRAY(pPipelineStage->ppGraphicsCommandAllocators);
+				SAFEDELETE_ARRAY(pPipelineStage->ppGraphicsCommandLists);
+			}
 
 			if (pPipelineStage->Type == ERenderGraphPipelineStageType::RENDER)
 			{
@@ -1246,6 +1272,15 @@ namespace LambdaEngine
 				}
 			}
 		}
+
+		return true;
+	}
+
+	bool RenderGraph::CreateProfiler(uint32 pipelineStageCount)
+	{
+		Profiler::GetGPUProfiler()->Init(GPUProfiler::TimeUnit::MICRO);
+		Profiler::GetGPUProfiler()->CreateTimestamps(pipelineStageCount * m_BackBufferCount * 2);
+		Profiler::GetGPUProfiler()->CreateGraphicsPipelineStats();
 
 		return true;
 	}
@@ -2099,6 +2134,7 @@ namespace LambdaEngine
 				}
 
 				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
+				customRendererInitDesc.BackBufferCount				= m_BackBufferCount;
 				customRendererInitDesc.pColorAttachmentDesc			= renderPassAttachmentDescriptions.GetData();
 				customRendererInitDesc.ColorAttachmentCount			= (uint32)renderPassAttachmentDescriptions.GetSize();
 				customRendererInitDesc.pDepthStencilAttachmentDesc	= renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE ? &renderPassDepthStencilDescription : nullptr;
@@ -2743,9 +2779,6 @@ namespace LambdaEngine
 		m_PipelineStageCount = (uint32)pipelineStageDescriptions.GetSize();
 		m_pPipelineStages = DBG_NEW PipelineStage[m_PipelineStageCount];
 
-		Profiler::GetGPUProfiler()->Init(GPUProfiler::TimeUnit::MICRO);
-		Profiler::GetGPUProfiler()->CreateTimestamps(m_PipelineStageCount * m_BackBufferCount * 2);
-		Profiler::GetGPUProfiler()->CreateGraphicsPipelineStats();
 		String pipelineStageName = "";
 
 		for (uint32 i = 0; i < m_PipelineStageCount; i++)
@@ -2754,9 +2787,13 @@ namespace LambdaEngine
 
 			PipelineStage* pPipelineStage = &m_pPipelineStages[i];
 
+			bool createCommandLists = true;
+
 			if (pPipelineStageDesc->Type == ERenderGraphPipelineStageType::RENDER)
 			{
-				m_ExecutionStageCount += m_pRenderStages[pPipelineStageDesc->StageIndex].UsesCustomRenderer ? 2 : 1;
+				bool usesCustomRenderer = m_pRenderStages[pPipelineStageDesc->StageIndex].UsesCustomRenderer;
+				createCommandLists = !usesCustomRenderer;
+				m_ExecutionStageCount += usesCustomRenderer ? 2 : 1;
 				pipelineStageName = m_pRenderStages[pPipelineStageDesc->StageIndex].Name;
 			}
 			else if (pPipelineStageDesc->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
@@ -2768,57 +2805,59 @@ namespace LambdaEngine
 			pPipelineStage->Type		= pPipelineStageDesc->Type;
 			pPipelineStage->StageIndex	= pPipelineStageDesc->StageIndex;
 
-			pPipelineStage->ppGraphicsCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
-			pPipelineStage->ppComputeCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
-			pPipelineStage->ppGraphicsCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
-			pPipelineStage->ppComputeCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
-
-			for (uint32 f = 0; f < m_BackBufferCount; f++)
+			if (createCommandLists)
 			{
-				//Todo: Don't always allocate 2 command lists (timestamps also do this)
-				pPipelineStage->ppGraphicsCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Graphics Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
-				pPipelineStage->ppComputeCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+				pPipelineStage->ppGraphicsCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
+				pPipelineStage->ppComputeCommandAllocators		= DBG_NEW CommandAllocator*[m_BackBufferCount];
+				pPipelineStage->ppGraphicsCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
+				pPipelineStage->ppComputeCommandLists			= DBG_NEW CommandList*[m_BackBufferCount];
 
-				CommandListDesc graphicsCommandListDesc = {};
-				graphicsCommandListDesc.DebugName				= "Render Graph Graphics Command List";
-				graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-				graphicsCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+				for (uint32 f = 0; f < m_BackBufferCount; f++)
+				{
+					//Todo: Don't always allocate 2 command lists (timestamps also do this)
+					pPipelineStage->ppGraphicsCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Graphics Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+					pPipelineStage->ppComputeCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
-				pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
+					CommandListDesc graphicsCommandListDesc = {};
+					graphicsCommandListDesc.DebugName				= "Render Graph Graphics Command List";
+					graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+					graphicsCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-				// Add graphics timestamps
-				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName + " GRAPHICS");
+					pPipelineStage->ppGraphicsCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppGraphicsCommandAllocators[f], &graphicsCommandListDesc);
 
-				CommandListDesc computeCommandListDesc = {};
-				computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
-				computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-				computeCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+					// Add graphics timestamps
+					Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName + " GRAPHICS");
 
-				pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], &computeCommandListDesc);
+					CommandListDesc computeCommandListDesc = {};
+					computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
+					computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+					computeCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
-				// Add compute timestamps
-				Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppComputeCommandLists[f], pipelineStageName + " COMPUTE");
+					pPipelineStage->ppComputeCommandLists[f]		= m_pGraphicsDevice->CreateCommandList(pPipelineStage->ppComputeCommandAllocators[f], &computeCommandListDesc);
+
+					// Add compute timestamps
+					Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppComputeCommandLists[f], pipelineStageName + " COMPUTE");
+				}
+
+				// Reset all timestamps and pipeline statistics before first use of them
+				for (uint32 f = 0; f < m_BackBufferCount; f++)
+				{
+					pPipelineStage->ppGraphicsCommandLists[f]->Begin(nullptr);
+					Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
+					Profiler::GetGPUProfiler()->ResetGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
+					Profiler::GetGPUProfiler()->StartGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
+					Profiler::GetGPUProfiler()->EndGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
+					pPipelineStage->ppGraphicsCommandLists[f]->End();
+					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pPipelineStage->ppGraphicsCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+					RenderAPI::GetGraphicsQueue()->Flush();
+
+					pPipelineStage->ppComputeCommandLists[f]->Begin(nullptr);
+					Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppComputeCommandLists[f]);
+					pPipelineStage->ppComputeCommandLists[f]->End();
+					RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pPipelineStage->ppComputeCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+					RenderAPI::GetComputeQueue()->Flush();
+				}
 			}
-
-			// Reset all timestamps and pipeline statistics before first use of them
-			for (uint32 f = 0; f < m_BackBufferCount; f++)
-			{
-				pPipelineStage->ppGraphicsCommandLists[f]->Begin(nullptr);
-				Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppGraphicsCommandLists[f]);
-				Profiler::GetGPUProfiler()->ResetGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
-				Profiler::GetGPUProfiler()->StartGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
-				Profiler::GetGPUProfiler()->EndGraphicsPipelineStat(pPipelineStage->ppGraphicsCommandLists[f]);
-				pPipelineStage->ppGraphicsCommandLists[f]->End();
-				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pPipelineStage->ppGraphicsCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-				RenderAPI::GetGraphicsQueue()->Flush();
-
-				pPipelineStage->ppComputeCommandLists[f]->Begin(nullptr);
-				Profiler::GetGPUProfiler()->ResetTimestamp(pPipelineStage->ppComputeCommandLists[f]);
-				pPipelineStage->ppComputeCommandLists[f]->End();
-				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pPipelineStage->ppComputeCommandLists[f], 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-				RenderAPI::GetComputeQueue()->Flush();
-			}
-
 		}
 
 		m_ppExecutionStages = DBG_NEW CommandList*[m_ExecutionStageCount];

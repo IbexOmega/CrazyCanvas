@@ -47,10 +47,12 @@ public:
 
 private:
 	void RunningBenchMark();
+	bool LoadRendererResources();
 
 private:
 
 	LambdaEngine::ClientBase* m_pClient;
 	bool m_IsBenchmarking;
 	uint32 m_BenchmarkPackets;
+	GUID_Lambda m_MeshSphereGUID;
 };

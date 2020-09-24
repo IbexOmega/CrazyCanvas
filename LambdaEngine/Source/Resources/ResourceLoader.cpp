@@ -180,11 +180,11 @@ namespace LambdaEngine
 	/*
 	* Helpers
 	*/
-	static void ConvertSlashes(std::string& string)
+	static void ConvertSlashes(String& string)
 	{
 		{
 			size_t pos = string.find_first_of('\\');
-			while (pos != std::string::npos)
+			while (pos != String::npos)
 			{
 				string.replace(pos, 1, 1, '/');
 				pos = string.find_first_of('\\', pos + 1);
@@ -193,7 +193,7 @@ namespace LambdaEngine
 
 		{
 			size_t pos = string.find_first_of('/');
-			while (pos != std::string::npos)
+			while (pos != String::npos)
 			{
 				size_t afterPos = pos + 1;
 				if (string[afterPos] == '/')
@@ -206,6 +206,46 @@ namespace LambdaEngine
 		}
 	}
 
+	static String ConvertSlashes(const String& string)
+	{
+		String result = string;
+		{
+			size_t pos = result.find_first_of('\\');
+			while (pos != std::string::npos)
+			{
+				result.replace(pos, 1, 1, '/');
+				pos = result.find_first_of('\\', pos + 1);
+			}
+		}
+
+		{
+			size_t pos = result.find_first_of('/');
+			while (pos != std::string::npos)
+			{
+				size_t afterPos = pos + 1;
+				if (result[afterPos] == '/')
+				{
+					result.erase(result.begin() + afterPos);
+				}
+
+				pos = result.find_first_of('/', afterPos);
+			}
+		}
+
+		return result;
+	}
+
+	// Removes extra data after the fileending (Some materials has extra data after file ending)
+	static void RemoveExtraData(String& string)
+	{
+		size_t dotPos = string.find_first_of('.');
+		size_t endPos = string.find_first_of(' ', dotPos);
+		if (dotPos != String::npos && endPos != String::npos)
+		{
+			string = string.substr(0, endPos);
+		}
+	}
+	
 	/*
 	* ResourceLoader
 	*/
@@ -259,6 +299,7 @@ namespace LambdaEngine
 
 			String name = str.C_Str();
 			ConvertSlashes(name);
+			RemoveExtraData(name);
 
 			auto loadedTexture = context.LoadedTextures.find(name);
 			if (loadedTexture == context.LoadedTextures.end())
@@ -295,7 +336,7 @@ namespace LambdaEngine
 			aiProcess_FindInvalidData;
 
 		SceneLoadRequest loadRequest = {
-			.Filepath		= filepath,
+			.Filepath		= ConvertSlashes(filepath),
 			.AssimpFlags	= assimpFlags,
 			.Meshes			= meshes,
 			.MeshComponents	= meshComponents,
@@ -330,7 +371,7 @@ namespace LambdaEngine
 		TArray<MeshComponent> meshComponent;
 
 		SceneLoadRequest loadRequest = {
-			.Filepath		= filepath,
+			.Filepath		= ConvertSlashes(filepath),
 			.AssimpFlags	= assimpFlags,
 			.Meshes			= meshes,
 			.MeshComponents	= meshComponent,
@@ -347,17 +388,12 @@ namespace LambdaEngine
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
-		Vertex* pVertexArray = DBG_NEW Vertex[numVertices];
-		memcpy(pVertexArray, pVertices, sizeof(Vertex) * numVertices);
-
-		uint32* pIndexArray = DBG_NEW uint32[numIndices];
-		memcpy(pIndexArray, pIndices, sizeof(uint32) * numIndices);
-
 		Mesh* pMesh = DBG_NEW Mesh();
-		pMesh->pVertexArray		= pVertexArray;
-		pMesh->pIndexArray		= pIndexArray;
-		pMesh->VertexCount		= numVertices;
-		pMesh->IndexCount		= numIndices;
+		pMesh->Vertices.Resize(numVertices);
+		memcpy(pMesh->Vertices.GetData(), pVertices, sizeof(Vertex) * numVertices);
+
+		pMesh->Indices.Resize(numVertices);
+		memcpy(pMesh->Indices.GetData(), pIndices, sizeof(uint32) * numIndices);
 
 		MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
 		return pMesh;
@@ -373,7 +409,7 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < count; i++)
 		{
-			String filepath = dir + pFilenames[i];
+			String filepath = dir + ConvertSlashes(pFilenames[i]);
 
 			void* pPixels = nullptr;
 
@@ -398,7 +434,7 @@ namespace LambdaEngine
 			}
 
 			stbi_pixels[i] = pPixels;
-			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+			// D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
 		}
 
 		Texture* pTexture = nullptr;
@@ -463,7 +499,7 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < textureCount; i++)
 		{
-			String filepath = dir + pFilenames[i];
+			String filepath = dir + ConvertSlashes(pFilenames[i]);
 
 			void* pPixels = nullptr;
 
@@ -641,8 +677,7 @@ namespace LambdaEngine
 
 	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
 	{
-		String file = filepath;
-		ConvertSlashes(file);
+		String file = ConvertSlashes(filepath);
 
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
@@ -725,17 +760,18 @@ namespace LambdaEngine
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
 
+		String path = ConvertSlashes(filepath);
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
 		{
-			if (!ReadDataFromFile(filepath, "r", &pShaderRawSource, &shaderRawSourceSize))
+			if (!ReadDataFromFile(path, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", filepath.c_str());
+				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", path.c_str());
 				return false;
 			}
 
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, nullptr, pReflection))
+			if (!CompileGLSLToSPIRV(path, reinterpret_cast<char*>(pShaderRawSource), stage, nullptr, pReflection))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", filepath.c_str());
+				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", path.c_str());
 				return false;
 			}
 		}
@@ -753,7 +789,7 @@ namespace LambdaEngine
 	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const String& filepath)
 	{
 		SoundEffect3DDesc soundDesc = {};
-		soundDesc.Filepath = filepath;
+		soundDesc.Filepath = ConvertSlashes(filepath);
 
 		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
 		if (pSound == nullptr)
@@ -769,10 +805,11 @@ namespace LambdaEngine
 
 	bool ResourceLoader::ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize)
 	{
-		FILE* pFile = fopen(filepath.c_str(), pMode);
+		String path = ConvertSlashes(filepath);
+		FILE* pFile = fopen(path.c_str(), pMode);
 		if (pFile == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to load file \"%s\"", filepath.c_str());
+			LOG_ERROR("[ResourceLoader]: Failed to load file \"%s\"", path.c_str());
 			return false;
 		}
 
@@ -786,7 +823,7 @@ namespace LambdaEngine
 		int32 read = int32(fread(pData, 1, length, pFile));
 		if (read == 0)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", filepath.c_str());
+			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", path.c_str());
 			fclose(pFile);
 			return false;
 		}
@@ -903,9 +940,7 @@ namespace LambdaEngine
 
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
-		pMesh->pVertexArray = DBG_NEW Vertex[pMeshAI->mNumVertices];
-		pMesh->VertexCount = pMeshAI->mNumVertices;
-
+		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
 			Vertex vertex;
@@ -933,7 +968,7 @@ namespace LambdaEngine
 				vertex.TexCoord.y = pMeshAI->mTextureCoords[0][vertexIdx].y;
 			}
 
-			pMesh->pVertexArray[vertexIdx] = vertex;
+			pMesh->Vertices[vertexIdx] = vertex;
 		}
 	}
 
@@ -941,7 +976,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pMeshAI->HasFaces());
 
-		TArray<uint32> indices;
+		TArray<Mesh::IndexType> indices;
 		indices.Reserve(pMeshAI->mNumFaces * 3);
 		for (uint32 faceIdx = 0; faceIdx < pMeshAI->mNumFaces; faceIdx++)
 		{
@@ -952,10 +987,8 @@ namespace LambdaEngine
 			}
 		}
 
-		pMesh->pIndexArray = DBG_NEW uint32[indices.GetSize()];
-		memcpy(pMesh->pIndexArray, indices.GetData(), sizeof(uint32) * indices.GetSize());
-
-		pMesh->IndexCount = indices.GetSize();
+		pMesh->Indices.Resize(indices.GetSize());
+		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(Mesh::IndexType) * indices.GetSize());
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
