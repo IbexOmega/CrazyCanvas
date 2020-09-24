@@ -120,7 +120,7 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 			renderGraphDesc.CustomRenderers				= { };
 
-			if (ENABLE_PHYSICS_RENDERING)
+			if (EngineConfig::GetBoolProperty("EnablePhysicsRenderer"))
 			{
 				m_pPhysicsRenderer = DBG_NEW PhysicsRenderer();
 				m_pPhysicsRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
