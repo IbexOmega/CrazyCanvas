@@ -31,9 +31,9 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, CameraComponent::s_TID}, {RW, ViewProjectionMatricesComponent::s_TID}}, {&transformComponents}, &m_CameraEntities}
+				{{{RW, CameraComponent::Type()}, {RW, ViewProjectionMatricesComponent::Type()}}, {&transformComponents}, &m_CameraEntities}
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::s_TID}} };
+			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::Type()}} };
 			systemReg.Phase = g_LastPhase-1;
 
 			RegisterSystem(systemReg);

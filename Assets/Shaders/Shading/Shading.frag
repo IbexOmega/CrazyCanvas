@@ -9,7 +9,7 @@ layout(location = 0) in vec2 in_TexCoord;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 { 
-    SPerFrameBuffer val; 
+	SPerFrameBuffer val; 
 } u_PerFrameBuffer;
 layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
@@ -27,29 +27,32 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-	SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
-	SLightsBuffer lightBuffer       = b_LightsBuffer.val;
+	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
+	SLightsBuffer lightBuffer		= b_LightsBuffer.val;
 
-    vec3 albedo             = texture(u_GBufferAlbedo, in_TexCoord).rgb;
-    vec4 aoRoughMetalValid  = texture(u_GBufferAORoughMetalValid, in_TexCoord);
+	vec3 albedo				= texture(u_GBufferAlbedo, in_TexCoord).rgb;
+	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 
-    if (aoRoughMetalValid.a < 1.0f)
-    {
-        vec3 color = albedo / (albedo + vec3(1.0f));
-        color = pow(color, vec3(1.0f / GAMMA));
-        out_Color = vec4(color, 1.0f);
-        return;
-    }
+	if (aoRoughMetalValid.a < 1.0f)
+	{
+		vec3 color = albedo / (albedo + vec3(1.0f));
+		color = pow(color, vec3(1.0f / GAMMA));
+		out_Color = vec4(color, 1.0f);
+		return;
+	}
 
-    vec3 worldPos           = texture(u_GBufferPosition, in_TexCoord).rgb;
+	float ao		= aoRoughMetalValid.r;
+	float roughness	= max(0.05f, aoRoughMetalValid.g);
+	float metallic	= aoRoughMetalValid.b;
 
-    vec3 N = normalize(OctToDir(texture(u_GBufferCompactNormal, in_TexCoord).xy));
-    vec3 V = normalize(perFrameBuffer.CameraPosition.xyz - worldPos);
+	vec3 worldPos = texture(u_GBufferPosition, in_TexCoord).rgb;
+	vec3 N = UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
+	vec3 V = normalize(perFrameBuffer.CameraPosition.xyz - worldPos);
 
 	vec3 Lo = vec3(0.0f);
 	vec3 F0 = vec3(0.04f);
 
-    F0 = mix(F0, albedo, aoRoughMetalValid.b);
+	F0 = mix(F0, albedo, metallic);
 
 	// Directional Light
 	{
@@ -59,8 +62,8 @@ void main()
 		vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance;
 
-		float NDF   = Distribution(N, H, aoRoughMetalValid.g);
-		float G     = Geometry(N, V, L, aoRoughMetalValid.g);
+		float NDF   = Distribution(N, H, roughness);
+		float G     = Geometry(N, V, L, roughness);
 		vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
 
 		vec3 nominator      = NDF * G * F;
@@ -70,7 +73,7 @@ void main()
 		vec3 kS = F;
 		vec3 kD = vec3(1.0f) - kS;
 
-		kD *= 1.0 - aoRoughMetalValid.b;
+		kD *= 1.0 - metallic;
 
 		float NdotL = max(dot(N, L), 0.0f);
 
@@ -91,8 +94,8 @@ void main()
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance * attenuation;
 	
-		float NDF   = Distribution(N, H, aoRoughMetalValid.g);
-		float G     = Geometry(N, V, L, aoRoughMetalValid.g);
+		float NDF   = Distribution(N, H, roughness);
+		float G     = Geometry(N, V, L, roughness);
 		vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
 
 		vec3 nominator      = NDF * G * F;
@@ -102,14 +105,14 @@ void main()
 		vec3 kS = F;
 		vec3 kD = vec3(1.0f) - kS;
 
-        kD *= 1.0 - aoRoughMetalValid.b;
+		kD *= 1.0 - metallic;
 
 		float NdotL = max(dot(N, L), 0.0f);
 
 		Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
 	}
 	
-	vec3 ambient    = 0.03f * albedo * aoRoughMetalValid.r;
+	vec3 ambient    = 0.03f * albedo * ao;
 	vec3 color      = ambient + Lo;
 
 	color = color / (color + vec3(1.0f));

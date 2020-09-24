@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS/ComponentStorage.h"
+#include "ECS/ComponentType.h"
 #include "ECS/EntityPublisher.h"
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
@@ -82,7 +83,7 @@ namespace LambdaEngine
 		void PerformComponentRegistrations();
 		void PerformComponentDeletions();
 		void PerformEntityDeletions();
-		bool DeleteComponent(Entity entity, std::type_index componentType);
+		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
 	private:
 		EntityRegistry m_EntityRegistry;
@@ -91,8 +92,8 @@ namespace LambdaEngine
 		ComponentStorage m_ComponentStorage;
 
 		TArray<Entity> m_EntitiesToDelete;
-		TArray<std::pair<Entity, std::type_index>> m_ComponentsToDelete;
-		TArray<std::pair<Entity, std::type_index>> m_ComponentsToRegister;
+		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToDelete;
+		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToRegister;
 
 		Timestamp m_DeltaTime;
 
@@ -112,8 +113,8 @@ namespace LambdaEngine
 		/*	Create component immediately, but hold off on registering and publishing it until the end of the frame.
 			This is to prevent concurrency issues. Publishing a component means pushing entity IDs to IDVectors,
 			and there is no guarentee that no one is simultaneously reading from these IDVectors. */
-		m_ComponentsToRegister.PushBack({entity, Comp::s_TID});
-
+		
+		m_ComponentsToRegister.PushBack({entity, Comp::Type()});
 		return m_ComponentStorage.AddComponent<Comp>(entity, component);
 	}
 
@@ -145,6 +146,6 @@ namespace LambdaEngine
 	inline void ECSCore::RemoveComponent(Entity entity)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockRemoveComponent);
-		m_ComponentsToDelete.PushBack({entity, Comp::s_TID});
+		m_ComponentsToDelete.PushBack({entity, Comp::Type()});
 	}
 }
