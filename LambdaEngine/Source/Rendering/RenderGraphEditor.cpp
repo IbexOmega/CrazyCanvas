@@ -1376,21 +1376,21 @@ namespace LambdaEngine
 			// Render options for changing the dimension of the render stage.
 			{
 				float nextItemWidth = ImGui::CalcTextSize("         ").x + ImGui::GetFrameHeight() * 2 + 4.0f;
-				int32 selectedOptions[3];
-				selectedOptions[0] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.XDimType);
-				selectedOptions[1] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.YDimType);
-				selectedOptions[2] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.ZDimType);
-				float32 variable[3];
-				variable[0] = pRenderStage->Parameters.XDimVariable;
-				variable[1] = pRenderStage->Parameters.YDimVariable;
-				variable[2] = pRenderStage->Parameters.ZDimVariable;
-				RenderDimChangeOptions(pRenderStage->Type, selectedOptions, variable, nextItemWidth);
-				pRenderStage->Parameters.XDimType = DimensionTypeIndexToDimensionType(selectedOptions[0]);
-				pRenderStage->Parameters.YDimType = DimensionTypeIndexToDimensionType(selectedOptions[1]);
-				pRenderStage->Parameters.ZDimType = DimensionTypeIndexToDimensionType(selectedOptions[2]);
-				pRenderStage->Parameters.XDimVariable = variable[0];
-				pRenderStage->Parameters.YDimVariable = variable[1];
-				pRenderStage->Parameters.ZDimVariable = variable[2];
+				int32 selectedXYZOptions[3];
+				selectedXYZOptions[0] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.XDimType);
+				selectedXYZOptions[1] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.YDimType);
+				selectedXYZOptions[2] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.ZDimType);
+				float32 valuesXYZ[3];
+				valuesXYZ[0] = pRenderStage->Parameters.XDimVariable;
+				valuesXYZ[1] = pRenderStage->Parameters.YDimVariable;
+				valuesXYZ[2] = pRenderStage->Parameters.ZDimVariable;
+				RenderDimChangeOptions(pRenderStage->Type, selectedXYZOptions, valuesXYZ, nextItemWidth);
+				pRenderStage->Parameters.XDimType = DimensionTypeIndexToDimensionType(selectedXYZOptions[0]);
+				pRenderStage->Parameters.YDimType = DimensionTypeIndexToDimensionType(selectedXYZOptions[1]);
+				pRenderStage->Parameters.ZDimType = DimensionTypeIndexToDimensionType(selectedXYZOptions[2]);
+				pRenderStage->Parameters.XDimVariable = valuesXYZ[0];
+				pRenderStage->Parameters.YDimVariable = valuesXYZ[1];
+				pRenderStage->Parameters.ZDimVariable = valuesXYZ[2];
 			}
 
 			imnodes::EndNodeTitleBar();
@@ -1768,8 +1768,8 @@ namespace LambdaEngine
 		static char renderStageNameBuffer[RENDER_STAGE_NAME_BUFFER_LENGTH];
 		static bool customRenderer = false;
 
-		static int32 selectedOptions[3]	= { 2, 2, 0 };			// Holds options for the x, y, and z dimensions.
-		static float variables[3]		= { 1.f, 1.f, 1.f };	// Holds the value of the x, y, and z dimension. 
+		static int32 selectedXYZOptions[3]	= { 2, 2, 0 };			// Holds options for the x, y, and z dimensions.
+		static float valuesXYZ[3]			= { 1.f, 1.f, 1.f };	// Holds the value of the x, y, and z dimension. 
 
 		ImGui::SetNextWindowSize(ImVec2(360, 500), ImGuiCond_Once);
 		if (ImGui::BeginPopupModal("Add Render Stage ##Popup"))
@@ -1789,7 +1789,7 @@ namespace LambdaEngine
 				//Render Pipeline State specific options
 				if (!customRenderer)
 				{
-					RenderDimChangeOptions(m_CurrentlyAddingRenderStage, selectedOptions, variables, 0.f);
+					RenderDimChangeOptions(m_CurrentlyAddingRenderStage, selectedXYZOptions, valuesXYZ, 0.f);
 				}
 
 				bool done = false;
@@ -1828,13 +1828,13 @@ namespace LambdaEngine
 					newRenderStage.Type					= m_CurrentlyAddingRenderStage;
 					newRenderStage.CustomRenderer		= customRenderer;
 
-					newRenderStage.Parameters.XDimType		= DimensionTypeIndexToDimensionType(selectedOptions[0]);
-					newRenderStage.Parameters.YDimType		= DimensionTypeIndexToDimensionType(selectedOptions[1]);
-					newRenderStage.Parameters.ZDimType		= DimensionTypeIndexToDimensionType(selectedOptions[2]);
+					newRenderStage.Parameters.XDimType		= DimensionTypeIndexToDimensionType(selectedXYZOptions[0]);
+					newRenderStage.Parameters.YDimType		= DimensionTypeIndexToDimensionType(selectedXYZOptions[1]);
+					newRenderStage.Parameters.ZDimType		= DimensionTypeIndexToDimensionType(selectedXYZOptions[2]);
 
-					newRenderStage.Parameters.XDimVariable	= variables[0];
-					newRenderStage.Parameters.YDimVariable	= variables[1];
-					newRenderStage.Parameters.ZDimVariable	= variables[2];
+					newRenderStage.Parameters.XDimVariable	= valuesXYZ[0];
+					newRenderStage.Parameters.YDimVariable	= valuesXYZ[1];
+					newRenderStage.Parameters.ZDimVariable	= valuesXYZ[2];
 
 					s_NextAttributeID += 2;
 
@@ -1859,12 +1859,12 @@ namespace LambdaEngine
 				{
 					ZERO_MEMORY(renderStageNameBuffer, RENDER_STAGE_NAME_BUFFER_LENGTH);
 					customRenderer = false;
-					selectedOptions[0] = 2;
-					selectedOptions[1] = 2;
-					selectedOptions[2] = 0;
-					variables[0] = 1.0f;
-					variables[1] = 1.0f;
-					variables[2] = 1.0f;
+					selectedXYZOptions[0] = 2;
+					selectedXYZOptions[1] = 2;
+					selectedXYZOptions[2] = 0;
+					valuesXYZ[0] = 1.0f;
+					valuesXYZ[1] = 1.0f;
+					valuesXYZ[2] = 1.0f;
 					m_CurrentlyAddingRenderStage = EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 					ImGui::CloseCurrentPopup();
 				}
@@ -2903,15 +2903,15 @@ namespace LambdaEngine
 		InitDefaultResources();
 	}
 
-	void RenderGraphEditor::RenderDimChangeOptions(EPipelineStateType pipelineStateType, int32 selectedOptions[3], float32 variable[3], float inputWidth)
+	void RenderGraphEditor::RenderDimChangeOptions(EPipelineStateType pipelineStateType, int32 selectedXYZOptions[3], float32 valuesXYZ[3], float inputWidth)
 	{
-		int32& selectedXOption	= selectedOptions[0];
-		int32& selectedYOption	= selectedOptions[1];
-		int32& selectedZOption	= selectedOptions[2];
+		int32& selectedXOption	= selectedXYZOptions[0];
+		int32& selectedYOption	= selectedXYZOptions[1];
+		int32& selectedZOption	= selectedXYZOptions[2];
 
-		float& xVariable		= variable[0];
-		float& yVariable		= variable[1];
-		float& zVariable		= variable[2];
+		float& xVariable		= valuesXYZ[0];
+		float& yVariable		= valuesXYZ[1];
+		float& zVariable		= valuesXYZ[2];
 
 		if (pipelineStateType == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 		{
