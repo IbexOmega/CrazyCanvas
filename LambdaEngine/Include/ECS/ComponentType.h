@@ -33,13 +33,6 @@ namespace LambdaEngine
 		const ConstString m_ClassName;
 	};
 
-	struct ComponentTypeHasher
-	{
-		size_t operator()(const ComponentType* key) const
-		{
-			return key->GetHash();
-		}
-	};
 }
 
 namespace std
