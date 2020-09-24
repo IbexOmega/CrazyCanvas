@@ -37,7 +37,7 @@ void main()
 	{
 		vec3 color = albedo / (albedo + vec3(1.0f));
 		color = pow(color, vec3(1.0f / GAMMA));
-		out_Color = vec4(color, 1.0f);
+		out_Color = vec4(color, CalculateLuminance(color));
 		return;
 	}
 
@@ -118,5 +118,5 @@ void main()
 	color = color / (color + vec3(1.0f));
 	color = pow(color, vec3(1.0f / GAMMA));
 
-	out_Color = vec4(color, 1.0f);
+	out_Color = vec4(color, CalculateLuminance(color));
 }

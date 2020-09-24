@@ -691,7 +691,7 @@ namespace LambdaEngine
 				return nullptr;
 			}
 
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV(file, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
 				return nullptr;
