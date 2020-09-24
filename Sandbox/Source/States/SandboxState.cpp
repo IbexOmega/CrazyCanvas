@@ -86,31 +86,24 @@ void SandboxState::Init()
 		TArray<MeshComponent> meshComponents;
 		ResourceManager::LoadSceneFromFile("Map/Scene.obj", meshComponents);
 
-		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			m_Entities.PushBack(entity);
-			CollisionCreateInfo collisionCreateInfo = {
-				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
-				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
-			};
+			pECS->AddComponent<PositionComponent>(entity, { position, true });
+			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 
-			pPhysicsSystem->CreateCollisionComponent(collisionCreateInfo);
+			m_Entities.PushBack(entity);
 		}
 	}
 
 	//Sphere Grid
 	{
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 		uint32 gridRadius = 5;
@@ -139,16 +132,22 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
-				glm::vec3 scale(1.0f);
+				const glm::vec3 position(-float32(gridRadius) * 0.5f + x, 1.0f + y, 5.0f);
+				const glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				pECS->AddComponent<PositionComponent>(entity, { position, true });
-				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				CollisionCreateInfo collisionCreateInfo = {
+					.Entity			= entity,
+					.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
+					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
+					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
+					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+				};
 
+				pPhysicsSystem->CreateCollisionComponent(collisionCreateInfo);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 				transform *= glm::toMat4(glm::identity<glm::quat>());

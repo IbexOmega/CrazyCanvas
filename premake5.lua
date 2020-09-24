@@ -440,7 +440,7 @@ workspace "LambdaEngine"
 				"/release/PhysXCooking_64.lib",
 				"/release/PhysXExtensions_dynamic_64.lib",
 				"/release/PhysXFoundation_64.lib",
-				"/release/PhysXPvdSDK_dynamic_64.lib"
+				-- "/release/PhysXPvdSDK_dynamic_64.lib"
 			}
 		-- Mac
 		filter { "system:macosx" }

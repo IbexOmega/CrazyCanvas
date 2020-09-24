@@ -1,11 +1,13 @@
 #include "Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
+#include "Engine/EngineConfig.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Resources/ResourceManager.h"
 
 #define PX_RELEASE(x) if(x)	{ x->release(); x = nullptr; }
+#define PVD_HOST "127.0.0.1"	// The IP address to stream debug visualization data to
 
 namespace LambdaEngine
 {
@@ -14,6 +16,7 @@ namespace LambdaEngine
 	PhysicsSystem::PhysicsSystem()
 		:m_pFoundation(nullptr),
 		m_pPhysics(nullptr),
+		m_pVisDbg(nullptr),
 		m_pDispatcher(nullptr),
 		m_pScene(nullptr),
 		m_pMaterial(nullptr)
@@ -25,6 +28,15 @@ namespace LambdaEngine
 		PX_RELEASE(m_pDispatcher);
 		PX_RELEASE(m_pScene);
 		PX_RELEASE(m_pPhysics);
+
+		if(m_pVisDbg)
+		{
+			PxPvdTransport* pTransport = m_pVisDbg->getTransport();
+			m_pVisDbg->release();
+			m_pVisDbg = nullptr;
+			PX_RELEASE(pTransport);
+		}
+
 		PX_RELEASE(m_pFoundation);
 	}
 
@@ -45,7 +57,16 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_pPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_pFoundation, PxTolerancesScale(), false, nullptr);
+	#ifdef LAMBDA_DEBUG
+		if (EngineConfig::GetBoolProperty("StreamPhysx"))
+		{
+			m_pVisDbg = PxCreatePvd(*m_pFoundation);
+			PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
+			m_pVisDbg->connect(*transport,PxPvdInstrumentationFlag::eALL);
+		}
+	#endif // LAMBDA_DEBUG
+
+		m_pPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_pFoundation, PxTolerancesScale(), false, m_pVisDbg);
 		if (!m_pPhysics)
 		{
 			LOG_ERROR("PhysX core creation failed");

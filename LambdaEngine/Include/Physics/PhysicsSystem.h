@@ -60,6 +60,7 @@ namespace LambdaEngine
 
 		PxFoundation*	m_pFoundation;
 		PxPhysics*		m_pPhysics;
+		PxPvd*			m_pVisDbg; // Visual debugger
 
 		PxDefaultCpuDispatcher*	m_pDispatcher;
 		PxScene*				m_pScene;
