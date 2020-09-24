@@ -71,8 +71,8 @@ function get_fmod_dll_path()
 	print("fmodL.dll was not found, ensure that FMOD engine is installed or modify premake5.lua")
 end
 
-VK_SDK_PATH					= get_vk_sdk_path()
-FMOD_DLL_PATH				= get_fmod_dll_path()
+VK_SDK_PATH		= get_vk_sdk_path()
+FMOD_DLL_PATH	= get_fmod_dll_path()
 
 workspace "LambdaEngine"
 	startproject "Sandbox"
@@ -374,7 +374,7 @@ workspace "LambdaEngine"
 				-- Assimp
 				"Dependencies/assimp/bin",
 
-				-- PhysX physics
+				-- PhysX
 				"Dependencies/PhysX/lib"
 			}
 
