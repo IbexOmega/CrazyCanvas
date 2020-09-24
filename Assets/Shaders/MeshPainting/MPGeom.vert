@@ -20,11 +20,6 @@ layout(location = 5) out vec2 out_TexCoord;
 layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
 
-// Ray from camera out in world.
-layout(location = 8) out vec3 out_CameraPosition;
-layout(location = 9) out vec3 out_CameraDirection;
-layout(location = 10) out vec3 out_CameraViewPosition;
-
 void main()
 {
     SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
@@ -46,10 +41,6 @@ void main()
 	out_TexCoord 		    = vertex.TexCoord.xy;
     out_ClipPosition        = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
     out_PrevClipPosition    = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
-
-    out_CameraViewPosition  = vec3(perFrameBuffer.View * worldPosition);
-    out_CameraPosition      = perFrameBuffer.CameraPosition.xyz;
-    out_CameraDirection     = vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]); //normalize(cross(perFrameBuffer.CameraUp.xyz, perFrameBuffer.CameraRight.xyz));
 
     gl_Position = out_ClipPosition;
 }
