@@ -30,8 +30,6 @@
 #include "Rendering/Core/Vulkan/VulkanHelpers.h"
 #include "Rendering/Core/Vulkan/SBTVK.h"
 
-#define ENABLE_IF_SUPPORTED(feature) feature = feature && true;
-
 namespace LambdaEngine
 {
 	/*
