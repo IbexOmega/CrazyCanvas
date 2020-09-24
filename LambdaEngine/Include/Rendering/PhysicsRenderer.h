@@ -1,6 +1,5 @@
 #pragma once
 
-#include <bullet/src/btBulletDynamicsCommon.h>
 #include "RenderGraphTypes.h"
 #include "ICustomRenderer.h"
 
@@ -38,7 +37,7 @@ namespace LambdaEngine
 		glm::vec4 Color;
 	};
 
-	class PhysicsRenderer : public btIDebugDraw, public ICustomRenderer
+	class PhysicsRenderer : public ICustomRenderer
 	{
 	public:
 		PhysicsRenderer();
@@ -73,15 +72,11 @@ namespace LambdaEngine
 
 
 		// DebugDraw implementations
-		virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override final;
-		virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor) override final;
-		//virtual void drawSphere(const btVector3& p, btScalar radius, const btVector3& color) override final;
-		//virtual void drawTriangle(const btVector3& a, const btVector3& b, const btVector3& c, const btVector3& color, btScalar alpha) override final;
-		virtual void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override final;
-		virtual void reportErrorWarning(const char* warningString) override final;
-		virtual void draw3dText(const btVector3& location, const char* textString) override final;
-		virtual void setDebugMode(int debugMode) override final { m_DebugMode = debugMode; }
-		virtual int getDebugMode() const override final { return m_DebugMode; }
+		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color);
+		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor);
+		//void DrawSphere(const btVecglm::vec3tor3& p, float radius, const glm::vec3& color);
+		//void DrawTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& color, float alpha);
+		void DrawContactPoint(const glm::vec3& PointOnB, const glm::vec3& normalOnB, float distance, int lifeTime, const glm::vec3& color);
 
 	public:
 		static PhysicsRenderer* Get();

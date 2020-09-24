@@ -65,7 +65,7 @@ namespace LambdaEngine
 		cmdTest.AddArg(Arg::EType::FLOAT);
 		GameConsole::Get().BindCommand(cmdTest, [this](GameConsole::CallbackInput& input)->void
 			{
-				drawLine({ input.Arguments[0].Value.Float32, input.Arguments[1].Value.Float32, input.Arguments[2].Value.Float32 },
+				DrawLine({ input.Arguments[0].Value.Float32, input.Arguments[1].Value.Float32, input.Arguments[2].Value.Float32 },
 					{ input.Arguments[3].Value.Float32, input.Arguments[4].Value.Float32, input.Arguments[5].Value.Float32 },
 					{ 1.0f, 0.0f, 0.0f });
 			});
@@ -107,53 +107,43 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PhysicsRenderer::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
+	void PhysicsRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
 	{
 		// if (m_DebugMode > 0)
 		VertexData fromData = {};
-		fromData.Position 	= { from.getX(), from.getY(), from.getZ(), 1.0f };
-		fromData.Color		= { color.getX(), color.getY(), color.getZ(), 1.0f };
+		fromData.Position 	= { from.x, from.y, from.z, 1.0f };
+		fromData.Color		= { color.x, color.y, color.z, 1.0f };
 		m_Verticies.PushBack(fromData);
 
 		VertexData toData	= {};
-		toData.Position		= { to.getX(), to.getY(), to.getZ(), 1.0f };
-		toData.Color		= { color.getX(), color.getY(), color.getZ(), 1.0f };
+		toData.Position		= { to.x, to.y, to.z, 1.0f };
+		toData.Color		= { color.x, color.y, color.z, 1.0f };
 		m_Verticies.PushBack(toData);
 	}
 
-	void PhysicsRenderer::drawLine(const btVector3& from, const btVector3& to, const btVector3& fromColor, const btVector3& toColor)
+	void PhysicsRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor)
 	{
 		VertexData fromData = {};
-		fromData.Position 	= { from.getX(), from.getY(), from.getZ(), 1.0f };
-		fromData.Color		= { fromColor.getX(), fromColor.getY(), fromColor.getZ(), 1.0f };
+		fromData.Position 	= { from.x, from.y, from.z, 1.0f };
+		fromData.Color		= { fromColor.x, fromColor.y, fromColor.z, 1.0f };
 		m_Verticies.PushBack(fromData);
 
 		VertexData toData	= {};
-		toData.Position		= { to.getX(), to.getY(), to.getZ(), 1.0f };
-		toData.Color		= { toColor.getX(), toColor.getY(), toColor.getZ(), 1.0f };
+		toData.Position		= { to.x, to.y, to.z, 1.0f };
+		toData.Color		= { toColor.x, toColor.y, toColor.z, 1.0f };
 		m_Verticies.PushBack(toData);
 	}
 
-	//void PhysicsRenderer::drawSphere(const btVector3& p, btScalar radius, const btVector3& color)
+	//void PhysicsRenderer::DrawSphere(const glm::vec3& p, float radius, const glm::vec3& color)
 	//{
 	//}
 
-	//void PhysicsRenderer::drawTriangle(const btVector3& a, const btVector3& b, const btVector3& c, const btVector3& color, btScalar alpha)
+	//void PhysicsRenderer::DrawTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& color, float alpha)
 	//{
 	//}
 
-	void PhysicsRenderer::drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
+	void PhysicsRenderer::DrawContactPoint(const glm::vec3& PointOnB, const glm::vec3& normalOnB, float distance, int lifeTime, const glm::vec3& color)
 	{
-	}
-
-	void PhysicsRenderer::reportErrorWarning(const char* warningString)
-	{
-		LOG_WARNING("[Physics Renderer (Bullet)]: %s", warningString);
-	}
-
-	void PhysicsRenderer::draw3dText(const btVector3& location, const char* textString)
-	{
-		LOG_INFO("[Physics Renderer (Bullet)]: %s at (%f, %f, %f)", textString, location.getX(), location.getY(), location.getZ());
 	}
 
 	// Custom renderer implementaion
