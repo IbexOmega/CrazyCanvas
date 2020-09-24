@@ -17,6 +17,7 @@ namespace LambdaEngine
 
 	struct CustomRendererRenderGraphInitDesc
 	{
+		uint32						BackBufferCount					= 0;
 		RenderPassAttachmentDesc*	pColorAttachmentDesc			= nullptr;
 		uint32						ColorAttachmentCount			= 0;
 		RenderPassAttachmentDesc*	pDepthStencilAttachmentDesc		= nullptr;
@@ -86,8 +87,8 @@ namespace LambdaEngine
 		virtual void Render(
 			uint32 modFrameIndex, 
 			uint32 backBufferIndex, 
-			CommandList** pFirstExecutionStage,
-			CommandList** pSecondaryExecutionStage)		= 0;
+			CommandList** ppFirstExecutionStage,
+			CommandList** ppSecondaryExecutionStage)		= 0;
 
 		virtual FPipelineStageFlag GetFirstPipelineStage()	= 0;
 		virtual FPipelineStageFlag GetLastPipelineStage()	= 0;
