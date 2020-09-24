@@ -22,15 +22,6 @@ namespace LambdaEngine
 	class Buffer;
 	class Window;
 
-	/*
-	* ImGuiRendererDesc
-	*/
-	struct PhysicsRendererDesc
-	{
-		uint32 BackBufferCount = 0;
-		uint32 VerticiesBufferSize = 0;
-	};
-
 	struct VertexData
 	{
 		glm::vec4 Position;
@@ -43,7 +34,7 @@ namespace LambdaEngine
 		PhysicsRenderer();
 		virtual ~PhysicsRenderer();
 
-		bool init(GraphicsDevice* pGraphicsDevice, const PhysicsRendererDesc* pDesc);
+		bool init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
 
 		// Custom Renderer implementations
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
@@ -53,13 +44,9 @@ namespace LambdaEngine
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 		virtual void Render(
-			CommandAllocator* pGraphicsCommandAllocator,
-			CommandList* pGraphicsCommandList,
-			CommandAllocator* pComputeCommandAllocator,
-			CommandList* pComputeCommandList,
 			uint32 modFrameIndex,
 			uint32 backBufferIndex,
-			CommandList** ppPrimaryExecutionStage,
+			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondaryExecutionStage)	override final;
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
@@ -109,11 +96,10 @@ namespace LambdaEngine
 	private:
 		bool CreateCopyCommandList();
 		bool CreateBuffers(uint32 verticiesBufferSize);
-		//bool CreateTextures();
-		//bool CreateSamplers();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
+		bool CreateCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 
@@ -125,11 +111,15 @@ namespace LambdaEngine
 		THashTable<uint32, TArray<VertexData>> m_LineGroups;
 		TArray<VertexData> m_Verticies;
 
+		uint32 m_BackBufferCount = 0;
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
 		TSharedRef<const TextureView>			m_DepthStencilBuffer;
 
 		TSharedRef<CommandAllocator>	m_CopyCommandAllocator	= nullptr;
 		TSharedRef<CommandList>			m_CopyCommandList		= nullptr;
+
+		CommandAllocator**	m_ppRenderCommandAllocators	= nullptr;
+		CommandList**		m_ppRenderCommandLists		= nullptr;
 
 		uint64						m_PipelineStateID	= 0;
 		TSharedRef<PipelineLayout>	m_PipelineLayout	= nullptr;

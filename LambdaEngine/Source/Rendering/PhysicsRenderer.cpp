@@ -42,15 +42,27 @@ namespace LambdaEngine
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
 
+		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		{
+			SAFERELEASE(m_ppRenderCommandLists[b]);
+			SAFERELEASE(m_ppRenderCommandAllocators[b]);
+		}
+
+		SAFEDELETE_ARRAY(m_ppRenderCommandLists);
+		SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+
 		m_Verticies.Clear();
+		for (auto& lineGroup : m_LineGroups)
+		{
+			lineGroup.second.Clear();
+		}
+		m_LineGroups.clear();
 	}
 
-	bool PhysicsRenderer::init(GraphicsDevice* pGraphicsDevice, const PhysicsRendererDesc* pDesc)
+	bool PhysicsRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
 	{
-		VALIDATE(pDesc);
-
-		uint32 backBufferCount = pDesc->BackBufferCount;
 		m_BackBuffers.Resize(backBufferCount);
+		m_BackBufferCount = backBufferCount;
 
 		m_pGraphicsDevice = pGraphicsDevice;
 
@@ -76,7 +88,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateBuffers(pDesc->VerticiesBufferSize))
+		if (!CreateBuffers(verticiesBufferSize))
 		{
 			LOG_ERROR("[PhysicsRenderer]: Failed to create buffers");
 			return false;
@@ -101,7 +113,7 @@ namespace LambdaEngine
 		}
 
 		uint64 offset 	= 0;
-		uint64 size 	= pDesc->VerticiesBufferSize;
+		uint64 size 	= verticiesBufferSize;
 		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		// TEMP TEST
@@ -232,6 +244,14 @@ namespace LambdaEngine
 
 		VALIDATE(pPreInitDesc->ColorAttachmentCount == 1);
 
+		m_BackBufferCount = pPreInitDesc->BackBufferCount;
+
+		if (!CreateCommandLists())
+		{
+			LOG_ERROR("[Physics Renderer]: Failed to create render command lists");
+			return false;
+		}
+
 		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0], &pPreInitDesc->pDepthStencilAttachmentDesc[0]))
 		{
 			LOG_ERROR("[Physics Renderer]: Failed to create RenderPass");
@@ -355,17 +375,12 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
-	void PhysicsRenderer::Render(CommandAllocator* pGraphicsCommandAllocator,
-		CommandList* pGraphicsCommandList,
-		CommandAllocator* pComputeCommandAllocator,
-		CommandList* pComputeCommandList,
+	void PhysicsRenderer::Render(
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
-		CommandList** ppPrimaryExecutionStage,
+		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage)
 	{
-		UNREFERENCED_VARIABLE(pComputeCommandAllocator);
-		UNREFERENCED_VARIABLE(pComputeCommandList);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
 		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];
@@ -385,22 +400,24 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.x			= 0;
 		beginRenderPassDesc.Offset.y			= 0;
 
-		if (m_LineGroups.size() == 0)
+		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
+
+		if (m_LineGroups.size() == 0 && m_Verticies.GetSize() == 0)
 		{
-			pGraphicsCommandAllocator->Reset();
-			pGraphicsCommandList->Begin(nullptr);
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
 			//Begin and End RenderPass to transition Texture State (Lazy)
-			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
-			pGraphicsCommandList->EndRenderPass();
+			pCommandList->BeginRenderPass(&beginRenderPassDesc);
+			pCommandList->EndRenderPass();
 
-			pGraphicsCommandList->End();
+			pCommandList->End();
 
-			(*ppPrimaryExecutionStage) = pGraphicsCommandList;
+			(*ppFirstExecutionStage) = pCommandList;
 			return;
 		}
 
-		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Begin(nullptr);
+		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
 
 		// Transfer data to copy buffers then the GPU buffers
 		uint32 drawCount = 0;
@@ -426,10 +443,10 @@ namespace LambdaEngine
 			}
 
 			uniformCopyBuffer->Unmap();
-			pGraphicsCommandList->CopyBuffer(uniformCopyBuffer.Get(), 0, m_UniformBuffer.Get(), 0, totalBufferSize);
+			pCommandList->CopyBuffer(uniformCopyBuffer.Get(), 0, m_UniformBuffer.Get(), 0, totalBufferSize);
 		}
 
-		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
+		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		Viewport viewport = {};
 		viewport.MinDepth	= 0.0f;
@@ -438,29 +455,29 @@ namespace LambdaEngine
 		viewport.Height		= (float32)height;
 		viewport.x			= 0.0f;
 		viewport.y			= 0.0f;
-		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
+		pCommandList->SetViewports(&viewport, 0, 1);
 
 		ScissorRect scissorRect = {};
 		scissorRect.Width 	= width;
 		scissorRect.Height 	= height;
-		pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
+		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		pGraphicsCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
+		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
 		if(m_BufferResourceNameDescriptorSetsMap.contains(PER_FRAME_BUFFER))
 		{
 			auto& descriptorSets = m_BufferResourceNameDescriptorSetsMap[PER_FRAME_BUFFER];
-			pGraphicsCommandList->BindDescriptorSetGraphics(descriptorSets[0].Get(), m_PipelineLayout.Get(), 0);
+			pCommandList->BindDescriptorSetGraphics(descriptorSets[0].Get(), m_PipelineLayout.Get(), 0);
 		}
 
-		pGraphicsCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 1);
 
-		pGraphicsCommandList->DrawInstanced(drawCount, drawCount, 0, 0);
+		pCommandList->DrawInstanced(drawCount, drawCount, 0, 0);
 
-		pGraphicsCommandList->EndRenderPass();
-		pGraphicsCommandList->End();
+		pCommandList->EndRenderPass();
+		pCommandList->End();
 
-		(*ppPrimaryExecutionStage) = pGraphicsCommandList;
+		(*ppFirstExecutionStage) = pCommandList;
 
 		// TODO: When bullet calls the drawLines, a clear on the verticies might be needed
 		//m_Verticies.Clear();
@@ -592,6 +609,36 @@ namespace LambdaEngine
 		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("PhysicsDebugVertex.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("PhysicsDebugPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
+	}
+
+	bool PhysicsRenderer::CreateCommandLists()
+	{
+		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
+		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
+
+		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		{
+			m_ppRenderCommandAllocators[b] = m_pGraphicsDevice->CreateCommandAllocator("Physics Renderer Render Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
+			if (!m_ppRenderCommandAllocators[b])
+			{
+				return false;
+			}
+
+			CommandListDesc commandListDesc = {};
+			commandListDesc.DebugName			= "Physics Renderer Render Command List " + std::to_string(b);
+			commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+			commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+			m_ppRenderCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppRenderCommandAllocators[b], &commandListDesc);
+
+			if (!m_ppRenderCommandLists[b])
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	bool PhysicsRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc)
