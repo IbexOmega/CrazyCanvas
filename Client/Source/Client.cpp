@@ -131,11 +131,11 @@ void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 		Job addEntityJob;
 		addEntityJob.Components =
 		{
-			{ RW, PositionComponent::s_TID } ,
-			{ RW, RotationComponent::s_TID } ,
-			{ RW, ScaleComponent::s_TID } ,
-			{ RW, MeshComponent::s_TID } ,
-			{ RW, NetworkComponent::s_TID }
+			{ RW, PositionComponent::Type() } ,
+			{ RW, RotationComponent::Type() } ,
+			{ RW, ScaleComponent::Type() } ,
+			{ RW, MeshComponent::Type() } ,
+			{ RW, NetworkComponent::Type() }
 		};
 		addEntityJob.Function = [isMyEntity, pos, color, reliableUID, this]
 		{

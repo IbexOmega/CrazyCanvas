@@ -47,21 +47,21 @@ namespace LambdaEngine
 
         for (uint32 subscriptionNr = 0; subscriptionNr < subs.GetSize(); subscriptionNr += 1)
         {
-            const TArray<std::type_index>& componentTypes = subs[subscriptionNr].ComponentTypes;
+            const TArray<const ComponentType*>& componentTypes = subs[subscriptionNr].ComponentTypes;
 
-            for (const std::type_index& componentType : componentTypes)
-                m_ComponentSubscriptions.insert({componentType, {subID, subscriptionNr}});
+            for (const ComponentType* pComponentType : componentTypes)
+                m_ComponentSubscriptions.insert({ pComponentType, {subID, subscriptionNr}});
         }
 
         // A subscription has been made, notify the system of all existing components it subscribed to
         for (EntitySubscription& subscription : subscriptions)
         {
-            std::type_index firstComponentType = subscription.ComponentTypes.GetFront();
-            if (!m_pComponentStorage->HasType(firstComponentType))
+            const ComponentType* pFirstComponentType = subscription.ComponentTypes.GetFront();
+            if (!m_pComponentStorage->HasType(pFirstComponentType))
                 continue;
 
             // Fetch the component vector of the first subscribed component type
-            const IComponentArray* pComponentArray = m_pComponentStorage->GetComponentArray(firstComponentType);
+            const IComponentArray* pComponentArray = m_pComponentStorage->GetComponentArray(pFirstComponentType);
             const TArray<Entity>& entities = pComponentArray->GetIDs();
 
             // See which entities in the entity vector also have all the other component types. Register those entities in the system.
@@ -96,11 +96,11 @@ namespace LambdaEngine
 
         for (const EntitySubscription& subscription : subscriptions)
         {
-            const TArray<std::type_index>& componentTypes = subscription.ComponentTypes;
+            const TArray<const ComponentType*>& componentTypes = subscription.ComponentTypes;
 
-            for (std::type_index componentType : componentTypes)
+            for (const ComponentType* pComponentType : componentTypes)
             {
-                auto subBucketItr = m_ComponentSubscriptions.find(componentType);
+                auto subBucketItr = m_ComponentSubscriptions.find(pComponentType);
 
                 if (subBucketItr == m_ComponentSubscriptions.end())
                 {
@@ -110,7 +110,7 @@ namespace LambdaEngine
                 }
 
                 // Find the subscription and delete it
-                while (subBucketItr != m_ComponentSubscriptions.end() && subBucketItr->first == componentType)
+                while (subBucketItr != m_ComponentSubscriptions.end() && subBucketItr->first == pComponentType)
                 {
                     if (subBucketItr->second.SystemID == subscriptionID)
                     {
@@ -130,19 +130,22 @@ namespace LambdaEngine
         m_SystemIDGenerator.PopID(subscriptionID);
     }
 
-    void EntityPublisher::PublishComponent(Entity entityID, std::type_index componentType)
+    void EntityPublisher::PublishComponent(Entity entityID, const ComponentType* pComponentType)
     {
         // Get all subscriptions for the component type by iterating through the unordered_map bucket
-        auto subBucketItr = m_ComponentSubscriptions.find(componentType);
+        auto subBucketItr = m_ComponentSubscriptions.find(pComponentType);
 
-        while (subBucketItr != m_ComponentSubscriptions.end() && subBucketItr->first == componentType) {
+        while (subBucketItr != m_ComponentSubscriptions.end() && subBucketItr->first == pComponentType)
+        {
             // Use indices stored in the component type -> component storage mapping to get the component subscription
             EntitySubscription& sysSub = m_SubscriptionStorage.IndexID(subBucketItr->second.SystemID)[subBucketItr->second.SubIdx];
 
-            if (m_pEntityRegistry->EntityHasTypes(entityID, sysSub.ComponentTypes)) {
+            if (m_pEntityRegistry->EntityHasTypes(entityID, sysSub.ComponentTypes))
+            {
                 sysSub.pSubscriber->PushBack(entityID);
 
-                if (sysSub.OnEntityAdded) {
+                if (sysSub.OnEntityAdded)
+                {
                     sysSub.OnEntityAdded(entityID);
                 }
             }
@@ -151,12 +154,12 @@ namespace LambdaEngine
         }
     }
 
-    void EntityPublisher::UnpublishComponent(Entity entityID, std::type_index componentType)
+    void EntityPublisher::UnpublishComponent(Entity entityID, const ComponentType* pComponentType)
     {
         // Get all subscriptions for the component type by iterating through the unordered_map bucket
-        auto subBucketItr = m_ComponentSubscriptions.find(componentType);
+        auto subBucketItr = m_ComponentSubscriptions.find(pComponentType);
 
-        while (subBucketItr != m_ComponentSubscriptions.end() && subBucketItr->first == componentType)
+        while (subBucketItr != m_ComponentSubscriptions.end() && subBucketItr->first == pComponentType)
         {
             // Use indices stored in the component type -> component storage mapping to get the component subscription
             EntitySubscription& sysSub = m_SubscriptionStorage.IndexID(subBucketItr->second.SystemID)[subBucketItr->second.SubIdx];
@@ -176,12 +179,12 @@ namespace LambdaEngine
         }
     }
 
-    void EntityPublisher::EliminateDuplicateTIDs(TArray<std::type_index>& TIDs)
+    void EntityPublisher::EliminateDuplicateTIDs(TArray<const ComponentType*>& TIDs)
     {
-        std::unordered_set<std::type_index> set;
-        for (const std::type_index element : TIDs)
+        std::unordered_set<const ComponentType*> set;
+        for (const ComponentType* pElement : TIDs)
         {
-            set.insert(element);
+            set.insert(pElement);
         }
 
         TIDs.Assign(set.begin(), set.end());
