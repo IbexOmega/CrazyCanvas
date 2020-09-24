@@ -99,7 +99,6 @@ void main()
 	mat4 transform	= instance.Transform;
 	
 	// Per vertex
-	//vec4 color = vec4(meshletcolors[meshletID % MAX_COLORS], 1.0f);
 	for (uint vert = threadID; vert < meshlet.VertCount; vert += NUM_THREADS)
 	{
 		uint vertexIndex = b_UniqueIndices.Val[vert + meshlet.VertOffset];
@@ -127,7 +126,7 @@ void main()
 	}
 
 	// Per Index
-	const uint MASK = 0xff;
+	const uint MASK			= 0xff;
 	const uint primCount	= meshlet.PrimCount;	//((meshlet.PrimCount * 3) + 3) / 4;
 	const uint primOffset	= meshlet.PrimOffset;	//((meshlet.PrimOffset * 3) + 3) / 4;
 	for (uint primitive = threadID; primitive < meshlet.PrimCount; primitive += NUM_THREADS)
