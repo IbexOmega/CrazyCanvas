@@ -35,8 +35,10 @@ namespace LambdaEngine
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
 		virtual const NetworkStatistics* GetStatistics() const override;
+		virtual IClientRemoteHandler* GetHandler() override;
 		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
 		bool SendUnreliableBroadcast(NetworkSegment* pPacket);
+		const ClientMap& GetClients() const;
 
 	protected:		
 		ClientRemoteBase(const ClientRemoteDesc& desc);

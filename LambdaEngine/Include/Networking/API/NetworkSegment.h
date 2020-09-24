@@ -45,8 +45,8 @@ namespace LambdaEngine
 		NetworkSegment* SetType(uint16 type);
 		uint16 GetType() const;
 
-		char* GetBuffer();
-		const char* GetBufferReadOnly() const;
+		uint8* GetBuffer();
+		const uint8* GetBufferReadOnly() const;
 		uint16 GetBufferSize() const;
 
 		Header& GetHeader();
@@ -81,7 +81,7 @@ namespace LambdaEngine
 		uint64 m_Salt;
 		uint16 m_SizeOfBuffer;
 		bool m_IsBorrowed;
-		char m_pBuffer[MAXIMUM_SEGMENT_SIZE];
+		uint8 m_pBuffer[MAXIMUM_SEGMENT_SIZE];
 	};
 
 	struct NetworkSegmentReliableUIDOrder

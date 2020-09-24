@@ -3,6 +3,8 @@
 #include "LambdaEngine.h"
 #include "Containers/String.h"
 
+#include "Math/Math.h"
+
 namespace LambdaEngine
 {
 	class NetworkSegment;
@@ -25,7 +27,11 @@ namespace LambdaEngine
 		void WriteFloat64(float64 value);
 		void WriteBool(bool value);
 		void WriteString(const std::string& value);
-		void WriteBuffer(const char* buffer, uint16 size);
+		void WriteBuffer(const uint8* buffer, uint16 size);
+
+		void WriteVec2(const glm::vec2& value);
+		void WriteVec3(const glm::vec3& value);
+		void WriteVec4(const glm::vec4& value);
 
 	private:
 		NetworkSegment* m_pNetworkPacket;

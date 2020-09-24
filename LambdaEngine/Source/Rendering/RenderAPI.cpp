@@ -35,7 +35,7 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceDesc deviceDesc = { };
 #ifdef LAMBDA_DEVELOPMENT
-		deviceDesc.Debug = true;
+		deviceDesc.Debug = false;
 #else
 		deviceDesc.Debug = false;
 #endif

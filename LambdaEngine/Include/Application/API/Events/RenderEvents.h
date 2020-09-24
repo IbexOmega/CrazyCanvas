@@ -17,7 +17,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(PreSwapChainRecreatedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("PreSwapChainRecreatedEvent");
 		}
@@ -37,7 +37,7 @@ namespace LambdaEngine
 
 		DECLARE_EVENT_TYPE(PostSwapChainRecreatedEvent);
 
-		virtual String ToString() const
+		virtual String ToString() const override
 		{
 			return String("PostSwapChainRecreatedEvent");
 		}
