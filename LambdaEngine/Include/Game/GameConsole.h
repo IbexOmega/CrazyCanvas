@@ -31,6 +31,10 @@ namespace LambdaEngine
 
 		void BindCommand(ConsoleCommand cmd, std::function<void(CallbackInput&)> callback);
 
+		void PushError(const std::string& msg);
+		void PushInfo(const std::string& msg);
+		void PushMsg(const std::string& line, glm::vec4 color);
+
 		static GameConsole& Get();
 
 	private:
@@ -50,10 +54,6 @@ namespace LambdaEngine
 		static void FillArg(Arg& arg, std::string token);
 
 		bool AddArg(uint32 index, Arg arg, ConsoleCommand& cmd);
-
-		void PushError(const std::string& msg);
-		void PushInfo(const std::string& msg);
-		void PushMsg(const std::string& line, glm::vec4 color);
 
 		bool OnKeyPressed(const KeyPressedEvent& event);
 

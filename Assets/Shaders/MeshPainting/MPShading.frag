@@ -34,7 +34,7 @@ void main()
     vec3 albedo             = texture(u_GBufferAlbedo, in_TexCoord).rgb;
     vec4 aoRoughMetalValid  = texture(u_GBufferAORoughMetalValid, in_TexCoord);
 
-    vec3 paintMask          = texture(u_MaskTexture, in_TexCoord).r;
+    float paintMask         = texture(u_MaskTexture, in_TexCoord).r;
 
 	if(paintMask > 0.5f)
 		 out_Color = vec4(1.f, 1.f, 1.f, 1.f);

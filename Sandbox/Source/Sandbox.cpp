@@ -11,7 +11,6 @@
 #include "Resources/ResourceManager.h"
 
 #include "Rendering/RenderAPI.h"
-#include "Rendering/ImGuiRenderer.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraphEditor.h"
 #include "Rendering/RenderGraphSerializer.h"
@@ -121,17 +120,26 @@ Sandbox::Sandbox()
 	ConsoleCommand showTextureCMD;
 	showTextureCMD.Init("debug_texture", true);
 	showTextureCMD.AddArg(Arg::EType::BOOL);
-	showTextureCMD.AddFlag("t", Arg::EType::STRING);
+	showTextureCMD.AddFlag("t", Arg::EType::STRING, 6);
 	showTextureCMD.AddFlag("ps", Arg::EType::STRING);
-	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph");
+	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph.\n\t'Example: debug_texture 1 -t TEXTURE_NAME1 TEXTURE_NAME2 ...'", { {"t", "The textures you want to display. (separated by spaces)"}, {"ps", "Which pixel shader you want to use."} });
 	GameConsole::Get().BindCommand(showTextureCMD, [&, this](GameConsole::CallbackInput& input)->void
 		{
 			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.Boolean;
 
 			auto textureNameIt				= input.Flags.find("t");
 			auto shaderNameIt				= input.Flags.find("ps");
-			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.String : "";
-			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.String) : GUID_NONE;
+
+			GUID_Lambda textureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.String) : GUID_NONE;
+			if (textureNameIt != input.Flags.end())
+			{
+				m_TextureDebuggingNames.Resize(textureNameIt->second.NumUsedArgs);
+				for (uint32 i = 0; i < textureNameIt->second.NumUsedArgs; i++)
+				{
+					m_TextureDebuggingNames[i].ResourceName = textureNameIt->second.Args[i].Value.String;
+					m_TextureDebuggingNames[i].PixelShaderGUID = textureDebuggingShaderGUID;
+				}
+			}
 		});
 
 	return;
@@ -212,13 +220,12 @@ void Sandbox::Render(LambdaEngine::Timestamp delta)
 			{
 				if (ImGui::Begin("Texture Debugging"))
 				{
-					if (!m_TextureDebuggingName.empty())
+					if (!m_TextureDebuggingNames.IsEmpty())
 					{
-						static ImGuiTexture texture = {};
-						texture.ResourceName		= m_TextureDebuggingName;
-						texture.PixelShaderGUID		= m_TextureDebuggingShaderGUID;
-
-						ImGui::Image(&texture, ImGui::GetWindowSize());
+						for (ImGuiTexture& imGuiTexture : m_TextureDebuggingNames)
+						{
+							ImGui::Image(&imGuiTexture, ImGui::GetWindowSize());
+						}
 					}
 				}
 

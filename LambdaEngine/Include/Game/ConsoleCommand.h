@@ -14,11 +14,15 @@ namespace LambdaEngine
 			int32 Int32;
 			char String[64];
 		} Value;
+
+		bool IsArray = false;
 	};
 
 	struct LAMBDA_API Flag
 	{
-		Arg Arg;
+		uint32 NumUsedArgs = 0;
+		TArray<Arg> Args;
+		Arg Arg; // For bakcwards compatability, this is unchanged.
 		std::string Name;
 	};
 
@@ -37,7 +41,9 @@ namespace LambdaEngine
 
 		void Init(std::string name, bool isDebug);
 		void AddArg(Arg::EType type);
+		void AddArray(Arg::EType type, uint32 count);
 		void AddFlag(const std::string& name, Arg::EType type);
+		void AddFlag(const std::string& name, Arg::EType type, uint32 count);
 
 		void AddDescription(const std::string& mainDescription);
 		void AddDescription(const std::string& mainDescription, std::unordered_map<std::string, std::string> flagDescriptions);

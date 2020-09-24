@@ -252,10 +252,10 @@
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_2D",
-                "x_dim_type": "RELATIVE",
-                "y_dim_type": "RELATIVE",
-                "x_dim_var": 1.0,
-                "y_dim_var": 1.0,
+                "x_dim_type": "CONSTANT",
+                "y_dim_type": "CONSTANT",
+                "x_dim_var": 1024.0,
+                "y_dim_var": 1024.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "LINEAR",
@@ -291,7 +291,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "CONSTANT",
@@ -482,13 +482,6 @@
                     "draw_args_mask": 4294967295,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "UNWRAPPED_TEXTURE",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_POSITION",

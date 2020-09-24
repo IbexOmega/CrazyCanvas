@@ -5,7 +5,6 @@
 
 #include "../../Defines.glsl"
 
-
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
 
 layout(binding = 0, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
@@ -19,8 +18,8 @@ void main()
     SInstance instance                          = b_Instances.val[gl_InstanceIndex];
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
-    vec4 worldPosition      = vec4(vertex.Position.xyz, 1.0f);
-    out_WorldPosition       = worldPosition.xyz;
+    vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
+    out_WorldPosition  = worldPosition.xyz;
 
     const float CAPTURE_SIZE = 1.0f;
     const vec3 UNWRAP_LOCATION = vec3(0.f, 0.f, 0.f);
