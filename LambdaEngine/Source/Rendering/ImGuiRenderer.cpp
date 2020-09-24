@@ -53,6 +53,15 @@ namespace LambdaEngine
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
 
+		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		{
+			SAFERELEASE(m_ppRenderCommandLists[b]);
+			SAFERELEASE(m_ppRenderCommandAllocators[b]);
+		}
+
+		SAFEDELETE_ARRAY(m_ppRenderCommandLists);
+		SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+
 		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
 		EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
 		EventQueue::UnregisterEventHandler<MouseScrolledEvent>(eventHandler);
@@ -81,7 +90,7 @@ namespace LambdaEngine
 
 		if (!CreateCopyCommandList())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create copy command list");
+			LOG_ERROR("[ImGuiRenderer]: Failed to create copy Command List");
 			return false;
 		}
 
@@ -147,6 +156,14 @@ namespace LambdaEngine
 		VALIDATE(pPreInitDesc);
 
 		VALIDATE(pPreInitDesc->ColorAttachmentCount == 1);
+
+		m_BackBufferCount = pPreInitDesc->BackBufferCount;
+
+		if (!CreateCommandLists())
+		{
+			LOG_ERROR("[ImGuiRenderer]: Failed to create render command lists");
+			return false;
+		}
 
 		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0]))
 		{
@@ -279,17 +296,11 @@ namespace LambdaEngine
 	}
 
 	void ImGuiRenderer::Render(
-		CommandAllocator* pGraphicsCommandAllocator,
-		CommandList* pGraphicsCommandList,
-		CommandAllocator* pComputeCommandAllocator,
-		CommandList* pComputeCommandList,
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
-		CommandList** ppPrimaryExecutionStage,
+		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage)
 	{
-		UNREFERENCED_VARIABLE(pComputeCommandAllocator);
-		UNREFERENCED_VARIABLE(pComputeCommandList);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
 		// Update imgui for this frame
@@ -337,29 +348,30 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.x			= 0;
 		beginRenderPassDesc.Offset.y			= 0;
 
+		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
+
 		// Render to screen
 		if (pDrawData == nullptr || pDrawData->CmdListsCount == 0)
 		{
-			pGraphicsCommandAllocator->Reset();
-			pGraphicsCommandList->Begin(nullptr);
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
 			//Begin and End RenderPass to transition Texture State (Lazy)
-			pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
-			pGraphicsCommandList->EndRenderPass();
+			pCommandList->BeginRenderPass(&beginRenderPassDesc);
+			pCommandList->EndRenderPass();
 
-			pGraphicsCommandList->End();
+			pCommandList->End();
 
-			(*ppPrimaryExecutionStage) = pGraphicsCommandList;
+			(*ppFirstExecutionStage) = pCommandList;
 			return;
 		}
 
-		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->GetTimestamp(pCommandList);
 
-		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Begin(nullptr);
+		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
 
-		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
-
+		Profiler::GetGPUProfiler()->ResetTimestamp(pCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pCommandList);
 
 		{
 			TSharedRef<Buffer> vertexCopyBuffer	= m_VertexCopyBuffers[modFrameIndex];
@@ -383,11 +395,11 @@ namespace LambdaEngine
 
 			vertexCopyBuffer->Unmap();
 			indexCopyBuffer->Unmap();
-			pGraphicsCommandList->CopyBuffer(vertexCopyBuffer.Get(), 0, m_VertexBuffer.Get(), 0, vertexBufferSize);
-			pGraphicsCommandList->CopyBuffer(indexCopyBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indexBufferSize);
+			pCommandList->CopyBuffer(vertexCopyBuffer.Get(), 0, m_VertexBuffer.Get(), 0, vertexBufferSize);
+			pCommandList->CopyBuffer(indexCopyBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indexBufferSize);
 		}
 
-		pGraphicsCommandList->BeginRenderPass(&beginRenderPassDesc);
+		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 	
 		Viewport viewport = {};
 		viewport.MinDepth	= 0.0f;
@@ -397,11 +409,11 @@ namespace LambdaEngine
 		viewport.x			= 0.0f;
 		viewport.y			= 0.0f;
 
-		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
+		pCommandList->SetViewports(&viewport, 0, 1);
 
 		uint64 offset = 0;
-		pGraphicsCommandList->BindVertexBuffers(&m_VertexBuffer, 0, &offset, 1);
-		pGraphicsCommandList->BindIndexBuffer(m_IndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT16);
+		pCommandList->BindVertexBuffers(&m_VertexBuffer, 0, &offset, 1);
+		pCommandList->BindIndexBuffer(m_IndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT16);
 
 		// Setup scale and translation:
 		// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -413,8 +425,8 @@ namespace LambdaEngine
 			pTranslate[0] = -1.0f - pDrawData->DisplayPos.x * pScale[0];
 			pTranslate[1] = -1.0f - pDrawData->DisplayPos.y * pScale[1];
 
-			pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, pScale,		2 * sizeof(float32), 0 * sizeof(float32));
-			pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, pTranslate,	2 * sizeof(float32), 2 * sizeof(float32));
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, pScale,		2 * sizeof(float32), 0 * sizeof(float32));
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, pTranslate,	2 * sizeof(float32), 2 * sizeof(float32));
 		}
 
 		// Will project scissor/clipping rectangles into framebuffer space
@@ -454,7 +466,7 @@ namespace LambdaEngine
 					scissorRect.Width			= uint32(clipRect.z - clipRect.x);
 					scissorRect.Height			= uint32(clipRect.w - clipRect.y);
 
-					pGraphicsCommandList->SetScissorRects(&scissorRect, 0, 1);
+					pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 					if (pCmd->TextureId)
 					{
@@ -475,7 +487,7 @@ namespace LambdaEngine
 							if (pixelShaderIt != vertexShaderIt->second.end())
 							{
 								PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pixelShaderIt->second);
-								pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
+								pCommandList->BindGraphicsPipeline(pPipelineState);
 							}
 							else
 							{
@@ -484,7 +496,7 @@ namespace LambdaEngine
 								vertexShaderIt->second.insert({ pixelShaderGUID, pipelineGUID });
 
 								PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
-								pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
+								pCommandList->BindGraphicsPipeline(pPipelineState);
 							}
 						}
 						else
@@ -496,22 +508,22 @@ namespace LambdaEngine
 							m_ShadersIDToPipelineStateIDMap.insert({ vertexShaderGUID, pixelShaderToPipelineStateMap });
 
 							PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(pipelineGUID);
-							pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
+							pCommandList->BindGraphicsPipeline(pPipelineState);
 						}
 
-						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelMul,			4 * sizeof(float32),	4 * sizeof(float32));
-						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,			4 * sizeof(float32),	8 * sizeof(float32));
-						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,	sizeof(uint32),		12 * sizeof(float32));
+						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelMul,			4 * sizeof(float32),	4 * sizeof(float32));
+						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, pImGuiTexture->ChannelAdd,			4 * sizeof(float32),	8 * sizeof(float32));
+						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &pImGuiTexture->ReservedIncludeMask,	sizeof(uint32),		12 * sizeof(float32));
 
 						const TArray<TSharedRef<DescriptorSet>>& descriptorSets = textureIt->second;
 						//Todo: Allow other sizes than 1
 						if (descriptorSets.GetSize() == 1)
 						{
-							pGraphicsCommandList->BindDescriptorSetGraphics(descriptorSets[0].Get(), m_PipelineLayout.Get(), 0);
+							pCommandList->BindDescriptorSetGraphics(descriptorSets[0].Get(), m_PipelineLayout.Get(), 0);
 						}
 						else
 						{
-							pGraphicsCommandList->BindDescriptorSetGraphics(descriptorSets[backBufferIndex].Get(), m_PipelineLayout.Get(), 0);
+							pCommandList->BindDescriptorSetGraphics(descriptorSets[backBufferIndex].Get(), m_PipelineLayout.Get(), 0);
 						}
 					}
 					else
@@ -521,17 +533,17 @@ namespace LambdaEngine
 						constexpr const uint32 DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK	= 0x00008421;  //0000 0000 0000 0000 1000 0100 0010 0001
 
 						PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_PipelineStateID);
-						pGraphicsCommandList->BindGraphicsPipeline(pPipelineState);
+						pCommandList->BindGraphicsPipeline(pPipelineState);
 
-						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_MUL,						4 * sizeof(float32),	4 * sizeof(float32));
-						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_ADD,						4 * sizeof(float32),	8 * sizeof(float32));
-						pGraphicsCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK,		sizeof(uint32),		12 * sizeof(float32));
+						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_MUL,						4 * sizeof(float32),	4 * sizeof(float32));
+						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, DEFAULT_CHANNEL_ADD,						4 * sizeof(float32),	8 * sizeof(float32));
+						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &DEFAULT_CHANNEL_RESERVED_INCLUDE_MASK,		sizeof(uint32),		12 * sizeof(float32));
 
-						pGraphicsCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
+						pCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 					}
 
 					// Draw
-					pGraphicsCommandList->DrawIndexInstanced(pCmd->ElemCount, 1, pCmd->IdxOffset + globalIndexOffset, pCmd->VtxOffset + globalVertexOffset, 0);
+					pCommandList->DrawIndexInstanced(pCmd->ElemCount, 1, pCmd->IdxOffset + globalIndexOffset, pCmd->VtxOffset + globalVertexOffset, 0);
 				}
 			}
 
@@ -539,12 +551,12 @@ namespace LambdaEngine
 			globalVertexOffset	+= pCmdList->VtxBuffer.Size;
 		}
 
-		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->EndTimestamp(pCommandList);
 
-		pGraphicsCommandList->EndRenderPass();
-		pGraphicsCommandList->End();
+		pCommandList->EndRenderPass();
+		pCommandList->End();
 
-		(*ppPrimaryExecutionStage) = pGraphicsCommandList;
+		(*ppFirstExecutionStage) = pCommandList;
 	}
 
 	bool ImGuiRenderer::OnEvent(const Event& event)
@@ -689,19 +701,25 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreateCopyCommandList()
 	{
 		m_CopyCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("ImGui Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
 		if (!m_CopyCommandAllocator)
 		{
 			return false;
 		}
 
 		CommandListDesc commandListDesc = {};
-		commandListDesc.DebugName			= "ImGui Copy Command List";
-		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-		commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		commandListDesc.DebugName		= "ImGui Copy Command List";
+		commandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		m_CopyCommandList = m_pGraphicsDevice->CreateCommandList(m_CopyCommandAllocator.Get(), &commandListDesc);
 
-		return m_CopyCommandList != nullptr;
+		if (!m_CopyCommandList)
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool ImGuiRenderer::CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize)
@@ -967,6 +985,46 @@ namespace LambdaEngine
 		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("ImGuiVertex.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
+	}
+	
+	bool ImGuiRenderer::CreateCommandLists()
+	{
+		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
+		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
+
+		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		{
+			m_ppRenderCommandAllocators[b] = m_pGraphicsDevice->CreateCommandAllocator("ImGui Render Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
+			if (!m_ppRenderCommandAllocators[b])
+			{
+				return false;
+			}
+
+			CommandListDesc commandListDesc = {};
+			commandListDesc.DebugName			= "ImGui Render Command List " + std::to_string(b);
+			commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+			commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+			m_ppRenderCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppRenderCommandAllocators[b], &commandListDesc);
+
+			if (!m_ppRenderCommandLists[b])
+			{
+				return false;
+			}
+
+			CommandList* pCommandList = m_ppRenderCommandLists[b];
+
+			Profiler::GetGPUProfiler()->AddTimestamp(pCommandList, "ImGui Render Command List");
+
+			pCommandList->Begin(nullptr);
+			Profiler::GetGPUProfiler()->ResetTimestamp(pCommandList);
+			pCommandList->End();
+			RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
+			RenderAPI::GetGraphicsQueue()->Flush();
+		}
+
+		return true;
 	}
 
 	bool ImGuiRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)

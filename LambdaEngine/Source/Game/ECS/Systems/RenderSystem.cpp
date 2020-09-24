@@ -49,10 +49,10 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::s_TID}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, DirectionalLightComponent::s_TID}, {R, RotationComponent::s_TID}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, PointLightComponent::s_TID}, {R, PositionComponent::s_TID}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
-				{{{RW, ViewProjectionMatricesComponent::s_TID}, {R, CameraComponent::s_TID}}, {&transformComponents}, &m_CameraEntities},
+				{{{RW, MeshComponent::Type()}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
+				{{{RW, ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
 
@@ -542,7 +542,7 @@ namespace LambdaEngine
 					BufferDesc meshletBufferDesc = {};
 					meshletBufferDesc.DebugName		= "Meshlet Buffer";
 					meshletBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					meshletBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
+					meshletBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 					meshletBufferDesc.SizeInBytes	= meshletStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
@@ -569,7 +569,7 @@ namespace LambdaEngine
 					BufferDesc uniqueIndicesBufferDesc = {};
 					uniqueIndicesBufferDesc.DebugName	= "Unique Indices Buffer";
 					uniqueIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
 					uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
@@ -596,7 +596,7 @@ namespace LambdaEngine
 					BufferDesc primitiveIndicesBufferDesc = {};
 					primitiveIndicesBufferDesc.DebugName	= "Primitive Indices Buffer";
 					primitiveIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
 					primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
