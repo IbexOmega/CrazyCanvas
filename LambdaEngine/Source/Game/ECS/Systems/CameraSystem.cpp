@@ -64,7 +64,7 @@ namespace LambdaEngine
 				camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
 
 				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
-					HandleInput(deltaTime, entity, posComp, rotComp, pFreeCameraComponents->GetData(entity));
+					HandleInput(deltaTime, posComp, rotComp, pFreeCameraComponents->GetData(entity));
 
 				viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
 				camComp.ViewInv = glm::inverse(viewProjComp.View);
@@ -87,7 +87,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void CameraSystem::HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
+	void CameraSystem::HandleInput(Timestamp deltaTime, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
 	{
 		float32 dt = float32(deltaTime.AsSeconds());
 

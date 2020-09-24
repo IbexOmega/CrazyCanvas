@@ -245,7 +245,7 @@ namespace LambdaEngine
 			string = string.substr(0, endPos);
 		}
 	}
-	
+
 	/*
 	* ResourceLoader
 	*/
@@ -941,12 +941,20 @@ namespace LambdaEngine
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
+
+		glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
+		halfExtent = glm::vec3(0.0f);
+
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
 			Vertex vertex;
 			vertex.Position.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
+
+			halfExtent.x = std::max(halfExtent.x, std::abs(vertex.Position.x));
+			halfExtent.y = std::max(halfExtent.y, std::abs(vertex.Position.y));
+			halfExtent.z = std::max(halfExtent.z, std::abs(vertex.Position.z));
 
 			if (pMeshAI->HasNormals())
 			{

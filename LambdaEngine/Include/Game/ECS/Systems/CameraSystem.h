@@ -27,7 +27,7 @@ namespace LambdaEngine
 	private:
 		CameraSystem() = default;
 
-		void HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp);
+		void HandleInput(Timestamp deltaTime, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp);
 
 	private:
 		IDVector	m_CameraEntities;

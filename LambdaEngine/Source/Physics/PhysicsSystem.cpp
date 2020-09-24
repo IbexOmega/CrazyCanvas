@@ -1,10 +1,11 @@
 #include "Physics/PhysicsSystem.h"
 
+#include "ECS/ECSCore.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Resources/ResourceManager.h"
 
 #define PX_RELEASE(x) if(x)	{ x->release(); x = nullptr; }
-
-#define GRAVITATIONAL_ACCELERATION 9.82f
 
 namespace LambdaEngine
 {
@@ -80,5 +81,11 @@ namespace LambdaEngine
 	{
 		m_pScene->simulate((float)deltaTime.AsSeconds());
 		m_pScene->fetchResults(true);
+	}
+
+	void PhysicsSystem::CreateCollisionComponent(const CollisionCreateInfo& collisionCreateInfo)
+	{
+		CollisionComponent collisionComponent = {};
+		ECSCore::GetInstance()->AddComponent<CollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
 	}
 }
