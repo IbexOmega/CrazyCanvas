@@ -35,4 +35,5 @@ private:
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[100];
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
+	LambdaEngine::Entity m_Entity;
 };

@@ -83,6 +83,35 @@ void SandboxState::Init()
 	//	}
 	//}
 
+	{
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("cube.obj");
+
+		MaterialProperties materialProperties;
+		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		materialProperties.Roughness = 0.5f;
+		materialProperties.Metallic = 0.5f;
+
+		MeshComponent sphereMeshComp = {};
+		sphereMeshComp.MeshGUID = sphereMeshGUID;
+		sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Default r: " + std::to_string(materialProperties.Roughness) + " m: " + std::to_string(materialProperties.Metallic),
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		glm::vec3 position(0.f, 0.f, 0.0f);
+		glm::vec3 scale(1/5.f);
+
+		m_Entity = pECS->CreateEntity();
+		m_Entities.PushBack(m_Entity);
+		pECS->AddComponent<PositionComponent>(m_Entity, { position, true });
+		pECS->AddComponent<ScaleComponent>(m_Entity, { scale, true });
+		pECS->AddComponent<RotationComponent>(m_Entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<MeshComponent>(m_Entity, sphereMeshComp);
+	}
 
 	//Scene
 	/*{
@@ -446,19 +475,14 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		return entity;
 	};
 
-	static bool down = false;
-	static bool first = true;
 	static uint32 s_Counter = 0;
-	static Entity s_Entity = 0;
 	static std::string s_Meshes[] = {"cube.obj", "quad.obj", "bunny.obj"};
-	if (event.Key == EKey::KEY_G && !down)
+	if (event.Key == EKey::KEY_G)
 	{
-		if (!first) { m_Entities.PopBack(); pECS->RemoveEntity(s_Entity); }
-		s_Entity = CreateEntity(s_Meshes[(s_Counter++) % 3]);
-		down = true;
-		first = false;
+		m_Entities.PopBack();
+		pECS->RemoveEntity(m_Entity);
+		m_Entity = CreateEntity(s_Meshes[(s_Counter++) % 3]);
 	}
-	else down = false;
 
 	return true;
 }

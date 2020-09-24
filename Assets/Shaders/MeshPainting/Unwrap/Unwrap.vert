@@ -19,16 +19,13 @@ void main()
     SInstance instance                          = b_Instances.val[gl_InstanceIndex];
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
-    vec4 worldPosition      = /*instance.Transform * */vec4(vertex.Position.xyz, 1.0f);
-    //vec4 prevWorldPosition  = instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
-
+    vec4 worldPosition      = vec4(vertex.Position.xyz, 1.0f);
     out_WorldPosition       = worldPosition.xyz;
 
     const float CAPTURE_SIZE = 1.0f;
-    const vec3 UNWRAP_LOCATION = vec3(0.0f, 0.f, 0.f);
+    const vec3 UNWRAP_LOCATION = vec3(0.f, 0.f, 0.f);
 
-    //vec4 out_ClipPosition        = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
     vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);
     texCoord = (texCoord*2.f - 1.f)*CAPTURE_SIZE;
-    gl_Position = vec4(vec3(texCoord, 0.f)+UNWRAP_LOCATION, 1.f); //vec4(vec3((vertex.TexCoord.xy-0.5)*CAPTURE_SIZE, 0)+UNWRAP_LOCATION - worldPosition.xyz, 1.f);
+    gl_Position = vec4(vec3(texCoord, 0.f)+UNWRAP_LOCATION, 1.f);
 }
