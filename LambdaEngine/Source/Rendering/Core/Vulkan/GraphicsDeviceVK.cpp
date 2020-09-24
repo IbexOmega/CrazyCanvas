@@ -1148,7 +1148,6 @@ namespace LambdaEngine
 		// Save device's limits
 		VkPhysicalDeviceProperties deviceProperties = GetPhysicalDeviceProperties();
 		m_DeviceLimits = deviceProperties.limits;
-
 		vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_DeviceFeaturesVk);
 
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
@@ -1178,55 +1177,60 @@ namespace LambdaEngine
 			queueCreateInfos.PushBack(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceRayTracingFeaturesKHR	supportedRayTracingFeatures		= {};
-		VkPhysicalDeviceVulkan12Features		supportedDeviceFeatures12		= {};
-		VkPhysicalDeviceVulkan11Features		supportedDeviceFeatures11		= {};
-		VkPhysicalDeviceFeatures				supportedDeviceFeatures10;
+		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = {};
+		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+		supportedMeshShaderFeatures.pNext = nullptr;
 
-		{
-			VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
-			supportedRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = {};
+		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		supportedRayTracingFeatures.pNext = &supportedMeshShaderFeatures;
 
-			supportedDeviceFeatures12.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-			supportedDeviceFeatures12.pNext			= &supportedRayTracingFeatures;
+		VkPhysicalDeviceVulkan12Features supportedDeviceFeatures12 = {};
+		supportedDeviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		supportedDeviceFeatures12.pNext = &supportedRayTracingFeatures;
 
-			supportedDeviceFeatures11.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-			supportedDeviceFeatures11.pNext		= &supportedDeviceFeatures12;
+		VkPhysicalDeviceVulkan11Features supportedDeviceFeatures11 = {};
+		supportedDeviceFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		supportedDeviceFeatures11.pNext = &supportedDeviceFeatures12;
 
-			deviceFeatures2.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-			deviceFeatures2.pNext					= &supportedDeviceFeatures11;
+		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+		deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures2.pNext = &supportedDeviceFeatures11;
 
-			vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
+		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
 
-			supportedDeviceFeatures10 = deviceFeatures2.features;
-		}
+		VkPhysicalDeviceFeatures supportedDeviceFeatures10;
+		supportedDeviceFeatures10 = deviceFeatures2.features;
 
+		VkPhysicalDeviceMeshShaderFeaturesNV enabledMeshShaderFeatures = {};
+		enabledMeshShaderFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+		enabledMeshShaderFeatures.pNext			= nullptr;
+		enabledMeshShaderFeatures.meshShader	= supportedMeshShaderFeatures.meshShader;
+		enabledMeshShaderFeatures.taskShader	= supportedMeshShaderFeatures.taskShader;
 
 		VkPhysicalDeviceRayTracingFeaturesKHR enabledRayTracingFeatures = {};
-		enabledRayTracingFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		enabledRayTracingFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		enabledRayTracingFeatures.pNext			= &enabledMeshShaderFeatures;
+		enabledRayTracingFeatures.rayTracing	= supportedRayTracingFeatures.rayTracing;
 
 		VkPhysicalDeviceVulkan12Features enabledDeviceFeatures12 = {};
-		enabledDeviceFeatures12.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		enabledDeviceFeatures12.pNext		= &enabledRayTracingFeatures;
+		enabledDeviceFeatures12.sType				= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		enabledDeviceFeatures12.pNext				= &enabledRayTracingFeatures;
+		enabledDeviceFeatures12.bufferDeviceAddress	= supportedDeviceFeatures12.bufferDeviceAddress;
+		enabledDeviceFeatures12.timelineSemaphore	= supportedDeviceFeatures12.timelineSemaphore;
+		enabledDeviceFeatures12.descriptorIndexing	= supportedDeviceFeatures12.descriptorIndexing;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
-		enabledDeviceFeatures11.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-		enabledDeviceFeatures11.pNext		= &enabledDeviceFeatures12;
+		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+		enabledDeviceFeatures11.pNext	= &enabledDeviceFeatures12;
 
 		VkPhysicalDeviceFeatures enabledDeviceFeatures10 = {};
-
-		enabledRayTracingFeatures.rayTracing						= supportedRayTracingFeatures.rayTracing;
-
-		enabledDeviceFeatures12.bufferDeviceAddress					= supportedDeviceFeatures12.bufferDeviceAddress;
-		enabledDeviceFeatures12.timelineSemaphore					= supportedDeviceFeatures12.timelineSemaphore;
-		enabledDeviceFeatures12.descriptorIndexing					= supportedDeviceFeatures12.descriptorIndexing;
-
-		enabledDeviceFeatures10.fillModeNonSolid					= supportedDeviceFeatures10.fillModeNonSolid;
-		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics		= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;
-		enabledDeviceFeatures10.fragmentStoresAndAtomics			= supportedDeviceFeatures10.fragmentStoresAndAtomics;
-		enabledDeviceFeatures10.multiDrawIndirect					= supportedDeviceFeatures10.multiDrawIndirect;
-		enabledDeviceFeatures10.pipelineStatisticsQuery				= supportedDeviceFeatures10.pipelineStatisticsQuery;
-		enabledDeviceFeatures10.imageCubeArray						= supportedDeviceFeatures10.imageCubeArray;
+		enabledDeviceFeatures10.fillModeNonSolid				= supportedDeviceFeatures10.fillModeNonSolid;
+		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics	= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;
+		enabledDeviceFeatures10.fragmentStoresAndAtomics		= supportedDeviceFeatures10.fragmentStoresAndAtomics;
+		enabledDeviceFeatures10.multiDrawIndirect				= supportedDeviceFeatures10.multiDrawIndirect;
+		enabledDeviceFeatures10.pipelineStatisticsQuery			= supportedDeviceFeatures10.pipelineStatisticsQuery;
+		enabledDeviceFeatures10.imageCubeArray					= supportedDeviceFeatures10.imageCubeArray;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -1619,6 +1623,8 @@ namespace LambdaEngine
 			deviceProps2.pNext = &RayTracingProperties;
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
+
+			m_DeviceFeatures.MaxRecursionDepth = RayTracingProperties.maxRecursionDepth;
 		}
 
 		//PushDescriptorSet
@@ -1641,6 +1647,25 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksNV);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectNV);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdDrawMeshTasksIndirectCountNV);
+
+			MeshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV;
+			MeshShaderProperties.pNext = nullptr;
+
+			VkPhysicalDeviceProperties2 deviceProperties2;
+			deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+			deviceProperties2.pNext = &MeshShaderProperties;
+			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProperties2);
+
+			memcpy(&m_DeviceFeatures.MaxMeshWorkGroupSize, MeshShaderProperties.maxMeshWorkGroupSize, sizeof(uint32) * 3);
+			memcpy(&m_DeviceFeatures.MaxTaskWorkGroupSize, MeshShaderProperties.maxTaskWorkGroupSize, sizeof(uint32) * 3);
+
+			m_DeviceFeatures.MaxMeshViewCount				= MeshShaderProperties.maxMeshMultiviewViewCount;
+			m_DeviceFeatures.MaxMeshOutputVertices			= MeshShaderProperties.maxMeshOutputVertices;
+			m_DeviceFeatures.MaxMeshOutputPrimitives		= MeshShaderProperties.maxMeshOutputPrimitives;
+			m_DeviceFeatures.MaxDrawMeshTasksCount			= MeshShaderProperties.maxDrawMeshTasksCount;
+			m_DeviceFeatures.MaxTaskOutputCount				= MeshShaderProperties.maxTaskOutputCount;
+			m_DeviceFeatures.MaxMeshWorkGroupInvocations	= MeshShaderProperties.maxMeshWorkGroupInvocations;
+			m_DeviceFeatures.MaxTaskWorkGroupInvocations	= MeshShaderProperties.maxTaskWorkGroupInvocations;
 		}
 	}
 

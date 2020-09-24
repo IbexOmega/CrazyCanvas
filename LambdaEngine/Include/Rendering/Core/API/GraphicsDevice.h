@@ -72,10 +72,20 @@ namespace LambdaEngine
 	struct GraphicsDeviceFeatureDesc
 	{
 		uint32	MaxComputeWorkGroupSize[3];
+		uint32	MaxMeshWorkGroupSize[3];
+		uint32	MaxTaskWorkGroupSize[3];
+		uint32	MaxMeshOutputVertices;
+		uint32	MaxMeshOutputPrimitives;
+		uint32	MaxMeshViewCount;
+		uint32	MaxRecursionDepth;
+		uint32	MaxDrawMeshTasksCount;
+		uint32	MaxTaskOutputCount;
+		uint32	MaxMeshWorkGroupInvocations;
+		uint32	MaxTaskWorkGroupInvocations;
 		bool	RayTracing;
 		bool	MeshShaders;
 		bool	GeometryShaders;
-		float	TimestampPeriod;
+		float32	TimestampPeriod;
 	};
 
 	/*

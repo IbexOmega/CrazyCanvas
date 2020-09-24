@@ -160,6 +160,11 @@ namespace LambdaEngine
 		return m_pServer->SendUnreliableBroadcast(this, pPacket);
 	}
 
+	const ClientMap& ClientRemoteBase::GetClients() const
+	{
+		return m_pServer->GetClients();
+	}
+
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
 	{
 		return GetPacketManager()->GetEndPoint();
@@ -182,6 +187,11 @@ namespace LambdaEngine
 	const NetworkStatistics* ClientRemoteBase::GetStatistics() const
 	{
 		return GetPacketManager()->GetStatistics();
+	}
+
+	IClientRemoteHandler* ClientRemoteBase::GetHandler()
+	{
+		return m_pHandler;
 	}
 
 	void ClientRemoteBase::TransmitPackets()

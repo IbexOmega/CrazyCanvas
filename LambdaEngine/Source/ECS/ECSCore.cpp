@@ -145,12 +145,7 @@ namespace LambdaEngine
 
 	bool ECSCore::DeleteComponent(Entity entity, std::type_index componentType)
 	{
-		if (m_ComponentStorage.DeleteComponent(entity, componentType))
-		{
-			m_EntityPublisher.UnpublishComponent(entity, componentType);
-			return true;
-		}
-
-		return false;
+		m_EntityPublisher.UnpublishComponent(entity, componentType);
+		return m_ComponentStorage.DeleteComponent(entity, componentType);
 	}
 }

@@ -90,6 +90,11 @@ namespace LambdaEngine
 		return GetPacketManager()->GetStatistics();
 	}
 
+	IClientRemoteHandler* ClientBase::GetHandler()
+	{
+		return m_pHandler;
+	}
+
 	bool ClientBase::SendUnreliable(NetworkSegment* packet)
 	{
 		if (!IsConnected())
