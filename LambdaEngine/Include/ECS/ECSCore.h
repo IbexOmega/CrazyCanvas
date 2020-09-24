@@ -83,7 +83,7 @@ namespace LambdaEngine
 		void PerformComponentRegistrations();
 		void PerformComponentDeletions();
 		void PerformEntityDeletions();
-		bool DeleteComponent(Entity entity, const ComponentType* componentType);
+		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
 	private:
 		EntityRegistry m_EntityRegistry;
