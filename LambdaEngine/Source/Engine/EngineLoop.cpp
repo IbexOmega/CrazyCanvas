@@ -41,6 +41,8 @@
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Networking/NetworkingSystem.h"
 
+#include "GUI/GUIShaderManager.h"
+
 namespace LambdaEngine
 {
 	/*
@@ -191,6 +193,11 @@ namespace LambdaEngine
 		}
 
 		if (!RenderSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!GUIShaderManager::Init())
 		{
 			return false;
 		}

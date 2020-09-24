@@ -372,14 +372,35 @@ namespace LambdaEngine
 		String filepath = SHADER_DIR + filename;
 
 		ShaderLoadDesc loadDesc = {};
-		loadDesc.Filepath = filepath;
-		loadDesc.Stage = stage;
-		loadDesc.Lang = lang;
-		loadDesc.pEntryPoint = pEntryPoint;
+		loadDesc.Filepath		= filepath;
+		loadDesc.Stage			= stage;
+		loadDesc.Lang			= lang;
+		loadDesc.pEntryPoint	= pEntryPoint;
 
 		s_ShaderLoadConfigurations[guid] = loadDesc;
 
 		(*ppMappedShader) = ResourceLoader::LoadShaderFromFile(filepath, stage, lang, pEntryPoint);
+
+		return guid;
+	}
+
+	GUID_Lambda ResourceManager::RegisterShader(const String& name, Shader* pShader)
+	{
+		auto loadedShaderGUID = s_ShaderNamesToGUIDs.find(name);
+		if (loadedShaderGUID != s_ShaderNamesToGUIDs.end())
+			return loadedShaderGUID->second;
+
+		GUID_Lambda guid = GUID_NONE;
+		Shader** ppMappedShader = nullptr;
+
+		//Spinlock
+		{
+			guid = s_NextFreeGUID++;
+			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
+			s_ShaderNamesToGUIDs[name] = guid;
+		}
+
+		(*ppMappedShader) = pShader;
 
 		return guid;
 	}

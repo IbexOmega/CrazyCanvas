@@ -142,6 +142,8 @@ namespace LambdaEngine
 		*/
 		static GUID_Lambda LoadShaderFromFile(const String& filename, FShaderStageFlag stage, EShaderLang lang, const char* pEntryPoint = "main");
 
+		static GUID_Lambda RegisterShader(const String& name, Shader* pShader);
+
 		/*
 		* Load sound from file
 		*	filename - Name of the audio file

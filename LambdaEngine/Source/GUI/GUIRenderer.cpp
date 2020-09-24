@@ -2,6 +2,7 @@
 #include "GUI/GUIHelpers.h"
 #include "GUI/GUIRenderTarget.h"
 #include "GUI/GUITexture.h"
+#include "GUI/GUIShaderManager.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
@@ -219,7 +220,9 @@ namespace LambdaEngine
 
 	void GUIRenderer::DrawBatch(const Noesis::Batch& batch)
 	{
-
+		NoesisShaderData shaderData		= NoesisGetShaderData(batch.shader.v);
+		GUID_Lambda vertexShaderGUID	= GUIShaderManager::GetGUIVertexShaderGUID(shaderData.VertexShaderID);
+		GUID_Lambda pixelShaderGUID		= GUIShaderManager::GetGUIPixelShaderGUID(shaderData.PixelShaderID);
 	}
 
 	void GUIRenderer::PreBuffersDescriptorSetWrite()
