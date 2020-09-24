@@ -40,13 +40,13 @@ namespace LambdaEngine
 		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
 		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty("MeshShadersEnabled");
 
-		TransformComponents transformComponents;
-		transformComponents.Position.Permissions	= R;
-		transformComponents.Scale.Permissions		= R;
-		transformComponents.Rotation.Permissions	= R;
-
 		// Subscribe on Static Entities & Dynamic Entities
 		{
+			TransformComponents transformComponents;
+			transformComponents.Position.Permissions	= R;
+			transformComponents.Scale.Permissions		= R;
+			transformComponents.Rotation.Permissions	= R;
+
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
@@ -416,7 +416,7 @@ namespace LambdaEngine
 
 		auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
 		auto& position = pECSCore->GetComponent<PositionComponent>(entity);
-	
+
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
@@ -479,12 +479,12 @@ namespace LambdaEngine
 					vertexStagingBufferDesc.DebugName	= "Vertex Staging Buffer";
 					vertexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					vertexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					vertexStagingBufferDesc.SizeInBytes = pMesh->VertexCount * sizeof(Vertex);
+					vertexStagingBufferDesc.SizeInBytes = pMesh->Vertices.GetSize() * sizeof(Vertex);
 
 					Buffer* pVertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexStagingBufferDesc);
 
 					void* pMapped = pVertexStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pVertexArray, vertexStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->Vertices.GetData(), vertexStagingBufferDesc.SizeInBytes);
 					pVertexStagingBuffer->Unmap();
 
 					BufferDesc vertexBufferDesc = {};
@@ -494,7 +494,7 @@ namespace LambdaEngine
 					vertexBufferDesc.SizeInBytes	= vertexStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
-					meshEntry.VertexCount	= pMesh->VertexCount;
+					meshEntry.VertexCount	= pMesh->Vertices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexStagingBuffer);
@@ -506,12 +506,12 @@ namespace LambdaEngine
 					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
 					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(Mesh::IndexType);
+					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(Mesh::IndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
 					void* pMapped = pIndexStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pIndexArray, indexStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->Indices.GetData(), indexStagingBufferDesc.SizeInBytes);
 					pIndexStagingBuffer->Unmap();
 
 					BufferDesc indexBufferDesc = {};
@@ -521,7 +521,7 @@ namespace LambdaEngine
 					indexBufferDesc.SizeInBytes		= indexStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pIndexBuffer	= RenderAPI::GetDevice()->CreateBuffer(&indexBufferDesc);
-					meshEntry.IndexCount	= pMesh->IndexCount;
+					meshEntry.IndexCount	= pMesh->Indices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
@@ -533,12 +533,12 @@ namespace LambdaEngine
 					meshletStagingBufferDesc.DebugName		= "Meshlet Staging Buffer";
 					meshletStagingBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					meshletStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					meshletStagingBufferDesc.SizeInBytes	= pMesh->MeshletCount * sizeof(Meshlet);
+					meshletStagingBufferDesc.SizeInBytes	= pMesh->Meshlets.GetSize() * sizeof(Meshlet);
 
 					Buffer* pMeshletStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&meshletStagingBufferDesc);
 
 					void* pMapped = pMeshletStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pMeshletArray, meshletStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->Meshlets.GetData(), meshletStagingBufferDesc.SizeInBytes);
 					pMeshletStagingBuffer->Unmap();
 
 					BufferDesc meshletBufferDesc = {};
@@ -548,7 +548,7 @@ namespace LambdaEngine
 					meshletBufferDesc.SizeInBytes	= meshletStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
-					meshEntry.MeshletCount = pMesh->MeshletCount;
+					meshEntry.MeshletCount = pMesh->Meshlets.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pMeshletStagingBuffer);
@@ -560,12 +560,12 @@ namespace LambdaEngine
 					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
 					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndexCount * sizeof(Mesh::IndexType);
+					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(Mesh::IndexType);
 
 					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
 
 					void* pMapped = pUniqueIndicesStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pUniqueIndices, uniqueIndicesStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->UniqueIndices.GetData(), uniqueIndicesStagingBufferDesc.SizeInBytes);
 					pUniqueIndicesStagingBuffer->Unmap();
 
 					BufferDesc uniqueIndicesBufferDesc = {};
@@ -575,7 +575,7 @@ namespace LambdaEngine
 					uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
-					meshEntry.UniqueIndexCount = pMesh->UniqueIndexCount;
+					meshEntry.UniqueIndexCount = pMesh->UniqueIndices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pUniqueIndicesStagingBuffer);
@@ -587,12 +587,12 @@ namespace LambdaEngine
 					primitiveIndicesStagingBufferDesc.DebugName		= "Primitive Indices Staging Buffer";
 					primitiveIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					primitiveIndicesStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndexCount * sizeof(Mesh::IndexType);
+					primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndices.GetSize() * sizeof(PackedTriangle);
 
 					Buffer* pPrimitiveIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesStagingBufferDesc);
 
 					void* pMapped = pPrimitiveIndicesStagingBuffer->Map();
-					memcpy(pMapped, pMesh->pPrimitiveIndices, primitiveIndicesStagingBufferDesc.SizeInBytes);
+					memcpy(pMapped, pMesh->PrimitiveIndices.GetData(), primitiveIndicesStagingBufferDesc.SizeInBytes);
 					pPrimitiveIndicesStagingBuffer->Unmap();
 
 					BufferDesc primitiveIndicesBufferDesc = {};
@@ -602,7 +602,7 @@ namespace LambdaEngine
 					primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
-					meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndexCount;
+					meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndices.GetSize();
 
 					m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pPrimitiveIndicesStagingBuffer);
@@ -733,7 +733,9 @@ namespace LambdaEngine
 			return;
 		}
 
-		const Instance& rasterInstance = meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
+		const uint32 instanceIndex = instanceKeyIt->second.InstanceIndex;
+		TArray<LambdaEngine::RenderSystem::Instance>& rasterInstances = meshAndInstancesIt->second.RasterInstances;
+		const Instance& rasterInstance = rasterInstances[instanceIndex];
 
 		//Update Material Instance Counts
 		{
@@ -742,22 +744,24 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.ASInstances[meshAndInstancesIt->second.ASInstances.GetSize() - 1];
-			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + (meshAndInstancesIt->second.ASInstances.GetSize() - 1));
+			TArray<AccelerationStructureInstance>& asInstances = meshAndInstancesIt->second.ASInstances;
+			asInstances[instanceIndex] = asInstances.GetBack();
+			asInstances.PopBack();
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
 		}
 
-		meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.RasterInstances[meshAndInstancesIt->second.RasterInstances.GetSize() - 1];
-		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + (meshAndInstancesIt->second.RasterInstances.GetSize() - 1));
+		rasterInstances[instanceIndex] = rasterInstances.GetBack();
+		rasterInstances.PopBack();
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
-		meshAndInstancesIt->second.EntityIDs[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
-		meshAndInstancesIt->second.EntityIDs.Erase(meshAndInstancesIt->second.EntityIDs.Begin() + (meshAndInstancesIt->second.EntityIDs.GetSize() - 1));
+		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
+		meshAndInstancesIt->second.EntityIDs[instanceIndex] = swappedEntityID;
+		meshAndInstancesIt->second.EntityIDs.PopBack();
 
-		m_EntityIDsToInstanceKey.erase(entity);
-		m_EntityIDsToInstanceKey.erase(swappedEntityID);
+		auto swappedInstanceKeyIt = m_EntityIDsToInstanceKey.find(swappedEntityID);
+		swappedInstanceKeyIt->second.InstanceIndex = instanceKeyIt->second.InstanceIndex;
+		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
 
 		//Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
@@ -780,7 +784,7 @@ namespace LambdaEngine
 			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
 			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
 			auto dirtyBLASToRemove = std::find_if(m_DirtyBLASs.begin(), m_DirtyBLASs.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
-			
+
 			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end()) m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
 			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end()) m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
 			if (dirtyBLASToRemove != m_DirtyBLASs.end()) m_DirtyBLASs.erase(dirtyBLASToRemove);
@@ -809,7 +813,7 @@ namespace LambdaEngine
 
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
-		
+
 		m_LightsDirty = true;
 	}
 
