@@ -4,8 +4,8 @@
     1080
   ],
   "FixedTimestep": 60,
-  "RayTracingEnabled": true,
-  "MeshShadersEnabled": true,
+  "RayTracingEnabled": false,
+  "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
   "RenderGraphName": "SHADOWMAP.lrg",
   "ShowDemo": false,
