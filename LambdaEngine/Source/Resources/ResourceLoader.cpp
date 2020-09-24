@@ -434,7 +434,7 @@ namespace LambdaEngine
 			}
 
 			stbi_pixels[i] = pPixels;
-			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+			// D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
 		}
 
 		Texture* pTexture = nullptr;
