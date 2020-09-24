@@ -1,12 +1,12 @@
-#include "Audio/AudioSystem.h"
+#include "Audio/AudioAPI.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	IAudioDevice*	AudioSystem::s_pAudioDevice = nullptr;
+	IAudioDevice* AudioAPI::s_pAudioDevice = nullptr;
 
-	bool AudioSystem::Init()
+	bool AudioAPI::Init()
 	{
 
 		AudioDeviceDesc audioDeviceDesc = {};
@@ -20,13 +20,13 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool AudioSystem::Release()
+	bool AudioAPI::Release()
 	{
 		SAFEDELETE(s_pAudioDevice)
 		return true;
 	}
 
-	void AudioSystem::Tick()
+	void AudioAPI::Tick()
 	{
 		s_pAudioDevice->Tick();
 	}

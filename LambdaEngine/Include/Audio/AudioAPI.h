@@ -4,10 +4,10 @@
 
 namespace LambdaEngine
 {
-	class LAMBDA_API AudioSystem
+	class LAMBDA_API AudioAPI
 	{
 	public:
-		DECL_STATIC_CLASS(AudioSystem);
+		DECL_STATIC_CLASS(AudioAPI);
 
 		static bool Init();
 		static bool Release();
