@@ -744,10 +744,6 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 
 						pCustomRenderer->Render(
-							pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],
-							pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],
-							pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex], 
-							pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],	
 							uint32(m_ModFrameIndex), 
 							m_BackBufferIndex, 
 							&m_ppExecutionStages[currentExecutionStage],

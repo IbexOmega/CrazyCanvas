@@ -83,14 +83,10 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void Render(
-			CommandAllocator* pGraphicsCommandAllocator,
-			CommandList* pGraphicsCommandList,
-			CommandAllocator* pComputeCommandAllocator,
-			CommandList* pComputeCommandList,
 			uint32 modFrameIndex,
 			uint32 backBufferIndex,
-			CommandList** ppPrimaryExecutionStage,
-			CommandList** ppSecondaryExecutionStage)	override final;
+			CommandList** pFirstExecutionStage,
+			CommandList** pSecondaryExecutionStage)	override final;
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
@@ -110,13 +106,13 @@ namespace LambdaEngine
 	private:
 		bool InitImGui();
 
-		bool CreateCopyCommandList();
 		bool CreateBuffers(uint32 vertexBufferSize, uint32 indexBufferSize);
 		bool CreateTextures();
 		bool CreateSamplers();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
+		bool CreateCommandLists(uint32 backBufferCount);
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		bool CreatePipelineState();
 
@@ -127,8 +123,11 @@ namespace LambdaEngine
 
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
 
-		TSharedRef<CommandAllocator>	m_CopyCommandAllocator	= nullptr;
-		TSharedRef<CommandList>			m_CopyCommandList		= nullptr;
+		TSharedRef<CommandAllocator>	m_CopyCommandAllocator		= nullptr;
+		TSharedRef<CommandList>			m_CopyCommandList			= nullptr;
+
+		TSharedRef<CommandAllocator>*	m_pRenderCommandAllocators	= nullptr;
+		TSharedRef<CommandList>*		m_pRenderCommandLists		= nullptr;
 
 		uint64						m_PipelineStateID	= 0;
 		TSharedRef<PipelineLayout>	m_PipelineLayout	= nullptr;
