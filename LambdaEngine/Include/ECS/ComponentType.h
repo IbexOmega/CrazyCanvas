@@ -42,7 +42,7 @@ namespace std
 	{
 		size_t operator()(const LambdaEngine::ComponentType* componentType) const
 		{
-			return componentType->GetHash();
+			return pComponentType->GetHash();
 		}
 	};
 }
