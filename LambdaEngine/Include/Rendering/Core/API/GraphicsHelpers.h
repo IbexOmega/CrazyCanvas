@@ -129,10 +129,14 @@ namespace LambdaEngine
         case EFormat::FORMAT_B8G8R8A8_UNORM:
         case EFormat::FORMAT_R8G8B8A8_SNORM:		
 		case EFormat::FORMAT_R16G16_SFLOAT:			
-		case EFormat::FORMAT_R11G11B10_UFLOAT:		return 4;
+		case EFormat::FORMAT_R16G16_SNORM:
+		case EFormat::FORMAT_R10G10B10A2_UNORM:		
+		case EFormat::FORMAT_B10G11R11_UFLOAT:		return 4;
 		case EFormat::FORMAT_R32G32_SFLOAT:
+		case EFormat::FORMAT_R16G16B16A16_SNORM:
         case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
-        case EFormat::FORMAT_R32G32B32A32_SFLOAT:	
+        
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	
         case EFormat::FORMAT_R32G32B32A32_UINT:		return 16;
         default:                                    return 0;
         }
@@ -144,15 +148,25 @@ namespace LambdaEngine
 		{
 		case EFormat::FORMAT_R16_UNORM:				return "FORMAT_R16_UNORM";
 		case EFormat::FORMAT_R16_SFLOAT:			return "FORMAT_R16_SFLOAT";
+		
 		case EFormat::FORMAT_R8G8B8A8_UNORM:		return "FORMAT_R8G8B8A8_UNORM";
 		case EFormat::FORMAT_B8G8R8A8_UNORM:		return "FORMAT_B8G8R8A8_UNORM";
 		case EFormat::FORMAT_R8G8B8A8_SNORM:		return "FORMAT_R8G8B8A8_SNORM";
+		
 		case EFormat::FORMAT_R16G16_SFLOAT:			return "FORMAT_R16G16_SFLOAT";
+		case EFormat::FORMAT_R16G16_SNORM:			return "FORMAT_R16G16_SNORM";
+		case EFormat::FORMAT_R10G10B10A2_UNORM:		return "FORMAT_R10G10B10A2_UNORM";
+
 		case EFormat::FORMAT_R32G32_SFLOAT:			return "FORMAT_R32G32_SFLOAT";
-		case EFormat::FORMAT_R11G11B10_UFLOAT:		return "FORMAT_R11G11B10_UFLOAT";
+		
+		case EFormat::FORMAT_B10G11R11_UFLOAT:		return "FORMAT_B10G11R11_UFLOAT";
+		
 		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return "FORMAT_R16G16B16A16_SFLOAT";
+		case EFormat::FORMAT_R16G16B16A16_SNORM:	return "FORMAT_R16G16B16A16_SNORM";
+		
 		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return "FORMAT_R32G32B32A32_SFLOAT";
 		case EFormat::FORMAT_R32G32B32A32_UINT:		return "FORMAT_R32G32B32A32_UINT";
+		
 		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return "FORMAT_D24_UNORM_S8_UINT";
 		default:                                    return "FORMAT_NONE";
 		}
@@ -162,15 +176,25 @@ namespace LambdaEngine
 	{
 		if		(string == "FORMAT_R16_UNORM")				return EFormat::FORMAT_R16_UNORM;
 		else if (string == "FORMAT_R16_SFLOAT")				return EFormat::FORMAT_R16_SFLOAT;
+		
 		else if (string == "FORMAT_R8G8B8A8_UNORM")			return EFormat::FORMAT_R8G8B8A8_UNORM;
 		else if (string == "FORMAT_B8G8R8A8_UNORM")			return EFormat::FORMAT_B8G8R8A8_UNORM;
 		else if (string == "FORMAT_R8G8B8A8_SNORM")			return EFormat::FORMAT_R8G8B8A8_SNORM;
+		
 		else if (string == "FORMAT_R16G16_SFLOAT")			return EFormat::FORMAT_R16G16_SFLOAT;
+		else if (string == "FORMAT_R16G16_SNORM")			return EFormat::FORMAT_R16G16_SNORM;
+		else if (string == "FORMAT_R10G10B10A2_UNORM")		return EFormat::FORMAT_R10G10B10A2_UNORM;
+		
 		else if (string == "FORMAT_R32G32_SFLOAT")			return EFormat::FORMAT_R32G32_SFLOAT;
-		else if (string == "FORMAT_R11G11B10_UFLOAT")		return EFormat::FORMAT_R11G11B10_UFLOAT;
+		
+		else if (string == "FORMAT_B10G11R11_UFLOAT")		return EFormat::FORMAT_B10G11R11_UFLOAT;
+		
 		else if (string == "FORMAT_R16G16B16A16_SFLOAT")	return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+		else if (string == "FORMAT_R16G16B16A16_SNORM")		return EFormat::FORMAT_R16G16B16A16_SNORM;
+		
 		else if (string == "FORMAT_R32G32B32A32_SFLOAT")	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
 		else if (string == "FORMAT_R32G32B32A32_UINT")		return EFormat::FORMAT_R32G32B32A32_UINT;
+		
 		else if	(string == "FORMAT_D24_UNORM_S8_UINT")		return EFormat::FORMAT_D24_UNORM_S8_UINT;
 
 		return EFormat::FORMAT_NONE;

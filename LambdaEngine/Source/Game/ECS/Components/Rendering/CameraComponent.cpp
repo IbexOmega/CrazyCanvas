@@ -6,10 +6,6 @@
 
 namespace LambdaEngine
 {
-	INIT_COMPONENT(FreeCameraComponent);
-	INIT_COMPONENT(CameraComponent);
-	INIT_COMPONENT(ViewProjectionMatricesComponent);
-
 	Entity CreateFreeCameraEntity(const CameraDesc& cameraDesc)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
