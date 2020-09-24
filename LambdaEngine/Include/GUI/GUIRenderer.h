@@ -7,6 +7,8 @@
 
 namespace LambdaEngine
 {
+	class GUIRenderTarget;
+
 	class GUIRenderer : public Noesis::RenderDevice, ICustomRenderer
 	{
 		GUIRenderer();
@@ -100,6 +102,8 @@ namespace LambdaEngine
 		FORCEINLINE virtual const String& GetName() const override final { return RENDER_GRAPH_NOESIS_GUI_STAGE_NAME; }
 
 	private:
+		CommandAllocator**	m_ppGUICommandAllocator	= nullptr;
+		CommandList**		m_ppGUICommandList		= nullptr;
 
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
 

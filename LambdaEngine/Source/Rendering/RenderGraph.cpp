@@ -2068,6 +2068,7 @@ namespace LambdaEngine
 				}
 
 				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
+				customRendererInitDesc.BackBufferCount				= m_BackBufferCount;
 				customRendererInitDesc.pColorAttachmentDesc			= renderPassAttachmentDescriptions.GetData();
 				customRendererInitDesc.ColorAttachmentCount			= (uint32)renderPassAttachmentDescriptions.GetSize();
 				customRendererInitDesc.pDepthStencilAttachmentDesc	= renderPassDepthStencilDescription.Format != EFormat::FORMAT_NONE ? &renderPassDepthStencilDescription : nullptr;

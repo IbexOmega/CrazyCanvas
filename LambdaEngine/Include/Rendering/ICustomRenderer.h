@@ -17,6 +17,7 @@ namespace LambdaEngine
 
 	struct CustomRendererRenderGraphInitDesc
 	{
+		uint32						BackBufferCount					= 0;
 		RenderPassAttachmentDesc*	pColorAttachmentDesc			= nullptr;
 		uint32						ColorAttachmentCount			= 0;
 		RenderPassAttachmentDesc*	pDepthStencilAttachmentDesc		= nullptr;

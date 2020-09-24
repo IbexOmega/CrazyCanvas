@@ -5,6 +5,9 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Rendering/Core/API/GraphicsDevice.h"
+
+#include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
 
 #include "Memory/API/Malloc.h"
@@ -14,11 +17,24 @@ namespace LambdaEngine
 	GUIRenderer::GUIRenderer()
 	{
 	}
+
 	GUIRenderer::~GUIRenderer()
 	{
+		SAFERELEASE(m_pGUICommandList);
+		SAFERELEASE(m_pGUICommandAllocator);
 	}
+
 	bool GUIRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
+		m_pGUICommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("GUI Renderer Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
+		CommandListDesc commandListDesc = {};
+		commandListDesc.DebugName			= "GUI Renderer Command List";
+		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_SECONDARY;
+		commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+		m_pGUICommandList = RenderAPI::GetDevice()->CreateCommandList(m_pGUICommandAllocator, &commandListDesc);
+
 		return true;
 	}
 	
@@ -60,7 +76,13 @@ namespace LambdaEngine
 
 	Noesis::Ptr<Noesis::Texture> GUIRenderer::CreateTexture(const char* pLabel, uint32_t width, uint32_t height, uint32_t numLevels, Noesis::TextureFormat::Enum format, const void** ppData)
 	{
-		CommandList* pCommandList = RenderSystem::GetInstance().GetRenderGraph()->AcquireGraphicsCopyCommandList();
+		if (!m_pGUICommandList->IsBegin())
+		{
+			SecondaryCommandListBeginDesc beginDesc = {};
+
+			m_pGUICommandAllocator->Reset();
+			m_pGUICommandList->Begin();
+		}
 
 		GUITextureDesc textureDesc = {};
 		textureDesc.DebugName		= pLabel;
@@ -72,7 +94,7 @@ namespace LambdaEngine
 
 		GUITexture* pTexture = new GUITexture();
 
-		if (!pTexture->Init(pCommandList, &textureDesc))
+		if (!pTexture->Init(m_pGUICommandList, &textureDesc))
 		{
 			LOG_ERROR("[GUIRenderer]: Failed to create GUI Texture");
 			SAFEDELETE(pTexture);
@@ -97,10 +119,14 @@ namespace LambdaEngine
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)
 	{
+		VALIDATE(pSurface != nullptr);
+		
+		m_pCurrentRenderTarget = reinterpret_cast<GUIRenderTarget*>(pSurface);
 	}
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
 	{
+		m_pCurrentRenderTarget->
 	}
 
 	void GUIRenderer::EndTile()
