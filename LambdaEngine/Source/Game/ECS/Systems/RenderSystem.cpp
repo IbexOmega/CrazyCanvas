@@ -36,7 +36,8 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
+		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
+		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty("MeshShadersEnabled");
 
 		TransformComponents transformComponents;
 		transformComponents.Position.Permissions	= R;
@@ -89,9 +90,21 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			String prefix = m_RayTracingEnabled ? "RT_" : "";
+			String prefix	= m_RayTracingEnabled ? "RT_" : "";
+			String postfix	= m_MeshShadersEnabled? "_MESH" : "";
+			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
+			size_t pos = renderGraphName.find_first_of(".lrg");
+			if (pos != String::npos)
+			{
+				renderGraphName.insert(pos, postfix);
+			}
+			else
+			{
+				renderGraphName += postfix + ".lrg";
+			}
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, prefix + EngineConfig::GetStringProperty("RenderGraphName"), IMGUI_ENABLED))
+			renderGraphName = prefix + renderGraphName;
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
@@ -188,6 +201,9 @@ namespace LambdaEngine
 		for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 		{
 			SAFERELEASE(meshAndInstancesIt->second.pBLAS);
+			SAFERELEASE(meshAndInstancesIt->second.pPrimitiveIndices);
+			SAFERELEASE(meshAndInstancesIt->second.pUniqueIndices);
+			SAFERELEASE(meshAndInstancesIt->second.pMeshlets);
 			SAFERELEASE(meshAndInstancesIt->second.pVertexBuffer);
 			SAFERELEASE(meshAndInstancesIt->second.pIndexBuffer);
 			SAFERELEASE(meshAndInstancesIt->second.pRasterInstanceBuffer);
@@ -340,9 +356,13 @@ namespace LambdaEngine
 			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
 		}
 
-		m_DirtyDrawArgs				= m_RequiredDrawArgs;
-		m_PerFrameResourceDirty		= true;
-		m_MaterialsResourceDirty	= true;
+		m_DirtyDrawArgs						= m_RequiredDrawArgs;
+		m_PerFrameResourceDirty				= true;
+		m_MaterialsResourceDirty			= true;
+		m_MaterialsPropertiesBufferDirty	= true;
+		m_RenderGraphSBTRecordsDirty		= true;
+		m_LightsResourceDirty				= true;
+
 		UpdateRenderGraph();
 	}
 
@@ -451,7 +471,7 @@ namespace LambdaEngine
 
 				MeshEntry meshEntry = {};
 
-				//Vertices
+				// Vertices
 				{
 					BufferDesc vertexStagingBufferDesc = {};
 					vertexStagingBufferDesc.DebugName	= "Vertex Staging Buffer";
@@ -478,13 +498,13 @@ namespace LambdaEngine
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexStagingBuffer);
 				}
 
-				//Indices
+				// Indices
 				{
 					BufferDesc indexStagingBufferDesc = {};
 					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
 					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(uint32);
+					indexStagingBufferDesc.SizeInBytes	= pMesh->IndexCount * sizeof(Mesh::IndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
@@ -503,6 +523,87 @@ namespace LambdaEngine
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
+				}
+
+				// Meshlet
+				{
+					BufferDesc meshletStagingBufferDesc = {};
+					meshletStagingBufferDesc.DebugName		= "Meshlet Staging Buffer";
+					meshletStagingBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					meshletStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					meshletStagingBufferDesc.SizeInBytes	= pMesh->MeshletCount * sizeof(Meshlet);
+
+					Buffer* pMeshletStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&meshletStagingBufferDesc);
+
+					void* pMapped = pMeshletStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pMeshletArray, meshletStagingBufferDesc.SizeInBytes);
+					pMeshletStagingBuffer->Unmap();
+
+					BufferDesc meshletBufferDesc = {};
+					meshletBufferDesc.DebugName		= "Meshlet Buffer";
+					meshletBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+					meshletBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					meshletBufferDesc.SizeInBytes	= meshletStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
+					meshEntry.MeshletCount = pMesh->MeshletCount;
+
+					m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pMeshletStagingBuffer);
+				}
+
+				// Unique Indices
+				{
+					BufferDesc uniqueIndicesStagingBufferDesc = {};
+					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
+					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndexCount * sizeof(Mesh::IndexType);
+
+					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
+
+					void* pMapped = pUniqueIndicesStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pUniqueIndices, uniqueIndicesStagingBufferDesc.SizeInBytes);
+					pUniqueIndicesStagingBuffer->Unmap();
+
+					BufferDesc uniqueIndicesBufferDesc = {};
+					uniqueIndicesBufferDesc.DebugName	= "Unique Indices Buffer";
+					uniqueIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+					uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
+					meshEntry.UniqueIndexCount = pMesh->UniqueIndexCount;
+
+					m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pUniqueIndicesStagingBuffer);
+				}
+
+				// Primitive indicies
+				{
+					BufferDesc primitiveIndicesStagingBufferDesc = {};
+					primitiveIndicesStagingBufferDesc.DebugName		= "Primitive Indices Staging Buffer";
+					primitiveIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					primitiveIndicesStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndexCount * sizeof(Mesh::IndexType);
+
+					Buffer* pPrimitiveIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesStagingBufferDesc);
+
+					void* pMapped = pPrimitiveIndicesStagingBuffer->Map();
+					memcpy(pMapped, pMesh->pPrimitiveIndices, primitiveIndicesStagingBufferDesc.SizeInBytes);
+					pPrimitiveIndicesStagingBuffer->Unmap();
+
+					BufferDesc primitiveIndicesBufferDesc = {};
+					primitiveIndicesBufferDesc.DebugName	= "Primitive Indices Buffer";
+					primitiveIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+					primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
+
+					meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
+					meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndexCount;
+
+					m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pPrimitiveIndicesStagingBuffer);
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
@@ -594,10 +695,13 @@ namespace LambdaEngine
 		}
 
 		Instance instance = {};
-		instance.Transform			= transform;
-		instance.PrevTransform		= transform;
-		instance.MaterialSlot		= materialSlot;
+		instance.Transform		= transform;
+		instance.PrevTransform	= transform;
+		instance.MaterialSlot	= materialSlot;
+		instance.MeshletCount	= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
+
+		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
@@ -636,19 +740,25 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+			meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.ASInstances[meshAndInstancesIt->second.ASInstances.GetSize() - 1];
+			meshAndInstancesIt->second.ASInstances.Erase(meshAndInstancesIt->second.ASInstances.Begin() + (meshAndInstancesIt->second.ASInstances.GetSize() - 1));
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
 		}
 
-		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + instanceKeyIt->second.InstanceIndex);
+		meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.RasterInstances[meshAndInstancesIt->second.RasterInstances.GetSize() - 1];
+		meshAndInstancesIt->second.RasterInstances.Erase(meshAndInstancesIt->second.RasterInstances.Begin() + (meshAndInstancesIt->second.RasterInstances.GetSize() - 1));
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		// Delete instanceKey it will not be used anymore
-		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
+		Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		meshAndInstancesIt->second.EntityIDs[instanceKeyIt->second.InstanceIndex] = meshAndInstancesIt->second.EntityIDs[meshAndInstancesIt->second.EntityIDs.GetSize() - 1];
+		meshAndInstancesIt->second.EntityIDs.Erase(meshAndInstancesIt->second.EntityIDs.Begin() + (meshAndInstancesIt->second.EntityIDs.GetSize() - 1));
+
+		m_EntityIDsToInstanceKey.erase(entity);
+		m_EntityIDsToInstanceKey.erase(swappedEntityID);
 
 		//Unload Mesh, Todo: Should we always do this?
-		if (meshAndInstancesIt->second.RasterInstances.IsEmpty())
+		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexBuffer);
@@ -664,6 +774,14 @@ namespace LambdaEngine
 
 			m_DirtyDrawArgs = m_RequiredDrawArgs;
 			m_SBTRecordsDirty = true;
+
+			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			auto dirtyBLASToRemove = std::find_if(m_DirtyBLASs.begin(), m_DirtyBLASs.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry) {return pMeshEntry == &meshAndInstancesIt->second; });
+			
+			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end()) m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
+			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end()) m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
+			if (dirtyBLASToRemove != m_DirtyBLASs.end()) m_DirtyBLASs.erase(dirtyBLASToRemove);
 
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
 		}
@@ -761,15 +879,21 @@ namespace LambdaEngine
 
 		for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
 		{
-			//Todo: Check Key (or whatever we end up using)
+			// Todo: Check Key (or whatever we end up using)
 			DrawArg drawArg = {};
-			drawArg.pVertexBuffer		= meshAndInstancesIt->second.pVertexBuffer;
-			drawArg.VertexBufferSize	= meshAndInstancesIt->second.pVertexBuffer->GetDesc().SizeInBytes;
-			drawArg.pIndexBuffer		= meshAndInstancesIt->second.pIndexBuffer;
-			drawArg.IndexCount			= meshAndInstancesIt->second.IndexCount;
-			drawArg.pInstanceBuffer		= meshAndInstancesIt->second.pRasterInstanceBuffer;
-			drawArg.InstanceBufferSize	= meshAndInstancesIt->second.pRasterInstanceBuffer->GetDesc().SizeInBytes;
-			drawArg.InstanceCount		= meshAndInstancesIt->second.RasterInstances.GetSize();
+			drawArg.pVertexBuffer	= meshAndInstancesIt->second.pVertexBuffer;
+
+			drawArg.pIndexBuffer	= meshAndInstancesIt->second.pIndexBuffer;
+			drawArg.IndexCount		= meshAndInstancesIt->second.IndexCount;
+			
+			drawArg.pInstanceBuffer	= meshAndInstancesIt->second.pRasterInstanceBuffer;
+			drawArg.InstanceCount	= meshAndInstancesIt->second.RasterInstances.GetSize();
+			
+			drawArg.pMeshletBuffer			= meshAndInstancesIt->second.pMeshlets;
+			drawArg.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
+			drawArg.pUniqueIndicesBuffer	= meshAndInstancesIt->second.pUniqueIndices;
+			drawArg.pPrimitiveIndices		= meshAndInstancesIt->second.pPrimitiveIndices;
+
 			drawArgs.PushBack(drawArg);
 		}
 	}
@@ -1276,37 +1400,37 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			std::vector<Sampler*> nearestSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetNearestSampler());
+			TArray<Sampler*> linearSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetLinearSampler());
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
 			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
 			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			ResourceUpdateDesc aoMapsUpdateDesc = {};
 			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
 			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
 			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= nearestSamplers.data();
+			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= linearSamplers.GetData();
 
 			ResourceUpdateDesc metallicMapsUpdateDesc = {};
 			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
 			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
 			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= nearestSamplers.data();
+			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
 			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= nearestSamplers.data();
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);

@@ -64,10 +64,11 @@ namespace LambdaEngine
 
 	enum class ERenderStageDrawType : uint8
 	{
-		NONE					= 0,
-		SCENE_INSTANCES			= 1,
-		FULLSCREEN_QUAD			= 2,
-		CUBE					= 3,
+		NONE							= 0,
+		SCENE_INSTANCES					= 1,
+		SCENE_INSTANCES_MESH_SHADER	= 4,
+		FULLSCREEN_QUAD					= 2,
+		CUBE							= 3,
 	};
 
 	enum class ERenderGraphDimensionType : uint8
@@ -252,13 +253,15 @@ namespace LambdaEngine
 
 	struct DrawArg
 	{
-		Buffer* pVertexBuffer		= nullptr;
-		uint64	VertexBufferSize	= 0;
-		Buffer* pIndexBuffer		= nullptr;
-		uint32	IndexCount			= 0;
-		Buffer* pInstanceBuffer		= nullptr;
-		uint64	InstanceBufferSize	= 0;
-		uint32	InstanceCount		= 0;
+		Buffer* pVertexBuffer			= nullptr;
+		Buffer* pIndexBuffer			= nullptr;
+		Buffer* pInstanceBuffer			= nullptr;
+		Buffer* pMeshletBuffer			= nullptr;
+		Buffer* pUniqueIndicesBuffer	= nullptr;
+		Buffer* pPrimitiveIndices		= nullptr;
+		uint32	InstanceCount			= 0;
+		uint32	IndexCount				= 0;
+		uint32	MeshletCount			= 0;
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/
@@ -787,18 +790,20 @@ namespace LambdaEngine
 	{
 		switch (drawType)
 		{
-		case ERenderStageDrawType::SCENE_INSTANCES:		return "SCENE_INSTANCES";
-		case ERenderStageDrawType::FULLSCREEN_QUAD:		return "FULLSCREEN_QUAD";
-		case ERenderStageDrawType::CUBE:				return "CUBE";
-		default:										return "NONE";
+		case ERenderStageDrawType::SCENE_INSTANCES:					return "SCENE_INSTANCES";
+		case ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER:	return "SCENE_INSTANCES_MESH_SHADER";
+		case ERenderStageDrawType::FULLSCREEN_QUAD:					return "FULLSCREEN_QUAD";
+		case ERenderStageDrawType::CUBE:							return "CUBE";
+		default:													return "NONE";
 		}
 	}
 
 	FORCEINLINE ERenderStageDrawType RenderStageDrawTypeFromString(const String& string)
 	{
-		if (string == "SCENE_INSTANCES")	return ERenderStageDrawType::SCENE_INSTANCES;
-		if (string == "FULLSCREEN_QUAD")	return ERenderStageDrawType::FULLSCREEN_QUAD;
-		if (string == "CUBE")				return ERenderStageDrawType::CUBE;
+		if (string == "SCENE_INSTANCES")				return ERenderStageDrawType::SCENE_INSTANCES;
+		if (string == "SCENE_INSTANCES_MESH_SHADER")	return ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER;
+		if (string == "FULLSCREEN_QUAD")				return ERenderStageDrawType::FULLSCREEN_QUAD;
+		if (string == "CUBE")							return ERenderStageDrawType::CUBE;
 		return ERenderStageDrawType::NONE;
 	}
 

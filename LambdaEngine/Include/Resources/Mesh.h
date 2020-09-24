@@ -9,6 +9,9 @@
 	#pragma warning(disable : 4324) //Disable alignment warning
 #endif
 
+#define MAX_PRIMS 126
+#define MAX_VERTS 64
+
 namespace LambdaEngine
 {
 	struct Vertex
@@ -74,6 +77,7 @@ namespace LambdaEngine
 	{
 	public:
 		static Mesh* CreateQuad();
+		static void GenerateMeshlets(Mesh* pMesh, uint32 maxVerts = MAX_VERTS, uint32 maxPrims = MAX_PRIMS);
 	};
 }
 
