@@ -22,7 +22,6 @@ layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferAlbedo;
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferAORoughMetalValid;
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferCompactNormal;
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferVelocity;
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_MaskTexture;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -34,13 +33,8 @@ void main()
     vec3 albedo             = texture(u_GBufferAlbedo, in_TexCoord).rgb;
     vec4 aoRoughMetalValid  = texture(u_GBufferAORoughMetalValid, in_TexCoord);
 
-    float paintMask         = texture(u_MaskTexture, in_TexCoord).r;
-
-	if(paintMask > 0.5f)
-		 out_Color = vec4(1.f, 1.f, 1.f, 1.f);
-	else
-    	out_Color = vec4(0.3f, 0.3f, 0.3f, 1.f);
-    return;
+	out_Color = vec4(albedo, 1.f);
+	return;
 
     if (aoRoughMetalValid.a < 1.0f)
     {

@@ -28,5 +28,7 @@ void main()
     if(length(worldPosition-projectedPosition) <= BRUSH_SIZE)
         out_MaskTexture = vec4(1.f, 1.f, 1.f, 1.f);
     else
-        out_MaskTexture = vec4(worldPosition, 1.f);
+        discard;
+    //else
+    //    out_MaskTexture = vec4(0.f, 0.f, 0.f, 1.f);
 }

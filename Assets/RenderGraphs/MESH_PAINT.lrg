@@ -484,6 +484,13 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
+                    "name": "MASK_TEXTURE",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "MASK_PASS"
+                },
+                {
                     "name": "G_BUFFER_POSITION",
                     "removable": true,
                     "draw_args_mask": 4294967295,
@@ -661,13 +668,6 @@
                     "draw_args_mask": 4294967295,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
-                },
-                {
-                    "name": "MASK_TEXTURE",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "MASK_PASS"
                 },
                 {
                     "name": "G_BUFFER_DEPTH_STENCIL",

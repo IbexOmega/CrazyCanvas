@@ -5,9 +5,9 @@
 
 layout(location = 0) in vec3        out_WorldPosition;
 
-layout(location = 0) out vec4       out_MaskTexture;
+layout(location = 0) out vec4       out_UnwrappedTexture;
 
 void main()
 {
-    out_MaskTexture = vec4(out_WorldPosition, 1.f);
+    out_UnwrappedTexture = vec4(out_WorldPosition, 1.f);
 }
