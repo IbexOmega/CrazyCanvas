@@ -15,11 +15,13 @@ namespace LambdaEngine
 		:m_pFoundation(nullptr),
 		m_pPhysics(nullptr),
 		m_pDispatcher(nullptr),
-		m_pScene(nullptr)
+		m_pScene(nullptr),
+		m_pMaterial(nullptr)
 	{}
 
 	PhysicsSystem::~PhysicsSystem()
 	{
+		PX_RELEASE(m_pMaterial);
 		PX_RELEASE(m_pDispatcher);
 		PX_RELEASE(m_pScene);
 		PX_RELEASE(m_pPhysics);
@@ -74,7 +76,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		return true;
+		m_pMaterial = m_pPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+		return m_pMaterial;
 	}
 
 	void PhysicsSystem::Tick(Timestamp deltaTime)
@@ -85,6 +88,24 @@ namespace LambdaEngine
 
 	void PhysicsSystem::CreateCollisionComponent(const CollisionCreateInfo& collisionCreateInfo)
 	{
+		const glm::vec3& position = collisionCreateInfo.Position.Position;
+		const glm::quat& rotation = collisionCreateInfo.Rotation.Quaternion;
+
+		const Mesh* pMesh = ResourceManager::GetMesh(collisionCreateInfo.Mesh.MeshGUID);
+		const glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
+
+		const PxVec3 positionPX = { position.x, position.y, position.z };
+		const PxQuat rotationPX = { rotation.x, rotation.y, rotation.z, rotation.w };
+		const PxTransform transformPX(positionPX, rotationPX);
+		PxRigidStatic* pBody = m_pPhysics->createRigidStatic(transformPX);
+
+		PxShape* pBoxShape = m_pPhysics->createShape(PxBoxGeometry(halfExtent.x, halfExtent.y, halfExtent.z), *m_pMaterial);
+		pBody->attachShape(*pBoxShape);
+
+		m_pScene->addActor(*pBody);
+
+		pBoxShape->release();
+
 		CollisionComponent collisionComponent = {};
 		ECSCore::GetInstance()->AddComponent<CollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
 	}

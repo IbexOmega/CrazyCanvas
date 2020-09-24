@@ -63,5 +63,7 @@ namespace LambdaEngine
 
 		PxDefaultCpuDispatcher*	m_pDispatcher;
 		PxScene*				m_pScene;
+
+		PxMaterial* m_pMaterial;
 	};
 }
