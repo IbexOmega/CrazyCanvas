@@ -18,7 +18,7 @@ bool TrackSystem::Init()
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
-			{{{RW, TrackComponent::s_TID}}, {&transformComponents}, &m_CameraEntities}
+			{{{RW, TrackComponent::Type()}}, {&transformComponents}, &m_CameraEntities}
 		};
 		systemReg.Phase = 0;
 

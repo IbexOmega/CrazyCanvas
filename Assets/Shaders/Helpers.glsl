@@ -31,6 +31,16 @@ SPositions CalculatePositionsFromDepth(vec2 screenTexCoord, float sampledDepth, 
 	return positions;
 }
 
+vec3 PackNormal(vec3 normal)
+{
+	return (normalize(normal) + 1.0f) * 0.5f;
+}
+
+vec3 UnpackNormal(vec3 normal)
+{
+	return normalize((normal * 2.0f) - 1.0f);
+}
+
 float LinearizeDepth(float depth, float near, float far)
 {
 	float z = depth * 2.0 - 1.0;

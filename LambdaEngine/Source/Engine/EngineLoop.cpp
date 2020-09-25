@@ -18,6 +18,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Physics/PhysicsSystem.h"
@@ -130,6 +131,11 @@ namespace LambdaEngine
 #endif
 
 		if (!EngineConfig::LoadFromFile())
+		{
+			return false;
+		}
+
+		if (!InputActionSystem::LoadFromFile())
 		{
 			return false;
 		}

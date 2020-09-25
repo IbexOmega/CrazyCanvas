@@ -16,8 +16,40 @@ function get_vk_sdk_path()
 		end
 	end
 
-	print(string.format('No environment variables for path to Vulkan SDK are set: %s', array_to_string(sdkPathVars)))
+	print(string.format("No environment variables for path to Vulkan SDK are set: %s", array_to_string(sdkPathVars)))
 	return ""
+end
+
+-- libFolder is either checked or release
+function get_physx_copy_commands(libFolder, outputdir)
+	libDir = "../Dependencies/PhysX/lib/" .. libFolder
+
+	DLL_FILES = {
+		"PhysX_64.dll",
+		"PhysXCommon_64.dll",
+		"PhysXCooking_64.dll",
+		"PhysXDevice64.dll",
+		"PhysXFoundation_64.dll",
+		"PhysXGpu_64.dll"
+	}
+
+	targetPaths = {
+		"\"../Build/bin/" .. outputdir .. "/CrazyCanvas/\"",
+		"\"../Build/bin/" .. outputdir .. "/Sandbox/\"",
+		"\"../Build/bin/" .. outputdir .. "/Client/\"",
+		"\"../Build/bin/" .. outputdir .. "/Server/\""
+	}
+
+	copyCommands = {}
+
+	for _, dllFile in ipairs(DLL_FILES) do
+		for _, targetPath in ipairs(targetPaths) do
+			copyCommand = string.format("{COPY} \"%s/%s\" %s", libDir, dllFile, targetPath)
+			table.insert(copyCommands, copyCommand)
+		end
+	end
+
+	return copyCommands
 end
 
 function get_fmod_dll_path()
@@ -36,7 +68,7 @@ function get_fmod_dll_path()
 		end
 	end
 
-	print('fmodL.dll was not found, ensure that FMOD engine is installed or modify premake5.lua')
+	print("fmodL.dll was not found, ensure that FMOD engine is installed or modify premake5.lua")
 end
 
 VK_SDK_PATH		= get_vk_sdk_path()
@@ -334,12 +366,14 @@ workspace "LambdaEngine"
 		{
 			"Dependencies/",
 			"Dependencies/assimp/include",
-			"Dependencies/bullet/src",
 			"Dependencies/imgui",
 			"Dependencies/imnodes",
 			"Dependencies/glm",
 			"Dependencies/glslang/include",
 			"Dependencies/ordered-map/include",
+			"Dependencies/PhysX/include",
+			-- "D:/Documents/PhysX-4.1/physx/include",
+			-- "D:/Documents/PhysX-4.1/pxshared/include",
 			"Dependencies/rapidjson/include",
 			"Dependencies/stb",
 			"Dependencies/WavLib",
@@ -380,9 +414,9 @@ workspace "LambdaEngine"
 				-- Assimp
 				"Dependencies/assimp/bin",
 
-				-- Bullet physics
-				"Dependencies/bullet/lib",
-				
+				-- PhysX
+				"Dependencies/PhysX/lib"
+                
 				-- NoesisGUI
 				"Dependencies/NoesisGUI/Lib",
 			}
@@ -416,11 +450,13 @@ workspace "LambdaEngine"
 				"/debug/assimp-vc142-mtd.lib",
 				"/debug/IrrXMLd.lib",
 				"/debug/zlibstaticd.lib",
-				
-				--Bullet
-				"/debug/BulletCollision_vs2010_x64_debug.lib",
-				"/debug/BulletDynamics_vs2010_x64_debug.lib",
-				"/debug/LinearMath_vs2010_x64_debug.lib",
+
+				-- PhysX
+				"/checked/PhysX_64.lib",
+				"/checked/PhysXCommon_64.lib",
+				"/checked/PhysXCooking_64.lib",
+				"/checked/PhysXFoundation_64.lib",
+				"/checked/PhysXExtensions_dynamic_64.lib"
 				
 				--NoesisGUI
 				"Noesis.lib",
@@ -444,11 +480,13 @@ workspace "LambdaEngine"
 				"/release/IrrXML.lib",
 				"/release/zlibstatic.lib",
 
-				-- Bullet
-				"/release/BulletCollision_vs2010_x64_release.lib",
-				"/release/BulletDynamics_vs2010_x64_release.lib",
-				"/release/LinearMath_vs2010_x64_release.lib",
-				
+				-- PhysX
+				"/release/PhysX_64.lib",
+				"/release/PhysXCommon_64.lib",
+				"/release/PhysXCooking_64.lib",
+				"/release/PhysXFoundation_64.lib",
+				"/release/PhysXExtensions_dynamic_64.lib"
+                
 				--NoesisGUI
 				"Noesis.lib",
 			}
@@ -509,6 +547,17 @@ workspace "LambdaEngine"
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
+		-- PhysX
+		filter { "system:windows", "configurations:Debug" }
+			postbuildcommands
+			{
+				get_physx_copy_commands("checked", outputdir)
+			}
+			filter { "system:windows", "configurations:Release or Production" }
+			postbuildcommands
+			{
+				get_physx_copy_commands("release", outputdir)
+			}
 		-- LambdaEngine
 		filter { "system:windows", "platforms:x64_SharedLib" }
 			postbuildcommands
@@ -546,6 +595,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
+			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
 		}
 
@@ -599,6 +649,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
+			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
 		}
 
@@ -652,6 +703,7 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
+			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
 		}
 
@@ -705,6 +757,8 @@ workspace "LambdaEngine"
 			"Dependencies/glm",
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
+			"Dependencies/rapidjson/include",
+			"Dependencies/PhysX/include"
 		}
 
 		-- Files

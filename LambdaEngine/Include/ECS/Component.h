@@ -1,16 +1,17 @@
 #pragma once
 
 #include "Containers/TArray.h"
+#include "Containers/String.h"
+#include "ECS/ComponentType.h"
 
-#include <typeindex>
-
-#define TID(type) std::type_index(typeid(type))
-
-#define DECL_COMPONENT(Component)		\
-	static std::type_index s_TID
-
-#define INIT_COMPONENT(Component)		\
-	std::type_index Component::s_TID = TID(Component)
+#define DECL_COMPONENT(Component) \
+	private: \
+		inline static constexpr const ComponentType s_Type = ComponentType(#Component); \
+	public: \
+		FORCEINLINE static const ComponentType* Type() \
+		{ \
+			return &s_Type; \
+		}
 
 namespace LambdaEngine
 {
@@ -24,7 +25,7 @@ namespace LambdaEngine
 	struct ComponentAccess
 	{
 		ComponentPermissions Permissions;
-		std::type_index TID;
+		const ComponentType* TID;
 	};
 
 	class IComponentGroup
