@@ -7,6 +7,8 @@
   "RayTracingEnabled": true,
   "MeshShadersEnabled": true,
   "ShowRenderGraph": false,
+  "RayTracingEnabled": false,
+  "EnablePhysicsRenderer": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",
   "ShowDemo": false,
   "Debugging": false,
