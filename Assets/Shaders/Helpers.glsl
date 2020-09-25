@@ -25,16 +25,26 @@ SPositions CalculatePositionsFromDepth(vec2 screenTexCoord, float sampledDepth, 
 	viewSpacePosition = viewSpacePosition / viewSpacePosition.w;
 	vec4 homogenousPosition = cameraViewInv * viewSpacePosition;
 
-    SPositions positions;
+	SPositions positions;
 	positions.WorldPos  = homogenousPosition.xyz;
 	positions.ViewPos   = viewSpacePosition.xyz;
-    return positions;
+	return positions;
+}
+
+vec3 PackNormal(vec3 normal)
+{
+	return (normalize(normal) + 1.0f) * 0.5f;
+}
+
+vec3 UnpackNormal(vec3 normal)
+{
+	return normalize((normal * 2.0f) - 1.0f);
 }
 
 float LinearizeDepth(float depth, float near, float far)
 {
-    float z = depth * 2.0 - 1.0;
-    return (2.0 * near * far) / (far + near - z * (far - near));
+	float z = depth * 2.0 - 1.0;
+	return (2.0 * near * far) / (far + near - z * (far - near));
 }
 
 /*
@@ -106,59 +116,59 @@ vec3 GammaCorrection(vec3 color, float gamma)
 
 float GoldNoise(vec3 x, float seed, float min, float max)
 {
-    const float BASE_SEED   = 10000.0f;
-    const float GOLD_PHI    = 1.61803398874989484820459 * 00000.1; // Golden Ratio   
-    const float GOLD_PI     = 3.14159265358979323846264 * 00000.1; // PI
-    const float GOLD_SQ2    = 1.41421356237309504880169 * 10000.0; // Square Root of Two
-    const float GOLD_E      = 2.71828182846;
+	const float BASE_SEED   = 10000.0f;
+	const float GOLD_PHI    = 1.61803398874989484820459 * 00000.1; // Golden Ratio   
+	const float GOLD_PI     = 3.14159265358979323846264 * 00000.1; // PI
+	const float GOLD_SQ2    = 1.41421356237309504880169 * 10000.0; // Square Root of Two
+	const float GOLD_E      = 2.71828182846;
 
-    return mix(min, max, fract(tan(distance(x * (BASE_SEED + seed + GOLD_PHI), vec3(GOLD_PHI, GOLD_PI, GOLD_E))) * GOLD_SQ2) * 0.5f + 0.5f);
+	return mix(min, max, fract(tan(distance(x * (BASE_SEED + seed + GOLD_PHI), vec3(GOLD_PHI, GOLD_PI, GOLD_E))) * GOLD_SQ2) * 0.5f + 0.5f);
 }
 
 void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb) 
 { 
-    if (abs(N.x) > abs(N.y))  	Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
-    else 						Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
-    //Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
-    Nb = cross(N, Nt); 
+	if (abs(N.x) > abs(N.y))  	Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
+	else 						Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
+	//Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
+	Nb = cross(N, Nt); 
 } 
 
 vec3 ReflectanceDirection(vec3 reflDir, vec3 Rt, vec3 Rb, float roughness, vec2 uniformRandom)
 {
-    float specularExponent = 2.0f / (pow(roughness, 4.0f)) - 2.0f;
+	float specularExponent = 2.0f / (pow(roughness, 4.0f)) - 2.0f;
 
-    if (specularExponent > 2048.0f)
-        return reflDir;
+	if (specularExponent > 2048.0f)
+		return reflDir;
 
-    float cosTheta = pow(0.244f, 1.0f / (specularExponent + 1.0f));
-    float z = mix(cosTheta, 1.0f, uniformRandom.x);
-    float phi = mix(-2.0f * PI, 2.0f * PI, uniformRandom.y);
-    float sinTheta = sqrt(1.0f - z * z);
+	float cosTheta = pow(0.244f, 1.0f / (specularExponent + 1.0f));
+	float z = mix(cosTheta, 1.0f, uniformRandom.x);
+	float phi = mix(-2.0f * PI, 2.0f * PI, uniformRandom.y);
+	float sinTheta = sqrt(1.0f - z * z);
 
-    vec3 coneVector = vec3(sinTheta * cos(phi), z, sinTheta * sin(phi));
-    return vec3(
-        coneVector.x * Rb.x + coneVector.y * reflDir.x + coneVector.z * Rt.x, 
-        coneVector.x * Rb.y + coneVector.y * reflDir.y + coneVector.z * Rt.y, 
-        coneVector.x * Rb.z + coneVector.y * reflDir.z + coneVector.z * Rt.z); 
+	vec3 coneVector = vec3(sinTheta * cos(phi), z, sinTheta * sin(phi));
+	return vec3(
+		coneVector.x * Rb.x + coneVector.y * reflDir.x + coneVector.z * Rt.x, 
+		coneVector.x * Rb.y + coneVector.y * reflDir.y + coneVector.z * Rt.y, 
+		coneVector.x * Rb.z + coneVector.y * reflDir.z + coneVector.z * Rt.z); 
 }
 
 vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi)
 {
-    return vec3(sinTheta * cos(phi), 
-                sinTheta * sin(phi), 
-                cosTheta);
+	return vec3(sinTheta * cos(phi), 
+				sinTheta * sin(phi), 
+				cosTheta);
 }
 
 vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi, vec3 x, vec3 y, vec3 z)
 {
-    return 	sinTheta * cos(phi) * x + 
+	return 	sinTheta * cos(phi) * x + 
 			sinTheta * sin(phi) * y +
 			cosTheta * z;
 }
 
 float FlipIfNotSameHemisphere(vec3 w_0, vec3 w_1)
 {
-    return step(0.0f, w_0.z * w_1.z) * 2.0f - 1.0f;
+	return step(0.0f, w_0.z * w_1.z) * 2.0f - 1.0f;
 }
 
 bool IsSameHemisphere(vec3 w_0, vec3 w_1)
@@ -168,17 +178,17 @@ bool IsSameHemisphere(vec3 w_0, vec3 w_1)
 
 float RadicalInverse_VdC(uint bits) 
 {
-    bits = (bits << 16u) | (bits >> 16u);
-    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-    return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
 
 vec2 Hammersley(uint i, uint N)
 {
-    return vec2(float(i) / float(N), RadicalInverse_VdC(i));
+	return vec2(float(i) / float(N), RadicalInverse_VdC(i));
 }  
 
 vec2 DirToOct(vec3 normal)
@@ -218,7 +228,7 @@ vec3 octToDir(uint octo)
 */
 float luminance(vec3 rgb)
 {
-    return dot(rgb, vec3(0.2126f, 0.7152f, 0.0722f));
+	return dot(rgb, vec3(0.2126f, 0.7152f, 0.0722f));
 }
 
 float SphereSurfaceArea(float radius)
@@ -242,20 +252,20 @@ vec2 ConcentricSampleDisk(vec2 u)
 	if (dot(uOffset, uOffset) == 0.0f) return vec2(0.0f);
 
 	float r     = 0.0f;
-    float theta = 0.0f;
+	float theta = 0.0f;
 
-    if (abs(uOffset.x) > abs(uOffset.y))
-    {
-        r = uOffset.x;
-        theta = PI_OVER_FOUR * uOffset.y / uOffset.x;
-    }
-    else
-    {
-        r = uOffset.y;
-        theta = PI_OVER_TWO - PI_OVER_FOUR * uOffset.x / uOffset.y;
-    }
+	if (abs(uOffset.x) > abs(uOffset.y))
+	{
+		r = uOffset.x;
+		theta = PI_OVER_FOUR * uOffset.y / uOffset.x;
+	}
+	else
+	{
+		r = uOffset.y;
+		theta = PI_OVER_TWO - PI_OVER_FOUR * uOffset.x / uOffset.y;
+	}
 
-    return r * vec2(cos(theta), sin(theta));
+	return r * vec2(cos(theta), sin(theta));
 }
 
 //These functions assume that the untransformed quad lies in the xz-plane with normal pointing in positive y direction and has a radius of 1 (side length of 2)

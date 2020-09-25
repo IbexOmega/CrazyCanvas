@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS/ComponentStorage.h"
+#include "ECS/ComponentType.h"
 #include "ECS/EntityPublisher.h"
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
@@ -33,19 +34,27 @@ namespace LambdaEngine
 		template<typename Comp>
 		Comp& AddComponent(Entity entity, const Comp& component);
 
-		// Fetch a reference to a component within a specific entity.
+		// Fetch a reference to a component for a specific entity.
 		template<typename Comp>
 		Comp& GetComponent(Entity entity);
 
-		// Fetch the whole array with the specific component type.
+		// Fetch a const reference to a component for a specific entity.
+		template<typename Comp>
+		const Comp& GetComponent(Entity entity) const;
+
+		// Fetch a pointer to an array containing all components of a specific type.
 		template<typename Comp>
 		ComponentArray<Comp>* GetComponentArray();
 
-		// Remove a component from a specific entity.
+		// Fetch a const pointer to an array containing all components of a specific type.
+		template<typename Comp>
+		const ComponentArray<Comp>* GetComponentArray() const;
+
+		// RemoveComponent enqueues the removal of a component, which is performed at the end of the current/next frame.
 		template<typename Comp>
 		void RemoveComponent(Entity entity);
 
-		// Remove a specific entity.
+		// RemoveEntity enqueues the removal of an entity, which is performed at the end of the current/next frame.
 		void RemoveEntity(Entity entity);
 
 		void ScheduleJobASAP(const Job& job);
@@ -74,7 +83,7 @@ namespace LambdaEngine
 		void PerformComponentRegistrations();
 		void PerformComponentDeletions();
 		void PerformEntityDeletions();
-		bool DeleteComponent(Entity entity, std::type_index componentType);
+		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
 	private:
 		EntityRegistry m_EntityRegistry;
@@ -83,10 +92,12 @@ namespace LambdaEngine
 		ComponentStorage m_ComponentStorage;
 
 		TArray<Entity> m_EntitiesToDelete;
-		TArray<std::pair<Entity, std::type_index>> m_ComponentsToDelete;
-		TArray<std::pair<Entity, std::type_index>> m_ComponentsToRegister;
+		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToDelete;
+		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToRegister;
 
 		Timestamp m_DeltaTime;
+
+		SpinLock m_LockAddComponent, m_LockRemoveComponent, m_LockRemoveEntity;
 
 	private:
 		static ECSCore* s_pInstance;
@@ -95,19 +106,26 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline Comp& ECSCore::AddComponent(Entity entity, const Comp& component)
 	{
+		std::scoped_lock<SpinLock> lock(m_LockAddComponent);
 		if (!m_ComponentStorage.HasType<Comp>())
 			m_ComponentStorage.RegisterComponentType<Comp>();
 
 		/*	Create component immediately, but hold off on registering and publishing it until the end of the frame.
 			This is to prevent concurrency issues. Publishing a component means pushing entity IDs to IDVectors,
 			and there is no guarentee that no one is simultaneously reading from these IDVectors. */
-		Comp& comp = m_ComponentStorage.AddComponent<Comp>(entity, component);
-		m_ComponentsToRegister.PushBack({entity, Comp::s_TID});
-		return comp;
+		
+		m_ComponentsToRegister.PushBack({entity, Comp::Type()});
+		return m_ComponentStorage.AddComponent<Comp>(entity, component);
 	}
 
 	template<typename Comp>
 	inline Comp& ECSCore::GetComponent(Entity entity)
+	{
+		return m_ComponentStorage.GetComponent<Comp>(entity);
+	}
+
+	template<typename Comp>
+	inline const Comp& ECSCore::GetComponent(Entity entity) const
 	{
 		return m_ComponentStorage.GetComponent<Comp>(entity);
 	}
@@ -119,8 +137,15 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
+	inline const ComponentArray<Comp>* ECSCore::GetComponentArray() const
+	{
+		return m_ComponentStorage.GetComponentArray<Comp>();
+	}
+
+	template<typename Comp>
 	inline void ECSCore::RemoveComponent(Entity entity)
 	{
-		m_ComponentsToDelete.PushBack({entity, Comp::s_TID});
+		std::scoped_lock<SpinLock> lock(m_LockRemoveComponent);
+		m_ComponentsToDelete.PushBack({entity, Comp::Type()});
 	}
 }

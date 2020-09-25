@@ -18,6 +18,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Physics/PhysicsSystem.h"
@@ -38,6 +39,7 @@
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
+#include "Game/ECS/Systems/Networking/NetworkingSystem.h"
 
 namespace LambdaEngine
 {
@@ -130,6 +132,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!InputActionSystem::LoadFromFile())
+		{
+			return false;
+		}
+
 		SetFixedTimestep(Timestamp::Seconds(1.0 / EngineConfig::GetDoubleProperty("FixedTimestep")));
 
 		if (!ThreadPool::Init())
@@ -199,6 +206,11 @@ namespace LambdaEngine
 		}
 
 		if (!CameraSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!NetworkingSystem::GetInstance().Init())
 		{
 			return false;
 		}

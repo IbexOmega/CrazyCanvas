@@ -106,8 +106,8 @@ namespace LambdaEngine
 			CONSOLE_SCREEN_BUFFER_INFO csbi = { };
 			if (::GetConsoleScreenBufferInfo(s_OutputHandle, &csbi))
 			{
-				COORD		dst			= { 0, -csbi.dwSize.Y };
-				CHAR_INFO	fillInfo	= { '\0', FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
+				COORD dst = { 0, static_cast<SHORT>(-csbi.dwSize.Y) };
+				CHAR_INFO fillInfo = { '\0', FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
 				::ScrollConsoleScreenBufferA(s_OutputHandle, &csbi.srWindow, nullptr, dst, &fillInfo);
 
 				COORD cursorPos = { 0, 0 };
@@ -125,7 +125,7 @@ namespace LambdaEngine
 			CONSOLE_SCREEN_BUFFER_INFO csbi = { };
 			if (::GetConsoleScreenBufferInfo(s_OutputHandle, &csbi))
 			{
-				COORD cursorPos = { 0, csbi.dwCursorPosition.Y - 1};
+				COORD cursorPos = { 0, static_cast<SHORT>(csbi.dwCursorPosition.Y - 1) };
 				DWORD dwConSize = csbi.dwSize.X;
 				DWORD dwCharsWritten;
 				if (!::FillConsoleOutputCharacter(s_OutputHandle, (TCHAR)' ', dwConSize, cursorPos, &dwCharsWritten))

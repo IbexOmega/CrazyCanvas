@@ -40,7 +40,7 @@ namespace LambdaEngine
 		struct ShaderLoadDesc
 		{
 			String				Filepath	= "";
-			FShaderStageFlags	Stage		= FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
+			FShaderStageFlag	Stage		= FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
 			EShaderLang			Lang		= EShaderLang::SHADER_LANG_NONE;
 			const char*			pEntryPoint	= nullptr;
 		};
@@ -140,7 +140,7 @@ namespace LambdaEngine
 		*	pEntryPoint - The name of the shader entrypoint
 		* return - a valid GUID if the shader was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadShaderFromFile(const String& filename, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint = "main");
+		static GUID_Lambda LoadShaderFromFile(const String& filename, FShaderStageFlag stage, EShaderLang lang, const char* pEntryPoint = "main");
 
 		/*
 		* Load sound from file

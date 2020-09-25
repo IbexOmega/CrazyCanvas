@@ -561,7 +561,7 @@ namespace LambdaEngine
 	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)
 	{
 		VALIDATE(pBufferBarriers		!= nullptr);
-		VALIDATE(bufferBarrierCount	< MAX_BUFFER_BARRIERS);
+		VALIDATE(bufferBarrierCount	<= MAX_BUFFER_BARRIERS);
 
 		BufferVK* pVkBuffer = nullptr;
 		for (uint32 i = 0; i < bufferBarrierCount; i++)

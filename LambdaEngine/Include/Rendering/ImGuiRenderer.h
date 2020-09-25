@@ -9,6 +9,10 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Core/API/DescriptorHeap.h"
+#include "Core/API/DescriptorSet.h"
+#include "Core/API/CommandList.h"
+
 struct ImGuiContext;
 
 namespace LambdaEngine
@@ -79,13 +83,9 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void Render(
-			CommandAllocator* pGraphicsCommandAllocator,
-			CommandList* pGraphicsCommandList,
-			CommandAllocator* pComputeCommandAllocator,
-			CommandList* pComputeCommandList,
 			uint32 modFrameIndex,
 			uint32 backBufferIndex,
-			CommandList** ppPrimaryExecutionStage,
+			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondaryExecutionStage)	override final;
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
@@ -113,6 +113,7 @@ namespace LambdaEngine
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
+		bool CreateCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		bool CreatePipelineState();
 
@@ -122,9 +123,13 @@ namespace LambdaEngine
 		const GraphicsDevice*	m_pGraphicsDevice			= nullptr;
 
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		uint32 m_BackBufferCount = 0;
 
-		TSharedRef<CommandAllocator>	m_CopyCommandAllocator	= nullptr;
-		TSharedRef<CommandList>			m_CopyCommandList		= nullptr;
+		TSharedRef<CommandAllocator>	m_CopyCommandAllocator		= nullptr;
+		TSharedRef<CommandList>			m_CopyCommandList			= nullptr;
+
+		CommandAllocator**	m_ppRenderCommandAllocators	= nullptr;
+		CommandList**		m_ppRenderCommandLists		= nullptr;
 
 		uint64						m_PipelineStateID	= 0;
 		TSharedRef<PipelineLayout>	m_PipelineLayout	= nullptr;

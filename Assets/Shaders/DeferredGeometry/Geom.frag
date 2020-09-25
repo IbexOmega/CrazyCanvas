@@ -26,17 +26,17 @@ layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MA
 layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;
 layout(location = 2) out vec4 out_AO_Rough_Metal_Valid;
-layout(location = 3) out vec2 out_Compact_Normal;
+layout(location = 3) out vec3 out_Compact_Normal;
 layout(location = 4) out vec2 out_Velocity;
 
 void main()
 {
-    vec3 normal 	= normalize(in_Normal);
+	vec3 normal 	= normalize(in_Normal);
 	vec3 tangent 	= normalize(in_Tangent);
 	vec3 bitangent	= normalize(in_Bitangent);
 	vec2 texCoord 	= in_TexCoord;
 
-    mat3 TBN = mat3(tangent, bitangent, normal);
+	mat3 TBN = mat3(tangent, bitangent, normal);
 
 	vec3 sampledAlbedo 	    = texture(u_AlbedoMaps[in_MaterialSlot],      texCoord).rgb;
 	vec3 sampledNormal 	    = texture(u_NormalMaps[in_MaterialSlot],      texCoord).rgb;
@@ -49,27 +49,27 @@ void main()
 
 	SMaterialParameters materialParameters = u_MaterialParameters.val[in_MaterialSlot];
 
-    vec2 currentNDC 	= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
+	vec2 currentNDC 	= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC 		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
 	//0
 	out_Position				= vec4(in_WorldPosition, 0.0f);
 
-    //1
-    vec3 storedAlbedo         	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+	//1
+	vec3 storedAlbedo         	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 	out_Albedo 				  	= storedAlbedo;
 
-    //2
-    float storedAO            	= materialParameters.AO * sampledAO;
-    float storedRoughness     	= materialParameters.Roughness * sampledRoughness;
-    float storedMetallic      	= materialParameters.Metallic * sampledMetallic;
+	//2
+	float storedAO            	= materialParameters.AO * sampledAO;
+	float storedRoughness     	= materialParameters.Roughness * sampledRoughness;
+	float storedMetallic      	= materialParameters.Metallic * sampledMetallic;
 	out_AO_Rough_Metal_Valid	= vec4(storedAO, storedRoughness, storedMetallic, 1.0f);
 
-    //3
+	//3
 	vec2 storedShadingNormal  	= DirToOct(shadingNormal);
-	out_Compact_Normal       	= storedShadingNormal;
+	out_Compact_Normal       	= PackNormal(shadingNormal);
 
-    //4
+	//4
 	vec2 screenVelocity 	  	= (prevNDC - currentNDC);// + in_CameraJitter;
 	out_Velocity              	= vec2(screenVelocity);    
 }

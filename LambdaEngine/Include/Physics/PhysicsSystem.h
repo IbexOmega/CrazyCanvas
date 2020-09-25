@@ -2,10 +2,15 @@
 
 #include "ECS/System.h"
 
-#include <btBulletDynamicsCommon.h>
+#undef realloc
+#undef free
+#include <PxPhysicsAPI.h>
+#include <foundation/PxErrorCallback.h>
 
 namespace LambdaEngine
 {
+	using namespace physx;
+
 	class PhysicsSystem : public System
 	{
 	public:
@@ -22,10 +27,13 @@ namespace LambdaEngine
 		static PhysicsSystem s_Instance;
 
 	private:
-		btDbvtBroadphase m_BroadphaseInterface;
-		btDefaultCollisionConfiguration m_CollisionConfiguration;
-		btCollisionDispatcher* m_pCollisionDispatcher;
-		btSequentialImpulseConstraintSolver m_ConstraintSolver;
-		btDiscreteDynamicsWorld* m_pDynamicsWorld;
+		PxDefaultAllocator		m_Allocator;
+		PxDefaultErrorCallback	m_ErrorCallback;
+
+		PxFoundation*	m_pFoundation;
+		PxPhysics*		m_pPhysics;
+
+		PxDefaultCpuDispatcher*	m_pDispatcher;
+		PxScene*				m_pScene;
 	};
 }

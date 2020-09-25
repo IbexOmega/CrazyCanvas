@@ -5,7 +5,6 @@
 
 #include "../Defines.glsl"
 
-
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
 
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
@@ -22,25 +21,25 @@ layout(location = 7) out vec4 out_PrevClipPosition;
 
 void main()
 {
-    SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
-    SInstance instance                          = b_Instances.val[gl_InstanceIndex];
-    SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
+	SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
+	SInstance instance                          = b_Instances.val[gl_InstanceIndex];
+	SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
-    vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
-    vec4 prevWorldPosition  = instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
+	vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
+	vec4 prevWorldPosition  = instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
-    vec3 normal 	        = normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+	vec3 normal 	        = normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
 	vec3 tangent            = normalize((instance.Transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent 	        = normalize(cross(normal, tangent));
 
-    out_MaterialSlot        = instance.MaterialSlot;
-    out_WorldPosition       = worldPosition.xyz;
+	out_MaterialSlot        = instance.MaterialSlot;
+	out_WorldPosition       = worldPosition.xyz;
 	out_Normal 			    = normal;
 	out_Tangent 		    = tangent;
 	out_Bitangent 		    = bitangent;
 	out_TexCoord 		    = vertex.TexCoord.xy;
-    out_ClipPosition        = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
-    out_PrevClipPosition    = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
+	out_ClipPosition        = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
+	out_PrevClipPosition    = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
 
-    gl_Position = out_ClipPosition;
+	gl_Position = out_ClipPosition;
 }
