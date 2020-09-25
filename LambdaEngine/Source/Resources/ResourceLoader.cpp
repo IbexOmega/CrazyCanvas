@@ -783,7 +783,7 @@ namespace LambdaEngine
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
 
-		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
+		shader.setStringsWithLengths(&pFinalSource, &size, 1);
 
 		//Todo: Fetch this
 		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
