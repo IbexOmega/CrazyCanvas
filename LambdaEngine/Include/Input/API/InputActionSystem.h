@@ -13,8 +13,8 @@ namespace LambdaEngine
 
 		static bool LoadFromFile();
 		static bool WriteToFile();
-		static bool ChangeKeyBinding(String action, EKey key);
-		static bool IsActive(String action);
+		static bool ChangeKeyBinding(const String& action, EKey key);
+		static bool IsActive(const String& action);
 
 	private:
 		static THashTable<String, EKey> m_CurrentKeyBindings;
