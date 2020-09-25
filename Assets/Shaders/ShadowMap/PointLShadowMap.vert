@@ -20,6 +20,7 @@ layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 
 layout(location = 0) out vec4 out_WorldPos;
 layout(location = 1) out flat vec3 out_PointLightPosition;
+layout(location = 2) out flat float out_FarPlane;
 
 void main()
 {
@@ -28,12 +29,13 @@ void main()
     SLightsBuffer lightsBuffer                  = b_LightsBuffer.val;
     
     uint pointLightIndex    = pc.Iteration / 6U;
-    if (pointLightIndex >= lightsBuffer.PointLightCount)
+    if (pointLightIndex >= uint(lightsBuffer.PointLightCount))
         gl_Position = vec4(0.f);
     uint faceIndex          = pc.Iteration % 6U;
 
     SPointLight pointLight = b_LightsBuffer.pointLights[pointLightIndex];
 
+    out_FarPlane            = pointLight.FarPlane;
     out_WorldPos            = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
     out_PointLightPosition  = pointLight.Position;
     gl_Position             = pointLight.ProjView[faceIndex] * out_WorldPos;

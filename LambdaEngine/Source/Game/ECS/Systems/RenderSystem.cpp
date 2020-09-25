@@ -850,6 +850,7 @@ namespace LambdaEngine
 		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
+			m_PointLights[index].FarPlane = farPlane;
 			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}

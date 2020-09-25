@@ -386,11 +386,10 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
 
-float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap)
+float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, float farPlane)
 {
     vec3 fragToLight  = fragPos - lightPos;
 
-	float farPlane = 10.0f;
 	float closestDepth = texture(shadowMap, fragToLight).r;
 	closestDepth *= farPlane;
 	float currentDepth = length(fragToLight);

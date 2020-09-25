@@ -7,12 +7,12 @@
 #include "../Helpers.glsl"
 
 layout(location = 0) in vec4 out_WorldPos;
-layout(location = 1) in flat vec3 out_PointLightPosition;
+layout(location = 1) in flat vec3 in_PointLightPosition;
+layout(location = 2) in flat float in_FarPlane;
 
 void main()
 {
-    float lightDistance = length(out_WorldPos.xyz - out_PointLightPosition);
-    float farplane = 10.0f;
+    float lightDistance = length(out_WorldPos.xyz - in_PointLightPosition);
 
-    gl_FragDepth = lightDistance / farplane;
+    gl_FragDepth = lightDistance / in_FarPlane;
 }

@@ -92,7 +92,7 @@ struct SPointLight
 {
     vec4    ColorIntensity;
     vec3    Position;
-    uint    Padding;
+	float	FarPlane;
     mat4    ProjView[6];
 };
 
@@ -100,7 +100,7 @@ struct SLightsBuffer
 {
     vec4        DirL_ColorIntensity;
 	vec3        DirL_Direction;
-    uint		PointLightCount;
+    float		PointLightCount;
     mat4        DirL_ProjView;
 };
 

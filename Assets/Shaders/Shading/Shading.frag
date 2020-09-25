@@ -89,7 +89,7 @@ void main()
 	}
 
 	//Point Light Loop
-	for (uint i = 0; i < lightBuffer.PointLightCount; i++)
+	for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
 	{
 		SPointLight light = b_LightsBuffer.pointLights[i];
 
@@ -98,8 +98,7 @@ void main()
 		L = normalize(L);
 		vec3 H = normalize(V + L);
 		
-		vec3 fragPos 			= worldPos;
-		float inShadow 			= PointShadowDepthTest(fragPos, light.Position, u_PointLShadowMap[i]);
+		float inShadow 			= PointShadowDepthTest(worldPos, light.Position, u_PointLShadowMap[i], light.FarPlane);
 		float attenuation   	= 1.0f / (distance * distance);
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
