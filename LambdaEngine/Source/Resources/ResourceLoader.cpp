@@ -845,12 +845,11 @@ namespace LambdaEngine
 		glslang::TShader shader(shaderType);
 
 		std::string source			= std::string(pSource);
-		int32 foundBracket			= int32(source.find_last_of('}') + 1);
-		source[foundBracket]		= '\0';
+		int32 size					= source.size();
 		const char* pFinalSource	= source.c_str();
-		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
+		shader.setStringsWithLengths(&pFinalSource, &size, 1);
 
-		//Todo: Fetch this
+		// Todo: Fetch this
 		int32 clientInputSemanticsVersion					= 100;
 		glslang::EShTargetClientVersion vulkanClientVersion	= glslang::EShTargetVulkan_1_2;
 		glslang::EShTargetLanguageVersion targetVersion		= glslang::EShTargetSpv_1_5;
@@ -865,7 +864,7 @@ namespace LambdaEngine
 
 		DirStackFileIncluder includer;
 
-		//Get Directory Path of File
+		// Get Directory Path of File
 		size_t found				= filepath.find_last_of("/\\");
 		std::string directoryPath	= filepath.substr(0, found);
 

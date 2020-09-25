@@ -10,15 +10,13 @@ layout(binding = 0, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D u_Back
 
 layout(location = 0) out vec4 out_Color;
 
-#define FXAA_EDGE_THRESHOLD			(1.0f / 8.0f)
-#define FXAA_EDGE_THRESHOLD_MIN		(1.0f / 24.0f)
-
-#define FXAA_SUBPIX_TRIM			(1.0f / 4.0f)
-#define FXAA_SUBPIX_CAP				(3.0f / 4.0f)
-#define FXAA_SUBPIX_TRIM_SCALE		(1.0f / (1.0f - FXAA_SUBPIX_TRIM))
-
-#define FXAA_SEARCH_THRESHOLD		(1.0f / 4.0f)
-#define FXAA_SEARCH_STEPS			24
+#define FXAA_EDGE_THRESHOLD		(1.0f / 8.0f)
+#define FXAA_EDGE_THRESHOLD_MIN	(1.0f / 24.0f)
+#define FXAA_SUBPIX_TRIM		(1.0f / 4.0f)
+#define FXAA_SUBPIX_CAP			(3.0f / 4.0f)
+#define FXAA_SUBPIX_TRIM_SCALE	(1.0f / (1.0f - FXAA_SUBPIX_TRIM))
+#define FXAA_SEARCH_THRESHOLD	(1.0f / 4.0f)
+#define FXAA_SEARCH_STEPS		32
 
 vec3 Lerp(vec3 a, vec3 b, float amountOfA)
 {
@@ -27,70 +25,105 @@ vec3 Lerp(vec3 a, vec3 b, float amountOfA)
 	return t0 + t1;
 }
 
+#define PASSTHROUGH			1
+#define DEBUG_EDGES			0
+#define DEBUG				0
+#define DEBUG_HORIZONTAL	0
+#define DEBUG_NEGPOS		0
+#define DEBUG_OFFSET		0
+#define DEBUG_STEP			0
+#define DEBUG_BLEND_FACTOR	0
+
+#if 1
 void main()
 {
-	// Perform edge detection
-	vec4 middle = textureOffset(u_BackBuffer, in_TexCoord, ivec2( 0,  0));
-	vec4 north  = textureOffset(u_BackBuffer, in_TexCoord, ivec2( 0,  1));
-	vec4 south  = textureOffset(u_BackBuffer, in_TexCoord, ivec2( 0, -1));
-	vec4 west   = textureOffset(u_BackBuffer, in_TexCoord, ivec2(-1,  0));
-	vec4 east   = textureOffset(u_BackBuffer, in_TexCoord, ivec2( 1,  0));
-	float lumaM = middle.a;
-	float lumaN = north.a;
-	float lumaS = south.a;
-	float lumaW = west.a;
-	float lumaE = east.a;
-	
-//	out_Color = vec4(middle.rgb, 1.0f);
-//	return;
+	vec2 texCoord = in_TexCoord;
+	vec4 m = textureOffset(u_BackBuffer, texCoord, ivec2( 0,  0));
+#if PASSTHROUGH
+	out_Color = vec4(m.rgb, 1.0f);
+	return;
+#endif
 
+	vec4 n = textureOffset(u_BackBuffer, texCoord, ivec2( 0, -1));
+	vec4 s = textureOffset(u_BackBuffer, texCoord, ivec2( 0,  1));
+	vec4 w = textureOffset(u_BackBuffer, texCoord, ivec2(-1,  0));
+	vec4 e = textureOffset(u_BackBuffer, texCoord, ivec2( 1,  0));
+	float lumaM = m.a;
+	float lumaN = n.a;
+	float lumaS = s.a;
+	float lumaW = w.a;
+	float lumaE = e.a;
+
+	// return if we determine that this is not an edge	
 	float rangeMin = min(lumaM, min(min(lumaN, lumaS), min(lumaW, lumaE)));
 	float rangeMax = max(lumaM, max(max(lumaN, lumaS), max(lumaW, lumaE)));
 	float range = rangeMax - rangeMin;
 	if (range < max(FXAA_EDGE_THRESHOLD_MIN, rangeMax * FXAA_EDGE_THRESHOLD))
 	{
-		out_Color = vec4(middle.rgb, 1.0f);
+#if DEBUG
+		out_Color = vec4(vec3(m.a), 1.0f);
+#else
+		out_Color = vec4(m.rgb, 1.0f);
+#endif
 		return;
 	}
 
-	vec2 texSize = textureSize(u_BackBuffer, 0);
-	vec2 invTexSize = vec2(1.0f) / texSize;
+#if DEBUG_EDGES
+	out_Color = vec4(1.0f);
+	return;
+#endif
+
+	// Size
+	const vec2 texSize = textureSize(u_BackBuffer, 0);
+	const vec2 invTexSize = vec2(1.0f) / texSize;
+
 	float lumaL		= (lumaN + lumaS + lumaW + lumaE) * 0.25f;
 	float rangeL	= abs(lumaL - lumaM);
 	float blendL	= max(0.0f, (rangeL / range) - FXAA_SUBPIX_TRIM) * FXAA_SUBPIX_TRIM_SCALE;
-	blendL = min(blendL, FXAA_SUBPIX_CAP);
+	blendL			= min(blendL, FXAA_SUBPIX_CAP);
 	
-	vec4 northWest = textureOffset(u_BackBuffer, in_TexCoord, ivec2(-1,  1));
-	vec4 southWest = textureOffset(u_BackBuffer, in_TexCoord, ivec2(-1, -1));
-	vec4 northEast = textureOffset(u_BackBuffer, in_TexCoord, ivec2( 1,  1));
-	vec4 southEast = textureOffset(u_BackBuffer, in_TexCoord, ivec2( 1, -1));
+#if DEBUG_BLEND_FACTOR
+	out_Color = vec4(blendL);
+	return;
+#endif
+
+	vec4 nw = textureOffset(u_BackBuffer, texCoord, ivec2(-1, -1));
+	vec4 sw = textureOffset(u_BackBuffer, texCoord, ivec2(-1,  1));
+	vec4 ne = textureOffset(u_BackBuffer, texCoord, ivec2( 1, -1));
+	vec4 se = textureOffset(u_BackBuffer, texCoord, ivec2( 1,  1));
 	
-	vec3 colorL = (middle.rgb + north.rgb + south.rgb + west.rgb + east.rgb);
-	colorL += (northWest.rgb + southWest.rgb + northEast.rgb + southEast.rgb);
+	vec3 colorL = (m.rgb + n.rgb + s.rgb + w.rgb + e.rgb);
+	colorL += (nw.rgb + sw.rgb + ne.rgb + se.rgb);
 	colorL = colorL * vec3(1.0f / 9.0f);
 
-	float lumaNW = northWest.a;
-	float lumaNE = northEast.a;
-	float lumaSW = southWest.a;
-	float lumaSE = southEast.a;
-	
-	float lumaNorthSouth	= lumaN + lumaS;
-	float lumaWestEast		= lumaW + lumaE;
-	float lumaWestCorners	= lumaSW + lumaNW;
-	float lumaSouthCorners	= lumaSW + lumaSE;
-	float lumaEastCorners	= lumaSE + lumaNE;
-	float lumaNorthCorners	= lumaNW + lumaNE;
-	
-	float edgeVert =
-		(abs((-2.0f * lumaN) + lumaNorthCorners))	+
-		(abs((-2.0f * lumaM) + lumaWestEast) * 2.0f) +
-		(abs((-2.0f * lumaS) + lumaSouthCorners));
-	float edgeHorz =
-		(abs((-2.0f * lumaW) + lumaWestCorners))	+
-		(abs((-2.0f * lumaM) + lumaNorthSouth) * 2.0f)	+
-		(abs((-2.0f * lumaE) + lumaEastCorners));
+	float lumaNW = nw.a;
+	float lumaNE = ne.a;
+	float lumaSW = sw.a;
+	float lumaSE = se.a;
+
+	float edgeVert = 
+		abs((0.25f * lumaNW) + (-0.5f * lumaN) + (0.25f * lumaNE)) +
+		abs((0.50f * lumaW ) + (-1.0f * lumaM) + (0.50f * lumaE )) +
+		abs((0.25f * lumaSW) + (-0.5f * lumaS) + (0.25f * lumaSE));
+	float edgeHorz = 
+		abs((0.25f * lumaNW) + (-0.5f * lumaW) + (0.25f * lumaSW)) +
+		abs((0.50f * lumaN ) + (-1.0f * lumaM) + (0.50f * lumaS )) +
+		abs((0.25f * lumaNE) + (-0.5f * lumaE) + (0.25f * lumaSE));
 	
 	bool isHorizontal = (edgeHorz >= edgeVert);
+#if DEBUG_HORIZONTAL
+		if(isHorizontal)
+		{
+			out_Color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+			return;
+		}
+		else
+		{
+			out_Color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+			return;
+		}
+#endif
+
 	if (!isHorizontal)
 	{
 		lumaN = lumaW;
@@ -105,18 +138,18 @@ void main()
 	float lumaAvgN = (lumaN + lumaM) * 0.5f;
 	float lumaAvgS = (lumaS + lumaM) * 0.5f;
 	
-	bool pairN = (abs(gradientN) >= abs(gradientS));
-	float localLumaAvg	= pairN ? lumaAvgN	: lumaAvgS;
-	float localGradient = pairN ? gradientN	: gradientS;
-	localGradient = localGradient * FXAA_SEARCH_THRESHOLD;
+	bool	pairN			= (gradientN >= gradientS);
+	float	localLumaAvg	= (!pairN) ? lumaAvgN	: lumaAvgS;
+	float	localGradient	= (!pairN) ? gradientN	: gradientS;
+	localGradient			= localGradient * FXAA_SEARCH_THRESHOLD;
 
-	float stepLength = (!isHorizontal) ? -invTexSize.y : invTexSize.x;
+	float stepLength = isHorizontal ? -invTexSize.y : -invTexSize.x;
 	if (pairN)
 	{
-		stepLength = -stepLength;
+		stepLength *= -1.0f;
 	}
 	
-	vec2 currentTexCoord = in_TexCoord;
+	vec2 currentTexCoord = texCoord;
 	if (isHorizontal)
 	{
 		currentTexCoord.y += stepLength * 0.5f;
@@ -129,23 +162,22 @@ void main()
 	vec2 offset = isHorizontal ? vec2(invTexSize.x, 0.0f) : vec2(0.0f, invTexSize.y);
 	bool done0 = false;
 	bool done1 = false;
-	float lumaEnd0;
-	float lumaEnd1;
+	float lumaEnd0 = localLumaAvg;
+	float lumaEnd1 = localLumaAvg;
 	vec2 texCoord0 = currentTexCoord - offset;
 	vec2 texCoord1 = currentTexCoord + offset;
 
-	
 	int steps = 0;
 	for (; steps < FXAA_SEARCH_STEPS; steps++)
 	{
 		if (!done0)
 		{
-			vec4 sample0 = texture(u_BackBuffer, texCoord0);
+			vec4 sample0 = textureLod(u_BackBuffer, texCoord0, 0);
 			lumaEnd0 = sample0.a;
 		}
 		if(!done1)
 		{
-			vec4 sample1 = texture(u_BackBuffer, texCoord1);
+			vec4 sample1 = textureLod(u_BackBuffer, texCoord1, 0);
 			lumaEnd1 = sample1.a;
 		}
 		
@@ -166,24 +198,79 @@ void main()
 		}
 	}
 	
-	float distance0 = isHorizontal ? (in_TexCoord.x - texCoord0.x) : (in_TexCoord.y - texCoord0.y);
-	float distance1 = isHorizontal ? (texCoord1.x - in_TexCoord.x) : (texCoord1.y - in_TexCoord.y);
-	bool direction0	= distance0 < distance1;
-	lumaEnd0 = direction0 ? lumaEnd0 : lumaEnd0;
-	
-	if (((lumaM - lumaN) < 0.0f) == ((lumaEnd0 - lumaN) < 0.0f))
+	float distance0 = isHorizontal ? (texCoord.x - texCoord0.x) : (texCoord.y - texCoord0.y);
+	float distance1 = isHorizontal ? (texCoord1.x - texCoord.x) : (texCoord1.y - texCoord.y);
+	bool dist0	= distance0 < distance1;
+#if DEBUG_NEGPOS
+	if(dist0)
+	{
+		out_Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		return;
+	}
+	else
+	{
+		out_Color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		return;
+	}
+#endif
+
+	lumaEnd0 = dist0 ? lumaEnd0 : lumaEnd1;
+	if (((lumaM - localLumaAvg) < 0.0f) == ((lumaEnd0 - localLumaAvg) < 0.0f))
 	{
 		stepLength = 0.0f;
 	}
+
+#if DEBUG_STEP
+	if (stepLength == 0.0f)
+	{
+		out_Color = vec4(1.0f);
+		return;
+	}
+#endif
 	
 	float spanLength = (distance0 + distance1);
-	distance0 = direction0 ? distance0 : distance1;
+	distance0 = dist0 ? distance0 : distance1;
 	
-	float subPixelOffset = (0.5f + (distance0 * (1.0f / spanLength))) * stepLength;
-	vec2 finalTexCoord = in_TexCoord + vec2(isHorizontal ? 0.0f : subPixelOffset, isHorizontal ? subPixelOffset : 0.0f);
-	
-	vec3 colorF = texture(u_BackBuffer, finalTexCoord).rgb;
-	vec3 finalColor = Lerp(colorL, colorF, blendL);
+	float subPixelOffset = (0.5f + (distance0 * (-1.0f / spanLength))) * stepLength;
+#if DEBUG_OFFSET
+	float ox = isHorizontal ? 0.0f : subPixelOffset * 2.0f / invTexSize.x;
+	float oy = isHorizontal ? subPixelOffset * 2.0f / invTexSize.y : 0.0f;
+	if(ox < 0.0f) 
+	{
+		out_Color = vec4(Lerp(vec3(lumaM), vec3(1.0f, 0.0f, 0.0f), -ox), 1.0f);
+		return;
+	}
+	if(ox > 0.0f) 
+	{
+		out_Color = vec4(Lerp(vec3(lumaM), vec3(0.0f, 0.0f, 1.0f), ox), 1.0f);
+		return;
+	}
+	if(oy < 0.0f)
+	{
+		out_Color = vec4(Lerp(vec3(lumaM), vec3(1.0f, 0.6f, 0.2f), -oy), 1.0f);
+		return;
+	}
+	if(oy > 0.0f) 
+	{
+		out_Color = vec4(Lerp(vec3(lumaM), vec3(0.2f, 0.6f, 1.0f), oy), 1.0f);
+		return;
+	}
 
+	out_Color = vec4(vec3(lumaM), 1.0f);
+	return;
+#endif
+
+	vec2 finalTexCoord	= vec2(texCoord.x + (isHorizontal ? 0.0f : subPixelOffset), texCoord.y + (isHorizontal ? subPixelOffset : 0.0f));
+	vec3 colorF			= texture(u_BackBuffer, finalTexCoord).rgb;
+	vec3 finalColor		= Lerp(colorL, colorF, blendL);
 	out_Color = vec4(finalColor, 1.0f);
 }
+
+#else
+
+void main()
+{
+	out_Color = vec4(1.0f);
+}
+
+#endif
