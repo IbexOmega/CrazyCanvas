@@ -29,7 +29,7 @@ void main()
     
     uint pointLightIndex    = pc.Iteration / 6U;
     if (pointLightIndex >= lightsBuffer.PointLightCount)
-        return;
+        gl_Position = vec4(0.f);
     uint faceIndex          = pc.Iteration % 6U;
 
     SPointLight pointLight = b_LightsBuffer.pointLights[pointLightIndex];

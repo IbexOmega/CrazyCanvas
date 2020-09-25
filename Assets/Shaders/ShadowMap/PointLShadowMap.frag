@@ -12,7 +12,7 @@ layout(location = 1) in flat vec3 out_PointLightPosition;
 void main()
 {
     float lightDistance = length(out_WorldPos.xyz - out_PointLightPosition);
-
     float farplane = 10.0f;
+
     gl_FragDepth = lightDistance / farplane;
 }

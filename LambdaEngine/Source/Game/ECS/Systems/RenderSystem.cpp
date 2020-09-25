@@ -278,7 +278,7 @@ namespace LambdaEngine
 			auto& position = pPositionComponents->GetData(entity);
 			if (pointLight.Dirty || position.Dirty)
 			{
-				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity);
+				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
 				pointLight.Dirty = false;
 			}
 		}
@@ -802,7 +802,6 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
 		m_LightBufferData.DirL_Direction = GetForward(direction);
 
-		static bool command = false;
 		static float depth = 20.0f;
 		static float width = 10.0f;
 
@@ -813,7 +812,7 @@ namespace LambdaEngine
 		m_LightsDirty = true;
 	}
 
-	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity)
+	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity, float nearPlane, float farPlane)
 	{
 		if (m_EntityToPointLight.find(entity) == m_EntityToPointLight.end())
 		{
@@ -825,11 +824,6 @@ namespace LambdaEngine
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
 		
-		constexpr uint32 PROJECTIONS = 6;
-		constexpr float FOV = 90.f;
-		constexpr float ASPECT_RATIO = 1.0f;
-		constexpr float NEAR = 0.1f;
-		constexpr float FAR = 10.0f;
 		const glm::vec3 directions[6] =
 		{
 			{1.0f, 0.0f, 0.0f},
@@ -844,15 +838,19 @@ namespace LambdaEngine
 		{
 			g_DefaultUp,
 			g_DefaultUp,
-			{0.0f, 0.0f, 1.0f},
 			{0.0f, 0.0f, -1.0f},
+			{0.0f, 0.0f, 1.0f},
 			g_DefaultUp,
 			g_DefaultUp,
 		};
 
+		constexpr uint32 PROJECTIONS = 6;
+		constexpr float FOV = 90.f;
+		constexpr float ASPECT_RATIO = 1.0f;
+		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
-			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, NEAR, FAR);
+			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}
 
