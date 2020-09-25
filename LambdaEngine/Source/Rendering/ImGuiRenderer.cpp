@@ -688,6 +688,13 @@ namespace LambdaEngine
 		ImGui::GetStyle().PopupRounding		= 0.0f;
 		ImGui::GetStyle().ScrollbarRounding = 0.0f;
 
+		// Disable anti-aliasing for the rendering to work better. (Unknown reason why it does not work when it's on)
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.AntiAliasedLines = false;
+		style.AntiAliasedLinesUseTex = true;
+		style.AntiAliasedFill = true;
+		style.FrameBorderSize = 0.f;
+
 		return true;
 	}
 

@@ -353,7 +353,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
+	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlag stage, EShaderLang lang, const char* pEntryPoint)
 	{
 		auto loadedShaderGUID = s_ShaderNamesToGUIDs.find(filename);
 		if (loadedShaderGUID != s_ShaderNamesToGUIDs.end())
