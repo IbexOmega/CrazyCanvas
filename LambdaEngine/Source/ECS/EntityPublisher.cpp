@@ -29,6 +29,7 @@ namespace LambdaEngine
             newSub.pSubscriber = subReq.pSubscriber;
             newSub.OnEntityAdded = subReq.OnEntityAdded;
             newSub.OnEntityRemoval = subReq.OnEntityRemoval;
+            newSub.ExcludedComponentTypes = subReq.ExcludedComponentTypes;
 
             newSub.ComponentTypes.Reserve(componentRegs.GetSize());
             for (const ComponentAccess& componentReg : componentRegs)
@@ -67,7 +68,7 @@ namespace LambdaEngine
             // See which entities in the entity vector also have all the other component types. Register those entities in the system.
             for (Entity entity : entities)
             {
-                bool registerEntity = m_pEntityRegistry->EntityHasTypes(entity, subscription.ComponentTypes);
+                bool registerEntity = m_pEntityRegistry->EntityHasAllowedTypes(entity, subscription.ComponentTypes, subscription.ExcludedComponentTypes);
 
                 if (registerEntity)
                 {
@@ -139,7 +140,7 @@ namespace LambdaEngine
             // Use indices stored in the component type -> component storage mapping to get the component subscription
             EntitySubscription& sysSub = m_SubscriptionStorage.IndexID(subBucketItr->second.SystemID)[subBucketItr->second.SubIdx];
 
-            if (m_pEntityRegistry->EntityHasTypes(entityID, sysSub.ComponentTypes)) {
+            if (m_pEntityRegistry->EntityHasAllowedTypes(entityID, sysSub.ComponentTypes, sysSub.ExcludedComponentTypes)) {
                 sysSub.pSubscriber->PushBack(entityID);
 
                 if (sysSub.OnEntityAdded) {

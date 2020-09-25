@@ -42,12 +42,22 @@ namespace LambdaEngine
 		}
 	}
 
-	bool EntityRegistry::EntityHasTypes(Entity entity, const TArray<std::type_index>& queryTypes) const
+	bool EntityRegistry::EntityHasAllowedTypes(Entity entity, const TArray<std::type_index>& queryTypes, const TArray<std::type_index>& excludedComponentsTypes = {}) const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		const EntityRegistryPage& topPage = m_EntityPages.top();
 		const std::unordered_set<std::type_index>& entityTypes = topPage.IndexID(entity);
+
+		// Entity with excluded componets are not allowed
+		for (auto excludedType : excludedComponentsTypes)
+		{
+			auto got = entityTypes.find(excludedType);
+			if (got != entityTypes.end())
+			{
+				return false;
+			}
+		}
 
 		for (std::type_index type : queryTypes)
 		{

@@ -14,11 +14,13 @@ namespace LambdaEngine
 	{
 	public:
 		EntitySubscriptionRegistration(TArray<ComponentAccess> componentAccesses, const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
+		EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, const TArray<IComponentGroup*>& componentGroups, const TArray<std::type_index>& excludedComponentTypes, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
 		EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
 		EntitySubscriptionRegistration(const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
 
 	public:
 		TArray<ComponentAccess> ComponentAccesses;
+		TArray<std::type_index> ExcludedComponentTypes;
 		IDVector* pSubscriber;
 		// Optional: Called after an entity is added due to the subscription
 		std::function<void(Entity)> OnEntityAdded;
@@ -30,6 +32,7 @@ namespace LambdaEngine
 	struct EntitySubscriberRegistration
 	{
 		TArray<EntitySubscriptionRegistration> EntitySubscriptionRegistrations;
+		//TArray<std::type_index> ExcludedComponentTypes;
 		/*  AdditionalDependencies are components that the subscriber will process.
 			However, the subscriber will not store an array of the entities whose components it will process. */
 		TArray<ComponentAccess> AdditionalDependencies;
