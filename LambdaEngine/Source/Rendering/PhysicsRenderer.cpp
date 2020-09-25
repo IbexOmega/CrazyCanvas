@@ -116,15 +116,6 @@ namespace LambdaEngine
 		uint64 size 	= verticiesBufferSize;
 		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
-		// TEMP TEST
-		// TArray<glm::vec3> testVecs;
-		// glm::vec3 testCol = { 0.0f, 1.0f, 0.0f };
-		// testVecs.PushBack({0.0f, 0.0f, 0.0f});
-		// testVecs.PushBack({1.0f, 0.0f, 0.0f});
-		// testVecs.PushBack({0.0f, 0.0f, 0.0f});
-		// testVecs.PushBack({0.0f, 0.0f, 1.0f});
-		// AddLineGroup(testVecs, testCol);
-
 		DrawLine({0.0f, 0.0f, 0.0f,}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
 		DrawLine({0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
 		DrawLine({0.0f, 0.0f, 0.0f,}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f});
@@ -132,7 +123,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	// TODO (maybe): Update m_LineGroups to contain an index to the m_Verticies array instead of keeping extra copies of the data
 	uint32 PhysicsRenderer::AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color)
 	{
 		uint32 ID = m_LineGroups.size();
@@ -163,12 +153,11 @@ namespace LambdaEngine
 			TArray<VertexData>& vertexPoints = m_LineGroups[ID];
 			if (points.GetSize() > vertexPoints.GetSize())
 			{
-				// Resize vector. This might affect the rendering stage
-				LOG_WARNING("[Physics Renderer]: UpdateLineGroup currently only supports update of array points of the same size. If a new size is wanted, remove and add a new line group.");
+				vertexPoints.Resize(points.GetSize());
 			}
 			else if (points.GetSize() < vertexPoints.GetSize())
 			{
-				LOG_WARNING("[Physics Renderer]: UpdateLineGroup currently only supports update of array points of the same size. If a new size is wanted, remove and add a new line group.");
+				vertexPoints.Resize(points.GetSize());
 			}
 			else
 			{
@@ -190,6 +179,8 @@ namespace LambdaEngine
 	{
 		if (m_LineGroups.contains(ID))
 		{
+			auto& arr = m_LineGroups[ID];
+			arr.Clear();
 			m_LineGroups.erase(ID);
 		}
 		else
@@ -485,7 +476,6 @@ namespace LambdaEngine
 
 	PhysicsRenderer* PhysicsRenderer::Get()
 	{
-		VALIDATE(s_pInstance != nullptr);
 		return s_pInstance;
 	}
 

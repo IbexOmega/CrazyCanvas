@@ -1718,6 +1718,7 @@ namespace LambdaEngine
 			renderStageBufferResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageDrawArgResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
+			bool						attachmentStateUnchanged			= true;
 			float32						renderPassAttachmentsWidth			= 0;
 			float32						renderPassAttachmentsHeight			= 0;
 			ERenderGraphDimensionType	renderPassAttachmentDimensionTypeX	= ERenderGraphDimensionType::NONE;
@@ -1921,6 +1922,14 @@ namespace LambdaEngine
 						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
 						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
 						return false;
+					}
+
+					// Check if attachment is unchanged after renderstage
+					auto prevBinding = pResourceStateDesc->AttachmentSynchronizations.PrevBindingType;
+					auto nextBinding = pResourceStateDesc->AttachmentSynchronizations.NextBindingType;
+					if (prevBinding != nextBinding) 
+					{
+						attachmentStateUnchanged = false;
 					}
 
 					float32						xDimVariable;
@@ -2384,6 +2393,7 @@ namespace LambdaEngine
 						pRenderStage->pRenderPass	= pRenderPass;
 
 						//Create duplicate Render Pass (this is fucking retarded) which we use when the RenderStage is Disabled, this Render Pass forces LoadOp to be LOAD
+						if (!attachmentStateUnchanged) 
 						{
 							RenderPassDesc disabledRenderPassDesc = renderPassDesc;
 
@@ -3602,6 +3612,9 @@ namespace LambdaEngine
 		CommandList*		pGraphicsCommandList,
 		CommandList**		ppExecutionStage)
 	{
+		if (pRenderStage->FrameCounter != pRenderStage->FrameOffset && pRenderStage->pDisabledRenderPass == nullptr)
+			return;
+
 		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
 		Profiler::GetGPUProfiler()->GetGraphicsPipelineStat();
 		pGraphicsCommandAllocator->Reset();
