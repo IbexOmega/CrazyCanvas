@@ -77,7 +77,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool InputActionSystem::ChangeKeyBinding(String action, EKey key)
+	bool InputActionSystem::ChangeKeyBinding(const String& action, EKey key)
 	{
 		auto itr = m_CurrentKeyBindings.find(action);
 
