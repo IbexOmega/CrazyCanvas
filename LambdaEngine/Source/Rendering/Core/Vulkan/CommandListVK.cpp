@@ -699,7 +699,7 @@ namespace LambdaEngine
 
 	void CommandListVK::SetStencilTestEnabled(bool enabled)
 	{
-		vkCmdSetStencilTestEnableEXT(m_CommandList, enabled ? VK_TRUE : VK_FALSE);
+		m_pDevice->vkCmdSetStencilTestEnableEXT(m_CommandList, enabled ? VK_TRUE : VK_FALSE);
 	}
 
 	void CommandListVK::SetStencilTestOp(EStencilFace face, EStencilOp failOp, EStencilOp passOp, EStencilOp depthFailOp, ECompareOp compareOp)
@@ -710,7 +710,7 @@ namespace LambdaEngine
 		VkStencilOp			depthFailOpVK	= ConvertStencilOp(depthFailOp);
 		VkCompareOp			compareOpVK		= ConvertCompareOp(compareOp);
 
-		vkCmdSetStencilOpEXT(m_CommandList, faceFlagsVK, failOpVK, passOpVK, depthFailOpVK, compareOpVK);
+		m_pDevice->vkCmdSetStencilOpEXT(m_CommandList, faceFlagsVK, failOpVK, passOpVK, depthFailOpVK, compareOpVK);
 	}
 
 	void CommandListVK::SetStencilTestReference(EStencilFace face, uint32 reference)

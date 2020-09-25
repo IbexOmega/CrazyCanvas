@@ -95,7 +95,12 @@ workspace "LambdaEngine"
 			"LAMBDA_SHARED_LIB",
 		}
 	filter {}
-
+	
+	defines
+	{
+		"NS_STATIC_LIBRARY"
+	}
+	
 	-- Configurations
 	configurations
 	{
@@ -233,7 +238,12 @@ workspace "LambdaEngine"
 				runtime "Release"
 				optimize "Full"
 			filter{}
-
+			
+			defines
+			{
+				"NS_STATIC_LIBRARY"
+			}
+			
 			sysincludedirs
 			{
 				"Dependencies/NoesisGUI/Include",
@@ -415,7 +425,7 @@ workspace "LambdaEngine"
 				"Dependencies/assimp/bin",
 
 				-- PhysX
-				"Dependencies/PhysX/lib"
+				"Dependencies/PhysX/lib",
                 
 				-- NoesisGUI
 				"Dependencies/NoesisGUI/Lib",
@@ -456,7 +466,7 @@ workspace "LambdaEngine"
 				"/checked/PhysXCommon_64.lib",
 				"/checked/PhysXCooking_64.lib",
 				"/checked/PhysXFoundation_64.lib",
-				"/checked/PhysXExtensions_dynamic_64.lib"
+				"/checked/PhysXExtensions_dynamic_64.lib",
 				
 				--NoesisGUI
 				"Noesis.lib",
@@ -485,7 +495,7 @@ workspace "LambdaEngine"
 				"/release/PhysXCommon_64.lib",
 				"/release/PhysXCooking_64.lib",
 				"/release/PhysXFoundation_64.lib",
-				"/release/PhysXExtensions_dynamic_64.lib"
+				"/release/PhysXExtensions_dynamic_64.lib",
                 
 				--NoesisGUI
 				"Noesis.lib",
@@ -546,6 +556,14 @@ workspace "LambdaEngine"
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
+			}
+			
+			postbuildcommands
+			{
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		-- PhysX
 		filter { "system:windows", "configurations:Debug" }
@@ -620,6 +638,7 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
+			"NoesisApp",
 		}
 
 	project "*"
@@ -674,6 +693,7 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
+			"NoesisApp",
 		}
 
 	project "*"
@@ -728,6 +748,7 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
+			"NoesisApp",
 		}
 
 	project "*"
@@ -782,5 +803,6 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
+			"NoesisApp",
 		}
 	project "*"

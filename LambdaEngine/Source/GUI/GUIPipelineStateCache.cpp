@@ -16,7 +16,7 @@ namespace LambdaEngine
 	constexpr const uint32 SAMPLE_COUNT_2_INDEX = 1;
 	constexpr const uint32 SAMPLE_COUNT_4_INDEX = 2;
 
-	TArray<PipelineState*[NUM_PIPELINE_STATE_VARIATIONS]> GUIPipelineStateCache::s_PipelineStates;
+	TArray<GUIPipelineStateCache::PipelineVariations> GUIPipelineStateCache::s_PipelineStates;
 	RenderPass* GUIPipelineStateCache::s_pDummyRenderPass		= nullptr;
 	PipelineLayout* GUIPipelineStateCache::s_pPipelineLayout	= nullptr;
 
@@ -126,11 +126,11 @@ namespace LambdaEngine
 
 		for (uint32 p = 0; p < s_PipelineStates.GetSize(); p++)
 		{
-			PipelineState** ppPipelineStates = s_PipelineStates[p];
+			PipelineVariations& pipelineVariations = s_PipelineStates[p];
 
 			for (uint32 v = 0; v < NUM_PIPELINE_STATE_VARIATIONS; v++)
 			{
-				SAFERELEASE(ppPipelineStates[v]);
+				SAFERELEASE(pipelineVariations.ppVariations[v]);
 			}
 		}
 
@@ -141,7 +141,7 @@ namespace LambdaEngine
 	PipelineState* GUIPipelineStateCache::GetPipelineState(uint32 index, bool colorEnable, bool blendEnable, const NoesisShaderData& shaderData)
 	{
 		uint32 subIndex = CalculateSubIndex(colorEnable, blendEnable);
-		PipelineState** ppPipelineState = &s_PipelineStates[index][subIndex];
+		PipelineState** ppPipelineState = &s_PipelineStates[index].ppVariations[subIndex];
 
 		//Create new Pipeline State if nullptr
 		if (*ppPipelineState == nullptr)
@@ -218,7 +218,7 @@ namespace LambdaEngine
 	bool GUIPipelineStateCache::InitPipelineState(uint32 index, bool colorEnable, bool blendEnable)
 	{
 		uint32 subIndex = CalculateSubIndex(colorEnable, blendEnable);
-		PipelineState** ppPipelineState = &s_PipelineStates[index][subIndex];
+		PipelineState** ppPipelineState = &s_PipelineStates[index].ppVariations[subIndex];
 		NoesisShaderData shaderData = NoesisGetShaderData(index);
 
 		return InitPipelineState(index, colorEnable, blendEnable, ppPipelineState, shaderData);

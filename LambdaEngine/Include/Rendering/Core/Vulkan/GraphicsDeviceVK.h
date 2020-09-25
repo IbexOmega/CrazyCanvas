@@ -202,6 +202,10 @@ namespace LambdaEngine
 		PFN_vkCmdDrawMeshTasksIndirectNV		vkCmdDrawMeshTasksIndirectNV		= nullptr;
 		PFN_vkCmdDrawMeshTasksIndirectCountNV	vkCmdDrawMeshTasksIndirectCountNV	= nullptr;
 
+		//Dynamic State
+		PFN_vkCmdSetStencilOpEXT			vkCmdSetStencilOpEXT			= nullptr;
+		PFN_vkCmdSetStencilTestEnableEXT	vkCmdSetStencilTestEnableEXT	= nullptr;
+
 	private:
 		VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 		

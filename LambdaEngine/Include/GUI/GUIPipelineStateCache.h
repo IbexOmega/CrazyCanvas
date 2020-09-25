@@ -17,6 +17,11 @@ namespace LambdaEngine
 
 	class GUIPipelineStateCache
 	{
+		struct PipelineVariations
+		{
+			PipelineState* ppVariations[NUM_PIPELINE_STATE_VARIATIONS];
+		};
+
 	public:
 		DECL_STATIC_CLASS(GUIPipelineStateCache);
 
@@ -35,7 +40,7 @@ namespace LambdaEngine
 		static uint32 CalculateSubIndex(bool colorEnable, bool blendEnable);
 
 	private:
-		static TArray<PipelineState*[NUM_PIPELINE_STATE_VARIATIONS]> s_PipelineStates;
+		static TArray<PipelineVariations> s_PipelineStates;
 		static RenderPass*		s_pDummyRenderPass;
 		static PipelineLayout*	s_pPipelineLayout;
 	};
