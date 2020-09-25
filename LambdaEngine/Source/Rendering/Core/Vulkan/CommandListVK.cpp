@@ -105,14 +105,14 @@ namespace LambdaEngine
 		{
 			beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		}
-		
+
 		VkCommandBufferInheritanceInfo inheritanceInfo = { };
 		if (pBeginDesc)
 		{
 			const RenderPassVK*	pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pBeginDesc->pRenderPass);
 
 			VALIDATE(pRenderPassVk != nullptr);
-			
+
 			inheritanceInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 			inheritanceInfo.pNext					= nullptr;
 			inheritanceInfo.framebuffer				= m_pDevice->GetFrameBuffer(pRenderPassVk, pBeginDesc->ppRenderTargets, pBeginDesc->RenderTargetCount, pBeginDesc->pDepthStencilView, pBeginDesc->Width, pBeginDesc->Height);
@@ -121,7 +121,7 @@ namespace LambdaEngine
 			inheritanceInfo.occlusionQueryEnable	= VK_FALSE;
 			inheritanceInfo.pipelineStatistics		= 0;
 			inheritanceInfo.queryFlags				= 0;
-			
+
 			beginInfo.pInheritanceInfo = &inheritanceInfo;
 		}
 		else
@@ -148,7 +148,7 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		// End CommandBuffer
-		VkResult result = vkEndCommandBuffer(m_CommandList); 
+		VkResult result = vkEndCommandBuffer(m_CommandList);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[CommandListVK]: End CommandBuffer Failed");
@@ -321,7 +321,7 @@ namespace LambdaEngine
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 			}
 		}
-		
+
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
 		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
 		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
@@ -470,7 +470,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void CommandListVK::QueueTranserBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ECommandQueueType srcQueue, ECommandQueueType dstQueue)
+	void CommandListVK::QueueTransferBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ECommandQueueType srcQueue, ECommandQueueType dstQueue)
 	{
 		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(resource);
 		const TextureDesc& desc = pTextureVk->GetDesc();
@@ -615,7 +615,7 @@ namespace LambdaEngine
 		TextureVK*		pVkTexture		= reinterpret_cast<TextureVK*>(pTexture);
 		TextureDesc		desc			= pVkTexture->GetDesc();
 		const uint32	miplevelCount	= desc.Miplevels;
-		
+
 		if (miplevelCount < 2)
 		{
 			LOG_WARNING("[CommandListVK::GenerateMiplevels]: pTexture only has 1 miplevel allocated, no other mips will be generated");
@@ -631,7 +631,7 @@ namespace LambdaEngine
 		}
 
 		//TODO: Fix for devices that do NOT support linear filtering
-		
+
 		VkFormat			formatVk			= ConvertFormat(desc.Format);
 		VkFormatProperties	formatProperties	= m_pDevice->GetFormatProperties(formatVk);
 		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
@@ -714,7 +714,7 @@ namespace LambdaEngine
 		{
 			const Viewport&     viewport    = pViewports[i];
 			VkViewport&         viewportVk  = m_Viewports[i];
-			
+
 			viewportVk.width    = viewport.Width;
 			viewportVk.height   = viewport.Height;
 			viewportVk.minDepth = viewport.MinDepth;
@@ -722,7 +722,7 @@ namespace LambdaEngine
 			viewportVk.x        = viewport.x;
 			viewportVk.y        = viewport.y;
 		}
-		
+
 		vkCmdSetViewport(m_CommandList, firstViewport, viewportCount, m_Viewports);
 	}
 
@@ -732,11 +732,11 @@ namespace LambdaEngine
 		{
 			const ScissorRect& scissorRect    = pScissorRects[i];
 			VkRect2D&          scissorRectVk  = m_ScissorRects[i];
-			
+
 			scissorRectVk.extent   = { scissorRect.Width, scissorRect.Height };
 			scissorRectVk.offset   = { scissorRect.x, scissorRect.y };
 		}
-		
+
 		vkCmdSetScissor(m_CommandList, firstScissor, scissorCount, m_ScissorRects);
 	}
 
@@ -759,11 +759,11 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < vertexBufferCount; i++)
 		{
 			const BufferVK* pVertexBufferVK = reinterpret_cast<const BufferVK*>(ppVertexBuffers[i]);
-			
+
 			m_VertexBuffers[i]          = pVertexBufferVK->GetBuffer();
 			m_VertexBufferOffsets[i]    = VkDeviceSize(pOffsets[i]);
 		}
-		
+
 		vkCmdBindVertexBuffers(m_CommandList, firstBuffer, vertexBufferCount, m_VertexBuffers, m_VertexBufferOffsets);
 	}
 
@@ -789,7 +789,7 @@ namespace LambdaEngine
 	{
 		CHECK_GRAPHICS(m_Allocator);
 		VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS);
-		
+
 		const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
 		vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
 	}
@@ -798,7 +798,7 @@ namespace LambdaEngine
 	{
 		CHECK_COMPUTE(m_Allocator);
 		VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE);
-		
+
 		const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
 		vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
 	}
@@ -807,10 +807,10 @@ namespace LambdaEngine
 	{
 		CHECK_COMPUTE(m_Allocator);
 		VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING);
-		
+
 		m_CurrentRayTracingPipeline = reinterpret_cast<RayTracingPipelineStateVK*>(pPipeline);
 		m_CurrentRayTracingPipeline->AddRef();
-		
+
 		vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_CurrentRayTracingPipeline->GetPipeline());
 	}
 
@@ -825,7 +825,7 @@ namespace LambdaEngine
 		const VkStridedBufferRegionKHR* pMiss		= pSBTVK->GetMissBufferRegion();
 		const VkStridedBufferRegionKHR* pHit		= pSBTVK->GetHitBufferRegion();
 		const VkStridedBufferRegionKHR* pCallable	= pSBTVK->GetCallableBufferRegion();
-		
+
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
@@ -929,7 +929,7 @@ namespace LambdaEngine
 		VALIDATE(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_TYPE_PRIMARY);
 		const CommandListVK* pVkSecondary = reinterpret_cast<const CommandListVK*>(pSecondary);
 
-#ifndef LAMBDA_DISABLE_ASSERTS 
+#ifndef LAMBDA_DISABLE_ASSERTS
 		CommandListDesc	desc = pVkSecondary->GetDesc();
 		VALIDATE(desc.CommandListType == ECommandListType::COMMAND_LIST_TYPE_SECONDARY);
 #endif
@@ -951,7 +951,7 @@ namespace LambdaEngine
 			{
 				vkCmdPipelineBarrier(m_CommandList, barrier.SrcStages, barrier.DestStages, 0, 0, nullptr, 0, nullptr, barrier.Barriers.GetSize(), barrier.Barriers.GetData());
 			}
-			
+
 			m_DeferredBarriers.Clear();
 		}
 	}
@@ -960,12 +960,12 @@ namespace LambdaEngine
 	{
 		m_ResourcesToDestroy.Clear();
 	}
-	
+
 	CommandAllocator* CommandListVK::GetAllocator()
 	{
 		return m_Allocator.GetAndAddRef();
 	}
-	
+
 	FORCEINLINE void CommandListVK::BindDescriptorSet(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint)
 	{
 		const PipelineLayoutVK* pVkPipelineLayout	= reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);

@@ -152,7 +152,7 @@ namespace LambdaEngine
 		/*
 		* Combine PBR materials into one texture
 		*/
-		static void CombineMaterials(Material* material);
+		static void CombineMaterials(Material* material, GUID_Lambda guid);
 
 		static GUID_Lambda					GetMeshGUID(const String& name);
 		static GUID_Lambda					GetMaterialGUID(const String& name);
