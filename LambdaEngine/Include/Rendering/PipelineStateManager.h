@@ -47,6 +47,7 @@ namespace LambdaEngine
 		uint32						SampleMask			= 0;
 		uint32						SampleCount			= 1;
 		uint32						Subpass				= 0;
+		FExtraDynamicStateFlags		ExtraDynamicState	= FExtraDynamicStateFlag::EXTRA_DYNAMIC_STATE_FLAG_NONE;
 		// Mesh-Shader pipeline
 		ManagedShaderModule MeshShader;
 		ManagedShaderModule TaskShader;
@@ -82,9 +83,9 @@ namespace LambdaEngine
 		RayTracingPipelineStateDesc GetDesc() const noexcept;
 
 	public:
-		String				DebugName			= "";
+		String						DebugName			= "";
 		TSharedRef<PipelineLayout>	PipelineLayout		= nullptr;
-		uint32				MaxRecursionDepth	= 1;
+		uint32						MaxRecursionDepth	= 1;
 		// Shaders
 		ManagedShaderModule			RaygenShader;
 		TArray<ManagedShaderModule> MissShaders;
@@ -112,7 +113,7 @@ namespace LambdaEngine
 
 	private:
 		static uint64													s_CurrentPipelineIndex;
-		static THashTable<uint64, TSharedRef<PipelineState>>					s_PipelineStates;
+		static THashTable<uint64, TSharedRef<PipelineState>>			s_PipelineStates;
 		static THashTable<uint64, ManagedGraphicsPipelineStateDesc>		s_GraphicsPipelineStateDescriptions;
 		static THashTable<uint64, ManagedComputePipelineStateDesc>		s_ComputePipelineStateDescriptions;
 		static THashTable<uint64, ManagedRayTracingPipelineStateDesc>	s_RayTracingPipelineStateDescriptions;

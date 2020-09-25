@@ -462,6 +462,15 @@ namespace LambdaEngine
 
 	};
 
+	typedef uint32 FExtraDynamicStateFlags;
+	enum FExtraDynamicStateFlag : FExtraDynamicStateFlags
+	{
+		EXTRA_DYNAMIC_STATE_FLAG_NONE				= 0,
+		EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE		= FLAG(1),
+		EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP			= FLAG(2),
+		EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE	= FLAG(3),
+	};
+
 	enum class EVertexInputRate : uint8
 	{
 		VERTEX_INPUT_NONE			= 0,
