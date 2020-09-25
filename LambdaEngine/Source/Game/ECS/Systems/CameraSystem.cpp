@@ -163,55 +163,57 @@ namespace LambdaEngine
 
 	void CameraSystem::RenderFrustum(Entity entity)
 	{
-		// This is a test code - This should probably not be done every tick
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
-		auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
-		auto& camComp = pECSCore->GetComponent<CameraComponent>(entity);
-
-		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const float aspect 		= (float)window->GetWidth() / (float)window->GetHeight();
-		const float tang 		= tan(glm::radians(camComp.FOV / 2));
-		const float nearHeight	= camComp.NearPlane * tang;
-		const float nearWidth	= nearHeight * aspect;
-		const float farHeight	= camComp.FarPlane * tang;
-		const float farWidth	= farHeight * aspect;
-
-		const glm::vec3 forward = GetForward(rotComp.Quaternion);
-		const glm::vec3 right 	= GetRight(rotComp.Quaternion);
-		const glm::vec3 up		= -GetUp(rotComp.Quaternion);
-
-		TArray<glm::vec3> points(10);
-		const glm::vec3 nearPos = posComp.Position + forward * camComp.NearPlane;
-		const glm::vec3 farPos = posComp.Position + forward * camComp.FarPlane;
-		// Near TL -> Far TL
-		points[0] = nearPos - right * nearWidth + up * nearHeight;
-		points[1] = farPos - right * farWidth + up * farHeight;
-
-		// Near BL -> Far BL
-		points[2] = nearPos - right * nearWidth - up * nearHeight;
-		points[3] = farPos - right * farWidth - up * farWidth;
-
-		// Near TR -> Far TR
-		points[4] = nearPos + right * nearWidth + up * nearHeight;
-		points[5] = farPos + right * farWidth + up * farHeight;
-
-		// Near BR -> Far BR
-		points[6] = nearPos + right * nearWidth - up * nearHeight;
-		points[7] = farPos + right * farWidth - up * farHeight;
-
-		// Far TL -> Far TR
-		points[8] = farPos - right * farWidth + up * farHeight;
-		points[9] = farPos + right * farWidth + up * farHeight;
-
-		if (m_LineGroupEntityIDs.contains(entity))
+		if (PhysicsRenderer::Get())
 		{
-			m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, {0.0f, 1.0f, 0.0f});
+			// This is a test code - This should probably not be done every tick
+			ECSCore* pECSCore = ECSCore::GetInstance();
+			auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
+			auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
+			auto& camComp = pECSCore->GetComponent<CameraComponent>(entity);
+
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+			const float aspect = (float)window->GetWidth() / (float)window->GetHeight();
+			const float tang = tan(glm::radians(camComp.FOV / 2));
+			const float nearHeight = camComp.NearPlane * tang;
+			const float nearWidth = nearHeight * aspect;
+			const float farHeight = camComp.FarPlane * tang;
+			const float farWidth = farHeight * aspect;
+
+			const glm::vec3 forward = GetForward(rotComp.Quaternion);
+			const glm::vec3 right = GetRight(rotComp.Quaternion);
+			const glm::vec3 up = -GetUp(rotComp.Quaternion);
+
+			TArray<glm::vec3> points(10);
+			const glm::vec3 nearPos = posComp.Position + forward * camComp.NearPlane;
+			const glm::vec3 farPos = posComp.Position + forward * camComp.FarPlane;
+			// Near TL -> Far TL
+			points[0] = nearPos - right * nearWidth + up * nearHeight;
+			points[1] = farPos - right * farWidth + up * farHeight;
+
+			// Near BL -> Far BL
+			points[2] = nearPos - right * nearWidth - up * nearHeight;
+			points[3] = farPos - right * farWidth - up * farWidth;
+
+			// Near TR -> Far TR
+			points[4] = nearPos + right * nearWidth + up * nearHeight;
+			points[5] = farPos + right * farWidth + up * farHeight;
+
+			// Near BR -> Far BR
+			points[6] = nearPos + right * nearWidth - up * nearHeight;
+			points[7] = farPos + right * farWidth - up * farHeight;
+
+			// Far TL -> Far TR
+			points[8] = farPos - right * farWidth + up * farHeight;
+			points[9] = farPos + right * farWidth + up * farHeight;
+
+			if (m_LineGroupEntityIDs.contains(entity))
+			{
+				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
+			}
+			else
+			{
+				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
+			}
 		}
-		else
-		{
-			m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, {0.0f, 1.0f, 0.0f});
-		}
-		
 	}
 }

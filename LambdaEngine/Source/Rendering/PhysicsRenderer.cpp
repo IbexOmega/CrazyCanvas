@@ -476,7 +476,6 @@ namespace LambdaEngine
 
 	PhysicsRenderer* PhysicsRenderer::Get()
 	{
-		VALIDATE(s_pInstance != nullptr);
 		return s_pInstance;
 	}
 
