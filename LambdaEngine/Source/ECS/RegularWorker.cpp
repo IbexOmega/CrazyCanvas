@@ -21,7 +21,7 @@ namespace LambdaEngine
 	TArray<ComponentAccess> RegularWorker::GetUniqueComponentAccesses(const EntitySubscriberRegistration& subscriberRegistration)
 	{
 		// Eliminate duplicate component types across the system's subscriptions
-		THashTable<std::type_index, ComponentPermissions> uniqueRegs;
+		THashTable<const ComponentType*, ComponentPermissions> uniqueRegs;
 
 		for (const EntitySubscriptionRegistration& subReq : subscriberRegistration.EntitySubscriptionRegistrations)
 		{
@@ -41,7 +41,7 @@ namespace LambdaEngine
 		return componentAccesses;
 	}
 
-	void RegularWorker::MapComponentAccesses(const TArray<ComponentAccess>& componentAccesses, THashTable<std::type_index, ComponentPermissions>& uniqueRegs)
+	void RegularWorker::MapComponentAccesses(const TArray<ComponentAccess>& componentAccesses, THashTable<const ComponentType*, ComponentPermissions>& uniqueRegs)
 	{
 		for (const ComponentAccess& componentUpdateReg : componentAccesses)
 		{

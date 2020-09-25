@@ -13,7 +13,10 @@ namespace LambdaEngine
 		"FORMAT_R16_UNORM",
 		"FORMAT_R16_SFLOAT",
 		"FORMAT_R16G16_SFLOAT",
+		"FORMAT_R16G16_SNORM",
+		"FORMAT_R10G10B10A2_UNORM",
 		"FORMAT_R16G16B16A16_SFLOAT",
+		"FORMAT_R16G16B16A16_SNORM",
 		"FORMAT_R32G32_SFLOAT",
 		"FORMAT_R11G11B10_SFLOAT",
 		"FORMAT_R32G32B32A32_UINT",
@@ -31,12 +34,15 @@ namespace LambdaEngine
 		case 3:		return EFormat::FORMAT_R16_UNORM;
 		case 4:		return EFormat::FORMAT_R16_SFLOAT;
 		case 5:		return EFormat::FORMAT_R16G16_SFLOAT;
-		case 6:		return EFormat::FORMAT_R16G16B16A16_SFLOAT;
-		case 7:		return EFormat::FORMAT_R32G32_SFLOAT;
-		case 8:		return EFormat::FORMAT_R11G11B10_UFLOAT;
-		case 9:		return EFormat::FORMAT_R32G32B32A32_UINT;
-		case 10:	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
-		case 11:	return EFormat::FORMAT_D24_UNORM_S8_UINT;
+		case 6:		return EFormat::FORMAT_R16G16_SNORM;
+		case 7:		return EFormat::FORMAT_R10G10B10A2_UNORM;
+		case 8:		return EFormat::FORMAT_R16G16B16A16_SFLOAT;
+		case 9:		return EFormat::FORMAT_R16G16B16A16_SNORM;
+		case 10:	return EFormat::FORMAT_R32G32_SFLOAT;
+		case 11:	return EFormat::FORMAT_B10G11R11_UFLOAT;
+		case 12:	return EFormat::FORMAT_R32G32B32A32_UINT;
+		case 13:	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		case 14:	return EFormat::FORMAT_D24_UNORM_S8_UINT;
 		}
 
 		return EFormat::FORMAT_NONE;
@@ -52,12 +58,15 @@ namespace LambdaEngine
 		case EFormat::FORMAT_R16_UNORM:				return 3;
 		case EFormat::FORMAT_R16_SFLOAT:			return 4;
 		case EFormat::FORMAT_R16G16_SFLOAT:			return 5;
-		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 6;
-		case EFormat::FORMAT_R32G32_SFLOAT:			return 7;
-		case EFormat::FORMAT_R11G11B10_UFLOAT:		return 8;
-		case EFormat::FORMAT_R32G32B32A32_UINT:		return 9;
-		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 10;
-		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 11;
+		case EFormat::FORMAT_R16G16_SNORM:			return 6;
+		case EFormat::FORMAT_R10G10B10A2_UNORM:		return 7;
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
+		case EFormat::FORMAT_R16G16B16A16_SNORM:	return 9;
+		case EFormat::FORMAT_R32G32_SFLOAT:			return 10;
+		case EFormat::FORMAT_B10G11R11_UFLOAT:		return 11;
+		case EFormat::FORMAT_R32G32B32A32_UINT:		return 12;
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 13;
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 14;
 		}
 
 		return -1;
