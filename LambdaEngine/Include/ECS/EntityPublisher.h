@@ -48,22 +48,22 @@ namespace LambdaEngine
         void UnsubscribeFromEntities(uint32 subscriptionID);
 
         // Notifies subscribers that a component has been added
-        void PublishComponent(Entity entityID, std::type_index componentType);
+        void PublishComponent(Entity entityID, const ComponentType* pComponentType);
         // Notifies subscribers that a component has been deleted
-        void UnpublishComponent(Entity entityID, std::type_index componentType);
+        void UnpublishComponent(Entity entityID, const ComponentType* pComponentType);
 
     private:
-        static void EliminateDuplicateTIDs(TArray<std::type_index>& TIDs);
+        static void EliminateDuplicateTIDs(TArray<const ComponentType*>& TIDs);
 
     private:
         // Map component types to subscriptions. Deleted only when a subscribing system unsubscribes.
-        std::unordered_multimap<std::type_index, SubscriptionStorageIndex> m_ComponentSubscriptions;
+        std::unordered_multimap<const ComponentType*, SubscriptionStorageIndex> m_ComponentSubscriptions;
 
         // Map systems' IDs to their subscriptions
         IDDVector<TArray<EntitySubscription>> m_SubscriptionStorage;
         IDGenerator m_SystemIDGenerator;
 
-        THashTable<std::type_index, ComponentHandler*> m_ComponentHandlers;
+        THashTable<const ComponentType*, ComponentHandler*> m_ComponentHandlers;
 
         const ComponentStorage* m_pComponentStorage;
         const EntityRegistry* m_pEntityRegistry;

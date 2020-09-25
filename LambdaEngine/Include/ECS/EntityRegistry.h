@@ -11,8 +11,10 @@
 
 namespace LambdaEngine
 {
+    class ComponentType;
+
     // Map Entities to the set of component types they are registered to
-    typedef IDDVector<std::unordered_set<std::type_index>> EntityRegistryPage;
+    typedef IDDVector<std::unordered_set<const ComponentType*>> EntityRegistryPage;
 
     class EntityRegistry
     {
@@ -20,8 +22,8 @@ namespace LambdaEngine
         EntityRegistry();
         ~EntityRegistry() = default;
 
-        void RegisterComponentType(Entity entity, std::type_index componentType);
-        void DeregisterComponentType(Entity entity, std::type_index componentType);
+        void RegisterComponentType(Entity entity, const ComponentType* pComponentType);
+        void DeregisterComponentType(Entity entity, const ComponentType* pComponentType);
 
         // Queries whether or not the entity has all the specified types
         bool EntityHasAllowedTypes(Entity entity, const TArray<std::type_index>& queryTypes, const TArray<std::type_index>& excludedComponentTypes) const;
