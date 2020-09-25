@@ -26,7 +26,7 @@ namespace LambdaEngine
         void DeregisterComponentType(Entity entity, const ComponentType* pComponentType);
 
         // Queries whether or not the entity has all the specified types
-        bool EntityHasAllowedTypes(Entity entity, const TArray<std::type_index>& queryTypes, const TArray<std::type_index>& excludedComponentTypes) const;
+        bool EntityHasAllowedTypes(Entity entity, const TArray<const ComponentType*>& queryTypes, const TArray<const ComponentType*>& excludedComponentTypes) const;
 
         Entity CreateEntity();
         void DeregisterEntity(Entity entity);

@@ -44,7 +44,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool EntityRegistry::EntityHasAllowedTypes(Entity entity, const TArray<std::type_index>& queryTypes, const TArray<std::type_index>& excludedComponentsTypes = {}) const
+	bool EntityRegistry::EntityHasAllowedTypes(Entity entity, const TArray<const ComponentType*>& queryTypes, const TArray<const ComponentType*>& excludedComponentsTypes = {}) const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
@@ -52,7 +52,7 @@ namespace LambdaEngine
 		const std::unordered_set<const ComponentType*>& entityTypes = topPage.IndexID(entity);
 
 		// Entity with excluded componets are not allowed
-		for (auto excludedType : excludedComponentsTypes)
+		for (const ComponentType* excludedType : excludedComponentsTypes)
 		{
 			auto got = entityTypes.find(excludedType);
 			if (got != entityTypes.end())

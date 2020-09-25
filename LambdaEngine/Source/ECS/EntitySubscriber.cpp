@@ -19,7 +19,7 @@ namespace LambdaEngine
         ComponentAccesses = componentAccesses;
     }
 
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, const TArray<IComponentGroup*>& componentGroups, const TArray<std::type_index>& excludedComponentTypes, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
+    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, const TArray<IComponentGroup*>& componentGroups, const TArray<const ComponentType*>& excludedComponentTypes, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
         :EntitySubscriptionRegistration(componentAccesses, {}, pSubscriber, onEntityAdded, onEntityRemoval)
     {
         // Filter the component accesses present in excluded list
@@ -29,9 +29,9 @@ namespace LambdaEngine
         for (auto component : ComponentAccesses)
         {
             // Look for component access in excluded list
-            for (auto excludedTID : excludedComponentTypes)
+            for (const auto* excludedCompType : excludedComponentTypes)
             {
-                if (component.TID == excludedTID)
+                if (component.TID == excludedCompType)
                 {
                     exclude = true;
                     break;
