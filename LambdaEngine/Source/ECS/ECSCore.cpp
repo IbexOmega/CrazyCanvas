@@ -52,11 +52,12 @@ namespace LambdaEngine
 
 		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
 		{
-			const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
+			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[entityIdx];
 
-			for (std::type_index type : typeSet) {
+			for (const ComponentType* pComponentType : typeSet)
+			{
 				// Deregister entity's components from systems
-				m_EntityPublisher.UnpublishComponent(entities[entityIdx], type);
+				m_EntityPublisher.UnpublishComponent(entities[entityIdx], pComponentType);
 			}
 		}
 	}
@@ -70,10 +71,10 @@ namespace LambdaEngine
 		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
 		{
 			Entity entity = entities[entityIdx];
-			const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
+			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[entityIdx];
 
-			for (std::type_index componentType : typeSet)
-				DeleteComponent(entity, componentType);
+			for (const ComponentType* pComponentType : typeSet)
+				DeleteComponent(entity, pComponentType);
 		}
 
 		m_EntityRegistry.RemovePage();
@@ -88,16 +89,16 @@ namespace LambdaEngine
 
 		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
 		{
-			const std::unordered_set<std::type_index>& typeSet = entityComponentSets[entityIdx];
+			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[entityIdx];
 
-			for (std::type_index componentType : typeSet)
-				m_EntityPublisher.PublishComponent(entities[entityIdx], componentType);
+			for (const ComponentType* pComponentType : typeSet)
+				m_EntityPublisher.PublishComponent(entities[entityIdx], pComponentType);
 		}
 	}
 
 	void ECSCore::PerformComponentRegistrations()
 	{
-		for (const std::pair<Entity, std::type_index>& component : m_ComponentsToRegister)
+		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
 		{
 			m_EntityRegistry.RegisterComponentType(component.first, component.second);
 			m_EntityPublisher.PublishComponent(component.first, component.second);
@@ -109,12 +110,12 @@ namespace LambdaEngine
 
 	void ECSCore::PerformComponentDeletions()
 	{
-		for (const std::pair<Entity, std::type_index>& component : m_ComponentsToDelete)
+		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToDelete)
 		{
 			if (DeleteComponent(component.first, component.second))
 			{
 				// If the entity has no more components, delete it
-				const std::unordered_set<std::type_index>& componentTypes = m_EntityRegistry.GetTopRegistryPage().IndexID(component.first);
+				const std::unordered_set<const ComponentType*>& componentTypes = m_EntityRegistry.GetTopRegistryPage().IndexID(component.first);
 				if (componentTypes.empty())
 					m_EntityRegistry.DeregisterEntity(component.first);
 			}
@@ -131,9 +132,9 @@ namespace LambdaEngine
 		for (Entity entity : m_EntitiesToDelete)
 		{
 			// Delete every component belonging to the entity
-			const std::unordered_set<std::type_index>& componentTypes = registryPage.IndexID(entity);
-			for (std::type_index componentType : componentTypes)
-				DeleteComponent(entity, componentType);
+			const std::unordered_set<const ComponentType*>& componentTypes = registryPage.IndexID(entity);
+			for (const ComponentType* pComponentType : componentTypes)
+				DeleteComponent(entity, pComponentType);
 
 			// Free the entity ID
 			m_EntityRegistry.DeregisterEntity(entity);
@@ -143,14 +144,9 @@ namespace LambdaEngine
 		m_EntitiesToDelete.Clear();
 	}
 
-	bool ECSCore::DeleteComponent(Entity entity, std::type_index componentType)
+	bool ECSCore::DeleteComponent(Entity entity, const ComponentType* pComponentType)
 	{
-		if (m_ComponentStorage.DeleteComponent(entity, componentType))
-		{
-			m_EntityPublisher.UnpublishComponent(entity, componentType);
-			return true;
-		}
-
-		return false;
+		m_EntityPublisher.UnpublishComponent(entity, pComponentType);
+		return m_ComponentStorage.DeleteComponent(entity, pComponentType);
 	}
 }

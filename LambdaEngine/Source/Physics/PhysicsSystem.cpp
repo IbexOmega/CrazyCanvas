@@ -2,6 +2,8 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 
+#define PX_RELEASE(x) if(x)	{ x->release(); x = nullptr; }
+
 #define GRAVITATIONAL_ACCELERATION 9.82f
 
 namespace LambdaEngine
@@ -9,45 +11,74 @@ namespace LambdaEngine
 	PhysicsSystem PhysicsSystem::s_Instance;
 
 	PhysicsSystem::PhysicsSystem()
-		:m_pCollisionDispatcher(nullptr),
-		m_pDynamicsWorld(nullptr)
-	{
-		SystemRegistration systemReg = {};
-		systemReg.Phase = 1;
-
-		RegisterSystem(systemReg);
-	}
+		:m_pFoundation(nullptr),
+		m_pPhysics(nullptr),
+		m_pDispatcher(nullptr),
+		m_pScene(nullptr)
+	{}
 
 	PhysicsSystem::~PhysicsSystem()
 	{
-		SAFEDELETE(m_pCollisionDispatcher);
-		SAFEDELETE(m_pDynamicsWorld);
+		PX_RELEASE(m_pDispatcher);
+		PX_RELEASE(m_pScene);
+		PX_RELEASE(m_pPhysics);
+		PX_RELEASE(m_pFoundation);
 	}
 
 	bool PhysicsSystem::Init()
 	{
-		m_pCollisionDispatcher = DBG_NEW btCollisionDispatcher(&m_CollisionConfiguration);
-		m_pDynamicsWorld = new btDiscreteDynamicsWorld(
-			m_pCollisionDispatcher,
-			&m_BroadphaseInterface,
-			&m_ConstraintSolver,
-			&m_CollisionConfiguration
-		);
+		{
+			SystemRegistration systemReg = {};
+			systemReg.Phase = 1;
 
-		const btVector3 gravity = {
+			RegisterSystem(systemReg);
+		}
+
+		// PhysX setup
+		m_pFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, m_Allocator, m_ErrorCallback);
+		if (!m_pFoundation)
+		{
+			LOG_ERROR("PhysX foundation creation failed");
+			return false;
+		}
+
+		m_pPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_pFoundation, PxTolerancesScale(), false, nullptr);
+		if (!m_pPhysics)
+		{
+			LOG_ERROR("PhysX core creation failed");
+			return false;
+		}
+
+		m_pDispatcher = PxDefaultCpuDispatcherCreate(2);
+		if (!m_pDispatcher)
+		{
+			LOG_ERROR("PhysX CPU dispatcher creation failed");
+			return false;
+		}
+
+		const PxVec3 gravity = {
 			g_DefaultUp.x,
-			-g_DefaultUp.y * GRAVITATIONAL_ACCELERATION,
+			-g_DefaultUp.y * 9.81f,
 			g_DefaultUp.z
 		};
 
-		m_pDynamicsWorld->setGravity(gravity);
+		PxSceneDesc sceneDesc(m_pPhysics->getTolerancesScale());
+		sceneDesc.gravity		= gravity;
+		sceneDesc.cpuDispatcher	= m_pDispatcher;
+		sceneDesc.filterShader	= PxDefaultSimulationFilterShader;
+		m_pScene = m_pPhysics->createScene(sceneDesc);
+		if (!m_pScene)
+		{
+			LOG_ERROR("PhysX scene creation failed");
+			return false;
+		}
 
-		return m_pCollisionDispatcher && m_pDynamicsWorld;
+		return true;
 	}
 
 	void PhysicsSystem::Tick(Timestamp deltaTime)
 	{
-		const btScalar deltaBT = (float)deltaTime.AsSeconds();
-		m_pDynamicsWorld->stepSimulation(deltaBT);
+		m_pScene->simulate((float)deltaTime.AsSeconds());
+		m_pScene->fetchResults(true);
 	}
 }

@@ -39,6 +39,7 @@
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
+#include "Game/ECS/Systems/Networking/NetworkingSystem.h"
 
 namespace LambdaEngine
 {
@@ -205,6 +206,11 @@ namespace LambdaEngine
 		}
 
 		if (!CameraSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!NetworkingSystem::GetInstance().Init())
 		{
 			return false;
 		}

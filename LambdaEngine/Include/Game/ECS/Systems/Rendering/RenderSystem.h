@@ -37,6 +37,7 @@ namespace LambdaEngine
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
+	class PhysicsRenderer;
 
 	struct RenderGraphStructureDesc;
 
@@ -47,9 +48,9 @@ namespace LambdaEngine
 			glm::mat4	Transform		= glm::mat4(1.0f);
 			glm::mat4	PrevTransform	= glm::mat4(1.0f);
 			uint32		MaterialSlot	= 0;
+			uint32		MeshletCount	= 0;
 			uint32		Padding0;
 			uint32		Padding1;
-			uint32		Padding2;
 		};
 
 		struct MeshKey
@@ -99,10 +100,16 @@ namespace LambdaEngine
 			AccelerationStructure* pBLAS		= nullptr;
 			SBTRecord ShaderRecord			= {};
 
-			Buffer* pVertexBuffer			= nullptr;
-			uint32	VertexCount				= 0;
-			Buffer* pIndexBuffer			= nullptr;
-			uint32	IndexCount				= 0;
+			Buffer* pVertexBuffer		= nullptr;
+			uint32	VertexCount			= 0;
+			Buffer* pIndexBuffer		= nullptr;
+			uint32	IndexCount			= 0;
+			Buffer* pUniqueIndices		= nullptr;
+			uint32	UniqueIndexCount	= 0;
+			Buffer* pPrimitiveIndices	= nullptr;
+			uint32	PrimtiveIndexCount	= 0;
+			Buffer* pMeshlets			= nullptr;
+			uint32	MeshletCount		= 0;
 
 			
 			Buffer* pASInstanceBuffer		= nullptr;
@@ -236,6 +243,8 @@ namespace LambdaEngine
 		IDVector				m_RenderableEntities;
 		IDVector				m_CameraEntities;
 
+		PhysicsRenderer*		m_pPhysicsRenderer	= nullptr;
+
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
 		TextureView**			m_ppBackBufferViews	= nullptr;
@@ -244,7 +253,8 @@ namespace LambdaEngine
 		uint64					m_ModFrameIndex		= 0;
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
-
+		bool					m_MeshShadersEnabled = false;
+		//Mesh/Instance/Entity
 		bool						m_LightsDirty			= true;
 		bool						m_LightsResourceDirty	= false;
 		bool						m_DirectionalExist		= false;

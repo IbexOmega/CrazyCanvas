@@ -18,57 +18,57 @@ namespace LambdaEngine
 
 	void BinaryDecoder::ReadInt8(int8& value)
 	{
-		ReadBuffer(&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadUInt8(uint8& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadInt16(int16& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadUInt16(uint16& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadInt32(int32& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadUInt32(uint32& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadInt64(int64& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadUInt64(uint64& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadFloat32(float32& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadFloat64(float64& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadBool(bool& value)
 	{
-		ReadBuffer((char*)&value, sizeof(value));
+		ReadBuffer((uint8*)&value, sizeof(value));
 	}
 
 	void BinaryDecoder::ReadString(std::string& value)
@@ -76,13 +76,34 @@ namespace LambdaEngine
 		uint16 length;
 		ReadUInt16(length);
 		value.resize(length);
-		ReadBuffer(value.data(), length);
+		ReadBuffer((uint8*)value.data(), length);
 	}
 
-	void BinaryDecoder::ReadBuffer(char* buffer, uint16 bytesToRead)
+	void BinaryDecoder::ReadBuffer(uint8* buffer, uint16 bytesToRead)
 	{
 		memcpy(buffer, m_pNetworkPacket->GetBufferReadOnly() + m_ReadHead, bytesToRead);
 		m_ReadHead += bytesToRead;
+	}
+
+	void BinaryDecoder::ReadVec2(glm::vec2& value)
+	{
+		ReadFloat32(value.x);
+		ReadFloat32(value.y);
+	}
+
+	void BinaryDecoder::ReadVec3(glm::vec3& value)
+	{
+		ReadFloat32(value.x);
+		ReadFloat32(value.y);
+		ReadFloat32(value.z);
+	}
+
+	void BinaryDecoder::ReadVec4(glm::vec4& value)
+	{
+		ReadFloat32(value.x);
+		ReadFloat32(value.y);
+		ReadFloat32(value.z);
+		ReadFloat32(value.w);
 	}
 
 	int8 BinaryDecoder::ReadInt8()
@@ -166,6 +187,27 @@ namespace LambdaEngine
 	{
 		std::string value;
 		ReadString(value);
+		return value;
+	}
+
+	glm::vec2 BinaryDecoder::ReadVec2()
+	{
+		glm::vec2 value;
+		ReadVec2(value);
+		return value;
+	}
+
+	glm::vec3 BinaryDecoder::ReadVec3()
+	{
+		glm::vec3 value;
+		ReadVec3(value);
+		return value;
+	}
+
+	glm::vec4 BinaryDecoder::ReadVec4()
+	{
+		glm::vec4 value;
+		ReadVec4(value);
 		return value;
 	}
 }

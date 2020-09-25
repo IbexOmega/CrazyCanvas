@@ -353,7 +353,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
+	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlag stage, EShaderLang lang, const char* pEntryPoint)
 	{
 		auto loadedShaderGUID = s_ShaderNamesToGUIDs.find(filename);
 		if (loadedShaderGUID != s_ShaderNamesToGUIDs.end())
@@ -519,6 +519,8 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::RegisterLoadedMesh(const String& name, Mesh* pResource)
 	{
+		VALIDATE(pResource != nullptr);
+
 		GUID_Lambda guid = GUID_NONE;
 		Mesh** ppMappedResource = nullptr;
 
@@ -536,6 +538,8 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::RegisterLoadedMaterial(const String& name, Material* pResource)
 	{
+		VALIDATE(pResource != nullptr);
+
 		GUID_Lambda guid = GUID_NONE;
 		Material** ppMappedResource = nullptr;
 
@@ -565,6 +569,8 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::RegisterLoadedTexture(Texture* pResource)
 	{
+		VALIDATE(pResource != nullptr);
+
 		GUID_Lambda guid = GUID_NONE;
 		Texture** ppMappedTexture = nullptr;
 		TextureView** ppMappedTextureView = nullptr;
@@ -578,8 +584,6 @@ namespace LambdaEngine
 		}
 
 		(*ppMappedTexture) = pResource;
-
-		ASSERT(pResource != nullptr);
 		
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";

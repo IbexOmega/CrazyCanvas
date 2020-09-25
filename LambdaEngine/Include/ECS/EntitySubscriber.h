@@ -13,17 +13,17 @@ namespace LambdaEngine
 	class EntitySubscriptionRegistration
 	{
 	public:
-		EntitySubscriptionRegistration(TArray<ComponentAccess> componentAccesses, const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoved = nullptr);
-		EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoved = nullptr);
-		EntitySubscriptionRegistration(const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoved = nullptr);
+		EntitySubscriptionRegistration(TArray<ComponentAccess> componentAccesses, const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
+		EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
+		EntitySubscriptionRegistration(const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
 
 	public:
 		TArray<ComponentAccess> ComponentAccesses;
 		IDVector* pSubscriber;
-		// Optional: Called after an entity was added due to the subscription
+		// Optional: Called after an entity is added due to the subscription
 		std::function<void(Entity)> OnEntityAdded;
-		// Optional: Called before an entity was removed
-		std::function<void(Entity)> OnEntityRemoved;
+		// Optional: Called before an entity is removed
+		std::function<void(Entity)> OnEntityRemoval;
 	};
 
 	// EntitySubscriberRegistration is a complete set of data required to register a component subscriber
