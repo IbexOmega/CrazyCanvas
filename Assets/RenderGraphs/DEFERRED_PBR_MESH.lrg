@@ -261,6 +261,27 @@
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_CUBE"
             }
+        },
+        {
+            "name": "G_BUFFER_POSITION",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": false,
+            "type_params": {
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D",
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "LINEAR",
+                "memory_type": "MEMORY_TYPE_GPU"
+            }
         }
     ],
     "resource_state_groups": [
@@ -608,13 +629,6 @@
                 },
                 {
                     "name": "G_BUFFER_VELOCITY",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS"
-                },
-                {
-                    "name": "G_BUFFER_DEPTH_STENCIL",
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "COMBINED_SAMPLER",

@@ -12,6 +12,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
+#include "Rendering/PhysicsRenderer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -112,10 +113,20 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
+
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.CustomRenderers				= { };
+
+			if (EngineConfig::GetBoolProperty("EnablePhysicsRenderer"))
+			{
+				m_pPhysicsRenderer = DBG_NEW PhysicsRenderer();
+				m_pPhysicsRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pPhysicsRenderer);
+			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
@@ -215,6 +226,7 @@ namespace LambdaEngine
 				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
+		SAFEDELETE(m_pPhysicsRenderer);
 
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
@@ -239,6 +251,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pLightsBuffer);
+
 
 		SAFEDELETE(m_pRenderGraph);
 
@@ -542,7 +555,7 @@ namespace LambdaEngine
 					BufferDesc meshletBufferDesc = {};
 					meshletBufferDesc.DebugName		= "Meshlet Buffer";
 					meshletBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					meshletBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
+					meshletBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 					meshletBufferDesc.SizeInBytes	= meshletStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
@@ -569,7 +582,7 @@ namespace LambdaEngine
 					BufferDesc uniqueIndicesBufferDesc = {};
 					uniqueIndicesBufferDesc.DebugName	= "Unique Indices Buffer";
 					uniqueIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
 					uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
@@ -596,7 +609,7 @@ namespace LambdaEngine
 					BufferDesc primitiveIndicesBufferDesc = {};
 					primitiveIndicesBufferDesc.DebugName	= "Primitive Indices Buffer";
 					primitiveIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
 					primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
