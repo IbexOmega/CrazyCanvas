@@ -43,7 +43,14 @@ namespace LambdaEngine
 	bool PhysicsSystem::Init()
 	{
 		{
+			// Subscribe to entities to register a destructor for collision components
+			auto onCollisionRemoved = std::bind(&PhysicsSystem::OnCollisionRemoved, this, std::placeholders::_1);
+
 			SystemRegistration systemReg = {};
+			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+			{
+				{{{NDA, CollisionComponent::Type()}}, &m_MeshEntities, nullptr, onCollisionRemoved},
+			};
 			systemReg.Phase = 1;
 
 			RegisterSystem(systemReg);
@@ -62,7 +69,14 @@ namespace LambdaEngine
 		{
 			m_pVisDbg = PxCreatePvd(*m_pFoundation);
 			PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
-			m_pVisDbg->connect(*transport,PxPvdInstrumentationFlag::eALL);
+			if (m_pVisDbg->connect(*transport,PxPvdInstrumentationFlag::eALL))
+			{
+				LOG_INFO("Connected to PhysX debug visualizer at %s", PVD_HOST);
+			}
+			else
+			{
+				LOG_WARNING("Failed to connect to PhysX debug visualizer at %s", PVD_HOST);
+			}
 		}
 	#endif // LAMBDA_DEBUG
 
@@ -107,27 +121,86 @@ namespace LambdaEngine
 		m_pScene->fetchResults(true);
 	}
 
-	void PhysicsSystem::CreateCollisionComponent(const CollisionCreateInfo& collisionCreateInfo)
+	CollisionComponent& PhysicsSystem::CreateCollisionSphere(const CollisionCreateInfo& collisionCreateInfo)
+	{
+		const Mesh* pMesh = ResourceManager::GetMesh(collisionCreateInfo.Mesh.MeshGUID);
+		const TArray<Vertex>& vertices = pMesh->Vertices;
+
+		float squareRadius = 0.0f;
+
+		for (const Vertex& vertex : vertices)
+			squareRadius = std::max(squareRadius, glm::length2(vertex.Position));
+
+		PxShape* pSphereShape = m_pPhysics->createShape(PxSphereGeometry(std::sqrtf(squareRadius)), *m_pMaterial);
+		return FinalizeCollisionComponent(collisionCreateInfo, pSphereShape);
+	}
+
+	CollisionComponent& PhysicsSystem::CreateCollisionBox(const CollisionCreateInfo& collisionCreateInfo)
+	{
+		const Mesh* pMesh = ResourceManager::GetMesh(collisionCreateInfo.Mesh.MeshGUID);
+		const glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
+		const PxVec3 halfExtentPX(halfExtent.x, halfExtent.y, halfExtent.z);
+
+		PxShape* pBoxShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentPX), *m_pMaterial);
+		return FinalizeCollisionComponent(collisionCreateInfo, pBoxShape);
+	}
+
+	CollisionComponent& PhysicsSystem::CreateCollisionCapsule(const CollisionCreateInfo& collisionCreateInfo)
+	{
+		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
+			it is rotated around the z-axis. */
+		const Mesh* pMesh = ResourceManager::GetMesh(collisionCreateInfo.Mesh.MeshGUID);
+		const TArray<Vertex>& vertices = pMesh->Vertices;
+
+		// The radius in the XZ plane (horizontal)
+		float squareRadiusXZ = 0.0f;
+		float halfHeight = 0.0f;
+
+		for (const Vertex& vertex : vertices)
+		{
+			const glm::vec3& position = vertex.Position;
+			squareRadiusXZ = std::max(squareRadiusXZ, glm::length2(glm::vec3(position.x, 0.0f, position.z)));
+			halfHeight = std::max(halfHeight, std::abs(position.y));
+		}
+
+		const float capsuleRadius = std::sqrtf(squareRadiusXZ);
+
+		PxShape* pCapsuleShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight), *m_pMaterial);
+		const PxQuat uprightRotation = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
+		return FinalizeCollisionComponent(collisionCreateInfo, pCapsuleShape, uprightRotation);
+	}
+
+	void PhysicsSystem::RemoveCollisionActor(Entity entity)
+	{
+		OnCollisionRemoved(entity);
+		ECSCore::GetInstance()->RemoveComponent<CollisionComponent>(entity);
+	}
+
+	void PhysicsSystem::OnCollisionRemoved(Entity entity)
+	{
+		PxActor* pActor = m_Actors.IndexID(entity);
+		m_Actors.Pop(entity);
+		m_pScene->removeActor(*pActor);
+	}
+
+	CollisionComponent& PhysicsSystem::FinalizeCollisionComponent(const CollisionCreateInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation)
 	{
 		const glm::vec3& position = collisionCreateInfo.Position.Position;
 		const glm::quat& rotation = collisionCreateInfo.Rotation.Quaternion;
 
-		const Mesh* pMesh = ResourceManager::GetMesh(collisionCreateInfo.Mesh.MeshGUID);
-		const glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
-
 		const PxVec3 positionPX = { position.x, position.y, position.z };
-		const PxQuat rotationPX = { rotation.x, rotation.y, rotation.z, rotation.w };
+		const PxQuat rotationPX = PxQuat(rotation.x, rotation.y, rotation.z, rotation.w) * additionalRotation;
 		const PxTransform transformPX(positionPX, rotationPX);
-		PxRigidStatic* pBody = m_pPhysics->createRigidStatic(transformPX);
 
-		PxShape* pBoxShape = m_pPhysics->createShape(PxBoxGeometry(halfExtent.x, halfExtent.y, halfExtent.z), *m_pMaterial);
-		pBody->attachShape(*pBoxShape);
+		PxRigidStatic* pBody = m_pPhysics->createRigidStatic(transformPX);
+		pBody->attachShape(*pShape);
 
 		m_pScene->addActor(*pBody);
+		m_Actors.PushBack(pBody, collisionCreateInfo.Entity);
 
-		pBoxShape->release();
+		pShape->release();
 
 		CollisionComponent collisionComponent = {};
-		ECSCore::GetInstance()->AddComponent<CollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
+		return ECSCore::GetInstance()->AddComponent<CollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
 	}
 }

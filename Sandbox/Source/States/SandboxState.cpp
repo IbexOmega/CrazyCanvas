@@ -147,7 +147,7 @@ void SandboxState::Init()
 					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
 				};
 
-				pPhysicsSystem->CreateCollisionComponent(collisionCreateInfo);
+				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 				transform *= glm::toMat4(glm::identity<glm::quat>());
