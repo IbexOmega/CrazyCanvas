@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #version 450 core
 #extension GL_ARB_separate_shader_objects : enable
 
@@ -8,4 +9,16 @@ layout(location = 0) out vec4 finalColor;
 void main()
 {
     finalColor = vec4(fragColor.xyz, 1.0f);
+=======
+#version 450 core
+#extension GL_ARB_separate_shader_objects : enable
+
+layout(location = 0) in vec4 fragColor;
+
+layout(location = 0) out vec4 finalColor;
+
+void main()
+{
+    finalColor = vec4(fragColor.xyz, 1.0f);
+>>>>>>> master
 }
