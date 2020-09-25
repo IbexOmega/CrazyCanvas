@@ -697,6 +697,29 @@ namespace LambdaEngine
 		vkCmdSetScissor(m_CommandList, firstScissor, scissorCount, m_ScissorRects);
 	}
 
+	void CommandListVK::SetStencilTestEnabled(bool enabled)
+	{
+		vkCmdSetStencilTestEnableEXT(m_CommandList, enabled ? VK_TRUE : VK_FALSE);
+	}
+
+	void CommandListVK::SetStencilTestOp(EStencilFace face, EStencilOp failOp, EStencilOp passOp, EStencilOp depthFailOp, ECompareOp compareOp)
+	{
+		VkStencilFaceFlags	faceFlagsVK		= ConvertStencilFace(face);
+		VkStencilOp			failOpVK		= ConvertStencilOp(failOp);
+		VkStencilOp			passOpVK		= ConvertStencilOp(passOp);
+		VkStencilOp			depthFailOpVK	= ConvertStencilOp(depthFailOp);
+		VkCompareOp			compareOpVK		= ConvertCompareOp(compareOp);
+
+		vkCmdSetStencilOpEXT(m_CommandList, faceFlagsVK, failOpVK, passOpVK, depthFailOpVK, compareOpVK);
+	}
+
+	void CommandListVK::SetStencilTestReference(EStencilFace face, uint32 reference)
+	{
+		VkStencilFaceFlags	faceFlagsVK = ConvertStencilFace(face);
+
+		vkCmdSetStencilReference(m_CommandList, faceFlagsVK, reference);
+	}
+
 	void CommandListVK::SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset)
 	{
 		const PipelineLayoutVK* pVkPipelineLayout = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);

@@ -181,6 +181,43 @@ workspace "LambdaEngine"
 				"Dependencies/imnodes/imnodes.h",
 				"Dependencies/imnodes/imnodes.cpp",
 			}
+			
+		-- Noesis Application Fra Project
+		project "NoesisApp"
+			kind "StaticLib"
+			language "C++"
+			cppdialect "C++latest"
+			systemversion "latest"
+			location "Dependencies/projectfiles/NoesisApp"
+
+			filter "configurations:Debug or Release"
+				symbols "on"
+				runtime "Release"
+				optimize "Full"
+			filter{}
+
+			filter "configurations:Production"
+				symbols "off"
+				runtime "Release"
+				optimize "Full"
+			filter{}
+
+			sysincludedirs
+			{
+				"Dependencies/NoesisGUI/Include",
+				"Dependencies/NoesisGUI/Providers/Include/",
+			}
+
+			-- Targets
+			targetdir ("Dependencies/bin/NoesisApp/" .. outputdir)
+			objdir ("Dependencies/bin-int/NoesisApp/" .. outputdir)
+
+			-- Files
+			files
+			{
+				"Dependencies/NoesisGUI/Providers/Src/**",
+			}
+			
 	group ""
 
     -- Engine Project
@@ -307,6 +344,7 @@ workspace "LambdaEngine"
 			"Dependencies/stb",
 			"Dependencies/WavLib",
 			"Dependencies/NoesisGUI/Include",
+			"Dependencies/NoesisGUI/Providers/Include",
 		}
 
 		links
@@ -314,6 +352,7 @@ workspace "LambdaEngine"
 			"WavLib",
 			"ImGui",
 			"imnodes",
+			"NoesisApp",
 		}
 
 		-- Win32

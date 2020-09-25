@@ -1,29 +1,64 @@
 #include "GUI/GUIPipelineStateCache.h"
+#include "GUI/GUIShaderManager.h"
 #include "GUI/GUIRenderTarget.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/RenderPass.h"
+#include "Rendering/Core/API/PipelineState.h"
+
+#include "Resources/ResourceManager.h"
 
 namespace LambdaEngine
 {
-	TArray<PipelineState*[NUM_PIPELINE_STATE_VARIATIONS]> GUIPipelineStateCache::s_PipelineStates;
-	GUIRenderTarget* GUIPipelineStateCache::s_pDummyRenderTarget	= nullptr;
-	PipelineLayout* GUIPipelineStateCache::s_pPipelineLayout		= nullptr;
+	constexpr const uint32 SAMPLE_COUNT_1_INDEX = 0;
+	constexpr const uint32 SAMPLE_COUNT_2_INDEX = 1;
+	constexpr const uint32 SAMPLE_COUNT_4_INDEX = 2;
 
-	bool GUIPipelineStateCache::Init()
+	TArray<PipelineState*[NUM_PIPELINE_STATE_VARIATIONS]> GUIPipelineStateCache::s_PipelineStates;
+	RenderPass* GUIPipelineStateCache::s_pDummyRenderPass		= nullptr;
+	PipelineLayout* GUIPipelineStateCache::s_pPipelineLayout	= nullptr;
+
+	bool GUIPipelineStateCache::Init(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)
 	{
-		if (!InitDummyRenderTarget())
-		{
-			LOG_ERROR("[GUIPipelineStateCache]: Failed to initialize Dummy Render Target");
-			return false;
-		}
+		Release();
 
 		if (!InitPipelineLayout())
 		{
 			LOG_ERROR("[GUIPipelineStateCache]: Failed to initialize Pipeline Layout");
 			return false;
 		}
+
+		RenderPassAttachmentDesc colorAttachmentDesc = {};
+		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
+		colorAttachmentDesc.SampleCount		= 1;
+		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
+		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
+		colorAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+		colorAttachmentDesc.InitialState	= pBackBufferAttachmentDesc->InitialState;
+		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
+
+		RenderPassSubpassDesc subpassDesc = {};
+		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
+		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
+
+		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
+		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
+		subpassDependencyDesc.DstSubpass	= 0;
+		subpassDependencyDesc.SrcAccessMask	= 0;
+		subpassDependencyDesc.DstAccessMask	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		subpassDependencyDesc.SrcStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+
+		RenderPassDesc renderPassDesc = {};
+		renderPassDesc.DebugName			= "GUI Render Pass";
+		renderPassDesc.Attachments			= { colorAttachmentDesc };
+		renderPassDesc.Subpasses			= { subpassDesc };
+		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
+
+		s_pDummyRenderPass = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
 
 		bool success = true;
 
@@ -82,12 +117,12 @@ namespace LambdaEngine
 			LOG_ERROR("[GUIPipelineStateCache]: Failed to initialize atleast one of the Pipeline States");
 		}
 
-		return success;
+		return false;
 	}
 
 	bool GUIPipelineStateCache::Release()
 	{
-		SAFEDELETE(s_pDummyRenderTarget);
+		SAFERELEASE(s_pDummyRenderPass);
 
 		for (uint32 p = 0; p < s_PipelineStates.GetSize(); p++)
 		{
@@ -103,34 +138,18 @@ namespace LambdaEngine
 		return true;
 	}
 
-	PipelineState* GUIPipelineStateCache::GetPipelineState(uint32 index, bool colorEnable, bool blendEnable)
+	PipelineState* GUIPipelineStateCache::GetPipelineState(uint32 index, bool colorEnable, bool blendEnable, const NoesisShaderData& shaderData)
 	{
-		uint32 subIndex = 0;
-		subIndex |= colorEnable ? 0 : BIT(1);
-		subIndex |= blendEnable ? 0 : BIT(2);
-
+		uint32 subIndex = CalculateSubIndex(colorEnable, blendEnable);
 		PipelineState** ppPipelineState = &s_PipelineStates[index][subIndex];
 
 		//Create new Pipeline State if nullptr
 		if (*ppPipelineState == nullptr)
 		{
-			InitPipelineState(index, colorEnable, blendEnable, ppPipelineState);
+			InitPipelineState(index, colorEnable, blendEnable, ppPipelineState, shaderData);
 		}
 
 		return *ppPipelineState;
-	}
-
-	bool GUIPipelineStateCache::InitDummyRenderTarget()
-	{
-		s_pDummyRenderTarget = new GUIRenderTarget();
-
-		GUIRenderTargetDesc renderTargetDesc = {};
-		renderTargetDesc.DebugName		= "GUIPipelineStateCache Dummy RenderPass";
-		renderTargetDesc.Width			= 1;
-		renderTargetDesc.Height			= 1;
-		renderTargetDesc.SampleCount	= 1;
-
-		return s_pDummyRenderTarget->Init(&renderTargetDesc);
 	}
 
 	bool GUIPipelineStateCache::InitPipelineLayout()
@@ -141,65 +160,55 @@ namespace LambdaEngine
 		vertBufferDescriptorBindingDesc.Binding				= 0;
 		vertBufferDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
-		DescriptorBindingDesc vertParamsDescriptorBindingDesc = {};
-		vertParamsDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		vertParamsDescriptorBindingDesc.DescriptorCount		= 1;
-		vertParamsDescriptorBindingDesc.Binding				= 1;
-		vertParamsDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-
-		DescriptorBindingDesc fragParamsDescriptorBindingDesc = {};
-		fragParamsDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		fragParamsDescriptorBindingDesc.DescriptorCount		= 1;
-		fragParamsDescriptorBindingDesc.Binding				= 2;
-		fragParamsDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-
-		DescriptorSetLayoutDesc bufferSetLayoutDesc = {};
-		bufferSetLayoutDesc.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_NONE;
-		bufferSetLayoutDesc.DescriptorBindings.PushBack(vertBufferDescriptorBindingDesc);
-		bufferSetLayoutDesc.DescriptorBindings.PushBack(vertParamsDescriptorBindingDesc);
-		bufferSetLayoutDesc.DescriptorBindings.PushBack(fragParamsDescriptorBindingDesc);
+		DescriptorBindingDesc paramsDescriptorBindingDesc = {};
+		paramsDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		paramsDescriptorBindingDesc.DescriptorCount			= 1;
+		paramsDescriptorBindingDesc.Binding					= 1;
+		paramsDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc patternDescriptorBindingDesc = {};
-		patternDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		patternDescriptorBindingDesc.DescriptorCount	= 1;
-		patternDescriptorBindingDesc.Binding			= 0;
-		patternDescriptorBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		patternDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		patternDescriptorBindingDesc.DescriptorCount		= 1;
+		patternDescriptorBindingDesc.Binding				= 2;
+		patternDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc rampsDescriptorBindingDesc = {};
-		rampsDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		rampsDescriptorBindingDesc.DescriptorCount		= 1;
-		rampsDescriptorBindingDesc.Binding				= 1;
-		rampsDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		rampsDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		rampsDescriptorBindingDesc.DescriptorCount			= 1;
+		rampsDescriptorBindingDesc.Binding					= 3;
+		rampsDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc imageDescriptorBindingDesc = {};
-		imageDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		imageDescriptorBindingDesc.DescriptorCount		= 1;
-		imageDescriptorBindingDesc.Binding				= 2;
-		imageDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		imageDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		imageDescriptorBindingDesc.DescriptorCount			= 1;
+		imageDescriptorBindingDesc.Binding					= 4;
+		imageDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc glyphsDescriptorBindingDesc = {};
-		glyphsDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		glyphsDescriptorBindingDesc.DescriptorCount		= 1;
-		glyphsDescriptorBindingDesc.Binding				= 3;
-		glyphsDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		glyphsDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		glyphsDescriptorBindingDesc.DescriptorCount			= 1;
+		glyphsDescriptorBindingDesc.Binding					= 5;
+		glyphsDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc shadowDescriptorBindingDesc = {};
-		shadowDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		shadowDescriptorBindingDesc.DescriptorCount		= 1;
-		shadowDescriptorBindingDesc.Binding				= 4;
-		shadowDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		shadowDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		shadowDescriptorBindingDesc.DescriptorCount			= 1;
+		shadowDescriptorBindingDesc.Binding					= 6;
+		shadowDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
-		DescriptorSetLayoutDesc texturesSetLayoutDesc = {};
-		texturesSetLayoutDesc.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_NONE;
-		texturesSetLayoutDesc.DescriptorBindings.PushBack(patternDescriptorBindingDesc);
-		texturesSetLayoutDesc.DescriptorBindings.PushBack(rampsDescriptorBindingDesc);
-		texturesSetLayoutDesc.DescriptorBindings.PushBack(imageDescriptorBindingDesc);
-		texturesSetLayoutDesc.DescriptorBindings.PushBack(glyphsDescriptorBindingDesc);
-		texturesSetLayoutDesc.DescriptorBindings.PushBack(shadowDescriptorBindingDesc);
+		DescriptorSetLayoutDesc descriptorSetLayout = {};
+		descriptorSetLayout.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_NONE;
+		descriptorSetLayout.DescriptorBindings.PushBack(vertBufferDescriptorBindingDesc);
+		descriptorSetLayout.DescriptorBindings.PushBack(paramsDescriptorBindingDesc);
+		descriptorSetLayout.DescriptorBindings.PushBack(patternDescriptorBindingDesc);
+		descriptorSetLayout.DescriptorBindings.PushBack(rampsDescriptorBindingDesc);
+		descriptorSetLayout.DescriptorBindings.PushBack(imageDescriptorBindingDesc);
+		descriptorSetLayout.DescriptorBindings.PushBack(glyphsDescriptorBindingDesc);
+		descriptorSetLayout.DescriptorBindings.PushBack(shadowDescriptorBindingDesc);
 
 		PipelineLayoutDesc pipelineLayoutDesc = {};
 		pipelineLayoutDesc.DebugName			= "GUIPipelineStateCache Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts = { bufferSetLayoutDesc, texturesSetLayoutDesc };
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayout };
 
 		s_pPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
@@ -208,33 +217,67 @@ namespace LambdaEngine
 
 	bool GUIPipelineStateCache::InitPipelineState(uint32 index, bool colorEnable, bool blendEnable)
 	{
-		uint32 subIndex = 0;
-		subIndex |= colorEnable ? 0 : BIT(1);
-		subIndex |= blendEnable ? 0 : BIT(2);
-
+		uint32 subIndex = CalculateSubIndex(colorEnable, blendEnable);
 		PipelineState** ppPipelineState = &s_PipelineStates[index][subIndex];
+		NoesisShaderData shaderData = NoesisGetShaderData(index);
 
-		return InitPipelineState(index, colorEnable, blendEnable, ppPipelineState);
+		return InitPipelineState(index, colorEnable, blendEnable, ppPipelineState, shaderData);
 	}
 
-	bool GUIPipelineStateCache::InitPipelineState(uint32 index, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState)
+	bool GUIPipelineStateCache::InitPipelineState(uint32 index, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData)
 	{
+		StencilOpStateDesc stencilOpStateDesc = {};
+		stencilOpStateDesc.FailOp			= EStencilOp::STENCIL_OP_KEEP;
+		stencilOpStateDesc.PassOp			= EStencilOp::STENCIL_OP_KEEP;
+		stencilOpStateDesc.DepthFailOp		= EStencilOp::STENCIL_OP_KEEP;
+		stencilOpStateDesc.CompareOp		= ECompareOp::COMPARE_OP_EQUAL;
+		stencilOpStateDesc.CompareMask		= 0xFFFFFFFF;
+		stencilOpStateDesc.WriteMask		= 0xFFFFFFFF;
+		stencilOpStateDesc.Reference		= 0x00000000;
+
 		DepthStencilStateDesc depthStencilStateDesc = {};	
 		depthStencilStateDesc.DepthTestEnable	= false;
 		depthStencilStateDesc.DepthWriteEnable	= false;
+		depthStencilStateDesc.FrontFace			= stencilOpStateDesc;
+		depthStencilStateDesc.BackFace			= stencilOpStateDesc;
+		
+		BlendAttachmentStateDesc blendAttachmentStateDesc = {};
+		blendAttachmentStateDesc.BlendEnabled				= blendEnable;
+		blendAttachmentStateDesc.RenderTargetComponentMask	= colorEnable ? COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A : COLOR_COMPONENT_FLAG_NONE;
+
+		BlendStateDesc blendStateDesc = {};
+		blendStateDesc.BlendAttachmentStates	= { blendAttachmentStateDesc};
+		blendStateDesc.BlendConstants[0]		= 1.0f;
+		blendStateDesc.BlendConstants[1]		= 1.0f;
+		blendStateDesc.BlendConstants[2]		= 1.0f;
+		blendStateDesc.BlendConstants[3]		= 1.0f;
+		blendStateDesc.LogicOp					= ELogicOp::LOGIC_OP_COPY;
+		blendStateDesc.AlphaToCoverageEnable	= false;
+		blendStateDesc.AlphaToOneEnable			= false;
+		blendStateDesc.LogicOpEnable			= false;
 
 		GraphicsPipelineStateDesc graphicsPipelineStateDesc = {};
-		graphicsPipelineStateDesc.DebugName			= "GUIPipelineStateCache PipelineState"; 
-		graphicsPipelineStateDesc.pRenderPass		= s_pDummyRenderTarget->GetRenderPass();
-		graphicsPipelineStateDesc.pPipelineLayout	= s_pPipelineLayout;
-		graphicsPipelineStateDesc.DepthStencilState	= 
-		graphicsPipelineStateDesc.BlendState			
-		graphicsPipelineStateDesc.RasterizerState		
-		graphicsPipelineStateDesc.SampleMask			
-		graphicsPipelineStateDesc.SampleCount			
-		graphicsPipelineStateDesc.Subpass				
+		graphicsPipelineStateDesc.DebugName				= "GUIPipelineStateCache PipelineState"; 
+		graphicsPipelineStateDesc.pRenderPass			= s_pDummyRenderPass;
+		graphicsPipelineStateDesc.pPipelineLayout		= s_pPipelineLayout;
+		graphicsPipelineStateDesc.DepthStencilState		= depthStencilStateDesc;
+		graphicsPipelineStateDesc.BlendState			= blendStateDesc;
+		graphicsPipelineStateDesc.SampleMask			= 0xFFFFFFFF;
+		graphicsPipelineStateDesc.SampleCount			= 1;
+		graphicsPipelineStateDesc.Subpass				= 0;
+		graphicsPipelineStateDesc.ExtraDynamicState		= EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE;
+		graphicsPipelineStateDesc.VertexShader.pShader	= ResourceManager::GetShader(GUIShaderManager::GetGUIVertexShaderGUID(shaderData.VertexShaderID));
+		graphicsPipelineStateDesc.PixelShader.pShader	= ResourceManager::GetShader(GUIShaderManager::GetGUIPixelShaderGUID(shaderData.PixelShaderID));
 
-		(*ppPipelineState) = RenderAPI::GetDevice()->CreateGraphicsPipelineState();
+		(*ppPipelineState) = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc);
 		return true;
+	}
+
+	uint32 GUIPipelineStateCache::CalculateSubIndex(bool colorEnable, bool blendEnable)
+	{
+		uint32 subIndex = 0;
+		if (!colorEnable)			subIndex += 1;
+		if (!blendEnable)			subIndex += 2;
+		return subIndex;
 	}
 }

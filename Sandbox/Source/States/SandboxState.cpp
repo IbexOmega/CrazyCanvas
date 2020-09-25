@@ -81,7 +81,6 @@ void SandboxState::Init()
 	//	}
 	//}
 
-
 	//Scene
 	{
 		TArray<MeshComponent> meshComponents;

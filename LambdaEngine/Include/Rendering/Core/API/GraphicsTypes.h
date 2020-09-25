@@ -478,6 +478,13 @@ namespace LambdaEngine
 		VERTEX_INPUT_PER_INSTANCE	= 2,
 	};
 
+	enum class EStencilFace : uint8
+	{
+		STENCIL_FACE_FRONT			= 0,
+		STENCIL_FACE_BACK			= 1,
+		STENCIL_FACE_FRONT_AND_BACK	= 2,
+	};
+
 	/*
 	* Structs
 	*/

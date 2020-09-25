@@ -546,6 +546,18 @@ namespace LambdaEngine
 		return stencilOpState;
 	}
 
+	inline VkStencilFaceFlags ConvertStencilFace(EStencilFace stencilFace)
+	{
+		switch (stencilFace)
+		{
+		case EStencilFace::STENCIL_FACE_FRONT:			return VK_STENCIL_FACE_FRONT_BIT;
+		case EStencilFace::STENCIL_FACE_BACK:			return VK_STENCIL_FACE_BACK_BIT;
+		case EStencilFace::STENCIL_FACE_FRONT_AND_BACK:	return VK_STENCIL_FACE_FRONT_AND_BACK;
+		}
+
+		return VK_STENCIL_FACE_FRONT_AND_BACK;
+	}
+
 	inline const char* VkFormatToString(VkFormat format)
 	{
 		switch (format)

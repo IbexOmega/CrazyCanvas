@@ -2,63 +2,41 @@
 
 #include "Rendering/Core/API/PipelineState.h"
 
+#include "GUI/GUIHelpers.h"
+
 #include "NsRender/RenderDevice.h"
 
 namespace LambdaEngine
 {
 	class PipelineState;
+	class RenderPassAttachmentDesc;
 	class GUIRenderTarget;
+
+	constexpr const uint32 NUM_NON_DYNAMIC_VARIATIONS = 4;
+	constexpr const uint32 NUM_PIPELINE_STATE_VARIATIONS = NUM_NON_DYNAMIC_VARIATIONS;
 
 	class GUIPipelineStateCache
 	{
-		static constexpr const uint32 NUM_PIPELINE_STATE_VARIATIONS = 4;
-
-		union GUIRenderState
-		{
-			struct
-			{
-				uint32 Invalidated		: 1;
-				uint32 ScissorEnable	: 1;
-				uint32 ColorEnable		: 1;
-				uint32 BlendEnable		: 1;
-				uint32 StencilEnable	: 1;
-				uint32 StencilMode		: 2;
-				uint32 StencilRef		: 8;
-			} Comp;
-
-			uint32 Value;
-
-			GUIRenderState() : Value(0) {}
-
-			GUIRenderState(Noesis::RenderState renderState, uint8 stencilRef)
-			{
-				Comp.Invalidated	= 0;
-				Comp.ScissorEnable	= renderState.f.scissorEnable;
-				Comp.ColorEnable	= renderState.f.colorEnable;
-				Comp.BlendEnable	= renderState.f.blendMode == Noesis::BlendMode::SrcOver;
-				Comp.StencilEnable	= renderState.f.stencilMode != Noesis::StencilMode::Disabled;
-				Comp.StencilMode	= renderState.f.stencilMode;
-				Comp.StencilRef		= stencilRef;
-			}
-		};
-
 	public:
 		DECL_STATIC_CLASS(GUIPipelineStateCache);
 
-		static bool Init();
+		static bool Init(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		static bool Release();
 
-		static PipelineState* GetPipelineState(uint32 index, bool colorEnable, bool blendEnable);
+		static PipelineState* GetPipelineState(uint32 index, bool colorEnable, bool blendEnable, const NoesisShaderData& shaderData);
+
+		FORCEINLINE static const PipelineLayout* GetPipelineLayout() { return s_pPipelineLayout; }
 
 	private:
-		static bool InitDummyRenderTarget();
 		static bool InitPipelineLayout();
 		static bool InitPipelineState(uint32 index, bool colorEnable, bool blendEnable);
-		static bool InitPipelineState(uint32 index, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState);
+		static bool InitPipelineState(uint32 index, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData);
+
+		static uint32 CalculateSubIndex(bool colorEnable, bool blendEnable);
 
 	private:
 		static TArray<PipelineState*[NUM_PIPELINE_STATE_VARIATIONS]> s_PipelineStates;
-		static GUIRenderTarget* s_pDummyRenderTarget;
-		static PipelineLayout* s_pPipelineLayout;
+		static RenderPass*		s_pDummyRenderPass;
+		static PipelineLayout*	s_pPipelineLayout;
 	};
 }

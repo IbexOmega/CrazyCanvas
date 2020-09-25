@@ -159,6 +159,7 @@ namespace LambdaEngine
 		FCommandListFlags	Flags			= FCommandListFlag::COMMAND_LIST_FLAG_NONE;
 	};
 
+
 	class CommandList : public DeviceChild
 	{
 	public:
@@ -188,6 +189,9 @@ namespace LambdaEngine
 
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			= 0;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	= 0;
+		virtual void SetStencilTestEnabled(bool enabled) = 0;
+		virtual void SetStencilTestOp(EStencilFace face, EStencilOp failOp, EStencilOp passOp, EStencilOp depthFailOp, ECompareOp compareOp) = 0;
+		virtual void SetStencilTestReference(EStencilFace face, uint32 reference) = 0;
 		
 		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
 

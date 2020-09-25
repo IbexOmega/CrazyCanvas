@@ -11,6 +11,21 @@ namespace LambdaEngine
 
 	class GUIRenderer : public Noesis::RenderDevice, ICustomRenderer
 	{
+		struct GUIParamsData
+		{
+			//Vertex Shader
+			glm::mat4	ProjMatrix		= glm::mat4(1.0f);
+			glm::vec2	TextSize		= glm::vec2(1.0f);
+			//Pixel Shader
+			glm::vec4	RGBA			= glm::vec4(1.0f);
+			float32		Opacity			= 1.0f;
+			glm::vec4	RadialGrad0		= glm::vec4(0.0f);
+			glm::vec4	RadialGrad1		= glm::vec4(0.0f);
+			glm::vec2	TexPixelSize	= glm::vec2(1.0f);
+			float32		pEffectParams[32];
+		};
+
+	public:
 		GUIRenderer();
 		~GUIRenderer();
 
@@ -99,23 +114,38 @@ namespace LambdaEngine
 
 	private:
 		CommandList* BeginOrGetCommandList();
+		DescriptorSet* CreateOrGetDescriptorSet();
 
+		bool CreateBuffers();
 		bool CreateCommandLists();
+		bool CreateDescriptorHeap();
+		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 
 	private:
+		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		uint32 m_BackBufferCount	= 0;
+		uint32 m_BackBufferIndex	= 0;
+		uint32 m_ModFrameIndex		= 0;
+
 		CommandAllocator**	m_ppRenderCommandAllocators	= nullptr;
 		CommandList**		m_ppRenderCommandLists		= nullptr;
 
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
 
-		uint32 m_BackBufferCount = 0;
-		uint32 m_ModFrameIndex = 0;
-
-		Buffer* m_pVertexStagingBuffer	= nullptr;
-		Buffer* m_pIndexStagingBuffer	= nullptr;
+		Buffer* m_pVertexStagingBuffer		= nullptr;
+		Buffer* m_pIndexStagingBuffer		= nullptr;
+		uint64	m_RequiredVertexBufferSize	= 0;
+		uint64	m_RequiredIndexBufferSize	= 0;
 
 		Buffer* m_pVertexBuffer	= nullptr;
 		Buffer* m_pIndexBuffer	= nullptr;
+		Buffer* m_pParamsBuffer	= nullptr;
 		TArray<Buffer*>* m_pBuffersToRemove;
+
+		DescriptorHeap*			m_pDescriptorHeap = nullptr;
+		TArray<DescriptorSet*>	m_AvailableDescriptorSets;
+		TArray<DescriptorSet*>	m_pUsedDescriptorSets[BACK_BUFFER_COUNT];
+
+		RenderPass* m_pMainRenderPass = nullptr;
 	};
 }
