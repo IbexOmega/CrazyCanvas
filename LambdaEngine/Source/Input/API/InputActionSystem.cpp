@@ -92,7 +92,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool InputActionSystem::IsActive(String action)
+	bool InputActionSystem::IsActive(const String& action)
 	{
 
 		auto itr = m_CurrentKeyBindings.find(action);
