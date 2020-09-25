@@ -78,7 +78,7 @@ namespace LambdaEngine
 		void ResetState();
 
 		// Helpers
-		void RenderDimChangeOptions(EPipelineStateType pipelineStateType, int32 selectedOptions[3], float32 variable[3], float inputWidth);
+		void RenderDimChangeOptions(EPipelineStateType pipelineStateType, int32 selectedXYZOptions[3], float32 valuesXYZ[3], float inputWidth);
 
 	private:
 		bool												m_GUIInitialized = false;

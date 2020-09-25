@@ -1,33 +1,26 @@
 #pragma once
 
 #include "Containers/TArray.h"
+#include "Containers/String.h"
+#include "ECS/ComponentType.h"
 
-#include <typeindex>
+#define DECL_COMPONENT(Component) \
+	private: \
+		inline static constexpr const ComponentType s_Type = ComponentType(#Component); \
+	public: \
+		FORCEINLINE static const ComponentType* Type() \
+		{ \
+			return &s_Type; \
+		}
 
-namespace LambdaEngine
-{
-	struct _Internal
-	{
-		static uint32 s_Generator;
-	};
-}
-
-#define TID(type) std::type_index(typeid(type))
-#define GENERATE_MASK() (1 << (_Internal::s_Generator++))
-
-#define DECL_COMPONENT(Component)		\
-	static std::type_index s_TID;		\
-	static uint32 s_DrawArgMask
-
-#define DECL_DRAW_ARG_COMPONENT(Component)	DECL_COMPONENT(Component)
-
-#define INIT_COMPONENT(Component)						\
-	std::type_index Component::s_TID = TID(Component);  \
-	uint32 Component::s_DrawArgMask = 0
-
-#define INIT_DRAW_ARG_COMPONENT(Component)						\
-	std::type_index Component::s_TID = TID(Component);  \
-	uint32 Component::s_DrawArgMask = GENERATE_MASK();
+#define DECL_DRAW_ARG_COMPONENT(Component) \
+	private: \
+		inline static constexpr const ComponentType s_Type = ComponentType(#Component); \
+	public: \
+		FORCEINLINE static const ComponentType* Type() \
+		{ \
+			return &s_Type; \
+		}
 
 namespace LambdaEngine
 {
@@ -41,7 +34,7 @@ namespace LambdaEngine
 	struct ComponentAccess
 	{
 		ComponentPermissions Permissions;
-		std::type_index TID;
+		const ComponentType* TID;
 	};
 
 	class IComponentGroup

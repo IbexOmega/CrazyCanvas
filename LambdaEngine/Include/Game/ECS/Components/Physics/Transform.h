@@ -48,9 +48,9 @@ namespace LambdaEngine
 			return { Position, Scale, Rotation };
 		}
 
-		ComponentAccess Position    = {R, PositionComponent::s_TID};
-		ComponentAccess Scale       = {R, ScaleComponent::s_TID};
-		ComponentAccess Rotation    = {R, RotationComponent::s_TID};
+		ComponentAccess Position    = {R, PositionComponent::Type()};
+		ComponentAccess Scale       = {R, ScaleComponent::Type()};
+		ComponentAccess Rotation    = {R, RotationComponent::Type()};
 	};
 
 	struct WorldMatrixComponent

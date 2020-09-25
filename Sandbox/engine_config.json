@@ -7,6 +7,7 @@
   "RayTracingEnabled": false,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
+  "EnablePhysicsRenderer": false,
   "RenderGraphName": "MESH_PAINT.lrg",
   "ShowDemo": false,
   "Debugging": false,

@@ -20,7 +20,7 @@ namespace LambdaEngine
 		static TArray<ComponentAccess> GetUniqueComponentAccesses(const EntitySubscriberRegistration& subscriberRegistration);
 
 	private:
-		static void MapComponentAccesses(const TArray<ComponentAccess>& componentAccesses, THashTable<std::type_index, ComponentPermissions>& uniqueRegs);
+		static void MapComponentAccesses(const TArray<ComponentAccess>& componentAccesses, THashTable<const ComponentType*, ComponentPermissions>& uniqueRegs);
 
 	private:
 		uint32 m_Phase = UINT32_MAX;

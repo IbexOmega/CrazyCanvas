@@ -17,6 +17,7 @@ namespace LambdaEngine
 
 	struct CustomRendererRenderGraphInitDesc
 	{
+		uint32						BackBufferCount					= 0;
 		RenderPassAttachmentDesc*	pColorAttachmentDesc			= nullptr;
 		uint32						ColorAttachmentCount			= 0;
 		RenderPassAttachmentDesc*	pDepthStencilAttachmentDesc		= nullptr;
@@ -75,26 +76,18 @@ namespace LambdaEngine
 
 		/*
 		* Called at rendertime to allow recording device commands
-		*	pGraphicsCommandAllocator - The graphics command allocator to be reset
-		*	pGraphicsCommandList - The graphics command list corresponding to pCommandAllocator and which to record device commands to
-		*	pComputeCommandAllocator - The compute command allocator to be reset
-		*	pComputeCommandList - The compute command list corresponding to pCommandAllocator and which to record device commands to
 		*	modFrameIndex - The current Frame Index % #BackBufferImages
 		*	backBufferIndex - The current Back Buffer index
-		*	ppFirstExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed first, if this rendering should be executed.
-		*	ppSecondaryExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed secondary, if this rendering should be executed.
+		*	pFirstExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed first, if this rendering should be executed.
+		*	pSecondaryExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed after pFirstExecutionStage, if this rendering should be executed.
 		*		Example:	
 		*		if (executeRecording)	(*ppExecutionStage) = pCommandList;
 		*		else					(*ppExecutionStage) = nullptr;
 		*/
 		virtual void Render(
-			CommandAllocator* pGraphicsCommandAllocator, 
-			CommandList* pGraphicsCommandList, 
-			CommandAllocator* pComputeCommandAllocator, 
-			CommandList* pComputeCommandList, 
 			uint32 modFrameIndex, 
 			uint32 backBufferIndex, 
-			CommandList** ppPrimaryExecutionStage, 
+			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondaryExecutionStage)		= 0;
 
 		virtual FPipelineStageFlag GetFirstPipelineStage()	= 0;
