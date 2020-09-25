@@ -20,7 +20,9 @@ namespace LambdaEngine
 		FILE* pFile = fopen(pKeyBindingsConfigPath, "r");
 		if (!pFile)
 		{
-			LOG_WARNING("Config file could not be opened: %s", pKeyBindingsConfigPath);
+			// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
+			LOG_ERROR("Config file could not be opened: %s", pKeyBindingsConfigPath);
+			DEBUGBREAK();
 			return false;
 		}
 
