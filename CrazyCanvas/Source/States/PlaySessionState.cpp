@@ -28,7 +28,7 @@ void PlaySessionState::Init()
 	ResourceManager::LoadSceneFromFile("Map/scene.obj", meshComponents);
 
 	const glm::vec3 position(0.0f, 0.0f, 0.0f);
-	const glm::vec3 scale(0.01f);
+	const glm::vec3 scale(1.0f);
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	for (const MeshComponent& meshComponent : meshComponents)

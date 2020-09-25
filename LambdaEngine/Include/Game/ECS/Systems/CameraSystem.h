@@ -28,6 +28,7 @@ namespace LambdaEngine
 		CameraSystem() = default;
 
 		void HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp);
+		void RenderFrustum(Entity entity);
 
 	private:
 		IDVector	m_CameraEntities;
@@ -36,6 +37,8 @@ namespace LambdaEngine
 
 		bool		m_VisbilityChanged = false;
 		glm::ivec2	m_NewMousePos;
+
+		THashTable<Entity, uint32> m_LineGroupEntityIDs;
 
 	private:
 		static CameraSystem	s_Instance;

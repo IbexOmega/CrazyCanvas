@@ -6,10 +6,6 @@
 
 namespace LambdaEngine
 {
-	INIT_COMPONENT(FreeCameraComponent);
-	INIT_COMPONENT(CameraComponent);
-	INIT_COMPONENT(ViewProjectionMatricesComponent);
-
 	Entity CreateFreeCameraEntity(const CameraDesc& cameraDesc)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
@@ -24,6 +20,9 @@ namespace LambdaEngine
 		pECS->AddComponent<ViewProjectionMatricesComponent>(entity, viewProjComp);
 
 		CameraComponent camComp;
+		camComp.FarPlane 	= cameraDesc.FarPlane;
+		camComp.NearPlane 	= cameraDesc.NearPlane;
+		camComp.FOV			= cameraDesc.FOVDegrees;
 		pECS->AddComponent<CameraComponent>(entity, camComp);
 
 		pECS->AddComponent<PositionComponent>(entity, PositionComponent{ .Position = cameraDesc.Position });
@@ -48,6 +47,8 @@ namespace LambdaEngine
 		pECS->AddComponent<ViewProjectionMatricesComponent>(entity, viewProjComp);
 
 		CameraComponent camComp;
+		camComp.FarPlane = cameraDesc.FarPlane;
+		camComp.NearPlane = cameraDesc.NearPlane;
 		pECS->AddComponent<CameraComponent>(entity, camComp);
 
 		pECS->AddComponent<PositionComponent>(entity, PositionComponent{ .Position = cameraDesc.Position });
