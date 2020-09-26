@@ -13,7 +13,7 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-	vec3 color = vec3(1.0f);//texture(u_Skybox, normalize(in_WorldPos)).rgb;
+	vec3 color = texture(u_Skybox, normalize(in_WorldPos)).rgb;
 	float luminance = CalculateLuminance(color);
 	out_Color = vec4(color, luminance);
 }
