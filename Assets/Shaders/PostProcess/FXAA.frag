@@ -25,29 +25,27 @@ vec3 Lerp(vec3 a, vec3 b, float amountOfA)
 	return t0 + t1;
 }
 
-#define PASSTHROUGH			1
+#define PASSTHROUGH			0
 #define DEBUG_EDGES			0
 #define DEBUG				0
 #define DEBUG_HORIZONTAL	0
 #define DEBUG_NEGPOS		0
-#define DEBUG_OFFSET		0
 #define DEBUG_STEP			0
 #define DEBUG_BLEND_FACTOR	0
 
-#if 1
 void main()
 {
 	vec2 texCoord = in_TexCoord;
-	vec4 m = textureOffset(u_BackBuffer, texCoord, ivec2( 0,  0));
+	vec4 m = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 0,  0));
 #if PASSTHROUGH
 	out_Color = vec4(m.rgb, 1.0f);
 	return;
 #endif
 
-	vec4 n = textureOffset(u_BackBuffer, texCoord, ivec2( 0, -1));
-	vec4 s = textureOffset(u_BackBuffer, texCoord, ivec2( 0,  1));
-	vec4 w = textureOffset(u_BackBuffer, texCoord, ivec2(-1,  0));
-	vec4 e = textureOffset(u_BackBuffer, texCoord, ivec2( 1,  0));
+	vec4 n = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 0, -1));
+	vec4 s = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 0,  1));
+	vec4 w = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2(-1,  0));
+	vec4 e = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1,  0));
 	float lumaM = m.a;
 	float lumaN = n.a;
 	float lumaS = s.a;
@@ -74,8 +72,8 @@ void main()
 #endif
 
 	// Size
-	const vec2 texSize = textureSize(u_BackBuffer, 0);
-	const vec2 invTexSize = vec2(1.0f) / texSize;
+	const vec2 texSize		= textureSize(u_BackBuffer, 0);
+	const vec2 invTexSize	= vec2(1.0f) / texSize;
 
 	float lumaL		= (lumaN + lumaS + lumaW + lumaE) * 0.25f;
 	float rangeL	= abs(lumaL - lumaM);
@@ -87,10 +85,10 @@ void main()
 	return;
 #endif
 
-	vec4 nw = textureOffset(u_BackBuffer, texCoord, ivec2(-1, -1));
-	vec4 sw = textureOffset(u_BackBuffer, texCoord, ivec2(-1,  1));
-	vec4 ne = textureOffset(u_BackBuffer, texCoord, ivec2( 1, -1));
-	vec4 se = textureOffset(u_BackBuffer, texCoord, ivec2( 1,  1));
+	vec4 nw = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2(-1, -1));
+	vec4 sw = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2(-1,  1));
+	vec4 ne = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1, -1));
+	vec4 se = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1,  1));
 	
 	vec3 colorL = (m.rgb + n.rgb + s.rgb + w.rgb + e.rgb);
 	colorL += (nw.rgb + sw.rgb + ne.rgb + se.rgb);
@@ -112,16 +110,16 @@ void main()
 	
 	bool isHorizontal = (edgeHorz >= edgeVert);
 #if DEBUG_HORIZONTAL
-		if(isHorizontal)
-		{
-			out_Color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-			return;
-		}
-		else
-		{
-			out_Color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
-			return;
-		}
+	if(isHorizontal)
+	{
+		out_Color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+		return;
+	}
+	else
+	{
+		out_Color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		return;
+	}
 #endif
 
 	if (!isHorizontal)
@@ -139,12 +137,12 @@ void main()
 	float lumaAvgS = (lumaS + lumaM) * 0.5f;
 	
 	bool	pairN			= (gradientN >= gradientS);
-	float	localLumaAvg	= (!pairN) ? lumaAvgN	: lumaAvgS;
-	float	localGradient	= (!pairN) ? gradientN	: gradientS;
+	float	localLumaAvg	= (!pairN) ? lumaAvgS	: lumaAvgN;
+	float	localGradient	= (!pairN) ? gradientS	: gradientN;
 	localGradient			= localGradient * FXAA_SEARCH_THRESHOLD;
 
 	float stepLength = isHorizontal ? -invTexSize.y : -invTexSize.x;
-	if (pairN)
+	if (!pairN)
 	{
 		stepLength *= -1.0f;
 	}
@@ -159,16 +157,15 @@ void main()
 		currentTexCoord.x += stepLength * 0.5f;
 	}
 	
-	vec2 offset = isHorizontal ? vec2(invTexSize.x, 0.0f) : vec2(0.0f, invTexSize.y);
-	bool done0 = false;
-	bool done1 = false;
-	float lumaEnd0 = localLumaAvg;
-	float lumaEnd1 = localLumaAvg;
-	vec2 texCoord0 = currentTexCoord - offset;
-	vec2 texCoord1 = currentTexCoord + offset;
+	vec2	offset		= isHorizontal ? vec2(invTexSize.x, 0.0f) : vec2(0.0f, invTexSize.y);
+	bool	done0		= false;
+	bool	done1		= false;
+	float	lumaEnd0	= localLumaAvg;
+	float	lumaEnd1	= localLumaAvg;
+	vec2	texCoord0	= currentTexCoord - offset;
+	vec2	texCoord1	= currentTexCoord + offset;
 
-	int steps = 0;
-	for (; steps < FXAA_SEARCH_STEPS; steps++)
+	for (int steps = 0; steps < FXAA_SEARCH_STEPS; steps++)
 	{
 		if (!done0)
 		{
@@ -200,9 +197,10 @@ void main()
 	
 	float distance0 = isHorizontal ? (texCoord.x - texCoord0.x) : (texCoord.y - texCoord0.y);
 	float distance1 = isHorizontal ? (texCoord1.x - texCoord.x) : (texCoord1.y - texCoord.y);
-	bool dist0	= distance0 < distance1;
+	
+	bool dir0 = distance0 < distance1;
 #if DEBUG_NEGPOS
-	if(dist0)
+	if(dir0)
 	{
 		out_Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		return;
@@ -214,7 +212,7 @@ void main()
 	}
 #endif
 
-	lumaEnd0 = dist0 ? lumaEnd0 : lumaEnd1;
+	lumaEnd0 = dir0 ? lumaEnd0 : lumaEnd1;
 	if (((lumaM - localLumaAvg) < 0.0f) == ((lumaEnd0 - localLumaAvg) < 0.0f))
 	{
 		stepLength = 0.0f;
@@ -228,49 +226,12 @@ void main()
 	}
 #endif
 	
-	float spanLength = (distance0 + distance1);
-	distance0 = dist0 ? distance0 : distance1;
+	float spanLength	= (distance0 + distance1);
+	distance0			= dir0 ? distance0 : distance1;
 	
-	float subPixelOffset = (0.5f + (distance0 * (-1.0f / spanLength))) * stepLength;
-#if DEBUG_OFFSET
-	float ox = isHorizontal ? 0.0f : subPixelOffset * 2.0f / invTexSize.x;
-	float oy = isHorizontal ? subPixelOffset * 2.0f / invTexSize.y : 0.0f;
-	if(ox < 0.0f) 
-	{
-		out_Color = vec4(Lerp(vec3(lumaM), vec3(1.0f, 0.0f, 0.0f), -ox), 1.0f);
-		return;
-	}
-	if(ox > 0.0f) 
-	{
-		out_Color = vec4(Lerp(vec3(lumaM), vec3(0.0f, 0.0f, 1.0f), ox), 1.0f);
-		return;
-	}
-	if(oy < 0.0f)
-	{
-		out_Color = vec4(Lerp(vec3(lumaM), vec3(1.0f, 0.6f, 0.2f), -oy), 1.0f);
-		return;
-	}
-	if(oy > 0.0f) 
-	{
-		out_Color = vec4(Lerp(vec3(lumaM), vec3(0.2f, 0.6f, 1.0f), oy), 1.0f);
-		return;
-	}
-
-	out_Color = vec4(vec3(lumaM), 1.0f);
-	return;
-#endif
-
-	vec2 finalTexCoord	= vec2(texCoord.x + (isHorizontal ? 0.0f : subPixelOffset), texCoord.y + (isHorizontal ? subPixelOffset : 0.0f));
-	vec3 colorF			= texture(u_BackBuffer, finalTexCoord).rgb;
-	vec3 finalColor		= Lerp(colorL, colorF, blendL);
+	float	subPixelOffset	= (0.5f + (distance0 * (-1.0f / spanLength))) * stepLength;
+	vec2	finalTexCoord	= vec2(texCoord.x + (isHorizontal ? 0.0f : subPixelOffset), texCoord.y + (isHorizontal ? subPixelOffset : 0.0f));
+	vec3	colorF			= texture(u_BackBuffer, finalTexCoord).rgb;
+	vec3	finalColor		= Lerp(colorL, colorF, blendL);
 	out_Color = vec4(finalColor, 1.0f);
 }
-
-#else
-
-void main()
-{
-	out_Color = vec4(1.0f);
-}
-
-#endif

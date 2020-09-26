@@ -116,7 +116,7 @@ void main()
 	vec3 color      = ambient + Lo;
 
 	color = color / (color + vec3(1.0f));
-
+	
 	float luminance = CalculateLuminance(color);
 	color = pow(color, vec3(1.0f / GAMMA));
 
