@@ -16,7 +16,7 @@ layout(location = 0) out vec4 out_Color;
 #define FXAA_SUBPIX_CAP			(3.0f / 4.0f)
 #define FXAA_SUBPIX_TRIM_SCALE	(1.0f / (1.0f - FXAA_SUBPIX_TRIM))
 #define FXAA_SEARCH_THRESHOLD	(1.0f / 4.0f)
-#define FXAA_SEARCH_STEPS		32
+#define FXAA_SEARCH_STEPS		16
 
 vec3 Lerp(vec3 a, vec3 b, float amountOfA)
 {
