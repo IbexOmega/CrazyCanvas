@@ -7,10 +7,21 @@
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
 
-layout(binding = 0, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
-layout(binding = 1, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
+layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
 
 layout(location = 0) out vec3 out_WorldPosition;
+layout(location = 1) out vec3 out_Normal;
+
+layout(location = 2) out vec3 out_TargetPosition;
+layout(location = 3) out vec3 out_TargetDirection;
+
+/*
+    Three parameters are needed to make this work. These are:
+        - Target position. This is the center of the mask which will be painted. The position is in world space.
+        - Direction. This is the direction of the projection onto the mesh, this too is in world space.
+        - Brush size. This is in normal world units. (Example: 1 meter)
+*/
 
 void main()
 {
@@ -19,7 +30,13 @@ void main()
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
     vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
-    out_WorldPosition  = worldPosition.xyz;
+    vec3 normal 	        = normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+
+    out_WorldPosition   = worldPosition.xyz;
+    out_Normal          = normal;
+
+    out_TargetDirection = normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
+    out_TargetPosition  = perFrameBuffer.CameraPosition.xyz;
 
     const float CAPTURE_SIZE = 1.0f;
     const vec3 UNWRAP_LOCATION = vec3(0.f, 0.f, 0.f);

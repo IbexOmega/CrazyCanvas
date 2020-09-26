@@ -14,7 +14,6 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Misc/MeshPaintComponent.h"
-#include "Game/ECS/Components/Misc/MaskComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Input/API/Input.h"
 #include "Math/Random.h"
@@ -102,8 +101,16 @@ void SandboxState::Init()
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		glm::vec3 position(0.f, 0.f, 0.0f);
+		glm::vec3 position(0.f, 0.f, 2.5f);
 		glm::vec3 scale(1/5.f);
+
+		MeshPaintComponent meshPaintComponent;
+		const uint32 width = 512;
+		const uint32 height = 512;
+		char* data = DBG_NEW char[width * height * 4];
+		memset(data, 0, width * height * 4);
+		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("PlaneUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
+		SAFEDELETE_ARRAY(data);
 
 		m_Entity = pECS->CreateEntity();
 		m_Entities.PushBack(m_Entity);
@@ -111,6 +118,7 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(m_Entity, { scale, true });
 		pECS->AddComponent<RotationComponent>(m_Entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<MeshComponent>(m_Entity, sphereMeshComp);
+		pECS->AddComponent<MeshPaintComponent>(m_Entity, meshPaintComponent);
 	}
 
 	//Scene

@@ -13,15 +13,6 @@
 			return &s_Type; \
 		}
 
-#define DECL_DRAW_ARG_COMPONENT(Component) \
-	private: \
-		inline static constexpr const ComponentType s_Type = ComponentType(#Component); \
-	public: \
-		FORCEINLINE static const ComponentType* Type() \
-		{ \
-			return &s_Type; \
-		}
-
 namespace LambdaEngine
 {
 	enum ComponentPermissions

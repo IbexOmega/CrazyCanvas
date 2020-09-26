@@ -29,10 +29,12 @@ namespace LambdaEngine
 	constexpr const char* SCENE_ROUGHNESS_MAPS					= "SCENE_ROUGHNESS_MAPS";
 	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
 
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE		= 4; 
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4; 
 
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0; 
 	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
+
+	constexpr const uint32 MAX_MASK_TEXTURES					= 64;
 
 	enum class ERenderGraphPipelineStageType : uint8
 	{
@@ -263,6 +265,9 @@ namespace LambdaEngine
 		uint32	InstanceCount			= 0;
 		uint32	IndexCount				= 0;
 		uint32	MeshletCount			= 0;
+
+		// Extensions with masks
+		Texture* MaskTextures[MAX_MASK_TEXTURES] = { nullptr }; // Used for the MeshPaintComponent extensions.
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

@@ -13,6 +13,7 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/PhysicsRenderer.h"
+#include "Rendering/DrawArgHelper.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -22,7 +23,6 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
-#include "Game/ECS/Components/Misc/MaskComponent.h"
 #include "Game/ECS/Components/Misc/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
@@ -55,8 +55,7 @@ namespace LambdaEngine
 				{{{RW, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
 				{{{RW, ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, MaskComponent::s_TID}} };
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, MeshPaintComponent::s_TID}} };
+			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, MeshPaintComponent::Type()}} };
 			systemReg.Phase = g_LastPhase;
 
 			RegisterSystem(systemReg);
@@ -721,15 +720,15 @@ namespace LambdaEngine
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
 		// Fetch the draw arg mask from the entity if it has a mask component.
-		uint32 drawArgHash = UINT32_MAX;
-		ComponentArray<MaskComponent>* pMaskComponents = ECSCore::GetInstance()->GetComponentArray<MaskComponent>();
-		if (pMaskComponents && pMaskComponents->HasComponent(entity))
-			drawArgHash = pMaskComponents->GetData(entity).Mask;
 
+		uint32 drawArgHash = UINT32_MAX;
 		GUID_Lambda texture = GUID_NONE;
 		ComponentArray<MeshPaintComponent>* pMeshPaintComponents = ECSCore::GetInstance()->GetComponentArray<MeshPaintComponent>();
 		if (pMeshPaintComponents && pMeshPaintComponents->HasComponent(entity))
+		{
 			texture = pMeshPaintComponents->GetData(entity).UnwrappedTexture;
+			//drawArgHash = DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type());
+		}
 
 		if (m_RequiredDrawArgs.count(drawArgHash))
 		{

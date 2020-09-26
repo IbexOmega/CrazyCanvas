@@ -23,6 +23,9 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/IRenderGraphCreateHandler.h"
+#include "Rendering/DrawArgHelper.h"
+
+#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
 
 #include "Log/Log.h"
 
@@ -1817,6 +1820,13 @@ namespace LambdaEngine
 							drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 							drawArgsData.InitialTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);
 
+							drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore			= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
+							drawArgsData.InitialTextureTransitionBarrierTemplate.QueueAfter				= drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore;
+							drawArgsData.InitialTextureTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;	// Should this be this????
+							drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);	// Should this be this????
+							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN; // Should this be this????
+							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY; // Should this be this????
+							
 							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
 						}
 					}
@@ -3138,8 +3148,13 @@ namespace LambdaEngine
 					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers[0];
 					drawBufferBarriers.Clear();
 
+					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
+					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers[0];
+					drawTextureBarriers.Clear();
+
 					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.DrawArgsCount; d++)
 					{
+						uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
 						DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
 						// Vertex Buffer
@@ -3201,16 +3216,30 @@ namespace LambdaEngine
 							bufferBarrierTemplate.Offset		= 0;
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
+
+						// Extension for MeshPaintComponent
+						if ((drawArgMask & DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
+						{
+							for (uint32 i = 0; i < MAX_MASK_TEXTURES; i++)
+							{
+								VALIDATE(pDrawArg->MaskTextures[i]);
+								textureBarrierTemplate.pTexture = pDrawArg->MaskTextures[i];
+								drawTextureBarriers.PushBack(textureBarrierTemplate);
+							}
+						}
 					}
 				}
 			}
 
 			static TArray<PipelineBufferBarrierDesc> intialBarriers;
+			static TArray<PipelineTextureBarrierDesc> intialTextureBarriers;
 			intialBarriers.Clear();
+			intialTextureBarriers.Clear();
 
 			//Create Initial Barriers
 			for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.DrawArgsCount; d++)
 			{
+				uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
 				DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
 				// Vertex Buffer
@@ -3278,9 +3307,31 @@ namespace LambdaEngine
 					initialPrimitiveIndicesBufferTransitionBarrier.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
 					intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
 				}
+
+				// Extension for MeshPaintComponent
+				if ((drawArgMask & DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
+				{
+					PipelineTextureBarrierDesc initialMaskTexturesTransitionBarrier = drawArgsArgsIt->second.InitialTextureTransitionBarrierTemplate;
+					for (uint32 i = 0; i < MAX_MASK_TEXTURES; i++)
+					{
+						Texture*& pTexture = pDrawArg->MaskTextures[i];
+						if (pTexture)
+						{
+							TextureDesc textureDesc = pTexture->GetDesc();
+
+							initialMaskTexturesTransitionBarrier.pTexture = pTexture;
+							initialMaskTexturesTransitionBarrier.TextureFlags = textureDesc.Flags;
+							initialMaskTexturesTransitionBarrier.ArrayCount = textureDesc.ArrayCount;
+							initialMaskTexturesTransitionBarrier.ArrayIndex = 0;
+							initialMaskTexturesTransitionBarrier.Miplevel = 0;
+							initialMaskTexturesTransitionBarrier.MiplevelCount = textureDesc.Miplevels;
+							intialTextureBarriers.PushBack(initialMaskTexturesTransitionBarrier);
+						}
+					}
+				}
 			}
 
-			//Transfer to Initial State
+			// Transfer to Initial State for buffer barriers
 			if (!intialBarriers.IsEmpty())
 			{
 				FPipelineStageFlags srcPipelineStage = pResource->LastPipelineStageOfFirstRenderStage;
@@ -3319,6 +3370,48 @@ namespace LambdaEngine
 						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i * MAX_BUFFER_BARRIERS], MAX_BUFFER_BARRIERS);
 					if (remaining != 0)
 						pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &intialBarriers[i * MAX_BUFFER_BARRIERS], remaining);
+				}
+			}
+
+			// Transfer to Initial State for texture barriers
+			if (!intialTextureBarriers.IsEmpty())
+			{
+				FPipelineStageFlags srcPipelineStage = pResource->LastPipelineStageOfFirstRenderStage;
+				FPipelineStageFlags dstPipelineStage = pResource->LastPipelineStageOfFirstRenderStage;
+
+				if (intialTextureBarriers[0].QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
+				{
+					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
+
+					if (!pCommandList->IsBegin())
+					{
+						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
+						pCommandList->Begin(nullptr);
+					}
+
+					uint32 remaining = intialTextureBarriers.GetSize() % MAX_IMAGE_BARRIERS;
+					uint32 i = 0;
+					for (; i < floor(intialTextureBarriers.GetSize() / MAX_IMAGE_BARRIERS); i++)
+						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], MAX_IMAGE_BARRIERS);
+					if (remaining != 0)
+						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], remaining);
+				}
+				else if (intialTextureBarriers[0].QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
+				{
+					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
+
+					if (!pCommandList->IsBegin())
+					{
+						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
+						pCommandList->Begin(nullptr);
+					}
+
+					uint32 remaining = intialTextureBarriers.GetSize() % MAX_IMAGE_BARRIERS;
+					uint32 i = 0;
+					for (; i < floor(intialTextureBarriers.GetSize() / MAX_IMAGE_BARRIERS); i++)
+						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], MAX_IMAGE_BARRIERS);
+					if (remaining != 0)
+						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], remaining);
 				}
 			}
 
@@ -3553,6 +3646,39 @@ namespace LambdaEngine
 				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
 				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
+			}
+		}
+
+		// Draw Texture Synchronizations
+		{
+			const TArray<PipelineTextureBarrierDesc>& sameQueueBackBufferBarriers = pSynchronizationStage->DrawTextureBarriers[SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX];
+			const TArray<PipelineTextureBarrierDesc>& sameQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX];
+			const TArray<PipelineTextureBarrierDesc>& otherQueueBackBufferBarriers = pSynchronizationStage->DrawTextureBarriers[OTHER_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX];
+			const TArray<PipelineTextureBarrierDesc>& otherQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX];
+
+			if (sameQueueBackBufferBarriers.GetSize() > 0)
+			{
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, &otherQueueBackBufferBarriers[m_BackBufferIndex], 1);
+			}
+
+			if (sameQueueDrawTextureBarriers.GetSize() > 0)
+			{
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueDrawTextureBarriers.GetData(), sameQueueDrawTextureBarriers.GetSize());
+			}
+
+			if (otherQueueBackBufferBarriers.GetSize() > 0)
+			{
+				const PipelineTextureBarrierDesc* pTextureBarrier = &otherQueueBackBufferBarriers[m_BackBufferIndex];
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, pTextureBarrier, 1);
+				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, pTextureBarrier, 1);
+				(*ppSecondExecutionStage) = pSecondExecutionCommandList; // Can I do this like normal textures?
+			}
+
+			if (otherQueueDrawTextureBarriers.GetSize() > 0)
+			{
+				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawTextureBarriers.GetData(), otherQueueDrawTextureBarriers.GetSize());
+				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawTextureBarriers.GetData(), otherQueueDrawTextureBarriers.GetSize());
+				(*ppSecondExecutionStage) = pSecondExecutionCommandList; // Can I do this like normal textures?
 			}
 		}
 

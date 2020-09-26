@@ -175,6 +175,7 @@ namespace LambdaEngine
 		struct DrawArgsData
 		{
 			PipelineBufferBarrierDesc			InitialTransitionBarrierTemplate;
+			PipelineTextureBarrierDesc			InitialTextureTransitionBarrierTemplate;
 			TArray<DrawArg>						Args;
 		};
 
@@ -282,6 +283,7 @@ namespace LambdaEngine
 			uint32					DrawArgsMask				= 0x0;
 
 			TArray<PipelineBufferBarrierDesc>	DrawBufferBarriers[2];
+			TArray<PipelineTextureBarrierDesc>	DrawTextureBarriers[4];
 			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
 			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
 		};
