@@ -6,13 +6,26 @@
 
 #include "Rendering/RenderAPI.h"
 
+#include <regex>
+
 namespace LambdaEngine
 {
 	GLSLShaderSource::GLSLShaderSource(const GLSLShaderSourceDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
+		
+		std::smatch match;
+		bool foundVersion = std::regex_search(pDesc->Source.begin(), pDesc->Source.end(), match, std::regex("#version [0-9]+\\s"));
+		
+		if (foundVersion && match.size() > 1)
+		{
+			LOG_ERROR("[GLSLShaderSource]: #version discovered more than once in shader");
+		}
 
-		m_Desc = *pDesc;
+		m_Version		= foundVersion ? match[0].str() : "version 460\n";
+		m_Source		= foundVersion ? match.suffix() : pDesc->Source;
+		m_EntryPoint	= pDesc->EntryPoint;
+		m_ShaderStage	= pDesc->ShaderStage;
 	}
 
 	GLSLShaderSource::~GLSLShaderSource()
@@ -21,12 +34,14 @@ namespace LambdaEngine
 
 	Shader* GLSLShaderSource::Compile(const String& name, const TArray<const char*>& defines)
 	{
-		TArray<const char*> strings = defines;
+		TArray<const char*> strings(defines.GetSize() + 2);
+		strings[0] = m_Version.c_str();
+		memcpy((strings.GetData() + 1), defines.GetData(), defines.GetSize() * sizeof(const char*));
+		strings[strings.GetSize() - 1] = m_Source.c_str();
 
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(m_Desc.ShaderStage);
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(m_ShaderStage);
 		glslang::TShader shader(shaderType);
 
-		strings.PushBack(m_Desc.Source.c_str());
 		shader.setStrings(strings.GetData(), strings.GetSize());
 
 		//Todo: Fetch this
@@ -73,8 +88,8 @@ namespace LambdaEngine
 		ShaderDesc shaderDesc = { };
 		shaderDesc.DebugName	= name;
 		shaderDesc.Source		= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
-		shaderDesc.EntryPoint	= m_Desc.EntryPoint;
-		shaderDesc.Stage		= m_Desc.ShaderStage;
+		shaderDesc.EntryPoint	= m_EntryPoint;
+		shaderDesc.Stage		= m_ShaderStage;
 		shaderDesc.Lang			= EShaderLang::SHADER_LANG_SPIRV;
 
 		return RenderAPI::GetDevice()->CreateShader(&shaderDesc);

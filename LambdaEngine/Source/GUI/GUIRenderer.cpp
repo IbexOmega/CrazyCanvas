@@ -30,7 +30,17 @@ namespace LambdaEngine
 	{
 		SAFERELEASE(m_pParamsBuffer);
 
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		for (GUITexture* pTexture : m_GUITextures)
+		{
+			SAFEDELETE(pTexture);
+		}
+
+		for (GUIRenderTarget* pRenderTarget : m_GUIRenderTargets)
+		{
+			SAFEDELETE(pRenderTarget);
+		}
+
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
 			SAFERELEASE(m_ppRenderCommandLists[b]);
 			SAFERELEASE(m_ppRenderCommandAllocators[b]);
@@ -57,10 +67,6 @@ namespace LambdaEngine
 
 		m_AvailableDescriptorSets.Clear();
 
-		SAFEDELETE_ARRAY(m_ppRenderCommandLists);
-		SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
-		SAFEDELETE_ARRAY(m_pBuffersToRemove);
-
 		SAFERELEASE(m_pMainRenderPass);
 
 		if (!GUIPipelineStateCache::Release())
@@ -69,21 +75,25 @@ namespace LambdaEngine
 		}
 	}
 
+	bool GUIRenderer::Init()
+	{
+		if (!CreateCommandLists())
+		{
+			LOG_ERROR("[GUIRenderer]: Failed to create Render Command lists");
+			return false;
+		}
+
+		return true;
+	}
+
 	bool GUIRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc != nullptr);
-
-		m_BackBufferCount = pPreInitDesc->BackBufferCount;
+		VALIDATE(pPreInitDesc->BackBufferCount == BACK_BUFFER_COUNT);
 
 		if (!CreateBuffers())
 		{
 			LOG_ERROR("[GUIRenderer]: Failed to create Buffers");
-			return false;
-		}
-
-		if (!CreateCommandLists())
-		{
-			LOG_ERROR("[GUIRenderer]: Failed to create Render Command lists");
 			return false;
 		}
 
@@ -105,8 +115,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_pBuffersToRemove = DBG_NEW TArray<Buffer*>[m_BackBufferCount];
-
 		return true;
 	}
 	
@@ -127,6 +135,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+		m_GUIRenderTargets.PushBack(pRenderTarget);
 		return Noesis::Ptr<Noesis::RenderTarget>(pRenderTarget);
 	}
 
@@ -165,6 +174,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+		m_GUITextures.PushBack(pTexture);
 		return Noesis::Ptr<Noesis::Texture>(pTexture);
 	}
 
@@ -339,8 +349,8 @@ namespace LambdaEngine
 			{
 				paramsData.TextSize.x		= pTextTexture->GetWidth();
 				paramsData.TextSize.x		= pTextTexture->GetHeight();
-				paramsData.TexPixelSize.x	= 1.0f / float32(pTextTexture->GetWidth());
-				paramsData.TexPixelSize.y	= 1.0f / float32(pTextTexture->GetHeight());
+				paramsData.TextPixelSize.x	= 1.0f / float32(pTextTexture->GetWidth());
+				paramsData.TextPixelSize.y	= 1.0f / float32(pTextTexture->GetHeight());
 			}
 
 			if (batch.rgba != nullptr)
@@ -396,7 +406,7 @@ namespace LambdaEngine
 			pCommandList->BindDescriptorSetGraphics(pDescriptorSet, GUIPipelineStateCache::GetPipelineLayout(), 0);
 		}
 		
-		const TextureView* pBackBuffer = m_BackBuffers[m_BackBufferIndex].Get();
+		const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
 		uint32 width	= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
 		uint32 height	= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
 
@@ -482,9 +492,11 @@ namespace LambdaEngine
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
+			VALIDATE(count == BACK_BUFFER_COUNT);
+
 			for (uint32 i = 0; i < count; i++)
 			{
-				m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+				m_pBackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
 			}
 		}
 	}
@@ -588,10 +600,7 @@ namespace LambdaEngine
 
 	bool GUIRenderer::CreateCommandLists()
 	{
-		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
-		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
-
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
 			m_ppRenderCommandAllocators[b] = RenderAPI::GetDevice()->CreateCommandAllocator("GUI Render Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
@@ -601,7 +610,7 @@ namespace LambdaEngine
 			}
 
 			CommandListDesc commandListDesc = {};
-			commandListDesc.DebugName			= "ImGui Render Command List " + std::to_string(b);
+			commandListDesc.DebugName			= "GUI Render Command List " + std::to_string(b);
 			commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 			commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 

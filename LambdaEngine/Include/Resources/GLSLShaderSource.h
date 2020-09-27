@@ -24,6 +24,9 @@ namespace LambdaEngine
 		Shader* Compile(const String& name, const TArray<const char*>& defines);
 
 	private:
-		GLSLShaderSourceDesc m_Desc = {};
-	};
-}
+		String				m_Version		= "";
+		String				m_Source		= "";
+		String				m_EntryPoint	= "";
+		FShaderStageFlag	m_ShaderStage	= FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
+	};	
+}		

@@ -1,6 +1,9 @@
 #version 460
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shader_draw_parameters : enable
+#extension GL_GOOGLE_include_directive : enable
+
+#include "NoesisInclude.glsl"
 
 #if defined(EFFECT_RGBA)
 
@@ -346,42 +349,38 @@
 #define SDF_BASE_MAX 0.25
 #define SDF_BASE_DEV -0.65
 
-uniform vec4 rgba;
-uniform float opacity;
-uniform vec4 radialGrad[2];
-uniform vec2 textPixelSize;
-uniform float effectParams[32];
+layout(binding = 1, set = 0) uniform Params { SNoesisParams v; } u_Params;
 
-uniform sampler2D pattern;
-uniform sampler2D ramps;
-uniform sampler2D image;
-uniform sampler2D glyphs;
-uniform sampler2D shadow;
+layout(binding = 2, set = 0) uniform sampler2D pattern;
+layout(binding = 3, set = 0) uniform sampler2D ramps;
+layout(binding = 4, set = 0) uniform sampler2D image;
+layout(binding = 5, set = 0) uniform sampler2D glyphs;
+layout(binding = 6, set = 0) uniform sampler2D shadow;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 #ifdef HAS_COLOR
-    in vec4 color;
+    layout(location = 0) in vec4 color;
 #endif
 
 #ifdef HAS_UV0
-    in vec2 uv0;
+    layout(location = 1) in vec2 uv0;
 #endif
 
 #ifdef HAS_UV1
-    in vec2 uv1;
+    layout(location = 2) in vec2 uv1;
 #endif
 
 #ifdef HAS_UV2
-    in vec4 uv2;
+    layout(location = 3) in vec4 uv2;
 #endif
 
 #ifdef HAS_ST1
-    in vec2 st1;
+    layout(location = 4) in vec2 st1;
 #endif
 
 #ifdef HAS_COVERAGE
-    in float coverage;
+    layout(location = 5) in float coverage;
 #endif
 
 #if defined(GAUSSIAN_35_TAP)
@@ -431,6 +430,8 @@ out vec4 fragColor;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
+    SNoesisParams params = u_Params.v;
+
     /////////////////////////////////////////////////////
     // Fetch paint color and opacity
     /////////////////////////////////////////////////////
@@ -440,25 +441,25 @@ void main()
 
     #elif defined(PAINT_LINEAR)
         vec4 paint = texture2D(ramps, uv0);
-        float opacity_ = opacity;
+        float opacity_ = params.Opacity;
 
     #elif defined(PAINT_RADIAL)
-        float dd = radialGrad[1].y * uv0.x - radialGrad[1].z * uv0.y;
-        float u = radialGrad[0].x * uv0.x + radialGrad[0].y * uv0.y + radialGrad[0].z * 
+        float dd = params.RadialGrad[1].y * uv0.x - params.RadialGrad[1].z * uv0.y;
+        float u = params.RadialGrad[0].x * uv0.x + params.RadialGrad[0].y * uv0.y + params.RadialGrad[0].z * 
             sqrt(uv0.x * uv0.x + uv0.y * uv0.y - dd * dd);
-        vec4 paint = texture2D(ramps, vec2(u, radialGrad[1].w));
-        float opacity_ = opacity;
+        vec4 paint = texture2D(ramps, vec2(u, params.RadialGrad[1].w));
+        float opacity_ = params.Opacity;
 
     #elif defined(PAINT_PATTERN)
         vec4 paint = texture2D(pattern, uv0);
-        float opacity_ = opacity;
+        float opacity_ = params.Opacity;
     #endif
 
     /////////////////////////////////////////////////////
     // Apply selected effect
     /////////////////////////////////////////////////////
     #if defined(EFFECT_RGBA)
-        fragColor = rgba;
+        fragColor = params.RGBA;
 
     #elif defined(EFFECT_MASK)
         fragColor = vec4(1);
@@ -473,10 +474,10 @@ void main()
         fragColor = texture2D(image, uv1) * (opacity_ * paint.a);
 
     #elif defined(EFFECT_IMAGE_SHADOW_V)
-        #define BLUR_SIZE effectParams[0]
+        #define BLUR_SIZE params.EffectParams.v[0]
 
         float alpha = 0.0;
-        float dir = BLUR_SIZE * textPixelSize.y;
+        float dir = BLUR_SIZE * params.TextPixelSize.v.y;
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {
@@ -489,14 +490,14 @@ void main()
         fragColor = vec4(0, 0, 0, alpha);
 
     #elif defined(EFFECT_IMAGE_SHADOW_H)
-        #define SHADOW_COLOR vec4(effectParams[0], effectParams[1], effectParams[2], effectParams[3])
-        #define BLUR_SIZE effectParams[4]
-        #define SHADOW_OFFSETX effectParams[5]
-        #define SHADOW_OFFSETY -effectParams[6]
+        #define SHADOW_COLOR vec4(params.EffectParams.v[0], params.EffectParams.v[1], params.EffectParams.v[2], params.EffectParams.v[3])
+        #define BLUR_SIZE params.EffectParams.v[4]
+        #define SHADOW_OFFSETX params.EffectParams.v[5]
+        #define SHADOW_OFFSETY -params.EffectParams.v[6]
 
         float alpha = 0.0;
-        vec2 dir = vec2(BLUR_SIZE * textPixelSize.x, 0);
-        vec2 offset = vec2(SHADOW_OFFSETX * textPixelSize.x, SHADOW_OFFSETY * textPixelSize.y);
+        vec2 dir = vec2(BLUR_SIZE * params.TextPixelSize.v.x, 0);
+        vec2 offset = vec2(SHADOW_OFFSETX * params.TextPixelSize.v.x, SHADOW_OFFSETY * params.TextPixelSize.v.y);
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {
@@ -508,10 +509,10 @@ void main()
         fragColor = (img + (1.0 - img.a) * (SHADOW_COLOR * alpha)) * (opacity_ * paint.a);
 
     #elif defined(EFFECT_IMAGE_BLUR_V)
-        #define BLUR_SIZE effectParams[0]
+        #define BLUR_SIZE params.EffectParams.v[0]
 
         vec4 color = vec4(0);
-        float dir = BLUR_SIZE * textPixelSize.y;
+        float dir = BLUR_SIZE * params.TextPixelSize.v.y;
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {
@@ -524,10 +525,10 @@ void main()
         fragColor = color;
 
     #elif defined(EFFECT_IMAGE_BLUR_H)
-        #define BLUR_SIZE effectParams[0]
+        #define BLUR_SIZE params.EffectParams.v[0]
 
         vec4 color = vec4(0);
-        float dir = BLUR_SIZE * textPixelSize.x;
+        float dir = BLUR_SIZE * params.TextPixelSize.v.x;
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {

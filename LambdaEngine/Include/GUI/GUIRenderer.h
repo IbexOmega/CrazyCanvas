@@ -8,6 +8,7 @@
 namespace LambdaEngine
 {
 	class GUIRenderTarget;
+	class GUITexture;
 
 	class GUIRenderer : public Noesis::RenderDevice, ICustomRenderer
 	{
@@ -21,7 +22,7 @@ namespace LambdaEngine
 			float32		Opacity			= 1.0f;
 			glm::vec4	RadialGrad0		= glm::vec4(0.0f);
 			glm::vec4	RadialGrad1		= glm::vec4(0.0f);
-			glm::vec2	TexPixelSize	= glm::vec2(1.0f);
+			glm::vec2	TextPixelSize	= glm::vec2(1.0f);
 			float32		pEffectParams[32];
 		};
 
@@ -29,6 +30,7 @@ namespace LambdaEngine
 		GUIRenderer();
 		~GUIRenderer();
 
+		bool Init();
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
 		//Noesis::RenderDevice
@@ -122,13 +124,12 @@ namespace LambdaEngine
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 
 	private:
-		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
-		uint32 m_BackBufferCount	= 0;
+		TSharedRef<const TextureView>	m_pBackBuffers[BACK_BUFFER_COUNT];
 		uint32 m_BackBufferIndex	= 0;
 		uint32 m_ModFrameIndex		= 0;
 
-		CommandAllocator**	m_ppRenderCommandAllocators	= nullptr;
-		CommandList**		m_ppRenderCommandLists		= nullptr;
+		CommandAllocator*	m_ppRenderCommandAllocators[BACK_BUFFER_COUNT];
+		CommandList*		m_ppRenderCommandLists[BACK_BUFFER_COUNT];
 
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
 
@@ -140,12 +141,15 @@ namespace LambdaEngine
 		Buffer* m_pVertexBuffer	= nullptr;
 		Buffer* m_pIndexBuffer	= nullptr;
 		Buffer* m_pParamsBuffer	= nullptr;
-		TArray<Buffer*>* m_pBuffersToRemove;
+		TArray<Buffer*> m_pBuffersToRemove[BACK_BUFFER_COUNT];
 
 		DescriptorHeap*			m_pDescriptorHeap = nullptr;
 		TArray<DescriptorSet*>	m_AvailableDescriptorSets;
 		TArray<DescriptorSet*>	m_pUsedDescriptorSets[BACK_BUFFER_COUNT];
 
 		RenderPass* m_pMainRenderPass = nullptr;
+
+		TArray<GUITexture*> m_GUITextures;
+		TArray<GUIRenderTarget*> m_GUIRenderTargets;
 	};
 }
