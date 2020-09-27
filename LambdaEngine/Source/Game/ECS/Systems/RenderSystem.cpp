@@ -190,15 +190,9 @@ namespace LambdaEngine
 			{
 				m_ppAlbedoMaps[i]					= pDefaultColorMap;
 				m_ppNormalMaps[i]					= pDefaultNormalMap;
-				m_ppAmbientOcclusionMaps[i]			= pDefaultColorMap;
-				m_ppRoughnessMaps[i]				= pDefaultColorMap;
-				m_ppMetallicMaps[i]					= pDefaultColorMap;
 				m_ppCombinedMaterialMaps[i]			= pDefaultColorMap;
 				m_ppAlbedoMapViews[i]				= pDefaultColorMapView;
 				m_ppNormalMapViews[i]				= pDefaultNormalMapView;
-				m_ppAmbientOcclusionMapViews[i]		= pDefaultColorMapView;
-				m_ppRoughnessMapViews[i]			= pDefaultColorMapView;
-				m_ppMetallicMapViews[i]				= pDefaultColorMapView;
 				m_ppCombinedMaterialMapViews[i]		= pDefaultColorMapView;
 				m_pMaterialInstanceCounts[i]		= 0;
 			}
@@ -668,16 +662,10 @@ namespace LambdaEngine
 
 				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
 				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppAmbientOcclusionMaps[materialSlot]			= pMaterial->pAmbientOcclusionMap;
-				m_ppRoughnessMaps[materialSlot]					= pMaterial->pRoughnessMap;
-				m_ppMetallicMaps[materialSlot]					= pMaterial->pMetallicMap;
-				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pMetallicMap;
+				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pCombinedMaterialMap;
 				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
 				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppAmbientOcclusionMapViews[materialSlot]		= pMaterial->pAmbientOcclusionMapView;
-				m_ppRoughnessMapViews[materialSlot]				= pMaterial->pRoughnessMapView;
-				m_ppMetallicMapViews[materialSlot]				= pMaterial->pMetallicMapView;
-				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pMetallicMapView;
+				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pCombinedMaterialMapView;
 				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
@@ -1435,35 +1423,14 @@ namespace LambdaEngine
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
-			ResourceUpdateDesc aoMapsUpdateDesc = {};
-			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= linearSamplers.GetData();
-
-			ResourceUpdateDesc metallicMapsUpdateDesc = {};
-			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
-
-			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
-
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
-			roughnessMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppCombinedMaterialMaps;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppCombinedMaterialMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+			combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppCombinedMaterialMaps;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppCombinedMaterialMapViews;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
 
 			m_MaterialsResourceDirty = false;

@@ -393,45 +393,6 @@ namespace LambdaEngine
 
 		{
 			RenderGraphResourceDesc resource = {};
-			resource.Name							= SCENE_AO_MAPS;
-			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
-			resource.Editable						= false;
-			resource.External						= true;
-			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.PushBack(resource);
-
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
-		}
-
-		{
-			RenderGraphResourceDesc resource = {};
-			resource.Name							= SCENE_ROUGHNESS_MAPS;
-			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
-			resource.Editable						= false;
-			resource.External						= true;
-			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.PushBack(resource);
-
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
-		}
-
-		{
-			RenderGraphResourceDesc resource = {};
-			resource.Name							= SCENE_METALLIC_MAPS;
-			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
-			resource.Editable						= false;
-			resource.External						= true;
-			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
-			m_Resources.PushBack(resource);
-
-			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
-		}
-
-		{
-			RenderGraphResourceDesc resource = {};
 			resource.Name							= SCENE_COMBINED_MATERIAL_MAPS;
 			resource.Type							= ERenderGraphResourceType::TEXTURE;
 			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;

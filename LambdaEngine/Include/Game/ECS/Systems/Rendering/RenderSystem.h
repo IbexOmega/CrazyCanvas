@@ -271,15 +271,9 @@ namespace LambdaEngine
 		//Materials
 		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppRoughnessMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppMetallicMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppCombinedMaterialMaps[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppAlbedoMapViews[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppNormalMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppAmbientOcclusionMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppRoughnessMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppMetallicMapViews[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppCombinedMaterialMapViews[MAX_UNIQUE_MATERIALS];
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
 		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];

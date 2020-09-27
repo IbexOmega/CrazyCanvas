@@ -25,9 +25,6 @@ namespace LambdaEngine
 
 	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
 	constexpr const char* SCENE_NORMAL_MAPS						= "SCENE_NORMAL_MAPS";
-	constexpr const char* SCENE_AO_MAPS							= "SCENE_AO_MAPS";
-	constexpr const char* SCENE_ROUGHNESS_MAPS					= "SCENE_ROUGHNESS_MAPS";
-	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
 	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS			= "SCENE_COMBINED_MATERIAL_MAPS";
 
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE		= 4;
