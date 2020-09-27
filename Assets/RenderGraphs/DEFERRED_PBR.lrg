@@ -85,33 +85,7 @@
             }
         },
         {
-            "name": "SCENE_AO_MAPS",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 32,
-            "editable": false,
-            "external": true,
-            "type_params": {
-                "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false,
-                "texture_type": "TEXTURE_2D"
-            }
-        },
-        {
-            "name": "SCENE_ROUGHNESS_MAPS",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 32,
-            "editable": false,
-            "external": true,
-            "type_params": {
-                "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false,
-                "texture_type": "TEXTURE_2D"
-            }
-        },
-        {
-            "name": "SCENE_METALLIC_MAPS",
+            "name": "SCENE_COMBINED_MATERIAL_MAPS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 32,
@@ -310,19 +284,7 @@
                     "src_stage": ""
                 },
                 {
-                    "name": "SCENE_AO_MAPS",
-                    "removable": false,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": ""
-                },
-                {
-                    "name": "SCENE_ROUGHNESS_MAPS",
-                    "removable": false,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": ""
-                },
-                {
-                    "name": "SCENE_METALLIC_MAPS",
+                    "name": "SCENE_COMBINED_MATERIAL_MAPS",
                     "removable": false,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": ""
@@ -414,21 +376,7 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "SCENE_AO_MAPS",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_ROUGHNESS_MAPS",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_METALLIC_MAPS",
+                    "name": "SCENE_COMBINED_MATERIAL_MAPS",
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "COMBINED_SAMPLER",

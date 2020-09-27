@@ -1412,22 +1412,22 @@ namespace LambdaEngine
 			TArray<Sampler*> linearSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetLinearSampler());
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
+			albedoMapsUpdateDesc.ResourceName										= SCENE_ALBEDO_MAPS;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppAlbedoMaps;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppAlbedoMapViews;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
+			normalMapsUpdateDesc.ResourceName										= SCENE_NORMAL_MAPS;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppNormalMaps;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppNormalMapViews;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
 
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
-			combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppCombinedMaterialMaps;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppCombinedMaterialMapViews;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppCombinedMaterialMaps;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppCombinedMaterialMapViews;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
