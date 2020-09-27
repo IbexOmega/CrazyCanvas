@@ -465,11 +465,12 @@ namespace LambdaEngine
 		textureDesc.Miplevels		= miplevels;
 		textureDesc.SampleCount		= 1;
 
-		Texture* pTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+		s_Textures[guid] = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+		//Texture* pTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 
 		TextureViewDesc textureViewDesc;
 		textureViewDesc.DebugName		= "CombineMaterial TextureView";
-		textureViewDesc.pTexture		= pTexture;
+		textureViewDesc.pTexture		= s_Textures[guid];
 		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
 		textureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
@@ -481,14 +482,14 @@ namespace LambdaEngine
 		s_TextureViews[guid] = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 		//pMaterial->pCombinedMaterialMapView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
-		if (pTexture == nullptr)
+		if (s_Textures[guid] == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to create texture for \"Combine Material Texture Desc\"");
 			return;
 		}
 
 		PipelineTextureBarrierDesc transitionToCopyDstBarrier = { };
-		transitionToCopyDstBarrier.pTexture					= pTexture;
+		transitionToCopyDstBarrier.pTexture					= s_Textures[guid];
 		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
 		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_GENERAL;
 		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
@@ -592,7 +593,7 @@ namespace LambdaEngine
 		//computeCmdList->Dispatch((uint32)1, (uint32)1, 1);
 		computeCmdList->Dispatch(largestWidth, largestHeight, 1);
 
-		computeCmdList->QueueTransferBarrier(pTexture, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+		computeCmdList->QueueTransferBarrier(s_Textures[guid], FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
 			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 		computeCmdList->End();
@@ -600,10 +601,10 @@ namespace LambdaEngine
 
 		graphicsCmdList->Begin(nullptr);
 
-		graphicsCmdList->QueueTransferBarrier(pTexture, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+		graphicsCmdList->QueueTransferBarrier(s_Textures[guid], FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
-		graphicsCmdList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		graphicsCmdList->GenerateMiplevels(s_Textures[guid], ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 		graphicsCmdList->End();
 
@@ -611,13 +612,14 @@ namespace LambdaEngine
 		pFence->Wait(2, UINT64_MAX);
 
 		// Kolla genom s_TextureViews innan du pushar!
+		pMaterial->pCombinedMaterialMap		= s_Textures[guid];
 		pMaterial->pCombinedMaterialMapView = s_TextureViews[guid];
 
 		pPipelineState->Release();
 		pDescriptorSet->Release();
 		pDescriptorHeap->Release();
 		pPipelineLayout->Release();
-		pTexture->Release();
+		//pTexture->Release();
 		pFence->Release();
 		computeCmdList->Release();
 		graphicsCmdList->Release();
@@ -812,7 +814,7 @@ namespace LambdaEngine
 		}
 
 		(*ppMappedTexture) = pResource;
-		
+
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";
 		textureViewDesc.pTexture		= pResource;

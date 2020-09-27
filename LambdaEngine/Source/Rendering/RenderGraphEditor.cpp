@@ -430,6 +430,19 @@ namespace LambdaEngine
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
 		}
 
+		{
+			RenderGraphResourceDesc resource = {};
+			resource.Name							= SCENE_COMBINED_MATERIAL_MAPS;
+			resource.Type							= ERenderGraphResourceType::TEXTURE;
+			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
+			resource.Editable						= false;
+			resource.External						= true;
+			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
+			m_Resources.PushBack(resource);
+
+			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
+		}
+
 		m_ResourceStateGroups.Resize(NUM_RESOURCE_STATE_GROUPS);
 		m_ResourceStateGroups[EXTERNAL_RESOURCE_STATE_GROUP_INDEX] = externalResourcesGroup;
 		m_ResourceStateGroups[TEMPORAL_RESOURCE_STATE_GROUP_INDEX] = temporalResourcesGroup;
@@ -951,7 +964,7 @@ namespace LambdaEngine
 							ImGui::InputFloat("##Texture Y Variable", &pResource->TextureParams.YDimVariable);
 						}
 					}
-					else 
+					else
 					{
 						ImGui::Text("Width & Height: ");
 						ImGui::SameLine();
@@ -1071,7 +1084,7 @@ namespace LambdaEngine
 
 					if (ImGui::BeginDragDropSource())
 					{
-						
+
 						ImGui::SetDragDropPayload("SHADER", &pPath, sizeof(const std::filesystem::path*));
 						ImGui::EndDragDropSource();
 					}
@@ -1769,7 +1782,7 @@ namespace LambdaEngine
 		static bool customRenderer = false;
 
 		static int32 selectedXYZOptions[3]	= { 2, 2, 0 };			// Holds options for the x, y, and z dimensions.
-		static float valuesXYZ[3]			= { 1.f, 1.f, 1.f };	// Holds the value of the x, y, and z dimension. 
+		static float valuesXYZ[3]			= { 1.f, 1.f, 1.f };	// Holds the value of the x, y, and z dimension.
 
 		ImGui::SetNextWindowSize(ImVec2(360, 500), ImGuiCond_Once);
 		if (ImGui::BeginPopupModal("Add Render Stage ##Popup"))
@@ -2929,7 +2942,7 @@ namespace LambdaEngine
 			if (selectedXOption == 0 || selectedXOption == 2)
 			{
 				ImGui::SameLine();
-				if(inputWidth > 0) 
+				if(inputWidth > 0)
 					ImGui::SetNextItemWidth(inputWidth);
 				ImGui::InputFloat("##Render Stage X Variable", &xVariable);
 			}

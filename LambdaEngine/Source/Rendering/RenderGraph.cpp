@@ -756,8 +756,8 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 
 						pCustomRenderer->Render(
-							uint32(m_ModFrameIndex), 
-							m_BackBufferIndex, 
+							uint32(m_ModFrameIndex),
+							m_BackBufferIndex,
 							&m_ppExecutionStages[currentExecutionStage],
 							&m_ppExecutionStages[currentExecutionStage + 1]);
 
@@ -1927,7 +1927,7 @@ namespace LambdaEngine
 					// Check if attachment is unchanged after renderstage
 					auto prevBinding = pResourceStateDesc->AttachmentSynchronizations.PrevBindingType;
 					auto nextBinding = pResourceStateDesc->AttachmentSynchronizations.NextBindingType;
-					if (prevBinding != nextBinding) 
+					if (prevBinding != nextBinding)
 					{
 						attachmentStateUnchanged = false;
 					}
@@ -2248,7 +2248,7 @@ namespace LambdaEngine
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
-					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || 
+					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES ||
 						pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 					{
 						if (pRenderStage->pDrawArgsResource == nullptr)
@@ -2393,7 +2393,7 @@ namespace LambdaEngine
 						pRenderStage->pRenderPass	= pRenderPass;
 
 						//Create duplicate Render Pass (this is fucking retarded) which we use when the RenderStage is Disabled, this Render Pass forces LoadOp to be LOAD
-						if (!attachmentStateUnchanged) 
+						if (!attachmentStateUnchanged)
 						{
 							RenderPassDesc disabledRenderPassDesc = renderPassDesc;
 

@@ -188,17 +188,19 @@ namespace LambdaEngine
 
 			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
 			{
-				m_ppAlbedoMaps[i]				= pDefaultColorMap;
-				m_ppNormalMaps[i]				= pDefaultNormalMap;
-				m_ppAmbientOcclusionMaps[i]		= pDefaultColorMap;
-				m_ppRoughnessMaps[i]			= pDefaultColorMap;
-				m_ppMetallicMaps[i]				= pDefaultColorMap;
-				m_ppAlbedoMapViews[i]			= pDefaultColorMapView;
-				m_ppNormalMapViews[i]			= pDefaultNormalMapView;
-				m_ppAmbientOcclusionMapViews[i]	= pDefaultColorMapView;
-				m_ppRoughnessMapViews[i]		= pDefaultColorMapView;
-				m_ppMetallicMapViews[i]			= pDefaultColorMapView;
-				m_pMaterialInstanceCounts[i]	= 0;
+				m_ppAlbedoMaps[i]					= pDefaultColorMap;
+				m_ppNormalMaps[i]					= pDefaultNormalMap;
+				m_ppAmbientOcclusionMaps[i]			= pDefaultColorMap;
+				m_ppRoughnessMaps[i]				= pDefaultColorMap;
+				m_ppMetallicMaps[i]					= pDefaultColorMap;
+				m_ppCombinedMaterialMaps[i]			= pDefaultColorMap;
+				m_ppAlbedoMapViews[i]				= pDefaultColorMapView;
+				m_ppNormalMapViews[i]				= pDefaultNormalMapView;
+				m_ppAmbientOcclusionMapViews[i]		= pDefaultColorMapView;
+				m_ppRoughnessMapViews[i]			= pDefaultColorMapView;
+				m_ppMetallicMapViews[i]				= pDefaultColorMapView;
+				m_ppCombinedMaterialMapViews[i]		= pDefaultColorMapView;
+				m_pMaterialInstanceCounts[i]		= 0;
 			}
 		}
 
@@ -664,17 +666,19 @@ namespace LambdaEngine
 					}
 				}
 
-				m_ppAlbedoMaps[materialSlot]				= pMaterial->pAlbedoMap;
-				m_ppNormalMaps[materialSlot]				= pMaterial->pNormalMap;
-				m_ppAmbientOcclusionMaps[materialSlot]		= pMaterial->pAmbientOcclusionMap;
-				m_ppRoughnessMaps[materialSlot]				= pMaterial->pRoughnessMap;
-				m_ppMetallicMaps[materialSlot]				= pMaterial->pMetallicMap;
-				m_ppAlbedoMapViews[materialSlot]			= pMaterial->pAlbedoMapView;
-				m_ppNormalMapViews[materialSlot]			= pMaterial->pNormalMapView;
-				m_ppAmbientOcclusionMapViews[materialSlot]	= pMaterial->pAmbientOcclusionMapView;
-				m_ppRoughnessMapViews[materialSlot]			= pMaterial->pRoughnessMapView;
-				m_ppMetallicMapViews[materialSlot]			= pMaterial->pMetallicMapView;
-				m_pMaterialProperties[materialSlot]			= pMaterial->Properties;
+				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
+				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
+				m_ppAmbientOcclusionMaps[materialSlot]			= pMaterial->pAmbientOcclusionMap;
+				m_ppRoughnessMaps[materialSlot]					= pMaterial->pRoughnessMap;
+				m_ppMetallicMaps[materialSlot]					= pMaterial->pMetallicMap;
+				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pMetallicMap;
+				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
+				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
+				m_ppAmbientOcclusionMapViews[materialSlot]		= pMaterial->pAmbientOcclusionMapView;
+				m_ppRoughnessMapViews[materialSlot]				= pMaterial->pRoughnessMapView;
+				m_ppMetallicMapViews[materialSlot]				= pMaterial->pMetallicMapView;
+				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pMetallicMapView;
+				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
 				m_MaterialsResourceDirty = true;
@@ -902,10 +906,10 @@ namespace LambdaEngine
 
 			drawArg.pIndexBuffer	= meshAndInstancesIt->second.pIndexBuffer;
 			drawArg.IndexCount		= meshAndInstancesIt->second.IndexCount;
-			
+
 			drawArg.pInstanceBuffer	= meshAndInstancesIt->second.pRasterInstanceBuffer;
 			drawArg.InstanceCount	= meshAndInstancesIt->second.RasterInstances.GetSize();
-			
+
 			drawArg.pMeshletBuffer			= meshAndInstancesIt->second.pMeshlets;
 			drawArg.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
 			drawArg.pUniqueIndicesBuffer	= meshAndInstancesIt->second.pUniqueIndices;
@@ -1449,11 +1453,18 @@ namespace LambdaEngine
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
 			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
 
+			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
+			roughnessMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppCombinedMaterialMaps;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppCombinedMaterialMapViews;
+			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
 
 			m_MaterialsResourceDirty = false;
 		}
