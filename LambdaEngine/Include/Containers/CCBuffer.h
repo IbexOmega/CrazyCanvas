@@ -15,11 +15,22 @@ namespace LambdaEngine
 			T& value = m_Buffer[m_ReadHead++];
 			m_ReadHead %= N;
 			return value;
+		}	
+		
+		T& ReadFrom(int32 index)
+		{
+			m_ReadHead = index;
+			return Read();
 		}
 
 		T& Peek()
 		{
 			return m_Buffer[m_ReadHead];
+		}		
+		
+		T& PeekAt(int32 index)
+		{
+			return m_Buffer[index];
 		}
 
 		void Write(const T& value)

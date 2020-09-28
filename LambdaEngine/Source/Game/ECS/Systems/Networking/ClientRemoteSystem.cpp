@@ -56,13 +56,13 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		GameState& gameState = m_Buffer.Peek();
+		/*GameState& gameState = m_Buffer.Peek();
 		if (gameState.SimulationTick - 1 == m_LastProcessedSimulationTick)
 		{
 			//Do a buffer Read
 
 
-		}
+		}*/
 	}
 
 	void ClientRemoteSystem::OnConnecting(IClient* pClient)
@@ -145,12 +145,7 @@ namespace LambdaEngine
 			decoder.ReadInt8(gameState.DeltaForward);
 			decoder.ReadInt8(gameState.DeltaLeft);
 
-			if (gameState.SimulationTick > m_LastProcessedSimulationTick)
-			{
-				m_Buffer.insert(gameState);
-			}
-			
-			//m_Buffer.WriteAt(gameState, gameState.SimulationTick);
+			m_Buffer.insert(gameState); //Add lock maybe, or change OnPacketReceived() to be runned by the main thread
 		}
 	}
 

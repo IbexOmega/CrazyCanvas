@@ -12,15 +12,20 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
+#define EPSILON 0.00001f
+
 namespace LambdaEngine
 {
 	ClientSystem* ClientSystem::s_pInstance = nullptr;
 
-	ClientSystem::ClientSystem() : 
+	ClientSystem::ClientSystem() :
 		m_ControllableEntities(),
 		m_pClient(nullptr),
-		m_Buffer(),
-		m_SimulationTick(0)
+		m_FramesToReconcile(),
+		m_FramesProcessedByServer(),
+		m_SimulationTick(0),
+		m_LastNetworkSimulationTick(0),
+		m_Entities()
 	{
 		ClientDesc clientDesc = {};
 		clientDesc.PoolSize = 1024;
@@ -102,8 +107,14 @@ namespace LambdaEngine
 				break;
 			}
 
-			m_Buffer.Write(gameState);
+			m_FramesToReconcile.PushBack(gameState);
 			m_SimulationTick++;
+
+			if (!m_FramesProcessedByServer.IsEmpty())
+			{
+				Reconcile();
+			}
+
 		}
 	}
 
@@ -142,9 +153,9 @@ namespace LambdaEngine
 		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
 		{
 			BinaryDecoder decoder(pPacket);
-			bool isMySelf		= decoder.ReadBool();
-			int32 networkUID	= decoder.ReadInt32();
-			glm::vec3 position	= decoder.ReadVec3();
+			bool isMySelf = decoder.ReadBool();
+			int32 networkUID = decoder.ReadInt32();
+			glm::vec3 position = decoder.ReadVec3();
 			glm::vec3 color		= decoder.ReadVec3();
 
 			if (isMySelf)
@@ -163,6 +174,43 @@ namespace LambdaEngine
 			addEntityJob.Function = std::bind(&ClientSystem::CreateEntity, this, networkUID, position, color);
 
 			ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
+		}
+		else if (pPacket->GetType() == NetworkSegment::TYPE_PLAYER_ACTION)
+		{
+			ECSCore* pECS = ECSCore::GetInstance();
+
+			GameState serverGameState = {};
+
+			BinaryDecoder decoder(pPacket);
+			int32 networkUID					= decoder.ReadInt32();
+			serverGameState.SimulationTick		= decoder.ReadInt32();//added
+			serverGameState.Position			= decoder.ReadVec3();
+
+			if (networkUID == m_NetworkUID)
+			{
+				m_FramesProcessedByServer.PushBack(serverGameState);
+			}
+			else
+			{
+				auto pair = m_Entities.find(networkUID);
+
+				if (pair != m_Entities.end())
+				{
+					auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+
+					PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
+
+					positionComponent.Position	= serverGameState.Position;
+					positionComponent.Dirty		= true;
+				}
+				else
+				{
+					LOG_ERROR("NetworkUID: %d is not registred on Client", networkUID);
+				}
+			}
+
+
+
 		}
 	}
 
@@ -203,9 +251,51 @@ namespace LambdaEngine
 		pECS->AddComponent<MeshComponent>(entity,			meshComponent);
 		pECS->AddComponent<NetworkComponent>(entity,		{ networkUID });
 
-		if(m_NetworkUID == networkUID)
+		m_Entities.insert({ networkUID, entity });
+
+		if (m_NetworkUID == networkUID)
+		{
 			pECS->AddComponent<ControllableComponent>(entity,	{ true });
+		}
 	}
+
+	void ClientSystem::Reconcile()
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+
+		if (!pPositionComponents)
+			return;
+
+		GameState ServerState = {};
+
+		//want to start reading from incoming networkSimulationTick
+
+		auto pair = m_Entities.find(m_NetworkUID);
+
+		ASSERT(pair != m_Entities.end())
+
+		for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
+		{
+			ASSERT(m_FramesProcessedByServer[i].SimulationTick == m_FramesToReconcile[i].SimulationTick);
+
+			if (glm::distance(m_FramesProcessedByServer[i].Position, m_FramesToReconcile[i].Position) > EPSILON)
+			{
+				PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
+
+				positionComponent.Position	= m_FramesProcessedByServer[i].Position;
+				positionComponent.Dirty		= true;
+
+				for (int32 j = i + 1; j < m_FramesToReconcile.GetSize(); j++)
+				{
+
+				}
+				break;
+			}
+		}
+		//should be in sync with server
+	}
+
 
 	void ClientSystem::StaticFixedTickMainThread(Timestamp deltaTime)
 	{

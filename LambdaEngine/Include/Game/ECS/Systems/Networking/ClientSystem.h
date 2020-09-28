@@ -8,6 +8,7 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 
 #include "Containers/CCBuffer.h"
+#include "Containers/TArray.h"
 
 namespace LambdaEngine
 {
@@ -53,6 +54,7 @@ namespace LambdaEngine
 
 	private:
 		ClientSystem();
+		void Reconcile();
 
 	private:
 		static void StaticFixedTickMainThread(Timestamp deltaTime);
@@ -63,8 +65,11 @@ namespace LambdaEngine
 		IDVector m_ControllableEntities;
 		int32 m_NetworkUID;
 		ClientBase* m_pClient;
-		CCBuffer<GameState, 60> m_Buffer;
+		TArray<GameState> m_FramesToReconcile;
+		TArray<GameState> m_FramesProcessedByServer;
 		int32 m_SimulationTick;
+		int32 m_LastNetworkSimulationTick;
+		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
 
 	private:
 		static ClientSystem* s_pInstance;
