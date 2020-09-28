@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ECS/ComponentOwner.h"
 #include "ECS/System.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 
@@ -35,7 +36,7 @@ namespace LambdaEngine
 		FCollisionGroup CollisionMask;	// Includes the masks of the groups this object collides with
 	};
 
-	class PhysicsSystem : public System
+	class PhysicsSystem : public System, public ComponentOwner
 	{
 	public:
 		PhysicsSystem();
@@ -48,6 +49,9 @@ namespace LambdaEngine
 		void CreateCollisionComponent(const CollisionCreateInfo& collisionCreateInfo);
 
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
+
+	private:
+		void CollisionComponentDestructor(CollisionComponent& collisionComponent);
 
 	private:
 		static PhysicsSystem s_Instance;

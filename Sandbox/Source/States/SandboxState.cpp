@@ -171,27 +171,6 @@ void SandboxState::Init()
 				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
 			};
 
-			struct Poo
-			{
-				int a, b, c;
-			};
-
-			Poo poo = {
-				.a = 1,
-				.b = 2,
-				.c = 3
-			};
-
-			Poo loo {
-				.b = 3,
-				.c = 1
-			};
-
-			Poo foo {
-				.a = 1,
-				.c = 2
-			};
-
 			const glm::vec3 startPosition[3] =
 			{
 				{4.0f, 0.0f, 5.0f},

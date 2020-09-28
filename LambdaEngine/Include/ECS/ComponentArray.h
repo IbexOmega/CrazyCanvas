@@ -31,9 +31,9 @@ namespace LambdaEngine
 	{
 	public:
 		ComponentArray() = default;
-		virtual ~ComponentArray() = default;
+		~ComponentArray() override final;
 
-		void SetComponentOwner(const ComponentOwnership<Comp>& componentOwnership) { m_ComponentOwnership = componentOwnership };
+		void SetComponentOwner(const ComponentOwnership<Comp>& componentOwnership) { m_ComponentOwnership = componentOwnership; }
 		void UnsetComponentOwner() override final { m_ComponentOwnership = {}; };
 
 		Comp& Insert(Entity entity, const Comp& comp);
@@ -54,6 +54,18 @@ namespace LambdaEngine
 
 		ComponentOwnership<Comp> m_ComponentOwnership;
 	};
+
+	template<typename Comp>
+	inline ComponentArray<Comp>::~ComponentArray()
+	{
+		if (m_ComponentOwnership.Destructor)
+		{
+			for (Comp& component : m_Data)
+			{
+				m_ComponentOwnership.Destructor(component);
+			}
+		}
+	}
 
 	template<typename Comp>
 	inline Comp& ComponentArray<Comp>::Insert(Entity entity, const Comp& comp)
@@ -77,7 +89,9 @@ namespace LambdaEngine
 		Comp& component = m_Data[indexItr->second];
 
 		if constexpr (Comp::HasDirtyFlag())
+		{
 			component.Dirty = true;
+		}
 
 		return component;
 	}
@@ -100,7 +114,9 @@ namespace LambdaEngine
 		uint32 currentIndex = indexItr->second;
 
 		if (m_ComponentOwnership.Destructor)
+		{
 			m_ComponentOwnership.Destructor(m_Data[currentIndex]);
+		}
 
 		// Swap the removed component with the last component.
 		m_Data[currentIndex] = m_Data.GetBack();

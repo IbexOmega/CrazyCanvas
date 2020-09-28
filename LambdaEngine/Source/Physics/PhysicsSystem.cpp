@@ -47,6 +47,7 @@ namespace LambdaEngine
 			systemReg.Phase = 1;
 
 			RegisterSystem(systemReg);
+			SetComponentOwner<CollisionComponent>({ std::bind(&PhysicsSystem::CollisionComponentDestructor, this, std::placeholders::_1) });
 		}
 
 		// PhysX setup
@@ -127,7 +128,13 @@ namespace LambdaEngine
 
 		pBoxShape->release();
 
-		CollisionComponent collisionComponent = {};
+		CollisionComponent collisionComponent = { pBody };
 		ECSCore::GetInstance()->AddComponent<CollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
+	}
+
+	void PhysicsSystem::CollisionComponentDestructor(CollisionComponent& collisionComponent)
+	{
+		m_pScene->removeActor(*collisionComponent.pActor);
+		PX_RELEASE(collisionComponent.pActor);
 	}
 }

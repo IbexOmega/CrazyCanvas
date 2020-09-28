@@ -65,7 +65,9 @@ namespace LambdaEngine
 	{
 		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
 		if (!pCompArray)
+		{
 			pCompArray = RegisterComponentType<Comp>();
+		}
 
 		pCompArray->SetComponentOwner(componentOwnership);
 	}

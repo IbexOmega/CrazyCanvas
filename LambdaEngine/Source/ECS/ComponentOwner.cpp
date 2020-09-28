@@ -8,7 +8,9 @@ namespace LambdaEngine
 		if (pECS)
 		{
 			for (const ComponentType* pComponentType : m_OwnedComponentTypes)
+			{
 				pECS->UnsetComponentOwner(pComponentType);
+			}
 		}
 	}
 }
