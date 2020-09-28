@@ -154,9 +154,9 @@ void SandboxState::Init()
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 0.0f, 5.0f},
-				{-4.0f, 0.0f, 5.0f},
-				{0.0f, 0.0f, 6.0f},
+				{4.0f, 3.0f, -5.0f},
+				{-4.0f, 3.0f, 5.0f},
+				{0.0f, 3.0f, -5.0f},
 			};
 
 			const float PI = glm::pi<float>();
