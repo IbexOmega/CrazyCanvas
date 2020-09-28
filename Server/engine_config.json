@@ -11,6 +11,5 @@
     "Debugging": false,
     "CameraFOV": 90.0,
     "CameraNearPlane": 0.001,
-    "CameraFarPlane": 1000.0,
-    "StreamPhysx": false
+    "CameraFarPlane": 1000.0
 }

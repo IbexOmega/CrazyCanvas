@@ -28,6 +28,7 @@ function get_physx_copy_commands(libFolder, outputdir)
 		"PhysX_64.dll",
 		"PhysXCommon_64.dll",
 		"PhysXCooking_64.dll",
+		"PhysXDevice64.dll",
 		"PhysXFoundation_64.dll",
 		"PhysXGpu_64.dll"
 	}
@@ -411,9 +412,8 @@ workspace "LambdaEngine"
 				"/checked/PhysX_64.lib",
 				"/checked/PhysXCommon_64.lib",
 				"/checked/PhysXCooking_64.lib",
-				"/checked/PhysXExtensions_dynamic_64.lib",
 				"/checked/PhysXFoundation_64.lib",
-				"/checked/PhysXPvdSDK_dynamic_64.lib"
+				"/checked/PhysXExtensions_dynamic_64.lib"
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
@@ -438,8 +438,8 @@ workspace "LambdaEngine"
 				"/release/PhysX_64.lib",
 				"/release/PhysXCommon_64.lib",
 				"/release/PhysXCooking_64.lib",
-				"/release/PhysXExtensions_dynamic_64.lib",
-				"/release/PhysXFoundation_64.lib"
+				"/release/PhysXFoundation_64.lib",
+				"/release/PhysXExtensions_dynamic_64.lib"
 			}
 		-- Mac
 		filter { "system:macosx" }

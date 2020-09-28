@@ -95,9 +95,9 @@ namespace LambdaEngine
 		float32 dt = float32(deltaTime.AsSeconds());
 
 		glm::vec3 translation = {
-				float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-				float(InputActionSystem::IsActive("CAM_UP")			- InputActionSystem::IsActive("CAM_DOWN")),		// Y: Up
-				float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
+				float(InputActionSystem::IsActive("CAM_RIGHT")	 - InputActionSystem::IsActive("CAM_LEFT")),	// X: Right
+				float(InputActionSystem::IsActive("CAM_DOWN")    - InputActionSystem::IsActive("CAM_UP")),		// Y: Up
+				float(InputActionSystem::IsActive("CAM_FORWARD") - InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
 		};
 
 		const glm::vec3 forward = GetForward(rotComp.Quaternion);
@@ -124,7 +124,7 @@ namespace LambdaEngine
 				m_CIsPressed		= true;
 			}
 		}
-		else
+		else 
 		{
 			m_CIsPressed = false;
 		}

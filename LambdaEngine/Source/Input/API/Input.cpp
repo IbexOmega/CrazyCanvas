@@ -31,7 +31,7 @@ namespace LambdaEngine
 			{
 				const KeyReleasedEvent& keyEvent = EventCast<KeyReleasedEvent>(event);
 				s_KeyboardState.KeyStates[keyEvent.Key] = false;
-
+				
 				return true;
 			}
 		}
@@ -63,7 +63,7 @@ namespace LambdaEngine
 				const MouseScrolledEvent& mouseEvent = EventCast<MouseScrolledEvent>(event);
 				s_MouseState.ScrollX = mouseEvent.DeltaX;
 				s_MouseState.ScrollY = mouseEvent.DeltaY;
-
+				
 				return true;
 			}
 		}

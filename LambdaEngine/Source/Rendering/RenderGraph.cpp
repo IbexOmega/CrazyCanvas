@@ -1396,6 +1396,7 @@ namespace LambdaEngine
 				//Internal
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
+
 					newResource.OwnershipType				= newResource.IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
 					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
 					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;

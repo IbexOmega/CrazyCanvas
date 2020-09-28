@@ -3,7 +3,6 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "../Defines.glsl"
-#include "../Helpers.glsl"
 
 layout(location = 0) in vec3 in_WorldPos;
 
@@ -13,7 +12,5 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-	vec3 color = texture(u_Skybox, normalize(in_WorldPos)).rgb;
-	float luminance = CalculateLuminance(color);
-	out_Color = vec4(color, luminance);
+	out_Color = texture(u_Skybox, normalize(in_WorldPos));
 }

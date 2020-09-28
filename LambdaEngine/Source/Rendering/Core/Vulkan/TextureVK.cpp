@@ -21,14 +21,11 @@ namespace LambdaEngine
 
 	bool TextureVK::Init(const TextureDesc* pDesc)
 	{
-		VkFormat format = ConvertFormat(pDesc->Format);
-		VALIDATE(format != VK_FORMAT_UNDEFINED);
-
 		VkImageCreateInfo info = {};
 		info.sType					= VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		info.pNext					= nullptr;
 		info.flags					= 0;
-		info.format					= format;
+		info.format					= ConvertFormat(pDesc->Format);
 		info.extent.width			= pDesc->Width;
 		info.extent.height			= pDesc->Height;
 		info.extent.depth			= pDesc->Depth;

@@ -10,21 +10,19 @@
 
 namespace LambdaEngine
 {
-	rapidjson::Document EngineConfig::s_ConfigDocument = {};
-	using namespace rapidjson;
+    rapidjson::Document EngineConfig::s_ConfigDocument = {};
+    using namespace rapidjson;
 
 	bool EngineConfig::LoadFromFile()
 	{
 		const char* pEngineConfigPath = "engine_config.json";
 
-		FILE* pFile = fopen(pEngineConfigPath, "r");
-		if (!pFile)
-		{
-			// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
-			LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
-			DEBUGBREAK();
-			return false;
-		}
+        FILE* pFile = fopen(pEngineConfigPath, "r");
+        if (!pFile)
+        {
+            LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
+            return false;
+        }
 
 		char readBuffer[2048];
 		FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
@@ -36,171 +34,171 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool EngineConfig::WriteToFile()
-	{
-		const char* pEngineConfigPath = "engine_config.json";
+    bool EngineConfig::WriteToFile()
+    {
+        const char* pEngineConfigPath = "engine_config.json";
 
-		FILE* pFile = fopen(pEngineConfigPath, "w");
-		if (!pFile)
-		{
-			LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
-			return false;
-		}
+        FILE* pFile = fopen(pEngineConfigPath, "w");
+        if (!pFile)
+        {
+            LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
+            return false;
+        }
 
-		char writeBuffer[2048];
-		FileWriteStream outputStream(pFile, writeBuffer, sizeof(writeBuffer));
+        char writeBuffer[2048];
+        FileWriteStream outputStream(pFile, writeBuffer, sizeof(writeBuffer));
 
-		PrettyWriter<FileWriteStream> writer(outputStream);
-		s_ConfigDocument.Accept(writer);
+        PrettyWriter<FileWriteStream> writer(outputStream);
+        s_ConfigDocument.Accept(writer);
 
-		fclose(pFile);
+        fclose(pFile);
 
-		return true;
-	}
+        return true;
+    }
 
-	bool EngineConfig::GetBoolProperty(const String& propertyName)
-	{
-		return s_ConfigDocument[propertyName.c_str()].GetBool();
-	}
+    bool EngineConfig::GetBoolProperty(const String& propertyName)
+    {
+        return s_ConfigDocument[propertyName.c_str()].GetBool();
+    }
 
-	float EngineConfig::GetFloatProperty(const String& propertyName)
-	{
-		return s_ConfigDocument[propertyName.c_str()].GetFloat();
-	}
+    float EngineConfig::GetFloatProperty(const String& propertyName)
+    {
+        return s_ConfigDocument[propertyName.c_str()].GetFloat();
+    }
 
-	int EngineConfig::GetIntProperty(const String& propertyName)
-	{
-		return s_ConfigDocument[propertyName.c_str()].GetInt();
-	}
+    int EngineConfig::GetIntProperty(const String& propertyName)
+    {
+        return s_ConfigDocument[propertyName.c_str()].GetInt();
+    }
 
-	double EngineConfig::GetDoubleProperty(const String& propertyName)
-	{
-		return s_ConfigDocument[propertyName.c_str()].GetDouble();
-	}
+    double EngineConfig::GetDoubleProperty(const String& propertyName)
+    {
+        return s_ConfigDocument[propertyName.c_str()].GetDouble();
+    }
 
-	String EngineConfig::GetStringProperty(const String& propertyName)
-	{
-		return s_ConfigDocument[propertyName.c_str()].GetString();
-	}
+    String EngineConfig::GetStringProperty(const String& propertyName)
+    {
+        return s_ConfigDocument[propertyName.c_str()].GetString();
+    }
 
-	TArray<float> EngineConfig::GetFloatArrayProperty(const String& propertyName)
-	{
-		const Value& arr = s_ConfigDocument[propertyName.c_str()];
-		TArray<float> tArr;
-		for (auto& itr : arr.GetArray())
-			tArr.PushBack(itr.GetFloat());
+    TArray<float> EngineConfig::GetFloatArrayProperty(const String& propertyName)
+    {
+        const Value& arr = s_ConfigDocument[propertyName.c_str()];
+        TArray<float> tArr;
+        for (auto& itr : arr.GetArray())
+            tArr.PushBack(itr.GetFloat());
 
-		return tArr;
-	}
+        return tArr;
+    }
 
-	TArray<int> EngineConfig::GetIntArrayProperty(const String& propertyName)
-	{
-		const Value& arr = s_ConfigDocument[propertyName.c_str()];
-		TArray<int> tArr;
-		for (auto& itr : arr.GetArray())
-			tArr.PushBack(itr.GetInt());
+    TArray<int> EngineConfig::GetIntArrayProperty(const String& propertyName)
+    {
+        const Value& arr = s_ConfigDocument[propertyName.c_str()];
+        TArray<int> tArr;
+        for (auto& itr : arr.GetArray())
+            tArr.PushBack(itr.GetInt());
 
-		return tArr;
-	}
+        return tArr;
+    }
 
-	bool EngineConfig::SetBoolProperty(const String& propertyName, const bool value)
-	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
-		{
-			s_ConfigDocument[propertyName.c_str()].SetBool(value);
+    bool EngineConfig::SetBoolProperty(const String& propertyName, const bool value)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetBool(value);
 
-			return true;
-		}
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	bool EngineConfig::SetFloatProperty(const String& propertyName, const float value)
-	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
-		{
-			s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+    bool EngineConfig::SetFloatProperty(const String& propertyName, const float value)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetFloat(value);
 
-			return true;
-		}
-		return false;
-	}
+            return true;
+        }
+        return false;
+    }
 
-	bool EngineConfig::SetIntProperty(const String& propertyName, const int value)
-	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
-		{
-			s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+    bool EngineConfig::SetIntProperty(const String& propertyName, const int value)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetFloat(value);
 
-			return true;
-		}
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	bool EngineConfig::SetDoubleProperty(const String& propertyName, const double value)
-	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
-		{
-			s_ConfigDocument[propertyName.c_str()].SetDouble(value);
+    bool EngineConfig::SetDoubleProperty(const String& propertyName, const double value)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetDouble(value);
 
-			return true;
-		}
-		return false;
-	}
+            return true;
+        }
+        return false;
+    }
 
-	bool EngineConfig::SetStringProperty(const String& propertyName, const String& string)
-	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
-		{
-			s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
+    bool EngineConfig::SetStringProperty(const String& propertyName, const String& string)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
 
-			return true;
-		}
-		return false;
-	}
+            return true;
+        }
+        return false;
+    }
 
-	bool EngineConfig::SetFloatArrayProperty(const String& propertyName, const TArray<float>& arr)
-	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
-		{
-			Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
+    bool EngineConfig::SetFloatArrayProperty(const String& propertyName, const TArray<float>& arr)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
 
-			auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
-			newArr.Reserve(arr.GetSize(), allocator);
+            auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+            newArr.Reserve(arr.GetSize(), allocator);
 
-			for (auto& itr : arr)
-				newArr.PushBack(Value().SetFloat(itr), allocator);
+            for (auto& itr : arr)
+                newArr.PushBack(Value().SetFloat(itr), allocator);
 
-			StringBuffer strBuf;
-			PrettyWriter<StringBuffer> writer(strBuf);
-			s_ConfigDocument.Accept(writer);
+            StringBuffer strBuf;
+            PrettyWriter<StringBuffer> writer(strBuf);
+            s_ConfigDocument.Accept(writer);
 
-			return true;
-		}
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	bool EngineConfig::SetIntArrayProperty(const String& propertyName, const TArray<int>& arr)
-	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
-		{
-			Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
+    bool EngineConfig::SetIntArrayProperty(const String& propertyName, const TArray<int>& arr)
+    {
+        if (s_ConfigDocument.HasMember(propertyName.c_str()))
+        {
+            Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
 
-			auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
-			newArr.Reserve(arr.GetSize(), allocator);
+            auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+            newArr.Reserve(arr.GetSize(), allocator);
 
-			for (auto& itr : arr)
-				newArr.PushBack(Value().SetInt(itr), allocator);
+            for (auto& itr : arr)
+                newArr.PushBack(Value().SetInt(itr), allocator);
 
-			StringBuffer strBuf;
-			PrettyWriter<StringBuffer> writer(strBuf);
-			s_ConfigDocument.Accept(writer);
+            StringBuffer strBuf;
+            PrettyWriter<StringBuffer> writer(strBuf);
+            s_ConfigDocument.Accept(writer);
 
-			return true;
-		}
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 }
