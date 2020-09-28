@@ -34,8 +34,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		pStartingState = DBG_NEW PlaySessionState();
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
-
-	
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)

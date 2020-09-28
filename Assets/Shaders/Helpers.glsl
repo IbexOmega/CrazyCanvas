@@ -414,7 +414,7 @@ float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, f
 	for(int i = 0; i < samples; ++i)
 	{
 		float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
-		closestDepth *= farPlane;   // undo mapping [0;1]
+		closestDepth *= farPlane;   
 		if(currentDepth - bias > closestDepth)
 			shadow += 1.0;
 	}
