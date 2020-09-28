@@ -28,7 +28,8 @@ namespace LambdaEngine
 		m_FramesProcessedByServer(),
 		m_SimulationTick(0),
 		m_LastNetworkSimulationTick(0),
-		m_Entities()
+		m_Entities(),
+		m_NetworkUID(-1)
 	{
 		ClientDesc clientDesc = {};
 		clientDesc.PoolSize = 1024;
@@ -70,7 +71,7 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		if (m_pClient->IsConnected())
+		if (m_pClient->IsConnected() && m_NetworkUID >= 0)
 		{
 			int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 			int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
