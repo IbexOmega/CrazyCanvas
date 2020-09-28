@@ -588,8 +588,7 @@ namespace LambdaEngine
 		computeCmdList->BindDescriptorSetCompute(pDescriptorSet, pPipelineLayout, 0);
 		computeCmdList->BindComputePipeline(pPipelineState);
 
-		//computeCmdList->Dispatch((uint32)1, (uint32)1, 1);
-		computeCmdList->Dispatch(largestWidth, largestHeight, 1);
+		computeCmdList->Dispatch(largestWidth / 8, largestHeight / 8, 1);
 
 		computeCmdList->QueueTransferBarrier(s_Textures[guid], FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
 			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);

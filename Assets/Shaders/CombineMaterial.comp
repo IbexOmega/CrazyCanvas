@@ -3,7 +3,7 @@
 
 #include "Defines.glsl"
 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout(binding = 0, set = 0) uniform sampler2D 	u_RoughnessMaterial;
 layout(binding = 1, set = 0) uniform sampler2D 	u_MetallicMaterial;
@@ -13,48 +13,15 @@ layout(binding = 3, set = 0, rgba8) uniform writeonly image2D u_OutputImage;
 
 void main()
 {
-	uvec2 texSize = uvec2(gl_NumWorkGroups.xy);
-	vec2 texcoord = vec2(gl_GlobalInvocationID.xy) / vec2(texSize);
+    // Working code
+
+    uvec2 OUTPUT_IMAGE_SIZE = imageSize(u_OutputImage);
+	vec2 texcoord   = vec2(gl_GlobalInvocationID.xy) / vec2(OUTPUT_IMAGE_SIZE);
+
     vec4 roughness 	= textureLod(u_RoughnessMaterial, 	texcoord, 0);
     vec4 metallic 	= textureLod(u_MetallicMaterial, 	texcoord, 0);
     vec4 ao 		= textureLod(u_AOMaterial, 			texcoord, 0);
     
 	vec4 combined_material = vec4(roughness.r, metallic.g, ao.b, 1.0f);
     imageStore(u_OutputImage, ivec2(gl_GlobalInvocationID.xy), combined_material);
-
-    //ivec2 OUTPUT_IMAGE_SIZE = imageSize(u_OutputImage);
-//
-    //uvec2 globalThreadID = uvec2(gl_GlobalInvocationID.xy);
-    //uvec2 totalThreads = uvec2(gl_NumWorkGroups * gl_WorkGroupSize);
-//
-    //uint nrOfJumps = OUTPUT_IMAGE_SIZE.x / (gl_NumWorkGroups.x * gl_WorkGroupSize.x); // How many times threads needs to be accessed in order to fill out all pixels in x-axis
-//
-    //for (uint j = 0; j < OUTPUT_IMAGE_SIZE.y; j+=totalThreads.y)
-    //{
-    //    for (uint i = globalThreadID.x; i < OUTPUT_IMAGE_SIZE.x; i+=totalThreads.x)
-    //    {
-    //        //uint index = totalThreads * i + globalThreadID.x;
-//
-    //        //if (index >= OUTPUT_IMAGE_SIZE.x)
-    //        //    return;
-//
-    //        vec4 roughness 	= textureLod(u_RoughnessMaterial, 	ivec2(i, j), 0);
-    //        vec4 metallic 	= textureLod(u_MetallicMaterial, 	ivec2(i, j), 0);
-    //        vec4 ao 		= textureLod(u_AOMaterial, 			ivec2(i, j), 0);
-//
-    //        vec4 combined_material = vec4(roughness.r, metallic.g, ao.b, 1.0f);
-    //        imageStore(u_OutputImage, ivec2(i, j), combined_material);
-    //    }
-    //}
-
-    //ivec2 OUTPUT_IMAGE_SIZE = imageSize(u_OutputImage);
-//
-    //uvec2 globalThreadID = uvec2(gl_GlobalInvocationID.xy);
-    //uvec2 totalThreads = uvec2(gl_NumWorkGroups * gl_WorkGroupSize);
-//
-    //if ((globalThreadID.x >= OUTPUT_IMAGE_SIZE.x) || (globalThreadID.y >= OUTPUT_IMAGE_SIZE.y))
-    //    return;
-//
-    //uint bx = (OUTPUT_IMAGE_SIZE.x + gl_WorkGroupSize.x - 1)/gl_WorkGroupSize.x;
-    //uint by = (OUTPUT_IMAGE_SIZE.y + gl_WorkGroupSize.y - 1)/gl_WorkGroupSize.y;
 }
