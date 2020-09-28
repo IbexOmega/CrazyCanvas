@@ -1,5 +1,6 @@
 #include "CrazyCanvas.h"
 
+
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
@@ -33,6 +34,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		pStartingState = DBG_NEW PlaySessionState();
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+
+	
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
