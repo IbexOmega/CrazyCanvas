@@ -37,6 +37,17 @@ namespace LambdaEngine
 
     void PlayerMovementSystem::Tick(Timestamp deltaTime)
     {
+		int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
+		int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
+
+		for (Entity entity : m_ControllableEntities)
+		{
+			Move(entity, deltaTime, deltaForward, deltaLeft);
+		}
+    }
+
+	void PlayerMovementSystem::Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft)
+	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -45,33 +56,27 @@ namespace LambdaEngine
 		if (!pPositionComponents || !pControllableComponents)
 			return;
 
-		for (Entity entity : m_ControllableEntities)
+		if (!pControllableComponents->HasComponent(entity))
+			return;
+
+		if (!pControllableComponents->GetData(entity).IsActive)
+			return;
+
+		if (!pPositionComponents->HasComponent(entity))
+			return;
+
+		PositionComponent& positionComponent = pPositionComponents->GetData(entity);
+
+		if (deltaForward != 0)
 		{
-			if (!pControllableComponents->HasComponent(entity))
-				continue;
-
-			if (!pControllableComponents->GetData(entity).IsActive)
-				continue;
-
-			if (!pPositionComponents->HasComponent(entity))
-				continue;
-
-			PositionComponent& positionComponent = pPositionComponents->GetData(entity);
-
-			int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
-			int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
-
-			if (deltaForward != 0)
-			{
-				positionComponent.Position.z += 1.0f * deltaTime.AsSeconds() * deltaForward;
-				positionComponent.Dirty = true;
-			}
-
-			if (deltaLeft != 0)
-			{
-				positionComponent.Position.x += 1.0f * deltaTime.AsSeconds() * deltaLeft;
-				positionComponent.Dirty = true;
-			}
+			positionComponent.Position.z += 1.0f * deltaTime.AsSeconds() * deltaForward;
+			positionComponent.Dirty = true;
 		}
-    }
+
+		if (deltaLeft != 0)
+		{
+			positionComponent.Position.x += 1.0f * deltaTime.AsSeconds() * deltaLeft;
+			positionComponent.Dirty = true;
+		}
+	}
 }

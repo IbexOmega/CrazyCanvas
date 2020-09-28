@@ -1,7 +1,12 @@
 #include "Game/ECS/Systems/Networking/ClientRemoteSystem.h"
-#include "ECS/ECSCore.h"
+#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Player/ControllableComponent.h"
+
+#include "ECS/ECSCore.h"
+
+#include "Engine/EngineLoop.h"
 
 namespace LambdaEngine
 {
@@ -39,6 +44,7 @@ namespace LambdaEngine
 		m_pClient(nullptr),
 		m_Entity(0),
 		m_LastProcessedSimulationTick(-1),
+		m_CurrentGameState(),
 		m_Color()
 	{
 		RegisterSystem({});
@@ -51,18 +57,54 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::Tick(Timestamp deltaTime)
 	{
+		
+	}
 
+	void ClientRemoteSystem::TickMainThread(Timestamp deltaTime)
+	{
+		if (m_LastProcessedSimulationTick < m_CurrentGameState.SimulationTick)
+		{
+			m_LastProcessedSimulationTick = m_CurrentGameState.SimulationTick;
+			//networkObject.frame = m_CurrentGameState.SimulationTick;
+		}
+		/*networkObject.position = _rigidBody.position;
+		networkObject.rotation = _rigidBody.rotation;*/
 	}
 
 	void ClientRemoteSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		GameState& gameState = m_Buffer.Peek();
-		if (gameState.SimulationTick - 1 == m_LastProcessedSimulationTick)
+		if (m_pClient->IsConnected())
 		{
-			//Do a buffer Read
+			// Reset the current input - we don't want to re-use it if there no inputs in the queue
+			//m_CurrentGameState = nullptr;
+
+			// Process all available inputs each frame
+			for (const GameState& gameState : m_Buffer)
+			{
+				m_CurrentGameState = gameState;
+				PlayerUpdate(m_CurrentGameState);
+			}
+			m_Buffer.clear();
 
 
+
+
+			auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
+			BinaryEncoder encoder(pPacket);
+			encoder.WriteUInt32(m_Entity);
+			encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
+			m_pClient->SendReliableBroadcast(pPacket);
 		}
+	}
+
+	void ClientRemoteSystem::PlayerUpdate(const GameState& gameState)
+	{
+		// Set the velocity to zero, move the player based on the next input, then detect & resolve collisions
+		//_rigidBody.velocity = Vector2.zero;
+		PlayerMovementSystem::GetInstance().Move(m_Entity, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
+		//PhysicsCollisions();
 	}
 
 	void ClientRemoteSystem::OnConnecting(IClient* pClient)
@@ -145,12 +187,7 @@ namespace LambdaEngine
 			decoder.ReadInt8(gameState.DeltaForward);
 			decoder.ReadInt8(gameState.DeltaLeft);
 
-			if (gameState.SimulationTick > m_LastProcessedSimulationTick)
-			{
-				m_Buffer.insert(gameState);
-			}
-			
-			//m_Buffer.WriteAt(gameState, gameState.SimulationTick);
+			m_Buffer.insert(gameState); //Add Lock maybe, or change OnPacketReceived() to be runned by the main thread
 		}
 	}
 

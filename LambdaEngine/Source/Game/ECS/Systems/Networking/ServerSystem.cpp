@@ -69,9 +69,7 @@ namespace LambdaEngine
 
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()
 	{
-		ClientRemoteSystem* pSystem = DBG_NEW ClientRemoteSystem();
-		pSystem->Init();
-		return pSystem;
+		return DBG_NEW ClientRemoteSystem();
 	}
 
 	void ServerSystem::StaticFixedTickMainThread(Timestamp deltaTime)
