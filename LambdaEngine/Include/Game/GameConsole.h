@@ -66,6 +66,8 @@ namespace LambdaEngine
 		
 		int32 m_HistoryIndex { -1 };
 
+		char m_Buf[256];
+
 		bool m_ScrollToBottom = false;
 		bool m_IsActive = false;
 		

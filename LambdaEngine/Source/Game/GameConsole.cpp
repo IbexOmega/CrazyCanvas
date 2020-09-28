@@ -466,13 +466,13 @@ namespace LambdaEngine
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
 
 				// Command line
-				static char s_Buf[256];
+				// static char s_Buf[256];
 
 				ImGui::PushItemWidth((float)width);
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
 
 				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackAlways;
-				if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags,
+				if (ImGui::InputText("###Input", m_Buf, 256, input_text_flags,
 					[](ImGuiInputTextCallbackData* data)->int {
 						GameConsole* console = (GameConsole*)data->UserData;
 						return console->TextEditCallback(data);
@@ -480,20 +480,20 @@ namespace LambdaEngine
 				{
 					if (m_ActivePopupIndex != -1)
 					{
-						strcpy(s_Buf, m_PopupSelectedText.c_str());
+						strcpy(m_Buf, m_PopupSelectedText.c_str());
 						m_ActivePopupIndex = -1;
 						m_Candidates.Clear();
 						m_UpdatePositionCursor = true;
 					}
 					else
 					{
-						if (s_Buf[0])
+						if (m_Buf[0])
 						{
-							std::string buff = std::string(s_Buf);
+							std::string buff = std::string(m_Buf);
 							ExecCommand(buff);
 						}
 
-						strcpy(s_Buf, "");
+						strcpy(m_Buf, "");
 					}
 
 					hasFocus = true;
@@ -555,7 +555,13 @@ namespace LambdaEngine
 					ImGui::PushID(i);
 					if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
 					{
-						PushError("Test");
+						strcpy(m_Buf, m_Candidates[i].c_str());
+						m_PopupSelectedText = m_Candidates[i];
+						m_ActivePopupIndex = -1;
+						m_Candidates.Clear();
+						m_UpdatePositionCursor = true;
+						ImGui::PopID();
+						break;
 					}
 					ImGui::PopID();
 
