@@ -109,14 +109,16 @@ namespace LambdaEngine
 				gameState.Position.z = positionComponent.Position.z + 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
 			}
 
-			m_FramesToReconcile.PushBack(gameState);
+			{
+				std::scoped_lock<SpinLock> lock(m_Lock);
+				m_FramesToReconcile.PushBack(gameState);
+			}
 			m_SimulationTick++;
 
 			if (!m_FramesProcessedByServer.IsEmpty())
 			{
 				Reconcile();
 			}
-
 		}
 	}
 
@@ -190,6 +192,7 @@ namespace LambdaEngine
 
 			if (networkUID == m_NetworkUID)
 			{
+				std::scoped_lock<SpinLock> lock(m_Lock);
 				m_FramesProcessedByServer.PushBack(serverGameState);
 			}
 			else
@@ -230,6 +233,8 @@ namespace LambdaEngine
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		Entity entity = pECS->CreateEntity();
+
+		LOG_INFO("Creating Entity with ID %d and NetworkID %d", entity, networkUID);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Roughness = 0.1f;
@@ -277,6 +282,7 @@ namespace LambdaEngine
 
 		ASSERT(pair != m_Entities.end());
 
+		std::scoped_lock<SpinLock> lock(m_Lock);
 		while (!m_FramesProcessedByServer.IsEmpty())
 		{
 			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);

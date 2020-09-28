@@ -79,24 +79,30 @@ namespace LambdaEngine
 			//m_CurrentGameState = nullptr;
 
 			// Process all available inputs each frame
-			for (const GameState& gameState : m_Buffer)
 			{
-				m_CurrentGameState = gameState;
-				PlayerUpdate(m_CurrentGameState);
+				std::scoped_lock<SpinLock> lock(m_Lock);
+				for (const GameState& gameState : m_Buffer)
+				{
+					m_CurrentGameState = gameState;
+					PlayerUpdate(m_CurrentGameState);
+				}
+				m_Buffer.clear();
 			}
-			m_Buffer.clear();
 
 
 
 
-			auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+			if (m_LastProcessedSimulationTick >= 0)
+			{
+				auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
 
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
-			BinaryEncoder encoder(pPacket);
-			encoder.WriteInt32(m_Entity);
-			encoder.WriteInt32(m_LastProcessedSimulationTick);
-			encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
-			m_pClient->SendReliableBroadcast(pPacket);
+				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
+				BinaryEncoder encoder(pPacket);
+				encoder.WriteInt32(m_Entity);
+				encoder.WriteInt32(m_LastProcessedSimulationTick);
+				encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
+				m_pClient->SendReliableBroadcast(pPacket);
+			}
 		}
 	}
 
@@ -149,6 +155,7 @@ namespace LambdaEngine
 				NetworkSegment* pPacket2 = clientPair.second->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 				BinaryEncoder encoder2(pPacket2);
 				encoder2.WriteBool(false);
+				encoder2.WriteInt32((int32)m_Entity);
 				encoder2.WriteVec3(position);
 				encoder2.WriteVec3(m_Color);
 				clientPair.second->SendReliable(pPacket2, this);
@@ -160,6 +167,7 @@ namespace LambdaEngine
 				NetworkSegment* pPacket3 = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 				BinaryEncoder encoder3(pPacket3);
 				encoder3.WriteBool(false);
+				encoder3.WriteInt32((int32)pHandler->m_Entity);
 				encoder3.WriteVec3(positionComponent.Position);
 				encoder3.WriteVec3(pHandler->m_Color);
 				pClient->SendReliable(pPacket3, this);
@@ -188,7 +196,8 @@ namespace LambdaEngine
 			decoder.ReadInt8(gameState.DeltaForward);
 			decoder.ReadInt8(gameState.DeltaLeft);
 
-			m_Buffer.insert(gameState); //Add Lock maybe, or change OnPacketReceived() to be runned by the main thread
+			std::scoped_lock<SpinLock> lock(m_Lock);
+			m_Buffer.insert(gameState);
 		}
 	}
 

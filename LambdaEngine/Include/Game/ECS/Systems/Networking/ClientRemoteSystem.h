@@ -65,6 +65,8 @@ namespace LambdaEngine
 		Entity m_Entity;
 		int32 m_LastProcessedSimulationTick;
 
+		SpinLock m_Lock;
+
 		//Temp, remove later plz
 		glm::vec3 m_Color;
 
