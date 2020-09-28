@@ -2,6 +2,7 @@
 #include "LambdaEngine.h"
 
 #include "Math/Math.h"
+#include "Physics/BoundingBox.h"
 
 #include "Rendering/Core/API/Buffer.h"
 
@@ -52,6 +53,7 @@ namespace LambdaEngine
 		TArray<IndexType>		UniqueIndices;
 		TArray<PackedTriangle>	PrimitiveIndices;
 		TArray<Meshlet>			Meshlets;
+		BoundingBox BoundingBox;
 	};
 
 	class MeshFactory

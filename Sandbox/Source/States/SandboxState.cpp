@@ -2,24 +2,26 @@
 
 #include "Resources/ResourceManager.h"
 
-#include "Engine/EngineConfig.h"
-
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "ECS/ECSCore.h"
+#include "Engine/EngineConfig.h"
 
+#include "Game/ECS/Components/Misc/Components.h"
+#include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
-#include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Systems/TrackSystem.h"
 #include "Input/API/Input.h"
 #include "Math/Random.h"
-#include "Application/API/Events/EventQueue.h"
 
-#include "Game/ECS/Components/Misc/Components.h"
-#include "Game/ECS/Systems/TrackSystem.h"
+#include "Math/Random.h"
+
+#include "Physics/PhysicsSystem.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
@@ -30,7 +32,6 @@
 
 
 using namespace LambdaEngine;
-
 SandboxState::SandboxState()
 {
 
@@ -69,23 +70,24 @@ void SandboxState::Init()
 		TArray<MeshComponent> meshComponents;
 		ResourceManager::LoadSceneFromFile("Map/Scene.obj", meshComponents);
 
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
+		const glm::vec3 position(0.0f, 0.0f, 0.0f);
+		const glm::vec3 scale(1.0f);
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
 			pECS->AddComponent<PositionComponent>(entity, { position, true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+
 			m_Entities.PushBack(entity);
 		}
 	}
 
 	//Sphere Grid
 	{
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 		uint32 gridRadius = 5;
@@ -119,11 +121,17 @@ void SandboxState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				pECS->AddComponent<PositionComponent>(entity, { position, true });
-				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				CollisionCreateInfo collisionCreateInfo = {
+					.Entity			= entity,
+					.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
+					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
+					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
+					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+				};
 
+				pPhysicsSystem->CreateCollisionComponent(collisionCreateInfo);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 				transform *= glm::toMat4(glm::identity<glm::quat>());

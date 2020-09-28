@@ -101,7 +101,7 @@ namespace LambdaEngine
 			string = string.substr(0, endPos);
 		}
 	}
-	
+
 	/*
 	* ResourceLoader
 	*/
@@ -547,7 +547,7 @@ namespace LambdaEngine
 				return nullptr;
 			}
 
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV(file, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
 				return nullptr;
@@ -777,14 +777,13 @@ namespace LambdaEngine
 	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		std::string source			= std::string(pSource);
-		int32 foundBracket			= int32(source.find_last_of('}') + 1);
-		source[foundBracket]		= '\0';
+		int32 size					= source.size();
 		const char* pFinalSource	= source.c_str();
 
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
 
-		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
+		shader.setStringsWithLengths(&pFinalSource, &size, 1);
 
 		//Todo: Fetch this
 		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
@@ -800,7 +799,7 @@ namespace LambdaEngine
 
 		DirStackFileIncluder includer;
 
-		//Get Directory Path of File
+		// Get Directory Path of File
 		size_t found				= filepath.find_last_of("/\\");
 		std::string directoryPath	= filepath.substr(0, found);
 
@@ -878,12 +877,20 @@ namespace LambdaEngine
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
+
+		glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
+		halfExtent = glm::vec3(0.0f);
+
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
 			Vertex vertex;
 			vertex.Position.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
+
+			halfExtent.x = std::max(halfExtent.x, std::abs(vertex.Position.x));
+			halfExtent.y = std::max(halfExtent.y, std::abs(vertex.Position.y));
+			halfExtent.z = std::max(halfExtent.z, std::abs(vertex.Position.z));
 
 			if (pMeshAI->HasNormals())
 			{

@@ -397,4 +397,9 @@ float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, f
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
 
+float CalculateLuminance(vec3 color)
+{
+	return sqrt(dot(color, vec3(0.299f, 0.587f, 0.114f)));
+}
+
 #endif
