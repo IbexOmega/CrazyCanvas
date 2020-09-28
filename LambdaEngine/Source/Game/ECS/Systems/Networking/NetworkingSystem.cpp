@@ -51,7 +51,6 @@ namespace LambdaEngine
 		{
 			auto& positionComponent = pComponents->GetData(entity);
 			positionComponent.Position.x += 0.1f * deltaTime.AsSeconds();
-			positionComponent.Dirty = true;
 		}*/
 	}
 }

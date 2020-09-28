@@ -77,7 +77,6 @@ void TrackSystem::UpdateTrack(Timestamp deltaTime, Entity entity, PositionCompon
 		trackComp.Track[splineIndices.z],
 		trackComp.Track[splineIndices.w],
 		trackComp.CurrentTrackT);
-	posComp.Dirty = true;
 
 	glm::vec3 dir = glm::normalize(GetCurrentGradient(splineIndices, trackComp));
 	rotComp.Quaternion = glm::quatLookAtLH(dir, glm::vec3(0.f, -1.f, 0.f)); // Update the Quaternion so that it matches the direction. (This is not used within this system)

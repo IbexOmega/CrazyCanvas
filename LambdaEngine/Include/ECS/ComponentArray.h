@@ -75,8 +75,9 @@ namespace LambdaEngine
 		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
 
 		Comp& component = m_Data[indexItr->second];
-		if (m_ComponentOwnership.OnNonConstFetch)
-			m_ComponentOwnership.OnNonConstFetch(component);
+
+		if constexpr (Comp::HasDirtyFlag())
+			component.Dirty = true;
 
 		return component;
 	}

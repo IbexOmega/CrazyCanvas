@@ -902,10 +902,10 @@ namespace LambdaEngine
 
 			drawArg.pIndexBuffer	= meshAndInstancesIt->second.pIndexBuffer;
 			drawArg.IndexCount		= meshAndInstancesIt->second.IndexCount;
-			
+
 			drawArg.pInstanceBuffer	= meshAndInstancesIt->second.pRasterInstanceBuffer;
 			drawArg.InstanceCount	= meshAndInstancesIt->second.RasterInstances.GetSize();
-			
+
 			drawArg.pMeshletBuffer			= meshAndInstancesIt->second.pMeshlets;
 			drawArg.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
 			drawArg.pUniqueIndicesBuffer	= meshAndInstancesIt->second.pUniqueIndices;

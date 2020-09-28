@@ -91,9 +91,9 @@ void SandboxState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { position, true });
-			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			pECS->AddComponent<PositionComponent>(entity, { true, position });
+			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+			pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 
 			m_Entities.PushBack(entity);
@@ -138,9 +138,9 @@ void SandboxState::Init()
 				m_Entities.PushBack(entity);
 				CollisionCreateInfo collisionCreateInfo = {
 					.Entity			= entity,
-					.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
-					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
-					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
+					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
 					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
@@ -157,7 +157,7 @@ void SandboxState::Init()
 		// Directional Light
 		{
 			m_DirLight = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
+			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp) });
 			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
 		}
 
@@ -169,6 +169,27 @@ void SandboxState::Init()
 				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}},
 				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}},
 				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
+			};
+
+			struct Poo
+			{
+				int a, b, c;
+			};
+
+			Poo poo = {
+				.a = 1,
+				.b = 2,
+				.c = 3
+			};
+
+			Poo loo {
+				.b = 3,
+				.c = 1
+			};
+
+			Poo foo {
+				.a = 1,
+				.c = 2
 			};
 
 			const glm::vec3 startPosition[3] =
@@ -204,9 +225,9 @@ void SandboxState::Init()
 
 				m_PointLights[i] = pECS->CreateEntity();
 				m_Entities.PushBack(m_PointLights[i]);
-				pECS->AddComponent<PositionComponent>(m_PointLights[i], { startPosition[i], true });
-				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
-				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PositionComponent>(m_PointLights[i], { true, startPosition[i] });
+				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { true, glm::vec3(0.4f) });
+				pECS->AddComponent<RotationComponent>(m_PointLights[i], { true, glm::identity<glm::quat>() });
 				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
 			}
@@ -329,7 +350,6 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 
 	RotationComponent& rotationComp = pECSCore->GetComponent<RotationComponent>(m_DirLight);
 	rotationComp.Quaternion		= glm::rotate(rotationComp.Quaternion, glm::pi<float32>() * float32(delta.AsSeconds()) * 0.1f, glm::vec3(1.0f, 1.0f, 0.0f));
-	rotationComp.Dirty			= true;
 }
 
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
