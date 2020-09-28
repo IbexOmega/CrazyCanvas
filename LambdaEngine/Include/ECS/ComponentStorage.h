@@ -14,7 +14,11 @@ namespace LambdaEngine
 		~ComponentStorage();
 
 		template<typename Comp>
-		void RegisterComponentType();
+		ComponentArray<Comp>* RegisterComponentType();
+
+		template <typename Comp>
+		void SetComponentOwner(const ComponentOwnership<Comp>& componentOwnership);
+		void UnsetComponentOwner(const ComponentType* pComponentType);
 
 		template<typename Comp>
 		Comp& AddComponent(Entity entity, const Comp& component);
@@ -45,14 +49,25 @@ namespace LambdaEngine
 	};
 
 	template<typename Comp>
-	inline void ComponentStorage::RegisterComponentType()
+	inline ComponentArray<Comp>* ComponentStorage::RegisterComponentType()
 	{
 		const ComponentType* pComponentType = Comp::Type();
 		VALIDATE_MSG(m_CompTypeToArrayMap.find(pComponentType) == m_CompTypeToArrayMap.end(), "Trying to register a component that already exists!");
 
 		m_CompTypeToArrayMap[pComponentType] = m_ComponentArrays.GetSize();
-		ComponentArray<Comp>* compArray = DBG_NEW ComponentArray<Comp>();
-		m_ComponentArrays.PushBack(compArray);
+		ComponentArray<Comp>* pCompArray = DBG_NEW ComponentArray<Comp>();
+		m_ComponentArrays.PushBack(pCompArray);
+		return pCompArray;
+	}
+
+	template <typename Comp>
+	inline void ComponentStorage::SetComponentOwner(const ComponentOwnership<Comp>& componentOwnership)
+	{
+		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
+		if (!pCompArray)
+			pCompArray = RegisterComponentType<Comp>();
+
+		pCompArray->SetComponentOwner(componentOwnership);
 	}
 
 	template<typename Comp>

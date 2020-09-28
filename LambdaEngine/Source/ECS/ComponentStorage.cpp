@@ -9,12 +9,19 @@ namespace LambdaEngine
 		m_ComponentArrays.Clear();
 	}
 
+	void ComponentStorage::UnsetComponentOwner(const ComponentType* pComponentType)
+	{
+		IComponentArray* pCompArray = GetComponentArray(pComponentType);
+		VALIDATE_MSG(pCompArray, "Trying to unset component ownership of an unregistered component type!");
+		pCompArray->UnsetComponentOwner();
+	}
+
 	bool ComponentStorage::DeleteComponent(Entity entity, const ComponentType* pComponentType)
 	{
 		IComponentArray* pComponentArray = GetComponentArray(pComponentType);
 		if (pComponentArray)
 		{
-			pComponentArray->DeleteEntity(entity);
+			pComponentArray->Remove(entity);
 			return true;
 		}
 		else

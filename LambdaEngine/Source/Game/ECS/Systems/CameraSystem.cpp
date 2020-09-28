@@ -129,10 +129,12 @@ namespace LambdaEngine
 			m_CIsPressed = false;
 		}
 
+	#ifdef LAMBDA_DEBUG
 		if (Input::IsKeyDown(EKey::KEY_T))
 		{
 			RenderFrustum(entity);
 		}
+	#endif // LAMBDA_DEBUG
 
 		if (m_MouseEnabled)
 		{

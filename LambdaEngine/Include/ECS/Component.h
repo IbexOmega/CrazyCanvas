@@ -33,4 +33,13 @@ namespace LambdaEngine
 	public:
 		virtual TArray<ComponentAccess> ToArray() const = 0;
 	};
+
+	template <typename Comp>
+	struct ComponentOwnership
+	{
+		// Called just before deleting a component
+		std::function<void(Comp&)> Destructor;
+		// Called just before a component array returns a non-const reference to a component
+		std::function<void(Comp&)> OnNonConstFetch;
+	};
 }
