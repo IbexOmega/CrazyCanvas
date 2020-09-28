@@ -11,6 +11,8 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Window.h"
 
+#include "Rendering/PhysicsRenderer.h"
+
 namespace LambdaEngine
 {
 	CameraSystem CameraSystem::s_Instance;
@@ -93,7 +95,7 @@ namespace LambdaEngine
 
 		glm::vec3 translation = {
 				float(Input::IsKeyDown(EKey::KEY_D) - Input::IsKeyDown(EKey::KEY_A)),	// X: Right
-				float(Input::IsKeyDown(EKey::KEY_Q) - Input::IsKeyDown(EKey::KEY_E)),	// Y: Up
+				float(Input::IsKeyDown(EKey::KEY_E) - Input::IsKeyDown(EKey::KEY_Q)),	// Y: Up
 				float(Input::IsKeyDown(EKey::KEY_W) - Input::IsKeyDown(EKey::KEY_S))	// Z: Forward
 		};
 
@@ -109,7 +111,7 @@ namespace LambdaEngine
 		}
 
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-		float addedPitch	= dt * float(Input::IsKeyDown(EKey::KEY_DOWN) - Input::IsKeyDown(EKey::KEY_UP));
+		float addedPitch	= dt * float(Input::IsKeyDown(EKey::KEY_UP) - Input::IsKeyDown(EKey::KEY_DOWN));
 		float addedYaw		= dt * float(Input::IsKeyDown(EKey::KEY_LEFT) - Input::IsKeyDown(EKey::KEY_RIGHT));
 
 		if (Input::IsKeyDown(EKey::KEY_C))
@@ -124,6 +126,26 @@ namespace LambdaEngine
 		else if (Input::IsKeyUp(EKey::KEY_C))
 		{
 			m_CIsPressed = false;
+		}
+
+		if (Input::IsKeyDown(EKey::KEY_F))
+		{
+			TArray<glm::vec3> points(2);
+
+			static uint32 xPointsID = UINT32_MAX;
+			points[0] = posComp.Position;
+			points[1] = posComp.Position + GetRight(rotComp.Quaternion);
+			xPointsID = PhysicsRenderer::Get()->UpdateLineGroup(xPointsID, points, {1.0f, 0.0f, 0.0f});
+
+			static uint32 yPointsID = UINT32_MAX;
+			points[0] = posComp.Position;
+			points[1] = posComp.Position + GetUp(rotComp.Quaternion);
+			yPointsID = PhysicsRenderer::Get()->UpdateLineGroup(yPointsID, points, {0.0f, 1.0f, 0.0f});
+
+			static uint32 zPointsID = UINT32_MAX;
+			points[0] = posComp.Position;
+			points[1] = posComp.Position + GetForward(rotComp.Quaternion);
+			zPointsID = PhysicsRenderer::Get()->UpdateLineGroup(zPointsID, points, {0.0f, 0.0f, 1.0f});
 		}
 
 		if (m_MouseEnabled)
