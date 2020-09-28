@@ -95,6 +95,9 @@ namespace LambdaEngine
 										writer.String("sampler_address_mode");
 										writer.String(RenderGraphSamplerAddressModeToString(resource.TextureParams.SamplerAddressMode));
 
+										writer.String("sampler_border_color");
+										writer.String(RenderGraphSamplerBorderColorToString(resource.TextureParams.SamplerBorderColor));
+
 										writer.String("memory_type");
 										writer.String(MemoryTypeToString(resource.MemoryType));
 									}
@@ -561,6 +564,7 @@ namespace LambdaEngine
 									resource.TextureParams.MiplevelCount		= resourceTypeParamsObject["miplevel_count"].GetInt();
 									resource.TextureParams.SamplerType			= RenderGraphSamplerTypeFromString(resourceTypeParamsObject["sampler_type"].GetString());
 									resource.TextureParams.SamplerAddressMode	= resourceTypeParamsObject.HasMember("sampler_address_mode") ? RenderGraphSamplerAddressModeFromString(resourceTypeParamsObject["sampler_address_mode"].GetString()) : ERenderGraphSamplerAddressMode::REPEAT;
+									resource.TextureParams.SamplerBorderColor	= resourceTypeParamsObject.HasMember("sampler_border_color") ? RenderGraphSamplerBorderColorFromString(resourceTypeParamsObject["sampler_border_color"].GetString()) : ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 									resource.MemoryType							= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
 								}
 								break;

@@ -159,6 +159,20 @@ namespace LambdaEngine
 		}
 	}
 
+	inline VkBorderColor ConvertBorderColor(ESamplerBorderColor borderColor)
+	{
+		switch (borderColor)
+		{
+		case ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:		return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		case ESamplerBorderColor::SAMPLER_BORDER_COLOR_INT_TRANSPARENT_BLACK:		return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+		case ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_BLACK:			return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		case ESamplerBorderColor::SAMPLER_BORDER_COLOR_INT_OPAQUE_BLACK:			return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		case ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_WHITE:			return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		case ESamplerBorderColor::SAMPLER_BORDER_COLOR_INT_OPAQUE_WHITE:			return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+		default:																	return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		}
+	}
+
 	inline VkDescriptorType ConvertDescriptorType(EDescriptorType descriptorType)
 	{
 		switch (descriptorType)

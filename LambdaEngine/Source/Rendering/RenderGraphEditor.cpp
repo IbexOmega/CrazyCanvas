@@ -996,6 +996,18 @@ namespace LambdaEngine
 						pResource->TextureParams.SamplerAddressMode = SamplerTypeIndexToSamplerAddressMode(samplerAddresModeIndex);
 					}
 
+					if (pResource->TextureParams.SamplerAddressMode == ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER)
+					{
+						int32 samplerBorderColorIndex = SamplerTypeBorderColorToSamplerIndex(pResource->TextureParams.SamplerBorderColor);
+
+						ImGui::Text("Sampler Border Color: ");
+						ImGui::SameLine();
+						if (ImGui::Combo("##Sampler Border Color", &samplerBorderColorIndex, SAMPLER_BORDER_COLOR, ARR_SIZE(SAMPLER_BORDER_COLOR)))
+						{
+							pResource->TextureParams.SamplerBorderColor = SamplerTypeIndexToSamplerBorderColor(samplerBorderColorIndex);
+						}
+					}
+
 					int32 memoryTypeIndex = MemoryTypeToMemoryTypeIndex(pResource->MemoryType);
 					ImGui::Text("Memory Type: ");
 					ImGui::SameLine();

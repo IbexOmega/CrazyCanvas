@@ -96,6 +96,17 @@ namespace LambdaEngine
 		CLAMP_TO_BORDER		= 3,
 	};
 
+	enum class ERenderGraphSamplerBorderColor : uint8
+	{
+		NONE									= 0,
+		BORDER_COLOR_FLOAT_TRANSPARENT_BLACK	= 1,
+		BORDER_COLOR_INT_TRANSPARENT_BLACK		= 2,
+		BORDER_COLOR_FLOAT_OPAQUE_BLACK			= 3,
+		BORDER_COLOR_INT_OPAQUE_BLACK			= 4,
+		BORDER_COLOR_FLOAT_OPAQUE_WHITE			= 5,
+		BORDER_COLOR_INT_OPAQUE_WHITE			= 6,
+	};
+
 
 	enum class ERenderGraphTextureType : uint8
 	{
@@ -132,6 +143,7 @@ namespace LambdaEngine
 			int32							MiplevelCount				= 1;
 			ERenderGraphSamplerType			SamplerType					= ERenderGraphSamplerType::LINEAR;
 			ERenderGraphSamplerAddressMode	SamplerAddressMode			= ERenderGraphSamplerAddressMode::REPEAT;
+			ERenderGraphSamplerBorderColor	SamplerBorderColor			= ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 			FTextureFlags					TextureFlags				= FTextureFlag::TEXTURE_FLAG_NONE;
 			FTextureViewFlags				TextureViewFlags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
 		} TextureParams;
@@ -984,7 +996,7 @@ namespace LambdaEngine
 		{
 		case ERenderGraphSamplerAddressMode::REPEAT:				return "REPEAT";
 		case ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE:			return "CLAMP_TO_EDGE";
-		case ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER:		return "CLAMP_TO_EDGE";
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER:		return "CLAMP_TO_BORDER";
 		default:													return "NONE";
 		}
 	}
@@ -996,6 +1008,47 @@ namespace LambdaEngine
 		else if (string == "CLAMP_TO_BORDER")		return ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER;
 
 		return ERenderGraphSamplerAddressMode::NONE;
+	}
+
+	FORCEINLINE const char* RenderGraphSamplerBorderColorToString(ERenderGraphSamplerBorderColor samplerBorderColor)
+	{
+		switch (samplerBorderColor)
+		{
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:		return "BORDER_COLOR_FLOAT_TRANSPARENT_BLACK";
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_TRANSPARENT_BLACK:		return "BORDER_COLOR_INT_TRANSPARENT_BLACK";
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK:			return "BORDER_COLOR_FLOAT_OPAQUE_BLACK";
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_BLACK:				return "BORDER_COLOR_INT_OPAQUE_BLACK";
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_WHITE:			return "BORDER_COLOR_FLOAT_OPAQUE_WHITE";
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_WHITE:				return "BORDER_COLOR_INT_OPAQUE_WHITE";
+		default:																		return "NONE";
+		}
+	}
+
+	FORCEINLINE ERenderGraphSamplerBorderColor RenderGraphSamplerBorderColorFromString(const String& string)
+	{
+		if (string == "BORDER_COLOR_FLOAT_TRANSPARENT_BLACK")		return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		else if (string == "BORDER_COLOR_INT_TRANSPARENT_BLACK")	return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_TRANSPARENT_BLACK;
+		else if (string == "BORDER_COLOR_FLOAT_OPAQUE_BLACK")		return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		else if (string == "BORDER_COLOR_INT_OPAQUE_BLACK")			return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_BLACK;
+		else if (string == "BORDER_COLOR_FLOAT_OPAQUE_WHITE")		return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		else if (string == "BORDER_COLOR_INT_OPAQUE_WHITE")			return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_WHITE;
+
+		return ERenderGraphSamplerBorderColor::NONE;
+	}
+
+
+	FORCEINLINE ESamplerBorderColor RenderGraphSamplerBorderColor(ERenderGraphSamplerBorderColor samplerBorderColor)
+	{
+		switch (samplerBorderColor)
+		{
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:		return ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_TRANSPARENT_BLACK:		return ESamplerBorderColor::SAMPLER_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK:			return ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_BLACK:				return ESamplerBorderColor::SAMPLER_BORDER_COLOR_INT_OPAQUE_BLACK;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_WHITE:			return ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_WHITE:				return ESamplerBorderColor::SAMPLER_BORDER_COLOR_INT_OPAQUE_WHITE;
+		default:																		return ESamplerBorderColor::SAMPLER_BORDER_COLOR_NONE;
+		}
 	}
 
 	FORCEINLINE ESamplerAddressMode RenderGraphSamplerAddressMode(ERenderGraphSamplerAddressMode samplerAddressMode)

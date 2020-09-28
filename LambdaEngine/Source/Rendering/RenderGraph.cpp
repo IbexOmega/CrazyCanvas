@@ -1436,6 +1436,7 @@ namespace LambdaEngine
 						samplerDesc.AddressModeU		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
 						samplerDesc.AddressModeV		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
 						samplerDesc.AddressModeW		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.borderColor			= RenderGraphSamplerBorderColor(pResourceDesc->TextureParams.SamplerBorderColor);
 						samplerDesc.MipLODBias			= 0.0f;
 						samplerDesc.AnisotropyEnabled	= false;
 						samplerDesc.MaxAnisotropy		= 16;
