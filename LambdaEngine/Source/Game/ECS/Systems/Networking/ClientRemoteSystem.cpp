@@ -93,7 +93,8 @@ namespace LambdaEngine
 
 			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 			BinaryEncoder encoder(pPacket);
-			encoder.WriteUInt32(m_Entity);
+			encoder.WriteInt32(m_Entity);
+			encoder.WriteInt32(m_LastProcessedSimulationTick);
 			encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
 			m_pClient->SendReliableBroadcast(pPacket);
 		}
