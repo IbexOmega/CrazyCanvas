@@ -16,6 +16,8 @@ namespace LambdaEngine
 	{
 		int32 SimulationTick = -1;
 		glm::vec3 Position;
+		int8 DeltaForward = 0;
+		int8 DeltaLeft = 0;
 	};
 
 	class ClientSystem : public System, protected IClientHandler
@@ -55,6 +57,7 @@ namespace LambdaEngine
 	private:
 		ClientSystem();
 		void Reconcile();
+		void PlayerUpdate(const GameState& gameState);
 
 	private:
 		static void StaticFixedTickMainThread(Timestamp deltaTime);

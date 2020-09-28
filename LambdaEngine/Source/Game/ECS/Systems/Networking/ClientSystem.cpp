@@ -1,4 +1,7 @@
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
+#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+
+#include "Engine/EngineLoop.h"
 
 #include "Game/ECS/Components/Player/ControllableComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -79,32 +82,31 @@ namespace LambdaEngine
 			encoder.WriteInt8(deltaLeft);
 			m_pClient->SendUnreliable(pPacket);
 
-
-			
-
 			ECSCore* pECS = ECSCore::GetInstance();
 			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 			if (!pPositionComponents)
 				return;
 
+			auto pair = m_Entities.find(m_NetworkUID);
+
+			ASSERT(pair != m_Entities.end());
+
+			PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
 			GameState gameState = {};
-			gameState.SimulationTick = m_SimulationTick;
 
-			for (Entity entity : m_ControllableEntities)
+			gameState.SimulationTick	= m_SimulationTick;
+			gameState.DeltaForward		= deltaForward;
+			gameState.DeltaLeft			= deltaLeft;
+
+			if (deltaForward != 0)
 			{
-				PositionComponent& positionComponent = pPositionComponents->GetData(entity);
+				gameState.Position.x = positionComponent.Position.x + 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaForward;
+			}
 
-				if (deltaForward != 0)
-				{
-					gameState.Position.x = positionComponent.Position.x + 1.0f * Timestamp::Seconds(1.0f / 60.0f).AsSeconds() * deltaForward;
-				}
-
-				if (deltaLeft != 0)
-				{
-					gameState.Position.z = positionComponent.Position.z + 1.0f * Timestamp::Seconds(1.0f / 60.0f).AsSeconds() * deltaLeft;
-				}
-				break;
+			if (deltaLeft != 0)
+			{
+				gameState.Position.z = positionComponent.Position.z + 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
 			}
 
 			m_FramesToReconcile.PushBack(gameState);
@@ -273,27 +275,37 @@ namespace LambdaEngine
 
 		auto pair = m_Entities.find(m_NetworkUID);
 
-		ASSERT(pair != m_Entities.end())
+		ASSERT(pair != m_Entities.end());
 
-		for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
+		while (!m_FramesProcessedByServer.IsEmpty())
 		{
-			ASSERT(m_FramesProcessedByServer[i].SimulationTick == m_FramesToReconcile[i].SimulationTick);
+			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 
-			if (glm::distance(m_FramesProcessedByServer[i].Position, m_FramesToReconcile[i].Position) > EPSILON)
+			if (glm::distance(m_FramesProcessedByServer[0].Position, m_FramesToReconcile[0].Position) > EPSILON) //checks for position prediction ERROR
 			{
 				PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
 
-				positionComponent.Position	= m_FramesProcessedByServer[i].Position;
+				positionComponent.Position	= m_FramesProcessedByServer[0].Position;
 				positionComponent.Dirty		= true;
 
-				for (int32 j = i + 1; j < m_FramesToReconcile.GetSize(); j++)
+				//Replay all game states since the game state which resulted in prediction ERROR
+				for (int32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
 				{
-
+					PlayerUpdate(m_FramesToReconcile[i]); 
 				}
-				break;
 			}
+
+			m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
+			m_FramesProcessedByServer.Erase(m_FramesProcessedByServer.Begin());
 		}
-		//should be in sync with server
+	}
+
+	void ClientSystem::PlayerUpdate(const GameState& gameState)
+	{
+		auto pair = m_Entities.find(m_NetworkUID);
+
+		ASSERT(pair != m_Entities.end());
+		PlayerMovementSystem::GetInstance().Move(pair->second, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
 	}
 
 
