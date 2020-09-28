@@ -74,13 +74,22 @@ namespace LambdaEngine
 		*/
 		void RemoveLineGroup(uint32 ID);
 
-		// TODO: Redo these functions
-		// These functions are from previous bullet implementation and will probably be redone
+		/*
+		* Draw a line that will be static in the scene and cannot be removed (old Bullet implementation)
+		* from - glm::vec3 of point to draw from
+		* to - glm::vec3 of point to draw to
+		* color - color the line between from and to should be
+		*/
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color);
+
+		/*
+		* Draw a line that will be static in the scene and cannot be removed (old Bullet implementation)
+		* from - glm::vec3 of point to draw from
+		* to - glm::vec3 of point to draw to
+		* fromColor - start color the line should be - will be interpolated to the toColor
+		* toColor -  end color the line should be - will be interpolated from fromColor
+		*/
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor);
-		//void DrawSphere(const btVecglm::vec3tor3& p, float radius, const glm::vec3& color);
-		//void DrawTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& color, float alpha);
-		void DrawContactPoint(const glm::vec3& PointOnB, const glm::vec3& normalOnB, float distance, int lifeTime, const glm::vec3& color);
 
 	public:
 		static LineRenderer* Get();

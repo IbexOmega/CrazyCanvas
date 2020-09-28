@@ -216,19 +216,10 @@ namespace LambdaEngine
 		m_Verticies.PushBack(toData);
 	}
 
-	//void LineRenderer::DrawSphere(const glm::vec3& p, float radius, const glm::vec3& color)
-	//{
-	//}
-
-	//void LineRenderer::DrawTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& color, float alpha)
-	//{
-	//}
-
 	void LineRenderer::DrawContactPoint(const glm::vec3& PointOnB, const glm::vec3& normalOnB, float distance, int lifeTime, const glm::vec3& color)
 	{
 	}
 
-	// Custom renderer implementaion
 	bool LineRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
@@ -469,9 +460,6 @@ namespace LambdaEngine
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
-
-		// TODO: When bullet calls the drawLines, a clear on the verticies might be needed
-		//m_Verticies.Clear();
 	}
 
 	LineRenderer* LineRenderer::Get()
@@ -507,11 +495,9 @@ namespace LambdaEngine
 		uniformCopyBufferDesc.SizeInBytes	= verticiesBufferSize;
 
 		uint32 backBufferCount = m_BackBuffers.GetSize();
-		// m_VertexCopyBuffers.Resize(backBufferCount);
 		m_UniformCopyBuffers.Resize(backBufferCount);
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
-			// TSharedRef<Buffer> vertexBuffer = m_pGraphicsDevice->CreateBuffer(&vertexCopyBufferDesc);
 			TSharedRef<Buffer> uniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformCopyBufferDesc);
 			if (uniformBuffer != nullptr)
 			{
