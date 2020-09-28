@@ -53,11 +53,12 @@ void SandboxState::Init()
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		CameraDesc cameraDesc = {};
-		cameraDesc.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV");
-		cameraDesc.Width = window->GetWidth();
-		cameraDesc.Height = window->GetHeight();
-		cameraDesc.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane");
-		cameraDesc.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane");
+		cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
+		cameraDesc.Position		= glm::vec3(0.0f, 2.0f, -2.0f);
+		cameraDesc.Width		= window->GetWidth();
+		cameraDesc.Height		= window->GetHeight();
+		cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+		cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
 
@@ -105,7 +106,7 @@ void SandboxState::Init()
 		robotMeshComp.MeshGUID		= robotGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
-		glm::vec3 position(0.0f, 0.0, 0.0f);
+		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
