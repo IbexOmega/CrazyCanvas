@@ -101,6 +101,41 @@ void SandboxState::Init()
 		}
 	}
 
+	// Robot
+	{
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		
+		MaterialProperties materialProperties;
+		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness	= 1.0f;
+		materialProperties.Metallic		= 1.0f;
+		
+		const uint32 robotMaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+			"Robot Material",
+			robotAlbedoGUID,
+			robotNormalGUID,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+		
+		MeshComponent robotMeshComp = {};
+		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MaterialGUID = robotMaterialGUID;
+
+		glm::vec3 position(0.0f, 0.0, 0.0f);
+		glm::vec3 scale(1.0f);
+
+		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
+		pECS->AddComponent<PositionComponent>(entity, { position, true });
+		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+	}
+
 	//Sphere Grid
 	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
@@ -110,7 +145,6 @@ void SandboxState::Init()
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
-
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
 				float32 metallic = x / float32(gridRadius - 1);
@@ -120,7 +154,7 @@ void SandboxState::Init()
 				materialProperties.Roughness = roughness;
 				materialProperties.Metallic = metallic;
 
-				MeshComponent sphereMeshComp = {};
+				MeshComponent sphereMeshComp = { };
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
 				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
 					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
@@ -140,7 +174,6 @@ void SandboxState::Init()
 				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 				transform *= glm::toMat4(glm::identity<glm::quat>());

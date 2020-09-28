@@ -98,7 +98,6 @@ namespace LambdaEngine
 		*/
 		static Texture* LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
 
-
 		/*
 		* Load multiple Cube textures from file and combine into Texture Arrays along with TextureViews and CubeTextureViews
 		*	name - A Name of given to the cubeTexture
@@ -159,6 +158,7 @@ namespace LambdaEngine
 	private:
 		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
 		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene);

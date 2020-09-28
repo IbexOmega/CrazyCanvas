@@ -43,15 +43,25 @@ namespace LambdaEngine
 		uint8 Padding;
 	};
 
+	struct Skeleton
+	{
+	};
+
 	struct Mesh
 	{
 		using IndexType = uint32;
+
+		inline ~Mesh()
+		{
+			SAFEDELETE(pSkeleton);
+		}
 
 		TArray<Vertex>			Vertices;
 		TArray<IndexType>		Indices;
 		TArray<IndexType>		UniqueIndices;
 		TArray<PackedTriangle>	PrimitiveIndices;
 		TArray<Meshlet>			Meshlets;
+		Skeleton*				pSkeleton = nullptr;
 	};
 
 	class MeshFactory

@@ -927,6 +927,10 @@ namespace LambdaEngine
 		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(Mesh::IndexType) * indices.GetSize());
 	}
 
+	void ResourceLoader::LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI)
+	{
+	}
+
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
 	{
 		auto mat = context.MaterialIndices.find(pMeshAI->mMaterialIndex);
@@ -1041,7 +1045,6 @@ namespace LambdaEngine
 			.pTextures		= sceneLoadRequest.pTextures
 		};
 
-
 		ProcessAssimpNode(context, pScene->mRootNode, pScene);
 		return true;
 	}
@@ -1061,6 +1064,11 @@ namespace LambdaEngine
 			if (context.pMaterials)
 			{
 				LoadMaterial(context, pScene, pMeshAI);
+			}
+
+			if (pMeshAI->mNumBones > 0)
+			{
+				LoadSkeleton(pMesh, pMeshAI);
 			}
 
 			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
