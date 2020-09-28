@@ -1,8 +1,10 @@
 #include "Game/ECS/Systems/Audio/AudioSystem.h"
-
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
-
+#include "Audio/AudioAPI.h"
 #include "ECS/ECSCore.h"
+#include "Resources/ResourceManager.h"
 
 namespace LambdaEngine
 {
@@ -10,18 +12,12 @@ namespace LambdaEngine
 
 	bool AudioSystem::Init()
 	{
-		//TransformComponents transformComponents;
-		//transformComponents.Position.Permissions = R;
-		//transformComponents.Scale.Permissions = R;
-		//transformComponents.Rotation.Permissions = R;
-
-		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{R, AudibleComponent::s_TID}, {R, PositionComponent::s_TID}}, {}, &m_AudibleEntities},
-				{{{R, AudibleComponent::s_TID}, {R, PositionComponent::s_TID}}, {}, &m_AudibleNoPositionEntities},
+				{{{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}, {R, CameraComponent::Type()}}, {}, &m_CameraEntities},
+				{{{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}},								{},	&m_AudibleEntities},
 			};
 			systemReg.Phase = 0;
 
@@ -34,15 +30,30 @@ namespace LambdaEngine
 	void AudioSystem::Tick(Timestamp deltaTime)
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
-		/*ECSCore* pECS = ECSCore::GetInstance();
+		ECSCore* pECS = ECSCore::GetInstance();
 
-		auto* pComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pAudibleComponents =	pECS->GetComponentArray<AudibleComponent>();
+		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pCameraComponents =	pECS->GetComponentArray<CameraComponent>();
 
-		for (Entity entity : m_NetworkEntities)
+		PositionComponent* pActiveCamPosComp = nullptr;
+
+		for (Entity entity : m_CameraEntities)
 		{
-			auto& positionComponent = pComponents->GetData(entity);
-			positionComponent.Position.x += 0.1f * deltaTime.AsSeconds();
-			positionComponent.Dirty = true;
-		}*/
+			auto& audibleComponent		=		pAudibleComponents->GetData(entity);
+			auto& positionComponent		=		pPositionComponents->GetData(entity);
+			auto& cameraComponent		=		pCameraComponents->GetData(entity);
+
+			auto* pSoundInstance		=		audibleComponent.pSoundInstance.Get();
+
+			if (cameraComponent.IsActive)
+			{
+				pSoundInstance->Play();
+				LOG_MESSAGE("%d is playing now", entity);
+			}
+		}
 	}
 }
+	
+
+

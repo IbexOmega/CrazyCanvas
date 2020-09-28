@@ -16,7 +16,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Audio/AudioSystem.h"
+#include "Audio/AudioAPI.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
