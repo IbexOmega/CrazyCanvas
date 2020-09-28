@@ -5,7 +5,7 @@
   ],
   "FixedTimestep": 60,
   "RayTracingEnabled": false,
-  "MeshShadersEnabled": false,
+  "MeshShadersEnabled": true,
   "ShowRenderGraph": false,
   "EnablePhysicsRenderer": true,
   "RenderGraphName": "PHYSICS_RENDER_TEST.lrg",

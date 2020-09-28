@@ -36,19 +36,13 @@ namespace LambdaEngine
 
 		bool init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
 
-		// Custom Renderer implementations
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 		virtual void PreBuffersDescriptorSetWrite() override final;
 		virtual void PreTexturesDescriptorSetWrite() override final;
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
-		virtual void Render(
-			uint32 modFrameIndex,
-			uint32 backBufferIndex,
-			CommandList** ppFirstExecutionStage,
-			CommandList** ppSecondaryExecutionStage)	override final;
-
+		virtual void Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage)	override final;
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 		FORCEINLINE virtual const String& GetName() const override
@@ -56,10 +50,6 @@ namespace LambdaEngine
 			static String name = RENDER_GRAPH_PHYSICS_DEBUG_STAGE;
 			return name;
 		}
-
-
-		// DebugDraw implementations
-
 
 		/*
 		* Adds a line group to be rendered. The number of lines is equal to points.GetSize() / 2
@@ -84,6 +74,8 @@ namespace LambdaEngine
 		*/
 		void RemoveLineGroup(uint32 ID);
 
+		// TODO: Redo these functions
+		// These functions are from previous bullet implementation and will probably be redone
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color);
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor);
 		//void DrawSphere(const btVecglm::vec3tor3& p, float radius, const glm::vec3& color);

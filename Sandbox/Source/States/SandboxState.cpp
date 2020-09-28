@@ -62,7 +62,7 @@ void SandboxState::Init()
 		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
 
-	// Load scene
+	//// Load scene
 	//{
 	//	TArray<MeshComponent> meshComponents;
 	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
@@ -81,8 +81,7 @@ void SandboxState::Init()
 	//	}
 	//}
 
-
-	//Scene
+	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
 		ResourceManager::LoadSceneFromFile("Map/Scene.obj", meshComponents);
