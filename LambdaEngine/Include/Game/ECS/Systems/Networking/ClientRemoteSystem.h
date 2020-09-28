@@ -37,7 +37,10 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime) override;
 
+		void TickMainThread(Timestamp deltaTime);
 		void FixedTickMainThread(Timestamp deltaTime);
+
+		void PlayerUpdate(const GameState& gameState);
 
 	protected:
 		virtual void OnConnecting(IClient* pClient) override;
@@ -57,7 +60,7 @@ namespace LambdaEngine
 	private:
 		IDVector m_NetworkEntities;
 		TSet<GameState, GameStateComparator> m_Buffer;
-		//CCBuffer<GameState, 60> m_Buffer;
+		GameState m_CurrentGameState;
 		ClientRemoteBase* m_pClient;
 		Entity m_Entity;
 		int32 m_LastProcessedSimulationTick;
