@@ -129,7 +129,9 @@ namespace LambdaEngine
 		float squareRadius = 0.0f;
 
 		for (const Vertex& vertex : vertices)
+		{
 			squareRadius = std::max(squareRadius, glm::length2(vertex.Position));
+		}
 
 		PxShape* pSphereShape = m_pPhysics->createShape(PxSphereGeometry(std::sqrtf(squareRadius)), *m_pMaterial);
 		return FinalizeCollisionComponent(collisionCreateInfo, pSphereShape);
@@ -168,9 +170,13 @@ namespace LambdaEngine
 
 		PxShape* pShape = nullptr;
 		if (halfHeight != 0.0f)
+		{
 			pShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight), *m_pMaterial);
+		}
 		else
+		{
 			pShape = m_pPhysics->createShape(PxSphereGeometry(capsuleRadius), *m_pMaterial);
+		}
 
 		const PxQuat uprightRotation = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
 		return FinalizeCollisionComponent(collisionCreateInfo, pShape, uprightRotation);
