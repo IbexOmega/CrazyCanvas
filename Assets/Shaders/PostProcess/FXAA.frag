@@ -29,7 +29,7 @@ vec3 Lerp(vec3 a, vec3 b, float amountOfA)
 #define DEBUG_EDGES			0
 #define DEBUG				0
 #define DEBUG_HORIZONTAL	0
-#define DEBUG_NEGPOS		0
+#define DEBUG_NEGPOS		1
 #define DEBUG_STEP			0
 #define DEBUG_BLEND_FACTOR	0
 
@@ -89,15 +89,13 @@ void main()
 	vec4 sw = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2(-1,  1));
 	vec4 ne = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1, -1));
 	vec4 se = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1,  1));
-	
-	vec3 colorL = (m.rgb + n.rgb + s.rgb + w.rgb + e.rgb);
-	colorL += (nw.rgb + sw.rgb + ne.rgb + se.rgb);
-	colorL = colorL * vec3(1.0f / 9.0f);
-
 	float lumaNW = nw.a;
 	float lumaNE = ne.a;
 	float lumaSW = sw.a;
 	float lumaSE = se.a;
+
+	vec3 colorL = (m.rgb + n.rgb + s.rgb + w.rgb + e.rgb) + (nw.rgb + sw.rgb + ne.rgb + se.rgb);
+	colorL = colorL * vec3(1.0f / 9.0f);
 
 	float edgeVert = 
 		abs((0.25f * lumaNW) + (-0.5f * lumaN) + (0.25f * lumaNE)) +
@@ -131,18 +129,18 @@ void main()
 		lumaS = lumaE;
 	}
 	
-	float gradientN = abs(lumaN - lumaM);
-	float gradientS = abs(lumaS - lumaM);
-	float lumaAvgN = (lumaN + lumaM) * 0.5f;
-	float lumaAvgS = (lumaS + lumaM) * 0.5f;
+	float gradient0	= abs(lumaN - lumaM);
+	float gradient1	= abs(lumaS - lumaM);
+	float lumaAvg0	= (lumaN + lumaM) * 0.5f;
+	float lumaAvg1	= (lumaS + lumaM) * 0.5f;
 	
-	bool	pairN			= (gradientN >= gradientS);
-	float	localLumaAvg	= (!pairN) ? lumaAvgS	: lumaAvgN;
-	float	localGradient	= (!pairN) ? gradientS	: gradientN;
+	bool	pair0			= (gradient0 >= gradient1);
+	float	localLumaAvg	= (!pair0) ? lumaAvg1	: lumaAvg0;
+	float	localGradient	= (!pair0) ? gradient1	: gradient0;
 	localGradient			= localGradient * FXAA_SEARCH_THRESHOLD;
 
 	float stepLength = isHorizontal ? -invTexSize.y : -invTexSize.x;
-	if (!pairN)
+	if (!pair0)
 	{
 		stepLength *= -1.0f;
 	}
