@@ -14,14 +14,13 @@ layout(binding = 3, set = 0, rgba8) uniform writeonly image2D u_OutputImage;
 void main()
 {
     // Working code
-
     uvec2 OUTPUT_IMAGE_SIZE = imageSize(u_OutputImage);
 	vec2 texcoord   = vec2(gl_GlobalInvocationID.xy) / vec2(OUTPUT_IMAGE_SIZE);
 
     vec4 roughness 	= textureLod(u_RoughnessMaterial, 	texcoord, 0);
     vec4 metallic 	= textureLod(u_MetallicMaterial, 	texcoord, 0);
     vec4 ao 		= textureLod(u_AOMaterial, 			texcoord, 0);
-    
+
 	vec4 combined_material = vec4(roughness.r, metallic.g, ao.b, 1.0f);
     imageStore(u_OutputImage, ivec2(gl_GlobalInvocationID.xy), combined_material);
 }
