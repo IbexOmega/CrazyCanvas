@@ -426,7 +426,7 @@ namespace LambdaEngine
 		largestWidth	= std::max(pMaterial->pMetallicMap->GetDesc().Width, std::max(pMaterial->pRoughnessMap->GetDesc().Width, pMaterial->pAmbientOcclusionMap->GetDesc().Width));
 		largestHeight	= std::max(pMaterial->pMetallicMap->GetDesc().Height, std::max(pMaterial->pRoughnessMap->GetDesc().Height, pMaterial->pAmbientOcclusionMap->GetDesc().Height));
 
-		//-------------- Create Command List
+		// Create Command List
 		CommandAllocator* computeCmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 		CommandAllocator* graphicsCmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
@@ -447,7 +447,7 @@ namespace LambdaEngine
 
 		Fence* pFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
 
-		//-------------- Create Textures
+		// Create Textures
 		uint32_t miplevels = 1u;
 		miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
 
@@ -501,7 +501,7 @@ namespace LambdaEngine
 
 		computeCmdList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
-		//-------------- Create Sampler
+		// Create Sampler
 		SamplerDesc samplerDesc	= { };
 		samplerDesc.DebugName				= "CombineMaterial Sampler ";
 		samplerDesc.MinFilter				= EFilterType::FILTER_TYPE_LINEAR;
@@ -518,7 +518,7 @@ namespace LambdaEngine
 
 		TSharedRef<Sampler> sampler = RenderAPI::GetDevice()->CreateSampler(&samplerDesc);
 
-		//-------------- Create Pipelinelayout
+		// Create Pipelinelayout
 		DescriptorBindingDesc ubo_roughness_mat = { };
 		ubo_roughness_mat.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		ubo_roughness_mat.DescriptorCount		= 1;
@@ -555,7 +555,7 @@ namespace LambdaEngine
 
 		PipelineLayout* pPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pPipelineLayoutDesc);
 
-		//-------------- Create DescriptorSet
+		// Create DescriptorSet
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount	= descriptorSetLayoutDesc.DescriptorBindings.GetSize();
 
@@ -572,7 +572,7 @@ namespace LambdaEngine
 		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pAmbientOcclusionMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 		pDescriptorSet->WriteTextureDescriptors(&s_TextureViews[guid], &sampler, ETextureState::TEXTURE_STATE_GENERAL, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE);
 
-		//-------------- Create Shaders
+		// Create Shaders
 		GUID_Lambda computeShaderGUID = LoadShaderFromFile("CombineMaterial.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
 
 		ShaderModuleDesc shaderModuleDesc = { };
@@ -587,6 +587,7 @@ namespace LambdaEngine
 		computeCmdList->BindDescriptorSetCompute(pDescriptorSet, pPipelineLayout, 0);
 		computeCmdList->BindComputePipeline(pPipelineState);
 
+		// Dispatch
 		largestWidth	= std::max<uint32>(largestWidth / 8, 1);
 		largestHeight	= std::max<uint32>(largestHeight / 8, 1);
 
