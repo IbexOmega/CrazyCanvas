@@ -7,9 +7,12 @@
 
 #include <glm/gtx/euler_angles.hpp>
 #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 #include "Log/Log.h"
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Window.h"
+
+#include "Rendering/PhysicsRenderer.h"
 
 namespace LambdaEngine
 {
@@ -64,7 +67,7 @@ namespace LambdaEngine
 				camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
 
 				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
-					HandleInput(deltaTime, posComp, rotComp, pFreeCameraComponents->GetData(entity));
+					HandleInput(deltaTime, entity, posComp, rotComp, pFreeCameraComponents->GetData(entity));
 
 				viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
 				camComp.ViewInv = glm::inverse(viewProjComp.View);
@@ -87,14 +90,14 @@ namespace LambdaEngine
 		}
 	}
 
-	void CameraSystem::HandleInput(Timestamp deltaTime, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
+	void CameraSystem::HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
 	{
 		float32 dt = float32(deltaTime.AsSeconds());
 
 		glm::vec3 translation = {
-				float(Input::IsKeyDown(EKey::KEY_D) - Input::IsKeyDown(EKey::KEY_A)),	// X: Right
-				float(Input::IsKeyDown(EKey::KEY_Q) - Input::IsKeyDown(EKey::KEY_E)),	// Y: Up
-				float(Input::IsKeyDown(EKey::KEY_W) - Input::IsKeyDown(EKey::KEY_S))	// Z: Forward
+				float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
+				float(InputActionSystem::IsActive("CAM_UP")			- InputActionSystem::IsActive("CAM_DOWN")),		// Y: Up
+				float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
 		};
 
 		const glm::vec3 forward = GetForward(rotComp.Quaternion);
@@ -102,17 +105,17 @@ namespace LambdaEngine
 
 		if (glm::length2(translation) > glm::epsilon<float>())
 		{
-			const float shiftSpeedFactor = Input::IsKeyDown(EKey::KEY_LEFT_SHIFT) ? 2.0f : 1.0f;
+			const float shiftSpeedFactor = InputActionSystem::IsActive("CAM_SPEED_MODIFIER") ? 2.0f : 1.0f;
 			translation = glm::normalize(translation) * freeCamComp.SpeedFactor * shiftSpeedFactor * dt;
 
 			posComp.Position += translation.x * right + translation.y * GetUp(rotComp.Quaternion) + translation.z * forward;
 		}
 
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-		float addedPitch	= dt * float(Input::IsKeyDown(EKey::KEY_DOWN) - Input::IsKeyDown(EKey::KEY_UP));
-		float addedYaw		= dt * float(Input::IsKeyDown(EKey::KEY_LEFT) - Input::IsKeyDown(EKey::KEY_RIGHT));
+		float addedPitch	= dt * float(InputActionSystem::IsActive("CAM_ROT_DOWN") - InputActionSystem::IsActive("CAM_ROT_UP"));
+		float addedYaw		= dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
 
-		if (Input::IsKeyDown(EKey::KEY_C))
+		if (InputActionSystem::IsActive("TOGGLE_MOUSE"))
 		{
 			if (!m_CIsPressed)
 			{
@@ -121,10 +124,17 @@ namespace LambdaEngine
 				m_CIsPressed		= true;
 			}
 		}
-		else if (Input::IsKeyUp(EKey::KEY_C))
+		else
 		{
 			m_CIsPressed = false;
 		}
+
+	#ifdef LAMBDA_DEBUG
+		if (Input::IsKeyDown(EKey::KEY_T))
+		{
+			RenderFrustum(entity);
+		}
+	#endif // LAMBDA_DEBUG
 
 		if (m_MouseEnabled)
 		{
@@ -152,5 +162,61 @@ namespace LambdaEngine
 		rotComp.Quaternion =
 			glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw
 			glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
+	}
+
+	void CameraSystem::RenderFrustum(Entity entity)
+	{
+		if (PhysicsRenderer::Get())
+		{
+			// This is a test code - This should probably not be done every tick
+			ECSCore* pECSCore = ECSCore::GetInstance();
+			auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
+			auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
+			auto& camComp = pECSCore->GetComponent<CameraComponent>(entity);
+
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+			const float aspect = (float)window->GetWidth() / (float)window->GetHeight();
+			const float tang = tan(glm::radians(camComp.FOV / 2));
+			const float nearHeight = camComp.NearPlane * tang;
+			const float nearWidth = nearHeight * aspect;
+			const float farHeight = camComp.FarPlane * tang;
+			const float farWidth = farHeight * aspect;
+
+			const glm::vec3 forward = GetForward(rotComp.Quaternion);
+			const glm::vec3 right = GetRight(rotComp.Quaternion);
+			const glm::vec3 up = -GetUp(rotComp.Quaternion);
+
+			TArray<glm::vec3> points(10);
+			const glm::vec3 nearPos = posComp.Position + forward * camComp.NearPlane;
+			const glm::vec3 farPos = posComp.Position + forward * camComp.FarPlane;
+			// Near TL -> Far TL
+			points[0] = nearPos - right * nearWidth + up * nearHeight;
+			points[1] = farPos - right * farWidth + up * farHeight;
+
+			// Near BL -> Far BL
+			points[2] = nearPos - right * nearWidth - up * nearHeight;
+			points[3] = farPos - right * farWidth - up * farWidth;
+
+			// Near TR -> Far TR
+			points[4] = nearPos + right * nearWidth + up * nearHeight;
+			points[5] = farPos + right * farWidth + up * farHeight;
+
+			// Near BR -> Far BR
+			points[6] = nearPos + right * nearWidth - up * nearHeight;
+			points[7] = farPos + right * farWidth - up * farHeight;
+
+			// Far TL -> Far TR
+			points[8] = farPos - right * farWidth + up * farHeight;
+			points[9] = farPos + right * farWidth + up * farHeight;
+
+			if (m_LineGroupEntityIDs.contains(entity))
+			{
+				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
+			}
+			else
+			{
+				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
+			}
+		}
 	}
 }

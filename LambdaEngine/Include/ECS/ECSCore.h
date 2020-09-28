@@ -8,8 +8,6 @@
 #include "ECS/System.h"
 #include "Utilities/IDGenerator.h"
 
-#include <typeindex>
-
 namespace LambdaEngine
 {
 	class EntitySubscriber;
@@ -56,6 +54,10 @@ namespace LambdaEngine
 
 		// RemoveEntity enqueues the removal of an entity, which is performed at the end of the current/next frame.
 		void RemoveEntity(Entity entity);
+
+		template <typename Comp>
+		void SetComponentOwner(const ComponentOwnership<Comp>& componentOwnership) { m_ComponentStorage.SetComponentOwner(componentOwnership); }
+		void UnsetComponentOwner(const ComponentType* pComponentType) { m_ComponentStorage.UnsetComponentOwner(pComponentType); }
 
 		void ScheduleJobASAP(const Job& job);
 		void ScheduleJobPostFrame(const Job& job);
@@ -113,7 +115,6 @@ namespace LambdaEngine
 		/*	Create component immediately, but hold off on registering and publishing it until the end of the frame.
 			This is to prevent concurrency issues. Publishing a component means pushing entity IDs to IDVectors,
 			and there is no guarentee that no one is simultaneously reading from these IDVectors. */
-		
 		m_ComponentsToRegister.PushBack({entity, Comp::Type()});
 		return m_ComponentStorage.AddComponent<Comp>(entity, component);
 	}

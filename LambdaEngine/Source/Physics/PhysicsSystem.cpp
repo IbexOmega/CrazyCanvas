@@ -45,17 +45,22 @@ namespace LambdaEngine
 	bool PhysicsSystem::Init()
 	{
 		{
-			// Subscribe to entities to register a destructor for collision components
-			auto onCollisionRemoved = std::bind(&PhysicsSystem::OnCollisionRemoved, this, std::placeholders::_1);
+			auto onCollisionRemoved = std::bind(&PhysicsSystem::OnCollisionEntityRemoved, this, std::placeholders::_1);
+
+			TransformComponents transformComponents;
+			transformComponents.Position.Permissions	= RW;
+			transformComponents.Scale.Permissions		= NDA;
+			transformComponents.Rotation.Permissions	= RW;
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{NDA, CollisionComponent::Type()}}, &m_MeshEntities, nullptr, onCollisionRemoved},
+				{{{NDA, CollisionComponent::Type()}}, {&transformComponents}, &m_CollisionEntities, nullptr, onCollisionRemoved},
 			};
 			systemReg.Phase = 1;
 
 			RegisterSystem(systemReg);
+			SetComponentOwner<CollisionComponent>({ std::bind(&PhysicsSystem::CollisionComponentDestructor, this, std::placeholders::_1) });
 		}
 
 		// PhysX setup
@@ -240,17 +245,21 @@ namespace LambdaEngine
 		FinalizeCollisionComponent(collisionCreateInfo, pShape);
 	}
 
-	void PhysicsSystem::RemoveCollisionActor(Entity entity)
+	void PhysicsSystem::CollisionComponentDestructor(CollisionComponent& collisionComponent)
 	{
-		OnCollisionRemoved(entity);
-		ECSCore::GetInstance()->RemoveComponent<CollisionComponent>(entity);
+		m_pScene->removeActor(*collisionComponent.pActor);
+		PX_RELEASE(collisionComponent.pActor);
 	}
 
-	void PhysicsSystem::OnCollisionRemoved(Entity entity)
+	void PhysicsSystem::OnCollisionEntityRemoved(Entity entity)
 	{
-		PxActor* pActor = m_Actors.IndexID(entity);
-		m_Actors.Pop(entity);
-		m_pScene->removeActor(*pActor);
+		// Remove the actor from the scene
+		CollisionComponent& collisionComponent = ECSCore::GetInstance()->GetComponent<CollisionComponent>(entity);
+		PxActor* pActor = collisionComponent.pActor;
+		if (pActor)
+		{
+			m_pScene->removeActor(*pActor);
+		}
 	}
 
 	void PhysicsSystem::FinalizeCollisionComponent(const CollisionCreateInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation)
@@ -266,11 +275,9 @@ namespace LambdaEngine
 		pBody->attachShape(*pShape);
 
 		m_pScene->addActor(*pBody);
-		m_Actors.PushBack(pBody, collisionCreateInfo.Entity);
-
 		pShape->release();
 
-		CollisionComponent collisionComponent = {};
+		CollisionComponent collisionComponent = { pBody };
 		ECSCore::GetInstance()->AddComponent<CollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
 	}
 }
