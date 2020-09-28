@@ -80,6 +80,8 @@ void SandboxState::Init()
 			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+
+			m_Entities.PushBack(entity);
 		}
 	}
 
@@ -166,8 +168,8 @@ void SandboxState::Init()
 			const glm::vec3 startPosition[3] =
 			{
 				{4.0f, 3.0f, -3.0f},
-				{-4.0f, 3.0f, 3.0f},
-				{0.0f, 3.0f, -3.0f},
+				{-4.0f, 3.0f, -3.0f},
+				{0.0f, 3.0f, 3.0f},
 			};
 
 			const float PI = glm::pi<float>();
@@ -203,6 +205,30 @@ void SandboxState::Init()
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
 			}
 		}
+	}
+
+	//Mirrors
+	{
+		MaterialProperties mirrorProperties = {};
+		mirrorProperties.Roughness = 0.0f;
+
+		MeshComponent meshComponent;
+		meshComponent.MeshGUID = GUID_MESH_QUAD;
+		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Mirror Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			mirrorProperties);
+
+		Entity entity = ECSCore::GetInstance()->CreateEntity();
+
+		pECS->AddComponent<PositionComponent>(entity, { {0.0f, 3.0f, -7.0f}, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
+		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.5f), true });
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
 }
 
