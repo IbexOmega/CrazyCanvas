@@ -184,12 +184,22 @@ namespace LambdaEngine
 			halfHeight = std::max(halfHeight, std::abs(position.y));
 		}
 
-		const glm::vec3& scale = collisionCreateInfo.Scale.Scale;
-		const float capsuleRadius = std::sqrtf(squareRadiusXZ) * std::max(scale.x, scale.z);
+		const float capsuleRadius = std::sqrtf(squareRadiusXZ);
+		halfHeight = std::max(0.0f, halfHeight - capsuleRadius);
 
-		PxShape* pCapsuleShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight * scale.y), *m_pMaterial);
-		const PxQuat uprightRotation = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
-		FinalizeCollisionComponent(collisionCreateInfo, pCapsuleShape, uprightRotation);
+		PxShape* pShape = nullptr;
+		PxQuat uprightRotation = PxQuat(PxIdentity);
+		if (halfHeight != 0.0f)
+		{
+			pShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight), *m_pMaterial);
+			uprightRotation = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
+		}
+		else
+		{
+			pShape = m_pPhysics->createShape(PxSphereGeometry(capsuleRadius), *m_pMaterial);
+		}
+
+		FinalizeCollisionComponent(collisionCreateInfo, pShape, uprightRotation);
 	}
 
 	void PhysicsSystem::CreateCollisionTriangleMesh(const CollisionCreateInfo& collisionCreateInfo)
@@ -226,6 +236,7 @@ namespace LambdaEngine
 
 		PxTriangleMeshGeometry triangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
 		PxShape* pShape = m_pPhysics->createShape(triangleMeshGeometry, *m_pMaterial);
+
 		FinalizeCollisionComponent(collisionCreateInfo, pShape);
 	}
 
