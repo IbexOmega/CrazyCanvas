@@ -63,33 +63,12 @@ void SandboxState::Init()
 	}
 
 	// Load scene
-	//{
-	//	TArray<MeshComponent> meshComponents;
-	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
-
-	//	const glm::vec3 position(0.0f, 0.0f, 0.0f);
-	//	const glm::vec3 scale(0.01f);
-
-	//	for (const MeshComponent& meshComponent : meshComponents)
-	//	{
-	//		Entity entity = ECSCore::GetInstance()->CreateEntity();
-	//		pECS->AddComponent<PositionComponent>(entity, { position, true });
-	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	//		m_Entities.PushBack(entity);
-	//	}
-	//}
-
-
-	//Scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Map/Scene.obj", meshComponents);
+		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
 
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
+		const glm::vec3 position(0.0f, 0.0f, 0.0f);
+		const glm::vec3 scale(0.01f);
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
@@ -101,6 +80,26 @@ void SandboxState::Init()
 			m_Entities.PushBack(entity);
 		}
 	}
+
+	//Scene
+	//{
+	//	TArray<MeshComponent> meshComponents;
+	//	ResourceManager::LoadSceneFromFile("Map/Scene.obj", meshComponents);
+
+	//	glm::vec3 position(0.0f, 0.0f, 0.0f);
+	//	glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+	//	glm::vec3 scale(1.0f);
+
+	//	for (const MeshComponent& meshComponent : meshComponents)
+	//	{
+	//		Entity entity = ECSCore::GetInstance()->CreateEntity();
+	//		pECS->AddComponent<PositionComponent>(entity, { position, true });
+	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	//		m_Entities.PushBack(entity);
+	//	}
+	//}
 
 	//Sphere Grid
 	{
