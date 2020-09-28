@@ -164,10 +164,16 @@ namespace LambdaEngine
 		}
 
 		const float capsuleRadius = std::sqrtf(squareRadiusXZ);
+		halfHeight = std::max(0.0f, halfHeight - capsuleRadius);
 
-		PxShape* pCapsuleShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight), *m_pMaterial);
+		PxShape* pShape = nullptr;
+		if (halfHeight != 0.0f)
+			pShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight), *m_pMaterial);
+		else
+			pShape = m_pPhysics->createShape(PxSphereGeometry(capsuleRadius), *m_pMaterial);
+
 		const PxQuat uprightRotation = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
-		return FinalizeCollisionComponent(collisionCreateInfo, pCapsuleShape, uprightRotation);
+		return FinalizeCollisionComponent(collisionCreateInfo, pShape, uprightRotation);
 	}
 
 	void PhysicsSystem::RemoveCollisionActor(Entity entity)

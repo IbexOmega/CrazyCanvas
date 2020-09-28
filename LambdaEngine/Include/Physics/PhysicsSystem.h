@@ -47,6 +47,7 @@ namespace LambdaEngine
 
 		CollisionComponent& CreateCollisionSphere(const CollisionCreateInfo& collisionCreateInfo);
 		CollisionComponent& CreateCollisionBox(const CollisionCreateInfo& collisionCreateInfo);
+		// CreateCollisionCapsule creates a sphere if no capsule can be made
 		CollisionComponent& CreateCollisionCapsule(const CollisionCreateInfo& collisionCreateInfo);
 
 		void RemoveCollisionActor(Entity entity);
