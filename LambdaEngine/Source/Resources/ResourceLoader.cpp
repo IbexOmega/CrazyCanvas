@@ -266,6 +266,12 @@ namespace LambdaEngine
 			}
 		}
 
+		// DELETES ALL ANIMATIONS HERE FOR NOW TO AVOID MEMORY LEAKS -> Needs system for this
+		for (Animation* pAnimation : animations)
+		{
+			SAFEDELETE(pAnimation);
+		}
+
 		return meshes[biggest];
 	}
 
