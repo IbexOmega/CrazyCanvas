@@ -129,26 +129,6 @@ namespace LambdaEngine
 			m_CIsPressed = false;
 		}
 
-		if (Input::IsKeyDown(EKey::KEY_F))
-		{
-			TArray<glm::vec3> points(2);
-
-			static uint32 xPointsID = UINT32_MAX;
-			points[0] = posComp.Position;
-			points[1] = posComp.Position + GetRight(rotComp.Quaternion);
-			xPointsID = PhysicsRenderer::Get()->UpdateLineGroup(xPointsID, points, {1.0f, 0.0f, 0.0f});
-
-			static uint32 yPointsID = UINT32_MAX;
-			points[0] = posComp.Position;
-			points[1] = posComp.Position + GetUp(rotComp.Quaternion);
-			yPointsID = PhysicsRenderer::Get()->UpdateLineGroup(yPointsID, points, {0.0f, 1.0f, 0.0f});
-
-			static uint32 zPointsID = UINT32_MAX;
-			points[0] = posComp.Position;
-			points[1] = posComp.Position + GetForward(rotComp.Quaternion);
-			zPointsID = PhysicsRenderer::Get()->UpdateLineGroup(zPointsID, points, {0.0f, 0.0f, 1.0f});
-		}
-
 		if (Input::IsKeyDown(EKey::KEY_T))
 		{
 			RenderFrustum(entity);
@@ -184,6 +164,7 @@ namespace LambdaEngine
 
 	void CameraSystem::RenderFrustum(Entity entity)
 	{
+		// Returns null if it isn't initilized
 		if (PhysicsRenderer::Get())
 		{
 			// This is a test code - This should probably not be done every tick

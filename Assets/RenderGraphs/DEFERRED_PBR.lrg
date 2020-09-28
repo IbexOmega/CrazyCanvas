@@ -500,50 +500,6 @@
             ]
         },
         {
-            "name": "FXAA",
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "trigger_type": "EVERY",
-            "frame_delay": 0,
-            "frame_offset": 0,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
-            "z_dim_var": 1.0,
-            "draw_type": "FULLSCREEN_QUAD",
-            "depth_test_enabled": false,
-            "cull_mode": "CULL_MODE_BACK",
-            "polygon_mode": "POLYGON_MODE_FILL",
-            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "/FullscreenQuad.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "/PostProcess\\FXAA.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "SKYBOX_PASS"
-                },
-                {
-                    "name": "BACK_BUFFER_TEXTURE",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": ""
-                }
-            ]
-        },
-        {
             "name": "SKYBOX_PASS",
             "type": "GRAPHICS",
             "custom_renderer": false,
@@ -598,6 +554,50 @@
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SHADING_PASS"
+                }
+            ]
+        },
+        {
+            "name": "FXAA",
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "trigger_type": "EVERY",
+            "frame_delay": 0,
+            "frame_offset": 0,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 1.0,
+            "draw_type": "FULLSCREEN_QUAD",
+            "depth_test_enabled": false,
+            "cull_mode": "CULL_MODE_BACK",
+            "polygon_mode": "POLYGON_MODE_FILL",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "/Helpers\\FullscreenQuad.vert",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "/PostProcess\\FXAA.frag"
+            },
+            "resource_states": [
+                {
+                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "SKYBOX_PASS"
+                },
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": ""
                 }
             ]
         },
