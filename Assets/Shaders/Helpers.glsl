@@ -117,7 +117,7 @@ vec3 GammaCorrection(vec3 color, float gamma)
 float GoldNoise(vec3 x, float seed, float min, float max)
 {
 	const float BASE_SEED   = 10000.0f;
-	const float GOLD_PHI    = 1.61803398874989484820459 * 00000.1; // Golden Ratio   
+	const float GOLD_PHI    = 1.61803398874989484820459 * 00000.1; // Golden Ratio
 	const float GOLD_PI     = 3.14159265358979323846264 * 00000.1; // PI
 	const float GOLD_SQ2    = 1.41421356237309504880169 * 10000.0; // Square Root of Two
 	const float GOLD_E      = 2.71828182846;
@@ -125,13 +125,13 @@ float GoldNoise(vec3 x, float seed, float min, float max)
 	return mix(min, max, fract(tan(distance(x * (BASE_SEED + seed + GOLD_PHI), vec3(GOLD_PHI, GOLD_PI, GOLD_E))) * GOLD_SQ2) * 0.5f + 0.5f);
 }
 
-void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb) 
-{ 
-	if (abs(N.x) > abs(N.y))  	Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
-	else 						Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z); 
-	//Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z); 
-	Nb = cross(N, Nt); 
-} 
+void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb)
+{
+	if (abs(N.x) > abs(N.y))  	Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z);
+	else 						Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z);
+	//Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z);
+	Nb = cross(N, Nt);
+}
 
 vec3 ReflectanceDirection(vec3 reflDir, vec3 Rt, vec3 Rb, float roughness, vec2 uniformRandom)
 {
@@ -147,21 +147,21 @@ vec3 ReflectanceDirection(vec3 reflDir, vec3 Rt, vec3 Rb, float roughness, vec2 
 
 	vec3 coneVector = vec3(sinTheta * cos(phi), z, sinTheta * sin(phi));
 	return vec3(
-		coneVector.x * Rb.x + coneVector.y * reflDir.x + coneVector.z * Rt.x, 
-		coneVector.x * Rb.y + coneVector.y * reflDir.y + coneVector.z * Rt.y, 
-		coneVector.x * Rb.z + coneVector.y * reflDir.z + coneVector.z * Rt.z); 
+		coneVector.x * Rb.x + coneVector.y * reflDir.x + coneVector.z * Rt.x,
+		coneVector.x * Rb.y + coneVector.y * reflDir.y + coneVector.z * Rt.y,
+		coneVector.x * Rb.z + coneVector.y * reflDir.z + coneVector.z * Rt.z);
 }
 
 vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi)
 {
-	return vec3(sinTheta * cos(phi), 
-				sinTheta * sin(phi), 
+	return vec3(sinTheta * cos(phi),
+				sinTheta * sin(phi),
 				cosTheta);
 }
 
 vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi, vec3 x, vec3 y, vec3 z)
 {
-	return 	sinTheta * cos(phi) * x + 
+	return 	sinTheta * cos(phi) * x +
 			sinTheta * sin(phi) * y +
 			cosTheta * z;
 }
@@ -176,7 +176,7 @@ bool IsSameHemisphere(vec3 w_0, vec3 w_1)
 	return w_0.z * w_1.z > 0.0f;
 }
 
-float RadicalInverse_VdC(uint bits) 
+float RadicalInverse_VdC(uint bits)
 {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
@@ -189,7 +189,7 @@ float RadicalInverse_VdC(uint bits)
 vec2 Hammersley(uint i, uint N)
 {
 	return vec2(float(i) / float(N), RadicalInverse_VdC(i));
-}  
+}
 
 vec2 DirToOct(vec3 normal)
 {
@@ -216,7 +216,7 @@ uint dirToOct(vec3 normal)
 
 vec3 octToDir(uint octo)
 {
-	vec2 e = unpackSnorm2x16(octo) ; 
+	vec2 e = unpackSnorm2x16(octo) ;
 	vec3 v = vec3(e, 1.0f - abs(e.x) - abs(e.y));
 	if (v.z < 0.0f)
 		v.xy = (1.0f - abs(v.yx)) * (step(0.0f, v.xy) * 2.0f - vec2(1.0f));
@@ -344,7 +344,7 @@ SShapeSample UniformSampleUnitSphere(vec2 u)
 SShapeSample UniformSampleSphereSurface(vec3 position, float radius, vec2 u)
 {
 	SShapeSample shapeSample = UniformSampleUnitSphere(u);
-	
+
 	shapeSample.Position	 = position + radius * shapeSample.Normal; //The normal as returned from UniformSampleUnitSphere can be interpreted as a point on the surface
 	shapeSample.PDF 		 /= (radius * radius);
 	return shapeSample;
@@ -355,7 +355,7 @@ float PowerHeuristic(float nf, float fPDF, float ng, float gPDF)
 	float f = nf * fPDF;
 	float fSqrd = f * f;
 	float g = ng * gPDF;
-	
+
 	return (fSqrd) / (fSqrd + g * g);
 }
 
@@ -365,7 +365,7 @@ float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
 	float f = nf * fPDF;
 	float fSqrd = f * f;
 	float g = ng * gPDF;
-	
+
 	return (nf * f) / (fSqrd + g * g);
 }
 
@@ -382,19 +382,31 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
-	float bias = max(2.0 * (1.0 - dot(normalize(fragNormal), normalize(lightDir))), 0.25);  
+	float bias = max(2.0 * (1.0 - dot(normalize(fragNormal), normalize(lightDir))), 0.25);
     return currentDepth - bias > closestDepth ? 1.0 : 0.0;
 }
 
 float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, float farPlane)
 {
     vec3 fragToLight  = fragPos - lightPos;
-
-	float closestDepth = texture(shadowMap, fragToLight).r * farPlane;
 	float currentDepth = length(fragToLight);
 
-	float bias = 0.2;
-    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	float shadow	= 0.0;
+	float bias		= 0.2;
+	float offset	= 0.1;
+	int samples	= 20;
+	float diskRadius = 0.05;
+	
+	for(int i = 0; i < samples; ++i)
+	{
+		float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+		closestDepth *= farPlane;   // undo mapping [0;1]
+		if(currentDepth - bias > closestDepth)
+			shadow += 1.0;
+	}
+	shadow /= float(samples);  
+
+    return shadow;
 }
 
 float CalculateLuminance(vec3 color)

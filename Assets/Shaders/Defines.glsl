@@ -29,6 +29,16 @@ const float MAX_TEMPORAL_FRAMES = 256.0f;
 #define HIT_MASK_GAME_OBJECT    0x01
 #define HIT_MASK_LIGHT          0x02
 
+// Used in PointShadowDepthTest for PCF soft shadows
+const vec3 sampleOffsetDirections[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);  
+
 struct SPositions
 {
 	vec3 WorldPos; 
