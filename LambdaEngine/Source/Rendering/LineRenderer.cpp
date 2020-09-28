@@ -216,10 +216,6 @@ namespace LambdaEngine
 		m_Verticies.PushBack(toData);
 	}
 
-	void LineRenderer::DrawContactPoint(const glm::vec3& PointOnB, const glm::vec3& normalOnB, float distance, int lifeTime, const glm::vec3& color)
-	{
-	}
-
 	bool LineRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
