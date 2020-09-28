@@ -27,6 +27,8 @@
 
 #include "Math/Random.h"
 
+
+
 using namespace LambdaEngine;
 
 SandboxState::SandboxState()
@@ -59,55 +61,36 @@ void SandboxState::Init()
 		cameraDesc.Height = window->GetHeight();
 		cameraDesc.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane");
 		cameraDesc.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane");
-		CreateFreeCameraEntity(cameraDesc);
+		Entity camer = CreateFreeCameraEntity(cameraDesc);
 	}
 
-	// Load scene
-	//{
-	//	TArray<MeshComponent> meshComponents;
-	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+	// Scene
+	{
+		TArray<MeshComponent> meshComponents;
+		ResourceManager::LoadSceneFromFile("Map/Scene.obj", meshComponents);
 
-	//	const glm::vec3 position(0.0f, 0.0f, 0.0f);
-	//	const glm::vec3 scale(0.01f);
+		glm::vec3 position(0.0f, 0.0f, 0.0f);
+		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+		glm::vec3 scale(1.0f);
 
-	//	for (const MeshComponent& meshComponent : meshComponents)
-	//	{
-	//		Entity entity = ECSCore::GetInstance()->CreateEntity();
-	//		pECS->AddComponent<PositionComponent>(entity, { position, true });
-	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	//		m_Entities.PushBack(entity);
-	//	}
-	//}
-
-
-	//Scene
-	//{
-	//	TArray<MeshComponent> meshComponents;
-	//	ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
-
-	//	glm::vec3 position(0.0f, 0.0f, 0.0f);
-	//	glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-	//	glm::vec3 scale(1.0f);
-
-	//	for (const MeshComponent& meshComponent : meshComponents)
-	//	{
-	//		Entity entity = ECSCore::GetInstance()->CreateEntity();
-	//		pECS->AddComponent<PositionComponent>(entity, { position, true });
-	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	//	}
-	//}
+		for (const MeshComponent& meshComponent : meshComponents)
+		{
+			Entity entity = ECSCore::GetInstance()->CreateEntity();
+			pECS->AddComponent<PositionComponent>(entity, { position, true });
+			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			m_Entities.PushBack(entity);
+		}
+	}
 
 	//Sphere Grid
 	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
-		uint32 gridRadius = 4;
+		uint32 gridRadius = 5;
 
-		for (uint32 y = 0; y < gridRadius * 0.5; y++)
+		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
 
@@ -117,8 +100,8 @@ void SandboxState::Init()
 
 				MaterialProperties materialProperties;
 				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness = 0.4f;
-				materialProperties.Metallic = 0.0f;
+				materialProperties.Roughness = roughness;
+				materialProperties.Metallic = metallic;
 
 				MeshComponent sphereMeshComp = {};
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
@@ -131,56 +114,41 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				for (uint32 z = 0; z < gridRadius; z++)
-				{
-					glm::vec3 position(-4.0 * 0.5f + x * 2.0f, 1.0f + y * 4.0f, -2.0f + z * 2.0f);
-					glm::vec3 scale(1.0f);
+				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
+				glm::vec3 scale(1.0f);
 
-					Entity entity = pECS->CreateEntity();
-					pECS->AddComponent<PositionComponent>(entity, { position, true });
-					pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-					pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-					pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-					m_Entities.PushBack(entity);
+				Entity entity = pECS->CreateEntity();
+				m_Entities.PushBack(entity);
+				pECS->AddComponent<PositionComponent>(entity, { position, true });
+				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
 
 
-					glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
-					transform *= glm::toMat4(glm::identity<glm::quat>());
-					transform = glm::scale(transform, scale);
-				}
+				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
+				transform *= glm::toMat4(glm::identity<glm::quat>());
+				transform = glm::scale(transform, scale);
 			}
 		}
 
 		// Directional Light
 		{
-			uint32 gun = ResourceManager::LoadMeshFromFile("gun.obj");
-			MaterialProperties materialProperties;
-			materialProperties.Albedo = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-			materialProperties.Roughness = 0.01f;
-			materialProperties.Metallic = 0.f;
-
-			MeshComponent sphereMeshComp = {};
-			sphereMeshComp.MeshGUID = gun;
-			sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"DIR_LIGHT",
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				materialProperties);
-
 			m_DirLight = ECSCore::GetInstance()->CreateEntity();
-			glm::vec3 direction(5.0f, -10.0f, -5.0f);
-			pECS->AddComponent<PositionComponent>(m_DirLight, { glm::vec3(-5.0f, 10.0f, 5.0f), true });
-			pECS->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(glm::normalize(direction), g_DefaultUp), true });
-			pECS->AddComponent<ScaleComponent>(m_DirLight, { glm::vec3(2.0f), true });
-			pECS->AddComponent<MeshComponent>(m_DirLight, sphereMeshComp);
-			pECS->AddComponent<DirectionalLightComponent>(m_DirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
+			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { {0.f, 0.f, 0.f}, true });
+			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(-g_DefaultRight - g_DefaultUp, g_DefaultUp), true });
+			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight,
+				DirectionalLightComponent{
+					.ColorIntensity = {1.0f, 1.0f, 1.0f, 15.0f},
+					.frustumWidth = 20.0f,
+					.frustumHeight = 20.0f,
+					.frustumZNear = -20.0f,
+					.frustumZFar = 20.0f,
+				}
+			);
 		}
 
 		// Add PointLights
-		/*{
+		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
@@ -191,9 +159,9 @@ void SandboxState::Init()
 
 			const glm::vec3 startPosition[3] =
 			{
-				{1.0f, 3.0f, 0.0f},
-				{0.0f, 1.0f, 0.0f},
-				{0.0f, 0.1f, 1.0f},
+				{4.0f, 0.0f, 5.0f},
+				{-4.0f, 0.0f, 5.0f},
+				{0.0f, 0.0f, 6.0f},
 			};
 
 			const float PI = glm::pi<float>();
@@ -201,6 +169,7 @@ void SandboxState::Init()
 			for (uint32 i = 0; i < 3; i++)
 			{
 				float positive = std::pow(-1.0, i);
+
 
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;
@@ -227,39 +196,8 @@ void SandboxState::Init()
 				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
 			}
-		}*/
-
-
-		//Mirrors
-		{
-			MaterialProperties mirrorProperties = {};
-			mirrorProperties.Roughness = 1.0f;
-
-			MeshComponent meshComponent;
-			meshComponent.MeshGUID = GUID_MESH_QUAD;
-			meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"Mirror Material",
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				mirrorProperties);
-
-
-			Entity entity = ECSCore::GetInstance()->CreateEntity();
-
-			pECS->AddComponent<PositionComponent>(entity, { glm::vec3(0.f), true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(40.0f), true });
-			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
-	// Load Scene SceneManager::Get("SceneName").Load()
-
-	// Use HelperClass to create additional entities
-
-	// EntityIndex index = HelperClass::CreatePlayer(
 }
 
 void SandboxState::Resume()
