@@ -1381,6 +1381,26 @@ namespace LambdaEngine
 			ImGui::SameLine();
 			ImGui::Checkbox(("##Override Recommended Binding Types" + pRenderStage->Name).c_str(), &pRenderStage->OverrideRecommendedBindingType);
 
+			// Render options for changing the dimension of the render stage.
+			{
+				float nextItemWidth = ImGui::CalcTextSize("         ").x + ImGui::GetFrameHeight() * 2 + 4.0f;
+				int32 selectedXYZOptions[3];
+				selectedXYZOptions[0] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.XDimType);
+				selectedXYZOptions[1] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.YDimType);
+				selectedXYZOptions[2] = DimensionTypeToDimensionTypeIndex(pRenderStage->Parameters.ZDimType);
+				float32 valuesXYZ[3];
+				valuesXYZ[0] = pRenderStage->Parameters.XDimVariable;
+				valuesXYZ[1] = pRenderStage->Parameters.YDimVariable;
+				valuesXYZ[2] = pRenderStage->Parameters.ZDimVariable;
+				RenderDimChangeOptions(pRenderStage->Type, selectedXYZOptions, valuesXYZ, nextItemWidth);
+				pRenderStage->Parameters.XDimType = DimensionTypeIndexToDimensionType(selectedXYZOptions[0]);
+				pRenderStage->Parameters.YDimType = DimensionTypeIndexToDimensionType(selectedXYZOptions[1]);
+				pRenderStage->Parameters.ZDimType = DimensionTypeIndexToDimensionType(selectedXYZOptions[2]);
+				pRenderStage->Parameters.XDimVariable = valuesXYZ[0];
+				pRenderStage->Parameters.YDimVariable = valuesXYZ[1];
+				pRenderStage->Parameters.ZDimVariable = valuesXYZ[2];
+			}
+
 			imnodes::EndNodeTitleBar();
 
 			String resourceStateToRemove = "";
@@ -1756,13 +1776,8 @@ namespace LambdaEngine
 		static char renderStageNameBuffer[RENDER_STAGE_NAME_BUFFER_LENGTH];
 		static bool customRenderer = false;
 
-		static int32	selectedXOption	= 2;
-		static int32	selectedYOption	= 2;
-		static int32	selectedZOption	= 0;
-
-		static float32	xVariable = 1.0f;
-		static float32	yVariable = 1.0f;
-		static float32	zVariable = 1.0f;
+		static int32 selectedXYZOptions[3]	= { 2, 2, 0 };			// Holds options for the x, y, and z dimensions.
+		static float valuesXYZ[3]			= { 1.f, 1.f, 1.f };	// Holds the value of the x, y, and z dimension. 
 
 		ImGui::SetNextWindowSize(ImVec2(360, 500), ImGuiCond_Once);
 		if (ImGui::BeginPopupModal("Add Render Stage ##Popup"))
@@ -1782,126 +1797,7 @@ namespace LambdaEngine
 				//Render Pipeline State specific options
 				if (!customRenderer)
 				{
-					if (m_CurrentlyAddingRenderStage == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
-					{
-						ImGui::Text("Dimensions");
-
-						ImGuiStyle& style = ImGui::GetStyle();
-						static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[0]).x + ImGui::GetFrameHeight() + 10;
-
-						ImGui::Text("Width:  ");
-						ImGui::SameLine();
-						ImGui::PushItemWidth(maxOptionTextSize);
-						ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 3);
-						ImGui::PopItemWidth();
-
-						if (selectedXOption == 0 || selectedXOption == 2)
-						{
-							ImGui::SameLine();
-							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
-						}
-
-						ImGui::Text("Height: ");
-						ImGui::SameLine();
-						ImGui::PushItemWidth(maxOptionTextSize);
-						ImGui::Combo("##Render Stage Y Option", &selectedYOption, DIMENSION_NAMES, 3);
-						ImGui::PopItemWidth();
-
-						if (selectedYOption == 0 || selectedYOption == 2)
-						{
-							ImGui::SameLine();
-							ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
-						}
-					}
-					else if (m_CurrentlyAddingRenderStage == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
-					{
-						ImGui::Text("Work Group Size");
-
-						ImGuiStyle& style = ImGui::GetStyle();
-						static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[3]).x + ImGui::GetFrameHeight() + 10;
-
-						ImGui::Text("X: ");
-						ImGui::SameLine();
-						ImGui::PushItemWidth(maxOptionTextSize);
-						ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 4);
-						ImGui::PopItemWidth();
-
-						if (selectedXOption == 0 || selectedXOption == 2 || selectedXOption == 3)
-						{
-							ImGui::SameLine();
-							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
-						}
-
-						if (selectedXOption != 3)
-						{
-							ImGui::Text("Y: ");
-							ImGui::SameLine();
-							ImGui::PushItemWidth(maxOptionTextSize);
-							ImGui::Combo("##Render Stage Y Option", &selectedYOption, DIMENSION_NAMES, 3);
-							ImGui::PopItemWidth();
-
-							if (selectedYOption == 0 || selectedYOption == 2)
-							{
-								ImGui::SameLine();
-								ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
-							}
-
-							ImGui::Text("Z: ");
-							ImGui::SameLine();
-							ImGui::PushItemWidth(maxOptionTextSize);
-							ImGui::Combo("##Render Stage Z Option", &selectedZOption, DIMENSION_NAMES, 2);
-							ImGui::PopItemWidth();
-
-							if (selectedZOption == 0 || selectedZOption == 2)
-							{
-								ImGui::SameLine();
-								ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
-							}
-						}
-					}
-					else if (m_CurrentlyAddingRenderStage == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
-					{
-						ImGui::Text("Ray Gen. Dimensions");
-
-						ImGuiStyle& style = ImGui::GetStyle();
-						static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[0]).x + ImGui::GetFrameHeight() + 10;
-
-						ImGui::Text("Width: ");
-						ImGui::SameLine();
-						ImGui::PushItemWidth(maxOptionTextSize);
-						ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 3);
-						ImGui::PopItemWidth();
-
-						if (selectedXOption == 0 || selectedXOption == 2)
-						{
-							ImGui::SameLine();
-							ImGui::InputFloat("##Render Stage X Variable", &xVariable);
-						}
-
-						ImGui::Text("Height: ");
-						ImGui::SameLine();
-						ImGui::PushItemWidth(maxOptionTextSize);
-						ImGui::Combo("##Render Stage Y Option", &selectedYOption, DIMENSION_NAMES, 3);
-						ImGui::PopItemWidth();
-
-						if (selectedYOption == 0 || selectedYOption == 2)
-						{
-							ImGui::SameLine();
-							ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
-						}
-
-						ImGui::Text("Depth: ");
-						ImGui::SameLine();
-						ImGui::PushItemWidth(maxOptionTextSize);
-						ImGui::Combo("##Render Stage Z Option", &selectedZOption, DIMENSION_NAMES, 2);
-						ImGui::PopItemWidth();
-
-						if (selectedZOption == 0 || selectedZOption == 2)
-						{
-							ImGui::SameLine();
-							ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
-						}
-					}
+					RenderDimChangeOptions(m_CurrentlyAddingRenderStage, selectedXYZOptions, valuesXYZ, 0.f);
 				}
 
 				bool done = false;
@@ -1940,13 +1836,13 @@ namespace LambdaEngine
 					newRenderStage.Type					= m_CurrentlyAddingRenderStage;
 					newRenderStage.CustomRenderer		= customRenderer;
 
-					newRenderStage.Parameters.XDimType		= DimensionTypeIndexToDimensionType(selectedXOption);
-					newRenderStage.Parameters.YDimType		= DimensionTypeIndexToDimensionType(selectedYOption);
-					newRenderStage.Parameters.ZDimType		= DimensionTypeIndexToDimensionType(selectedZOption);
+					newRenderStage.Parameters.XDimType		= DimensionTypeIndexToDimensionType(selectedXYZOptions[0]);
+					newRenderStage.Parameters.YDimType		= DimensionTypeIndexToDimensionType(selectedXYZOptions[1]);
+					newRenderStage.Parameters.ZDimType		= DimensionTypeIndexToDimensionType(selectedXYZOptions[2]);
 
-					newRenderStage.Parameters.XDimVariable	= xVariable;
-					newRenderStage.Parameters.YDimVariable	= yVariable;
-					newRenderStage.Parameters.ZDimVariable	= zVariable;
+					newRenderStage.Parameters.XDimVariable	= valuesXYZ[0];
+					newRenderStage.Parameters.YDimVariable	= valuesXYZ[1];
+					newRenderStage.Parameters.ZDimVariable	= valuesXYZ[2];
 
 					s_NextAttributeID += 2;
 
@@ -1971,12 +1867,12 @@ namespace LambdaEngine
 				{
 					ZERO_MEMORY(renderStageNameBuffer, RENDER_STAGE_NAME_BUFFER_LENGTH);
 					customRenderer = false;
-					selectedXOption = 2;
-					selectedYOption = 2;
-					selectedZOption = 0;
-					xVariable = 1.0f;
-					yVariable = 1.0f;
-					zVariable = 1.0f;
+					selectedXYZOptions[0] = 2;
+					selectedXYZOptions[1] = 2;
+					selectedXYZOptions[2] = 0;
+					valuesXYZ[0] = 1.0f;
+					valuesXYZ[1] = 1.0f;
+					valuesXYZ[2] = 1.0f;
 					m_CurrentlyAddingRenderStage = EPipelineStateType::PIPELINE_STATE_TYPE_NONE;
 					ImGui::CloseCurrentPopup();
 				}
@@ -3013,5 +2909,153 @@ namespace LambdaEngine
 		}
 
 		InitDefaultResources();
+	}
+
+	void RenderGraphEditor::RenderDimChangeOptions(EPipelineStateType pipelineStateType, int32 selectedXYZOptions[3], float32 valuesXYZ[3], float inputWidth)
+	{
+		int32& selectedXOption	= selectedXYZOptions[0];
+		int32& selectedYOption	= selectedXYZOptions[1];
+		int32& selectedZOption	= selectedXYZOptions[2];
+
+		float& xVariable		= valuesXYZ[0];
+		float& yVariable		= valuesXYZ[1];
+		float& zVariable		= valuesXYZ[2];
+
+		if (pipelineStateType == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
+		{
+			ImGui::Text("Dimensions");
+
+			ImGuiStyle& style = ImGui::GetStyle();
+			static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[0]).x + ImGui::GetFrameHeight() + 10;
+
+			ImGui::Text("Width:  ");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(maxOptionTextSize);
+			ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 3);
+			ImGui::PopItemWidth();
+
+			if (selectedXOption == 0 || selectedXOption == 2)
+			{
+				ImGui::SameLine();
+				if(inputWidth > 0) 
+					ImGui::SetNextItemWidth(inputWidth);
+				ImGui::InputFloat("##Render Stage X Variable", &xVariable);
+			}
+
+			ImGui::Text("Height: ");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(maxOptionTextSize);
+			ImGui::Combo("##Render Stage Y Option", &selectedYOption, DIMENSION_NAMES, 3);
+			ImGui::PopItemWidth();
+
+			if (selectedYOption == 0 || selectedYOption == 2)
+			{
+				ImGui::SameLine();
+				if (inputWidth > 0)
+					ImGui::SetNextItemWidth(inputWidth);
+				ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
+			}
+		}
+		else if (pipelineStateType == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
+		{
+			ImGui::Text("Work Group Size");
+
+			ImGuiStyle& style = ImGui::GetStyle();
+			static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[3]).x + ImGui::GetFrameHeight() + 10;
+
+			ImGui::Text("X: ");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(maxOptionTextSize);
+			ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 4);
+			ImGui::PopItemWidth();
+
+			if (selectedXOption == 0 || selectedXOption == 2 || selectedXOption == 3)
+			{
+				ImGui::SameLine();
+				if (inputWidth > 0)
+					ImGui::SetNextItemWidth(inputWidth);
+				ImGui::InputFloat("##Render Stage X Variable", &xVariable);
+			}
+
+			if (selectedXOption != 3)
+			{
+				ImGui::Text("Y: ");
+				ImGui::SameLine();
+				ImGui::PushItemWidth(maxOptionTextSize);
+				ImGui::Combo("##Render Stage Y Option", &selectedYOption, DIMENSION_NAMES, 3);
+				ImGui::PopItemWidth();
+
+				if (selectedYOption == 0 || selectedYOption == 2)
+				{
+					ImGui::SameLine();
+					if (inputWidth > 0)
+						ImGui::SetNextItemWidth(inputWidth);
+					ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
+				}
+
+				ImGui::Text("Z: ");
+				ImGui::SameLine();
+				ImGui::PushItemWidth(maxOptionTextSize);
+				ImGui::Combo("##Render Stage Z Option", &selectedZOption, DIMENSION_NAMES, 2);
+				ImGui::PopItemWidth();
+
+				if (selectedZOption == 0 || selectedZOption == 2)
+				{
+					ImGui::SameLine();
+					if (inputWidth > 0)
+						ImGui::SetNextItemWidth(inputWidth);
+					ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
+				}
+			}
+		}
+		else if (pipelineStateType == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+		{
+			ImGui::Text("Ray Gen. Dimensions");
+
+			ImGuiStyle& style = ImGui::GetStyle();
+			static float maxOptionTextSize = style.ItemInnerSpacing.x + ImGui::CalcTextSize(DIMENSION_NAMES[0]).x + ImGui::GetFrameHeight() + 10;
+
+			ImGui::Text("Width: ");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(maxOptionTextSize);
+			ImGui::Combo("##Render Stage X Option", &selectedXOption, DIMENSION_NAMES, 3);
+			ImGui::PopItemWidth();
+
+			if (selectedXOption == 0 || selectedXOption == 2)
+			{
+				ImGui::SameLine();
+				if (inputWidth > 0)
+					ImGui::SetNextItemWidth(inputWidth);
+				ImGui::InputFloat("##Render Stage X Variable", &xVariable);
+			}
+
+			ImGui::Text("Height: ");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(maxOptionTextSize);
+			ImGui::Combo("##Render Stage Y Option", &selectedYOption, DIMENSION_NAMES, 3);
+			ImGui::PopItemWidth();
+
+			if (selectedYOption == 0 || selectedYOption == 2)
+			{
+				ImGui::SameLine();
+				if (inputWidth > 0)
+					ImGui::SetNextItemWidth(inputWidth);
+				ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
+			}
+
+			ImGui::Text("Depth: ");
+			ImGui::SameLine();
+			ImGui::PushItemWidth(maxOptionTextSize);
+			ImGui::Combo("##Render Stage Z Option", &selectedZOption, DIMENSION_NAMES, 2);
+			ImGui::PopItemWidth();
+
+			if (selectedZOption == 0 || selectedZOption == 2)
+			{
+				ImGui::SameLine();
+				if (inputWidth > 0)
+					ImGui::SetNextItemWidth(inputWidth);
+				ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
+			}
+		}
 	}
 }

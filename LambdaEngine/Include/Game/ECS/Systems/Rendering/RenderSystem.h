@@ -37,6 +37,7 @@ namespace LambdaEngine
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
+	class PhysicsRenderer;
 
 	struct RenderGraphStructureDesc;
 
@@ -243,6 +244,8 @@ namespace LambdaEngine
 		IDVector				m_PointLightEntities;
 		IDVector				m_RenderableEntities;
 		IDVector				m_CameraEntities;
+
+		PhysicsRenderer*		m_pPhysicsRenderer	= nullptr;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;

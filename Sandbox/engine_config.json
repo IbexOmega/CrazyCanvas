@@ -7,6 +7,7 @@
   "RayTracingEnabled": false,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
+  "EnablePhysicsRenderer": false,
   "RenderGraphName": "SHADOWMAP.lrg",
   "ShowDemo": false,
   "Debugging": false,
