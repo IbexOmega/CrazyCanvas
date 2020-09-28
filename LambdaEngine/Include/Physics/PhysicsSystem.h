@@ -45,15 +45,27 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime) override final;
 
-		void CreateCollisionComponent(const CollisionCreateInfo& collisionCreateInfo);
+		CollisionComponent& CreateCollisionSphere(const CollisionCreateInfo& collisionCreateInfo);
+		CollisionComponent& CreateCollisionBox(const CollisionCreateInfo& collisionCreateInfo);
+		// CreateCollisionCapsule creates a sphere if no capsule can be made
+		CollisionComponent& CreateCollisionCapsule(const CollisionCreateInfo& collisionCreateInfo);
+
+		void RemoveCollisionActor(Entity entity);
 
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
+
+	private:
+		void OnCollisionRemoved(Entity entity);
+		// FinalizeCollisionComponent creates an actor and attaches the shape to it. An empty collision component
+		// is returned.
+		CollisionComponent& FinalizeCollisionComponent(const CollisionCreateInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation = PxQuat(PxIDENTITY::PxIdentity));
 
 	private:
 		static PhysicsSystem s_Instance;
 
 	private:
 		IDVector m_MeshEntities;
+		IDDVector<PxActor*> m_Actors;
 
 		PxDefaultAllocator		m_Allocator;
 		PxDefaultErrorCallback	m_ErrorCallback;
