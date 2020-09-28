@@ -4,7 +4,7 @@
     1080
   ],
   "FixedTimestep": 60,
-  "RayTracingEnabled": true,
+  "RayTracingEnabled": false,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
   "EnablePhysicsRenderer": false,
