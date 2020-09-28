@@ -28,11 +28,11 @@ namespace LambdaEngine
 		glm::vec4 Color;
 	};
 
-	class PhysicsRenderer : public ICustomRenderer
+	class LineRenderer : public ICustomRenderer
 	{
 	public:
-		PhysicsRenderer();
-		virtual ~PhysicsRenderer();
+		LineRenderer();
+		virtual ~LineRenderer();
 
 		bool init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
 
@@ -83,7 +83,7 @@ namespace LambdaEngine
 		void DrawContactPoint(const glm::vec3& PointOnB, const glm::vec3& normalOnB, float distance, int lifeTime, const glm::vec3& color);
 
 	public:
-		static PhysicsRenderer* Get();
+		static LineRenderer* Get();
 
 	private:
 		bool CreateCopyCommandList();
@@ -130,7 +130,7 @@ namespace LambdaEngine
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 
 	private:
-		static PhysicsRenderer* s_pInstance;
+		static LineRenderer* s_pInstance;
 	};
 
 }
