@@ -369,6 +369,7 @@ float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
 	return (nf * f) / (fSqrd + g * g);
 }
 
+#define ONE_NINTH 0.1111111
 float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir, sampler2D shadowMap)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -382,8 +383,21 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
-	float bias = max(2.0 * (1.0 - dot(normalize(fragNormal), normalize(lightDir))), 0.25);
-    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+	float bias = 0.5; 
+
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0); // Todo: send in shadowMap width as pushback constant
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+		}    
+	}
+	shadow *= ONE_NINTH;
+
+    return shadow;
 }
 
 float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, float farPlane)
@@ -396,7 +410,7 @@ float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, f
 	float offset	= 0.1;
 	int samples	= 20;
 	float diskRadius = 0.05;
-	
+
 	for(int i = 0; i < samples; ++i)
 	{
 		float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;

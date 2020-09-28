@@ -66,9 +66,9 @@ void main()
 		vec3 H = normalize(V + L);
 
 		vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(worldPos, 1.0);
-		float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
+		// float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 		vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-		vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
+		vec3 incomingRadiance    = outgoingRadiance;// * (1.0 - inShadow);
 
 		float NDF   = Distribution(N, H, roughness);
 		float G     = Geometry(N, V, L, roughness);

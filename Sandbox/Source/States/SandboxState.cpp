@@ -138,20 +138,20 @@ void SandboxState::Init()
 		}
 
 		//// Directional Light
-		//{
-		//	m_DirLight = ECSCore::GetInstance()->CreateEntity();
-		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { {0.f, 0.f, 0.f}, true });
-		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(-g_DefaultRight - g_DefaultUp, g_DefaultUp), true });
-		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight,
-		//		DirectionalLightComponent{
-		//			.ColorIntensity = {1.0f, 1.0f, 1.0f, 15.0f},
-		//			.frustumWidth = 20.0f,
-		//			.frustumHeight = 20.0f,
-		//			.frustumZNear = -20.0f,
-		//			.frustumZFar = 20.0f,
-		//		}
-		//	);
-		//}
+		{
+			/*m_DirLight = ECSCore::GetInstance()->CreateEntity();
+			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { {0.f, 0.f, 0.f}, true });
+			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(glm::normalize(-g_DefaultRight - g_DefaultUp), g_DefaultUp), true });
+			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight,
+				DirectionalLightComponent{
+					.ColorIntensity = {1.0f, 1.0f, 1.0f, 15.0f},
+					.frustumWidth = 20.0f,
+					.frustumHeight = 20.0f,
+					.frustumZNear = -40.0f,
+					.frustumZFar = 10.0f,
+				}
+			);*/
+		}
 
 		// Add PointLights
 		{
@@ -165,9 +165,9 @@ void SandboxState::Init()
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 3.0f, 3.0f},
+				{4.0f, 3.0f, -3.0f},
 				{-4.0f, 3.0f, 3.0f},
-				{0.0f, 3.0f, 3.0f},
+				{0.0f, 3.0f, -3.0f},
 			};
 
 			const float PI = glm::pi<float>();

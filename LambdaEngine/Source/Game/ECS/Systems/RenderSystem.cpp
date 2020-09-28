@@ -27,9 +27,6 @@
 
 #include "Engine/EngineConfig.h"
 
-#include "Game/GameConsole.h"
-
-#include "Rendering/PhysicsRenderer.h"
 
 namespace LambdaEngine
 {
@@ -836,61 +833,6 @@ namespace LambdaEngine
 
 		m_LightBufferData.DirL_ProjViews = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
 		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
-
-		static uint32 m_LineID = 0U;
-
-		TArray<glm::vec3> points(24);
-		glm::vec3 forward = m_LightBufferData.DirL_Direction;
-		glm::vec3 right = GetRight(direction);
-		glm::vec3 up = GetUp(direction);
-
-		const glm::vec3 nearPos = position + forward * zNear;
-		const glm::vec3 farPos = position + forward * zFar;
-
-		// Near TL -> Far TL
-		points[0] = nearPos - right * frustumWidth + up * frustumHeight;
-		points[1] = farPos - right * frustumWidth + up * frustumHeight;
-
-		// Near BL -> Far BL
-		points[2] = nearPos - right * frustumWidth - up * frustumHeight;
-		points[3] = farPos - right * frustumWidth - up * frustumHeight;
-
-		// Near TR -> Far TR
-		points[4] = nearPos + right * frustumWidth + up * frustumHeight;
-		points[5] = farPos + right * frustumWidth + up * frustumHeight;
-
-		// Near BR -> Far BR
-		points[6] = nearPos + right * frustumWidth - up * frustumHeight;
-		points[7] = farPos + right * frustumWidth - up * frustumHeight;
-
-		// Far TL -> Far TR
-		points[8] = farPos - right * frustumWidth + up * frustumHeight;
-		points[9] = farPos + right * frustumWidth + up * frustumHeight;
-
-		//  FRONT
-		points[10] = nearPos + right * frustumWidth + up * frustumHeight;
-		points[11] = nearPos + right * frustumWidth - up * frustumHeight;
-
-		points[12] = farPos - right * frustumWidth + up * frustumHeight;
-		points[13] = farPos - right * frustumWidth - up * frustumHeight;
-
-		//  BACK
-		points[14] = nearPos - right * frustumWidth + up * frustumHeight;
-		points[15] = nearPos - right * frustumWidth - up * frustumHeight;
-
-		points[16] = farPos + right * frustumWidth + up * frustumHeight;
-		points[17] = farPos + right * frustumWidth - up * frustumHeight;
-
-		points[18] = farPos - right * frustumWidth - up * frustumHeight;
-		points[19] = farPos + right * frustumWidth - up * frustumHeight;
-
-		points[20] = farPos - right * frustumWidth + up * frustumHeight;
-		points[21] = farPos + right * frustumWidth + up * frustumHeight;
-
-		points[22] = nearPos - right * frustumWidth - up * frustumHeight;
-		points[23] = nearPos + right * frustumWidth - up * frustumHeight;
-
-		m_LineID = PhysicsRenderer::Get()->UpdateLineGroup(m_LineID, points, { 0.0f, 1.0f, 0.0f });
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsDirty = true;
