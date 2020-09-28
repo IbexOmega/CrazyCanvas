@@ -23,6 +23,7 @@ namespace glslang
 struct aiMesh;
 struct aiNode;
 struct aiScene;
+struct aiAnimation;
 
 namespace LambdaEngine
 {
@@ -30,10 +31,12 @@ namespace LambdaEngine
 
 	/*	SceneLoadRequest contains information needed to begin loading a scene. It is also used to specify whether to
 		skip loading optional resources by setting fields to nullptr. */
-	struct SceneLoadRequest {
-		String Filepath;
-		int32 AssimpFlags;
+	struct SceneLoadRequest 
+	{
+		String					Filepath;
+		int32					AssimpFlags;
 		TArray<Mesh*>&			Meshes;
+		TArray<Animation*>&		Animations;
 		TArray<MeshComponent>&	MeshComponents;
 		// Either both materials and textures are nullptr, or they are both non-null pointers
 		TArray<Material*>*		pMaterials;
@@ -43,13 +46,14 @@ namespace LambdaEngine
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
-		String DirectoryPath;
-		TArray<Mesh*>&			Meshes;
-		TArray<MeshComponent>&	MeshComponents;
-		TArray<Material*>*		pMaterials;
-		TArray<Texture*>*		pTextures;
-		THashTable<String, Texture*> LoadedTextures;
-		THashTable<uint32, uint32> MaterialIndices;
+		String							DirectoryPath;
+		TArray<Mesh*>&					Meshes;
+		TArray<MeshComponent>&			MeshComponents;
+		TArray<Animation*>&				Animations;
+		TArray<Material*>*				pMaterials;
+		TArray<Texture*>*				pTextures;
+		THashTable<String, Texture*>	LoadedTextures;
+		THashTable<uint32, uint32>		MaterialIndices;
 	};
 
 	class LAMBDA_API ResourceLoader
@@ -67,7 +71,7 @@ namespace LambdaEngine
 		*	loadedTextures			- A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Material*>& materials, TArray<Texture*>& textures);
+		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures);
 
 		/*
 		* Load a mesh from file
@@ -160,6 +164,7 @@ namespace LambdaEngine
 		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
+		static void LoadAnimation(SceneLoadingContext& context, const aiAnimation* pAnimationAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
 		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene);
 

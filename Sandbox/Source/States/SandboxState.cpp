@@ -123,17 +123,17 @@ void SandboxState::Init()
 		
 		MeshComponent robotMeshComp = {};
 		robotMeshComp.MeshGUID		= robotGUID;
-		robotMeshComp.MaterialGUID = robotMaterialGUID;
+		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		glm::vec3 position(0.0f, 0.0, 0.0f);
-		glm::vec3 scale(1.0f);
+		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
-		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { position, true });
 		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		m_Entities.PushBack(entity);
 	}
 
 	//Sphere Grid

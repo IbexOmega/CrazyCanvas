@@ -517,7 +517,7 @@ namespace LambdaEngine
 					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
 					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(Mesh::IndexType);
+					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(MeshIndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
@@ -571,7 +571,7 @@ namespace LambdaEngine
 					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
 					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(Mesh::IndexType);
+					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(MeshIndexType);
 
 					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
 

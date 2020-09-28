@@ -29,7 +29,7 @@ vec3 Lerp(vec3 a, vec3 b, float amountOfA)
 #define DEBUG_EDGES			0
 #define DEBUG				0
 #define DEBUG_HORIZONTAL	0
-#define DEBUG_NEGPOS		1
+#define DEBUG_NEGPOS		0
 #define DEBUG_STEP			0
 #define DEBUG_BLEND_FACTOR	0
 
