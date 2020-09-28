@@ -202,7 +202,7 @@ namespace LambdaEngine
 
 			const glm::vec3 forward = GetForward(rotComp.Quaternion);
 			const glm::vec3 right = GetRight(rotComp.Quaternion);
-			const glm::vec3 up = -GetUp(rotComp.Quaternion);
+			const glm::vec3 up = GetUp(rotComp.Quaternion);
 
 			TArray<glm::vec3> points(10);
 			const glm::vec3 nearPos = posComp.Position + forward * camComp.NearPlane;

@@ -2348,7 +2348,7 @@ namespace LambdaEngine
 					pipelineDesc.DomainShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.PixelShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
-					pipelineDesc.RasterizerState.CullMode			= ECullMode::CULL_MODE_NONE; // pRenderStageDesc->Graphics.CullMode; // ECullMode::CULL_MODE_BACK;
+					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode; // ECullMode::CULL_MODE_BACK;
 					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
 					pipelineDesc.RasterizerState.FrontFaceCounterClockWise = false;
 					pipelineDesc.InputAssembly.PrimitiveTopology	= pRenderStageDesc->Graphics.PrimitiveTopology;
