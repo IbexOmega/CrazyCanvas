@@ -8,6 +8,7 @@
   "MeshShadersEnabled": true,
   "ShowRenderGraph": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",
+  "EnablePhysicsRenderer": false,
   "ShowDemo": false,
   "Debugging": false,
   "CameraFOV": 90.0,

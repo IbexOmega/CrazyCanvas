@@ -66,7 +66,7 @@ void main()
 	out_AO_Rough_Metal_Valid	= vec4(storedAO, storedRoughness, storedMetallic, 1.0f);
 
 	//3
-	vec2 storedShadingNormal  	= DirToOct(shadingNormal);
+	// vec2 storedShadingNormal  	= DirToOct(shadingNormal);
 	out_Compact_Normal       	= PackNormal(shadingNormal);
 
 	//4
