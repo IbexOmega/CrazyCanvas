@@ -86,10 +86,13 @@ namespace LambdaEngine
 		uint64 SrcOffset		= 0;
 		uint64 SrcRowPitch		= 0;
 		uint32 SrcHeight		= 0;
-		uint32 Width			= 0; 
-		uint32 Height			= 0; 
-		uint32 Depth			= 0; 
-		uint32 Miplevel			= 0; 
+		uint32 OffsetX			= 0;
+		uint32 OffsetY			= 0;
+		uint32 OffsetZ			= 0;
+		uint32 Width			= 0;
+		uint32 Height			= 0;
+		uint32 Depth			= 0;
+		uint32 Miplevel			= 0;
 		uint32 MiplevelCount	= 0;
 		uint32 ArrayIndex		= 0;
 		uint32 ArrayCount		= 0;

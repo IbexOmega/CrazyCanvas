@@ -162,7 +162,7 @@ namespace LambdaEngine
 
 		m_BackBufferCount = pPreInitDesc->BackBufferCount;
 
-		if (!CreateCommandLists())
+		if (!CreateRenderCommandLists())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create render command lists");
 			return false;
@@ -990,7 +990,7 @@ namespace LambdaEngine
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 	
-	bool ImGuiRenderer::CreateCommandLists()
+	bool ImGuiRenderer::CreateRenderCommandLists()
 	{
 		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
 		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];

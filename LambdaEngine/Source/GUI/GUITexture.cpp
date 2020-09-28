@@ -1,6 +1,7 @@
 #include "GUI/GUITexture.h"
 
 #include "Rendering/RenderAPI.h"
+#include "Rendering/StagingBufferCache.h"
 
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/CommandList.h"
@@ -19,21 +20,6 @@ namespace LambdaEngine
 	{
 		SAFERELEASE(m_pTexture);
 		SAFERELEASE(m_pTextureView);
-
-		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
-		{
-			Buffer** ppStagingBuffers = m_pppStagingBuffers[b];
-
-			if (ppStagingBuffers != nullptr)
-			{
-				for (uint32 m = 0; m < m_pTexture->GetDesc().Miplevels; m++)
-				{
-					SAFERELEASE(ppStagingBuffers[m]);
-				}
-
-				SAFEDELETE_ARRAY(ppStagingBuffers);
-			}
-		}
 	}
 
 	bool GUITexture::Init(CommandList* pCommandList, const GUITextureDesc* pDesc)
@@ -127,29 +113,9 @@ namespace LambdaEngine
 		ECommandQueueType prevCommandQueue, ETextureState prevTextureState, uint32 modFrameIndex)
 	{
 		uint32 stride = TextureFormatStride(m_pTexture->GetDesc().Format);
-		uint32 sizeInBytes = width * height * stride;
+		uint64 sizeInBytes = uint64(width * height * stride);
 
-		Buffer** ppStagingBuffers = m_pppStagingBuffers[modFrameIndex];
-
-		if (ppStagingBuffers == nullptr)
-		{
-			ppStagingBuffers = DBG_NEW Buffer*[m_pTexture->GetDesc().Miplevels];
-			m_pppStagingBuffers[modFrameIndex] = ppStagingBuffers;
-		}
-
-		Buffer* pStagingBuffer = ppStagingBuffers[mipLevel];
-
-		if (pStagingBuffer == nullptr)
-		{
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Texture Copy Buffer";
-			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes	= sizeInBytes;
-
-			pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			ppStagingBuffers[mipLevel] = pStagingBuffer;
-		}
+		Buffer* pStagingBuffer = StagingBufferCache::RequestBuffer(sizeInBytes);
 
 		void* pMapped = pStagingBuffer->Map();
 		memcpy(pMapped, pData, sizeInBytes);
@@ -177,6 +143,8 @@ namespace LambdaEngine
 		copyDesc.SrcOffset		= 0;
 		copyDesc.SrcRowPitch	= 0;
 		copyDesc.SrcHeight		= 0;
+		copyDesc.OffsetX		= x;
+		copyDesc.OffsetY		= y;
 		copyDesc.Width			= width;
 		copyDesc.Height			= height;
 		copyDesc.Depth			= 1;
@@ -198,7 +166,7 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount			= m_pTexture->GetDesc().ArrayCount;
 			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			textureBarrier.StateBefore			= prevTextureState;
+			textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
 			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 			pCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, &textureBarrier, 1);
 		}

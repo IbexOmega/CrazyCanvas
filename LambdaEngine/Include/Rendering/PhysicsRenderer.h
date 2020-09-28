@@ -91,7 +91,7 @@ namespace LambdaEngine
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
-		bool CreateCommandLists();
+		bool CreateRenderCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 

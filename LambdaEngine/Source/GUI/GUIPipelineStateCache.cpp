@@ -7,6 +7,7 @@
 #include "Rendering/Core/API/PipelineLayout.h"
 #include "Rendering/Core/API/RenderPass.h"
 #include "Rendering/Core/API/PipelineState.h"
+#include "Rendering/Core/API/GraphicsHelpers.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -53,7 +54,7 @@ namespace LambdaEngine
 		subpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.DebugName			= "GUI Render Pass";
+		renderPassDesc.DebugName			= "GUI Dummy Render Pass";
 		renderPassDesc.Attachments			= { colorAttachmentDesc };
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
@@ -117,7 +118,7 @@ namespace LambdaEngine
 			LOG_ERROR("[GUIPipelineStateCache]: Failed to initialize atleast one of the Pipeline States");
 		}
 
-		return false;
+		return true;
 	}
 
 	bool GUIPipelineStateCache::Release()
@@ -154,51 +155,44 @@ namespace LambdaEngine
 
 	bool GUIPipelineStateCache::InitPipelineLayout()
 	{
-		DescriptorBindingDesc vertBufferDescriptorBindingDesc = {};
-		vertBufferDescriptorBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		vertBufferDescriptorBindingDesc.DescriptorCount		= 1;
-		vertBufferDescriptorBindingDesc.Binding				= 0;
-		vertBufferDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-
 		DescriptorBindingDesc paramsDescriptorBindingDesc = {};
 		paramsDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		paramsDescriptorBindingDesc.DescriptorCount			= 1;
-		paramsDescriptorBindingDesc.Binding					= 1;
+		paramsDescriptorBindingDesc.Binding					= 0;
 		paramsDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc patternDescriptorBindingDesc = {};
 		patternDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		patternDescriptorBindingDesc.DescriptorCount		= 1;
-		patternDescriptorBindingDesc.Binding				= 2;
+		patternDescriptorBindingDesc.Binding				= 1;
 		patternDescriptorBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc rampsDescriptorBindingDesc = {};
 		rampsDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		rampsDescriptorBindingDesc.DescriptorCount			= 1;
-		rampsDescriptorBindingDesc.Binding					= 3;
+		rampsDescriptorBindingDesc.Binding					= 2;
 		rampsDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc imageDescriptorBindingDesc = {};
 		imageDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		imageDescriptorBindingDesc.DescriptorCount			= 1;
-		imageDescriptorBindingDesc.Binding					= 4;
+		imageDescriptorBindingDesc.Binding					= 3;
 		imageDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc glyphsDescriptorBindingDesc = {};
 		glyphsDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		glyphsDescriptorBindingDesc.DescriptorCount			= 1;
-		glyphsDescriptorBindingDesc.Binding					= 5;
+		glyphsDescriptorBindingDesc.Binding					= 4;
 		glyphsDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc shadowDescriptorBindingDesc = {};
 		shadowDescriptorBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		shadowDescriptorBindingDesc.DescriptorCount			= 1;
-		shadowDescriptorBindingDesc.Binding					= 6;
+		shadowDescriptorBindingDesc.Binding					= 5;
 		shadowDescriptorBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorSetLayoutDesc descriptorSetLayout = {};
 		descriptorSetLayout.DescriptorSetLayoutFlags	= FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_NONE;
-		descriptorSetLayout.DescriptorBindings.PushBack(vertBufferDescriptorBindingDesc);
 		descriptorSetLayout.DescriptorBindings.PushBack(paramsDescriptorBindingDesc);
 		descriptorSetLayout.DescriptorBindings.PushBack(patternDescriptorBindingDesc);
 		descriptorSetLayout.DescriptorBindings.PushBack(rampsDescriptorBindingDesc);
@@ -240,9 +234,16 @@ namespace LambdaEngine
 		depthStencilStateDesc.DepthWriteEnable	= false;
 		depthStencilStateDesc.FrontFace			= stencilOpStateDesc;
 		depthStencilStateDesc.BackFace			= stencilOpStateDesc;
+		depthStencilStateDesc.StencilTestEnable = true;
 		
 		BlendAttachmentStateDesc blendAttachmentStateDesc = {};
-		blendAttachmentStateDesc.BlendEnabled				= blendEnable;
+		blendAttachmentStateDesc.BlendOp		= EBlendOp::BLEND_OP_ADD,
+		blendAttachmentStateDesc.SrcBlend		= EBlendFactor::BLEND_FACTOR_ONE,
+		blendAttachmentStateDesc.DstBlend		= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+		blendAttachmentStateDesc.BlendOpAlpha	= EBlendOp::BLEND_OP_ADD,
+		blendAttachmentStateDesc.SrcBlendAlpha	= EBlendFactor::BLEND_FACTOR_ONE,
+		blendAttachmentStateDesc.DstBlendAlpha	= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+		blendAttachmentStateDesc.BlendEnabled	= blendEnable;
 		blendAttachmentStateDesc.RenderTargetComponentMask	= colorEnable ? COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A : COLOR_COMPONENT_FLAG_NONE;
 
 		BlendStateDesc blendStateDesc = {};
@@ -265,9 +266,96 @@ namespace LambdaEngine
 		graphicsPipelineStateDesc.SampleMask			= 0xFFFFFFFF;
 		graphicsPipelineStateDesc.SampleCount			= 1;
 		graphicsPipelineStateDesc.Subpass				= 0;
-		graphicsPipelineStateDesc.ExtraDynamicState		= EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE;
+		graphicsPipelineStateDesc.ExtraDynamicState		= EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE;// | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP;
 		graphicsPipelineStateDesc.VertexShader.pShader	= ResourceManager::GetShader(GUIShaderManager::GetGUIVertexShaderGUID(shaderData.VertexShaderID));
 		graphicsPipelineStateDesc.PixelShader.pShader	= ResourceManager::GetShader(GUIShaderManager::GetGUIPixelShaderGUID(shaderData.PixelShaderID));
+		graphicsPipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
+
+		uint32 offset = 0;
+
+		//Position
+		{
+			InputElementDesc posElementDesc = {};
+			posElementDesc.Semantic		= "POSITION";
+			posElementDesc.Binding		= 0;
+			posElementDesc.Stride		= shaderData.VertexSize;
+			posElementDesc.InputRate	= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+			posElementDesc.Location		= 0;
+			posElementDesc.Offset		= 0;
+			posElementDesc.Format		= EFormat::FORMAT_R32G32_SFLOAT;
+			graphicsPipelineStateDesc.InputLayout.PushBack(posElementDesc);
+			offset += TextureFormatStride(posElementDesc.Format);
+		}
+
+		if (shaderData.VertexFormat & NOESIS_VF_COLOR)
+		{
+			InputElementDesc colorElementDesc = {};
+			colorElementDesc.Semantic	= "COLOR";
+			colorElementDesc.Binding	= 0;
+			colorElementDesc.Stride		= shaderData.VertexSize;
+			colorElementDesc.InputRate	= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+			colorElementDesc.Location	= 1;
+			colorElementDesc.Offset		= offset;
+			colorElementDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
+			graphicsPipelineStateDesc.InputLayout.PushBack(colorElementDesc);
+			offset += TextureFormatStride(colorElementDesc.Format);
+		}
+
+		if (shaderData.VertexFormat & NOESIS_VF_TEX0)
+		{
+			InputElementDesc tex0ElementDesc = {};
+			tex0ElementDesc.Semantic	= "TEX_0";
+			tex0ElementDesc.Binding		= 0;
+			tex0ElementDesc.Stride		= shaderData.VertexSize;
+			tex0ElementDesc.InputRate	= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+			tex0ElementDesc.Location	= 2;
+			tex0ElementDesc.Offset		= offset;
+			tex0ElementDesc.Format		= EFormat::FORMAT_R32G32_SFLOAT;
+			graphicsPipelineStateDesc.InputLayout.PushBack(tex0ElementDesc);
+			offset += TextureFormatStride(tex0ElementDesc.Format);
+		}
+
+		if (shaderData.VertexFormat & NOESIS_VF_TEX1)
+		{
+			InputElementDesc tex1ElementDesc = {};
+			tex1ElementDesc.Semantic	= "TEX_1";
+			tex1ElementDesc.Binding		= 0;
+			tex1ElementDesc.Stride		= shaderData.VertexSize;
+			tex1ElementDesc.InputRate	= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+			tex1ElementDesc.Location	= 3;
+			tex1ElementDesc.Offset		= offset;
+			tex1ElementDesc.Format		= EFormat::FORMAT_R32G32_SFLOAT;
+			graphicsPipelineStateDesc.InputLayout.PushBack(tex1ElementDesc);
+			offset += TextureFormatStride(tex1ElementDesc.Format);
+		}
+
+		if (shaderData.VertexFormat & NOESIS_VF_TEX2)
+		{
+			InputElementDesc tex2ElementDesc = {};
+			tex2ElementDesc.Semantic	= "TEX_2";
+			tex2ElementDesc.Binding		= 0;
+			tex2ElementDesc.Stride		= shaderData.VertexSize;
+			tex2ElementDesc.InputRate	= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+			tex2ElementDesc.Location	= 4;
+			tex2ElementDesc.Offset		= offset;
+			tex2ElementDesc.Format		= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+			graphicsPipelineStateDesc.InputLayout.PushBack(tex2ElementDesc);
+			offset += TextureFormatStride(tex2ElementDesc.Format);
+		}
+
+		if (shaderData.VertexFormat & NOESIS_VF_COVERAGE)
+		{
+			InputElementDesc coverageElementDesc = {};
+			coverageElementDesc.Semantic	= "COVERAGE";
+			coverageElementDesc.Binding		= 0;
+			coverageElementDesc.Stride		= shaderData.VertexSize;
+			coverageElementDesc.InputRate	= EVertexInputRate::VERTEX_INPUT_PER_VERTEX;
+			coverageElementDesc.Location	= 5;
+			coverageElementDesc.Offset		= offset;
+			coverageElementDesc.Format		= EFormat::FORMAT_R32_SFLOAT;
+			graphicsPipelineStateDesc.InputLayout.PushBack(coverageElementDesc);
+			offset += TextureFormatStride(coverageElementDesc.Format);
+		}
 
 		(*ppPipelineState) = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc);
 		return true;

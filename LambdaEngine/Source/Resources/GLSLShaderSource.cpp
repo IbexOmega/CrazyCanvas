@@ -14,35 +14,22 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc != nullptr);
 		
-		std::smatch match;
-		bool foundVersion = std::regex_search(pDesc->Source.begin(), pDesc->Source.end(), match, std::regex("#version [0-9]+\\s"));
-		
-		if (foundVersion && match.size() > 1)
-		{
-			LOG_ERROR("[GLSLShaderSource]: #version discovered more than once in shader");
-		}
-
-		m_Version		= foundVersion ? match[0].str() : "version 460\n";
-		m_Source		= foundVersion ? match.suffix() : pDesc->Source;
-		m_EntryPoint	= pDesc->EntryPoint;
-		m_ShaderStage	= pDesc->ShaderStage;
+		m_Desc = *pDesc;
 	}
 
 	GLSLShaderSource::~GLSLShaderSource()
 	{
 	}
 
-	Shader* GLSLShaderSource::Compile(const String& name, const TArray<const char*>& defines)
+	Shader* GLSLShaderSource::Compile(const String& name, const String& defines)
 	{
-		TArray<const char*> strings(defines.GetSize() + 2);
-		strings[0] = m_Version.c_str();
-		memcpy((strings.GetData() + 1), defines.GetData(), defines.GetSize() * sizeof(const char*));
-		strings[strings.GetSize() - 1] = m_Source.c_str();
-
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(m_ShaderStage);
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(m_Desc.ShaderStage);
 		glslang::TShader shader(shaderType);
 
-		shader.setStrings(strings.GetData(), strings.GetSize());
+		const char* pSource = m_Desc.Source.c_str();
+
+		shader.setPreamble(defines.c_str());
+		shader.setStrings(&pSource, 1);
 
 		//Todo: Fetch this
 		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
@@ -56,11 +43,22 @@ namespace LambdaEngine
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
 		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
 		
+		DirStackFileIncluder includer;
+		includer.pushExternalLocalDirectory(m_Desc.Directory);
+
+		String preprocessedGLSL; 
+		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		{
+			LOG_ERROR("[GLSLShaderSource]: GLSL Preprocessing failed for: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
+		shader.setStrings(&pPreprocessedGLSL, 1);
+
 		if (!shader.parse(pResources, defaultVersion, false, messages))
 		{
-			const char* pShaderInfoLog		= shader.getInfoLog();
-			const char* pShaderDebugInfo	= shader.getInfoDebugLog();
-			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", pShaderInfoLog, pShaderDebugInfo);
+			LOG_ERROR("[GLSLShaderSource]: GLSL Parsing failed: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
 
@@ -69,7 +67,7 @@ namespace LambdaEngine
 
 		if (!program.link(messages))
 		{
-			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", shader.getInfoLog(), shader.getInfoDebugLog());
+			LOG_ERROR("[GLSLShaderSource]: GLSL Linking failed: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
 
@@ -88,8 +86,8 @@ namespace LambdaEngine
 		ShaderDesc shaderDesc = { };
 		shaderDesc.DebugName	= name;
 		shaderDesc.Source		= TArray<byte>(reinterpret_cast<byte*>(sourceSPIRV.GetData()), reinterpret_cast<byte*>(sourceSPIRV.GetData()) + sourceSize);
-		shaderDesc.EntryPoint	= m_EntryPoint;
-		shaderDesc.Stage		= m_ShaderStage;
+		shaderDesc.EntryPoint	= m_Desc.EntryPoint;
+		shaderDesc.Stage		= m_Desc.ShaderStage;
 		shaderDesc.Lang			= EShaderLang::SHADER_LANG_SPIRV;
 
 		return RenderAPI::GetDevice()->CreateShader(&shaderDesc);

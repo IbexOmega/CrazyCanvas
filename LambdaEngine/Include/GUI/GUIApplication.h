@@ -3,6 +3,8 @@
 #include "NsCore/Ptr.h"
 #include "NsGui/IView.h"
 
+#include "Time/API/Timestamp.h"
+
 #include "Application/API/Events/WindowEvents.h"
 
 namespace LambdaEngine
@@ -16,6 +18,10 @@ namespace LambdaEngine
 
 		static bool Init();
 		static bool Release();
+
+		static void Tick(Timestamp delta);
+
+		FORCEINLINE static GUIRenderer* GetRenderer() { return s_pRenderer; }
 
 	private:
 		static bool InitNoesis();

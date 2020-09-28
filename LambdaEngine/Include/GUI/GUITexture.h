@@ -52,7 +52,5 @@ namespace LambdaEngine
 	private:
 		LambdaEngine::Texture*		m_pTexture		= nullptr;
 		LambdaEngine::TextureView*	m_pTextureView	= nullptr;
-
-		Buffer** m_pppStagingBuffers[BACK_BUFFER_COUNT];
 	};
 }

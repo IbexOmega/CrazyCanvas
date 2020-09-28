@@ -372,6 +372,9 @@ namespace LambdaEngine
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;
 		copyRegion.imageSubresource.mipLevel		= desc.Miplevel;
+		copyRegion.imageOffset.x					= desc.OffsetX;
+		copyRegion.imageOffset.y					= desc.OffsetY;
+		copyRegion.imageOffset.z					= desc.OffsetZ;
 		copyRegion.imageExtent.depth				= desc.Depth;
 		copyRegion.imageExtent.height				= desc.Height;
 		copyRegion.imageExtent.width				= desc.Width;

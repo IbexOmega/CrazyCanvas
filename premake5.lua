@@ -219,47 +219,6 @@ workspace "LambdaEngine"
 				"Dependencies/imnodes/imnodes.cpp",
 			}
 			
-		-- Noesis Application Fra Project
-		project "NoesisApp"
-			kind "StaticLib"
-			language "C++"
-			cppdialect "C++latest"
-			systemversion "latest"
-			location "Dependencies/projectfiles/NoesisApp"
-
-			filter "configurations:Debug or Release"
-				symbols "on"
-				runtime "Release"
-				optimize "Full"
-			filter{}
-
-			filter "configurations:Production"
-				symbols "off"
-				runtime "Release"
-				optimize "Full"
-			filter{}
-			
-			defines
-			{
-				"NS_STATIC_LIBRARY"
-			}
-			
-			sysincludedirs
-			{
-				"Dependencies/NoesisGUI/Include",
-				"Dependencies/NoesisGUI/Providers/Include/",
-			}
-
-			-- Targets
-			targetdir ("Dependencies/bin/NoesisApp/" .. outputdir)
-			objdir ("Dependencies/bin-int/NoesisApp/" .. outputdir)
-
-			-- Files
-			files
-			{
-				"Dependencies/NoesisGUI/Providers/Src/**",
-			}
-			
 	group ""
 
     -- Engine Project
@@ -396,7 +355,6 @@ workspace "LambdaEngine"
 			"WavLib",
 			"ImGui",
 			"imnodes",
-			"NoesisApp",
 		}
 
 		-- Win32
@@ -470,6 +428,7 @@ workspace "LambdaEngine"
 				
 				--NoesisGUI
 				"Noesis.lib",
+				"NoesisApp.lib",
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
@@ -499,6 +458,7 @@ workspace "LambdaEngine"
                 
 				--NoesisGUI
 				"Noesis.lib",
+				"NoesisApp.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -563,7 +523,12 @@ workspace "LambdaEngine"
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\""),
+				
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
 		-- PhysX
 		filter { "system:windows", "configurations:Debug" }
@@ -638,7 +603,6 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
-			"NoesisApp",
 		}
 
 	project "*"
@@ -693,7 +657,6 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
-			"NoesisApp",
 		}
 
 	project "*"
@@ -748,7 +711,6 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
-			"NoesisApp",
 		}
 
 	project "*"
@@ -803,6 +765,5 @@ workspace "LambdaEngine"
 		{
 			"LambdaEngine",
 			"ImGui",
-			"NoesisApp",
 		}
 	project "*"

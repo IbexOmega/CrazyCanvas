@@ -47,7 +47,7 @@ namespace LambdaEngine
 		#define VSHADER_2(x0, x1) "#define HAS_" #x0 "\n#define HAS_" #x1 "\n"
 		#define VSHADER_3(x0, x1, x2) "#define HAS_" #x0 "\n#define HAS_" #x1 "\n#define HAS_" #x2 "\n"
 
-		const char* ppVertexShaderDefines[] =
+		String pVertexShaderDefines[] =
 		{
 			VSHADER,
 			VSHADER_1(COLOR),
@@ -64,11 +64,11 @@ namespace LambdaEngine
 
 		GLSLShaderSource shaderSource = ResourceLoader::LoadShaderSourceFromFile("../Assets/Shaders/NoesisGUI/NoesisGUI.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER);
 
-		for (uint32 vs = 0; vs < ARR_SIZE(ppVertexShaderDefines); vs++)
+		for (uint32 vs = 0; vs < ARR_SIZE(pVertexShaderDefines); vs++)
 		{
-			const char* pDefines = ppVertexShaderDefines[vs];
-			String name = "Noesis GUI Vertex Shader " + String(pDefines);
-			GUID_Lambda shaderGUID = ResourceManager::RegisterShader(name, shaderSource.Compile(name, { pDefines }));
+			String& defines = pVertexShaderDefines[vs];
+			String name = "Noesis GUI Vertex Shader " + defines;
+			GUID_Lambda shaderGUID = ResourceManager::RegisterShader(name, shaderSource.Compile(name, defines));
 
 			s_GUIVertexShaders.PushBack(shaderGUID);
 		}
@@ -80,7 +80,7 @@ namespace LambdaEngine
 	{
 		#define FSHADER(x) "#define EFFECT_" #x "\n"
 
-		const char* ppPixelShaderDefines[] =
+		String pPixelShaderDefines[] =
 		{
 			FSHADER(RGBA),
 			FSHADER(MASK),
@@ -146,13 +146,13 @@ namespace LambdaEngine
 
 		GLSLShaderSource shaderSource = ResourceLoader::LoadShaderSourceFromFile("../Assets/Shaders/NoesisGUI/NoesisGUI.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER);
 
-		for (uint32 ps = 0; ps < ARR_SIZE(ppPixelShaderDefines); ps++)
+		for (uint32 ps = 0; ps < ARR_SIZE(pPixelShaderDefines); ps++)
 		{
-			const char* pDefines = ppPixelShaderDefines[ps];
-			String name = "Noesis GUI Pixel Shader " + String(pDefines);
-			GUID_Lambda shaderGUID = ResourceManager::RegisterShader(name, shaderSource.Compile(name, { pDefines }));
+			String& defines = pPixelShaderDefines[ps];
+			String name = "Noesis GUI Pixel Shader " + defines;
+			GUID_Lambda shaderGUID = ResourceManager::RegisterShader(name, shaderSource.Compile(name, defines));
 
-			s_GUIVertexShaders.PushBack(shaderGUID);
+			s_GUIPixelShaders.PushBack(shaderGUID);
 		}
 
 		return true;

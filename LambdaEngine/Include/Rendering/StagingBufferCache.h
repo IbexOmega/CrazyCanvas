@@ -18,7 +18,7 @@ namespace LambdaEngine
 		{
 			bool operator()(uint64 requiredSize, uint64 bufferSize) const
 			{
-				return requiredSize <= bufferSize;
+				return requiredSize < bufferSize;
 			}
 		};
 

@@ -165,7 +165,6 @@ namespace LambdaEngine
 
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
-		static bool IncludeGLSLToSource(const String& filepath, const char* pSource, FShaderStageFlags stage, String& preprocessedGLSL);
 		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection);
 		static bool CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection);
 

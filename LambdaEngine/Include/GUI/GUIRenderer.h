@@ -4,25 +4,31 @@
 #include "Rendering/RenderGraphTypes.h"
 
 #include "NsRender/RenderDevice.h"
+#include "NsCore/Ptr.h"
+#include "NsGui/IView.h"
+
+namespace Noesis
+{
+	class IView;
+}
 
 namespace LambdaEngine
 {
 	class GUIRenderTarget;
 	class GUITexture;
 
-	class GUIRenderer : public Noesis::RenderDevice, ICustomRenderer
+	class GUIRenderer : public Noesis::RenderDevice, public ICustomRenderer
 	{
 		struct GUIParamsData
 		{
-			//Vertex Shader
 			glm::mat4	ProjMatrix		= glm::mat4(1.0f);
-			glm::vec2	TextSize		= glm::vec2(1.0f);
-			//Pixel Shader
 			glm::vec4	RGBA			= glm::vec4(1.0f);
-			float32		Opacity			= 1.0f;
 			glm::vec4	RadialGrad0		= glm::vec4(0.0f);
 			glm::vec4	RadialGrad1		= glm::vec4(0.0f);
+			glm::vec2	TextSize		= glm::vec2(1.0f);
 			glm::vec2	TextPixelSize	= glm::vec2(1.0f);
+			float32		Opacity			= 1.0f;
+			glm::vec3	Padding;
 			float32		pEffectParams[32];
 		};
 
@@ -99,6 +105,8 @@ namespace LambdaEngine
 			CommandList** ppFirstExecutionStage, 
 			CommandList** ppSecondaryExecutionStage) override final;
 
+		void SetView(Noesis::Ptr<Noesis::IView> view);
+
 		/// Retrieves device render capabilities
 		FORCEINLINE virtual const Noesis::DeviceCaps& GetCaps() const override final 
 		{
@@ -112,26 +120,37 @@ namespace LambdaEngine
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; };
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; };
 
-		FORCEINLINE virtual const String& GetName() const override final { return RENDER_GRAPH_NOESIS_GUI_STAGE_NAME; }
+		FORCEINLINE virtual const String& GetName() const override final 
+		{ 
+			static String name = RENDER_GRAPH_NOESIS_GUI_STAGE_NAME;
+			return name;
+		}
 
 	private:
-		CommandList* BeginOrGetCommandList();
+		CommandList* BeginOrGetUtilityCommandList();
+		CommandList* BeginOrGetRenderCommandList();
+		Buffer* CreateOrGetParamsBuffer();
 		DescriptorSet* CreateOrGetDescriptorSet();
 
-		bool CreateBuffers();
 		bool CreateCommandLists();
 		bool CreateDescriptorHeap();
+		bool CreateSampler();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 
 	private:
 		TSharedRef<const TextureView>	m_pBackBuffers[BACK_BUFFER_COUNT];
+		TSharedRef<const TextureView> m_DepthStencilTextureView;
 		uint32 m_BackBufferIndex	= 0;
 		uint32 m_ModFrameIndex		= 0;
+
+		CommandAllocator*	m_ppUtilityCommandAllocators[BACK_BUFFER_COUNT];
+		CommandList*		m_ppUtilityCommandLists[BACK_BUFFER_COUNT];
 
 		CommandAllocator*	m_ppRenderCommandAllocators[BACK_BUFFER_COUNT];
 		CommandList*		m_ppRenderCommandLists[BACK_BUFFER_COUNT];
 
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
+		Sampler* m_pGUISampler = nullptr;
 
 		Buffer* m_pVertexStagingBuffer		= nullptr;
 		Buffer* m_pIndexStagingBuffer		= nullptr;
@@ -140,7 +159,8 @@ namespace LambdaEngine
 
 		Buffer* m_pVertexBuffer	= nullptr;
 		Buffer* m_pIndexBuffer	= nullptr;
-		Buffer* m_pParamsBuffer	= nullptr;
+		TArray<Buffer*> m_AvailableParamsBuffers;
+		TArray<Buffer*> m_pUsedParamsBuffers[BACK_BUFFER_COUNT];
 		TArray<Buffer*> m_pBuffersToRemove[BACK_BUFFER_COUNT];
 
 		DescriptorHeap*			m_pDescriptorHeap = nullptr;
@@ -151,5 +171,7 @@ namespace LambdaEngine
 
 		TArray<GUITexture*> m_GUITextures;
 		TArray<GUIRenderTarget*> m_GUIRenderTargets;
+
+		Noesis::Ptr<Noesis::IView> m_View;
 	};
 }

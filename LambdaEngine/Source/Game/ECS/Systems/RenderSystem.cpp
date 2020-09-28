@@ -26,6 +26,9 @@
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 
+#include "GUI/GUIApplication.h"
+#include "GUI/GUIRenderer.h"
+
 #include "Engine/EngineConfig.h"
 
 namespace LambdaEngine
@@ -114,7 +117,6 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
-
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
@@ -127,6 +129,12 @@ namespace LambdaEngine
 				m_pPhysicsRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pPhysicsRenderer);
+			}
+
+			//GUI Renderer
+			{
+				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
@@ -204,6 +212,8 @@ namespace LambdaEngine
 		}
 
 		UpdateBuffers();
+		UpdateRenderGraph();
+		m_pRenderGraph->Update();
 
 		return true;
 	}

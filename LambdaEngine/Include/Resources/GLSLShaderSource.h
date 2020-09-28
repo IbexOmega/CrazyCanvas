@@ -10,7 +10,9 @@ namespace LambdaEngine
 
 	struct GLSLShaderSourceDesc
 	{
+		String				Name		= "";
 		String				Source		= "";
+		String				Directory	= "";
 		String				EntryPoint	= "";
 		FShaderStageFlag	ShaderStage = FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
 	};
@@ -21,12 +23,9 @@ namespace LambdaEngine
 		GLSLShaderSource(const GLSLShaderSourceDesc* pDesc);
 		~GLSLShaderSource();
 
-		Shader* Compile(const String& name, const TArray<const char*>& defines);
+		Shader* Compile(const String& name, const String& defines);
 
 	private:
-		String				m_Version		= "";
-		String				m_Source		= "";
-		String				m_EntryPoint	= "";
-		FShaderStageFlag	m_ShaderStage	= FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
+		GLSLShaderSourceDesc m_Desc;
 	};	
 }		

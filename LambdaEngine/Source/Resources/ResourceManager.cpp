@@ -523,14 +523,17 @@ namespace LambdaEngine
 		{
 			if (it->second != nullptr)
 			{
-				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
+				auto loadConfigIt = s_ShaderLoadConfigurations.find(it->first);
 
-				Shader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
-
-				if (pShader != nullptr)
+				if (loadConfigIt != s_ShaderLoadConfigurations.end())
 				{
-					SAFERELEASE(it->second);
-					it->second = pShader;
+					Shader* pShader = ResourceLoader::LoadShaderFromFile(loadConfigIt->second.Filepath, loadConfigIt->second.Stage, loadConfigIt->second.Lang, loadConfigIt->second.pEntryPoint);
+
+					if (pShader != nullptr)
+					{
+						SAFERELEASE(it->second);
+						it->second = pShader;
+					}
 				}
 			}
 		}

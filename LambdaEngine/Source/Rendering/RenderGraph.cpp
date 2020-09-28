@@ -1043,7 +1043,7 @@ namespace LambdaEngine
 					binding.pRenderStage->pCustomRenderer->UpdateTextureResource(
 						backBufferResourceIt->second.Name,
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetData(),
-						1,
+						backBufferResourceIt->second.Texture.PerImageTextureViews.GetSize(),
 						true);
 				}
 				else if (binding.DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
@@ -2133,7 +2133,7 @@ namespace LambdaEngine
 
 					if (customRendererIt == customRenderers.end())
 					{
-						LOG_ERROR("[RenderGraph]: Custom Renderer %s could not be found among Custom Renderers");
+						LOG_ERROR("[RenderGraph]: Custom Renderer %s could not be found among Custom Renderers", pRenderStage->Name.c_str());
 						pRenderStage->TriggerType = ERenderStageExecutionTrigger::DISABLED;
 					}
 					else
@@ -2174,19 +2174,10 @@ namespace LambdaEngine
 							return false;
 						}
 
-						if (resourceIt->second.Type == ERenderGraphResourceType::TEXTURE)
+						//Only set it if it hasn't been set before, if it has been set before a previous Render Stage uses this resource -> we shouldn't set it
+						if (resourceIt->second.LastPipelineStageOfFirstRenderStage == FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN)
 						{
-							if (resourceIt->second.Texture.InitialTransitionBarriers.IsEmpty())
-							{
-								resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
-							}
-						}
-						else
-						{
-							if (resourceIt->second.Buffer.InitialTransitionBarriers.IsEmpty())
-							{
-								resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
-							}
+							resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
 						}
 					}
 				}

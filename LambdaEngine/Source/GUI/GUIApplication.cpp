@@ -5,6 +5,7 @@
 #include "NsApp/LocalXamlProvider.h"
 #include "NsApp/LocalFontProvider.h"
 #include "NsApp/LocalTextureProvider.h"
+#include "NsApp/ThemeProviders.h"
 #include "NoesisPCH.h"
 
 #include "Application/API/CommonApplication.h"
@@ -46,30 +47,62 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void GUIApplication::Tick(Timestamp delta)
+	{
+		s_pView->Update(delta.AsSeconds());
+	}
+
 	bool GUIApplication::InitNoesis()
 	{
-#ifdef LAMBDA_DEBUG
+#if defined(LAMBDA_DEBUG)
 		Noesis::GUI::SetLogHandler(GUIApplication::NoesisLogHandler);
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
-#elif LAMBDA_RELEASE
+#elif defined(LAMBDA_RELEASE)
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
 #endif
 
-		//Init
+		//Init 25/9
 		Noesis::GUI::Init("IbexOmega", "Uz25EdN1uRHmmJJyF0SjbeNtuCheNvKnJoeAhCTyh/NxhLSa");
 
-		//Set Providers
-		Noesis::GUI::SetXamlProvider(Noesis::MakePtr<NoesisApp::LocalXamlProvider>("..\Assets\NoesisGUI\Xaml"));
-		Noesis::GUI::SetFontProvider(Noesis::MakePtr<NoesisApp::LocalFontProvider>("..\Assets\NoesisGUI\Fonts"));
-		Noesis::GUI::SetTextureProvider(Noesis::MakePtr<NoesisApp::LocalTextureProvider>("..\Assets\NoesisGUI\Textures"));
-
-		//Set Fallbacks
-		const char* fonts[] = { "Arial", "Segoe UI Emoji" };
-		Noesis::GUI::SetFontFallbacks(fonts, ARR_SIZE(fonts));
-		Noesis::GUI::SetFontDefaultProperties(15.0f, Noesis::FontWeight_Normal, Noesis::FontStretch_Normal, Noesis::FontStyle_Normal);
-
 		//Application Resources
+		NoesisApp::SetThemeProviders(
+			new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml"),
+			new NoesisApp::LocalFontProvider("../Assets/NoesisGUI/Fonts"),
+			new NoesisApp::LocalTextureProvider("../Assets/NoesisGUI/Textures"));
+
 		Noesis::GUI::LoadApplicationResources("Theme/NoesisTheme.DarkBlue.xaml");
+
+
+		//View Creation
+		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+		//Noesis::Ptr<Noesis::FrameworkElement> xaml = Noesis::GUI::LoadXaml<Noesis::FrameworkElement>("App.xaml");
+		Noesis::Ptr<Noesis::Grid> xaml(Noesis::GUI::ParseXaml<Noesis::Grid>(R"(
+			<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+				<Grid.Background>
+					<LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+						<GradientStop Offset="0" Color="#FF123F61"/>
+						<GradientStop Offset="0.6" Color="#FF0E4B79"/>
+						<GradientStop Offset="0.7" Color="#FF106097"/>
+					</LinearGradientBrush>
+				</Grid.Background>
+				<Viewbox>
+					<StackPanel Margin="50">
+						<Button Content="Hello World!" Margin="0,30,0,0"/>
+						<Rectangle Height="5" Margin="-10,20,-10,0">
+							<Rectangle.Fill>
+								<RadialGradientBrush>
+									<GradientStop Offset="0" Color="#40000000"/>
+									<GradientStop Offset="1" Color="#00000000"/>
+								</RadialGradientBrush>
+							</Rectangle.Fill>
+						</Rectangle>
+					</StackPanel>
+				</Viewbox>
+			</Grid>
+		)"));
+		s_pView = Noesis::GUI::CreateView(xaml);
+		s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
+		s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
 
 		//Renderer Initialization
 		s_pRenderer = new GUIRenderer();
@@ -80,13 +113,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		//View Creation
-		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-		Noesis::Ptr<Noesis::FrameworkElement> xaml = Noesis::GUI::LoadXaml<Noesis::FrameworkElement>("ThemePreview.xaml");
-		s_pView = Noesis::GUI::CreateView(xaml);
-		s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
-		s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
-		s_pView->GetRenderer()->Init(s_pRenderer);
+		s_pRenderer->SetView(s_pView);
 
 		return true;
 	}

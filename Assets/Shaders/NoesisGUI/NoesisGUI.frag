@@ -349,13 +349,13 @@
 #define SDF_BASE_MAX 0.25
 #define SDF_BASE_DEV -0.65
 
-layout(binding = 1, set = 0) uniform Params { SNoesisParams v; } u_Params;
+layout(binding = 0, set = 0) uniform Params { SNoesisParams v; } u_Params;
 
-layout(binding = 2, set = 0) uniform sampler2D pattern;
-layout(binding = 3, set = 0) uniform sampler2D ramps;
-layout(binding = 4, set = 0) uniform sampler2D image;
-layout(binding = 5, set = 0) uniform sampler2D glyphs;
-layout(binding = 6, set = 0) uniform sampler2D shadow;
+layout(binding = 1, set = 0) uniform sampler2D pattern;
+layout(binding = 2, set = 0) uniform sampler2D ramps;
+layout(binding = 3, set = 0) uniform sampler2D image;
+layout(binding = 4, set = 0) uniform sampler2D glyphs;
+layout(binding = 5, set = 0) uniform sampler2D shadow;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -440,18 +440,18 @@ void main()
         float opacity_ = 1.0;
 
     #elif defined(PAINT_LINEAR)
-        vec4 paint = texture2D(ramps, uv0);
+        vec4 paint = texture(ramps, uv0);
         float opacity_ = params.Opacity;
 
     #elif defined(PAINT_RADIAL)
-        float dd = params.RadialGrad[1].y * uv0.x - params.RadialGrad[1].z * uv0.y;
-        float u = params.RadialGrad[0].x * uv0.x + params.RadialGrad[0].y * uv0.y + params.RadialGrad[0].z * 
+        float dd = params.RadialGrad1.y * uv0.x - params.RadialGrad1.z * uv0.y;
+        float u = params.RadialGrad0.x * uv0.x + params.RadialGrad0.y * uv0.y + params.RadialGrad0.z * 
             sqrt(uv0.x * uv0.x + uv0.y * uv0.y - dd * dd);
-        vec4 paint = texture2D(ramps, vec2(u, params.RadialGrad[1].w));
+        vec4 paint = texture(ramps, vec2(u, params.RadialGrad1.w));
         float opacity_ = params.Opacity;
 
     #elif defined(PAINT_PATTERN)
-        vec4 paint = texture2D(pattern, uv0);
+        vec4 paint = texture(pattern, uv0);
         float opacity_ = params.Opacity;
     #endif
 
@@ -471,77 +471,77 @@ void main()
         fragColor = (opacity_ * coverage) * paint;
 
     #elif defined(EFFECT_IMAGE_OPACITY)
-        fragColor = texture2D(image, uv1) * (opacity_ * paint.a);
+        fragColor = texture(image, uv1) * (opacity_ * paint.a);
 
     #elif defined(EFFECT_IMAGE_SHADOW_V)
-        #define BLUR_SIZE params.EffectParams.v[0]
+        #define BLUR_SIZE params.EffectParams[0]
 
         float alpha = 0.0;
-        float dir = BLUR_SIZE * params.TextPixelSize.v.y;
+        float dir = BLUR_SIZE * params.TextPixelSize.y;
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {
             float offset = o[i] * dir;
             vec2 up = vec2(uv1.x, min(uv1.y + offset, uv2.w));
             vec2 down = vec2(uv1.x, max(uv1.y - offset, uv2.y));  
-            alpha += w[i] * (texture2D(image, up).a + texture2D(image, down).a);
+            alpha += w[i] * (texture(image, up).a + texture(image, down).a);
         }
 
         fragColor = vec4(0, 0, 0, alpha);
 
     #elif defined(EFFECT_IMAGE_SHADOW_H)
-        #define SHADOW_COLOR vec4(params.EffectParams.v[0], params.EffectParams.v[1], params.EffectParams.v[2], params.EffectParams.v[3])
-        #define BLUR_SIZE params.EffectParams.v[4]
-        #define SHADOW_OFFSETX params.EffectParams.v[5]
-        #define SHADOW_OFFSETY -params.EffectParams.v[6]
+        #define SHADOW_COLOR vec4(params.EffectParams[0], params.EffectParams[1], params.EffectParams[2], params.EffectParams[3])
+        #define BLUR_SIZE params.EffectParams[4]
+        #define SHADOW_OFFSETX params.EffectParams[5]
+        #define SHADOW_OFFSETY -params.EffectParams[6]
 
         float alpha = 0.0;
-        vec2 dir = vec2(BLUR_SIZE * params.TextPixelSize.v.x, 0);
-        vec2 offset = vec2(SHADOW_OFFSETX * params.TextPixelSize.v.x, SHADOW_OFFSETY * params.TextPixelSize.v.y);
+        vec2 dir = vec2(BLUR_SIZE * params.TextPixelSize.x, 0);
+        vec2 offset = vec2(SHADOW_OFFSETX * params.TextPixelSize.x, SHADOW_OFFSETY * params.TextPixelSize.y);
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {
             vec2 uvOffset = o[i] * dir;
-            alpha += w[i] * (texture2D(shadow, clamp(uv1 - offset + uvOffset, uv2.xy, uv2.zw)).a + texture2D(shadow, clamp(uv1 - offset - uvOffset, uv2.xy, uv2.zw)).a);
+            alpha += w[i] * (texture(shadow, clamp(uv1 - offset + uvOffset, uv2.xy, uv2.zw)).a + texture(shadow, clamp(uv1 - offset - uvOffset, uv2.xy, uv2.zw)).a);
         }
 
-        vec4 img = texture2D(image, clamp(uv1, uv2.xy, uv2.zw));
+        vec4 img = texture(image, clamp(uv1, uv2.xy, uv2.zw));
         fragColor = (img + (1.0 - img.a) * (SHADOW_COLOR * alpha)) * (opacity_ * paint.a);
 
     #elif defined(EFFECT_IMAGE_BLUR_V)
-        #define BLUR_SIZE params.EffectParams.v[0]
+        #define BLUR_SIZE params.EffectParams[0]
 
         vec4 color = vec4(0);
-        float dir = BLUR_SIZE * params.TextPixelSize.v.y;
+        float dir = BLUR_SIZE * params.TextPixelSize.y;
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {
             float offset = o[i] * dir;
             vec2 up = vec2(uv1.x, min(uv1.y + offset, uv2.w));
             vec2 down = vec2(uv1.x, max(uv1.y - offset, uv2.y)); 
-            color += w[i] * (texture2D(image, up) + texture2D(image, down));
+            color += w[i] * (texture(image, up) + texture(image, down));
         }
 
         fragColor = color;
 
     #elif defined(EFFECT_IMAGE_BLUR_H)
-        #define BLUR_SIZE params.EffectParams.v[0]
+        #define BLUR_SIZE params.EffectParams[0]
 
         vec4 color = vec4(0);
-        float dir = BLUR_SIZE * params.TextPixelSize.v.x;
+        float dir = BLUR_SIZE * params.TextPixelSize.x;
 
         for (int i = 0; i < GAUSSIAN_NUM_SAMPLES; i++)
         {
             float offset = o[i] * dir;
             vec2 right = vec2(min(uv1.x + offset, uv2.z), uv1.y);
             vec2 left = vec2(max(uv1.x - offset, uv2.x), uv1.y);
-            color += w[i] * (texture2D(image, right) + texture2D(image, left));
+            color += w[i] * (texture(image, right) + texture(image, left));
         }
 
         fragColor = color * (opacity_ * paint.a);
 
     #elif defined(EFFECT_SDF)
-        vec4 color = texture2D(glyphs, uv1);
+        vec4 color = texture(glyphs, uv1);
         float distance = SDF_SCALE * (color.r - SDF_BIAS);
         vec2 grad = dFdx(st1);
 

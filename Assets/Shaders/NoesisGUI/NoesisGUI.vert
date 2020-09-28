@@ -4,87 +4,68 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "NoesisInclude.glsl"
+    
+layout(location = 0) in vec2 attr_pos;
 
-struct SNoesisVertex
-{
-    vec2 attr_pos;
-
-#ifdef HAS_COLOR
-    vec4 attr_color;
-#endif
-
-#ifdef HAS_UV0
-    vec2 attr_tex0;
-#endif
-
-#ifdef HAS_UV1
-    vec2 attr_tex1;
-#endif
-
-#ifdef HAS_UV2
-    vec4 attr_tex2;
-#endif
-
-#ifdef HAS_COVERAGE
-    float attr_coverage;
-#endif
-};
-
-#ifdef HAS_COLOR
+#if defined(HAS_COLOR)
+    layout(location = 1) in vec4 attr_color;
     layout(location = 0) out vec4 color;
 #endif
 
-#ifdef HAS_UV0
+#if defined(HAS_UV0)
+    layout(location = 2) in vec2 attr_tex0;
     layout(location = 1) out vec2 uv0;
 #endif
 
-#ifdef HAS_UV1
+#if defined(HAS_UV1)
+    layout(location = 3) in vec2 attr_tex1;
     layout(location = 2) out vec2 uv1;
 #endif
 
-#ifdef HAS_UV2
+#if defined(HAS_UV2)
+    layout(location = 4) in vec4 attr_tex2;
     layout(location = 3) out vec4 uv2;
 #endif
 
-#ifdef HAS_ST1
+#if defined(HAS_ST1)
     layout(location = 4) out vec2 st1;
 #endif
 
-#ifdef HAS_COVERAGE
+#if defined(HAS_COVERAGE)
+    layout(location = 5) in float attr_coverage;
     layout(location = 5) out float coverage;
 #endif
 
-layout(binding = 0, set = 0) restrict readonly buffer   Vertices    { SNoesisVertex v[]; }  b_Vertices;
-layout(binding = 1, set = 0) uniform                    Params      { SNoesisParams v; }    u_Params;
+layout(binding = 0, set = 0) uniform Params { SNoesisParams v; } u_Params;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
-    SNoesisVertex vertex = b_Vertices.v[gl_VertexIndex];
     SNoesisParams params = u_Params.v;
-    gl_Position = vec4(vertex.attr_pos, 0, 1) * params.ProjMatrix;
+    vec4 clipPos = params.ProjMatrix * vec4(attr_pos.x, attr_pos.y, 0, 1);
+    gl_Position = vec4(clipPos.x, -clipPos.y, clipPos.zw);
 
-#ifdef HAS_COLOR
-    color = vertex.attr_color;
+#if defined(HAS_COLOR)
+    color = attr_color;
 #endif
 
-#ifdef HAS_UV0
-    uv0 = vertex.attr_tex0;
+#if defined(HAS_UV0)
+    uv0 = attr_tex0;
 #endif
 
-#ifdef HAS_UV1
-    uv1 = vertex.attr_tex1;
+#if defined(HAS_UV1)
+    uv1 = attr_tex1;
 #endif
 
-#ifdef HAS_UV2
-    uv2 = vertex.attr_tex2;
+#if defined(HAS_UV2)
+    uv2 = attr_tex2;
 #endif
 
-#ifdef HAS_ST1
-    st1 = vertex.attr_tex1 * params.TextSize.xy;
+#if defined(HAS_ST1)
+    st1 = attr_tex1 * params.TextSize.xy;
 #endif
 
-#ifdef HAS_COVERAGE
-    coverage = vertex.attr_coverage;
+#if defined(HAS_COVERAGE)
+    coverage = attr_coverage;
 #endif
 }

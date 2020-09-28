@@ -46,8 +46,9 @@ namespace LambdaEngine
 		{
 			std::multimap<uint64, Buffer*, SizeCompare>& frameAvailableBuffers = s_AvailableBuffers[s_ModFrameIndex];
 
-			for (Buffer* pFinishedStagingBuffer : frameStagedBuffers)
+			for (uint32 b = 0; b < frameStagedBuffers.GetSize(); b++)
 			{
+				Buffer* pFinishedStagingBuffer = frameStagedBuffers[b];
 				frameAvailableBuffers.insert({ pFinishedStagingBuffer->GetDesc().SizeInBytes, pFinishedStagingBuffer });
 			}
 
@@ -82,7 +83,7 @@ namespace LambdaEngine
 			//If we find one, move it to m_StagedBuffers
 			pReturnBuffer = availableBufferIt->second;
 			s_StagedBuffers[s_ModFrameIndex].PushBack(pReturnBuffer);
-			s_AvailableBuffers->erase(availableBufferIt);
+			frameAvailableBuffers.erase(availableBufferIt);
 		}
 
 		return pReturnBuffer;

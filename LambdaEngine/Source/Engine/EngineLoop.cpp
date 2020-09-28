@@ -108,6 +108,7 @@ namespace LambdaEngine
 		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
+		GUIApplication::Tick(delta);
 		RenderSystem::GetInstance().Render();
 
 		return true;
@@ -198,12 +199,12 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::GetInstance().Init())
+		if (!GUIApplication::Init())
 		{
 			return false;
 		}
 
-		if (!GUIApplication::Init())
+		if (!RenderSystem::GetInstance().Init())
 		{
 			return false;
 		}
