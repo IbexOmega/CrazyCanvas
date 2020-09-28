@@ -7,27 +7,27 @@
 
 namespace LambdaEngine
 {
-	class NetworkingSystem : public System
+	class EntityFactorySystem : public System
 	{
 	public:
-		DECL_UNIQUE_CLASS(NetworkingSystem);
-		~NetworkingSystem() = default;
+		DECL_UNIQUE_CLASS(EntityFactorySystem);
+		~EntityFactorySystem() = default;
 
 		bool Init();
 
 		void Tick(Timestamp deltaTime) override;
 
 	public:
-		static NetworkingSystem& GetInstance() { return s_Instance; }
+		static EntityFactorySystem& GetInstance() { return s_Instance; }
 
 	private:
-		NetworkingSystem() = default;
+		EntityFactorySystem() = default;
 
 
 	private:
 		IDVector	m_NetworkEntities;
 
 	private:
-		static NetworkingSystem s_Instance;
+		static EntityFactorySystem s_Instance;
 	};
 }

@@ -146,9 +146,8 @@ namespace LambdaEngine
 					pair.second.PingValues[s_PingValuesOffset] = (float)pStatistics->GetPing().AsMilliSeconds();
 					ImGui::PlotLines("", pair.second.PingValues.data(), pair.second.PingValues.size(), s_PingValuesOffset, "", 0.0f, 50.0f, ImVec2(0, 80.0f));
 				}
-
-				ImGui::End();
 			}
+			ImGui::End();
 		});
 	}
 }

@@ -6,6 +6,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
+#include "Game/ECS/Components/Player/ControllableComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Input/API/Input.h"
 
@@ -44,12 +45,12 @@ void NetworkingState::Init()
 		}
 	}
 
-	//Create Balls
+	//Create Player
 	/*{
 		MaterialProperties materialProperties = {};
 		materialProperties.Roughness	= 0.1f;
 		materialProperties.Metallic	= 0.0f;
-		materialProperties.Albedo		= glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+		materialProperties.Albedo		= glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
 		MeshComponent meshComponent;
 		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("sphere.obj");
@@ -63,11 +64,12 @@ void NetworkingState::Init()
 			materialProperties);
 
 		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { glm::vec3(0.0f, 1.0f, 0.0f), true });
+		pECS->AddComponent<PositionComponent>(entity, { glm::vec3(1.0f, 1.0f, 0.0f), true });
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		pECS->AddComponent<NetworkComponent>(entity, {});
+		pECS->AddComponent<ControllableComponent>(entity, {true});
 	}*/
 }
 

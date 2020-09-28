@@ -32,7 +32,6 @@ namespace LambdaEngine
 	private:
 		const ConstString m_ClassName;
 	};
-
 }
 
 namespace std

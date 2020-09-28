@@ -17,51 +17,30 @@
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/NetworkDebugger.h"
 
-#include "ClientHandler.h"
-
 #include "Math/Random.h"
 
 #include <argh/argh.h>
 
+#include "Game/ECS/Systems/Networking/ServerSystem.h"
+
 using namespace LambdaEngine;
 
-Server::Server() : 
-	m_pServer(nullptr)
+Server::Server()
 {
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	ServerDesc desc = {};
-	desc.Handler		= this;
-	desc.MaxRetries		= 10;
-	desc.MaxClients		= 10;
-	desc.PoolSize		= 1024;
-	desc.Protocol		= EProtocol::UDP;
-	desc.PingInterval	= Timestamp::Seconds(1);
-	desc.PingTimeout	= Timestamp::Seconds(3);
-	desc.UsePingSystem	= true;
-
-	m_pServer = NetworkUtils::CreateServer(desc);
-	m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
-
-	//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 
 	//NetworkDiscovery::EnableServer("Crazy Canvas", 4444, this);
+
+	ServerSystem::GetInstance().Start();
 }
 
 Server::~Server()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
-
-	if(m_pServer)
-		m_pServer->Release();
-}
-
-LambdaEngine::IClientRemoteHandler* Server::CreateClientHandler()
-{
-	return DBG_NEW ClientHandler();
 }
 
 bool Server::OnKeyPressed(const KeyPressedEvent& event)
@@ -73,14 +52,11 @@ bool Server::OnKeyPressed(const KeyPressedEvent& event)
 void Server::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-
-	if (m_pServer)
-		NetworkDebugger::RenderStatistics(m_pServer);
 }
 
 void Server::FixedTick(Timestamp delta)
 {
-	UNREFERENCED_VARIABLE(delta);
+	ServerSystem::GetInstance().FixedTickMainThread(delta);
 }
 
 void Server::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
