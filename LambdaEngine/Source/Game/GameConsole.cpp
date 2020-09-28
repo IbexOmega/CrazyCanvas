@@ -549,7 +549,7 @@ namespace LambdaEngine
 					ImGui::PushID(i);
 					if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
 					{
-						PushError("Test");
+						PushInfo("Use the keyboard to select command");
 					}
 					ImGui::PopID();
 
