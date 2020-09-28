@@ -71,6 +71,7 @@ namespace LambdaEngine
 		
 		int32 m_ActivePopupIndex = -1;
 		bool m_PopupSelectionChanged = false;
+		bool m_UpdatePositionCursor = false;
 		
 		std::string m_PopupSelectedText = "";
 		
