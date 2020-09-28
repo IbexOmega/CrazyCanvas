@@ -217,7 +217,7 @@ namespace LambdaEngine
 		void OnPointLightEntityRemoved(Entity entity);
 
 		void RemoveEntityInstance(Entity entity);
-		void UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction);
+		void UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
 		void UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);

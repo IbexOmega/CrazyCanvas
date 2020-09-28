@@ -142,6 +142,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -164,6 +165,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -186,6 +188,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -208,6 +211,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -230,6 +234,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -252,6 +257,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -286,7 +292,8 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "sampler_address_mode": "CLAMP_TO_EDGE",
+                "sampler_address_mode": "CLAMP_TO_BORDER",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_WHITE",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -309,6 +316,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "CLAMP_TO_EDGE",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         }
@@ -396,7 +404,7 @@
             "name": "BACK_BUFFER_TEXTURE",
             "removable": false,
             "binding_type": "COMBINED_SAMPLER",
-            "src_stage": "SKYBOX_PASS"
+            "src_stage": "RENDER_STAGE_PHYSICS_DEBUG"
         }
     },
     "render_stages": [
@@ -529,57 +537,6 @@
             ]
         },
         {
-            "name": "DIRL_SHADOWMAP",
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "trigger_type": "TRIGGERED",
-            "frame_delay": 0,
-            "frame_offset": 0,
-            "x_dim_type": "CONSTANT",
-            "y_dim_type": "CONSTANT",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 1024.0,
-            "y_dim_var": 1024.0,
-            "z_dim_var": 1.0,
-            "draw_type": "SCENE_INSTANCES",
-            "depth_test_enabled": true,
-            "cull_mode": "CULL_MODE_FRONT",
-            "polygon_mode": "POLYGON_MODE_FILL",
-            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "/ShadowMap\\DirLShadowMap.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "/ShadowMap\\DirLShadowMap.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "SCENE_DRAW_ARGS",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_LIGHTS_BUFFER",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "DIRL_SHADOWMAP",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": ""
-                }
-            ]
-        },
-        {
             "name": "SKYBOX_PASS",
             "type": "GRAPHICS",
             "custom_renderer": false,
@@ -634,6 +591,57 @@
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SHADING_PASS"
+                }
+            ]
+        },
+        {
+            "name": "DIRL_SHADOWMAP",
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "trigger_type": "TRIGGERED",
+            "frame_delay": 0,
+            "frame_offset": 0,
+            "x_dim_type": "CONSTANT",
+            "y_dim_type": "CONSTANT",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1024.0,
+            "y_dim_var": 1024.0,
+            "z_dim_var": 1.0,
+            "draw_type": "SCENE_INSTANCES",
+            "depth_test_enabled": true,
+            "cull_mode": "CULL_MODE_FRONT",
+            "polygon_mode": "POLYGON_MODE_FILL",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "/ShadowMap\\DirLShadowMap.vert",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "/ShadowMap\\DirLShadowMap.frag"
+            },
+            "resource_states": [
+                {
+                    "name": "SCENE_DRAW_ARGS",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "DIRL_SHADOWMAP",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": ""
                 }
             ]
         },
@@ -785,6 +793,57 @@
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
+                }
+            ]
+        },
+        {
+            "name": "RENDER_STAGE_PHYSICS_DEBUG",
+            "type": "GRAPHICS",
+            "custom_renderer": true,
+            "trigger_type": "EVERY",
+            "frame_delay": 0,
+            "frame_offset": 0,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 1.0,
+            "draw_type": "SCENE_INSTANCES",
+            "depth_test_enabled": true,
+            "cull_mode": "CULL_MODE_NONE",
+            "polygon_mode": "POLYGON_MODE_LINE",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_LINE_LIST",
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": ""
+            },
+            "resource_states": [
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": "SKYBOX_PASS"
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": "SKYBOX_PASS"
                 }
             ]
         }

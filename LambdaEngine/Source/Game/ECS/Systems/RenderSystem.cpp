@@ -29,6 +29,8 @@
 
 #include "Game/GameConsole.h"
 
+#include "Rendering/PhysicsRenderer.h"
+
 namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
@@ -229,8 +231,8 @@ namespace LambdaEngine
 				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
-		SAFEDELETE(m_pPhysicsRenderer);
 
+		SAFEDELETE(m_pPhysicsRenderer);
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
 
@@ -302,10 +304,19 @@ namespace LambdaEngine
 			auto& dirLight = pDirLightComponents->GetData(entity);
 			auto& position = pPositionComponents->GetData(entity);
 			auto& rotation = pRotationComponents->GetData(entity);
-			if (dirLight.Dirty || rotation.Dirty)
+			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
 			{
-				UpdateDirectionalLight(dirLight.ColorIntensity, position.Position, rotation.Quaternion);
-				dirLight.Dirty = false;
+				UpdateDirectionalLight(
+					dirLight.ColorIntensity,
+					position.Position,
+					rotation.Quaternion,
+					dirLight.frustumWidth,
+					dirLight.frustumHeight,
+					dirLight.frustumZNear,
+					dirLight.frustumZFar
+				);
+				dirLight.Dirty = rotation.Dirty = position.Dirty = false;
+
 			}
 		}
 
@@ -412,11 +423,19 @@ namespace LambdaEngine
 		{
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
-			auto& pointLightComp = pECSCore->GetComponent<DirectionalLightComponent>(entity);
+			auto& dirLight = pECSCore->GetComponent<DirectionalLightComponent>(entity);
 			auto& position = pECSCore->GetComponent<PositionComponent>(entity);
 			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
-			UpdateDirectionalLight(pointLightComp.ColorIntensity, position.Position, rotation.Quaternion);
+			UpdateDirectionalLight(
+				dirLight.ColorIntensity,
+				position.Position,
+				rotation.Quaternion,
+				dirLight.frustumWidth,
+				dirLight.frustumHeight,
+				dirLight.frustumZNear,
+				dirLight.frustumZFar
+			);
 
 			m_DirectionalExist = true;
 		}
@@ -810,16 +829,68 @@ namespace LambdaEngine
 	}
 
 
-	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction)
+	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
-		m_LightBufferData.DirL_Direction = GetForward(direction);
+		m_LightBufferData.DirL_Direction = -GetForward(direction);
 
-		static float depth = 20.0f;
-		static float width = 10.0f;
+		m_LightBufferData.DirL_ProjViews = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
+		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
 
-		m_LightBufferData.DirL_ProjViews = glm::ortho(-width, width, -width, width, -10.0f, depth);
-		m_LightBufferData.DirL_ProjViews *= glm::lookAt(m_LightBufferData.DirL_Direction, glm::vec3(0.0f), g_DefaultUp);
+		static uint32 m_LineID = 0U;
+
+		TArray<glm::vec3> points(24);
+		glm::vec3 forward = m_LightBufferData.DirL_Direction;
+		glm::vec3 right = GetRight(direction);
+		glm::vec3 up = GetUp(direction);
+
+		const glm::vec3 nearPos = position + forward * zNear;
+		const glm::vec3 farPos = position + forward * zFar;
+
+		// Near TL -> Far TL
+		points[0] = nearPos - right * frustumWidth + up * frustumHeight;
+		points[1] = farPos - right * frustumWidth + up * frustumHeight;
+
+		// Near BL -> Far BL
+		points[2] = nearPos - right * frustumWidth - up * frustumHeight;
+		points[3] = farPos - right * frustumWidth - up * frustumHeight;
+
+		// Near TR -> Far TR
+		points[4] = nearPos + right * frustumWidth + up * frustumHeight;
+		points[5] = farPos + right * frustumWidth + up * frustumHeight;
+
+		// Near BR -> Far BR
+		points[6] = nearPos + right * frustumWidth - up * frustumHeight;
+		points[7] = farPos + right * frustumWidth - up * frustumHeight;
+
+		// Far TL -> Far TR
+		points[8] = farPos - right * frustumWidth + up * frustumHeight;
+		points[9] = farPos + right * frustumWidth + up * frustumHeight;
+
+		//  FRONT
+		points[10] = nearPos + right * frustumWidth + up * frustumHeight;
+		points[11] = nearPos + right * frustumWidth - up * frustumHeight;
+
+		points[12] = farPos - right * frustumWidth + up * frustumHeight;
+		points[13] = farPos - right * frustumWidth - up * frustumHeight;
+
+		//  BACK
+		points[14] = nearPos - right * frustumWidth + up * frustumHeight;
+		points[15] = nearPos - right * frustumWidth - up * frustumHeight;
+
+		points[16] = farPos + right * frustumWidth + up * frustumHeight;
+		points[17] = farPos + right * frustumWidth - up * frustumHeight;
+
+		points[18] = farPos - right * frustumWidth - up * frustumHeight;
+		points[19] = farPos + right * frustumWidth - up * frustumHeight;
+
+		points[20] = farPos - right * frustumWidth + up * frustumHeight;
+		points[21] = farPos + right * frustumWidth + up * frustumHeight;
+
+		points[22] = nearPos - right * frustumWidth - up * frustumHeight;
+		points[23] = nearPos + right * frustumWidth - up * frustumHeight;
+
+		m_LineID = PhysicsRenderer::Get()->UpdateLineGroup(m_LineID, points, { 0.0f, 1.0f, 0.0f });
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsDirty = true;
@@ -860,10 +931,10 @@ namespace LambdaEngine
 		constexpr uint32 PROJECTIONS = 6;
 		constexpr float FOV = 90.f;
 		constexpr float ASPECT_RATIO = 1.0f;
+		m_PointLights[index].FarPlane = farPlane;
 		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
-			m_PointLights[index].FarPlane = farPlane;
 			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}
