@@ -62,13 +62,13 @@ void SandboxState::Init()
 		cameraDesc.Height = window->GetHeight();
 		cameraDesc.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane");
 		cameraDesc.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane");
-		Entity camer = CreateFreeCameraEntity(cameraDesc);
+		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
 
 	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Map/Scene.obj", meshComponents);
+		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
@@ -80,8 +80,6 @@ void SandboxState::Init()
 			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
-
-			m_Entities.PushBack(entity);
 		}
 	}
 
@@ -224,8 +222,7 @@ void SandboxState::Pause()
 
 void SandboxState::Tick(LambdaEngine::Timestamp delta)
 {
-	 //Update State specfic objects
-
+	// Update State specfic objects
 }
 
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
