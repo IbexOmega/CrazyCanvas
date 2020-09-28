@@ -46,10 +46,10 @@ namespace LambdaEngine
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
-		String							DirectoryPath;
-		TArray<Mesh*>&					Meshes;
-		TArray<MeshComponent>&			MeshComponents;
-		TArray<Animation*>&				Animations;
+		String						DirectoryPath;
+		TArray<Mesh*>&				Meshes;
+		TArray<MeshComponent>&		MeshComponents;
+		TArray<Animation*>&			Animations;
 		TArray<Material*>*				pMaterials;
 		TArray<Texture*>*				pTextures;
 		THashTable<String, Texture*>	LoadedTextures;
