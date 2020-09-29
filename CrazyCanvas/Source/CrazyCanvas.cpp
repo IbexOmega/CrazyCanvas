@@ -1,5 +1,6 @@
 #include "CrazyCanvas.h"
 
+
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"

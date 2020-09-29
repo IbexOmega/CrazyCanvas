@@ -18,8 +18,8 @@ namespace LambdaEngine
 
 		uint32 indices[6] =
 		{
-			2, 0, 1,
-			3, 0, 2
+			1, 0, 2,
+			2, 0, 3
 		};
 
 		Mesh* pMesh = DBG_NEW Mesh();
@@ -49,7 +49,7 @@ namespace LambdaEngine
 
 	struct InlineMeshlet
 	{
-		TArray<Mesh::IndexType> UniqueVertexIndices;
+		TArray<MeshIndexType> UniqueVertexIndices;
 		TArray<PackedTriangle> PrimitiveIndices;
 	};
 
@@ -66,12 +66,12 @@ namespace LambdaEngine
 		const uint32 vertexCount = pMesh->Vertices.GetSize();
 		const uint32 triangleCount = (indexCount / 3);
 
-		const Mesh::IndexType* pIndices = pMesh->Indices.GetData();
+		const MeshIndexType* pIndices = pMesh->Indices.GetData();
 		const Vertex* pVertices = pMesh->Vertices.GetData();
 
-		TArray<Mesh::IndexType> indexList(vertexCount);
+		TArray<MeshIndexType> indexList(vertexCount);
 
-		std::unordered_map<size_t, Mesh::IndexType> uniquePositions;
+		std::unordered_map<size_t, MeshIndexType> uniquePositions;
 		uniquePositions.reserve(vertexCount);
 
 		std::hash<glm::vec3> hasher;
@@ -86,8 +86,8 @@ namespace LambdaEngine
 			}
 			else
 			{
-				uniquePositions.insert(std::make_pair(hash, static_cast<Mesh::IndexType>(i)));
-				indexList[i] = static_cast<Mesh::IndexType>(i);
+				uniquePositions.insert(std::make_pair(hash, static_cast<MeshIndexType>(i)));
+				indexList[i] = static_cast<MeshIndexType>(i);
 			}
 		}
 
@@ -102,9 +102,9 @@ namespace LambdaEngine
 			uint32 index = face * 3;
 			for (uint32 edge = 0; edge < 3; edge++)
 			{
-				Mesh::IndexType i0 = indexList[pIndices[index + ((edge + 0) % 3)]];
-				Mesh::IndexType i1 = indexList[pIndices[index + ((edge + 1) % 3)]];
-				Mesh::IndexType i2 = indexList[pIndices[index + ((edge + 2) % 3)]];
+				MeshIndexType i0 = indexList[pIndices[index + ((edge + 0) % 3)]];
+				MeshIndexType i1 = indexList[pIndices[index + ((edge + 1) % 3)]];
+				MeshIndexType i2 = indexList[pIndices[index + ((edge + 2) % 3)]];
 
 				EdgeEntry& entry = entries[entryIndex++];
 				entry.i0 = i0;
@@ -131,9 +131,9 @@ namespace LambdaEngine
 					continue;
 				}
 
-				Mesh::IndexType i0 = indexList[pIndices[index + ((point + 1) % 3)]];
-				Mesh::IndexType i1 = indexList[pIndices[index + ((point + 0) % 3)]];
-				Mesh::IndexType i2 = indexList[pIndices[index + ((point + 2) % 3)]];
+				MeshIndexType i0 = indexList[pIndices[index + ((point + 1) % 3)]];
+				MeshIndexType i1 = indexList[pIndices[index + ((point + 0) % 3)]];
+				MeshIndexType i2 = indexList[pIndices[index + ((point + 2) % 3)]];
 
 				uint32 key = i0 % hashSize;
 
@@ -238,7 +238,7 @@ namespace LambdaEngine
 						uint32 edge2 = 0;
 						for (; edge2 < 3; edge2++)
 						{
-							Mesh::IndexType k = pIndices[(pFound->Face * 3) + edge2];
+							MeshIndexType k = pIndices[(pFound->Face * 3) + edge2];
 							if (k == static_cast<uint32>(-1))
 							{
 								continue;
@@ -353,7 +353,7 @@ namespace LambdaEngine
 
 	static void Meshletize(Mesh* pMesh, uint32 maxVerts, uint32 maxPrims, TArray<InlineMeshlet>& output)
 	{
-		Mesh::IndexType* pIndices = pMesh->Indices.GetData();
+		MeshIndexType* pIndices = pMesh->Indices.GetData();
 		Vertex* pVertices = pMesh->Vertices.GetData();
 
 		const uint32 vertexCount = pMesh->Vertices.GetSize();
@@ -387,7 +387,7 @@ namespace LambdaEngine
 			uint32 index = candidates.GetBack().first;
 			candidates.PopBack();
 
-			Mesh::IndexType tri[3] =
+			MeshIndexType tri[3] =
 			{
 				pIndices[index * 3 + 0],
 				pIndices[index * 3 + 1],
@@ -448,7 +448,7 @@ namespace LambdaEngine
 				for (uint32 i = 0; i < static_cast<uint32>(candidates.GetSize()); i++)
 				{
 					uint32 candidate = candidates[i].first;
-					Mesh::IndexType triIndices[3] =
+					MeshIndexType triIndices[3] =
 					{
 						pIndices[(candidate * 3) + 0],
 						pIndices[(candidate * 3) + 1],
@@ -541,37 +541,37 @@ namespace LambdaEngine
 		TArray<InlineMeshlet> builtMeshlets;
 		Meshletize(pMesh, maxVerts, maxPrims, builtMeshlets);
 
-		uint32 uniqueVertexIndexCount = 0;
-		uint32 primitiveIndexCount = 0;
-		uint32 meshletCount = static_cast<uint32>(builtMeshlets.GetSize());
+		uint32 uniqueVertexIndexCount	= 0;
+		uint32 primitiveIndexCount		= 0;
+		const uint32 meshletCount		= static_cast<uint32>(builtMeshlets.GetSize());
 
 		pMesh->Meshlets.Resize(meshletCount);
 		for (uint32 i = 0; i < meshletCount; i++)
 		{
-			pMesh->Meshlets[i].VertOffset = uniqueVertexIndexCount;
-			pMesh->Meshlets[i].VertCount = static_cast<uint32>(builtMeshlets[i].UniqueVertexIndices.GetSize());
+			pMesh->Meshlets[i].VertOffset	= uniqueVertexIndexCount;
+			pMesh->Meshlets[i].VertCount	= static_cast<uint32>(builtMeshlets[i].UniqueVertexIndices.GetSize());
 			uniqueVertexIndexCount += static_cast<uint32>(builtMeshlets[i].UniqueVertexIndices.GetSize());
 
-			pMesh->Meshlets[i].PrimOffset = primitiveIndexCount;
-			pMesh->Meshlets[i].PrimCount = static_cast<uint32>(builtMeshlets[i].PrimitiveIndices.GetSize());
+			pMesh->Meshlets[i].PrimOffset	= primitiveIndexCount;
+			pMesh->Meshlets[i].PrimCount	= static_cast<uint32>(builtMeshlets[i].PrimitiveIndices.GetSize());
 			primitiveIndexCount += static_cast<uint32>(builtMeshlets[i].PrimitiveIndices.GetSize());
 		}
 
 		pMesh->PrimitiveIndices.Resize(primitiveIndexCount);
 		pMesh->UniqueIndices.Resize(uniqueVertexIndexCount);
 
-		Mesh::IndexType* pUniqueIndices		= pMesh->UniqueIndices.GetData();
-		PackedTriangle* pPrimitiveIndices	= pMesh->PrimitiveIndices.GetData();
+		MeshIndexType*	pUniqueIndices		= pMesh->UniqueIndices.GetData();
+		PackedTriangle*	pPrimitiveIndices	= pMesh->PrimitiveIndices.GetData();
 		for (uint32 i = 0; i < meshletCount; i++)
 		{
-			uint32 localPrimitiveIndexCount = builtMeshlets[i].PrimitiveIndices.GetSize();
-			uint32 localUniqueVertexIndexCount = builtMeshlets[i].UniqueVertexIndices.GetSize();
+			uint32 localPrimitiveIndexCount		= builtMeshlets[i].PrimitiveIndices.GetSize();
+			uint32 localUniqueVertexIndexCount	= builtMeshlets[i].UniqueVertexIndices.GetSize();
 
 			memcpy(pPrimitiveIndices, builtMeshlets[i].PrimitiveIndices.GetData(), sizeof(PackedTriangle) * localPrimitiveIndexCount);
-			memcpy(pUniqueIndices, builtMeshlets[i].UniqueVertexIndices.GetData(), sizeof(Mesh::IndexType) * localUniqueVertexIndexCount);
+			memcpy(pUniqueIndices, builtMeshlets[i].UniqueVertexIndices.GetData(), sizeof(MeshIndexType) * localUniqueVertexIndexCount);
 
-			pPrimitiveIndices += localPrimitiveIndexCount;
-			pUniqueIndices += localUniqueVertexIndexCount;
+			pPrimitiveIndices	+= localPrimitiveIndexCount;
+			pUniqueIndices		+= localUniqueVertexIndexCount;
 		}
 
 		//LOG_INFO("--------------------------------------------");
