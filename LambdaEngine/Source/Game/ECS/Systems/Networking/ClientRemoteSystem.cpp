@@ -56,16 +56,18 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::Tick(Timestamp deltaTime)
 	{
-		
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientRemoteSystem::TickMainThread(Timestamp deltaTime)
 	{
-		
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientRemoteSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		if (m_pClient->IsConnected())
 		{
 			std::scoped_lock<SpinLock> lock(m_Lock);
@@ -158,16 +160,18 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::OnDisconnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientRemoteSystem::OnDisconnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientRemoteSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
+		UNREFERENCED_VARIABLE(pClient);
+
 		if (pPacket->GetType() == NetworkSegment::TYPE_PLAYER_ACTION)
 		{
 			GameState gameState = {};
@@ -184,21 +188,25 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::OnClientReleased(IClient* pClient)
 	{
+		UNREFERENCED_VARIABLE(pClient);
 		delete this;
 	}
 
 	void ClientRemoteSystem::OnPacketDelivered(NetworkSegment* pPacket)
 	{
-
+		UNREFERENCED_VARIABLE(pPacket);
 	}
 
 	void ClientRemoteSystem::OnPacketResent(NetworkSegment* pPacket, uint8 retries)
 	{
-
+		UNREFERENCED_VARIABLE(pPacket);
+		UNREFERENCED_VARIABLE(retries);
 	}
 
 	void ClientRemoteSystem::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 retries)
 	{
+		UNREFERENCED_VARIABLE(pPacket);
+		UNREFERENCED_VARIABLE(retries);
 		m_pClient->Disconnect("ClientRemoteSystem::OnPacketMaxTriesReached()");
 	}
 }

@@ -69,13 +69,13 @@ namespace LambdaEngine
 
 		if (deltaForward != 0)
 		{
-			positionComponent.Position.z += 1.0f * deltaTime.AsSeconds() * deltaForward;
+			positionComponent.Position.z += (float32)((1.0f * deltaTime.AsSeconds()) * (float64)deltaForward);
 			positionComponent.Dirty = true;
 		}
 
 		if (deltaLeft != 0)
 		{
-			positionComponent.Position.x += 1.0f * deltaTime.AsSeconds() * deltaLeft;
+			positionComponent.Position.x -= (float32)((1.0f * deltaTime.AsSeconds()) * (float64)deltaLeft);
 			positionComponent.Dirty = true;
 		}
 	}

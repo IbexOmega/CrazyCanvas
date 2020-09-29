@@ -71,6 +71,8 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		if (m_pClient->IsConnected() && m_Entities.size() > 0)
 		{
 			int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
@@ -126,36 +128,39 @@ namespace LambdaEngine
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
 		NetworkDebugger::RenderStatistics(m_pClient);
 	}
 
 	void ClientSystem::Tick(Timestamp deltaTime)
 	{
-		
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientSystem::OnConnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnConnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnDisconnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnDisconnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
+		UNREFERENCED_VARIABLE(pClient);
+
 		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
 		{
 			BinaryDecoder decoder(pPacket);
@@ -219,12 +224,12 @@ namespace LambdaEngine
 
 	void ClientSystem::OnClientReleased(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnServerFull(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color)
