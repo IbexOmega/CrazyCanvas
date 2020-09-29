@@ -118,11 +118,12 @@ void BenchmarkState::Init()
 		}
 
 		// Directional Light
-		{
+	/*	{
 			m_DirLight = ECSCore::GetInstance()->CreateEntity();
+			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { { 0.0f, 0.0f, 0.0f} });
 			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
 			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-		}
+		}*/
 
 		// Add PointLights
 		{
@@ -136,9 +137,9 @@ void BenchmarkState::Init()
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 0.0f, 5.0f},
-				{-4.0f, 0.0f, 5.0f},
-				{0.0f, 0.0f, 5.0f},
+				{4.0f, 2.0f, 5.0f},
+				{-4.0f, 2.0f, 5.0f},
+				{0.0f, 2.0f, 5.0f},
 			};
 
 			for (uint32 i = 0; i < POINT_LIGHT_COUNT; i++)
@@ -152,7 +153,7 @@ void BenchmarkState::Init()
 				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 7.0f, -5.0f));
 				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 6.0f, -8.0f));
 				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 5.0f, -10.0f));
-				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 0.0f, -10.0f));
+				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 2.0f, -10.0f));
 
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;

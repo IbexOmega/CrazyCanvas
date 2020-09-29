@@ -85,11 +85,6 @@ void PlaySessionState::Init()
 				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-
-
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
-				transform *= glm::toMat4(glm::identity<glm::quat>());
-				transform = glm::scale(transform, scale);
 			}
 		}
 
