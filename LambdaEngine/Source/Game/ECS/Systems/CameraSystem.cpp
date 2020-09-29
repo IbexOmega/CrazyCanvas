@@ -12,7 +12,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Window.h"
 
-#include "Rendering/PhysicsRenderer.h"
+#include "Rendering/LineRenderer.h"
 
 namespace LambdaEngine
 {
@@ -95,9 +95,9 @@ namespace LambdaEngine
 		float32 dt = float32(deltaTime.AsSeconds());
 
 		glm::vec3 translation = {
-				float(InputActionSystem::IsActive("CAM_RIGHT")	 - InputActionSystem::IsActive("CAM_LEFT")),	// X: Right
-				float(InputActionSystem::IsActive("CAM_DOWN")    - InputActionSystem::IsActive("CAM_UP")),		// Y: Up
-				float(InputActionSystem::IsActive("CAM_FORWARD") - InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
+				float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
+				float(InputActionSystem::IsActive("CAM_UP")			- InputActionSystem::IsActive("CAM_DOWN")),		// Y: Up
+				float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
 		};
 
 		const glm::vec3 forward = GetForward(rotComp.Quaternion);
@@ -124,7 +124,7 @@ namespace LambdaEngine
 				m_CIsPressed		= true;
 			}
 		}
-		else 
+		else
 		{
 			m_CIsPressed = false;
 		}
@@ -164,7 +164,7 @@ namespace LambdaEngine
 
 	void CameraSystem::RenderFrustum(Entity entity)
 	{
-		if (PhysicsRenderer::Get())
+		if (LineRenderer::Get())
 		{
 			// This is a test code - This should probably not be done every tick
 			ECSCore* pECSCore = ECSCore::GetInstance();
@@ -209,11 +209,11 @@ namespace LambdaEngine
 
 			if (m_LineGroupEntityIDs.contains(entity))
 			{
-				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
+				m_LineGroupEntityIDs[entity] = LineRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
 			}
 			else
 			{
-				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
+				m_LineGroupEntityIDs[entity] = LineRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
 			}
 		}
 	}

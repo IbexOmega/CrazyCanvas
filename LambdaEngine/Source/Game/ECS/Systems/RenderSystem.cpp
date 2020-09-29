@@ -12,7 +12,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
-#include "Rendering/PhysicsRenderer.h"
+#include "Rendering/LineRenderer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -120,12 +120,12 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 			renderGraphDesc.CustomRenderers				= { };
 
-			if (EngineConfig::GetBoolProperty("EnablePhysicsRenderer"))
+			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 			{
-				m_pPhysicsRenderer = DBG_NEW PhysicsRenderer();
-				m_pPhysicsRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+				m_pLineRenderer = DBG_NEW LineRenderer();
+				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
-				renderGraphDesc.CustomRenderers.PushBack(m_pPhysicsRenderer);
+				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
@@ -226,7 +226,7 @@ namespace LambdaEngine
 				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
-		SAFEDELETE(m_pPhysicsRenderer);
+		SAFEDELETE(m_pLineRenderer);
 
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
@@ -453,8 +453,11 @@ namespace LambdaEngine
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
+		
 		m_EntityToPointLight[lastEntity] = currentIndex;
+		m_PointLightToEntity[currentIndex] = lastEntity;
 
+		m_PointLightToEntity.erase(lastIndex);
 		m_EntityToPointLight.erase(entity);
 		m_PointLights.PopBack();
 
@@ -517,7 +520,7 @@ namespace LambdaEngine
 					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
 					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(Mesh::IndexType);
+					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(MeshIndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
@@ -571,7 +574,7 @@ namespace LambdaEngine
 					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
 					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(Mesh::IndexType);
+					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(MeshIndexType);
 
 					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
 
