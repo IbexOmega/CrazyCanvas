@@ -11,15 +11,14 @@
 #include "Audio/AudioSystem.h"
 
 #include "Resources/STB.h"
+#include "Resources/GLSLShaderSource.h"
 
 #include "Log/Log.h"
 
 #include "Containers/THashTable.h"
 #include "Containers/TUniquePtr.h"
 
-#include <glslangStandAlone/DirStackFileIncluder.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
-#include <glslang/MachineIndependent/reflection.h>
+#include "Resources/GLSLang.h"
 
 #include <cstdio>
 
@@ -33,149 +32,6 @@ namespace LambdaEngine
 	CommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
 	Fence*					ResourceLoader::s_pCopyFence				= nullptr;
 	uint64					ResourceLoader::s_SignalValue				= 1;
-
-	/*
-	*  --------------------------glslang Helpers Begin---------------------------------
-	*/
-
-	static const TBuiltInResource* GetDefaultBuiltInResources()
-	{
-		static TBuiltInResource defaultBuiltInResources = {};
-
-		defaultBuiltInResources.maxLights									= 32;
-		defaultBuiltInResources.maxClipPlanes								= 6;
-		defaultBuiltInResources.maxTextureUnits								= 32;
-		defaultBuiltInResources.maxTextureCoords							= 32;
-		defaultBuiltInResources.maxVertexAttribs							= 64;
-		defaultBuiltInResources.maxVertexUniformComponents					= 4096;
-		defaultBuiltInResources.maxVaryingFloats							= 64;
-		defaultBuiltInResources.maxVertexTextureImageUnits					= 32;
-		defaultBuiltInResources.maxCombinedTextureImageUnits				= 80;
-		defaultBuiltInResources.maxTextureImageUnits						= 32;
-		defaultBuiltInResources.maxFragmentUniformComponents				= 4096;
-		defaultBuiltInResources.maxDrawBuffers								= 32;
-		defaultBuiltInResources.maxVertexUniformVectors						= 128;
-		defaultBuiltInResources.maxVaryingVectors							= 8;
-		defaultBuiltInResources.maxFragmentUniformVectors					= 16;
-		defaultBuiltInResources.maxVertexOutputVectors						= 16;
-		defaultBuiltInResources.maxFragmentInputVectors						= 15;
-		defaultBuiltInResources.minProgramTexelOffset						= -8;
-		defaultBuiltInResources.maxProgramTexelOffset						= 7;
-		defaultBuiltInResources.maxClipDistances							= 8;
-		defaultBuiltInResources.maxComputeWorkGroupCountX					= 65535;
-		defaultBuiltInResources.maxComputeWorkGroupCountY					= 65535;
-		defaultBuiltInResources.maxComputeWorkGroupCountZ					= 65535;
-		defaultBuiltInResources.maxComputeWorkGroupSizeX					= 1024;
-		defaultBuiltInResources.maxComputeWorkGroupSizeY					= 1024;
-		defaultBuiltInResources.maxComputeWorkGroupSizeZ					= 64;
-		defaultBuiltInResources.maxComputeUniformComponents					= 1024;
-		defaultBuiltInResources.maxComputeTextureImageUnits					= 16;
-		defaultBuiltInResources.maxComputeImageUniforms						= 8;
-		defaultBuiltInResources.maxComputeAtomicCounters					= 8;
-		defaultBuiltInResources.maxComputeAtomicCounterBuffers				= 1;
-		defaultBuiltInResources.maxVaryingComponents						= 60;
-		defaultBuiltInResources.maxVertexOutputComponents					= 64;
-		defaultBuiltInResources.maxGeometryInputComponents					= 64;
-		defaultBuiltInResources.maxGeometryOutputComponents					= 128;
-		defaultBuiltInResources.maxFragmentInputComponents					= 128;
-		defaultBuiltInResources.maxImageUnits								= 8;
-		defaultBuiltInResources.maxCombinedImageUnitsAndFragmentOutputs		= 8;
-		defaultBuiltInResources.maxCombinedShaderOutputResources			= 8;
-		defaultBuiltInResources.maxImageSamples								= 0;
-		defaultBuiltInResources.maxVertexImageUniforms						= 0;
-		defaultBuiltInResources.maxTessControlImageUniforms					= 0;
-		defaultBuiltInResources.maxTessEvaluationImageUniforms				= 0;
-		defaultBuiltInResources.maxGeometryImageUniforms					= 0;
-		defaultBuiltInResources.maxFragmentImageUniforms					= 8;
-		defaultBuiltInResources.maxCombinedImageUniforms					= 8;
-		defaultBuiltInResources.maxGeometryTextureImageUnits				= 16;
-		defaultBuiltInResources.maxGeometryOutputVertices					= 256;
-		defaultBuiltInResources.maxGeometryTotalOutputComponents			= 1024;
-		defaultBuiltInResources.maxGeometryUniformComponents				= 1024;
-		defaultBuiltInResources.maxGeometryVaryingComponents				= 64;
-		defaultBuiltInResources.maxTessControlInputComponents				= 128;
-		defaultBuiltInResources.maxTessControlOutputComponents				= 128;
-		defaultBuiltInResources.maxTessControlTextureImageUnits				= 16;
-		defaultBuiltInResources.maxTessControlUniformComponents				= 1024;
-		defaultBuiltInResources.maxTessControlTotalOutputComponents			= 4096;
-		defaultBuiltInResources.maxTessEvaluationInputComponents			= 128;
-		defaultBuiltInResources.maxTessEvaluationOutputComponents			= 128;
-		defaultBuiltInResources.maxTessEvaluationTextureImageUnits			= 16;
-		defaultBuiltInResources.maxTessEvaluationUniformComponents			= 1024;
-		defaultBuiltInResources.maxTessPatchComponents						= 120;
-		defaultBuiltInResources.maxPatchVertices							= 32;
-		defaultBuiltInResources.maxTessGenLevel								= 64;
-		defaultBuiltInResources.maxViewports								= 16;
-		defaultBuiltInResources.maxVertexAtomicCounters						= 0;
-		defaultBuiltInResources.maxTessControlAtomicCounters				= 0;
-		defaultBuiltInResources.maxTessEvaluationAtomicCounters				= 0;
-		defaultBuiltInResources.maxGeometryAtomicCounters					= 0;
-		defaultBuiltInResources.maxFragmentAtomicCounters					= 8;
-		defaultBuiltInResources.maxCombinedAtomicCounters					= 8;
-		defaultBuiltInResources.maxAtomicCounterBindings					= 1;
-		defaultBuiltInResources.maxVertexAtomicCounterBuffers				= 0;
-		defaultBuiltInResources.maxTessControlAtomicCounterBuffers			= 0;
-		defaultBuiltInResources.maxTessEvaluationAtomicCounterBuffers		= 0;
-		defaultBuiltInResources.maxGeometryAtomicCounterBuffers				= 0;
-		defaultBuiltInResources.maxFragmentAtomicCounterBuffers				= 1;
-		defaultBuiltInResources.maxCombinedAtomicCounterBuffers				= 1;
-		defaultBuiltInResources.maxAtomicCounterBufferSize					= 16384;
-		defaultBuiltInResources.maxTransformFeedbackBuffers					= 4;
-		defaultBuiltInResources.maxTransformFeedbackInterleavedComponents	= 64;
-		defaultBuiltInResources.maxCullDistances							= 8;
-		defaultBuiltInResources.maxCombinedClipAndCullDistances				= 8;
-		defaultBuiltInResources.maxSamples									= 4;
-		defaultBuiltInResources.limits.nonInductiveForLoops					= true;
-		defaultBuiltInResources.limits.whileLoops							= true;
-		defaultBuiltInResources.limits.doWhileLoops							= true;
-		defaultBuiltInResources.limits.generalUniformIndexing				= true;
-		defaultBuiltInResources.limits.generalAttributeMatrixVectorIndexing = true;
-		defaultBuiltInResources.limits.generalVaryingIndexing				= true;
-		defaultBuiltInResources.limits.generalSamplerIndexing				= true;
-		defaultBuiltInResources.limits.generalVariableIndexing				= true;
-		defaultBuiltInResources.limits.generalConstantMatrixVectorIndexing	= true;
-
-		// Mesh shaders
-		defaultBuiltInResources.maxMeshWorkGroupSizeX_NV	= 32;
-		defaultBuiltInResources.maxMeshWorkGroupSizeY_NV	= 1;
-		defaultBuiltInResources.maxMeshWorkGroupSizeZ_NV	= 1;
-		defaultBuiltInResources.maxTaskWorkGroupSizeX_NV	= 32;
-		defaultBuiltInResources.maxTaskWorkGroupSizeY_NV	= 1;
-		defaultBuiltInResources.maxTaskWorkGroupSizeZ_NV	= 1;
-		defaultBuiltInResources.maxMeshOutputVerticesNV		= 256;
-		defaultBuiltInResources.maxMeshOutputPrimitivesNV	= 512;
-		defaultBuiltInResources.maxMeshViewCountNV			= 4;
-
-		return &defaultBuiltInResources;
-	}
-
-	static EShLanguage ConvertShaderStageToEShLanguage(FShaderStageFlags shaderStage)
-	{
-		switch (shaderStage)
-		{
-		case FShaderStageFlag::SHADER_STAGE_FLAG_MESH_SHADER:			return EShLanguage::EShLangMeshNV;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_TASK_SHADER:			return EShLanguage::EShLangTaskNV;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER:			return EShLanguage::EShLangVertex;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_GEOMETRY_SHADER:		return EShLanguage::EShLangGeometry;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_HULL_SHADER:			return EShLanguage::EShLangTessControl;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER:			return EShLanguage::EShLangTessEvaluation;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER:			return EShLanguage::EShLangFragment;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER:		return EShLanguage::EShLangCompute;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER:			return EShLanguage::EShLangRayGen;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER:		return EShLanguage::EShLangIntersect;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER:		return EShLanguage::EShLangAnyHit;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:	return EShLanguage::EShLangClosestHit;
-		case FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER:			return EShLanguage::EShLangMiss;
-
-		case FShaderStageFlag::SHADER_STAGE_FLAG_NONE:
-		default:
-			return EShLanguage::EShLangCount;
-		}
-	}
-
-	/*
-	*  --------------------------glslang Helpers End---------------------------------
-	*/
 
 	/*
 	* Helpers
@@ -245,7 +101,7 @@ namespace LambdaEngine
 			string = string.substr(0, endPos);
 		}
 	}
-	
+
 	/*
 	* ResourceLoader
 	*/
@@ -317,9 +173,9 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Material*>& materials, TArray<Texture*>& textures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures)
 	{
-		int32 assimpFlags =
+		const int32 assimpFlags =
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|
@@ -335,10 +191,12 @@ namespace LambdaEngine
 			aiProcess_FindDegenerates			|
 			aiProcess_FindInvalidData;
 
-		SceneLoadRequest loadRequest = {
+		SceneLoadRequest loadRequest = 
+		{
 			.Filepath		= ConvertSlashes(filepath),
 			.AssimpFlags	= assimpFlags,
 			.Meshes			= meshes,
+			.Animations		= animations,
 			.MeshComponents	= meshComponents,
 			.pMaterials		= &materials,
 			.pTextures		= &textures
@@ -349,7 +207,7 @@ namespace LambdaEngine
 
 	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath)
 	{
-		int32 assimpFlags =
+		const int32 assimpFlags =
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|
@@ -358,7 +216,6 @@ namespace LambdaEngine
 			aiProcess_ImproveCacheLocality		|
 			aiProcess_LimitBoneWeights			|
 			aiProcess_RemoveRedundantMaterials	|
-			aiProcess_SplitLargeMeshes			|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
 			aiProcess_SortByPType				|
@@ -367,38 +224,65 @@ namespace LambdaEngine
 			aiProcess_OptimizeGraph				|
 			aiProcess_FindInvalidData;
 
-		TArray<Mesh*> meshes;
-		TArray<MeshComponent> meshComponent;
+		TArray<Mesh*>			meshes;
+		TArray<Animation*>		animations;
+		TArray<MeshComponent>	meshComponent;
 
-		SceneLoadRequest loadRequest = {
+		SceneLoadRequest loadRequest =
+		{
 			.Filepath		= ConvertSlashes(filepath),
 			.AssimpFlags	= assimpFlags,
 			.Meshes			= meshes,
-			.MeshComponents	= meshComponent,
+			.Animations		= animations,
+			.MeshComponents = meshComponent,
 			.pMaterials		= nullptr,
 			.pTextures		= nullptr,
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
+		{
 			return nullptr;
+		}
 
 		D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\"", filepath.c_str());
-		return meshes.GetFront();
+
+		// Find the largest and delete the ones not used
+		uint32 biggest	= 0;
+		uint32 maxCount	= 0;
+		for (uint32 i = 0; i < meshes.GetSize(); i++)
+		{
+			if (meshes[i]->Vertices.GetSize() > maxCount)
+			{
+				biggest		= i;
+				maxCount	= meshes[i]->Vertices.GetSize();
+			}
+		}
+
+		for (Mesh* pMesh : meshes)
+		{
+			if (meshes[biggest] != pMesh)
+			{
+				SAFEDELETE(pMesh);
+			}
+		}
+
+		// DELETES ALL ANIMATIONS HERE FOR NOW TO AVOID MEMORY LEAKS -> Needs system for this
+		for (Animation* pAnimation : animations)
+		{
+			SAFEDELETE(pAnimation);
+		}
+
+		return meshes[biggest];
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
 	{
-		Vertex* pVertexArray = DBG_NEW Vertex[numVertices];
-		memcpy(pVertexArray, pVertices, sizeof(Vertex) * numVertices);
-
-		uint32* pIndexArray = DBG_NEW uint32[numIndices];
-		memcpy(pIndexArray, pIndices, sizeof(uint32) * numIndices);
-
 		Mesh* pMesh = DBG_NEW Mesh();
-		pMesh->pVertexArray		= pVertexArray;
-		pMesh->pIndexArray		= pIndexArray;
-		pMesh->VertexCount		= numVertices;
-		pMesh->IndexCount		= numIndices;
+		pMesh->Vertices.Resize(numVertices);
+		memcpy(pMesh->Vertices.GetData(), pVertices, sizeof(Vertex) * numVertices);
+
+		pMesh->Indices.Resize(numVertices);
+		memcpy(pMesh->Indices.GetData(), pIndices, sizeof(uint32) * numIndices);
 
 		MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
 		return pMesh;
@@ -439,7 +323,7 @@ namespace LambdaEngine
 			}
 
 			stbi_pixels[i] = pPixels;
-			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+			// D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
 		}
 
 		Texture* pTexture = nullptr;
@@ -680,7 +564,7 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
+	Shader* ResourceLoader::LoadShaderFromFile(const String& filepath, FShaderStageFlag stage, EShaderLang lang, const String& entryPoint)
 	{
 		String file = ConvertSlashes(filepath);
 
@@ -696,7 +580,7 @@ namespace LambdaEngine
 				return nullptr;
 			}
 
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV(file, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
 				return nullptr;
@@ -729,7 +613,7 @@ namespace LambdaEngine
 		return pShader;
 	}
 
-	Shader* ResourceLoader::LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint)
+	Shader* ResourceLoader::LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlag stage, EShaderLang lang, const String& entryPoint)
 	{
 		TArray<uint32> sourceSPIRV;
 		if (lang == EShaderLang::SHADER_LANG_GLSL)
@@ -760,7 +644,36 @@ namespace LambdaEngine
 		return pShader;
 	}
 
-	bool ResourceLoader::CreateShaderReflection(const String& filepath, FShaderStageFlags stage, EShaderLang lang, ShaderReflection* pReflection)
+	GLSLShaderSource ResourceLoader::LoadShaderSourceFromFile(const String& filepath, FShaderStageFlag stage, const String& entryPoint)
+	{
+		String file = ConvertSlashes(filepath);
+
+		byte* pShaderRawSource = nullptr;
+		uint32 shaderRawSourceSize = 0;
+
+		if (!ReadDataFromFile(file, "r", &pShaderRawSource, &shaderRawSourceSize))
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", file.c_str());
+			return nullptr;
+		}
+
+		GLSLShaderSourceDesc shaderSourceDesc = {};
+		shaderSourceDesc.EntryPoint		= entryPoint;
+		shaderSourceDesc.ShaderStage	= stage;
+
+		if (!IncludeGLSLToSource(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, shaderSourceDesc.Source))
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
+			return nullptr;
+		}
+
+		GLSLShaderSource shaderSource(&shaderSourceDesc);
+		Malloc::Free(pShaderRawSource);
+
+		return shaderSource;
+	}
+
+	bool ResourceLoader::CreateShaderReflection(const String& filepath, FShaderStageFlag stage, EShaderLang lang, ShaderReflection* pReflection)
 	{
 		byte* pShaderRawSource = nullptr;
 		uint32 shaderRawSourceSize = 0;
@@ -844,33 +757,82 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	bool ResourceLoader::IncludeGLSLToSource(const String& filepath, const char* pSource, FShaderStageFlags stage, String& preprocessedGLSL)
 	{
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
-		glslang::TShader shader(shaderType);
+		if (stage == FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER)
+		{
+			VALIDATE_MSG(false, "[ResourceLoader]: Unsupported shader stage because GLSLang can't get their shit together");
+		}
 
 		std::string source			= std::string(pSource);
 		int32 foundBracket			= int32(source.find_last_of('}') + 1);
 		source[foundBracket]		= '\0';
 		const char* pFinalSource	= source.c_str();
+
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TShader shader(shaderType);
+
 		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
 
 		//Todo: Fetch this
-		int32 clientInputSemanticsVersion					= 100;
-		glslang::EShTargetClientVersion vulkanClientVersion	= glslang::EShTargetVulkan_1_2;
-		glslang::EShTargetLanguageVersion targetVersion		= glslang::EShTargetSpv_1_5;
+		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
+		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
+		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
+		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
+		EShMessages messages								= GetDefaultMessages();
+		int32 defaultVersion								= GetDefaultVersion();
 
 		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
 		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
 
-		const TBuiltInResource* pResources	= GetDefaultBuiltInResources();
-		EShMessages messages				= static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault);
-		const int defaultVersion			= 450;
-
 		DirStackFileIncluder includer;
 
 		//Get Directory Path of File
+		size_t found				= filepath.find_last_of("/\\");
+		std::string directoryPath	= filepath.substr(0, found);
+
+		includer.pushExternalLocalDirectory(directoryPath);
+
+		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		{
+			LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		return true;
+	}
+
+	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	{
+		std::string source			= std::string(pSource);
+		int32 size					= source.size();
+		const char* pFinalSource	= source.c_str();
+
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TShader shader(shaderType);
+
+		shader.setStringsWithLengths(&pFinalSource, &size, 1);
+
+		//Todo: Fetch this
+		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
+		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
+		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
+		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
+		EShMessages messages								= GetDefaultMessages();
+		int32 defaultVersion								= GetDefaultVersion();
+
+		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
+		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
+		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
+
+		DirStackFileIncluder includer;
+
+		// Get Directory Path of File
 		size_t found				= filepath.find_last_of("/\\");
 		std::string directoryPath	= filepath.substr(0, found);
 
@@ -904,6 +866,8 @@ namespace LambdaEngine
 		}
 
 		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
+
+		String sourcesss = pIntermediate->getSourceText();
 
 		if (pSourceSPIRV != nullptr)
 		{
@@ -945,8 +909,10 @@ namespace LambdaEngine
 
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
-		pMesh->pVertexArray = DBG_NEW Vertex[pMeshAI->mNumVertices];
-		pMesh->VertexCount = pMeshAI->mNumVertices;
+		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
+
+		glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
+		halfExtent = glm::vec3(0.0f);
 
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
@@ -954,6 +920,10 @@ namespace LambdaEngine
 			vertex.Position.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
+
+			halfExtent.x = std::max(halfExtent.x, std::abs(vertex.Position.x));
+			halfExtent.y = std::max(halfExtent.y, std::abs(vertex.Position.y));
+			halfExtent.z = std::max(halfExtent.z, std::abs(vertex.Position.z));
 
 			if (pMeshAI->HasNormals())
 			{
@@ -975,7 +945,7 @@ namespace LambdaEngine
 				vertex.TexCoord.y = pMeshAI->mTextureCoords[0][vertexIdx].y;
 			}
 
-			pMesh->pVertexArray[vertexIdx] = vertex;
+			pMesh->Vertices[vertexIdx] = vertex;
 		}
 	}
 
@@ -983,7 +953,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pMeshAI->HasFaces());
 
-		TArray<uint32> indices;
+		TArray<MeshIndexType> indices;
 		indices.Reserve(pMeshAI->mNumFaces * 3);
 		for (uint32 faceIdx = 0; faceIdx < pMeshAI->mNumFaces; faceIdx++)
 		{
@@ -994,10 +964,42 @@ namespace LambdaEngine
 			}
 		}
 
-		pMesh->pIndexArray = DBG_NEW uint32[indices.GetSize()];
-		memcpy(pMesh->pIndexArray, indices.GetData(), sizeof(uint32) * indices.GetSize());
+		pMesh->Indices.Resize(indices.GetSize());
+		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(MeshIndexType) * indices.GetSize());
+	}
 
-		pMesh->IndexCount = indices.GetSize();
+	void ResourceLoader::LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI)
+	{
+		Skeleton* pSkeleton = DBG_NEW Skeleton();
+		pMesh->pSkeleton = pSkeleton;
+
+		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
+		{
+			Skeleton::Bone bone;
+			
+			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
+			bone.Name = pBoneAI->mName.C_Str();
+			
+			for (uint32 row = 0; row < 4; row++)
+			{
+				ai_real* pRow = pBoneAI->mOffsetMatrix[row];
+				for (uint32 i = 0; i < 4; i++)
+				{
+					bone.Transform[row][i] = pRow[i];
+				}
+			}
+
+			bone.Weights.Resize(pBoneAI->mNumWeights);
+			for (uint32 weightIndex = 0; weightIndex < pBoneAI->mNumWeights; weightIndex++)
+			{
+				bone.Weights[weightIndex].VertexIndex	= pBoneAI->mWeights[weightIndex].mVertexId;
+				bone.Weights[weightIndex].VertexWeight	= pBoneAI->mWeights[weightIndex].mWeight;
+			}
+
+			pSkeleton->Bones.PushBack(bone);
+		}
+
+		pSkeleton->Bones.ShrinkToFit();
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
@@ -1085,6 +1087,51 @@ namespace LambdaEngine
 		}
 	}
 
+	void ResourceLoader::LoadAnimation(SceneLoadingContext& context, const aiAnimation* pAnimationAI)
+	{
+		VALIDATE(pAnimationAI != nullptr);
+
+		Animation* pAnimation = DBG_NEW Animation();
+		pAnimation->Name			= pAnimationAI->mName.C_Str();
+		pAnimation->Duration		= pAnimationAI->mDuration;
+		pAnimation->TicksPerSecond	= static_cast<float64>(pAnimationAI->mTicksPerSecond);
+		
+		pAnimation->Channels.Resize(pAnimationAI->mNumChannels);
+		for (uint32 channelIndex = 0; channelIndex < pAnimationAI->mNumChannels; channelIndex++)
+		{
+			aiNodeAnim* pChannel = pAnimationAI->mChannels[channelIndex];
+			
+			pAnimation->Channels[channelIndex].Positions.Resize(pChannel->mNumPositionKeys);
+			for (uint32 i = 0; i < pChannel->mNumPositionKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Positions[i].Time	= pChannel->mPositionKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Positions[i].Value.x	= pChannel->mPositionKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Positions[i].Value.y = pChannel->mPositionKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Positions[i].Value.z = pChannel->mPositionKeys[i].mValue.z;
+			}
+
+			pAnimation->Channels[channelIndex].Rotations.Resize(pChannel->mNumRotationKeys);
+			for (uint32 i = 0; i < pChannel->mNumRotationKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Rotations[i].Time	= pChannel->mRotationKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.x	= pChannel->mRotationKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.y	= pChannel->mRotationKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.z	= pChannel->mRotationKeys[i].mValue.z;
+			}
+
+			pAnimation->Channels[channelIndex].Scales.Resize(pChannel->mNumScalingKeys);
+			for (uint32 i = 0; i < pChannel->mNumScalingKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Scales[i].Time		= pChannel->mScalingKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Scales[i].Value.x	= pChannel->mScalingKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Scales[i].Value.y	= pChannel->mScalingKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Scales[i].Value.z	= pChannel->mScalingKeys[i].mValue.z;
+			}
+		}
+
+		context.Animations.EmplaceBack(pAnimation);
+	}
+
 	bool ResourceLoader::LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest)
 	{
 		// Find the directory path
@@ -1106,27 +1153,41 @@ namespace LambdaEngine
 
 		VALIDATE(pScene != nullptr);
 
-		SceneLoadingContext context = {
+		SceneLoadingContext context = 
+		{
 			.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1),
 			.Meshes			= sceneLoadRequest.Meshes,
 			.MeshComponents	= sceneLoadRequest.MeshComponents,
+			.Animations		= sceneLoadRequest.Animations,
 			.pMaterials		= sceneLoadRequest.pMaterials,
 			.pTextures		= sceneLoadRequest.pTextures
 		};
 
+		// Load all meshes
+		if (pScene->mRootNode)
+		{
+			ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		}
 
-		ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		// Load all animations
+		if (pScene->mNumAnimations > 0)
+		{
+			for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
+			{
+				LoadAnimation(context, pScene->mAnimations[animationIndex]);
+			}
+		}
+
 		return true;
 	}
 
 	void ResourceLoader::ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
 	{
 		context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
-
 		for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
 		{
-			Mesh* pMesh = DBG_NEW Mesh;
-			aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
+			Mesh*	pMesh	= DBG_NEW Mesh;
+			aiMesh*	pMeshAI	= pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
 			LoadVertices(pMesh, pMeshAI);
 			LoadIndices(pMesh, pMeshAI);
@@ -1134,6 +1195,11 @@ namespace LambdaEngine
 			if (context.pMaterials)
 			{
 				LoadMaterial(context, pScene, pMeshAI);
+			}
+
+			if (pMeshAI->mNumBones > 0)
+			{
+				LoadSkeleton(pMesh, pMeshAI);
 			}
 
 			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);

@@ -23,15 +23,20 @@ namespace glslang
 struct aiMesh;
 struct aiNode;
 struct aiScene;
+struct aiAnimation;
 
 namespace LambdaEngine
 {
+	class GLSLShaderSource;
+
 	/*	SceneLoadRequest contains information needed to begin loading a scene. It is also used to specify whether to
 		skip loading optional resources by setting fields to nullptr. */
-	struct SceneLoadRequest {
-		String Filepath;
-		int32 AssimpFlags;
+	struct SceneLoadRequest 
+	{
+		String					Filepath;
+		int32					AssimpFlags;
 		TArray<Mesh*>&			Meshes;
+		TArray<Animation*>&		Animations;
 		TArray<MeshComponent>&	MeshComponents;
 		// Either both materials and textures are nullptr, or they are both non-null pointers
 		TArray<Material*>*		pMaterials;
@@ -41,13 +46,14 @@ namespace LambdaEngine
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
-		String DirectoryPath;
-		TArray<Mesh*>&			Meshes;
-		TArray<MeshComponent>&	MeshComponents;
-		TArray<Material*>*		pMaterials;
-		TArray<Texture*>*		pTextures;
-		THashTable<String, Texture*> LoadedTextures;
-		THashTable<uint32, uint32> MaterialIndices;
+		String						DirectoryPath;
+		TArray<Mesh*>&				Meshes;
+		TArray<MeshComponent>&		MeshComponents;
+		TArray<Animation*>&			Animations;
+		TArray<Material*>*				pMaterials;
+		TArray<Texture*>*				pTextures;
+		THashTable<String, Texture*>	LoadedTextures;
+		THashTable<uint32, uint32>		MaterialIndices;
 	};
 
 	class LAMBDA_API ResourceLoader
@@ -65,7 +71,7 @@ namespace LambdaEngine
 		*	loadedTextures			- A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Material*>& materials, TArray<Texture*>& textures);
+		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures);
 
 		/*
 		* Load a mesh from file
@@ -95,7 +101,6 @@ namespace LambdaEngine
 		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
 		static Texture* LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
-
 
 		/*
 		* Load multiple Cube textures from file and combine into Texture Arrays along with TextureViews and CubeTextureViews
@@ -130,9 +135,9 @@ namespace LambdaEngine
 		*	EntryPoint	- The name of the shader entrypoint
 		* return - an Shader* if the shader was loaded, otherwise nullptr will be returned
 		*/
-		static Shader* LoadShaderFromFile(const String& filepath, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint = "main");
+		static Shader* LoadShaderFromFile(const String& filepath, FShaderStageFlag stage, EShaderLang lang, const String& entryPoint = "main");
 
-		static bool CreateShaderReflection(const String& filepath, FShaderStageFlags stage, EShaderLang lang, ShaderReflection* pReflection);
+		static bool CreateShaderReflection(const String& filepath, FShaderStageFlag stage, EShaderLang lang, ShaderReflection* pReflection);
 
 		/*
 		* Load sound from a source string
@@ -143,7 +148,9 @@ namespace LambdaEngine
 		*	EntryPoint	- The name of the shader entrypoint
 		* return - an Shader* if the shader was loaded, otherwise nullptr will be returned
 		*/
-		static Shader* LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlags stage, EShaderLang lang, const String& entryPoint = "main");
+		static Shader* LoadShaderFromMemory(const String& source, const String& name, FShaderStageFlag stage, EShaderLang lang, const String& entryPoint = "main");
+
+		static GLSLShaderSource LoadShaderSourceFromFile(const String& filepath, FShaderStageFlag stage, const String& entryPoint = "main");
 
 		/*
 		* Load sound from file
@@ -155,12 +162,15 @@ namespace LambdaEngine
 	private:
 		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
+		static void LoadAnimation(SceneLoadingContext& context, const aiAnimation* pAnimationAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
 		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene);
 
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
+		static bool IncludeGLSLToSource(const String& filepath, const char* pSource, FShaderStageFlags stage, String& preprocessedGLSL);
 		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection);
 		static bool CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection);
 

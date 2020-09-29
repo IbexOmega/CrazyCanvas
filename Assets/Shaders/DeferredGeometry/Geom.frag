@@ -26,7 +26,7 @@ layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MA
 layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;
 layout(location = 2) out vec4 out_AO_Rough_Metal_Valid;
-layout(location = 3) out vec2 out_Compact_Normal;
+layout(location = 3) out vec3 out_Compact_Normal;
 layout(location = 4) out vec2 out_Velocity;
 
 void main()
@@ -66,8 +66,8 @@ void main()
 	out_AO_Rough_Metal_Valid	= vec4(storedAO, storedRoughness, storedMetallic, 1.0f);
 
 	//3
-	vec2 storedShadingNormal  	= DirToOct(shadingNormal);
-	out_Compact_Normal       	= storedShadingNormal;
+	// vec2 storedShadingNormal  	= DirToOct(shadingNormal);
+	out_Compact_Normal       	= PackNormal(shadingNormal);
 
 	//4
 	vec2 screenVelocity 	  	= (prevNDC - currentNDC);// + in_CameraJitter;

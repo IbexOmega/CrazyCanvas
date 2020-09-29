@@ -60,12 +60,13 @@ namespace LambdaEngine
 
 	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result)
 	{
-		TArray<MeshComponent> sceneLocalMeshComponents;
-		TArray<Mesh*> meshes;
-		TArray<Material*> materials;
-		TArray<Texture*> textures;
+		TArray<MeshComponent>	sceneLocalMeshComponents;
+		TArray<Mesh*>			meshes;
+		TArray<Animation*>		animations;
+		TArray<Material*>		materials;
+		TArray<Texture*>		textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalMeshComponents, meshes, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalMeshComponents, meshes, animations, materials, textures))
 		{
 			return false;
 		}
@@ -353,7 +354,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlags stage, EShaderLang lang, const char* pEntryPoint)
+	GUID_Lambda ResourceManager::LoadShaderFromFile(const String& filename, FShaderStageFlag stage, EShaderLang lang, const char* pEntryPoint)
 	{
 		auto loadedShaderGUID = s_ShaderNamesToGUIDs.find(filename);
 		if (loadedShaderGUID != s_ShaderNamesToGUIDs.end())

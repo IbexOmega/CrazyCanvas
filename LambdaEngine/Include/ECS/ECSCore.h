@@ -83,7 +83,7 @@ namespace LambdaEngine
 		void PerformComponentRegistrations();
 		void PerformComponentDeletions();
 		void PerformEntityDeletions();
-		bool DeleteComponent(Entity entity, const ComponentType* componentType);
+		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
 	private:
 		EntityRegistry m_EntityRegistry;
@@ -113,9 +113,9 @@ namespace LambdaEngine
 		/*	Create component immediately, but hold off on registering and publishing it until the end of the frame.
 			This is to prevent concurrency issues. Publishing a component means pushing entity IDs to IDVectors,
 			and there is no guarentee that no one is simultaneously reading from these IDVectors. */
-		Comp& comp = m_ComponentStorage.AddComponent<Comp>(entity, component);
+		
 		m_ComponentsToRegister.PushBack({entity, Comp::Type()});
-		return comp;
+		return m_ComponentStorage.AddComponent<Comp>(entity, component);
 	}
 
 	template<typename Comp>
