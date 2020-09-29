@@ -23,10 +23,11 @@ namespace LambdaEngine
 	private:
 		AudioSystem() = default;
 
-
 	private:
 		IDVector	m_AudibleEntities;
 		IDVector	m_AudibleNoPositionEntities;
+		IDVector	m_CameraEntities;
+		glm::vec3   m_lastPos;
 
 	private:
 		static AudioSystem s_Instance;

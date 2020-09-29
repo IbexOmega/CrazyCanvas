@@ -3,5 +3,7 @@
 
 namespace LambdaEngine
 {
-	INIT_COMPONENT(AudibleComponent);
+    //float GetSound(const GUID_Lambda& soundId)
+    //{
+    //}
 }

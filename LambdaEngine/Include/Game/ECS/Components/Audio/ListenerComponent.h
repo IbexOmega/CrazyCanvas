@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include "ECS/Component.h"
 #include "Audio/API/ISoundInstance3D.h"
@@ -10,10 +11,12 @@
 
 namespace LambdaEngine
 {
-	struct AudibleComponent
+	struct ListenerComponent
 	{
-		DECL_COMPONENT(AudibleComponent);
-		ISoundEffect3D* pSoundEffect;
-		ISoundInstance3D* pSoundInstance;
+		DECL_COMPONENT(ListenerComponent);
+		uint32 ListenerId;
+		AudioListenerDesc Desc;
 	};
+
+
 }
