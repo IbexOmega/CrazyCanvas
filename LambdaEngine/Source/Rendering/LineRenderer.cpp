@@ -578,8 +578,8 @@ namespace LambdaEngine
 
 	bool LineRenderer::CreateShaders()
 	{
-		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("PhysicsDebugVertex.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("PhysicsDebugPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("/LineRenderer/LineRendererVertex.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("/LineRenderer/LineRendererPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 
