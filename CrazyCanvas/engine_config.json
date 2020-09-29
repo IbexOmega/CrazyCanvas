@@ -9,6 +9,7 @@
   "ShowRenderGraph": false,
   "RayTracingEnabled": false,
   "EnablePhysicsRenderer": false,
+  "EnableLineRenderer": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",
   "EnablePhysicsRenderer": false,
   "ShowDemo": false,

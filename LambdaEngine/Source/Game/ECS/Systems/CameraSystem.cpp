@@ -12,7 +12,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Window.h"
 
-#include "Rendering/PhysicsRenderer.h"
+#include "Rendering/LineRenderer.h"
 
 namespace LambdaEngine
 {
@@ -164,7 +164,7 @@ namespace LambdaEngine
 
 	void CameraSystem::RenderFrustum(Entity entity)
 	{
-		if (PhysicsRenderer::Get())
+		if (LineRenderer::Get())
 		{
 			// This is a test code - This should probably not be done every tick
 			ECSCore* pECSCore = ECSCore::GetInstance();
@@ -209,11 +209,11 @@ namespace LambdaEngine
 
 			if (m_LineGroupEntityIDs.contains(entity))
 			{
-				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
+				m_LineGroupEntityIDs[entity] = LineRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
 			}
 			else
 			{
-				m_LineGroupEntityIDs[entity] = PhysicsRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
+				m_LineGroupEntityIDs[entity] = LineRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
 			}
 		}
 	}

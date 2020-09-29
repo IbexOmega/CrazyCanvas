@@ -66,11 +66,14 @@ namespace LambdaEngine
 		
 		int32 m_HistoryIndex { -1 };
 
+		char m_Buf[256];
+
 		bool m_ScrollToBottom = false;
 		bool m_IsActive = false;
 		
 		int32 m_ActivePopupIndex = -1;
 		bool m_PopupSelectionChanged = false;
+		bool m_UpdatePositionCursor = false;
 		
 		std::string m_PopupSelectedText = "";
 		
