@@ -92,20 +92,24 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			String prefix	= m_RayTracingEnabled ? "RT_" : "";
-			String postfix	= m_MeshShadersEnabled? "_MESH" : "";
 			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
-			size_t pos = renderGraphName.find_first_of(".lrg");
-			if (pos != String::npos)
+			if (renderGraphName != "")
 			{
-				renderGraphName.insert(pos, postfix);
-			}
-			else
-			{
-				renderGraphName += postfix + ".lrg";
+				String prefix	= m_RayTracingEnabled ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled? "_MESH" : "";
+				size_t pos		= renderGraphName.find_first_of(".lrg");
+				if (pos != String::npos)
+				{
+					renderGraphName.insert(pos, postfix);
+				}
+				else
+				{
+					renderGraphName += postfix + ".lrg";
+				}
+
+				renderGraphName = prefix + renderGraphName;
 			}
 
-			renderGraphName = prefix + renderGraphName;
 			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");

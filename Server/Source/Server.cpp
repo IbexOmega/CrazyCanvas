@@ -15,7 +15,6 @@
 #include "Threading/API/Thread.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Networking/API/NetworkDebugger.h"
 
 #include "Math/Random.h"
 
@@ -56,7 +55,7 @@ void Server::Tick(Timestamp delta)
 
 void Server::FixedTick(Timestamp delta)
 {
-	ServerSystem::GetInstance().FixedTickMainThread(delta);
+
 }
 
 void Server::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)

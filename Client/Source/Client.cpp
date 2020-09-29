@@ -38,9 +38,7 @@
 
 using namespace LambdaEngine;
 
-Client::Client() :
-	m_IsBenchmarking(false),
-	m_BenchmarkPackets(0)
+Client::Client()
 {
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
@@ -70,101 +68,19 @@ void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const Lam
 	LOG_MESSAGE("OnServerFound(%s)", endPoint.ToString().c_str());
 }
 
-/*void Client::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
-{
-	UNREFERENCED_VARIABLE(pClient);
-	UNREFERENCED_VARIABLE(pPacket);
-	LOG_MESSAGE("OnPacketReceived(%s)", pPacket->ToString().c_str());
-
-	if (pPacket->GetType() == TYPE_ADD_ENTITY)
-	{
-		uint32 reliableUID = pPacket->GetReliableUID();
-		BinaryDecoder decoder(pPacket);
-		bool isMyEntity = decoder.ReadBool();
-		glm::vec3 pos = decoder.ReadVec3();
-		glm::vec3 color = decoder.ReadVec3();
-
-
-		Job addEntityJob;
-		addEntityJob.Components =
-		{
-			{ RW, PositionComponent::Type() } ,
-			{ RW, RotationComponent::Type() } ,
-			{ RW, ScaleComponent::Type() } ,
-			{ RW, MeshComponent::Type() } ,
-			{ RW, NetworkComponent::Type() }
-		};
-		addEntityJob.Function = [isMyEntity, pos, color, reliableUID, this]
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-
-			MaterialProperties materialProperties = {};
-			materialProperties.Roughness = 0.1f;
-			materialProperties.Metallic = 0.0f;
-			materialProperties.Albedo = glm::vec4(color, 1.0f);
-
-			MeshComponent meshComponent;
-			meshComponent.MeshGUID = m_MeshSphereGUID;
-			meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"Mirror Material " + std::to_string(reliableUID),
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				materialProperties);
-
-			Entity entity = pECS->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity,	{ pos, true });
-			pECS->AddComponent<RotationComponent>(entity,	{ glm::identity<glm::quat>(), true });
-			pECS->AddComponent<ScaleComponent>(entity,		{ glm::vec3(1.0f), true });
-			pECS->AddComponent<MeshComponent>(entity,		meshComponent);
-			pECS->AddComponent<NetworkComponent>(entity,	{});
-		};
-
-		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
-	}
-}*/
-
 bool Client::OnKeyPressed(const KeyPressedEvent& event)
 {
-	// if(event.Key == EKey::KEY_HOME)
-	// {
-	// 	m_IsBenchmarking = true;
-	// }
-
 	return false;
 }
 
 void Client::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-
-	/*if (m_pClient->IsConnected() && m_IsBenchmarking)
-	{
-		RunningBenchMark();
-	}*/
 }
 
 void Client::FixedTick(Timestamp delta)
 {
 
-}
-
-void Client::RunningBenchMark()
-{
-	/*if (m_BenchmarkPackets++ < 100000)
-	{
-		NetworkSegment* pPacket = m_pClient->GetFreePacket(420);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt32(m_BenchmarkPackets);
-		m_pClient->SendReliable(pPacket, this);
-	}
-	else
-	{
-		m_IsBenchmarking = false;
-		m_BenchmarkPackets = 0;
-	}*/
 }
 
 bool Client::LoadRendererResources()
@@ -200,8 +116,6 @@ bool Client::LoadRendererResources()
 
 	return true;
 }
-
-
 
 namespace LambdaEngine
 {

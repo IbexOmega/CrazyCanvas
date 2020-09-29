@@ -4,9 +4,6 @@
 
 #include "Application/API/Events/KeyEvents.h"
 
-#include "Networking/API/IPacketListener.h"
-#include "Networking/API/IClientHandler.h"
-
 #include "Networking/API/UDP/INetworkDiscoveryClient.h"
 
 namespace LambdaEngine
@@ -32,12 +29,9 @@ public:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 private:
-	void RunningBenchMark();
 	bool LoadRendererResources();
 
 private:
 
-	bool m_IsBenchmarking;
-	uint32 m_BenchmarkPackets;
 	GUID_Lambda m_MeshSphereGUID;
 };
