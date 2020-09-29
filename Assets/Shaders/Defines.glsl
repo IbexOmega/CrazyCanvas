@@ -29,6 +29,16 @@ const float MAX_TEMPORAL_FRAMES = 256.0f;
 #define HIT_MASK_GAME_OBJECT    0x01
 #define HIT_MASK_LIGHT          0x02
 
+// Used in PointShadowDepthTest for PCF soft shadows
+const vec3 sampleOffsetDirections[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);  
+
 struct SPositions
 {
 	vec3 WorldPos; 
@@ -92,14 +102,16 @@ struct SPointLight
 {
     vec4    ColorIntensity;
     vec3    Position;
-    uint    Padding;
+	float	FarPlane;
+    mat4    ProjView[6];
 };
 
 struct SLightsBuffer
 {
     vec4        DirL_ColorIntensity;
 	vec3        DirL_Direction;
-    uint		PointLightCount;
+    float		PointLightCount;
+    mat4        DirL_ProjView;
 };
 
 struct SPerFrameBuffer

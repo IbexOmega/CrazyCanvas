@@ -43,7 +43,6 @@ namespace LambdaEngine
 		m_Buffer(),
 		m_pClient(nullptr),
 		m_Entity(0),
-		m_LastProcessedSimulationTick(-1),
 		m_CurrentGameState(),
 		m_Color()
 	{
@@ -57,59 +56,43 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::Tick(Timestamp deltaTime)
 	{
-		
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientRemoteSystem::TickMainThread(Timestamp deltaTime)
 	{
-		if (m_LastProcessedSimulationTick < m_CurrentGameState.SimulationTick)
-		{
-			m_LastProcessedSimulationTick = m_CurrentGameState.SimulationTick;
-			//networkObject.frame = m_CurrentGameState.SimulationTick;
-		}
-		/*networkObject.position = _rigidBody.position;
-		networkObject.rotation = _rigidBody.rotation;*/
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientRemoteSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		if (m_pClient->IsConnected())
 		{
-			// Reset the current input - we don't want to re-use it if there no inputs in the queue
-			//m_CurrentGameState = nullptr;
-
-			// Process all available inputs each frame
+			std::scoped_lock<SpinLock> lock(m_Lock);
+			for (const GameState& gameState : m_Buffer)
 			{
-				std::scoped_lock<SpinLock> lock(m_Lock);
-				for (const GameState& gameState : m_Buffer)
-				{
-					m_CurrentGameState = gameState;
-					PlayerUpdate(m_CurrentGameState);
-				}
-				m_Buffer.clear();
-			}
+				ASSERT(gameState.SimulationTick - 1 == m_CurrentGameState.SimulationTick);
 
+				m_CurrentGameState = gameState;
+				PlayerUpdate(m_CurrentGameState);
 
-
-
-			if (m_LastProcessedSimulationTick >= 0)
-			{
 				auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
 
 				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 				BinaryEncoder encoder(pPacket);
 				encoder.WriteInt32(m_Entity);
-				encoder.WriteInt32(m_LastProcessedSimulationTick);
+				encoder.WriteInt32(m_CurrentGameState.SimulationTick);
 				encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
 				m_pClient->SendReliableBroadcast(pPacket);
 			}
+			m_Buffer.clear();
 		}
 	}
 
 	void ClientRemoteSystem::PlayerUpdate(const GameState& gameState)
 	{
-		// Set the velocity to zero, move the player based on the next input, then detect & resolve collisions
-		//_rigidBody.velocity = Vector2.zero;
 		PlayerMovementSystem::GetInstance().Move(m_Entity, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
 		//PhysicsCollisions();
 	}
@@ -177,16 +160,18 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::OnDisconnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientRemoteSystem::OnDisconnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientRemoteSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
+		UNREFERENCED_VARIABLE(pClient);
+
 		if (pPacket->GetType() == NetworkSegment::TYPE_PLAYER_ACTION)
 		{
 			GameState gameState = {};
@@ -203,21 +188,25 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::OnClientReleased(IClient* pClient)
 	{
+		UNREFERENCED_VARIABLE(pClient);
 		delete this;
 	}
 
 	void ClientRemoteSystem::OnPacketDelivered(NetworkSegment* pPacket)
 	{
-
+		UNREFERENCED_VARIABLE(pPacket);
 	}
 
 	void ClientRemoteSystem::OnPacketResent(NetworkSegment* pPacket, uint8 retries)
 	{
-
+		UNREFERENCED_VARIABLE(pPacket);
+		UNREFERENCED_VARIABLE(retries);
 	}
 
 	void ClientRemoteSystem::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 retries)
 	{
+		UNREFERENCED_VARIABLE(pPacket);
+		UNREFERENCED_VARIABLE(retries);
 		m_pClient->Disconnect("ClientRemoteSystem::OnPacketMaxTriesReached()");
 	}
 }

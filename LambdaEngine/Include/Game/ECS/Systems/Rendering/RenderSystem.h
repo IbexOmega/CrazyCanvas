@@ -37,7 +37,7 @@ namespace LambdaEngine
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
-	class PhysicsRenderer;
+	class LineRenderer;
 
 	struct RenderGraphStructureDesc;
 
@@ -167,14 +167,16 @@ namespace LambdaEngine
 		{
 			glm::vec4	ColorIntensity	= glm::vec4(1.0f);
 			glm::vec3	Position		= glm::vec3(0.0f);
-			uint32		Padding0;
+			float		FarPlane		= 10.0f;
+			glm::mat4	ProjViews[6];
 		};
 
 		struct LightBuffer
 		{
-			glm::vec4	ColorIntensity	= glm::vec4(0.0f);
-			glm::vec3	Direction		= glm::vec3(1.0f);
-			uint32		PointLightCount = 0U;
+			glm::vec4	DirL_ColorIntensity	= glm::vec4(0.0f);
+			glm::vec3	DirL_Direction		= glm::vec3(1.0f);
+			float		PointLightCount		= 0;
+			glm::mat4	DirL_ProjViews;
 			// PointLight PointLights[] unbounded
 		};
 
@@ -215,8 +217,8 @@ namespace LambdaEngine
 		void OnPointLightEntityRemoved(Entity entity);
 
 		void RemoveEntityInstance(Entity entity);
-		void UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction);
-		void UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity);
+		void UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
+		void UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(Entity entity);
 
@@ -243,7 +245,7 @@ namespace LambdaEngine
 		IDVector				m_RenderableEntities;
 		IDVector				m_CameraEntities;
 
-		PhysicsRenderer*		m_pPhysicsRenderer	= nullptr;
+		LineRenderer*		m_pLineRenderer	= nullptr;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;

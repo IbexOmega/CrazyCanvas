@@ -92,6 +92,12 @@ namespace LambdaEngine
 										writer.String("sampler_type");
 										writer.String(RenderGraphSamplerTypeToString(resource.TextureParams.SamplerType));
 
+										writer.String("sampler_address_mode");
+										writer.String(RenderGraphSamplerAddressModeToString(resource.TextureParams.SamplerAddressMode));
+
+										writer.String("sampler_border_color");
+										writer.String(RenderGraphSamplerBorderColorToString(resource.TextureParams.SamplerBorderColor));
+
 										writer.String("memory_type");
 										writer.String(MemoryTypeToString(resource.MemoryType));
 									}
@@ -550,14 +556,16 @@ namespace LambdaEngine
 
 								if (!resource.External && resource.Name != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 								{
-									resource.TextureParams.XDimType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["x_dim_type"].GetString());
-									resource.TextureParams.YDimType			= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["y_dim_type"].GetString());
-									resource.TextureParams.XDimVariable		= resourceTypeParamsObject["x_dim_var"].GetFloat();
-									resource.TextureParams.YDimVariable		= resourceTypeParamsObject["y_dim_var"].GetFloat();
-									resource.TextureParams.SampleCount		= resourceTypeParamsObject["sample_count"].GetInt();
-									resource.TextureParams.MiplevelCount	= resourceTypeParamsObject["miplevel_count"].GetInt();
-									resource.TextureParams.SamplerType		= RenderGraphSamplerTypeFromString(resourceTypeParamsObject["sampler_type"].GetString());
-									resource.MemoryType						= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
+									resource.TextureParams.XDimType				= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["x_dim_type"].GetString());
+									resource.TextureParams.YDimType				= RenderGraphDimensionTypeFromString(resourceTypeParamsObject["y_dim_type"].GetString());
+									resource.TextureParams.XDimVariable			= resourceTypeParamsObject["x_dim_var"].GetFloat();
+									resource.TextureParams.YDimVariable			= resourceTypeParamsObject["y_dim_var"].GetFloat();
+									resource.TextureParams.SampleCount			= resourceTypeParamsObject["sample_count"].GetInt();
+									resource.TextureParams.MiplevelCount		= resourceTypeParamsObject["miplevel_count"].GetInt();
+									resource.TextureParams.SamplerType			= RenderGraphSamplerTypeFromString(resourceTypeParamsObject["sampler_type"].GetString());
+									resource.TextureParams.SamplerAddressMode	= resourceTypeParamsObject.HasMember("sampler_address_mode") ? RenderGraphSamplerAddressModeFromString(resourceTypeParamsObject["sampler_address_mode"].GetString()) : ERenderGraphSamplerAddressMode::REPEAT;
+									resource.TextureParams.SamplerBorderColor	= resourceTypeParamsObject.HasMember("sampler_border_color") ? RenderGraphSamplerBorderColorFromString(resourceTypeParamsObject["sampler_border_color"].GetString()) : ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+									resource.MemoryType							= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
 								}
 								break;
 							}

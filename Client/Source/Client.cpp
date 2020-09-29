@@ -5,7 +5,6 @@
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
-#include "Input/API/InputActionSystem.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -56,7 +55,7 @@ Client::Client() :
 	m_MeshSphereGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 
-	ClientSystem::GetInstance().Connect(IPAddress::Get("192.168.0.104"));
+	ClientSystem::GetInstance().Connect(IPAddress::Get("81.170.143.133"));
 
 	//NetworkDiscovery::EnableClient("Crazy Canvas", this);
 }
@@ -129,37 +128,7 @@ void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const Lam
 
 bool Client::OnKeyPressed(const KeyPressedEvent& event)
 {
-	// if (InputActionSystem::IsActive("PLAYER_FORWARD"))
-	// {
-	// 	LOG_INFO("PLAYER_FORWARD ACTIVE");
-	// }
-	// else if (InputActionSystem::IsActive("PLAYER_BACKWARD"))
-	// {
-	// 	LOG_INFO("PLAYER_BACKWARD ACTIVE");
-	// }
-	// else if (InputActionSystem::IsActive("PLAYER_LEFT"))
-	// {
-	// 	LOG_INFO("PLAYER_LEFT ACTIVE");
-	// }
-	// else if (InputActionSystem::IsActive("PLAYER_RIGHT"))
-	// {
-	// 	LOG_INFO("PLAYER_RIGHT ACTIVE");
-	// }
-	// else if (InputActionSystem::IsActive("CHANGE_KEYBINDING"))
-	// {
-	// 	LOG_INFO("CHANGE_KEYBINDING ACTIVE");
-	// 	InputActionSystem::ChangeKeyBinding("PLAYER_FORWARD", EKey::KEY_UP);
-	// }
-
-
-	// if (event.Key == EKey::KEY_ENTER)
-	// {
-	// 	if (m_pClient->IsConnected())
-	// 		m_pClient->Disconnect("User Requested");
-	// 	else
-	// 		m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444));
-	// }
-	// else if(event.Key == EKey::KEY_HOME)
+	// if(event.Key == EKey::KEY_HOME)
 	// {
 	// 	m_IsBenchmarking = true;
 	// }
@@ -179,7 +148,7 @@ void Client::Tick(Timestamp delta)
 
 void Client::FixedTick(Timestamp delta)
 {
-	ClientSystem::GetInstance().FixedTickMainThread(delta);
+
 }
 
 void Client::RunningBenchMark()

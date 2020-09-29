@@ -27,6 +27,10 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/Core/API/GraphicsTypes.h"
 
+#include "Math/Random.h"
+
+
+
 using namespace LambdaEngine;
 SandboxState::SandboxState()
 {
@@ -53,11 +57,12 @@ void SandboxState::Init()
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		CameraDesc cameraDesc = {};
-		cameraDesc.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV");
-		cameraDesc.Width = window->GetWidth();
-		cameraDesc.Height = window->GetHeight();
-		cameraDesc.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane");
-		cameraDesc.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane");
+		cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
+		cameraDesc.Position		= glm::vec3(0.0f, 2.0f, -2.0f);
+		cameraDesc.Width		= window->GetWidth();
+		cameraDesc.Height		= window->GetHeight();
+		cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+		cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
 
@@ -81,6 +86,41 @@ void SandboxState::Init()
 		}
 	}
 
+	// Robot
+	{
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		
+		MaterialProperties materialProperties;
+		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness	= 1.0f;
+		materialProperties.Metallic		= 1.0f;
+		
+		const uint32 robotMaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+			"Robot Material",
+			robotAlbedoGUID,
+			robotNormalGUID,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+		
+		MeshComponent robotMeshComp = {};
+		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MaterialGUID	= robotMaterialGUID;
+
+		glm::vec3 position(0.0f, 1.25f, 0.0f);
+		glm::vec3 scale(0.01f);
+
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { position, true });
+		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		m_Entities.PushBack(entity);
+	}
+
 	//Sphere Grid
 	{
 		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
@@ -91,7 +131,6 @@ void SandboxState::Init()
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
-
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
 				float32 metallic = x / float32(gridRadius - 1);
@@ -101,7 +140,7 @@ void SandboxState::Init()
 				materialProperties.Roughness = roughness;
 				materialProperties.Metallic = metallic;
 
-				MeshComponent sphereMeshComp = {};
+				MeshComponent sphereMeshComp = { };
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
 				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
 					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
@@ -117,7 +156,8 @@ void SandboxState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				CollisionCreateInfo collisionCreateInfo = {
+				CollisionCreateInfo collisionCreateInfo = 
+				{
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
@@ -135,11 +175,20 @@ void SandboxState::Init()
 			}
 		}
 
-		// Directional Light
+		//// Directional Light
 		{
-			Entity dirLight = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
-			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
+			/*m_DirLight = ECSCore::GetInstance()->CreateEntity();
+			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { {0.f, 0.f, 0.f}, true });
+			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(glm::normalize(-g_DefaultRight - g_DefaultUp), g_DefaultUp), true });
+			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight,
+				DirectionalLightComponent{
+					.ColorIntensity = {1.0f, 1.0f, 1.0f, 15.0f},
+					.frustumWidth = 20.0f,
+					.frustumHeight = 20.0f,
+					.frustumZNear = -40.0f,
+					.frustumZFar = 10.0f,
+				}
+			);*/
 		}
 
 		// Add PointLights
@@ -147,16 +196,16 @@ void SandboxState::Init()
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 3.0f, -5.0f},
-				{-4.0f, 3.0f, 5.0f},
-				{0.0f, 3.0f, -5.0f},
+				{4.0f, 2.0f, -3.0f},
+				{-4.0f, 2.0f, -3.0f},
+				{0.0f, 2.0f, 3.0f},
 			};
 
 			const float PI = glm::pi<float>();

@@ -18,7 +18,6 @@
 #include "Engine/EngineConfig.h"
 
 #include "Input/API/Input.h"
-#include "Input/API/InputActionSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Physics/PhysicsSystem.h"
@@ -75,8 +74,8 @@ namespace LambdaEngine
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
-				FixedTick(fixedClock.GetDeltaTime());
-
+				FixedTick(g_FixedTimestep);
+				
 				accumulator -= g_FixedTimestep;
 			}
 		}
@@ -118,6 +117,7 @@ namespace LambdaEngine
 	{
 		Game::Get().FixedTick(delta);
 
+		PlayerMovementSystem::GetInstance().FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
@@ -134,11 +134,6 @@ namespace LambdaEngine
 #endif
 
 		if (!EngineConfig::LoadFromFile())
-		{
-			return false;
-		}
-
-		if (!InputActionSystem::LoadFromFile())
 		{
 			return false;
 		}

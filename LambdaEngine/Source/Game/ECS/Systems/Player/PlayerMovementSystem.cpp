@@ -9,6 +9,8 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	PlayerMovementSystem PlayerMovementSystem::s_Instance;
@@ -35,8 +37,8 @@ namespace LambdaEngine
 		return true;
     }
 
-    void PlayerMovementSystem::Tick(Timestamp deltaTime)
-    {
+	void PlayerMovementSystem::FixedTick(Timestamp deltaTime)
+	{
 		int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 		int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
 
@@ -44,38 +46,33 @@ namespace LambdaEngine
 		{
 			Move(entity, deltaTime, deltaForward, deltaLeft);
 		}
-    }
+	}
+
+	void PlayerMovementSystem::Tick(Timestamp deltaTime)
+	{
+		UNREFERENCED_VARIABLE(deltaTime);
+	}
 
 	void PlayerMovementSystem::Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		auto* pControllableComponents = pECS->GetComponentArray<ControllableComponent>();
 
-		if (!pPositionComponents || !pControllableComponents)
-			return;
-
-		if (!pControllableComponents->HasComponent(entity))
-			return;
-
-		if (!pControllableComponents->GetData(entity).IsActive)
-			return;
-
-		if (!pPositionComponents->HasComponent(entity))
+		if (!pPositionComponents && !pPositionComponents->HasComponent(entity))
 			return;
 
 		PositionComponent& positionComponent = pPositionComponents->GetData(entity);
 
 		if (deltaForward != 0)
 		{
-			positionComponent.Position.z += 1.0f * deltaTime.AsSeconds() * deltaForward;
+			positionComponent.Position.z += (float32)((1.0f * deltaTime.AsSeconds()) * (float64)deltaForward);
 			positionComponent.Dirty = true;
 		}
 
 		if (deltaLeft != 0)
 		{
-			positionComponent.Position.x += 1.0f * deltaTime.AsSeconds() * deltaLeft;
+			positionComponent.Position.x -= (float32)((1.0f * deltaTime.AsSeconds()) * (float64)deltaLeft);
 			positionComponent.Dirty = true;
 		}
 	}

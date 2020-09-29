@@ -15,7 +15,7 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
-#define EPSILON 0.00001f
+#define EPSILON 0.01f
 
 namespace LambdaEngine
 {
@@ -71,7 +71,9 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		if (m_pClient->IsConnected() && m_NetworkUID >= 0)
+		UNREFERENCED_VARIABLE(deltaTime);
+
+		if (m_pClient->IsConnected() && m_Entities.size() > 0)
 		{
 			int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 			int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
@@ -81,7 +83,7 @@ namespace LambdaEngine
 			encoder.WriteInt32(m_SimulationTick);
 			encoder.WriteInt8(deltaForward);
 			encoder.WriteInt8(deltaLeft);
-			m_pClient->SendUnreliable(pPacket);
+			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
 			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -99,16 +101,17 @@ namespace LambdaEngine
 			gameState.SimulationTick	= m_SimulationTick;
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
+			gameState.Position			= positionComponent.Position;
 
-			if (deltaForward != 0)
+			/*if (deltaForward != 0)
 			{
-				gameState.Position.x = positionComponent.Position.x + 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaForward;
+				gameState.Position.z += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaForward;
 			}
 
 			if (deltaLeft != 0)
 			{
-				gameState.Position.z = positionComponent.Position.z + 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
-			}
+				gameState.Position.x += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
+			}*/
 
 			{
 				std::scoped_lock<SpinLock> lock(m_Lock);
@@ -125,36 +128,39 @@ namespace LambdaEngine
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
 		NetworkDebugger::RenderStatistics(m_pClient);
 	}
 
 	void ClientSystem::Tick(Timestamp deltaTime)
 	{
-		
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientSystem::OnConnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnConnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnDisconnecting(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnDisconnected(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
+		UNREFERENCED_VARIABLE(pClient);
+
 		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
 		{
 			BinaryDecoder decoder(pPacket);
@@ -199,7 +205,6 @@ namespace LambdaEngine
 			else
 			{
 				auto pair = m_Entities.find(networkUID);
-
 				if (pair != m_Entities.end())
 				{
 					auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -214,20 +219,17 @@ namespace LambdaEngine
 					LOG_ERROR("NetworkUID: %d is not registred on Client", networkUID);
 				}
 			}
-
-
-
 		}
 	}
 
 	void ClientSystem::OnClientReleased(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::OnServerFull(IClient* pClient)
 	{
-
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color)
@@ -277,8 +279,6 @@ namespace LambdaEngine
 
 		GameState ServerState = {};
 
-		//want to start reading from incoming networkSimulationTick
-
 		auto pair = m_Entities.find(m_NetworkUID);
 
 		ASSERT(pair != m_Entities.end());
@@ -296,7 +296,7 @@ namespace LambdaEngine
 				positionComponent.Dirty		= true;
 
 				//Replay all game states since the game state which resulted in prediction ERROR
-				for (int32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
+				for (uint32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
 				{
 					PlayerUpdate(m_FramesToReconcile[i]); 
 				}
