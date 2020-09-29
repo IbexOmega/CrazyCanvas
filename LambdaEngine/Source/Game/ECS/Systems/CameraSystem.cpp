@@ -148,7 +148,7 @@ namespace LambdaEngine
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
 				addedYaw	-= freeCamComp.MouseSpeedFactor * (float)mouseDelta.x * dt;
-				addedPitch	+= freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
+				addedPitch	-= freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
 			}
 		}
 
