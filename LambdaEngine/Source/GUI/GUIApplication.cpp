@@ -1,10 +1,12 @@
 #include "GUI/GUIApplication.h"
 #include "GUI/GUIShaderManager.h"
 #include "GUI/GUIRenderer.h"
+#include "GUI/GUIInputMapper.h"
 
 #include "NsApp/LocalXamlProvider.h"
 #include "NsApp/LocalFontProvider.h"
 #include "NsApp/LocalTextureProvider.h"
+#include "NsApp/ThemeProviders.h"
 #include "NsApp/ThemeProviders.h"
 #include "NoesisPCH.h"
 
@@ -21,6 +23,19 @@ namespace LambdaEngine
 	bool GUIApplication::Init()
 	{
 		EventQueue::RegisterEventHandler<WindowResizedEvent>(&GUIApplication::OnWindowResized);
+		EventQueue::RegisterEventHandler<KeyPressedEvent>(&GUIApplication::OnKeyPressed);
+		EventQueue::RegisterEventHandler<KeyReleasedEvent>(&GUIApplication::OnKeyReleased);
+		EventQueue::RegisterEventHandler<KeyTypedEvent>(&GUIApplication::OnKeyTyped);
+		EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(&GUIApplication::OnMouseButtonClicked);
+		EventQueue::RegisterEventHandler<MouseButtonReleasedEvent>(&GUIApplication::OnMouseButtonReleased);
+		EventQueue::RegisterEventHandler<MouseScrolledEvent>(&GUIApplication::OnMouseScrolled);
+		EventQueue::RegisterEventHandler<MouseMovedEvent>(&GUIApplication::OnMouseMoved);
+
+		if (!GUIInputMapper::Init())
+		{
+			LOG_ERROR("[GUIApplication] Failed to initialize GUIInputMapper");
+			return false;
+		}
 
 		if (!GUIShaderManager::Init())
 		{
@@ -104,7 +119,6 @@ namespace LambdaEngine
 
 		//Renderer Initialization
 		s_pRenderer = new GUIRenderer();
-
 		if (!s_pRenderer->Init())
 		{
 			LOG_ERROR("[GUIApplication]: Failed to initialize Renderer");
@@ -155,6 +169,50 @@ namespace LambdaEngine
 	bool GUIApplication::OnWindowResized(const WindowResizedEvent& windowEvent)
 	{
 		s_pView->SetSize(windowEvent.Width, windowEvent.Height);
+		return true;
+	}
+
+	bool GUIApplication::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
+	{
+		s_pView->KeyDown(GUIInputMapper::GetKey(keyPressedEvent.Key));
+		return true;
+	}
+
+	bool GUIApplication::OnKeyReleased(const KeyReleasedEvent& keyReleasedEvent)
+	{
+		s_pView->KeyUp(GUIInputMapper::GetKey(keyReleasedEvent.Key));
+		return true;
+	}
+
+	bool GUIApplication::OnKeyTyped(const KeyTypedEvent& keyTypedEvent)
+	{
+		s_pView->Char(keyTypedEvent.Character);
+		return true;
+	}
+
+	bool GUIApplication::OnMouseButtonClicked(const MouseButtonClickedEvent& mouseButtonClickedEvent)
+	{
+		s_pView->MouseButtonDown(mouseButtonClickedEvent.Position.x, mouseButtonClickedEvent.Position.y, GUIInputMapper::GetMouseButton(mouseButtonClickedEvent.Button));
+		return true;
+	}
+
+	bool GUIApplication::OnMouseButtonReleased(const MouseButtonReleasedEvent& mouseButtonReleasedEvent)
+	{
+		s_pView->MouseButtonUp(mouseButtonReleasedEvent.Position.x, mouseButtonReleasedEvent.Position.y, GUIInputMapper::GetMouseButton(mouseButtonReleasedEvent.Button));
+		return true;
+	}
+
+	bool GUIApplication::OnMouseScrolled(const MouseScrolledEvent& mouseScrolledEvent)
+	{
+		if (mouseScrolledEvent.DeltaY > 0)		s_pView->MouseWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, mouseScrolledEvent.DeltaY);
+		else if (mouseScrolledEvent.DeltaX > 0)	s_pView->MouseHWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, mouseScrolledEvent.DeltaX);
+
+		return true;
+	}
+
+	bool GUIApplication::OnMouseMoved(const MouseMovedEvent& mouseMovedEvent)
+	{
+		s_pView->MouseMove(mouseMovedEvent.Position.x, mouseMovedEvent.Position.y);
 		return true;
 	}
 }

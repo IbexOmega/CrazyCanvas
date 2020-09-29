@@ -6,6 +6,8 @@
 #include "Time/API/Timestamp.h"
 
 #include "Application/API/Events/WindowEvents.h"
+#include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/MouseEvents.h"
 
 namespace LambdaEngine
 {
@@ -29,6 +31,14 @@ namespace LambdaEngine
 		static void NoesisErrorHandler(const char* file, uint32_t line, const char* message, bool fatal);
 
 		static bool OnWindowResized(const WindowResizedEvent& windowEvent);
+		static bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
+		static bool OnKeyReleased(const KeyReleasedEvent& keyReleasedEvent);
+		static bool OnKeyTyped(const KeyTypedEvent& keyTypedEvent);
+
+		static bool OnMouseButtonClicked(const MouseButtonClickedEvent& mouseButtonClickedEvent);
+		static bool OnMouseButtonReleased(const MouseButtonReleasedEvent& mouseButtonReleasedEvent);
+		static bool OnMouseScrolled(const MouseScrolledEvent& mouseScrolledEvent);
+		static bool OnMouseMoved(const MouseMovedEvent& mouseMovedEvent);
 
 	private:
 		static Noesis::Ptr<Noesis::IView> s_pView;

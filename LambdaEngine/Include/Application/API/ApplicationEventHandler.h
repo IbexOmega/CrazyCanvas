@@ -110,7 +110,7 @@ namespace LambdaEngine
 		*	button			- Which button was pressed
 		*	modifierState	- Current state of the modifer keys at the same time as key was pressed.
 		*/
-		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
+		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState, int32 x, int32 y)
 		{
 		}
 
@@ -118,7 +118,7 @@ namespace LambdaEngine
 		* Will be called when a mouse button released event occurs
 		*	button - Which button was released
 		*/
-		virtual void OnButtonReleased(EMouseButton button, ModifierKeyState modifierState)
+		virtual void OnButtonReleased(EMouseButton button, ModifierKeyState modifierState, int32 x, int32 y)
 		{
 		}
 
@@ -127,7 +127,7 @@ namespace LambdaEngine
 		*	deltaX - The amount of scrolling delta < 0 for left scrolling and delta > 0 for right scrolling
 		*	deltaY - The amount of scrolling delta < 0 for downwards scrolling and delta > 0 for upwards scrolling
 		*/
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY, int32 x, int32 y)
 		{
 		}
 
