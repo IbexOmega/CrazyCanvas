@@ -548,6 +548,12 @@ workspace "LambdaEngine"
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
+
+			-- FMOD
+			"C:/FMOD Studio API Windows/api/core/inc",
+			"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/FMOD Studio API Windows/api/core/inc",
 		}
 
 		-- Files
