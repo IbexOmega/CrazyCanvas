@@ -164,9 +164,9 @@ namespace LambdaEngine
 		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
 		{
 			BinaryDecoder decoder(pPacket);
-			bool isMySelf = decoder.ReadBool();
-			int32 networkUID = decoder.ReadInt32();
-			glm::vec3 position = decoder.ReadVec3();
+			bool isMySelf		= decoder.ReadBool();
+			int32 networkUID	= decoder.ReadInt32();
+			glm::vec3 position	= decoder.ReadVec3();
 			glm::vec3 color		= decoder.ReadVec3();
 
 			if (isMySelf)
@@ -240,9 +240,9 @@ namespace LambdaEngine
 		LOG_INFO("Creating Entity with ID %d and NetworkID %d", entity, networkUID);
 
 		MaterialProperties materialProperties = {};
-		materialProperties.Roughness = 0.1f;
-		materialProperties.Metallic = 0.0f;
-		materialProperties.Albedo = glm::vec4(color, 1.0f);
+		materialProperties.Roughness	= 0.1f;
+		materialProperties.Metallic		= 0.0f;
+		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
 		MeshComponent meshComponent;
 		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
