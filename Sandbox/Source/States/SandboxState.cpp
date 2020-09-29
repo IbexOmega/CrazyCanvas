@@ -160,16 +160,16 @@ void SandboxState::Init()
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 3.0f, -3.0f},
-				{-4.0f, 3.0f, -3.0f},
-				{0.0f, 3.0f, 3.0f},
+				{4.0f, 2.0f, -3.0f},
+				{-4.0f, 2.0f, -3.0f},
+				{0.0f, 2.0f, 3.0f},
 			};
 
 			const float PI = glm::pi<float>();
@@ -196,13 +196,12 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				m_PointLights[i] = pECS->CreateEntity();
-				m_Entities.PushBack(m_PointLights[i]);
-				pECS->AddComponent<PositionComponent>(m_PointLights[i], { startPosition[i], true });
-				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
-				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
-				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
-				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
+				Entity pt = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(pt, { startPosition[i], true });
+				pECS->AddComponent<ScaleComponent>(pt, { glm::vec3(0.4f), true });
+				pECS->AddComponent<RotationComponent>(pt, { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PointLightComponent>(pt, pointLights[i]);
+				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
 		}
 	}

@@ -4,10 +4,10 @@
     1080
   ],
   "FixedTimestep": 60,
-  "RayTracingEnabled": false,
+  "RayTracingEnabled": true,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
-  "RenderGraphName": "SHADOWMAP.lrg",
+  "RenderGraphName": "DEFERRED_PBR.lrg",
   "EnablePhysicsRenderer": false,
   "ShowDemo": false,
   "Debugging": false,
