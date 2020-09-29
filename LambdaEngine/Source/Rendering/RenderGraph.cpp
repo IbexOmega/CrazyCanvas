@@ -2351,6 +2351,7 @@ namespace LambdaEngine
 					pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
 					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode;
 					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
+					pipelineDesc.RasterizerState.FrontFaceCounterClockWise = false;
 					pipelineDesc.InputAssembly.PrimitiveTopology	= pRenderStageDesc->Graphics.PrimitiveTopology;
 
 					if (pShaderConstants != nullptr)
@@ -3630,9 +3631,9 @@ namespace LambdaEngine
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
 		viewport.Width		= (float)pRenderStage->Dimensions.x;
-		viewport.Height		= (float)pRenderStage->Dimensions.y;
+		viewport.Height		= -(float)pRenderStage->Dimensions.y;
 		viewport.x			= 0.0f;
-		viewport.y			= 0.0f;
+		viewport.y			= (float)pRenderStage->Dimensions.y;
 
 		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
 
@@ -3693,7 +3694,7 @@ namespace LambdaEngine
 
 				ppTextureViews[textureViewCount++] = pRenderTarget;
 
-				clearColorDescriptions[clearColorCount].Color[0] = 0.0f;
+				clearColorDescriptions[clearColorCount].Color[0] = 1.0f;
 				clearColorDescriptions[clearColorCount].Color[1] = 0.0f;
 				clearColorDescriptions[clearColorCount].Color[2] = 0.0f;
 				clearColorDescriptions[clearColorCount].Color[3] = 0.0f;

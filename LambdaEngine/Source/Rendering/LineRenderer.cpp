@@ -116,9 +116,10 @@ namespace LambdaEngine
 		uint64 size 	= verticiesBufferSize;
 		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
+		// Draw the XYZ axis in the center of the world
 		DrawLine({0.0f, 0.0f, 0.0f,}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
 		DrawLine({0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
-		DrawLine({0.0f, 0.0f, 0.0f,}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f});
+		DrawLine({0.0f, 0.0f, 0.0f,}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, 1.0f});
 
 		return true;
 	}
@@ -430,9 +431,9 @@ namespace LambdaEngine
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
 		viewport.Width		= (float32)width;
-		viewport.Height		= (float32)height;
+		viewport.Height		= -(float32)height;
 		viewport.x			= 0.0f;
-		viewport.y			= 0.0f;
+		viewport.y			= (float32)height;
 		pCommandList->SetViewports(&viewport, 0, 1);
 
 		ScissorRect scissorRect = {};
