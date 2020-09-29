@@ -42,7 +42,7 @@
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Networking/NetworkingSystem.h"
 
-#include "GUI/GUIApplication.h"
+#include "GUI/Core/GUIApplication.h"
 
 namespace LambdaEngine
 {
@@ -248,6 +248,11 @@ namespace LambdaEngine
 		Input::Release();
 
 		if (!GameConsole::Get().Release())
+		{
+			return false;
+		}
+
+		if (!StateManager::GetInstance()->Release())
 		{
 			return false;
 		}

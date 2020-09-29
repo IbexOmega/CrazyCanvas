@@ -2,7 +2,7 @@
 
 #include "Rendering/Core/API/PipelineState.h"
 
-#include "GUI/GUIHelpers.h"
+#include "GUI/Core/GUIHelpers.h"
 
 #include "NsRender/RenderDevice.h"
 

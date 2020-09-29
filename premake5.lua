@@ -580,6 +580,7 @@ workspace "LambdaEngine"
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
+			"Dependencies/NoesisGUI/Include",
 		}
 
 		-- Files
@@ -634,6 +635,7 @@ workspace "LambdaEngine"
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
+			"Dependencies/NoesisGUI/Include",
 		}
 
 		-- Files
@@ -688,6 +690,7 @@ workspace "LambdaEngine"
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
+			"Dependencies/NoesisGUI/Include",
 		}
 
 		-- Files
@@ -741,7 +744,8 @@ workspace "LambdaEngine"
 			"Dependencies/imgui",
 			"Dependencies/ordered-map/include",
 			"Dependencies/rapidjson/include",
-			"Dependencies/PhysX/include"
+			"Dependencies/PhysX/include",
+			"Dependencies/NoesisGUI/Include",
 		}
 
 		-- Files

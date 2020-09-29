@@ -8,12 +8,15 @@
 
 #include "Application/API/Events/KeyEvents.h"
 
+#include "NsCore/Ptr.h"
 
 namespace LambdaEngine
 {
 	class StateManager;
 	class ECSCore;
 }
+
+class GUITest;
 
 class SandboxState : public LambdaEngine::State
 {
@@ -36,4 +39,6 @@ private:
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[100];
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
+
+	Noesis::Ptr<GUITest> m_GUITest;
 };

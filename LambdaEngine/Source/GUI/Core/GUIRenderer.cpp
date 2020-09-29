@@ -30,6 +30,8 @@ namespace LambdaEngine
 
 	GUIRenderer::~GUIRenderer()
 	{
+		m_View.Reset();
+
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pVertexBuffer);
 		SAFERELEASE(m_pGUISampler);

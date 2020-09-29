@@ -26,8 +26,8 @@
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 
-#include "GUI/GUIApplication.h"
-#include "GUI/GUIRenderer.h"
+#include "GUI/Core/GUIApplication.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
 

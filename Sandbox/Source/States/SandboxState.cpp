@@ -27,6 +27,8 @@
 
 #include "Math/Random.h"
 
+#include "GUI/GUITest.h"
+
 using namespace LambdaEngine;
 
 SandboxState::SandboxState()
@@ -40,11 +42,15 @@ SandboxState::SandboxState(LambdaEngine::State* pOther) : LambdaEngine::State(pO
 
 SandboxState::~SandboxState()
 {
+	m_GUITest.Reset();
 	// Remove System
 }
 
 void SandboxState::Init()
 {
+	m_GUITest = *new GUITest();
+	m_GUITest->Init("Test.xaml");
+
 	// Create Systems
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
@@ -300,6 +306,7 @@ void SandboxState::Init()
 	// Use HelperClass to create additional entities
 
 	// EntityIndex index = HelperClass::CreatePlayer(
+
 }
 
 void SandboxState::Resume()

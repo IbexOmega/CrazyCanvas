@@ -1,7 +1,7 @@
-#include "GUI/GUIApplication.h"
-#include "GUI/GUIShaderManager.h"
-#include "GUI/GUIRenderer.h"
-#include "GUI/GUIInputMapper.h"
+#include "GUI/Core/GUIApplication.h"
+#include "GUI/Core/GUIShaderManager.h"
+#include "GUI/Core/GUIRenderer.h"
+#include "GUI/Core/GUIInputMapper.h"
 
 #include "NsApp/LocalXamlProvider.h"
 #include "NsApp/LocalFontProvider.h"
@@ -70,6 +70,13 @@ namespace LambdaEngine
 	void GUIApplication::SetView(Noesis::Ptr<Noesis::IView> view)
 	{
 		s_pView.Reset();
+
+		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+
+		s_pView = view;
+		s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
+		s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
+
 		s_pRenderer->SetView(view);
 	}
 
@@ -94,34 +101,34 @@ namespace LambdaEngine
 
 		//View Creation
 		//Noesis::Ptr<Noesis::FrameworkElement> xaml = Noesis::GUI::LoadXaml<Noesis::FrameworkElement>("App.xaml");
-		Noesis::Ptr<Noesis::Grid> xaml(Noesis::GUI::ParseXaml<Noesis::Grid>(R"(
-			<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-				<Grid.Background>
-					<LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-						<GradientStop Offset="0" Color="#FF123F61"/>
-						<GradientStop Offset="0.6" Color="#FF0E4B79"/>
-						<GradientStop Offset="0.7" Color="#FF106097"/>
-					</LinearGradientBrush>
-				</Grid.Background>
-				<Viewbox>
-					<StackPanel Margin="50">
-						<Button Name="TestButton" Content="Hello World!" Margin="0,30,0,0"/>
-						<Rectangle Height="5" Margin="-10,20,-10,0">
-							<Rectangle.Fill>
-								<RadialGradientBrush>
-									<GradientStop Offset="0" Color="#40000000"/>
-									<GradientStop Offset="1" Color="#00000000"/>
-								</RadialGradientBrush>
-							</Rectangle.Fill>
-						</Rectangle>
-					</StackPanel>
-				</Viewbox>
-			</Grid>
-		)"));
-		s_pView = Noesis::GUI::CreateView(xaml);
-		s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
-		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-		s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
+		//Noesis::Ptr<Noesis::Grid> xaml(Noesis::GUI::ParseXaml<Noesis::Grid>(R"(
+		//	<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+		//		<Grid.Background>
+		//			<LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+		//				<GradientStop Offset="0" Color="#FF123F61"/>
+		//				<GradientStop Offset="0.6" Color="#FF0E4B79"/>
+		//				<GradientStop Offset="0.7" Color="#FF106097"/>
+		//			</LinearGradientBrush>
+		//		</Grid.Background>
+		//		<Viewbox>
+		//			<StackPanel Margin="50">
+		//				<Button Name="TestButton" Content="Hello World!" Margin="0,30,0,0"/>
+		//				<Rectangle Height="5" Margin="-10,20,-10,0">
+		//					<Rectangle.Fill>
+		//						<RadialGradientBrush>
+		//							<GradientStop Offset="0" Color="#40000000"/>
+		//							<GradientStop Offset="1" Color="#00000000"/>
+		//						</RadialGradientBrush>
+		//					</Rectangle.Fill>
+		//				</Rectangle>
+		//			</StackPanel>
+		//		</Viewbox>
+		//	</Grid>
+		//)"));
+		//s_pView = Noesis::GUI::CreateView(xaml);
+		//s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
+		//TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+		//s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
 
 		//Renderer Initialization
 		s_pRenderer = new GUIRenderer();
@@ -131,13 +138,13 @@ namespace LambdaEngine
 			return false;
 		}
 
-		s_pRenderer->SetView(s_pView);
+		//s_pRenderer->SetView(s_pView);
 
-		Noesis::Button* pButton = s_pView->GetContent()->FindName<Noesis::Button>("TestButton");
-		pButton->Click() += [](Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-		{
-			LOG_WARNING("PP");
-		};
+		//Noesis::Button* pButton = s_pView->GetContent()->FindName<Noesis::Button>("TestButton");
+		//pButton->Click() += [](Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+		//{
+		//	LOG_WARNING("PP");
+		//};
 
 		return true;
 	}
@@ -180,42 +187,51 @@ namespace LambdaEngine
 
 	bool GUIApplication::OnWindowResized(const WindowResizedEvent& windowEvent)
 	{
-		s_pView->SetSize(windowEvent.Width, windowEvent.Height);
+		if (s_pView.GetPtr() != nullptr)
+			s_pView->SetSize(windowEvent.Width, windowEvent.Height);
 		return true;
 	}
 
 	bool GUIApplication::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
 	{
-		s_pView->KeyDown(GUIInputMapper::GetKey(keyPressedEvent.Key));
+		if (s_pView.GetPtr() != nullptr)
+			s_pView->KeyDown(GUIInputMapper::GetKey(keyPressedEvent.Key));
 		return true;
 	}
 
 	bool GUIApplication::OnKeyReleased(const KeyReleasedEvent& keyReleasedEvent)
 	{
-		s_pView->KeyUp(GUIInputMapper::GetKey(keyReleasedEvent.Key));
+		if (s_pView.GetPtr() != nullptr)
+			s_pView->KeyUp(GUIInputMapper::GetKey(keyReleasedEvent.Key));
 		return true;
 	}
 
 	bool GUIApplication::OnKeyTyped(const KeyTypedEvent& keyTypedEvent)
 	{
-		s_pView->Char(keyTypedEvent.Character);
+		if (s_pView.GetPtr() != nullptr)
+			s_pView->Char(keyTypedEvent.Character);
 		return true;
 	}
 
 	bool GUIApplication::OnMouseButtonClicked(const MouseButtonClickedEvent& mouseButtonClickedEvent)
 	{
-		s_pView->MouseButtonDown(mouseButtonClickedEvent.Position.x, mouseButtonClickedEvent.Position.y, GUIInputMapper::GetMouseButton(mouseButtonClickedEvent.Button));
+		if (s_pView.GetPtr() != nullptr)
+			s_pView->MouseButtonDown(mouseButtonClickedEvent.Position.x, mouseButtonClickedEvent.Position.y, GUIInputMapper::GetMouseButton(mouseButtonClickedEvent.Button));
 		return true;
 	}
 
 	bool GUIApplication::OnMouseButtonReleased(const MouseButtonReleasedEvent& mouseButtonReleasedEvent)
 	{
-		s_pView->MouseButtonUp(mouseButtonReleasedEvent.Position.x, mouseButtonReleasedEvent.Position.y, GUIInputMapper::GetMouseButton(mouseButtonReleasedEvent.Button));
+		if (s_pView.GetPtr() != nullptr)
+			s_pView->MouseButtonUp(mouseButtonReleasedEvent.Position.x, mouseButtonReleasedEvent.Position.y, GUIInputMapper::GetMouseButton(mouseButtonReleasedEvent.Button));
 		return true;
 	}
 
 	bool GUIApplication::OnMouseScrolled(const MouseScrolledEvent& mouseScrolledEvent)
 	{
+		if (s_pView.GetPtr() == nullptr)
+			return true;
+
 		if (mouseScrolledEvent.DeltaY > 0)		s_pView->MouseWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, mouseScrolledEvent.DeltaY);
 		else if (mouseScrolledEvent.DeltaX > 0)	s_pView->MouseHWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, mouseScrolledEvent.DeltaX);
 
@@ -224,7 +240,8 @@ namespace LambdaEngine
 
 	bool GUIApplication::OnMouseMoved(const MouseMovedEvent& mouseMovedEvent)
 	{
-		s_pView->MouseMove(mouseMovedEvent.Position.x, mouseMovedEvent.Position.y);
+		if (s_pView.GetPtr() != nullptr)
+			s_pView->MouseMove(mouseMovedEvent.Position.x, mouseMovedEvent.Position.y);
 		return true;
 	}
 }
