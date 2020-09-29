@@ -37,6 +37,10 @@ namespace LambdaEngine
 			TYPE_ACCEPTED				= UINT16_MAX - 7,
 			TYPE_NETWORK_ACK			= UINT16_MAX - 8,
 			TYPE_NETWORK_DISCOVERY		= UINT16_MAX - 9,
+
+
+			TYPE_ENTITY_CREATE			= UINT16_MAX - 10,
+			TYPE_PLAYER_ACTION			= UINT16_MAX - 11,
 		};
 
 	public:
