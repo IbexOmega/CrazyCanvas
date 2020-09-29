@@ -219,26 +219,6 @@ namespace LambdaEngine
 	void GUIRenderer::BeginRender(bool offscreen)
 	{
 		UNREFERENCED_VARIABLE(offscreen);
-		const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
-		CommandList* pCommandList = BeginOrGetRenderCommandList();
-
-		//Begin RenderPass
-		{
-			BeginRenderPassDesc beginRenderPassDesc = {};
-			beginRenderPassDesc.pRenderPass			= m_pMainRenderPass;
-			beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
-			beginRenderPassDesc.RenderTargetCount	= 1;
-			beginRenderPassDesc.pDepthStencil		= m_DepthStencilTextureView.Get();
-			beginRenderPassDesc.Width				= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
-			beginRenderPassDesc.Height				= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
-			beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-			beginRenderPassDesc.pClearColors		= nullptr;
-			beginRenderPassDesc.ClearColorCount		= 0;
-			beginRenderPassDesc.Offset.x			= 0;
-			beginRenderPassDesc.Offset.y			= 0;
-
-			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		}
 	}
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)
@@ -302,12 +282,26 @@ namespace LambdaEngine
 	void GUIRenderer::EndRender()
 	{
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
-		pCommandList->EndRenderPass();
+
+		if (m_RenderPassBegun)
+		{
+			pCommandList->EndRenderPass();
+			m_RenderPassBegun = false;
+		}
+
 		pCommandList->End();
 	}
 
 	void* GUIRenderer::MapVertices(uint32_t bytes)
 	{
+		CommandList* pCommandList = BeginOrGetRenderCommandList();
+
+		if (m_RenderPassBegun)
+		{
+			pCommandList->EndRenderPass();
+			m_RenderPassBegun = false;
+		}
+
 		m_RequiredVertexBufferSize = uint64(bytes);
 		m_pVertexStagingBuffer = StagingBufferCache::RequestBuffer(m_RequiredVertexBufferSize);
 		return m_pVertexStagingBuffer->Map();
@@ -317,10 +311,10 @@ namespace LambdaEngine
 	{
 		m_pVertexStagingBuffer->Unmap();
 
+		CommandList* pCommandList = BeginOrGetRenderCommandList();
+
 		//Update Vertex Buffer
 		{
-			CommandList* pCommandList = BeginOrGetUtilityCommandList();
-
 			if (m_pVertexBuffer == nullptr || m_pVertexBuffer->GetDesc().SizeInBytes < m_RequiredVertexBufferSize)
 			{
 				if (m_pVertexBuffer != nullptr) m_pBuffersToRemove->PushBack(m_pVertexBuffer);
@@ -349,10 +343,10 @@ namespace LambdaEngine
 	{
 		m_pIndexStagingBuffer->Unmap();
 
+		CommandList* pCommandList = BeginOrGetRenderCommandList();
+
 		//Update Index Buffer
 		{
-			CommandList* pCommandList = BeginOrGetUtilityCommandList();
-
 			if (m_pIndexBuffer == nullptr || m_pIndexBuffer->GetDesc().SizeInBytes < m_RequiredIndexBufferSize)
 			{
 				if (m_pIndexBuffer != nullptr) m_pBuffersToRemove->PushBack(m_pIndexBuffer);
@@ -368,6 +362,8 @@ namespace LambdaEngine
 
 			pCommandList->CopyBuffer(m_pIndexStagingBuffer, 0, m_pIndexBuffer, 0, m_RequiredIndexBufferSize);
 		}
+
+		BeginMainRenderPass(pCommandList);
 	}
 
 	void GUIRenderer::DrawBatch(const Noesis::Batch& batch)
@@ -548,11 +544,13 @@ namespace LambdaEngine
 	}
 
 	void GUIRenderer::Render(
+		Timestamp delta,
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage)
 	{
+		m_View->Update(delta.AsSeconds());
 		m_ModFrameIndex		= modFrameIndex;
 		m_BackBufferIndex	= backBufferIndex;
 
@@ -657,6 +655,31 @@ namespace LambdaEngine
 		}
 
 		return pCommandList;
+	}
+
+	void GUIRenderer::BeginMainRenderPass(CommandList* pCommandList)
+	{
+		//Begin RenderPass
+		if (!m_RenderPassBegun)
+		{
+			const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
+
+			BeginRenderPassDesc beginRenderPassDesc = {};
+			beginRenderPassDesc.pRenderPass			= m_pMainRenderPass;
+			beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
+			beginRenderPassDesc.RenderTargetCount	= 1;
+			beginRenderPassDesc.pDepthStencil		= m_DepthStencilTextureView.Get();
+			beginRenderPassDesc.Width				= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
+			beginRenderPassDesc.Height				= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
+			beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+			beginRenderPassDesc.pClearColors		= nullptr;
+			beginRenderPassDesc.ClearColorCount		= 0;
+			beginRenderPassDesc.Offset.x			= 0;
+			beginRenderPassDesc.Offset.y			= 0;
+
+			pCommandList->BeginRenderPass(&beginRenderPassDesc);
+			m_RenderPassBegun = true;
+		}
 	}
 
 	Buffer* GUIRenderer::CreateOrGetParamsBuffer()

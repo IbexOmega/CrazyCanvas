@@ -83,6 +83,7 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void Render(
+			Timestamp delta,
 			uint32 modFrameIndex,
 			uint32 backBufferIndex,
 			CommandList** ppFirstExecutionStage,

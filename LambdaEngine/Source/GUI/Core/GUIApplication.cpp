@@ -62,11 +62,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void GUIApplication::Tick(Timestamp delta)
-	{
-		s_pView->Update(delta.AsSeconds());
-	}
-
 	void GUIApplication::SetView(Noesis::Ptr<Noesis::IView> view)
 	{
 		s_pView.Reset();

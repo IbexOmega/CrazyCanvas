@@ -13,10 +13,6 @@
 
 namespace LambdaEngine
 {
-	constexpr const uint32 SAMPLE_COUNT_1_INDEX = 0;
-	constexpr const uint32 SAMPLE_COUNT_2_INDEX = 1;
-	constexpr const uint32 SAMPLE_COUNT_4_INDEX = 2;
-
 	TArray<GUIPipelineStateCache::PipelineVariations> GUIPipelineStateCache::s_PipelineStates;
 	RenderPass* GUIPipelineStateCache::s_pDummyRenderPass		= nullptr;
 	PipelineLayout* GUIPipelineStateCache::s_pPipelineLayout	= nullptr;

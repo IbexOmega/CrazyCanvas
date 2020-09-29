@@ -100,6 +100,7 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 
 		virtual void Render(
+			Timestamp delta,
 			uint32 modFrameIndex, 
 			uint32 backBufferIndex, 
 			CommandList** ppFirstExecutionStage, 
@@ -129,6 +130,7 @@ namespace LambdaEngine
 	private:
 		CommandList* BeginOrGetUtilityCommandList();
 		CommandList* BeginOrGetRenderCommandList();
+		void BeginMainRenderPass(CommandList* pCommandList);
 		Buffer* CreateOrGetParamsBuffer();
 		DescriptorSet* CreateOrGetDescriptorSet();
 
@@ -173,5 +175,7 @@ namespace LambdaEngine
 		TArray<Noesis::Ptr<Noesis::RenderTarget>> m_GUIRenderTargets;
 
 		Noesis::Ptr<Noesis::IView> m_View;
+
+		bool m_RenderPassBegun = false;
 	};
 }

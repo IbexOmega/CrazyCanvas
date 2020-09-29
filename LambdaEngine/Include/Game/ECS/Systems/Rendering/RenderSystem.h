@@ -190,7 +190,7 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime) override final;
 
-		bool Render();
+		bool Render(Timestamp delta);
 
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 

@@ -10,6 +10,7 @@ namespace LambdaEngine
 	std::multimap<uint64, Buffer*, StagingBufferCache::SizeCompare> StagingBufferCache::s_AvailableBuffers[BACK_BUFFER_COUNT];
 	TArray<Buffer*> StagingBufferCache::s_StagedBuffers[BACK_BUFFER_COUNT];
 	uint32 StagingBufferCache::s_ModFrameIndex = 0;
+	uint32 StagingBufferCache::s_BufferIndex = 0;
 
 	bool StagingBufferCache::Release()
 	{
@@ -37,7 +38,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void StagingBufferCache::PreRender()
+	void StagingBufferCache::Tick()
 	{
 		TArray<Buffer*>& frameStagedBuffers = s_StagedBuffers[s_ModFrameIndex];
 
@@ -70,7 +71,11 @@ namespace LambdaEngine
 		{
 			//If we don't find one, create a new 
 			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName	= "Staging Buffer Cache";
+			bufferDesc.DebugName	= "Staging Buffer Cache"
+#ifdef LAMBDA_DEVELOPMENT
+			+ std::to_string(s_BufferIndex++)
+#endif
+			;
 			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes	= size;

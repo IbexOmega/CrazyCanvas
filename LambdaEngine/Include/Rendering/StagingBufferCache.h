@@ -26,7 +26,7 @@ namespace LambdaEngine
 		DECL_STATIC_CLASS(StagingBufferCache);
 
 		static bool Release();
-		static void PreRender();
+		static void Tick();
 
 		/*
 		*	Returns a Staging Buffer which should be used this frame.
@@ -38,5 +38,6 @@ namespace LambdaEngine
 		static std::multimap<uint64, Buffer*, SizeCompare> s_AvailableBuffers[BACK_BUFFER_COUNT];
 		static TArray<Buffer*>	s_StagedBuffers[BACK_BUFFER_COUNT];
 		static uint32 s_ModFrameIndex;
+		static uint32 s_BufferIndex;
 	};
 }

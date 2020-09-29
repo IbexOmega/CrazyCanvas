@@ -21,8 +21,6 @@ namespace LambdaEngine
 		static bool Init();
 		static bool Release();
 
-		static void Tick(Timestamp delta);
-
 		static void SetView(Noesis::Ptr<Noesis::IView> view);
 
 		FORCEINLINE static GUIRenderer* GetRenderer() { return s_pRenderer; }
