@@ -157,7 +157,7 @@ namespace LambdaEngine
 
     void EntityPublisher::UnpublishComponent(Entity entityID, const ComponentType* pComponentType)
     {
-        // Get all subscriptions for the component type by iterating through the unordered_map bucket
+        // Get all subscriptions for the component type by iterating through the unordered_multimap bucket
         auto subBucketItr = m_ComponentSubscriptions.find(pComponentType);
 
         while (subBucketItr != m_ComponentSubscriptions.end() && subBucketItr->first == pComponentType)
