@@ -20,6 +20,9 @@ namespace LambdaEngine
 		pECS->AddComponent<ViewProjectionMatricesComponent>(entity, viewProjComp);
 
 		CameraComponent camComp;
+		camComp.FarPlane 	= cameraDesc.FarPlane;
+		camComp.NearPlane 	= cameraDesc.NearPlane;
+		camComp.FOV			= cameraDesc.FOVDegrees;
 		pECS->AddComponent<CameraComponent>(entity, camComp);
 
 		pECS->AddComponent<PositionComponent>(entity, PositionComponent{ .Position = cameraDesc.Position });
@@ -44,10 +47,12 @@ namespace LambdaEngine
 		pECS->AddComponent<ViewProjectionMatricesComponent>(entity, viewProjComp);
 
 		CameraComponent camComp;
+		camComp.FarPlane = cameraDesc.FarPlane;
+		camComp.NearPlane = cameraDesc.NearPlane;
 		pECS->AddComponent<CameraComponent>(entity, camComp);
 
 		pECS->AddComponent<PositionComponent>(entity, PositionComponent{ .Position = cameraDesc.Position });
-		pECS->AddComponent<RotationComponent>(entity, RotationComponent{ .Quaternion = glm::quatLookAtLH(cameraDesc.Direction, g_DefaultUp) });
+		pECS->AddComponent<RotationComponent>(entity, RotationComponent{ .Quaternion = glm::quatLookAt(cameraDesc.Direction, g_DefaultUp) });
 		pECS->AddComponent<ScaleComponent>(entity, ScaleComponent{ .Scale = {1.f, 1.f, 1.f} });
 
 		return entity;

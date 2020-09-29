@@ -33,21 +33,21 @@ namespace LambdaEngine
 			cmdHelp.AddFlag("d", Arg::EType::EMPTY);
 			cmdHelp.AddDescription("Shows all commands descriptions.", { {"d", "Used to show debug commands also."} });
 			BindCommand(cmdHelp, [this](CallbackInput& input)->void
-			{
-				for (auto i : m_CommandMap)
 				{
-					ConsoleCommand& cCmd = i.second.first;
-					if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
+					for (auto i : m_CommandMap)
 					{
-						std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
-						ConsoleCommand::Description desc = cCmd.GetDescription();
-						PushInfo(i.first + type + ":");
-						PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
-						for (auto flagDesc : desc.FlagDescs)
-							PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+						ConsoleCommand& cCmd = i.second.first;
+						if (!cCmd.IsDebug() || (input.Flags.find("d") != input.Flags.end()))
+						{
+							std::string type = cCmd.IsDebug() ? " [DEBUG]" : "";
+							ConsoleCommand::Description desc = cCmd.GetDescription();
+							PushInfo(i.first + type + ":");
+							PushMsg("\t" + desc.MainDesc, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+							for (auto flagDesc : desc.FlagDescs)
+								PushMsg("\t\t-" + flagDesc.first + ": " + flagDesc.second, glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+						}
 					}
-				}
-			});
+				});
 		}
 
 		// Clear
@@ -57,9 +57,10 @@ namespace LambdaEngine
 			cmdClear.AddFlag("h", Arg::EType::EMPTY);
 			cmdClear.AddDescription("Clears the visible text in the console.", { {"h", "Clears the history."} });
 			BindCommand(cmdClear, [this](CallbackInput& input)->void
-			{
-				m_Items.Clear();
-			});
+				{
+					UNREFERENCED_VARIABLE(input);
+					m_Items.Clear();
+				});
 		}
 
 		// Exit
@@ -68,9 +69,10 @@ namespace LambdaEngine
 			cmdExit.Init("exit", false);
 			cmdExit.AddDescription("Terminate the application");
 			BindCommand(cmdExit, [this](CallbackInput& input)->void
-			{
-				CommonApplication::Get()->Terminate();
-			});
+				{
+					UNREFERENCED_VARIABLE(input);
+					CommonApplication::Get()->Terminate();
+				});
 		}
 
 		// Enable input
@@ -80,16 +82,16 @@ namespace LambdaEngine
 			cmdInput.AddArg(Arg::EType::BOOL);
 			cmdInput.AddDescription("Enable or disable application input");
 			BindCommand(cmdInput, [this](CallbackInput& input)->void
-			{
-				if (input.Arguments[0].Value.Boolean)
 				{
-					Input::Enable();
-				}
-				else
-				{
-					Input::Disable();
-				}
-			});
+					if (input.Arguments[0].Value.Boolean)
+					{
+						Input::Enable();
+					}
+					else
+					{
+						Input::Disable();
+					}
+				});
 		}
 
 		// Main window width
@@ -99,14 +101,14 @@ namespace LambdaEngine
 			cmdWidth.AddArg(Arg::EType::INT);
 			cmdWidth.AddDescription("Set main window width");
 			BindCommand(cmdWidth, [this](CallbackInput& input)->void
-			{
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				if (mainWindow)
 				{
-					const uint16 height = mainWindow->GetHeight();
-					mainWindow->SetSize(input.Arguments.GetFront().Value.Int32, height);
-				}
-			});
+					TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+					if (mainWindow)
+					{
+						const uint16 height = mainWindow->GetHeight();
+						mainWindow->SetSize((uint16)input.Arguments.GetFront().Value.Int32, (uint16)height);
+					}
+				});
 		}
 
 		// Main window height
@@ -116,14 +118,14 @@ namespace LambdaEngine
 			cmdHeight.AddArg(Arg::EType::INT);
 			cmdHeight.AddDescription("Set main window height");
 			BindCommand(cmdHeight, [this](CallbackInput& input)->void
-			{
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				if (mainWindow)
 				{
-					const uint16 width = mainWindow->GetWidth();
-					mainWindow->SetSize(width, input.Arguments.GetFront().Value.Int32);
-				}
-			});
+					TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+					if (mainWindow)
+					{
+						const uint16 width = mainWindow->GetWidth();
+						mainWindow->SetSize(width, (uint16)input.Arguments.GetFront().Value.Int32);
+					}
+				});
 		}
 
 		// Main window maximize
@@ -131,13 +133,14 @@ namespace LambdaEngine
 			ConsoleCommand cmdMaximize;
 			cmdMaximize.Init("window_maximize", false);
 			BindCommand(cmdMaximize, [this](CallbackInput& input)->void
-			{
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				if (mainWindow)
 				{
-					mainWindow->Maximize();
-				}
-			});
+					UNREFERENCED_VARIABLE(input);
+					TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+					if (mainWindow)
+					{
+						mainWindow->Maximize();
+					}
+				});
 		}
 
 		// Main window minimize
@@ -145,13 +148,14 @@ namespace LambdaEngine
 			ConsoleCommand cmdMinimize;
 			cmdMinimize.Init("window_minimize", false);
 			BindCommand(cmdMinimize, [this](CallbackInput& input)->void
-			{
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				if (mainWindow)
 				{
-					mainWindow->Minimize();
-				}
-			});
+					UNREFERENCED_VARIABLE(input);
+					TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+					if (mainWindow)
+					{
+						mainWindow->Minimize();
+					}
+				});
 		}
 
 		// Main window fullscreen
@@ -160,13 +164,14 @@ namespace LambdaEngine
 			cmdFullscreen.Init("window_toggle_fullscreen", false);
 			cmdFullscreen.AddDescription("Set main window to fullscreen");
 			BindCommand(cmdFullscreen, [this](CallbackInput& input)->void
-			{
-				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-				if (mainWindow)
 				{
-					mainWindow->ToggleFullscreen();
-				}
-			});
+					UNREFERENCED_VARIABLE(input);
+					TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+					if (mainWindow)
+					{
+						mainWindow->ToggleFullscreen();
+					}
+				});
 		}
 
 		// Main window size
@@ -185,14 +190,14 @@ namespace LambdaEngine
 					auto widthPair = input.Flags.find("w");
 					if (widthPair != input.Flags.end())
 					{
-						width = widthPair->second.Arg.Value.Int32;
+						width = (uint16)widthPair->second.Arg.Value.Int32;
 					}
 
 					uint16 height = mainWindow->GetWidth();
 					auto heightPair = input.Flags.find("h");
 					if (heightPair != input.Flags.end())
 					{
-						height = heightPair->second.Arg.Value.Int32;
+						height = (uint16)heightPair->second.Arg.Value.Int32;
 					}
 
 					mainWindow->SetSize(width, height);
@@ -376,6 +381,7 @@ namespace LambdaEngine
 			cmdSaveSettings.AddDescription("Save changes into config file");
 			BindCommand(cmdSaveSettings, [](CallbackInput& input)->void
 				{
+					UNREFERENCED_VARIABLE(input);
 					EngineConfig::WriteToFile();
 				});
 		}
@@ -412,8 +418,8 @@ namespace LambdaEngine
 
 			// Draw a console window at the top right of the viewport.
 			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver); // Standard position
-			ImGui::SetNextWindowSize(ImVec2(width, standardHeight), ImGuiCond_FirstUseEver); // Standard size
-			ImGui::SetNextWindowSizeConstraints(ImVec2(width, 70), ImVec2(width, height)); // Window constraints
+			ImGui::SetNextWindowSize(ImVec2((float)width, (float)standardHeight), ImGuiCond_FirstUseEver); // Standard size
+			ImGui::SetNextWindowSizeConstraints(ImVec2((float)width, 70), ImVec2((float)width, (float)height)); // Window constraints
 
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f); // Make more transparent
 			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); // Remove grip, resize works anyway
@@ -460,13 +466,13 @@ namespace LambdaEngine
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.9f); // Make less transparent
 
 				// Command line
-				static char s_Buf[256];
+				// static char s_Buf[256];
 
-				ImGui::PushItemWidth(width);
+				ImGui::PushItemWidth((float)width);
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
 
-				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit;
-				if (ImGui::InputText("###Input", s_Buf, 256, input_text_flags,
+				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackAlways;
+				if (ImGui::InputText("###Input", m_Buf, 256, input_text_flags,
 					[](ImGuiInputTextCallbackData* data)->int {
 						GameConsole* console = (GameConsole*)data->UserData;
 						return console->TextEditCallback(data);
@@ -474,20 +480,20 @@ namespace LambdaEngine
 				{
 					if (m_ActivePopupIndex != -1)
 					{
-						strcpy(s_Buf, m_PopupSelectedText.c_str());
+						strcpy(m_Buf, m_PopupSelectedText.c_str());
 						m_ActivePopupIndex = -1;
 						m_Candidates.Clear();
-						m_PopupSelectedText = "";
+						m_UpdatePositionCursor = true;
 					}
 					else
 					{
-						if (s_Buf[0])
+						if (m_Buf[0])
 						{
-							std::string buff = std::string(s_Buf);
+							std::string buff = std::string(m_Buf);
 							ExecCommand(buff);
 						}
 
-						strcpy(s_Buf, "");
+						strcpy(m_Buf, "");
 					}
 
 					hasFocus = true;
@@ -543,13 +549,19 @@ namespace LambdaEngine
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 2));
 				ImGui::PushAllowKeyboardFocus(false);
 
-				for (uint32 i = 0; i < m_Candidates.GetSize(); i++)
+				for (int i = 0; i < (int)m_Candidates.GetSize(); i++)
 				{
 					isActiveIndex = m_ActivePopupIndex == i;
 					ImGui::PushID(i);
 					if (ImGui::Selectable(m_Candidates[i].c_str(), &isActiveIndex))
 					{
-						PushError("Test");
+						strcpy(m_Buf, m_Candidates[i].c_str());
+						m_PopupSelectedText = m_Candidates[i];
+						m_ActivePopupIndex = -1;
+						m_Candidates.Clear();
+						m_UpdatePositionCursor = true;
+						ImGui::PopID();
+						break;
 					}
 					ImGui::PopID();
 
@@ -816,6 +828,14 @@ namespace LambdaEngine
 
 	int GameConsole::TextEditCallback(ImGuiInputTextCallbackData* data)
 	{
+		if (m_UpdatePositionCursor)
+		{
+			m_UpdatePositionCursor = false;
+			data->CursorPos = m_PopupSelectedText.length();
+			data->InsertChars(data->CursorPos, " ");
+			m_PopupSelectedText = "";
+		}
+
 		switch (data->EventFlag)
 		{
 		case ImGuiInputTextFlags_CallbackEdit:
@@ -927,7 +947,7 @@ namespace LambdaEngine
 				else if (data->EventKey == ImGuiKey_DownArrow)
 				{
 					if (m_HistoryIndex != -1)
-						if (++m_HistoryIndex >= m_History.GetSize())
+						if (++m_HistoryIndex >= (int)m_History.GetSize())
 							m_HistoryIndex = -1;
 				}
 
@@ -941,15 +961,31 @@ namespace LambdaEngine
 			else
 			{
 				// Navigate candidates list
-				if (data->EventKey == ImGuiKey_UpArrow && m_ActivePopupIndex > 0)
+				if (data->EventKey == ImGuiKey_UpArrow )
 				{
-					m_ActivePopupIndex--;
-					m_PopupSelectionChanged = true;
+					if (m_ActivePopupIndex <= 0)
+					{
+						m_ActivePopupIndex = ((int32)(m_Candidates.GetSize()) - 1);
+						m_PopupSelectionChanged = true;
+					}
+					else
+					{
+						m_ActivePopupIndex--;
+						m_PopupSelectionChanged = true;
+					}
 				}
-				else if (data->EventKey == ImGuiKey_DownArrow && m_ActivePopupIndex < ((int32)(m_Candidates.GetSize()) - 1))
+				else if (data->EventKey == ImGuiKey_DownArrow)
 				{
-					m_ActivePopupIndex++;
-					m_PopupSelectionChanged = true;
+					if (m_ActivePopupIndex >= ((int32)(m_Candidates.GetSize()) - 1))
+					{
+						m_ActivePopupIndex = 0;
+						m_PopupSelectionChanged = true;
+					}
+					else
+					{
+						m_ActivePopupIndex++;
+						m_PopupSelectionChanged = true;
+					}
 				}
 			}
 			break;

@@ -17,6 +17,7 @@ namespace LambdaEngine
 		"FORMAT_R10G10B10A2_UNORM",
 		"FORMAT_R16G16B16A16_SFLOAT",
 		"FORMAT_R16G16B16A16_SNORM",
+		"FORMAT_R16G16B16A16_UNORM",
 		"FORMAT_R32G32_SFLOAT",
 		"FORMAT_R11G11B10_SFLOAT",
 		"FORMAT_R32G32B32A32_UINT",
@@ -38,11 +39,12 @@ namespace LambdaEngine
 		case 7:		return EFormat::FORMAT_R10G10B10A2_UNORM;
 		case 8:		return EFormat::FORMAT_R16G16B16A16_SFLOAT;
 		case 9:		return EFormat::FORMAT_R16G16B16A16_SNORM;
-		case 10:	return EFormat::FORMAT_R32G32_SFLOAT;
-		case 11:	return EFormat::FORMAT_B10G11R11_UFLOAT;
-		case 12:	return EFormat::FORMAT_R32G32B32A32_UINT;
-		case 13:	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
-		case 14:	return EFormat::FORMAT_D24_UNORM_S8_UINT;
+		case 10:	return EFormat::FORMAT_R16G16B16A16_UNORM;
+		case 11:	return EFormat::FORMAT_R32G32_SFLOAT;
+		case 12:	return EFormat::FORMAT_B10G11R11_UFLOAT;
+		case 13:	return EFormat::FORMAT_R32G32B32A32_UINT;
+		case 14:	return EFormat::FORMAT_R32G32B32A32_SFLOAT;
+		case 15:	return EFormat::FORMAT_D24_UNORM_S8_UINT;
 		}
 
 		return EFormat::FORMAT_NONE;
@@ -62,11 +64,12 @@ namespace LambdaEngine
 		case EFormat::FORMAT_R10G10B10A2_UNORM:		return 7;
 		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
 		case EFormat::FORMAT_R16G16B16A16_SNORM:	return 9;
-		case EFormat::FORMAT_R32G32_SFLOAT:			return 10;
-		case EFormat::FORMAT_B10G11R11_UFLOAT:		return 11;
-		case EFormat::FORMAT_R32G32B32A32_UINT:		return 12;
-		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 13;
-		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 14;
+		case EFormat::FORMAT_R16G16B16A16_UNORM:	return 10;
+		case EFormat::FORMAT_R32G32_SFLOAT:			return 11;
+		case EFormat::FORMAT_B10G11R11_UFLOAT:		return 12;
+		case EFormat::FORMAT_R32G32B32A32_UINT:		return 13;
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	return 14;
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return 15;
 		}
 
 		return -1;
@@ -112,6 +115,23 @@ namespace LambdaEngine
 		"NEAREST",
 	};
 
+	constexpr const char* SAMPLER_ADDRESS_NAMES[] =
+	{
+		"REPEAT",
+		"CLAMP_TO_EDGE",
+		"CLAMP_TO_BORDER",
+	};
+
+	constexpr const char* SAMPLER_BORDER_COLOR[] =
+	{
+		"BORDER_COLOR_FLOAT_TRANSPARENT_BLACK",
+		"BORDER_COLOR_INT_TRANSPARENT_BLACK",
+		"BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+		"BORDER_COLOR_INT_OPAQUE_BLACK",
+		"BORDER_COLOR_FLOAT_OPAQUE_WHITE",
+		"BORDER_COLOR_INT_OPAQUE_WHITE",
+	};
+
 	ERenderGraphSamplerType SamplerTypeIndexToSamplerType(int32 index)
 	{
 		switch (index)
@@ -129,6 +149,60 @@ namespace LambdaEngine
 		{
 		case ERenderGraphSamplerType::LINEAR:	return 0;
 		case ERenderGraphSamplerType::NEAREST:	return 1;
+		}
+
+		return -1;
+	}
+
+	ERenderGraphSamplerAddressMode SamplerTypeIndexToSamplerAddressMode(int32 index)
+	{
+		switch (index)
+		{
+		case 0: return ERenderGraphSamplerAddressMode::REPEAT;
+		case 1: return ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE;
+		case 2: return ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER;
+		}
+
+		return ERenderGraphSamplerAddressMode::NONE;
+	}
+
+	int32 SamplerTypeToSamplerAddressModeIndex(ERenderGraphSamplerAddressMode samplerType)
+	{
+		switch (samplerType)
+		{
+		case ERenderGraphSamplerAddressMode::REPEAT:			return 0;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE:		return 1;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER:	return 2;
+		}
+
+		return -1;
+	}
+
+	ERenderGraphSamplerBorderColor SamplerTypeIndexToSamplerBorderColor(int32 index)
+	{
+		switch (index)
+		{
+		case 0 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		case 1 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_TRANSPARENT_BLACK;
+		case 2 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		case 3 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_BLACK;
+		case 4 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		case 5 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_WHITE;
+		}
+
+		return ERenderGraphSamplerBorderColor::NONE;
+	}
+
+	int32 SamplerTypeBorderColorToSamplerIndex(ERenderGraphSamplerBorderColor samplerBorderColor)
+	{
+		switch (samplerBorderColor)
+		{
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:			return 0;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_TRANSPARENT_BLACK:			return 1;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK:				return 2;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_BLACK:					return 3;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_WHITE:				return 4;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_WHITE:					return 5;
 		}
 
 		return -1;

@@ -101,7 +101,7 @@ namespace LambdaEngine
 			string = string.substr(0, endPos);
 		}
 	}
-	
+
 	/*
 	* ResourceLoader
 	*/
@@ -173,9 +173,10 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Material*>& materials, TArray<Texture*>& textures)
+	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures)
 	{
-		int32 assimpFlags =
+		const int32 assimpFlags =
+			aiProcess_FlipWindingOrder			|
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|
@@ -191,10 +192,12 @@ namespace LambdaEngine
 			aiProcess_FindDegenerates			|
 			aiProcess_FindInvalidData;
 
-		SceneLoadRequest loadRequest = {
+		SceneLoadRequest loadRequest = 
+		{
 			.Filepath		= ConvertSlashes(filepath),
 			.AssimpFlags	= assimpFlags,
 			.Meshes			= meshes,
+			.Animations		= animations,
 			.MeshComponents	= meshComponents,
 			.pMaterials		= &materials,
 			.pTextures		= &textures
@@ -205,7 +208,8 @@ namespace LambdaEngine
 
 	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath)
 	{
-		int32 assimpFlags =
+		const int32 assimpFlags =
+			aiProcess_FlipWindingOrder			|
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|
@@ -214,7 +218,6 @@ namespace LambdaEngine
 			aiProcess_ImproveCacheLocality		|
 			aiProcess_LimitBoneWeights			|
 			aiProcess_RemoveRedundantMaterials	|
-			aiProcess_SplitLargeMeshes			|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
 			aiProcess_SortByPType				|
@@ -223,23 +226,55 @@ namespace LambdaEngine
 			aiProcess_OptimizeGraph				|
 			aiProcess_FindInvalidData;
 
-		TArray<Mesh*> meshes;
-		TArray<MeshComponent> meshComponent;
+		TArray<Mesh*>			meshes;
+		TArray<Animation*>		animations;
+		TArray<MeshComponent>	meshComponent;
 
-		SceneLoadRequest loadRequest = {
+		SceneLoadRequest loadRequest =
+		{
 			.Filepath		= ConvertSlashes(filepath),
 			.AssimpFlags	= assimpFlags,
 			.Meshes			= meshes,
-			.MeshComponents	= meshComponent,
+			.Animations		= animations,
+			.MeshComponents = meshComponent,
 			.pMaterials		= nullptr,
 			.pTextures		= nullptr,
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
+		{
 			return nullptr;
+		}
 
 		D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\"", filepath.c_str());
-		return meshes.GetFront();
+
+		// Find the largest and delete the ones not used
+		uint32 biggest	= 0;
+		uint32 maxCount	= 0;
+		for (uint32 i = 0; i < meshes.GetSize(); i++)
+		{
+			if (meshes[i]->Vertices.GetSize() > maxCount)
+			{
+				biggest		= i;
+				maxCount	= meshes[i]->Vertices.GetSize();
+			}
+		}
+
+		for (Mesh* pMesh : meshes)
+		{
+			if (meshes[biggest] != pMesh)
+			{
+				SAFEDELETE(pMesh);
+			}
+		}
+
+		// DELETES ALL ANIMATIONS HERE FOR NOW TO AVOID MEMORY LEAKS -> Needs system for this
+		for (Animation* pAnimation : animations)
+		{
+			SAFEDELETE(pAnimation);
+		}
+
+		return meshes[biggest];
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
@@ -547,7 +582,7 @@ namespace LambdaEngine
 				return nullptr;
 			}
 
-			if (!CompileGLSLToSPIRV(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
+			if (!CompileGLSLToSPIRV(file, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
 				return nullptr;
@@ -777,14 +812,13 @@ namespace LambdaEngine
 	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		std::string source			= std::string(pSource);
-		int32 foundBracket			= int32(source.find_last_of('}') + 1);
-		source[foundBracket]		= '\0';
+		int32 size					= source.size();
 		const char* pFinalSource	= source.c_str();
 
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
 		glslang::TShader shader(shaderType);
 
-		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
+		shader.setStringsWithLengths(&pFinalSource, &size, 1);
 
 		//Todo: Fetch this
 		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
@@ -800,7 +834,7 @@ namespace LambdaEngine
 
 		DirStackFileIncluder includer;
 
-		//Get Directory Path of File
+		// Get Directory Path of File
 		size_t found				= filepath.find_last_of("/\\");
 		std::string directoryPath	= filepath.substr(0, found);
 
@@ -878,12 +912,20 @@ namespace LambdaEngine
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
+
+		glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
+		halfExtent = glm::vec3(0.0f);
+
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
 			Vertex vertex;
 			vertex.Position.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
+
+			halfExtent.x = std::max(halfExtent.x, std::abs(vertex.Position.x));
+			halfExtent.y = std::max(halfExtent.y, std::abs(vertex.Position.y));
+			halfExtent.z = std::max(halfExtent.z, std::abs(vertex.Position.z));
 
 			if (pMeshAI->HasNormals())
 			{
@@ -913,7 +955,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pMeshAI->HasFaces());
 
-		TArray<Mesh::IndexType> indices;
+		TArray<MeshIndexType> indices;
 		indices.Reserve(pMeshAI->mNumFaces * 3);
 		for (uint32 faceIdx = 0; faceIdx < pMeshAI->mNumFaces; faceIdx++)
 		{
@@ -925,7 +967,41 @@ namespace LambdaEngine
 		}
 
 		pMesh->Indices.Resize(indices.GetSize());
-		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(Mesh::IndexType) * indices.GetSize());
+		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(MeshIndexType) * indices.GetSize());
+	}
+
+	void ResourceLoader::LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI)
+	{
+		Skeleton* pSkeleton = DBG_NEW Skeleton();
+		pMesh->pSkeleton = pSkeleton;
+
+		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
+		{
+			Skeleton::Bone bone;
+			
+			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
+			bone.Name = pBoneAI->mName.C_Str();
+			
+			for (uint32 row = 0; row < 4; row++)
+			{
+				ai_real* pRow = pBoneAI->mOffsetMatrix[row];
+				for (uint32 i = 0; i < 4; i++)
+				{
+					bone.Transform[row][i] = pRow[i];
+				}
+			}
+
+			bone.Weights.Resize(pBoneAI->mNumWeights);
+			for (uint32 weightIndex = 0; weightIndex < pBoneAI->mNumWeights; weightIndex++)
+			{
+				bone.Weights[weightIndex].VertexIndex	= pBoneAI->mWeights[weightIndex].mVertexId;
+				bone.Weights[weightIndex].VertexWeight	= pBoneAI->mWeights[weightIndex].mWeight;
+			}
+
+			pSkeleton->Bones.PushBack(bone);
+		}
+
+		pSkeleton->Bones.ShrinkToFit();
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
@@ -1013,6 +1089,51 @@ namespace LambdaEngine
 		}
 	}
 
+	void ResourceLoader::LoadAnimation(SceneLoadingContext& context, const aiAnimation* pAnimationAI)
+	{
+		VALIDATE(pAnimationAI != nullptr);
+
+		Animation* pAnimation = DBG_NEW Animation();
+		pAnimation->Name			= pAnimationAI->mName.C_Str();
+		pAnimation->Duration		= pAnimationAI->mDuration;
+		pAnimation->TicksPerSecond	= static_cast<float64>(pAnimationAI->mTicksPerSecond);
+		
+		pAnimation->Channels.Resize(pAnimationAI->mNumChannels);
+		for (uint32 channelIndex = 0; channelIndex < pAnimationAI->mNumChannels; channelIndex++)
+		{
+			aiNodeAnim* pChannel = pAnimationAI->mChannels[channelIndex];
+			
+			pAnimation->Channels[channelIndex].Positions.Resize(pChannel->mNumPositionKeys);
+			for (uint32 i = 0; i < pChannel->mNumPositionKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Positions[i].Time	= pChannel->mPositionKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Positions[i].Value.x	= pChannel->mPositionKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Positions[i].Value.y = pChannel->mPositionKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Positions[i].Value.z = pChannel->mPositionKeys[i].mValue.z;
+			}
+
+			pAnimation->Channels[channelIndex].Rotations.Resize(pChannel->mNumRotationKeys);
+			for (uint32 i = 0; i < pChannel->mNumRotationKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Rotations[i].Time	= pChannel->mRotationKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.x	= pChannel->mRotationKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.y	= pChannel->mRotationKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.z	= pChannel->mRotationKeys[i].mValue.z;
+			}
+
+			pAnimation->Channels[channelIndex].Scales.Resize(pChannel->mNumScalingKeys);
+			for (uint32 i = 0; i < pChannel->mNumScalingKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Scales[i].Time		= pChannel->mScalingKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Scales[i].Value.x	= pChannel->mScalingKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Scales[i].Value.y	= pChannel->mScalingKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Scales[i].Value.z	= pChannel->mScalingKeys[i].mValue.z;
+			}
+		}
+
+		context.Animations.EmplaceBack(pAnimation);
+	}
+
 	bool ResourceLoader::LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest)
 	{
 		// Find the directory path
@@ -1034,27 +1155,41 @@ namespace LambdaEngine
 
 		VALIDATE(pScene != nullptr);
 
-		SceneLoadingContext context = {
+		SceneLoadingContext context = 
+		{
 			.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1),
 			.Meshes			= sceneLoadRequest.Meshes,
 			.MeshComponents	= sceneLoadRequest.MeshComponents,
+			.Animations		= sceneLoadRequest.Animations,
 			.pMaterials		= sceneLoadRequest.pMaterials,
 			.pTextures		= sceneLoadRequest.pTextures
 		};
 
+		// Load all meshes
+		if (pScene->mRootNode)
+		{
+			ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		}
 
-		ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		// Load all animations
+		if (pScene->mNumAnimations > 0)
+		{
+			for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
+			{
+				LoadAnimation(context, pScene->mAnimations[animationIndex]);
+			}
+		}
+
 		return true;
 	}
 
 	void ResourceLoader::ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
 	{
 		context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
-
 		for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
 		{
-			Mesh* pMesh = DBG_NEW Mesh;
-			aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
+			Mesh*	pMesh	= DBG_NEW Mesh;
+			aiMesh*	pMeshAI	= pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
 			LoadVertices(pMesh, pMeshAI);
 			LoadIndices(pMesh, pMeshAI);
@@ -1062,6 +1197,11 @@ namespace LambdaEngine
 			if (context.pMaterials)
 			{
 				LoadMaterial(context, pScene, pMeshAI);
+			}
+
+			if (pMeshAI->mNumBones > 0)
+			{
+				LoadSkeleton(pMesh, pMeshAI);
 			}
 
 			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);

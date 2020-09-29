@@ -17,11 +17,17 @@ layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 	SPointLight pointLights[];  
 } b_LightsBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferPosition;
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferAlbedo;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferAORoughMetalValid;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferCompactNormal;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_GBufferVelocity;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferPosition;
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAORoughMetalValid;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferCompactNormal;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVelocity;
+
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
+
+// Todo implement octahedron sampling
+const uint MAX_POINT_SHADOWMAPS = 8;
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[MAX_POINT_SHADOWMAPS];
 
 layout(location = 0) out vec4 out_Color;
 
@@ -37,7 +43,7 @@ void main()
 	{
 		vec3 color = albedo / (albedo + vec3(1.0f));
 		color = pow(color, vec3(1.0f / GAMMA));
-		out_Color = vec4(color, 1.0f);
+		out_Color = vec4(color, CalculateLuminance(color));
 		return;
 	}
 
@@ -59,8 +65,10 @@ void main()
 		vec3 L = normalize(lightBuffer.DirL_Direction);
 		vec3 H = normalize(V + L);
 
+		vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(worldPos, 1.0);
+		// float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 		vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-		vec3 incomingRadiance    = outgoingRadiance;
+		vec3 incomingRadiance    = outgoingRadiance;// * (1.0 - inShadow);
 
 		float NDF   = Distribution(N, H, roughness);
 		float G     = Geometry(N, V, L, roughness);
@@ -81,7 +89,7 @@ void main()
 	}
 
 	//Point Light Loop
-	for (uint i = 0; i < lightBuffer.PointLightCount; ++i)
+	for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
 	{
 		SPointLight light = b_LightsBuffer.pointLights[i];
 
@@ -90,9 +98,10 @@ void main()
 		L = normalize(L);
 		vec3 H = normalize(V + L);
 		
+		float inShadow 			= PointShadowDepthTest(worldPos, light.Position, u_PointLShadowMap[i], light.FarPlane);
 		float attenuation   	= 1.0f / (distance * distance);
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
-		vec3 incomingRadiance    = outgoingRadiance * attenuation;
+		vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
 	
 		float NDF   = Distribution(N, H, roughness);
 		float G     = Geometry(N, V, L, roughness);
@@ -115,8 +124,8 @@ void main()
 	vec3 ambient    = 0.03f * albedo * ao;
 	vec3 color      = ambient + Lo;
 
+	float luminance = CalculateLuminance(color);
 	color = color / (color + vec3(1.0f));
 	color = pow(color, vec3(1.0f / GAMMA));
-
-	out_Color = vec4(color, 1.0f);
+	out_Color = vec4(color, luminance);
 }

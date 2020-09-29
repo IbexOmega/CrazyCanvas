@@ -1402,7 +1402,6 @@ namespace LambdaEngine
 				//Internal
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
-					
 					newResource.OwnershipType				= newResource.IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
 					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
 					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;
@@ -1439,9 +1438,10 @@ namespace LambdaEngine
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MagFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MipmapMode			= RenderGraphSamplerToMipmapMode(pResourceDesc->TextureParams.SamplerType);
-						samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-						samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-						samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.AddressModeU		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.AddressModeV		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.AddressModeW		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.borderColor			= RenderGraphSamplerBorderColor(pResourceDesc->TextureParams.SamplerBorderColor);
 						samplerDesc.MipLODBias			= 0.0f;
 						samplerDesc.AnisotropyEnabled	= false;
 						samplerDesc.MaxAnisotropy		= 16;
@@ -1724,6 +1724,7 @@ namespace LambdaEngine
 			renderStageBufferResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			renderStageDrawArgResources.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
+			bool						attachmentStateUnchanged			= true;
 			float32						renderPassAttachmentsWidth			= 0;
 			float32						renderPassAttachmentsHeight			= 0;
 			ERenderGraphDimensionType	renderPassAttachmentDimensionTypeX	= ERenderGraphDimensionType::NONE;
@@ -1944,6 +1945,14 @@ namespace LambdaEngine
 						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
 						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
 						return false;
+					}
+
+					// Check if attachment is unchanged after renderstage
+					auto prevBinding = pResourceStateDesc->AttachmentSynchronizations.PrevBindingType;
+					auto nextBinding = pResourceStateDesc->AttachmentSynchronizations.NextBindingType;
+					if (prevBinding != nextBinding) 
+					{
+						attachmentStateUnchanged = false;
 					}
 
 					float32						xDimVariable;
@@ -2365,6 +2374,7 @@ namespace LambdaEngine
 					pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
 					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode;
 					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
+					pipelineDesc.RasterizerState.FrontFaceCounterClockWise = false;
 					pipelineDesc.InputAssembly.PrimitiveTopology	= pRenderStageDesc->Graphics.PrimitiveTopology;
 
 					if (pShaderConstants != nullptr)
@@ -2407,6 +2417,7 @@ namespace LambdaEngine
 						pRenderStage->pRenderPass	= pRenderPass;
 
 						//Create duplicate Render Pass (this is fucking retarded) which we use when the RenderStage is Disabled, this Render Pass forces LoadOp to be LOAD
+						if (!attachmentStateUnchanged) 
 						{
 							RenderPassDesc disabledRenderPassDesc = renderPassDesc;
 
@@ -3741,6 +3752,9 @@ namespace LambdaEngine
 		CommandList*		pGraphicsCommandList,
 		CommandList**		ppExecutionStage)
 	{
+		if (pRenderStage->FrameCounter != pRenderStage->FrameOffset && pRenderStage->pDisabledRenderPass == nullptr)
+			return;
+
 		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
 		Profiler::GetGPUProfiler()->GetGraphicsPipelineStat();
 		pGraphicsCommandAllocator->Reset();
@@ -3756,9 +3770,9 @@ namespace LambdaEngine
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
 		viewport.Width		= (float)pRenderStage->Dimensions.x;
-		viewport.Height		= (float)pRenderStage->Dimensions.y;
+		viewport.Height		= -(float)pRenderStage->Dimensions.y;
 		viewport.x			= 0.0f;
-		viewport.y			= 0.0f;
+		viewport.y			= (float)pRenderStage->Dimensions.y;
 
 		pGraphicsCommandList->SetViewports(&viewport, 0, 1);
 
@@ -3819,7 +3833,7 @@ namespace LambdaEngine
 
 				ppTextureViews[textureViewCount++] = pRenderTarget;
 
-				clearColorDescriptions[clearColorCount].Color[0] = 0.0f;
+				clearColorDescriptions[clearColorCount].Color[0] = 1.0f;
 				clearColorDescriptions[clearColorCount].Color[1] = 0.0f;
 				clearColorDescriptions[clearColorCount].Color[2] = 0.0f;
 				clearColorDescriptions[clearColorCount].Color[3] = 0.0f;
