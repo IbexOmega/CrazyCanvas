@@ -113,10 +113,7 @@ namespace LambdaEngine
 				gameState.Position.x += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
 			}*/
 
-			{
-				std::scoped_lock<SpinLock> lock(m_Lock);
-				m_FramesToReconcile.PushBack(gameState);
-			}
+			m_FramesToReconcile.PushBack(gameState);
 			m_SimulationTick++;
 
 			if (!m_FramesProcessedByServer.IsEmpty())
@@ -199,7 +196,6 @@ namespace LambdaEngine
 
 			if (networkUID == m_NetworkUID)
 			{
-				std::scoped_lock<SpinLock> lock(m_Lock);
 				m_FramesProcessedByServer.PushBack(serverGameState);
 			}
 			else
@@ -283,7 +279,6 @@ namespace LambdaEngine
 
 		ASSERT(pair != m_Entities.end());
 
-		std::scoped_lock<SpinLock> lock(m_Lock);
 		while (!m_FramesProcessedByServer.IsEmpty())
 		{
 			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
@@ -298,7 +293,7 @@ namespace LambdaEngine
 				//Replay all game states since the game state which resulted in prediction ERROR
 				for (uint32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
 				{
-					PlayerUpdate(m_FramesToReconcile[i]); 
+					PlayerUpdate(pair->second, m_FramesToReconcile[i]);
 				}
 			}
 
@@ -307,12 +302,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void ClientSystem::PlayerUpdate(const GameState& gameState)
+	void ClientSystem::PlayerUpdate(Entity entity, const GameState& gameState)
 	{
-		auto pair = m_Entities.find(m_NetworkUID);
-
-		ASSERT(pair != m_Entities.end());
-		PlayerMovementSystem::GetInstance().Move(pair->second, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
+		PlayerMovementSystem::GetInstance().Move(entity, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
 	}
 
 

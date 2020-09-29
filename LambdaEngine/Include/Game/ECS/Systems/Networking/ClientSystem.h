@@ -57,7 +57,7 @@ namespace LambdaEngine
 	private:
 		ClientSystem();
 		void Reconcile();
-		void PlayerUpdate(const GameState& gameState);
+		void PlayerUpdate(Entity entity, const GameState& gameState);
 
 	private:
 		static void StaticFixedTickMainThread(Timestamp deltaTime);
@@ -73,7 +73,6 @@ namespace LambdaEngine
 		int32 m_SimulationTick;
 		int32 m_LastNetworkSimulationTick;
 		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
-		SpinLock m_Lock;
 
 	private:
 		static ClientSystem* s_pInstance;

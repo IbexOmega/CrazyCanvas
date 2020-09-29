@@ -70,7 +70,6 @@ namespace LambdaEngine
 
 		if (m_pClient->IsConnected())
 		{
-			std::scoped_lock<SpinLock> lock(m_Lock);
 			for (const GameState& gameState : m_Buffer)
 			{
 				ASSERT(gameState.SimulationTick - 1 == m_CurrentGameState.SimulationTick);
@@ -181,7 +180,6 @@ namespace LambdaEngine
 			decoder.ReadInt8(gameState.DeltaForward);
 			decoder.ReadInt8(gameState.DeltaLeft);
 
-			std::scoped_lock<SpinLock> lock(m_Lock);
 			m_Buffer.insert(gameState);
 		}
 	}

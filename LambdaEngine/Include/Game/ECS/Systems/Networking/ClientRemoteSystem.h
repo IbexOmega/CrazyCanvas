@@ -64,8 +64,6 @@ namespace LambdaEngine
 		ClientRemoteBase* m_pClient;
 		Entity m_Entity;
 
-		SpinLock m_Lock;
-
 		//Temp, remove later plz
 		glm::vec3 m_Color;
 
