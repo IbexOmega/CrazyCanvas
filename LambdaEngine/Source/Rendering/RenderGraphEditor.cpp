@@ -1515,14 +1515,14 @@ namespace LambdaEngine
 				if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 				{
 					char drawBufferMask[9];
-					sprintf(drawBufferMask, "%x", pResourceState->DrawArgsMask);
+					sprintf(drawBufferMask, "%08x", pResourceState->DrawArgsMask);
 
 					ImGui::Text("\tDraw Buffer Mask (Hex)");
 					ImGui::SameLine();
 					ImGui::SetNextItemWidth(ImGui::CalcTextSize("FFFFFFFF").x + ImGui::GetFrameHeight());
 					if (ImGui::InputText("##Draw Buffer Mask", drawBufferMask, ARR_SIZE(drawBufferMask), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll))
 					{
-						sscanf(drawBufferMask, "%x", &pResourceState->DrawArgsMask);
+						sscanf(drawBufferMask, "%08x", &pResourceState->DrawArgsMask);
 					}
 				}
 

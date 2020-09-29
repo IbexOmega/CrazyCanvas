@@ -13,7 +13,7 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/PhysicsRenderer.h"
-#include "Rendering/DrawArgHelper.h"
+#include "Rendering/EntityMaskManager.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -554,10 +554,10 @@ namespace LambdaEngine
 					pMeshletStagingBuffer->Unmap();
 
 					BufferDesc meshletBufferDesc = {};
-					meshletBufferDesc.DebugName		= "Meshlet Buffer";
-					meshletBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					meshletBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-					meshletBufferDesc.SizeInBytes	= meshletStagingBufferDesc.SizeInBytes;
+					meshletBufferDesc.DebugName = "Meshlet Buffer";
+					meshletBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					meshletBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					meshletBufferDesc.SizeInBytes = meshletStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
 					meshEntry.MeshletCount = pMesh->Meshlets.GetSize();
@@ -569,10 +569,10 @@ namespace LambdaEngine
 				// Unique Indices
 				{
 					BufferDesc uniqueIndicesStagingBufferDesc = {};
-					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
-					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(Mesh::IndexType);
+					uniqueIndicesStagingBufferDesc.DebugName = "Unique Indices Staging Buffer";
+					uniqueIndicesStagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					uniqueIndicesStagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					uniqueIndicesStagingBufferDesc.SizeInBytes = pMesh->UniqueIndices.GetSize() * sizeof(Mesh::IndexType);
 
 					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
 
@@ -581,10 +581,10 @@ namespace LambdaEngine
 					pUniqueIndicesStagingBuffer->Unmap();
 
 					BufferDesc uniqueIndicesBufferDesc = {};
-					uniqueIndicesBufferDesc.DebugName	= "Unique Indices Buffer";
-					uniqueIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
-					uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
+					uniqueIndicesBufferDesc.DebugName = "Unique Indices Buffer";
+					uniqueIndicesBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					uniqueIndicesBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					uniqueIndicesBufferDesc.SizeInBytes = uniqueIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
 					meshEntry.UniqueIndexCount = pMesh->UniqueIndices.GetSize();
@@ -596,10 +596,10 @@ namespace LambdaEngine
 				// Primitive indicies
 				{
 					BufferDesc primitiveIndicesStagingBufferDesc = {};
-					primitiveIndicesStagingBufferDesc.DebugName		= "Primitive Indices Staging Buffer";
-					primitiveIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-					primitiveIndicesStagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndices.GetSize() * sizeof(PackedTriangle);
+					primitiveIndicesStagingBufferDesc.DebugName = "Primitive Indices Staging Buffer";
+					primitiveIndicesStagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					primitiveIndicesStagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					primitiveIndicesStagingBufferDesc.SizeInBytes = pMesh->PrimitiveIndices.GetSize() * sizeof(PackedTriangle);
 
 					Buffer* pPrimitiveIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesStagingBufferDesc);
 
@@ -608,10 +608,10 @@ namespace LambdaEngine
 					pPrimitiveIndicesStagingBuffer->Unmap();
 
 					BufferDesc primitiveIndicesBufferDesc = {};
-					primitiveIndicesBufferDesc.DebugName	= "Primitive Indices Buffer";
-					primitiveIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
-					primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
+					primitiveIndicesBufferDesc.DebugName = "Primitive Indices Buffer";
+					primitiveIndicesBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					primitiveIndicesBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					primitiveIndicesBufferDesc.SizeInBytes = primitiveIndicesStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
 					meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndices.GetSize();
@@ -624,11 +624,26 @@ namespace LambdaEngine
 
 				if (m_RayTracingEnabled)
 				{
-					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress	= meshEntry.pVertexBuffer->GetDeviceAdress();
-					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress	= meshEntry.pIndexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
 					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 					m_SBTRecordsDirty = true;
 				}
+
+			}
+
+			// Add Draw Arg Extensions.
+			{
+				MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
+				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
+				if (entityMask > 1) // If the entity has extensions add them to the entry.
+				{
+					DrawArgExtensionGroup& exntesionGroup = EntityMaskManager::GetExtensionGroup(entity);
+					meshEntry.ppExtensionGroups[meshEntry.ExtensionGroupCount] = &exntesionGroup;
+				}
+				// Assume all instances of this mesh have extension groups! (This should not be the case, but it works for initial testing)
+				// TODO: Change this!
+				meshEntry.ExtensionGroupCount++;
 			}
 		}
 
@@ -719,20 +734,15 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		// Fetch the draw arg mask from the entity if it has a mask component.
-
-		uint32 drawArgHash = UINT32_MAX;
-		GUID_Lambda texture = GUID_NONE;
-		ComponentArray<MeshPaintComponent>* pMeshPaintComponents = ECSCore::GetInstance()->GetComponentArray<MeshPaintComponent>();
-		if (pMeshPaintComponents && pMeshPaintComponents->HasComponent(entity))
+		// Fetch entity mask and extract the individual component masks and add them to the set.
+		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
+		TArray<uint32> componentMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(drawArgMask);
+		for (uint32 mask : componentMasks)
 		{
-			texture = pMeshPaintComponents->GetData(entity).UnwrappedTexture;
-			//drawArgHash = DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type());
-		}
-
-		if (m_RequiredDrawArgs.count(drawArgHash))
-		{
-			m_DirtyDrawArgs.insert(drawArgHash);
+			if (m_RequiredDrawArgs.count(mask))
+			{
+				m_DirtyDrawArgs.insert(mask);
+			}
 		}
 	}
 
@@ -920,6 +930,8 @@ namespace LambdaEngine
 			drawArg.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
 			drawArg.pUniqueIndicesBuffer	= meshAndInstancesIt->second.pUniqueIndices;
 			drawArg.pPrimitiveIndices		= meshAndInstancesIt->second.pPrimitiveIndices;
+
+			drawArg.ppExtensionGroups = meshAndInstancesIt->second.ppExtensionGroups;
 
 			drawArgs.PushBack(drawArg);
 		}

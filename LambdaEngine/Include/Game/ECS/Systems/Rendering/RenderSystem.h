@@ -97,26 +97,28 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
-			AccelerationStructure* pBLAS		= nullptr;
-			SBTRecord ShaderRecord			= {};
+			AccelerationStructure* pBLAS				= nullptr;
+			SBTRecord ShaderRecord						= {};
 
-			Buffer* pVertexBuffer		= nullptr;
-			uint32	VertexCount			= 0;
-			Buffer* pIndexBuffer		= nullptr;
-			uint32	IndexCount			= 0;
-			Buffer* pUniqueIndices		= nullptr;
-			uint32	UniqueIndexCount	= 0;
-			Buffer* pPrimitiveIndices	= nullptr;
-			uint32	PrimtiveIndexCount	= 0;
-			Buffer* pMeshlets			= nullptr;
-			uint32	MeshletCount		= 0;
+			Buffer*				pVertexBuffer			= nullptr;
+			uint32				VertexCount				= 0;
+			Buffer*				pIndexBuffer			= nullptr;
+			uint32				IndexCount				= 0;
+			Buffer*				pUniqueIndices			= nullptr;
+			uint32				UniqueIndexCount		= 0;
+			Buffer*				pPrimitiveIndices		= nullptr;
+			uint32				PrimtiveIndexCount		= 0;
+			Buffer*				pMeshlets				= nullptr;
+			uint32				MeshletCount			= 0;
 
-			
-			Buffer* pASInstanceBuffer		= nullptr;
-			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
+			DrawArgExtensionGroup*	ppExtensionGroups[MAX_EXTENSION_GROUPS_PER_MESH_TYPE];
+			uint32					ExtensionGroupCount = 0;
+
+			Buffer*				pASInstanceBuffer		= nullptr;
+			Buffer*				ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<AccelerationStructureInstance> ASInstances;
 
-			Buffer* pRasterInstanceBuffer			= nullptr;
+			Buffer* pRasterInstanceBuffer				= nullptr;
 			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<Instance> RasterInstances;
 

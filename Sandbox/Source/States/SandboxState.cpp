@@ -24,6 +24,7 @@
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
+#include "Rendering/EntityMaskManager.h"
 #include "Rendering/Core/API/GraphicsTypes.h"
 
 #include "Math/Random.h"
@@ -103,6 +104,7 @@ void SandboxState::Init()
 
 		glm::vec3 position(0.f, 0.f, 2.5f);
 		glm::vec3 scale(1/5.f);
+		glm::quat rotation = glm::identity<glm::quat>();
 
 		MeshPaintComponent meshPaintComponent;
 		const uint32 width = 512;
@@ -116,9 +118,56 @@ void SandboxState::Init()
 		m_Entities.PushBack(m_Entity);
 		pECS->AddComponent<PositionComponent>(m_Entity, { position, true });
 		pECS->AddComponent<ScaleComponent>(m_Entity, { scale, true });
-		pECS->AddComponent<RotationComponent>(m_Entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<RotationComponent>(m_Entity, { rotation, true });
 		pECS->AddComponent<MeshComponent>(m_Entity, sphereMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(m_Entity, meshPaintComponent);
+
+		DrawArgExtensionData drawArgExtensionData = {};
+		drawArgExtensionData.TextureCount = 1;
+		drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
+		drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
+		//drawArgExtensionData.ppSamplers[0] = ;
+		EntityMaskManager::AddExtensionToEntity(m_Entity, MeshPaintComponent::Type(), drawArgExtensionData);
+	}
+
+	{
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("quad.obj");
+
+		MaterialProperties materialProperties;
+		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		materialProperties.Roughness = 1.f;
+		materialProperties.Metallic = 0.f;
+
+		MeshComponent sphereMeshComp = {};
+		sphereMeshComp.MeshGUID = sphereMeshGUID;
+		sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Default r: " + std::to_string(materialProperties.Roughness) + " m: " + std::to_string(materialProperties.Metallic),
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		glm::vec3 position(0.f, -1.f, 3.f);
+		glm::vec3 scale(40.f);
+		glm::quat rotation = glm::rotate(glm::identity<glm::quat>(), glm::radians(-180.f), glm::vec3(0.f, 1.f, 0.f));
+
+		MeshPaintComponent meshPaintComponent;
+		//const uint32 width = 512;
+		//const uint32 height = 512;
+		//char* data = DBG_NEW char[width * height * 4];
+		//memset(data, 0, width * height * 4);
+		//meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("PlaneUnwrappedTexture_2", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
+		//SAFEDELETE_ARRAY(data);
+
+		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
+		pECS->AddComponent<PositionComponent>(entity, { position, true });
+		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+		pECS->AddComponent<RotationComponent>(entity, { rotation, true });
+		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
 	}
 
 	//Scene
@@ -446,50 +495,6 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		Entity entity = m_Entities[entityIndex];
 		m_Entities.Erase(m_Entities.Begin() + entityIndex);
 		ECSCore::GetInstance()->RemoveEntity(entity);
-	}
-
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	auto CreateEntity = [pECS, this](const std::string& mesh)->Entity
-	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile(mesh);
-
-		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		materialProperties.Roughness = 0.5f;
-		materialProperties.Metallic = 0.5f;
-
-		MeshComponent sphereMeshComp = {};
-		sphereMeshComp.MeshGUID = sphereMeshGUID;
-		sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Default r: " + std::to_string(materialProperties.Roughness) + " m: " + std::to_string(materialProperties.Metallic),
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
-
-		glm::vec3 position(0.f, 0.f, 0.0f);
-		glm::vec3 scale(1.f);
-
-		Entity entity = pECS->CreateEntity();
-		m_Entities.PushBack(entity);
-		pECS->AddComponent<PositionComponent>(entity, { position, true });
-		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-
-		return entity;
-	};
-
-	static uint32 s_Counter = 0;
-	static std::string s_Meshes[] = {"cube.obj", "quad.obj", "bunny.obj"};
-	if (event.Key == EKey::KEY_G)
-	{
-		m_Entities.PopBack();
-		pECS->RemoveEntity(m_Entity);
-		m_Entity = CreateEntity(s_Meshes[(s_Counter++) % 3]);
 	}
 
 	return true;

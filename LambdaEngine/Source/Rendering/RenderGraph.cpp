@@ -23,7 +23,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/IRenderGraphCreateHandler.h"
-#include "Rendering/DrawArgHelper.h"
+#include "Rendering/EntityMaskManager.h"
 
 #include "Game/ECS/Components/Misc/MeshPaintComponent.h"
 
@@ -1826,7 +1826,7 @@ namespace LambdaEngine
 							drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);	// Should this be this????
 							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN; // Should this be this????
 							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY; // Should this be this????
-							
+
 							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
 						}
 					}
@@ -1914,6 +1914,16 @@ namespace LambdaEngine
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 4;
 						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+
+						// Create one descriptor set per extension. The extension has a struct in the shader file and will be accessed by an array of that struct indexed by the instance index.
+						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMask);
+						uint32 binding = 5;
+						for (uint32 mask : extensionMasks)
+						{
+							descriptorBinding.DescriptorCount = 1;
+							descriptorBinding.Binding = binding++;
+							drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						}
 
 						renderStageDrawArgResources.PushBack(std::make_tuple(pResource, descriptorType));
 					}
@@ -3148,9 +3158,9 @@ namespace LambdaEngine
 					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers[0];
 					drawBufferBarriers.Clear();
 
-					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
-					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers[0];
-					drawTextureBarriers.Clear();
+					//TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
+					//PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers[0];
+					//drawTextureBarriers.Clear();
 
 					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.DrawArgsCount; d++)
 					{
@@ -3218,15 +3228,15 @@ namespace LambdaEngine
 						}
 
 						// Extension for MeshPaintComponent
-						if ((drawArgMask & DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
+						/*if ((drawArgMask & EntityMaskManager::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
 						{
 							for (uint32 i = 0; i < MAX_MASK_TEXTURES; i++)
 							{
-								VALIDATE(pDrawArg->MaskTextures[i]);
-								textureBarrierTemplate.pTexture = pDrawArg->MaskTextures[i];
+								VALIDATE(pDrawArg->ppMaskTextures[i]);
+								textureBarrierTemplate.pTexture = pDrawArg->ppMaskTextures[i];
 								drawTextureBarriers.PushBack(textureBarrierTemplate);
 							}
-						}
+						}*/
 					}
 				}
 			}
@@ -3309,12 +3319,12 @@ namespace LambdaEngine
 				}
 
 				// Extension for MeshPaintComponent
-				if ((drawArgMask & DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
+				/*if ((drawArgMask & DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
 				{
 					PipelineTextureBarrierDesc initialMaskTexturesTransitionBarrier = drawArgsArgsIt->second.InitialTextureTransitionBarrierTemplate;
 					for (uint32 i = 0; i < MAX_MASK_TEXTURES; i++)
 					{
-						Texture*& pTexture = pDrawArg->MaskTextures[i];
+						Texture*& pTexture = pDrawArg->ppMaskTextures[i];
 						if (pTexture)
 						{
 							TextureDesc textureDesc = pTexture->GetDesc();
@@ -3328,7 +3338,7 @@ namespace LambdaEngine
 							intialTextureBarriers.PushBack(initialMaskTexturesTransitionBarrier);
 						}
 					}
-				}
+				}*/
 			}
 
 			// Transfer to Initial State for buffer barriers
@@ -3419,7 +3429,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: Update DrawArgs called for unused DrawArgsMask %x", pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
+			LOG_WARNING("[RenderGraph]: Update DrawArgs called for unused DrawArgsMask %08x", pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
 		}
 	}
 

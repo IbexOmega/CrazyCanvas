@@ -473,7 +473,7 @@ namespace LambdaEngine
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
 	{
 		VALIDATE(pTextureBarriers		!= nullptr);
-		VALIDATE(textureBarrierCount	< MAX_IMAGE_BARRIERS);
+		VALIDATE(textureBarrierCount	<= MAX_IMAGE_BARRIERS);
 
 		TextureVK*		pVkTexture	= nullptr;
 		VkImageLayout	oldLayout	= VK_IMAGE_LAYOUT_UNDEFINED;

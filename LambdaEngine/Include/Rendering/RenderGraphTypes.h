@@ -34,7 +34,9 @@ namespace LambdaEngine
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0; 
 	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
-	constexpr const uint32 MAX_MASK_TEXTURES					= 64;
+	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 1;
+	constexpr const uint32 MAX_TEXTURES_PER_EXTENSION			= 16;
+	constexpr const uint32 MAX_EXTENSION_GROUPS_PER_MESH_TYPE	= 64; // Number of extension groups per mesh instance
 
 	enum class ERenderGraphPipelineStageType : uint8
 	{
@@ -254,6 +256,21 @@ namespace LambdaEngine
 		TArray<RenderGraphResourceSynchronizationDesc> Synchronizations;
 	};
 
+	struct DrawArgExtensionData
+	{
+		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]		= {nullptr};
+		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
+		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]		= { nullptr };
+		uint32			TextureCount	= 0;
+	};
+
+	struct DrawArgExtensionGroup
+	{
+		uint32					pExtensionMasks[MAX_EXTENSIONS_PER_MESH_TYPE];
+		DrawArgExtensionData	pExtensions[MAX_EXTENSIONS_PER_MESH_TYPE];
+		uint32					ExtensionCount = 0;
+	};
+
 	struct DrawArg
 	{
 		Buffer* pVertexBuffer			= nullptr;
@@ -266,8 +283,8 @@ namespace LambdaEngine
 		uint32	IndexCount				= 0;
 		uint32	MeshletCount			= 0;
 
-		// Extensions with masks
-		Texture* MaskTextures[MAX_MASK_TEXTURES] = { nullptr }; // Used for the MeshPaintComponent extensions.
+		// Extensions
+		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount! The size of the array is MAX_EXTENSION_GROUPS_PER_MESH_TYPE
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

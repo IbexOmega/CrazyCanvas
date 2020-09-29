@@ -28,8 +28,10 @@ void main()
 	vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
 	vec4 prevWorldPosition  = instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
-	vec3 normal 	        = normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
-	vec3 tangent            = normalize((instance.Transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
+	mat4 normalTransform = instance.Transform;//transpose(inverse(instance.Transform));
+
+	vec3 normal 	        = normalize((normalTransform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+	vec3 tangent            = normalize((normalTransform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent 	        = normalize(cross(normal, tangent));
 
 	out_MaterialSlot        = instance.MaterialSlot;
