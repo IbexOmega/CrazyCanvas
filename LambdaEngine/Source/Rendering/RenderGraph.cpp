@@ -1432,9 +1432,10 @@ namespace LambdaEngine
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MagFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MipmapMode			= RenderGraphSamplerToMipmapMode(pResourceDesc->TextureParams.SamplerType);
-						samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-						samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-						samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.AddressModeU		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.AddressModeV		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.AddressModeW		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.borderColor			= RenderGraphSamplerBorderColor(pResourceDesc->TextureParams.SamplerBorderColor);
 						samplerDesc.MipLODBias			= 0.0f;
 						samplerDesc.AnisotropyEnabled	= false;
 						samplerDesc.MaxAnisotropy		= 16;

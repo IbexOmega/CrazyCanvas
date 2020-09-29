@@ -40,7 +40,7 @@ namespace LambdaEngine
 		samplerCreateInfo.compareOp					= VK_COMPARE_OP_ALWAYS;
 		samplerCreateInfo.minLod					= pDesc->MinLOD;
 		samplerCreateInfo.maxLod					= pDesc->MaxLOD;
-		samplerCreateInfo.borderColor				= VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		samplerCreateInfo.borderColor				= ConvertBorderColor(pDesc->borderColor);
 		samplerCreateInfo.unnormalizedCoordinates	= VK_FALSE;
 
 		VkResult result = vkCreateSampler(m_pDevice->Device, &samplerCreateInfo, nullptr, &m_Sampler);

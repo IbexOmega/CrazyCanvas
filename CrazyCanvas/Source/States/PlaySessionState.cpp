@@ -85,36 +85,32 @@ void PlaySessionState::Init()
 				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-
-
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
-				transform *= glm::toMat4(glm::identity<glm::quat>());
-				transform = glm::scale(transform, scale);
 			}
 		}
 
 		// Directional Light
-		{
-			Entity dirLight = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
-			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-		}
+		//{
+		//	Entity dirLight = ECSCore::GetInstance()->CreateEntity();
+		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, { { 0.0f, 0.0f, 0.0f} });
+		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
+		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
+		//}
 
 		// Add PointLights
 		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 0.0f, 5.0f},
-				{-4.0f, 0.0f, 5.0f},
-				{0.0f, 0.0f, 6.0f},
+				{4.0f, 2.0f, -3.0f},
+				{-4.0f, 2.0f, -3.0f},
+				{0.0f, 2.0f, 3.0f},
 			};
 
 			const float PI = glm::pi<float>();
