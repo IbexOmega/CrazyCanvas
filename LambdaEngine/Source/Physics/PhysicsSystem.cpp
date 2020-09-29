@@ -151,7 +151,9 @@ namespace LambdaEngine
 		float squareRadius = 0.0f;
 
 		for (const Vertex& vertex : vertices)
+		{
 			squareRadius = std::max(squareRadius, glm::length2(vertex.Position));
+		}
 
 		const glm::vec3& scale = collisionCreateInfo.Scale.Scale;
 		const float scaleScalar = std::max(scale.x, std::max(scale.y, scale.z));
