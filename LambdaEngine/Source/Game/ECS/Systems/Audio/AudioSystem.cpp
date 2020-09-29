@@ -1,3 +1,4 @@
+
 #include "Game/ECS/Systems/Audio/AudioSystem.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
@@ -5,6 +6,7 @@
 #include "Audio/AudioAPI.h"
 #include "ECS/ECSCore.h"
 #include "Resources/ResourceManager.h"
+#include "Time/API/Clock.h"
 
 namespace LambdaEngine
 {
@@ -44,14 +46,31 @@ namespace LambdaEngine
 			auto& positionComponent		=		pPositionComponents->GetData(entity);
 			auto& cameraComponent		=		pCameraComponents->GetData(entity);
 
-			auto* pSoundInstance		=		audibleComponent.pSoundInstance.Get();
+			auto* pSoundInstance		=		audibleComponent.pSoundInstance;
+			//auto* pSoundInstance		=		audibleComponent.pSoundInstance.Get();
 
-			if (cameraComponent.IsActive)
+			bool isMoving = m_lastPos != positionComponent.Position;
+			m_lastPos = positionComponent.Position;
+
+			if (cameraComponent.IsActive && isMoving)
 			{
 				pSoundInstance->Play();
 				LOG_MESSAGE("%d is playing now", entity);
 			}
+			
 		}
+
+		for (Entity entity : m_AudibleEntities)
+		{
+			auto& audibleComponent = pAudibleComponents->GetData(entity);
+			auto& positionComponent = pPositionComponents->GetData(entity);
+
+			auto* pSoundInstance = audibleComponent.pSoundInstance;
+
+			pSoundInstance->Play();
+
+		}
+
 	}
 }
 	

@@ -6,6 +6,9 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
+
 #include "ECS/ECSCore.h"
 
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
@@ -26,6 +29,7 @@
 #include "Rendering/Core/API/GraphicsTypes.h"
 
 #include "Math/Random.h"
+#include <Game\ECS\Components\Audio\AudibleComponent.h>
 
 using namespace LambdaEngine;
 
@@ -142,7 +146,6 @@ void SandboxState::Init()
 				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
 
-
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 				transform *= glm::toMat4(glm::identity<glm::quat>());
 				transform = glm::scale(transform, scale);
@@ -155,13 +158,13 @@ void SandboxState::Init()
 			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
 			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
 		}
-		
+
 		// Add PointLights
 		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}},
+				{.ColorIntensity = {1.0f, 1.0f, 1.0f, 25.0f}},
 				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}},
 				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
 			};
@@ -204,6 +207,23 @@ void SandboxState::Init()
 				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
 				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
+
+				if (i == 1) {
+					//// Audio
+					GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+					ISoundEffect3D* pSoundEffect = ResourceManager::GetSoundEffect(soundGUID);
+					ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+					const SoundInstance3DDesc desc = {
+							.pName = "SoundInstance3DFMOD",
+							.pSoundEffect = pSoundEffect,
+							.Flags = FSoundModeFlags::SOUND_MODE_NONE
+					};
+					float volume = 0.05f;
+					pSoundInstance->Init(&desc);
+					pSoundInstance->SetVolume(volume);
+					pSoundInstance->SetPosition(startPosition[i]);
+					pECS->AddComponent<AudibleComponent>(m_PointLights[i], { pSoundEffect, pSoundInstance });
+				}
 			}
 		}
 
@@ -323,8 +343,8 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	ECSCore* pECSCore = ECSCore::GetInstance();
 
 	RotationComponent& rotationComp = pECSCore->GetComponent<RotationComponent>(m_DirLight);
-	rotationComp.Quaternion		= glm::rotate(rotationComp.Quaternion, glm::pi<float32>() * float32(delta.AsSeconds()) * 0.1f, glm::vec3(1.0f, 1.0f, 0.0f));
-	rotationComp.Dirty			= true;
+	rotationComp.Quaternion = glm::rotate(rotationComp.Quaternion, glm::pi<float32>() * float32(delta.AsSeconds()) * 0.1f, glm::vec3(1.0f, 1.0f, 0.0f));
+	rotationComp.Dirty = true;
 }
 
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
