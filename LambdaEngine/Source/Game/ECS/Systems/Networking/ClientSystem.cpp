@@ -81,7 +81,7 @@ namespace LambdaEngine
 			encoder.WriteInt32(m_SimulationTick);
 			encoder.WriteInt8(deltaForward);
 			encoder.WriteInt8(deltaLeft);
-			m_pClient->SendUnreliable(pPacket);
+			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
 			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -273,8 +273,6 @@ namespace LambdaEngine
 			return;
 
 		GameState ServerState = {};
-
-		//want to start reading from incoming networkSimulationTick
 
 		auto pair = m_Entities.find(m_NetworkUID);
 

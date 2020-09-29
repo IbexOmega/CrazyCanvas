@@ -75,7 +75,7 @@ namespace LambdaEngine
 			{
 				fixedClock.Tick();
 				FixedTick(g_FixedTimestep);
-
+				
 				accumulator -= g_FixedTimestep;
 			}
 		}
