@@ -28,23 +28,14 @@ namespace LambdaEngine
 
         for (auto component : ComponentAccesses)
         {
-            // Look for component access in excluded list
-            for (const auto* excludedCompType : excludedComponentTypes)
-            {
-                if (component.TID == excludedCompType)
-                {
-                    exclude = true;
-                    break;
-                }
-            }
-
-            // Include component access if not in excluded list
-            if (!exclude) 
+            if (std::none_of(excludedComponentTypes.Begin(), excludedComponentTypes.End(),
+                [component](const auto* pExcludedType) {
+                    return pExcludedType == component.TID;
+                }))
             {
                 componentAccessesFiltered.PushBack(component);
             }
 
-            exclude = false;
         }
 
         ComponentAccesses = componentAccessesFiltered;

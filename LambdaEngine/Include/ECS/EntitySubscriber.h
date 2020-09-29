@@ -32,7 +32,6 @@ namespace LambdaEngine
 	struct EntitySubscriberRegistration
 	{
 		TArray<EntitySubscriptionRegistration> EntitySubscriptionRegistrations;
-		//TArray<std::type_index> ExcludedComponentTypes;
 		/*  AdditionalDependencies are components that the subscriber will process.
 			However, the subscriber will not store an array of the entities whose components it will process. */
 		TArray<ComponentAccess> AdditionalDependencies;
