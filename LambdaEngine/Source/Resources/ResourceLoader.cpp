@@ -184,12 +184,15 @@ namespace LambdaEngine
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
 			aiProcess_LimitBoneWeights			|
-			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_SplitLargeMeshes			|
+			//aiProcess_PopulateArmatureData		|
+			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
 			aiProcess_SortByPType				|
 			aiProcess_FindDegenerates			|
+			aiProcess_OptimizeMeshes			|
+			aiProcess_OptimizeGraph				|
 			aiProcess_FindInvalidData;
 
 		SceneLoadRequest loadRequest = 
@@ -217,6 +220,7 @@ namespace LambdaEngine
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
 			aiProcess_LimitBoneWeights			|
+			//aiProcess_PopulateArmatureData		|
 			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
@@ -980,7 +984,7 @@ namespace LambdaEngine
 				ai_real* pRow = pBoneAI->mOffsetMatrix[row];
 				for (uint32 i = 0; i < 4; i++)
 				{
-					bone.Transform[row][i] = pRow[i];
+					bone.OffsetTransform[row][i] = pRow[i];
 				}
 			}
 
@@ -1134,11 +1138,13 @@ namespace LambdaEngine
 		pAnimation->Name			= pAnimationAI->mName.C_Str();
 		pAnimation->DurationInTicks	= pAnimationAI->mDuration;
 		pAnimation->TicksPerSecond	= static_cast<float64>(pAnimationAI->mTicksPerSecond);
+		pAnimationAI->mChannels[0]->mNodeName;
 
 		pAnimation->Channels.Resize(pAnimationAI->mNumChannels);
 		for (uint32 channelIndex = 0; channelIndex < pAnimationAI->mNumChannels; channelIndex++)
 		{
 			aiNodeAnim* pChannel = pAnimationAI->mChannels[channelIndex];
+			pAnimation->Channels[channelIndex].Name = pChannel->mNodeName.C_Str();
 			
 			pAnimation->Channels[channelIndex].Positions.Resize(pChannel->mNumPositionKeys);
 			for (uint32 i = 0; i < pChannel->mNumPositionKeys; i++)

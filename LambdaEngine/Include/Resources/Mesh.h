@@ -72,7 +72,7 @@ namespace LambdaEngine
 			};
 
 			String			Name;
-			glm::mat4		Transform;
+			glm::mat4		OffsetTransform;
 			TArray<Weight>	Weights;
 		};
 
@@ -95,6 +95,7 @@ namespace LambdaEngine
 				float32		Time;
 			};
 
+			String						Name;
 			TArray<KeyFrame>			Positions;
 			TArray<KeyFrame>			Scales;
 			TArray<RotationKeyFrame>	Rotations;
