@@ -31,6 +31,16 @@ SPositions CalculatePositionsFromDepth(vec2 screenTexCoord, float sampledDepth, 
 	return positions;
 }
 
+vec3 PackNormal(vec3 normal)
+{
+	return (normalize(normal) + 1.0f) * 0.5f;
+}
+
+vec3 UnpackNormal(vec3 normal)
+{
+	return normalize((normal * 2.0f) - 1.0f);
+}
+
 float LinearizeDepth(float depth, float near, float far)
 {
 	float z = depth * 2.0 - 1.0;
@@ -357,6 +367,11 @@ float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
 	float g = ng * gPDF;
 	
 	return (nf * f) / (fSqrd + g * g);
+}
+
+float CalculateLuminance(vec3 color)
+{
+	return sqrt(dot(color, vec3(0.299f, 0.587f, 0.114f)));
 }
 
 #endif

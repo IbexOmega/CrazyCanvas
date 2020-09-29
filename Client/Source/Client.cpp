@@ -5,6 +5,7 @@
 #include "Log/Log.h"
 
 #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -84,7 +85,7 @@ void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const Lam
 		glm::vec3 pos = decoder.ReadVec3();
 		glm::vec3 color = decoder.ReadVec3();
 
-		
+
 		Job addEntityJob;
 		addEntityJob.Components =
 		{
@@ -121,17 +122,47 @@ void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const Lam
 			pECS->AddComponent<MeshComponent>(entity,		meshComponent);
 			pECS->AddComponent<NetworkComponent>(entity,	{});
 		};
-		
+
 		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
 	}
 }*/
 
 bool Client::OnKeyPressed(const KeyPressedEvent& event)
 {
-	if(event.Key == EKey::KEY_HOME)
-	{
-		m_IsBenchmarking = true;
-	}
+	// if (InputActionSystem::IsActive("PLAYER_FORWARD"))
+	// {
+	// 	LOG_INFO("PLAYER_FORWARD ACTIVE");
+	// }
+	// else if (InputActionSystem::IsActive("PLAYER_BACKWARD"))
+	// {
+	// 	LOG_INFO("PLAYER_BACKWARD ACTIVE");
+	// }
+	// else if (InputActionSystem::IsActive("PLAYER_LEFT"))
+	// {
+	// 	LOG_INFO("PLAYER_LEFT ACTIVE");
+	// }
+	// else if (InputActionSystem::IsActive("PLAYER_RIGHT"))
+	// {
+	// 	LOG_INFO("PLAYER_RIGHT ACTIVE");
+	// }
+	// else if (InputActionSystem::IsActive("CHANGE_KEYBINDING"))
+	// {
+	// 	LOG_INFO("CHANGE_KEYBINDING ACTIVE");
+	// 	InputActionSystem::ChangeKeyBinding("PLAYER_FORWARD", EKey::KEY_UP);
+	// }
+
+
+	// if (event.Key == EKey::KEY_ENTER)
+	// {
+	// 	if (m_pClient->IsConnected())
+	// 		m_pClient->Disconnect("User Requested");
+	// 	else
+	// 		m_pClient->Connect(IPEndPoint(IPAddress::Get("192.168.1.65"), 4444));
+	// }
+	// else if(event.Key == EKey::KEY_HOME)
+	// {
+	// 	m_IsBenchmarking = true;
+	// }
 
 	return false;
 }

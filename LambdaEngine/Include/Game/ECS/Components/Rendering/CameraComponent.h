@@ -16,10 +16,13 @@ namespace LambdaEngine
 	struct CameraComponent
 	{
 		DECL_COMPONENT(CameraComponent);
-		glm::vec2 Jitter = glm::vec2(0.f);
+		glm::vec2 Jitter 		= glm::vec2(0.f);
 		glm::mat4 ProjectionInv = glm::mat4(1.f);
-		glm::mat4 ViewInv = glm::mat4(1.f);
-		bool IsActive = true;
+		glm::mat4 ViewInv 		= glm::mat4(1.f);
+		float NearPlane 		= 0.0001f;
+		float FarPlane			= 50.0f;
+		float FOV				= 45.0f;
+		bool IsActive 			= true;
 	};
 
 	struct ViewProjectionMatricesComponent
@@ -31,13 +34,13 @@ namespace LambdaEngine
 
 	struct CameraDesc
 	{
-		glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 Position 	= glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::vec3 Direction = glm::vec3(0.0f, 0.0f, 1.0f);
-		float FOVDegrees = 45.0f;
-		float Width = 1280.0f;
-		float Height = 720.0f;
-		float NearPlane = 0.0001f;
-		float FarPlane = 50.0f;
+		float FOVDegrees 	= 45.0f;
+		float Width 		= 1280.0f;
+		float Height 		= 720.0f;
+		float NearPlane 	= 0.0001f;
+		float FarPlane 		= 50.0f;
 	};
 
 	Entity CreateFreeCameraEntity(const CameraDesc& cameraDesc);
