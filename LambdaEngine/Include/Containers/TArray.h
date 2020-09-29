@@ -2,6 +2,7 @@
 #include "TUtilities.h"
 
 #include <iterator>
+#include <algorithm>
 
 // Disable the DLL- linkage warning for now
 #ifdef LAMBDA_VISUAL_STUDIO
@@ -388,7 +389,7 @@ namespace LambdaEngine
 		{
 			if (inCapacity != m_Capacity)
 			{
-				SizeType oldSize = m_Size;
+				const SizeType oldSize = m_Size;
 				if (inCapacity < m_Size)
 				{
 					m_Size = inCapacity;
@@ -397,11 +398,9 @@ namespace LambdaEngine
 				T* pTempData = InternalAllocateElements(inCapacity);
 				InternalMoveEmplace(m_pData, m_pData + m_Size, pTempData);
 				InternalDestructRange(m_pData, m_pData + oldSize);
-
 				InternalReleaseData();
-				m_pData = pTempData;
-
-				m_Capacity = inCapacity;
+				m_pData		= pTempData;
+				m_Capacity	= inCapacity;
 			}
 		}
 
@@ -410,7 +409,7 @@ namespace LambdaEngine
 		{
 			if (m_Size >= m_Capacity)
 			{
-				const SizeType newCapacity = InternalGetResizeFactor();
+				const SizeType newCapacity = std::max<SizeType>(InternalGetResizeFactor(), 2);
 				InternalRealloc(newCapacity);
 			}
 
@@ -442,11 +441,11 @@ namespace LambdaEngine
 			}
 
 			// Emplace
-			const SizeType index = InternalIndex(pos);
-			T* dataBegin = m_pData + index;
+			const SizeType index	= InternalIndex(pos);
+			T* dataBegin			= m_pData + index;
 			if (m_Size >= m_Capacity)
 			{
-				const SizeType newCapacity = InternalGetResizeFactor();
+				const SizeType newCapacity = std::max<SizeType>(InternalGetResizeFactor(), 2);
 				InternalEmplaceRealloc(newCapacity, dataBegin, 1);
 				dataBegin = m_pData + index;
 			}
@@ -504,9 +503,9 @@ namespace LambdaEngine
 			}
 
 			// Insert
-			const SizeType listSize = static_cast<SizeType>(iList.size());
-			const SizeType newSize = m_Size + listSize;
-			const SizeType index = InternalIndex(pos);
+			const SizeType listSize	= static_cast<SizeType>(iList.size());
+			const SizeType newSize	= m_Size + listSize;
+			const SizeType index	= InternalIndex(pos);
 
 			T* rangeBegin = m_pData + index;
 			if (newSize >= m_Capacity)
@@ -518,9 +517,9 @@ namespace LambdaEngine
 			else
 			{
 				// Construct the range so that we can move to it
-				T* dataEnd = m_pData + m_Size;
-				T* newDataEnd = m_pData + m_Size + listSize;
-				T* rangeEnd = rangeBegin + listSize;
+				T* dataEnd		= m_pData + m_Size;
+				T* newDataEnd	= m_pData + m_Size + listSize;
+				T* rangeEnd		= rangeBegin + listSize;
 				InternalDefaultConstructRange(dataEnd, newDataEnd);
 				InternalMemmoveForward(rangeBegin, dataEnd, newDataEnd - 1);
 				InternalDestructRange(rangeBegin, rangeEnd);
@@ -554,9 +553,9 @@ namespace LambdaEngine
 			}
 
 			// Insert
-			const SizeType rangeSize = InternalDistance(begin, end);
-			const SizeType newSize = m_Size + rangeSize;
-			const SizeType index = InternalIndex(pos);
+			const SizeType rangeSize	= InternalDistance(begin, end);
+			const SizeType newSize		= m_Size + rangeSize;
+			const SizeType index		= InternalIndex(pos);
 
 			T* rangeBegin = m_pData + index;
 			if (newSize >= m_Capacity)
@@ -568,9 +567,9 @@ namespace LambdaEngine
 			else
 			{
 				// Construct the range so that we can move to it
-				T* dataEnd = m_pData + m_Size;
-				T* newDataEnd = m_pData + m_Size + rangeSize;
-				T* rangeEnd = rangeBegin + rangeSize;
+				T* dataEnd		= m_pData + m_Size;
+				T* newDataEnd	= m_pData + m_Size + rangeSize;
+				T* rangeEnd		= rangeBegin + rangeSize;
 				InternalDefaultConstructRange(dataEnd, newDataEnd);
 				InternalMemmoveForward(rangeBegin, dataEnd, newDataEnd - 1);
 				InternalDestructRange(rangeBegin, rangeEnd);
@@ -607,8 +606,8 @@ namespace LambdaEngine
 
 			// Erase
 			const SizeType index = InternalDistance(ConstBegin(), pos);
-			T* dataBegin = m_pData + index;
-			T* dataEnd = m_pData + m_Size;
+			T* dataBegin	= m_pData + index;
+			T* dataEnd		= m_pData + m_Size;
 			InternalMemmoveBackwards(dataBegin + 1, dataEnd, dataBegin);
 			InternalDestruct(dataEnd - 1);
 
@@ -626,8 +625,8 @@ namespace LambdaEngine
 			VALIDATE(begin < end);
 			VALIDATE(InternalIsRangeOwner(begin, end));
 
-			T* dataBegin = m_pData + InternalIndex(begin);
-			T* dataEnd = m_pData + InternalIndex(end);
+			T* dataBegin	= m_pData + InternalIndex(begin);
+			T* dataEnd		= m_pData + InternalIndex(end);
 
 			const SizeType elementCount = InternalDistance(dataBegin, dataEnd);
 			if (end >= ConstEnd())
@@ -650,16 +649,16 @@ namespace LambdaEngine
 			if (this != std::addressof(other))
 			{
 				T* tempPtr = m_pData;
-				SizeType tempSize = m_Size;
-				SizeType tempCapacity = m_Capacity;
+				SizeType tempSize		= m_Size;
+				SizeType tempCapacity	= m_Capacity;
 
-				m_pData = other.m_pData;
-				m_Size = other.m_Size;
-				m_Capacity = other.m_Capacity;
+				m_pData		= other.m_pData;
+				m_Size		= other.m_Size;
+				m_Capacity	= other.m_Capacity;
 
-				other.m_pData = tempPtr;
-				other.m_Size = tempSize;
-				other.m_Capacity = tempCapacity;
+				other.m_pData		= tempPtr;
+				other.m_Size		= tempSize;
+				other.m_Capacity	= tempCapacity;
 			}
 		}
 
@@ -951,13 +950,14 @@ namespace LambdaEngine
 
 		FORCEINLINE SizeType InternalGetResizeFactor(SizeType baseSize) const
 		{
-			return baseSize + (m_Capacity)+1;
+			const SizeType add = (m_Capacity > 15) ? (m_Capacity / 2) : m_Capacity;
+			return std::max<SizeType>(baseSize, 1) + add;
 		}
 
 		FORCEINLINE T* InternalAllocateElements(SizeType inCapacity)
 		{
-			constexpr SizeType elementByteSize = sizeof(T);
-			const SizeType sizeInBytes = elementByteSize * inCapacity;
+			constexpr SizeType elementByteSize	= sizeof(T);
+			const SizeType sizeInBytes			= elementByteSize * inCapacity;
 			return reinterpret_cast<T*>(malloc(static_cast<size_t>(sizeInBytes)));
 		}
 
@@ -975,8 +975,8 @@ namespace LambdaEngine
 			if (inCapacity > m_Capacity)
 			{
 				InternalReleaseData();
-				m_pData = InternalAllocateElements(inCapacity);
-				m_Capacity = inCapacity;
+				m_pData		= InternalAllocateElements(inCapacity);
+				m_Capacity	= inCapacity;
 			}
 		}
 
@@ -985,11 +985,9 @@ namespace LambdaEngine
 			T* pTempData = InternalAllocateElements(inCapacity);
 			InternalMoveEmplace(m_pData, m_pData + m_Size, pTempData);
 			InternalDestructRange(m_pData, m_pData + m_Size);
-
 			InternalReleaseData();
-			m_pData = pTempData;
-
-			m_Capacity = inCapacity;
+			m_pData		= pTempData;
+			m_Capacity	= inCapacity;
 		}
 
 		FORCEINLINE void InternalEmplaceRealloc(SizeType inCapacity, T* EmplacePos, SizeType count)
@@ -1005,11 +1003,9 @@ namespace LambdaEngine
 			}
 
 			InternalDestructRange(m_pData, m_pData + m_Size);
-
 			InternalReleaseData();
-			m_pData = pTempData;
-
-			m_Capacity = inCapacity;
+			m_pData		= pTempData;
+			m_Capacity	= inCapacity;
 		}
 
 		// Construct
@@ -1049,13 +1045,13 @@ namespace LambdaEngine
 		{
 			InternalReleaseData();
 
-			m_pData = other.m_pData;
-			m_Size = other.m_Size;
-			m_Capacity = other.m_Capacity;
+			m_pData		= other.m_pData;
+			m_Size		= other.m_Size;
+			m_Capacity	= other.m_Capacity;
 
-			other.m_pData = nullptr;
-			other.m_Size = 0;
-			other.m_Capacity = 0;
+			other.m_pData		= nullptr;
+			other.m_Size		= 0;
+			other.m_Capacity	= 0;
 		}
 
 		// Emplace
@@ -1063,14 +1059,14 @@ namespace LambdaEngine
 		FORCEINLINE void InternalCopyEmplace(TInputIt begin, TInputIt end, T* dest)
 		{
 			// This function assumes that there is no overlap
-			constexpr bool isTrivial = std::is_trivially_copy_constructible<T>();
-			constexpr bool isPointer = std::is_pointer<TInputIt>();
-			constexpr bool isCustomIterator = std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
+			constexpr bool isTrivial		= std::is_trivially_copy_constructible<T>();
+			constexpr bool isPointer		= std::is_pointer<TInputIt>();
+			constexpr bool isCustomIterator	= std::is_same<TInputIt, Iterator>() || std::is_same<TInputIt, ConstIterator>();
 
 			if constexpr (isTrivial && (isPointer || isCustomIterator))
 			{
-				const SizeType count = InternalDistance(begin, end);
-				const SizeType cpySize = count * sizeof(T);
+				const SizeType count	= InternalDistance(begin, end);
+				const SizeType cpySize	= count * sizeof(T);
 				memcpy(dest, InternalUnwrapConst(begin), cpySize);
 			}
 			else
@@ -1099,8 +1095,8 @@ namespace LambdaEngine
 			// This function assumes that there is no overlap
 			if constexpr (std::is_trivially_move_constructible<T>())
 			{
-				const SizeType count = InternalDistance(begin, end);
-				const SizeType cpySize = count * sizeof(T);
+				const SizeType count	= InternalDistance(begin, end);
+				const SizeType cpySize	= count * sizeof(T);
 				memcpy(dest, begin, cpySize);
 			}
 			else
@@ -1158,8 +1154,8 @@ namespace LambdaEngine
 			{
 				if (count > 0)
 				{
-					const SizeType cpySize = count * sizeof(T);
-					const SizeType offsetSize = (count - 1) * sizeof(T);
+					const SizeType cpySize		= count * sizeof(T);
+					const SizeType offsetSize	= (count - 1) * sizeof(T);
 					memmove(reinterpret_cast<char*>(dest) - offsetSize, begin, cpySize);
 				}
 			}
@@ -1221,8 +1217,8 @@ namespace LambdaEngine
 		}
 
 	private:
-		T* m_pData;
-		SizeType m_Size;
-		SizeType m_Capacity;
+		T*			m_pData;
+		SizeType	m_Size;
+		SizeType	m_Capacity;
 	};
 }

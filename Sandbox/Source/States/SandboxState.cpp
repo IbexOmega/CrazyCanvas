@@ -57,11 +57,12 @@ void SandboxState::Init()
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		CameraDesc cameraDesc = {};
-		cameraDesc.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV");
-		cameraDesc.Width = window->GetWidth();
-		cameraDesc.Height = window->GetHeight();
-		cameraDesc.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane");
-		cameraDesc.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane");
+		cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
+		cameraDesc.Position		= glm::vec3(0.0f, 2.0f, -2.0f);
+		cameraDesc.Width		= window->GetWidth();
+		cameraDesc.Height		= window->GetHeight();
+		cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
+		cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
 		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
 
@@ -85,6 +86,41 @@ void SandboxState::Init()
 		}
 	}
 
+	// Robot
+	{
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		
+		MaterialProperties materialProperties;
+		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness	= 1.0f;
+		materialProperties.Metallic		= 1.0f;
+		
+		const uint32 robotMaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+			"Robot Material",
+			robotAlbedoGUID,
+			robotNormalGUID,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+		
+		MeshComponent robotMeshComp = {};
+		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MaterialGUID	= robotMaterialGUID;
+
+		glm::vec3 position(0.0f, 1.25f, 0.0f);
+		glm::vec3 scale(0.01f);
+
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { position, true });
+		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		m_Entities.PushBack(entity);
+	}
+
 	//Sphere Grid
 	{
 		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
@@ -95,7 +131,6 @@ void SandboxState::Init()
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
-
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
 				float32 metallic = x / float32(gridRadius - 1);
@@ -105,7 +140,7 @@ void SandboxState::Init()
 				materialProperties.Roughness = roughness;
 				materialProperties.Metallic = metallic;
 
-				MeshComponent sphereMeshComp = {};
+				MeshComponent sphereMeshComp = { };
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
 				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
 					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
@@ -121,7 +156,8 @@ void SandboxState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				CollisionCreateInfo collisionCreateInfo = {
+				CollisionCreateInfo collisionCreateInfo = 
+				{
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
