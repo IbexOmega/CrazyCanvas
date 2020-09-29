@@ -424,7 +424,7 @@ workspace "LambdaEngine"
 				"/checked/PhysXCooking_64.lib",
 				"/checked/PhysXExtensions_dynamic_64.lib",
 				"/checked/PhysXFoundation_64.lib",
-				"/checked/PhysXPvdSDK_dynamic_64.lib"
+				"/checked/PhysXPvdSDK_dynamic_64.lib",
 				
 				--NoesisGUI
 				"Noesis.lib",
@@ -454,7 +454,7 @@ workspace "LambdaEngine"
 				"/release/PhysXCommon_64.lib",
 				"/release/PhysXCooking_64.lib",
 				"/release/PhysXExtensions_dynamic_64.lib",
-				"/release/PhysXFoundation_64.lib"
+				"/release/PhysXFoundation_64.lib",
                 
 				--NoesisGUI
 				"Noesis.lib",

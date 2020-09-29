@@ -13,7 +13,6 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
-#include "Rendering/PhysicsRenderer.h"
 #include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
