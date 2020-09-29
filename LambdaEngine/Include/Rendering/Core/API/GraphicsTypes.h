@@ -486,6 +486,13 @@ namespace LambdaEngine
 
 	};
 
+	typedef uint32 FDescriptorSetLayoutBindingFlags;
+	enum FDescriptorSetLayoutBindingFlag : FDescriptorSetLayoutBindingFlags
+	{
+		DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_NONE				= 0,
+		DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND	= FLAG(0),
+	};
+
 	enum class EVertexInputRate : uint8
 	{
 		VERTEX_INPUT_NONE			= 0,

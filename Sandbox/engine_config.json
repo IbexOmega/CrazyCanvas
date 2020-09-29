@@ -8,7 +8,7 @@
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
   "EnableLineRenderer": false,
-  "RenderGraphName": "MESH_PAINT.lrg",
+  "RenderGraphName": "DEFERRED_PBR.lrg",
   "ShowDemo": false,
   "Debugging": false,
   "CameraFOV": 90.0,

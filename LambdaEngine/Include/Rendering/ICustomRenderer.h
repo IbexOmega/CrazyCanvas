@@ -14,6 +14,7 @@ namespace LambdaEngine
 	class TextureView;
 	class Buffer;
 	class AccelerationStructure;
+	class DrawArg;
 
 	struct CustomRendererRenderGraphInitDesc
 	{
@@ -67,12 +68,20 @@ namespace LambdaEngine
 		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)	= 0;
+
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given acceleration structure
 		*	resourceName - Name of the resource being updated
 		*	pAccelerationStructure - The acceleration structure that represent the update data
 		*/
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)	= 0;
+
+		/*
+		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given draw arg
+		*	resourceName - Name of the resource being updated
+		*	drawArgs - The draw args that represent the update data
+		*/
+		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count) = 0;
 
 		/*
 		* Called at rendertime to allow recording device commands
