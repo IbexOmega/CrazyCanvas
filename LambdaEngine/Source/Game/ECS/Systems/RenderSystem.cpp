@@ -12,7 +12,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
-#include "Rendering/PhysicsRenderer.h"
+#include "Rendering/LineRenderer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -121,12 +121,12 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 			renderGraphDesc.CustomRenderers				= { };
 
-			if (EngineConfig::GetBoolProperty("EnablePhysicsRenderer"))
+			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 			{
-				m_pPhysicsRenderer = DBG_NEW PhysicsRenderer();
-				m_pPhysicsRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+				m_pLineRenderer = DBG_NEW LineRenderer();
+				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
-				renderGraphDesc.CustomRenderers.PushBack(m_pPhysicsRenderer);
+				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
@@ -228,6 +228,9 @@ namespace LambdaEngine
 				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
+
+		SAFEDELETE(m_pLineRenderer);
+
 
 		SAFEDELETE(m_pPhysicsRenderer);
 		SAFERELEASE(m_pTLAS);
