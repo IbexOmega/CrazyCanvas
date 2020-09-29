@@ -4,8 +4,8 @@
     1080
   ],
   "FixedTimestep": 60,
-  "RayTracingEnabled": false,
-  "MeshShadersEnabled": true,
+  "RayTracingEnabled": true,
+  "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
   "EnablePhysicsRenderer": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",
