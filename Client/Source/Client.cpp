@@ -65,11 +65,13 @@ Client::~Client()
 
 void Client::OnServerFound(const LambdaEngine::BinaryDecoder& decoder, const LambdaEngine::IPEndPoint& endPoint)
 {
+	UNREFERENCED_VARIABLE(decoder);
 	LOG_MESSAGE("OnServerFound(%s)", endPoint.ToString().c_str());
 }
 
 bool Client::OnKeyPressed(const KeyPressedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
 	return false;
 }
 
@@ -80,7 +82,7 @@ void Client::Tick(Timestamp delta)
 
 void Client::FixedTick(Timestamp delta)
 {
-
+	UNREFERENCED_VARIABLE(delta);
 }
 
 bool Client::LoadRendererResources()

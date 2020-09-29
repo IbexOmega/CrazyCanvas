@@ -55,7 +55,7 @@ void Server::Tick(Timestamp delta)
 
 void Server::FixedTick(Timestamp delta)
 {
-
+	UNREFERENCED_VARIABLE(delta);
 }
 
 void Server::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
