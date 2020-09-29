@@ -28,7 +28,7 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(ClientSystem);
 		virtual ~ClientSystem();
 
-		bool Connect(IPAddress* address);
+		bool Connect(IPAddress* pAddress);
 
 		void Tick(Timestamp deltaTime) override;
 
