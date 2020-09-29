@@ -81,6 +81,9 @@ namespace LambdaEngine
 
 	void BinaryDecoder::ReadBuffer(uint8* buffer, uint16 bytesToRead)
 	{
+		//If this assert is triggerd then you are reading more data than what exists in the Packet
+		ASSERT(m_ReadHead + bytesToRead <= m_pNetworkPacket->GetBufferSize());
+
 		memcpy(buffer, m_pNetworkPacket->GetBufferReadOnly() + m_ReadHead, bytesToRead);
 		m_ReadHead += bytesToRead;
 	}

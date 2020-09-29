@@ -43,7 +43,6 @@ namespace LambdaEngine
 		m_Buffer(),
 		m_pClient(nullptr),
 		m_Entity(0),
-		m_LastProcessedSimulationTick(-1),
 		m_CurrentGameState(),
 		m_Color()
 	{
@@ -62,7 +61,7 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::TickMainThread(Timestamp deltaTime)
 	{
-		if (m_LastProcessedSimulationTick < m_CurrentGameState.SimulationTick)
+		/*if (m_LastProcessedSimulationTick < m_CurrentGameState.SimulationTick)
 		{
 			m_LastProcessedSimulationTick = m_CurrentGameState.SimulationTick;
 			//networkObject.frame = m_CurrentGameState.SimulationTick;
@@ -85,23 +84,17 @@ namespace LambdaEngine
 				{
 					m_CurrentGameState = gameState;
 					PlayerUpdate(m_CurrentGameState);
+
+					auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+
+					NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
+					BinaryEncoder encoder(pPacket);
+					encoder.WriteInt32(m_Entity);
+					encoder.WriteInt32(m_CurrentGameState.SimulationTick);
+					encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
+					m_pClient->SendReliableBroadcast(pPacket);
 				}
 				m_Buffer.clear();
-			}
-
-
-
-
-			if (m_LastProcessedSimulationTick >= 0)
-			{
-				auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
-
-				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
-				BinaryEncoder encoder(pPacket);
-				encoder.WriteInt32(m_Entity);
-				encoder.WriteInt32(m_LastProcessedSimulationTick);
-				encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
-				m_pClient->SendReliableBroadcast(pPacket);
 			}
 		}
 	}

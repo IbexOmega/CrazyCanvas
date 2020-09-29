@@ -51,18 +51,8 @@ namespace LambdaEngine
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		auto* pControllableComponents = pECS->GetComponentArray<ControllableComponent>();
 
-		if (!pPositionComponents || !pControllableComponents)
-			return;
-
-		if (!pControllableComponents->HasComponent(entity))
-			return;
-
-		if (!pControllableComponents->GetData(entity).IsActive)
-			return;
-
-		if (!pPositionComponents->HasComponent(entity))
+		if (!pPositionComponents && !pPositionComponents->HasComponent(entity))
 			return;
 
 		PositionComponent& positionComponent = pPositionComponents->GetData(entity);
