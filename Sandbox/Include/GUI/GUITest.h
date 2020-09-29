@@ -2,9 +2,9 @@
 
 #include "Containers/String.h"
 
-#include "NsGui/StackPanel.h"
+#include "NsGui/UserControl.h"
 
-class GUITest : public Noesis::StackPanel
+class GUITest : public Noesis::UserControl
 {
 public:
 	GUITest();
@@ -19,5 +19,5 @@ public:
 private:
 	Noesis::Ptr<Noesis::IView> m_View;
 
-	NS_IMPLEMENT_INLINE_REFLECTION_(GUITest, Noesis::StackPanel)
+	NS_IMPLEMENT_INLINE_REFLECTION_(GUITest, Noesis::UserControl)
 };

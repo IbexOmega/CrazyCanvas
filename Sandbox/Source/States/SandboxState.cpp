@@ -49,7 +49,7 @@ SandboxState::~SandboxState()
 void SandboxState::Init()
 {
 	m_GUITest = *new GUITest();
-	m_GUITest->Init("Test.xaml");
+	m_GUITest->Init("Time.xaml");
 
 	// Create Systems
 	TrackSystem::GetInstance().Init();

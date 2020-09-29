@@ -99,37 +99,6 @@ namespace LambdaEngine
 
 		Noesis::GUI::LoadApplicationResources("Theme/NoesisTheme.DarkBlue.xaml");
 
-		//View Creation
-		//Noesis::Ptr<Noesis::FrameworkElement> xaml = Noesis::GUI::LoadXaml<Noesis::FrameworkElement>("App.xaml");
-		//Noesis::Ptr<Noesis::Grid> xaml(Noesis::GUI::ParseXaml<Noesis::Grid>(R"(
-		//	<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-		//		<Grid.Background>
-		//			<LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-		//				<GradientStop Offset="0" Color="#FF123F61"/>
-		//				<GradientStop Offset="0.6" Color="#FF0E4B79"/>
-		//				<GradientStop Offset="0.7" Color="#FF106097"/>
-		//			</LinearGradientBrush>
-		//		</Grid.Background>
-		//		<Viewbox>
-		//			<StackPanel Margin="50">
-		//				<Button Name="TestButton" Content="Hello World!" Margin="0,30,0,0"/>
-		//				<Rectangle Height="5" Margin="-10,20,-10,0">
-		//					<Rectangle.Fill>
-		//						<RadialGradientBrush>
-		//							<GradientStop Offset="0" Color="#40000000"/>
-		//							<GradientStop Offset="1" Color="#00000000"/>
-		//						</RadialGradientBrush>
-		//					</Rectangle.Fill>
-		//				</Rectangle>
-		//			</StackPanel>
-		//		</Viewbox>
-		//	</Grid>
-		//)"));
-		//s_pView = Noesis::GUI::CreateView(xaml);
-		//s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
-		//TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-		//s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
-
 		//Renderer Initialization
 		s_pRenderer = new GUIRenderer();
 		if (!s_pRenderer->Init())
@@ -137,14 +106,6 @@ namespace LambdaEngine
 			LOG_ERROR("[GUIApplication]: Failed to initialize Renderer");
 			return false;
 		}
-
-		//s_pRenderer->SetView(s_pView);
-
-		//Noesis::Button* pButton = s_pView->GetContent()->FindName<Noesis::Button>("TestButton");
-		//pButton->Click() += [](Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-		//{
-		//	LOG_WARNING("PP");
-		//};
 
 		return true;
 	}

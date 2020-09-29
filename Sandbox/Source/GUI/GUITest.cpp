@@ -23,8 +23,8 @@ bool GUITest::Init(const LambdaEngine::String& xamlFile)
 
 bool GUITest::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
 {
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton1Click);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton2Click);
+	//NS_CONNECT_EVENT(Noesis::Button, Click, OnButton1Click);
+	//NS_CONNECT_EVENT(Noesis::Button, Click, OnButton2Click);
 	return false;
 }
 

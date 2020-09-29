@@ -12,7 +12,7 @@ namespace LambdaEngine
 	class RenderPassAttachmentDesc;
 	class GUIRenderTarget;
 
-	constexpr const uint32 NUM_NON_DYNAMIC_VARIATIONS = 4;
+	constexpr const uint32 NUM_NON_DYNAMIC_VARIATIONS = 4 * 2 * 2; //stencilMode(4) * colorEnable(2) * blendEnable(2)
 	constexpr const uint32 NUM_PIPELINE_STATE_VARIATIONS = NUM_NON_DYNAMIC_VARIATIONS;
 
 	class GUIPipelineStateCache
@@ -28,16 +28,16 @@ namespace LambdaEngine
 		static bool Init(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		static bool Release();
 
-		static PipelineState* GetPipelineState(uint32 index, bool colorEnable, bool blendEnable, const NoesisShaderData& shaderData);
+		static PipelineState* GetPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable, const NoesisShaderData& shaderData);
 
 		FORCEINLINE static const PipelineLayout* GetPipelineLayout() { return s_pPipelineLayout; }
 
 	private:
 		static bool InitPipelineLayout();
-		static bool InitPipelineState(uint32 index, bool colorEnable, bool blendEnable);
-		static bool InitPipelineState(uint32 index, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData);
+		static bool InitPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable);
+		static bool InitPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData);
 
-		static uint32 CalculateSubIndex(bool colorEnable, bool blendEnable);
+		static uint32 CalculateSubIndex(uint8 stencilMode, bool colorEnable, bool blendEnable);
 
 	private:
 		static TArray<PipelineVariations> s_PipelineStates;

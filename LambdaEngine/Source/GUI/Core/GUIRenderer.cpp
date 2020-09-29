@@ -466,6 +466,7 @@ namespace LambdaEngine
 		{
 			PipelineState* pPipelineState = GUIPipelineStateCache::GetPipelineState(
 				batch.shader.v,
+				batch.renderState.f.stencilMode,
 				batch.renderState.f.colorEnable != 0,
 				batch.renderState.f.blendMode	!= 0,
 				shaderData);

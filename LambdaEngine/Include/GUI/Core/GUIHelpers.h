@@ -31,13 +31,17 @@ namespace LambdaEngine
 		return EFormat::FORMAT_R8G8B8A8_UNORM;
 	}
 
-	FORCEINLINE EStencilOp NoesisStencilModeToLambdaStencilOp(uint8 stencilMode)
+	FORCEINLINE bool NoesisStencilOpToLambdaStencilOp(uint8 stencilOp, EStencilOp& outStencilOp)
 	{
-		if (stencilMode == Noesis::StencilMode::Equal_Keep)	return EStencilOp::STENCIL_OP_KEEP;
-		if (stencilMode == Noesis::StencilMode::Equal_Incr)	return EStencilOp::STENCIL_OP_INCREMENT_AND_WRAP;
-		if (stencilMode == Noesis::StencilMode::Equal_Decr)	return EStencilOp::STENCIL_OP_DECREMENT_AND_CLAMP;
+		switch (stencilOp)
+		{
+		case Noesis::StencilMode::Disabled:		return false;
+		case Noesis::StencilMode::Equal_Keep:	outStencilOp = EStencilOp::STENCIL_OP_KEEP; return true;
+		case Noesis::StencilMode::Equal_Incr:	outStencilOp = EStencilOp::STENCIL_OP_INCREMENT_AND_WRAP; return true;
+		case Noesis::StencilMode::Equal_Decr:	outStencilOp = EStencilOp::STENCIL_OP_DECREMENT_AND_WRAP; return true;
+		}
 
-		return EStencilOp::STENCIL_OP_KEEP;
+		return false;
 	}
 
 	FORCEINLINE NoesisShaderData NoesisGetShaderData(uint32 n)

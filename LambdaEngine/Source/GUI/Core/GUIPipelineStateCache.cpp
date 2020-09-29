@@ -64,54 +64,54 @@ namespace LambdaEngine
 		bool success = true;
 
 		s_PipelineStates.Resize(Noesis::Shader::Count);
-		success = success && InitPipelineState(Noesis::Shader::RGBA, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Mask, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Path_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Path_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Path_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Path_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::PathAA_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::PathAA_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::PathAA_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::PathAA_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::SDF_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::SDF_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::SDF_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::SDF_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35V, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63V, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127V, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur35V, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur63V, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur127V, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Pattern, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Solid, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Linear, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Radial, true, true);
-		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Pattern, true, true);
+		success = success && InitPipelineState(Noesis::Shader::RGBA, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Mask, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Path_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Path_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Path_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Path_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::PathAA_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::PathAA_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::PathAA_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::PathAA_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::SDF_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::SDF_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::SDF_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::SDF_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Opacity_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35V, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63V, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127V, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow35H_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow63H_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Shadow127H_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur35V, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur63V, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur127V, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur35H_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur63H_Pattern, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Solid, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Linear, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Radial, Noesis::StencilMode::Disabled, true, true);
+		success = success && InitPipelineState(Noesis::Shader::Image_Blur127H_Pattern, Noesis::StencilMode::Disabled, true, true);
 
 		if (!success)
 		{
@@ -140,15 +140,15 @@ namespace LambdaEngine
 		return true;
 	}
 
-	PipelineState* GUIPipelineStateCache::GetPipelineState(uint32 index, bool colorEnable, bool blendEnable, const NoesisShaderData& shaderData)
+	PipelineState* GUIPipelineStateCache::GetPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable, const NoesisShaderData& shaderData)
 	{
-		uint32 subIndex = CalculateSubIndex(colorEnable, blendEnable);
+		uint32 subIndex = CalculateSubIndex(stencilMode, colorEnable, blendEnable);
 		PipelineState** ppPipelineState = &s_PipelineStates[index].ppVariations[subIndex];
 
 		//Create new Pipeline State if nullptr
 		if (*ppPipelineState == nullptr)
 		{
-			InitPipelineState(index, colorEnable, blendEnable, ppPipelineState, shaderData);
+			InitPipelineState(index, stencilMode, colorEnable, blendEnable, ppPipelineState, shaderData);
 		}
 
 		return *ppPipelineState;
@@ -210,32 +210,33 @@ namespace LambdaEngine
 		return s_pPipelineLayout != nullptr;
 	}
 
-	bool GUIPipelineStateCache::InitPipelineState(uint32 index, bool colorEnable, bool blendEnable)
+	bool GUIPipelineStateCache::InitPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable)
 	{
-		uint32 subIndex = CalculateSubIndex(colorEnable, blendEnable);
+		uint32 subIndex = CalculateSubIndex(stencilMode, colorEnable, blendEnable);
 		PipelineState** ppPipelineState = &s_PipelineStates[index].ppVariations[subIndex];
 		NoesisShaderData shaderData = NoesisGetShaderData(index);
 
-		return InitPipelineState(index, colorEnable, blendEnable, ppPipelineState, shaderData);
+		return InitPipelineState(index, stencilMode, colorEnable, blendEnable, ppPipelineState, shaderData);
 	}
 
-	bool GUIPipelineStateCache::InitPipelineState(uint32 index, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData)
+	bool GUIPipelineStateCache::InitPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData)
 	{
 		StencilOpStateDesc stencilOpStateDesc = {};
 		stencilOpStateDesc.FailOp			= EStencilOp::STENCIL_OP_KEEP;
-		stencilOpStateDesc.PassOp			= EStencilOp::STENCIL_OP_KEEP;
 		stencilOpStateDesc.DepthFailOp		= EStencilOp::STENCIL_OP_KEEP;
 		stencilOpStateDesc.CompareOp		= ECompareOp::COMPARE_OP_EQUAL;
 		stencilOpStateDesc.CompareMask		= 0xFFFFFFFF;
 		stencilOpStateDesc.WriteMask		= 0xFFFFFFFF;
 		stencilOpStateDesc.Reference		= 0x00000000;
 
+		bool enableStencil = NoesisStencilOpToLambdaStencilOp(stencilMode, stencilOpStateDesc.PassOp);
+
 		DepthStencilStateDesc depthStencilStateDesc = {};	
 		depthStencilStateDesc.DepthTestEnable	= false;
 		depthStencilStateDesc.DepthWriteEnable	= false;
 		depthStencilStateDesc.FrontFace			= stencilOpStateDesc;
 		depthStencilStateDesc.BackFace			= stencilOpStateDesc;
-		depthStencilStateDesc.StencilTestEnable = true;
+		depthStencilStateDesc.StencilTestEnable = enableStencil;
 		
 		BlendAttachmentStateDesc blendAttachmentStateDesc = {};
 		blendAttachmentStateDesc.BlendOp		= EBlendOp::BLEND_OP_ADD,
@@ -362,11 +363,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-	uint32 GUIPipelineStateCache::CalculateSubIndex(bool colorEnable, bool blendEnable)
+	uint32 GUIPipelineStateCache::CalculateSubIndex(uint8 stencilMode, bool colorEnable, bool blendEnable)
 	{
 		uint32 subIndex = 0;
-		if (!colorEnable)			subIndex += 1;
-		if (!blendEnable)			subIndex += 2;
+		if (!colorEnable)	subIndex += 1;
+		if (!blendEnable)	subIndex += 2;
+		if		(stencilMode == Noesis::StencilMode::Equal_Keep)	subIndex += 4;
+		else if (stencilMode == Noesis::StencilMode::Equal_Incr)	subIndex += 8;
+		else if (stencilMode == Noesis::StencilMode::Equal_Decr)	subIndex += 12;
 		return subIndex;
 	}
 }
