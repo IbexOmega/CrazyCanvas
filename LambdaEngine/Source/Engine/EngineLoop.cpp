@@ -74,8 +74,7 @@ namespace LambdaEngine
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
-				FixedTick(fixedClock.GetDeltaTime());
-
+				FixedTick(g_FixedTimestep);
 				accumulator -= g_FixedTimestep;
 			}
 		}

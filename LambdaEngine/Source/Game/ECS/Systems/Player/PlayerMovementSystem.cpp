@@ -9,6 +9,8 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	PlayerMovementSystem PlayerMovementSystem::s_Instance;
@@ -58,7 +60,10 @@ namespace LambdaEngine
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 		if (!pPositionComponents && !pPositionComponents->HasComponent(entity))
+		{
+			LOG_MESSAGE("Returning From Base");
 			return;
+		}
 
 		PositionComponent& positionComponent = pPositionComponents->GetData(entity);
 
