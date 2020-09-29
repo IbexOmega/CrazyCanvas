@@ -296,7 +296,7 @@ namespace LambdaEngine
 				positionComponent.Dirty		= true;
 
 				//Replay all game states since the game state which resulted in prediction ERROR
-				for (int32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
+				for (uint32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
 				{
 					PlayerUpdate(m_FramesToReconcile[i]); 
 				}
