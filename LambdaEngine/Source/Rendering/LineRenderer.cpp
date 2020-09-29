@@ -1,6 +1,6 @@
 #include "PreCompiled.h"
 
-#include "Rendering/PhysicsRenderer.h"
+#include "Rendering/LineRenderer.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
@@ -29,15 +29,15 @@
 
 namespace LambdaEngine
 {
-	PhysicsRenderer* PhysicsRenderer::s_pInstance = nullptr;
+	LineRenderer* LineRenderer::s_pInstance = nullptr;
 
-	PhysicsRenderer::PhysicsRenderer()
+	LineRenderer::LineRenderer()
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
 	}
 
-	PhysicsRenderer::~PhysicsRenderer()
+	LineRenderer::~LineRenderer()
 	{
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
@@ -59,7 +59,7 @@ namespace LambdaEngine
 		m_LineGroups.clear();
 	}
 
-	bool PhysicsRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
+	bool LineRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
 	{
 		m_BackBuffers.Resize(backBufferCount);
 		m_BackBufferCount = backBufferCount;
@@ -84,31 +84,31 @@ namespace LambdaEngine
 
 		if (!CreateCopyCommandList())
 		{
-			LOG_ERROR("[PhysicsRenderer]: Failed to create copy command list");
+			LOG_ERROR("[LineRenderer]: Failed to create copy command list");
 			return false;
 		}
 
 		if (!CreateBuffers(verticiesBufferSize))
 		{
-			LOG_ERROR("[PhysicsRenderer]: Failed to create buffers");
+			LOG_ERROR("[LineRenderer]: Failed to create buffers");
 			return false;
 		}
 
 		if (!CreatePipelineLayout())
 		{
-			LOG_ERROR("[PhysicsRenderer]: Failed to create PipelineLayout");
+			LOG_ERROR("[LineRenderer]: Failed to create PipelineLayout");
 			return false;
 		}
 
 		if (!CreateDescriptorSet())
 		{
-			LOG_ERROR("[PhysicsRenderer]: Failed to create DescriptorSet");
+			LOG_ERROR("[LineRenderer]: Failed to create DescriptorSet");
 			return false;
 		}
 
 		if (!CreateShaders())
 		{
-			LOG_ERROR("[PhysicsRenderer]: Failed to create Shaders");
+			LOG_ERROR("[LineRenderer]: Failed to create Shaders");
 			return false;
 		}
 
@@ -123,7 +123,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	uint32 PhysicsRenderer::AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color)
+	uint32 LineRenderer::AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color)
 	{
 		uint32 ID = m_LineGroups.size();
 		TArray<VertexData>& vertexPoints = m_LineGroups[ID];
@@ -146,7 +146,7 @@ namespace LambdaEngine
 		return ID;
 	}
 
-	uint32 PhysicsRenderer::UpdateLineGroup(uint32 ID, const TArray<glm::vec3>& points, const glm::vec3& color)
+	uint32 LineRenderer::UpdateLineGroup(uint32 ID, const TArray<glm::vec3>& points, const glm::vec3& color)
 	{
 		if (m_LineGroups.contains(ID))
 		{
@@ -175,7 +175,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsRenderer::RemoveLineGroup(uint32 ID)
+	void LineRenderer::RemoveLineGroup(uint32 ID)
 	{
 		if (m_LineGroups.contains(ID))
 		{
@@ -189,7 +189,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
+	void LineRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
 	{
 		// if (m_DebugMode > 0)
 		VertexData fromData = {};
@@ -203,7 +203,7 @@ namespace LambdaEngine
 		m_Verticies.PushBack(toData);
 	}
 
-	void PhysicsRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor)
+	void LineRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor)
 	{
 		VertexData fromData = {};
 		fromData.Position 	= { from.x, from.y, from.z, 1.0f };
@@ -216,20 +216,7 @@ namespace LambdaEngine
 		m_Verticies.PushBack(toData);
 	}
 
-	//void PhysicsRenderer::DrawSphere(const glm::vec3& p, float radius, const glm::vec3& color)
-	//{
-	//}
-
-	//void PhysicsRenderer::DrawTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& color, float alpha)
-	//{
-	//}
-
-	void PhysicsRenderer::DrawContactPoint(const glm::vec3& PointOnB, const glm::vec3& normalOnB, float distance, int lifeTime, const glm::vec3& color)
-	{
-	}
-
-	// Custom renderer implementaion
-	bool PhysicsRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
+	bool LineRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
 
@@ -258,15 +245,15 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PhysicsRenderer::PreBuffersDescriptorSetWrite()
+	void LineRenderer::PreBuffersDescriptorSetWrite()
 	{
 	}
 
-	void PhysicsRenderer::PreTexturesDescriptorSetWrite()
+	void LineRenderer::PreTexturesDescriptorSetWrite()
 	{
 	}
 
-	void PhysicsRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void LineRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(backBufferBound);
 
@@ -284,7 +271,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
+	void LineRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
 		if (count == 1 || backBufferBound)
 		{
@@ -360,13 +347,13 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
+	void LineRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
-	void PhysicsRenderer::Render(
+	void LineRenderer::Render(
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
@@ -469,18 +456,15 @@ namespace LambdaEngine
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
-
-		// TODO: When bullet calls the drawLines, a clear on the verticies might be needed
-		//m_Verticies.Clear();
 	}
 
-	PhysicsRenderer* PhysicsRenderer::Get()
+	LineRenderer* LineRenderer::Get()
 	{
 		return s_pInstance;
 	}
 
 
-	bool PhysicsRenderer::CreateCopyCommandList()
+	bool LineRenderer::CreateCopyCommandList()
 	{
 		m_CopyCommandAllocator = m_pGraphicsDevice->CreateCommandAllocator("Physics Renderer Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 		if (!m_CopyCommandAllocator)
@@ -498,7 +482,7 @@ namespace LambdaEngine
 		return m_CopyCommandList != nullptr;
 	}
 
-	bool PhysicsRenderer::CreateBuffers(uint32 verticiesBufferSize)
+	bool LineRenderer::CreateBuffers(uint32 verticiesBufferSize)
 	{
 		BufferDesc uniformCopyBufferDesc = {};
 		uniformCopyBufferDesc.DebugName		= "Physics Renderer Uniform Copy Buffer";
@@ -507,11 +491,9 @@ namespace LambdaEngine
 		uniformCopyBufferDesc.SizeInBytes	= verticiesBufferSize;
 
 		uint32 backBufferCount = m_BackBuffers.GetSize();
-		// m_VertexCopyBuffers.Resize(backBufferCount);
 		m_UniformCopyBuffers.Resize(backBufferCount);
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
-			// TSharedRef<Buffer> vertexBuffer = m_pGraphicsDevice->CreateBuffer(&vertexCopyBufferDesc);
 			TSharedRef<Buffer> uniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformCopyBufferDesc);
 			if (uniformBuffer != nullptr)
 			{
@@ -538,7 +520,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool PhysicsRenderer::CreatePipelineLayout()
+	bool LineRenderer::CreatePipelineLayout()
 	{
 		DescriptorBindingDesc perFrameBufferDesc = {};
 		perFrameBufferDesc.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
@@ -567,7 +549,7 @@ namespace LambdaEngine
 		return m_PipelineLayout != nullptr;
 	}
 
-	bool PhysicsRenderer::CreateDescriptorSet()
+	bool LineRenderer::CreateDescriptorSet()
 	{
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount					= 0;
@@ -594,14 +576,14 @@ namespace LambdaEngine
 		return m_DescriptorSet != nullptr;
 	}
 
-	bool PhysicsRenderer::CreateShaders()
+	bool LineRenderer::CreateShaders()
 	{
 		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("PhysicsDebugVertex.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("PhysicsDebugPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 
-	bool PhysicsRenderer::CreateCommandLists()
+	bool LineRenderer::CreateCommandLists()
 	{
 		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
 		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
@@ -631,7 +613,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool PhysicsRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc)
+	bool LineRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
@@ -668,7 +650,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool PhysicsRenderer::CreatePipelineState()
+	bool LineRenderer::CreatePipelineState()
 	{
 		m_PipelineStateID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID);
 
@@ -679,7 +661,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	uint64 PhysicsRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
+	uint64 LineRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
 		pipelineStateDesc.DebugName			= "Physics Renderer Pipeline State";
