@@ -28,6 +28,10 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/Core/API/GraphicsTypes.h"
 
+#include "Math/Random.h"
+
+
+
 using namespace LambdaEngine;
 SandboxState::SandboxState()
 {
@@ -49,6 +53,7 @@ void SandboxState::Init()
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	// Create Camera
 	{
@@ -74,10 +79,17 @@ void SandboxState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { position, true });
-			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			CollisionCreateInfo collisionCreateInfo = {
+				.Entity			= entity,
+				.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
+				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
+				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
+				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+			};
+
+			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
 
 			m_Entities.PushBack(entity);
 		}
@@ -125,7 +137,6 @@ void SandboxState::Init()
 
 	//Sphere Grid
 	{
-		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 		uint32 gridRadius = 5;
@@ -169,7 +180,7 @@ void SandboxState::Init()
 					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
 				};
 
-				pPhysicsSystem->CreateCollisionComponent(collisionCreateInfo);
+				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 				transform *= glm::toMat4(glm::identity<glm::quat>());
@@ -177,11 +188,20 @@ void SandboxState::Init()
 			}
 		}
 
-		// Directional Light
+		//// Directional Light
 		{
-			Entity dirLight = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
-			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
+			/*m_DirLight = ECSCore::GetInstance()->CreateEntity();
+			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { {0.f, 0.f, 0.f}, true });
+			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(glm::normalize(-g_DefaultRight - g_DefaultUp), g_DefaultUp), true });
+			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight,
+				DirectionalLightComponent{
+					.ColorIntensity = {1.0f, 1.0f, 1.0f, 15.0f},
+					.frustumWidth = 20.0f,
+					.frustumHeight = 20.0f,
+					.frustumZNear = -40.0f,
+					.frustumZFar = 10.0f,
+				}
+			);*/
 		}
 
 		// Add PointLights
@@ -189,16 +209,16 @@ void SandboxState::Init()
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 3.0f, -5.0f},
-				{-4.0f, 3.0f, 5.0f},
-				{0.0f, 3.0f, -5.0f},
+				{4.0f, 2.0f, -3.0f},
+				{-4.0f, 2.0f, -3.0f},
+				{0.0f, 2.0f, 3.0f},
 			};
 
 			const float PI = glm::pi<float>();

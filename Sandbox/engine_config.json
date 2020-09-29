@@ -4,15 +4,15 @@
     1080
   ],
   "FixedTimestep": 60,
-  "RayTracingEnabled": false,
-  "MeshShadersEnabled": true,
+  "RayTracingEnabled": true,
+  "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
-  "EnablePhysicsRenderer": false,
+  "EnableLineRenderer": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",
   "ShowDemo": false,
   "Debugging": false,
   "CameraFOV": 90.0,
   "CameraNearPlane": 0.001,
   "CameraFarPlane": 1000.0,
-  "StreamPhysx": true
+  "StreamPhysx": false
 }

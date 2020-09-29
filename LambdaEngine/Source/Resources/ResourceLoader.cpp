@@ -176,6 +176,7 @@ namespace LambdaEngine
 	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures)
 	{
 		const int32 assimpFlags =
+			aiProcess_FlipWindingOrder			|
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|
@@ -208,6 +209,7 @@ namespace LambdaEngine
 	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations)
 	{
 		const int32 assimpFlags =
+			aiProcess_FlipWindingOrder			|
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
 			aiProcess_FindInstances				|

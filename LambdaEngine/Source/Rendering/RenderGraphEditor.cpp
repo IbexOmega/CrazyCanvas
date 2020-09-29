@@ -987,8 +987,28 @@ namespace LambdaEngine
 						pResource->TextureParams.SamplerType = SamplerTypeIndexToSamplerType(samplerTypeIndex);
 					}
 
-					int32 memoryTypeIndex = MemoryTypeToMemoryTypeIndex(pResource->MemoryType);
+					int32 samplerAddresModeIndex = SamplerTypeToSamplerAddressModeIndex(pResource->TextureParams.SamplerAddressMode);
 
+					ImGui::Text("Sampler Address Mode: ");
+					ImGui::SameLine();
+					if (ImGui::Combo("##Sampler Address Mode", &samplerAddresModeIndex, SAMPLER_ADDRESS_NAMES, ARR_SIZE(SAMPLER_ADDRESS_NAMES)))
+					{
+						pResource->TextureParams.SamplerAddressMode = SamplerTypeIndexToSamplerAddressMode(samplerAddresModeIndex);
+					}
+
+					if (pResource->TextureParams.SamplerAddressMode == ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER)
+					{
+						int32 samplerBorderColorIndex = SamplerTypeBorderColorToSamplerIndex(pResource->TextureParams.SamplerBorderColor);
+
+						ImGui::Text("Sampler Border Color: ");
+						ImGui::SameLine();
+						if (ImGui::Combo("##Sampler Border Color", &samplerBorderColorIndex, SAMPLER_BORDER_COLOR, ARR_SIZE(SAMPLER_BORDER_COLOR)))
+						{
+							pResource->TextureParams.SamplerBorderColor = SamplerTypeIndexToSamplerBorderColor(samplerBorderColorIndex);
+						}
+					}
+
+					int32 memoryTypeIndex = MemoryTypeToMemoryTypeIndex(pResource->MemoryType);
 					ImGui::Text("Memory Type: ");
 					ImGui::SameLine();
 					if (ImGui::Combo("##Memory Type", &memoryTypeIndex, MEMORY_TYPE_NAMES, ARR_SIZE(MEMORY_TYPE_NAMES)))
