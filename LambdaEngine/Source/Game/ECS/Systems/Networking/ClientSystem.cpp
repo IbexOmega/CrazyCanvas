@@ -15,7 +15,7 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
-#define EPSILON 0.00001f
+#define EPSILON 0.01f
 
 namespace LambdaEngine
 {
@@ -71,7 +71,7 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		if (m_pClient->IsConnected() && m_NetworkUID >= 0)
+		if (m_pClient->IsConnected() && m_Entities.size() > 0)
 		{
 			int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 			int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
@@ -99,15 +99,16 @@ namespace LambdaEngine
 			gameState.SimulationTick	= m_SimulationTick;
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
+			gameState.Position			= positionComponent.Position;
 
 			if (deltaForward != 0)
 			{
-				gameState.Position.x = positionComponent.Position.x + 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaForward;
+				gameState.Position.z += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaForward;
 			}
 
 			if (deltaLeft != 0)
 			{
-				gameState.Position.z = positionComponent.Position.z + 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
+				gameState.Position.x += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
 			}
 
 			{
@@ -199,9 +200,9 @@ namespace LambdaEngine
 			else
 			{
 				auto pair = m_Entities.find(networkUID);
-
 				if (pair != m_Entities.end())
 				{
+					LOG_MESSAGE("Incoming new Position From Server");
 					auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 					PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);

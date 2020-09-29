@@ -117,6 +117,7 @@ namespace LambdaEngine
 	{
 		Game::Get().FixedTick(delta);
 
+		PlayerMovementSystem::GetInstance().FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);

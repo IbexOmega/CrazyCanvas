@@ -35,8 +35,8 @@ namespace LambdaEngine
 		return true;
     }
 
-    void PlayerMovementSystem::Tick(Timestamp deltaTime)
-    {
+	void PlayerMovementSystem::FixedTick(Timestamp deltaTime)
+	{
 		int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 		int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
 
@@ -44,7 +44,12 @@ namespace LambdaEngine
 		{
 			Move(entity, deltaTime, deltaForward, deltaLeft);
 		}
-    }
+	}
+
+	void PlayerMovementSystem::Tick(Timestamp deltaTime)
+	{
+		UNREFERENCED_VARIABLE(deltaTime);
+	}
 
 	void PlayerMovementSystem::Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft)
 	{

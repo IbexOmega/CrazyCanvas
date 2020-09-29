@@ -17,6 +17,7 @@ namespace LambdaEngine
 
 		bool Init();
 
+		void FixedTick(Timestamp deltaTime);
 		void Tick(Timestamp deltaTime) override;
 
 		void Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft);
