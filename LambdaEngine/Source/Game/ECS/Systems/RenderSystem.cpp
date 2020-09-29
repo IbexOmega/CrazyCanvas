@@ -230,6 +230,7 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(m_pLineRenderer);
+
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
 

@@ -631,7 +631,7 @@
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "/FullscreenQuad.vert",
+                "vertex_shader": "/Helpers\\FullscreenQuad.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
