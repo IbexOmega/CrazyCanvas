@@ -105,7 +105,7 @@ namespace LambdaEngine
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		uint8 index = m_pClient->GetServer()->GetClientCount() % 10;
+		uint8 index = m_pClient->GetServer()->GetClientCount() % 10 - 1;
 		const glm::vec3& position = s_StartPositions[index];
 		m_Color = s_StartColors[index];
 
