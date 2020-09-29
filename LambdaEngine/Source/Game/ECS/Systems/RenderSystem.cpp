@@ -474,8 +474,11 @@ namespace LambdaEngine
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
+		
 		m_EntityToPointLight[lastEntity] = currentIndex;
+		m_PointLightToEntity[currentIndex] = lastEntity;
 
+		m_PointLightToEntity.erase(lastIndex);
 		m_EntityToPointLight.erase(entity);
 		m_PointLights.PopBack();
 
