@@ -32,14 +32,15 @@ void BenchmarkState::Init()
 	TrackSystem::GetInstance().Init();
 
 	TArray<glm::vec3> cameraTrack = {
-		{-2.0f, 1.6f, 1.0f},
-		{9.8f, 1.6f, 0.8f},
-		{9.4f, 1.6f, -3.8f},
-		{-9.8f, 1.6f, -3.9f},
-		{-11.6f, 1.6f, -1.1f},
-		{9.8f, 6.1f, -0.8f},
-		{9.4f, 6.1f, 3.8f},
-		{-9.8f, 6.1f, 3.9f}
+		{-2.0f, 3.0f, 1.0f},
+		{7.8f, 3.0f, 0.8f},
+		{7.4f, 3.0f, -3.8f},
+		{-7.8f, 4.0f, -3.9f},
+		{-7.6f, 4.0f, -2.1f},
+		{7.8f, 6.1f, -0.8f},
+		{7.4f, 6.1f, 3.8f},
+		{0.0f, 6.1f, 3.9f},
+		{0.0f, 4.1f, -3.9f}
 	};
 
 	CameraDesc cameraDesc = {};
