@@ -231,8 +231,6 @@ namespace LambdaEngine
 
 		SAFEDELETE(m_pLineRenderer);
 
-
-		SAFEDELETE(m_pPhysicsRenderer);
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
 
