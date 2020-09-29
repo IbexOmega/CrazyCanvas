@@ -1,5 +1,5 @@
-#include "GUI/GUIRenderTarget.h"
-#include "GUI/GUIRenderer.h"
+#include "GUI/Core/GUIRenderTarget.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/RenderPass.h"

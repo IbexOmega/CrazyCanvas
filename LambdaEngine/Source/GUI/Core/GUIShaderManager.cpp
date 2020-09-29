@@ -1,4 +1,4 @@
-#include "GUI/GUIShaderManager.h"
+#include "GUI/Core/GUIShaderManager.h"
 
 #include "Resources/GLSLShaderSource.h"
 #include "Resources/ResourceLoader.h"

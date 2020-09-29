@@ -1,4 +1,4 @@
-#include "GUI/GUITexture.h"
+#include "GUI/Core/Core/GUITexture.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/StagingBufferCache.h"

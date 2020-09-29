@@ -1,6 +1,6 @@
-#include "GUI/GUIPipelineStateCache.h"
-#include "GUI/GUIShaderManager.h"
-#include "GUI/GUIRenderTarget.h"
+#include "GUI/Core/GUIPipelineStateCache.h"
+#include "GUI/Core/GUIShaderManager.h"
+#include "GUI/Core/GUIRenderTarget.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"

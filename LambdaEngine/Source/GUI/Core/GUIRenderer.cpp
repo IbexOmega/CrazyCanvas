@@ -1,9 +1,9 @@
-#include "GUI/GUIRenderer.h"
-#include "GUI/GUIHelpers.h"
-#include "GUI/GUIRenderTarget.h"
-#include "GUI/GUITexture.h"
-#include "GUI/GUIShaderManager.h"
-#include "GUI/GUIPipelineStateCache.h"
+#include "GUI/Core/GUIRenderer.h"
+#include "GUI/Core/GUIHelpers.h"
+#include "GUI/Core/GUIRenderTarget.h"
+#include "GUI/Core/GUITexture.h"
+#include "GUI/Core/GUIShaderManager.h"
+#include "GUI/Core/GUIPipelineStateCache.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
@@ -630,6 +630,7 @@ namespace LambdaEngine
 
 	void GUIRenderer::SetView(Noesis::Ptr<Noesis::IView> view)
 	{
+		m_View.Reset();
 		m_View = view;
 		m_View->GetRenderer()->Init(this);
 	}

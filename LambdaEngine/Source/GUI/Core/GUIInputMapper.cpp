@@ -1,4 +1,4 @@
-#include "GUI/GUIInputMapper.h"
+#include "GUI/Core/GUIInputMapper.h"
 
 namespace LambdaEngine
 {

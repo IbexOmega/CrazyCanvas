@@ -67,6 +67,12 @@ namespace LambdaEngine
 		s_pView->Update(delta.AsSeconds());
 	}
 
+	void GUIApplication::SetView(Noesis::Ptr<Noesis::IView> view)
+	{
+		s_pView.Reset();
+		s_pRenderer->SetView(view);
+	}
+
 	bool GUIApplication::InitNoesis()
 	{
 #if defined(LAMBDA_DEBUG)
@@ -99,7 +105,7 @@ namespace LambdaEngine
 				</Grid.Background>
 				<Viewbox>
 					<StackPanel Margin="50">
-						<Button Content="Hello World!" Margin="0,30,0,0"/>
+						<Button Name="TestButton" Content="Hello World!" Margin="0,30,0,0"/>
 						<Rectangle Height="5" Margin="-10,20,-10,0">
 							<Rectangle.Fill>
 								<RadialGradientBrush>
@@ -126,6 +132,12 @@ namespace LambdaEngine
 		}
 
 		s_pRenderer->SetView(s_pView);
+
+		Noesis::Button* pButton = s_pView->GetContent()->FindName<Noesis::Button>("TestButton");
+		pButton->Click() += [](Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+		{
+			LOG_WARNING("PP");
+		};
 
 		return true;
 	}
