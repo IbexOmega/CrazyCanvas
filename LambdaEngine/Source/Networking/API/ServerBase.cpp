@@ -230,12 +230,12 @@ namespace LambdaEngine
 		Stop(reason);
 	}
 
-	void ServerBase::Tick(Timestamp delta)
+	void ServerBase::FixedTick(Timestamp delta)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		for (auto& pair : m_Clients)
 		{
-			pair.second->Tick(delta);
+			pair.second->FixedTick(delta);
 		}
 
 		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
@@ -243,7 +243,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
 			for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
 			{
-				m_ClientsToAdd[i]->Tick(delta);
+				m_ClientsToAdd[i]->FixedTick(delta);
 				if (m_ClientsToAdd[i]->IsConnected())
 				{
 					LOG_INFO("[ServerBase]: Client Registered");
@@ -302,7 +302,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(s_Lock);
 			for (ServerBase* server : s_Servers)
 			{
-				server->Tick(delta);
+				server->FixedTick(delta);
 			}
 		}
 	}
