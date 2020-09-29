@@ -111,7 +111,6 @@ namespace LambdaEngine
 			Buffer* pMeshlets			= nullptr;
 			uint32	MeshletCount		= 0;
 
-			
 			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<AccelerationStructureInstance> ASInstances;
@@ -244,6 +243,7 @@ namespace LambdaEngine
 		IDVector m_PointLightEntities;
 		IDVector m_RenderableEntities;
 		IDVector m_CameraEntities;
+		IDVector m_AnimatedEntities;
 
 		LineRenderer*		m_pLineRenderer	= nullptr;
 

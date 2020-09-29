@@ -21,6 +21,7 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
@@ -55,6 +56,7 @@ namespace LambdaEngine
 				{{{RW, DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
 				{{{RW, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
 				{{{RW, ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
+				{{{R, AnimationComponent::Type()}, {R, MeshComponent::Type()}},	&m_AnimatedEntities }
 			};
 			systemReg.Phase = g_LastPhase;
 
@@ -500,7 +502,6 @@ namespace LambdaEngine
 		//Get meshAndInstancesIterator
 		{
 			meshAndInstancesIt = m_MeshAndInstancesMap.find(meshKey);
-
 			if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 			{
 				const Mesh* pMesh = ResourceManager::GetMesh(meshGUID);

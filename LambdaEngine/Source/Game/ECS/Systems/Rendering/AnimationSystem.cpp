@@ -131,7 +131,6 @@ namespace LambdaEngine
 		systemReg.Phase = 0;
 
 		RegisterSystem(systemReg);
-
 		return true;
 	}
 
