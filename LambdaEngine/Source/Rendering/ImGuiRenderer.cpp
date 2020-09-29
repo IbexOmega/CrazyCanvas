@@ -985,8 +985,8 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::CreateShaders()
 	{
-		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("ImGuiVertex.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("ImGuiPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_VertexShaderGUID		= ResourceManager::LoadShaderFromFile("/ImGui/ImGuiVertex.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("/ImGui/ImGuiPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 	

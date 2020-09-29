@@ -60,12 +60,13 @@ namespace LambdaEngine
 
 	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result)
 	{
-		TArray<MeshComponent> sceneLocalMeshComponents;
-		TArray<Mesh*> meshes;
-		TArray<Material*> materials;
-		TArray<Texture*> textures;
+		TArray<MeshComponent>	sceneLocalMeshComponents;
+		TArray<Mesh*>			meshes;
+		TArray<Animation*>		animations;
+		TArray<Material*>		materials;
+		TArray<Texture*>		textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalMeshComponents, meshes, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalMeshComponents, meshes, animations, materials, textures))
 		{
 			return false;
 		}

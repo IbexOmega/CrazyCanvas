@@ -10,7 +10,7 @@
 namespace LambdaEngine
 {
 	THashTable<String, EKey> InputActionSystem::m_CurrentKeyBindings;
-	
+
 	rapidjson::Document InputActionSystem::s_ConfigDocument;
 
 	bool InputActionSystem::LoadFromFile()
@@ -33,7 +33,7 @@ namespace LambdaEngine
 
 		for (auto& m : s_ConfigDocument.GetObject())
 		{
-			
+
 			String action = m.name.GetString();
 			String strKey = m.value.GetString();
 
@@ -96,7 +96,6 @@ namespace LambdaEngine
 
 	bool InputActionSystem::IsActive(const String& action)
 	{
-
 		auto itr = m_CurrentKeyBindings.find(action);
 
 		if (itr != m_CurrentKeyBindings.end()) {

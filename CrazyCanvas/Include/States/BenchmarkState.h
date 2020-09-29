@@ -21,4 +21,6 @@ private:
 
 private:
 	LambdaEngine::Entity m_Camera;
+	LambdaEngine::Entity m_DirLight;
+	LambdaEngine::Entity m_PointLights[3];
 };

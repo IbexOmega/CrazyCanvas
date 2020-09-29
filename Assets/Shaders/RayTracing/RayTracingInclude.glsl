@@ -29,10 +29,10 @@ layout(binding = 3,     set = TEXTURE_SET_INDEX) uniform sampler2D              
 layout(binding = 4,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_MetallicMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 5,     set = TEXTURE_SET_INDEX) uniform samplerCube                u_Skybox;
 
-layout(binding = 6,     set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D  u_GBufferPosition;
+layout(binding = 6,     set = TEXTURE_SET_INDEX, rgba32f) restrict uniform image2D  u_GBufferPosition;
 layout(binding = 7,     set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D    u_GBufferAlbedo;
 layout(binding = 8,     set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D    u_GBufferAORoughMetalValid;
-layout(binding = 9,     set = TEXTURE_SET_INDEX, rg16f) restrict uniform image2D    u_GBufferCompactNormal;
+layout(binding = 9,     set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D    u_GBufferCompactNormal;
 layout(binding = 10,    set = TEXTURE_SET_INDEX) uniform sampler2D 	                u_GBufferDepthStencil;
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)

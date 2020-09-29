@@ -27,7 +27,11 @@ namespace LambdaEngine
 			m_Buffer = VK_NULL_HANDLE;
 		}
 
-		m_pDevice->FreeMemory(&m_Allocation);
+		if (m_Allocation.Memory != VK_NULL_HANDLE)
+		{
+			m_pDevice->FreeMemory(&m_Allocation);
+		}
+		
 		ZERO_MEMORY(&m_Allocation, sizeof(m_Allocation));
 	}
 
