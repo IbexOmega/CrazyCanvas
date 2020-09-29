@@ -59,9 +59,9 @@ namespace LambdaEngine
 		m_pClient->Release();
 	}
 
-	bool ClientSystem::Connect(IPAddress* address)
+	bool ClientSystem::Connect(IPAddress* pAddress)
 	{
-		if (!m_pClient->Connect(IPEndPoint(address, 4444)))
+		if (!m_pClient->Connect(IPEndPoint(pAddress, 4444)))
 		{
 			LOG_ERROR("Failed to connect!");
 			return false;
