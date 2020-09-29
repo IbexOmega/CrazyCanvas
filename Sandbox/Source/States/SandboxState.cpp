@@ -52,6 +52,7 @@ void SandboxState::Init()
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	// Create Camera
 	{
@@ -77,10 +78,17 @@ void SandboxState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { position, true });
-			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			CollisionCreateInfo collisionCreateInfo = {
+				.Entity			= entity,
+				.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
+				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
+				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
+				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+			};
+
+			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
 
 			m_Entities.PushBack(entity);
 		}
@@ -123,7 +131,6 @@ void SandboxState::Init()
 
 	//Sphere Grid
 	{
-		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 		uint32 gridRadius = 5;
