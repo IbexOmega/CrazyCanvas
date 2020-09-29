@@ -63,7 +63,6 @@ namespace LambdaEngine
 		GameState m_CurrentGameState;
 		ClientRemoteBase* m_pClient;
 		Entity m_Entity;
-		int32 m_LastProcessedSimulationTick;
 
 		SpinLock m_Lock;
 
