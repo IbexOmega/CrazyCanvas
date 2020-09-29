@@ -124,6 +124,7 @@ namespace LambdaEngine
 	bool GUIPipelineStateCache::Release()
 	{
 		SAFERELEASE(s_pDummyRenderPass);
+		SAFERELEASE(s_pPipelineLayout);
 
 		for (uint32 p = 0; p < s_PipelineStates.GetSize(); p++)
 		{

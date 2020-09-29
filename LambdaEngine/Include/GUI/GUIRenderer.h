@@ -169,8 +169,8 @@ namespace LambdaEngine
 
 		RenderPass* m_pMainRenderPass = nullptr;
 
-		TArray<GUITexture*> m_GUITextures;
-		TArray<GUIRenderTarget*> m_GUIRenderTargets;
+		TArray<Noesis::Ptr<Noesis::Texture>> m_GUITextures;
+		TArray<Noesis::Ptr<Noesis::RenderTarget>> m_GUIRenderTargets;
 
 		Noesis::Ptr<Noesis::IView> m_View;
 	};

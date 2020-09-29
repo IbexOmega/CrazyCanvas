@@ -30,20 +30,26 @@ namespace LambdaEngine
 
 	GUIRenderer::~GUIRenderer()
 	{
-		SAFEDELETE(m_pGUISampler);
+		SAFERELEASE(m_pIndexBuffer);
+		SAFERELEASE(m_pVertexBuffer);
+		SAFERELEASE(m_pGUISampler);
 
-		for (GUITexture* pTexture : m_GUITextures)
+		for (Noesis::Ptr<Noesis::RenderTarget>& renderTarget : m_GUIRenderTargets)
 		{
-			SAFEDELETE(pTexture);
+			renderTarget.Reset();
 		}
+		m_GUIRenderTargets.Clear();
 
-		for (GUIRenderTarget* pRenderTarget : m_GUIRenderTargets)
+		for (Noesis::Ptr<Noesis::Texture>& texture : m_GUITextures)
 		{
-			SAFEDELETE(pRenderTarget);
+			texture.Reset();
 		}
+		m_GUITextures.Clear();
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
+			SAFERELEASE(m_ppUtilityCommandLists[b]);
+			SAFERELEASE(m_ppUtilityCommandAllocators[b]);
 			SAFERELEASE(m_ppRenderCommandLists[b]);
 			SAFERELEASE(m_ppRenderCommandAllocators[b]);
 
@@ -68,6 +74,8 @@ namespace LambdaEngine
 
 			m_pUsedDescriptorSets[b].Clear();
 		}
+
+		SAFERELEASE(m_pDescriptorHeap);
 
 		for (Buffer* pParamsBuffer : m_AvailableParamsBuffers)
 		{
@@ -151,8 +159,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		m_GUIRenderTargets.PushBack(pRenderTarget);
-		return Noesis::Ptr<Noesis::RenderTarget>(pRenderTarget);
+		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
+		m_GUIRenderTargets.PushBack(renderTarget);
+		return renderTarget;
 	}
 
 	Noesis::Ptr<Noesis::RenderTarget> GUIRenderer::CloneRenderTarget(const char* pLabel, Noesis::RenderTarget* pSurface)
@@ -168,7 +177,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		return Noesis::Ptr<Noesis::RenderTarget>(pRenderTarget);
+		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
+		m_GUIRenderTargets.PushBack(renderTarget);
+		return renderTarget;
 	}
 
 	Noesis::Ptr<Noesis::Texture> GUIRenderer::CreateTexture(const char* pLabel, uint32_t width, uint32_t height, uint32_t numLevels, Noesis::TextureFormat::Enum format, const void** ppData)
@@ -190,8 +201,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		m_GUITextures.PushBack(pTexture);
-		return Noesis::Ptr<Noesis::Texture>(pTexture);
+		Noesis::Ptr<Noesis::Texture> texture = *pTexture;
+		m_GUITextures.PushBack(texture);
+		return texture;
 	}
 
 	void GUIRenderer::UpdateTexture(Noesis::Texture* pTexture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* pData)

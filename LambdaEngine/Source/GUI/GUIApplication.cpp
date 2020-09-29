@@ -60,7 +60,6 @@ namespace LambdaEngine
 #elif defined(LAMBDA_RELEASE)
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
 #endif
-
 		//Init 25/9
 		Noesis::GUI::Init("IbexOmega", "Uz25EdN1uRHmmJJyF0SjbeNtuCheNvKnJoeAhCTyh/NxhLSa");
 
@@ -72,9 +71,7 @@ namespace LambdaEngine
 
 		Noesis::GUI::LoadApplicationResources("Theme/NoesisTheme.DarkBlue.xaml");
 
-
 		//View Creation
-		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
 		//Noesis::Ptr<Noesis::FrameworkElement> xaml = Noesis::GUI::LoadXaml<Noesis::FrameworkElement>("App.xaml");
 		Noesis::Ptr<Noesis::Grid> xaml(Noesis::GUI::ParseXaml<Noesis::Grid>(R"(
 			<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
@@ -102,6 +99,7 @@ namespace LambdaEngine
 		)"));
 		s_pView = Noesis::GUI::CreateView(xaml);
 		s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
+		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
 		s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
 
 		//Renderer Initialization

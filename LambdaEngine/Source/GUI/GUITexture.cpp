@@ -64,6 +64,21 @@ namespace LambdaEngine
 			return false;
 		}
 
+		PipelineTextureBarrierDesc textureBarrier = { };
+		textureBarrier.pTexture				= m_pTexture;
+		textureBarrier.TextureFlags			= m_pTexture->GetDesc().Flags;
+		textureBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+		textureBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+		textureBarrier.Miplevel				= 0;
+		textureBarrier.ArrayIndex			= 0;
+		textureBarrier.MiplevelCount		= pDesc->MipLevelCount;
+		textureBarrier.ArrayCount			= m_pTexture->GetDesc().ArrayCount;
+		textureBarrier.SrcMemoryAccessFlags = 0;
+		textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN;
+		textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		pCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
+
 		if (pDesc->ppData != nullptr)
 		{
 			for (uint32 m = 0; m < pDesc->MipLevelCount; m++)
@@ -71,7 +86,7 @@ namespace LambdaEngine
 				uint32 width	= pDesc->Width >> m;
 				uint32 height	= pDesc->Height >> m;
 
-				UpdateTexture(pCommandList, m, 0, 0, width, height, pDesc->ppData[m], ECommandQueueType::COMMAND_QUEUE_TYPE_NONE, ETextureState::TEXTURE_STATE_DONT_CARE, 0);
+				UpdateTexture(pCommandList, m, 0, 0, width, height, pDesc->ppData[m], ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0);
 			}
 		}
 
