@@ -32,14 +32,15 @@ void BenchmarkState::Init()
 	TrackSystem::GetInstance().Init();
 
 	TArray<glm::vec3> cameraTrack = {
-		{-2.0f, 1.6f, 1.0f},
-		{9.8f, 1.6f, 0.8f},
-		{9.4f, 1.6f, -3.8f},
-		{-9.8f, 1.6f, -3.9f},
-		{-11.6f, 1.6f, -1.1f},
-		{9.8f, 6.1f, -0.8f},
-		{9.4f, 6.1f, 3.8f},
-		{-9.8f, 6.1f, 3.9f}
+		{-2.0f, 3.0f, 1.0f},
+		{7.8f, 3.0f, 0.8f},
+		{7.4f, 3.0f, -3.8f},
+		{-7.8f, 4.0f, -3.9f},
+		{-7.6f, 4.0f, -2.1f},
+		{7.8f, 6.1f, -0.8f},
+		{7.4f, 6.1f, 3.8f},
+		{0.0f, 6.1f, 3.9f},
+		{0.0f, 4.1f, -3.9f}
 	};
 
 	CameraDesc cameraDesc = {};
@@ -118,27 +119,28 @@ void BenchmarkState::Init()
 		}
 
 		// Directional Light
-		{
+	/*	{
 			m_DirLight = ECSCore::GetInstance()->CreateEntity();
+			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { { 0.0f, 0.0f, 0.0f} });
 			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
 			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-		}
+		}*/
 
 		// Add PointLights
 		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 25.f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 25.f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 25.f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 0.0f, 5.0f},
-				{-4.0f, 0.0f, 5.0f},
-				{0.0f, 0.0f, 5.0f},
+				{4.0f, 2.0f, 5.0f},
+				{-4.0f, 2.0f, 5.0f},
+				{0.0f, 2.0f, 5.0f},
 			};
 
 			for (uint32 i = 0; i < POINT_LIGHT_COUNT; i++)
@@ -152,7 +154,7 @@ void BenchmarkState::Init()
 				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 7.0f, -5.0f));
 				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 6.0f, -8.0f));
 				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 5.0f, -10.0f));
-				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 0.0f, -10.0f));
+				lightPath.PushBack(startPosition[i] + glm::vec3(0.0f, 2.0f, -10.0f));
 
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;

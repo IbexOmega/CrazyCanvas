@@ -1432,9 +1432,10 @@ namespace LambdaEngine
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MagFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
 						samplerDesc.MipmapMode			= RenderGraphSamplerToMipmapMode(pResourceDesc->TextureParams.SamplerType);
-						samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-						samplerDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-						samplerDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+						samplerDesc.AddressModeU		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.AddressModeV		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.AddressModeW		= RenderGraphSamplerAddressMode(pResourceDesc->TextureParams.SamplerAddressMode);
+						samplerDesc.borderColor			= RenderGraphSamplerBorderColor(pResourceDesc->TextureParams.SamplerBorderColor);
 						samplerDesc.MipLODBias			= 0.0f;
 						samplerDesc.AnisotropyEnabled	= false;
 						samplerDesc.MaxAnisotropy		= 16;
@@ -2348,7 +2349,7 @@ namespace LambdaEngine
 					pipelineDesc.DomainShader.ShaderGUID			= pRenderStageDesc->Graphics.Shaders.DomainShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.DomainShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.PixelShader.ShaderGUID				= pRenderStageDesc->Graphics.Shaders.PixelShaderName.empty()	? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->Graphics.Shaders.PixelShaderName,		FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER,		EShaderLang::SHADER_LANG_GLSL);
 					pipelineDesc.BlendState.BlendAttachmentStates	= renderPassBlendAttachmentStates;
-					pipelineDesc.RasterizerState.CullMode			= ECullMode::CULL_MODE_NONE;// pRenderStageDesc->Graphics.CullMode;
+					pipelineDesc.RasterizerState.CullMode			= pRenderStageDesc->Graphics.CullMode;
 					pipelineDesc.RasterizerState.PolygonMode		= pRenderStageDesc->Graphics.PolygonMode;
 					pipelineDesc.InputAssembly.PrimitiveTopology	= pRenderStageDesc->Graphics.PrimitiveTopology;
 

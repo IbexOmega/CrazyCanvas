@@ -13,6 +13,7 @@ namespace LambdaEngine
 		ESamplerAddressMode		AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_NONE;
 		ESamplerAddressMode		AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_NONE;
 		ESamplerAddressMode		AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_NONE;
+		ESamplerBorderColor		borderColor			= ESamplerBorderColor::SAMPLER_BORDER_COLOR_NONE;
 		float32					MipLODBias			= 0.0f;
 		bool					AnisotropyEnabled	= false;
 		float32					MaxAnisotropy		= 1.0f;

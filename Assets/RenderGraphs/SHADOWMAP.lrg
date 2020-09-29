@@ -131,7 +131,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
@@ -275,29 +275,6 @@
             }
         },
         {
-            "name": "INTERMEDIATE_OUTPUT_IMAGE",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 1,
-            "editable": true,
-            "external": false,
-            "type_params": {
-                "texture_format": "FORMAT_R8G8B8A8_UNORM",
-                "is_of_array_type": false,
-                "texture_type": "TEXTURE_2D",
-                "x_dim_type": "RELATIVE",
-                "y_dim_type": "RELATIVE",
-                "x_dim_var": 1.0,
-                "y_dim_var": 1.0,
-                "sample_count": 1,
-                "miplevel_count": 1,
-                "sampler_type": "LINEAR",
-                "sampler_address_mode": "REPEAT",
-                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
-                "memory_type": "MEMORY_TYPE_GPU"
-            }
-        },
-        {
             "name": "DIRL_SHADOWMAP",
             "type": "TEXTURE",
             "back_buffer_bound": false,
@@ -321,7 +298,7 @@
             }
         },
         {
-            "name": "POINTL_SHADOWMAPS",
+            "name": "POINTL_SHADOWMAP",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 8,
@@ -427,7 +404,7 @@
             "name": "BACK_BUFFER_TEXTURE",
             "removable": false,
             "binding_type": "COMBINED_SAMPLER",
-            "src_stage": "FXAA"
+            "src_stage": "SKYBOX_PASS"
         }
     },
     "render_stages": [
@@ -609,55 +586,11 @@
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
-                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": "SHADING_PASS"
-                }
-            ]
-        },
-        {
-            "name": "FXAA",
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "trigger_type": "EVERY",
-            "frame_delay": 0,
-            "frame_offset": 0,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
-            "z_dim_var": 1.0,
-            "draw_type": "FULLSCREEN_QUAD",
-            "depth_test_enabled": false,
-            "cull_mode": "CULL_MODE_BACK",
-            "polygon_mode": "POLYGON_MODE_FILL",
-            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "/Helpers/FullscreenQuad.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "/PostProcess\\FXAA.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "SKYBOX_PASS"
-                },
-                {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": ""
+                    "src_stage": "SHADING_PASS"
                 }
             ]
         },
@@ -790,13 +723,6 @@
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
-                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": ""
-                },
-                {
                     "name": "DIRL_SHADOWMAP",
                     "removable": true,
                     "draw_args_mask": 4294967295,
@@ -804,11 +730,18 @@
                     "src_stage": "DIRL_SHADOWMAP"
                 },
                 {
-                    "name": "POINTL_SHADOWMAPS",
+                    "name": "POINTL_SHADOWMAP",
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "POINTL_SHADOW"
+                },
+                {
+                    "name": "BACK_BUFFER_TEXTURE",
+                    "removable": true,
+                    "draw_args_mask": 4294967295,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": ""
                 }
             ]
         },
@@ -855,7 +788,7 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "POINTL_SHADOWMAPS",
+                    "name": "POINTL_SHADOWMAP",
                     "removable": true,
                     "draw_args_mask": 4294967295,
                     "binding_type": "ATTACHMENT",
