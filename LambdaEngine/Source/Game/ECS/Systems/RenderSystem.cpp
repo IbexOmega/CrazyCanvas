@@ -13,6 +13,7 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/EntityMaskManager.h"
+#include "Rendering/LineRenderer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"

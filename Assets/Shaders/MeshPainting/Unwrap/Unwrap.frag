@@ -14,6 +14,10 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTextur
 
 layout(location = 0) out vec4   out_UnwrappedTexture;
 
+float random (in vec3 x) {
+    return fract(sin(dot(x, vec3(12.9898,78.233, 37.31633)))* 43758.5453123);
+}
+
 void main()
 {
     const vec3 GLOBAL_UP = vec3(0.f, 1.f, 0.f);
@@ -27,7 +31,10 @@ void main()
 
     float dir = step(0.f, dot(normal, -direction));
     vec3 projectedPosition = targetPosition + dot(worldPosToTargetPos,direction)*direction*dir;
-    const float BRUSH_SIZE = 0.5f;
+    
+    //float rand = random(worldPosition);
+
+    float BRUSH_SIZE = 0.1f;
 
     // Calculate uv-coordinates for a square encapsulating the sphere.
     vec3 right = normalize(cross(direction, GLOBAL_UP));
@@ -42,6 +49,6 @@ void main()
     if(brushMask.a > 0.01f && length(worldPosition-projectedPosition) <= BRUSH_SIZE)
         out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
     else
-        discard;
-    //    out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
+    //   discard;
+        out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
 }

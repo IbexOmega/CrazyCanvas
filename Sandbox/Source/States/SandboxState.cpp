@@ -107,7 +107,7 @@ void SandboxState::Init()
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		glm::vec3 position(0.f, 0.f, 2.5f);
+		glm::vec3 position(0.f, 0.f, -4.5f);
 		glm::vec3 scale(1/5.f);
 		glm::quat rotation = glm::identity<glm::quat>();
 
@@ -116,7 +116,7 @@ void SandboxState::Init()
 		const uint32 height = 512;
 		char* data = DBG_NEW char[width * height * 4];
 		memset(data, 0, width * height * 4);
-		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("PlaneUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
+		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("CubeUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
 		SAFEDELETE_ARRAY(data);
 
 		m_Entity = pECS->CreateEntity();
@@ -154,17 +154,17 @@ void SandboxState::Init()
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		glm::vec3 position(0.f, -1.f, 3.f);
+		glm::vec3 position(0.f, -1.f, -4.f);
 		glm::vec3 scale(40.f);
 		glm::quat rotation = glm::rotate(glm::identity<glm::quat>(), glm::radians(-180.f), glm::vec3(0.f, 1.f, 0.f));
 
 		MeshPaintComponent meshPaintComponent;
-		//const uint32 width = 512;
-		//const uint32 height = 512;
-		//char* data = DBG_NEW char[width * height * 4];
-		//memset(data, 0, width * height * 4);
-		//meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("PlaneUnwrappedTexture_2", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-		//SAFEDELETE_ARRAY(data);
+		const uint32 width = 512;
+		const uint32 height = 512;
+		char* data = DBG_NEW char[width * height * 4];
+		memset(data, 0, width* height * 4);
+		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("PlaneUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
+		SAFEDELETE_ARRAY(data);
 
 		Entity entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -173,6 +173,13 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { rotation, true });
 		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
+
+		DrawArgExtensionData drawArgExtensionData = {};
+		drawArgExtensionData.TextureCount = 1;
+		drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
+		drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
+		//drawArgExtensionData.ppSamplers[0] = ;
+		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
 	}
 
 	//Scene

@@ -7,8 +7,15 @@
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
 
+struct MeshPaintExtensionData
+{
+    uint unwrappedTextureIndex;
+}
+
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
+
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer ExtensonsDesc    { SInstance val[]; }        b_Instances;
 
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_Normal;
@@ -38,10 +45,8 @@ void main()
     out_TargetDirection = normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
     out_TargetPosition  = perFrameBuffer.CameraPosition.xyz;
 
-    const float CAPTURE_SIZE = 1.0f;
-    const vec3 UNWRAP_LOCATION = vec3(0.f, 0.f, 0.f);
-
     vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);
-    texCoord = (texCoord*2.f - 1.f)*CAPTURE_SIZE;
-    gl_Position = vec4(vec3(texCoord, 0.f)+UNWRAP_LOCATION, 1.f);
+    texCoord.y = 1.f - texCoord.y;
+    texCoord = (texCoord*2.f - 1.f);
+    gl_Position = vec4(vec3(texCoord, 0.f), 1.f);
 }
