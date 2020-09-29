@@ -148,7 +148,7 @@ void Client::Tick(Timestamp delta)
 
 void Client::FixedTick(Timestamp delta)
 {
-	ClientSystem::GetInstance().FixedTickMainThread(delta);
+	
 }
 
 void Client::RunningBenchMark()

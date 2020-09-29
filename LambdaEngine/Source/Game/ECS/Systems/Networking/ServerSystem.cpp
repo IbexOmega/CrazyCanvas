@@ -17,14 +17,15 @@ namespace LambdaEngine
 		m_pServer(nullptr)
 	{
 		ServerDesc desc = {};
-		desc.Handler = this;
-		desc.MaxRetries = 10;
-		desc.MaxClients = 10;
-		desc.PoolSize = 1024;
-		desc.Protocol = EProtocol::UDP;
-		desc.PingInterval = Timestamp::Seconds(1);
-		desc.PingTimeout = Timestamp::Seconds(3);
-		desc.UsePingSystem = true;
+		desc.Handler				= this;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 3;
+		desc.MaxClients				= 10;
+		desc.PoolSize				= 1024;
+		desc.Protocol				= EProtocol::UDP;
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(3);
+		desc.UsePingSystem			= true;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);

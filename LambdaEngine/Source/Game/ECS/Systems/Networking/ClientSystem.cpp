@@ -101,7 +101,7 @@ namespace LambdaEngine
 			gameState.DeltaLeft			= deltaLeft;
 			gameState.Position			= positionComponent.Position;
 
-			if (deltaForward != 0)
+			/*if (deltaForward != 0)
 			{
 				gameState.Position.z += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaForward;
 			}
@@ -109,7 +109,7 @@ namespace LambdaEngine
 			if (deltaLeft != 0)
 			{
 				gameState.Position.x += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
-			}
+			}*/
 
 			{
 				std::scoped_lock<SpinLock> lock(m_Lock);
@@ -202,7 +202,6 @@ namespace LambdaEngine
 				auto pair = m_Entities.find(networkUID);
 				if (pair != m_Entities.end())
 				{
-					LOG_MESSAGE("Incoming new Position From Server");
 					auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 					PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
@@ -215,9 +214,6 @@ namespace LambdaEngine
 					LOG_ERROR("NetworkUID: %d is not registred on Client", networkUID);
 				}
 			}
-
-
-
 		}
 	}
 

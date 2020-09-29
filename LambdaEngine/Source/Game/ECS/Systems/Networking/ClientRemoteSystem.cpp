@@ -61,48 +61,36 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::TickMainThread(Timestamp deltaTime)
 	{
-		/*if (m_LastProcessedSimulationTick < m_CurrentGameState.SimulationTick)
-		{
-			m_LastProcessedSimulationTick = m_CurrentGameState.SimulationTick;
-			//networkObject.frame = m_CurrentGameState.SimulationTick;
-		}
-		/*networkObject.position = _rigidBody.position;
-		networkObject.rotation = _rigidBody.rotation;*/
+		
 	}
 
 	void ClientRemoteSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
 		if (m_pClient->IsConnected())
 		{
-			// Reset the current input - we don't want to re-use it if there no inputs in the queue
-			//m_CurrentGameState = nullptr;
-
-			// Process all available inputs each frame
+			std::scoped_lock<SpinLock> lock(m_Lock);
+			for (const GameState& gameState : m_Buffer)
 			{
-				std::scoped_lock<SpinLock> lock(m_Lock);
-				for (const GameState& gameState : m_Buffer)
-				{
-					m_CurrentGameState = gameState;
-					PlayerUpdate(m_CurrentGameState);
+				ASSERT(gameState.SimulationTick - 1 == m_CurrentGameState.SimulationTick);
 
-					auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+				m_CurrentGameState = gameState;
+				PlayerUpdate(m_CurrentGameState);
 
-					NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
-					BinaryEncoder encoder(pPacket);
-					encoder.WriteInt32(m_Entity);
-					encoder.WriteInt32(m_CurrentGameState.SimulationTick);
-					encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
-					m_pClient->SendReliableBroadcast(pPacket);
-				}
-				m_Buffer.clear();
+				auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+
+				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
+				BinaryEncoder encoder(pPacket);
+				encoder.WriteInt32(m_Entity);
+				encoder.WriteInt32(m_CurrentGameState.SimulationTick);
+				encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
+				m_pClient->SendReliableBroadcast(pPacket);
 			}
+			m_Buffer.clear();
 		}
 	}
 
 	void ClientRemoteSystem::PlayerUpdate(const GameState& gameState)
 	{
-		// Set the velocity to zero, move the player based on the next input, then detect & resolve collisions
-		//_rigidBody.velocity = Vector2.zero;
 		PlayerMovementSystem::GetInstance().Move(m_Entity, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
 		//PhysicsCollisions();
 	}
