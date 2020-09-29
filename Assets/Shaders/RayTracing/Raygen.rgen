@@ -93,6 +93,6 @@ void main()
         imageStore(u_GBufferPosition,           pixelCoords, vec4(s_PrimaryPayload.HitPosition, 1.0f));
         imageStore(u_GBufferAlbedo,             pixelCoords, vec4(s_PrimaryPayload.Albedo * float(MAX_BOUNCES - b) / float(MAX_BOUNCES), 1.0f));
         imageStore(u_GBufferAORoughMetalValid,  pixelCoords, vec4(s_PrimaryPayload.AO, s_PrimaryPayload.Roughness, s_PrimaryPayload.Metallic, step(Tmin, s_PrimaryPayload.Distance)));
-        imageStore(u_GBufferCompactNormal,      pixelCoords, vec4(DirToOct(s_PrimaryPayload.Normal), 1.0f, 1.0f));
+        imageStore(u_GBufferCompactNormal,      pixelCoords, vec4(PackNormal(s_PrimaryPayload.Normal), 1.0f));
     }
 }
