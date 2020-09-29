@@ -191,7 +191,7 @@ namespace LambdaEngine
 
 			BinaryDecoder decoder(pPacket);
 			int32 networkUID					= decoder.ReadInt32();
-			serverGameState.SimulationTick		= decoder.ReadInt32();//added
+			serverGameState.SimulationTick		= decoder.ReadInt32();
 			serverGameState.Position			= decoder.ReadVec3();
 
 			if (networkUID == m_NetworkUID)

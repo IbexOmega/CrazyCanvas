@@ -126,6 +126,11 @@ namespace LambdaEngine
 		return m_TerminationApproved;
 	}
 
+	void ClientRemoteBase::OnConnectionApproved()
+	{
+		m_pHandler->OnConnected(this);
+	}
+
 	bool ClientRemoteBase::SendUnreliable(NetworkSegment* pPacket)
 	{
 		if (!IsConnected())
@@ -321,7 +326,6 @@ namespace LambdaEngine
 				{
 					m_State = STATE_CONNECTED;
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
-					m_pHandler->OnConnected(this);
 				}
 			}
 			else
