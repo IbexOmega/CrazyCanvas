@@ -3,8 +3,9 @@
 #include "Containers/String.h"
 
 #include "NsGui/UserControl.h"
+#include "NsGui/Grid.h"
 
-class GUITest : public Noesis::UserControl
+class GUITest : public Noesis::Grid
 {
 public:
 	GUITest();
@@ -19,5 +20,5 @@ public:
 private:
 	Noesis::Ptr<Noesis::IView> m_View;
 
-	NS_IMPLEMENT_INLINE_REFLECTION_(GUITest, Noesis::UserControl)
+	NS_IMPLEMENT_INLINE_REFLECTION_(GUITest, Noesis::Grid)
 };

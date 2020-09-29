@@ -479,23 +479,14 @@ namespace LambdaEngine
 			viewport.x			= 0.0f;
 			viewport.y			= 0.0f;
 
-			pRenderCommandList->SetViewports(&viewport, 0, 1);
-
 			ScissorRect scissorRect = { };
 			scissorRect.Width	= width;
 			scissorRect.Height	= height;
 			scissorRect.x		= 0;
 			scissorRect.y		= 0;
 
+			pRenderCommandList->SetViewports(&viewport, 0, 1);
 			pRenderCommandList->SetScissorRects(&scissorRect, 0, 1);
-
-			//pCommandList->SetStencilTestEnabled(batch.renderState.f.stencilMode != Noesis::StencilMode::Disabled);
-			//pCommandList->SetStencilTestOp(
-			//	EStencilFace::STENCIL_FACE_FRONT_AND_BACK, 
-			//	EStencilOp::STENCIL_OP_KEEP,
-			//	NoesisStencilModeToLambdaStencilOp(batch.renderState.f.stencilMode),
-			//	EStencilOp::STENCIL_OP_KEEP,
-			//	ECompareOp::COMPARE_OP_EQUAL);
 			pRenderCommandList->SetStencilTestReference(EStencilFace::STENCIL_FACE_FRONT_AND_BACK, batch.stencilRef);
 
 			pRenderCommandList->BindGraphicsPipeline(pPipelineState);
@@ -504,7 +495,7 @@ namespace LambdaEngine
 		//Draw
 		{
 			uint64 vertexByteOffset = uint64(batch.vertexOffset);
-			uint64 vertexByteSize	= uint64(batch.numVertices * shaderData.VertexSize);
+			//uint64 vertexByteSize	= uint64(batch.numVertices * shaderData.VertexSize);
 
 			pRenderCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
 			pRenderCommandList->BindVertexBuffers(&m_pVertexBuffer, 0, &vertexByteOffset, 1);
