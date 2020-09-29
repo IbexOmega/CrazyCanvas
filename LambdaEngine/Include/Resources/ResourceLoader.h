@@ -46,10 +46,10 @@ namespace LambdaEngine
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
-		String						DirectoryPath;
-		TArray<Mesh*>&				Meshes;
-		TArray<MeshComponent>&		MeshComponents;
-		TArray<Animation*>&			Animations;
+		String							DirectoryPath;
+		TArray<Mesh*>&					Meshes;
+		TArray<MeshComponent>&			MeshComponents;
+		TArray<Animation*>&				Animations;
 		TArray<Material*>*				pMaterials;
 		TArray<Texture*>*				pTextures;
 		THashTable<String, Texture*>	LoadedTextures;
@@ -75,10 +75,11 @@ namespace LambdaEngine
 
 		/*
 		* Load a mesh from file
-		*	filepath - Path to the .obj file
+		*	filepath	- Path to the .obj file
+		*	animations	- The animations in this file
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
-		static Mesh* LoadMeshFromFile(const String& filepath);
+		static Mesh* LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations);
 
 		/*
 		* Load a mesh from memory

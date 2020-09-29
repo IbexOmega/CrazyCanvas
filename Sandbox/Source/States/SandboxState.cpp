@@ -11,6 +11,7 @@
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
@@ -84,7 +85,8 @@ void SandboxState::Init()
 
 	// Robot
 	{
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+		TArray<GUID_Lambda> animations;
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		
@@ -93,7 +95,7 @@ void SandboxState::Init()
 		materialProperties.Roughness	= 1.0f;
 		materialProperties.Metallic		= 1.0f;
 		
-		const uint32 robotMaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
 			robotAlbedoGUID,
 			robotNormalGUID,
@@ -106,6 +108,9 @@ void SandboxState::Init()
 		robotMeshComp.MeshGUID		= robotGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
+		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.AnimationGUID = animations.GetFront();
+
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
 
@@ -114,6 +119,7 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		m_Entities.PushBack(entity);
 	}
 

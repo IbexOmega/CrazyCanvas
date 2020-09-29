@@ -276,7 +276,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(deltaTime);
 
 		ECSCore* pECSCore = ECSCore::GetInstance();
-
 		ComponentArray<PositionComponent>*	pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
 		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
@@ -284,8 +283,8 @@ namespace LambdaEngine
 		ComponentArray<PointLightComponent>* pPointLightComponents = pECSCore->GetComponentArray<PointLightComponent>();
 		for (Entity entity : m_PointLightEntities.GetIDs())
 		{
-			auto& pointLight = pPointLightComponents->GetData(entity);
-			auto& position = pPositionComponents->GetData(entity);
+			auto& pointLight	= pPointLightComponents->GetData(entity);
+			auto& position		= pPositionComponents->GetData(entity);
 			if (position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity);
@@ -303,7 +302,7 @@ namespace LambdaEngine
 			}
 		}
 
-		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
 		for (Entity entity : m_CameraEntities.GetIDs())
 		{
 			auto& cameraComp = pCameraComponents->GetData(entity);

@@ -205,7 +205,7 @@ namespace LambdaEngine
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath)
+	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations)
 	{
 		const int32 assimpFlags =
 			aiProcess_FlipUVs					|
@@ -225,7 +225,6 @@ namespace LambdaEngine
 			aiProcess_FindInvalidData;
 
 		TArray<Mesh*>			meshes;
-		TArray<Animation*>		animations;
 		TArray<MeshComponent>	meshComponent;
 
 		SceneLoadRequest loadRequest =
@@ -264,12 +263,6 @@ namespace LambdaEngine
 			{
 				SAFEDELETE(pMesh);
 			}
-		}
-
-		// DELETES ALL ANIMATIONS HERE FOR NOW TO AVOID MEMORY LEAKS -> Needs system for this
-		for (Animation* pAnimation : animations)
-		{
-			SAFEDELETE(pAnimation);
 		}
 
 		return meshes[biggest];
@@ -973,13 +966,13 @@ namespace LambdaEngine
 		Skeleton* pSkeleton = DBG_NEW Skeleton();
 		pMesh->pSkeleton = pSkeleton;
 
+		pSkeleton->Bones.Resize(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			Skeleton::Bone bone;
+			Skeleton::Bone& bone = pSkeleton->Bones[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			bone.Name = pBoneAI->mName.C_Str();
-			
 			for (uint32 row = 0; row < 4; row++)
 			{
 				ai_real* pRow = pBoneAI->mOffsetMatrix[row];
@@ -995,11 +988,55 @@ namespace LambdaEngine
 				bone.Weights[weightIndex].VertexIndex	= pBoneAI->mWeights[weightIndex].mVertexId;
 				bone.Weights[weightIndex].VertexWeight	= pBoneAI->mWeights[weightIndex].mWeight;
 			}
-
-			pSkeleton->Bones.PushBack(bone);
 		}
 
-		pSkeleton->Bones.ShrinkToFit();
+		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());
+		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		{
+			Skeleton::Bone& bone = pSkeleton->Bones[boneID];
+			for (uint32 weightID = 0; weightID < bone.Weights.GetSize(); weightID++)
+			{
+				const uint32	vertexID	= bone.Weights[weightID].VertexIndex;
+				const float32	weight		= bone.Weights[weightID].VertexWeight;
+
+				VertexBoneData& vertex = pMesh->VertexBoneData[vertexID];
+				if (vertex.Bone0.BoneID == -1)
+				{
+					vertex.Bone0.BoneID = boneID;
+					vertex.Bone0.Weight = weight;
+				}
+				else if (vertex.Bone1.BoneID == -1)
+				{
+					vertex.Bone1.BoneID = boneID;
+					vertex.Bone1.Weight = weight;
+				}
+				else if (vertex.Bone2.BoneID == -1)
+				{
+					vertex.Bone2.BoneID = boneID;
+					vertex.Bone2.Weight = weight;
+				}
+				else if (vertex.Bone3.BoneID == -1)
+				{
+					vertex.Bone3.BoneID = boneID;
+					vertex.Bone3.Weight = weight;
+				}
+				else
+				{
+					LOG_WARNING("More than 4 bones affect this vertex");
+				}
+			}
+		}
+
+#if 0
+		for (VertexBoneData& bone : pMesh->VertexBoneData)
+		{
+			LOG_WARNING("BoneData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
+				bone.Bone0.BoneID, bone.Bone0.Weight,
+				bone.Bone1.BoneID, bone.Bone1.Weight,
+				bone.Bone2.BoneID, bone.Bone2.Weight,
+				bone.Bone3.BoneID, bone.Bone3.Weight);
+		}
+#endif
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
@@ -1093,9 +1130,9 @@ namespace LambdaEngine
 
 		Animation* pAnimation = DBG_NEW Animation();
 		pAnimation->Name			= pAnimationAI->mName.C_Str();
-		pAnimation->Duration		= pAnimationAI->mDuration;
+		pAnimation->DurationInTicks	= pAnimationAI->mDuration;
 		pAnimation->TicksPerSecond	= static_cast<float64>(pAnimationAI->mTicksPerSecond);
-		
+
 		pAnimation->Channels.Resize(pAnimationAI->mNumChannels);
 		for (uint32 channelIndex = 0; channelIndex < pAnimationAI->mNumChannels; channelIndex++)
 		{
@@ -1110,15 +1147,6 @@ namespace LambdaEngine
 				pAnimation->Channels[channelIndex].Positions[i].Value.z = pChannel->mPositionKeys[i].mValue.z;
 			}
 
-			pAnimation->Channels[channelIndex].Rotations.Resize(pChannel->mNumRotationKeys);
-			for (uint32 i = 0; i < pChannel->mNumRotationKeys; i++)
-			{
-				pAnimation->Channels[channelIndex].Rotations[i].Time	= pChannel->mRotationKeys[i].mTime;
-				pAnimation->Channels[channelIndex].Rotations[i].Value.x	= pChannel->mRotationKeys[i].mValue.x;
-				pAnimation->Channels[channelIndex].Rotations[i].Value.y	= pChannel->mRotationKeys[i].mValue.y;
-				pAnimation->Channels[channelIndex].Rotations[i].Value.z	= pChannel->mRotationKeys[i].mValue.z;
-			}
-
 			pAnimation->Channels[channelIndex].Scales.Resize(pChannel->mNumScalingKeys);
 			for (uint32 i = 0; i < pChannel->mNumScalingKeys; i++)
 			{
@@ -1126,6 +1154,16 @@ namespace LambdaEngine
 				pAnimation->Channels[channelIndex].Scales[i].Value.x	= pChannel->mScalingKeys[i].mValue.x;
 				pAnimation->Channels[channelIndex].Scales[i].Value.y	= pChannel->mScalingKeys[i].mValue.y;
 				pAnimation->Channels[channelIndex].Scales[i].Value.z	= pChannel->mScalingKeys[i].mValue.z;
+			}
+
+			pAnimation->Channels[channelIndex].Rotations.Resize(pChannel->mNumRotationKeys);
+			for (uint32 i = 0; i < pChannel->mNumRotationKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Rotations[i].Time	= pChannel->mRotationKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.x	= pChannel->mRotationKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.y	= pChannel->mRotationKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.z	= pChannel->mRotationKeys[i].mValue.z;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.w = pChannel->mRotationKeys[i].mValue.w;
 			}
 		}
 

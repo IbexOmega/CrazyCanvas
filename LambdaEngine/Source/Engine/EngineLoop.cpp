@@ -38,6 +38,7 @@
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Networking/NetworkingSystem.h"
 
@@ -191,6 +192,11 @@ namespace LambdaEngine
 		}
 
 		if (!ResourceManager::Init())
+		{
+			return false;
+		}
+
+		if (!AnimationSystem::GetInstance().Init())
 		{
 			return false;
 		}

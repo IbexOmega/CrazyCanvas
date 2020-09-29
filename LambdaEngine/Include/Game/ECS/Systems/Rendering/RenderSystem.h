@@ -181,12 +181,13 @@ namespace LambdaEngine
 	public:
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
+
 		~RenderSystem() = default;
 
 		bool Init();
 		bool Release();
 
-		void Tick(Timestamp deltaTime) override final;
+		virtual void Tick(Timestamp deltaTime) override final;
 
 		bool Render();
 
@@ -237,11 +238,10 @@ namespace LambdaEngine
 		void UpdateRenderGraph();
 
 	private:
-
-		IDVector				m_DirectionalLightEntities;
-		IDVector				m_PointLightEntities;
-		IDVector				m_RenderableEntities;
-		IDVector				m_CameraEntities;
+		IDVector m_DirectionalLightEntities;
+		IDVector m_PointLightEntities;
+		IDVector m_RenderableEntities;
+		IDVector m_CameraEntities;
 
 		PhysicsRenderer*		m_pPhysicsRenderer	= nullptr;
 
@@ -288,22 +288,21 @@ namespace LambdaEngine
 		//Per Frame
 		PerFrameBuffer		m_PerFrameData;
 
-
-		Buffer*				m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
-		Buffer*				m_pLightsBuffer								= nullptr;
-		Buffer*				m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*				m_pPerFrameBuffer			= nullptr;
+		Buffer*	m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
+		Buffer*	m_pLightsBuffer								= nullptr;
+		Buffer*	m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
+		Buffer*	m_pPerFrameBuffer			= nullptr;
 
 		//Draw Args
 		TSet<uint32>		m_RequiredDrawArgs;
 
 		//Ray Tracing
-		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
-		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
-		uint32					m_MaxInstances					= 0;
-		AccelerationStructure*	m_pTLAS							= nullptr;
-		TArray<PendingBufferUpdate> m_CompleteInstanceBufferPendingCopies;
-		TArray<SBTRecord> m_SBTRecords;
+		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
+		Buffer*						m_pCompleteInstanceBuffer		= nullptr;
+		uint32						m_MaxInstances					= 0;
+		AccelerationStructure*		m_pTLAS							= nullptr;
+		TArray<PendingBufferUpdate>	m_CompleteInstanceBufferPendingCopies;
+		TArray<SBTRecord>			m_SBTRecords;
 
 		//Pending/Dirty
 		bool						m_SBTRecordsDirty					= true;

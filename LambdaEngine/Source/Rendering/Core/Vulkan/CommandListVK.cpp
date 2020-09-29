@@ -113,9 +113,18 @@ namespace LambdaEngine
 
 			VALIDATE(pRenderPassVk != nullptr);
 			
-			inheritanceInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-			inheritanceInfo.pNext					= nullptr;
-			inheritanceInfo.framebuffer				= m_pDevice->GetFrameBuffer(pRenderPassVk, pBeginDesc->ppRenderTargets, pBeginDesc->RenderTargetCount, pBeginDesc->pDepthStencilView, pBeginDesc->Width, pBeginDesc->Height);
+			inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+			inheritanceInfo.pNext = nullptr;
+
+			if (pBeginDesc->ppRenderTargets != nullptr || pBeginDesc->pDepthStencilView != nullptr)
+			{
+				inheritanceInfo.framebuffer = m_pDevice->GetFrameBuffer(pRenderPassVk, pBeginDesc->ppRenderTargets, pBeginDesc->RenderTargetCount, pBeginDesc->pDepthStencilView, pBeginDesc->Width, pBeginDesc->Height);
+			}
+			else
+			{
+				inheritanceInfo.framebuffer = VK_NULL_HANDLE;
+			}
+
 			inheritanceInfo.renderPass				= pRenderPassVk->GetRenderPass();
 			inheritanceInfo.subpass					= pBeginDesc->SubPass;
 			inheritanceInfo.occlusionQueryEnable	= VK_FALSE;
