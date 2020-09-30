@@ -7,7 +7,6 @@
 #include "NsApp/LocalFontProvider.h"
 #include "NsApp/LocalTextureProvider.h"
 #include "NsApp/ThemeProviders.h"
-#include "NsApp/ThemeProviders.h"
 #include "NoesisPCH.h"
 
 #include "Application/API/CommonApplication.h"
@@ -19,6 +18,10 @@ namespace LambdaEngine
 {
 	Noesis::Ptr<Noesis::IView> GUIApplication::s_pView = nullptr;
 	GUIRenderer* GUIApplication::s_pRenderer = nullptr;
+
+	NoesisApp::LocalXamlProvider*		GUIApplication::m_pXAMLProvider		= nullptr;
+	NoesisApp::LocalFontProvider*		GUIApplication::m_pFontProvider		= nullptr;
+	NoesisApp::LocalTextureProvider*	GUIApplication::m_pTextureProvider	= nullptr;
 
 	bool GUIApplication::Init()
 	{
@@ -54,9 +57,17 @@ namespace LambdaEngine
 
 	bool GUIApplication::Release()
 	{
-		s_pView->GetRenderer()->Shutdown();
+		if (s_pView.GetPtr() != nullptr)
+		{
+			s_pView->GetRenderer()->Shutdown();
+			s_pView.Reset();
+		}
+
 		SAFEDELETE(s_pRenderer);
-		s_pView.Reset();
+		
+		m_pXAMLProvider->Release();
+		m_pFontProvider->Release();
+		m_pTextureProvider->Release();
 		Noesis::GUI::Shutdown();
 
 		return true;
@@ -86,11 +97,15 @@ namespace LambdaEngine
 		//Init 25/9
 		Noesis::GUI::Init("IbexOmega", "Uz25EdN1uRHmmJJyF0SjbeNtuCheNvKnJoeAhCTyh/NxhLSa");
 
+		m_pXAMLProvider		= new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml");
+		m_pFontProvider		= new NoesisApp::LocalFontProvider("../Assets/NoesisGUI/Fonts");
+		m_pTextureProvider	= new NoesisApp::LocalTextureProvider("../Assets/NoesisGUI/Textures");
+
 		//Application Resources
 		NoesisApp::SetThemeProviders(
-			new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml"),
-			new NoesisApp::LocalFontProvider("../Assets/NoesisGUI/Fonts"),
-			new NoesisApp::LocalTextureProvider("../Assets/NoesisGUI/Textures"));
+			m_pXAMLProvider,
+			m_pFontProvider,
+			m_pTextureProvider);
 
 		Noesis::GUI::LoadApplicationResources("Theme/NoesisTheme.DarkBlue.xaml");
 

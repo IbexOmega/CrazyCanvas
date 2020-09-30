@@ -85,7 +85,6 @@ namespace LambdaEngine
 		*		else					(*ppExecutionStage) = nullptr;
 		*/
 		virtual void Render(
-			Timestamp delta,
 			uint32 modFrameIndex, 
 			uint32 backBufferIndex, 
 			CommandList** ppFirstExecutionStage,

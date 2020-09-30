@@ -545,7 +545,6 @@ namespace LambdaEngine
 	}
 
 	void GUIRenderer::Render(
-		Timestamp delta,
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
@@ -598,6 +597,9 @@ namespace LambdaEngine
 				descriptorsNowAvailable.Clear();
 			}
 		}
+
+		if (m_View.GetPtr() == nullptr)
+			return;
 
 		//Todo: Use UpdateRenderTree return value
 		m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());

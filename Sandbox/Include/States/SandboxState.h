@@ -9,6 +9,7 @@
 #include "Application/API/Events/KeyEvents.h"
 
 #include "NsCore/Ptr.h"
+#include "NsGui/IView.h"
 
 namespace LambdaEngine
 {
@@ -41,4 +42,5 @@ private:
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
 	Noesis::Ptr<GUITest> m_GUITest;
+	Noesis::Ptr<Noesis::IView> m_View;
 };

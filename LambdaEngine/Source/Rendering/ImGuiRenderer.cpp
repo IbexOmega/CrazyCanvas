@@ -299,13 +299,11 @@ namespace LambdaEngine
 	}
 
 	void ImGuiRenderer::Render(
-		Timestamp delta,
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage)
 	{
-		UNREFERENCED_VARIABLE(delta);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
 		// Update imgui for this frame

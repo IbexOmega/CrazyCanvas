@@ -355,13 +355,11 @@ namespace LambdaEngine
 	}
 
 	void LineRenderer::Render(
-		Timestamp delta,
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage)
 	{
-		UNREFERENCED_VARIABLE(delta);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
 		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];

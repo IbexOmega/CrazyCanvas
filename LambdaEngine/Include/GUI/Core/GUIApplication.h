@@ -9,6 +9,13 @@
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
 
+namespace NoesisApp
+{
+	class LocalXamlProvider;
+	class LocalFontProvider;
+	class LocalTextureProvider;
+}
+
 namespace LambdaEngine
 {
 	class GUIRenderer;
@@ -43,5 +50,9 @@ namespace LambdaEngine
 	private:
 		static Noesis::Ptr<Noesis::IView> s_pView;
 		static GUIRenderer* s_pRenderer;
+
+		static NoesisApp::LocalXamlProvider*	m_pXAMLProvider;
+		static NoesisApp::LocalFontProvider*	m_pFontProvider;
+		static NoesisApp::LocalTextureProvider*	m_pTextureProvider;
 	};
 }

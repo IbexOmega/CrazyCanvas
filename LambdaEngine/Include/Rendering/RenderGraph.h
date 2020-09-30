@@ -356,7 +356,7 @@ namespace LambdaEngine
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.
 		*	If the RenderGraph writes to the Back Buffer it is safe to present the Back Buffer after Render has returned.
 		*/
-		void Render(Timestamp delta, uint64 modFrameIndex, uint32 backBufferIndex);
+		void Render(uint64 modFrameIndex, uint32 backBufferIndex);
 
 		/*
 		* Acquires a general purpose Graphics Command List, this will then be executed before all other Render Stages & Synchronization Stages.

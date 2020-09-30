@@ -719,7 +719,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Render(Timestamp delta, uint64 modFrameIndex, uint32 backBufferIndex)
+	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
 	{
 		m_BackBufferIndex = backBufferIndex;
 
@@ -756,7 +756,6 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 
 						pCustomRenderer->Render(
-							delta,
 							uint32(m_ModFrameIndex), 
 							m_BackBufferIndex, 
 							&m_ppExecutionStages[currentExecutionStage],

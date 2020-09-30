@@ -3,22 +3,13 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
-GUITest::GUITest()
+GUITest::GUITest(const LambdaEngine::String& xamlFile)
 {
+	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 }
 
 GUITest::~GUITest()
 {
-	m_View.Reset();
-}
-
-bool GUITest::Init(const LambdaEngine::String& xamlFile)
-{
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
-	m_View = Noesis::GUI::CreateView(this);
-	LambdaEngine::GUIApplication::SetView(m_View);
-
-	return true;
 }
 
 bool GUITest::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)

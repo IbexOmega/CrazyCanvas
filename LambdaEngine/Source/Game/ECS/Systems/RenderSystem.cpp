@@ -362,7 +362,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderSystem::Render(Timestamp delta)
+	bool RenderSystem::Render()
 	{
 		m_BackBufferIndex = uint32(m_SwapChain->GetCurrentBackBufferIndex());
 
@@ -376,7 +376,7 @@ namespace LambdaEngine
 
 		m_pRenderGraph->Update();
 
-		m_pRenderGraph->Render(delta, m_ModFrameIndex, m_BackBufferIndex);
+		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
 		m_SwapChain->Present();
 
