@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
-#include "Game/ECS/Systems/Networking/InterpolationSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -14,6 +13,8 @@
 namespace LambdaEngine
 {
 	typedef std::unordered_map<uint16, TArray<std::function<void(NetworkSegment*)>>> PacketSubscriberMap;
+
+	class InterpolationSystem;
 
 	class ClientSystem : public ClientBaseSystem, protected IClientHandler
 	{
@@ -45,6 +46,8 @@ namespace LambdaEngine
 		void CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color);
 
 	private:
+		void Init();
+
 		void ReplayGameStatesBasedOnServerGameState(const GameState* gameStates, uint32 count, const GameState& gameStateServer);
 		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
 
@@ -55,7 +58,10 @@ namespace LambdaEngine
 		static ClientSystem& GetInstance()
 		{
 			if (!s_pInstance)
+			{
 				s_pInstance = DBG_NEW ClientSystem();
+				s_pInstance->Init();
+			}
 			return *s_pInstance;
 		}
 
@@ -79,7 +85,7 @@ namespace LambdaEngine
 		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
 		PacketSubscriberMap m_PacketSubscribers;
 
-		InterpolationSystem m_InterpolationSystem;
+		InterpolationSystem* m_pInterpolationSystem;
 
 	private:
 		static ClientSystem* s_pInstance;

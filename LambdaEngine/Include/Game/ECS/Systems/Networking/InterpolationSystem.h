@@ -2,17 +2,12 @@
 
 #include "ECS/System.h"
 
-#include "Game/ECS/Components/Misc/Components.h"
-#include "Game/ECS/Components/Networking/NetworkComponent.h"
-
-
 namespace LambdaEngine
 {
 	class NetworkSegment;
 
 	class InterpolationSystem : public System
 	{
-
 		friend class ClientSystem;
 
 	public:
@@ -20,9 +15,6 @@ namespace LambdaEngine
 		virtual ~InterpolationSystem();
 
 		void Tick(Timestamp deltaTime) override;
-
-		void TickMainThread(Timestamp deltaTime);
-		void FixedTickMainThread(Timestamp deltaTime);
 
 	private:
 		InterpolationSystem();

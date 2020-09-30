@@ -1,4 +1,5 @@
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
+#include "Game/ECS/Systems/Networking/InterpolationSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
 
 #include "Engine/EngineLoop.h"
@@ -30,17 +31,28 @@ namespace LambdaEngine
 		m_LastNetworkSimulationTick(0),
 		m_Entities(),
 		m_NetworkUID(-1),
-		m_InterpolationSystem()
+		m_pInterpolationSystem(nullptr)
 	{
-		ClientDesc clientDesc			= {};
-		clientDesc.PoolSize				= 1024;
-		clientDesc.MaxRetries			= 10;
-		clientDesc.ResendRTTMultiplier	= 5.0F;
-		clientDesc.Handler				= this;
-		clientDesc.Protocol				= EProtocol::UDP;
-		clientDesc.PingInterval			= Timestamp::Seconds(1);
-		clientDesc.PingTimeout			= Timestamp::Seconds(3);
-		clientDesc.UsePingSystem		= true;
+
+	}
+
+	ClientSystem::~ClientSystem()
+	{
+		m_pClient->Release();
+		SAFEDELETE(m_pInterpolationSystem);
+	}
+
+	void ClientSystem::Init()
+	{
+		ClientDesc clientDesc = {};
+		clientDesc.PoolSize = 1024;
+		clientDesc.MaxRetries = 10;
+		clientDesc.ResendRTTMultiplier = 5.0F;
+		clientDesc.Handler = this;
+		clientDesc.Protocol = EProtocol::UDP;
+		clientDesc.PingInterval = Timestamp::Seconds(1);
+		clientDesc.PingTimeout = Timestamp::Seconds(3);
+		clientDesc.UsePingSystem = true;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
@@ -56,11 +68,8 @@ namespace LambdaEngine
 
 		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
 		SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&ClientSystem::OnPacketPlayerAction, this, std::placeholders::_1));
-	}
 
-	ClientSystem::~ClientSystem()
-	{
-		m_pClient->Release();
+		m_pInterpolationSystem = DBG_NEW InterpolationSystem();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)

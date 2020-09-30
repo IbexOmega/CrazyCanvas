@@ -26,6 +26,11 @@ namespace LambdaEngine
 		ClientSystem::GetInstance().SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&InterpolationSystem::OnPacketCreateEntity, this, std::placeholders::_1));
 	}
 
+	InterpolationSystem::~InterpolationSystem()
+	{
+
+	}
+
 	void InterpolationSystem::Tick(Timestamp deltaTime)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
@@ -33,7 +38,6 @@ namespace LambdaEngine
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 		Timestamp currentTime	= EngineLoop::GetTimeSinceStart();
-		Timestamp deltaTime;
 		float64 percentage;
 
 		for (auto& entity : m_InterpolationEntities)
