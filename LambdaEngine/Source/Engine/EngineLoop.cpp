@@ -40,7 +40,9 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
-#include "Game/ECS/Systems/Networking/NetworkingSystem.h"
+#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+#include "Game/ECS/Systems/Networking/ClientSystem.h"
+#include "Game/ECS/Systems/Networking/ServerSystem.h"
 
 namespace LambdaEngine
 {
@@ -74,8 +76,8 @@ namespace LambdaEngine
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
-				FixedTick(fixedClock.GetDeltaTime());
-
+				FixedTick(g_FixedTimestep);
+				
 				accumulator -= g_FixedTimestep;
 			}
 		}
@@ -101,6 +103,8 @@ namespace LambdaEngine
 
 		AudioSystem::Tick();
 
+		ClientSystem::StaticTickMainThread(delta);
+		ServerSystem::StaticTickMainThread(delta);
 		CameraSystem::GetInstance().MainThreadTick(delta);
 		StateManager::GetInstance()->Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
@@ -115,6 +119,9 @@ namespace LambdaEngine
 	{
 		Game::Get().FixedTick(delta);
 
+		PlayerMovementSystem::GetInstance().FixedTick(delta);
+		ClientSystem::StaticFixedTickMainThread(delta);
+		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
 	}
 
@@ -216,7 +223,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!NetworkingSystem::GetInstance().Init())
+		if (!PlayerMovementSystem::GetInstance().Init())
 		{
 			return false;
 		}
@@ -287,6 +294,8 @@ namespace LambdaEngine
 
 	bool EngineLoop::PostRelease()
 	{
+		ClientSystem::StaticRelease();
+		ServerSystem::StaticRelease();
 		Thread::Release();
 		PlatformNetworkUtils::PostRelease();
 

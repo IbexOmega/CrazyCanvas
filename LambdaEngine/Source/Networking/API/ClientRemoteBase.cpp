@@ -165,6 +165,11 @@ namespace LambdaEngine
 		return m_pServer->GetClients();
 	}
 
+	ServerBase* ClientRemoteBase::GetServer()
+	{
+		return m_pServer;
+	}
+
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
 	{
 		return GetPacketManager()->GetEndPoint();

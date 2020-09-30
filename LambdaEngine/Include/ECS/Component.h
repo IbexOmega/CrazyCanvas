@@ -11,7 +11,25 @@
 		FORCEINLINE static const ComponentType* Type() \
 		{ \
 			return &s_Type; \
-		}
+		} \
+		static constexpr bool HasDirtyFlag() \
+		{ \
+			return false; \
+		} \
+
+#define DECL_COMPONENT_WITH_DIRTY_FLAG(Component) \
+	protected: \
+		inline static constexpr const ComponentType s_Type = ComponentType(#Component); \
+	public: \
+		FORCEINLINE static const ComponentType* Type() \
+		{ \
+			return &s_Type; \
+		} \
+		static constexpr bool HasDirtyFlag() \
+		{ \
+			return true; \
+		} \
+		bool Dirty = true \
 
 namespace LambdaEngine
 {
@@ -32,5 +50,12 @@ namespace LambdaEngine
 	{
 	public:
 		virtual TArray<ComponentAccess> ToArray() const = 0;
+	};
+
+	template <typename Comp>
+	struct ComponentOwnership
+	{
+		// Called just before deleting a component
+		std::function<void(Comp&)> Destructor;
 	};
 }

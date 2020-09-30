@@ -32,7 +32,6 @@ namespace LambdaEngine
 	private:
 		const ConstString m_ClassName;
 	};
-
 }
 
 namespace std
@@ -40,9 +39,9 @@ namespace std
 	template<>
 	struct hash<const LambdaEngine::ComponentType*>
 	{
-		size_t operator()(const LambdaEngine::ComponentType* pComponentType) const
+		size_t operator()(const LambdaEngine::ComponentType* componentType) const
 		{
-			return pComponentType->GetHash();
+			return componentType->GetHash();
 		}
 	};
 }
