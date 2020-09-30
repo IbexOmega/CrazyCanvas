@@ -2985,6 +2985,9 @@ namespace LambdaEngine
 		}
 		else
 		{
+			if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
+				if (pDesc->ExternalTextureUpdate.HasDynamicSubResourceCount)
+					pResource->SubResourceCount = pDesc->ExternalTextureUpdate.DynamicSubResourceCount;
 			actualSubResourceCount = pResource->SubResourceCount;
 		}
 

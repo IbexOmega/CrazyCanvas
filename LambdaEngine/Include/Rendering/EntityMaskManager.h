@@ -12,14 +12,6 @@ namespace LambdaEngine
 	class TextureView;
 	class Buffer;
 
-	typedef uint32 FDrawArgExtensionFlags;
-	enum FDrawArgExtensionFlag : FDrawArgExtensionFlags
-	{
-		DRAW_ARG_EXTENSION_TYPE_NONE		= 0,
-		DRAW_ARG_EXTENSION_TYPE_TEXTURE_2D	= FLAG(1),
-		DRAW_ARG_EXTENSION_TYPE_BUFFER		= FLAG(2)
-	};
-
 	struct DrawArgExtensionGroupEntry
 	{
 		uint32					Mask = 0;
@@ -38,9 +30,9 @@ namespace LambdaEngine
 
 		static TArray<uint32> ExtractComponentMasksFromEntityMask(uint32 mask);
 
-	private:
 		static uint32 GetExtensionMask(const ComponentType* type);
 
+	private:
 		static void CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData& src);
 
 		static THashTable<const ComponentType*, uint32>			s_ComponentTypeToMaskMap;

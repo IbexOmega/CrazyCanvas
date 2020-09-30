@@ -3,19 +3,12 @@
 #extension GL_ARB_shader_draw_parameters : enable
 #extension GL_GOOGLE_include_directive : enable
 
-#include "../../Defines.glsl"
+#include "../Defines.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
 
-struct MeshPaintExtensionData
-{
-    uint unwrappedTextureIndex;
-}
-
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
-
-layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer ExtensonsDesc    { SInstance val[]; }        b_Instances;
 
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_Normal;
@@ -42,7 +35,7 @@ void main()
     out_WorldPosition   = worldPosition.xyz;
     out_Normal          = normal;
 
-    out_TargetDirection = normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
+    out_TargetDirection = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
     out_TargetPosition  = perFrameBuffer.CameraPosition.xyz;
 
     vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);

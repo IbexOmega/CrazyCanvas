@@ -1903,15 +1903,41 @@ namespace LambdaEngine
 		constexpr const int32 RENDER_GRAPH_NAME_BUFFER_LENGTH = 256;
 		static char renderGraphNameBuffer[RENDER_GRAPH_NAME_BUFFER_LENGTH];
 
-		ImGui::SetNextWindowSize(ImVec2(360, 120));
+		ImGui::SetNextWindowSize(ImVec2(360, 250));
 		if (ImGui::BeginPopupModal("Save Render Graph ##Popup"))
 		{
+			TArray<String> filesInDirectory = EnumerateFilesInDirectory("../Assets/RenderGraphs/", true);
+			TArray<const char*> renderGraphFilesInDirectory;
+
+			for (auto fileIt = filesInDirectory.begin(); fileIt != filesInDirectory.end(); fileIt++)
+			{
+				String& filename = *fileIt;
+
+				if (filename.find(".lrg") != String::npos)
+				{
+					size_t pos = filename.rfind(".lrg");
+					filename = filename.substr(0, pos);
+					renderGraphFilesInDirectory.PushBack(filename.c_str());
+				}
+			}
+
+			static int32 selectedIndex = -1;
+
+			if (selectedIndex >= int32(renderGraphFilesInDirectory.GetSize())) selectedIndex = renderGraphFilesInDirectory.GetSize() - 1;
+			ImGui::ListBox("##Render Graph Files", &selectedIndex, renderGraphFilesInDirectory.GetData(), (int32)renderGraphFilesInDirectory.GetSize());
+
 			ImGui::Text("Render Graph Name:");
 			ImGui::SameLine();
-			ImGui::InputText("##Render Graph Name", renderGraphNameBuffer, RENDER_GRAPH_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
+			if (ImGui::InputText("##Render Graph Name", renderGraphNameBuffer, RENDER_GRAPH_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				selectedIndex = -1;
+			}
 
 			bool done = false;
 			bool renderGraphNameEmpty = renderGraphNameBuffer[0] == 0;
+
+			if(selectedIndex != -1)
+				strcpy(renderGraphNameBuffer, renderGraphFilesInDirectory[selectedIndex]);
 
 			if (renderGraphNameEmpty)
 			{

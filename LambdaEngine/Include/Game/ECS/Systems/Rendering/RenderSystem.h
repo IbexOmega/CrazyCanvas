@@ -38,6 +38,7 @@ namespace LambdaEngine
 	class GraphicsDevice;
 	class CommandAllocator;
 	class LineRenderer;
+	class PaintMaskRenderer;
 
 	struct RenderGraphStructureDesc;
 
@@ -111,8 +112,7 @@ namespace LambdaEngine
 			Buffer*				pMeshlets				= nullptr;
 			uint32				MeshletCount			= 0;
 
-			DrawArgExtensionGroup*	ppExtensionGroups[MAX_EXTENSION_GROUPS_PER_MESH_TYPE];
-			uint32					ExtensionGroupCount = 0;
+			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
 
 			Buffer*				pASInstanceBuffer		= nullptr;
 			Buffer*				ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
@@ -247,17 +247,18 @@ namespace LambdaEngine
 		IDVector				m_RenderableEntities;
 		IDVector				m_CameraEntities;
 
-		LineRenderer*		m_pLineRenderer	= nullptr;
+		LineRenderer*			m_pLineRenderer			= nullptr;
+		PaintMaskRenderer*		m_pPaintMaskRenderer	= nullptr;
 
-		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
-		Texture**				m_ppBackBuffers		= nullptr;
-		TextureView**			m_ppBackBufferViews	= nullptr;
-		RenderGraph*			m_pRenderGraph		= nullptr;
-		uint64					m_FrameIndex		= 0;
-		uint64					m_ModFrameIndex		= 0;
-		uint32					m_BackBufferIndex	= 0;
-		bool					m_RayTracingEnabled	= false;
-		bool					m_MeshShadersEnabled = false;
+		TSharedRef<SwapChain>	m_SwapChain				= nullptr;
+		Texture**				m_ppBackBuffers			= nullptr;
+		TextureView**			m_ppBackBufferViews		= nullptr;
+		RenderGraph*			m_pRenderGraph			= nullptr;
+		uint64					m_FrameIndex			= 0;
+		uint64					m_ModFrameIndex			= 0;
+		uint32					m_BackBufferIndex		= 0;
+		bool					m_RayTracingEnabled		= false;
+		bool					m_MeshShadersEnabled	= false;
 		//Mesh/Instance/Entity
 		bool						m_LightsDirty			= true;
 		bool						m_LightsResourceDirty	= false;
@@ -301,6 +302,10 @@ namespace LambdaEngine
 		//Draw Args
 		TSet<uint32>		m_RequiredDrawArgs;
 
+		// Draw Args Extensions
+		TArray<Texture*>		m_PaintMaskTextures;
+		TArray<TextureView*>	m_PaintMaskTextureViews;
+
 		//Ray Tracing
 		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
 		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
@@ -315,6 +320,7 @@ namespace LambdaEngine
 		bool						m_MaterialsPropertiesBufferDirty	= true;
 		bool						m_MaterialsResourceDirty			= true;
 		bool						m_PerFrameResourceDirty				= true;
+		bool						m_PaintMaskResourcesDirty			= true;
 		TSet<uint32>				m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;

@@ -5,11 +5,30 @@
 
 namespace LambdaEngine
 {
+	class CommandAllocator;
+	class DeviceAllocator;
+	class GraphicsDevice;
+	class PipelineLayout;
+	class DescriptorHeap;
+	class DescriptorSet;
+	class PipelineState;
+	class CommandList;
+	class TextureView;
+	class CommandList;
+	class RenderPass;
+	class Texture;
+	class Sampler;
+	class Shader;
+	class Buffer;
+	class Window;
+
 	class PaintMaskRenderer : public ICustomRenderer
 	{
 	public:
 		PaintMaskRenderer();
 		~PaintMaskRenderer();
+
+		bool init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 		virtual void PreBuffersDescriptorSetWrite() override final;
@@ -34,5 +53,43 @@ namespace LambdaEngine
 		}
 
 	private:
+		bool CreateCopyCommandList();
+		bool CreateBuffers();
+		bool CreatePipelineLayout();
+		bool CreateDescriptorSet();
+		bool CreateShaders();
+		bool CreateCommandLists();
+		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
+		bool CreatePipelineState();
+
+		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
+
+	private:
+		const GraphicsDevice* m_pGraphicsDevice = nullptr;
+
+		uint32 m_BackBufferCount = 0;
+		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		TSharedRef<const TextureView>			m_DepthStencilBuffer;
+
+		TSharedRef<CommandAllocator>	m_CopyCommandAllocator = nullptr;
+		TSharedRef<CommandList>			m_CopyCommandList = nullptr;
+
+		CommandAllocator** m_ppRenderCommandAllocators = nullptr;
+		CommandList** m_ppRenderCommandLists = nullptr;
+
+		uint64						m_PipelineStateID = 0;
+		TSharedRef<PipelineLayout>	m_PipelineLayout = nullptr;
+		TSharedRef<DescriptorHeap>	m_DescriptorHeap = nullptr;
+		TSharedRef<DescriptorSet>	m_DescriptorSet = nullptr;
+
+		GUID_Lambda m_VertexShaderGUID = 0;
+		GUID_Lambda m_PixelShaderGUID = 0;
+
+		TSharedRef<RenderPass> m_RenderPass = nullptr;
+
+		TSharedRef<Sampler> m_Sampler = nullptr;
+
+		//THashTable<String, TArray<TSharedRef<DescriptorSet>>>		m_BufferResourceNameDescriptorSetsMap;
+		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }

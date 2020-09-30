@@ -14,6 +14,7 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
+#include "Rendering/PaintMaskRenderer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -130,6 +131,14 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 			}
 
+			// Add paint mask renderer to the custom renderers inside the render graph.
+			{
+				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
+				m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
+			}
+
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
 			{
@@ -231,6 +240,7 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(m_pLineRenderer);
+		SAFEDELETE(m_pPaintMaskRenderer);
 
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
@@ -378,6 +388,8 @@ namespace LambdaEngine
 		renderGraphDesc.Name						= name;
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+
+		// TODO: Fill custom renderes also!
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
@@ -664,12 +676,26 @@ namespace LambdaEngine
 				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
 				if (entityMask > 1) // If the entity has extensions add them to the entry.
 				{
-					DrawArgExtensionGroup& exntesionGroup = EntityMaskManager::GetExtensionGroup(entity);
-					meshEntry.ppExtensionGroups[meshEntry.ExtensionGroupCount] = &exntesionGroup;
+					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
+
+					uint32 numExtensions = extensionGroup.ExtensionCount;
+					for (uint32 e = 0; e < numExtensions; e++)
+					{
+						// This might be too specific. Try to make this more general. 
+						uint32 mask = extensionGroup.pExtensionMasks[e];
+						if (mask == EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
+						{
+							m_PaintMaskTextures.PushBack(extensionGroup.pExtensions[e].ppTextures[0]);
+							m_PaintMaskTextureViews.PushBack(extensionGroup.pExtensions[e].ppTextureViews[0]);
+							m_PaintMaskResourcesDirty = true;
+						}
+					}
 				}
-				// Assume all instances of this mesh have extension groups! (This should not be the case, but it works for initial testing)
-				// TODO: Change this!
-				meshEntry.ExtensionGroupCount++;
+				else
+				{
+					meshEntry.ExtensionGroups.PushBack(nullptr);
+				}
 			}
 		}
 
@@ -993,7 +1019,7 @@ namespace LambdaEngine
 			drawArg.pUniqueIndicesBuffer	= meshAndInstancesIt->second.pUniqueIndices;
 			drawArg.pPrimitiveIndices		= meshAndInstancesIt->second.pPrimitiveIndices;
 
-			drawArg.ppExtensionGroups = meshAndInstancesIt->second.ppExtensionGroups;
+			drawArg.ppExtensionGroups = meshAndInstancesIt->second.ExtensionGroups.GetData();
 
 			drawArgs.PushBack(drawArg);
 		}
@@ -1555,6 +1581,23 @@ namespace LambdaEngine
 
 				m_TLASResourceDirty = false;
 			}
+		}
+
+		if (m_PaintMaskResourcesDirty)
+		{
+			const uint32 count = m_PaintMaskTextures.GetSize();
+			TArray<Sampler*> linearSamplers(count, Sampler::GetLinearSampler());
+
+			ResourceUpdateDesc paintMaskTextureMapUpdateDesc = {};
+			paintMaskTextureMapUpdateDesc.ResourceName = PAINT_MASK_TEXTURES;
+			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.ppTextures = m_PaintMaskTextures.GetData();
+			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_PaintMaskTextureViews.GetData();
+			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.ppSamplers = linearSamplers.GetData();
+			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.HasDynamicSubResourceCount = true;
+			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.DynamicSubResourceCount = count;
+			m_pRenderGraph->UpdateResource(&paintMaskTextureMapUpdateDesc);
+
+			m_PaintMaskResourcesDirty = false;
 		}
 	}
 }

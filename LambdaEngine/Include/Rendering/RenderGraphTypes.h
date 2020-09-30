@@ -30,6 +30,8 @@ namespace LambdaEngine
 	constexpr const char* SCENE_ROUGHNESS_MAPS					= "SCENE_ROUGHNESS_MAPS";
 	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
 
+	constexpr const char* PAINT_MASK_TEXTURES = "PAINT_MASK_TEXTURES";
+
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4; 
 
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0; 
