@@ -16,7 +16,6 @@ void main()
 	s_PrimaryPayload.Normal		        = vec3(0.0f);
 	s_PrimaryPayload.Albedo			    = albedo;
     s_PrimaryPayload.Roughness			= 0.0f;
-	s_PrimaryPayload.Roughness			= 0.0f;
 	s_PrimaryPayload.Metallic			= 0.0f;
 	s_PrimaryPayload.Distance			= 0.0f;
 }
