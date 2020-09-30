@@ -36,8 +36,6 @@
 
 using namespace LambdaEngine;
 
-
-using namespace LambdaEngine;
 SandboxState::SandboxState()
 {
 
@@ -49,8 +47,6 @@ SandboxState::SandboxState(LambdaEngine::State* pOther) : LambdaEngine::State(pO
 
 SandboxState::~SandboxState()
 {
-	int32 ref = m_GUITest->GetNumReferences();
-
 	m_GUITest.Reset();
 	m_View.Reset();
 	// Remove System
