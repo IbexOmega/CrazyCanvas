@@ -47,7 +47,7 @@ namespace LambdaEngine
 				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
 				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 				.Position = cameraDesc.Position,
-				.Volume = 0.065f
+				.Volume = 0.055f
 		};
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });

@@ -136,7 +136,7 @@ void SandboxState::Init()
 				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
 				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 				.Position = position,
-				.Volume = 0.035f
+				.Volume = 0.03f
 		};
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });

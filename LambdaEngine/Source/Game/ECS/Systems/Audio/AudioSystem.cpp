@@ -15,7 +15,6 @@ namespace LambdaEngine
 	bool AudioSystem::Init()
 	{
 		{
-
 			TransformComponents transformComponents;
 			transformComponents.Position.Permissions = R;
 			transformComponents.Scale.Permissions = R;
@@ -70,6 +69,7 @@ namespace LambdaEngine
 
 			pListenerComponent.Desc.Position = pPositionComponent.Position;
 			pListenerComponent.Desc.Forward = GetForward(pRotationComponent.Quaternion);
+
 			AudioAPI::GetDevice()->UpdateAudioListener(pListenerComponent.ListenerId, &pListenerComponent.Desc);
 		}
 
@@ -90,13 +90,10 @@ namespace LambdaEngine
 			if (cameraComponent.IsActive && isMoving)
 			{
 				pSoundInstance->Play();
-				LOG_MESSAGE("%d is playing now", entity);
 			}
 			else
 			{
 				pSoundInstance->Pause();
-				LOG_MESSAGE("%d is stop now. Repeat: %d", entity);
-
 			}
 		}
 	}
