@@ -302,9 +302,13 @@ namespace LambdaEngine
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
-		CommandList** ppSecondaryExecutionStage)
+		CommandList** ppSecondaryExecutionStage,
+		bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+
+		if (Sleeping)
+			return;
 
 		// Update imgui for this frame
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();

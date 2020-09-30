@@ -103,7 +103,8 @@ namespace LambdaEngine
 			uint32 modFrameIndex, 
 			uint32 backBufferIndex, 
 			CommandList** ppFirstExecutionStage, 
-			CommandList** ppSecondaryExecutionStage) override final;
+			CommandList** ppSecondaryExecutionStage,
+			bool Sleeping) override final;
 
 		void SetView(Noesis::Ptr<Noesis::IView> view);
 

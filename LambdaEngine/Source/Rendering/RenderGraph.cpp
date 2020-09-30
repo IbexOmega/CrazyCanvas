@@ -445,7 +445,7 @@ namespace LambdaEngine
 		if (it != m_RenderStageMap.end())
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[it->second];
-			pRenderStage->Sleeping = true;
+			pRenderStage->Sleeping = sleeping;
 		}
 		else
 		{
@@ -775,7 +775,8 @@ namespace LambdaEngine
 							uint32(m_ModFrameIndex), 
 							m_BackBufferIndex, 
 							&m_ppExecutionStages[currentExecutionStage],
-							&m_ppExecutionStages[currentExecutionStage + 1]);
+							&m_ppExecutionStages[currentExecutionStage + 1],
+							pRenderStage->Sleeping);
 
 						currentExecutionStage += 2;
 					}
