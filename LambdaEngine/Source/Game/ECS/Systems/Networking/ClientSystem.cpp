@@ -255,9 +255,9 @@ namespace LambdaEngine
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		pECS->AddComponent<PositionComponent>(entity,		{ position, true });
-		pECS->AddComponent<RotationComponent>(entity,		{ glm::identity<glm::quat>(), true });
-		pECS->AddComponent<ScaleComponent>(entity,			{ glm::vec3(1.0f), true });
+		pECS->AddComponent<PositionComponent>(entity,		{ true, position });
+		pECS->AddComponent<RotationComponent>(entity,		{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(entity,			{ true, glm::vec3(1.0f) });
 		pECS->AddComponent<MeshComponent>(entity,			meshComponent);
 		pECS->AddComponent<NetworkComponent>(entity,		{ networkUID });
 
@@ -298,7 +298,7 @@ namespace LambdaEngine
 				//Replay all game states since the game state which resulted in prediction ERROR
 				for (uint32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
 				{
-					PlayerUpdate(m_FramesToReconcile[i]); 
+					PlayerUpdate(m_FramesToReconcile[i]);
 				}
 			}
 

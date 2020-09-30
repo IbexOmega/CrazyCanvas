@@ -40,9 +40,9 @@ void PlaySessionState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { position, true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<PositionComponent>(entity, { true, position });
+			pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
@@ -81,9 +81,9 @@ void PlaySessionState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(entity, { position, true });
-				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PositionComponent>(entity, { true, position });
+				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
 			}
 		}
@@ -117,9 +117,6 @@ void PlaySessionState::Init()
 			const float RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float positive = std::pow(-1.0, i);
-
-
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;
 				materialProperties.Albedo = glm::vec4(color, 1.0f);
@@ -138,9 +135,9 @@ void PlaySessionState::Init()
 					materialProperties);
 
 				Entity pt = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(pt, { startPosition[i], true });
-				pECS->AddComponent<ScaleComponent>(pt, { glm::vec3(0.4f), true });
-				pECS->AddComponent<RotationComponent>(pt, { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PositionComponent>(pt, { true, startPosition[i] });
+				pECS->AddComponent<ScaleComponent>(pt, { true, glm::vec3(0.4f) });
+				pECS->AddComponent<RotationComponent>(pt, { true, glm::identity<glm::quat>() });
 				pECS->AddComponent<PointLightComponent>(pt, pointLights[i]);
 				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
@@ -165,9 +162,9 @@ void PlaySessionState::Init()
 
 		Entity entity = ECSCore::GetInstance()->CreateEntity();
 
-		pECS->AddComponent<PositionComponent>(entity, { {0.0f, 3.0f, -7.0f}, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
-		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.5f), true });
+		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
+		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
 }
