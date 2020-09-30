@@ -46,7 +46,8 @@ namespace LambdaEngine
 
 			deltaTime = currentTime - interpolationComponent.StartTimestamp;
 			percentage = deltaTime.AsSeconds() / interpolationComponent.Duration.AsSeconds();
-			LOG_MESSAGE("Percentage: %f", percentage);
+			percentage = percentage > 1.0f ? 1.0f : percentage < 0.0f ? 0.0f : percentage;
+
 			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, pPositionComponent.Position, percentage);
 			
 			pPositionComponent.Dirty = true;
