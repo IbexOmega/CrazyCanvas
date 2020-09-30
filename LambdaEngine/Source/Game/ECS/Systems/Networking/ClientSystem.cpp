@@ -215,8 +215,6 @@ namespace LambdaEngine
 
 	void ClientSystem::OnPacketPlayerAction(NetworkSegment* pPacket)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-
 		GameState serverGameState = {};
 
 		BinaryDecoder decoder(pPacket);
@@ -227,15 +225,6 @@ namespace LambdaEngine
 		if (IsLocalClient(networkUID))
 		{
 			m_FramesProcessedByServer.PushBack(serverGameState);
-		}
-		else
-		{
-			/*auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-
-			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityFromNetworkUID(networkUID));
-			
-			positionComponent.Position	= serverGameState.Position;
-			positionComponent.Dirty		= true;*/
 		}
 	}
 

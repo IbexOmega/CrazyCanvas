@@ -22,7 +22,7 @@ namespace LambdaEngine
 		void OnPacketPlayerAction(NetworkSegment* pPacket);
 		void OnEntityCreated(Entity entity, int32 networkUID);
 
-		void Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float64 percentage);
+		void Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage);
 
 	private:
 		IDVector m_InterpolationEntities;

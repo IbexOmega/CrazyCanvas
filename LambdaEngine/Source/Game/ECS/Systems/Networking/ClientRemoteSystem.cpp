@@ -42,7 +42,7 @@ namespace LambdaEngine
 		m_NetworkEntities(),
 		m_Buffer(),
 		m_pClient(nullptr),
-		m_EntityPlayer(-1),
+		m_EntityPlayer(UINT32_MAX),
 		m_CurrentGameState(),
 		m_Color()
 	{

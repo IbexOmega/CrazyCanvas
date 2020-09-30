@@ -48,7 +48,7 @@ namespace LambdaEngine
 			percentage = deltaTime.AsSeconds() / interpolationComponent.Duration.AsSeconds();
 			percentage = percentage > 1.0f ? 1.0f : percentage < 0.0f ? 0.0f : percentage;
 
-			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, pPositionComponent.Position, percentage);
+			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, pPositionComponent.Position, (float32)percentage);
 			
 			pPositionComponent.Dirty = true;
 		}
@@ -100,7 +100,7 @@ namespace LambdaEngine
 		}
 	}
 	
-	void InterpolationSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float64 percentage)
+	void InterpolationSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage)
 	{
 		result.x = (end.x - start.x) * percentage + start.x;
 		result.y = (end.y - start.y) * percentage + start.y;
