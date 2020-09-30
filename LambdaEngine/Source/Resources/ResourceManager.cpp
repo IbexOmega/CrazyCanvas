@@ -45,6 +45,22 @@ namespace LambdaEngine
 
 	std::unordered_map<GUID_Lambda, ResourceManager::ShaderLoadDesc>		ResourceManager::s_ShaderLoadConfigurations;
 
+	CommandAllocator* ResourceManager::s_pMaterialComputeCommandAllocator	= nullptr;
+	CommandAllocator* ResourceManager::s_pMaterialGraphicsCommandAllocator	= nullptr;
+
+	CommandList* ResourceManager::s_pMaterialComputeCommandList		= nullptr;
+	CommandList* ResourceManager::s_pMaterialGraphicsCommandList	= nullptr;
+
+	Fence* ResourceManager::s_pMaterialFence = nullptr;
+
+	DescriptorHeap* ResourceManager::s_pMaterialDescriptorHeap	= nullptr;
+	DescriptorSet* ResourceManager::s_pMaterialDescriptorSet	= nullptr;
+
+	PipelineLayout* ResourceManager::s_pMaterialPipelineLayout	= nullptr;
+	PipelineState* ResourceManager::s_pMaterialPipelineState	= nullptr;
+
+	GUID_Lambda ResourceManager::s_MaterialShaderGUID = GUID_NONE;
+
 	bool ResourceManager::Init()
 	{
 		InitDefaultResources();
@@ -446,63 +462,92 @@ namespace LambdaEngine
 		uint32 largestHeight = std::max(pMaterial->pMetallicMap->GetDesc().Width, std::max(pMaterial->pRoughnessMap->GetDesc().Width, pMaterial->pAmbientOcclusionMap->GetDesc().Width));
 		uint32 largestWidth = std::max(pMaterial->pMetallicMap->GetDesc().Height, std::max(pMaterial->pRoughnessMap->GetDesc().Height, pMaterial->pAmbientOcclusionMap->GetDesc().Height));
 
-		// Create Command List
-		CommandAllocator* computeCmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-		CommandAllocator* graphicsCmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		Texture* pCombinedMaterialTexture;
+		TextureView* pCombinedMaterialTextureView;
 
-		CommandListDesc commandListDesc = { };
-		commandListDesc.DebugName			= "Compute Command List";
-		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-		commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-
-		CommandList* computeCmdList = RenderAPI::GetDevice()->CreateCommandList(computeCmdAllocator, &commandListDesc);
-
-		commandListDesc.DebugName = "Graphics Command List";
-		CommandList* graphicsCmdList = RenderAPI::GetDevice()->CreateCommandList(graphicsCmdAllocator, &commandListDesc);
-		computeCmdList->Begin(nullptr);
-
-		FenceDesc fenceDesc = {};
-		fenceDesc.DebugName		= "CombineMaterials Fence";
-		fenceDesc.InitalValue	= 0;
-
-		Fence* pFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
-
-		// Create Textures
-		uint32_t miplevels = 1u;
-		miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
-
-		TextureDesc textureDesc = { };
-		textureDesc.DebugName		= "CombineMaterial Texture";
-		textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-		textureDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
-		textureDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
-		textureDesc.Flags			= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
-		textureDesc.Width			= largestWidth;
-		textureDesc.Height			= largestHeight;
-		textureDesc.Depth			= 1;
-		textureDesc.ArrayCount		= 1;
-		textureDesc.Miplevels		= miplevels;
-		textureDesc.SampleCount		= 1;
-
-		s_Textures[guid] = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
-
-		TextureViewDesc textureViewDesc;
-		textureViewDesc.DebugName		= "CombineMaterial TextureView";
-		textureViewDesc.pTexture		= s_Textures[guid];
-		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-		textureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
-		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		textureViewDesc.MiplevelCount	= miplevels;
-		textureViewDesc.ArrayCount		= 1;
-		textureViewDesc.Miplevel		= 0;
-		textureViewDesc.ArrayIndex		= 0;
-
-		s_TextureViews[guid] = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-
-		if (s_Textures[guid] == nullptr)
+		//Create new Combined Material Texture & Texture View
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create texture for \"Combine Material Texture Desc\"");
-			return;
+			uint32_t miplevels = 1u;
+			miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
+
+			TextureDesc textureDesc = { };
+			textureDesc.DebugName		= "Combined Material Texture";
+			textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+			textureDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+			textureDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
+			textureDesc.Flags			= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
+			textureDesc.Width			= largestWidth;
+			textureDesc.Height			= largestHeight;
+			textureDesc.Depth			= 1;
+			textureDesc.ArrayCount		= 1;
+			textureDesc.Miplevels		= miplevels;
+			textureDesc.SampleCount		= 1;
+
+			pCombinedMaterialTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+
+			if (pCombinedMaterialTexture == nullptr)
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to create texture for \"Combined Material Texture\"");
+				return;
+			}
+
+			s_Textures[guid] = pCombinedMaterialTexture;
+
+			TextureViewDesc textureViewDesc;
+			textureViewDesc.DebugName		= "Combined Material Texture View";
+			textureViewDesc.pTexture		= s_Textures[guid];
+			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+			textureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+			textureViewDesc.MiplevelCount	= miplevels;
+			textureViewDesc.ArrayCount		= 1;
+			textureViewDesc.Miplevel		= 0;
+			textureViewDesc.ArrayIndex		= 0;
+
+			pCombinedMaterialTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+
+			if (pCombinedMaterialTextureView == nullptr)
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to create texture view for \"Combined Material Texture View\"");
+				return;
+			}
+
+			s_TextureViews[guid] = pCombinedMaterialTextureView;
+		}
+
+		//Update Descriptor Set
+		{
+			s_pMaterialDescriptorSet->WriteTextureDescriptors(
+				&pMaterial->pRoughnessMapView,
+				nullptr,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				0,
+				1,
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+
+			s_pMaterialDescriptorSet->WriteTextureDescriptors(
+				&pMaterial->pMetallicMapView,
+				nullptr,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				1,
+				1,
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+
+			s_pMaterialDescriptorSet->WriteTextureDescriptors(
+				&pMaterial->pAmbientOcclusionMapView,
+				nullptr,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				2,
+				1,
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+
+			s_pMaterialDescriptorSet->WriteTextureDescriptors(
+				&pCombinedMaterialTextureView,
+				nullptr,
+				ETextureState::TEXTURE_STATE_GENERAL,
+				3,
+				1,
+				EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE);
 		}
 
 		PipelineTextureBarrierDesc transitionToCopyDstBarrier = { };
@@ -513,99 +558,20 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
 		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
+		transitionToCopyDstBarrier.TextureFlags				= pCombinedMaterialTexture->GetDesc().Flags;
 		transitionToCopyDstBarrier.Miplevel					= 0;
-		transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
+		transitionToCopyDstBarrier.MiplevelCount			= pCombinedMaterialTexture->GetDesc().Miplevels;
 		transitionToCopyDstBarrier.ArrayIndex				= 0;
-		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
+		transitionToCopyDstBarrier.ArrayCount				= pCombinedMaterialTexture->GetDesc().ArrayCount;
 
-		computeCmdList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+		s_pMaterialComputeCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
-		// Create Sampler
-		SamplerDesc samplerDesc	= { };
-		samplerDesc.DebugName				= "CombineMaterial Sampler ";
-		samplerDesc.MinFilter				= EFilterType::FILTER_TYPE_LINEAR;
-		samplerDesc.MagFilter				= EFilterType::FILTER_TYPE_LINEAR;
-		samplerDesc.MipmapMode				= EMipmapMode::MIPMAP_MODE_LINEAR;
-		samplerDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerDesc.MipLODBias				= 0.0f;
-		samplerDesc.AnisotropyEnabled		= false;
-		samplerDesc.MaxAnisotropy			= 16.0f;
-		samplerDesc.MinLOD					= 0.0f;
-		samplerDesc.MaxLOD					= FLT32_MAX;
+		s_pMaterialGraphicsCommandList->Begin(nullptr);
+		s_pMaterialComputeCommandList->BindDescriptorSetCompute(s_pDescriptorSet, pPipelineLayout, 0);
+		s_pMaterialComputeCommandList->BindComputePipeline(pPipelineState);
+		
 
-		TSharedRef<Sampler> sampler = RenderAPI::GetDevice()->CreateSampler(&samplerDesc);
-
-		// Create Pipelinelayout
-		DescriptorBindingDesc ubo_roughness_mat = { };
-		ubo_roughness_mat.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		ubo_roughness_mat.DescriptorCount		= 1;
-		ubo_roughness_mat.Binding				= 0;
-		ubo_roughness_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		ubo_roughness_mat.ImmutableSamplers		= { sampler };
-
-		DescriptorBindingDesc ubo_metallic_mat = { };
-		ubo_metallic_mat.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		ubo_metallic_mat.DescriptorCount		= 1;
-		ubo_metallic_mat.Binding				= 1;
-		ubo_metallic_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		ubo_metallic_mat.ImmutableSamplers		= { sampler };
-
-		DescriptorBindingDesc ubo_ao_material = { };
-		ubo_ao_material.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		ubo_ao_material.DescriptorCount			= 1;
-		ubo_ao_material.Binding					= 2;
-		ubo_ao_material.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		ubo_ao_material.ImmutableSamplers		= { sampler };
-
-		DescriptorBindingDesc ubo_output_image = { };
-		ubo_output_image.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
-		ubo_output_image.DescriptorCount		= 1;
-		ubo_output_image.Binding				= 3;
-		ubo_output_image.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc = { };
-		descriptorSetLayoutDesc.DescriptorBindings = { ubo_roughness_mat, ubo_metallic_mat, ubo_ao_material, ubo_output_image };
-
-		PipelineLayoutDesc pPipelineLayoutDesc = { };
-		pPipelineLayoutDesc.DebugName				= "CombineMaterial PipelineLayout";
-		pPipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc };
-
-		PipelineLayout* pPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pPipelineLayoutDesc);
-
-		// Create DescriptorSet
-		DescriptorHeapInfo descriptorCountDesc = { };
-		descriptorCountDesc.SamplerDescriptorCount	= descriptorSetLayoutDesc.DescriptorBindings.GetSize();
-
-		DescriptorHeapDesc descriptorHeapDesc = { };
-		descriptorHeapDesc.DebugName				= "CombineMaterial Descriptor";
-		descriptorHeapDesc.DescriptorSetCount		= 1;
-		descriptorHeapDesc.DescriptorCount			= descriptorCountDesc;
-
-		DescriptorHeap* pDescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
-
-		DescriptorSet* pDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Combine Material Descriptor Set", pPipelineLayout, 0, pDescriptorHeap);
-		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pRoughnessMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pMetallicMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pAmbientOcclusionMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-		pDescriptorSet->WriteTextureDescriptors(&s_TextureViews[guid], &sampler, ETextureState::TEXTURE_STATE_GENERAL, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE);
-
-		// Create Shaders
-		GUID_Lambda computeShaderGUID = LoadShaderFromFile("CombineMaterial.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
-
-		ShaderModuleDesc shaderModuleDesc = { };
-		shaderModuleDesc.pShader = s_Shaders[computeShaderGUID];
-
-		ComputePipelineStateDesc computePipelineStateDesc = { };
-		computePipelineStateDesc.DebugName			= "CombineMaterial PipelineState";
-		computePipelineStateDesc.pPipelineLayout	= pPipelineLayout;
-		computePipelineStateDesc.Shader				= shaderModuleDesc;
-
-		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
-		computeCmdList->BindDescriptorSetCompute(pDescriptorSet, pPipelineLayout, 0);
-		computeCmdList->BindComputePipeline(pPipelineState);
+		
 
 		// Dispatch
 		largestWidth	= std::max<uint32>(largestWidth / 8, 1);
@@ -634,15 +600,7 @@ namespace LambdaEngine
 		pMaterial->pCombinedMaterialMap			= s_Textures[guid];
 		pMaterial->pCombinedMaterialMapView		= s_TextureViews[guid];
 
-		pPipelineState->Release();
-		pDescriptorSet->Release();
-		pDescriptorHeap->Release();
-		pPipelineLayout->Release();
-		pFence->Release();
-		computeCmdList->Release();
-		graphicsCmdList->Release();
-		computeCmdAllocator->Release();
-		graphicsCmdAllocator->Release();
+		
 	}
 
 	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
@@ -861,6 +819,99 @@ namespace LambdaEngine
 		return GUID_NONE;
 	}
 
+	void ResourceManager::InitMaterialCreation()
+	{
+		// Create Command Lists
+		{
+			s_pMaterialComputeCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+			s_pMaterialGraphicsCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+
+			CommandListDesc commandListDesc = { };
+			commandListDesc.DebugName			= "Compute Command List";
+			commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+			commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+			s_pMaterialComputeCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pMaterialComputeCommandAllocator, &commandListDesc);
+
+			commandListDesc.DebugName = "Graphics Command List";
+			s_pMaterialGraphicsCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pMaterialGraphicsCommandAllocator, &commandListDesc);
+		}
+
+		//Create Fence
+		{
+			FenceDesc fenceDesc = {};
+			fenceDesc.DebugName		= "CombineMaterials Fence";
+			fenceDesc.InitalValue	= 0;
+			s_pMaterialFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
+		}
+
+		//Create Descriptor Heap
+		{
+			DescriptorHeapInfo descriptorCountDesc = { };
+			descriptorCountDesc.SamplerDescriptorCount	= 4;
+
+			DescriptorHeapDesc descriptorHeapDesc = { };
+			descriptorHeapDesc.DebugName				= "CombineMaterial Descriptor";
+			descriptorHeapDesc.DescriptorSetCount		= 1;
+			descriptorHeapDesc.DescriptorCount			= descriptorCountDesc;
+
+			s_pMaterialDescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
+		}
+
+		//Create Pipeline Layout, Descriptor Set & Pipeline State
+		{
+			DescriptorBindingDesc ubo_roughness_mat = { };
+			ubo_roughness_mat.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			ubo_roughness_mat.DescriptorCount		= 1;
+			ubo_roughness_mat.Binding				= 0;
+			ubo_roughness_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			ubo_roughness_mat.ImmutableSamplers		= { Sampler::GetLinearSampler() };
+
+			DescriptorBindingDesc ubo_metallic_mat = { };
+			ubo_metallic_mat.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			ubo_metallic_mat.DescriptorCount		= 1;
+			ubo_metallic_mat.Binding				= 1;
+			ubo_metallic_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			ubo_metallic_mat.ImmutableSamplers		= { Sampler::GetLinearSampler() };
+
+			DescriptorBindingDesc ubo_ao_material = { };
+			ubo_ao_material.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			ubo_ao_material.DescriptorCount			= 1;
+			ubo_ao_material.Binding					= 2;
+			ubo_ao_material.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			ubo_ao_material.ImmutableSamplers		= { Sampler::GetLinearSampler() };
+
+			DescriptorBindingDesc ubo_output_image = { };
+			ubo_output_image.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			ubo_output_image.DescriptorCount		= 1;
+			ubo_output_image.Binding				= 3;
+			ubo_output_image.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+			DescriptorSetLayoutDesc descriptorSetLayoutDesc = { };
+			descriptorSetLayoutDesc.DescriptorBindings = { ubo_roughness_mat, ubo_metallic_mat, ubo_ao_material, ubo_output_image };
+
+			PipelineLayoutDesc pPipelineLayoutDesc = { };
+			pPipelineLayoutDesc.DebugName				= "Combined Material Pipeline Layout";
+			pPipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc };
+
+			s_pMaterialPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pPipelineLayoutDesc);
+
+			s_pMaterialDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Combine Material Descriptor Set", s_pMaterialPipelineLayout, 0, s_pMaterialDescriptorHeap);
+
+			// Create Shaders
+			s_MaterialShaderGUID = LoadShaderFromFile("CombineMaterial.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+
+			ShaderModuleDesc shaderModuleDesc = { };
+			shaderModuleDesc.pShader = s_Shaders[s_MaterialShaderGUID];
+
+			ComputePipelineStateDesc computePipelineStateDesc = { };
+			computePipelineStateDesc.DebugName			= "Combined Material Pipeline State";
+			computePipelineStateDesc.pPipelineLayout	= s_pMaterialPipelineLayout;
+			computePipelineStateDesc.Shader				= shaderModuleDesc;
+
+			s_pMaterialPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
+		}
+	}
+
 	void ResourceManager::InitDefaultResources()
 	{
 		s_Meshes[GUID_NONE]					= nullptr;
@@ -933,5 +984,18 @@ namespace LambdaEngine
 			s_MaterialNamesToGUIDs["Default Material"]	= GUID_MATERIAL_DEFAULT;
 			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;
 		}
+	}
+
+	void ResourceManager::ReleaseMaterialCreation()
+	{
+		s_pPipelineState->Release();
+		s_pDescriptorSet->Release();
+		s_pDescriptorHeap->Release();
+		s_pPipelineLayout->Release();
+		s_pMaterialFence->Release();
+		s_pMaterialComputeCommandList->Release();
+		s_pMaterialGraphicsCommandList->Release();
+		s_pMaterialComputeCommandAllocator->Release();
+		s_pMaterialGraphicsCommandAllocator->Release();
 	}
 }

@@ -57,8 +57,8 @@ namespace LambdaEngine
 	{
 		EventQueue::UnregisterEventHandler(this, &RenderGraph::OnWindowResized);
 
-		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
-		SAFERELEASE(m_pFence);
+		s_pMaterialFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		SAFERELEASE(s_pMaterialFence);
 
 		SAFERELEASE(m_pDescriptorHeap);
 
@@ -727,7 +727,7 @@ namespace LambdaEngine
 
 		uint32 currentExecutionStage = 0;
 
-		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		s_pMaterialFence->Wait(m_SignalValue - 1, UINT64_MAX);
 
 		TArray<DeviceChild*>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[m_ModFrameIndex];
 
@@ -815,7 +815,7 @@ namespace LambdaEngine
 			if (pGraphicsCopyCommandList->IsBegin())
 			{
 				pGraphicsCopyCommandList->End();
-				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				m_SignalValue++;
 			}
 
@@ -824,7 +824,7 @@ namespace LambdaEngine
 			if (pComputeCopyCommandList->IsBegin())
 			{
 				pComputeCopyCommandList->End();
-				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				m_SignalValue++;
 			}
 		}
@@ -849,11 +849,11 @@ namespace LambdaEngine
 					{
 						if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 						{
-							RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 						}
 						else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 						{
-							RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 						}
 
 						m_SignalValue++;
@@ -870,11 +870,11 @@ namespace LambdaEngine
 			{
 				if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 				else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 
 				m_SignalValue++;
@@ -1185,9 +1185,9 @@ namespace LambdaEngine
 		fenceDesc.DebugName		= "Render Stage Fence";
 		fenceDesc.InitalValue	= 0;
 
-		m_pFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
+		s_pMaterialFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
 
-		if (m_pFence == nullptr)
+		if (s_pMaterialFence == nullptr)
 		{
 			LOG_ERROR("[RenderGraph]: Could not create RenderGraph fence");
 			return false;

@@ -191,7 +191,10 @@ namespace LambdaEngine
 
 		static GUID_Lambda GetGUID(const std::unordered_map<String, GUID_Lambda>& namesToGUIDs, const String& name);
 
+		static void InitMaterialCreation();
 		static void InitDefaultResources();
+
+		static void ReleaseMaterialCreation();
 
 	private:
 		static GUID_Lambda										s_NextFreeGUID;
@@ -210,5 +213,22 @@ namespace LambdaEngine
 		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>	s_SoundEffects;
 
 		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>	s_ShaderLoadConfigurations;
+
+		//Material Combine 
+		static CommandAllocator* s_pMaterialComputeCommandAllocator;
+		static CommandAllocator* s_pMaterialGraphicsCommandAllocator;
+
+		static CommandList* s_pMaterialComputeCommandList;
+		static CommandList* s_pMaterialGraphicsCommandList;
+
+		static Fence* s_pMaterialFence;
+
+		static DescriptorHeap* s_pMaterialDescriptorHeap;
+		static DescriptorSet* s_pMaterialDescriptorSet;
+
+		static PipelineLayout* s_pMaterialPipelineLayout;
+		static PipelineState* s_pMaterialPipelineState;
+
+		static GUID_Lambda s_MaterialShaderGUID;
 	};
 }
