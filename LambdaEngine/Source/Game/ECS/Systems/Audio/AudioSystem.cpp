@@ -1,12 +1,10 @@
-
+#include "ECS/ECSCore.h"
 #include "Game/ECS/Systems/Audio/AudioSystem.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Input/API/InputActionSystem.h"
 #include "Audio/AudioAPI.h"
-#include "ECS/ECSCore.h"
 #include "Resources/ResourceManager.h"
-#include "Time/API/Clock.h"
 
 namespace LambdaEngine
 {
