@@ -115,6 +115,23 @@ namespace LambdaEngine
 		"NEAREST",
 	};
 
+	constexpr const char* SAMPLER_ADDRESS_NAMES[] =
+	{
+		"REPEAT",
+		"CLAMP_TO_EDGE",
+		"CLAMP_TO_BORDER",
+	};
+
+	constexpr const char* SAMPLER_BORDER_COLOR[] =
+	{
+		"BORDER_COLOR_FLOAT_TRANSPARENT_BLACK",
+		"BORDER_COLOR_INT_TRANSPARENT_BLACK",
+		"BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+		"BORDER_COLOR_INT_OPAQUE_BLACK",
+		"BORDER_COLOR_FLOAT_OPAQUE_WHITE",
+		"BORDER_COLOR_INT_OPAQUE_WHITE",
+	};
+
 	ERenderGraphSamplerType SamplerTypeIndexToSamplerType(int32 index)
 	{
 		switch (index)
@@ -132,6 +149,60 @@ namespace LambdaEngine
 		{
 		case ERenderGraphSamplerType::LINEAR:	return 0;
 		case ERenderGraphSamplerType::NEAREST:	return 1;
+		}
+
+		return -1;
+	}
+
+	ERenderGraphSamplerAddressMode SamplerTypeIndexToSamplerAddressMode(int32 index)
+	{
+		switch (index)
+		{
+		case 0: return ERenderGraphSamplerAddressMode::REPEAT;
+		case 1: return ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE;
+		case 2: return ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER;
+		}
+
+		return ERenderGraphSamplerAddressMode::NONE;
+	}
+
+	int32 SamplerTypeToSamplerAddressModeIndex(ERenderGraphSamplerAddressMode samplerType)
+	{
+		switch (samplerType)
+		{
+		case ERenderGraphSamplerAddressMode::REPEAT:			return 0;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_EDGE:		return 1;
+		case ERenderGraphSamplerAddressMode::CLAMP_TO_BORDER:	return 2;
+		}
+
+		return -1;
+	}
+
+	ERenderGraphSamplerBorderColor SamplerTypeIndexToSamplerBorderColor(int32 index)
+	{
+		switch (index)
+		{
+		case 0 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		case 1 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_TRANSPARENT_BLACK;
+		case 2 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		case 3 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_BLACK;
+		case 4 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		case 5 : return ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_WHITE;
+		}
+
+		return ERenderGraphSamplerBorderColor::NONE;
+	}
+
+	int32 SamplerTypeBorderColorToSamplerIndex(ERenderGraphSamplerBorderColor samplerBorderColor)
+	{
+		switch (samplerBorderColor)
+		{
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:			return 0;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_TRANSPARENT_BLACK:			return 1;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK:				return 2;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_BLACK:					return 3;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_WHITE:				return 4;
+		case ERenderGraphSamplerBorderColor::BORDER_COLOR_INT_OPAQUE_WHITE:					return 5;
 		}
 
 		return -1;

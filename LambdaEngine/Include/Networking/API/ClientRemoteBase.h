@@ -39,6 +39,7 @@ namespace LambdaEngine
 		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
 		bool SendUnreliableBroadcast(NetworkSegment* pPacket);
 		const ClientMap& GetClients() const;
+		ServerBase* GetServer();
 
 	protected:		
 		ClientRemoteBase(const ClientRemoteDesc& desc);

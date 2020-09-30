@@ -12,7 +12,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
-#include "Rendering/PhysicsRenderer.h"
+#include "Rendering/LineRenderer.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -26,6 +26,7 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 
 #include "Engine/EngineConfig.h"
+
 
 namespace LambdaEngine
 {
@@ -91,20 +92,24 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			String prefix	= m_RayTracingEnabled ? "RT_" : "";
-			String postfix	= m_MeshShadersEnabled? "_MESH" : "";
 			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
-			size_t pos = renderGraphName.find_first_of(".lrg");
-			if (pos != String::npos)
+			if (renderGraphName != "")
 			{
-				renderGraphName.insert(pos, postfix);
-			}
-			else
-			{
-				renderGraphName += postfix + ".lrg";
+				String prefix	= m_RayTracingEnabled ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled? "_MESH" : "";
+				size_t pos		= renderGraphName.find_first_of(".lrg");
+				if (pos != String::npos)
+				{
+					renderGraphName.insert(pos, postfix);
+				}
+				else
+				{
+					renderGraphName += postfix + ".lrg";
+				}
+
+				renderGraphName = prefix + renderGraphName;
 			}
 
-			renderGraphName = prefix + renderGraphName;
 			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
@@ -120,12 +125,12 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 			renderGraphDesc.CustomRenderers				= { };
 
-			if (EngineConfig::GetBoolProperty("EnablePhysicsRenderer"))
+			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 			{
-				m_pPhysicsRenderer = DBG_NEW PhysicsRenderer();
-				m_pPhysicsRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+				m_pLineRenderer = DBG_NEW LineRenderer();
+				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
-				renderGraphDesc.CustomRenderers.PushBack(m_pPhysicsRenderer);
+				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
@@ -202,6 +207,7 @@ namespace LambdaEngine
 			}
 		}
 
+		m_LightsDirty = true; // Initilise Light buffer to avoid validation layer errors
 		UpdateBuffers();
 
 		return true;
@@ -226,7 +232,8 @@ namespace LambdaEngine
 				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
-		SAFEDELETE(m_pPhysicsRenderer);
+
+		SAFEDELETE(m_pLineRenderer);
 
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
@@ -286,9 +293,10 @@ namespace LambdaEngine
 		{
 			auto& pointLight = pPointLightComponents->GetData(entity);
 			auto& position = pPositionComponents->GetData(entity);
-			if (position.Dirty)
+			if (pointLight.Dirty || position.Dirty)
 			{
-				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity);
+				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
+				pointLight.Dirty = false;
 			}
 		}
 
@@ -296,10 +304,21 @@ namespace LambdaEngine
 		for (Entity entity : m_DirectionalLightEntities.GetIDs())
 		{
 			auto& dirLight = pDirLightComponents->GetData(entity);
+			auto& position = pPositionComponents->GetData(entity);
 			auto& rotation = pRotationComponents->GetData(entity);
-			if (rotation.Dirty)
+			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
 			{
-				UpdateDirectionalLight(entity, dirLight.ColorIntensity, rotation.Quaternion);
+				UpdateDirectionalLight(
+					dirLight.ColorIntensity,
+					position.Position,
+					rotation.Quaternion,
+					dirLight.frustumWidth,
+					dirLight.frustumHeight,
+					dirLight.frustumZNear,
+					dirLight.frustumZFar
+				);
+				dirLight.Dirty = rotation.Dirty = position.Dirty = false;
+
 			}
 		}
 
@@ -406,14 +425,21 @@ namespace LambdaEngine
 		{
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
-			auto& pointLightComp = pECSCore->GetComponent<DirectionalLightComponent>(entity);
+			auto& dirLight = pECSCore->GetComponent<DirectionalLightComponent>(entity);
+			auto& position = pECSCore->GetComponent<PositionComponent>(entity);
 			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
-			m_LightBufferData.ColorIntensity	= pointLightComp.ColorIntensity;
-			m_LightBufferData.Direction			= GetForward(rotation.Quaternion);
+			UpdateDirectionalLight(
+				dirLight.ColorIntensity,
+				position.Position,
+				rotation.Quaternion,
+				dirLight.frustumWidth,
+				dirLight.frustumHeight,
+				dirLight.frustumZNear,
+				dirLight.frustumZFar
+			);
 
 			m_DirectionalExist = true;
-			m_LightsDirty = true;
 		}
 		else
 		{
@@ -441,7 +467,7 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(entity);
 
-		m_LightBufferData.ColorIntensity = glm::vec4(0.f);
+		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
 		m_LightsDirty = true;
 	}
@@ -453,8 +479,11 @@ namespace LambdaEngine
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
+		
 		m_EntityToPointLight[lastEntity] = currentIndex;
+		m_PointLightToEntity[currentIndex] = lastEntity;
 
+		m_PointLightToEntity.erase(lastIndex);
 		m_EntityToPointLight.erase(entity);
 		m_PointLights.PopBack();
 
@@ -517,7 +546,7 @@ namespace LambdaEngine
 					indexStagingBufferDesc.DebugName	= "Index Staging Buffer";
 					indexStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					indexStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(Mesh::IndexType);
+					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(MeshIndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
 
@@ -571,7 +600,7 @@ namespace LambdaEngine
 					uniqueIndicesStagingBufferDesc.DebugName	= "Unique Indices Staging Buffer";
 					uniqueIndicesStagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 					uniqueIndicesStagingBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(Mesh::IndexType);
+					uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(MeshIndexType);
 
 					Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
 
@@ -804,16 +833,20 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::UpdateDirectionalLight(Entity entity, glm::vec4& colorIntensity, glm::quat& direction)
-	{
-		UNREFERENCED_VARIABLE(entity);
 
-		m_LightBufferData.ColorIntensity	= colorIntensity;
-		m_LightBufferData.Direction			= GetForward(direction);
+	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
+	{
+		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
+		m_LightBufferData.DirL_Direction = -GetForward(direction);
+
+		m_LightBufferData.DirL_ProjViews = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
+		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
+
+		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsDirty = true;
 	}
 
-	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity)
+	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity, float nearPlane, float farPlane)
 	{
 		if (m_EntityToPointLight.find(entity) == m_EntityToPointLight.end())
 		{
@@ -824,7 +857,39 @@ namespace LambdaEngine
 
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
+		
+		const glm::vec3 directions[6] =
+		{
+			{1.0f, 0.0f, 0.0f},
+			{-1.0f, 0.0f, 0.0f},
+			{0.0f, 1.0f, 0.0f},
+			{0.0f, -1.0f, 0.0f},
+			{0.0f, 0.0f, 1.0f},
+			{0.0f, 0.0f, -1.0f},
+		};
 
+		const glm::vec3 defaultUp[6] =
+		{
+			g_DefaultUp,
+			g_DefaultUp,
+			{0.0f, 0.0f, -1.0f},
+			{0.0f, 0.0f, 1.0f},
+			g_DefaultUp,
+			g_DefaultUp,
+		};
+
+		constexpr uint32 PROJECTIONS = 6;
+		constexpr float FOV = 90.f;
+		constexpr float ASPECT_RATIO = 1.0f;
+		m_PointLights[index].FarPlane = farPlane;
+		// Create projection matrices for each face
+		for (uint32 p = 0; p < PROJECTIONS; p++)
+		{
+			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
+		}
+
+		m_pRenderGraph->TriggerRenderStage("POINTL_SHADOW");
 		m_LightsDirty = true;
 	}
 
