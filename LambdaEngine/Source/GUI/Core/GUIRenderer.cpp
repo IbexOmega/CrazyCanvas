@@ -22,6 +22,8 @@
 
 #include "NoesisPCH.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	GUIRenderer::GUIRenderer()
@@ -361,6 +363,7 @@ namespace LambdaEngine
 			}
 
 			pCommandList->CopyBuffer(m_pIndexStagingBuffer, 0, m_pIndexBuffer, 0, m_RequiredIndexBufferSize);
+			pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
 		}
 
 		BeginMainRenderPass(pCommandList);
@@ -491,9 +494,7 @@ namespace LambdaEngine
 		//Draw
 		{
 			uint64 vertexByteOffset = uint64(batch.vertexOffset);
-			//uint64 vertexByteSize	= uint64(batch.numVertices * shaderData.VertexSize);
 
-			pRenderCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
 			pRenderCommandList->BindVertexBuffers(&m_pVertexBuffer, 0, &vertexByteOffset, 1);
 
 			pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
@@ -550,15 +551,8 @@ namespace LambdaEngine
 		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage)
 	{
-		m_View->Update(delta.AsSeconds());
 		m_ModFrameIndex		= modFrameIndex;
 		m_BackBufferIndex	= backBufferIndex;
-
-		//Todo: Use this
-		bool updated = m_View->GetRenderer()->UpdateRenderTree();
-
-		m_View->GetRenderer()->RenderOffscreen();
-		m_View->GetRenderer()->Render();
 
 		//Delete Buffers
 		{
@@ -604,6 +598,13 @@ namespace LambdaEngine
 				descriptorsNowAvailable.Clear();
 			}
 		}
+
+		//Todo: Use UpdateRenderTree return value
+		m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());
+		m_View->GetRenderer()->UpdateRenderTree();
+
+		m_View->GetRenderer()->RenderOffscreen();
+		m_View->GetRenderer()->Render();
 
 		CommandList* pUtilityCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
 		CommandList* pRenderCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
