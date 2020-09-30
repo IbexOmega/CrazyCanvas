@@ -44,7 +44,7 @@ namespace LambdaEngine
 		virtual bool IsInverted() const override final;
 
 		void UpdateTexture(CommandList* pCommandList, uint32 mipLevel, uint32 x, uint32 y, uint32 width, uint32 height, const void* pData,
-			ECommandQueueType prevCommandQueue, ETextureState prevTextureState, uint32 modFrameIndex);
+			ECommandQueueType prevCommandQueue, ETextureState prevTextureState);
 
 		FORCEINLINE LambdaEngine::TextureView* GetTextureView()			{ return m_pTextureView;  }
 		FORCEINLINE LambdaEngine::TextureView** GetTextureViewToBind()	{ return &m_pTextureView;  }

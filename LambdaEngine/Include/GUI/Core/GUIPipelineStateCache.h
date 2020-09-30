@@ -8,8 +8,8 @@
 
 namespace LambdaEngine
 {
+	struct RenderPassAttachmentDesc;
 	class PipelineState;
-	class RenderPassAttachmentDesc;
 	class GUIRenderTarget;
 
 	constexpr const uint32 NUM_NON_DYNAMIC_VARIATIONS = 4 * 2 * 2; //stencilMode(4) * colorEnable(2) * blendEnable(2)
@@ -35,7 +35,7 @@ namespace LambdaEngine
 	private:
 		static bool InitPipelineLayout();
 		static bool InitPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable);
-		static bool InitPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData);
+		static bool InitPipelineState(uint8 stencilMode, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData);
 
 		static uint32 CalculateSubIndex(uint8 stencilMode, bool colorEnable, bool blendEnable);
 

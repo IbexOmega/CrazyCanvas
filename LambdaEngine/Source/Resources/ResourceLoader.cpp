@@ -772,7 +772,7 @@ namespace LambdaEngine
 	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		std::string source			= std::string(pSource);
-		int32 size					= source.size();
+		int32 size					= int32(source.size());
 		const char* pFinalSource	= source.c_str();
 
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);

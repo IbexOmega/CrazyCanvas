@@ -58,7 +58,7 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
-	m_GUITest	= *new GUITest("Time.xaml");
+	m_GUITest	= *new GUITest("Test.xaml");
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
 	LambdaEngine::GUIApplication::SetView(m_View);
 

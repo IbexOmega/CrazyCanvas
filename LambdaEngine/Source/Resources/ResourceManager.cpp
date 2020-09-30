@@ -520,6 +520,8 @@ namespace LambdaEngine
 
 	bool ResourceManager::OnShaderRecompileEvent(const ShaderRecompileEvent& event)
 	{
+		UNREFERENCED_VARIABLE(event);
+
 		for (auto it = s_Shaders.begin(); it != s_Shaders.end(); it++)
 		{
 			if (it->second != nullptr)

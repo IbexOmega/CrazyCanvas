@@ -144,7 +144,7 @@ namespace LambdaEngine
 		//Create new Pipeline State if nullptr
 		if (*ppPipelineState == nullptr)
 		{
-			InitPipelineState(index, stencilMode, colorEnable, blendEnable, ppPipelineState, shaderData);
+			InitPipelineState(stencilMode, colorEnable, blendEnable, ppPipelineState, shaderData);
 		}
 
 		return *ppPipelineState;
@@ -212,10 +212,10 @@ namespace LambdaEngine
 		PipelineState** ppPipelineState = &s_PipelineStates[index].ppVariations[subIndex];
 		NoesisShaderData shaderData = NoesisGetShaderData(index);
 
-		return InitPipelineState(index, stencilMode, colorEnable, blendEnable, ppPipelineState, shaderData);
+		return InitPipelineState(stencilMode, colorEnable, blendEnable, ppPipelineState, shaderData);
 	}
 
-	bool GUIPipelineStateCache::InitPipelineState(uint32 index, uint8 stencilMode, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData)
+	bool GUIPipelineStateCache::InitPipelineState(uint8 stencilMode, bool colorEnable, bool blendEnable, PipelineState** ppPipelineState, const NoesisShaderData& shaderData)
 	{
 		StencilOpStateDesc stencilOpStateDesc = {};
 		stencilOpStateDesc.FailOp			= EStencilOp::STENCIL_OP_KEEP;
