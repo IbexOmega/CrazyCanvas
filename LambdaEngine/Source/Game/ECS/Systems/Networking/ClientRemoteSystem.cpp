@@ -38,7 +38,7 @@ namespace LambdaEngine
 		glm::vec3(0.5f, 0.5f, 1.0f)
 	};
 
-	ClientRemoteSystem::ClientRemoteSystem() : 
+	ClientRemoteSystem::ClientRemoteSystem() :
 		m_NetworkEntities(),
 		m_Buffer(),
 		m_pClient(nullptr),
@@ -111,9 +111,9 @@ namespace LambdaEngine
 		m_Color = s_StartColors[index];
 
 		m_Entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(m_Entity,		{ position,	true });
-		pECS->AddComponent<RotationComponent>(m_Entity,		{ glm::identity<glm::quat>(),	true });
-		pECS->AddComponent<ScaleComponent>(m_Entity,		{ glm::vec3(1.0f),				true });
+		pECS->AddComponent<PositionComponent>(m_Entity,		{ true, position });
+		pECS->AddComponent<RotationComponent>(m_Entity,		{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(m_Entity,		{ true, glm::vec3(1.0f) });
 		pECS->AddComponent<NetworkComponent>(m_Entity,		{ (int32)m_Entity });
 		pECS->AddComponent<ControllableComponent>(m_Entity, { false });
 
