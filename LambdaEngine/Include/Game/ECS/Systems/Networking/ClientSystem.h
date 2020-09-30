@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/System.h"
+#include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -12,15 +12,7 @@
 
 namespace LambdaEngine
 {
-	struct GameState
-	{
-		int32 SimulationTick = -1;
-		glm::vec3 Position;
-		int8 DeltaForward = 0;
-		int8 DeltaLeft = 0;
-	};
-
-	class ClientSystem : public System, protected IClientHandler
+	class ClientSystem : public ClientBaseSystem, protected IClientHandler
 	{
 		friend class EngineLoop;
 
@@ -30,12 +22,11 @@ namespace LambdaEngine
 
 		bool Connect(IPAddress* pAddress);
 
-		void Tick(Timestamp deltaTime) override;
-
-		void FixedTickMainThread(Timestamp deltaTime);
-		void TickMainThread(Timestamp deltaTime);
-
 	protected:
+		virtual void TickMainThread(Timestamp deltaTime) override;
+		virtual void FixedTickMainThread(Timestamp deltaTime) override;
+		virtual Entity GetEntityPlayer() override;
+
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
 		virtual void OnDisconnecting(IClient* pClient) override;
@@ -45,6 +36,10 @@ namespace LambdaEngine
 		virtual void OnServerFull(IClient* pClient) override;
 
 		void CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color);
+
+	private:
+		void ReplayGameStatesBasedOnServerGameState(const GameState* gameStates, uint32 count, const GameState& gameStateServer);
+		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
 
 	public:
 		static ClientSystem& GetInstance()
@@ -57,7 +52,6 @@ namespace LambdaEngine
 	private:
 		ClientSystem();
 		void Reconcile();
-		void PlayerUpdate(Entity entity, const GameState& gameState);
 
 	private:
 		static void StaticFixedTickMainThread(Timestamp deltaTime);

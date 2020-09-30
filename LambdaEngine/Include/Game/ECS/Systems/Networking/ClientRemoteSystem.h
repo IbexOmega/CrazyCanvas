@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/System.h"
+#include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -12,22 +12,7 @@
 
 namespace LambdaEngine
 {
-	struct GameState
-	{
-		int32 SimulationTick	= -1;
-		int8 DeltaForward		= 0;
-		int8 DeltaLeft			= 0;
-	};
-
-	struct GameStateComparator
-	{
-		bool operator() (const GameState& lhs, const GameState& rhs) const
-		{
-			return lhs.SimulationTick < rhs.SimulationTick;
-		}
-	};
-
-	class ClientRemoteSystem : public System, public IClientRemoteHandler, public IPacketListener
+	class ClientRemoteSystem : public ClientBaseSystem, public IClientRemoteHandler, public IPacketListener
 	{
 		friend class ServerSystem;
 
@@ -35,14 +20,11 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(ClientRemoteSystem);
 		virtual ~ClientRemoteSystem();
 
-		void Tick(Timestamp deltaTime) override;
-
-		void TickMainThread(Timestamp deltaTime);
-		void FixedTickMainThread(Timestamp deltaTime);
-
-		void PlayerUpdate(const GameState& gameState);
-
 	protected:
+		virtual void TickMainThread(Timestamp deltaTime) override;
+		virtual void FixedTickMainThread(Timestamp deltaTime) override;
+		virtual Entity GetEntityPlayer() override;
+
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
 		virtual void OnDisconnecting(IClient* pClient) override;
@@ -62,7 +44,7 @@ namespace LambdaEngine
 		TSet<GameState, GameStateComparator> m_Buffer;
 		GameState m_CurrentGameState;
 		ClientRemoteBase* m_pClient;
-		Entity m_Entity;
+		Entity m_EntityPlayer;
 
 		//Temp, remove later plz
 		glm::vec3 m_Color;

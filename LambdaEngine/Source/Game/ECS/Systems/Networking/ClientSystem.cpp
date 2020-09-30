@@ -91,11 +91,7 @@ namespace LambdaEngine
 			if (!pPositionComponents)
 				return;
 
-			auto pair = m_Entities.find(m_NetworkUID);
-
-			ASSERT(pair != m_Entities.end());
-
-			PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
+			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
 			GameState gameState = {};
 
 			gameState.SimulationTick	= m_SimulationTick;
@@ -103,35 +99,24 @@ namespace LambdaEngine
 			gameState.DeltaLeft			= deltaLeft;
 			gameState.Position			= positionComponent.Position;
 
-			/*if (deltaForward != 0)
-			{
-				gameState.Position.z += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaForward;
-			}
-
-			if (deltaLeft != 0)
-			{
-				gameState.Position.x += 1.0f * EngineLoop::GetFixedTimestep().AsSeconds() * deltaLeft;
-			}*/
-
 			m_FramesToReconcile.PushBack(gameState);
 			m_SimulationTick++;
 
-			if (!m_FramesProcessedByServer.IsEmpty())
-			{
-				Reconcile();
-			}
+			Reconcile();
 		}
+	}
+
+	Entity ClientSystem::GetEntityPlayer()
+	{
+		auto pair = m_Entities.find(m_NetworkUID);
+		ASSERT(pair != m_Entities.end());
+		return pair->second;
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 		NetworkDebugger::RenderStatistics(m_pClient);
-	}
-
-	void ClientSystem::Tick(Timestamp deltaTime)
-	{
-		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientSystem::OnConnecting(IClient* pClient)
@@ -200,20 +185,11 @@ namespace LambdaEngine
 			}
 			else
 			{
-				auto pair = m_Entities.find(networkUID);
-				if (pair != m_Entities.end())
-				{
-					auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+				auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
-					PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
-
-					positionComponent.Position	= serverGameState.Position;
-					positionComponent.Dirty		= true;
-				}
-				else
-				{
-					LOG_ERROR("NetworkUID: %d is not registred on Client", networkUID);
-				}
+				PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
+				positionComponent.Position	= serverGameState.Position;
+				positionComponent.Dirty		= true;
 			}
 		}
 	}
@@ -267,34 +243,13 @@ namespace LambdaEngine
 
 	void ClientSystem::Reconcile()
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-
-		if (!pPositionComponents)
-			return;
-
-		GameState ServerState = {};
-
-		auto pair = m_Entities.find(m_NetworkUID);
-
-		ASSERT(pair != m_Entities.end());
-
 		while (!m_FramesProcessedByServer.IsEmpty())
 		{
 			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 
-			if (glm::distance(m_FramesProcessedByServer[0].Position, m_FramesToReconcile[0].Position) > EPSILON) //checks for position prediction ERROR
+			if (!CompareGameStates(m_FramesProcessedByServer[0], m_FramesToReconcile[0]))
 			{
-				PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
-
-				positionComponent.Position	= m_FramesProcessedByServer[0].Position;
-				positionComponent.Dirty		= true;
-
-				//Replay all game states since the game state which resulted in prediction ERROR
-				for (uint32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
-				{
-					PlayerUpdate(pair->second, m_FramesToReconcile[i]);
-				}
+				ReplayGameStatesBasedOnServerGameState(m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[0]);
 			}
 
 			m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
@@ -302,11 +257,34 @@ namespace LambdaEngine
 		}
 	}
 
-	void ClientSystem::PlayerUpdate(Entity entity, const GameState& gameState)
+	void ClientSystem::ReplayGameStatesBasedOnServerGameState(const GameState* gameStates, uint32 count, const GameState& gameStateServer)
 	{
-		PlayerMovementSystem::GetInstance().Move(entity, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		Entity entityPlayer = GetEntityPlayer();
+
+		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+
+		positionComponent.Position	= gameStateServer.Position;
+		positionComponent.Dirty		= true;
+
+		//Replay all game states since the game state which resulted in prediction ERROR
+		for (uint32 i = 0; i < count; i++)
+		{
+			PlayerUpdate(entityPlayer, gameStates[i]);
+		}
 	}
 
+	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
+	{
+		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
+		{
+			return false;
+		}
+
+		return true;
+	}
 
 	void ClientSystem::StaticFixedTickMainThread(Timestamp deltaTime)
 	{

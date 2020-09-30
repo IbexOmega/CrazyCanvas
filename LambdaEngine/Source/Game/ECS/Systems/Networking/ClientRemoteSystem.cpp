@@ -42,7 +42,7 @@ namespace LambdaEngine
 		m_NetworkEntities(),
 		m_Buffer(),
 		m_pClient(nullptr),
-		m_Entity(0),
+		m_EntityPlayer(-1),
 		m_CurrentGameState(),
 		m_Color()
 	{
@@ -52,11 +52,6 @@ namespace LambdaEngine
 	ClientRemoteSystem::~ClientRemoteSystem()
 	{
 
-	}
-
-	void ClientRemoteSystem::Tick(Timestamp deltaTime)
-	{
-		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ClientRemoteSystem::TickMainThread(Timestamp deltaTime)
@@ -75,25 +70,24 @@ namespace LambdaEngine
 				ASSERT(gameState.SimulationTick - 1 == m_CurrentGameState.SimulationTick);
 
 				m_CurrentGameState = gameState;
-				PlayerUpdate(m_CurrentGameState);
+				PlayerUpdate(GetEntityPlayer(), m_CurrentGameState);
 
 				auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
 
 				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 				BinaryEncoder encoder(pPacket);
-				encoder.WriteInt32(m_Entity);
+				encoder.WriteInt32(GetEntityPlayer());
 				encoder.WriteInt32(m_CurrentGameState.SimulationTick);
-				encoder.WriteVec3(pPositionComponents->GetData(m_Entity).Position);
+				encoder.WriteVec3(pPositionComponents->GetData(GetEntityPlayer()).Position);
 				m_pClient->SendReliableBroadcast(pPacket);
 			}
 			m_Buffer.clear();
 		}
 	}
 
-	void ClientRemoteSystem::PlayerUpdate(const GameState& gameState)
+	Entity ClientRemoteSystem::GetEntityPlayer()
 	{
-		PlayerMovementSystem::GetInstance().Move(m_Entity, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
-		//PhysicsCollisions();
+		return m_EntityPlayer;
 	}
 
 	void ClientRemoteSystem::OnConnecting(IClient* pClient)
@@ -109,17 +103,17 @@ namespace LambdaEngine
 		const glm::vec3& position = s_StartPositions[index];
 		m_Color = s_StartColors[index];
 
-		m_Entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(m_Entity,		{ position,	true });
-		pECS->AddComponent<RotationComponent>(m_Entity,		{ glm::identity<glm::quat>(),	true });
-		pECS->AddComponent<ScaleComponent>(m_Entity,		{ glm::vec3(1.0f),				true });
-		pECS->AddComponent<NetworkComponent>(m_Entity,		{ (int32)m_Entity });
-		pECS->AddComponent<ControllableComponent>(m_Entity, { false });
+		m_EntityPlayer = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(m_EntityPlayer,		{ position,	true });
+		pECS->AddComponent<RotationComponent>(m_EntityPlayer,		{ glm::identity<glm::quat>(),	true });
+		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,		{ glm::vec3(1.0f),				true });
+		pECS->AddComponent<NetworkComponent>(m_EntityPlayer,		{ (int32)m_EntityPlayer });
+		pECS->AddComponent<ControllableComponent>(m_EntityPlayer, { false });
 
 		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 		BinaryEncoder encoder = BinaryEncoder(pPacket);
 		encoder.WriteBool(true);
-		encoder.WriteInt32((int32)m_Entity);
+		encoder.WriteInt32((int32)m_EntityPlayer);
 		encoder.WriteVec3(position);
 		encoder.WriteVec3(m_Color);
 		pClient->SendReliable(pPacket, this);
@@ -137,19 +131,19 @@ namespace LambdaEngine
 				NetworkSegment* pPacket2 = clientPair.second->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 				BinaryEncoder encoder2(pPacket2);
 				encoder2.WriteBool(false);
-				encoder2.WriteInt32((int32)m_Entity);
+				encoder2.WriteInt32((int32)m_EntityPlayer);
 				encoder2.WriteVec3(position);
 				encoder2.WriteVec3(m_Color);
 				clientPair.second->SendReliable(pPacket2, this);
 
 				//Send everyone to my self
 				ClientRemoteSystem* pHandler = (ClientRemoteSystem*)clientPair.second->GetHandler();
-				PositionComponent& positionComponent = pPositionComponents->GetData(pHandler->m_Entity);
+				PositionComponent& positionComponent = pPositionComponents->GetData(pHandler->m_EntityPlayer);
 
 				NetworkSegment* pPacket3 = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 				BinaryEncoder encoder3(pPacket3);
 				encoder3.WriteBool(false);
-				encoder3.WriteInt32((int32)pHandler->m_Entity);
+				encoder3.WriteInt32((int32)pHandler->m_EntityPlayer);
 				encoder3.WriteVec3(positionComponent.Position);
 				encoder3.WriteVec3(pHandler->m_Color);
 				pClient->SendReliable(pPacket3, this);
