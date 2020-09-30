@@ -18,7 +18,7 @@ namespace LambdaEngine
 		std::vector<LambdaDirectory>	Children;
 	};
 
-	FORCEINLINE TArray<String> EnumerateFilesInDirectory(const String& filepath, bool skipDirectories)
+	inline TArray<String> EnumerateFilesInDirectory(const String& filepath, bool skipDirectories)
 	{
 		TArray<String> result;
 
@@ -31,7 +31,7 @@ namespace LambdaEngine
 		return result;
 	}
 
-	FORCEINLINE LambdaDirectory ExtractDirectory(const String& filepath, const std::filesystem::path& relativePath, bool ignoreRootPath = true)
+	inline LambdaDirectory ExtractDirectory(const String& filepath, const std::filesystem::path& relativePath, bool ignoreRootPath = true)
 	{
 		LambdaDirectory result;
 		std::filesystem::path rootPath(filepath);

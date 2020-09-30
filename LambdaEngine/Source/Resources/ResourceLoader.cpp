@@ -648,6 +648,15 @@ namespace LambdaEngine
 
 	GLSLShaderSource ResourceLoader::LoadShaderSourceFromFile(const String& filepath, FShaderStageFlag stage, const String& entryPoint)
 	{
+		if (stage == FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER)
+		{
+			VALIDATE_MSG(false, "[ResourceLoader]: Unsupported shader stage because GLSLang can't get their shit together");
+		}
+
 		String file = ConvertSlashes(filepath);
 
 		byte* pShaderRawSource = nullptr;
@@ -659,15 +668,16 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+		size_t found = file.find_last_of("/");
+		std::string shaderName = file.substr(found + 1, file.length());
+		std::string directoryPath = file.substr(0, found);
+
 		GLSLShaderSourceDesc shaderSourceDesc = {};
+		shaderSourceDesc.Name			= shaderName;
 		shaderSourceDesc.EntryPoint		= entryPoint;
 		shaderSourceDesc.ShaderStage	= stage;
-
-		if (!IncludeGLSLToSource(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, shaderSourceDesc.Source))
-		{
-			LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
-			return nullptr;
-		}
+		shaderSourceDesc.Source			= reinterpret_cast<const char*>(pShaderRawSource);
+		shaderSourceDesc.Directory		= directoryPath;
 
 		GLSLShaderSource shaderSource(&shaderSourceDesc);
 		Malloc::Free(pShaderRawSource);
@@ -759,60 +769,10 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::IncludeGLSLToSource(const String& filepath, const char* pSource, FShaderStageFlags stage, String& preprocessedGLSL)
-	{
-		if (stage == FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER)
-		{
-			VALIDATE_MSG(false, "[ResourceLoader]: Unsupported shader stage because GLSLang can't get their shit together");
-		}
-
-		std::string source			= std::string(pSource);
-		int32 foundBracket			= int32(source.find_last_of('}') + 1);
-		source[foundBracket]		= '\0';
-		const char* pFinalSource	= source.c_str();
-
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
-		glslang::TShader shader(shaderType);
-
-		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
-
-		//Todo: Fetch this
-		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
-		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
-		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
-		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
-		EShMessages messages								= GetDefaultMessages();
-		int32 defaultVersion								= GetDefaultVersion();
-
-		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
-		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
-		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
-
-		DirStackFileIncluder includer;
-
-		//Get Directory Path of File
-		size_t found				= filepath.find_last_of("/\\");
-		std::string directoryPath	= filepath.substr(0, found);
-
-		includer.pushExternalLocalDirectory(directoryPath);
-
-		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
-		{
-			LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
-		}
-
-		return true;
-	}
-
 	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		std::string source			= std::string(pSource);
-		int32 size					= source.size();
+		int32 size					= int32(source.size());
 		const char* pFinalSource	= source.c_str();
 
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
