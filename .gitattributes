@@ -30,3 +30,6 @@
 *.app   binary
 # Exclude vendored files from language statistics
 Dependencies/* linguist-vendored
+*.lib filter=lfs diff=lfs merge=lfs binary
+*.dll filter=lfs diff=lfs merge=lfs binary
+*.exp filter=lfs diff=lfs merge=lfs binary
