@@ -13,6 +13,8 @@ namespace LambdaEngine
 		const char* pName					= "SoundInstance3DFMOD";
 		ISoundEffect3D* pSoundEffect		= nullptr;
 		uint32 Flags						= FSoundModeFlags::SOUND_MODE_NONE;
+		glm::vec3 Position					= glm::vec3(0.f);
+		float Volume						= 1.0f;
 	};
 	
 	class ISoundInstance3D

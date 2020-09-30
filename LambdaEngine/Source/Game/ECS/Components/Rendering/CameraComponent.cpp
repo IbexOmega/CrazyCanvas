@@ -41,17 +41,16 @@ namespace LambdaEngine
 
 		// Audio Footsteps
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("walking-short.wav");
-		ISoundEffect3D* SoundEffect = ResourceManager::GetSoundEffect(soundGUID);
-		ISoundInstance3D* SoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc = {
-				.pName = "SoundInstance3DFMOD",
-				.pSoundEffect = SoundEffect,
-				.Flags = FSoundModeFlags::SOUND_MODE_NONE
+				.pName = "WalkingSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = cameraDesc.Position,
+				.Volume = 0.065f
 		};
-		float volume = 0.075f;
-		SoundInstance->Init(&desc);
-		SoundInstance->SetVolume(volume);
-		pECS->AddComponent<AudibleComponent>(entity, { SoundInstance });
+		pSoundInstance->Init(&desc);
+		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 
 		// Listener
 		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener(), {} });

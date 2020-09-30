@@ -15,4 +15,5 @@ namespace LambdaEngine
 		DECL_COMPONENT(AudibleComponent);
 		ISoundInstance3D* pSoundInstance;
 	};
+
 }

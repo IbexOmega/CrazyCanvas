@@ -130,17 +130,15 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
-		ISoundEffect3D* pSoundEffect = ResourceManager::GetSoundEffect(soundGUID);
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc = {
-				.pName = "SoundInstance3DFMOD",
-				.pSoundEffect = pSoundEffect,
-				.Flags = FSoundModeFlags::SOUND_MODE_NONE
+				.pName = "RobotSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = position,
+				.Volume = 0.035f
 		};
-		float volume = 0.05f;
 		pSoundInstance->Init(&desc);
-		pSoundInstance->SetVolume(volume);
-		pSoundInstance->SetPosition(position);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 		m_Entities.PushBack(entity);
 	}
