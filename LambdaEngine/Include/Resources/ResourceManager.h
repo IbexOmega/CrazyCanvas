@@ -154,7 +154,14 @@ namespace LambdaEngine
 		/*
 		* Combine PBR materials into one texture
 		*/
-		static void CombineMaterials(Material* material, GUID_Lambda guid);
+		static void CombineMaterials(
+			Material* pMaterial,
+			Texture* pAOMap,
+			Texture* pMetallicMap,
+			Texture* pRoughnessMap,
+			TextureView* pAOMapView,
+			TextureView* pMetallicMapView,
+			TextureView* pRoughnessMapView);
 
 		static GUID_Lambda					GetMeshGUID(const String& name);
 		static GUID_Lambda					GetMaterialGUID(const String& name);
@@ -188,6 +195,7 @@ namespace LambdaEngine
 		static GUID_Lambda RegisterLoadedMesh(const String& name, Mesh* pMesh);
 		static GUID_Lambda RegisterLoadedMaterial(const String& name, Material* pMaterial);
 		static GUID_Lambda RegisterLoadedTexture(Texture* pTexture);
+		static GUID_Lambda RegisterLoadedTextureWithView(Texture* pTexture, TextureView* pTextureView);
 
 		static GUID_Lambda GetGUID(const std::unordered_map<String, GUID_Lambda>& namesToGUIDs, const String& name);
 

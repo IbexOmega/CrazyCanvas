@@ -78,9 +78,15 @@ namespace LambdaEngine
 			
 			if (descriptorTypeVk == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 			{
-				VALIDATE(ppVkSamplers		!= nullptr);
-				VALIDATE(ppVkSamplers[i]	!= nullptr);
-				imageInfo.sampler = ppVkSamplers[i]->GetSampler();
+				if (ppVkSamplers != nullptr)
+				{
+					VALIDATE(ppVkSamplers[i]	!= nullptr);
+					imageInfo.sampler = ppVkSamplers[i]->GetSampler();
+				}
+				else
+				{
+					imageInfo.sampler = VK_NULL_HANDLE;
+				}
 			}
 		}
 

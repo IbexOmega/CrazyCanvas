@@ -9,7 +9,22 @@ namespace LambdaEngine
 	class TextureView;
 	class Sampler;
 
-	constexpr const float DEFAULT_EMISSIVE_EMISSION_STRENGTH = 250.0f;
+	typedef uint32 FLoadedTextureFlags;
+	enum FLoadedTextureFlag : FLoadedTextureFlags
+	{
+		LOADED_TEXTURE_FLAG_NONE		= 0,
+		LOADED_TEXTURE_FLAG_ALBEDO		= FLAG(0),
+		LOADED_TEXTURE_FLAG_NORMAL		= FLAG(1),
+		LOADED_TEXTURE_FLAG_AO			= FLAG(2),
+		LOADED_TEXTURE_FLAG_METALLIC	= FLAG(3),
+		LOADED_TEXTURE_FLAG_ROUGHNESS	= FLAG(4),
+	};
+
+	struct LoadedTexture
+	{
+		Texture*				pTexture	= nullptr;
+		FLoadedTextureFlags		Flags		= LOADED_TEXTURE_FLAG_NONE;
+	};
 
 	union MaterialProperties
 	{
@@ -27,22 +42,33 @@ namespace LambdaEngine
 		float Properties[8] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f };
 	};
 
+	struct LoadedMaterial
+	{
+		MaterialProperties Properties;
+
+		LoadedTexture* pAlbedoMap				= nullptr;
+		LoadedTexture* pNormalMap				= nullptr;
+		LoadedTexture* pAmbientOcclusionMap		= nullptr;
+		LoadedTexture* pMetallicMap				= nullptr;
+		LoadedTexture* pRoughnessMap			= nullptr;
+
+		TextureView* pAlbedoMapView					= nullptr;
+		TextureView* pNormalMapView					= nullptr;
+		TextureView* pAmbientOcclusionMapView		= nullptr;
+		TextureView* pMetallicMapView				= nullptr;
+		TextureView* pRoughnessMapView				= nullptr;
+	};
+
 	struct Material
 	{
 		MaterialProperties Properties;
 
-		Texture* pAlbedoMap						= nullptr;
-		Texture* pNormalMap						= nullptr;
-		Texture* pAmbientOcclusionMap			= nullptr;
-		Texture* pMetallicMap					= nullptr;
-		Texture* pRoughnessMap					= nullptr;
-		Texture* pCombinedMaterialMap			= nullptr;
+		Texture* pAlbedoMap					= nullptr;
+		Texture* pNormalMap					= nullptr;
+		Texture* pAOMetallicRoughnessMap	= nullptr;
 
-		TextureView* pAlbedoMapView				= nullptr;
-		TextureView* pNormalMapView				= nullptr;
-		TextureView* pAmbientOcclusionMapView	= nullptr;
-		TextureView* pMetallicMapView			= nullptr;
-		TextureView* pRoughnessMapView			= nullptr;
-		TextureView* pCombinedMaterialMapView	= nullptr;
+		TextureView* pAlbedoMapView					= nullptr;
+		TextureView* pNormalMapView					= nullptr;
+		TextureView* pAOMetallicRoughnessMapView	= nullptr;
 	};
 }

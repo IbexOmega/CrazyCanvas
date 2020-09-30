@@ -703,10 +703,12 @@ namespace LambdaEngine
 
 				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
 				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pCombinedMaterialMap;
+				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pAOMetallicRoughnessMap;
+
 				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
 				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pCombinedMaterialMapView;
+				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pAOMetallicRoughnessMapView;
+
 				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
