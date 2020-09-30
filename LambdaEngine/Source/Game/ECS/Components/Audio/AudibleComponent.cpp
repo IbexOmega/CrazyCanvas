@@ -3,7 +3,5 @@
 
 namespace LambdaEngine
 {
-    //float GetSound(const GUID_Lambda& soundId)
-    //{
-    //}
+
 }

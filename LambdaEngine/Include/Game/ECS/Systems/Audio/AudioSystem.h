@@ -4,6 +4,7 @@
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
+#include "Game/ECS/Components/Audio/ListenerComponent.h"
 
 namespace LambdaEngine
 {
@@ -25,10 +26,9 @@ namespace LambdaEngine
 
 	private:
 		IDVector	m_AudibleEntities;
+		IDVector	m_ListenerEntities;
 		IDVector	m_AudibleNoPositionEntities;
 		IDVector	m_CameraEntities;
-		glm::vec3   m_lastPos;
-
 	private:
 		static AudioSystem s_Instance;
 	};

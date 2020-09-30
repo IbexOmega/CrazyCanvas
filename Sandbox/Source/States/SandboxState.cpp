@@ -121,6 +121,20 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
 		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		// Audio
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+		ISoundEffect3D* pSoundEffect = ResourceManager::GetSoundEffect(soundGUID);
+		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		const SoundInstance3DDesc desc = {
+				.pName = "SoundInstance3DFMOD",
+				.pSoundEffect = pSoundEffect,
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE
+		};
+		float volume = 0.05f;
+		pSoundInstance->Init(&desc);
+		pSoundInstance->SetVolume(volume);
+		pSoundInstance->SetPosition(position);
+		pECS->AddComponent<AudibleComponent>(entity, { pSoundEffect, pSoundInstance });
 		m_Entities.PushBack(entity);
 	}
 
@@ -233,23 +247,6 @@ void SandboxState::Init()
 				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
 				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
-
-				if (i == 1) {
-					//// Audio
-					GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
-					ISoundEffect3D* pSoundEffect = ResourceManager::GetSoundEffect(soundGUID);
-					ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-					const SoundInstance3DDesc desc = {
-							.pName = "SoundInstance3DFMOD",
-							.pSoundEffect = pSoundEffect,
-							.Flags = FSoundModeFlags::SOUND_MODE_NONE
-					};
-					float volume = 0.05f;
-					pSoundInstance->Init(&desc);
-					pSoundInstance->SetVolume(volume);
-					pSoundInstance->SetPosition(startPosition[i]);
-					pECS->AddComponent<AudibleComponent>(m_PointLights[i], { pSoundEffect, pSoundInstance });
-				}
 			}
 		}
 	}

@@ -37,10 +37,10 @@
 
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
+#include "Game/ECS/Systems/Audio/AudioSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Networking/NetworkingSystem.h"
-#include "Game/ECS/Systems/Audio/AudioSystem.h"
 
 namespace LambdaEngine
 {

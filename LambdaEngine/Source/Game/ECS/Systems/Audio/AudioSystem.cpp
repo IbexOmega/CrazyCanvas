@@ -1,8 +1,8 @@
 
 #include "Game/ECS/Systems/Audio/AudioSystem.h"
-#include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Input/API/InputActionSystem.h"
 #include "Audio/AudioAPI.h"
 #include "ECS/ECSCore.h"
 #include "Resources/ResourceManager.h"
@@ -15,11 +15,18 @@ namespace LambdaEngine
 	bool AudioSystem::Init()
 	{
 		{
+
+			TransformComponents transformComponents;
+			transformComponents.Position.Permissions = R;
+			transformComponents.Scale.Permissions = R;
+			transformComponents.Rotation.Permissions = R;
+
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{{{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}, {R, CameraComponent::Type()}}, {}, &m_CameraEntities},
 				{{{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}},								{},	&m_AudibleEntities},
+				{{{RW, ListenerComponent::Type()}},											{&transformComponents}, &m_ListenerEntities}
 			};
 			systemReg.Phase = 0;
 
@@ -36,7 +43,9 @@ namespace LambdaEngine
 
 		auto* pAudibleComponents =	pECS->GetComponentArray<AudibleComponent>();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		auto* pCameraComponents =	pECS->GetComponentArray<CameraComponent>();
+		auto* pListenerComponents =	pECS->GetComponentArray<ListenerComponent>();
 
 		PositionComponent* pActiveCamPosComp = nullptr;
 
@@ -47,28 +56,50 @@ namespace LambdaEngine
 			auto& cameraComponent		=		pCameraComponents->GetData(entity);
 
 			auto* pSoundInstance		=		audibleComponent.pSoundInstance;
-			//auto* pSoundInstance		=		audibleComponent.pSoundInstance.Get();
+			pSoundInstance->SetPosition(positionComponent.Position);
 
-			bool isMoving = m_lastPos != positionComponent.Position;
-			m_lastPos = positionComponent.Position;
+			bool isMoving = InputActionSystem::IsActive("CAM_FORWARD") || 
+							InputActionSystem::IsActive("CAM_LEFT") ||
+							InputActionSystem::IsActive("CAM_BACKWARD") ||
+							InputActionSystem::IsActive("CAM_RIGHT");
 
 			if (cameraComponent.IsActive && isMoving)
 			{
 				pSoundInstance->Play();
 				LOG_MESSAGE("%d is playing now", entity);
 			}
-			
+			else
+			{
+				pSoundInstance->Pause();
+				LOG_MESSAGE("%d is stop now. Repeat: %d", entity);
+			}
+
 		}
 
 		for (Entity entity : m_AudibleEntities)
 		{
 			auto& audibleComponent = pAudibleComponents->GetData(entity);
 			auto& positionComponent = pPositionComponents->GetData(entity);
+			auto& cameraComponent = pCameraComponents->GetData(entity);
 
 			auto* pSoundInstance = audibleComponent.pSoundInstance;
+			pSoundInstance->SetPosition(positionComponent.Position);
 
+
+			// filter out camera
 			pSoundInstance->Play();
 
+		}
+
+		for (Entity entity : m_ListenerEntities)
+		{
+			auto& pListenerComponent = pListenerComponents->GetData(entity);
+			auto& pPositionComponent = pPositionComponents->GetData(entity);
+			auto& pRotationComponent = pRotationComponents->GetData(entity);
+
+			pListenerComponent.Desc.Position = pPositionComponent.Position;
+			pListenerComponent.Desc.Forward = GetForward(pRotationComponent.Quaternion);
+			AudioAPI::GetDevice()->UpdateAudioListener(pListenerComponent.ListenerId, &pListenerComponent.Desc);
 		}
 
 	}

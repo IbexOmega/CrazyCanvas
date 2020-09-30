@@ -48,7 +48,7 @@ namespace LambdaEngine
 				.pSoundEffect = SoundEffect,
 				.Flags = FSoundModeFlags::SOUND_MODE_NONE
 		};
-		float volume = 0.1f;
+		float volume = 0.075f;
 		SoundInstance->Init(&desc);
 		SoundInstance->SetVolume(volume);
 		pECS->AddComponent<AudibleComponent>(entity, { SoundEffect, SoundInstance });
