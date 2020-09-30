@@ -65,9 +65,9 @@ void BenchmarkState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { position, true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<PositionComponent>(entity, { true, position });
+			pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
@@ -106,9 +106,9 @@ void BenchmarkState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(entity, { position, true });
-				pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-				pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PositionComponent>(entity, { true, position });
+				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
 
 
@@ -174,9 +174,9 @@ void BenchmarkState::Init()
 					materialProperties);
 
 				m_PointLights[i] = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(m_PointLights[i], { startPosition[i], true });
-				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { glm::vec3(0.4f), true });
-				pECS->AddComponent<RotationComponent>(m_PointLights[i], { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PositionComponent>(m_PointLights[i], { true, startPosition[i] });
+				pECS->AddComponent<ScaleComponent>(m_PointLights[i], { true, glm::vec3(0.4f) });
+				pECS->AddComponent<RotationComponent>(m_PointLights[i], { true, glm::identity<glm::quat>() });
 				pECS->AddComponent<PointLightComponent>(m_PointLights[i], pointLights[i]);
 				pECS->AddComponent<MeshComponent>(m_PointLights[i], sphereMeshComp);
 				pECS->AddComponent<TrackComponent>(m_PointLights[i], TrackComponent{ .Track = lightPath });
@@ -202,9 +202,9 @@ void BenchmarkState::Init()
 
 		Entity entity = ECSCore::GetInstance()->CreateEntity();
 
-		pECS->AddComponent<PositionComponent>(entity, { {0.0f, 3.0f, -7.0f}, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
-		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.5f), true });
+		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
+		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
 }
