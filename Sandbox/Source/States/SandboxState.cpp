@@ -80,16 +80,15 @@ void SandboxState::Init()
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
 			CollisionCreateInfo collisionCreateInfo = {
 				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
+				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
 				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
 			};
 
 			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-
 			m_Entities.PushBack(entity);
 		}
 	}
@@ -99,12 +98,12 @@ void SandboxState::Init()
 		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		
+
 		MaterialProperties materialProperties;
 		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		materialProperties.Roughness	= 1.0f;
 		materialProperties.Metallic		= 1.0f;
-		
+
 		const uint32 robotMaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
 			robotAlbedoGUID,
@@ -113,7 +112,7 @@ void SandboxState::Init()
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
-		
+
 		MeshComponent robotMeshComp = {};
 		robotMeshComp.MeshGUID		= robotGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
@@ -122,9 +121,9 @@ void SandboxState::Init()
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { position, true });
-		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		m_Entities.PushBack(entity);
 	}
@@ -163,12 +162,12 @@ void SandboxState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				CollisionCreateInfo collisionCreateInfo = 
+				CollisionCreateInfo collisionCreateInfo =
 				{
 					.Entity			= entity,
-					.Position		= pECS->AddComponent<PositionComponent>(entity, { position, true }),
-					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { scale, true }),
-					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true }),
+					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
 					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
@@ -240,9 +239,9 @@ void SandboxState::Init()
 					materialProperties);
 
 				Entity pt = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(pt, { startPosition[i], true });
-				pECS->AddComponent<ScaleComponent>(pt, { glm::vec3(0.4f), true });
-				pECS->AddComponent<RotationComponent>(pt, { glm::identity<glm::quat>(), true });
+				pECS->AddComponent<PositionComponent>(pt, { true, startPosition[i] });
+				pECS->AddComponent<ScaleComponent>(pt, { true, glm::vec3(0.4f) });
+				pECS->AddComponent<RotationComponent>(pt, { true, glm::identity<glm::quat>() });
 				pECS->AddComponent<PointLightComponent>(pt, pointLights[i]);
 				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
@@ -267,9 +266,9 @@ void SandboxState::Init()
 
 		Entity entity = ECSCore::GetInstance()->CreateEntity();
 
-		pECS->AddComponent<PositionComponent>(entity, { {0.0f, 3.0f, -7.0f}, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))), true });
-		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.5f), true });
+		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
+		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
 }

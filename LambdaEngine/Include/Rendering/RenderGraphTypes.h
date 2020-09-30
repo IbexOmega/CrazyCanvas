@@ -25,13 +25,11 @@ namespace LambdaEngine
 
 	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
 	constexpr const char* SCENE_NORMAL_MAPS						= "SCENE_NORMAL_MAPS";
-	constexpr const char* SCENE_AO_MAPS							= "SCENE_AO_MAPS";
-	constexpr const char* SCENE_ROUGHNESS_MAPS					= "SCENE_ROUGHNESS_MAPS";
-	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
+	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS			= "SCENE_COMBINED_MATERIAL_MAPS";
 
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE		= 4; 
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE		= 4;
 
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0; 
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0;
 	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
 	enum class ERenderGraphPipelineStageType : uint8
@@ -116,10 +114,10 @@ namespace LambdaEngine
 
 	/*-----------------------------------------------------------------Resource Structs Begin-----------------------------------------------------------------*/
 
-	struct RenderGraphResourceDesc 
+	struct RenderGraphResourceDesc
 	{
 		String						Name					= "";
-		
+
 		ERenderGraphResourceType	Type					= ERenderGraphResourceType::NONE;
 		bool						BackBufferBound			= false;
 		int32						SubResourceCount		= 1;

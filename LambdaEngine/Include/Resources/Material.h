@@ -36,11 +36,13 @@ namespace LambdaEngine
 		Texture* pAmbientOcclusionMap			= nullptr;
 		Texture* pMetallicMap					= nullptr;
 		Texture* pRoughnessMap					= nullptr;
+		Texture* pCombinedMaterialMap			= nullptr;
 
 		TextureView* pAlbedoMapView				= nullptr;
 		TextureView* pNormalMapView				= nullptr;
 		TextureView* pAmbientOcclusionMapView	= nullptr;
 		TextureView* pMetallicMapView			= nullptr;
 		TextureView* pRoughnessMapView			= nullptr;
+		TextureView* pCombinedMaterialMapView	= nullptr;
 	};
 }

@@ -38,7 +38,7 @@ namespace LambdaEngine
 		glm::vec3(0.5f, 0.5f, 1.0f)
 	};
 
-	ClientRemoteSystem::ClientRemoteSystem() : 
+	ClientRemoteSystem::ClientRemoteSystem() :
 		m_NetworkEntities(),
 		m_Buffer(),
 		m_pClient(nullptr),
@@ -104,11 +104,11 @@ namespace LambdaEngine
 		m_Color = s_StartColors[index];
 
 		m_EntityPlayer = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(m_EntityPlayer,		{ position,	true });
-		pECS->AddComponent<RotationComponent>(m_EntityPlayer,		{ glm::identity<glm::quat>(),	true });
-		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,		{ glm::vec3(1.0f),				true });
+		pECS->AddComponent<PositionComponent>(m_EntityPlayer,		{ true, position });
+		pECS->AddComponent<RotationComponent>(m_EntityPlayer,		{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,			{ true, glm::vec3(1.0f) });
 		pECS->AddComponent<NetworkComponent>(m_EntityPlayer,		{ (int32)m_EntityPlayer });
-		pECS->AddComponent<ControllableComponent>(m_EntityPlayer, { false });
+		pECS->AddComponent<ControllableComponent>(m_EntityPlayer, 	{ false });
 
 		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 		BinaryEncoder encoder = BinaryEncoder(pPacket);

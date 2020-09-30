@@ -257,9 +257,9 @@ namespace LambdaEngine
 		LOG_INFO("Creating Entity with ID %d and NetworkID %d", entity, networkUID);
 
 		MaterialProperties materialProperties = {};
-		materialProperties.Roughness = 0.1f;
-		materialProperties.Metallic = 0.0f;
-		materialProperties.Albedo = glm::vec4(color, 1.0f);
+		materialProperties.Roughness	= 0.1f;
+		materialProperties.Metallic		= 0.0f;
+		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
 		MeshComponent meshComponent;
 		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
@@ -272,9 +272,9 @@ namespace LambdaEngine
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		pECS->AddComponent<PositionComponent>(entity,		{ position, true });
-		pECS->AddComponent<RotationComponent>(entity,		{ glm::identity<glm::quat>(), true });
-		pECS->AddComponent<ScaleComponent>(entity,			{ glm::vec3(1.0f), true });
+		pECS->AddComponent<PositionComponent>(entity,		{ true, position });
+		pECS->AddComponent<RotationComponent>(entity,		{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(entity,			{ true, glm::vec3(1.0f) });
 		pECS->AddComponent<MeshComponent>(entity,			meshComponent);
 		pECS->AddComponent<NetworkComponent>(entity,		{ networkUID });
 
