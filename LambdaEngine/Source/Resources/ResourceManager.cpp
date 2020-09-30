@@ -698,7 +698,7 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
-			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 			s_pMaterialGraphicsCommandList->End();
 

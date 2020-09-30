@@ -80,7 +80,7 @@ void SandboxState::Init()
 	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
+		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
