@@ -144,7 +144,10 @@ namespace LambdaEngine
 		{
 			MeshComponent&		mesh		= pMeshComponents->GetData(entity);
 			AnimationComponent&	animation	= pAnimationComponents->GetData(entity);
-			Animate(deltaTime, animation, mesh);
+			if (!animation.IsPaused)
+			{
+				Animate(deltaTime, animation, mesh);
+			}
 		}
 	}
 

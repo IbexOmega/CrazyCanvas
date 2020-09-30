@@ -13,7 +13,8 @@ namespace LambdaEngine
 		DECL_COMPONENT(AnimationComponent);
 
 		GUID_Lambda			AnimationGUID	= GUID_NONE;
-		float64				DurationInTicks = 0.0f;
+		float64				DurationInTicks	= 0.0f;
+		bool				IsPaused		= false;
 		TArray<glm::mat4>	BoneMatrices;
 	};
 }

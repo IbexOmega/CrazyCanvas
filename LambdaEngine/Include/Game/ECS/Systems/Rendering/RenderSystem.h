@@ -40,9 +40,13 @@ namespace LambdaEngine
 	class LineRenderer;
 
 	struct RenderGraphStructureDesc;
+	struct AnimationComponent;
 
 	class LAMBDA_API RenderSystem : public System
 	{
+		DECL_REMOVE_COPY(RenderSystem);
+		DECL_REMOVE_MOVE(RenderSystem);
+
 		struct Instance
 		{
 			glm::mat4	Transform		= glm::mat4(1.0f);
@@ -55,18 +59,26 @@ namespace LambdaEngine
 
 		struct MeshKey
 		{
-			GUID_Lambda		MeshGUID;
-			bool			IsAnimated;
-			Entity			EntityID;
-			mutable size_t	Hash = 0;
+		public:
+			MeshKey() = default;
+
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated)
+				: MeshGUID(meshGUID)
+				, EntityID(entityID)
+				, IsAnimated(isAnimated)
+			{
+				GetHash();
+			}
 
 			size_t GetHash() const
 			{
 				if (Hash == 0)
 				{
 					Hash = std::hash<GUID_Lambda>()(MeshGUID);
-
-					if (IsAnimated) HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
+					if (IsAnimated)
+					{
+						HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
+					}
 				}
 
 				return Hash;
@@ -75,16 +87,26 @@ namespace LambdaEngine
 			bool operator==(const MeshKey& other) const
 			{
 				if (MeshGUID != other.MeshGUID)
+				{
 					return false;
+				}
 
 				if (IsAnimated)
 				{
 					if (!other.IsAnimated || EntityID != other.EntityID)
+					{
 						return false;
+					}
 				}
 
 				return true;
 			}
+
+		public:
+			GUID_Lambda		MeshGUID;
+			bool			IsAnimated;
+			Entity			EntityID;
+			mutable size_t	Hash = 0;
 		};
 
 		struct MeshKeyHasher
@@ -100,16 +122,20 @@ namespace LambdaEngine
 			AccelerationStructure* pBLAS		= nullptr;
 			SBTRecord ShaderRecord			= {};
 
-			Buffer* pVertexBuffer		= nullptr;
-			uint32	VertexCount			= 0;
-			Buffer* pIndexBuffer		= nullptr;
-			uint32	IndexCount			= 0;
-			Buffer* pUniqueIndices		= nullptr;
-			uint32	UniqueIndexCount	= 0;
-			Buffer* pPrimitiveIndices	= nullptr;
-			uint32	PrimtiveIndexCount	= 0;
-			Buffer* pMeshlets			= nullptr;
-			uint32	MeshletCount		= 0;
+			Buffer* pAnimatedVertexBuffer	= nullptr;
+			Buffer* pVertexBuffer			= nullptr;
+			uint32	VertexCount				= 0;
+			Buffer* pStagingMatrixBuffer	= nullptr;
+			Buffer* pMatrixBuffer			= nullptr;
+			uint32	MatrixCount				= 0;
+			Buffer* pIndexBuffer			= nullptr;
+			uint32	IndexCount				= 0;
+			Buffer* pUniqueIndices			= nullptr;
+			uint32	UniqueIndexCount		= 0;
+			Buffer* pPrimitiveIndices		= nullptr;
+			uint32	PrimtiveIndexCount		= 0;
+			Buffer* pMeshlets				= nullptr;
+			uint32	MeshletCount			= 0;
 
 			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
@@ -180,9 +206,6 @@ namespace LambdaEngine
 		};
 
 	public:
-		DECL_REMOVE_COPY(RenderSystem);
-		DECL_REMOVE_MOVE(RenderSystem);
-
 		~RenderSystem() = default;
 
 		bool Init();
@@ -205,15 +228,20 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
+		glm::mat4 CreateEntityTransform(Entity entity);
+		
 		void OnEntityAdded(Entity entity);
 		void OnEntityRemoved(Entity entity);
+
+		void OnAnimatedEntityAdded(Entity entity);
+		void OnAnimatedEntityRemoved(Entity entity);
 
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
 		
 		void OnDirectionalEntityAdded(Entity entity);
-		void OnPointLightEntityAdded(Entity entity);
-
 		void OnDirectionalEntityRemoved(Entity entity);
+
+		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
 
 		void RemoveEntityInstance(Entity entity);
@@ -226,6 +254,7 @@ namespace LambdaEngine
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
 		void UpdateBuffers();
+		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
@@ -296,7 +325,7 @@ namespace LambdaEngine
 		Buffer*	m_pPerFrameBuffer			= nullptr;
 
 		//Draw Args
-		TSet<uint32>		m_RequiredDrawArgs;
+		TSet<uint32> m_RequiredDrawArgs;
 
 		//Ray Tracing
 		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
