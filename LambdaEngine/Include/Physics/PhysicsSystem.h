@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ECS/ComponentOwner.h"
 #include "ECS/System.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 
@@ -35,7 +36,7 @@ namespace LambdaEngine
 		FCollisionGroup CollisionMask;	// Includes the masks of the groups this object collides with
 	};
 
-	class PhysicsSystem : public System
+	class PhysicsSystem : public System, public ComponentOwner
 	{
 	public:
 		PhysicsSystem();
@@ -45,20 +46,20 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime) override final;
 
-		CollisionComponent& CreateCollisionSphere(const CollisionCreateInfo& collisionCreateInfo);
-		CollisionComponent& CreateCollisionBox(const CollisionCreateInfo& collisionCreateInfo);
+		void CreateCollisionSphere(const CollisionCreateInfo& collisionCreateInfo);
+		void CreateCollisionBox(const CollisionCreateInfo& collisionCreateInfo);
 		// CreateCollisionCapsule creates a sphere if no capsule can be made
-		CollisionComponent& CreateCollisionCapsule(const CollisionCreateInfo& collisionCreateInfo);
-
-		void RemoveCollisionActor(Entity entity);
+		void CreateCollisionCapsule(const CollisionCreateInfo& collisionCreateInfo);
+		void CreateCollisionTriangleMesh(const CollisionCreateInfo& collisionCreateInfo);
 
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
 	private:
+		void CollisionComponentDestructor(CollisionComponent& collisionComponent);
 		void OnCollisionRemoved(Entity entity);
 		// FinalizeCollisionComponent creates an actor and attaches the shape to it. An empty collision component
 		// is returned.
-		CollisionComponent& FinalizeCollisionComponent(const CollisionCreateInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation = PxQuat(PxIDENTITY::PxIdentity));
+		void FinalizeCollisionComponent(const CollisionCreateInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation = PxQuat(PxIDENTITY::PxIdentity));
 
 	private:
 		static PhysicsSystem s_Instance;
@@ -72,6 +73,7 @@ namespace LambdaEngine
 
 		PxFoundation*	m_pFoundation;
 		PxPhysics*		m_pPhysics;
+		PxCooking*		m_pCooking;
 		PxPvd*			m_pVisDbg; // Visual debugger
 
 		PxDefaultCpuDispatcher*	m_pDispatcher;

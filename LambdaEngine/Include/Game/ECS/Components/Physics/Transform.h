@@ -6,30 +6,26 @@
 
 namespace LambdaEngine
 {
-	const glm::vec3 g_DefaultForward	= glm::vec3(0.0f, 0.0f, 1.0f);
+	const glm::vec3 g_DefaultForward	= glm::vec3(0.0f, 0.0f, -1.0f);
 	const glm::vec3 g_DefaultRight		= glm::vec3(1.0f, 0.0f, 0.0f);
-	//The up vector is inverted because of vulkans inverted y-axis
-	const glm::vec3 g_DefaultUp = glm::vec3(0.0f, -1.0f, 0.0f);
+	const glm::vec3 g_DefaultUp 		= glm::vec3(0.0f, 1.0f, 0.0f);
 
 	struct PositionComponent
 	{
-		DECL_COMPONENT(PositionComponent);
+		DECL_COMPONENT_WITH_DIRTY_FLAG(PositionComponent);
 		glm::vec3 Position;
-		bool Dirty;
 	};
 
 	struct ScaleComponent
 	{
-		DECL_COMPONENT(ScaleComponent);
+		DECL_COMPONENT_WITH_DIRTY_FLAG(ScaleComponent);
 		glm::vec3 Scale;
-		bool Dirty;
 	};
 
 	struct RotationComponent
 	{
-		DECL_COMPONENT(RotationComponent);
+		DECL_COMPONENT_WITH_DIRTY_FLAG(RotationComponent);
 		glm::quat Quaternion;
-		bool Dirty;
 	};
 
 	// Transform is a convenience wrapper
@@ -51,14 +47,6 @@ namespace LambdaEngine
 		ComponentAccess Position    = {R, PositionComponent::Type()};
 		ComponentAccess Scale       = {R, ScaleComponent::Type()};
 		ComponentAccess Rotation    = {R, RotationComponent::Type()};
-	};
-
-	struct WorldMatrixComponent
-	{
-		DECL_COMPONENT(WorldMatrixComponent);
-		glm::mat4 WorldMatrix;
-		// Flags whether or not the potential belonging Transform component has been written to since the last access
-		bool Dirty;
 	};
 
 	// Transform calculation functions

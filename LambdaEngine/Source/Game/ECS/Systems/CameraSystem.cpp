@@ -112,7 +112,7 @@ namespace LambdaEngine
 		}
 
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-		float addedPitch	= dt * float(InputActionSystem::IsActive("CAM_ROT_DOWN") - InputActionSystem::IsActive("CAM_ROT_UP"));
+		float addedPitch	= dt * float(InputActionSystem::IsActive("CAM_ROT_UP") - InputActionSystem::IsActive("CAM_ROT_DOWN"));
 		float addedYaw		= dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
 
 		if (InputActionSystem::IsActive("TOGGLE_MOUSE"))
@@ -129,10 +129,12 @@ namespace LambdaEngine
 			m_CIsPressed = false;
 		}
 
+	#ifdef LAMBDA_DEBUG
 		if (Input::IsKeyDown(EKey::KEY_T))
 		{
 			RenderFrustum(entity);
 		}
+	#endif // LAMBDA_DEBUG
 
 		if (m_MouseEnabled)
 		{
@@ -148,7 +150,7 @@ namespace LambdaEngine
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
 				addedYaw	-= freeCamComp.MouseSpeedFactor * (float)mouseDelta.x * dt;
-				addedPitch	+= freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
+				addedPitch	-= freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
 			}
 		}
 
@@ -182,7 +184,7 @@ namespace LambdaEngine
 
 			const glm::vec3 forward = GetForward(rotComp.Quaternion);
 			const glm::vec3 right = GetRight(rotComp.Quaternion);
-			const glm::vec3 up = -GetUp(rotComp.Quaternion);
+			const glm::vec3 up = GetUp(rotComp.Quaternion);
 
 			TArray<glm::vec3> points(10);
 			const glm::vec3 nearPos = posComp.Position + forward * camComp.NearPlane;
