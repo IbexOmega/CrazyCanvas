@@ -49,7 +49,7 @@ namespace LambdaEngine
 #endif
 	struct ClearColorDesc
 	{
-		union 
+		union
 		{
 			float Color[4];
 			struct
@@ -97,7 +97,7 @@ namespace LambdaEngine
 		uint32 ArrayIndex		= 0;
 		uint32 ArrayCount		= 0;
 	};
-	
+
 	struct PipelineTextureBarrierDesc
 	{
 		Texture*			pTexture				= nullptr;
@@ -144,11 +144,11 @@ namespace LambdaEngine
 	{
 		AccelerationStructure*		pAccelerationStructure	= nullptr;
 		FAccelerationStructureFlags	Flags					= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_NONE;
-		const Buffer*				pVertexBuffer			= nullptr; 
-		uint32						FirstVertexIndex		= 0; 
+		const Buffer*				pVertexBuffer			= nullptr;
+		uint32						FirstVertexIndex		= 0;
 		uint32						VertexStride			= 0;
 		const Buffer*				pIndexBuffer			= nullptr;
-		uint32						IndexBufferByteOffset	= 0; 
+		uint32						IndexBufferByteOffset	= 0;
 		uint32						TriangleCount			= 0;
 		const Buffer*				pTransformBuffer		= nullptr;
 		uint32						TransformByteOffset		= 0;
@@ -184,6 +184,8 @@ namespace LambdaEngine
 		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState) = 0;
 		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState) = 0;
 
+		virtual void QueueTransferBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ECommandQueueType srcQueue, ECommandQueueType dstQueue) = 0;
+
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	= 0;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
 		virtual void PipelineMemoryBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineMemoryBarrierDesc* pMemoryBarriers, uint32 bufferMemoryCount)			= 0;
@@ -210,7 +212,7 @@ namespace LambdaEngine
 		virtual void BindRayTracingPipeline(PipelineState* pPipeline)		= 0;
 
 		virtual void TraceRays(const SBT* pSBT, uint32 width, uint32 height, uint32 depth) = 0;
-		
+
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) = 0;
 
 		virtual void DispatchMesh(uint32 taskCount, uint32 firstTask)													= 0;
@@ -233,7 +235,7 @@ namespace LambdaEngine
 		virtual void FlushDeferredResources()	= 0;
 
 		virtual uint64 GetHandle() const = 0;
-		
+
 		FORCEINLINE const CommandListDesc& GetDesc() const
 		{
 			return m_Desc;
@@ -247,7 +249,7 @@ namespace LambdaEngine
 		FORCEINLINE bool IsBegin() const { return m_IsBegin; }
 
 		/*
-		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on 
+		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on
 		* the returned pointer
 		*	return - Returns a valid pointer if successful otherwise nullptr
 		*/

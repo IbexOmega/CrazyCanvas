@@ -462,7 +462,7 @@ namespace LambdaEngine
 
 		uint32 pixelDataSize = width * height * TextureFormatStride(format);
 
-		BufferDesc bufferDesc	= {};
+		BufferDesc bufferDesc	= { };
 		bufferDesc.DebugName	= "Texture Copy Buffer";
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;

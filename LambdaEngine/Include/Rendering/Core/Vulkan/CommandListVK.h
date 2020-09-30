@@ -31,7 +31,7 @@ namespace LambdaEngine
 	};
 
 	/*
-	* CommandListVK 
+	* CommandListVK
 	*/
 	class CommandListVK : public TDeviceChildBase<GraphicsDeviceVK, CommandList>
 	{
@@ -64,11 +64,13 @@ namespace LambdaEngine
 
 		virtual void CopyBuffer(const Buffer* pSrc, uint64 srcOffset, Buffer* pDst, uint64 dstOffset, uint64 sizeInBytes)				override final;
 		virtual void CopyTextureFromBuffer(const Buffer* pSrc, Texture* pDst, const CopyTextureFromBufferDesc& desc)					override final;
-		
+
 		virtual void BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)	override final;
 
 		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState) override final;
 		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState) override final;
+
+		virtual void QueueTransferBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ECommandQueueType srcQueue, ECommandQueueType dstQueue) override final;
 
 		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	override final;
 		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		override final;
@@ -124,7 +126,7 @@ namespace LambdaEngine
 		{
 			return reinterpret_cast<uint64>(m_CommandList);
 		}
-	
+
 	private:
 		void BindDescriptorSet(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint);
 
@@ -132,7 +134,7 @@ namespace LambdaEngine
 		VkCommandBuffer							m_CommandList				= VK_NULL_HANDLE;
 		TSharedRef<CommandAllocatorVK>			m_Allocator					= nullptr;
 		TSharedRef<RayTracingPipelineStateVK>	m_CurrentRayTracingPipeline	= nullptr;
-		
+
 		TArray<DeferredImageBarrier> m_DeferredBarriers;
 		TArray<TSharedRef<DeviceChild>> m_ResourcesToDestroy;
 
