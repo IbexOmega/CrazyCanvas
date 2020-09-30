@@ -409,6 +409,7 @@ workspace "LambdaEngine"
 
 				-- PhysX
 				"/checked/PhysX_64.lib",
+				"/checked/PhysXCharacterKinematic_dynamic_64.lib",
 				"/checked/PhysXCommon_64.lib",
 				"/checked/PhysXCooking_64.lib",
 				"/checked/PhysXExtensions_dynamic_64.lib",
@@ -436,6 +437,7 @@ workspace "LambdaEngine"
 
 				-- PhysX
 				"/release/PhysX_64.lib",
+				"/checked/PhysXCharacterKinematic_dynamic_64.lib",
 				"/release/PhysXCommon_64.lib",
 				"/release/PhysXCooking_64.lib",
 				"/release/PhysXExtensions_dynamic_64.lib",

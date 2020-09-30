@@ -27,7 +27,11 @@ namespace LambdaEngine
 	private:
 		CameraSystem() = default;
 
-		void HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp);
+		// MoveFreeCamera translates and rotates a free camera
+		void MoveFreeCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp);
+		// MoveFPSCamera translates and rotates an FPS camera
+		void MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FPSControllerComponent& FPSComp);
+		void RotateCamera(float32 dt, float32 mouseSpeedFactor, const glm::vec3& forward, glm::quat& rotation);
 		void RenderFrustum(Entity entity);
 
 	private:
