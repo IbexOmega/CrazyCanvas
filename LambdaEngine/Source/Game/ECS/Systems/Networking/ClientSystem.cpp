@@ -293,7 +293,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void ClientSystem::ReplayGameStatesBasedOnServerGameState(const GameState* gameStates, uint32 count, const GameState& gameStateServer)
+	void ClientSystem::ReplayGameStatesBasedOnServerGameState(const GameState* pGameStates, uint32 count, const GameState& gameStateServer)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
@@ -308,7 +308,7 @@ namespace LambdaEngine
 		//Replay all game states since the game state which resulted in prediction ERROR
 		for (uint32 i = 0; i < count; i++)
 		{
-			PlayerUpdate(entityPlayer, gameStates[i]);
+			PlayerUpdate(entityPlayer, pGameStates[i]);
 		}
 	}
 
