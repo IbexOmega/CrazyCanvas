@@ -12,6 +12,8 @@
 
 namespace LambdaEngine
 {
+	typedef std::unordered_map<uint16, TArray<std::function<void(NetworkSegment*)>>> PacketSubscriberMap;
+
 	class ClientSystem : public ClientBaseSystem, protected IClientHandler
 	{
 		friend class EngineLoop;
@@ -21,6 +23,8 @@ namespace LambdaEngine
 		virtual ~ClientSystem();
 
 		bool Connect(IPAddress* pAddress);
+
+		void SubscribeToPacketType(uint16 packetType, const std::function<void(NetworkSegment*)>& func);
 
 	protected:
 		virtual void TickMainThread(Timestamp deltaTime) override;
@@ -40,6 +44,9 @@ namespace LambdaEngine
 	private:
 		void ReplayGameStatesBasedOnServerGameState(const GameState* gameStates, uint32 count, const GameState& gameStateServer);
 		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
+
+		void OnPacketCreateEntity(NetworkSegment* pPacket);
+		void OnPacketPlayerAction(NetworkSegment* pPacket);
 
 	public:
 		static ClientSystem& GetInstance()
@@ -67,6 +74,7 @@ namespace LambdaEngine
 		int32 m_SimulationTick;
 		int32 m_LastNetworkSimulationTick;
 		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
+		PacketSubscriberMap m_PacketSubscribers;
 
 	private:
 		static ClientSystem* s_pInstance;

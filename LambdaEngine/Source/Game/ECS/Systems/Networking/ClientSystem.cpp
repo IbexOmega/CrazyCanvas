@@ -52,6 +52,9 @@ namespace LambdaEngine
 		systemReg.Phase = 0;
 
 		RegisterSystem(systemReg);
+
+		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
+		SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&ClientSystem::OnPacketPlayerAction, this, std::placeholders::_1));
 	}
 
 	ClientSystem::~ClientSystem()
@@ -67,6 +70,11 @@ namespace LambdaEngine
 			return false;
 		}
 		return true;
+	}
+
+	void ClientSystem::SubscribeToPacketType(uint16 packetType, const std::function<void(NetworkSegment*)>& func)
+	{
+		m_PacketSubscribers[packetType].PushBack(func);
 	}
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
@@ -143,54 +151,69 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(pClient);
 
-		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
+		auto iterator = m_PacketSubscribers.find(pPacket->GetType());
+		if (iterator != m_PacketSubscribers.end())
 		{
-			BinaryDecoder decoder(pPacket);
-			bool isMySelf = decoder.ReadBool();
-			int32 networkUID = decoder.ReadInt32();
-			glm::vec3 position = decoder.ReadVec3();
-			glm::vec3 color		= decoder.ReadVec3();
-
-			if (isMySelf)
-				m_NetworkUID = networkUID;
-
-			Job addEntityJob;
-			addEntityJob.Components =
+			const TArray<std::function<void(NetworkSegment*)>>& functions = iterator->second;
+			for (const auto& func : functions)
 			{
-				{ RW, PositionComponent::Type()		},
-				{ RW, RotationComponent::Type()		},
-				{ RW, ScaleComponent::Type()		},
-				{ RW, MeshComponent::Type()			},
-				{ RW, NetworkComponent::Type()		},
-				{ RW, ControllableComponent::Type() }
-			};
-			addEntityJob.Function = std::bind(&ClientSystem::CreateEntity, this, networkUID, position, color);
-
-			ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
+				func(pPacket);
+			}
 		}
-		else if (pPacket->GetType() == NetworkSegment::TYPE_PLAYER_ACTION)
+		else
 		{
-			ECSCore* pECS = ECSCore::GetInstance();
+			LOG_WARNING("No packet subscription of type: %hu", pPacket->GetType());
+		}
+	}
 
-			GameState serverGameState = {};
+	void ClientSystem::OnPacketCreateEntity(NetworkSegment* pPacket)
+	{
+		BinaryDecoder decoder(pPacket);
+		bool isMySelf = decoder.ReadBool();
+		int32 networkUID = decoder.ReadInt32();
+		glm::vec3 position = decoder.ReadVec3();
+		glm::vec3 color = decoder.ReadVec3();
 
-			BinaryDecoder decoder(pPacket);
-			int32 networkUID					= decoder.ReadInt32();
-			serverGameState.SimulationTick		= decoder.ReadInt32();
-			serverGameState.Position			= decoder.ReadVec3();
+		if (isMySelf)
+			m_NetworkUID = networkUID;
 
-			if (networkUID == m_NetworkUID)
-			{
-				m_FramesProcessedByServer.PushBack(serverGameState);
-			}
-			else
-			{
-				auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		Job addEntityJob;
+		addEntityJob.Components =
+		{
+			{ RW, PositionComponent::Type()		},
+			{ RW, RotationComponent::Type()		},
+			{ RW, ScaleComponent::Type()		},
+			{ RW, MeshComponent::Type()			},
+			{ RW, NetworkComponent::Type()		},
+			{ RW, ControllableComponent::Type() }
+		};
+		addEntityJob.Function = std::bind(&ClientSystem::CreateEntity, this, networkUID, position, color);
 
-				PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
-				positionComponent.Position	= serverGameState.Position;
-				positionComponent.Dirty		= true;
-			}
+		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
+	}
+
+	void ClientSystem::OnPacketPlayerAction(NetworkSegment* pPacket)
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		GameState serverGameState = {};
+
+		BinaryDecoder decoder(pPacket);
+		int32 networkUID = decoder.ReadInt32();
+		serverGameState.SimulationTick = decoder.ReadInt32();
+		serverGameState.Position = decoder.ReadVec3();
+
+		if (networkUID == m_NetworkUID)
+		{
+			m_FramesProcessedByServer.PushBack(serverGameState);
+		}
+		else
+		{
+			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+
+			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
+			positionComponent.Position = serverGameState.Position;
+			positionComponent.Dirty = true;
 		}
 	}
 
