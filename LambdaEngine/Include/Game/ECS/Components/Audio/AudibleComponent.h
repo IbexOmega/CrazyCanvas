@@ -13,7 +13,6 @@ namespace LambdaEngine
 	struct AudibleComponent
 	{
 		DECL_COMPONENT(AudibleComponent);
-		ISoundEffect3D* pSoundEffect;
 		ISoundInstance3D* pSoundInstance;
 	};
 }

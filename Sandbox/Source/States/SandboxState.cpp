@@ -141,7 +141,7 @@ void SandboxState::Init()
 		pSoundInstance->Init(&desc);
 		pSoundInstance->SetVolume(volume);
 		pSoundInstance->SetPosition(position);
-		pECS->AddComponent<AudibleComponent>(entity, { pSoundEffect, pSoundInstance });
+		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 		m_Entities.PushBack(entity);
 	}
 

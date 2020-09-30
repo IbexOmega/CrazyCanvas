@@ -29,6 +29,7 @@ namespace LambdaEngine
 				{{{RW, ListenerComponent::Type()}},											{&transformComponents}, &m_ListenerEntities}
 			};
 			systemReg.Phase = 0;
+			SetComponentOwner<AudibleComponent>({ std::bind(&AudioSystem::AudibleComponentDestructor, this, std::placeholders::_1) });
 
 			RegisterSystem(systemReg);
 		}
@@ -41,52 +42,22 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(deltaTime);
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		auto* pAudibleComponents =	pECS->GetComponentArray<AudibleComponent>();
+		auto* pAudibleComponents = pECS->GetComponentArray<AudibleComponent>();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-		auto* pCameraComponents =	pECS->GetComponentArray<CameraComponent>();
-		auto* pListenerComponents =	pECS->GetComponentArray<ListenerComponent>();
+		auto* pCameraComponents = pECS->GetComponentArray<CameraComponent>();
+		auto* pListenerComponents = pECS->GetComponentArray<ListenerComponent>();
 
 		PositionComponent* pActiveCamPosComp = nullptr;
-
-		for (Entity entity : m_CameraEntities)
-		{
-			auto& audibleComponent		=		pAudibleComponents->GetData(entity);
-			auto& positionComponent		=		pPositionComponents->GetData(entity);
-			auto& cameraComponent		=		pCameraComponents->GetData(entity);
-
-			auto* pSoundInstance		=		audibleComponent.pSoundInstance;
-			pSoundInstance->SetPosition(positionComponent.Position);
-
-			bool isMoving = InputActionSystem::IsActive("CAM_FORWARD") || 
-							InputActionSystem::IsActive("CAM_LEFT") ||
-							InputActionSystem::IsActive("CAM_BACKWARD") ||
-							InputActionSystem::IsActive("CAM_RIGHT");
-
-			if (cameraComponent.IsActive && isMoving)
-			{
-				pSoundInstance->Play();
-				LOG_MESSAGE("%d is playing now", entity);
-			}
-			else
-			{
-				pSoundInstance->Pause();
-				LOG_MESSAGE("%d is stop now. Repeat: %d", entity);
-			}
-
-		}
 
 		for (Entity entity : m_AudibleEntities)
 		{
 			auto& audibleComponent = pAudibleComponents->GetData(entity);
 			auto& positionComponent = pPositionComponents->GetData(entity);
-			auto& cameraComponent = pCameraComponents->GetData(entity);
 
 			auto* pSoundInstance = audibleComponent.pSoundInstance;
 			pSoundInstance->SetPosition(positionComponent.Position);
 
-
-			// filter out camera
 			pSoundInstance->Play();
 
 		}
@@ -102,6 +73,38 @@ namespace LambdaEngine
 			AudioAPI::GetDevice()->UpdateAudioListener(pListenerComponent.ListenerId, &pListenerComponent.Desc);
 		}
 
+		for (Entity entity : m_CameraEntities)
+		{
+			auto& audibleComponent = pAudibleComponents->GetData(entity);
+			auto& positionComponent = pPositionComponents->GetData(entity);
+			auto& cameraComponent = pCameraComponents->GetData(entity);
+
+			auto* pSoundInstance = audibleComponent.pSoundInstance;
+			pSoundInstance->SetPosition(positionComponent.Position);
+
+			bool isMoving = InputActionSystem::IsActive("CAM_FORWARD") ||
+				InputActionSystem::IsActive("CAM_LEFT") ||
+				InputActionSystem::IsActive("CAM_BACKWARD") ||
+				InputActionSystem::IsActive("CAM_RIGHT");
+
+			if (cameraComponent.IsActive && isMoving)
+			{
+				pSoundInstance->Play();
+				LOG_MESSAGE("%d is playing now", entity);
+			}
+			else
+			{
+				pSoundInstance->Pause();
+				LOG_MESSAGE("%d is stop now. Repeat: %d", entity);
+
+			}
+		}
+	}
+
+	void AudioSystem::AudibleComponentDestructor(AudibleComponent& audibleComponent)
+	{
+		SAFEDELETE(audibleComponent.pSoundInstance);
+		
 	}
 }
 	

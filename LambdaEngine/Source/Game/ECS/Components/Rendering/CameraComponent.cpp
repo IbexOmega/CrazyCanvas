@@ -51,7 +51,7 @@ namespace LambdaEngine
 		float volume = 0.075f;
 		SoundInstance->Init(&desc);
 		SoundInstance->SetVolume(volume);
-		pECS->AddComponent<AudibleComponent>(entity, { SoundEffect, SoundInstance });
+		pECS->AddComponent<AudibleComponent>(entity, { SoundInstance });
 
 		// Listener
 		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener(), {} });

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS/System.h"
+#include "ECS/ComponentOwner.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
@@ -8,7 +9,7 @@
 
 namespace LambdaEngine
 {
-	class AudioSystem : public System
+	class AudioSystem : public System, public ComponentOwner
 	{
 	public:
 		DECL_UNIQUE_CLASS(AudioSystem);
@@ -23,6 +24,7 @@ namespace LambdaEngine
 
 	private:
 		AudioSystem() = default;
+		void AudibleComponentDestructor(AudibleComponent& audibleComponent);
 
 	private:
 		IDVector	m_AudibleEntities;
