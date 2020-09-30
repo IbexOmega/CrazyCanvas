@@ -475,7 +475,7 @@ namespace LambdaEngine
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
-		
+
 		m_EntityToPointLight[lastEntity] = currentIndex;
 		m_PointLightToEntity[currentIndex] = lastEntity;
 
@@ -849,7 +849,7 @@ namespace LambdaEngine
 
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
-		
+
 		const glm::vec3 directions[6] =
 		{
 			{1.0f, 0.0f, 0.0f},

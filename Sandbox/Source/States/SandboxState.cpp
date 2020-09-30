@@ -104,7 +104,7 @@ void SandboxState::Init()
 		materialProperties.Roughness	= 1.0f;
 		materialProperties.Metallic		= 1.0f;
 
-		const uint32 robotMaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
 			robotAlbedoGUID,
 			robotNormalGUID,
