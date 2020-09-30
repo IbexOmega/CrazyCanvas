@@ -5,25 +5,33 @@
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   mc:Ignorable="d"
   Background="#00124C7A" d:DesignWidth="443.419" d:DesignHeight="235.461">
-    <StackPanel HorizontalAlignment="Center" Height="269.833" Margin="53.333,75.833,0,0" VerticalAlignment="Center" Width="255.334" MinWidth="49" MinHeight="52" RenderTransformOrigin="0.525,0.51">
-        <Label x:Name="label" Content="Main Menu" Height="39.333" Margin="30.293,0,38.294,0" FontSize="18" HorizontalAlignment="Center" Width="186.747" Foreground="White" RenderTransformOrigin="0.505,0.555"/>
-        <Button
+     <StackPanel HorizontalAlignment="Center" Height="269.833" Margin="0" VerticalAlignment="Center" Width="255.334" MinWidth="49" MinHeight="52" RenderTransformOrigin="0.525,0.51">
+            <StackPanel.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="Black" Offset="0.653"/>
+                    <GradientStop Color="#2BFFFFFF"/>
+                    <GradientStop Color="#26FFFFFF" Offset="1"/>
+                    <GradientStop Color="#F10F0F0F" Offset="0.029"/>
+                    <GradientStop Color="#37EAEAEA" Offset="0.552"/>
+                </LinearGradientBrush>
+            </StackPanel.Background>
+            <Label x:Name="label" Content="Main Menu" Margin="0,0,3,0" FontSize="18" HorizontalAlignment="Center" Foreground="White" RenderTransformOrigin="0.505,0.555" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="5,5,6,5" VerticalAlignment="Center"/>
+            <Button
 
-x:Name="button" Margin="0,0,-1.75,0" Content="Sandbox State" Height="33.055"/>
+    x:Name="button" Margin="0,5,0,0" Content="Sandbox State" Height="33.055" Click="OnButton1Click"/>
 
-        <Button
+            <Button
 
-x:Name="button_Copy" Margin="0,0,-1.75,0" Content="Benchmark State" Height="33.054"/>
+    x:Name="button_Copy" Margin="0,5,0,0" Content="Benchmark State" Height="33.054" Click="OnButton2Click"/>
 
-        <CheckBox
+            <CheckBox
 
-x:Name="checkBox" Margin="0,0,-0.5,0" Foreground="White" Content="Raytracing" Background="White" Height="25.004"/>
+    x:Name="checkBox" Margin="0,5,0,0" Foreground="Black" Content="Raytracing" Background="#00000000" Height="25.004"/>
 
-        <CheckBox
+            <CheckBox
 
-x:Name="checkBox_Copy" Margin="0,0,-0.5,0" Foreground="White" Content="Mesh Shaders" Background="White" Height="25.004"/>
-    </StackPanel>
-
+    x:Name="checkBox_Copy" Margin="0,5,0,0" Foreground="Black" Content="Mesh Shaders" Background="#00000000" Height="25.004"/>
+        </StackPanel>
 
 </Grid>
 

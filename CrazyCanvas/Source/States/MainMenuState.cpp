@@ -7,6 +7,7 @@
 #include "Engine/EngineConfig.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+
 MainMenuState::~MainMenuState()
 {
 	int32 ref = m_MainMenuGUI->GetNumReferences();
@@ -21,7 +22,13 @@ void MainMenuState::Init()
 
 	// Put unecessary renderstages to sleep in main menu
 
-	//RenderSystem::GetInstance().SetRenderStageSleeping();
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true); 
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true); 
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", true); 
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", true); 
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true); 
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true); 
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true); 
 
 	RenderGraphStructureDesc renderGraphStructure = {};
 
