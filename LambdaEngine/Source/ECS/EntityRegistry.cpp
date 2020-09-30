@@ -52,9 +52,9 @@ namespace LambdaEngine
 		const std::unordered_set<const ComponentType*>& entityTypes = topPage.IndexID(entity);
 
 		// Entity with excluded components are not allowed
-		for (const ComponentType* excludedType : excludedComponentsTypes)
+		for (const ComponentType* pExcludedType : excludedComponentsTypes)
 		{
-			auto got = entityTypes.find(excludedType);
+			auto got = entityTypes.find(pExcludedType);
 			if (got != entityTypes.end())
 			{
 				return false;
