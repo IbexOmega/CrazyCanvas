@@ -5,6 +5,7 @@
 #include "Rendering/RenderAPI.h"
 
 #include "Engine/EngineConfig.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 MainMenuState::~MainMenuState()
 {
@@ -18,18 +19,9 @@ void MainMenuState::Init()
 {
 	using namespace LambdaEngine;
 
-	//String prefix = m_RayTracingEnabled ? "RT_" : "";
-	//String postfix = m_MeshShadersEnabled ? "_MESH" : "";
-	//String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
-	//size_t pos = renderGraphName.find_first_of(".lrg");
-	//if (pos != String::npos)
-	//{
-	//	renderGraphName.insert(pos, postfix);
-	//}
-	//else
-	//{
-	//	renderGraphName += postfix + ".lrg";
-	//}
+	// Put unecessary renderstages to sleep in main menu
+
+	//RenderSystem::GetInstance().SetRenderStageSleeping();
 
 	RenderGraphStructureDesc renderGraphStructure = {};
 
