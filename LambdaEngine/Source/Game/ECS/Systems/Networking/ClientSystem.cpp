@@ -284,6 +284,8 @@ namespace LambdaEngine
 			pECS->AddComponent<ControllableComponent>(entity,	{ true });
 		else
 			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });
+	
+		m_pInterpolationSystem->OnEntityCreated(entity, networkUID);
 	}
 
 	void ClientSystem::Reconcile()
