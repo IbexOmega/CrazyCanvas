@@ -31,15 +31,15 @@ namespace LambdaEngine
 		m_Entities(),
 		m_NetworkUID(-1)
 	{
-		ClientDesc clientDesc = {};
-		clientDesc.PoolSize = 1024;
-		clientDesc.MaxRetries = 10;
-		clientDesc.ResendRTTMultiplier = 3.0F;
-		clientDesc.Handler = this;
-		clientDesc.Protocol = EProtocol::UDP;
-		clientDesc.PingInterval = Timestamp::Seconds(1);
-		clientDesc.PingTimeout = Timestamp::Seconds(3);
-		clientDesc.UsePingSystem = true;
+		ClientDesc clientDesc			= {};
+		clientDesc.PoolSize				= 1024;
+		clientDesc.MaxRetries			= 10;
+		clientDesc.ResendRTTMultiplier	= 5.0F;
+		clientDesc.Handler				= this;
+		clientDesc.Protocol				= EProtocol::UDP;
+		clientDesc.PingInterval			= Timestamp::Seconds(1);
+		clientDesc.PingTimeout			= Timestamp::Seconds(3);
+		clientDesc.UsePingSystem		= true;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
@@ -164,9 +164,9 @@ namespace LambdaEngine
 		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
 		{
 			BinaryDecoder decoder(pPacket);
-			bool isMySelf = decoder.ReadBool();
-			int32 networkUID = decoder.ReadInt32();
-			glm::vec3 position = decoder.ReadVec3();
+			bool isMySelf		= decoder.ReadBool();
+			int32 networkUID	= decoder.ReadInt32();
+			glm::vec3 position	= decoder.ReadVec3();
 			glm::vec3 color		= decoder.ReadVec3();
 
 			if (isMySelf)
@@ -240,9 +240,9 @@ namespace LambdaEngine
 		LOG_INFO("Creating Entity with ID %d and NetworkID %d", entity, networkUID);
 
 		MaterialProperties materialProperties = {};
-		materialProperties.Roughness = 0.1f;
-		materialProperties.Metallic = 0.0f;
-		materialProperties.Albedo = glm::vec4(color, 1.0f);
+		materialProperties.Roughness	= 0.1f;
+		materialProperties.Metallic		= 0.0f;
+		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
 		MeshComponent meshComponent;
 		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");

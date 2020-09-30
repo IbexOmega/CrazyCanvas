@@ -59,8 +59,9 @@ namespace LambdaEngine
 
 	private:
 		void ReleaseByServer();
-		void Tick(Timestamp delta);
+		void FixedTick(Timestamp delta);
 		void UpdatePingSystem();
+		void HandleReceivedPacketsMainThread();
 		bool HandleReceivedPacket(NetworkSegment* pPacket);
 		void SendDisconnect();
 		void SendServerFull();
@@ -83,5 +84,7 @@ namespace LambdaEngine
 		std::atomic_bool m_TerminationRequested;
 		std::atomic_bool m_TerminationApproved;
 		bool m_UsePingSystem;
+		std::atomic_int8_t m_BufferIndex;
+		TArray<NetworkSegment*> m_ReceivedPackets[2];
 	};
 }
