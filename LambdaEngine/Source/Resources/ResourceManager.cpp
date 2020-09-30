@@ -548,14 +548,14 @@ namespace LambdaEngine
 		uint32 largestWidth		= std::max(pMetallicMap->GetDesc().Width, std::max(pRoughnessMap->GetDesc().Width, pAOMap->GetDesc().Width));
 		uint32 largestHeight	= std::max(pMetallicMap->GetDesc().Height, std::max(pRoughnessMap->GetDesc().Height, pAOMap->GetDesc().Height));
 
+		uint32_t miplevels = 1u;
+		miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
+
 		Texture* pCombinedMaterialTexture;
 		TextureView* pCombinedMaterialTextureView;
 
 		//Create new Combined Material Texture & Texture View
 		{
-			uint32_t miplevels = 1u;
-			miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
-
 			TextureDesc textureDesc = { };
 			textureDesc.DebugName		= "Combined Material Texture";
 			textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
@@ -650,7 +650,9 @@ namespace LambdaEngine
 
 		//Execute Compute Pass
 		{
+			s_pMaterialComputeCommandAllocator->Reset();
 			s_pMaterialComputeCommandList->Begin(nullptr);
+
 			s_pMaterialComputeCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
 			s_pMaterialComputeCommandList->BindDescriptorSetCompute(s_pMaterialDescriptorSet, s_pMaterialPipelineLayout, 0);
@@ -662,21 +664,39 @@ namespace LambdaEngine
 
 			s_pMaterialComputeCommandList->Dispatch(largestWidth, largestHeight, 1);
 
-			s_pMaterialComputeCommandList->QueueTransferBarrier(pCombinedMaterialTexture, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+			s_pMaterialComputeCommandList->QueueTransferBarrier(
+				pCombinedMaterialTexture, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, 
+				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, 
+				ETextureState::TEXTURE_STATE_GENERAL, 
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 			s_pMaterialComputeCommandList->End();
 
 			signalValue++;
-			RenderAPI::GetComputeQueue()->ExecuteCommandLists(&s_pMaterialComputeCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, signalValue > 1 ? s_pMaterialFence : nullptr, signalValue - 1, s_pMaterialFence, signalValue);
+			RenderAPI::GetComputeQueue()->ExecuteCommandLists(&s_pMaterialComputeCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, s_pMaterialFence, signalValue);
 		}
 
 		//Execute Mipmap Pass
+		if (miplevels > 1)
 		{
+			s_pMaterialGraphicsCommandAllocator->Reset();
 			s_pMaterialGraphicsCommandList->Begin(nullptr);
 
-			s_pMaterialGraphicsCommandList->QueueTransferBarrier(pCombinedMaterialTexture, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+			s_pMaterialGraphicsCommandList->QueueTransferBarrier(
+				pCombinedMaterialTexture, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, 
+				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
+				ETextureState::TEXTURE_STATE_GENERAL,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
@@ -914,7 +934,7 @@ namespace LambdaEngine
 		// Create Command Lists
 		{
 			s_pMaterialComputeCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-			s_pMaterialGraphicsCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+			s_pMaterialGraphicsCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 			CommandListDesc commandListDesc = { };
 			commandListDesc.DebugName			= "Compute Command List";
