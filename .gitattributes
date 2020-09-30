@@ -19,14 +19,11 @@
 # Compiled Dynamic libraries
 *.so    binary
 *.dylib binary
-*.dll filter=lfs diff=lfs merge=lfs -text
 # Compiled Static libraries
 *.lai   binary
 *.la    binary
 *.a     binary
-*.lib filter=lfs diff=lfs merge=lfs binary
 *.pdb filter=lfs diff=lfs merge=lfs binary
-*.exp filter=lfs diff=lfs merge=lfs binary
 # Executables
 *.exe   binary
 *.out   binary
