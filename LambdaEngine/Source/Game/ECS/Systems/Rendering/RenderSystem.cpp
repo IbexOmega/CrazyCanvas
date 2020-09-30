@@ -49,15 +49,56 @@ namespace LambdaEngine
 			transformComponents.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
+			systemReg.Phase = g_LastPhase;
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW,	MeshComponent::Type()}},	{&transformComponents},	&m_RenderableEntities,							std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
-				{{{RW,	DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities,	std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
-				{{{RW,	PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities,				std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
-				{{{RW,	ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
-				{{{R,	AnimationComponent::Type()}, {RW, MeshComponent::Type()}}, {&transformComponents}, &m_AnimatedEntities, std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1) }
+				{
+					{
+						{ RW, MeshComponent::Type() }
+					},
+					{ &transformComponents },
+					{ AnimationComponent::Type() },
+					&m_RenderableEntities,
+					std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), 
+					std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)
+				},
+				{
+					{
+						{ RW,	DirectionalLightComponent::Type() }, 
+						{ R,	RotationComponent::Type() }
+					}, 
+					&m_DirectionalLightEntities,	
+					std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), 
+					std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
+				},
+				{
+					{
+						{ RW,	PointLightComponent::Type() }, 
+						{ R,	PositionComponent::Type() }
+					}, 
+					&m_PointLightEntities,
+					std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), 
+					std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) 
+				},
+				{
+					{
+						{ RW,	ViewProjectionMatricesComponent::Type() }, 
+						{ R,	CameraComponent::Type() }
+					}, 
+					{ &transformComponents }, 
+					&m_CameraEntities
+				},
+				{
+					{
+						{ R,	AnimationComponent::Type() }, 
+						{ RW,	MeshComponent::Type() }
+					}, 
+					{ &transformComponents }, 
+					&m_AnimatedEntities, 
+					std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1), 
+					std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1) 
+				}
 			};
-			systemReg.Phase = g_LastPhase;
 
 			RegisterSystem(systemReg);
 		}
@@ -373,6 +414,17 @@ namespace LambdaEngine
 				positionComp.Dirty	= false;
 				rotationComp.Dirty	= false;
 				scaleComp.Dirty		= false;
+			}
+		}
+
+		for (Entity entity0 : m_RenderableEntities)
+		{
+			for (Entity entity1 : m_AnimatedEntities)
+			{
+				if (entity0 == entity1)
+				{
+					break;
+				}
 			}
 		}
 	}
