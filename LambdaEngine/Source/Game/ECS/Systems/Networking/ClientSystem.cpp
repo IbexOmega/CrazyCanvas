@@ -5,6 +5,7 @@
 #include "Engine/EngineLoop.h"
 
 #include "Game/ECS/Components/Player/ControllableComponent.h"
+#include "Game/ECS/Components/Networking/InterpolationComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 
 #include "ECS/ECSCore.h"
@@ -69,7 +70,7 @@ namespace LambdaEngine
 		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
 		SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&ClientSystem::OnPacketPlayerAction, this, std::placeholders::_1));
 
-		m_pInterpolationSystem = DBG_NEW InterpolationSystem();
+		//m_pInterpolationSystem = DBG_NEW InterpolationSystem();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
@@ -223,7 +224,7 @@ namespace LambdaEngine
 		serverGameState.SimulationTick	= decoder.ReadInt32();
 		serverGameState.Position		= decoder.ReadVec3();
 
-		if (networkUID == m_NetworkUID)
+		if (IsLocalClient(networkUID))
 		{
 			m_FramesProcessedByServer.PushBack(serverGameState);
 		}
@@ -231,9 +232,10 @@ namespace LambdaEngine
 		{
 			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
-			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
-			positionComponent.Position = serverGameState.Position;
-			positionComponent.Dirty = true;
+			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityFromNetworkUID(networkUID));
+			
+			positionComponent.Position	= serverGameState.Position;
+			positionComponent.Dirty		= true;
 		}
 	}
 
@@ -278,10 +280,12 @@ namespace LambdaEngine
 
 		m_Entities.insert({ networkUID, entity });
 
-		if (m_NetworkUID == networkUID)
+		if (IsLocalClient(networkUID))
 		{
 			pECS->AddComponent<ControllableComponent>(entity,	{ true });
 		}
+		/*else
+			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });*/
 	}
 
 	void ClientSystem::Reconcile()
