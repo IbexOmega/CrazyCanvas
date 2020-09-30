@@ -230,6 +230,13 @@ namespace LambdaEngine
 			String					Name						= "";
 			RenderStageParameters	Parameters					= {};
 
+			/*
+				If set to true, renderstage will not be submited during execution of rendergraph.
+				*Triggertype will be ignored*
+				Use RenderSystem->setRenderStageSleeping to enable/disable sleeping outside of rendergraph
+			*/
+			bool							Sleeping			= false;
+
 			//Triggering
 			ERenderStageExecutionTrigger	TriggerType			= ERenderStageExecutionTrigger::NONE;
 			uint32							FrameDelay			= 0;
@@ -346,6 +353,12 @@ namespace LambdaEngine
 		* Triggers a Render Stage which has a TriggerType of Triggered
 		*/
 		void TriggerRenderStage(const String& renderStageName);
+
+		/*
+		* Puts given render stage to sleep, this will prevent execution of renderstage
+		* Useful for optimization when a rendergraph can still execute without given renderstage
+		*/
+		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets

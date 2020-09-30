@@ -406,6 +406,19 @@ namespace LambdaEngine
 		UpdateRenderGraph();
 	}
 
+	void RenderSystem::SetRenderStageSleeping(const String& renderStageName, bool sleeping)
+	{
+		if (m_pRenderGraph != nullptr)
+		{
+			m_pRenderGraph->SetRenderStageSleeping(renderStageName, sleeping);
+		}
+		else
+		{
+			LOG_WARNING("[RenderSystem]: SetRenderStageSleeping failed - Rendergraph not initilised");
+		}
+
+	}
+
 	void RenderSystem::OnEntityAdded(Entity entity)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
