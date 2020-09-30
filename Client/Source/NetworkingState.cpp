@@ -38,9 +38,9 @@ void NetworkingState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = pECS->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { position, true });
-			pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-			pECS->AddComponent<ScaleComponent>(entity, { scale, true });
+			pECS->AddComponent<PositionComponent>(entity, { true, position });
+			pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
 	}
