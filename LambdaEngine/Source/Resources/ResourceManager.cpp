@@ -422,10 +422,8 @@ namespace LambdaEngine
 	void ResourceManager::CombineMaterials(Material* pMaterial, GUID_Lambda guid)
 	{
 		// Find largest texture size
-		uint32 largestHeight;
-		uint32 largestWidth;
-		largestWidth	= std::max(pMaterial->pMetallicMap->GetDesc().Width, std::max(pMaterial->pRoughnessMap->GetDesc().Width, pMaterial->pAmbientOcclusionMap->GetDesc().Width));
-		largestHeight	= std::max(pMaterial->pMetallicMap->GetDesc().Height, std::max(pMaterial->pRoughnessMap->GetDesc().Height, pMaterial->pAmbientOcclusionMap->GetDesc().Height));
+		uint32 largestHeight = std::max(pMaterial->pMetallicMap->GetDesc().Width, std::max(pMaterial->pRoughnessMap->GetDesc().Width, pMaterial->pAmbientOcclusionMap->GetDesc().Width));
+		uint32 largestWidth = std::max(pMaterial->pMetallicMap->GetDesc().Height, std::max(pMaterial->pRoughnessMap->GetDesc().Height, pMaterial->pAmbientOcclusionMap->GetDesc().Height));
 
 		// Create Command List
 		CommandAllocator* computeCmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);

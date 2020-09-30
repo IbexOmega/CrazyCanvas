@@ -13,7 +13,6 @@ layout(binding = 3, set = 0, rgba8) uniform writeonly image2D u_OutputImage;
 
 void main()
 {
-    // Working code
     uvec2 OUTPUT_IMAGE_SIZE = imageSize(u_OutputImage);
 	vec2 texcoord   = vec2(gl_GlobalInvocationID.xy) / vec2(OUTPUT_IMAGE_SIZE);
 
