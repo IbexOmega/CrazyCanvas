@@ -85,7 +85,7 @@ namespace LambdaEngine
 		}
 	}
 
-	Entity ClientRemoteSystem::GetEntityPlayer()
+	Entity ClientRemoteSystem::GetEntityPlayer() const
 	{
 		return m_EntityPlayer;
 	}

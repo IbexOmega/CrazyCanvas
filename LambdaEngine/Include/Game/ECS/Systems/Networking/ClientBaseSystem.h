@@ -35,7 +35,7 @@ namespace LambdaEngine
 
 		virtual void TickMainThread(Timestamp deltaTime) = 0;
 		virtual void FixedTickMainThread(Timestamp deltaTime) = 0;
-		virtual Entity GetEntityPlayer() = 0;
+		virtual Entity GetEntityPlayer() const = 0;
 
 		void PlayerUpdate(Entity entity, const GameState& gameState);
 

@@ -29,7 +29,8 @@ namespace LambdaEngine
 		m_SimulationTick(0),
 		m_LastNetworkSimulationTick(0),
 		m_Entities(),
-		m_NetworkUID(-1)
+		m_NetworkUID(-1),
+		m_InterpolationSystem()
 	{
 		ClientDesc clientDesc			= {};
 		clientDesc.PoolSize				= 1024;
@@ -77,14 +78,26 @@ namespace LambdaEngine
 		m_PacketSubscribers[packetType].PushBack(func);
 	}
 
+	Entity ClientSystem::GetEntityFromNetworkUID(int32 networkUID) const
+	{
+		auto pair = m_Entities.find(networkUID);
+		ASSERT(pair != m_Entities.end());
+		return pair->second;
+	}
+
+	bool ClientSystem::IsLocalClient(int32 networkUID) const
+	{
+		return m_NetworkUID == networkUID;
+	}
+
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 
 		if (m_pClient->IsConnected() && m_Entities.size() > 0)
 		{
-			int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
-			int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
+			int8 deltaForward	= int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
+			int8 deltaLeft		= int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
 
 			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 			BinaryEncoder encoder(pPacket);
@@ -114,11 +127,9 @@ namespace LambdaEngine
 		}
 	}
 
-	Entity ClientSystem::GetEntityPlayer()
+	Entity ClientSystem::GetEntityPlayer() const
 	{
-		auto pair = m_Entities.find(m_NetworkUID);
-		ASSERT(pair != m_Entities.end());
-		return pair->second;
+		return GetEntityFromNetworkUID(m_NetworkUID);
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
@@ -169,10 +180,10 @@ namespace LambdaEngine
 	void ClientSystem::OnPacketCreateEntity(NetworkSegment* pPacket)
 	{
 		BinaryDecoder decoder(pPacket);
-		bool isMySelf = decoder.ReadBool();
-		int32 networkUID = decoder.ReadInt32();
-		glm::vec3 position = decoder.ReadVec3();
-		glm::vec3 color = decoder.ReadVec3();
+		bool isMySelf		= decoder.ReadBool();
+		int32 networkUID	= decoder.ReadInt32();
+		glm::vec3 position	= decoder.ReadVec3();
+		glm::vec3 color		= decoder.ReadVec3();
 
 		if (isMySelf)
 			m_NetworkUID = networkUID;
@@ -199,9 +210,9 @@ namespace LambdaEngine
 		GameState serverGameState = {};
 
 		BinaryDecoder decoder(pPacket);
-		int32 networkUID = decoder.ReadInt32();
-		serverGameState.SimulationTick = decoder.ReadInt32();
-		serverGameState.Position = decoder.ReadVec3();
+		int32 networkUID				= decoder.ReadInt32();
+		serverGameState.SimulationTick	= decoder.ReadInt32();
+		serverGameState.Position		= decoder.ReadVec3();
 
 		if (networkUID == m_NetworkUID)
 		{

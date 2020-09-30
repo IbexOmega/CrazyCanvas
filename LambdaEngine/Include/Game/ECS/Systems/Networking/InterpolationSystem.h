@@ -1,0 +1,38 @@
+#pragma once
+
+#include "ECS/System.h"
+
+#include "Game/ECS/Components/Misc/Components.h"
+#include "Game/ECS/Components/Networking/NetworkComponent.h"
+
+
+namespace LambdaEngine
+{
+	class NetworkSegment;
+
+	class InterpolationSystem : public System
+	{
+
+		friend class ClientSystem;
+
+	public:
+		DECL_UNIQUE_CLASS(InterpolationSystem);
+		virtual ~InterpolationSystem();
+
+		void Tick(Timestamp deltaTime) override;
+
+		void TickMainThread(Timestamp deltaTime);
+		void FixedTickMainThread(Timestamp deltaTime);
+
+	private:
+		InterpolationSystem();
+
+		void OnPacketPlayerAction(NetworkSegment* pPacket);
+		void OnPacketCreateEntity(NetworkSegment* pPacket);
+
+		void Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float64 percentage);
+
+	private:
+		IDVector m_InterpolationEntities;
+	};
+}

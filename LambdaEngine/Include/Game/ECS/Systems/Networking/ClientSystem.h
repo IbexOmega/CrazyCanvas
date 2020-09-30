@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
+#include "Game/ECS/Systems/Networking/InterpolationSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -25,11 +26,13 @@ namespace LambdaEngine
 		bool Connect(IPAddress* pAddress);
 
 		void SubscribeToPacketType(uint16 packetType, const std::function<void(NetworkSegment*)>& func);
+		Entity GetEntityFromNetworkUID(int32 networkUID) const;
+		bool IsLocalClient(int32 networkUID) const;
 
 	protected:
 		virtual void TickMainThread(Timestamp deltaTime) override;
 		virtual void FixedTickMainThread(Timestamp deltaTime) override;
-		virtual Entity GetEntityPlayer() override;
+		virtual Entity GetEntityPlayer() const override;
 
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
@@ -75,6 +78,8 @@ namespace LambdaEngine
 		int32 m_LastNetworkSimulationTick;
 		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
 		PacketSubscriberMap m_PacketSubscribers;
+
+		InterpolationSystem m_InterpolationSystem;
 
 	private:
 		static ClientSystem* s_pInstance;
