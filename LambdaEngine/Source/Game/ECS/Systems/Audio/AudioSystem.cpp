@@ -47,8 +47,6 @@ namespace LambdaEngine
 		auto* pCameraComponents = pECS->GetComponentArray<CameraComponent>();
 		auto* pListenerComponents = pECS->GetComponentArray<ListenerComponent>();
 
-		PositionComponent* pActiveCamPosComp = nullptr;
-
 		for (Entity entity : m_AudibleEntities)
 		{
 			auto& audibleComponent = pAudibleComponents->GetData(entity);

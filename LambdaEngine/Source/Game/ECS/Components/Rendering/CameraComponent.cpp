@@ -1,13 +1,10 @@
-#include "Game/ECS/Components/Rendering/CameraComponent.h"
-#include "Game/ECS/Components/Audio/AudibleComponent.h"
-#include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Audio/AudioAPI.h"
-
 #include "Audio/FMOD/AudioDeviceFMOD.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
-#include "Containers/TSharedPtr.h"
-
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
+#include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Misc/Components.h"
 #include "ECS/ECSCore.h"
@@ -53,7 +50,7 @@ namespace LambdaEngine
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 
 		// Listener
-		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener(), {} });
+		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener() });
 
 		return entity;
 	}

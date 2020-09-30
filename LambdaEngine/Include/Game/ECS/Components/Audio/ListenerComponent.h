@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include "ECS/Component.h"
 #include "Audio/API/ISoundInstance3D.h"
@@ -17,6 +16,5 @@ namespace LambdaEngine
 		uint32 ListenerId;
 		AudioListenerDesc Desc;
 	};
-
 
 }
