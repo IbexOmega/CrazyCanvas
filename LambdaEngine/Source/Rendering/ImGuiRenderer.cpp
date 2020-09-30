@@ -492,6 +492,7 @@ namespace LambdaEngine
 							else
 							{
 								uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+								VALIDATE(pipelineGUID != 0);
 
 								vertexShaderIt->second.insert({ pixelShaderGUID, pipelineGUID });
 
@@ -502,6 +503,7 @@ namespace LambdaEngine
 						else
 						{
 							uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+							VALIDATE(pipelineGUID != 0);
 
 							THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
 							pixelShaderToPipelineStateMap.insert({ pixelShaderGUID, pipelineGUID });
@@ -1065,6 +1067,7 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreatePipelineState()
 	{
 		m_PipelineStateID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID);
+		VALIDATE(m_PipelineStateID != 0);
 
 		THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
 		pixelShaderToPipelineStateMap.insert({ m_PixelShaderGUID, m_PipelineStateID });

@@ -76,7 +76,9 @@ namespace LambdaEngine
 			TArray<Weight>	Weights;
 		};
 
-		TArray<Bone> Bones;
+		glm::mat4					GlobalTransform;
+		TArray<Bone>				Bones;
+		THashTable<String, uint32>	BoneMap;
 	};
 
 	struct Animation

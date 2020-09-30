@@ -119,15 +119,18 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
-			AccelerationStructure* pBLAS		= nullptr;
+			AccelerationStructure* pBLAS	= nullptr;
 			SBTRecord ShaderRecord			= {};
 
+			DescriptorSet* pAnimationDescriptorSet = nullptr;
+
+			Buffer* pVertexWeightsBuffer	= nullptr;
 			Buffer* pAnimatedVertexBuffer	= nullptr;
 			Buffer* pVertexBuffer			= nullptr;
 			uint32	VertexCount				= 0;
 			Buffer* pStagingMatrixBuffer	= nullptr;
-			Buffer* pMatrixBuffer			= nullptr;
-			uint32	MatrixCount				= 0;
+			Buffer* pBoneMatrixBuffer		= nullptr;
+			uint32	BoneMatrixCount			= 0;
 			Buffer* pIndexBuffer			= nullptr;
 			uint32	IndexCount				= 0;
 			Buffer* pUniqueIndices			= nullptr;
@@ -255,6 +258,7 @@ namespace LambdaEngine
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
+		void PerformMeshSkinning(CommandList* pCommandList);
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
@@ -285,7 +289,7 @@ namespace LambdaEngine
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
 		bool					m_MeshShadersEnabled = false;
-		//Mesh/Instance/Entity
+		// Mesh/Instance/Entity
 		bool						m_LightsDirty			= true;
 		bool						m_LightsResourceDirty	= false;
 		bool						m_DirectionalExist		= false;
@@ -294,12 +298,12 @@ namespace LambdaEngine
 		THashTable<uint32, Entity>	m_PointLightToEntity;
 		TArray<PointLight>			m_PointLights;
 
-		//Data Supplied to the RenderGraph
+		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
-		//Materials
+		// Materials
 		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
@@ -313,10 +317,10 @@ namespace LambdaEngine
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
 		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
 		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*				m_pMaterialParametersBuffer				= nullptr;
+		Buffer*				m_pMaterialParametersBuffer = nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
 
-		//Per Frame
+		// Per Frame
 		PerFrameBuffer		m_PerFrameData;
 
 		Buffer*	m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
@@ -324,10 +328,10 @@ namespace LambdaEngine
 		Buffer*	m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
 		Buffer*	m_pPerFrameBuffer			= nullptr;
 
-		//Draw Args
+		// Draw Args
 		TSet<uint32> m_RequiredDrawArgs;
 
-		//Ray Tracing
+		// Ray Tracing
 		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
 		Buffer*						m_pCompleteInstanceBuffer		= nullptr;
 		uint32						m_MaxInstances					= 0;
@@ -335,7 +339,12 @@ namespace LambdaEngine
 		TArray<PendingBufferUpdate>	m_CompleteInstanceBufferPendingCopies;
 		TArray<SBTRecord>			m_SBTRecords;
 
-		//Pending/Dirty
+		// Animation
+		uint64						m_SkinningPipelineID;
+		TSharedRef<PipelineLayout>	m_SkinningPipelineLayout;
+		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
+
+		// Pending/Dirty
 		bool						m_SBTRecordsDirty					= true;
 		bool						m_RenderGraphSBTRecordsDirty		= true;
 		bool						m_MaterialsPropertiesBufferDirty	= true;
@@ -345,6 +354,7 @@ namespace LambdaEngine
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyBLASs;
+		TSet<MeshEntry*>			m_AnimationsToUpdate;
 		bool						m_TLASDirty							= true;
 		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;

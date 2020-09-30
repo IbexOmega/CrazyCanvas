@@ -39,9 +39,17 @@ namespace LambdaEngine
 		animation.BoneMatrices.Resize(pAnimation->Channels.GetSize());
 		
 		// Find keyframes
-		uint32 boneID = 0;
 		for (Animation::Channel& channel : pAnimation->Channels)
 		{
+			// Retrive the bone ID
+			auto it = pSkeleton->BoneMap.find(channel.Name);
+			if (it == pSkeleton->BoneMap.end())
+			{
+				continue;
+			}
+
+			const uint32 boneID = it->second;
+
 			// Interpolate position
 			glm::vec3 position;
 			{
@@ -110,25 +118,31 @@ namespace LambdaEngine
 			}
 
 			// Calculate transform
-			glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), position);
+			glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 			transform			= transform * glm::toMat4(rotation);
 			transform			= glm::scale(transform, scale);
-			transform			= transform * pSkeleton->Bones[boneID].OffsetTransform;
 
 			// Increase boneID
-			animation.BoneMatrices[boneID] = transform;
-			boneID++;
+			animation.BoneMatrices[boneID] = pSkeleton->GlobalTransform * transform * pSkeleton->Bones[boneID].OffsetTransform;
 		}
 	}
 
 	bool AnimationSystem::Init()
 	{
 		SystemRegistration systemReg = {};
+		systemReg.Phase = 0;
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
-			{{{ RW, AnimationComponent::Type() }, { R, MeshComponent::Type() }},	&m_AnimationEntities,	std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&AnimationSystem::OnEntityRemoved, this, std::placeholders::_1) },
+			{
+				{
+					{ RW,	AnimationComponent::Type() }, 
+					{ R,	MeshComponent::Type() }
+				},
+				&m_AnimationEntities,	
+				std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1), 
+				std::bind(&AnimationSystem::OnEntityRemoved, this, std::placeholders::_1) 
+			},
 		};
-		systemReg.Phase = 0;
 
 		RegisterSystem(systemReg);
 		return true;

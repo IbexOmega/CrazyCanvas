@@ -1079,19 +1079,24 @@ namespace LambdaEngine
 		for (uint32 r = 0; r < m_RenderStageCount; r++)
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[r];
-
-			pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
-
-			if (pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+			if (pRenderStage->PipelineStateID != 0)
 			{
-				m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
+				pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
+				if (pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+				{
+					m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
 
-				SBTDesc sbtDesc = {};
-				sbtDesc.DebugName		= "Render Graph Global SBT";
-				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
-				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
+					SBTDesc sbtDesc = {};
+					sbtDesc.DebugName		= "Render Graph Global SBT";
+					sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
+					sbtDesc.SBTRecords		= m_GlobalShaderRecords;
 
-				pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+				}
+			}
+			else
+			{
+				LOG_ERROR("[RenderGraph]: Invalid PipelineStateID");
 			}
 		}
 
@@ -2416,6 +2421,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
@@ -2431,6 +2437,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
@@ -2468,6 +2475,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 			}

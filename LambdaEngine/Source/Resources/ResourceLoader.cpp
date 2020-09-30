@@ -211,7 +211,7 @@ namespace LambdaEngine
 
 	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations)
 	{
-		const int32 assimpFlags =
+		int32 assimpFlags =
 			aiProcess_FlipWindingOrder			|
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
@@ -220,7 +220,6 @@ namespace LambdaEngine
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
 			aiProcess_LimitBoneWeights			|
-			//aiProcess_PopulateArmatureData		|
 			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
@@ -967,6 +966,33 @@ namespace LambdaEngine
 		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(MeshIndexType) * indices.GetSize());
 	}
 
+	glm::mat4 AssimpToGLMMat4(const aiMatrix4x4& mat)
+	{
+		glm::mat4 retMat;
+
+		retMat[0][0] = mat.a1;
+		retMat[0][1] = mat.b1;
+		retMat[0][2] = mat.c1;
+		retMat[0][3] = mat.d1;
+
+		retMat[1][0] = mat.a2;
+		retMat[1][1] = mat.b2;
+		retMat[1][2] = mat.c2;
+		retMat[1][3] = mat.d2;
+
+		retMat[2][0] = mat.a3;
+		retMat[2][1] = mat.b3;
+		retMat[2][2] = mat.c3;
+		retMat[2][3] = mat.d3;
+
+		retMat[3][0] = mat.a4;
+		retMat[3][1] = mat.b4;
+		retMat[3][2] = mat.c4;
+		retMat[3][3] = mat.d4;
+
+		return retMat;
+	}
+
 	void ResourceLoader::LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		Skeleton* pSkeleton = DBG_NEW Skeleton();
@@ -979,15 +1005,19 @@ namespace LambdaEngine
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			bone.Name = pBoneAI->mName.C_Str();
-			for (uint32 row = 0; row < 4; row++)
+			
+			auto it = pSkeleton->BoneMap.find(bone.Name);
+			if (it != pSkeleton->BoneMap.end())
 			{
-				ai_real* pRow = pBoneAI->mOffsetMatrix[row];
-				for (uint32 i = 0; i < 4; i++)
-				{
-					bone.OffsetTransform[row][i] = pRow[i];
-				}
+				LOG_ERROR("[ResourceLoader] Multiple bones with the same name");
+				return;
 			}
-
+			else
+			{
+				pSkeleton->BoneMap[bone.Name] = boneIndex;
+			}
+			
+			bone.OffsetTransform	= AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 			bone.Weights.Resize(pBoneAI->mNumWeights);
 			for (uint32 weightIndex = 0; weightIndex < pBoneAI->mNumWeights; weightIndex++)
 			{
@@ -1246,6 +1276,10 @@ namespace LambdaEngine
 			if (pMeshAI->mNumBones > 0)
 			{
 				LoadSkeleton(pMesh, pMeshAI);
+				if (pMesh->pSkeleton)
+				{
+					pMesh->pSkeleton->GlobalTransform = AssimpToGLMMat4(pNode->mTransformation);
+				}
 			}
 
 			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);

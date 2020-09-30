@@ -249,6 +249,51 @@ namespace LambdaEngine
 			}
 		}
 
+		// Create animation resources
+		{
+			DescriptorHeapDesc descriptorHeap;
+			descriptorHeap.DebugName											= "Animation DescriptorHeao";
+			descriptorHeap.DescriptorSetCount									= 1024;
+			descriptorHeap.DescriptorCount.UnorderedAccessBufferDescriptorCount	= 4;
+
+			m_AnimationDescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeap);
+			if (!m_AnimationDescriptorHeap)
+			{
+				return false;
+			}
+
+			DescriptorSetLayoutDesc descriptorSetLayoutDesc;
+			descriptorSetLayoutDesc.DescriptorSetLayoutFlags = 0;
+			descriptorSetLayoutDesc.DescriptorBindings =
+			{
+				{ EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER, 1, 0, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER },
+				{ EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER, 1, 1, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER },
+				{ EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER, 1, 2, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER },
+				{ EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER, 1, 3, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER }
+			};
+
+			PipelineLayoutDesc pipelineLayoutDesc;
+			pipelineLayoutDesc.DebugName			= "Skinning pipeline";
+			pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc };
+			
+			m_SkinningPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
+			if (!m_SkinningPipelineLayout)
+			{
+				return false;
+			}
+
+			ManagedComputePipelineStateDesc pipelineDesc;
+			pipelineDesc.DebugName			= "Skinning pipeline";
+			pipelineDesc.PipelineLayout		= m_SkinningPipelineLayout;
+			pipelineDesc.Shader.ShaderGUID	= ResourceManager::LoadShaderFromFile("Animation/Skinning.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+			
+			m_SkinningPipelineID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
+			if (m_SkinningPipelineID == 0)
+			{
+				return false;
+			}
+		}
+
 		m_LightsDirty = true; // Initilize Light buffer to avoid validation layer errors
 		UpdateBuffers();
 
@@ -257,24 +302,26 @@ namespace LambdaEngine
 
 	bool RenderSystem::Release()
 	{
-		for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
+		for (auto& meshAndInstancesIt : m_MeshAndInstancesMap)
 		{
-			SAFERELEASE(meshAndInstancesIt->second.pBLAS);
-			SAFERELEASE(meshAndInstancesIt->second.pPrimitiveIndices);
-			SAFERELEASE(meshAndInstancesIt->second.pUniqueIndices);
-			SAFERELEASE(meshAndInstancesIt->second.pMeshlets);
-			SAFERELEASE(meshAndInstancesIt->second.pVertexBuffer);
-			SAFERELEASE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
-			SAFERELEASE(meshAndInstancesIt->second.pMatrixBuffer);
-			SAFERELEASE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-			SAFERELEASE(meshAndInstancesIt->second.pIndexBuffer);
-			SAFERELEASE(meshAndInstancesIt->second.pRasterInstanceBuffer);
-			SAFERELEASE(meshAndInstancesIt->second.pASInstanceBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pBLAS);
+			SAFERELEASE(meshAndInstancesIt.second.pPrimitiveIndices);
+			SAFERELEASE(meshAndInstancesIt.second.pUniqueIndices);
+			SAFERELEASE(meshAndInstancesIt.second.pMeshlets);
+			SAFERELEASE(meshAndInstancesIt.second.pVertexBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pAnimatedVertexBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pVertexWeightsBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pAnimationDescriptorSet);
+			SAFERELEASE(meshAndInstancesIt.second.pBoneMatrixBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pStagingMatrixBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pIndexBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pRasterInstanceBuffer);
+			SAFERELEASE(meshAndInstancesIt.second.pASInstanceBuffer);
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
-				SAFERELEASE(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
-				SAFERELEASE(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
+				SAFERELEASE(meshAndInstancesIt.second.ppASInstanceStagingBuffers[b]);
+				SAFERELEASE(meshAndInstancesIt.second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
 
@@ -286,7 +333,6 @@ namespace LambdaEngine
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
 			TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[b];
-
 			for (DeviceChild* pResource : resourcesToRemove)
 			{
 				SAFERELEASE(pResource);
@@ -320,6 +366,8 @@ namespace LambdaEngine
 			m_SwapChain.Reset();
 		}
 
+		m_AnimationDescriptorHeap.Reset();
+		m_SkinningPipelineLayout.Reset();
 		return true;
 	}
 
@@ -391,6 +439,11 @@ namespace LambdaEngine
 				if (meshEntryIt != m_MeshAndInstancesMap.end())
 				{
 					UpdateAnimationBuffers(animationComp, meshEntryIt->second);
+					
+					MeshEntry* pMeshEntry = &meshEntryIt->second;
+					m_AnimationsToUpdate.insert(pMeshEntry);
+					m_DirtyBLASs.insert(pMeshEntry);
+					m_TLASDirty = true;
 				}
 			}
 		}
@@ -414,17 +467,6 @@ namespace LambdaEngine
 				positionComp.Dirty	= false;
 				rotationComp.Dirty	= false;
 				scaleComp.Dirty		= false;
-			}
-		}
-
-		for (Entity entity0 : m_RenderableEntities)
-		{
-			for (Entity entity1 : m_AnimatedEntities)
-			{
-				if (entity0 == entity1)
-				{
-					break;
-				}
 			}
 		}
 	}
@@ -616,6 +658,7 @@ namespace LambdaEngine
 					vertexStagingBufferDesc.SizeInBytes = pMesh->Vertices.GetSize() * sizeof(Vertex);
 
 					Buffer* pVertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexStagingBufferDesc);
+					VALIDATE(pVertexStagingBuffer != nullptr);
 
 					void* pMapped = pVertexStagingBuffer->Map();
 					memcpy(pMapped, pMesh->Vertices.GetData(), vertexStagingBufferDesc.SizeInBytes);
@@ -629,10 +672,38 @@ namespace LambdaEngine
 
 					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
 					meshEntry.VertexCount	= pMesh->Vertices.GetSize();
+					VALIDATE(meshEntry.pVertexBuffer != nullptr);
+
 					if (isAnimated)
 					{
 						vertexBufferDesc.DebugName		= "Animated Vertices Buffer";
 						meshEntry.pAnimatedVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
+						VALIDATE(meshEntry.pAnimatedVertexBuffer != nullptr);
+
+						BufferDesc vertexWeightBufferDesc = {};
+						vertexWeightBufferDesc.DebugName	= "Vertex Weight Staging Buffer";
+						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+						vertexWeightBufferDesc.SizeInBytes	= pMesh->VertexBoneData.GetSize() * sizeof(VertexBoneData);
+
+						VALIDATE(pMesh->VertexBoneData.GetSize() == pMesh->Vertices.GetSize());
+
+						Buffer* pVertexWeightStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexWeightBufferDesc);
+						VALIDATE(pVertexWeightStagingBuffer != nullptr);
+
+						void* pMappedWeights = pVertexWeightStagingBuffer->Map();
+						memcpy(pMappedWeights, pMesh->VertexBoneData.GetData(), vertexWeightBufferDesc.SizeInBytes);
+						pVertexWeightStagingBuffer->Unmap();
+
+						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
+						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					
+						meshEntry.pVertexWeightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexWeightBufferDesc);
+						VALIDATE(meshEntry.pVertexWeightsBuffer != nullptr);
+
+						m_PendingBufferUpdates.PushBack({ pVertexWeightStagingBuffer, 0, meshEntry.pVertexWeightsBuffer, 0, vertexWeightBufferDesc.SizeInBytes });
+						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexWeightStagingBuffer);
 					}
 
 					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes });
@@ -648,6 +719,7 @@ namespace LambdaEngine
 					indexStagingBufferDesc.SizeInBytes	= pMesh->Indices.GetSize() * sizeof(MeshIndexType);
 
 					Buffer* pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&indexStagingBufferDesc);
+					VALIDATE(pIndexStagingBuffer != nullptr);
 
 					void* pMapped = pIndexStagingBuffer->Map();
 					memcpy(pMapped, pMesh->Indices.GetData(), indexStagingBufferDesc.SizeInBytes);
@@ -661,6 +733,7 @@ namespace LambdaEngine
 
 					meshEntry.pIndexBuffer	= RenderAPI::GetDevice()->CreateBuffer(&indexBufferDesc);
 					meshEntry.IndexCount	= pMesh->Indices.GetSize();
+					VALIDATE(meshEntry.pIndexBuffer != nullptr);
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes });
 					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
@@ -677,6 +750,7 @@ namespace LambdaEngine
 						meshletStagingBufferDesc.SizeInBytes	= pMesh->Meshlets.GetSize() * sizeof(Meshlet);
 
 						Buffer* pMeshletStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&meshletStagingBufferDesc);
+						VALIDATE(pMeshletStagingBuffer != nullptr);
 
 						void* pMapped = pMeshletStagingBuffer->Map();
 						memcpy(pMapped, pMesh->Meshlets.GetData(), meshletStagingBufferDesc.SizeInBytes);
@@ -690,6 +764,7 @@ namespace LambdaEngine
 
 						meshEntry.pMeshlets = RenderAPI::GetDevice()->CreateBuffer(&meshletBufferDesc);
 						meshEntry.MeshletCount = pMesh->Meshlets.GetSize();
+						VALIDATE(meshEntry.pMeshlets != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
 						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pMeshletStagingBuffer);
@@ -704,6 +779,7 @@ namespace LambdaEngine
 						uniqueIndicesStagingBufferDesc.SizeInBytes	= pMesh->UniqueIndices.GetSize() * sizeof(MeshIndexType);
 
 						Buffer* pUniqueIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesStagingBufferDesc);
+						VALIDATE(pUniqueIndicesStagingBuffer != nullptr);
 
 						void* pMapped = pUniqueIndicesStagingBuffer->Map();
 						memcpy(pMapped, pMesh->UniqueIndices.GetData(), uniqueIndicesStagingBufferDesc.SizeInBytes);
@@ -717,6 +793,7 @@ namespace LambdaEngine
 
 						meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
 						meshEntry.UniqueIndexCount = pMesh->UniqueIndices.GetSize();
+						VALIDATE(meshEntry.pUniqueIndices != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
 						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pUniqueIndicesStagingBuffer);
@@ -731,6 +808,7 @@ namespace LambdaEngine
 						primitiveIndicesStagingBufferDesc.SizeInBytes	= pMesh->PrimitiveIndices.GetSize() * sizeof(PackedTriangle);
 
 						Buffer* pPrimitiveIndicesStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesStagingBufferDesc);
+						VALIDATE(pPrimitiveIndicesStagingBuffer != nullptr);
 
 						void* pMapped = pPrimitiveIndicesStagingBuffer->Map();
 						memcpy(pMapped, pMesh->PrimitiveIndices.GetData(), primitiveIndicesStagingBufferDesc.SizeInBytes);
@@ -744,6 +822,7 @@ namespace LambdaEngine
 
 						meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);
 						meshEntry.PrimtiveIndexCount = pMesh->PrimitiveIndices.GetSize();
+						VALIDATE(meshEntry.pPrimitiveIndices != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
 						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pPrimitiveIndicesStagingBuffer);
@@ -849,7 +928,7 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		//Todo: This needs to come from the Entity in some way
+		// Todo: This needs to come from the Entity in some way
 		uint32 drawArgHash = TEMP_DRAW_ARG_MASK;
 		if (m_RequiredDrawArgs.count(drawArgHash))
 		{
@@ -860,7 +939,6 @@ namespace LambdaEngine
 	void RenderSystem::RemoveEntityInstance(Entity entity)
 	{
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
-
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
 			LOG_ERROR("[RenderSystem]: Tried to remove entity which does not exist");
@@ -868,7 +946,6 @@ namespace LambdaEngine
 		}
 
 		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
-
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
 			LOG_ERROR("[RenderSystem]: Tried to remove entity which has no MeshAndInstancesMap entry");
@@ -876,7 +953,7 @@ namespace LambdaEngine
 		}
 
 		const uint32 instanceIndex = instanceKeyIt->second.InstanceIndex;
-		TArray<LambdaEngine::RenderSystem::Instance>& rasterInstances = meshAndInstancesIt->second.RasterInstances;
+		TArray<RenderSystem::Instance>& rasterInstances = meshAndInstancesIt->second.RasterInstances;
 		const Instance& rasterInstance = rasterInstances[instanceIndex];
 
 		//Update Material Instance Counts
@@ -914,6 +991,20 @@ namespace LambdaEngine
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pRasterInstanceBuffer);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
 
+			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
+			{
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimatedVertexBuffer);
+
+				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimationDescriptorSet);
+
+				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBoneMatrixBuffer);
+
+				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexWeightsBuffer);
+			}
+
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
@@ -946,7 +1037,6 @@ namespace LambdaEngine
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
 		}
 	}
-
 
 	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
 	{
@@ -1010,7 +1100,6 @@ namespace LambdaEngine
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
 	{
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
-
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
 			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which is not registered");
@@ -1018,7 +1107,6 @@ namespace LambdaEngine
 		}
 
 		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
-
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
 			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which has no MeshAndInstancesMap entry");
@@ -1135,6 +1223,11 @@ namespace LambdaEngine
 			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
 		}
 
+		// Perform mesh skinning
+		{
+			PerformMeshSkinning(pComputeCommandList);
+		}
+
 		//Update Acceleration Structures
 		if (m_RayTracingEnabled)
 		{
@@ -1148,13 +1241,14 @@ namespace LambdaEngine
 	void RenderSystem::UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry)
 	{
 		// If needed create new buffers
-		const uint32 sizeInBytes = animationComp.BoneMatrices.GetSize() * sizeof(glm::mat4);
-		if (animationComp.BoneMatrices.GetSize() > meshEntry.MatrixCount)
+		const uint64 sizeInBytes = animationComp.BoneMatrices.GetSize() * sizeof(glm::mat4);
+		if (animationComp.BoneMatrices.GetSize() > meshEntry.BoneMatrixCount)
 		{
-			if (meshEntry.pMatrixBuffer)
+			if (meshEntry.pBoneMatrixBuffer)
 			{
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pStagingMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pMatrixBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pBoneMatrixBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pAnimationDescriptorSet);
 			}
 
 			BufferDesc matrixBufferDesc = {};
@@ -1165,11 +1259,21 @@ namespace LambdaEngine
 
 			meshEntry.pStagingMatrixBuffer = RenderAPI::GetDevice()->CreateBuffer(&matrixBufferDesc);
 
-			matrixBufferDesc.DebugName		= "Matrix Buffer";
-			matrixBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+			matrixBufferDesc.DebugName	= "Matrix Buffer";
+			matrixBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			matrixBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 
-			meshEntry.pMatrixBuffer	= RenderAPI::GetDevice()->CreateBuffer(&matrixBufferDesc);
-			meshEntry.MatrixCount	= animationComp.BoneMatrices.GetSize();
+			meshEntry.pBoneMatrixBuffer			= RenderAPI::GetDevice()->CreateBuffer(&matrixBufferDesc);
+			meshEntry.BoneMatrixCount			= animationComp.BoneMatrices.GetSize();
+			meshEntry.pAnimationDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet("Animation Descriptor Set", m_SkinningPipelineLayout.Get(), 0, m_AnimationDescriptorHeap.Get());
+			
+			const uint64 offset = 0;
+			uint64 size = meshEntry.VertexCount * sizeof(Vertex);
+			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexBuffer,			&offset, &size,			0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pAnimatedVertexBuffer,	&offset, &size,			1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pBoneMatrixBuffer,		&offset, &sizeInBytes,	2, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+			size = meshEntry.VertexCount * sizeof(VertexBoneData);
+			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexWeightsBuffer, &offset, &size, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 		}
 
 		// Copy data
@@ -1177,7 +1281,22 @@ namespace LambdaEngine
 		memcpy(pMapped, animationComp.BoneMatrices.GetData(), sizeInBytes);
 		meshEntry.pStagingMatrixBuffer->Unmap();
 		
-		m_PendingBufferUpdates.PushBack({ meshEntry.pStagingMatrixBuffer, 0, meshEntry.pMatrixBuffer, 0, sizeInBytes });
+		m_PendingBufferUpdates.PushBack({ meshEntry.pStagingMatrixBuffer, 0, meshEntry.pBoneMatrixBuffer, 0, sizeInBytes });
+	}
+
+	void RenderSystem::PerformMeshSkinning(CommandList* pCommandList)
+	{
+		PipelineState* pPipeline = PipelineStateManager::GetPipelineState(m_SkinningPipelineID);
+		VALIDATE(pPipeline != nullptr);
+		
+		for (MeshEntry* pMeshEntry : m_AnimationsToUpdate)
+		{
+			pCommandList->BindDescriptorSetCompute(pMeshEntry->pAnimationDescriptorSet, m_SkinningPipelineLayout.Get(), 0);
+			pCommandList->BindComputePipeline(pPipeline);
+			pCommandList->Dispatch(pMeshEntry->VertexCount, 1, 1);
+		}
+
+		m_AnimationsToUpdate.clear();
 	}
 
 	void RenderSystem::ExecutePendingBufferUpdates(CommandList* pCommandList)
@@ -1353,20 +1472,27 @@ namespace LambdaEngine
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
 				blasBuildDesc.pAccelerationStructure	= pDirtyBLAS->pBLAS;
 				blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				blasBuildDesc.pVertexBuffer				= pDirtyBLAS->pVertexBuffer;
-				blasBuildDesc.FirstVertexIndex			= 0;
-				blasBuildDesc.VertexStride				= sizeof(Vertex);
-				blasBuildDesc.pIndexBuffer				= pDirtyBLAS->pIndexBuffer;
-				blasBuildDesc.IndexBufferByteOffset		= 0;
-				blasBuildDesc.TriangleCount				= pDirtyBLAS->IndexCount / 3;
-				blasBuildDesc.pTransformBuffer			= nullptr;
-				blasBuildDesc.TransformByteOffset		= 0;
-				blasBuildDesc.Update					= update;
+				if (pDirtyBLAS->pAnimatedVertexBuffer)
+				{
+					blasBuildDesc.pVertexBuffer = pDirtyBLAS->pAnimatedVertexBuffer;
+				}
+				else
+				{
+					blasBuildDesc.pVertexBuffer = pDirtyBLAS->pVertexBuffer;
+				}
+
+				blasBuildDesc.FirstVertexIndex		= 0;
+				blasBuildDesc.VertexStride			= sizeof(Vertex);
+				blasBuildDesc.pIndexBuffer			= pDirtyBLAS->pIndexBuffer;
+				blasBuildDesc.IndexBufferByteOffset	= 0;
+				blasBuildDesc.TriangleCount			= pDirtyBLAS->IndexCount / 3;
+				blasBuildDesc.pTransformBuffer		= nullptr;
+				blasBuildDesc.TransformByteOffset	= 0;
+				blasBuildDesc.Update				= update;
 
 				pCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
 
 				uint64 blasAddress = pDirtyBLAS->pBLAS->GetDeviceAdress();
-
 				for (AccelerationStructureInstance& asInstance : pDirtyBLAS->ASInstances)
 				{
 					asInstance.AccelerationStructureAddress = blasAddress;
