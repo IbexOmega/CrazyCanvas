@@ -45,15 +45,15 @@ namespace LambdaEngine
 
 	void ClientSystem::Init()
 	{
-		ClientDesc clientDesc = {};
-		clientDesc.PoolSize = 1024;
-		clientDesc.MaxRetries = 10;
-		clientDesc.ResendRTTMultiplier = 5.0F;
-		clientDesc.Handler = this;
-		clientDesc.Protocol = EProtocol::UDP;
-		clientDesc.PingInterval = Timestamp::Seconds(1);
-		clientDesc.PingTimeout = Timestamp::Seconds(3);
-		clientDesc.UsePingSystem = true;
+		ClientDesc clientDesc			= {};
+		clientDesc.PoolSize				= 1024;
+		clientDesc.MaxRetries			= 10;
+		clientDesc.ResendRTTMultiplier	= 5.0F;
+		clientDesc.Handler				= this;
+		clientDesc.Protocol				= EProtocol::UDP;
+		clientDesc.PingInterval			= Timestamp::Seconds(1);
+		clientDesc.PingTimeout			= Timestamp::Seconds(3);
+		clientDesc.UsePingSystem		= true;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
@@ -70,7 +70,7 @@ namespace LambdaEngine
 		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
 		SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&ClientSystem::OnPacketPlayerAction, this, std::placeholders::_1));
 
-		//m_pInterpolationSystem = DBG_NEW InterpolationSystem();
+		m_pInterpolationSystem = DBG_NEW InterpolationSystem();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
@@ -230,12 +230,12 @@ namespace LambdaEngine
 		}
 		else
 		{
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			/*auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityFromNetworkUID(networkUID));
 			
 			positionComponent.Position	= serverGameState.Position;
-			positionComponent.Dirty		= true;
+			positionComponent.Dirty		= true;*/
 		}
 	}
 
@@ -281,11 +281,9 @@ namespace LambdaEngine
 		m_Entities.insert({ networkUID, entity });
 
 		if (IsLocalClient(networkUID))
-		{
 			pECS->AddComponent<ControllableComponent>(entity,	{ true });
-		}
-		/*else
-			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });*/
+		else
+			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });
 	}
 
 	void ClientSystem::Reconcile()
