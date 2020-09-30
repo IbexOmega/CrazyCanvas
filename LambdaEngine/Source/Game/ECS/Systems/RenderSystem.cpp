@@ -303,7 +303,8 @@ namespace LambdaEngine
 			if (pointLight.Dirty || position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
-				pointLight.Dirty = false;
+				pointLight.Dirty	= false;
+				position.Dirty		= false;
 			}
 		}
 
@@ -324,8 +325,10 @@ namespace LambdaEngine
 					dirLight.frustumZNear,
 					dirLight.frustumZFar
 				);
-				dirLight.Dirty = rotation.Dirty = position.Dirty = false;
 
+				dirLight.Dirty = false;
+				position.Dirty = false;
+				rotation.Dirty = false;
 			}
 		}
 

@@ -80,8 +80,6 @@ namespace LambdaEngine
 
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			override final;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	override final;
-		virtual void SetStencilTestEnabled(bool enabled) override final;
-		virtual void SetStencilTestOp(EStencilFace face, EStencilOp failOp, EStencilOp passOp, EStencilOp depthFailOp, ECompareOp compareOp) override final;
 		virtual void SetStencilTestReference(EStencilFace face, uint32 reference) override final;
 
 		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) override final;
