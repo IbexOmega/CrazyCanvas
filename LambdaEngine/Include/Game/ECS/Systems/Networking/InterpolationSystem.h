@@ -20,7 +20,7 @@ namespace LambdaEngine
 		InterpolationSystem();
 
 		void OnPacketPlayerAction(NetworkSegment* pPacket);
-		void OnPacketCreateEntity(NetworkSegment* pPacket);
+		void OnEntityCreated(Entity entity, int32 networkUID);
 
 		void Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float64 percentage);
 

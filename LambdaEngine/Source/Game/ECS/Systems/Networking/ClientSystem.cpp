@@ -70,7 +70,7 @@ namespace LambdaEngine
 		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
 		SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&ClientSystem::OnPacketPlayerAction, this, std::placeholders::_1));
 
-		//m_pInterpolationSystem = DBG_NEW InterpolationSystem();
+		m_pInterpolationSystem = DBG_NEW InterpolationSystem();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
@@ -230,12 +230,12 @@ namespace LambdaEngine
 		}
 		else
 		{
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			/*auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityFromNetworkUID(networkUID));
 			
 			positionComponent.Position	= serverGameState.Position;
-			positionComponent.Dirty		= true;
+			positionComponent.Dirty		= true;*/
 		}
 	}
 
@@ -284,8 +284,10 @@ namespace LambdaEngine
 		{
 			pECS->AddComponent<ControllableComponent>(entity,	{ true });
 		}
-		/*else
-			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });*/
+		else
+			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });
+	
+		m_pInterpolationSystem->OnEntityCreated(entity, networkUID);
 	}
 
 	void ClientSystem::Reconcile()

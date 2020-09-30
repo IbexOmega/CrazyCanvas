@@ -23,7 +23,6 @@ namespace LambdaEngine
 		RegisterSystem(systemReg);
 
 		ClientSystem::GetInstance().SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&InterpolationSystem::OnPacketPlayerAction, this, std::placeholders::_1));
-		ClientSystem::GetInstance().SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&InterpolationSystem::OnPacketCreateEntity, this, std::placeholders::_1));
 	}
 
 	InterpolationSystem::~InterpolationSystem()
@@ -47,7 +46,7 @@ namespace LambdaEngine
 
 			deltaTime = currentTime - interpolationComponent.StartTimestamp;
 			percentage = deltaTime.AsSeconds() / interpolationComponent.Duration.AsSeconds();
-
+			LOG_MESSAGE("Percentage: %f", percentage);
 			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, pPositionComponent.Position, percentage);
 			
 			pPositionComponent.Dirty = true;
@@ -77,26 +76,24 @@ namespace LambdaEngine
 			interpolationComponent.StartTimestamp	= EngineLoop::GetTimeSinceStart();
 		}
 	}	
-	
-	void InterpolationSystem::OnPacketCreateEntity(NetworkSegment* pPacket)
+
+	void InterpolationSystem::OnEntityCreated(Entity entity, int32 networkUID)
 	{
 		const ClientSystem& clientSystem = ClientSystem::GetInstance();
-		
-		BinaryDecoder decoder(pPacket);
-		bool isMySelf		= decoder.ReadBool();
-		int32 networkUID	= decoder.ReadInt32();
 
 		if (!clientSystem.IsLocalClient(networkUID))
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 			auto* pInterpolationComponents = pECS->GetComponentArray<InterpolationComponent>();
+			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 			if (!pInterpolationComponents)
 				return;
 
-			InterpolationComponent& interpolationComponent = pInterpolationComponents->GetData(clientSystem.GetEntityFromNetworkUID(networkUID));
+			InterpolationComponent& interpolationComponent	= pInterpolationComponents->GetData(entity);
+			PositionComponent& positionComponent			= pPositionComponents->GetData(entity);
 
-			interpolationComponent.StartPosition	= decoder.ReadVec3();
+			interpolationComponent.StartPosition	= positionComponent.Position;
 			interpolationComponent.EndPosition		= interpolationComponent.StartPosition;
 			interpolationComponent.Duration			= EngineLoop::GetFixedTimestep();
 		}
@@ -104,8 +101,8 @@ namespace LambdaEngine
 	
 	void InterpolationSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float64 percentage)
 	{
-		result.x = (start.x - end.x) * percentage + start.x;
-		result.y = (start.y - end.y) * percentage + start.y;
-		result.z = (start.z - end.z) * percentage + start.z;
+		result.x = (end.x - start.x) * percentage + start.x;
+		result.y = (end.y - start.y) * percentage + start.y;
+		result.z = (end.z - start.z) * percentage + start.z;
 	}
 }
