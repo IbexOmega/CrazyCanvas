@@ -5,7 +5,7 @@
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
 
-class GUITest : public Noesis::UserControl
+class GUITest : public Noesis::Grid
 {
 public:
 	GUITest(const LambdaEngine::String& xamlFile);
@@ -16,5 +16,5 @@ public:
 	void OnButton2Click(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 private:
-	NS_IMPLEMENT_INLINE_REFLECTION_(GUITest, Noesis::UserControl)
+	NS_IMPLEMENT_INLINE_REFLECTION_(GUITest, Noesis::Grid)
 };
