@@ -19,8 +19,8 @@ namespace LambdaEngine
 		PerformComponentRegistrations();
 		PerformComponentDeletions();
 		PerformEntityDeletions();
-		m_ComponentStorage.ResetDirtyFlags();
 		m_JobScheduler.Tick();
+		m_ComponentStorage.ResetDirtyFlags();
 	}
 
 	void ECSCore::RemoveEntity(Entity entity)
