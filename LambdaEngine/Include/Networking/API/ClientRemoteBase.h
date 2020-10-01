@@ -69,6 +69,7 @@ namespace LambdaEngine
 
 		bool RequestTermination(const std::string& reason, bool byServer = false);
 		void OnTerminationApproved();
+		void OnConnectionApproved();
 
 	protected:
 		bool m_DisconnectedByRemote;

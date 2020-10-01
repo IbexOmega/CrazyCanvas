@@ -39,7 +39,9 @@ namespace LambdaEngine
 	class CommandAllocator;
 	class LineRenderer;
 
+	struct CameraComponent;
 	struct RenderGraphStructureDesc;
+	struct ViewProjectionMatricesComponent;
 
 	class LAMBDA_API RenderSystem : public System
 	{
@@ -226,10 +228,10 @@ namespace LambdaEngine
 		void OnPointLightEntityRemoved(Entity entity);
 
 		void RemoveEntityInstance(Entity entity);
-		void UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
-		void UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity, float nearPlane, float farPlane);
+		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
+		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
-		void UpdateCamera(Entity entity);
+		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
 
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;

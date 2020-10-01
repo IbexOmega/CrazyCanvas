@@ -19,6 +19,7 @@ namespace LambdaEngine
 		virtual const TArray<uint32>& GetIDs() const = 0;
 
 		virtual bool HasComponent(Entity entity) const = 0;
+		virtual void ResetDirtyFlags() = 0;
 
 	protected:
 		// Systems or other external users should not be able to perform immediate deletions
@@ -43,6 +44,7 @@ namespace LambdaEngine
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
 		bool HasComponent(Entity entity) const override final { return m_EntityToIndex.find(entity) != m_EntityToIndex.end(); }
+		void ResetDirtyFlags() override final;
 
 	protected:
 		void Remove(Entity entity) override final;
@@ -130,5 +132,17 @@ namespace LambdaEngine
 
 		// Remove the deleted component's entry.
 		m_EntityToIndex.erase(indexItr);
+	}
+
+	template<typename Comp>
+	inline void ComponentArray<Comp>::ResetDirtyFlags()
+	{
+		if constexpr (Comp::HasDirtyFlag())
+		{
+			for (Comp& component : m_Data)
+			{
+				component.Dirty = false;
+			}
+		}
 	}
 }
