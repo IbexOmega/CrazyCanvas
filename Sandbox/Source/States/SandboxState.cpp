@@ -149,7 +149,8 @@ void SandboxState::Init()
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc = {
+		const SoundInstance3DDesc desc = 
+		{
 				.pName = "RobotSoundInstance",
 				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
 				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
