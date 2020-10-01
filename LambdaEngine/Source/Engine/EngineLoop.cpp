@@ -40,6 +40,7 @@
 #include "Game/StateManager.h"
 #include "Game/ECS/Systems/Audio/AudioSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
@@ -238,6 +239,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!AnimationSystem::GetInstance().Init())
+		{
+			return false;
+		}
+		
 		if (!GUIApplication::Init())
 		{
 			return false;

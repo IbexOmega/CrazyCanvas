@@ -486,7 +486,14 @@ namespace LambdaEngine
 		DESCRIPTOR_SET_LAYOUT_FLAG_NONE						= 0,
 		DESCRIPTOR_SET_LAYOUT_FLAG_PUSH_DESCRIPTOR			= FLAG(0),
 		DESCRIPTOR_SET_LAYOUT_FLAG_UPDATE_AFTER_BIND_POOL	= FLAG(1),
+	};
 
+	typedef uint32 FDescriptorHeapFlags;
+	enum FDescriptorHeapFlag : FDescriptorHeapFlags
+	{
+		DESCRIPTOR_HEAP_FLAG_NONE					= 0,
+		DESCRIPTOR_HEAP_FLAG_PUSH_DESCRIPTOR		= FLAG(0),
+		DESCRIPTOR_HEAP_FLAG_UPDATE_AFTER_BIND_POOL	= FLAG(1),
 	};
 
 	typedef uint32 FExtraDynamicStateFlags;

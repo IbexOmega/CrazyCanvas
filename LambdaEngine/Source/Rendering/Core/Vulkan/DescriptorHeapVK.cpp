@@ -76,9 +76,14 @@ namespace LambdaEngine
 		}
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
-		poolInfo.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.pNext			= nullptr;
-		poolInfo.flags			= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.pNext = nullptr;
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		if (pDesc->Flags & FDescriptorHeapFlag::DESCRIPTOR_HEAP_FLAG_UPDATE_AFTER_BIND_POOL)
+		{
+			poolInfo.flags |= VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+		}
+
 		poolInfo.poolSizeCount	= poolCount;
 		poolInfo.pPoolSizes		= poolSizes;
 		poolInfo.maxSets		= pDesc->DescriptorSetCount;

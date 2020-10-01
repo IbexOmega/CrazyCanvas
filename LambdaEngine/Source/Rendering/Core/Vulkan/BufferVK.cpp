@@ -45,6 +45,8 @@ namespace LambdaEngine
 		info.queueFamilyIndexCount  = 0;
 		info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
 		info.size                   = pDesc->SizeInBytes;
+
+		VALIDATE(info.size > 0);
 		
 		VkPhysicalDeviceProperties deviceProperties = m_pDevice->GetPhysicalDeviceProperties();
 		VkPhysicalDeviceLimits& deviceLimits = deviceProperties.limits;
