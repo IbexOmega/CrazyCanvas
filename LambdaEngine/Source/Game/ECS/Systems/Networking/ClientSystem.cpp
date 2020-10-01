@@ -122,7 +122,7 @@ namespace LambdaEngine
 			if (!pControllableComponent)
 				return;
 
-			ControllableComponent& controllableComponent = pControllableComponent->GetData(GetEntityPlayer());
+			const ControllableComponent& controllableComponent = pControllableComponent->GetData(GetEntityPlayer());
 
 			GameState gameState = {};
 
