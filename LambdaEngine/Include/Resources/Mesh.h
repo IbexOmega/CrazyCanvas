@@ -2,7 +2,10 @@
 #include "LambdaEngine.h"
 
 #include "Math/Math.h"
+
 #include "Physics/BoundingBox.h"
+
+#include "Containers/PrehashedString.h"
 
 #include "Rendering/Core/API/Buffer.h"
 
@@ -61,26 +64,26 @@ namespace LambdaEngine
 	// Moved out from mesh due to dependency issue
 	using MeshIndexType = uint32;
 	
+	struct VertexWeight
+	{
+		MeshIndexType	VertexIndex;
+		float32			VertexWeight;
+	};
+
+	struct Bone
+	{
+		PrehashedString			Name;
+		glm::mat4				OffsetTransform;
+		TArray<VertexWeight>	Weights;
+		int32					ParentBoneIndex = -1;
+	};
+
 	struct Skeleton
 	{
-		struct Bone
-		{
-			struct Weight
-			{
-				MeshIndexType	VertexIndex;
-				float32			VertexWeight;
-			};
-
-			String			Name;
-			glm::mat4		OffsetTransform;
-			TArray<Weight>	Weights;
-			int32			ParentBoneIndex = -1;
-		};
-
-		glm::mat4					GlobalTransform;
-		int32						RootBone = -1;
-		TArray<Bone>				Bones;
-		THashTable<String, uint32>	BoneMap;
+		glm::mat4		GlobalTransform;
+		int32			RootBone = -1;
+		TArray<Bone>	Bones;
+		THashTable<PrehashedString, uint32, PrehashedStringHasher>	BoneMap;
 	};
 
 	struct Animation
@@ -99,13 +102,13 @@ namespace LambdaEngine
 				float32		Time;
 			};
 
-			String						Name;
+			PrehashedString				Name;
 			TArray<KeyFrame>			Positions;
 			TArray<KeyFrame>			Scales;
 			TArray<RotationKeyFrame>	Rotations;
 		};
 
-		String			Name;
+		PrehashedString	Name;
 		float64			DurationInTicks;
 		float64			TicksPerSecond;
 		TArray<Channel>	Channels;

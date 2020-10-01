@@ -1047,7 +1047,7 @@ namespace LambdaEngine
 		pSkeleton->Bones.Resize(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneIndex];
+			Bone& bone = pSkeleton->Bones[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			bone.Name = pBoneAI->mName.C_Str();
@@ -1084,15 +1084,15 @@ namespace LambdaEngine
 
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
 		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
+			Bone& bone = pSkeleton->Bones[boneID];
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", static_cast<String>(bone.Name).c_str(), boneID, bone.ParentBoneIndex);
 		}
 
 		// Go through and correct mistakes with the armature
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
 			// We already found the parent
-			Skeleton::Bone& bone = pSkeleton->Bones[boneIndex];
+			Bone& bone = pSkeleton->Bones[boneIndex];
 			if (bone.ParentBoneIndex != -1)
 			{
 				continue;
@@ -1118,15 +1118,15 @@ namespace LambdaEngine
 
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
 		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
+			Bone& bone = pSkeleton->Bones[boneID];
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", static_cast<String>(bone.Name).c_str(), boneID, bone.ParentBoneIndex);
 		}
 
 		// Set weights
 		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
 		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneID];
+			Bone& bone = pSkeleton->Bones[boneID];
 			for (uint32 weightID = 0; weightID < bone.Weights.GetSize(); weightID++)
 			{
 				const uint32	vertexID	= bone.Weights[weightID].VertexIndex;

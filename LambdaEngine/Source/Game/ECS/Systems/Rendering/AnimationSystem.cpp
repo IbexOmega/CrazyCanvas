@@ -130,14 +130,14 @@ namespace LambdaEngine
 		TArray<glm::mat4> tempBones = animation.BoneMatrices;
 		for (uint32 i = 0; i < pSkeleton->Bones.GetSize(); i++)
 		{
-			Skeleton::Bone& bone = pSkeleton->Bones[i];
+			Bone& bone = pSkeleton->Bones[i];
 			tempBones[i] = pSkeleton->GlobalTransform * ApplyParent(bone, *pSkeleton, animation.BoneMatrices) * bone.OffsetTransform;
 		}
 
 		animation.BoneMatrices.Swap(tempBones);
 	}
 
-	glm::mat4 AnimationSystem::ApplyParent(Skeleton::Bone& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
+	glm::mat4 AnimationSystem::ApplyParent(Bone& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
 	{
 		int32 parentID	= bone.ParentBoneIndex;
 		int32 myID		= skeleton.BoneMap[bone.Name];

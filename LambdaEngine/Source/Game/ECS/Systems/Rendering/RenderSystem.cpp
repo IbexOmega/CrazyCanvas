@@ -684,7 +684,7 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pAnimatedVertexBuffer != nullptr);
 
 						BufferDesc vertexWeightBufferDesc = {};
-						vertexWeightBufferDesc.DebugName	= "Vertex Weight Staging Buffer";
+						vertexWeightBufferDesc.DebugName	= "Vertex VertexWeight Staging Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 						vertexWeightBufferDesc.SizeInBytes	= pMesh->VertexBoneData.GetSize() * sizeof(VertexBoneData);
@@ -698,7 +698,7 @@ namespace LambdaEngine
 						memcpy(pMappedWeights, pMesh->VertexBoneData.GetData(), vertexWeightBufferDesc.SizeInBytes);
 						pVertexWeightStagingBuffer->Unmap();
 
-						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
+						vertexWeightBufferDesc.DebugName	= "Vertex VertexWeight Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
 					
