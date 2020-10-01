@@ -9,6 +9,7 @@
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 #include "ECS/ECSCore.h"
+
 #include "Engine/EngineConfig.h"
 
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
@@ -21,8 +22,8 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+
 #include "Input/API/Input.h"
-#include "Math/Random.h"
 
 #include "Math/Random.h"
 
@@ -37,6 +38,7 @@
 #include "GUI/GUITest.h"
 
 #include "GUI/Core/GUIApplication.h"
+
 #include "NoesisPCH.h"
 
 using namespace LambdaEngine;

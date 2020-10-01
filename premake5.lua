@@ -580,7 +580,7 @@ workspace "LambdaEngine"
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
-      "Dependencies/NoesisGUI/Include",
+			"Dependencies/NoesisGUI/Include",
 			-- FMOD
 			"C:/FMOD Studio API Windows/api/core/inc",
 			"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
@@ -641,6 +641,11 @@ workspace "LambdaEngine"
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
 			"Dependencies/NoesisGUI/Include",
+			-- FMOD
+			"C:/FMOD Studio API Windows/api/core/inc",
+			"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/FMOD Studio API Windows/api/core/inc",
 		}
 
 		-- Files
