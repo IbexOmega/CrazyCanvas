@@ -326,8 +326,11 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
+				const int32 x = GET_X_LPARAM(lParam);
+				const int32 y = GET_Y_LPARAM(lParam);
+
 				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
-				m_EventHandler->OnButtonPressed(button, modifierState);
+				m_EventHandler->OnButtonPressed(button, modifierState, x, y);
 				break;
 			}
 
@@ -358,23 +361,32 @@ namespace LambdaEngine
 					button = EMouseButton::MOUSE_BUTTON_FORWARD;
 				}
 
+				const int32 x = GET_X_LPARAM(lParam);
+				const int32 y = GET_Y_LPARAM(lParam);
+
 				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
-				m_EventHandler->OnButtonReleased(button, modifierState);
+				m_EventHandler->OnButtonReleased(button, modifierState, x, y);
 				break;
 			}
 
 			case WM_MOUSEWHEEL:
 			{
+				const int32 x = GET_X_LPARAM(lParam);
+				const int32 y = GET_Y_LPARAM(lParam);
+
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				m_EventHandler->OnMouseScrolled(0, scrollDelta);
+				m_EventHandler->OnMouseScrolled(0, scrollDelta, x, y);
 
 				break;
 			}
 
 			case WM_MOUSEHWHEEL:
 			{
+				const int32 x = GET_X_LPARAM(lParam);
+				const int32 y = GET_Y_LPARAM(lParam);
+
 				const int32 scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-				m_EventHandler->OnMouseScrolled(scrollDelta, 0);
+				m_EventHandler->OnMouseScrolled(scrollDelta, 0, x, y);
 				break;
 			}
 

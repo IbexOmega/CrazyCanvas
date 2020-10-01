@@ -8,6 +8,7 @@ namespace LambdaEngine
 {
 	/*
 	* KeyPressedEvent
+	* bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
 	*/
 	struct KeyPressedEvent : public Event
 	{
@@ -35,6 +36,7 @@ namespace LambdaEngine
 
 	/*
 	* KeyReleasedEvent
+	* bool OnKeyReleased(const KeyReleasedEvent& keyReleasedEvent);
 	*/
 	struct KeyReleasedEvent : public Event
 	{
@@ -60,6 +62,7 @@ namespace LambdaEngine
 
 	/*
 	* KeyTypedEvent
+	* bool OnKeyTyped(const KeyTypedEvent& keyTypedEvent);
 	*/
 	struct KeyTypedEvent : public Event
 	{

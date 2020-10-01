@@ -53,14 +53,17 @@ namespace LambdaEngine
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
 
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		if (m_ppRenderCommandLists != nullptr && m_ppRenderCommandAllocators != nullptr)
 		{
-			SAFERELEASE(m_ppRenderCommandLists[b]);
-			SAFERELEASE(m_ppRenderCommandAllocators[b]);
-		}
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppRenderCommandLists[b]);
+				SAFERELEASE(m_ppRenderCommandAllocators[b]);
+			}
 
-		SAFEDELETE_ARRAY(m_ppRenderCommandLists);
-		SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
+			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+		}
 
 		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
 		EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
@@ -159,7 +162,7 @@ namespace LambdaEngine
 
 		m_BackBufferCount = pPreInitDesc->BackBufferCount;
 
-		if (!CreateCommandLists())
+		if (!CreateRenderCommandLists())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create render command lists");
 			return false;
@@ -987,7 +990,7 @@ namespace LambdaEngine
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 	
-	bool ImGuiRenderer::CreateCommandLists()
+	bool ImGuiRenderer::CreateRenderCommandLists()
 	{
 		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
 		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
