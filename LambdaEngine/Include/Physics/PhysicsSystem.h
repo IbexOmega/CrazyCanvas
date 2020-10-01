@@ -83,8 +83,6 @@ namespace LambdaEngine
 		void TickCharacterControllers(float32 dt);
 		static glm::vec3 GetCharacterTranslation(float32 dt, const glm::vec3& forward, const glm::vec3& right, const FPSControllerComponent& FPSComp);
 
-		// FinalizeCollisionComponent creates an actor and attaches the shape to it. An empty collision component
-		// is returned.
 		void FinalizeCollisionComponent(const StaticCollisionInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation = PxQuat(PxIDENTITY::PxIdentity));
 		void FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
 

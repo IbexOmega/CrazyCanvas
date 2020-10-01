@@ -1,9 +1,15 @@
-#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
 
-#include "ECS/ECSCore.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
+#include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Physics/PhysicsSystem.h"
+
+#include "Resources/ResourceManager.h"
 
 namespace LambdaEngine
 {
@@ -37,6 +43,23 @@ namespace LambdaEngine
 		constexpr const float capsuleHeight = 1.8f;
 		constexpr const float capsuleRadius = 0.2f;
 		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius);
+
+		// Audio Footsteps
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("walking-short.wav");
+		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		const SoundInstance3DDesc desc = {
+				.pName = "WalkingSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = cameraDesc.Position,
+				.Volume = 0.055f
+		};
+		pSoundInstance->Init(&desc);
+		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
+
+		// Listener
+		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener() });
+
 		return entity;
 	}
 

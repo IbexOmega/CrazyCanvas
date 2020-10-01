@@ -33,27 +33,27 @@ namespace LambdaEngine
 		skip loading optional resources by setting fields to nullptr. */
 	struct SceneLoadRequest 
 	{
-		String					Filepath;
-		int32					AssimpFlags;
-		TArray<Mesh*>&			Meshes;
-		TArray<Animation*>&		Animations;
-		TArray<MeshComponent>&	MeshComponents;
+		String						Filepath;
+		int32						AssimpFlags;
+		TArray<Mesh*>&				Meshes;
+		TArray<Animation*>&			Animations;
+		TArray<MeshComponent>&		MeshComponents;
 		// Either both materials and textures are nullptr, or they are both non-null pointers
-		TArray<Material*>*		pMaterials;
-		TArray<Texture*>*		pTextures;
+		TArray<LoadedMaterial*>*	pMaterials;
+		TArray<LoadedTexture*>*		pTextures;
 	};
 
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
-		String						DirectoryPath;
-		TArray<Mesh*>&				Meshes;
-		TArray<MeshComponent>&		MeshComponents;
-		TArray<Animation*>&			Animations;
-		TArray<Material*>*				pMaterials;
-		TArray<Texture*>*				pTextures;
-		THashTable<String, Texture*>	LoadedTextures;
-		THashTable<uint32, uint32>		MaterialIndices;
+		String								DirectoryPath;
+		TArray<Mesh*>&						Meshes;
+		TArray<MeshComponent>&				MeshComponents;
+		TArray<Animation*>&					Animations;
+		TArray<LoadedMaterial*>*			pMaterials;
+		TArray<LoadedTexture*>*				pTextures;
+		THashTable<String, LoadedTexture*>	LoadedTextures;
+		THashTable<uint32, uint32>			MaterialIndices;
 	};
 
 	class LAMBDA_API ResourceLoader
@@ -71,7 +71,13 @@ namespace LambdaEngine
 		*	loadedTextures			- A vector where all loaded Texture(s) will be stored
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures);
+		static bool LoadSceneFromFile(
+			const String& filepath,
+			TArray<MeshComponent>& meshComponents,
+			TArray<Mesh*>& meshes,
+			TArray<Animation*>& animations,
+			TArray<LoadedMaterial*>& materials,
+			TArray<LoadedTexture*>& textures);
 
 		/*
 		* Load a mesh from file
@@ -170,7 +176,6 @@ namespace LambdaEngine
 
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
-		static bool IncludeGLSLToSource(const String& filepath, const char* pSource, FShaderStageFlags stage, String& preprocessedGLSL);
 		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection);
 		static bool CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection);
 

@@ -8,7 +8,7 @@
 
 #include "Rendering/RenderAPI.h"
 
-#include "Audio/AudioSystem.h"
+#include "Audio/AudioAPI.h"
 
 #include "Resources/STB.h"
 #include "Resources/GLSLShaderSource.h"
@@ -102,6 +102,21 @@ namespace LambdaEngine
 		}
 	}
 
+	static FLoadedTextureFlag AssimpTextureFlagToLambdaTextureFlag(aiTextureType textureType)
+	{
+		switch (textureType)
+		{
+		case aiTextureType::aiTextureType_DIFFUSE:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
+		case aiTextureType::aiTextureType_NORMALS:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_HEIGHT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_AMBIENT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
+		case aiTextureType::aiTextureType_REFLECTION:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
+		case aiTextureType::aiTextureType_SHININESS:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		}
+
+		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NONE;
+	}
+
 	/*
 	* ResourceLoader
 	*/
@@ -146,7 +161,7 @@ namespace LambdaEngine
 	/*
 	* Assimp Parsing
 	*/
-	static Texture* LoadAssimpTexture(SceneLoadingContext& context, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
+	static LoadedTexture* LoadAssimpTexture(SceneLoadingContext& context, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
 	{
 		if (pMaterial->GetTextureCount(type) > index)
 		{
@@ -160,9 +175,12 @@ namespace LambdaEngine
 			auto loadedTexture = context.LoadedTextures.find(name);
 			if (loadedTexture == context.LoadedTextures.end())
 			{
-				Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
-				context.LoadedTextures[name] = pTexture;
-				return context.pTextures->PushBack(pTexture);
+				LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
+				pLoadedTexture->pTexture	= ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+				pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+
+				context.LoadedTextures[name] = pLoadedTexture;
+				return context.pTextures->PushBack(pLoadedTexture);
 			}
 			else
 			{
@@ -173,7 +191,13 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures)
+	bool ResourceLoader::LoadSceneFromFile(
+		const String& filepath,
+		TArray<MeshComponent>& meshComponents,
+		TArray<Mesh*>& meshes,
+		TArray<Animation*>& animations,
+		TArray<LoadedMaterial*>& materials,
+		TArray<LoadedTexture*>& textures)
 	{
 		const int32 assimpFlags =
 			aiProcess_FlipWindingOrder			|
@@ -462,7 +486,7 @@ namespace LambdaEngine
 
 		uint32 pixelDataSize = width * height * TextureFormatStride(format);
 
-		BufferDesc bufferDesc	= {};
+		BufferDesc bufferDesc	= { };
 		bufferDesc.DebugName	= "Texture Copy Buffer";
 		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
@@ -648,6 +672,15 @@ namespace LambdaEngine
 
 	GLSLShaderSource ResourceLoader::LoadShaderSourceFromFile(const String& filepath, FShaderStageFlag stage, const String& entryPoint)
 	{
+		if (stage == FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER ||
+			stage == FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER)
+		{
+			VALIDATE_MSG(false, "[ResourceLoader]: Unsupported shader stage because GLSLang can't get their shit together");
+		}
+
 		String file = ConvertSlashes(filepath);
 
 		byte* pShaderRawSource = nullptr;
@@ -659,15 +692,16 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+		size_t found = file.find_last_of("/");
+		std::string shaderName = file.substr(found + 1, file.length());
+		std::string directoryPath = file.substr(0, found);
+
 		GLSLShaderSourceDesc shaderSourceDesc = {};
+		shaderSourceDesc.Name			= shaderName;
 		shaderSourceDesc.EntryPoint		= entryPoint;
 		shaderSourceDesc.ShaderStage	= stage;
-
-		if (!IncludeGLSLToSource(filepath, reinterpret_cast<char*>(pShaderRawSource), stage, shaderSourceDesc.Source))
-		{
-			LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
-			return nullptr;
-		}
+		shaderSourceDesc.Source			= reinterpret_cast<const char*>(pShaderRawSource);
+		shaderSourceDesc.Directory		= directoryPath;
 
 		GLSLShaderSource shaderSource(&shaderSourceDesc);
 		Malloc::Free(pShaderRawSource);
@@ -711,7 +745,7 @@ namespace LambdaEngine
 		SoundEffect3DDesc soundDesc = {};
 		soundDesc.Filepath = ConvertSlashes(filepath);
 
-		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
+		ISoundEffect3D* pSound = AudioAPI::GetDevice()->CreateSoundEffect(&soundDesc);
 		if (pSound == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
@@ -759,60 +793,10 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::IncludeGLSLToSource(const String& filepath, const char* pSource, FShaderStageFlags stage, String& preprocessedGLSL)
-	{
-		if (stage == FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER ||
-			stage == FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER)
-		{
-			VALIDATE_MSG(false, "[ResourceLoader]: Unsupported shader stage because GLSLang can't get their shit together");
-		}
-
-		std::string source			= std::string(pSource);
-		int32 foundBracket			= int32(source.find_last_of('}') + 1);
-		source[foundBracket]		= '\0';
-		const char* pFinalSource	= source.c_str();
-
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
-		glslang::TShader shader(shaderType);
-
-		shader.setStringsWithLengths(&pFinalSource, &foundBracket, 1);
-
-		//Todo: Fetch this
-		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
-		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
-		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
-		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
-		EShMessages messages								= GetDefaultMessages();
-		int32 defaultVersion								= GetDefaultVersion();
-
-		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
-		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
-		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
-
-		DirStackFileIncluder includer;
-
-		//Get Directory Path of File
-		size_t found				= filepath.find_last_of("/\\");
-		std::string directoryPath	= filepath.substr(0, found);
-
-		includer.pushExternalLocalDirectory(directoryPath);
-
-		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
-		{
-			LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
-		}
-
-		return true;
-	}
-
 	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
 	{
 		std::string source			= std::string(pSource);
-		int32 size					= source.size();
+		int32 size					= int32(source.size());
 		const char* pFinalSource	= source.c_str();
 
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
@@ -1009,7 +993,7 @@ namespace LambdaEngine
 		auto mat = context.MaterialIndices.find(pMeshAI->mMaterialIndex);
 		if (mat == context.MaterialIndices.end())
 		{
-			Material*	pMaterial	= DBG_NEW Material();
+			LoadedMaterial*	pMaterial	= DBG_NEW LoadedMaterial();
 			aiMaterial* pMaterialAI	= pSceneAI->mMaterials[pMeshAI->mMaterialIndex];
 #if 0
 			for (uint32 t = 0; t < aiTextureType_UNKNOWN; t++)
