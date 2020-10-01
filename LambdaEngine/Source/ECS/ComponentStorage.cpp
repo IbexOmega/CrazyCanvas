@@ -7,6 +7,7 @@ namespace LambdaEngine
 		for (IComponentArray* compArr : m_ComponentArrays)
 			SAFEDELETE(compArr);
 		m_ComponentArrays.Clear();
+		m_ComponentArraysWithDirtyFlags.Clear();
 	}
 
 	void ComponentStorage::UnsetComponentOwner(const ComponentType* pComponentType)
@@ -40,5 +41,13 @@ namespace LambdaEngine
 	{
 		auto arrayItr = m_CompTypeToArrayMap.find(pComponentType);
 		return arrayItr == m_CompTypeToArrayMap.end() ? nullptr : m_ComponentArrays[arrayItr->second];
+	}
+
+	void ComponentStorage::ResetDirtyFlags()
+	{
+		for (IComponentArray* pArray : m_ComponentArraysWithDirtyFlags)
+		{
+			pArray->ResetDirtyFlags();
+		}
 	}
 }

@@ -405,11 +405,11 @@ float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, f
     vec3 fragToLight  = fragPos - lightPos;
 	float currentDepth = length(fragToLight);
 
-	float shadow	= 0.0;
-	float bias		= 0.2;
-	float offset	= 0.1;
-	int samples	= 20;
-	float diskRadius = 0.05;
+
+	float shadow		= 0.0;
+	float bias			= 0.05;
+	int samples			= 20;
+	float diskRadius	= 0.05;
 
 	for(int i = 0; i < samples; ++i)
 	{

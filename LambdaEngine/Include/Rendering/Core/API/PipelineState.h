@@ -93,9 +93,9 @@ namespace LambdaEngine
 	*/
 	struct GraphicsPipelineStateDesc
 	{
-		String					DebugName		= "";
-		const RenderPass*		pRenderPass		= nullptr;
-		const PipelineLayout*	pPipelineLayout	= nullptr;
+		String						DebugName			= "";
+		const RenderPass*			pRenderPass			= nullptr;
+		const PipelineLayout*		pPipelineLayout		= nullptr;
 		
 		// Pipeline
 		TArray<InputElementDesc>	InputLayout			= { };
@@ -106,7 +106,8 @@ namespace LambdaEngine
 		uint32						SampleMask			= 0;
 		uint32						SampleCount			= 1;
 		uint32						Subpass				= 0;
-		
+		FExtraDynamicStateFlags		ExtraDynamicState	= FExtraDynamicStateFlag::EXTRA_DYNAMIC_STATE_FLAG_NONE;
+
 		// Mesh-Shader pipeline
 		ShaderModuleDesc MeshShader;
 		ShaderModuleDesc TaskShader;

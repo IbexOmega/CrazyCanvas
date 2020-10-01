@@ -13,6 +13,7 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
+#include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -24,6 +25,9 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+
+#include "GUI/Core/GUIApplication.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -51,10 +55,10 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, MeshComponent::Type()}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
-				{{{RW, ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
+				{{{NDA, MeshComponent::Type()}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
+				{{{R, DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities,	std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
+				{{{R, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities, std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
+				{{{R, ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
 
@@ -96,7 +100,7 @@ namespace LambdaEngine
 			if (renderGraphName != "")
 			{
 				String prefix	= m_RayTracingEnabled ? "RT_" : "";
-				String postfix	= m_MeshShadersEnabled? "_MESH" : "";
+				String postfix	= m_MeshShadersEnabled ? "_MESH" : "";
 				size_t pos		= renderGraphName.find_first_of(".lrg");
 				if (pos != String::npos)
 				{
@@ -118,7 +122,6 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
-
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
@@ -131,6 +134,12 @@ namespace LambdaEngine
 				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+			}
+
+			//GUI Renderer
+			{
+				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
@@ -205,6 +214,7 @@ namespace LambdaEngine
 
 		m_LightsDirty = true; // Initilise Light buffer to avoid validation layer errors
 		UpdateBuffers();
+		UpdateRenderGraph();
 
 		return true;
 	}
@@ -280,28 +290,27 @@ namespace LambdaEngine
 
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
-		ComponentArray<PositionComponent>*	pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
-		ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
-		ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
+		const ComponentArray<PositionComponent>*	pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
+		const ComponentArray<RotationComponent>*	pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
+		const ComponentArray<ScaleComponent>*		pScaleComponents	= pECSCore->GetComponentArray<ScaleComponent>();
 
-		ComponentArray<PointLightComponent>* pPointLightComponents = pECSCore->GetComponentArray<PointLightComponent>();
+		const ComponentArray<PointLightComponent>* pPointLightComponents = pECSCore->GetComponentArray<PointLightComponent>();
 		for (Entity entity : m_PointLightEntities.GetIDs())
 		{
-			auto& pointLight = pPointLightComponents->GetData(entity);
-			auto& position = pPositionComponents->GetData(entity);
+			const auto& pointLight = pPointLightComponents->GetData(entity);
+			const auto& position = pPositionComponents->GetData(entity);
 			if (pointLight.Dirty || position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
-				pointLight.Dirty = false;
 			}
 		}
 
 		ComponentArray<DirectionalLightComponent>* pDirLightComponents = pECSCore->GetComponentArray<DirectionalLightComponent>();
 		for (Entity entity : m_DirectionalLightEntities.GetIDs())
 		{
-			auto& dirLight = pDirLightComponents->GetData(entity);
-			auto& position = pPositionComponents->GetData(entity);
-			auto& rotation = pRotationComponents->GetData(entity);
+			const auto& dirLight = pDirLightComponents->GetData(entity);
+			const auto& position = pPositionComponents->GetData(entity);
+			const auto& rotation = pRotationComponents->GetData(entity);
 			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
 			{
 				UpdateDirectionalLight(
@@ -313,26 +322,28 @@ namespace LambdaEngine
 					dirLight.frustumZNear,
 					dirLight.frustumZFar
 				);
-				dirLight.Dirty = rotation.Dirty = position.Dirty = false;
-
 			}
 		}
 
-		ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		const ComponentArray<CameraComponent>*	pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		const ComponentArray<ViewProjectionMatricesComponent>* pViewProjComponents = pECSCore->GetComponentArray<ViewProjectionMatricesComponent>();
 		for (Entity entity : m_CameraEntities.GetIDs())
 		{
-			auto& cameraComp = pCameraComponents->GetData(entity);
+			const auto& cameraComp = pCameraComponents->GetData(entity);
 			if (cameraComp.IsActive)
 			{
-				UpdateCamera(entity);
+				const auto& positionComp = pPositionComponents->GetData(entity);
+				const auto& rotationComp = pRotationComponents->GetData(entity);
+				const auto& viewProjComp = pViewProjComponents->GetData(entity);
+				UpdateCamera(positionComp.Position, rotationComp.Quaternion, cameraComp, viewProjComp);
 			}
 		}
 
 		for (Entity entity : m_RenderableEntities)
 		{
-			auto& positionComp	= pPositionComponents->GetData(entity);
-			auto& rotationComp	= pRotationComponents->GetData(entity);
-			auto& scaleComp		= pScaleComponents->GetData(entity);
+			const auto& positionComp	= pPositionComponents->GetData(entity);
+			const auto& rotationComp	= pRotationComponents->GetData(entity);
+			const auto& scaleComp		= pScaleComponents->GetData(entity);
 
 			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
 			{
@@ -340,13 +351,7 @@ namespace LambdaEngine
 				transform *= glm::toMat4(rotationComp.Quaternion);
 				transform = glm::scale(transform, scaleComp.Scale);
 
-				//rotationComp.Quaternion = glm::rotate(rotationComp.Quaternion, glm::degrees(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
 				UpdateTransform(entity, transform);
-
-				positionComp.Dirty	= false;
-				rotationComp.Dirty	= false;
-				scaleComp.Dirty		= false;
 			}
 		}
 	}
@@ -358,6 +363,7 @@ namespace LambdaEngine
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
+		StagingBufferCache::Tick();
 		CleanBuffers();
 		UpdateBuffers();
 		UpdateRenderGraph();
@@ -421,9 +427,9 @@ namespace LambdaEngine
 		{
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
-			auto& dirLight = pECSCore->GetComponent<DirectionalLightComponent>(entity);
-			auto& position = pECSCore->GetComponent<PositionComponent>(entity);
-			auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
+			const auto& dirLight = pECSCore->GetComponent<DirectionalLightComponent>(entity);
+			const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+			const auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
 
 			UpdateDirectionalLight(
 				dirLight.ColorIntensity,
@@ -445,18 +451,19 @@ namespace LambdaEngine
 
 	void RenderSystem::OnPointLightEntityAdded(Entity entity)
 	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
+		const ECSCore* pECSCore = ECSCore::GetInstance();
 
-		auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
-		auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+		const auto& pointLight = pECSCore->GetComponent<PointLightComponent>(entity);
+		const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+
 
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
 
-		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLightComp.ColorIntensity, .Position = position.Position});
-
-		m_LightsDirty = true;
+		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
+	
+		UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
 	}
 
 	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
@@ -475,7 +482,7 @@ namespace LambdaEngine
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
-		
+
 		m_EntityToPointLight[lastEntity] = currentIndex;
 		m_PointLightToEntity[currentIndex] = lastEntity;
 
@@ -691,10 +698,12 @@ namespace LambdaEngine
 
 				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
 				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pCombinedMaterialMap;
+				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pAOMetallicRoughnessMap;
+
 				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
 				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pCombinedMaterialMapView;
+				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pAOMetallicRoughnessMapView;
+
 				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
@@ -826,7 +835,7 @@ namespace LambdaEngine
 	}
 
 
-	void RenderSystem::UpdateDirectionalLight(glm::vec4& colorIntensity, glm::vec3 position, glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
+	void RenderSystem::UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
 		m_LightBufferData.DirL_Direction = -GetForward(direction);
@@ -838,7 +847,7 @@ namespace LambdaEngine
 		m_LightsDirty = true;
 	}
 
-	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, glm::vec4& colorIntensity, float nearPlane, float farPlane)
+	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
 	{
 		if (m_EntityToPointLight.find(entity) == m_EntityToPointLight.end())
 		{
@@ -849,7 +858,7 @@ namespace LambdaEngine
 
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
-		
+
 		const glm::vec3 directions[6] =
 		{
 			{1.0f, 0.0f, 0.0f},
@@ -862,22 +871,24 @@ namespace LambdaEngine
 
 		const glm::vec3 defaultUp[6] =
 		{
-			g_DefaultUp,
-			g_DefaultUp,
-			{0.0f, 0.0f, -1.0f},
-			{0.0f, 0.0f, 1.0f},
-			g_DefaultUp,
-			g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultForward,
+			g_DefaultForward,
+			-g_DefaultUp,
+			-g_DefaultUp,
 		};
 
 		constexpr uint32 PROJECTIONS = 6;
 		constexpr float FOV = 90.f;
 		constexpr float ASPECT_RATIO = 1.0f;
 		m_PointLights[index].FarPlane = farPlane;
+
+		glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
-			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			m_PointLights[index].ProjViews[p] = perspective;
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}
 
@@ -917,20 +928,16 @@ namespace LambdaEngine
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 	}
 
-	void RenderSystem::UpdateCamera(Entity entity)
+	void RenderSystem::UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp)
 	{
-		ViewProjectionMatricesComponent& viewProjComp = ECSCore::GetInstance()->GetComponent<ViewProjectionMatricesComponent>(entity);
-		PositionComponent& posComp	= ECSCore::GetInstance()->GetComponent<PositionComponent>(entity);
-		RotationComponent& rotComp	= ECSCore::GetInstance()->GetComponent<RotationComponent>(entity);
-		CameraComponent& camComp	= ECSCore::GetInstance()->GetComponent<CameraComponent>(entity);
 		m_PerFrameData.CamData.PrevView			= m_PerFrameData.CamData.View;
 		m_PerFrameData.CamData.PrevProjection	= m_PerFrameData.CamData.Projection;
 		m_PerFrameData.CamData.View				= viewProjComp.View;
 		m_PerFrameData.CamData.Projection		= viewProjComp.Projection;
 		m_PerFrameData.CamData.ViewInv			= camComp.ViewInv;
 		m_PerFrameData.CamData.ProjectionInv	= camComp.ProjectionInv;
-		m_PerFrameData.CamData.Position			= glm::vec4(posComp.Position, 0.f);
-		m_PerFrameData.CamData.Up				= glm::vec4(GetUp(rotComp.Quaternion), 0.f);
+		m_PerFrameData.CamData.Position			= glm::vec4(position, 0.f);
+		m_PerFrameData.CamData.Up				= glm::vec4(GetUp(rotation), 0.f);
 		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 	}
 
@@ -1368,7 +1375,7 @@ namespace LambdaEngine
 			size_t lightBufferSize			= dirLightBufferSize + pointLightsBufferSize;
 
 			// Set point light count
-			m_LightBufferData.PointLightCount = uint32(pointLightCount);
+			m_LightBufferData.PointLightCount = float32(pointLightCount);
 
 			Buffer* pCurrentStagingBuffer = m_ppLightsStagingBuffer[m_ModFrameIndex];
 

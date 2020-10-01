@@ -50,6 +50,16 @@ namespace LambdaEngine
 			return s_pNearestSampler; 
 		}
 
+		FORCEINLINE static Sampler** GetLinearSamplerToBind()
+		{
+			return &s_pLinearSampler;
+		}
+
+		FORCEINLINE static Sampler** GetNearestSamplerToBind()
+		{
+			return &s_pNearestSampler;
+		}
+
 	private:
 		static bool InitDefaults();
 		static void ReleaseDefaults();

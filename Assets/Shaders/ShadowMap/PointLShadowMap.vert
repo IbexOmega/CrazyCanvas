@@ -39,4 +39,5 @@ void main()
     out_WorldPos            = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
     out_PointLightPosition  = pointLight.Position;
     gl_Position             = pointLight.ProjView[faceIndex] * out_WorldPos;
+    gl_Position.y           *= -1.0;
 }

@@ -27,21 +27,26 @@
 #include "Threading/API/ThreadPool.h"
 
 #include "Rendering/RenderAPI.h"
+#include "Rendering/StagingBufferCache.h"
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
-#include "Audio/AudioSystem.h"
+#include "Audio/AudioAPI.h"
 
 #include "Utilities/RuntimeStats.h"
 
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
+#include "Game/ECS/Systems/Audio/AudioSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+#include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/ServerSystem.h"
+
+#include "GUI/Core/GUIApplication.h"
 
 namespace LambdaEngine
 {
@@ -76,10 +81,40 @@ namespace LambdaEngine
 			{
 				fixedClock.Tick();
 				FixedTick(g_FixedTimestep);
-				
 				accumulator -= g_FixedTimestep;
 			}
 		}
+	}
+
+	bool EngineLoop::InitSystems()
+	{
+		if (!RenderSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!PhysicsSystem::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		if (!AudioSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!CameraSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!PlayerMovementSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		TransformApplierSystem::GetInstance()->Init();
+		return true;
 	}
 
 	bool EngineLoop::Tick(Timestamp delta)
@@ -100,12 +135,13 @@ namespace LambdaEngine
 
 		EventQueue::Tick();
 
-		AudioSystem::Tick();
+		AudioAPI::Tick();
 
 		ClientSystem::StaticTickMainThread(delta);
 		ServerSystem::StaticTickMainThread(delta);
 		CameraSystem::GetInstance().MainThreadTick(delta);
 		StateManager::GetInstance()->Tick(delta);
+		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
@@ -187,7 +223,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!AudioSystem::Init())
+		if (!AudioAPI::Init())
 		{
 			return false;
 		}
@@ -202,22 +238,12 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::GetInstance().Init())
+		if (!GUIApplication::Init())
 		{
 			return false;
 		}
 
-		if (!PhysicsSystem::GetInstance()->Init())
-		{
-			return false;
-		}
-
-		if (!CameraSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
-		if (!PlayerMovementSystem::GetInstance().Init())
+		if (!InitSystems())
 		{
 			return false;
 		}
@@ -250,6 +276,16 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!StateManager::GetInstance()->Release())
+		{
+			return false;
+		}
+
+		if (!GUIApplication::Release())
+		{
+			return false;
+		}
+
 		if (!RenderSystem::GetInstance().Release())
 		{
 			return false;
@@ -265,12 +301,17 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!StagingBufferCache::Release())
+		{
+			return false;
+		}
+
 		if (!RenderAPI::Release())
 		{
 			return false;
 		}
 
-		if (!AudioSystem::Release())
+		if (!AudioAPI::Release())
 		{
 			return false;
 		}

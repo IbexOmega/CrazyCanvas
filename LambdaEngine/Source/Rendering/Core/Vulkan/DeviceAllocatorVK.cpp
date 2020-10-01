@@ -340,7 +340,6 @@ namespace LambdaEngine
 		{
 			VALIDATE(aSize > 0);
 			VALIDATE(pageGranularity > 0);
-			//VALIDATE(aOffset + aSize <= bOffset);
 
 			VkDeviceSize aEnd = aOffset + (aSize - 1);
 			VkDeviceSize aEndPage = aEnd & ~(pageGranularity - 1);

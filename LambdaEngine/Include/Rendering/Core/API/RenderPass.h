@@ -36,7 +36,7 @@ namespace LambdaEngine
 
 	struct RenderPassDesc
 	{
-		String									DebugName = "";
+		String									DebugName			= "";
 		TArray<RenderPassAttachmentDesc>		Attachments;
 		TArray<RenderPassSubpassDesc>			Subpasses;
 		TArray<RenderPassSubpassDependencyDesc>	SubpassDependencies;

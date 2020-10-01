@@ -282,7 +282,7 @@ namespace LambdaEngine
 		{
 			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 
-			if (!CompareGameStates(m_FramesProcessedByServer[0], m_FramesToReconcile[0]))
+			if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[0]))
 			{
 				ReplayGameStatesBasedOnServerGameState(m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[0]);
 			}

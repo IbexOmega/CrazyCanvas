@@ -12,6 +12,10 @@ Tested on:
 ### How to contribute
 If you want to contribute, start by reading the [coding-style-document](CodeStandard.MD)
 
+### Dependencies
+* Get Vulkan Drivers [here](https://developer.nvidia.com/vulkan-driver)
+* Get FMOD Engine [here](https://fmod.com/download)
+
 ### How to build
 
 * Clone repository
