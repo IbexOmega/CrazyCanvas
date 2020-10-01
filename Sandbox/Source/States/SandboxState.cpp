@@ -228,21 +228,21 @@ void SandboxState::Init()
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 100.0f}, .FarPlane = 25.0f},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 100.0f}, .NearPlane = 0.01f, .FarPlane = 50.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 100.0f}, .NearPlane = 0.01f, .FarPlane = 50.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 100.0f}, .NearPlane = 0.01f, .FarPlane = 50.0f},
 			};
 
-			const glm::vec3 startPosition[3] =
+			const glm::vec3 startPosition[POINT_LIGHT_COUNT] =
 			{
-				{-1.0f, 5.0f, 1.0f},
-				{-4.0f, 2.0f, -3.0f},
-				{0.0f, 2.0f, 3.0f},
+				{-1.0f, 8.0f, 1.0f},
+				{-4.0f, 8.0f, -3.0f},
+				{0.0f, 8.0f, 3.0f},
 			};
 
 			const float PI = glm::pi<float>();
 			const float RADIUS = 3.0f;
-			for (uint32 i = 0; i < 3; i++)
+			for (uint32 i = 0; i < POINT_LIGHT_COUNT; i++)
 			{
 				float positive = std::powf(-1.0, i);
 
