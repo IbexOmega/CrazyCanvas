@@ -53,7 +53,7 @@ namespace LambdaEngine
 			ControllableComponent& controllableComponent = pInterpolationComponents->GetData(entity);
 
 			controllableComponent.StartPosition = controllableComponent.EndPosition;
-			InterpolationMove(deltaTime, deltaForward, deltaLeft, controllableComponent.EndPosition);
+			PredictMove(deltaTime, deltaForward, deltaLeft, controllableComponent.EndPosition);
 			controllableComponent.StartTimestamp = EngineLoop::GetTimeSinceStart();
 		}
 	}
@@ -97,18 +97,10 @@ namespace LambdaEngine
 
 		PositionComponent& positionComponent = pPositionComponents->GetData(entity);
 
-		if (deltaForward != 0)
-		{
-			positionComponent.Position.z += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaForward);
-		}
-
-		if (deltaLeft != 0)
-		{
-			positionComponent.Position.x += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaLeft);
-		}
+		PredictMove(deltaTime, deltaForward, deltaLeft, positionComponent.Position);
 	}
 
-	void PlayerMovementSystem::InterpolationMove( Timestamp deltaTime, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
+	void PlayerMovementSystem::PredictMove(Timestamp deltaTime, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
 	{
 		if (deltaForward != 0)
 		{
