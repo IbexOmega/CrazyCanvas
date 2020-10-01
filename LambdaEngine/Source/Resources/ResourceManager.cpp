@@ -30,12 +30,13 @@ namespace LambdaEngine
 {
 	GUID_Lambda ResourceManager::s_NextFreeGUID = SMALLEST_UNRESERVED_GUID;
 
-	std::unordered_map<String, GUID_Lambda> ResourceManager::s_MeshNamesToGUIDs;
-	std::unordered_map<String, GUID_Lambda> ResourceManager::s_MaterialNamesToGUIDs;
-	std::unordered_map<String, GUID_Lambda> ResourceManager::s_AnimationNamesToGUIDs;
-	std::unordered_map<String, GUID_Lambda> ResourceManager::s_TextureNamesToGUIDs;
-	std::unordered_map<String, GUID_Lambda> ResourceManager::s_ShaderNamesToGUIDs;
-	std::unordered_map<String, GUID_Lambda> ResourceManager::s_SoundEffectNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MeshNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MaterialNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_AnimationNamesToGUIDs;
+	std::unordered_map<String, TArray<GUID_Lambda>>		ResourceManager::s_MeshNamesToAnimationGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_TextureNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_ShaderNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_SoundEffectNamesToGUIDs;
 
 	std::unordered_map<GUID_Lambda, Mesh*>				ResourceManager::s_Meshes;
 	std::unordered_map<GUID_Lambda, Material*>			ResourceManager::s_Materials;
@@ -292,6 +293,12 @@ namespace LambdaEngine
 		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename);
 		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
+			auto loadedAnimations = s_MeshNamesToAnimationGUIDs.find(filename);
+			if (loadedAnimations != s_MeshNamesToAnimationGUIDs.end())
+			{
+				animations = loadedAnimations->second;
+			}
+
 			return loadedMeshGUID->second;
 		}
 
@@ -300,9 +307,9 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshNamesToGUIDs[filename] = guid;
+			guid							= s_NextFreeGUID++;
+			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshNamesToGUIDs[filename]	= guid;
 		}
 
 		TArray<Animation*> rawAnimations;
@@ -318,6 +325,7 @@ namespace LambdaEngine
 			animations.EmplaceBack(animationsGuid);
 		}
 
+		s_MeshNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
 		return guid;
 	}
 
