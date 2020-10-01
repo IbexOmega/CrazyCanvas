@@ -291,6 +291,9 @@ namespace LambdaEngine
 						writer.String("custom_renderer");
 						writer.Bool(renderStageIt->second.CustomRenderer);
 
+						writer.String("allow_overriding_of_binding_types");
+						writer.Bool(renderStageIt->second.OverrideRecommendedBindingType);
+
 						writer.String("trigger_type");
 						writer.String(ExecutionTriggerTypeToString(renderStageIt->second.TriggerType).c_str());
 
@@ -418,6 +421,7 @@ namespace LambdaEngine
 
 									writer.String("binding_type");
 									writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
+
 
 									writer.String("src_stage");
 
@@ -776,7 +780,8 @@ namespace LambdaEngine
 					nextAttributeID					+= 2;
 					renderStage.Type				= RenderStageTypeFromString(renderStageObject["type"].GetString());
 					renderStage.CustomRenderer		= renderStageObject["custom_renderer"].GetBool();
-
+					renderStage.OverrideRecommendedBindingType = renderStageObject.HasMember("allow_overriding_of_binding_types") ? renderStageObject["allow_overriding_of_binding_types"].GetBool() : false;
+					
 					renderStage.TriggerType = renderStageObject.HasMember("trigger_type")	? ExecutionTriggerTypeFromString(renderStageObject["trigger_type"].GetString()) : ERenderStageExecutionTrigger::EVERY;
 					renderStage.FrameDelay	= renderStageObject.HasMember("frame_delay")	? renderStageObject["frame_delay"].GetInt()		: 0;
 					renderStage.FrameOffset = renderStageObject.HasMember("frame_offset")	? renderStageObject["frame_offset"].GetInt()	: 0;
