@@ -46,7 +46,7 @@ void MainMenuGUI::OnButton1Click(Noesis::BaseComponent* pSender, const Noesis::R
 	SetRenderStagesSleeping();
 
 	State* pStartingState = DBG_NEW PlaySessionState();
-	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void MainMenuGUI::OnButton2Click(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -58,7 +58,7 @@ void MainMenuGUI::OnButton2Click(Noesis::BaseComponent* pSender, const Noesis::R
 	SetRenderStagesSleeping();
 
 	State* pStartingState = DBG_NEW BenchmarkState();
-	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 

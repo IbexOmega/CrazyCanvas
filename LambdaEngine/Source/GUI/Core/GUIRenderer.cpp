@@ -560,30 +560,24 @@ namespace LambdaEngine
 			{
 				TArray<Buffer*>& frameBuffersToRemove = m_pBuffersToRemove[m_ModFrameIndex];
 
-				if (!frameBuffersToRemove.IsEmpty())
+				for (Buffer* pBuffer : frameBuffersToRemove)
 				{
-					for (Buffer* pBuffer : frameBuffersToRemove)
-					{
-						SAFERELEASE(pBuffer);
-					}
-
-					frameBuffersToRemove.Clear();
+					SAFERELEASE(pBuffer);
 				}
+
+				frameBuffersToRemove.Clear();
 			}
 
 			//Make Param Buffers available again
 			{
 				TArray<Buffer*>& buffersNowAvailable = m_pUsedParamsBuffers[m_ModFrameIndex];
 
-				if (!buffersNowAvailable.IsEmpty())
+				for (Buffer* pParamsBuffer : buffersNowAvailable)
 				{
-					for (Buffer* pParamsBuffer : buffersNowAvailable)
-					{
-						m_AvailableParamsBuffers.PushBack(pParamsBuffer);
-					}
-
-					buffersNowAvailable.Clear();
+					m_AvailableParamsBuffers.PushBack(pParamsBuffer);
 				}
+
+				buffersNowAvailable.Clear();
 			}
 
 			//Make Descriptor Sets available again

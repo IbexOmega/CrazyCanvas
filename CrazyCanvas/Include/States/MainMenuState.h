@@ -25,7 +25,6 @@ public:
 
 
 private:
-
 	Noesis::Ptr<MainMenuGUI> m_MainMenuGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
 };
