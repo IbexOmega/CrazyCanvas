@@ -1073,18 +1073,21 @@ namespace LambdaEngine
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[r];
 
-			pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
-
-			if (pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+			if (!pRenderStage->UsesCustomRenderer)
 			{
-				m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
+				pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 
-				SBTDesc sbtDesc = {};
-				sbtDesc.DebugName		= "Render Graph Global SBT";
-				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
-				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
+				if (pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+				{
+					m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
 
-				pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+					SBTDesc sbtDesc = {};
+					sbtDesc.DebugName = "Render Graph Global SBT";
+					sbtDesc.pPipelineState = pRenderStage->pPipelineState;
+					sbtDesc.SBTRecords = m_GlobalShaderRecords;
+
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+				}
 			}
 		}
 
