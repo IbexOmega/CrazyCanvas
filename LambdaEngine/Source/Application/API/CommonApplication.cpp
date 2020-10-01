@@ -1,6 +1,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/Window.h"
+
 #include "Engine/EngineConfig.h"
 
 #include "Application/API/Events/EventQueue.h"

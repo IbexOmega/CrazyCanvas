@@ -1,0 +1,51 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+
+#include "../Helpers.glsl"
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+// Buffers
+layout(binding = 0, set = 0) restrict readonly buffer OriginalVertices
+{ 
+	SVertex Val[]; 
+} b_OriginalVertices;
+
+layout(binding = 1, set = 0) restrict writeonly	buffer SkinnedVertices
+{ 
+	SVertex Val[]; 
+} b_SkinnedVertices;
+
+layout(binding = 2, set = 0) restrict readonly buffer Matrices
+{ 
+	mat4 Val[]; 
+} b_BoneMatrices;
+
+layout(binding = 3, set = 0) restrict readonly buffer BoneWeights
+{ 
+	SVertexBoneData Val[]; 
+} b_BoneWeights;
+
+#define PASSTHROUGH 0
+
+// Main
+void main()
+{
+	SVertexBoneData weights = b_BoneWeights.Val[gl_GlobalInvocationID.x];
+	mat4 bone0 = b_BoneMatrices.Val[weights.Bone0.BoneID] * weights.Bone0.Weight;
+	mat4 bone1 = b_BoneMatrices.Val[weights.Bone1.BoneID] * weights.Bone1.Weight;
+	mat4 bone2 = b_BoneMatrices.Val[weights.Bone2.BoneID] * weights.Bone2.Weight;
+	mat4 bone3 = b_BoneMatrices.Val[weights.Bone3.BoneID] * weights.Bone3.Weight;
+	mat4 transform = bone0 + bone1 + bone2 + bone3;
+
+	SVertex vertex	= b_OriginalVertices.Val[gl_GlobalInvocationID.x];
+	vertex.Position	= transform * vec4(vertex.Position.xyz, 1.0f);
+	vertex.Normal	= transform * vec4(vertex.Normal.xyz, 0.0f);
+	vertex.Tangent	= transform * vec4(vertex.Tangent.xyz, 0.0f);
+
+#if PASSTHROUGH
+	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = b_OriginalVertices.Val[gl_GlobalInvocationID.x];
+#else
+	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = vertex;
+#endif
+}
