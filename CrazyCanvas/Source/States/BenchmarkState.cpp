@@ -217,7 +217,6 @@ void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 	{
 		PrintBenchmarkResults();
 		LambdaEngine::CommonApplication::Get()->Terminate();
-		return;
 	}
 }
 

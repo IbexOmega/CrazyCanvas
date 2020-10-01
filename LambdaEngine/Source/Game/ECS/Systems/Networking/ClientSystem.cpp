@@ -86,7 +86,7 @@ namespace LambdaEngine
 			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 			if (!pPositionComponents)
 				return;
@@ -95,7 +95,7 @@ namespace LambdaEngine
 
 			ASSERT(pair != m_Entities.end());
 
-			PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
+			const PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
 			GameState gameState = {};
 
 			gameState.SimulationTick	= m_SimulationTick;
@@ -212,7 +212,6 @@ namespace LambdaEngine
 					PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
 
 					positionComponent.Position	= serverGameState.Position;
-					positionComponent.Dirty		= true;
 				}
 				else
 				{
@@ -293,7 +292,6 @@ namespace LambdaEngine
 				PositionComponent& positionComponent = pPositionComponents->GetData(pair->second);
 
 				positionComponent.Position	= m_FramesProcessedByServer[0].Position;
-				positionComponent.Dirty		= true;
 
 				//Replay all game states since the game state which resulted in prediction ERROR
 				for (uint32 i = 1; i < m_FramesToReconcile.GetSize(); i++)
