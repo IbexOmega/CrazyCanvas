@@ -5,33 +5,51 @@
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   mc:Ignorable="d"
   Background="#00124C7A" d:DesignWidth="443.419" d:DesignHeight="235.461">
-     <StackPanel HorizontalAlignment="Center" Height="269.833" Margin="0" VerticalAlignment="Center" Width="255.334" MinWidth="49" MinHeight="52" RenderTransformOrigin="0.525,0.51">
-            <StackPanel.Background>
-                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                    <GradientStop Color="Black" Offset="0.653"/>
-                    <GradientStop Color="#2BFFFFFF"/>
-                    <GradientStop Color="#26FFFFFF" Offset="1"/>
-                    <GradientStop Color="#F10F0F0F" Offset="0.029"/>
-                    <GradientStop Color="#37EAEAEA" Offset="0.552"/>
-                </LinearGradientBrush>
-            </StackPanel.Background>
+             
+         <StackPanel HorizontalAlignment="Center" Height="262.834" Margin="0" VerticalAlignment="Center" Width="211.334" MinWidth="49" MinHeight="52" RenderTransformOrigin="0.525,0.51" Background="#33FFFFFF">
             <Label x:Name="label" Content="Main Menu" Margin="0,0,3,0" FontSize="18" HorizontalAlignment="Center" Foreground="White" RenderTransformOrigin="0.505,0.555" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="5,5,6,5" VerticalAlignment="Center"/>
             <Button
 
-    x:Name="button" Margin="0,5,0,0" Content="Sandbox State" Height="33.055" Click="OnButton1Click"/>
+    x:Name="button" Margin="10,5,13,0" Content="Playsession State" Height="33.055" Click="OnButton1Click">
+                <Button.Background>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="#39000000" Offset="0"/>
+                        <GradientStop Color="#76FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Button.Background>
+            </Button>
 
             <Button
 
-    x:Name="button_Copy" Margin="0,5,0,0" Content="Benchmark State" Height="33.054" Click="OnButton2Click"/>
+    x:Name="button_Copy" Margin="10,5,13,0" Content="Benchmark State" Height="33.054"  Click="OnButton2Click">
+                <Button.Background>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="#39000000" Offset="0"/>
+                        <GradientStop Color="#76FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Button.Background>
+            </Button>
 
             <CheckBox
 
-    x:Name="checkBox" Margin="0,5,0,0" Foreground="Black" Content="Raytracing" Background="#00000000" Height="25.004"/>
-
+    x:Name="checkBox" Margin="10,5,13,0" Foreground="Black" Content="Raytracing" Height="25.004" Click="OnRayTracingChecked">
+                <CheckBox.Background>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="#39000000" Offset="0"/>
+                        <GradientStop Color="#76FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </CheckBox.Background>
+            </CheckBox>
             <CheckBox
 
-    x:Name="checkBox_Copy" Margin="0,5,0,0" Foreground="Black" Content="Mesh Shaders" Background="#00000000" Height="25.004"/>
+    x:Name="checkBox_Copy" Margin="10,5,13,0" Foreground="Black" Content="Mesh Shaders" Height="25.004"  Click="OnMeshShadersChecked">
+                <CheckBox.Background>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="#39000000" Offset="0"/>
+                        <GradientStop Color="#76FFFFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                </CheckBox.Background>
+            </CheckBox>
         </StackPanel>
-
 </Grid>
 

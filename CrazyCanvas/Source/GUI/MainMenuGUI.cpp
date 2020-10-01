@@ -26,23 +26,18 @@ bool MainMenuGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event,
 {
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton1Click);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton2Click);
+	NS_CONNECT_EVENT(Noesis::CheckBox, Click, OnRayTracingChecked);
+	NS_CONNECT_EVENT(Noesis::CheckBox, Click, OnMeshShadersChecked);
 	return false;
 }
 
 void MainMenuGUI::OnButton1Click(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	using namespace LambdaEngine;
-
-	LOG_WARNING("PP1");
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", true);
+	SetRenderStagesSleeping();
 
 	State* pStartingState = DBG_NEW PlaySessionState();
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
@@ -50,19 +45,47 @@ void MainMenuGUI::OnButton1Click(Noesis::BaseComponent* pSender, const Noesis::R
 
 void MainMenuGUI::OnButton2Click(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	using namespace LambdaEngine;
-
-	LOG_WARNING("PP2");
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", true);
+	SetRenderStagesSleeping();
 
 	State* pStartingState = DBG_NEW BenchmarkState();
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+}
+
+
+void MainMenuGUI::OnRayTracingChecked(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	LOG_WARNING("RT checked");
+
+	Noesis::ToggleButton* pFE = (Noesis::ToggleButton*)args.source;
+	m_RayTracingSleeping = pFE->GetIsChecked().GetValue();
+}
+
+void MainMenuGUI::OnMeshShadersChecked(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	LOG_WARNING("MeshShaders checked");
+
+	Noesis::ToggleButton* pFE = (Noesis::ToggleButton*)args.source;
+	m_MeshShadersSleeping = pFE->GetIsChecked().GetValue();
+}
+
+
+void MainMenuGUI::SetRenderStagesSleeping()
+{
+	using namespace LambdaEngine;
+
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",	false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",			false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",				false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",				false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",				m_RayTracingSleeping);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",	true);
 }

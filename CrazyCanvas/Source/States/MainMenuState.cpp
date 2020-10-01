@@ -29,6 +29,7 @@ void MainMenuState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true); 
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true); 
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true); 
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
 
 	RenderGraphStructureDesc renderGraphStructure = {};
 
