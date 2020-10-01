@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/System.h"
+#include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -12,15 +12,11 @@
 
 namespace LambdaEngine
 {
-	struct GameState
-	{
-		int32 SimulationTick = -1;
-		glm::vec3 Position;
-		int8 DeltaForward = 0;
-		int8 DeltaLeft = 0;
-	};
+	typedef std::unordered_map<uint16, TArray<std::function<void(NetworkSegment*)>>> PacketSubscriberMap;
 
-	class ClientSystem : public System, protected IClientHandler
+	class InterpolationSystem;
+
+	class ClientSystem : public ClientBaseSystem, protected IClientHandler
 	{
 		friend class EngineLoop;
 
@@ -30,12 +26,15 @@ namespace LambdaEngine
 
 		bool Connect(IPAddress* pAddress);
 
-		void Tick(Timestamp deltaTime) override;
-
-		void FixedTickMainThread(Timestamp deltaTime);
-		void TickMainThread(Timestamp deltaTime);
+		void SubscribeToPacketType(uint16 packetType, const std::function<void(NetworkSegment*)>& func);
+		Entity GetEntityFromNetworkUID(int32 networkUID) const;
+		bool IsLocalClient(int32 networkUID) const;
 
 	protected:
+		virtual void TickMainThread(Timestamp deltaTime) override;
+		virtual void FixedTickMainThread(Timestamp deltaTime) override;
+		virtual Entity GetEntityPlayer() const override;
+
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
 		virtual void OnDisconnecting(IClient* pClient) override;
@@ -46,18 +45,29 @@ namespace LambdaEngine
 
 		void CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color);
 
+	private:
+		void Init();
+
+		void ReplayGameStatesBasedOnServerGameState(const GameState* pGameStates, uint32 count, const GameState& gameStateServer);
+		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
+
+		void OnPacketCreateEntity(NetworkSegment* pPacket);
+		void OnPacketPlayerAction(NetworkSegment* pPacket);
+
 	public:
 		static ClientSystem& GetInstance()
 		{
 			if (!s_pInstance)
+			{
 				s_pInstance = DBG_NEW ClientSystem();
+				s_pInstance->Init();
+			}
 			return *s_pInstance;
 		}
 
 	private:
 		ClientSystem();
 		void Reconcile();
-		void PlayerUpdate(const GameState& gameState);
 
 	private:
 		static void StaticFixedTickMainThread(Timestamp deltaTime);
@@ -73,7 +83,9 @@ namespace LambdaEngine
 		int32 m_SimulationTick;
 		int32 m_LastNetworkSimulationTick;
 		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
-		SpinLock m_Lock;
+		PacketSubscriberMap m_PacketSubscribers;
+
+		InterpolationSystem* m_pInterpolationSystem;
 
 	private:
 		static ClientSystem* s_pInstance;
