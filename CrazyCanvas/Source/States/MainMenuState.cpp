@@ -10,8 +10,6 @@
 
 MainMenuState::~MainMenuState()
 {
-	int32 ref = m_MainMenuGUI->GetNumReferences();
-
 	m_MainMenuGUI.Reset();
 	m_View.Reset();
 }

@@ -11,6 +11,7 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Engine/EngineConfig.h"
 
+
 MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 {
 	using namespace LambdaEngine;
@@ -24,14 +25,15 @@ MainMenuGUI::~MainMenuGUI()
 {
 }
 
-
-
-bool MainMenuGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
+bool MainMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
+	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
+
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton1Click);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton2Click);
 	NS_CONNECT_EVENT(Noesis::CheckBox, Click, OnRayTracingChecked);
 	NS_CONNECT_EVENT(Noesis::CheckBox, Click, OnMeshShadersChecked);
+
 	return false;
 }
 
