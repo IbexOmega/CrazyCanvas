@@ -11,22 +11,28 @@
 
 #include "Input/API/Input.h"
 
+#include "Physics/PhysicsSystem.h"
+
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
 
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width		= window->GetWidth();
-	cameraDesc.Height		= window->GetHeight();
-	cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-	cameraDesc.Position = glm::vec3(0.f, 3.f, 0.f);
-	CreateFreeCameraEntity(cameraDesc);
+	// Create Camera
+	{
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+		const CameraDesc cameraDesc = {
+			.Position = { 0.0f, 20.0f, -2.0f },
+			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+			.Width = (float)window->GetWidth(),
+			.Height = (float)window->GetHeight(),
+			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+		};
+		Entity e = CreateFPSCameraEntity(cameraDesc);
+	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	// Scene
 	{
@@ -39,11 +45,18 @@ void PlaySessionState::Init()
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
-			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { true, position });
-			pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			Entity entity = pECS->CreateEntity();
+			const StaticCollisionInfo collisionCreateInfo = {
+				.Entity			= entity,
+				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+			};
+
+			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
 		}
 	}
 
@@ -81,10 +94,17 @@ void PlaySessionState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(entity, { true, position });
-				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				const StaticCollisionInfo collisionCreateInfo = {
+					.Entity			= entity,
+					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+				};
+
+				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
 			}
 		}
 

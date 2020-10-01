@@ -1,16 +1,15 @@
 #include "Game/ECS/Systems/CameraSystem.h"
 
-#include "Game/ECS/Components/Rendering/CameraComponent.h"
-#include "Game/ECS/Components/Physics/Transform.h"
+#include "Application/API/CommonApplication.h"
 
 #include "ECS/ECSCore.h"
 
-#include <glm/gtx/euler_angles.hpp>
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Physics/Transform.h"
+
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
 #include "Log/Log.h"
-#include "Application/API/CommonApplication.h"
-#include "Application/API/Window.h"
 
 #include "Rendering/LineRenderer.h"
 
@@ -18,26 +17,23 @@ namespace LambdaEngine
 {
 	CameraSystem CameraSystem::s_Instance;
 
-	//The up vector is inverted because of vulkans inverted y-axis
-	const glm::vec3 UP_VECTOR = glm::vec3(0.0f, -1.0f, 0.0f);
-	const glm::vec3 FORWARD_VECTOR = glm::vec3(0.0f, 0.0f, 1.0f);
-
 	bool CameraSystem::Init()
 	{
-		TransformComponents transformComponents;
-		transformComponents.Position.Permissions	= RW;
-		transformComponents.Scale.Permissions		= NDA;
-		transformComponents.Rotation.Permissions	= RW;
-
 		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, CameraComponent::Type()}, {RW, ViewProjectionMatricesComponent::Type()}}, {&transformComponents}, &m_CameraEntities}
+				{
+					{
+						{R, CameraComponent::Type()}, {NDA, ViewProjectionMatricesComponent::Type()}, {RW, VelocityComponent::Type()},
+						{NDA, PositionComponent::Type()}, {RW, RotationComponent::Type()}
+					},
+					&m_CameraEntities
+				}
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::Type()}} };
-			systemReg.Phase = g_LastPhase-1;
+			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
+			systemReg.Phase = 0;
 
 			RegisterSystem(systemReg);
 		}
@@ -47,31 +43,36 @@ namespace LambdaEngine
 
 	void CameraSystem::Tick(Timestamp deltaTime)
 	{
+		const float32 dt = (float32)deltaTime.AsSeconds();
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
-		ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
-		ComponentArray<FreeCameraComponent>* pFreeCameraComponents = pECSCore->GetComponentArray<FreeCameraComponent>();
+		const ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		const ComponentArray<FreeCameraComponent>* pFreeCameraComponents = pECSCore->GetComponentArray<FreeCameraComponent>();
+		const ComponentArray<FPSControllerComponent>* pFPSCameraComponents = pECSCore->GetComponentArray<FPSControllerComponent>();
 
 		for (Entity entity : m_CameraEntities)
 		{
-			auto& camComp = pCameraComponents->GetData(entity);
+			const auto& camComp = pCameraComponents->GetData(entity);
 			if (camComp.IsActive)
 			{
-				auto& viewProjComp = pECSCore->GetComponent<ViewProjectionMatricesComponent>(entity);
-				auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
-				auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
-
-				TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-				const uint16 width = window->GetWidth();
-				const uint16 height = window->GetHeight();
-				camComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
+				auto& rotComp		= pECSCore->GetComponent<RotationComponent>(entity);
+				auto& velocityComp	= pECSCore->GetComponent<VelocityComponent>(entity);
 
 				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
-					HandleInput(deltaTime, entity, posComp, rotComp, pFreeCameraComponents->GetData(entity));
+				{
+					MoveFreeCamera(dt, velocityComp, rotComp, pFreeCameraComponents->GetData(entity));
+				}
+				else if (pFPSCameraComponents && pFPSCameraComponents->HasComponent(entity))
+				{
+					MoveFPSCamera(dt, velocityComp, rotComp, pFPSCameraComponents->GetData(entity));
+				}
 
-				viewProjComp.View = glm::lookAt(posComp.Position, posComp.Position + GetForward(rotComp.Quaternion), g_DefaultUp);
-				camComp.ViewInv = glm::inverse(viewProjComp.View);
-				camComp.ProjectionInv = glm::inverse(viewProjComp.Projection);
+				#ifdef LAMBDA_DEBUG
+					if (Input::IsKeyDown(EKey::KEY_T))
+					{
+						RenderFrustum(entity);
+					}
+				#endif // LAMBDA_DEBUG
 			}
 		}
 	}
@@ -90,27 +91,62 @@ namespace LambdaEngine
 		}
 	}
 
-	void CameraSystem::HandleInput(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
+	void CameraSystem::MoveFreeCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
 	{
-		float32 dt = float32(deltaTime.AsSeconds());
-
-		glm::vec3 translation = {
-				float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-				float(InputActionSystem::IsActive("CAM_UP")			- InputActionSystem::IsActive("CAM_DOWN")),		// Y: Up
-				float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
+		glm::vec3& velocity = velocityComp.Velocity;
+		velocity = {
+			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
+			float(InputActionSystem::IsActive("CAM_UP")			- InputActionSystem::IsActive("CAM_DOWN")),		// Y: Up
+			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
 		};
 
 		const glm::vec3 forward = GetForward(rotComp.Quaternion);
-		const glm::vec3 right	= GetRight(rotComp.Quaternion);
 
-		if (glm::length2(translation) > glm::epsilon<float>())
+		if (glm::length2(velocity) > glm::epsilon<float>())
 		{
+			const glm::vec3 right = GetRight(rotComp.Quaternion);
 			const float shiftSpeedFactor = InputActionSystem::IsActive("CAM_SPEED_MODIFIER") ? 2.0f : 1.0f;
-			translation = glm::normalize(translation) * freeCamComp.SpeedFactor * shiftSpeedFactor * dt;
+			velocity = glm::normalize(velocity) * freeCamComp.SpeedFactor * shiftSpeedFactor * dt;
 
-			posComp.Position += translation.x * right + translation.y * GetUp(rotComp.Quaternion) + translation.z * forward;
+			velocity = velocity.x * right + velocity.y * GetUp(rotComp.Quaternion) + velocity.z * forward;
 		}
 
+		RotateCamera(dt, freeCamComp.MouseSpeedFactor, forward, rotComp.Quaternion);
+	}
+
+	void CameraSystem::MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FPSControllerComponent& FPSComp)
+	{
+		// First calculate translation relative to the character's rotation (i.e. right, up, forward).
+		// Then convert the translation be relative to the world axes.
+		glm::vec3& velocity = velocityComp.Velocity;
+		velocity = {
+			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
+			0.0f,																								// Y: Up
+			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
+		};
+
+		if (glm::length2(velocity) > glm::epsilon<float>())
+		{
+			const int isSprinting = InputActionSystem::IsActive("CAM_SPEED_MODIFIER");
+			const float sprintFactor = std::max(1.0f, FPSComp.SprintSpeedFactor * isSprinting);
+			velocity = glm::normalize(velocity) * FPSComp.SpeedFactor * sprintFactor * dt;
+		}
+
+		velocity.y = -GRAVITATIONAL_ACCELERATION * dt;
+
+		const glm::vec3 forward	= GetForward(rotComp.Quaternion);
+		const glm::vec3 right	= GetRight(rotComp.Quaternion);
+
+		const glm::vec3 forwardHorizontal	= glm::normalize(glm::vec3(forward.x, 0.0f, forward.z));
+		const glm::vec3 rightHorizontal		= glm::normalize(glm::vec3(right.x, 0.0f, right.z));
+
+		velocity = velocity.x * rightHorizontal + velocity.y * g_DefaultUp + velocity.z * forwardHorizontal;
+
+		RotateCamera(dt, FPSComp.MouseSpeedFactor, forward, rotComp.Quaternion);
+	}
+
+	void CameraSystem::RotateCamera(float32 dt, float32 mouseSpeedFactor, const glm::vec3& forward, glm::quat& rotation)
+	{
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
 		float addedPitch	= dt * float(InputActionSystem::IsActive("CAM_ROT_UP") - InputActionSystem::IsActive("CAM_ROT_DOWN"));
 		float addedYaw		= dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
@@ -129,13 +165,6 @@ namespace LambdaEngine
 			m_CIsPressed = false;
 		}
 
-	#ifdef LAMBDA_DEBUG
-		if (Input::IsKeyDown(EKey::KEY_T))
-		{
-			RenderFrustum(entity);
-		}
-	#endif // LAMBDA_DEBUG
-
 		if (m_MouseEnabled)
 		{
 			const MouseState& mouseState = Input::GetMouseState();
@@ -149,8 +178,8 @@ namespace LambdaEngine
 
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
-				addedYaw	-= freeCamComp.MouseSpeedFactor * (float)mouseDelta.x * dt;
-				addedPitch	-= freeCamComp.MouseSpeedFactor * (float)mouseDelta.y * dt;
+				addedYaw	-= mouseSpeedFactor * (float)mouseDelta.x * dt;
+				addedPitch	-= mouseSpeedFactor * (float)mouseDelta.y * dt;
 			}
 		}
 
@@ -159,7 +188,7 @@ namespace LambdaEngine
 		const float currentPitch = glm::clamp(GetPitch(forward) + addedPitch, -MAX_PITCH, MAX_PITCH);
 		const float currentYaw = GetYaw(forward) + addedYaw;
 
-		rotComp.Quaternion =
+		rotation =
 			glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw
 			glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
 	}

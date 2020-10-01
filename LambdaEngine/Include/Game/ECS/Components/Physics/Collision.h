@@ -2,16 +2,20 @@
 
 #include "ECS/Component.h"
 
-namespace physx
-{
-	class PxActor;
-}
+#include <characterkinematic/PxController.h>
 
 namespace LambdaEngine
 {
-	struct CollisionComponent
+	struct StaticCollisionComponent
 	{
-		DECL_COMPONENT(CollisionComponent);
+		DECL_COMPONENT(StaticCollisionComponent);
 		physx::PxActor* pActor;
+	};
+
+	struct CharacterColliderComponent
+	{
+		DECL_COMPONENT(CharacterColliderComponent);
+		physx::PxController* pController;
+		physx::PxControllerFilters Filters;
 	};
 }
