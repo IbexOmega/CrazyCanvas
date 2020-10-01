@@ -120,7 +120,7 @@ namespace LambdaEngine
 		cookingParams.midphaseDesc						= PxMeshMidPhase::eBVH34;
 		cookingParams.suppressTriangleMeshRemapTable	= true;
 		cookingParams.meshPreprocessParams				= PxMeshPreprocessingFlag::eWELD_VERTICES;
-		cookingParams.meshWeldTolerance					= 0.5f;
+		cookingParams.meshWeldTolerance					= 0.1f;
 		m_pCooking->setParams(cookingParams);
 
 		m_pDispatcher = PxDefaultCpuDispatcherCreate(2);
