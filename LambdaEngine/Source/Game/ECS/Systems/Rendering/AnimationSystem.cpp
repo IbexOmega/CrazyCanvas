@@ -36,7 +36,7 @@ namespace LambdaEngine
 		}
 
 		// Make sure we have enough matrices
-		animation.BoneMatrices.Resize(pAnimation->Channels.GetSize());
+		animation.BoneMatrices.Resize(pSkeleton->Bones.GetSize());
 		
 		// Find keyframes
 		for (Animation::Channel& channel : pAnimation->Channels)
@@ -123,8 +123,30 @@ namespace LambdaEngine
 			transform			= glm::scale(transform, scale);
 
 			// Increase boneID
-			animation.BoneMatrices[boneID] = pSkeleton->GlobalTransform * transform * pSkeleton->Bones[boneID].OffsetTransform;
+			animation.BoneMatrices[boneID] = transform;
 		}
+
+		// Apply parent transform
+		TArray<glm::mat4> tempBones = animation.BoneMatrices;
+		for (uint32 i = 0; i < pSkeleton->Bones.GetSize(); i++)
+		{
+			Skeleton::Bone& bone = pSkeleton->Bones[i];
+			tempBones[i] = pSkeleton->GlobalTransform * ApplyParent(bone, *pSkeleton, animation.BoneMatrices) * bone.OffsetTransform;
+		}
+
+		animation.BoneMatrices.Swap(tempBones);
+	}
+
+	glm::mat4 AnimationSystem::ApplyParent(Skeleton::Bone& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
+	{
+		int32 parentID	= bone.ParentBoneIndex;
+		int32 myID		= skeleton.BoneMap[bone.Name];
+		if (parentID == -1)
+		{
+			return matrices[myID];
+		}
+
+		return ApplyParent(skeleton.Bones[parentID], skeleton, matrices) * matrices[myID];
 	}
 
 	bool AnimationSystem::Init()

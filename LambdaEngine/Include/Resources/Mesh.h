@@ -74,9 +74,11 @@ namespace LambdaEngine
 			String			Name;
 			glm::mat4		OffsetTransform;
 			TArray<Weight>	Weights;
+			int32			ParentBoneIndex = -1;
 		};
 
 		glm::mat4					GlobalTransform;
+		int32						RootBone = -1;
 		TArray<Bone>				Bones;
 		THashTable<String, uint32>	BoneMap;
 	};

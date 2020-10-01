@@ -26,6 +26,7 @@ namespace LambdaEngine
 		~AnimationSystem();
 
 		void Animate(Timestamp deltaTime, AnimationComponent& animation, MeshComponent& mesh);
+		glm::mat4 ApplyParent(Skeleton::Bone& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
 	public:
 		static AnimationSystem& GetInstance();

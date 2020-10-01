@@ -97,7 +97,7 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
