@@ -3,15 +3,26 @@
 #include "Utilities/StringUtilities.h"
 #include "ECS/ECSCore.h"
 
+#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
+
 using namespace LambdaEngine;
 
 THashTable<const ComponentType*, uint32>			EntityMaskManager::s_ComponentTypeToMaskMap;
 THashTable<Entity, DrawArgExtensionGroupEntry>		EntityMaskManager::s_EntityToExtensionGroupEntryMap;
+THashTable<uint32, DrawArgExtensionDesc>			EntityMaskManager::s_ExtensionMaskToExtensionDescMap;
+
+bool LambdaEngine::EntityMaskManager::Init()
+{
+	BindTypeToExtensionDesc(MeshPaintComponent::Type(), {1});
+
+	return true;
+}
 
 void LambdaEngine::EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType*  type, const DrawArgExtensionData& DrawArgExtension)
 {
 	uint32 extensionMask = GetExtensionMask(type);
 
+	// Bind entity to the extension data
 	auto it = s_EntityToExtensionGroupEntryMap.find(entity);
 	if (it != s_EntityToExtensionGroupEntryMap.end())
 	{
@@ -47,7 +58,7 @@ uint32 LambdaEngine::EntityMaskManager::FetchEntityMask(Entity entity)
 TArray<uint32> LambdaEngine::EntityMaskManager::ExtractComponentMasksFromEntityMask(uint32 mask)
 {
 	TArray<uint32> componentMasks;
-	for (uint32 bit = 0; bit < sizeof(mask) * 8; bit++)
+	for (uint32 bit = 1; bit < sizeof(mask) * 8; bit++)
 	{
 		// Check if bit is set, if it is. That bit is the mask for the component.
 		uint32 componentMask = mask & (1 << bit);
@@ -68,6 +79,22 @@ uint32 LambdaEngine::EntityMaskManager::GetExtensionMask(const ComponentType* ty
 	uint32 mask = FLAG(++s_MaskCounter);
 	s_ComponentTypeToMaskMap[type] = mask;
 	return	mask;
+}
+
+const DrawArgExtensionDesc& LambdaEngine::EntityMaskManager::GetExtensionDescFromExtensionMask(uint32 mask)
+{
+	ASSERT(s_ExtensionMaskToExtensionDescMap.contains(mask));
+	return s_ExtensionMaskToExtensionDescMap[mask];
+}
+
+void LambdaEngine::EntityMaskManager::BindTypeToExtensionDesc(const ComponentType* type, DrawArgExtensionDesc extensionDesc)
+{
+	uint32 extensionMask = GetExtensionMask(type);
+
+	// Set extension description for later use
+	auto eIt = s_ExtensionMaskToExtensionDescMap.find(extensionMask);
+	if (eIt == s_ExtensionMaskToExtensionDescMap.end())
+		s_ExtensionMaskToExtensionDescMap[extensionMask] = extensionDesc;
 }
 
 void LambdaEngine::EntityMaskManager::CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData& src)

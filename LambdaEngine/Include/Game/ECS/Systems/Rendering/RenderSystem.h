@@ -302,10 +302,6 @@ namespace LambdaEngine
 		//Draw Args
 		TSet<uint32>		m_RequiredDrawArgs;
 
-		// Draw Args Extensions
-		TArray<Texture*>		m_PaintMaskTextures;
-		TArray<TextureView*>	m_PaintMaskTextureViews;
-
 		//Ray Tracing
 		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
 		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
@@ -320,7 +316,6 @@ namespace LambdaEngine
 		bool						m_MaterialsPropertiesBufferDirty	= true;
 		bool						m_MaterialsResourceDirty			= true;
 		bool						m_PerFrameResourceDirty				= true;
-		bool						m_PaintMaskResourcesDirty			= true;
 		TSet<uint32>				m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;

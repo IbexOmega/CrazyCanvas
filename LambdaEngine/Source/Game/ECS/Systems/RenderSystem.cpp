@@ -679,7 +679,7 @@ namespace LambdaEngine
 					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
 
-					uint32 numExtensions = extensionGroup.ExtensionCount;
+					/*uint32 numExtensions = extensionGroup.ExtensionCount;
 					for (uint32 e = 0; e < numExtensions; e++)
 					{
 						// This might be too specific. Try to make this more general. 
@@ -690,7 +690,7 @@ namespace LambdaEngine
 							m_PaintMaskTextureViews.PushBack(extensionGroup.pExtensions[e].ppTextureViews[0]);
 							m_PaintMaskResourcesDirty = true;
 						}
-					}
+					}*/
 				}
 				else
 				{
@@ -1581,23 +1581,6 @@ namespace LambdaEngine
 
 				m_TLASResourceDirty = false;
 			}
-		}
-
-		if (m_PaintMaskResourcesDirty)
-		{
-			const uint32 count = m_PaintMaskTextures.GetSize();
-			TArray<Sampler*> linearSamplers(count, Sampler::GetLinearSampler());
-
-			ResourceUpdateDesc paintMaskTextureMapUpdateDesc = {};
-			paintMaskTextureMapUpdateDesc.ResourceName = PAINT_MASK_TEXTURES;
-			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.ppTextures = m_PaintMaskTextures.GetData();
-			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_PaintMaskTextureViews.GetData();
-			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.ppSamplers = linearSamplers.GetData();
-			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.HasDynamicSubResourceCount = true;
-			paintMaskTextureMapUpdateDesc.ExternalTextureUpdate.DynamicSubResourceCount = count;
-			m_pRenderGraph->UpdateResource(&paintMaskTextureMapUpdateDesc);
-
-			m_PaintMaskResourcesDirty = false;
 		}
 	}
 }

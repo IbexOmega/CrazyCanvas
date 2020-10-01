@@ -23,7 +23,8 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_AOMaps[MAX_UNIQ
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_RoughnessMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_MaskTexture;
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+
+layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
 layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;
@@ -76,6 +77,6 @@ void main()
 	out_Velocity              	= vec2(screenVelocity);
 
     // 5
-    vec3 paintMask         = texture(u_MaskTexture, texCoord).rgb;
-	out_Albedo = paintMask;
+    //vec3 paintMask         = texture(u_MaskTexture, texCoord).rgb;
+	//out_Albedo = paintMask;
 }

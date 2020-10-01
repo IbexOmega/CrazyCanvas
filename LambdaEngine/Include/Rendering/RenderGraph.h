@@ -85,8 +85,6 @@ namespace LambdaEngine
 				Texture**		ppTextures;
 				TextureView**	ppTextureViews;
 				Sampler**		ppSamplers;
-				bool			HasDynamicSubResourceCount;
-				int32			DynamicSubResourceCount;
 			} ExternalTextureUpdate;
 
 			struct

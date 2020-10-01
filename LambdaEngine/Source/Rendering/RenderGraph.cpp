@@ -1718,6 +1718,9 @@ namespace LambdaEngine
 			TArray<DescriptorBindingDesc> drawArgDescriptorSetDescriptions;
 			drawArgDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
+			TArray<DescriptorBindingDesc> drawArgExtensionDescriptorSetDescriptions;
+			drawArgExtensionDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+
 			TArray<RenderPassAttachmentDesc>								renderPassAttachmentDescriptions;
 			RenderPassAttachmentDesc										renderPassDepthStencilDescription;
 			TArray<ETextureState>											renderPassRenderTargetStates;
@@ -1837,7 +1840,7 @@ namespace LambdaEngine
 							drawArgsData.InitialTextureTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;	// Should this be this????
 							drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);	// Should this be this????
 							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN; // Should this be this????
-							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY; // Should this be this????
+							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.PrevBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);; // Should this be this????
 
 							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
 						}
@@ -1927,14 +1930,15 @@ namespace LambdaEngine
 						descriptorBinding.Binding			= 4;
 						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
 
-						// Create one descriptor set per extension. The extension has a struct in the shader file and will be accessed by an array of that struct indexed by the instance index.
+						// Create a new descriptor set for extensions.
 						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMask);
-						uint32 binding = 5;
+						uint32 binding = 0;
 						for (uint32 mask : extensionMasks)
 						{
-							descriptorBinding.DescriptorCount	= 1;
+							const DrawArgExtensionDesc& extensionDesc = EntityMaskManager::GetExtensionDescFromExtensionMask(mask);
+							descriptorBinding.DescriptorCount	= extensionDesc.TextureCount;
 							descriptorBinding.Binding			= binding++;
-							drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+							drawArgExtensionDescriptorSetDescriptions.PushBack(descriptorBinding);
 						}
 
 						renderStageDrawArgResources.PushBack(std::make_tuple(pResource, descriptorType));
@@ -2299,9 +2303,20 @@ namespace LambdaEngine
 							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a non-zero DrawArgsMask set to that binding");
 							return false;
 						}
-						DescriptorSetLayoutDesc descriptorSetLayout = {};
-						descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetDescriptions;
-						descriptorSetLayouts.PushBack(descriptorSetLayout);
+
+						{
+							DescriptorSetLayoutDesc descriptorSetLayout = {};
+							descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetDescriptions;
+							descriptorSetLayouts.PushBack(descriptorSetLayout);
+						}
+
+						// Extensions descriptor set layout
+						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
+						{
+							DescriptorSetLayoutDesc descriptorSetLayout = {};
+							descriptorSetLayout.DescriptorBindings = drawArgExtensionDescriptorSetDescriptions;
+							descriptorSetLayouts.PushBack(descriptorSetLayout);
+						}
 					}
 
 					PipelineLayoutDesc pipelineLayoutDesc = {};
@@ -2738,37 +2753,39 @@ namespace LambdaEngine
 				}
 				else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 				{
-					PipelineBufferBarrierDesc bufferBarrier = {};
-					bufferBarrier.QueueBefore			= prevQueue;
-					bufferBarrier.QueueAfter			= nextQueue;
-					bufferBarrier.SrcMemoryAccessFlags	= srcMemoryAccessFlags;
-					bufferBarrier.DstMemoryAccessFlags	= dstMemoryAccessFlags;
-
-					uint32 targetSynchronizationIndex = 0;
-
-					if (prevQueue == nextQueue)
 					{
-						targetSynchronizationIndex = SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX;
+						PipelineBufferBarrierDesc bufferBarrier = {};
+						bufferBarrier.QueueBefore = prevQueue;
+						bufferBarrier.QueueAfter = nextQueue;
+						bufferBarrier.SrcMemoryAccessFlags = srcMemoryAccessFlags;
+						bufferBarrier.DstMemoryAccessFlags = dstMemoryAccessFlags;
+
+						uint32 targetSynchronizationIndex = 0;
+
+						if (prevQueue == nextQueue)
+						{
+							targetSynchronizationIndex = SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX;
+						}
+						else
+						{
+							targetSynchronizationIndex = OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX;
+						}
+
+						TArray<PipelineBufferBarrierDesc>& targetArray = pSynchronizationStage->DrawBufferBarriers[targetSynchronizationIndex];
+						targetArray.PushBack(bufferBarrier);
+						uint32 barrierIndex = targetArray.GetSize() - 1;
+
+						//We ignore SubResourceCount since DRAW_BUFFERS don't have predetermined SubResourceCount, instead it is determined at runtime
+
+						ResourceBarrierInfo barrierInfo = {};
+						barrierInfo.SynchronizationStageIndex = s;
+						barrierInfo.SynchronizationTypeIndex = targetSynchronizationIndex;
+						barrierInfo.BarrierIndex = barrierIndex;
+						barrierInfo.DrawArgsMask = synchronizationIt->DrawArgsMask;
+						requiredDrawArgs.insert(synchronizationIt->DrawArgsMask);
+
+						pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
 					}
-					else
-					{
-						targetSynchronizationIndex = OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX;
-					}
-
-					TArray<PipelineBufferBarrierDesc>& targetArray = pSynchronizationStage->DrawBufferBarriers[targetSynchronizationIndex];
-					targetArray.PushBack(bufferBarrier);
-					uint32 barrierIndex = targetArray.GetSize() - 1;
-
-					//We ignore SubResourceCount since DRAW_BUFFERS don't have predetermined SubResourceCount, instead it is determined at runtime
-
-					ResourceBarrierInfo barrierInfo = {};
-					barrierInfo.SynchronizationStageIndex	= s;
-					barrierInfo.SynchronizationTypeIndex	= targetSynchronizationIndex;
-					barrierInfo.BarrierIndex				= barrierIndex;
-					barrierInfo.DrawArgsMask				= synchronizationIt->DrawArgsMask;
-					requiredDrawArgs.insert(synchronizationIt->DrawArgsMask);
-
-					pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
 
 					// Textures from draw arg extensions. 
 					// (This is the same code as in the Texture Resource, but uses DrawTextureBarriers instead of TextureBarriers, Might want to make a function for this.)
@@ -3055,17 +3072,14 @@ namespace LambdaEngine
 		}
 		else
 		{
-			if (pResource->OwnershipType == EResourceOwnershipType::EXTERNAL)
-				if (pDesc->ExternalTextureUpdate.HasDynamicSubResourceCount)
-					pResource->SubResourceCount = pDesc->ExternalTextureUpdate.DynamicSubResourceCount;
 			actualSubResourceCount = pResource->SubResourceCount;
 		}
 
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
 		{
-			Texture** ppTexture =					&pResource->Texture.Textures[sr];
-			TextureView** ppTextureView =			&pResource->Texture.PerImageTextureViews[sr];
-			Sampler** ppSampler =					&pResource->Texture.Samplers[sr];
+			Texture** ppTexture			= &pResource->Texture.Textures[sr];
+			TextureView** ppTextureView = &pResource->Texture.PerImageTextureViews[sr];
+			Sampler** ppSampler			= &pResource->Texture.Samplers[sr];
 
 			Texture* pTexture						= nullptr;
 			TextureView* pTextureView				= nullptr;
@@ -3322,8 +3336,8 @@ namespace LambdaEngine
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
 
-						// Extension for MeshPaintComponent
-						if ((drawArgMask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type())) > 0)
+						// For draw arg extensions
+						if (drawArgMask > 1)
 						{
 							uint32 numExtensionGroups = pDrawArg->InstanceCount;
 							for (uint32 i = 0; i < numExtensionGroups; i++)
@@ -3339,8 +3353,11 @@ namespace LambdaEngine
 										for (uint32 t = 0; t < numTextures; t++)
 										{
 											uint32 masks = extensionGroup->pExtensionMasks[e];
+											const TextureViewDesc& textureViewDesc = extension.ppTextureViews[t]->GetDesc();
 											textureBarrierTemplate.pTexture = extension.ppTextures[t];
-											textureBarrierTemplate.
+											textureBarrierTemplate.Miplevel = textureViewDesc.Miplevel;
+											textureBarrierTemplate.MiplevelCount = textureViewDesc.MiplevelCount;
+											textureBarrierTemplate.ArrayIndex = textureViewDesc.ArrayIndex;
 											drawTextureBarriers.PushBack(textureBarrierTemplate);
 										}
 									}
@@ -3428,27 +3445,36 @@ namespace LambdaEngine
 					intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
 				}
 
-				// Extension for MeshPaintComponent
-				/*if ((drawArgMask & DrawArgHelper::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
+				// Draw arg extensions
+				if (drawArgMask > 1)
 				{
 					PipelineTextureBarrierDesc initialMaskTexturesTransitionBarrier = drawArgsArgsIt->second.InitialTextureTransitionBarrierTemplate;
-					for (uint32 i = 0; i < MAX_MASK_TEXTURES; i++)
+					uint32 numExtensionGroups = pDrawArg->InstanceCount;
+					for (uint32 i = 0; i < numExtensionGroups; i++)
 					{
-						Texture*& pTexture = pDrawArg->ppMaskTextures[i];
-						if (pTexture)
+						DrawArgExtensionGroup* extensionGroup = pDrawArg->ppExtensionGroups[i];
+						if (extensionGroup)
 						{
-							TextureDesc textureDesc = pTexture->GetDesc();
-
-							initialMaskTexturesTransitionBarrier.pTexture = pTexture;
-							initialMaskTexturesTransitionBarrier.TextureFlags = textureDesc.Flags;
-							initialMaskTexturesTransitionBarrier.ArrayCount = textureDesc.ArrayCount;
-							initialMaskTexturesTransitionBarrier.ArrayIndex = 0;
-							initialMaskTexturesTransitionBarrier.Miplevel = 0;
-							initialMaskTexturesTransitionBarrier.MiplevelCount = textureDesc.Miplevels;
-							intialTextureBarriers.PushBack(initialMaskTexturesTransitionBarrier);
+							uint32 extensionCount = extensionGroup->ExtensionCount;
+							for (uint32 e = 0; e < extensionCount; e++)
+							{
+								DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+								uint32 numTextures = extension.TextureCount;
+								for (uint32 t = 0; t < numTextures; t++)
+								{
+									const TextureDesc& textureDesc = extension.ppTextures[t]->GetDesc();
+									initialMaskTexturesTransitionBarrier.pTexture = extension.ppTextures[t];
+									initialMaskTexturesTransitionBarrier.TextureFlags = textureDesc.Flags;
+									initialMaskTexturesTransitionBarrier.ArrayCount = textureDesc.ArrayCount;
+									initialMaskTexturesTransitionBarrier.ArrayIndex = 0;
+									initialMaskTexturesTransitionBarrier.Miplevel = 0;
+									initialMaskTexturesTransitionBarrier.MiplevelCount = textureDesc.Miplevels;
+									intialTextureBarriers.PushBack(initialMaskTexturesTransitionBarrier);
+								}
+							}
 						}
 					}
-				}*/
+				}
 			}
 
 			// Transfer to Initial State for buffer barriers

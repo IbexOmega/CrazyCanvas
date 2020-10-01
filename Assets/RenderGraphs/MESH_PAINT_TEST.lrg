@@ -410,14 +410,7 @@
         },
         {
             "name": "TEMPORAL_RESOURCES",
-            "resource_states": [
-                {
-                    "name": "PAINT_MASK_TEXTURES",
-                    "removable": true,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "RENDER_GRAPH_PAINT_MASK_STAGE"
-                }
-            ]
+            "resource_states": []
         }
     ],
     "final_output_stage": {
@@ -464,7 +457,7 @@
                     "removable": true,
                     "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
+                    "src_stage": "RENDER_GRAPH_PAINT_MASK_STAGE"
                 },
                 {
                     "name": "PER_FRAME_BUFFER",
@@ -510,20 +503,6 @@
                 },
                 {
                     "name": "SCENE_METALLIC_MAPS",
-                    "removable": true,
-                    "draw_args_mask": 1,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "UNWRAPPED_TEXTURE",
-                    "removable": true,
-                    "draw_args_mask": 1,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": ""
-                },
-                {
-                    "name": "PAINT_MASK_TEXTURES",
                     "removable": true,
                     "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
@@ -629,13 +608,6 @@
                     "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SHADING_PASS"
-                },
-                {
-                    "name": "PAINT_MASK_TEXTURES",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "RENDER_GRAPH_PAINT_MASK_STAGE"
                 }
             ]
         },
@@ -737,7 +709,7 @@
             "name": "RENDER_GRAPH_PAINT_MASK_STAGE",
             "type": "GRAPHICS",
             "custom_renderer": true,
-            "allow_overriding_of_binding_types": true,
+            "allow_overriding_of_binding_types": false,
             "trigger_type": "EVERY",
             "frame_delay": 0,
             "frame_offset": 0,
@@ -766,7 +738,7 @@
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
                     "draw_args_mask": 2,
-                    "binding_type": "UNORDERED_ACCESS_R",
+                    "binding_type": "UNORDERED_ACCESS_RW",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
@@ -780,13 +752,6 @@
                     "name": "BRUSH_MASK",
                     "removable": true,
                     "draw_args_mask": 4294967295,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "PAINT_MASK_TEXTURES",
-                    "removable": true,
-                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 }
