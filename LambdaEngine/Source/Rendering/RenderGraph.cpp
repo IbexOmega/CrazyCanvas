@@ -2769,6 +2769,76 @@ namespace LambdaEngine
 					requiredDrawArgs.insert(synchronizationIt->DrawArgsMask);
 
 					pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
+
+					// Textures from draw arg extensions. 
+					// (This is the same code as in the Texture Resource, but uses DrawTextureBarriers instead of TextureBarriers, Might want to make a function for this.)
+					{
+						PipelineTextureBarrierDesc textureBarrier = {};
+						textureBarrier.QueueBefore = prevQueue;
+						textureBarrier.QueueAfter = nextQueue;
+						textureBarrier.SrcMemoryAccessFlags = srcMemoryAccessFlags;
+						textureBarrier.DstMemoryAccessFlags = dstMemoryAccessFlags;
+						textureBarrier.StateBefore = CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
+						textureBarrier.StateAfter = CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->NextBindingType, pResource->Texture.Format);
+						textureBarrier.TextureFlags = pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : 0;
+
+						uint32 targetSynchronizationIndex = 0;
+
+						if (prevQueue == nextQueue)
+						{
+							if (pResource->BackBufferBound)
+							{
+								targetSynchronizationIndex = SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX;
+							}
+							else
+							{
+								targetSynchronizationIndex = SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX;
+							}
+						}
+						else
+						{
+							if (pResource->BackBufferBound)
+							{
+								targetSynchronizationIndex = OTHER_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX;
+							}
+							else
+							{
+								targetSynchronizationIndex = OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX;
+							}
+						}
+
+						uint32 actualSubResourceCount = 0;
+						bool isTextureCube = pResource->Texture.TextureType == ERenderGraphTextureType::TEXTURE_CUBE;
+						if (pResource->BackBufferBound)
+						{
+							actualSubResourceCount = m_BackBufferCount;
+							textureBarrier.ArrayCount = isTextureCube ? 6 : 1;
+						}
+						else if (pResource->Texture.IsOfArrayType)
+						{
+							actualSubResourceCount = 1;
+							textureBarrier.ArrayCount = isTextureCube ? 6 * pResource->SubResourceCount : pResource->SubResourceCount;
+						}
+						else
+						{
+							actualSubResourceCount = pResource->SubResourceCount;
+							textureBarrier.ArrayCount = isTextureCube ? 6 : 1;
+						}
+
+						for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
+						{
+							TArray<PipelineTextureBarrierDesc>& targetArray = pSynchronizationStage->DrawTextureBarriers[targetSynchronizationIndex];
+							targetArray.PushBack(textureBarrier);
+							uint32 barrierIndex = targetArray.GetSize() - 1;
+
+							ResourceBarrierInfo barrierInfo = {};
+							barrierInfo.SynchronizationStageIndex = s;
+							barrierInfo.SynchronizationTypeIndex = targetSynchronizationIndex;
+							barrierInfo.BarrierIndex = barrierIndex;
+
+							pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
+						}
+					}
 				}
 				else if (pResource->Type == ERenderGraphResourceType::BUFFER)
 				{
@@ -3183,9 +3253,9 @@ namespace LambdaEngine
 					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers[0];
 					drawBufferBarriers.Clear();
 
-					//TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
-					//PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers[0];
-					//drawTextureBarriers.Clear();
+					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
+					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers[0];
+					drawTextureBarriers.Clear();
 
 					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.DrawArgsCount; d++)
 					{
@@ -3253,15 +3323,30 @@ namespace LambdaEngine
 						}
 
 						// Extension for MeshPaintComponent
-						/*if ((drawArgMask & EntityMaskManager::FetchComponentDrawArgMask(MeshPaintComponent::Type())) > 0)
+						if ((drawArgMask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type())) > 0)
 						{
-							for (uint32 i = 0; i < MAX_MASK_TEXTURES; i++)
+							uint32 numExtensionGroups = pDrawArg->InstanceCount;
+							for (uint32 i = 0; i < numExtensionGroups; i++)
 							{
-								VALIDATE(pDrawArg->ppMaskTextures[i]);
-								textureBarrierTemplate.pTexture = pDrawArg->ppMaskTextures[i];
-								drawTextureBarriers.PushBack(textureBarrierTemplate);
+								DrawArgExtensionGroup* extensionGroup = pDrawArg->ppExtensionGroups[i];
+								if (extensionGroup)
+								{
+									uint32 extensionCount = extensionGroup->ExtensionCount;
+									for (uint32 e = 0; e < extensionCount; e++)
+									{
+										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+										uint32 numTextures = extension.TextureCount;
+										for (uint32 t = 0; t < numTextures; t++)
+										{
+											uint32 masks = extensionGroup->pExtensionMasks[e];
+											textureBarrierTemplate.pTexture = extension.ppTextures[t];
+											textureBarrierTemplate.
+											drawTextureBarriers.PushBack(textureBarrierTemplate);
+										}
+									}
+								}
 							}
-						}*/
+						}
 					}
 				}
 			}
