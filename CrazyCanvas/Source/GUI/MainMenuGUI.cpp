@@ -9,11 +9,15 @@
 #include "States/PlaySessionState.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
-
+#include "Engine/EngineConfig.h"
 
 MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 {
+	using namespace LambdaEngine;
+
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+
+	m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 }
 
 MainMenuGUI::~MainMenuGUI()
@@ -74,7 +78,6 @@ void MainMenuGUI::OnMeshShadersChecked(Noesis::BaseComponent* pSender, const Noe
 	m_MeshShadersSleeping = pFE->GetIsChecked().GetValue();
 }
 
-
 void MainMenuGUI::SetRenderStagesSleeping()
 {
 	using namespace LambdaEngine;
@@ -86,6 +89,9 @@ void MainMenuGUI::SetRenderStagesSleeping()
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",				false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",				m_RayTracingSleeping);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",	true);
+
+	if (m_RayTracingEnabled)
+		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);
+
 }

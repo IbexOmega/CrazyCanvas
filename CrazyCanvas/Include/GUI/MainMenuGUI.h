@@ -21,8 +21,10 @@ private:
 	void SetRenderStagesSleeping();
 
 private:
+	bool	m_RayTracingEnabled		= false;
 	bool	m_RayTracingSleeping	= false;
 	bool	m_MeshShadersSleeping	= false;
 
-	NS_IMPLEMENT_INLINE_REFLECTION_(MainMenuGUI, Noesis::Grid)
+	NS_IMPLEMENT_INLINE_REFLECTION_(MainMenuGUI, Noesis::Grid) 
+	
 };
