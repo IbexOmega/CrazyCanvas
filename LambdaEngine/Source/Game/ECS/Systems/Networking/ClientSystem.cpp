@@ -213,6 +213,7 @@ namespace LambdaEngine
 		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
 	}
 
+	int i = 0;
 	void ClientSystem::OnPacketPlayerAction(NetworkSegment* pPacket)
 	{
 		GameState serverGameState = {};
@@ -281,7 +282,11 @@ namespace LambdaEngine
 	{
 		while (!m_FramesProcessedByServer.IsEmpty())
 		{
-			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
+			if (m_FramesProcessedByServer[0].SimulationTick != m_FramesToReconcile[0].SimulationTick)
+			{
+				LOG_ERROR("SimulationTick missmatch [%d != %d]", m_FramesProcessedByServer[0].SimulationTick, m_FramesToReconcile[0].SimulationTick);
+				DEBUGBREAK();
+			}
 
 			if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[0]))
 			{
@@ -303,7 +308,6 @@ namespace LambdaEngine
 		PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
 
 		positionComponent.Position	= gameStateServer.Position;
-		positionComponent.Dirty		= true;
 
 		//Replay all game states since the game state which resulted in prediction ERROR
 		for (uint32 i = 0; i < count; i++)

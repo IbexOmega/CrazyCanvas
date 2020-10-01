@@ -51,7 +51,6 @@ namespace LambdaEngine
 	void PlayerMovementSystem::Tick(Timestamp deltaTime)
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
-
 	}
 
 	void PlayerMovementSystem::Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft)
@@ -63,15 +62,15 @@ namespace LambdaEngine
 		if (!pPositionComponents && !pPositionComponents->HasComponent(entity))
 			return;
 
-		PositionComponent& positionComponent = pPositionComponents->GetData(entity);
-
 		if (deltaForward != 0)
 		{
+			PositionComponent& positionComponent = pPositionComponents->GetData(entity);
 			positionComponent.Position.z += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaForward);
 		}
 
 		if (deltaLeft != 0)
 		{
+			PositionComponent& positionComponent = pPositionComponents->GetData(entity);
 			positionComponent.Position.x += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaLeft);
 		}
 	}
