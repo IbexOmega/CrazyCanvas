@@ -22,6 +22,7 @@ namespace LambdaEngine
         // Stores IDs of entities found using subscription
         IDVector* pSubscriber;
         TArray<const ComponentType*> ComponentTypes;
+        TArray<const ComponentType*> ExcludedComponentTypes;
         // Optional: Called after an entity was added due to the subscription
         std::function<void(Entity)> OnEntityAdded;
         // Optional: Called before an entity was removed

@@ -5,6 +5,16 @@
 #include "Log/Log.h"
 
 #include "Rendering/RenderAPI.h"
+#include "Rendering/Core/API/Shader.h"
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
+#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/PipelineState.h"
+#include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/Fence.h"
+#include "Rendering/PipelineStateManager.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -114,6 +124,7 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < materials.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), materials[i]);
+			CombineMaterials(materials[i], guid);
 			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
 			{
 				if (sceneLocalMeshComponents[g].MaterialGUID == i)
@@ -225,6 +236,8 @@ namespace LambdaEngine
 		(*ppMappedMaterial)->pAmbientOcclusionMapView = pAmbientOcclusionMapView;
 		(*ppMappedMaterial)->pMetallicMapView = pMetallicMapView;
 		(*ppMappedMaterial)->pRoughnessMapView = pRoughnessMapView;
+
+		CombineMaterials(*ppMappedMaterial, guid);
 
 		return guid;
 	}
@@ -373,14 +386,35 @@ namespace LambdaEngine
 		String filepath = SHADER_DIR + filename;
 
 		ShaderLoadDesc loadDesc = {};
-		loadDesc.Filepath = filepath;
-		loadDesc.Stage = stage;
-		loadDesc.Lang = lang;
-		loadDesc.pEntryPoint = pEntryPoint;
+		loadDesc.Filepath		= filepath;
+		loadDesc.Stage			= stage;
+		loadDesc.Lang			= lang;
+		loadDesc.pEntryPoint	= pEntryPoint;
 
 		s_ShaderLoadConfigurations[guid] = loadDesc;
 
 		(*ppMappedShader) = ResourceLoader::LoadShaderFromFile(filepath, stage, lang, pEntryPoint);
+
+		return guid;
+	}
+
+	GUID_Lambda ResourceManager::RegisterShader(const String& name, Shader* pShader)
+	{
+		auto loadedShaderGUID = s_ShaderNamesToGUIDs.find(name);
+		if (loadedShaderGUID != s_ShaderNamesToGUIDs.end())
+			return loadedShaderGUID->second;
+
+		GUID_Lambda guid = GUID_NONE;
+		Shader** ppMappedShader = nullptr;
+
+		//Spinlock
+		{
+			guid = s_NextFreeGUID++;
+			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
+			s_ShaderNamesToGUIDs[name] = guid;
+		}
+
+		(*ppMappedShader) = pShader;
 
 		return guid;
 	}
@@ -404,6 +438,211 @@ namespace LambdaEngine
 		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(SOUND_DIR + filename);
 
 		return guid;
+	}
+
+	void ResourceManager::CombineMaterials(Material* pMaterial, GUID_Lambda guid)
+	{
+		// Find largest texture size
+		uint32 largestHeight = std::max(pMaterial->pMetallicMap->GetDesc().Width, std::max(pMaterial->pRoughnessMap->GetDesc().Width, pMaterial->pAmbientOcclusionMap->GetDesc().Width));
+		uint32 largestWidth = std::max(pMaterial->pMetallicMap->GetDesc().Height, std::max(pMaterial->pRoughnessMap->GetDesc().Height, pMaterial->pAmbientOcclusionMap->GetDesc().Height));
+
+		// Create Command List
+		CommandAllocator* computeCmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		CommandAllocator* graphicsCmdAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Combine Material Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+
+		CommandListDesc commandListDesc = { };
+		commandListDesc.DebugName			= "Compute Command List";
+		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+		commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+		CommandList* computeCmdList = RenderAPI::GetDevice()->CreateCommandList(computeCmdAllocator, &commandListDesc);
+
+		commandListDesc.DebugName = "Graphics Command List";
+		CommandList* graphicsCmdList = RenderAPI::GetDevice()->CreateCommandList(graphicsCmdAllocator, &commandListDesc);
+		computeCmdList->Begin(nullptr);
+
+		FenceDesc fenceDesc = {};
+		fenceDesc.DebugName		= "CombineMaterials Fence";
+		fenceDesc.InitalValue	= 0;
+
+		Fence* pFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
+
+		// Create Textures
+		uint32_t miplevels = 1u;
+		miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
+
+		TextureDesc textureDesc = { };
+		textureDesc.DebugName		= "CombineMaterial Texture";
+		textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+		textureDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
+		textureDesc.Flags			= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
+		textureDesc.Width			= largestWidth;
+		textureDesc.Height			= largestHeight;
+		textureDesc.Depth			= 1;
+		textureDesc.ArrayCount		= 1;
+		textureDesc.Miplevels		= miplevels;
+		textureDesc.SampleCount		= 1;
+
+		s_Textures[guid] = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.DebugName		= "CombineMaterial TextureView";
+		textureViewDesc.pTexture		= s_Textures[guid];
+		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+		textureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		textureViewDesc.MiplevelCount	= miplevels;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.ArrayIndex		= 0;
+
+		s_TextureViews[guid] = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+
+		if (s_Textures[guid] == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create texture for \"Combine Material Texture Desc\"");
+			return;
+		}
+
+		PipelineTextureBarrierDesc transitionToCopyDstBarrier = { };
+		transitionToCopyDstBarrier.pTexture					= s_Textures[guid];
+		transitionToCopyDstBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+		transitionToCopyDstBarrier.StateAfter				= ETextureState::TEXTURE_STATE_GENERAL;
+		transitionToCopyDstBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToCopyDstBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		transitionToCopyDstBarrier.SrcMemoryAccessFlags		= 0;
+		transitionToCopyDstBarrier.DstMemoryAccessFlags		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		transitionToCopyDstBarrier.TextureFlags				= textureDesc.Flags;
+		transitionToCopyDstBarrier.Miplevel					= 0;
+		transitionToCopyDstBarrier.MiplevelCount			= textureDesc.Miplevels;
+		transitionToCopyDstBarrier.ArrayIndex				= 0;
+		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
+
+		computeCmdList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+
+		// Create Sampler
+		SamplerDesc samplerDesc	= { };
+		samplerDesc.DebugName				= "CombineMaterial Sampler ";
+		samplerDesc.MinFilter				= EFilterType::FILTER_TYPE_LINEAR;
+		samplerDesc.MagFilter				= EFilterType::FILTER_TYPE_LINEAR;
+		samplerDesc.MipmapMode				= EMipmapMode::MIPMAP_MODE_LINEAR;
+		samplerDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerDesc.MipLODBias				= 0.0f;
+		samplerDesc.AnisotropyEnabled		= false;
+		samplerDesc.MaxAnisotropy			= 16.0f;
+		samplerDesc.MinLOD					= 0.0f;
+		samplerDesc.MaxLOD					= FLT32_MAX;
+
+		TSharedRef<Sampler> sampler = RenderAPI::GetDevice()->CreateSampler(&samplerDesc);
+
+		// Create Pipelinelayout
+		DescriptorBindingDesc ubo_roughness_mat = { };
+		ubo_roughness_mat.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		ubo_roughness_mat.DescriptorCount		= 1;
+		ubo_roughness_mat.Binding				= 0;
+		ubo_roughness_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		ubo_roughness_mat.ImmutableSamplers		= { sampler };
+
+		DescriptorBindingDesc ubo_metallic_mat = { };
+		ubo_metallic_mat.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		ubo_metallic_mat.DescriptorCount		= 1;
+		ubo_metallic_mat.Binding				= 1;
+		ubo_metallic_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		ubo_metallic_mat.ImmutableSamplers		= { sampler };
+
+		DescriptorBindingDesc ubo_ao_material = { };
+		ubo_ao_material.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		ubo_ao_material.DescriptorCount			= 1;
+		ubo_ao_material.Binding					= 2;
+		ubo_ao_material.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		ubo_ao_material.ImmutableSamplers		= { sampler };
+
+		DescriptorBindingDesc ubo_output_image = { };
+		ubo_output_image.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+		ubo_output_image.DescriptorCount		= 1;
+		ubo_output_image.Binding				= 3;
+		ubo_output_image.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc = { };
+		descriptorSetLayoutDesc.DescriptorBindings = { ubo_roughness_mat, ubo_metallic_mat, ubo_ao_material, ubo_output_image };
+
+		PipelineLayoutDesc pPipelineLayoutDesc = { };
+		pPipelineLayoutDesc.DebugName				= "CombineMaterial PipelineLayout";
+		pPipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc };
+
+		PipelineLayout* pPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pPipelineLayoutDesc);
+
+		// Create DescriptorSet
+		DescriptorHeapInfo descriptorCountDesc = { };
+		descriptorCountDesc.SamplerDescriptorCount	= descriptorSetLayoutDesc.DescriptorBindings.GetSize();
+
+		DescriptorHeapDesc descriptorHeapDesc = { };
+		descriptorHeapDesc.DebugName				= "CombineMaterial Descriptor";
+		descriptorHeapDesc.DescriptorSetCount		= 1;
+		descriptorHeapDesc.DescriptorCount			= descriptorCountDesc;
+
+		DescriptorHeap* pDescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
+
+		DescriptorSet* pDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Combine Material Descriptor Set", pPipelineLayout, 0, pDescriptorHeap);
+		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pRoughnessMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pMetallicMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+		pDescriptorSet->WriteTextureDescriptors(&pMaterial->pAmbientOcclusionMapView, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+		pDescriptorSet->WriteTextureDescriptors(&s_TextureViews[guid], &sampler, ETextureState::TEXTURE_STATE_GENERAL, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE);
+
+		// Create Shaders
+		GUID_Lambda computeShaderGUID = LoadShaderFromFile("CombineMaterial.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+
+		ShaderModuleDesc shaderModuleDesc = { };
+		shaderModuleDesc.pShader = s_Shaders[computeShaderGUID];
+
+		ComputePipelineStateDesc computePipelineStateDesc = { };
+		computePipelineStateDesc.DebugName			= "CombineMaterial PipelineState";
+		computePipelineStateDesc.pPipelineLayout	= pPipelineLayout;
+		computePipelineStateDesc.Shader				= shaderModuleDesc;
+
+		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
+		computeCmdList->BindDescriptorSetCompute(pDescriptorSet, pPipelineLayout, 0);
+		computeCmdList->BindComputePipeline(pPipelineState);
+
+		// Dispatch
+		largestWidth	= std::max<uint32>(largestWidth / 8, 1);
+		largestHeight	= std::max<uint32>(largestHeight / 8, 1);
+
+		computeCmdList->Dispatch(largestWidth, largestHeight, 1);
+
+		computeCmdList->QueueTransferBarrier(s_Textures[guid], FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
+		computeCmdList->End();
+		RenderAPI::GetComputeQueue()->ExecuteCommandLists(&computeCmdList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, pFence, 1);
+
+		graphicsCmdList->Begin(nullptr);
+
+		graphicsCmdList->QueueTransferBarrier(s_Textures[guid], FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 0, ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
+		graphicsCmdList->GenerateMiplevels(s_Textures[guid], ETextureState::TEXTURE_STATE_GENERAL, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+		graphicsCmdList->End();
+
+		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&graphicsCmdList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, pFence, 1, pFence, 2);
+		pFence->Wait(2, UINT64_MAX);
+
+		pMaterial->pCombinedMaterialMap			= s_Textures[guid];
+		pMaterial->pCombinedMaterialMapView		= s_TextureViews[guid];
+
+		pPipelineState->Release();
+		pDescriptorSet->Release();
+		pDescriptorHeap->Release();
+		pPipelineLayout->Release();
+		pFence->Release();
+		computeCmdList->Release();
+		graphicsCmdList->Release();
+		computeCmdAllocator->Release();
+		graphicsCmdAllocator->Release();
 	}
 
 	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
@@ -499,18 +738,23 @@ namespace LambdaEngine
 
 	bool ResourceManager::OnShaderRecompileEvent(const ShaderRecompileEvent& event)
 	{
+		UNREFERENCED_VARIABLE(event);
+
 		for (auto it = s_Shaders.begin(); it != s_Shaders.end(); it++)
 		{
 			if (it->second != nullptr)
 			{
-				ShaderLoadDesc loadDesc = s_ShaderLoadConfigurations[it->first];
+				auto loadConfigIt = s_ShaderLoadConfigurations.find(it->first);
 
-				Shader* pShader = ResourceLoader::LoadShaderFromFile(loadDesc.Filepath, loadDesc.Stage, loadDesc.Lang, loadDesc.pEntryPoint);
-
-				if (pShader != nullptr)
+				if (loadConfigIt != s_ShaderLoadConfigurations.end())
 				{
-					SAFERELEASE(it->second);
-					it->second = pShader;
+					Shader* pShader = ResourceLoader::LoadShaderFromFile(loadConfigIt->second.Filepath, loadConfigIt->second.Stage, loadConfigIt->second.Lang, loadConfigIt->second.pEntryPoint);
+
+					if (pShader != nullptr)
+					{
+						SAFERELEASE(it->second);
+						it->second = pShader;
+					}
 				}
 			}
 		}
@@ -556,12 +800,14 @@ namespace LambdaEngine
 		pResource->pAmbientOcclusionMap			= pResource->pAmbientOcclusionMap		!= nullptr ? pResource->pAmbientOcclusionMap		: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		pResource->pMetallicMap					= pResource->pMetallicMap				!= nullptr ? pResource->pMetallicMap				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		pResource->pRoughnessMap				= pResource->pRoughnessMap				!= nullptr ? pResource->pRoughnessMap				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		
+		pResource->pRoughnessMap				= pResource->pCombinedMaterialMap		!= nullptr ? pResource->pCombinedMaterialMap		: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+
 		pResource->pAlbedoMapView				= pResource->pAlbedoMapView				!= nullptr ? pResource->pAlbedoMapView				: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		pResource->pNormalMapView				= pResource->pNormalMapView				!= nullptr ? pResource->pNormalMapView				: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
 		pResource->pAmbientOcclusionMapView		= pResource->pAmbientOcclusionMapView	!= nullptr ? pResource->pAmbientOcclusionMapView	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		pResource->pMetallicMapView				= pResource->pMetallicMapView			!= nullptr ? pResource->pMetallicMapView			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 		pResource->pRoughnessMapView			= pResource->pRoughnessMapView			!= nullptr ? pResource->pRoughnessMapView			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		pResource->pCombinedMaterialMapView		= pResource->pCombinedMaterialMapView	!= nullptr ? pResource->pCombinedMaterialMapView	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
 		(*ppMappedResource) = pResource;
 
@@ -585,7 +831,7 @@ namespace LambdaEngine
 		}
 
 		(*ppMappedTexture) = pResource;
-		
+
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= pResource->GetDesc().DebugName + " Texture View";
 		textureViewDesc.pTexture		= pResource;
@@ -675,12 +921,14 @@ namespace LambdaEngine
 			pDefaultMaterial->pAmbientOcclusionMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pMetallicMap				= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pRoughnessMap				= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pCombinedMaterialMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
 			pDefaultMaterial->pAlbedoMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pNormalMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
 			pDefaultMaterial->pAmbientOcclusionMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pMetallicMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 			pDefaultMaterial->pRoughnessMapView			= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pDefaultMaterial->pCombinedMaterialMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
 			s_MaterialNamesToGUIDs["Default Material"]	= GUID_MATERIAL_DEFAULT;
 			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;

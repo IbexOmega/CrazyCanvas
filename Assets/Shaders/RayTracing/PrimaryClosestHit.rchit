@@ -77,15 +77,13 @@ void main()
 
 	SMaterialParameters materialParameters = u_MaterialParameters.val[hitDescription.MaterialIndex];
 
-	vec3 sampledAlbedo 		=		texture(u_AlbedoMaps[hitDescription.MaterialIndex],     hitDescription.TexCoord).rgb;
-    float sampledAO 		=       texture(u_AOMaps[hitDescription.MaterialIndex],         hitDescription.TexCoord).r;
-	float sampledMetallic 	= 		texture(u_MetallicMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
-	float sampledRoughness 	= 		texture(u_RoughnessMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).r;
+	vec3 sampledAlbedo 		=		texture(u_AlbedoMaps[hitDescription.MaterialIndex],     		hitDescription.TexCoord).rgb;
+	vec3 sampledMaterial	=		texture(u_CombinedMaterialMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).rgb;
 
     vec3 albedo       		= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-    float ao   		        = 		materialParameters.AO * sampledAO;
-	float roughness   		= 		materialParameters.Roughness * sampledRoughness;
-    float metallic    		= 		materialParameters.Metallic * sampledMetallic;
+    float ao   		        = 		materialParameters.AO * sampledMaterial.b;
+	float roughness   		= 		materialParameters.Roughness * sampledMaterial.r;
+    float metallic    		= 		materialParameters.Metallic * sampledMaterial.g;
 
 	s_PrimaryPayload.HitPosition		= hitDescription.Position;
 	s_PrimaryPayload.Normal		        = hitDescription.Normal;

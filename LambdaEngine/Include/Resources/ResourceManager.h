@@ -142,12 +142,19 @@ namespace LambdaEngine
 		*/
 		static GUID_Lambda LoadShaderFromFile(const String& filename, FShaderStageFlag stage, EShaderLang lang, const char* pEntryPoint = "main");
 
+		static GUID_Lambda RegisterShader(const String& name, Shader* pShader);
+
 		/*
 		* Load sound from file
 		*	filename - Name of the audio file
 		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadSoundEffectFromFile(const String& filename);
+
+		/*
+		* Combine PBR materials into one texture
+		*/
+		static void CombineMaterials(Material* material, GUID_Lambda guid);
 
 		static GUID_Lambda					GetMeshGUID(const String& name);
 		static GUID_Lambda					GetMaterialGUID(const String& name);

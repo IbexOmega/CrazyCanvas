@@ -27,6 +27,7 @@
 #include "Threading/API/ThreadPool.h"
 
 #include "Rendering/RenderAPI.h"
+#include "Rendering/StagingBufferCache.h"
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
@@ -43,6 +44,8 @@
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/ServerSystem.h"
+
+#include "GUI/Core/GUIApplication.h"
 
 namespace LambdaEngine
 {
@@ -204,6 +207,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!GUIApplication::Init())
+		{
+			return false;
+		}
+
 		if (!RenderSystem::GetInstance().Init())
 		{
 			return false;
@@ -257,6 +265,16 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!StateManager::GetInstance()->Release())
+		{
+			return false;
+		}
+
+		if (!GUIApplication::Release())
+		{
+			return false;
+		}
+
 		if (!RenderSystem::GetInstance().Release())
 		{
 			return false;
@@ -268,6 +286,11 @@ namespace LambdaEngine
 		}
 
 		if (!ResourceLoader::Release())
+		{
+			return false;
+		}
+
+		if (!StagingBufferCache::Release())
 		{
 			return false;
 		}

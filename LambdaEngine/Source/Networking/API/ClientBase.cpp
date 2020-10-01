@@ -21,7 +21,9 @@ namespace LambdaEngine
 		m_UsePingSystem(desc.UsePingSystem),
 		m_LastPingTimestamp(0),
 		m_State(STATE_DISCONNECTED),
-		m_SendDisconnectPacket(false)
+		m_SendDisconnectPacket(false),
+		m_ReceivedPackets(),
+		m_BufferIndex(0)
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Clients.insert(this);
@@ -131,7 +133,7 @@ namespace LambdaEngine
 		TransmitPackets();
 	}
 
-	void ClientBase::Tick(Timestamp delta)
+	void ClientBase::FixedTick(Timestamp delta)
 	{
 		if (m_State != STATE_DISCONNECTED)
 		{
@@ -144,6 +146,8 @@ namespace LambdaEngine
 		}
 
 		Flush();
+
+		HandleReceivedPacketsMainThread();
 	}
 
 	void ClientBase::UpdatePingSystem()
@@ -168,6 +172,19 @@ namespace LambdaEngine
 		}
 	}
 
+	void ClientBase::HandleReceivedPacketsMainThread()
+	{
+		int8 index = m_BufferIndex;
+		m_BufferIndex = (m_BufferIndex + 1) % 2;
+		TArray<NetworkSegment*>& packets = m_ReceivedPackets[index];
+		for (NetworkSegment* pPacket : packets)
+		{
+			m_pHandler->OnPacketReceived(this, pPacket);
+		}
+		GetPacketManager()->QueryEnd(packets);
+		packets.Clear();
+	}
+
 	void ClientBase::TransmitPackets()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
@@ -177,14 +194,14 @@ namespace LambdaEngine
 	void ClientBase::DecodeReceivedPackets()
 	{
 		TArray<NetworkSegment*> packets;
-		PacketManagerBase* pPacketManager = GetPacketManager();
-		pPacketManager->QueryBegin(GetTransceiver(), packets);
+		GetPacketManager()->QueryBegin(GetTransceiver(), packets);
 		for (NetworkSegment* pPacket : packets)
 		{
 			if (!HandleReceivedPacket(pPacket))
-				break;
+			{
+				GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+			}
 		}
-		pPacketManager->QueryEnd(packets);
 	}
 
 	bool ClientBase::HandleReceivedPacket(NetworkSegment* pPacket)
@@ -216,14 +233,12 @@ namespace LambdaEngine
 		{
 			m_SendDisconnectPacket = false;
 			Disconnect("Disconnected By Remote");
-			return false;
 		}
 		else if (packetType == NetworkSegment::TYPE_SERVER_FULL)
 		{
 			m_SendDisconnectPacket = false;
 			m_pHandler->OnServerFull(this);
 			Disconnect("Server Full");
-			return false;
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
@@ -231,9 +246,10 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_pHandler->OnPacketReceived(this, pPacket);
+			m_ReceivedPackets[m_BufferIndex].PushBack(pPacket);
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	bool ClientBase::OnThreadsStarted(std::string& reason)
@@ -302,7 +318,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(s_Lock);
 			for (ClientBase* client : s_Clients)
 			{
-				client->Tick(timestamp);
+				client->FixedTick(timestamp);
 			}
 		}
 	}
