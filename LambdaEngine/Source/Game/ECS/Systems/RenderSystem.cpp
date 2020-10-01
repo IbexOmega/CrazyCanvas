@@ -215,7 +215,6 @@ namespace LambdaEngine
 		m_LightsDirty = true; // Initilise Light buffer to avoid validation layer errors
 		UpdateBuffers();
 		UpdateRenderGraph();
-		m_pRenderGraph->Update();
 
 		return true;
 	}
