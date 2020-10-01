@@ -82,7 +82,6 @@ namespace LambdaEngine
 			percentage = percentage > 1.0f ? 1.0f : percentage < 0.0f ? 0.0f : percentage;
 
 			Interpolate(controllableComponent.StartPosition, controllableComponent.EndPosition, positionComponent.Position, (float32)percentage);
-			positionComponent.Dirty = true;
 		}
 	}
 
