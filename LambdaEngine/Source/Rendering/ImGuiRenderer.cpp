@@ -303,11 +303,11 @@ namespace LambdaEngine
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage,
-		bool Sleeping)
+		bool sleeping)
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (Sleeping)
+		if (sleeping)
 			return;
 
 		// Update imgui for this frame
