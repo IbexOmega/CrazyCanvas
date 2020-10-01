@@ -19,17 +19,17 @@
 # Compiled Dynamic libraries
 *.so    binary
 *.dylib binary
+*.dll filter=lfs diff=lfs merge=lfs binary
 # Compiled Static libraries
 *.lai   binary
 *.la    binary
 *.a     binary
+*.lib filter=lfs diff=lfs merge=lfs binary
 *.pdb filter=lfs diff=lfs merge=lfs binary
+*.exp filter=lfs diff=lfs merge=lfs binary
 # Executables
 *.exe   binary
 *.out   binary
 *.app   binary
 # Exclude vendored files from language statistics
 Dependencies/* linguist-vendored
-*.lib filter=lfs diff=lfs merge=lfs binary
-*.dll filter=lfs diff=lfs merge=lfs binary
-*.exp filter=lfs diff=lfs merge=lfs binary

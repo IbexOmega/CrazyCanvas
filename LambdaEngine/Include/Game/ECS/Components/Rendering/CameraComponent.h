@@ -10,7 +10,13 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(FreeCameraComponent);
 		float SpeedFactor = 1.4f;
-		float MouseSpeedFactor = 1.f;
+		float MouseSpeedFactor = 0.35f;
+	};
+
+	struct FPSControllerComponent : FreeCameraComponent
+	{
+		DECL_COMPONENT(FPSControllerComponent);
+		float SprintSpeedFactor	= 1.6f;
 	};
 
 	struct CameraComponent
@@ -35,7 +41,7 @@ namespace LambdaEngine
 	struct CameraDesc
 	{
 		glm::vec3 Position 	= glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 Direction = glm::vec3(0.0f, 0.0f, 1.0f);
+		glm::vec3 Direction = glm::vec3(0.0f, 0.0f, -1.0f);
 		float FOVDegrees 	= 45.0f;
 		float Width 		= 1280.0f;
 		float Height 		= 720.0f;
@@ -44,6 +50,8 @@ namespace LambdaEngine
 	};
 
 	Entity CreateFreeCameraEntity(const CameraDesc& cameraDesc);
-
+	Entity CreateFPSCameraEntity(const CameraDesc& cameraDesc);
 	Entity CreateCameraTrackEntity(const CameraDesc& cameraDesc, const TArray<glm::vec3>& track);
+
+	static Entity CreateCameraEntity(const CameraDesc& cameraDesc);
 }

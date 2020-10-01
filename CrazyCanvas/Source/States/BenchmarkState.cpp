@@ -23,14 +23,16 @@
 
 #include "Game/ECS/Systems/TrackSystem.h"
 
+#include "Physics/PhysicsSystem.h"
+
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
-
-#include "Audio/AudioAPI.h"
-#include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 void BenchmarkState::Init()
 {
@@ -41,27 +43,32 @@ void BenchmarkState::Init()
 
 	TrackSystem::GetInstance().Init();
 
-	TArray<glm::vec3> cameraTrack = {
-		{-2.0f, 3.0f, 1.0f},
-		{7.8f, 3.0f, 0.8f},
-		{7.4f, 3.0f, -3.8f},
-		{-7.8f, 4.0f, -3.9f},
-		{-7.6f, 4.0f, -2.1f},
-		{7.8f, 6.1f, -0.8f},
-		{7.4f, 6.1f, 3.8f},
-		{0.0f, 6.1f, 3.9f},
-		{0.0f, 4.1f, -3.9f}
-	};
+	// Create camera with a track
+	{
+		const TArray<glm::vec3> cameraTrack = {
+			{-2.0f, 3.0f, 1.0f},
+			{7.8f, 3.0f, 0.8f},
+			{7.4f, 3.0f, -3.8f},
+			{-7.8f, 4.0f, -3.9f},
+			{-7.6f, 4.0f, -2.1f},
+			{7.8f, 6.1f, -0.8f},
+			{7.4f, 6.1f, 3.8f},
+			{0.0f, 6.1f, 3.9f},
+			{0.0f, 4.1f, -3.9f}
+		};
 
-	CameraDesc cameraDesc = {};
-	cameraDesc.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV");
-	cameraDesc.Width = window->GetWidth();
-	cameraDesc.Height = window->GetHeight();
-	cameraDesc.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane");
-	cameraDesc.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane");
-	m_Camera = CreateCameraTrackEntity(cameraDesc, cameraTrack);
+		const CameraDesc cameraDesc = {
+			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+			.Width = (float32)window->GetWidth(),
+			.Height = (float32)window->GetHeight(),
+			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+		};
+		m_Camera = CreateCameraTrackEntity(cameraDesc, cameraTrack);
+	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	// Scene
 	{
@@ -74,11 +81,18 @@ void BenchmarkState::Init()
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
-			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { true, position });
-			pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			Entity entity = pECS->CreateEntity();
+			const StaticCollisionInfo collisionCreateInfo = {
+				.Entity			= entity,
+				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+			};
+
+			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
 		}
 	}
 
@@ -170,11 +184,17 @@ void BenchmarkState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(entity, { true, position });
-				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				const StaticCollisionInfo collisionCreateInfo = {
+					.Entity			= entity,
+					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+				};
 
+				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
 				transform *= glm::toMat4(glm::identity<glm::quat>());
