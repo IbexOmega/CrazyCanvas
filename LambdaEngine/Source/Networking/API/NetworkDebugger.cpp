@@ -100,8 +100,10 @@ namespace LambdaEngine
 				ImGui::Text("Reliable Segments Sent");
 				ImGui::Text("Packets Received");
 				ImGui::Text("Segments Received");
-				ImGui::Text("Packets Lost");
-				ImGui::Text("Packet Loss Rate");
+				ImGui::Text("Packets Lost (S)");
+				ImGui::Text("Packets Lost (R)");
+				ImGui::Text("Packet Loss Rate (S)");
+				ImGui::Text("Packet Loss Rate (R)");
 				ImGui::Text("Bytes Sent");
 				ImGui::Text("Bytes Received");
 				ImGui::Text("Local Salt");
@@ -131,8 +133,10 @@ namespace LambdaEngine
 					ImGui::Text("%d", pStatistics->GetReliableSegmentsSent());
 					ImGui::Text("%d", pStatistics->GetPacketsReceived());
 					ImGui::Text("%d", pStatistics->GetSegmentsReceived());
-					ImGui::Text("%d", pStatistics->GetPacketsLost());
-					ImGui::Text("%.1f%%", pStatistics->GetPacketLossRate() * 100.0f);
+					ImGui::Text("%d", pStatistics->GetSendingPacketsLost());
+					ImGui::Text("%d", pStatistics->GetReceivingPacketsLost());
+					ImGui::Text("%.1f%%", pStatistics->GetSendingPacketLossRate() * 100.0f);
+					ImGui::Text("%.1f%%", pStatistics->GetReceivingPacketLossRate() * 100.0f);
 					ImGui::Text("%d", pStatistics->GetBytesSent());
 					ImGui::Text("%d", pStatistics->GetBytesReceived());
 					ImGui::Text("%llu", pStatistics->GetSalt());
