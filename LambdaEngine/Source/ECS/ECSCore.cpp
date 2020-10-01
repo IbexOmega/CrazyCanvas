@@ -19,6 +19,7 @@ namespace LambdaEngine
 		PerformComponentRegistrations();
 		PerformComponentDeletions();
 		PerformEntityDeletions();
+		m_ComponentStorage.ResetDirtyFlags();
 		m_JobScheduler.Tick();
 	}
 
