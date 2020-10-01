@@ -47,7 +47,7 @@ namespace LambdaEngine
 			ECSCore* pECS = ECSCore::GetInstance();
 			auto* pControllableComponents = pECS->GetComponentArray<ControllableComponent>();
 
-			if (!pInterpolationComponents)
+			if (!pControllableComponents)
 				return;
 
 			ControllableComponent& controllableComponent = pInterpolationComponents->GetData(entity);
