@@ -386,10 +386,11 @@ namespace LambdaEngine
 	void PhysicsSystem::FinalizeCollisionComponent(const StaticCollisionInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation)
 	{
 		// Add filtering data
-		// PxFilterData filterData;
-		// filterData.word0 = 0u;// (PxU32)collisionCreateInfo.CollisionGroup;
-		// filterData.word1 = 0u;// (PxU32)collisionCreateInfo.CollisionMask;
-		// pShape->setSimulationFilterData(filterData);
+		PxFilterData filterData;
+		filterData.word0 = (PxU32)collisionCreateInfo.CollisionGroup;
+		filterData.word1 = (PxU32)collisionCreateInfo.CollisionMask;
+		pShape->setSimulationFilterData(filterData);
+		pShape->setQueryFilterData(filterData);
 
 		// Combine shape and transform to create a static body
 		const glm::vec3& position = collisionCreateInfo.Position.Position;
@@ -432,15 +433,14 @@ namespace LambdaEngine
 		controllerDesc.nonWalkableMode	= PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
 
 		PxController* pController = m_pControllerManager->createController(controllerDesc);
-		// PxFilterData* pFilterData = DBG_NEW PxFilterData(
-		// 	(PxU32)characterColliderInfo.CollisionGroup,
-		// 	(PxU32)characterColliderInfo.CollisionMask,
-		// 	0u,
-		// 	0u
-		// );
+		PxFilterData* pFilterData = DBG_NEW PxFilterData(
+			(PxU32)characterColliderInfo.CollisionGroup,
+			(PxU32)characterColliderInfo.CollisionMask,
+			0u,
+			0u
+		);
 
-		PxControllerFilters controllerFilters(nullptr);
-		// controllerFilters.mFilterFlags = PxQueryFlag::eANY_HIT;
+		PxControllerFilters controllerFilters(pFilterData);
 		const CharacterColliderComponent characterColliderComp = {
 			.pController	= pController,
 			.Filters		= controllerFilters

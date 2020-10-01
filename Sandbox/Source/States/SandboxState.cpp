@@ -86,7 +86,7 @@ void SandboxState::Init()
 				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
 				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 			};
 
 			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
@@ -171,7 +171,7 @@ void SandboxState::Init()
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
 					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);

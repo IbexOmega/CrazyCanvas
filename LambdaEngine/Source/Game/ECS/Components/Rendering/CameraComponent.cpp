@@ -31,10 +31,12 @@ namespace LambdaEngine
 			.Position = pECS->GetComponent<PositionComponent>(entity),
 			.Rotation = pECS->GetComponent<RotationComponent>(entity),
 			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
-			.CollisionMask	= UINT32_MAX
+			.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
 		};
 
-		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, 1.0f, 0.5f);
+		constexpr const float capsuleHeight = 1.8f;
+		constexpr const float capsuleRadius = 0.2f;
+		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius);
 		return entity;
 	}
 
