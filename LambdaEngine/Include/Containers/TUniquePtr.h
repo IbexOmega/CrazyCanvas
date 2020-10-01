@@ -336,7 +336,7 @@ namespace LambdaEngine
 	std::enable_if_t<!std::is_array_v<T>, TUniquePtr<T>> MakeUnique(TArgs&&... args) noexcept
 	{
 		T* pUniquePtr = DBG_NEW T(Forward<TArgs>(args)...);
-		return Move(TUniquePtr<T>(pUniquePtr));
+		return std::move(TUniquePtr<T>(pUniquePtr));
 	}
 
 	/*
@@ -348,6 +348,6 @@ namespace LambdaEngine
 		using TType = TRemoveExtent<T>;
 
 		TType* pUniquePtr = DBG_NEW TType[size];
-		return Move(TUniquePtr<T>(pUniquePtr));
+		return std::move(TUniquePtr<T>(pUniquePtr));
 	}
 }

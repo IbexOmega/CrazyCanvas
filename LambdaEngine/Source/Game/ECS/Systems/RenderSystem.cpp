@@ -215,7 +215,6 @@ namespace LambdaEngine
 		m_LightsDirty = true; // Initilise Light buffer to avoid validation layer errors
 		UpdateBuffers();
 		UpdateRenderGraph();
-		m_pRenderGraph->Update();
 
 		return true;
 	}
@@ -303,7 +302,8 @@ namespace LambdaEngine
 			if (pointLight.Dirty || position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
-				pointLight.Dirty = false;
+				pointLight.Dirty	= false;
+				position.Dirty		= false;
 			}
 		}
 
@@ -324,8 +324,10 @@ namespace LambdaEngine
 					dirLight.frustumZNear,
 					dirLight.frustumZFar
 				);
-				dirLight.Dirty = rotation.Dirty = position.Dirty = false;
 
+				dirLight.Dirty = false;
+				position.Dirty = false;
+				rotation.Dirty = false;
 			}
 		}
 
@@ -487,7 +489,7 @@ namespace LambdaEngine
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
-		
+
 		m_EntityToPointLight[lastEntity] = currentIndex;
 		m_PointLightToEntity[currentIndex] = lastEntity;
 
@@ -703,10 +705,12 @@ namespace LambdaEngine
 
 				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
 				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pCombinedMaterialMap;
+				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pAOMetallicRoughnessMap;
+
 				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
 				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pCombinedMaterialMapView;
+				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pAOMetallicRoughnessMapView;
+
 				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
@@ -861,7 +865,7 @@ namespace LambdaEngine
 
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
-		
+
 		const glm::vec3 directions[6] =
 		{
 			{1.0f, 0.0f, 0.0f},
@@ -874,22 +878,24 @@ namespace LambdaEngine
 
 		const glm::vec3 defaultUp[6] =
 		{
-			g_DefaultUp,
-			g_DefaultUp,
-			{0.0f, 0.0f, -1.0f},
-			{0.0f, 0.0f, 1.0f},
-			g_DefaultUp,
-			g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultForward,
+			g_DefaultForward,
+			-g_DefaultUp,
+			-g_DefaultUp,
 		};
 
 		constexpr uint32 PROJECTIONS = 6;
 		constexpr float FOV = 90.f;
 		constexpr float ASPECT_RATIO = 1.0f;
 		m_PointLights[index].FarPlane = farPlane;
+
+		glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
-			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			m_PointLights[index].ProjViews[p] = perspective;
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}
 

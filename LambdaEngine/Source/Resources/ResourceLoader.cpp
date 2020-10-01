@@ -8,7 +8,7 @@
 
 #include "Rendering/RenderAPI.h"
 
-#include "Audio/AudioSystem.h"
+#include "Audio/AudioAPI.h"
 
 #include "Resources/STB.h"
 #include "Resources/GLSLShaderSource.h"
@@ -102,6 +102,21 @@ namespace LambdaEngine
 		}
 	}
 
+	static FLoadedTextureFlag AssimpTextureFlagToLambdaTextureFlag(aiTextureType textureType)
+	{
+		switch (textureType)
+		{
+		case aiTextureType::aiTextureType_DIFFUSE:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
+		case aiTextureType::aiTextureType_NORMALS:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_HEIGHT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_AMBIENT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
+		case aiTextureType::aiTextureType_REFLECTION:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
+		case aiTextureType::aiTextureType_SHININESS:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		}
+
+		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NONE;
+	}
+
 	/*
 	* ResourceLoader
 	*/
@@ -146,7 +161,7 @@ namespace LambdaEngine
 	/*
 	* Assimp Parsing
 	*/
-	static Texture* LoadAssimpTexture(SceneLoadingContext& context, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
+	static LoadedTexture* LoadAssimpTexture(SceneLoadingContext& context, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
 	{
 		if (pMaterial->GetTextureCount(type) > index)
 		{
@@ -160,9 +175,12 @@ namespace LambdaEngine
 			auto loadedTexture = context.LoadedTextures.find(name);
 			if (loadedTexture == context.LoadedTextures.end())
 			{
-				Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
-				context.LoadedTextures[name] = pTexture;
-				return context.pTextures->PushBack(pTexture);
+				LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
+				pLoadedTexture->pTexture	= ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+				pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+
+				context.LoadedTextures[name] = pLoadedTexture;
+				return context.pTextures->PushBack(pLoadedTexture);
 			}
 			else
 			{
@@ -173,7 +191,13 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	bool ResourceLoader::LoadSceneFromFile(const String& filepath, TArray<MeshComponent>& meshComponents, TArray<Mesh*>& meshes, TArray<Animation*>& animations, TArray<Material*>& materials, TArray<Texture*>& textures)
+	bool ResourceLoader::LoadSceneFromFile(
+		const String& filepath,
+		TArray<MeshComponent>& meshComponents,
+		TArray<Mesh*>& meshes,
+		TArray<Animation*>& animations,
+		TArray<LoadedMaterial*>& materials,
+		TArray<LoadedTexture*>& textures)
 	{
 		const int32 assimpFlags =
 			aiProcess_FlipWindingOrder			|
@@ -721,7 +745,7 @@ namespace LambdaEngine
 		SoundEffect3DDesc soundDesc = {};
 		soundDesc.Filepath = ConvertSlashes(filepath);
 
-		ISoundEffect3D* pSound = AudioSystem::GetDevice()->CreateSoundEffect(&soundDesc);
+		ISoundEffect3D* pSound = AudioAPI::GetDevice()->CreateSoundEffect(&soundDesc);
 		if (pSound == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
@@ -969,7 +993,7 @@ namespace LambdaEngine
 		auto mat = context.MaterialIndices.find(pMeshAI->mMaterialIndex);
 		if (mat == context.MaterialIndices.end())
 		{
-			Material*	pMaterial	= DBG_NEW Material();
+			LoadedMaterial*	pMaterial	= DBG_NEW LoadedMaterial();
 			aiMaterial* pMaterialAI	= pSceneAI->mMaterials[pMeshAI->mMaterialIndex];
 #if 0
 			for (uint32 t = 0; t < aiTextureType_UNKNOWN; t++)

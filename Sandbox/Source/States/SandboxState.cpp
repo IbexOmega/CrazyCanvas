@@ -5,9 +5,13 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
 
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
+
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
 
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
@@ -114,7 +118,7 @@ void SandboxState::Init()
 		materialProperties.Roughness	= 1.0f;
 		materialProperties.Metallic		= 1.0f;
 
-		const uint32 robotMaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
 			robotAlbedoGUID,
 			robotNormalGUID,
@@ -135,6 +139,18 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		// Audio
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		const SoundInstance3DDesc desc = {
+				.pName = "RobotSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = position,
+				.Volume = 0.03f
+		};
+		pSoundInstance->Init(&desc);
+		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 		m_Entities.PushBack(entity);
 	}
 
@@ -212,14 +228,14 @@ void SandboxState::Init()
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 100.0f}, .FarPlane = 25.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 2.0f, -3.0f},
+				{-1.0f, 5.0f, 1.0f},
 				{-4.0f, 2.0f, -3.0f},
 				{0.0f, 2.0f, 3.0f},
 			};

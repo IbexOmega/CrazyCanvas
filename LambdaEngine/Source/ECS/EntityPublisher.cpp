@@ -43,15 +43,20 @@ namespace LambdaEngine
         uint32 subID = m_SystemIDGenerator.GenID();
         m_SubscriptionStorage.PushBack(subscriptions, subID);
 
-        // Map each component type to its subscriptions
+        // Map each component type (included and excluded) to its subscriptions
         const TArray<EntitySubscription>& subs = m_SubscriptionStorage.IndexID(subID);
 
         for (uint32 subscriptionNr = 0; subscriptionNr < subs.GetSize(); subscriptionNr += 1)
         {
-            const TArray<const ComponentType*>& componentTypes = subs[subscriptionNr].ComponentTypes;
+            const EntitySubscription& subscription = subs[subscriptionNr];
+            const TArray<const ComponentType*>& componentTypes          = subscription.ComponentTypes;
+            const TArray<const ComponentType*>& excludedComponentTypes  = subscription.ExcludedComponentTypes;
 
             for (const ComponentType* pComponentType : componentTypes)
                 m_ComponentSubscriptions.insert({ pComponentType, {subID, subscriptionNr}});
+
+            for (const ComponentType* pExcludedComponentType : excludedComponentTypes)
+                m_ComponentSubscriptions.insert({ pExcludedComponentType, {subID, subscriptionNr}});
         }
 
         // A subscription has been made, notify the system of all existing components it subscribed to
@@ -68,7 +73,7 @@ namespace LambdaEngine
             // See which entities in the entity vector also have all the other component types. Register those entities in the system.
             for (Entity entity : entities)
             {
-                bool registerEntity = m_pEntityRegistry->EntityHasAllowedTypes(entity, subscription.ComponentTypes, subscription.ExcludedComponentTypes);
+                const bool registerEntity = m_pEntityRegistry->EntityHasAllowedTypes(entity, subscription.ComponentTypes, subscription.ExcludedComponentTypes);
 
                 if (registerEntity)
                 {
@@ -131,7 +136,7 @@ namespace LambdaEngine
         m_SystemIDGenerator.PopID(subscriptionID);
     }
 
-    void EntityPublisher::PublishComponent(Entity entityID, const ComponentType* pComponentType)
+    void EntityPublisher::PublishComponent(Entity entity, const ComponentType* pComponentType)
     {
         // Get all subscriptions for the component type by iterating through the unordered_map bucket
         auto subBucketItr = m_ComponentSubscriptions.find(pComponentType);
@@ -141,13 +146,26 @@ namespace LambdaEngine
             // Use indices stored in the component type -> component storage mapping to get the component subscription
             EntitySubscription& sysSub = m_SubscriptionStorage.IndexID(subBucketItr->second.SystemID)[subBucketItr->second.SubIdx];
 
-            if (m_pEntityRegistry->EntityHasAllowedTypes(entityID, sysSub.ComponentTypes, sysSub.ExcludedComponentTypes)) 
+            const bool entityHasExcludedTypes = m_pEntityRegistry->EntityHasAnyOfTypes(entity, sysSub.ExcludedComponentTypes);
+
+            // Check if an excluded type was added. If so, remove the entity
+            if (sysSub.pSubscriber->HasElement(entity) && entityHasExcludedTypes)
             {
-                sysSub.pSubscriber->PushBack(entityID);
+                if (sysSub.OnEntityRemoval)
+                {
+                    sysSub.OnEntityRemoval(entity);
+                }
+
+                sysSub.pSubscriber->Pop(entity);
+            }
+            // Check if the entity should be added to the subscription
+            else if (!entityHasExcludedTypes && m_pEntityRegistry->EntityHasAllTypes(entity, sysSub.ComponentTypes))
+            {
+                sysSub.pSubscriber->PushBack(entity);
 
                 if (sysSub.OnEntityAdded)
                 {
-                    sysSub.OnEntityAdded(entityID);
+                    sysSub.OnEntityAdded(entity);
                 }
             }
 
@@ -155,7 +173,7 @@ namespace LambdaEngine
         }
     }
 
-    void EntityPublisher::UnpublishComponent(Entity entityID, const ComponentType* pComponentType)
+    void EntityPublisher::UnpublishComponent(Entity entity, const ComponentType* pComponentType)
     {
         // Get all subscriptions for the component type by iterating through the unordered_multimap bucket
         auto subBucketItr = m_ComponentSubscriptions.find(pComponentType);
@@ -165,16 +183,20 @@ namespace LambdaEngine
             // Use indices stored in the component type -> component storage mapping to get the component subscription
             EntitySubscription& sysSub = m_SubscriptionStorage.IndexID(subBucketItr->second.SystemID)[subBucketItr->second.SubIdx];
 
-            if (!sysSub.pSubscriber->HasElement(entityID))
+            // Check if this component was excluded, and therefore preventing an entity to being pushed to a subscriber
+            if (!sysSub.pSubscriber->HasElement(entity) && m_pEntityRegistry->EntityHasAllowedTypes(entity, sysSub.ComponentTypes, sysSub.ExcludedComponentTypes))
             {
+                sysSub.pSubscriber->PushBack(entity);
                 subBucketItr++;
                 continue;
             }
+            else
+            {
+                if (sysSub.OnEntityRemoval)
+                    sysSub.OnEntityRemoval(entity);
 
-            if (sysSub.OnEntityRemoval)
-                sysSub.OnEntityRemoval(entityID);
-
-            sysSub.pSubscriber->Pop(entityID);
+                sysSub.pSubscriber->Pop(entity);
+            }
 
             subBucketItr++;
         }

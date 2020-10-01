@@ -312,7 +312,7 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "sampler_address_mode": "CLAMP_TO_BORDER",
+                "sampler_address_mode": "CLAMP_TO_EDGE",
                 "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_WHITE",
                 "memory_type": "MEMORY_TYPE_GPU"
             }

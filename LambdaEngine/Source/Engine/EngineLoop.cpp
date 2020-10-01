@@ -32,12 +32,13 @@
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
-#include "Audio/AudioSystem.h"
+#include "Audio/AudioAPI.h"
 
 #include "Utilities/RuntimeStats.h"
 
 #include "Game/GameConsole.h"
 #include "Game/StateManager.h"
+#include "Game/ECS/Systems/Audio/AudioSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
@@ -103,12 +104,13 @@ namespace LambdaEngine
 
 		EventQueue::Tick();
 
-		AudioSystem::Tick();
+		AudioAPI::Tick();
 
 		ClientSystem::StaticTickMainThread(delta);
 		ServerSystem::StaticTickMainThread(delta);
 		CameraSystem::GetInstance().MainThreadTick(delta);
 		StateManager::GetInstance()->Tick(delta);
+		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
@@ -190,7 +192,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!AudioSystem::Init())
+		if (!AudioAPI::Init())
 		{
 			return false;
 		}
@@ -216,6 +218,11 @@ namespace LambdaEngine
 		}
 
 		if (!PhysicsSystem::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		if (!AudioSystem::GetInstance().Init())
 		{
 			return false;
 		}
@@ -293,7 +300,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!AudioSystem::Release())
+		if (!AudioAPI::Release())
 		{
 			return false;
 		}
