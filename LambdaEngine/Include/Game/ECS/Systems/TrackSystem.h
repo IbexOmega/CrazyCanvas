@@ -27,8 +27,6 @@ namespace LambdaEngine
 	private:
 		TrackSystem() = default;
 
-		void UpdateTrack(Timestamp deltaTime, Entity entity, PositionComponent& posComp, RotationComponent& rotComp);
-
 		static glm::vec3 GetCurrentGradient(const glm::uvec4& splineIndices, const TrackComponent& camTrackComp);
 		glm::uvec4 GetCurrentSplineIndices(TrackComponent& camTrackComp) const;
 		static bool HasReachedEnd(const TrackComponent& camTrackComp);
