@@ -1082,11 +1082,11 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
-		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
-		}
+		//for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		//{
+		//	Skeleton::Bone& bone = pSkeleton->Bones[boneID];
+		//	LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
+		//}
 
 		// Go through and correct mistakes with the armature
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
@@ -1114,13 +1114,13 @@ namespace LambdaEngine
 			}
 		}
 
-		LOG_INFO("-----------------------------------");
+		//LOG_INFO("-----------------------------------");
 
-		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
-		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
-		}
+		//for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		//{
+		//	Skeleton::Bone& bone = pSkeleton->Bones[boneID];
+		//	LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
+		//}
 
 		// Set weights
 		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());

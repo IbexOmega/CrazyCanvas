@@ -502,6 +502,20 @@ namespace LambdaEngine
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 
+		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
+		{
+			m_pLineRenderer = DBG_NEW LineRenderer();
+			m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+
+			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+		}
+
+		//GUI Renderer
+		{
+			ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
+		}
+
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
 		{
@@ -514,6 +528,11 @@ namespace LambdaEngine
 		m_MaterialsPropertiesBufferDirty	= true;
 		m_RenderGraphSBTRecordsDirty		= true;
 		m_LightsResourceDirty				= true;
+
+		if (m_RayTracingEnabled)
+		{
+			m_TLASResourceDirty = true;
+		}
 
 		UpdateRenderGraph();
 	}

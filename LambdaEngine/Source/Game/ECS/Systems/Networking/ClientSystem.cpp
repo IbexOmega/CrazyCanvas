@@ -1,9 +1,9 @@
+#include "Engine/EngineLoop.h"
+
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/InterpolationSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
-
-#include "Engine/EngineLoop.h"
-
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Player/ControllableComponent.h"
 #include "Game/ECS/Components/Networking/InterpolationComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -250,22 +250,31 @@ namespace LambdaEngine
 		materialProperties.Metallic		= 0.0f;
 		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
+		TArray<GUID_Lambda> animations;
+
+		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+
 		MeshComponent meshComponent;
-		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 			"Mirror Material" + std::to_string(entity),
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			robotAlbedoGUID,
+			robotNormalGUID,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		pECS->AddComponent<PositionComponent>(entity,		{ true, position });
-		pECS->AddComponent<RotationComponent>(entity,		{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(entity,			{ true, glm::vec3(1.0f) });
-		pECS->AddComponent<MeshComponent>(entity,			meshComponent);
-		pECS->AddComponent<NetworkComponent>(entity,		{ networkUID });
+		AnimationComponent animationComp;
+		animationComp.AnimationGUID = animations[0];
+
+		pECS->AddComponent<PositionComponent>(entity,	{ true, position });
+		pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(0.01f) });
+		pECS->AddComponent<AnimationComponent>(entity,	animationComp);
+		pECS->AddComponent<MeshComponent>(entity,		meshComponent);
+		pECS->AddComponent<NetworkComponent>(entity,	{ networkUID });
 
 		m_Entities.insert({ networkUID, entity });
 
