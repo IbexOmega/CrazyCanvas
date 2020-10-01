@@ -50,7 +50,7 @@ namespace LambdaEngine
 			if (!pControllableComponents)
 				return;
 
-			ControllableComponent& controllableComponent = pInterpolationComponents->GetData(entity);
+			ControllableComponent& controllableComponent = pControllableComponents->GetData(entity);
 
 			controllableComponent.StartPosition = controllableComponent.EndPosition;
 			PredictMove(deltaTime, deltaForward, deltaLeft, controllableComponent.EndPosition);
