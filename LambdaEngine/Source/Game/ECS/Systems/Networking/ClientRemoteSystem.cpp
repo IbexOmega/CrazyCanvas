@@ -120,7 +120,7 @@ namespace LambdaEngine
 
 
 
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		const ClientMap& clients = m_pClient->GetClients();
 
 		for (auto& clientPair : clients)
@@ -138,7 +138,7 @@ namespace LambdaEngine
 
 				//Send everyone to my self
 				ClientRemoteSystem* pHandler = (ClientRemoteSystem*)clientPair.second->GetHandler();
-				PositionComponent& positionComponent = pPositionComponents->GetData(pHandler->m_EntityPlayer);
+				const PositionComponent& positionComponent = pPositionComponents->GetData(pHandler->m_EntityPlayer);
 
 				NetworkSegment* pPacket3 = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 				BinaryEncoder encoder3(pPacket3);

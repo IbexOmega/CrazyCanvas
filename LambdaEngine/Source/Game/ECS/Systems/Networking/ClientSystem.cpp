@@ -117,12 +117,12 @@ namespace LambdaEngine
 			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 			if (!pPositionComponents)
 				return;
 
-			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
+			const PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
 			GameState gameState = {};
 
 			gameState.SimulationTick	= m_SimulationTick;
@@ -283,7 +283,7 @@ namespace LambdaEngine
 		{
 			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 
-			if (!CompareGameStates(m_FramesProcessedByServer[0], m_FramesToReconcile[0]))
+			if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[0]))
 			{
 				ReplayGameStatesBasedOnServerGameState(m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[0]);
 			}
