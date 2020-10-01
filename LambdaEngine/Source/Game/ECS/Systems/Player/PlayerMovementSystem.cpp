@@ -108,7 +108,7 @@ namespace LambdaEngine
 
 		if (deltaLeft != 0)
 		{
-			result.x += (float32)((1.0f * deltaTime.AsSeconds()) * (float64)deltaLeft);
+			result.x += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaLeft);
 		}
 	}
 	
