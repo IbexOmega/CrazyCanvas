@@ -3732,7 +3732,6 @@ namespace LambdaEngine
 
 				clearColorCount++;
 			}
-				
 			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
 			{
 				BeginRenderPassDesc beginRenderPassDesc = { };
