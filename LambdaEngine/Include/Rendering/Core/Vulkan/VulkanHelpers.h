@@ -29,8 +29,10 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
+		case EFormat::FORMAT_R8_UNORM:				return VK_FORMAT_R8_UNORM;
 		case EFormat::FORMAT_R16_UNORM:				return VK_FORMAT_R16_UNORM;
 		case EFormat::FORMAT_R16_SFLOAT:			return VK_FORMAT_R16_SFLOAT;
+		case EFormat::FORMAT_R32_SFLOAT:			return VK_FORMAT_R32_SFLOAT;
 		case EFormat::FORMAT_R16G16_SFLOAT:			return VK_FORMAT_R16G16_SFLOAT;
 		case EFormat::FORMAT_R16G16_SNORM:			return VK_FORMAT_R16G16_SNORM;
 		case EFormat::FORMAT_R10G10B10A2_UNORM:		return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
@@ -561,6 +563,18 @@ namespace LambdaEngine
 		stencilOpState.failOp		= ConvertStencilOp(stencilOpStateDesc.FailOp);
 		stencilOpState.passOp		= ConvertStencilOp(stencilOpStateDesc.PassOp);
 		return stencilOpState;
+	}
+
+	inline VkStencilFaceFlags ConvertStencilFace(EStencilFace stencilFace)
+	{
+		switch (stencilFace)
+		{
+		case EStencilFace::STENCIL_FACE_FRONT:			return VK_STENCIL_FACE_FRONT_BIT;
+		case EStencilFace::STENCIL_FACE_BACK:			return VK_STENCIL_FACE_BACK_BIT;
+		case EStencilFace::STENCIL_FACE_FRONT_AND_BACK:	return VK_STENCIL_FACE_FRONT_AND_BACK;
+		}
+
+		return VK_STENCIL_FACE_FRONT_AND_BACK;
 	}
 
 	inline const char* VkFormatToString(VkFormat format)

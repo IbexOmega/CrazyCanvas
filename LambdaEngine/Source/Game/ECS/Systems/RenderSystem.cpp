@@ -13,6 +13,7 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
+#include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -24,6 +25,9 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+
+#include "GUI/Core/GUIApplication.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -52,8 +56,8 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{{{RW, MeshComponent::Type()}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities,			std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
-				{{{RW, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities,								std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
+				{{{RW, DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities, std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
+				{{{RW, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities, std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
 				{{{RW, ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -118,7 +122,6 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
-
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
@@ -131,6 +134,12 @@ namespace LambdaEngine
 				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+			}
+
+			//GUI Renderer
+			{
+				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
@@ -205,6 +214,8 @@ namespace LambdaEngine
 
 		m_LightsDirty = true; // Initilise Light buffer to avoid validation layer errors
 		UpdateBuffers();
+		UpdateRenderGraph();
+		m_pRenderGraph->Update();
 
 		return true;
 	}
@@ -358,6 +369,7 @@ namespace LambdaEngine
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
+		StagingBufferCache::Tick();
 		CleanBuffers();
 		UpdateBuffers();
 		UpdateRenderGraph();
@@ -1368,7 +1380,7 @@ namespace LambdaEngine
 			size_t lightBufferSize			= dirLightBufferSize + pointLightsBufferSize;
 
 			// Set point light count
-			m_LightBufferData.PointLightCount = uint32(pointLightCount);
+			m_LightBufferData.PointLightCount = float32(pointLightCount);
 
 			Buffer* pCurrentStagingBuffer = m_ppLightsStagingBuffer[m_ModFrameIndex];
 

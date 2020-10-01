@@ -212,18 +212,31 @@ namespace LambdaEngine
 		viewportState.pScissors		= nullptr;
 
 		// Dynamic state
-		VkDynamicState dynamicStates[] =
+		TArray<VkDynamicState> dynamicStates =
 		{
 			VK_DYNAMIC_STATE_VIEWPORT,
 			VK_DYNAMIC_STATE_SCISSOR
 		};
 
+		if (pDesc->ExtraDynamicState & FExtraDynamicStateFlag::EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE)
+		{
+			dynamicStates.PushBack(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT);
+		}
+		if (pDesc->ExtraDynamicState & FExtraDynamicStateFlag::EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP)
+		{
+			dynamicStates.PushBack(VK_DYNAMIC_STATE_STENCIL_OP_EXT);
+		}
+		if (pDesc->ExtraDynamicState & FExtraDynamicStateFlag::EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE)
+		{
+			dynamicStates.PushBack(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
+		}
+
 		VkPipelineDynamicStateCreateInfo dynamicState = {};
 		dynamicState.sType				= VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		dynamicState.flags				= 0;
 		dynamicState.pNext				= nullptr;
-		dynamicState.pDynamicStates		= dynamicStates;
-		dynamicState.dynamicStateCount	= 2;
+		dynamicState.pDynamicStates		= dynamicStates.GetData();
+		dynamicState.dynamicStateCount	= dynamicStates.GetSize();
 
 		// Pipeline info
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};

@@ -78,6 +78,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
+		Extension(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
@@ -1666,6 +1667,13 @@ namespace LambdaEngine
 			m_DeviceFeatures.MaxTaskOutputCount				= MeshShaderProperties.maxTaskOutputCount;
 			m_DeviceFeatures.MaxMeshWorkGroupInvocations	= MeshShaderProperties.maxMeshWorkGroupInvocations;
 			m_DeviceFeatures.MaxTaskWorkGroupInvocations	= MeshShaderProperties.maxTaskWorkGroupInvocations;
+		}
+
+		//Dynamic State
+		if (IsDeviceExtensionEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME))
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkCmdSetStencilOpEXT);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdSetStencilTestEnableEXT);
 		}
 	}
 
