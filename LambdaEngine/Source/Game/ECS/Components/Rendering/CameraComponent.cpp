@@ -11,6 +11,8 @@
 
 #include "Resources/ResourceManager.h"
 
+#include "Resources/ResourceManager.h"
+
 namespace LambdaEngine
 {
 	Entity CreateFreeCameraEntity(const CameraDesc& cameraDesc)

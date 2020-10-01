@@ -94,12 +94,10 @@ workspace "LambdaEngine"
 			"LAMBDA_SHARED_LIB",
 		}
 	filter {}
-
 	defines
 	{
 		"NS_STATIC_LIBRARY"
 	}
-
 	-- Configurations
 	configurations
 	{
@@ -217,7 +215,6 @@ workspace "LambdaEngine"
 				"Dependencies/imnodes/imnodes.h",
 				"Dependencies/imnodes/imnodes.cpp",
 			}
-
 	group ""
 
     -- Engine Project
@@ -381,7 +378,6 @@ workspace "LambdaEngine"
 
 				-- PhysX
 				"Dependencies/PhysX/lib",
-
 				-- NoesisGUI
 				"Dependencies/NoesisGUI/Lib",
 			}
@@ -424,7 +420,6 @@ workspace "LambdaEngine"
 				"/checked/PhysXExtensions_dynamic_64.lib",
 				"/checked/PhysXFoundation_64.lib",
 				"/checked/PhysXPvdSDK_dynamic_64.lib",
-
 				--NoesisGUI
 				"Noesis.lib",
 				"NoesisApp.lib",
@@ -450,12 +445,11 @@ workspace "LambdaEngine"
 
 				-- PhysX
 				"/release/PhysX_64.lib",
-				"/checked/PhysXCharacterKinematic_dynamic_64.lib",
+				"/release/PhysXCharacterKinematic_dynamic_64.lib",
 				"/release/PhysXCommon_64.lib",
 				"/release/PhysXCooking_64.lib",
 				"/release/PhysXExtensions_dynamic_64.lib",
 				"/release/PhysXFoundation_64.lib",
-
 				--NoesisGUI
 				"Noesis.lib",
 				"NoesisApp.lib",
@@ -517,14 +511,12 @@ workspace "LambdaEngine"
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
-
 			postbuildcommands
 			{
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\""),
-
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
