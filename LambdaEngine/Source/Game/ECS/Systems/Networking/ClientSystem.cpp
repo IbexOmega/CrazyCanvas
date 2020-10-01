@@ -311,7 +311,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ClientSystem::CompareGameStates(const GameState& gameStateServer, const GameState& gameStateLocal)
+	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
 	{
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
 			return false;
