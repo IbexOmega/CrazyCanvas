@@ -3877,7 +3877,7 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping && pRenderStage->pSBT != nullptr)
 		{
 			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 			pComputeCommandAllocator->Reset();
