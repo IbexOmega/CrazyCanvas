@@ -7,6 +7,8 @@
   "RayTracingEnabled": false,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
+  "RayTracingEnabled": false,
+  "EnablePhysicsRenderer": false,
   "EnableLineRenderer": false,
   "RenderGraphName": "GUI_TEST.lrg",
   "EnablePhysicsRenderer": false,

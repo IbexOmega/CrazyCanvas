@@ -61,7 +61,7 @@ namespace LambdaEngine
         virtual void OnReleaseRequested(const std::string& reason) override;
         virtual void RunTransmitter() override;
 
-        virtual void Tick(Timestamp delta);
+        virtual void FixedTick(Timestamp delta);
         ClientRemoteBase* GetClient(const IPEndPoint& endPoint);
         void HandleNewConnection(ClientRemoteBase* pClient);
 

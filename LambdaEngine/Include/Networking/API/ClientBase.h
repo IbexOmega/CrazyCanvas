@@ -62,8 +62,9 @@ namespace LambdaEngine
 		void SendConnect();
 		void SendDisconnect();
 		bool HandleReceivedPacket(NetworkSegment* pPacket);
-		void Tick(Timestamp delta);
+		void FixedTick(Timestamp delta);
 		void UpdatePingSystem();
+		void HandleReceivedPacketsMainThread();
 
 	protected:
 		std::atomic_bool m_SendDisconnectPacket;
@@ -77,6 +78,8 @@ namespace LambdaEngine
 		Timestamp m_PingTimeout;
 		Timestamp m_LastPingTimestamp;
 		bool m_UsePingSystem;
+		std::atomic_int8_t m_BufferIndex;
+		TArray<NetworkSegment*> m_ReceivedPackets[2];
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);

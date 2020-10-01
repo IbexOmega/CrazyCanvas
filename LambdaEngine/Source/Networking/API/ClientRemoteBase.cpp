@@ -19,7 +19,9 @@ namespace LambdaEngine
 		m_LastPingTimestamp(0),
 		m_DisconnectedByRemote(false),
 		m_TerminationRequested(false),
-		m_TerminationApproved(false)
+		m_TerminationApproved(false),
+		m_BufferIndex(0),
+		m_ReceivedPackets()
     {
 
     }
@@ -165,6 +167,11 @@ namespace LambdaEngine
 		return m_pServer->GetClients();
 	}
 
+	ServerBase* ClientRemoteBase::GetServer()
+	{
+		return m_pServer;
+	}
+
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
 	{
 		return GetPacketManager()->GetEndPoint();
@@ -231,21 +238,36 @@ namespace LambdaEngine
 			for (NetworkSegment* pPacket : packets)
 			{
 				if (!HandleReceivedPacket(pPacket))
-					break;
+				{
+					pPacketManager->GetSegmentPool()->FreeSegment(pPacket);
+				}
 			}
-
-			pPacketManager->QueryEnd(packets);
 		}
 	}
 
-	void ClientRemoteBase::Tick(Timestamp delta)
+	void ClientRemoteBase::FixedTick(Timestamp delta)
 	{
 		GetPacketManager()->Tick(delta);
 
 		if (m_UsePingSystem)
 		{
 			UpdatePingSystem();
-		}	
+		}
+
+		HandleReceivedPacketsMainThread();
+	}
+
+	void ClientRemoteBase::HandleReceivedPacketsMainThread()
+	{
+		int8 index = m_BufferIndex;
+		m_BufferIndex = (m_BufferIndex + 1) % 2;
+		TArray<NetworkSegment*>& packets = m_ReceivedPackets[index];
+		for (NetworkSegment* pPacket : packets)
+		{
+			m_pHandler->OnPacketReceived(this, pPacket);
+		}
+		GetPacketManager()->QueryEnd(packets);
+		packets.Clear();
 	}
 
 	void ClientRemoteBase::UpdatePingSystem()
@@ -311,7 +333,6 @@ namespace LambdaEngine
 		{
 			m_DisconnectedByRemote = true;
 			Disconnect("Disconnected By Remote");
-			return false;
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
@@ -319,9 +340,10 @@ namespace LambdaEngine
 		}
 		else if (IsConnected())
 		{
-			m_pHandler->OnPacketReceived(this, pPacket);
+			m_ReceivedPackets[m_BufferIndex].PushBack(pPacket);
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	void ClientRemoteBase::SendDisconnect()

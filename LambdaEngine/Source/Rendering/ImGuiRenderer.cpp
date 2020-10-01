@@ -41,7 +41,7 @@ namespace LambdaEngine
 	/*
 	* ImGuiRenderer
 	*/
-	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice) 
+	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
 		VALIDATE(s_pRendererInstance == nullptr);
@@ -179,7 +179,7 @@ namespace LambdaEngine
 			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineState");
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -580,14 +580,14 @@ namespace LambdaEngine
 		{
 			MouseButtonClickedEvent mouseEvent = EventCast<MouseButtonClickedEvent>(event);
 			io.MouseDown[mouseEvent.Button - 1] = true;
-			
+
 			return true;
 		}
 		else if (IsEventOfType<MouseButtonReleasedEvent>(event))
 		{
 			MouseButtonReleasedEvent mouseEvent = EventCast<MouseButtonReleasedEvent>(event);
 			io.MouseDown[mouseEvent.Button - 1] = false;
-			
+
 			return true;
 		}
 		else if (IsEventOfType<MouseScrolledEvent>(event))
@@ -595,7 +595,7 @@ namespace LambdaEngine
 			MouseScrolledEvent mouseEvent = EventCast<MouseScrolledEvent>(event);
 			io.MouseWheelH	+= static_cast<float32>(mouseEvent.DeltaX);
 			io.MouseWheel	+= static_cast<float32>(mouseEvent.DeltaY);
-			
+
 			return true;
 		}
 		else if (IsEventOfType<KeyPressedEvent>(event))
@@ -606,7 +606,7 @@ namespace LambdaEngine
 			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
 			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
 			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
-			
+
 			return true;
 		}
 		else if (IsEventOfType<KeyReleasedEvent>(event))
@@ -617,14 +617,14 @@ namespace LambdaEngine
 			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
 			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
 			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
-			
+
 			return true;
 		}
 		else if (IsEventOfType<KeyTypedEvent>(event))
 		{
 			KeyTypedEvent keyEvent = EventCast<KeyTypedEvent>(event);
 			io.AddInputCharacter(keyEvent.Character);
-			
+
 			return true;
 		}
 
@@ -748,7 +748,7 @@ namespace LambdaEngine
 		indexBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		indexBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
 		indexBufferDesc.SizeInBytes	= vertexBufferSize;
-		
+
 		m_IndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc);
 		if (!m_IndexBuffer)
 		{
@@ -865,7 +865,7 @@ namespace LambdaEngine
 
 		m_CopyCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 		m_CopyCommandList->CopyTextureFromBuffer(fontBuffer.Get(), m_FontTexture.Get(), copyDesc);
-		
+
 		PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
 		transitionToShaderReadBarrier.pTexture				= m_FontTexture.Get();
 		transitionToShaderReadBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
@@ -916,7 +916,7 @@ namespace LambdaEngine
 		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
 		samplerDesc.AddressModeV		= samplerDesc.AddressModeU;
 		samplerDesc.AddressModeW		= samplerDesc.AddressModeU;
-		samplerDesc.MipLODBias			= 0.0f; 
+		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
 		samplerDesc.MinLOD				= 0.0f;

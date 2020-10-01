@@ -86,7 +86,7 @@ namespace LambdaEngine
 				uint32 width	= pDesc->Width >> m;
 				uint32 height	= pDesc->Height >> m;
 
-				UpdateTexture(pCommandList, m, 0, 0, width, height, pDesc->ppData[m], ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0);
+				UpdateTexture(pCommandList, m, 0, 0, width, height, pDesc->ppData[m], ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 			}
 		}
 
@@ -125,7 +125,7 @@ namespace LambdaEngine
 	}
 
 	void GUITexture::UpdateTexture(CommandList* pCommandList, uint32 mipLevel, uint32 x, uint32 y, uint32 width, uint32 height, const void* pData,
-		ECommandQueueType prevCommandQueue, ETextureState prevTextureState, uint32 modFrameIndex)
+		ECommandQueueType prevCommandQueue, ETextureState prevTextureState)
 	{
 		uint32 stride = TextureFormatStride(m_pTexture->GetDesc().Format);
 		uint64 sizeInBytes = uint64(width * height * stride);

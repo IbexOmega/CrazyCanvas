@@ -96,20 +96,24 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			String prefix	= m_RayTracingEnabled ? "RT_" : "";
-			String postfix	= m_MeshShadersEnabled? "_MESH" : "";
 			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
-			size_t pos = renderGraphName.find_first_of(".lrg");
-			if (pos != String::npos)
+			if (renderGraphName != "")
 			{
-				renderGraphName.insert(pos, postfix);
-			}
-			else
-			{
-				renderGraphName += postfix + ".lrg";
+				String prefix	= m_RayTracingEnabled ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled? "_MESH" : "";
+				size_t pos		= renderGraphName.find_first_of(".lrg");
+				if (pos != String::npos)
+				{
+					renderGraphName.insert(pos, postfix);
+				}
+				else
+				{
+					renderGraphName += postfix + ".lrg";
+				}
+
+				renderGraphName = prefix + renderGraphName;
 			}
 
-			renderGraphName = prefix + renderGraphName;
 			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
@@ -198,17 +202,13 @@ namespace LambdaEngine
 
 			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
 			{
-				m_ppAlbedoMaps[i]				= pDefaultColorMap;
-				m_ppNormalMaps[i]				= pDefaultNormalMap;
-				m_ppAmbientOcclusionMaps[i]		= pDefaultColorMap;
-				m_ppRoughnessMaps[i]			= pDefaultColorMap;
-				m_ppMetallicMaps[i]				= pDefaultColorMap;
-				m_ppAlbedoMapViews[i]			= pDefaultColorMapView;
-				m_ppNormalMapViews[i]			= pDefaultNormalMapView;
-				m_ppAmbientOcclusionMapViews[i]	= pDefaultColorMapView;
-				m_ppRoughnessMapViews[i]		= pDefaultColorMapView;
-				m_ppMetallicMapViews[i]			= pDefaultColorMapView;
-				m_pMaterialInstanceCounts[i]	= 0;
+				m_ppAlbedoMaps[i]					= pDefaultColorMap;
+				m_ppNormalMaps[i]					= pDefaultNormalMap;
+				m_ppCombinedMaterialMaps[i]			= pDefaultColorMap;
+				m_ppAlbedoMapViews[i]				= pDefaultColorMapView;
+				m_ppNormalMapViews[i]				= pDefaultNormalMapView;
+				m_ppCombinedMaterialMapViews[i]		= pDefaultColorMapView;
+				m_pMaterialInstanceCounts[i]		= 0;
 			}
 		}
 
@@ -303,7 +303,8 @@ namespace LambdaEngine
 			if (pointLight.Dirty || position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
-				pointLight.Dirty = false;
+				pointLight.Dirty	= false;
+				position.Dirty		= false;
 			}
 		}
 
@@ -324,8 +325,10 @@ namespace LambdaEngine
 					dirLight.frustumZNear,
 					dirLight.frustumZFar
 				);
-				dirLight.Dirty = rotation.Dirty = position.Dirty = false;
 
+				dirLight.Dirty = false;
+				position.Dirty = false;
+				rotation.Dirty = false;
 			}
 		}
 
@@ -500,7 +503,7 @@ namespace LambdaEngine
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
-		
+
 		m_EntityToPointLight[lastEntity] = currentIndex;
 		m_PointLightToEntity[currentIndex] = lastEntity;
 
@@ -714,17 +717,15 @@ namespace LambdaEngine
 					}
 				}
 
-				m_ppAlbedoMaps[materialSlot]				= pMaterial->pAlbedoMap;
-				m_ppNormalMaps[materialSlot]				= pMaterial->pNormalMap;
-				m_ppAmbientOcclusionMaps[materialSlot]		= pMaterial->pAmbientOcclusionMap;
-				m_ppRoughnessMaps[materialSlot]				= pMaterial->pRoughnessMap;
-				m_ppMetallicMaps[materialSlot]				= pMaterial->pMetallicMap;
-				m_ppAlbedoMapViews[materialSlot]			= pMaterial->pAlbedoMapView;
-				m_ppNormalMapViews[materialSlot]			= pMaterial->pNormalMapView;
-				m_ppAmbientOcclusionMapViews[materialSlot]	= pMaterial->pAmbientOcclusionMapView;
-				m_ppRoughnessMapViews[materialSlot]			= pMaterial->pRoughnessMapView;
-				m_ppMetallicMapViews[materialSlot]			= pMaterial->pMetallicMapView;
-				m_pMaterialProperties[materialSlot]			= pMaterial->Properties;
+				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
+				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
+				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pAOMetallicRoughnessMap;
+
+				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
+				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
+				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pAOMetallicRoughnessMapView;
+
+				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
 				m_MaterialsResourceDirty = true;
@@ -878,7 +879,7 @@ namespace LambdaEngine
 
 		m_PointLights[index].ColorIntensity = colorIntensity;
 		m_PointLights[index].Position = position;
-		
+
 		const glm::vec3 directions[6] =
 		{
 			{1.0f, 0.0f, 0.0f},
@@ -891,22 +892,24 @@ namespace LambdaEngine
 
 		const glm::vec3 defaultUp[6] =
 		{
-			g_DefaultUp,
-			g_DefaultUp,
-			{0.0f, 0.0f, -1.0f},
-			{0.0f, 0.0f, 1.0f},
-			g_DefaultUp,
-			g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultForward,
+			g_DefaultForward,
+			-g_DefaultUp,
+			-g_DefaultUp,
 		};
 
 		constexpr uint32 PROJECTIONS = 6;
 		constexpr float FOV = 90.f;
 		constexpr float ASPECT_RATIO = 1.0f;
 		m_PointLights[index].FarPlane = farPlane;
+
+		glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
-			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			m_PointLights[index].ProjViews[p] = perspective;
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}
 
@@ -988,10 +991,10 @@ namespace LambdaEngine
 
 			drawArg.pIndexBuffer	= meshAndInstancesIt->second.pIndexBuffer;
 			drawArg.IndexCount		= meshAndInstancesIt->second.IndexCount;
-			
+
 			drawArg.pInstanceBuffer	= meshAndInstancesIt->second.pRasterInstanceBuffer;
 			drawArg.InstanceCount	= meshAndInstancesIt->second.RasterInstances.GetSize();
-			
+
 			drawArg.pMeshletBuffer			= meshAndInstancesIt->second.pMeshlets;
 			drawArg.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
 			drawArg.pUniqueIndicesBuffer	= meshAndInstancesIt->second.pUniqueIndices;
@@ -1397,7 +1400,7 @@ namespace LambdaEngine
 			size_t lightBufferSize			= dirLightBufferSize + pointLightsBufferSize;
 
 			// Set point light count
-			m_LightBufferData.PointLightCount = uint32(pointLightCount);
+			m_LightBufferData.PointLightCount = float32(pointLightCount);
 
 			Buffer* pCurrentStagingBuffer = m_ppLightsStagingBuffer[m_ModFrameIndex];
 
@@ -1506,40 +1509,26 @@ namespace LambdaEngine
 			TArray<Sampler*> linearSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetLinearSampler());
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName								= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppAlbedoMaps;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
+			albedoMapsUpdateDesc.ResourceName										= SCENE_ALBEDO_MAPS;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppAlbedoMaps;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppAlbedoMapViews;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName								= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppNormalMaps;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
+			normalMapsUpdateDesc.ResourceName										= SCENE_NORMAL_MAPS;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppNormalMaps;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppNormalMapViews;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
 
-			ResourceUpdateDesc aoMapsUpdateDesc = {};
-			aoMapsUpdateDesc.ResourceName									= SCENE_AO_MAPS;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextures				= m_ppAmbientOcclusionMaps;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews			= m_ppAmbientOcclusionMapViews;
-			aoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers				= linearSamplers.GetData();
-
-			ResourceUpdateDesc metallicMapsUpdateDesc = {};
-			metallicMapsUpdateDesc.ResourceName								= SCENE_METALLIC_MAPS;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppMetallicMaps;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppMetallicMapViews;
-			metallicMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
-
-			ResourceUpdateDesc roughnessMapsUpdateDesc = {};
-			roughnessMapsUpdateDesc.ResourceName							= SCENE_ROUGHNESS_MAPS;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppRoughnessMaps;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppRoughnessMapViews;
-			roughnessMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
+			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppCombinedMaterialMaps;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppCombinedMaterialMapViews;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&aoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&metallicMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&roughnessMapsUpdateDesc);
+			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
 
 			m_MaterialsResourceDirty = false;
 		}

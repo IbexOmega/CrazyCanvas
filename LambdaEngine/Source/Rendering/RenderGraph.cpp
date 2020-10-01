@@ -57,8 +57,8 @@ namespace LambdaEngine
 	{
 		EventQueue::UnregisterEventHandler(this, &RenderGraph::OnWindowResized);
 
-		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
-		SAFERELEASE(m_pFence);
+		s_pMaterialFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		SAFERELEASE(s_pMaterialFence);
 
 		SAFERELEASE(m_pDescriptorHeap);
 
@@ -231,7 +231,7 @@ namespace LambdaEngine
 		}
 
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
-		{ 
+		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
 			return false;
 		}
@@ -675,7 +675,7 @@ namespace LambdaEngine
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.MaskToArgs.find(pRenderStage->DrawArgsMask);
 					pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
-					
+
 					for (uint32 b = 0; b < m_BackBufferCount; b++)
 					{
 						DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
@@ -743,7 +743,7 @@ namespace LambdaEngine
 
 		uint32 currentExecutionStage = 0;
 
-		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		s_pMaterialFence->Wait(m_SignalValue - 1, UINT64_MAX);
 
 		TArray<DeviceChild*>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[m_ModFrameIndex];
 
@@ -772,8 +772,8 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 
 						pCustomRenderer->Render(
-							uint32(m_ModFrameIndex), 
-							m_BackBufferIndex, 
+							uint32(m_ModFrameIndex),
+							m_BackBufferIndex,
 							&m_ppExecutionStages[currentExecutionStage],
 							&m_ppExecutionStages[currentExecutionStage + 1],
 							pRenderStage->Sleeping);
@@ -832,7 +832,7 @@ namespace LambdaEngine
 			if (pGraphicsCopyCommandList->IsBegin())
 			{
 				pGraphicsCopyCommandList->End();
-				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				m_SignalValue++;
 			}
 
@@ -841,7 +841,7 @@ namespace LambdaEngine
 			if (pComputeCopyCommandList->IsBegin())
 			{
 				pComputeCopyCommandList->End();
-				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				m_SignalValue++;
 			}
 		}
@@ -866,11 +866,11 @@ namespace LambdaEngine
 					{
 						if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 						{
-							RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 						}
 						else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 						{
-							RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 						}
 
 						m_SignalValue++;
@@ -887,11 +887,11 @@ namespace LambdaEngine
 			{
 				if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 				else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 
 				m_SignalValue++;
@@ -1171,7 +1171,7 @@ namespace LambdaEngine
 						SAFEDELETE_ARRAY(ppDrawArgDescriptorSets);
 					}
 				}
-				
+
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets);
@@ -1202,9 +1202,9 @@ namespace LambdaEngine
 		fenceDesc.DebugName		= "Render Stage Fence";
 		fenceDesc.InitalValue	= 0;
 
-		m_pFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
+		s_pMaterialFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
 
-		if (m_pFence == nullptr)
+		if (s_pMaterialFence == nullptr)
 		{
 			LOG_ERROR("[RenderGraph]: Could not create RenderGraph fence");
 			return false;
@@ -1397,13 +1397,13 @@ namespace LambdaEngine
 			else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 			{
 				newResource.Type = ERenderGraphResourceType::BUFFER;
-				
+
 				newResource.Buffer.Buffers.Resize(newResource.SubResourceCount);
 				newResource.Buffer.Offsets.Resize(newResource.SubResourceCount);
 				newResource.Buffer.SizesInBytes.Resize(newResource.SubResourceCount);
 			}
 			else if (pResourceDesc->Type == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
-			{ 
+			{
 				newResource.Type = ERenderGraphResourceType::ACCELERATION_STRUCTURE;
 			}
 
@@ -1535,7 +1535,7 @@ namespace LambdaEngine
 					alreadyExists = alreadyExists && newResource.Texture.PerImageTextureViews.GetSize()		== previousResource.Texture.PerImageTextureViews.GetSize();
 					alreadyExists = alreadyExists && newResource.Texture.PerSubImageTextureViews.GetSize()	== previousResource.Texture.PerSubImageTextureViews.GetSize();
 					alreadyExists = alreadyExists && newResource.Texture.Samplers.GetSize()					== previousResource.Texture.Samplers.GetSize();
-					
+
 					previousResource.Texture.InitialTransitionBarriers.Clear();
 
 					//If the resource is discovered as nonexisiting here, we need to release internal subresources
@@ -1944,7 +1944,7 @@ namespace LambdaEngine
 					// Check if attachment is unchanged after renderstage
 					auto prevBinding = pResourceStateDesc->AttachmentSynchronizations.PrevBindingType;
 					auto nextBinding = pResourceStateDesc->AttachmentSynchronizations.NextBindingType;
-					if (prevBinding != nextBinding) 
+					if (prevBinding != nextBinding)
 					{
 						attachmentStateUnchanged = false;
 					}
@@ -1991,8 +1991,8 @@ namespace LambdaEngine
 
 						if (renderPassAttachmentsWidth != xDimVariable)
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
-								pResourceStateDesc->ResourceName.c_str(), 
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d",
+								pResourceStateDesc->ResourceName.c_str(),
 								xDimVariable,
 								renderPassAttachmentsWidth);
 							success = false;
@@ -2218,7 +2218,7 @@ namespace LambdaEngine
 						pPushConstants->pData		= DBG_NEW byte[DRAW_ITERATION_PUSH_CONSTANTS_SIZE];
 						pPushConstants->DataSize	= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
-						pPushConstants->MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;	
+						pPushConstants->MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 
 						externalMaxSize -= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 					}
@@ -2256,7 +2256,7 @@ namespace LambdaEngine
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
-					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || 
+					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES ||
 						pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 					{
 						if (pRenderStage->pDrawArgsResource == nullptr)
@@ -2340,7 +2340,7 @@ namespace LambdaEngine
 						pShaderConstants = &shaderConstantsIt->second;
 					}
 				}
-				
+
 
 				//Create Pipeline State
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
@@ -2402,7 +2402,7 @@ namespace LambdaEngine
 						pRenderStage->pRenderPass	= pRenderPass;
 
 						//Create duplicate Render Pass (this is fucking retarded) which we use when the RenderStage is Disabled, this Render Pass forces LoadOp to be LOAD
-						if (!attachmentStateUnchanged) 
+						if (!attachmentStateUnchanged)
 						{
 							RenderPassDesc disabledRenderPassDesc = renderPassDesc;
 
@@ -2440,7 +2440,7 @@ namespace LambdaEngine
 					pipelineDesc.PipelineLayout			= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.MaxRecursionDepth		= 1;
 					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
-					
+
 					if (pShaderConstants != nullptr)
 					{
 						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
@@ -2596,7 +2596,7 @@ namespace LambdaEngine
 
 				FPipelineStageFlags	prevLastPipelineStage;
 
-				
+
 				if (prevRenderStageIt == m_RenderStageMap.end())
 				{
 					if (pResourceSynchronizationDesc->PrevRenderStage == "PRESENT")
@@ -2819,7 +2819,7 @@ namespace LambdaEngine
 			{
 				m_ExecutionStageCount += 2;
 				pipelineStageName = "Synchronization Stage " + std::to_string(pPipelineStageDesc->StageIndex);
-			}			
+			}
 
 			pPipelineStage->Type		= pPipelineStageDesc->Type;
 			pPipelineStage->StageIndex	= pPipelineStageDesc->StageIndex;

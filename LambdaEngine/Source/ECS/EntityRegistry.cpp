@@ -44,23 +44,50 @@ namespace LambdaEngine
 		}
 	}
 
-	bool EntityRegistry::EntityHasTypes(Entity entity, const TArray<const ComponentType*>& queryTypes) const
+	bool EntityRegistry::EntityHasAllowedTypes(Entity entity, const TArray<const ComponentType*>& allowedTypes, const TArray<const ComponentType*>& disallowedTypes) const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		const EntityRegistryPage& topPage = m_EntityPages.top();
 		const std::unordered_set<const ComponentType*>& entityTypes = topPage.IndexID(entity);
 
-		for (const ComponentType* pComponentType : queryTypes)
+		const bool hasDisallowedType = std::any_of(disallowedTypes.Begin(), disallowedTypes.End(), [entityTypes](const ComponentType* pType) {
+			return entityTypes.contains(pType);
+		});
+
+		if (hasDisallowedType)
 		{
-			auto got = entityTypes.find(pComponentType);
-			if (got == entityTypes.end())
-			{
-				return false;
-			}
+			return false;
 		}
 
-		return true;
+		return std::none_of(allowedTypes.Begin(), allowedTypes.End(), [entityTypes](const ComponentType* pType) {
+			return !entityTypes.contains(pType);
+		});
+	}
+
+	bool EntityRegistry::EntityHasAllTypes(Entity entity, const TArray<const ComponentType*>& types) const
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+
+		const EntityRegistryPage& topPage = m_EntityPages.top();
+		const std::unordered_set<const ComponentType*>& entityTypes = topPage.IndexID(entity);
+
+		// Check that none of the entity types are missing
+		return std::none_of(types.Begin(), types.End(), [entityTypes](const ComponentType* pType) {
+			return !entityTypes.contains(pType);
+		});
+	}
+
+	bool EntityRegistry::EntityHasAnyOfTypes(Entity entity, const TArray<const ComponentType*>& types) const
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+
+		const EntityRegistryPage& topPage = m_EntityPages.top();
+		const std::unordered_set<const ComponentType*>& entityTypes = topPage.IndexID(entity);
+
+		return std::any_of(types.Begin(), types.End(), [entityTypes](const ComponentType* pType) {
+			return entityTypes.contains(pType);
+		});
 	}
 
 	Entity EntityRegistry::CreateEntity()

@@ -174,7 +174,7 @@ namespace LambdaEngine
 
 		GUIRenderTarget* pRenderTarget = new GUIRenderTarget();
 
-		if (!pRenderTarget->Init(pRenderTarget->GetDesc()))
+		if (!pRenderTarget->Init(pOriginal->GetDesc()))
 		{
 			LOG_ERROR("[GUIRenderer]: Failed to create GUI Render Target");
 			SAFEDELETE(pRenderTarget);
@@ -215,7 +215,7 @@ namespace LambdaEngine
 		CommandList* pCommandList = BeginOrGetUtilityCommandList();
 
 		GUITexture* pGUITexture = reinterpret_cast<GUITexture*>(pTexture);
-		pGUITexture->UpdateTexture(pCommandList, level, x, y, width, height, pData, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, m_ModFrameIndex);
+		pGUITexture->UpdateTexture(pCommandList, level, x, y, width, height, pData, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 	}
 
 	void GUIRenderer::BeginRender(bool offscreen)
@@ -262,8 +262,8 @@ namespace LambdaEngine
 		beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 		beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
 		beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
-		beginRenderPass.Offset.x			= 0.0f;
-		beginRenderPass.Offset.y			= 0.0f;
+		beginRenderPass.Offset.x			= 0;
+		beginRenderPass.Offset.y			= 0;
 
 		pCommandList->BeginRenderPass(&beginRenderPass);
 	}
@@ -398,10 +398,10 @@ namespace LambdaEngine
 
 			if (pTextTexture != nullptr)
 			{
-				paramsData.TextSize.x		= pTextTexture->GetWidth();
-				paramsData.TextSize.y		= pTextTexture->GetHeight();
-				paramsData.TextPixelSize.x	= 1.0f / float32(pTextTexture->GetWidth());
-				paramsData.TextPixelSize.y	= 1.0f / float32(pTextTexture->GetHeight());
+				paramsData.TextSize.x		= float32(pTextTexture->GetWidth());
+				paramsData.TextSize.y		= float32(pTextTexture->GetHeight());
+				paramsData.TextPixelSize.x	= 1.0f / paramsData.TextSize.x;
+				paramsData.TextPixelSize.y	= 1.0f / paramsData.TextSize.y;
 			}
 
 			if (batch.rgba != nullptr)

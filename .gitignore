@@ -34,5 +34,3 @@ cppcheck_report*
 # Ignore files created by the game/engine
 benchmark_results*.json
 LambdaProfile*.json
-/Assets/Shaders/PostProcess
-/Client

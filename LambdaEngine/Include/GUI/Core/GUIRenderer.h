@@ -7,11 +7,6 @@
 #include "NsCore/Ptr.h"
 #include "NsGui/IView.h"
 
-namespace Noesis
-{
-	class IView;
-}
-
 namespace LambdaEngine
 {
 	class GUIRenderTarget;

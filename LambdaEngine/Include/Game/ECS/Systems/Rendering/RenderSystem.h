@@ -111,7 +111,7 @@ namespace LambdaEngine
 			Buffer* pMeshlets			= nullptr;
 			uint32	MeshletCount		= 0;
 
-			
+
 			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<AccelerationStructureInstance> ASInstances;
@@ -175,7 +175,7 @@ namespace LambdaEngine
 		{
 			glm::vec4	DirL_ColorIntensity	= glm::vec4(0.0f);
 			glm::vec3	DirL_Direction		= glm::vec3(1.0f);
-			float		PointLightCount		= 0;
+			float32		PointLightCount		= 0;
 			glm::mat4	DirL_ProjViews;
 			// PointLight PointLights[] unbounded
 		};
@@ -218,7 +218,7 @@ namespace LambdaEngine
 		void OnEntityRemoved(Entity entity);
 
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
-		
+
 		void OnDirectionalEntityAdded(Entity entity);
 		void OnPointLightEntityAdded(Entity entity);
 
@@ -282,14 +282,10 @@ namespace LambdaEngine
 		//Materials
 		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppAmbientOcclusionMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppRoughnessMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppMetallicMaps[MAX_UNIQUE_MATERIALS];
+		Texture*			m_ppCombinedMaterialMaps[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppAlbedoMapViews[MAX_UNIQUE_MATERIALS];
 		TextureView*		m_ppNormalMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppAmbientOcclusionMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppRoughnessMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppMetallicMapViews[MAX_UNIQUE_MATERIALS];
+		TextureView*		m_ppCombinedMaterialMapViews[MAX_UNIQUE_MATERIALS];
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
 		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
 		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
