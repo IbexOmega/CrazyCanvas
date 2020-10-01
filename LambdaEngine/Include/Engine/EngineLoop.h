@@ -59,6 +59,11 @@ namespace LambdaEngine
 
 	private:
 		/*
+		* Initializes ECS systems. Separate from EngineLoop::Init to avoid cluttering.
+		*/
+		static bool InitSystems();
+
+		/*
 		* Engine tick, advances the whole engine one frame. Should only be called from run
 		*	delta	- The time between this frame and the last frame
 		*	return	- Returns true if the engine should perform next tick

@@ -347,22 +347,25 @@ namespace LambdaEngine
 
 		FORCEINLINE void Resize(SizeType size) noexcept
 		{
-			if (size > m_Size)
+			if (size != m_Size)
 			{
-				if (size >= m_Capacity)
+				if (size > m_Size)
 				{
-					const SizeType newCapacity = InternalGetResizeFactor(size);
-					InternalRealloc(newCapacity);
+					if (size >= m_Capacity)
+					{
+						const SizeType newCapacity = InternalGetResizeFactor(size);
+						InternalRealloc(newCapacity);
+					}
+
+					InternalDefaultConstructRange(m_pData + m_Size, m_pData + size);
+				}
+				else if (size < m_Size)
+				{
+					InternalDestructRange(m_pData + size, m_pData + m_Size);
 				}
 
-				InternalDefaultConstructRange(m_pData + m_Size, m_pData + size);
+				m_Size = size;
 			}
-			else if (size < m_Size)
-			{
-				InternalDestructRange(m_pData + size, m_pData + m_Size);
-			}
-
-			m_Size = size;
 		}
 
 		FORCEINLINE void Resize(SizeType size, const T& value) noexcept

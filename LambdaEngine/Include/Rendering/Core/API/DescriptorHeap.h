@@ -8,13 +8,20 @@ namespace LambdaEngine
 	class DescriptorSet;
 	class PipelineLayout;
 
+	/*
+	* DescriptorHeapDesc
+	*/
 	struct DescriptorHeapDesc
 	{
-		String				DebugName			= "";
-		uint32				DescriptorSetCount	= 0;
-		DescriptorHeapInfo	DescriptorCount		= DescriptorHeapInfo();
+		String					DebugName			= "";
+		FDescriptorHeapFlags	Flags				= 0;
+		uint32					DescriptorSetCount	= 0;
+		DescriptorHeapInfo		DescriptorCount		= DescriptorHeapInfo();
 	};
 
+	/*
+	* DescriptorHeap 
+	*/	
 	class DescriptorHeap : public DeviceChild
 	{
 	public:

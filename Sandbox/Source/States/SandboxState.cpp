@@ -9,19 +9,21 @@
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 #include "ECS/ECSCore.h"
+
 #include "Engine/EngineConfig.h"
 
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+
 #include "Input/API/Input.h"
-#include "Math/Random.h"
 
 #include "Math/Random.h"
 
@@ -36,6 +38,7 @@
 #include "GUI/GUITest.h"
 
 #include "GUI/Core/GUIApplication.h"
+
 #include "NoesisPCH.h"
 
 using namespace LambdaEngine;
@@ -71,14 +74,15 @@ void SandboxState::Init()
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		CameraDesc cameraDesc = {};
-		cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-		cameraDesc.Position		= glm::vec3(0.0f, 2.0f, -2.0f);
-		cameraDesc.Width		= window->GetWidth();
-		cameraDesc.Height		= window->GetHeight();
-		cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-		cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-		Entity e = CreateFreeCameraEntity(cameraDesc);
+		const CameraDesc cameraDesc = {
+			.Position = { 0.0f, 20.0f, -2.0f },
+			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+			.Width = (float)window->GetWidth(),
+			.Height = (float)window->GetHeight(),
+			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+		};
+		Entity e = CreateFPSCameraEntity(cameraDesc);
 	}
 
 	// Scene
@@ -92,14 +96,14 @@ void SandboxState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			CollisionCreateInfo collisionCreateInfo = {
+			const StaticCollisionInfo collisionCreateInfo = {
 				.Entity			= entity,
 				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
 				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 			};
 
 			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
@@ -109,7 +113,8 @@ void SandboxState::Init()
 
 	// Robot
 	{
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+		TArray<GUID_Lambda> animations;
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
@@ -131,6 +136,9 @@ void SandboxState::Init()
 		robotMeshComp.MeshGUID		= robotGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
+		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.AnimationGUID = animations[0];
+
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
 
@@ -138,17 +146,21 @@ void SandboxState::Init()
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc = {
+		const SoundInstance3DDesc desc = 
+		{
 				.pName = "RobotSoundInstance",
 				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
 				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 				.Position = position,
 				.Volume = 0.03f
 		};
+		
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 		m_Entities.PushBack(entity);
@@ -188,15 +200,14 @@ void SandboxState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				CollisionCreateInfo collisionCreateInfo =
-				{
+				const StaticCollisionInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
 					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
@@ -244,8 +255,7 @@ void SandboxState::Init()
 			const float RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float positive = std::pow(-1.0, i);
-
+				float positive = std::powf(-1.0, i);
 
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;
