@@ -50,7 +50,6 @@ namespace LambdaEngine
 
 			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, positionComponent.Position, (float32)percentage);
 			
-			positionComponent.Dirty = true;
 		}
 	}
 
