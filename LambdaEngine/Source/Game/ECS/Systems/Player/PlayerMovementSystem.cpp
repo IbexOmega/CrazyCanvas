@@ -103,7 +103,7 @@ namespace LambdaEngine
 	{
 		if (deltaForward != 0)
 		{
-			result.z += (float32)((1.0f * deltaTime.AsSeconds()) * (float64)deltaForward);
+			result.z += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaForward);
 		}
 
 		if (deltaLeft != 0)
