@@ -42,6 +42,7 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+#include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/ServerSystem.h"
 
@@ -80,10 +81,40 @@ namespace LambdaEngine
 			{
 				fixedClock.Tick();
 				FixedTick(g_FixedTimestep);
-				
 				accumulator -= g_FixedTimestep;
 			}
 		}
+	}
+
+	bool EngineLoop::InitSystems()
+	{
+		if (!RenderSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!PhysicsSystem::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		if (!AudioSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!CameraSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		if (!PlayerMovementSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
+		TransformApplierSystem::GetInstance()->Init();
+		return true;
 	}
 
 	bool EngineLoop::Tick(Timestamp delta)
@@ -212,27 +243,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
-		if (!PhysicsSystem::GetInstance()->Init())
-		{
-			return false;
-		}
-
-		if (!AudioSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
-		if (!CameraSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
-		if (!PlayerMovementSystem::GetInstance().Init())
+		if (!InitSystems())
 		{
 			return false;
 		}

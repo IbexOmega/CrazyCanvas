@@ -71,14 +71,15 @@ void SandboxState::Init()
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		CameraDesc cameraDesc = {};
-		cameraDesc.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV");
-		cameraDesc.Position		= glm::vec3(0.0f, 2.0f, -2.0f);
-		cameraDesc.Width		= window->GetWidth();
-		cameraDesc.Height		= window->GetHeight();
-		cameraDesc.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane");
-		cameraDesc.FarPlane		= EngineConfig::GetFloatProperty("CameraFarPlane");
-		Entity e = CreateFreeCameraEntity(cameraDesc);
+		const CameraDesc cameraDesc = {
+			.Position = { 0.0f, 20.0f, -2.0f },
+			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+			.Width = (float)window->GetWidth(),
+			.Height = (float)window->GetHeight(),
+			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+		};
+		Entity e = CreateFPSCameraEntity(cameraDesc);
 	}
 
 	// Scene
@@ -92,14 +93,14 @@ void SandboxState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			CollisionCreateInfo collisionCreateInfo = {
+			const StaticCollisionInfo collisionCreateInfo = {
 				.Entity			= entity,
 				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
 				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 			};
 
 			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
@@ -188,15 +189,14 @@ void SandboxState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				CollisionCreateInfo collisionCreateInfo =
-				{
+				const StaticCollisionInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
 					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-					.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC
+					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
@@ -244,8 +244,7 @@ void SandboxState::Init()
 			const float RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float positive = std::pow(-1.0, i);
-
+				float positive = std::powf(-1.0, i);
 
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;
