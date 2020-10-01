@@ -33,8 +33,8 @@ namespace LambdaEngine
 	void InterpolationSystem::Tick(Timestamp deltaTime)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pInterpolationComponents = pECS->GetComponentArray<InterpolationComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pInterpolationComponents	= pECS->GetComponentArray<InterpolationComponent>();
+		auto* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
 
 		Timestamp currentTime	= EngineLoop::GetTimeSinceStart();
 		float64 percentage;
@@ -42,15 +42,15 @@ namespace LambdaEngine
 		for (auto& entity : m_InterpolationEntities)
 		{
 			InterpolationComponent& interpolationComponent	= pInterpolationComponents->GetData(entity);
-			PositionComponent& pPositionComponent			= pPositionComponents->GetData(entity);
+			PositionComponent& positionComponent			= pPositionComponents->GetData(entity);
 
 			deltaTime = currentTime - interpolationComponent.StartTimestamp;
 			percentage = deltaTime.AsSeconds() / interpolationComponent.Duration.AsSeconds();
 			percentage = percentage > 1.0f ? 1.0f : percentage < 0.0f ? 0.0f : percentage;
 
-			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, pPositionComponent.Position, (float32)percentage);
+			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, positionComponent.Position, (float32)percentage);
 			
-			pPositionComponent.Dirty = true;
+			positionComponent.Dirty = true;
 		}
 	}
 
@@ -77,28 +77,6 @@ namespace LambdaEngine
 			interpolationComponent.StartTimestamp	= EngineLoop::GetTimeSinceStart();
 		}
 	}	
-
-	void InterpolationSystem::OnEntityCreated(Entity entity, int32 networkUID)
-	{
-		const ClientSystem& clientSystem = ClientSystem::GetInstance();
-
-		if (!clientSystem.IsLocalClient(networkUID))
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pInterpolationComponents = pECS->GetComponentArray<InterpolationComponent>();
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-
-			if (!pInterpolationComponents)
-				return;
-
-			InterpolationComponent& interpolationComponent	= pInterpolationComponents->GetData(entity);
-			PositionComponent& positionComponent			= pPositionComponents->GetData(entity);
-
-			interpolationComponent.StartPosition	= positionComponent.Position;
-			interpolationComponent.EndPosition		= interpolationComponent.StartPosition;
-			interpolationComponent.Duration			= EngineLoop::GetFixedTimestep();
-		}
-	}
 	
 	void InterpolationSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage)
 	{

@@ -117,18 +117,19 @@ namespace LambdaEngine
 			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			auto* pControllableComponent = pECS->GetComponentArray<ControllableComponent>();
 
-			if (!pPositionComponents)
+			if (!pControllableComponent)
 				return;
 
-			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
+			ControllableComponent& controllableComponent = pControllableComponent->GetData(GetEntityPlayer());
+
 			GameState gameState = {};
 
 			gameState.SimulationTick	= m_SimulationTick;
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
-			gameState.Position			= positionComponent.Position;
+			gameState.Position			= controllableComponent.EndPosition;
 
 			m_FramesToReconcile.PushBack(gameState);
 			m_SimulationTick++;
@@ -270,11 +271,9 @@ namespace LambdaEngine
 		m_Entities.insert({ networkUID, entity });
 
 		if (IsLocalClient(networkUID))
-			pECS->AddComponent<ControllableComponent>(entity,	{ true });
+			pECS->AddComponent<ControllableComponent>(entity,	{ true, position, position, 0 , EngineLoop::GetFixedTimestep() });
 		else
-			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });
-	
-		m_pInterpolationSystem->OnEntityCreated(entity, networkUID);
+			pECS->AddComponent<InterpolationComponent>(entity, { position, position, 0, EngineLoop::GetFixedTimestep() });
 	}
 
 	void ClientSystem::Reconcile()
@@ -312,12 +311,10 @@ namespace LambdaEngine
 		}
 	}
 
-	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
+	bool ClientSystem::CompareGameStates(const GameState& gameStateServer, const GameState& gameStateLocal)
 	{
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
-		{
 			return false;
-		}
 
 		return true;
 	}

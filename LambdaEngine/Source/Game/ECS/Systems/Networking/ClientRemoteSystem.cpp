@@ -108,7 +108,6 @@ namespace LambdaEngine
 		pECS->AddComponent<RotationComponent>(m_EntityPlayer,		{ true, glm::identity<glm::quat>() });
 		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,			{ true, glm::vec3(1.0f) });
 		pECS->AddComponent<NetworkComponent>(m_EntityPlayer,		{ (int32)m_EntityPlayer });
-		pECS->AddComponent<ControllableComponent>(m_EntityPlayer, 	{ false });
 
 		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 		BinaryEncoder encoder = BinaryEncoder(pPacket);
@@ -117,8 +116,6 @@ namespace LambdaEngine
 		encoder.WriteVec3(position);
 		encoder.WriteVec3(m_Color);
 		pClient->SendReliable(pPacket, this);
-
-
 
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		const ClientMap& clients = m_pClient->GetClients();
@@ -139,7 +136,6 @@ namespace LambdaEngine
 				//Send everyone to my self
 				ClientRemoteSystem* pHandler = (ClientRemoteSystem*)clientPair.second->GetHandler();
 				PositionComponent& positionComponent = pPositionComponents->GetData(pHandler->m_EntityPlayer);
-
 				NetworkSegment* pPacket3 = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 				BinaryEncoder encoder3(pPacket3);
 				encoder3.WriteBool(false);
