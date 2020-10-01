@@ -388,7 +388,7 @@ namespace LambdaEngine
 		FORCEINLINE TSharedPtr(TSharedPtr&& other) noexcept
 			: TBase()
 		{
-			TBase::InternalMove(::Move(other));
+			TBase::InternalMove(std::move(other));
 		}
 
 		template<typename TOther>
