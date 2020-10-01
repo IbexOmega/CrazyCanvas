@@ -117,7 +117,7 @@ namespace LambdaEngine
 			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pControllableComponent = pECS->GetComponentArray<ControllableComponent>();
+			const auto* pControllableComponent = pECS->GetComponentArray<ControllableComponent>();
 
 			if (!pControllableComponent)
 				return;
