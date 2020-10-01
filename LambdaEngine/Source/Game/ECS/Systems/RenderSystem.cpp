@@ -879,22 +879,24 @@ namespace LambdaEngine
 
 		const glm::vec3 defaultUp[6] =
 		{
-			g_DefaultUp,
-			g_DefaultUp,
-			{0.0f, 0.0f, -1.0f},
-			{0.0f, 0.0f, 1.0f},
-			g_DefaultUp,
-			g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultForward,
+			g_DefaultForward,
+			-g_DefaultUp,
+			-g_DefaultUp,
 		};
 
 		constexpr uint32 PROJECTIONS = 6;
 		constexpr float FOV = 90.f;
 		constexpr float ASPECT_RATIO = 1.0f;
 		m_PointLights[index].FarPlane = farPlane;
+
+		glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
-			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			m_PointLights[index].ProjViews[p] = perspective;
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}
 
