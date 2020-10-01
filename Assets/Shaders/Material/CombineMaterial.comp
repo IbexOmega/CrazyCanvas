@@ -1,13 +1,13 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
 
-#include "Defines.glsl"
+#include "../Defines.glsl"
 
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(binding = 0, set = 0) uniform sampler2D 	u_RoughnessMaterial;
+layout(binding = 0, set = 0) uniform sampler2D 	u_AOMaterial;
 layout(binding = 1, set = 0) uniform sampler2D 	u_MetallicMaterial;
-layout(binding = 2, set = 0) uniform sampler2D 	u_AOMaterial;
+layout(binding = 2, set = 0) uniform sampler2D 	u_RoughnessMaterial;
 
 layout(binding = 3, set = 0, rgba8) uniform writeonly image2D u_OutputImage;
 

@@ -13,6 +13,7 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
+#include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -24,6 +25,9 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+
+#include "GUI/Core/GUIApplication.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -53,7 +57,7 @@ namespace LambdaEngine
 			{
 				{{{NDA, MeshComponent::Type()}},	{&transformComponents}, &m_RenderableEntities, std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)},
 				{{{R, DirectionalLightComponent::Type()}, {R, RotationComponent::Type()}}, &m_DirectionalLightEntities,	std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)},
-				{{{R, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities,				std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
+				{{{R, PointLightComponent::Type()}, {R, PositionComponent::Type()}}, &m_PointLightEntities, std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) },
 				{{{R, ViewProjectionMatricesComponent::Type()}, {R, CameraComponent::Type()}}, {&transformComponents}, &m_CameraEntities},
 			};
 			systemReg.Phase = g_LastPhase;
@@ -118,7 +122,6 @@ namespace LambdaEngine
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
 			}
 
-
 			RenderGraphDesc renderGraphDesc = {};
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
@@ -131,6 +134,12 @@ namespace LambdaEngine
 				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+			}
+
+			//GUI Renderer
+			{
+				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
@@ -205,6 +214,8 @@ namespace LambdaEngine
 
 		m_LightsDirty = true; // Initilise Light buffer to avoid validation layer errors
 		UpdateBuffers();
+		UpdateRenderGraph();
+		m_pRenderGraph->Update();
 
 		return true;
 	}
@@ -353,6 +364,7 @@ namespace LambdaEngine
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
+		StagingBufferCache::Tick();
 		CleanBuffers();
 		UpdateBuffers();
 		UpdateRenderGraph();
@@ -686,10 +698,12 @@ namespace LambdaEngine
 
 				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
 				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pCombinedMaterialMap;
+				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pAOMetallicRoughnessMap;
+
 				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
 				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pCombinedMaterialMapView;
+				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pAOMetallicRoughnessMapView;
+
 				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
 
 				m_MaterialMap.insert({ materialGUID, materialSlot });
@@ -857,22 +871,24 @@ namespace LambdaEngine
 
 		const glm::vec3 defaultUp[6] =
 		{
-			g_DefaultUp,
-			g_DefaultUp,
-			{0.0f, 0.0f, -1.0f},
-			{0.0f, 0.0f, 1.0f},
-			g_DefaultUp,
-			g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultUp,
+			-g_DefaultForward,
+			g_DefaultForward,
+			-g_DefaultUp,
+			-g_DefaultUp,
 		};
 
 		constexpr uint32 PROJECTIONS = 6;
 		constexpr float FOV = 90.f;
 		constexpr float ASPECT_RATIO = 1.0f;
 		m_PointLights[index].FarPlane = farPlane;
+
+		glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
 		// Create projection matrices for each face
 		for (uint32 p = 0; p < PROJECTIONS; p++)
 		{
-			m_PointLights[index].ProjViews[p] = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			m_PointLights[index].ProjViews[p] = perspective;
 			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
 		}
 
@@ -1359,7 +1375,7 @@ namespace LambdaEngine
 			size_t lightBufferSize			= dirLightBufferSize + pointLightsBufferSize;
 
 			// Set point light count
-			m_LightBufferData.PointLightCount = float(pointLightCount);
+			m_LightBufferData.PointLightCount = float32(pointLightCount);
 
 			Buffer* pCurrentStagingBuffer = m_ppLightsStagingBuffer[m_ModFrameIndex];
 

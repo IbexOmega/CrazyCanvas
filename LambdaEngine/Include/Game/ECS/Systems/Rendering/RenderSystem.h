@@ -177,7 +177,7 @@ namespace LambdaEngine
 		{
 			glm::vec4	DirL_ColorIntensity	= glm::vec4(0.0f);
 			glm::vec3	DirL_Direction		= glm::vec3(1.0f);
-			float		PointLightCount		= 0;
+			float32		PointLightCount		= 0;
 			glm::mat4	DirL_ProjViews;
 			// PointLight PointLights[] unbounded
 		};

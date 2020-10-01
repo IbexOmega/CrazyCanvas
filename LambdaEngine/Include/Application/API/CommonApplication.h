@@ -93,11 +93,11 @@ namespace LambdaEngine
 		virtual void OnMouseEntered(TSharedRef<Window> window)													override final;
 		virtual void OnMouseLeft(TSharedRef<Window> window)														override final;
 
-		virtual void OnMouseMoved(int32 x, int32 y)											override final;
-		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)							override final;
-		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)	override final;
-		virtual void OnButtonReleased(EMouseButton button, ModifierKeyState modifierState)	override final;
-		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY)							override final;
+		virtual void OnMouseMoved(int32 x, int32 y)																override final;
+		virtual void OnMouseMovedRaw(int32 deltaX, int32 deltaY)												override final;
+		virtual void OnButtonPressed(EMouseButton button, ModifierKeyState modifierState, int32 x, int32 y)		override final;
+		virtual void OnButtonReleased(EMouseButton button, ModifierKeyState modifierState, int32 x, int32 y)	override final;
+		virtual void OnMouseScrolled(int32 deltaX, int32 deltaY, int32 x, int32 y)								override final;
 
 		virtual void OnKeyPressed(EKey key, ModifierKeyState modifierState, bool isRepeat)	override final;
 		virtual void OnKeyReleased(EKey key, ModifierKeyState modifierState)				override final;

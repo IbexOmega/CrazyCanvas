@@ -29,9 +29,13 @@
 
 #include "Math/Random.h"
 
+#include "GUI/GUITest.h"
 
+#include "GUI/Core/GUIApplication.h"
+#include "NoesisPCH.h"
 
 using namespace LambdaEngine;
+
 SandboxState::SandboxState()
 {
 
@@ -43,11 +47,17 @@ SandboxState::SandboxState(LambdaEngine::State* pOther) : LambdaEngine::State(pO
 
 SandboxState::~SandboxState()
 {
+	m_GUITest.Reset();
+	m_View.Reset();
 	// Remove System
 }
 
 void SandboxState::Init()
 {
+	m_GUITest	= *new GUITest("Test.xaml");
+	m_View		= Noesis::GUI::CreateView(m_GUITest);
+	LambdaEngine::GUIApplication::SetView(m_View);
+
 	// Create Systems
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
@@ -202,14 +212,14 @@ void SandboxState::Init()
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 100.0f}, .FarPlane = 25.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{4.0f, 2.0f, -3.0f},
+				{-1.0f, 5.0f, 1.0f},
 				{-4.0f, 2.0f, -3.0f},
 				{0.0f, 2.0f, 3.0f},
 			};
