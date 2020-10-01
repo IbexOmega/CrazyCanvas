@@ -117,12 +117,12 @@ namespace LambdaEngine
 			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 			if (!pPositionComponents)
 				return;
 
-			PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
+			const PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
 			GameState gameState = {};
 
 			gameState.SimulationTick	= m_SimulationTick;
