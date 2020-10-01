@@ -45,6 +45,7 @@ namespace LambdaEngine
 		desc.SampleCount		= SampleCount;
 		desc.SampleMask			= SampleMask;
 		desc.Subpass			= Subpass;
+		desc.ExtraDynamicState	= ExtraDynamicState;
 
 		desc.pRenderPass		= RenderPass.Get();
 		desc.pPipelineLayout	= PipelineLayout.Get();

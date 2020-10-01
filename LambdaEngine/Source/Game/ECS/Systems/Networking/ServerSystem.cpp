@@ -19,7 +19,7 @@ namespace LambdaEngine
 		ServerDesc desc = {};
 		desc.Handler				= this;
 		desc.MaxRetries				= 10;
-		desc.ResendRTTMultiplier	= 3;
+		desc.ResendRTTMultiplier	= 5.0f;
 		desc.MaxClients				= 10;
 		desc.PoolSize				= 1024;
 		desc.Protocol				= EProtocol::UDP;

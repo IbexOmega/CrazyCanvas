@@ -90,7 +90,7 @@ namespace LambdaEngine
 		SAFERELEASE(s_pGraphicsDevice);
 		return true;
 	}
-	
+
 	void RenderAPI::Tick()
 	{
 	}

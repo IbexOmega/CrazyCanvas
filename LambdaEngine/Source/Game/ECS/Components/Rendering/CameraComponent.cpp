@@ -1,8 +1,15 @@
-#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
 
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
+#include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Misc/Components.h"
 #include "ECS/ECSCore.h"
+
+#include "Resources/ResourceManager.h"
 
 namespace LambdaEngine
 {
@@ -28,6 +35,22 @@ namespace LambdaEngine
 		pECS->AddComponent<PositionComponent>(entity, PositionComponent{ .Position = cameraDesc.Position });
 		pECS->AddComponent<RotationComponent>(entity, RotationComponent{ .Quaternion = glm::identity<glm::quat>() });
 		pECS->AddComponent<ScaleComponent>(entity, ScaleComponent{ .Scale = {1.f, 1.f, 1.f} });
+
+		// Audio Footsteps
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("walking-short.wav");
+		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		const SoundInstance3DDesc desc = {
+				.pName = "WalkingSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = cameraDesc.Position,
+				.Volume = 0.055f
+		};
+		pSoundInstance->Init(&desc);
+		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
+
+		// Listener
+		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener() });
 
 		return entity;
 	}

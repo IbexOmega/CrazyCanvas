@@ -93,7 +93,7 @@ namespace LambdaEngine
 
 		bool OnEvent(const Event& event);
 		
-		FORCEINLINE virtual const String& GetName() const  override
+		FORCEINLINE virtual const String& GetName() const override
 		{
 			static String name = RENDER_GRAPH_IMGUI_STAGE_NAME;
 			return name;
@@ -113,7 +113,7 @@ namespace LambdaEngine
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSet();
 		bool CreateShaders();
-		bool CreateCommandLists();
+		bool CreateRenderCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		bool CreatePipelineState();
 

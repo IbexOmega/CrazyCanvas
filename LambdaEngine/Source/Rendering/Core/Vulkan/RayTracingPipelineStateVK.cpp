@@ -30,7 +30,7 @@ namespace LambdaEngine
 	bool RayTracingPipelineStateVK::Init(const RayTracingPipelineStateDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		if (pDesc->RaygenShader.pShader == nullptr)
 		{
 			LOG_ERROR("[RayTracingPipelineStateVK]: pRaygenShader cannot be nullptr!");
@@ -109,7 +109,7 @@ namespace LambdaEngine
 		rayTracingPipelineLibrariesInfo.pLibraries	 = nullptr;
 
 		const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
-		
+
 		VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo = {};
 		rayTracingPipelineInfo.sType			 = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 		rayTracingPipelineInfo.flags			 = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
@@ -132,7 +132,7 @@ namespace LambdaEngine
 			{
 				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed");
 			}
-			
+
 			return false;
 		}
 
@@ -154,8 +154,8 @@ namespace LambdaEngine
 		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_Pipeline), VK_OBJECT_TYPE_PIPELINE);
 		m_DebugName = debugName;
 	}
-	
-	void RayTracingPipelineStateVK::CreateShaderStageInfo(const ShaderModuleDesc* pShaderModule, TArray<VkPipelineShaderStageCreateInfo>& shaderStagesInfos, 
+
+	void RayTracingPipelineStateVK::CreateShaderStageInfo(const ShaderModuleDesc* pShaderModule, TArray<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
 		TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps)
 	{
 		const ShaderVK* pShader = reinterpret_cast<const ShaderVK*>(pShaderModule->pShader);
