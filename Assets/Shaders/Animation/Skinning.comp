@@ -26,6 +26,8 @@ layout(binding = 3, set = 0) restrict readonly buffer BoneWeights
 	SVertexBoneData Val[]; 
 } b_BoneWeights;
 
+#define PASSTHROUGH 0
+
 // Main
 void main()
 {
@@ -41,5 +43,9 @@ void main()
 	vertex.Normal	= transform * vec4(vertex.Normal.xyz, 0.0f);
 	vertex.Tangent	= transform * vec4(vertex.Tangent.xyz, 0.0f);
 
+#if PASSTHROUGH
+	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = b_OriginalVertices.Val[gl_GlobalInvocationID.x];
+#else
 	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = vertex;
+#endif
 }
