@@ -34,7 +34,7 @@ namespace LambdaEngine
 		RegisterSystem(systemReg);
 	}
 
-	void TransformApplierSystem::Tick(Timestamp deltaTime)
+	void TransformApplierSystem::Tick(Timestamp)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();

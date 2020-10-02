@@ -244,8 +244,6 @@ void SandboxState::Init()
 			const float RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float positive = std::powf(-1.0, i);
-
 				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;
 				materialProperties.Albedo = glm::vec4(color, 1.0f);
