@@ -1086,7 +1086,7 @@ namespace LambdaEngine
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
 		{
 			Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", static_cast<String>(bone.Name).c_str(), boneID, bone.ParentBoneIndex);
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.GetString().c_str(), boneID, bone.ParentBoneIndex);
 		}
 #endif
 
@@ -1122,7 +1122,7 @@ namespace LambdaEngine
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
 		{
 			Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", static_cast<String>(bone.Name).c_str(), boneID, bone.ParentBoneIndex);
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.GetString().c_str(), boneID, bone.ParentBoneIndex);
 		}
 #endif
 

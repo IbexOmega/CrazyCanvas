@@ -46,6 +46,16 @@ namespace LambdaEngine
 			return m_Hash;
 		}
 
+		inline String& GetString()
+		{
+			return m_Str;
+		}
+
+		inline const String& GetString() const
+		{
+			return m_Str;
+		}
+
 		inline bool operator==(const PrehashedString& other) const
 		{
 			if (GetHash() != other.GetHash())
