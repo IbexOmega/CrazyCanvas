@@ -52,8 +52,7 @@ Client::Client()
 
 	m_MeshSphereGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
-
-	ClientSystem::GetInstance().Connect(IPAddress::Get("81.170.143.133"));
+	ClientSystem::GetInstance().Connect(IPAddress::Get("192.168.1.65"));
 
 	//NetworkDiscovery::EnableClient("Crazy Canvas", this);
 }

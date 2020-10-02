@@ -15,3 +15,7 @@
 // Core
 #include "Core/TSharedRef.h"
 #include "Core/RefCountedObject.h"
+
+// Memory
+#include "Memory/API/Malloc.h"
+#include "Memory/API/New.h"

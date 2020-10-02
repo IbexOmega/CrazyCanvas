@@ -26,12 +26,7 @@ namespace LambdaEngine
                 if (pJob)
                 {
                     RegisterJobExecution(*pJob);
-                    m_ThreadHandles.PushBack(ThreadPool::Execute([this, pJob] {
-                        pJob->Function();
-                        m_Lock.lock();
-                        DeregisterJobExecution(*pJob);
-                        m_Lock.unlock();
-                    }));
+                    m_ThreadHandles.PushBack(ThreadPool::Execute(std::bind(&JobScheduler::ExecuteJob, this, *pJob)));
                 }
             } while(pJob);
 
@@ -161,6 +156,14 @@ namespace LambdaEngine
         }
 
         return true;
+    }
+
+    void JobScheduler::ExecuteJob(Job job)
+    {
+        job.Function();
+        m_Lock.lock();
+        DeregisterJobExecution(job);
+        m_Lock.unlock();
     }
 
     void JobScheduler::RegisterJobExecution(const Job& job)

@@ -518,6 +518,19 @@ namespace LambdaEngine
 		UpdateRenderGraph();
 	}
 
+	void RenderSystem::SetRenderStageSleeping(const String& renderStageName, bool sleeping)
+	{
+		if (m_pRenderGraph != nullptr)
+		{
+			m_pRenderGraph->SetRenderStageSleeping(renderStageName, sleeping);
+		}
+		else
+		{
+			LOG_WARNING("[RenderSystem]: SetRenderStageSleeping failed - Rendergraph not initilised");
+		}
+
+	}
+
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity)
 	{
 		ECSCore* pECSCore	= ECSCore::GetInstance();
@@ -591,16 +604,17 @@ namespace LambdaEngine
 	{
 		const ECSCore* pECSCore = ECSCore::GetInstance();
 
-		const auto& pointLightComp = pECSCore->GetComponent<PointLightComponent>(entity);
+		const auto& pointLight = pECSCore->GetComponent<PointLightComponent>(entity);
 		const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+
 
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
 
-		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLightComp.ColorIntensity, .Position = position.Position});
-
-		m_LightsDirty = true;
+		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
+	
+		UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
 	}
 
 	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
