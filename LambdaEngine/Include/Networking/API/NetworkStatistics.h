@@ -15,6 +15,8 @@ namespace LambdaEngine
 		friend class PacketTransceiverTCP;
 		friend class PacketManagerUDP;
 		friend class PacketManagerBase;
+		friend class ClientBase;
+		friend class ClientRemoteBase;
 
 	public:
 		NetworkStatistics();
@@ -51,14 +53,24 @@ namespace LambdaEngine
 		uint32 GetSegmentsReceived() const;
 
 		/*
-		* return - The number of physical packets lost
+		* return - The number of physical packets lost (Packets we never received)
 		*/
-		uint32 GetPacketsLost()	const;
+		uint32 GetReceivingPacketsLost() const;
 
 		/*
-		* return - The percentage of physical packets lost 
+		* return - The number of physical packets lost (Packets the remote never received)
 		*/
-		float64 GetPacketLossRate()	const;
+		uint32 GetSendingPacketsLost() const;
+
+		/*
+		* return - The percentage of physical packets lost (Packets we never received)
+		*/
+		float64 GetReceivingPacketLossRate() const;
+
+		/*
+		* return - The percentage of physical packets lost (Packets the remote never received)
+		*/
+		float64 GetSendingPacketLossRate() const;
 
 		/*
 		* return - The total number of bytes sent
@@ -112,7 +124,9 @@ namespace LambdaEngine
 		uint32 RegisterReliableSegmentSent();
 		void RegisterPacketReceived(uint32 segments, uint32 bytes);
 		void RegisterReliableSegmentReceived();
-		void RegisterPacketLoss();
+
+		void SetPacketsSentByRemote(uint32 packets);
+		void SetPacketsReceivedByRemote(uint32 packetsLost);
 		void RegisterBytesSent(uint32 bytes);
 		void SetRemoteSalt(uint64 salt);
 
@@ -121,8 +135,14 @@ namespace LambdaEngine
 		void SetLastReceivedAckNr(uint32 ack);
 		void SetReceivedAckBits(uint64 ackBits);
 
+		void UpdatePacketsSentFixed();
+
 	private:
-		uint32 m_PacketsLost;
+		uint32 m_PacketsSentByRemote;
+		uint32 m_PacketReceivedByRemote;
+		uint32 m_PacketsSentFixed;
+		uint32 m_PacketsReceivedFixed;
+
 		uint32 m_PacketsSent;
 		uint32 m_SegmentsRegistered;
 		uint32 m_SegmentsSent;

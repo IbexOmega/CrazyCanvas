@@ -47,18 +47,33 @@ namespace LambdaEngine
 		}
 
 		// DescriptorSetLayouts
-		TArray<VkSampler>						immutableSamplers;
-		TArray<VkDescriptorSetLayoutBinding>	layoutBindings;
-		TArray<VkDescriptorBindingFlags>		layoutBindingFlags;
+		TArray<VkSampler> immutableSamplers;
+		TArray<VkDescriptorSetLayoutBinding> layoutBindings;
+		TArray<VkDescriptorBindingFlags> layoutBindingFlags;
 		for (const DescriptorSetLayoutDesc& descriptorSetLayout : pDesc->DescriptorSetLayouts)
 		{
 			VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+			uint32 immutableSamplerOffset = 0;
+
+			// Allocate enough size in immutableSamplers so that it does no get resized
+			// Since it only has to be alive until the iteration of this loop we can realloc each iteration if needed
+			// This is fine since it is unlikely that we will use so many descriptor sets that this gets noticable
+			uint32 requiredSize = 0;
+			for (const DescriptorBindingDesc& binding : descriptorSetLayout.DescriptorBindings)
+			{
+				requiredSize += binding.ImmutableSamplers.GetSize();
+			}
+
+			if (immutableSamplers.GetSize() < requiredSize)
+			{
+				immutableSamplers.Reserve(requiredSize);
+			}
 
 			// Bindings for each descriptorsetlayout
 			for (const DescriptorBindingDesc& binding : descriptorSetLayout.DescriptorBindings)
 			{
-				DescriptorHeapInfo				heapInfo;
-				VkDescriptorSetLayoutBinding	bindingVk = { };
+				DescriptorHeapInfo heapInfo;
+				VkDescriptorSetLayoutBinding bindingVk = { };
 
 				// Immutable Samplers for each binding
 				if (!binding.ImmutableSamplers.IsEmpty())
@@ -104,9 +119,11 @@ namespace LambdaEngine
 				bindingVk.descriptorType		= ConvertDescriptorType(binding.DescriptorType);
 				bindingVk.binding				= binding.Binding;
 				bindingVk.descriptorCount		= binding.DescriptorCount;
-				bindingVk.pImmutableSamplers	= binding.ImmutableSamplers.IsEmpty() ? nullptr : immutableSamplers.GetData();
+				bindingVk.pImmutableSamplers	= binding.ImmutableSamplers.IsEmpty() ? nullptr : (immutableSamplers.GetData() + immutableSamplerOffset);
 				bindingVk.stageFlags			= ConvertShaderStageMask(binding.ShaderStageMask);
 				
+				immutableSamplerOffset += binding.ImmutableSamplers.GetSize();
+
 				layoutBindings.EmplaceBack(bindingVk);
 				m_DescriptorCounts.EmplaceBack(heapInfo);
 				
@@ -157,6 +174,7 @@ namespace LambdaEngine
 				m_DescriptorSetLayouts.EmplaceBack(layout);
 				layoutBindings.Clear();
 				layoutBindingFlags.Clear();
+				immutableSamplers.Clear();
 			}
 		}
 		

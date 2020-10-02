@@ -58,6 +58,20 @@ struct SVertex
 	vec4 TexCoord;
 };
 
+struct SBoneData
+{
+	uint	BoneID;
+	float	Weight;
+};
+
+struct SVertexBoneData
+{
+	SBoneData Bone0;
+	SBoneData Bone1;
+	SBoneData Bone2;
+	SBoneData Bone3;
+};
+
 struct SMeshlet
 {
 	uint VertCount;

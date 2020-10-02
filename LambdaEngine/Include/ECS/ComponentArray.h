@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Containers/THashTable.h"
 #include "Defines.h"
-#include "Entity.h"
-#include <unordered_map>
+#include "ECS/Component.h"
+#include "ECS/Entity.h"
 
 namespace LambdaEngine
 {
@@ -13,14 +14,16 @@ namespace LambdaEngine
 	public:
 		virtual ~IComponentArray() = default;
 
+		virtual void UnsetComponentOwner() = 0;
+
 		virtual const TArray<uint32>& GetIDs() const = 0;
 
 		virtual bool HasComponent(Entity entity) const = 0;
+		virtual void ResetDirtyFlags() = 0;
 
 	protected:
 		// Systems or other external users should not be able to perform immediate deletions
 		friend ComponentStorage;
-		virtual void DeleteEntity(Entity entity) = 0;
 		virtual void Remove(Entity entity) = 0;
 	};
 
@@ -29,24 +32,42 @@ namespace LambdaEngine
 	{
 	public:
 		ComponentArray() = default;
-		virtual ~ComponentArray() = default;
+		~ComponentArray() override final;
+
+		void SetComponentOwner(const ComponentOwnership<Comp>& componentOwnership) { m_ComponentOwnership = componentOwnership; }
+		void UnsetComponentOwner() override final { m_ComponentOwnership = {}; };
 
 		Comp& Insert(Entity entity, const Comp& comp);
 
 		Comp& GetData(Entity entity);
+		const Comp& GetData(Entity entity) const;
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
 		bool HasComponent(Entity entity) const override final { return m_EntityToIndex.find(entity) != m_EntityToIndex.end(); }
+		void ResetDirtyFlags() override final;
 
 	protected:
-		void DeleteEntity(Entity) override final;
 		void Remove(Entity entity) override final;
 
 	private:
 		TArray<Comp> m_Data;
 		TArray<uint32> m_IDs;
-		std::unordered_map<Entity, uint32> m_EntityToIndex;
+		THashTable<Entity, uint32> m_EntityToIndex;
+
+		ComponentOwnership<Comp> m_ComponentOwnership;
 	};
+
+	template<typename Comp>
+	inline ComponentArray<Comp>::~ComponentArray()
+	{
+		if (m_ComponentOwnership.Destructor)
+		{
+			for (Comp& component : m_Data)
+			{
+				m_ComponentOwnership.Destructor(component);
+			}
+		}
+	}
 
 	template<typename Comp>
 	inline Comp& ComponentArray<Comp>::Insert(Entity entity, const Comp& comp)
@@ -66,15 +87,24 @@ namespace LambdaEngine
 	{
 		auto indexItr = m_EntityToIndex.find(entity);
 		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
-		return m_Data[indexItr->second];
+
+		Comp& component = m_Data[indexItr->second];
+
+		if constexpr (Comp::HasDirtyFlag())
+		{
+			component.Dirty = true;
+		}
+
+		return component;
 	}
 
 	template<typename Comp>
-	inline void ComponentArray<Comp>::DeleteEntity(Entity entity)
+	inline const Comp& ComponentArray<Comp>::GetData(Entity entity) const
 	{
-		// Remove component related to the entity if it exists.
-		if (m_EntityToIndex.find(entity) != m_EntityToIndex.end())
-			Remove(entity);
+		auto indexItr = m_EntityToIndex.find(entity);
+		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
+
+		return m_Data[indexItr->second];
 	}
 
 	template<typename Comp>
@@ -84,6 +114,11 @@ namespace LambdaEngine
 		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to remove a component that does not exist!");
 
 		uint32 currentIndex = indexItr->second;
+
+		if (m_ComponentOwnership.Destructor)
+		{
+			m_ComponentOwnership.Destructor(m_Data[currentIndex]);
+		}
 
 		// Swap the removed component with the last component.
 		m_Data[currentIndex] = m_Data.GetBack();
@@ -97,5 +132,17 @@ namespace LambdaEngine
 
 		// Remove the deleted component's entry.
 		m_EntityToIndex.erase(indexItr);
+	}
+
+	template<typename Comp>
+	inline void ComponentArray<Comp>::ResetDirtyFlags()
+	{
+		if constexpr (Comp::HasDirtyFlag())
+		{
+			for (Comp& component : m_Data)
+			{
+				component.Dirty = false;
+			}
+		}
 	}
 }

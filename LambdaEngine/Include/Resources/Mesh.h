@@ -28,6 +28,20 @@ namespace LambdaEngine
 		}
 	};
 
+	struct VertexBoneData
+	{
+		struct BoneData
+		{
+			int32	BoneID = -1;
+			float32	Weight = 0.0f;
+		};
+
+		BoneData Bone0;
+		BoneData Bone1;
+		BoneData Bone2;
+		BoneData Bone3;
+	};
+
 	struct Meshlet
 	{
 		uint32 VertCount;
@@ -58,11 +72,15 @@ namespace LambdaEngine
 			};
 
 			String			Name;
-			glm::mat4		Transform;
+			glm::mat4		OffsetTransform;
 			TArray<Weight>	Weights;
+			int32			ParentBoneIndex = -1;
 		};
 
-		TArray<Bone> Bones;
+		glm::mat4					GlobalTransform;
+		int32						RootBone = -1;
+		TArray<Bone>				Bones;
+		THashTable<String, uint32>	BoneMap;
 	};
 
 	struct Animation
@@ -75,13 +93,20 @@ namespace LambdaEngine
 				float32		Time;
 			};
 
-			TArray<KeyFrame> Positions;
-			TArray<KeyFrame> Rotations;
-			TArray<KeyFrame> Scales;
+			struct RotationKeyFrame
+			{
+				glm::quat	Value;
+				float32		Time;
+			};
+
+			String						Name;
+			TArray<KeyFrame>			Positions;
+			TArray<KeyFrame>			Scales;
+			TArray<RotationKeyFrame>	Rotations;
 		};
 
 		String			Name;
-		float64			Duration;
+		float64			DurationInTicks;
 		float64			TicksPerSecond;
 		TArray<Channel>	Channels;
 	};
@@ -94,6 +119,7 @@ namespace LambdaEngine
 		}
 
 		TArray<Vertex>			Vertices;
+		TArray<VertexBoneData>	VertexBoneData;
 		TArray<MeshIndexType>	Indices;
 		TArray<MeshIndexType>	UniqueIndices;
 		TArray<PackedTriangle>	PrimitiveIndices;

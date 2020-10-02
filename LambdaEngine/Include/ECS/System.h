@@ -12,27 +12,27 @@
 
 namespace LambdaEngine
 {
-    struct SystemRegistration
-    {
-        EntitySubscriberRegistration SubscriberRegistration;
-        uint32_t Phase = 0;
-    };
+	struct SystemRegistration
+	{
+		EntitySubscriberRegistration SubscriberRegistration;
+		uint32_t Phase = 0;
+	};
 
-    class ComponentHandler;
+	class ComponentHandler;
 
-    // A system processes components each frame in the tick function
-    class LAMBDA_API System : private EntitySubscriber, private RegularWorker
-    {
-    public:
-        // Registers the system in the system handler
-        System() = default;
+	// A system processes components each frame in the tick function
+	class LAMBDA_API System : private EntitySubscriber, private RegularWorker
+	{
+	public:
+		// Registers the system in the system handler
+		System() = default;
 
-        // Deregisters system
-        virtual ~System() = default;
+		// Deregisters system
+		virtual ~System() = default;
 
-        virtual void Tick(Timestamp deltaTime) = 0;
+		virtual void Tick(Timestamp deltaTime) = 0;
 
-    protected:
-        void RegisterSystem(const SystemRegistration& systemRegistration);
-    };
+	protected:
+		void RegisterSystem(const SystemRegistration& systemRegistration);
+	};
 }

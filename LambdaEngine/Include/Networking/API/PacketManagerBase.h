@@ -27,6 +27,9 @@ namespace LambdaEngine
 
 	class LAMBDA_API PacketManagerBase
 	{
+		friend class ClientBase;
+		friend class ClientRemoteBase;
+
 	public:
 		DECL_ABSTRACT_CLASS(PacketManagerBase);
 

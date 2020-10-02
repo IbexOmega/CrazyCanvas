@@ -41,7 +41,7 @@ namespace LambdaEngine
 	/*
 	* ImGuiRenderer
 	*/
-	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice) 
+	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
 		VALIDATE(s_pRendererInstance == nullptr);
@@ -53,14 +53,17 @@ namespace LambdaEngine
 		VALIDATE(s_pRendererInstance != nullptr);
 		s_pRendererInstance = nullptr;
 
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		if (m_ppRenderCommandLists != nullptr && m_ppRenderCommandAllocators != nullptr)
 		{
-			SAFERELEASE(m_ppRenderCommandLists[b]);
-			SAFERELEASE(m_ppRenderCommandAllocators[b]);
-		}
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppRenderCommandLists[b]);
+				SAFERELEASE(m_ppRenderCommandAllocators[b]);
+			}
 
-		SAFEDELETE_ARRAY(m_ppRenderCommandLists);
-		SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
+			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+		}
 
 		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
 		EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
@@ -159,7 +162,7 @@ namespace LambdaEngine
 
 		m_BackBufferCount = pPreInitDesc->BackBufferCount;
 
-		if (!CreateCommandLists())
+		if (!CreateRenderCommandLists())
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create render command lists");
 			return false;
@@ -176,7 +179,7 @@ namespace LambdaEngine
 			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineState");
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -499,6 +502,7 @@ namespace LambdaEngine
 							else
 							{
 								uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+								VALIDATE(pipelineGUID != 0);
 
 								vertexShaderIt->second.insert({ pixelShaderGUID, pipelineGUID });
 
@@ -509,6 +513,7 @@ namespace LambdaEngine
 						else
 						{
 							uint64 pipelineGUID = InternalCreatePipelineState(vertexShaderGUID, pixelShaderGUID);
+							VALIDATE(pipelineGUID != 0);
 
 							THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
 							pixelShaderToPipelineStateMap.insert({ pixelShaderGUID, pipelineGUID });
@@ -580,14 +585,14 @@ namespace LambdaEngine
 		{
 			MouseButtonClickedEvent mouseEvent = EventCast<MouseButtonClickedEvent>(event);
 			io.MouseDown[mouseEvent.Button - 1] = true;
-			
+
 			return true;
 		}
 		else if (IsEventOfType<MouseButtonReleasedEvent>(event))
 		{
 			MouseButtonReleasedEvent mouseEvent = EventCast<MouseButtonReleasedEvent>(event);
 			io.MouseDown[mouseEvent.Button - 1] = false;
-			
+
 			return true;
 		}
 		else if (IsEventOfType<MouseScrolledEvent>(event))
@@ -595,7 +600,7 @@ namespace LambdaEngine
 			MouseScrolledEvent mouseEvent = EventCast<MouseScrolledEvent>(event);
 			io.MouseWheelH	+= static_cast<float32>(mouseEvent.DeltaX);
 			io.MouseWheel	+= static_cast<float32>(mouseEvent.DeltaY);
-			
+
 			return true;
 		}
 		else if (IsEventOfType<KeyPressedEvent>(event))
@@ -606,7 +611,7 @@ namespace LambdaEngine
 			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
 			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
 			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
-			
+
 			return true;
 		}
 		else if (IsEventOfType<KeyReleasedEvent>(event))
@@ -617,14 +622,14 @@ namespace LambdaEngine
 			io.KeyShift = keyEvent.ModiferState.IsShiftDown();
 			io.KeyAlt	= keyEvent.ModiferState.IsAltDown();
 			io.KeySuper	= keyEvent.ModiferState.IsSuperDown();
-			
+
 			return true;
 		}
 		else if (IsEventOfType<KeyTypedEvent>(event))
 		{
 			KeyTypedEvent keyEvent = EventCast<KeyTypedEvent>(event);
 			io.AddInputCharacter(keyEvent.Character);
-			
+
 			return true;
 		}
 
@@ -748,7 +753,7 @@ namespace LambdaEngine
 		indexBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		indexBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
 		indexBufferDesc.SizeInBytes	= vertexBufferSize;
-		
+
 		m_IndexBuffer = m_pGraphicsDevice->CreateBuffer(&indexBufferDesc);
 		if (!m_IndexBuffer)
 		{
@@ -865,7 +870,7 @@ namespace LambdaEngine
 
 		m_CopyCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 		m_CopyCommandList->CopyTextureFromBuffer(fontBuffer.Get(), m_FontTexture.Get(), copyDesc);
-		
+
 		PipelineTextureBarrierDesc transitionToShaderReadBarrier = {};
 		transitionToShaderReadBarrier.pTexture				= m_FontTexture.Get();
 		transitionToShaderReadBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
@@ -916,7 +921,7 @@ namespace LambdaEngine
 		samplerDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
 		samplerDesc.AddressModeV		= samplerDesc.AddressModeU;
 		samplerDesc.AddressModeW		= samplerDesc.AddressModeU;
-		samplerDesc.MipLODBias			= 0.0f; 
+		samplerDesc.MipLODBias			= 0.0f;
 		samplerDesc.AnisotropyEnabled	= false;
 		samplerDesc.MaxAnisotropy		= 16;
 		samplerDesc.MinLOD				= 0.0f;
@@ -994,7 +999,7 @@ namespace LambdaEngine
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 	
-	bool ImGuiRenderer::CreateCommandLists()
+	bool ImGuiRenderer::CreateRenderCommandLists()
 	{
 		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
 		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
@@ -1072,6 +1077,7 @@ namespace LambdaEngine
 	bool ImGuiRenderer::CreatePipelineState()
 	{
 		m_PipelineStateID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID);
+		VALIDATE(m_PipelineStateID != 0);
 
 		THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
 		pixelShaderToPipelineStateMap.insert({ m_PixelShaderGUID, m_PipelineStateID });

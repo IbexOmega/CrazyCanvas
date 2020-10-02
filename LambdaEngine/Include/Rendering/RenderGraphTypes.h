@@ -11,6 +11,7 @@
 namespace LambdaEngine
 {
 	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
+	constexpr const char* RENDER_GRAPH_NOESIS_GUI_STAGE_NAME	= "RENDER_STAGE_NOESIS_GUI";
 
 	constexpr const char* RENDER_GRAPH_PHYSICS_DEBUG_STAGE		= "RENDER_STAGE_PHYSICS_DEBUG";
 	constexpr const char* RENDER_GRAPH_PAINT_MASK_STAGE			= "RENDER_GRAPH_PAINT_MASK_STAGE";
@@ -26,15 +27,13 @@ namespace LambdaEngine
 
 	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
 	constexpr const char* SCENE_NORMAL_MAPS						= "SCENE_NORMAL_MAPS";
-	constexpr const char* SCENE_AO_MAPS							= "SCENE_AO_MAPS";
-	constexpr const char* SCENE_ROUGHNESS_MAPS					= "SCENE_ROUGHNESS_MAPS";
-	constexpr const char* SCENE_METALLIC_MAPS					= "SCENE_METALLIC_MAPS";
+	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS			= "SCENE_COMBINED_MATERIAL_MAPS";
 
-	constexpr const char* PAINT_MASK_TEXTURES = "PAINT_MASK_TEXTURES";
+	constexpr const char* PAINT_MASK_TEXTURES 					= "PAINT_MASK_TEXTURES";
+	
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4;
 
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4; 
-
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0; 
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0;
 	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
 	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 1;
@@ -123,10 +122,10 @@ namespace LambdaEngine
 
 	/*-----------------------------------------------------------------Resource Structs Begin-----------------------------------------------------------------*/
 
-	struct RenderGraphResourceDesc 
+	struct RenderGraphResourceDesc
 	{
 		String						Name					= "";
-		
+
 		ERenderGraphResourceType	Type					= ERenderGraphResourceType::NONE;
 		bool						BackBufferBound			= false;
 		int32						SubResourceCount		= 1;

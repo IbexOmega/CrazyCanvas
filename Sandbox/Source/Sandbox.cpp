@@ -19,7 +19,7 @@
 #include "Rendering/Core/API/Sampler.h"
 #include "Rendering/Core/API/CommandQueue.h"
 
-#include "Audio/AudioSystem.h"
+#include "Audio/AudioAPI.h"
 #include "Audio/API/ISoundEffect3D.h"
 #include "Audio/API/ISoundInstance3D.h"
 #include "Audio/API/IAudioGeometry.h"

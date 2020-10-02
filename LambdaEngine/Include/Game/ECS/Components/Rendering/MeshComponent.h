@@ -11,4 +11,3 @@ namespace LambdaEngine
 		GUID_Lambda MaterialGUID;
 	};
 }
-

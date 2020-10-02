@@ -6,12 +6,14 @@
 
 #include "Rendering/RenderAPI.h"
 
+#include <regex>
+
 namespace LambdaEngine
 {
 	GLSLShaderSource::GLSLShaderSource(const GLSLShaderSourceDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
-
+		
 		m_Desc = *pDesc;
 	}
 
@@ -19,15 +21,15 @@ namespace LambdaEngine
 	{
 	}
 
-	Shader* GLSLShaderSource::Compile(const String& name, const TArray<const char*>& defines)
+	Shader* GLSLShaderSource::Compile(const String& name, const String& defines)
 	{
-		TArray<const char*> strings = defines;
-
 		EShLanguage shaderType = ConvertShaderStageToEShLanguage(m_Desc.ShaderStage);
 		glslang::TShader shader(shaderType);
 
-		strings.PushBack(m_Desc.Source.c_str());
-		shader.setStrings(strings.GetData(), strings.GetSize());
+		const char* pSource = m_Desc.Source.c_str();
+
+		shader.setPreamble(defines.c_str());
+		shader.setStrings(&pSource, 1);
 
 		//Todo: Fetch this
 		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
@@ -41,11 +43,22 @@ namespace LambdaEngine
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
 		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
 		
+		DirStackFileIncluder includer;
+		includer.pushExternalLocalDirectory(m_Desc.Directory);
+
+		String preprocessedGLSL; 
+		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		{
+			LOG_ERROR("[GLSLShaderSource]: GLSL Preprocessing failed for: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
+		shader.setStrings(&pPreprocessedGLSL, 1);
+
 		if (!shader.parse(pResources, defaultVersion, false, messages))
 		{
-			const char* pShaderInfoLog		= shader.getInfoLog();
-			const char* pShaderDebugInfo	= shader.getInfoDebugLog();
-			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", pShaderInfoLog, pShaderDebugInfo);
+			LOG_ERROR("[GLSLShaderSource]: GLSL Parsing failed: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
 
@@ -54,7 +67,7 @@ namespace LambdaEngine
 
 		if (!program.link(messages))
 		{
-			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", shader.getInfoLog(), shader.getInfoDebugLog());
+			LOG_ERROR("[GLSLShaderSource]: GLSL Linking failed: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
 

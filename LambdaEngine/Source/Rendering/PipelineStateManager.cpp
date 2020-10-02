@@ -11,7 +11,7 @@
 
 namespace LambdaEngine
 {
-	uint64													PipelineStateManager::s_CurrentPipelineIndex = 0;
+	uint64													PipelineStateManager::s_CurrentPipelineIndex = 1;
 	THashTable<uint64, TSharedRef<PipelineState>>			PipelineStateManager::s_PipelineStates;
 	THashTable<uint64, ManagedGraphicsPipelineStateDesc>	PipelineStateManager::s_GraphicsPipelineStateDescriptions;
 	THashTable<uint64, ManagedComputePipelineStateDesc>		PipelineStateManager::s_ComputePipelineStateDescriptions;
@@ -45,6 +45,7 @@ namespace LambdaEngine
 		desc.SampleCount		= SampleCount;
 		desc.SampleMask			= SampleMask;
 		desc.Subpass			= Subpass;
+		desc.ExtraDynamicState	= ExtraDynamicState;
 
 		desc.pRenderPass		= RenderPass.Get();
 		desc.pPipelineLayout	= PipelineLayout.Get();

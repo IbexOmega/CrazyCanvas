@@ -60,8 +60,8 @@ namespace LambdaEngine
 	{
 		EventQueue::UnregisterEventHandler(this, &RenderGraph::OnWindowResized);
 
-		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
-		SAFERELEASE(m_pFence);
+		s_pMaterialFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		SAFERELEASE(s_pMaterialFence);
 
 		SAFERELEASE(m_pDescriptorHeap);
 
@@ -234,7 +234,7 @@ namespace LambdaEngine
 		}
 
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
-		{ 
+		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
 			return false;
 		}
@@ -661,18 +661,19 @@ namespace LambdaEngine
 					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.MaskToArgs.find(pRenderStage->DrawArgsMask);
+					pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
 
 					if (pRenderStage->UsesCustomRenderer)
 					{
 						pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
-							pResource->Name, 
+							pResource->Name,
 							drawArgsMaskToArgsIt->second.Args.GetData(),
 							drawArgsMaskToArgsIt->second.Args.GetSize());
 					}
 					else
 					{
 						pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
-					
+
 						for (uint32 b = 0; b < m_BackBufferCount; b++)
 						{
 							DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
@@ -680,7 +681,7 @@ namespace LambdaEngine
 
 							if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
 							{
-								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet*[drawArgsMaskToArgsIt->second.Args.GetSize()];
+								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
 							}
 							else
 							{
@@ -702,14 +703,21 @@ namespace LambdaEngine
 								const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
 								VALIDATE(drawArg.pVertexBuffer);
 								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
+
 								VALIDATE(drawArg.pInstanceBuffer);
 								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
-								VALIDATE(drawArg.pMeshletBuffer);
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
-								VALIDATE(drawArg.pUniqueIndicesBuffer);
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
-								VALIDATE(drawArg.pPrimitiveIndices);
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
+
+								// If meshletbuffer is nullptr we assume that meshshaders are disabled
+								if (drawArg.pMeshletBuffer)
+								{
+									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
+
+									VALIDATE(drawArg.pUniqueIndicesBuffer);
+									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
+
+									VALIDATE(drawArg.pPrimitiveIndices);
+									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
+								}
 
 								ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 							}
@@ -741,7 +749,7 @@ namespace LambdaEngine
 
 		uint32 currentExecutionStage = 0;
 
-		m_pFence->Wait(m_SignalValue - 1, UINT64_MAX);
+		s_pMaterialFence->Wait(m_SignalValue - 1, UINT64_MAX);
 
 		TArray<DeviceChild*>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[m_ModFrameIndex];
 
@@ -770,8 +778,8 @@ namespace LambdaEngine
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 
 						pCustomRenderer->Render(
-							uint32(m_ModFrameIndex), 
-							m_BackBufferIndex, 
+							uint32(m_ModFrameIndex),
+							m_BackBufferIndex,
 							&m_ppExecutionStages[currentExecutionStage],
 							&m_ppExecutionStages[currentExecutionStage + 1]);
 
@@ -829,7 +837,7 @@ namespace LambdaEngine
 			if (pGraphicsCopyCommandList->IsBegin())
 			{
 				pGraphicsCopyCommandList->End();
-				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				m_SignalValue++;
 			}
 
@@ -838,7 +846,7 @@ namespace LambdaEngine
 			if (pComputeCopyCommandList->IsBegin())
 			{
 				pComputeCopyCommandList->End();
-				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				m_SignalValue++;
 			}
 		}
@@ -863,11 +871,11 @@ namespace LambdaEngine
 					{
 						if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 						{
-							RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 						}
 						else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 						{
-							RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+							RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 						}
 
 						m_SignalValue++;
@@ -884,11 +892,11 @@ namespace LambdaEngine
 			{
 				if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 				else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, m_pFence, m_SignalValue - 1, m_pFence, m_SignalValue);
+					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 
 				m_SignalValue++;
@@ -1057,7 +1065,7 @@ namespace LambdaEngine
 					binding.pRenderStage->pCustomRenderer->UpdateTextureResource(
 						backBufferResourceIt->second.Name,
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetData(),
-						1,
+						backBufferResourceIt->second.Texture.PerImageTextureViews.GetSize(),
 						true);
 				}
 				else if (binding.DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
@@ -1086,22 +1094,21 @@ namespace LambdaEngine
 		for (uint32 r = 0; r < m_RenderStageCount; r++)
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[r];
-
-			if (pRenderStage->UsesCustomRenderer)
-				continue;
-
-			pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
-
-			if (pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+			if (!pRenderStage->UsesCustomRenderer)
 			{
-				m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
+				pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 
-				SBTDesc sbtDesc = {};
-				sbtDesc.DebugName		= "Render Graph Global SBT";
-				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
-				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
+				if (pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
+				{
+					m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
 
-				pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+					SBTDesc sbtDesc = {};
+					sbtDesc.DebugName = "Render Graph Global SBT";
+					sbtDesc.pPipelineState = pRenderStage->pPipelineState;
+					sbtDesc.SBTRecords = m_GlobalShaderRecords;
+
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+				}
 			}
 		}
 
@@ -1171,7 +1178,7 @@ namespace LambdaEngine
 						SAFEDELETE_ARRAY(ppDrawArgDescriptorSets);
 					}
 				}
-				
+
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets);
@@ -1202,9 +1209,9 @@ namespace LambdaEngine
 		fenceDesc.DebugName		= "Render Stage Fence";
 		fenceDesc.InitalValue	= 0;
 
-		m_pFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
+		s_pMaterialFence = m_pGraphicsDevice->CreateFence(&fenceDesc);
 
-		if (m_pFence == nullptr)
+		if (s_pMaterialFence == nullptr)
 		{
 			LOG_ERROR("[RenderGraph]: Could not create RenderGraph fence");
 			return false;
@@ -1397,13 +1404,13 @@ namespace LambdaEngine
 			else if (pResourceDesc->Type == ERenderGraphResourceType::BUFFER)
 			{
 				newResource.Type = ERenderGraphResourceType::BUFFER;
-				
+
 				newResource.Buffer.Buffers.Resize(newResource.SubResourceCount);
 				newResource.Buffer.Offsets.Resize(newResource.SubResourceCount);
 				newResource.Buffer.SizesInBytes.Resize(newResource.SubResourceCount);
 			}
 			else if (pResourceDesc->Type == ERenderGraphResourceType::ACCELERATION_STRUCTURE)
-			{ 
+			{
 				newResource.Type = ERenderGraphResourceType::ACCELERATION_STRUCTURE;
 			}
 
@@ -1535,7 +1542,7 @@ namespace LambdaEngine
 					alreadyExists = alreadyExists && newResource.Texture.PerImageTextureViews.GetSize()		== previousResource.Texture.PerImageTextureViews.GetSize();
 					alreadyExists = alreadyExists && newResource.Texture.PerSubImageTextureViews.GetSize()	== previousResource.Texture.PerSubImageTextureViews.GetSize();
 					alreadyExists = alreadyExists && newResource.Texture.Samplers.GetSize()					== previousResource.Texture.Samplers.GetSize();
-					
+
 					previousResource.Texture.InitialTransitionBarriers.Clear();
 
 					//If the resource is discovered as nonexisiting here, we need to release internal subresources
@@ -1965,7 +1972,7 @@ namespace LambdaEngine
 					// Check if attachment is unchanged after renderstage
 					auto prevBinding = pResourceStateDesc->AttachmentSynchronizations.PrevBindingType;
 					auto nextBinding = pResourceStateDesc->AttachmentSynchronizations.NextBindingType;
-					if (prevBinding != nextBinding) 
+					if (prevBinding != nextBinding)
 					{
 						attachmentStateUnchanged = false;
 					}
@@ -2012,8 +2019,8 @@ namespace LambdaEngine
 
 						if (renderPassAttachmentsWidth != xDimVariable)
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d", 
-								pResourceStateDesc->ResourceName.c_str(), 
+							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d",
+								pResourceStateDesc->ResourceName.c_str(),
 								xDimVariable,
 								renderPassAttachmentsWidth);
 							success = false;
@@ -2171,7 +2178,7 @@ namespace LambdaEngine
 
 					if (customRendererIt == customRenderers.end())
 					{
-						LOG_ERROR("[RenderGraph]: Custom Renderer %s could not be found among Custom Renderers");
+						LOG_ERROR("[RenderGraph]: Custom Renderer %s could not be found among Custom Renderers", pRenderStage->Name.c_str());
 						pRenderStage->TriggerType = ERenderStageExecutionTrigger::DISABLED;
 					}
 					else
@@ -2212,19 +2219,10 @@ namespace LambdaEngine
 							return false;
 						}
 
-						if (resourceIt->second.Type == ERenderGraphResourceType::TEXTURE)
+						//Only set it if it hasn't been set before, if it has been set before a previous Render Stage uses this resource -> we shouldn't set it
+						if (resourceIt->second.LastPipelineStageOfFirstRenderStage == FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN)
 						{
-							if (resourceIt->second.Texture.InitialTransitionBarriers.IsEmpty())
-							{
-								resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
-							}
-						}
-						else
-						{
-							if (resourceIt->second.Buffer.InitialTransitionBarriers.IsEmpty())
-							{
-								resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
-							}
+							resourceIt->second.LastPipelineStageOfFirstRenderStage = pRenderStage->LastPipelineStage;
 						}
 					}
 				}
@@ -2248,7 +2246,7 @@ namespace LambdaEngine
 						pPushConstants->pData		= DBG_NEW byte[DRAW_ITERATION_PUSH_CONSTANTS_SIZE];
 						pPushConstants->DataSize	= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 						pPushConstants->Offset		= MAX_PUSH_CONSTANT_SIZE - externalMaxSize;
-						pPushConstants->MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;	
+						pPushConstants->MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 
 						externalMaxSize -= DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
 					}
@@ -2286,7 +2284,7 @@ namespace LambdaEngine
 						descriptorSetLayouts.PushBack(descriptorSetLayout);
 					}
 
-					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || 
+					if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES ||
 						pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 					{
 						if (pRenderStage->pDrawArgsResource == nullptr)
@@ -2381,7 +2379,7 @@ namespace LambdaEngine
 						pShaderConstants = &shaderConstantsIt->second;
 					}
 				}
-				
+
 
 				//Create Pipeline State
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
@@ -2443,7 +2441,7 @@ namespace LambdaEngine
 						pRenderStage->pRenderPass	= pRenderPass;
 
 						//Create duplicate Render Pass (this is fucking retarded) which we use when the RenderStage is Disabled, this Render Pass forces LoadOp to be LOAD
-						if (!attachmentStateUnchanged) 
+						if (!attachmentStateUnchanged)
 						{
 							RenderPassDesc disabledRenderPassDesc = renderPassDesc;
 
@@ -2458,6 +2456,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
@@ -2473,6 +2472,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
@@ -2481,7 +2481,7 @@ namespace LambdaEngine
 					pipelineDesc.PipelineLayout			= MakeSharedRef(pRenderStage->pPipelineLayout);
 					pipelineDesc.MaxRecursionDepth		= 1;
 					pipelineDesc.RaygenShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.RaygenShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER, EShaderLang::SHADER_LANG_GLSL );
-					
+
 					if (pShaderConstants != nullptr)
 					{
 						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
@@ -2510,6 +2510,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 			}
@@ -2637,7 +2638,7 @@ namespace LambdaEngine
 
 				FPipelineStageFlags	prevLastPipelineStage;
 
-				
+
 				if (prevRenderStageIt == m_RenderStageMap.end())
 				{
 					if (pResourceSynchronizationDesc->PrevRenderStage == "PRESENT")
@@ -2932,7 +2933,7 @@ namespace LambdaEngine
 			{
 				m_ExecutionStageCount += 2;
 				pipelineStageName = "Synchronization Stage " + std::to_string(pPipelineStageDesc->StageIndex);
-			}			
+			}
 
 			pPipelineStage->Type		= pPipelineStageDesc->Type;
 			pPipelineStage->StageIndex	= pPipelineStageDesc->StageIndex;
@@ -3412,37 +3413,39 @@ namespace LambdaEngine
 					intialBarriers.PushBack(initialIndexBufferTransitionBarrier);
 				}
 
-				// Meshlet Buffer
+				// If meshlet buffer is nullptr we assume that we are not using meshshaders
+				if (pDrawArg->pMeshletBuffer)
 				{
-					VALIDATE(pDrawArg->pMeshletBuffer);
+					// Meshlet Buffer
+					{
+						PipelineBufferBarrierDesc initialMeshletBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+						initialMeshletBufferTransitionBarrier.pBuffer		= pDrawArg->pMeshletBuffer;
+						initialMeshletBufferTransitionBarrier.Offset		= 0;
+						initialMeshletBufferTransitionBarrier.SizeInBytes	= pDrawArg->pMeshletBuffer->GetDesc().SizeInBytes;
+						intialBarriers.PushBack(initialMeshletBufferTransitionBarrier);
+					}
 
-					PipelineBufferBarrierDesc initialMeshletBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
-					initialMeshletBufferTransitionBarrier.pBuffer		= pDrawArg->pMeshletBuffer;
-					initialMeshletBufferTransitionBarrier.Offset		= 0;
-					initialMeshletBufferTransitionBarrier.SizeInBytes	= pDrawArg->pMeshletBuffer->GetDesc().SizeInBytes;
-					intialBarriers.PushBack(initialMeshletBufferTransitionBarrier);
-				}
+					// Unique Indices Buffer
+					{
+						VALIDATE(pDrawArg->pUniqueIndicesBuffer);
 
-				// Unique Indices Buffer
-				{
-					VALIDATE(pDrawArg->pUniqueIndicesBuffer);
+						PipelineBufferBarrierDesc initialUniqueIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+						initialUniqueIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pUniqueIndicesBuffer;
+						initialUniqueIndicesBufferTransitionBarrier.Offset		= 0;
+						initialUniqueIndicesBufferTransitionBarrier.SizeInBytes = pDrawArg->pUniqueIndicesBuffer->GetDesc().SizeInBytes;
+						intialBarriers.PushBack(initialUniqueIndicesBufferTransitionBarrier);
+					}
 
-					PipelineBufferBarrierDesc initialUniqueIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
-					initialUniqueIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pUniqueIndicesBuffer;
-					initialUniqueIndicesBufferTransitionBarrier.Offset		= 0;
-					initialUniqueIndicesBufferTransitionBarrier.SizeInBytes = pDrawArg->pUniqueIndicesBuffer->GetDesc().SizeInBytes;
-					intialBarriers.PushBack(initialUniqueIndicesBufferTransitionBarrier);
-				}
+					// Primitive Indices Buffer
+					{
+						VALIDATE(pDrawArg->pPrimitiveIndices);
 
-				// Primitive Indices Buffer
-				{
-					VALIDATE(pDrawArg->pPrimitiveIndices);
-
-					PipelineBufferBarrierDesc initialPrimitiveIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
-					initialPrimitiveIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pPrimitiveIndices;
-					initialPrimitiveIndicesBufferTransitionBarrier.Offset		= 0;
-					initialPrimitiveIndicesBufferTransitionBarrier.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
-					intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
+						PipelineBufferBarrierDesc initialPrimitiveIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+						initialPrimitiveIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pPrimitiveIndices;
+						initialPrimitiveIndicesBufferTransitionBarrier.Offset		= 0;
+						initialPrimitiveIndicesBufferTransitionBarrier.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
+						intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
+					}
 				}
 
 				// Draw arg extensions
@@ -3889,8 +3892,6 @@ namespace LambdaEngine
 		Profiler::GetGPUProfiler()->StartGraphicsPipelineStat(pGraphicsCommandList);
 		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 
-		uint32 flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-
 		Viewport viewport = { };
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
@@ -3958,10 +3959,11 @@ namespace LambdaEngine
 
 				ppTextureViews[textureViewCount++] = pRenderTarget;
 
-				clearColorDescriptions[clearColorCount].Color[0] = 1.0f;
-				clearColorDescriptions[clearColorCount].Color[1] = 0.0f;
-				clearColorDescriptions[clearColorCount].Color[2] = 0.0f;
-				clearColorDescriptions[clearColorCount].Color[3] = 0.0f;
+				ClearColorDesc* pClearColorDesc = &clearColorDescriptions[clearColorCount];
+				pClearColorDesc->Color[0] = 0.0f;
+				pClearColorDesc->Color[1] = 0.0f;
+				pClearColorDesc->Color[2] = 0.0f;
+				pClearColorDesc->Color[3] = 0.0f;
 
 				clearColorCount++;
 			}
@@ -3983,12 +3985,13 @@ namespace LambdaEngine
 				frameBufferWidth	= depthStencilDesc.Width;
 				frameBufferHeight	= depthStencilDesc.Height;
 
-				clearColorDescriptions[clearColorCount].Depth		= 1.0f;
-				clearColorDescriptions[clearColorCount].Stencil		= 0;
+				ClearColorDesc* pClearDepthStencilDesc = &clearColorDescriptions[clearColorCount];
+				pClearDepthStencilDesc->Depth		= 1.0f;
+				pClearDepthStencilDesc->Stencil		= 0;
 
 				clearColorCount++;
 			}
-				
+
 			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
 			{
 				BeginRenderPassDesc beginRenderPassDesc = { };
@@ -3998,7 +4001,7 @@ namespace LambdaEngine
 				beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
 				beginRenderPassDesc.Width				= frameBufferWidth;
 				beginRenderPassDesc.Height				= frameBufferHeight;
-				beginRenderPassDesc.Flags				= flags;
+				beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 				beginRenderPassDesc.pClearColors		= clearColorDescriptions;
 				beginRenderPassDesc.ClearColorCount		= clearColorCount;
 				beginRenderPassDesc.Offset.x			= 0;
@@ -4077,7 +4080,7 @@ namespace LambdaEngine
 				beginRenderPassDesc.pDepthStencil		= pDepthStencilTextureView;
 				beginRenderPassDesc.Width				= frameBufferWidth;
 				beginRenderPassDesc.Height				= frameBufferHeight;
-				beginRenderPassDesc.Flags				= flags;
+				beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 				beginRenderPassDesc.pClearColors		= clearColorDescriptions;
 				beginRenderPassDesc.ClearColorCount		= clearColorCount;
 				beginRenderPassDesc.Offset.x			= 0;

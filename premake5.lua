@@ -94,7 +94,10 @@ workspace "LambdaEngine"
 			"LAMBDA_SHARED_LIB",
 		}
 	filter {}
-
+	defines
+	{
+		"NS_STATIC_LIBRARY"
+	}
 	-- Configurations
 	configurations
 	{
@@ -334,11 +337,11 @@ workspace "LambdaEngine"
 			"Dependencies/glslang/include",
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
-			-- "D:/Documents/PhysX-4.1/physx/include",
-			-- "D:/Documents/PhysX-4.1/pxshared/include",
 			"Dependencies/rapidjson/include",
 			"Dependencies/stb",
 			"Dependencies/WavLib",
+			"Dependencies/NoesisGUI/Include",
+			"Dependencies/NoesisGUI/Providers/Include",
 		}
 
 		links
@@ -374,7 +377,9 @@ workspace "LambdaEngine"
 				"Dependencies/assimp/bin",
 
 				-- PhysX
-				"Dependencies/PhysX/lib"
+				"Dependencies/PhysX/lib",
+				-- NoesisGUI
+				"Dependencies/NoesisGUI/Lib",
 			}
 
 			sysincludedirs
@@ -409,11 +414,15 @@ workspace "LambdaEngine"
 
 				-- PhysX
 				"/checked/PhysX_64.lib",
+				"/checked/PhysXCharacterKinematic_dynamic_64.lib",
 				"/checked/PhysXCommon_64.lib",
 				"/checked/PhysXCooking_64.lib",
 				"/checked/PhysXExtensions_dynamic_64.lib",
 				"/checked/PhysXFoundation_64.lib",
-				"/checked/PhysXPvdSDK_dynamic_64.lib"
+				"/checked/PhysXPvdSDK_dynamic_64.lib",
+				--NoesisGUI
+				"Noesis.lib",
+				"NoesisApp.lib",
 			}
 		filter { "system:windows", "configurations:Release or Production" }
 			links
@@ -436,10 +445,14 @@ workspace "LambdaEngine"
 
 				-- PhysX
 				"/release/PhysX_64.lib",
+				"/release/PhysXCharacterKinematic_dynamic_64.lib",
 				"/release/PhysXCommon_64.lib",
 				"/release/PhysXCooking_64.lib",
 				"/release/PhysXExtensions_dynamic_64.lib",
-				"/release/PhysXFoundation_64.lib"
+				"/release/PhysXFoundation_64.lib",
+				--NoesisGUI
+				"Noesis.lib",
+				"NoesisApp.lib",
 			}
 		-- Mac
 		filter { "system:macosx" }
@@ -498,6 +511,17 @@ workspace "LambdaEngine"
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
 				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
 			}
+			postbuildcommands
+			{
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
+			}
 		-- PhysX
 		filter { "system:windows", "configurations:Debug" }
 			postbuildcommands
@@ -545,9 +569,16 @@ workspace "LambdaEngine"
 			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/NoesisGUI/Include",
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
+			"Dependencies/NoesisGUI/Include",
+			-- FMOD
+			"C:/FMOD Studio API Windows/api/core/inc",
+			"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/FMOD Studio API Windows/api/core/inc",
 		}
 
 		-- Files
@@ -599,9 +630,16 @@ workspace "LambdaEngine"
 			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/NoesisGUI/Include",
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
+			"Dependencies/NoesisGUI/Include",
+			-- FMOD
+			"C:/FMOD Studio API Windows/api/core/inc",
+			"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+			"D:/FMOD Studio API Windows/api/core/inc",
 		}
 
 		-- Files
@@ -653,6 +691,7 @@ workspace "LambdaEngine"
 			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/NoesisGUI/Include",
 			"Dependencies/ordered-map/include",
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
@@ -707,9 +746,10 @@ workspace "LambdaEngine"
 			"Dependencies/",
 			"Dependencies/glm",
 			"Dependencies/imgui",
+			"Dependencies/NoesisGUI/Include",
 			"Dependencies/ordered-map/include",
-			"Dependencies/rapidjson/include",
-			"Dependencies/PhysX/include"
+			"Dependencies/PhysX/include",
+			"Dependencies/rapidjson/include"
 		}
 
 		-- Files

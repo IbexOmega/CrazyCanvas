@@ -35,6 +35,7 @@ namespace LambdaEngine
     private:
         const Job* FindExecutableJob();
         bool CanExecute(const Job& job) const;
+        void ExecuteJob(Job job);
 
         // Register the component accesses (reads and writes) to be performed by the job
         void RegisterJobExecution(const Job& job);

@@ -230,41 +230,52 @@ namespace LambdaEngine
 		Stop(reason);
 	}
 
-	void ServerBase::Tick(Timestamp delta)
+	void ServerBase::FixedTick(Timestamp delta)
 	{
-		std::scoped_lock<SpinLock> lock(m_LockClients);
-		for (auto& pair : m_Clients)
+		TArray<ClientRemoteBase*> clientsApproved;
 		{
-			pair.second->Tick(delta);
-		}
-
-		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
-		{
-			std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
-			for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
+			std::scoped_lock<SpinLock> lock(m_LockClients);
+			for (auto& pair : m_Clients)
 			{
-				m_ClientsToAdd[i]->Tick(delta);
-				if (m_ClientsToAdd[i]->IsConnected())
+				pair.second->FixedTick(delta);
+			}
+
+			if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
+			{
+				std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
+				for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
 				{
-					LOG_INFO("[ServerBase]: Client Registered");
-					m_Clients.insert({ m_ClientsToAdd[i]->GetEndPoint(), m_ClientsToAdd[i] });
-					m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
+					ClientRemoteBase* pClient = m_ClientsToAdd[i];
+
+					pClient->FixedTick(delta);
+					if (pClient->IsConnected())
+					{
+						LOG_INFO("[ServerBase]: Client Registered");
+						m_Clients.insert({ pClient->GetEndPoint(), pClient });
+						m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
+						clientsApproved.PushBack(pClient);
+					}
 				}
+
+				for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
+				{
+					LOG_INFO("[ServerBase]: Client Unregistered");
+
+					for (int32 j = m_ClientsToAdd.GetSize() - 1; j >= 0; j--)
+						if (m_ClientsToAdd[j] == m_ClientsToRemove[i])
+							m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
+
+					m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
+					m_ClientsToRemove[i]->OnTerminationApproved();
+				}
+
+				m_ClientsToRemove.Clear();
 			}
-
-			for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
-			{
-				LOG_INFO("[ServerBase]: Client Unregistered");
-
-				for (int32 j = m_ClientsToAdd.GetSize() - 1; j >= 0; j--)
-					if (m_ClientsToAdd[j] == m_ClientsToRemove[i])
-						m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
-
-				m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
-				m_ClientsToRemove[i]->OnTerminationApproved();
-			}
-
-			m_ClientsToRemove.Clear();
+		}
+		
+		for (ClientRemoteBase* pClient : clientsApproved)
+		{
+			pClient->OnConnectionApproved();
 		}
 
 		Flush();
@@ -302,7 +313,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(s_Lock);
 			for (ServerBase* server : s_Servers)
 			{
-				server->Tick(delta);
+				server->FixedTick(delta);
 			}
 		}
 	}

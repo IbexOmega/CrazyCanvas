@@ -22,6 +22,7 @@ namespace LambdaEngine
         // Stores IDs of entities found using subscription
         IDVector* pSubscriber;
         TArray<const ComponentType*> ComponentTypes;
+        TArray<const ComponentType*> ExcludedComponentTypes;
         // Optional: Called after an entity was added due to the subscription
         std::function<void(Entity)> OnEntityAdded;
         // Optional: Called before an entity was removed
@@ -47,9 +48,9 @@ namespace LambdaEngine
         void UnsubscribeFromEntities(uint32 subscriptionID);
 
         // Notifies subscribers that a component has been added
-        void PublishComponent(Entity entityID, const ComponentType* pComponentType);
+        void PublishComponent(Entity entity, const ComponentType* pComponentType);
         // Notifies subscribers that a component has been deleted
-        void UnpublishComponent(Entity entityID, const ComponentType* pComponentType);
+        void UnpublishComponent(Entity entity, const ComponentType* pComponentType);
 
     private:
         static void EliminateDuplicateTIDs(TArray<const ComponentType*>& TIDs);

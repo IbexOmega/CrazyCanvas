@@ -42,6 +42,9 @@ namespace LambdaEngine
 			m_Mode |= FMOD_LOOP_NORMAL;
 		}
 
+		m_Position = pDesc->Position;
+		m_Volume = pDesc->Volume;
+
 		return true;
 	}
 

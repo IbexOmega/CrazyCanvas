@@ -33,7 +33,7 @@ namespace LambdaEngine
 
 	struct PipelineLayoutDesc
 	{
-		String							DebugName = "";
+		String							DebugName				= "";
 		TArray<DescriptorSetLayoutDesc>	DescriptorSetLayouts;
 		TArray<ConstantRangeDesc>		ConstantRanges;
 	};

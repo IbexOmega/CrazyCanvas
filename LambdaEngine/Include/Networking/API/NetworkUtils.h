@@ -13,6 +13,8 @@
 #include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/UDP/NetworkDiscovery.h"
+#include "Networking/API/IClientHandler.h"
+#include "Networking/API/IServerHandler.h"
 
 #include "Time/API/Timestamp.h"
 

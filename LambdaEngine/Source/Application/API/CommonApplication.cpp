@@ -1,6 +1,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/PlatformApplication.h"
 #include "Application/API/Window.h"
+
 #include "Engine/EngineConfig.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -163,7 +164,7 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
-	void CommonApplication::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState)
+	void CommonApplication::OnButtonPressed(EMouseButton button, ModifierKeyState modifierState, int32 x, int32 y)
 	{
 		TSharedRef<Window> CaptureWindow = GetCapture();
 		if (!CaptureWindow)
@@ -172,11 +173,11 @@ namespace LambdaEngine
 			SetCapture(ActiveWindow);
 		}
 
-		MouseButtonClickedEvent event(button, modifierState);
+		MouseButtonClickedEvent event(button, modifierState, x, y);
 		EventQueue::SendEvent(event);
 	}
 
-	void CommonApplication::OnButtonReleased(EMouseButton button, ModifierKeyState modifierState)
+	void CommonApplication::OnButtonReleased(EMouseButton button, ModifierKeyState modifierState, int32 x, int32 y)
 	{
 		TSharedRef<Window> CaptureWindow = GetCapture();
 		if (CaptureWindow)
@@ -184,13 +185,13 @@ namespace LambdaEngine
 			SetCapture(nullptr);
 		}
 
-		MouseButtonReleasedEvent event(button, modifierState);
+		MouseButtonReleasedEvent event(button, modifierState, x, y);
 		EventQueue::SendEvent(event);
 	}
 
-	void CommonApplication::OnMouseScrolled(int32 deltaX, int32 deltaY)
+	void CommonApplication::OnMouseScrolled(int32 deltaX, int32 deltaY, int32 x, int32 y)
 	{
-		MouseScrolledEvent event(deltaX, deltaY);
+		MouseScrolledEvent event(deltaX, deltaY, x, y);
 		EventQueue::SendEvent(event);
 	}
 

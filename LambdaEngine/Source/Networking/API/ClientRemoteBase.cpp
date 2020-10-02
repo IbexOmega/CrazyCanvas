@@ -2,6 +2,7 @@
 #include "Networking/API/IClientRemoteHandler.h"
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryDecoder.h"
+#include "Networking/API/BinaryEncoder.h"
 #include "Networking/API/NetworkChallenge.h"
 #include "Networking/API/ServerBase.h"
 
@@ -19,7 +20,9 @@ namespace LambdaEngine
 		m_LastPingTimestamp(0),
 		m_DisconnectedByRemote(false),
 		m_TerminationRequested(false),
-		m_TerminationApproved(false)
+		m_TerminationApproved(false),
+		m_BufferIndex(0),
+		m_ReceivedPackets()
     {
 
     }
@@ -124,6 +127,11 @@ namespace LambdaEngine
 		return m_TerminationApproved;
 	}
 
+	void ClientRemoteBase::OnConnectionApproved()
+	{
+		m_pHandler->OnConnected(this);
+	}
+
 	bool ClientRemoteBase::SendUnreliable(NetworkSegment* pPacket)
 	{
 		if (!IsConnected())
@@ -163,6 +171,11 @@ namespace LambdaEngine
 	const ClientMap& ClientRemoteBase::GetClients() const
 	{
 		return m_pServer->GetClients();
+	}
+
+	ServerBase* ClientRemoteBase::GetServer()
+	{
+		return m_pServer;
 	}
 
 	const IPEndPoint& ClientRemoteBase::GetEndPoint() const
@@ -231,21 +244,36 @@ namespace LambdaEngine
 			for (NetworkSegment* pPacket : packets)
 			{
 				if (!HandleReceivedPacket(pPacket))
-					break;
+				{
+					pPacketManager->GetSegmentPool()->FreeSegment(pPacket);
+				}
 			}
-
-			pPacketManager->QueryEnd(packets);
 		}
 	}
 
-	void ClientRemoteBase::Tick(Timestamp delta)
+	void ClientRemoteBase::FixedTick(Timestamp delta)
 	{
 		GetPacketManager()->Tick(delta);
 
 		if (m_UsePingSystem)
 		{
 			UpdatePingSystem();
-		}	
+		}
+
+		HandleReceivedPacketsMainThread();
+	}
+
+	void ClientRemoteBase::HandleReceivedPacketsMainThread()
+	{
+		int8 index = m_BufferIndex;
+		m_BufferIndex = (m_BufferIndex + 1) % 2;
+		TArray<NetworkSegment*>& packets = m_ReceivedPackets[index];
+		for (NetworkSegment* pPacket : packets)
+		{
+			m_pHandler->OnPacketReceived(this, pPacket);
+		}
+		GetPacketManager()->QueryEnd(packets);
+		packets.Clear();
 	}
 
 	void ClientRemoteBase::UpdatePingSystem()
@@ -264,7 +292,13 @@ namespace LambdaEngine
 				if (timeSinceLastPacketSent >= m_PingInterval)
 				{
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
-					SendReliable(GetFreePacket(NetworkSegment::TYPE_PING));
+					NetworkSegment* pPacket = GetFreePacket(NetworkSegment::TYPE_PING);
+					BinaryEncoder encoder(pPacket);
+					NetworkStatistics& pStatistics = GetPacketManager()->m_Statistics;
+					encoder.WriteUInt32(pStatistics.GetPacketsSent());
+					encoder.WriteUInt32(pStatistics.GetPacketsReceived());
+					pStatistics.UpdatePacketsSentFixed();
+					SendReliable(pPacket);
 				}
 			}
 		}
@@ -299,7 +333,6 @@ namespace LambdaEngine
 				{
 					m_State = STATE_CONNECTED;
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
-					m_pHandler->OnConnected(this);
 				}
 			}
 			else
@@ -311,17 +344,22 @@ namespace LambdaEngine
 		{
 			m_DisconnectedByRemote = true;
 			Disconnect("Disconnected By Remote");
-			return false;
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
-
+			BinaryDecoder decoder(pPacket);
+			uint32 packetsSentByRemote		= decoder.ReadUInt32() + 1;
+			uint32 packetsReceivedByRemote	= decoder.ReadUInt32();
+			NetworkStatistics& statistics = GetPacketManager()->m_Statistics;
+			statistics.SetPacketsSentByRemote(packetsSentByRemote);
+			statistics.SetPacketsReceivedByRemote(packetsReceivedByRemote);
 		}
 		else if (IsConnected())
 		{
-			m_pHandler->OnPacketReceived(this, pPacket);
+			m_ReceivedPackets[m_BufferIndex].PushBack(pPacket);
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	void ClientRemoteBase::SendDisconnect()
