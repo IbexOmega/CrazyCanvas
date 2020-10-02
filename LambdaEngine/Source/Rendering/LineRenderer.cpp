@@ -358,9 +358,13 @@ namespace LambdaEngine
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
-		CommandList** ppSecondaryExecutionStage)
+		CommandList** ppSecondaryExecutionStage,
+		bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+		
+		if (Sleeping)
+			return;
 
 		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];
 		uint32 width	= backBuffer->GetDesc().pTexture->GetDesc().Width;

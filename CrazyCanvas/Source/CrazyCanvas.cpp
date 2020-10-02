@@ -9,6 +9,7 @@
 #include "Rendering/RenderGraph.h"
 #include "States/BenchmarkState.h"
 #include "States/PlaySessionState.h"
+#include "States/MainMenuState.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -31,7 +32,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	if (flagParser[{"-b", "--benchmark"}])
 		pStartingState = DBG_NEW BenchmarkState();
 	else
-		pStartingState = DBG_NEW PlaySessionState();
+		pStartingState = DBG_NEW MainMenuState();
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }

@@ -220,7 +220,16 @@ namespace LambdaEngine
 
 		bool Render();
 
+		/*
+		* Set new rendergraph to be executed
+		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
+
+		/*
+		* Puts given render stage to sleep, this will prevent execution of renderstage
+		* Useful for optimization when a rendergraph can still execute without given renderstage
+		*/
+		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
 		uint64			GetFrameIndex() const	 	{ return m_FrameIndex; }

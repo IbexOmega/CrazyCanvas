@@ -438,6 +438,22 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderGraph::SetRenderStageSleeping(const String& renderStageName, bool sleeping)
+	{
+		auto it = m_RenderStageMap.find(renderStageName);
+
+		if (it != m_RenderStageMap.end())
+		{
+			RenderStage* pRenderStage = &m_pRenderStages[it->second];
+			pRenderStage->Sleeping = sleeping;
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: SetRenderStageSleeping failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
+			return;
+		}
+	}
+
 	void RenderGraph::Update()
 	{
 		//We need to copy descriptor sets here since they may become invalidated after recreating internal resources
@@ -766,7 +782,8 @@ namespace LambdaEngine
 							uint32(m_ModFrameIndex),
 							m_BackBufferIndex,
 							&m_ppExecutionStages[currentExecutionStage],
-							&m_ppExecutionStages[currentExecutionStage + 1]);
+							&m_ppExecutionStages[currentExecutionStage + 1],
+							pRenderStage->Sleeping);
 
 						currentExecutionStage += 2;
 					}
@@ -3618,7 +3635,7 @@ namespace LambdaEngine
 		CommandList*		pGraphicsCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter != pRenderStage->FrameOffset && pRenderStage->pDisabledRenderPass == nullptr)
+		if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset || pRenderStage->Sleeping) && pRenderStage->pDisabledRenderPass == nullptr )
 			return;
 
 		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
@@ -3729,8 +3746,7 @@ namespace LambdaEngine
 
 				clearColorCount++;
 			}
-
-			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
+			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
 			{
 				BeginRenderPassDesc beginRenderPassDesc = { };
 				beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
@@ -3843,7 +3859,7 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
 		{
 			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 			pComputeCommandAllocator->Reset();
@@ -3874,7 +3890,7 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping && pRenderStage->pSBT != nullptr)
 		{
 			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 			pComputeCommandAllocator->Reset();
