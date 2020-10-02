@@ -1270,7 +1270,7 @@ namespace LambdaEngine
 		Animation* pAnimation = DBG_NEW Animation();
 		pAnimation->Name			= pAnimationAI->mName.C_Str();
 		pAnimation->DurationInTicks	= pAnimationAI->mDuration;
-		pAnimation->TicksPerSecond	= static_cast<float64>(pAnimationAI->mTicksPerSecond);
+		pAnimation->TicksPerSecond	= (pAnimationAI->mTicksPerSecond != 0.0) ? pAnimationAI->mTicksPerSecond : 30.0;
 		pAnimationAI->mChannels[0]->mNodeName;
 
 		pAnimation->Channels.Resize(pAnimationAI->mNumChannels);

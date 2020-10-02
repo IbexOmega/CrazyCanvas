@@ -121,7 +121,7 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Shuffling.fbx", animations);
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
@@ -145,6 +145,7 @@ void SandboxState::Init()
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.AnimationGUID = animations[0];
+		robotAnimationComp.PlaybackSpeed = 2.0f;
 
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
@@ -161,11 +162,11 @@ void SandboxState::Init()
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc = 
 		{
-			.pName = "RobotSoundInstance",
-			.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
-			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-			.Position = position,
-			.Volume = 0.03f
+			.pName			= "RobotSoundInstance",
+			.pSoundEffect	= ResourceManager::GetSoundEffect(soundGUID),
+			.Flags			= FSoundModeFlags::SOUND_MODE_NONE,
+			.Position		= position,
+			.Volume			= 0.03f
 		};
 		
 		pSoundInstance->Init(&desc);

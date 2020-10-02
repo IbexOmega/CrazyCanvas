@@ -29,7 +29,9 @@ namespace LambdaEngine
 		VALIDATE(pSkeleton);
 
 		// Move timer
-		animation.DurationInTicks += (pAnimation->TicksPerSecond * deltaTime.AsSeconds());
+		const float64 ticksPerSeconds	= animation.PlaybackSpeed * pAnimation->TicksPerSecond;
+		const float64 deltaTicks		= ticksPerSeconds * deltaTime.AsSeconds();
+		animation.DurationInTicks += deltaTicks;
 		if (animation.DurationInTicks > pAnimation->DurationInTicks)
 		{
 			animation.DurationInTicks = 0.0f;
