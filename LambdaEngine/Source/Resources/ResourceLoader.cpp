@@ -1082,11 +1082,13 @@ namespace LambdaEngine
 			}
 		}
 
+#if 0
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
 		{
 			Bone& bone = pSkeleton->Bones[boneID];
 			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", static_cast<String>(bone.Name).c_str(), boneID, bone.ParentBoneIndex);
 		}
+#endif
 
 		// Go through and correct mistakes with the armature
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
@@ -1114,6 +1116,7 @@ namespace LambdaEngine
 			}
 		}
 
+#if 0
 		LOG_INFO("-----------------------------------");
 
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
@@ -1121,6 +1124,7 @@ namespace LambdaEngine
 			Bone& bone = pSkeleton->Bones[boneID];
 			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", static_cast<String>(bone.Name).c_str(), boneID, bone.ParentBoneIndex);
 		}
+#endif
 
 		// Set weights
 		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());
