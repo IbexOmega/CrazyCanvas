@@ -1018,7 +1018,9 @@ namespace LambdaEngine
 			myID = it->second;
 		}
 
+#if 0
 		LOG_INFO("Name=%s, ID=%d", name.c_str(), myID);
+#endif
 
 		for (uint32 child = 0; child < pNode->mNumChildren; child++)
 		{
