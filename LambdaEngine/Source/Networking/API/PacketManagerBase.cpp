@@ -68,7 +68,6 @@ namespace LambdaEngine
 
 	void PacketManagerBase::DeleteOldBundles()
 	{
-		// Maybe add a callback for disconnection?
 		Timestamp maxAllowedTime = m_Statistics.GetPing() * 100;
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
@@ -80,7 +79,6 @@ namespace LambdaEngine
 			if (currentTime - pair.second.Timestamp > maxAllowedTime)
 			{
 				bundlesToDelete.PushBack(pair.first);
-				m_Statistics.RegisterPacketLoss();
 			}
 		}
 

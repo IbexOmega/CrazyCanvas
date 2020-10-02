@@ -87,11 +87,11 @@ namespace LambdaEngine
 			for (int i = 0; i < delta; i++)
 			{
 				uint64 sequenceBits = pStatistics->GetReceivedSequenceBits();
-				if (sequenceBits >> (sizeof(uint64) * 8 - 1) & 0)
+				/*if (sequenceBits >> (sizeof(uint64) * 8 - 1) & 0)
 				{
 					//The last bit that was removed was never acked.
 					pStatistics->m_PacketsLost++;
-				}
+				}*/
 				pStatistics->SetReceivedSequenceBits(sequenceBits << 1);
 			}
 		}
