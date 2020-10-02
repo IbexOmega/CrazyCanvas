@@ -720,7 +720,7 @@ namespace LambdaEngine
 						memcpy(pMappedWeights, pMesh->VertexBoneData.GetData(), vertexWeightBufferDesc.SizeInBytes);
 						pVertexWeightStagingBuffer->Unmap();
 
-						vertexWeightBufferDesc.DebugName	= "Vertex VertexWeight Buffer";
+						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
 					
