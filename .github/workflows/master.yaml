@@ -5,37 +5,15 @@ on:
         - master
 
 jobs:
-  Pre-Build:
-    runs-on: [self-hosted, Windows, X64]
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Read LFS Cache
-        run: cp -r -Force ../../.git/lfs .git/
-
-      # Fetches changes and replaces LFS pointers with their actual contents
-      - name: Pull From LFS
-        run: git lfs pull
-
-      - name: Update LFS Cache
-        run: cp -r -Force .git/lfs ../../.git/
-
   benchmark:
-    runs-on: [self-hosted, Windows, X64]
-    needs: Pre-Build
-
+    runs-on: [self-hosted, benchmarker, Windows, X64]
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
       - name: Build CrazyCanvas Production
-        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Production x64_StaticLib" -p:Platform=x64
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: CrazyCanvas/CrazyCanvas.vcxproj
+          build-configuration: Production x64_StaticLib
 
       - name: Benchmark
         run: python .github/workflows/benchmark.py --bin .\Build\bin\Production-windows-x86_64-x64_StaticLib\CrazyCanvas\CrazyCanvas.exe

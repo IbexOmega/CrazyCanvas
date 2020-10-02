@@ -2,163 +2,105 @@ name: Välfärden
 on: pull_request
 
 jobs:
-  Pre-Build:
-    runs-on: [self-hosted, Windows, X64]
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Read LFS Cache
-        run: cp -r -Force ../../.git/lfs .git/
-
-      # Fetches changes and replaces LFS pointers with their actual contents
-      - name: Pull From LFS
-        run: git lfs pull
-
-      - name: Update LFS Cache
-        run: cp -r -Force .git/lfs ../../.git/
-
   Build-LambdaEngine-Debug:
     runs-on: [self-hosted, Windows, X64]
-    needs: Pre-Build
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild LambdaEngine/LambdaEngine.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
+      - name: Build LambdaEngine Debug
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: LambdaEngine/LambdaEngine.vcxproj
+          build-configuration: Debug x64_StaticLib
 
   Build-LambdaEngine-Release:
     runs-on: [self-hosted, Windows, X64]
-    needs: Pre-Build
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild LambdaEngine/LambdaEngine.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build LambdaEngine Release
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: LambdaEngine/LambdaEngine.vcxproj
+          build-configuration: Release x64_StaticLib
 
   Build-CrazyCanvas-Debug:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Debug
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Debug x64_StaticLib" -p:Platform=x64
+      - name: Build CrazyCanvas Debug
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: CrazyCanvas/CrazyCanvas.vcxproj
+          build-configuration: Debug x64_StaticLib
 
   Build-CrazyCanvas-Release:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Release
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild CrazyCanvas/CrazyCanvas.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build CrazyCanvas Release
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: CrazyCanvas/CrazyCanvas.vcxproj
+          build-configuration: Release x64_StaticLib
 
   Build-Sandbox-Debug:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Debug
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild Sandbox/Sandbox.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build Sandbox Debug
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: Sandbox/Sandbox.vcxproj
+          build-configuration: Debug x64_StaticLib
 
   Build-Sandbox-Release:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Release
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild Sandbox/Sandbox.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build Sandbox Release
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: Sandbox/Sandbox.vcxproj
+          build-configuration: Release x64_StaticLib
 
   Build-Client-Debug:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Debug
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild Client/Client.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build Client Debug
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: Client/Client.vcxproj
+          build-configuration: Debug x64_StaticLib
 
   Build-Client-Release:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Release
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild Client/Client.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build Client Release
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: Client/Client.vcxproj
+          build-configuration: Release x64_StaticLib
 
   Build-Server-Debug:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Debug
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild Server/Server.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build Server Debug
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: Server/Server.vcxproj
+          build-configuration: Debug x64_StaticLib
 
   Build-Server-Release:
     runs-on: [self-hosted, Windows, X64]
-    needs: Build-LambdaEngine-Release
-
     steps:
-      - name: Execute Premake
-        run: .\premake5.exe vs2019
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build
-        run: msbuild Server/Server.vcxproj -p:Configuration="Release x64_StaticLib" -p:Platform=x64
+      - name: Build Server Release
+        uses: IbexOmega/lambda-build-action@v1.0
+        with:
+          branch: ${{ github.ref }}
+          project-path: Server/Server.vcxproj
+          build-configuration: Release x64_StaticLib
 
   Lint:
     runs-on: [self-hosted, Windows, X64]
@@ -175,10 +117,9 @@ jobs:
         run: python .github/workflows/generate-lint-report.py -o cppcheck_report.txt -i Dependencies
 
       - name: Get file changes
-        id: get_file_changes
-        uses: trilom/file-changes-action@v1.2.3
+        uses: lots0logs/gh-action-get-changed-files@2.1.4
         with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read Lint Report
         run: python ./.github/workflows/read-lint-report.py --report ./cppcheck_report.txt
