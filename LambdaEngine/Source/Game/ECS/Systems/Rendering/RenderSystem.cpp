@@ -706,7 +706,7 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pAnimatedVertexBuffer != nullptr);
 
 						BufferDesc vertexWeightBufferDesc = {};
-						vertexWeightBufferDesc.DebugName	= "Vertex VertexWeight Staging Buffer";
+						vertexWeightBufferDesc.DebugName	= "Vertex Weight Staging Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
 						vertexWeightBufferDesc.SizeInBytes	= pMesh->VertexBoneData.GetSize() * sizeof(VertexBoneData);
