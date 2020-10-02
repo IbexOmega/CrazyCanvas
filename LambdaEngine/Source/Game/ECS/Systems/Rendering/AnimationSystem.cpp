@@ -59,7 +59,7 @@ namespace LambdaEngine
 				{
 					for (uint32 i = 0; i < (channel.Positions.GetSize() - 1); i++)
 					{
-						if (channel.Positions[i].Time >= animation.DurationInTicks)
+						if (animation.DurationInTicks < channel.Positions[i + 1].Time)
 						{
 							pos0 = channel.Positions[i];
 							pos1 = channel.Positions[i + 1];
@@ -68,7 +68,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float32 factor = (pos1.Time != pos0.Time) ? (animation.DurationInTicks - pos0.Time) / (pos1.Time - pos0.Time) : 0.5f;
+				const float32 factor = (pos1.Time != pos0.Time) ? (animation.DurationInTicks - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
 				position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
 			}
 
@@ -81,7 +81,7 @@ namespace LambdaEngine
 				{
 					for (uint32 i = 0; i < (channel.Rotations.GetSize() - 1); i++)
 					{
-						if (channel.Rotations[i].Time >= animation.DurationInTicks)
+						if (animation.DurationInTicks < channel.Rotations[i + 1].Time)
 						{
 							rot0 = channel.Rotations[i];
 							rot1 = channel.Rotations[i + 1];
@@ -90,7 +90,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float32 factor = (rot1.Time != rot0.Time) ? (animation.DurationInTicks - rot0.Time) / (rot1.Time - rot0.Time) : 0.5f;
+				const float32 factor = (rot1.Time != rot0.Time) ? (animation.DurationInTicks - rot0.Time) / (rot1.Time - rot0.Time) : 0.0f;
 				rotation = glm::slerp(rot0.Value, rot1.Value, factor);
 				rotation = glm::normalize(rotation);
 			}
@@ -104,7 +104,7 @@ namespace LambdaEngine
 				{
 					for (uint32 i = 0; i < (channel.Scales.GetSize() - 1); i++)
 					{
-						if (channel.Scales[i].Time >= animation.DurationInTicks)
+						if (animation.DurationInTicks < channel.Scales[i + 1].Time)
 						{
 							scale0 = channel.Scales[i];
 							scale1 = channel.Scales[i + 1];
@@ -113,7 +113,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float32 factor = (scale1.Time != scale0.Time) ? (animation.DurationInTicks - scale0.Time) / (scale1.Time - scale0.Time) : 0.5f;
+				const float32 factor = (scale1.Time != scale0.Time) ? (animation.DurationInTicks - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
 				scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
 			}
 

@@ -6,6 +6,7 @@ namespace LambdaEngine
 	/*
 	* PrehashedString
 	*/
+
 	class PrehashedString
 	{
 	public:
@@ -43,6 +44,31 @@ namespace LambdaEngine
 			}
 
 			return m_Hash;
+		}
+
+		inline bool operator==(const PrehashedString& other) const
+		{
+			if (GetHash() != other.GetHash())
+			{
+				return false;
+			}
+
+			return m_Str == other.m_Str;
+		}
+
+		inline bool operator!=(const PrehashedString& other) const
+		{
+			return !(*this == other);
+		}
+
+		inline bool operator==(const String& str) const
+		{
+			return m_Str == str;
+		}
+
+		inline bool operator!=(const String& str) const
+		{
+			return !(*this == str);
 		}
 
 		inline PrehashedString& operator=(const String& newString)
@@ -87,6 +113,7 @@ namespace LambdaEngine
 	/*
 	* PrehashedStringHasher
 	*/
+
 	struct PrehashedStringHasher
 	{
 		inline size_t operator()(const PrehashedString& prehashedString) const
