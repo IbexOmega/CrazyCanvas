@@ -14,6 +14,7 @@ namespace LambdaEngine
 
 		GUID_Lambda			AnimationGUID	= GUID_NONE;
 		float64				DurationInTicks	= 0.0f;
+		float32				PlaybackSpeed	= 1.0f;
 		bool				IsPaused		= false;
 		TArray<glm::mat4>	BoneMatrices;
 	};
