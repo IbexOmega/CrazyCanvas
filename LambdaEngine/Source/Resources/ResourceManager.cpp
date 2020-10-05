@@ -299,9 +299,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedMesh = &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshNamesToGUIDs[filename] = guid;
+			guid							= s_NextFreeGUID++;
+			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshGUIDsToNames[guid]		= filename;
+			s_MeshNamesToGUIDs[filename]	= guid;
 		}
 
 		TArray<Animation*> animations;
@@ -337,6 +338,7 @@ namespace LambdaEngine
 		{
 			guid							= s_NextFreeGUID++;
 			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshGUIDsToNames[guid]		= filename;
 			s_MeshNamesToGUIDs[filename]	= guid;
 		}
 
@@ -374,6 +376,7 @@ namespace LambdaEngine
 		{
 			guid						= s_NextFreeGUID++;
 			ppMappedMesh				= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshGUIDsToNames[guid]	= name;
 			s_MeshNamesToGUIDs[name]	= guid;
 		}
 
@@ -396,6 +399,7 @@ namespace LambdaEngine
 		{
 			guid							= s_NextFreeGUID++;
 			ppMappedMaterial				= &s_Materials[guid]; //Creates new entry if not existing
+			s_MaterialGUIDsToNames[guid]	= name;
 			s_MaterialNamesToGUIDs[name]	= guid;
 		}
 
@@ -513,6 +517,7 @@ namespace LambdaEngine
 			guid						= s_NextFreeGUID++;
 			ppMappedTexture				= &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView			= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureGUIDsToNames[guid]	= name;
 			s_TextureNamesToGUIDs[name]	= guid;
 		}
 
@@ -556,6 +561,7 @@ namespace LambdaEngine
 			guid						= s_NextFreeGUID++;
 			ppMappedTexture				= &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView			= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureGUIDsToNames[guid] = name;
 			s_TextureNamesToGUIDs[name]	= guid;
 		}
 
@@ -602,6 +608,7 @@ namespace LambdaEngine
 			guid						= s_NextFreeGUID++;
 			ppMappedTexture				= &s_Textures[guid]; //Creates new entry if not existing
 			ppMappedTextureView			= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureGUIDsToNames[guid] = name;
 			s_TextureNamesToGUIDs[name]	= guid;
 		}
 
@@ -638,9 +645,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
-			s_ShaderNamesToGUIDs[filename] = guid;
+			guid							= s_NextFreeGUID++;
+			ppMappedShader					= &s_Shaders[guid]; //Creates new entry if not existing
+			s_ShaderGUIDsToNames[guid]		= filename;
+			s_ShaderNamesToGUIDs[filename]	= guid;
 		}
 
 		String filepath = SHADER_DIR + filename;
@@ -669,9 +677,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedShader = &s_Shaders[guid]; //Creates new entry if not existing
-			s_ShaderNamesToGUIDs[name] = guid;
+			guid						= s_NextFreeGUID++;
+			ppMappedShader				= &s_Shaders[guid]; //Creates new entry if not existing
+			s_ShaderGUIDsToNames[guid]	= name;
+			s_ShaderNamesToGUIDs[name]	= guid;
 		}
 
 		(*ppMappedShader) = pShader;
@@ -692,9 +701,10 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid = s_NextFreeGUID++;
-			ppMappedSoundEffect = &s_SoundEffects[guid]; //Creates new entry if not existing
-			s_SoundEffectNamesToGUIDs[filename] = guid;
+			guid								= s_NextFreeGUID++;
+			ppMappedSoundEffect					= &s_SoundEffects[guid]; //Creates new entry if not existing
+			s_SoundEffectGUIDsToNames[guid]		= filename;
+			s_SoundEffectNamesToGUIDs[filename]	= guid;
 		}
 
 		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(SOUND_DIR + filename);
@@ -881,11 +891,37 @@ namespace LambdaEngine
 
 	bool ResourceManager::UnloadMesh(GUID_Lambda guid)
 	{
-		auto it = s_Meshes.find(guid);
-		if (it != s_Meshes.end())
+		auto meshIt = s_Meshes.find(guid);
+		if (meshIt != s_Meshes.end())
 		{
-			SAFEDELETE(it->second);
-			s_Meshes.erase(guid);
+			SAFEDELETE(meshIt->second);
+			s_Meshes.erase(meshIt);
+
+			auto meshGUIDToNameIt = s_MeshGUIDsToNames.find(guid);
+
+			if (meshGUIDToNameIt != s_MeshGUIDsToNames.end())
+			{
+				//Clean Mesh Name -> GUID
+				auto meshNameToGUIDIt = s_MeshNamesToGUIDs.find(meshGUIDToNameIt->second);
+				if (meshNameToGUIDIt != s_MeshNamesToGUIDs.end()) s_MeshNamesToGUIDs.erase(meshNameToGUIDIt);
+
+				auto animationsIt = s_MeshNamesToAnimationGUIDs.find(meshGUIDToNameIt->second);
+
+				if (animationsIt != s_MeshNamesToAnimationGUIDs.end())
+				{
+					for (GUID_Lambda animationGUID : animationsIt->second)
+					{
+						UnloadAnimation(animationGUID);
+					}
+
+					//Clean Mesh Name -> Animation GUID
+					s_MeshNamesToAnimationGUIDs.erase(animationsIt);
+				}
+
+				//Clean Mesh GUID -> Name
+				s_MeshGUIDsToNames.erase(meshGUIDToNameIt);
+			}
+
 			return true;
 		}
 
@@ -895,11 +931,37 @@ namespace LambdaEngine
 
 	bool ResourceManager::UnloadMaterial(GUID_Lambda guid)
 	{
-		auto it = s_Materials.find(guid);
-		if (it != s_Materials.end())
+		auto materialIt = s_Materials.find(guid);
+		if (materialIt != s_Materials.end())
 		{
-			SAFEDELETE(it->second);
-			s_Materials.erase(guid);
+			SAFEDELETE(materialIt->second);
+			s_Materials.erase(materialIt);
+
+			auto materialGUIDToNameIt = s_MaterialGUIDsToNames.find(guid);
+			if (materialGUIDToNameIt != s_MaterialGUIDsToNames.end())
+			{
+				//Clean Material Name -> GUID
+				auto materialNameToGUIDIt = s_MaterialNamesToGUIDs.find(materialGUIDToNameIt->second);
+				if (materialNameToGUIDIt != s_MaterialNamesToGUIDs.end()) s_MaterialNamesToGUIDs.erase(materialNameToGUIDIt);
+
+				//Clean Material GUID -> Name
+				s_MaterialGUIDsToNames.erase(materialGUIDToNameIt);
+			}
+
+			auto materialLoadConfigIt = s_MaterialLoadConfigurations.find(guid);
+			if (materialLoadConfigIt != s_MaterialLoadConfigurations.end())
+			{
+				if (materialLoadConfigIt->second.AlbedoMapGUID					!= GUID_NONE) DecrementTextureMaterialRef(materialLoadConfigIt->second.AlbedoMapGUID);
+				if (materialLoadConfigIt->second.NormalMapGUID					!= GUID_NONE) DecrementTextureMaterialRef(materialLoadConfigIt->second.NormalMapGUID);
+				if (materialLoadConfigIt->second.AOMapGUID						!= GUID_NONE) DecrementTextureMaterialRef(materialLoadConfigIt->second.AOMapGUID);
+				if (materialLoadConfigIt->second.MetallicMapGUID				!= GUID_NONE) DecrementTextureMaterialRef(materialLoadConfigIt->second.MetallicMapGUID);
+				if (materialLoadConfigIt->second.RoughnessMapGUID				!= GUID_NONE) DecrementTextureMaterialRef(materialLoadConfigIt->second.RoughnessMapGUID);
+				if (materialLoadConfigIt->second.AOMetallicRoughnessMapGUID		!= GUID_NONE) DecrementTextureMaterialRef(materialLoadConfigIt->second.AOMetallicRoughnessMapGUID);
+
+				//Clean Material Load Config
+				s_MaterialLoadConfigurations.erase(materialLoadConfigIt);
+			}
+
 			return true;
 		}
 
@@ -909,21 +971,127 @@ namespace LambdaEngine
 
 	bool ResourceManager::UnloadAnimation(GUID_Lambda guid)
 	{
+		auto animationIt = s_Animations.find(guid);
+		if (animationIt != s_Animations.end())
+		{
+			SAFEDELETE(animationIt->second);
+			s_Animations.erase(animationIt);
+
+			auto animationGUIDToNameIt = s_AnimationGUIDsToNames.find(guid);
+			if (animationGUIDToNameIt != s_AnimationGUIDsToNames.end())
+			{
+				//Clean Animation Name -> GUID
+				auto animationNameToGUIDIt = s_AnimationNamesToGUIDs.find(animationGUIDToNameIt->second);
+				if (animationNameToGUIDIt != s_AnimationNamesToGUIDs.end()) s_AnimationNamesToGUIDs.erase(animationNameToGUIDIt);
+
+				//Clean Animation GUID -> Name
+				s_AnimationGUIDsToNames.erase(animationGUIDToNameIt);
+			}
+
+			return true;
+		}
+
+		LOG_ERROR("[ResourceManager]: Failed to unload Animation: %d", guid);
 		return false;
 	}
 
 	bool ResourceManager::UnloadTexture(GUID_Lambda guid)
 	{
+		auto textureIt = s_Textures.find(guid);
+		if (textureIt != s_Textures.end())
+		{
+			SAFEDELETE(textureIt->second);
+			s_Textures.erase(textureIt);
+
+			auto textureGUIDToNameIt = s_TextureGUIDsToNames.find(guid);
+			if (textureGUIDToNameIt != s_TextureGUIDsToNames.end())
+			{
+				//Clean Texture Name -> GUID
+				auto textureNameToGUIDIt = s_TextureNamesToGUIDs.find(textureGUIDToNameIt->second);
+				if (textureNameToGUIDIt != s_TextureNamesToGUIDs.end()) s_TextureNamesToGUIDs.erase(textureNameToGUIDIt);
+
+				//Clean Texture GUID -> Name
+				s_TextureGUIDsToNames.erase(textureGUIDToNameIt);
+			}
+
+			return true;
+		}
+
+		LOG_ERROR("[ResourceManager]: Failed to unload Animation: %d", guid);
 		return false;
 	}
 
 	bool ResourceManager::UnloadShader(GUID_Lambda guid)
 	{
+		auto shaderIt = s_Shaders.find(guid);
+		if (shaderIt != s_Shaders.end())
+		{
+			SAFEDELETE(shaderIt->second);
+			s_Shaders.erase(shaderIt);
+
+			auto shaderGUIDToNameIt = s_ShaderGUIDsToNames.find(guid);
+			if (shaderGUIDToNameIt != s_ShaderGUIDsToNames.end())
+			{
+				//Clean Shader Name -> GUID
+				auto shaderNameToGUIDIt = s_ShaderNamesToGUIDs.find(shaderGUIDToNameIt->second);
+				if (shaderNameToGUIDIt != s_ShaderNamesToGUIDs.end()) s_ShaderNamesToGUIDs.erase(shaderNameToGUIDIt);
+
+				//Clean Shader GUID -> Name
+				s_ShaderGUIDsToNames.erase(shaderGUIDToNameIt);
+			}
+
+			return true;
+		}
+
+		LOG_ERROR("[ResourceManager]: Failed to unload Shader: %d", guid);
 		return false;
 	}
 
 	bool ResourceManager::UnloadSoundEffect(GUID_Lambda guid)
 	{
+		auto soundEffectIt = s_SoundEffects.find(guid);
+		if (soundEffectIt != s_SoundEffects.end())
+		{
+			SAFEDELETE(soundEffectIt->second);
+			s_SoundEffects.erase(soundEffectIt);
+
+			auto soundEffectGUIDToNameIt = s_SoundEffectGUIDsToNames.find(guid);
+			if (soundEffectGUIDToNameIt != s_SoundEffectGUIDsToNames.end())
+			{
+				//Clean Sound Effect Name -> GUID
+				auto soundEffectNameToGUIDIt = s_SoundEffectNamesToGUIDs.find(soundEffectGUIDToNameIt->second);
+				if (soundEffectNameToGUIDIt != s_SoundEffectNamesToGUIDs.end()) s_SoundEffectNamesToGUIDs.erase(soundEffectNameToGUIDIt);
+
+				//Clean Sound Effect GUID -> Name
+				s_SoundEffectGUIDsToNames.erase(soundEffectGUIDToNameIt);
+			}
+
+			return true;
+		}
+
+		LOG_ERROR("[ResourceManager]: Failed to unload Shader: %d", guid);
+		return false;
+	}
+
+	bool ResourceManager::DecrementTextureMaterialRef(GUID_Lambda guid)
+	{
+		auto textureRefIt = s_TextureMaterialRefs.find(guid);
+		if (textureRefIt != s_TextureMaterialRefs.end())
+		{
+			textureRefIt->second--;
+
+			if (textureRefIt->second == 0)
+			{
+				//Clean Material Ref
+				s_TextureMaterialRefs.erase(textureRefIt);
+
+				return UnloadTexture(guid);
+			}
+
+			return true;
+		}
+
+		LOG_ERROR("[ResourceManager]: Failed to DecrementTextureMaterialRef: %d", guid);
 		return false;
 	}
 
@@ -1096,6 +1264,7 @@ namespace LambdaEngine
 		{
 			guid							= s_NextFreeGUID++;
 			ppMappedResource				= &s_Materials[guid]; //Creates new entry if not existing
+			s_MaterialGUIDsToNames[guid]	= name;
 			s_MaterialNamesToGUIDs[name]	= guid;
 		}
 
@@ -1122,6 +1291,7 @@ namespace LambdaEngine
 		{
 			guid							= s_NextFreeGUID++;
 			ppMappedResource				= &s_Animations[guid]; //Creates new entry if not existing
+			s_AnimationGUIDsToNames[guid]	= name;
 			s_AnimationNamesToGUIDs[name]	= guid;
 		}
 
@@ -1160,7 +1330,8 @@ namespace LambdaEngine
 			guid				= s_NextFreeGUID++;
 			ppMappedTexture		= &s_Textures[guid];		//Creates new entry if not existing
 			ppMappedTextureView	= &s_TextureViews[guid];	//Creates new entry if not existing
-			s_TextureNamesToGUIDs[pTexture->GetDesc().DebugName]	= guid;
+			s_TextureGUIDsToNames[guid] = pTexture->GetDesc().DebugName;
+			s_TextureNamesToGUIDs[pTexture->GetDesc().DebugName] = guid;
 		}
 
 		(*ppMappedTexture)		= pTexture;
@@ -1302,8 +1473,11 @@ namespace LambdaEngine
 			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
 			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
-			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
+			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_COLOR_MAP;
+			s_TextureGUIDsToNames[GUID_TEXTURE_DEFAULT_COLOR_MAP]			= pDefaultColorMap->GetDesc().DebugName;
 			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
+			s_TextureGUIDsToNames[GUID_TEXTURE_DEFAULT_NORMAL_MAP]			= pDefaultNormalMap->GetDesc().DebugName;
+
 			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
 
@@ -1343,7 +1517,8 @@ namespace LambdaEngine
 			pDefaultMaterial->pNormalMapView				= s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
 			pDefaultMaterial->pAOMetallicRoughnessMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-			s_MaterialNamesToGUIDs["Default Material"]	= GUID_MATERIAL_DEFAULT;
+			s_MaterialNamesToGUIDs["Default Material"]		= GUID_MATERIAL_DEFAULT;
+			s_MaterialGUIDsToNames[GUID_MATERIAL_DEFAULT]	= "Default Material";
 			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;
 		}
 	}

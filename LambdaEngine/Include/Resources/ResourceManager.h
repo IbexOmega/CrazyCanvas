@@ -190,6 +190,8 @@ namespace LambdaEngine
 		static bool UnloadShader(GUID_Lambda guid);
 		static bool UnloadSoundEffect(GUID_Lambda guid);
 
+		static bool DecrementTextureMaterialRef(GUID_Lambda guid);
+
 		static GUID_Lambda GetMeshGUID(const String& name);
 		static GUID_Lambda GetMaterialGUID(const String& name);
 		static GUID_Lambda GetAnimationGUID(const String& name);
