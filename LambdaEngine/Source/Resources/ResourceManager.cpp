@@ -30,6 +30,13 @@ namespace LambdaEngine
 {
 	GUID_Lambda ResourceManager::s_NextFreeGUID = SMALLEST_UNRESERVED_GUID;
 
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_MeshGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_MaterialGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_AnimationGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_TextureGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_ShaderGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_SoundEffectGUIDsToNames;
+
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MeshNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MaterialNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_AnimationNamesToGUIDs;
@@ -46,7 +53,9 @@ namespace LambdaEngine
 	std::unordered_map<GUID_Lambda, Shader*>			ResourceManager::s_Shaders;
 	std::unordered_map<GUID_Lambda, ISoundEffect3D*>	ResourceManager::s_SoundEffects;
 
-	std::unordered_map<GUID_Lambda, ResourceManager::ShaderLoadDesc>		ResourceManager::s_ShaderLoadConfigurations;
+	std::unordered_map<GUID_Lambda, uint32>								ResourceManager::s_TextureMaterialRefs;
+	std::unordered_map<GUID_Lambda, ResourceManager::MaterialLoadDesc>	ResourceManager::s_MaterialLoadConfigurations;
+	std::unordered_map<GUID_Lambda, ResourceManager::ShaderLoadDesc>	ResourceManager::s_ShaderLoadConfigurations;
 
 	CommandAllocator* ResourceManager::s_pMaterialComputeCommandAllocator	= nullptr;
 	CommandAllocator* ResourceManager::s_pMaterialGraphicsCommandAllocator	= nullptr;
@@ -106,6 +115,9 @@ namespace LambdaEngine
 			return false;
 		}
 
+		TArray<MaterialLoadDesc> materialLoadConfigurations;
+		materialLoadConfigurations.Resize(materials.GetSize());
+
 		TArray<TextureView*> textureViewsToDelete;
 
 		result = sceneLocalMeshComponents;
@@ -122,11 +134,21 @@ namespace LambdaEngine
 				for (uint32 j = 0; j < materials.GetSize(); j++)
 				{
 					LoadedMaterial* pLoadedMaterial = materials[j];
+					MaterialLoadDesc& materialLoadConfig = materialLoadConfigurations[j];
+
 					if (pLoadedMaterial->pAlbedoMap == pLoadedTexture)
+					{
 						pLoadedMaterial->pAlbedoMapView = s_TextureViews[guid];
+						s_TextureMaterialRefs[guid]++;
+						materialLoadConfig.AlbedoMapGUID = guid;
+					}
 
 					if (pLoadedMaterial->pNormalMap == pLoadedTexture)
+					{
 						pLoadedMaterial->pNormalMapView = s_TextureViews[guid];
+						s_TextureMaterialRefs[guid]++;
+						materialLoadConfig.NormalMapGUID = guid;
+					}
 				}
 			}
 			else
@@ -176,6 +198,7 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < materials.GetSize(); i++)
 		{
 			LoadedMaterial* pLoadedMaterial = materials[i];
+			MaterialLoadDesc& materialLoadConfig = materialLoadConfigurations[i];
 
 			Material* pMaterialToBeRegistered = DBG_NEW Material();
 			pMaterialToBeRegistered->Properties		= pLoadedMaterial->Properties;
@@ -197,7 +220,7 @@ namespace LambdaEngine
 				Texture*		pDefaultColorTexture		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 				TextureView*	pDefaultColorTextureView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
 
-				CombineMaterials(
+				GUID_Lambda aoMetallicRoughnessGUID = CombineMaterialTextures(
 					pMaterialToBeRegistered,
 					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMap->pTexture	: pDefaultColorTexture,
 					pLoadedMaterial->pMetallicMap			!= nullptr ? pLoadedMaterial->pMetallicMap->pTexture			: pDefaultColorTexture,
@@ -205,9 +228,13 @@ namespace LambdaEngine
 					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMapView			: pDefaultColorTextureView,
 					pLoadedMaterial->pMetallicMap			!= nullptr ? pLoadedMaterial->pMetallicMapView					: pDefaultColorTextureView,
 					pLoadedMaterial->pRoughnessMap			!= nullptr ? pLoadedMaterial->pRoughnessMapView					: pDefaultColorTextureView);
+
+				s_TextureMaterialRefs[aoMetallicRoughnessGUID]++;
+				materialLoadConfig.NormalMapGUID = aoMetallicRoughnessGUID;
 			}
 
 			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), pMaterialToBeRegistered);
+			s_MaterialLoadConfigurations[guid] = materialLoadConfig;
 
 			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
 			{
@@ -218,6 +245,7 @@ namespace LambdaEngine
 			}
 
 			SAFEDELETE(pLoadedMaterial);
+
 		}
 
 		for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
@@ -373,17 +401,77 @@ namespace LambdaEngine
 
 		(*ppMappedMaterial) = DBG_NEW Material();
 
-		Texture* pAlbedoMap						= albedoMap				!= GUID_NONE ? s_Textures[albedoMap]				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pNormalMap						= normalMap				!= GUID_NONE ? s_Textures[normalMap]				: s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		Texture* pAmbientOcclusionMap			= ambientOcclusionMap	!= GUID_NONE ? s_Textures[ambientOcclusionMap]		: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pMetallicMap					= metallicMap			!= GUID_NONE ? s_Textures[metallicMap]				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		Texture* pRoughnessMap					= roughnessMap			!= GUID_NONE ? s_Textures[roughnessMap]				: s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		Texture* pAlbedoMap;
+		Texture* pNormalMap;
+		Texture* pAmbientOcclusionMap;
+		Texture* pMetallicMap;
+		Texture* pRoughnessMap;
 
-		TextureView* pAlbedoMapView				= albedoMap				!= GUID_NONE ? s_TextureViews[albedoMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pNormalMapView				= normalMap				!= GUID_NONE ? s_TextureViews[normalMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		TextureView* pAmbientOcclusionMapView	= ambientOcclusionMap	!= GUID_NONE ? s_TextureViews[ambientOcclusionMap]	: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pMetallicMapView			= metallicMap			!= GUID_NONE ? s_TextureViews[metallicMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		TextureView* pRoughnessMapView			= roughnessMap			!= GUID_NONE ? s_TextureViews[roughnessMap]			: s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		TextureView* pAlbedoMapView;
+		TextureView* pNormalMapView;
+		TextureView* pAmbientOcclusionMapView;
+		TextureView* pMetallicMapView;
+		TextureView* pRoughnessMapView;
+
+		if (albedoMap != GUID_NONE)
+		{
+			pAlbedoMap		= s_Textures[albedoMap];
+			pAlbedoMapView	= s_TextureViews[albedoMap];
+			s_TextureMaterialRefs[albedoMap]++;
+		}
+		else
+		{
+			pAlbedoMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pAlbedoMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		}
+
+		if (normalMap != GUID_NONE)
+		{
+			pNormalMap		= s_Textures[normalMap];
+			pNormalMapView	= s_TextureViews[normalMap];
+			s_TextureMaterialRefs[normalMap]++;
+		}
+		else
+		{
+			pNormalMap		= s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+			pNormalMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
+		}
+
+		if (ambientOcclusionMap != GUID_NONE)
+		{
+			pAmbientOcclusionMap		= s_Textures[ambientOcclusionMap];
+			pAmbientOcclusionMapView	= s_TextureViews[ambientOcclusionMap];
+			s_TextureMaterialRefs[ambientOcclusionMap]++;
+		}
+		else
+		{
+			pAmbientOcclusionMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pAmbientOcclusionMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		}
+
+		if (metallicMap != GUID_NONE)
+		{
+			pMetallicMap		= s_Textures[metallicMap];
+			pMetallicMapView	= s_TextureViews[metallicMap];
+			s_TextureMaterialRefs[metallicMap]++;
+		}
+		else
+		{
+			pMetallicMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pMetallicMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		}
+
+		if (roughnessMap != GUID_NONE)
+		{
+			pRoughnessMap		= s_Textures[roughnessMap];
+			pRoughnessMapView	= s_TextureViews[roughnessMap];
+			s_TextureMaterialRefs[roughnessMap]++;
+		}
+		else
+		{
+			pRoughnessMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pRoughnessMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		}
 
 		(*ppMappedMaterial)->Properties = properties;
 
@@ -393,7 +481,17 @@ namespace LambdaEngine
 		(*ppMappedMaterial)->pAlbedoMapView = pAlbedoMapView;
 		(*ppMappedMaterial)->pNormalMapView = pNormalMapView;
 
-		CombineMaterials(*ppMappedMaterial, pAmbientOcclusionMap, pMetallicMap, pRoughnessMap, pAmbientOcclusionMapView, pMetallicMapView, pRoughnessMapView);
+		GUID_Lambda aoMetallicRoughnessGUID = CombineMaterialTextures(*ppMappedMaterial, pAmbientOcclusionMap, pMetallicMap, pRoughnessMap, pAmbientOcclusionMapView, pMetallicMapView, pRoughnessMapView);
+
+		MaterialLoadDesc materialLoadDesc = {};
+		materialLoadDesc.AlbedoMapGUID				= albedoMap;
+		materialLoadDesc.NormalMapGUID				= normalMap;
+		materialLoadDesc.AOMapGUID					= ambientOcclusionMap;
+		materialLoadDesc.MetallicMapGUID			= metallicMap;
+		materialLoadDesc.RoughnessMapGUID			= roughnessMap;
+		materialLoadDesc.AOMetallicRoughnessMapGUID	= aoMetallicRoughnessGUID;
+
+		s_MaterialLoadConfigurations[guid] = materialLoadDesc;
 
 		return guid;
 	}
@@ -603,7 +701,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	void ResourceManager::CombineMaterials(
+	GUID_Lambda ResourceManager::CombineMaterialTextures(
 		Material* pMaterial, 
 		Texture* pAOMap, 
 		Texture* pMetallicMap, 
@@ -642,7 +740,7 @@ namespace LambdaEngine
 			if (pCombinedMaterialTexture == nullptr)
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to create texture for \"Combined Material Texture\"");
-				return;
+				return GUID_NONE;
 			}
 
 			TextureViewDesc textureViewDesc;
@@ -661,7 +759,7 @@ namespace LambdaEngine
 			if (pCombinedMaterialTextureView == nullptr)
 			{
 				LOG_ERROR("[ResourceLoader]: Failed to create texture view for \"Combined Material Texture View\"");
-				return;
+				return GUID_NONE;
 			}
 		}
 
@@ -778,7 +876,55 @@ namespace LambdaEngine
 
 		pMaterial->pAOMetallicRoughnessMap		= pCombinedMaterialTexture;
 		pMaterial->pAOMetallicRoughnessMapView	= pCombinedMaterialTextureView;
-		RegisterLoadedTextureWithView(pCombinedMaterialTexture, pCombinedMaterialTextureView);
+		return RegisterLoadedTextureWithView(pCombinedMaterialTexture, pCombinedMaterialTextureView);
+	}
+
+	bool ResourceManager::UnloadMesh(GUID_Lambda guid)
+	{
+		auto it = s_Meshes.find(guid);
+		if (it != s_Meshes.end())
+		{
+			SAFEDELETE(it->second);
+			s_Meshes.erase(guid);
+			return true;
+		}
+
+		LOG_ERROR("[ResourceManager]: Failed to unload Mesh: %d", guid);
+		return false;
+	}
+
+	bool ResourceManager::UnloadMaterial(GUID_Lambda guid)
+	{
+		auto it = s_Materials.find(guid);
+		if (it != s_Materials.end())
+		{
+			SAFEDELETE(it->second);
+			s_Materials.erase(guid);
+			return true;
+		}
+
+		LOG_ERROR("[ResourceManager]: Failed to unload Material: %d", guid);
+		return false;
+	}
+
+	bool ResourceManager::UnloadAnimation(GUID_Lambda guid)
+	{
+		return false;
+	}
+
+	bool ResourceManager::UnloadTexture(GUID_Lambda guid)
+	{
+		return false;
+	}
+
+	bool ResourceManager::UnloadShader(GUID_Lambda guid)
+	{
+		return false;
+	}
+
+	bool ResourceManager::UnloadSoundEffect(GUID_Lambda guid)
+	{
+		return false;
 	}
 
 	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
@@ -931,6 +1077,7 @@ namespace LambdaEngine
 		{
 			guid						= s_NextFreeGUID++;
 			ppMappedResource			= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshGUIDsToNames[guid]	= name;
 			s_MeshNamesToGUIDs[name]	= guid;
 		}
 
