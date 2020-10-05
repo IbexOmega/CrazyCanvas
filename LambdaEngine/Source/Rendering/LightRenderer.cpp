@@ -69,8 +69,6 @@ namespace LambdaEngine
 		VALIDATE(pPreInitDesc);
 		VALIDATE(pPreInitDesc->pDepthStencilAttachmentDesc == nullptr);
 
-		m_BackBufferCount = pPreInitDesc->BackBufferCount;
-
 		if (!CreateCommandLists())
 		{
 			LOG_ERROR("[LightRenderer]: Failed to create render command lists");
@@ -100,12 +98,27 @@ namespace LambdaEngine
 	{
 	}
 
-	void LightRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void LightRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppTextureViews);
-		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(backBufferBound);
+
+		if (resourceName == SCENE_POINT_SHADOWMAPS)
+		{
+			constexpr uint32 CUBE_FACE_COUNT = 6U;
+
+			m_PointLightCount = imageCount;
+
+			m_PointLFaceViews.Clear();
+			m_PointLFaceViews.Resize(imageCount * CUBE_FACE_COUNT);
+			for (uint32 c = 0; c < imageCount; c++)
+			{
+				for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
+				{
+					m_PointLFaceViews[f + c * CUBE_FACE_COUNT] = MakeSharedRef(ppPerSubImageTextureViews[f + c * CUBE_FACE_COUNT]);
+				}
+			}
+		}
 	}
 
 	void LightRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
@@ -174,15 +187,12 @@ namespace LambdaEngine
 							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 						);
 					}
-
 				}
 			}
 			else
 			{
 				LOG_ERROR("[LightRenderer]: Failed to update descriptors for drawArgs");
 			}
-
-
 		}
 	}
 
@@ -193,96 +203,105 @@ namespace LambdaEngine
 		if (Sleeping)
 			return;
 
-		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];
-		uint32 width = backBuffer->GetDesc().pTexture->GetDesc().Width;
-		uint32 height = backBuffer->GetDesc().pTexture->GetDesc().Height;
-
-		BeginRenderPassDesc beginRenderPassDesc = {};
-		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
-		beginRenderPassDesc.ppRenderTargets = &backBuffer;
-		beginRenderPassDesc.RenderTargetCount = 1;
-		beginRenderPassDesc.pDepthStencil = m_DepthStencilBuffer.Get();
-		beginRenderPassDesc.Width = width;
-		beginRenderPassDesc.Height = height;
-		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPassDesc.pClearColors = nullptr;
-		beginRenderPassDesc.ClearColorCount = 0;
-		beginRenderPassDesc.Offset.x = 0;
-		beginRenderPassDesc.Offset.y = 0;
-
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 	
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
-		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
-		Viewport viewport = {};
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.Width = (float32)width;
-		viewport.Height = -(float32)height;
-		viewport.x = 0.0f;
-		viewport.y = (float32)height;
-		pCommandList->SetViewports(&viewport, 0, 1);
-
-		ScissorRect scissorRect = {};
-		scissorRect.Width = width;
-		scissorRect.Height = height;
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
-
-		pCommandList->BindDescriptorSetGraphics(m_LightDescriptorSet[0].Get(), m_PipelineLayout.Get(), 0);	// LightsBuffer
-		//pCommandList->BindDescriptorSetGraphics(m_DescriptorSets[1].Get(), m_PipelineLayout.Get(), 1);	// DrawArgs
-
-		//pCommandList->DrawInstanced(drawCount, drawCount, 0, 0);
-		if (!m_UsingMeshShader)
+		pCommandList->BindDescriptorSetGraphics(m_LightDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// LightsBuffer
+		
+		constexpr uint32 CUBE_FACE_COUNT = 6U;
+		for (uint32 c = 0; c < m_PointLightCount; c++)
 		{
-			for (uint32 d = 0; d < m_DrawCount; d++)
+			for (uint32 f = 0; f < m_PointLFaceViews.GetSize(); f++)
 			{
-				const DrawArg& drawArg = m_pDrawArgs[d];
-				m_ppGraphicCommandLists[modFrameIndex]->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-	
-				m_ppGraphicCommandLists[modFrameIndex]->BindDescriptorSetGraphics(m_DrawArgsDescriptorSets[d].Get(), m_PipelineLayout.Get(), 1);
+				auto pFaceView = m_PointLFaceViews[c * CUBE_FACE_COUNT + f];
 
-				m_ppGraphicCommandLists[modFrameIndex]->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
-			}
-		}
-		/*else
-		{
-			for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
-			{
-				const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
-				if (ppDrawArgsDescriptorSetsPerFrame)
-				{
-					pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
-				}
+				uint32 width = pFaceView->GetDesc().pTexture->GetDesc().Width;
+				uint32 height = pFaceView->GetDesc().pTexture->GetDesc().Height;
 
-				const uint32 maxTaskCount = m_Features.MaxDrawMeshTasksCount;
-				const uint32 totalMeshletCount = drawArg.MeshletCount * drawArg.InstanceCount;
-				if (totalMeshletCount > maxTaskCount)
+				Viewport viewport = {};
+				viewport.MinDepth = 0.0f;
+				viewport.MaxDepth = 1.0f;
+				viewport.Width = (float32)width;
+				viewport.Height = -(float32)height;
+				viewport.x = 0.0f;
+				viewport.y = (float32)height;
+				pCommandList->SetViewports(&viewport, 0, 1);
+
+				ScissorRect scissorRect = {};
+				scissorRect.Width = width;
+				scissorRect.Height = height;
+				pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+				BeginRenderPassDesc beginRenderPassDesc = {};
+				beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
+				beginRenderPassDesc.ppRenderTargets = nullptr;
+				beginRenderPassDesc.RenderTargetCount = 1;
+				beginRenderPassDesc.pDepthStencil = pFaceView.Get();
+				beginRenderPassDesc.Width = width;
+				beginRenderPassDesc.Height = height;
+				beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+				beginRenderPassDesc.pClearColors = nullptr;
+				beginRenderPassDesc.ClearColorCount = 0;
+				beginRenderPassDesc.Offset.x = 0;
+				beginRenderPassDesc.Offset.y = 0;
+
+				pCommandList->BeginRenderPass(&beginRenderPassDesc);
+
+				if (!m_UsingMeshShader)
 				{
-					int32 meshletsLeft = static_cast<int32>(totalMeshletCount);
-					int32 meshletOffset = 0;
-					while (meshletsLeft > 0)
+					for (uint32 d = 0; d < m_DrawCount; d++)
 					{
-						int32 meshletCount = std::min<int32>(maxTaskCount, meshletsLeft);
-						pGraphicsCommandList->DispatchMesh(meshletCount, meshletOffset);
+						const DrawArg& drawArg = m_pDrawArgs[d];
+						pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-						meshletOffset += meshletCount;
-						meshletsLeft -= meshletCount;
+						auto* descriptorSet = m_DrawArgsDescriptorSets[d].Get();
+						VALIDATE(descriptorSet != nullptr);
+
+						pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 1);
+
+						pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 					}
 				}
-				else
+				/*else
 				{
-					pGraphicsCommandList->DispatchMesh(totalMeshletCount, 0);
-				}
+					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
+					{
+						const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
+						if (ppDrawArgsDescriptorSetsPerFrame)
+						{
+							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+						}
+
+						const uint32 maxTaskCount = m_Features.MaxDrawMeshTasksCount;
+						const uint32 totalMeshletCount = drawArg.MeshletCount * drawArg.InstanceCount;
+						if (totalMeshletCount > maxTaskCount)
+						{
+							int32 meshletsLeft = static_cast<int32>(totalMeshletCount);
+							int32 meshletOffset = 0;
+							while (meshletsLeft > 0)
+							{
+								int32 meshletCount = std::min<int32>(maxTaskCount, meshletsLeft);
+								pGraphicsCommandList->DispatchMesh(meshletCount, meshletOffset);
+
+								meshletOffset += meshletCount;
+								meshletsLeft -= meshletCount;
+							}
+						}
+						else
+						{
+							pGraphicsCommandList->DispatchMesh(totalMeshletCount, 0);
+						}
+					}
+				}*/
 			}
-		}*/
 
 
-		pCommandList->EndRenderPass();
+			pCommandList->EndRenderPass();
+
+		}
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
@@ -477,6 +496,7 @@ namespace LambdaEngine
 		}
 
 		return 	ds;
+		return nullptr;
 	}
 
 }

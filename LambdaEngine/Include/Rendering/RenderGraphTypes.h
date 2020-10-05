@@ -19,6 +19,7 @@ namespace LambdaEngine
 
 	constexpr const char* PER_FRAME_BUFFER						= "PER_FRAME_BUFFER";
 	constexpr const char* SCENE_LIGHTS_BUFFER					= "SCENE_LIGHTS_BUFFER";
+	constexpr const char* SCENE_POINT_SHADOWMAPS				= "SCENE_POINT_SHADOWMAPS";
 
 	constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
 	constexpr const char* SCENE_DRAW_ARGS						= "SCENE_DRAW_ARGS";

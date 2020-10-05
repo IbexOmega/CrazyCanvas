@@ -1,11 +1,11 @@
 #pragma once
 
 #include "RenderGraphTypes.h"
-
 #include "ICustomRenderer.h"
 
 namespace LambdaEngine
 {
+
 	class LightRenderer : public ICustomRenderer
 	{
 	public:
@@ -22,7 +22,7 @@ namespace LambdaEngine
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
 
-		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound) override final;
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)  override final;
@@ -54,7 +54,6 @@ namespace LambdaEngine
 		DescriptorSet* GetDrawArgsDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
 
 	private:
-		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
 
 		const DrawArg*							m_pDrawArgs = nullptr;
 		uint32									m_DrawCount	= 0;
@@ -78,9 +77,8 @@ namespace LambdaEngine
 		TArray<TSharedRef<DescriptorSet>>		m_DrawArgsDescriptorSets;
 
 		uint32									m_BackBufferCount = 0;
-		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
-		TSharedRef<const TextureView>			m_DepthStencilBuffer;
-
+		uint32									m_PointLightCount = 0;
+		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
 	private:
 		static LightRenderer* s_pInstance;
 
