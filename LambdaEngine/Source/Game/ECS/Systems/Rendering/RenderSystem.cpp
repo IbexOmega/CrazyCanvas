@@ -422,6 +422,9 @@ namespace LambdaEngine
 		{
 			MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
 			AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
+			const auto&			positionComp	= pPositionComponents->GetData(entity);
+			const auto&			rotationComp	= pRotationComponents->GetData(entity);
+			const auto&			scaleComp		= pScaleComponents->GetData(entity);
 			
 			if (!animationComp.IsPaused)
 			{
@@ -437,6 +440,15 @@ namespace LambdaEngine
 					m_DirtyBLASs.insert(pMeshEntry);
 					m_TLASDirty = true;
 				}
+			}
+
+			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
+			{
+				glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
+				transform			*= glm::toMat4(rotationComp.Quaternion);
+				transform			= glm::scale(transform, scaleComp.Scale);
+
+				UpdateTransform(entity, transform);
 			}
 		}
 
@@ -486,6 +498,20 @@ namespace LambdaEngine
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 
+		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
+		{
+			m_pLineRenderer = DBG_NEW LineRenderer();
+			m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+
+			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+		}
+
+		//GUI Renderer
+		{
+			ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
+		}
+
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
 		{
@@ -498,6 +524,11 @@ namespace LambdaEngine
 		m_MaterialsPropertiesBufferDirty	= true;
 		m_RenderGraphSBTRecordsDirty		= true;
 		m_LightsResourceDirty				= true;
+
+		if (m_RayTracingEnabled)
+		{
+			m_TLASResourceDirty = true;
+		}
 
 		UpdateRenderGraph();
 	}

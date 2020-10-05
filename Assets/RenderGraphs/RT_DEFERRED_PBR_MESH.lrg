@@ -910,7 +910,7 @@
             "z_dim_var": 1.0,
             "draw_type": "SCENE_INSTANCES",
             "depth_test_enabled": true,
-            "cull_mode": "CULL_MODE_FRONT",
+            "cull_mode": "CULL_MODE_BACK",
             "polygon_mode": "POLYGON_MODE_FILL",
             "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {

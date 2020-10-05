@@ -101,7 +101,7 @@ namespace LambdaEngine
 			uint32 backBufferIndex, 
 			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondaryExecutionStage,
-			bool Sleeping)		= 0;
+			bool sleeping)		= 0;
 
 		virtual FPipelineStageFlag GetFirstPipelineStage()	= 0;
 		virtual FPipelineStageFlag GetLastPipelineStage()	= 0;

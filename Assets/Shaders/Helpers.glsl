@@ -400,16 +400,16 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
     return shadow;
 }
 
-float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, samplerCube shadowMap, float farPlane)
+float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, float viewDistance, vec3 normal, samplerCube shadowMap, float farPlane)
 {
     vec3 fragToLight  = fragPos - lightPos;
 	float currentDepth = length(fragToLight);
+	vec3 lightDir = fragToLight / currentDepth;
 
-
-	float shadow		= 0.0;
-	float bias			= 0.05;
+	float shadow		= 0.0f;
+	float bias			= max(0.05f * (1.0f - dot(normal, lightDir)), 0.005f);
+	float diskRadius	= (1.0f + (viewDistance / farPlane)) / 75.0f;
 	int samples			= 20;
-	float diskRadius	= 0.05;
 
 	for(int i = 0; i < samples; ++i)
 	{
