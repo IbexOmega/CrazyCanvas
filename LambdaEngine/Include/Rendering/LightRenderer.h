@@ -25,6 +25,7 @@ namespace LambdaEngine
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
+		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)  override final;
 
 		virtual void Render(
 			uint32 modFrameIndex,
@@ -50,8 +51,14 @@ namespace LambdaEngine
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		bool CreatePipelineState();
 
+		DescriptorSet* GetDrawArgsDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
+
 	private:
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
+
+		const DrawArg*							m_pDrawArgs = nullptr;
+		uint32									m_DrawCount	= 0;
+		bool									m_UsingMeshShader = false;
 
 		GUID_Lambda								m_VertexShaderPointGUID = 0;
 		GUID_Lambda								m_PixelShaderPointGUID = 0;
@@ -59,15 +66,16 @@ namespace LambdaEngine
 		TSharedRef<CommandAllocator>			m_CopyCommandAllocator = nullptr;
 		TSharedRef<CommandList>					m_CopyCommandList = nullptr;
 
-		CommandAllocator**						m_ppRenderCommandAllocators = nullptr;
-		CommandList**							m_ppRenderCommandLists = nullptr;
+		CommandAllocator**						m_ppGraphicCommandAllocators = nullptr;
+		CommandList**							m_ppGraphicCommandLists = nullptr;
 
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
 		uint64									m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
-		TArray<TSharedRef<DescriptorSet>>		m_DescriptorSets;
+		TSharedRef<DescriptorSet>				m_LightDescriptorSet;
+		TArray<TSharedRef<DescriptorSet>>		m_DrawArgsDescriptorSets;
 
 		uint32									m_BackBufferCount = 0;
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
