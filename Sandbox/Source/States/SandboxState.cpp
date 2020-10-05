@@ -74,7 +74,7 @@ void SandboxState::Init()
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const CameraDesc cameraDesc = 
+		const CameraDesc cameraDesc =
 		{
 			.Position	= { 0.0f, 20.0f, -2.0f },
 			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
@@ -101,7 +101,7 @@ void SandboxState::Init()
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = 
+			const StaticCollisionInfo collisionCreateInfo =
 			{
 				.Entity			= entity,
 				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -246,8 +246,6 @@ void SandboxState::Init()
 			const float32 RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float32 positive = std::powf(-1.0, i);
-
 				glm::vec3 color = pointLights[i].ColorIntensity;
 				MaterialProperties materialProperties;
 				materialProperties.Albedo		= glm::vec4(color, 1.0f);
