@@ -333,10 +333,10 @@ namespace LambdaEngine
 		// Per Frame
 		PerFrameBuffer		m_PerFrameData;
 
-		Buffer*	m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
-		Buffer*	m_pLightsBuffer								= nullptr;
-		Buffer*	m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*	m_pPerFrameBuffer			= nullptr;
+		Buffer* m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
+		Buffer* m_pLightsBuffer								= nullptr;
+		Buffer* m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
+		Buffer* m_pPerFrameBuffer			= nullptr;
 
 		// Draw Args
 		TSet<uint32> m_RequiredDrawArgs;

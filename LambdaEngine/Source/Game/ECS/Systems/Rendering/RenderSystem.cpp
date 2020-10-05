@@ -127,8 +127,8 @@ namespace LambdaEngine
 				return false;
 			}
 
-			m_ppBackBuffers = DBG_NEW Texture*[BACK_BUFFER_COUNT];
-			m_ppBackBufferViews = DBG_NEW TextureView*[BACK_BUFFER_COUNT];
+			m_ppBackBuffers		= DBG_NEW Texture*[BACK_BUFFER_COUNT];
+			m_ppBackBufferViews	= DBG_NEW TextureView*[BACK_BUFFER_COUNT];
 
 			m_FrameIndex++;
 			m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
@@ -289,8 +289,16 @@ namespace LambdaEngine
 
 			PipelineLayoutDesc pipelineLayoutDesc;
 			pipelineLayoutDesc.DebugName			= "Skinning pipeline";
-			pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc };
-			
+			pipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc };
+			pipelineLayoutDesc.ConstantRanges		=
+			{
+				{
+					FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+					4,
+					0
+				}
+			};
+
 			m_SkinningPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 			if (!m_SkinningPipelineLayout)
 			{
@@ -1007,7 +1015,7 @@ namespace LambdaEngine
 		swappedInstanceKeyIt->second.InstanceIndex = instanceKeyIt->second.InstanceIndex;
 		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
 
-		//Unload Mesh, Todo: Should we always do this?
+		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
@@ -1309,6 +1317,9 @@ namespace LambdaEngine
 
 	void RenderSystem::PerformMeshSkinning(CommandList* pCommandList)
 	{
+		// TODO: Investigate the best groupsize for us (THIS MUST MATCH THE SHADER-DEFINE)
+		constexpr uint32 THREADS_PER_WORKGROUP = 32;
+		
 		PipelineState* pPipeline = PipelineStateManager::GetPipelineState(m_SkinningPipelineID);
 		VALIDATE(pPipeline != nullptr);
 		
@@ -1316,7 +1327,12 @@ namespace LambdaEngine
 		{
 			pCommandList->BindDescriptorSetCompute(pMeshEntry->pAnimationDescriptorSet, m_SkinningPipelineLayout.Get(), 0);
 			pCommandList->BindComputePipeline(pPipeline);
-			pCommandList->Dispatch(pMeshEntry->VertexCount, 1, 1);
+
+			const uint32 vertexCount = pMeshEntry->VertexCount;
+			pCommandList->SetConstantRange(m_SkinningPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &vertexCount, sizeof(uint32), 0);
+
+			const uint32 workGroupCount = std::max<uint32>(AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
+			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
 
 		m_AnimationsToUpdate.clear();
@@ -1743,7 +1759,7 @@ namespace LambdaEngine
 				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.Count			= drawArgs.GetSize();
 
 				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 			}
@@ -1766,6 +1782,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
@@ -1777,6 +1794,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			m_LightsResourceDirty = false;
@@ -1787,6 +1805,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 

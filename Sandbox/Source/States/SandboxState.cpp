@@ -80,13 +80,14 @@ void SandboxState::Init()
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const CameraDesc cameraDesc = {
-			.Position = { 0.0f, 20.0f, -2.0f },
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width = (float)window->GetWidth(),
-			.Height = (float)window->GetHeight(),
-			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+		const CameraDesc cameraDesc = 
+		{
+			.Position	= { 0.0f, 20.0f, -2.0f },
+			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
+			.Width		= (float32)window->GetWidth(),
+			.Height		= (float32)window->GetHeight(),
+			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
 		Entity e = CreateFPSCameraEntity(cameraDesc);
 	}
@@ -98,11 +99,11 @@ void SandboxState::Init()
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
-
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = {
+			const StaticCollisionInfo collisionCreateInfo = 
+			{
 				.Entity			= entity,
 				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
@@ -120,7 +121,7 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
@@ -144,6 +145,7 @@ void SandboxState::Init()
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.AnimationGUID = animations[0];
+		robotAnimationComp.PlaybackSpeed = 2.0f;
 
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
@@ -160,11 +162,11 @@ void SandboxState::Init()
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc = 
 		{
-				.pName = "RobotSoundInstance",
-				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
-				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-				.Position = position,
-				.Volume = 0.03f
+			.pName			= "RobotSoundInstance",
+			.pSoundEffect	= ResourceManager::GetSoundEffect(soundGUID),
+			.Flags			= FSoundModeFlags::SOUND_MODE_NONE,
+			.Position		= position,
+			.Volume			= 0.03f
 		};
 		
 		pSoundInstance->Init(&desc);
@@ -174,10 +176,8 @@ void SandboxState::Init()
 
 	//Sphere Grid
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-
-		uint32 gridRadius = 5;
-
+		const uint32 sphereMeshGUID	= ResourceManager::LoadMeshFromFile("sphere.obj");
+		const uint32 gridRadius		= 5;
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
@@ -186,9 +186,9 @@ void SandboxState::Init()
 				float32 metallic = x / float32(gridRadius - 1);
 
 				MaterialProperties materialProperties;
-				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness = roughness;
-				materialProperties.Metallic = metallic;
+				materialProperties.Albedo		= glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+				materialProperties.Roughness	= roughness;
+				materialProperties.Metallic		= metallic;
 
 				MeshComponent sphereMeshComp = { };
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
@@ -257,17 +257,17 @@ void SandboxState::Init()
 				{0.0f, 2.0f, 3.0f},
 			};
 
-			const float PI = glm::pi<float>();
-			const float RADIUS = 3.0f;
+			const float32 PI = glm::pi<float>();
+			const float32 RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float positive = std::powf(-1.0, i);
+				float32 positive = std::powf(-1.0, i);
 
-				MaterialProperties materialProperties;
 				glm::vec3 color = pointLights[i].ColorIntensity;
-				materialProperties.Albedo = glm::vec4(color, 1.0f);
-				materialProperties.Roughness = 0.1f;
-				materialProperties.Metallic = 0.1f;
+				MaterialProperties materialProperties;
+				materialProperties.Albedo		= glm::vec4(color, 1.0f);
+				materialProperties.Roughness	= 0.1f;
+				materialProperties.Metallic		= 0.1f;
 
 				MeshComponent sphereMeshComp = {};
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
@@ -307,7 +307,6 @@ void SandboxState::Init()
 			mirrorProperties);
 
 		Entity entity = ECSCore::GetInstance()->CreateEntity();
-
 		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
 		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
