@@ -1,9 +1,9 @@
+#include "Engine/EngineLoop.h"
+
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/InterpolationSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
-
-#include "Engine/EngineLoop.h"
-
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Player/ControllableComponent.h"
 #include "Game/ECS/Components/Networking/InterpolationComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -117,19 +117,18 @@ namespace LambdaEngine
 			m_pClient->SendReliable(pPacket);
 
 			ECSCore* pECS = ECSCore::GetInstance();
-			const auto* pControllableComponent = pECS->GetComponentArray<ControllableComponent>();
+			const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
-			if (!pControllableComponent)
+			if (!pPositionComponents)
 				return;
 
-			const ControllableComponent& controllableComponent = pControllableComponent->GetData(GetEntityPlayer());
-
+			const PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
 			GameState gameState = {};
 
 			gameState.SimulationTick	= m_SimulationTick;
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
-			gameState.Position			= controllableComponent.EndPosition;
+			gameState.Position			= positionComponent.Position;
 
 			m_FramesToReconcile.PushBack(gameState);
 			m_SimulationTick++;
@@ -214,7 +213,6 @@ namespace LambdaEngine
 		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
 	}
 
-	int i = 0;
 	void ClientSystem::OnPacketPlayerAction(NetworkSegment* pPacket)
 	{
 		GameState serverGameState = {};
@@ -252,40 +250,45 @@ namespace LambdaEngine
 		materialProperties.Metallic		= 0.0f;
 		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
+		TArray<GUID_Lambda> animations;
+
+		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+
 		MeshComponent meshComponent;
-		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 			"Mirror Material" + std::to_string(entity),
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			robotAlbedoGUID,
+			robotNormalGUID,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		pECS->AddComponent<PositionComponent>(entity,		{ true, position });
-		pECS->AddComponent<RotationComponent>(entity,		{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(entity,			{ true, glm::vec3(1.0f) });
-		pECS->AddComponent<MeshComponent>(entity,			meshComponent);
-		pECS->AddComponent<NetworkComponent>(entity,		{ networkUID });
+		AnimationComponent animationComp;
+		animationComp.AnimationGUID = animations[0];
+
+		pECS->AddComponent<PositionComponent>(entity,	{ true, position });
+		pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(0.01f) });
+		pECS->AddComponent<AnimationComponent>(entity,	animationComp);
+		pECS->AddComponent<MeshComponent>(entity,		meshComponent);
+		pECS->AddComponent<NetworkComponent>(entity,	{ networkUID });
 
 		m_Entities.insert({ networkUID, entity });
 
 		if (IsLocalClient(networkUID))
-			pECS->AddComponent<ControllableComponent>(entity,	{ true, position, position, 0 , EngineLoop::GetFixedTimestep() });
+			pECS->AddComponent<ControllableComponent>(entity,	{ true });
 		else
-			pECS->AddComponent<InterpolationComponent>(entity, { position, position, 0, EngineLoop::GetFixedTimestep() });
+			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });
 	}
 
 	void ClientSystem::Reconcile()
 	{
 		while (!m_FramesProcessedByServer.IsEmpty())
 		{
-			if (m_FramesProcessedByServer[0].SimulationTick != m_FramesToReconcile[0].SimulationTick)
-			{
-				LOG_ERROR("SimulationTick missmatch [%d != %d]", m_FramesProcessedByServer[0].SimulationTick, m_FramesToReconcile[0].SimulationTick);
-				DEBUGBREAK();
-			}
+			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 
 			if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[0]))
 			{
@@ -307,6 +310,7 @@ namespace LambdaEngine
 		PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
 
 		positionComponent.Position	= gameStateServer.Position;
+		positionComponent.Dirty		= true;
 
 		//Replay all game states since the game state which resulted in prediction ERROR
 		for (uint32 i = 0; i < count; i++)
@@ -318,7 +322,9 @@ namespace LambdaEngine
 	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
 	{
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
+		{
 			return false;
+		}
 
 		return true;
 	}
