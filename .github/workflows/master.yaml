@@ -19,10 +19,10 @@ jobs:
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Production x64_StaticLib
+          build-configuration: Production x64_CrazyCanvas
 
       - name: Benchmark
-        run: python .github/workflows/benchmark.py --bin .\Build\bin\Production-windows-x86_64-x64_StaticLib\CrazyCanvas\CrazyCanvas.exe
+        run: python .github/workflows/benchmark.py --bin .\Build\bin\Production-windows-x86_64-x64_CrazyCanvas\CrazyCanvas\CrazyCanvas.exe
 
       - name: Update Charts
         run: python .github/workflows/update-charts.py

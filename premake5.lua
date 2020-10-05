@@ -32,12 +32,7 @@ function get_physx_copy_commands(libFolder, outputdir)
 		"PhysXGpu_64.dll"
 	}
 
-	targetPaths = {
-		"\"../Build/bin/" .. outputdir .. "/CrazyCanvas/\"",
-		"\"../Build/bin/" .. outputdir .. "/Sandbox/\"",
-		"\"../Build/bin/" .. outputdir .. "/Client/\"",
-		"\"../Build/bin/" .. outputdir .. "/Server/\""
-	}
+	targetPaths = { "\"../Build/bin/" .. outputdir .. "/CrazyCanvas/\"" }
 
 	copyCommands = {}
 
@@ -74,7 +69,7 @@ VK_SDK_PATH		= get_vk_sdk_path()
 FMOD_DLL_PATH	= get_fmod_dll_path()
 
 workspace "LambdaEngine"
-	startproject "Sandbox"
+	startproject "CrazyCanvas"
 	architecture "x64"
 	warnings "extra"
 
@@ -84,16 +79,11 @@ workspace "LambdaEngine"
 	-- Platform
 	platforms
 	{
-		"x64_SharedLib",
-		"x64_StaticLib",
+		"x64_CrazyCanvas",
+		"x64_Sandbox",
+		"x64_Client",
+		"x64_Server"
     }
-
-	filter "platforms:x64_SharedLib"
-		defines
-		{
-			"LAMBDA_SHARED_LIB",
-		}
-	filter {}
 	defines
 	{
 		"NS_STATIC_LIBRARY"
@@ -234,11 +224,7 @@ workspace "LambdaEngine"
 		}
 
         -- Platform
-		filter "platforms:x64_StaticLib"
-			kind "StaticLib"
-		filter "platforms:x64_SharedLib"
-			kind "SharedLib"
-		filter {}
+		kind "StaticLib"
 
 		-- Targets
 		targetdir 	("Build/bin/" .. outputdir .. "/%{prj.name}")
@@ -492,35 +478,16 @@ workspace "LambdaEngine"
 			}
 		filter {}
 
-		-- Copy .dylib into correct folder on mac builds
-		-- filter { "system:macosx"}
-		--	postbuildcommands
-		--	{
-		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Client/\""),
-		--		("{COPY} \"../FMODProgrammersAPI/api/core/lib/libfmodL.dylib\" \"../Build/bin/" .. outputdir .. "/Server/\""),
-		--	}
-
-		-- Copy DLL into correct folder for windows builds
 		-- FMOD
 		filter { "system:windows"}
 			postbuildcommands
 			{
-				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
+				("{COPY} " .. FMOD_DLL_PATH .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\"")
 			}
 			postbuildcommands
 			{
 				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/Noesis.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/Server/\"")
+				("{COPY} " .. "../Dependencies/NoesisGUI/Lib/NoesisApp.dll" .. " \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\"")
 			}
 		-- PhysX
 		filter { "system:windows", "configurations:Debug" }
@@ -533,77 +500,7 @@ workspace "LambdaEngine"
 			{
 				get_physx_copy_commands("release", outputdir)
 			}
-		-- LambdaEngine
-		filter { "system:windows", "platforms:x64_SharedLib" }
-			postbuildcommands
-			{
-				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/CrazyCanvas/\""),
-				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Sandbox/\""),
-				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Client/\""),
-				("{COPY} %{cfg.buildtarget.relpath} \"../Build/bin/" .. outputdir .. "/Server/\""),
-			}
 		filter {}
-	project "*"
-
-	-- Sandbox Project
-	project "Sandbox"
-		kind "WindowedApp"
-		language "C++"
-		cppdialect "C++latest"
-		systemversion "latest"
-		location "Sandbox"
-
-		-- Targets
-		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
-		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
-
-		--Includes
-		includedirs
-		{
-			"LambdaEngine/Include",
-			"%{prj.name}/Include",
-		}
-
-		sysincludedirs
-		{
-			"Dependencies/",
-			"Dependencies/glm",
-			"Dependencies/imgui",
-			"Dependencies/NoesisGUI/Include",
-			"Dependencies/ordered-map/include",
-			"Dependencies/PhysX/include",
-			"Dependencies/rapidjson/include",
-			"Dependencies/NoesisGUI/Include",
-			-- FMOD
-			"C:/FMOD Studio API Windows/api/core/inc",
-			"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
-			"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
-			"D:/FMOD Studio API Windows/api/core/inc",
-		}
-
-		-- Files
-		files
-		{
-			"LambdaEngine/Source/Launch/**",
-			"%{prj.name}/**.hpp",
-			"%{prj.name}/**.h",
-			"%{prj.name}/**.inl",
-			"%{prj.name}/**.cpp",
-			"%{prj.name}/**.c",
-			"%{prj.name}/**.hlsl",
-		}
-		-- We do not want to compile HLSL files
-		excludes
-		{
-			"**.hlsl",
-		}
-		-- Linking
-		links
-		{
-			"LambdaEngine",
-			"ImGui",
-		}
-
 	project "*"
 
 	-- CrazyCanvas Project
@@ -618,6 +515,18 @@ workspace "LambdaEngine"
 		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
 		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
 
+		filter "platforms:x64_CrazyCanvas"
+			debugargs { "--state=crazycanvas" }
+
+		filter "platforms:x64_Sandbox"
+			debugargs { "--state=sandbox" }
+
+		filter "platforms:x64_Client"
+			debugargs { "--state=client" }
+
+		filter "platforms:x64_Server"
+			debugargs { "--state=server" }
+
 		--Includes
 		includedirs
 		{
@@ -665,113 +574,4 @@ workspace "LambdaEngine"
 			"ImGui",
 		}
 
-	project "*"
-
-	-- Client Project
-	project "Client"
-		kind "WindowedApp"
-		language "C++"
-		cppdialect "C++latest"
-		systemversion "latest"
-		location "Client"
-
-		-- Targets
-		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
-		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
-
-		--Includes
-		includedirs
-		{
-			"LambdaEngine/Include",
-			"%{prj.name}/Include",
-		}
-
-		sysincludedirs
-		{
-			"Dependencies/",
-			"Dependencies/glm",
-			"Dependencies/imgui",
-			"Dependencies/NoesisGUI/Include",
-			"Dependencies/ordered-map/include",
-			"Dependencies/PhysX/include",
-			"Dependencies/rapidjson/include",
-		}
-
-		-- Files
-		files
-		{
-			"LambdaEngine/Source/Launch/**",
-			"%{prj.name}/**.hpp",
-			"%{prj.name}/**.h",
-			"%{prj.name}/**.inl",
-			"%{prj.name}/**.cpp",
-			"%{prj.name}/**.c",
-			"%{prj.name}/**.hlsl",
-		}
-		-- We do not want to compile HLSL files
-		excludes
-		{
-			"**.hlsl",
-		}
-		-- Linking
-		links
-		{
-			"LambdaEngine",
-			"ImGui",
-		}
-
-	project "*"
-
-	-- Server Project
-	project "Server"
-		kind "WindowedApp"
-		language "C++"
-		cppdialect "C++latest"
-		systemversion "latest"
-		location "Server"
-
-		-- Targets
-		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
-		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
-
-		--Includes
-		includedirs
-		{
-			"LambdaEngine/Include",
-			"%{prj.name}/Include",
-		}
-
-		sysincludedirs
-		{
-			"Dependencies/",
-			"Dependencies/glm",
-			"Dependencies/imgui",
-			"Dependencies/NoesisGUI/Include",
-			"Dependencies/ordered-map/include",
-			"Dependencies/PhysX/include",
-			"Dependencies/rapidjson/include"
-		}
-
-		-- Files
-		files
-		{
-			"LambdaEngine/Source/Launch/**",
-			"%{prj.name}/**.hpp",
-			"%{prj.name}/**.h",
-			"%{prj.name}/**.inl",
-			"%{prj.name}/**.cpp",
-			"%{prj.name}/**.c",
-			"%{prj.name}/**.hlsl",
-		}
-		-- We do not want to compile HLSL files
-		excludes
-		{
-			"**.hlsl",
-		}
-		-- Linking
-		links
-		{
-			"LambdaEngine",
-			"ImGui",
-		}
 	project "*"

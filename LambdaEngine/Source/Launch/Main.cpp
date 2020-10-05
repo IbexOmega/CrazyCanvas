@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	argh::parser flagParser(argc, argv);
 
 	LAMBDA_PROFILER_BEGIN_SESSION("Startup", "LambdaProfile-Startup.json");
-	if (!EngineLoop::PreInit())
+	if (!EngineLoop::PreInit(flagParser))
 	{
 		return -1;
 	}
