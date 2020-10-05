@@ -15,7 +15,6 @@ jobs:
       - name: Build LambdaEngine Debug
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
-          branch: ${{ github.ref }}
           project-path: LambdaEngine/LambdaEngine.vcxproj
           build-configuration: Debug x64_StaticLib
 
@@ -32,7 +31,6 @@ jobs:
       - name: Build LambdaEngine Release
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
-          branch: ${{ github.ref }}
           project-path: LambdaEngine/LambdaEngine.vcxproj
           build-configuration: Release x64_StaticLib
 
@@ -49,7 +47,6 @@ jobs:
       - name: Build CrazyCanvas Debug
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
-          branch: ${{ github.ref }}
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
           build-configuration: Debug x64_StaticLib
 
@@ -66,7 +63,6 @@ jobs:
       - name: Build CrazyCanvas Release
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
-          branch: ${{ github.ref }}
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
           build-configuration: Release x64_StaticLib
 
