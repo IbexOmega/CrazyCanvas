@@ -13,7 +13,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build LambdaEngine Debug
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: LambdaEngine/LambdaEngine.vcxproj
@@ -30,7 +30,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build LambdaEngine Release
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: LambdaEngine/LambdaEngine.vcxproj
@@ -47,7 +47,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build CrazyCanvas Debug
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
@@ -64,7 +64,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build CrazyCanvas Release
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
@@ -81,7 +81,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build Sandbox Debug
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: Sandbox/Sandbox.vcxproj
@@ -98,7 +98,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build Sandbox Release
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: Sandbox/Sandbox.vcxproj
@@ -115,7 +115,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build Client Debug
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: Client/Client.vcxproj
@@ -132,7 +132,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build Client Release
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: Client/Client.vcxproj
@@ -149,7 +149,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build Server Debug
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: Server/Server.vcxproj
@@ -166,7 +166,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build Server Release
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           branch: ${{ github.ref }}
           project-path: Server/Server.vcxproj

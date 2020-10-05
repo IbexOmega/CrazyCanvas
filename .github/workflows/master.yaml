@@ -16,7 +16,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.1
 
       - name: Build CrazyCanvas Production
-        uses: IbexOmega/lambda-build-action@v1.0.1
+        uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
           build-configuration: Production x64_StaticLib
