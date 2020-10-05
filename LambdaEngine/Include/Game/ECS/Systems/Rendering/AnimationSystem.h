@@ -5,6 +5,8 @@
 
 #include "Resources/Mesh.h"
 
+#include "Time/API/Clock.h"
+
 namespace LambdaEngine
 {
 	struct MeshComponent;
@@ -22,13 +24,17 @@ namespace LambdaEngine
 		AnimationSystem();
 		~AnimationSystem();
 
-		void Animate(Timestamp deltaTime, AnimationComponent& animation, MeshComponent& mesh);
+		void InitClock();
+
+		void Animate(float64 seconds, AnimationComponent& animation, MeshComponent& mesh);
 		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
 	public:
 		static AnimationSystem& GetInstance();
 
 	private:
-		IDVector m_AnimationEntities;
+		bool		m_HasInitClock = false;
+		Clock		m_Clock;
+		IDVector	m_AnimationEntities;
 	};
 }

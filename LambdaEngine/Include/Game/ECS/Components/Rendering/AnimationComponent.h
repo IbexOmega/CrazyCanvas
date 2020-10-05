@@ -20,6 +20,7 @@ namespace LambdaEngine
 		float64			DurationInTicks	= 0.0f;
 		float32			PlaybackSpeed	= 1.0f;
 		bool			IsPaused		= false;
+		bool			IsLooping		= true;
 		SkeletonPose	Pose;
 	};
 }

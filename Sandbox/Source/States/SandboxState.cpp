@@ -76,7 +76,7 @@ void SandboxState::Init()
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const CameraDesc cameraDesc =
 		{
-			.Position	= { 0.0f, 20.0f, -2.0f },
+			.Position	= { 0.0f, 20.0f, 5.0f },
 			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
 			.Width		= (float32)window->GetWidth(),
 			.Height		= (float32)window->GetHeight(),
@@ -144,6 +144,7 @@ void SandboxState::Init()
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.AnimationGUID	= animations[0];
 		robotAnimationComp.PlaybackSpeed	= 1.0f;
+		robotAnimationComp.IsLooping		= false;
 		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
@@ -158,6 +159,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		
 		position = glm::vec3(-5.0f, 1.25f, 0.0f);
+		robotAnimationComp.IsLooping = true;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });

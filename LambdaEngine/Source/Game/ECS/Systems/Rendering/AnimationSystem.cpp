@@ -17,7 +17,18 @@ namespace LambdaEngine
 	{
 	}
 
-	void AnimationSystem::Animate(Timestamp deltaTime, AnimationComponent& animation, MeshComponent& mesh)
+	void AnimationSystem::InitClock()
+	{
+		if (!m_HasInitClock)
+		{
+			m_Clock.Reset();
+			m_Clock.Tick();
+
+			m_HasInitClock = true;
+		}
+	}
+
+	void AnimationSystem::Animate(float64 seconds, AnimationComponent& animation, MeshComponent& mesh)
 	{
 		Animation* pAnimation = ResourceManager::GetAnimation(animation.AnimationGUID);
 		VALIDATE(pAnimation);
@@ -25,22 +36,34 @@ namespace LambdaEngine
 		Skeleton* pSkeleton = animation.Pose.pSkeleton;
 		VALIDATE(pSkeleton);
 
-		// Move timer
-		const float64 ticksPerSeconds	= animation.PlaybackSpeed * pAnimation->TicksPerSecond;
-		const float64 deltaTicks		= ticksPerSeconds * deltaTime.AsSeconds();
-		
-		animation.DurationInTicks += deltaTicks;
-		if (animation.DurationInTicks > pAnimation->DurationInTicks)
-		{
-			animation.DurationInTicks = 0.0f;
-		}
-
 		// Make sure we have enough matrices
 		if (animation.Pose.LocalTransforms.GetSize() < pSkeleton->Joints.GetSize())
 		{
-			animation.Pose.LocalTransforms.Resize(pSkeleton->Joints.GetSize());
+			animation.Pose.LocalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
 		}
-		
+
+		if (animation.Pose.GlobalTransforms.GetSize() < pSkeleton->Joints.GetSize())
+		{
+			animation.Pose.GlobalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
+		}
+
+		// Move timer
+		const float64 ticksPerSeconds	= animation.PlaybackSpeed * pAnimation->TicksPerSecond;
+		const float64 deltaTicks		= ticksPerSeconds * seconds;
+		animation.DurationInTicks += deltaTicks;
+		if (animation.DurationInTicks >= pAnimation->DurationInTicks)
+		{
+			// If the animation is looping we reset and start over, otherwise we stop here
+			if (animation.IsLooping)
+			{
+				animation.DurationInTicks = 0.0f;
+			}
+			else
+			{
+				return;
+			}
+		}
+
 		// Find keyframes
 		for (Animation::Channel& channel : pAnimation->Channels)
 		{
@@ -128,13 +151,8 @@ namespace LambdaEngine
 			// Increase boneID
 			animation.Pose.LocalTransforms[boneID] = transform;
 		}
-
-		// Make sure we have enough matrices
-		if (animation.Pose.GlobalTransforms.GetSize() < pSkeleton->Joints.GetSize())
-		{
-			animation.Pose.GlobalTransforms.Resize(pSkeleton->Joints.GetSize());
-		}
 		
+		// Calculate global transforms
 		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
 		{
 			Joint& joint = pSkeleton->Joints[i];
@@ -174,17 +192,23 @@ namespace LambdaEngine
 
 	void AnimationSystem::Tick(Timestamp deltaTime)
 	{
+		InitClock();
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		ComponentArray<AnimationComponent>*	pAnimationComponents	= pECSCore->GetComponentArray<AnimationComponent>();
 		ComponentArray<MeshComponent>*		pMeshComponents			= pECSCore->GetComponentArray<MeshComponent>();
 
+		// Animation system has its own clock to keep track of time
+		m_Clock.Tick();
+
+		Timestamp deltatime = m_Clock.GetDeltaTime();
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
 			MeshComponent&		mesh		= pMeshComponents->GetData(entity);
 			AnimationComponent&	animation	= pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
-				Animate(deltaTime, animation, mesh);
+				Animate(deltatime.AsSeconds(), animation, mesh);
 			}
 		}
 	}
