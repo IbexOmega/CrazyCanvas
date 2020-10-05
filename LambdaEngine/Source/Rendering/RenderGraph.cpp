@@ -627,7 +627,9 @@ namespace LambdaEngine
 						pRenderStage->pCustomRenderer->UpdateTextureResource(
 							pResource->Name,
 							pResource->Texture.PerImageTextureViews.GetData(),
-							pResource->Texture.IsOfArrayType ? 1 : pResource->SubResourceCount,
+							pResource->Texture.PerSubImageTextureViews.GetData(),
+							pResource->Texture.PerImageTextureViews.GetSize(),
+							pResource->Texture.PerSubImageTextureViews.GetSize(),
 							pResource->BackBufferBound);
 					}
 					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
@@ -647,8 +649,6 @@ namespace LambdaEngine
 						}
 						else
 						{
-							uint32 actualSubResourceCount = pResource->Texture.IsOfArrayType ? 1U : pResource->SubResourceCount;
-
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
 								pRenderStage->ppTextureDescriptorSets[b]->WriteTextureDescriptors(
@@ -656,7 +656,7 @@ namespace LambdaEngine
 									pResource->Texture.Samplers.GetData(),
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
-									actualSubResourceCount,
+									pResource->Texture.PerImageTextureViews.GetSize(),
 									pResourceBinding->DescriptorType);
 							}
 						}
@@ -1080,7 +1080,9 @@ namespace LambdaEngine
 					binding.pRenderStage->pCustomRenderer->UpdateTextureResource(
 						backBufferResourceIt->second.Name,
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetData(),
+						backBufferResourceIt->second.Texture.PerSubImageTextureViews.GetData(),
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetSize(),
+						backBufferResourceIt->second.Texture.PerSubImageTextureViews.GetSize(),
 						true);
 				}
 				else if (binding.DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)

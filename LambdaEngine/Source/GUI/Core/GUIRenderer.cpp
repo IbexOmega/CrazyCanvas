@@ -502,22 +502,28 @@ namespace LambdaEngine
 	{
 	}
 
-	void GUIRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void GUIRenderer::UpdateTextureResource(
+		const String& resourceName,
+		const TextureView* const* ppPerImageTextureViews,
+		const TextureView* const* ppPerSubImageTextureViews,
+		uint32 imageCount,
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
-			VALIDATE(count == BACK_BUFFER_COUNT);
+			VALIDATE(imageCount == BACK_BUFFER_COUNT);
 
-			for (uint32 i = 0; i < count; i++)
+			for (uint32 i = 0; i < imageCount; i++)
 			{
-				m_pBackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+				m_pBackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
 			}
 		}
-		else if (resourceName == "NOESIS_GUI_DEPTH_STENCIL" && count == 1)
+		else if (resourceName == "NOESIS_GUI_DEPTH_STENCIL" && subImageCount == 1)
 		{
-			m_DepthStencilTextureView = MakeSharedRef(ppTextureViews[0]);
+			m_DepthStencilTextureView = MakeSharedRef(ppPerSubImageTextureViews[0]);
 		}
 	}
 

@@ -53,11 +53,13 @@ namespace LambdaEngine
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given texture
 		*	resourceName - Name of the resource being updated
-		*	ppTextureViews - An array of textureviews that represent the update data
-		*	count - Size of ppTextureViews
+		*	ppPerImageTextureViews - An array of textureviews that represent the update data, this is per Texture (or Image), normally, use this when writing to Descriptor Set
+		*	ppPerSubImageTextureViews - An array of textureviews that represent the update data, this is per Sub Texture (or Sub Image), normally, use these when binding to FBO
+		*	imageCount - Size of ppPerImageTextureViews
+		*	subImageCount - Size of ppPerSubImageTextureViews, guaranteed to be an integer multiple of imageCount
 		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
-		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const * ppTextureViews, uint32 count, bool backBufferBound)	= 0;
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)	= 0;
 
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given buffer
