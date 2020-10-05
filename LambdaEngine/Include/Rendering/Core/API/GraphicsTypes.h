@@ -24,7 +24,6 @@ namespace LambdaEngine
 	constexpr const uint32 MAX_PUSH_CONSTANT_SIZE			= 128;
 	constexpr const uint32 PARTIALLY_BOUND_DESCRIPTOR_COUNT	= 1024;
 	constexpr const uint32 EXTERNAL_SUBPASS					= UINT32_MAX;
-	constexpr const uint32 MAX_UNIQUE_MATERIALS				= 32;
 	constexpr const uint32 BACK_BUFFER_COUNT				= 3;
 
 	// Determines if a resource should be allocated by a deviceallocator or via a seperate allocation
