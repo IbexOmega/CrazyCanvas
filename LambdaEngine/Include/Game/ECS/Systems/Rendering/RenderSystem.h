@@ -57,7 +57,7 @@ namespace LambdaEngine
 		{
 			glm::mat4	Transform		= glm::mat4(1.0f);
 			glm::mat4	PrevTransform	= glm::mat4(1.0f);
-			uint32		MaterialSlot	= 0;
+			uint32		MaterialIndex	= 0;
 			uint32		MeshletCount	= 0;
 			uint32		Padding0;
 			uint32		Padding1;
@@ -318,17 +318,17 @@ namespace LambdaEngine
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
 		// Materials
-		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppCombinedMaterialMaps[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppAlbedoMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppNormalMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppCombinedMaterialMapViews[MAX_UNIQUE_MATERIALS];
-		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
-		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
-		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*				m_pMaterialParametersBuffer = nullptr;
-		TStack<uint32>		m_FreeMaterialSlots;
+		TArray<Texture*>			m_AlbedoMaps;
+		TArray<Texture*>			m_NormalMaps;
+		TArray<Texture*>			m_CombinedMaterialMaps;
+		TArray<TextureView*>		m_AlbedoMapViews;
+		TArray<TextureView*>		m_NormalMapViews;
+		TArray<TextureView*>		m_CombinedMaterialMapViews;
+		TArray<MaterialProperties>	m_MaterialProperties;
+		TArray<uint32>				m_MaterialInstanceCounts;
+		Buffer*						m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
+		Buffer*						m_pMaterialParametersBuffer = nullptr;
+		TArray<uint32>				m_ReleasedMaterialIndices;
 
 		// Per Frame
 		PerFrameBuffer		m_PerFrameData;
@@ -357,8 +357,8 @@ namespace LambdaEngine
 		// Pending/Dirty
 		bool						m_SBTRecordsDirty					= true;
 		bool						m_RenderGraphSBTRecordsDirty		= true;
-		bool						m_MaterialsPropertiesBufferDirty	= true;
-		bool						m_MaterialsResourceDirty			= true;
+		bool						m_MaterialsPropertiesBufferDirty	= false;
+		bool						m_MaterialsResourceDirty			= false;
 		bool						m_PerFrameResourceDirty				= true;
 		TSet<uint32>				m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;

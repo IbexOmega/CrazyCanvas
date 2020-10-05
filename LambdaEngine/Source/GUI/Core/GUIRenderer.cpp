@@ -57,12 +57,12 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppRenderCommandLists[b]);
 			SAFERELEASE(m_ppRenderCommandAllocators[b]);
 
-			for (Buffer* pBuffer : m_pBuffersToRemove[b])
+			for (DeviceChild* pGraphicsResource : m_pGraphicsResourcesToRemove[b])
 			{
-				SAFERELEASE(pBuffer);
+				SAFERELEASE(pGraphicsResource);
 			}
 
-			m_pBuffersToRemove[b].Clear();
+			m_pGraphicsResourcesToRemove[b].Clear();
 
 			for (Buffer* pParamsBuffer : m_pUsedParamsBuffers[b])
 			{
@@ -117,6 +117,8 @@ namespace LambdaEngine
 
 	bool GUIRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
+		if (m_Initialized) return true;
+
 		VALIDATE(pPreInitDesc != nullptr);
 		VALIDATE(pPreInitDesc->BackBufferCount == BACK_BUFFER_COUNT);
 
@@ -144,6 +146,7 @@ namespace LambdaEngine
 			return false;
 		}
 
+		m_Initialized = true;
 		return true;
 	}
 	
@@ -312,7 +315,7 @@ namespace LambdaEngine
 		{
 			if (m_pVertexBuffer == nullptr || m_pVertexBuffer->GetDesc().SizeInBytes < m_RequiredVertexBufferSize)
 			{
-				if (m_pVertexBuffer != nullptr) m_pBuffersToRemove->PushBack(m_pVertexBuffer);
+				if (m_pVertexBuffer != nullptr) m_pGraphicsResourcesToRemove[m_ModFrameIndex].PushBack(m_pVertexBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "GUI Vertex Buffer";
@@ -344,7 +347,7 @@ namespace LambdaEngine
 		{
 			if (m_pIndexBuffer == nullptr || m_pIndexBuffer->GetDesc().SizeInBytes < m_RequiredIndexBufferSize)
 			{
-				if (m_pIndexBuffer != nullptr) m_pBuffersToRemove->PushBack(m_pIndexBuffer);
+				if (m_pIndexBuffer != nullptr) m_pGraphicsResourcesToRemove[m_ModFrameIndex].PushBack(m_pIndexBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "GUI Index Buffer";
@@ -502,22 +505,28 @@ namespace LambdaEngine
 	{
 	}
 
-	void GUIRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void GUIRenderer::UpdateTextureResource(
+		const String& resourceName,
+		const TextureView* const* ppPerImageTextureViews,
+		const TextureView* const* ppPerSubImageTextureViews,
+		uint32 imageCount,
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
-			VALIDATE(count == BACK_BUFFER_COUNT);
+			VALIDATE(imageCount == BACK_BUFFER_COUNT);
 
-			for (uint32 i = 0; i < count; i++)
+			for (uint32 i = 0; i < imageCount; i++)
 			{
-				m_pBackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+				m_pBackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
 			}
 		}
-		else if (resourceName == "NOESIS_GUI_DEPTH_STENCIL" && count == 1)
+		else if (resourceName == "NOESIS_GUI_DEPTH_STENCIL" && subImageCount == 1)
 		{
-			m_DepthStencilTextureView = MakeSharedRef(ppTextureViews[0]);
+			m_DepthStencilTextureView = MakeSharedRef(ppPerSubImageTextureViews[0]);
 		}
 	}
 
@@ -549,23 +558,23 @@ namespace LambdaEngine
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage,
-		bool Sleeping)
+		bool sleeping)
 	{
-		if (!Sleeping)
+		m_ModFrameIndex		= modFrameIndex;
+		m_BackBufferIndex	= backBufferIndex;
+
+		if (!sleeping)
 		{
-			m_ModFrameIndex = modFrameIndex;
-			m_BackBufferIndex = backBufferIndex;
+			TArray<DeviceChild*>& resourcesToRemove = m_pGraphicsResourcesToRemove[m_ModFrameIndex];
 
-			//Delete Buffers
+			if (!resourcesToRemove.IsEmpty())
 			{
-				TArray<Buffer*>& frameBuffersToRemove = m_pBuffersToRemove[m_ModFrameIndex];
-
-				for (Buffer* pBuffer : frameBuffersToRemove)
+				for (DeviceChild* pGraphicsResource : resourcesToRemove)
 				{
-					SAFERELEASE(pBuffer);
+					SAFERELEASE(pGraphicsResource);
 				}
 
-				frameBuffersToRemove.Clear();
+				resourcesToRemove.Clear();
 			}
 
 			//Make Param Buffers available again
@@ -594,16 +603,16 @@ namespace LambdaEngine
 					descriptorsNowAvailable.Clear();
 				}
 			}
-
-			if (m_View.GetPtr() == nullptr)
-				return;
 		}
+
+		if (m_View.GetPtr() == nullptr)
+			return;
 
 		//Todo: Use UpdateRenderTree return value
 		m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());
 		m_View->GetRenderer()->UpdateRenderTree();
 
-		if (!Sleeping)
+		if (!sleeping)
 		{
 			m_RenderPassClearBegun = false;
 			m_View->GetRenderer()->RenderOffscreen();

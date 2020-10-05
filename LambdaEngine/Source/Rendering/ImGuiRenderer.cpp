@@ -157,7 +157,6 @@ namespace LambdaEngine
 	bool ImGuiRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
-
 		VALIDATE(pPreInitDesc->ColorAttachmentCount == 1);
 
 		m_BackBufferCount = pPreInitDesc->BackBufferCount;
@@ -202,15 +201,21 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(dataSize);
 	}*/
 
-	void ImGuiRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void ImGuiRenderer::UpdateTextureResource(
+		const String& resourceName, 
+		const TextureView* const* ppPerImageTextureViews, 
+		const TextureView* const* ppPerSubImageTextureViews, 
+		uint32 imageCount, 
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
-		if (count == 1 || backBufferBound)
+		if (subImageCount == 1 || backBufferBound)
 		{
 			if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 			{
-				for (uint32 i = 0; i < count; i++)
+				for (uint32 i = 0; i < imageCount; i++)
 				{
-					m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+					m_BackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
 				}
 			}
 			else
@@ -228,18 +233,18 @@ namespace LambdaEngine
 							TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 							descriptorSets[b] = descriptorSet;
 
-							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 						}
 					}
 					else
 					{
-						descriptorSets.Resize(count);
-						for (uint32 b = 0; b < count; b++)
+						descriptorSets.Resize(imageCount);
+						for (uint32 b = 0; b < imageCount; b++)
 						{
 							TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 							descriptorSets[b] = descriptorSet;
 
-							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 						}
 					}
 				}
@@ -254,18 +259,18 @@ namespace LambdaEngine
 							for (uint32 b = 0; b < backBufferCount; b++)
 							{
 								TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-								descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 							}
 						}
 					}
 					else
 					{
-						if (descriptorSets.GetSize() == count)
+						if (descriptorSets.GetSize() == imageCount)
 						{
-							for (uint32 b = 0; b < count; b++)
+							for (uint32 b = 0; b < imageCount; b++)
 							{
 								TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-								descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 							}
 						}
 						else
@@ -1005,6 +1010,18 @@ namespace LambdaEngine
 	
 	bool ImGuiRenderer::CreateRenderCommandLists()
 	{
+		if (m_ppRenderCommandLists != nullptr && m_ppRenderCommandAllocators != nullptr)
+		{
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppRenderCommandLists[b]);
+				SAFERELEASE(m_ppRenderCommandAllocators[b]);
+			}
+
+			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
+			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+		}
+
 		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
 		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
 
@@ -1045,6 +1062,9 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)
 	{
+		if (m_RenderPass.Get())
+			m_RenderPass.Reset();
+
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
 		colorAttachmentDesc.SampleCount		= 1;

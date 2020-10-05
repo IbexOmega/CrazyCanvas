@@ -369,10 +369,11 @@ namespace LambdaEngine
 			RenderGraphResourceDesc resource = {};
 			resource.Name							= SCENE_ALBEDO_MAPS;
 			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
+			resource.SubResourceCount				= 1;
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
+			resource.TextureParams.UnboundedArray	= true;
 			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -382,10 +383,11 @@ namespace LambdaEngine
 			RenderGraphResourceDesc resource = {};
 			resource.Name							= SCENE_NORMAL_MAPS;
 			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
+			resource.SubResourceCount				= 1;
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
+			resource.TextureParams.UnboundedArray	= true;
 			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -395,10 +397,11 @@ namespace LambdaEngine
 			RenderGraphResourceDesc resource = {};
 			resource.Name							= SCENE_COMBINED_MATERIAL_MAPS;
 			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
+			resource.SubResourceCount				= 1;
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
+			resource.TextureParams.UnboundedArray	= true;
 			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));

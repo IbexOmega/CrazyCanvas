@@ -6,25 +6,25 @@ namespace LambdaEngine
 	/*
 	* Constants
 	*/
-	constexpr const uint32 MAX_COLOR_ATTACHMENTS		= 8;
-	constexpr const uint32 MAX_SUBPASSES				= 16;
-	constexpr const uint32 MAX_SUBPASS_DEPENDENCIES		= 16;
-	constexpr const uint32 MAX_VERTEX_INPUT_ATTACHMENTS	= 8;
-	constexpr const uint32 MAX_ATTRIBUTES_PER_VERTEX	= 8;
-	constexpr const uint32 MAX_IMAGE_BARRIERS			= 16;
-	constexpr const uint32 MAX_MEMORY_BARRIERS			= 16;
-	constexpr const uint32 MAX_BUFFER_BARRIERS			= 16;
-	constexpr const uint32 MAX_VIEWPORTS				= 8;
-	constexpr const uint32 MAX_VERTEX_BUFFERS			= 32;
-	constexpr const uint32 MAX_DESCRIPTOR_BINDINGS		= 32;
-	constexpr const uint32 MAX_CONSTANT_RANGES			= 16;
-	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS		= 32;
-	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT	= 8;
-	constexpr const uint32 MAX_MISS_SHADER_COUNT		= 8;
-	constexpr const uint32 MAX_PUSH_CONSTANT_SIZE		= 128;
-	constexpr const uint32 EXTERNAL_SUBPASS				= UINT32_MAX;
-	constexpr const uint32 MAX_UNIQUE_MATERIALS			= 32;
-	constexpr const uint32 BACK_BUFFER_COUNT			= 3;
+	constexpr const uint32 MAX_COLOR_ATTACHMENTS			= 8;
+	constexpr const uint32 MAX_SUBPASSES					= 16;
+	constexpr const uint32 MAX_SUBPASS_DEPENDENCIES			= 16;
+	constexpr const uint32 MAX_VERTEX_INPUT_ATTACHMENTS		= 8;
+	constexpr const uint32 MAX_ATTRIBUTES_PER_VERTEX		= 8;
+	constexpr const uint32 MAX_IMAGE_BARRIERS				= 16;
+	constexpr const uint32 MAX_MEMORY_BARRIERS				= 16;
+	constexpr const uint32 MAX_BUFFER_BARRIERS				= 16;
+	constexpr const uint32 MAX_VIEWPORTS					= 8;
+	constexpr const uint32 MAX_VERTEX_BUFFERS				= 32;
+	constexpr const uint32 MAX_DESCRIPTOR_BINDINGS			= 32;
+	constexpr const uint32 MAX_CONSTANT_RANGES				= 16;
+	constexpr const uint32 MAX_IMMUTABLE_SAMPLERS			= 32;
+	constexpr const uint32 MAX_CLOSEST_HIT_SHADER_COUNT		= 8;
+	constexpr const uint32 MAX_MISS_SHADER_COUNT			= 8;
+	constexpr const uint32 MAX_PUSH_CONSTANT_SIZE			= 128;
+	constexpr const uint32 PARTIALLY_BOUND_DESCRIPTOR_COUNT	= 1024;
+	constexpr const uint32 EXTERNAL_SUBPASS					= UINT32_MAX;
+	constexpr const uint32 BACK_BUFFER_COUNT				= 3;
 
 	// Determines if a resource should be allocated by a deviceallocator or via a seperate allocation
 	constexpr const uint32 LARGE_TEXTURE_ALLOCATION_SIZE				= MEGA_BYTE(64);
@@ -503,6 +503,13 @@ namespace LambdaEngine
 		EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE		= FLAG(1),
 		EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP			= FLAG(2),
 		EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE	= FLAG(3),
+	};
+
+	typedef uint32 FDescriptorSetLayoutBindingFlags;
+	enum FDescriptorSetLayoutBindingFlag : FDescriptorSetLayoutBindingFlags
+	{
+		DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_NONE				= 0,
+		DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND	= FLAG(0),
 	};
 
 	enum class EVertexInputRate : uint8
