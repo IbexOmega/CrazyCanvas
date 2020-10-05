@@ -3,6 +3,8 @@
 #include "Rendering/ICustomRenderer.h"
 #include "Rendering/RenderGraphTypes.h"
 
+#include "Rendering/Core/API/CommandList.h"
+
 #include "NsRender/RenderDevice.h"
 #include "NsCore/Ptr.h"
 #include "NsGui/IView.h"
@@ -93,6 +95,7 @@ namespace LambdaEngine
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const * ppTextureViews, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
+		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count) override final;
 
 		virtual void Render(
 			uint32 modFrameIndex, 
@@ -165,8 +168,9 @@ namespace LambdaEngine
 		TArray<DescriptorSet*>	m_AvailableDescriptorSets;
 		TArray<DescriptorSet*>	m_pUsedDescriptorSets[BACK_BUFFER_COUNT];
 
-		RenderPass* m_pMainRenderPassClearDS = nullptr;
-		RenderPass* m_pMainRenderPassLoadDS = nullptr;
+		RenderPass* m_pMainRenderPassClearDS	= nullptr;
+		RenderPass* m_pMainRenderPassLoadDS		= nullptr;
+		ClearColorDesc m_pMainRenderPassClearColors[2];
 
 		TArray<Noesis::Ptr<Noesis::Texture>> m_GUITextures;
 		TArray<Noesis::Ptr<Noesis::RenderTarget>> m_GUIRenderTargets;

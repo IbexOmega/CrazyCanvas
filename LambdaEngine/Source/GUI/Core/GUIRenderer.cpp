@@ -515,7 +515,7 @@ namespace LambdaEngine
 				m_pBackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
 			}
 		}
-		else if (resourceName == "GUI_DEPTH_STENCIL" && count == 1)
+		else if (resourceName == "NOESIS_GUI_DEPTH_STENCIL" && count == 1)
 		{
 			m_DepthStencilTextureView = MakeSharedRef(ppTextureViews[0]);
 		}
@@ -535,6 +535,13 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
+	}
+
+	void GUIRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
+	{
+		UNREFERENCED_VARIABLE(resourceName);
+		UNREFERENCED_VARIABLE(pDrawArgs);
+		UNREFERENCED_VARIABLE(count);
 	}
 
 	void GUIRenderer::Render(
@@ -670,8 +677,8 @@ namespace LambdaEngine
 			beginRenderPassDesc.Width				= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
 			beginRenderPassDesc.Height				= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
 			beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-			beginRenderPassDesc.pClearColors		= nullptr;
-			beginRenderPassDesc.ClearColorCount		= 0;
+			beginRenderPassDesc.pClearColors		= m_pMainRenderPassClearColors;
+			beginRenderPassDesc.ClearColorCount		= 2;
 			beginRenderPassDesc.Offset.x			= 0;
 			beginRenderPassDesc.Offset.y			= 0;
 
@@ -898,6 +905,14 @@ namespace LambdaEngine
 
 			m_pMainRenderPassLoadDS = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
 		}
+
+		m_pMainRenderPassClearColors[0].Color[0]	= 0.0f;
+		m_pMainRenderPassClearColors[0].Color[1]	= 0.0f;
+		m_pMainRenderPassClearColors[0].Color[2]	= 0.0f;
+		m_pMainRenderPassClearColors[0].Color[3]	= 0.0f;
+
+		m_pMainRenderPassClearColors[1].Depth	= 1.0f;
+		m_pMainRenderPassClearColors[1].Stencil	= 0;
 
 		return true;
 	}

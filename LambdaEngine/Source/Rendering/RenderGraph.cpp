@@ -679,65 +679,75 @@ namespace LambdaEngine
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.MaskToArgs.find(pRenderStage->DrawArgsMask);
 					pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
 
-					for (uint32 b = 0; b < m_BackBufferCount; b++)
+					if (pRenderStage->UsesCustomRenderer)
 					{
-						DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
-						DescriptorSet** ppNewDrawArgsPerFrame = nullptr;
+						pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
+							pResource->Name,
+							drawArgsMaskToArgsIt->second.Args.GetData(),
+							drawArgsMaskToArgsIt->second.Args.GetSize());
+					}
+					else
+					{
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
+							DescriptorSet** ppNewDrawArgsPerFrame = nullptr;
 
-						if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
-						{
-							ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet*[drawArgsMaskToArgsIt->second.Args.GetSize()];
-						}
-						else
-						{
-							ppNewDrawArgsPerFrame = ppPrevDrawArgsPerFrame;
-						}
+							if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
+							{
+								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet*[drawArgsMaskToArgsIt->second.Args.GetSize()];
+							}
+							else
+							{
+								ppNewDrawArgsPerFrame = ppPrevDrawArgsPerFrame;
+							}
 
-						for (uint32 d = 0; d < drawArgsMaskToArgsIt->second.Args.GetSize(); d++)
-						{
-							if (d < pRenderStage->NumDrawArgsPerFrame)
+							for (uint32 d = 0; d < drawArgsMaskToArgsIt->second.Args.GetSize(); d++)
+							{
+								if (d < pRenderStage->NumDrawArgsPerFrame)
+								{
+									DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
+									m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+								}
+
+								DescriptorSet* pWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, m_pDescriptorHeap);
+
+								static uint64 offset = 0;
+
+								const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
+								VALIDATE(drawArg.pVertexBuffer);
+								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
+							
+								VALIDATE(drawArg.pInstanceBuffer);
+								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
+							
+								// If meshletbuffer is nullptr we assume that meshshaders are disabled
+								if (drawArg.pMeshletBuffer)
+								{
+									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
+								
+									VALIDATE(drawArg.pUniqueIndicesBuffer);
+									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
+								
+									VALIDATE(drawArg.pPrimitiveIndices);
+									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
+								}
+
+								ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
+							}
+
+							//If drawArgsMaskToArgsIt->second.Args.GetSize() is smaller than pRenderStage->NumDrawArgsPerFrame then some Descriptor Sets are not destroyed that should be destroyed
+							for (uint32 d = drawArgsMaskToArgsIt->second.Args.GetSize(); d < pRenderStage->NumDrawArgsPerFrame; d++)
 							{
 								DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
 								m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
 							}
 
-							DescriptorSet* pWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, m_pDescriptorHeap);
-
-							static uint64 offset = 0;
-
-							const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
-							VALIDATE(drawArg.pVertexBuffer);
-							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
-							
-							VALIDATE(drawArg.pInstanceBuffer);
-							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
-							
-							// If meshletbuffer is nullptr we assume that meshshaders are disabled
-							if (drawArg.pMeshletBuffer)
-							{
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
-								
-								VALIDATE(drawArg.pUniqueIndicesBuffer);
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
-								
-								VALIDATE(drawArg.pPrimitiveIndices);
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
-							}
-
-							ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
+							pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
 						}
 
-						//If drawArgsMaskToArgsIt->second.Args.GetSize() is smaller than pRenderStage->NumDrawArgsPerFrame then some Descriptor Sets are not destroyed that should be destroyed
-						for (uint32 d = drawArgsMaskToArgsIt->second.Args.GetSize(); d < pRenderStage->NumDrawArgsPerFrame; d++)
-						{
-							DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
-							m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-						}
-
-						pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
+						pRenderStage->NumDrawArgsPerFrame = drawArgsMaskToArgsIt->second.Args.GetSize();
 					}
-
-					pRenderStage->NumDrawArgsPerFrame = drawArgsMaskToArgsIt->second.Args.GetSize();
 				}
 			}
 
@@ -3470,7 +3480,7 @@ namespace LambdaEngine
 			actualSubResourceCount = pResource->SubResourceCount;
 		}
 
-		VALIDATE(actualSubResourceCount == pDesc->BufferUpdate.Count);
+		VALIDATE(actualSubResourceCount == pDesc->ExternalBufferUpdate.Count);
 
 		//Update Buffer
 		for (uint32 sr = 0; sr < actualSubResourceCount; sr++)
@@ -3861,6 +3871,7 @@ namespace LambdaEngine
 
 				clearColorCount++;
 			}
+
 			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
 			{
 				BeginRenderPassDesc beginRenderPassDesc = { };

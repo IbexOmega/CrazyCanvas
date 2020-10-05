@@ -447,7 +447,7 @@ namespace LambdaEngine
 		uint32											m_BackBufferIndex					= 0;
 		uint32											m_BackBufferCount					= 0;
 
-		Fence*											s_pMaterialFence							= nullptr;
+		Fence*											s_pMaterialFence					= nullptr;
 		uint64											m_SignalValue						= 1;
 
 		TArray<ICustomRenderer*>						m_CustomRenderers;

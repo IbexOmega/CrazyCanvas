@@ -298,6 +298,13 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
+	void ImGuiRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
+	{
+		UNREFERENCED_VARIABLE(resourceName);
+		UNREFERENCED_VARIABLE(pDrawArgs);
+		UNREFERENCED_VARIABLE(count);
+	}
+
 	void ImGuiRenderer::Render(
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,

@@ -1772,6 +1772,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
@@ -1783,6 +1784,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			m_LightsResourceDirty = false;
@@ -1793,6 +1795,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 

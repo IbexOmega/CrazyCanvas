@@ -354,6 +354,13 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
+	void LineRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
+	{
+		UNREFERENCED_VARIABLE(resourceName);
+		UNREFERENCED_VARIABLE(pDrawArgs);
+		UNREFERENCED_VARIABLE(count);
+	}
+
 	void LineRenderer::Render(
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
