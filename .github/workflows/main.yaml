@@ -16,7 +16,7 @@ jobs:
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           project-path: LambdaEngine/LambdaEngine.vcxproj
-          build-configuration: Debug x64_StaticLib
+          build-configuration: Debug x64_CrazyCanvas
 
   Build-LambdaEngine-Release:
     runs-on: [self-hosted, Windows, X64]
@@ -32,7 +32,7 @@ jobs:
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           project-path: LambdaEngine/LambdaEngine.vcxproj
-          build-configuration: Release x64_StaticLib
+          build-configuration: Release x64_CrazyCanvas
 
   Build-CrazyCanvas-Debug:
     runs-on: [self-hosted, Windows, X64]
@@ -48,7 +48,7 @@ jobs:
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Debug x64_StaticLib
+          build-configuration: Debug x64_CrazyCanvas
 
   Build-CrazyCanvas-Release:
     runs-on: [self-hosted, Windows, X64]
@@ -64,7 +64,7 @@ jobs:
         uses: IbexOmega/lambda-build-action@v1.0.2
         with:
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Release x64_StaticLib
+          build-configuration: Release x64_CrazyCanvas
 
   Lint:
     runs-on: [self-hosted, Windows, X64]
