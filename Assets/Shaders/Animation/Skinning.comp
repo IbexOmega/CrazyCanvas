@@ -3,7 +3,14 @@
 
 #include "../Helpers.glsl"
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+#define THREAD_COUNT 32
+layout(local_size_x = THREAD_COUNT, local_size_y = 1, local_size_z = 1) in;
+
+// Pushconstants
+layout(push_constant) uniform PushConstants
+{
+	uint VertexCount;
+} u_PC;
 
 // Buffers
 layout(binding = 0, set = 0) restrict readonly buffer OriginalVertices
@@ -31,6 +38,12 @@ layout(binding = 3, set = 0) restrict readonly buffer BoneWeights
 // Main
 void main()
 {
+	// Return in case this thread is outside of our VertexCount
+	if (gl_GlobalInvocationID.x >= u_PC.VertexCount)
+	{
+		return;
+	}
+
 	SVertexBoneData weights = b_BoneWeights.Val[gl_GlobalInvocationID.x];
 	mat4 bone0 = b_BoneMatrices.Val[weights.Bone0.BoneID] * weights.Bone0.Weight;
 	mat4 bone1 = b_BoneMatrices.Val[weights.Bone1.BoneID] * weights.Bone1.Weight;
