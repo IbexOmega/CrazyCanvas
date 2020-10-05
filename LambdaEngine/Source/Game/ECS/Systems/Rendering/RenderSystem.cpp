@@ -1397,7 +1397,7 @@ namespace LambdaEngine
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName		= "Raster Instance Buffer";
 					bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-					bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 					bufferDesc.SizeInBytes		= requiredBufferSize;
 
 					pDirtyInstanceBufferEntry->pRasterInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);

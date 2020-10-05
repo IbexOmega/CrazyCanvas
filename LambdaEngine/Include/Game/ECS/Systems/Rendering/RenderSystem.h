@@ -47,6 +47,7 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderSystem : public System
 	{
+		friend class PaintMaskRenderer;
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
 

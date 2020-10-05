@@ -2,6 +2,7 @@
 
 #include "Rendering/ICustomRenderer.h"
 #include "Rendering/RenderGraph.h"
+#include <optional>
 
 namespace LambdaEngine
 {
@@ -65,6 +66,14 @@ namespace LambdaEngine
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
 
 	private:
+		struct RenderTarget
+		{
+			TextureView*	TextureView		= nullptr;
+			uint32			DrawArgIndex	= 0;
+			uint32			InstanceIndex	= 0;
+		};
+
+	private:
 		const GraphicsDevice* m_pGraphicsDevice = nullptr;
 
 		uint32 m_BackBufferCount = 0;
@@ -80,7 +89,6 @@ namespace LambdaEngine
 		uint64						m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>	m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>	m_DescriptorHeap = nullptr;
-		TSharedRef<DescriptorSet>	m_DescriptorSet = nullptr;
 
 		GUID_Lambda m_VertexShaderGUID = 0;
 		GUID_Lambda m_PixelShaderGUID = 0;
@@ -91,8 +99,14 @@ namespace LambdaEngine
 		TArray<TSharedRef<Buffer>> m_TransformCopyBuffers;
 		TSharedRef<Buffer> m_TransformBuffer = nullptr;
 
-		THashTable<String, TArray<TSharedRef<DescriptorSet>>>		m_BufferResourceNameDescriptorSetsMap;
-		TArray<TSharedRef<DescriptorSet>>							m_BrushMaskDescriptorSet;
+		const DrawArg*												m_pDrawArgs;
+		TArray<TArray<TSharedRef<DescriptorSet>>>					m_VerticesDescriptorSets;
+		std::optional<TSharedRef<DescriptorSet>>					m_PerFrameTransformBufferDescriptorSets;
+		std::optional<TSharedRef<DescriptorSet>>					m_BrushMaskDescriptorSet;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
+
+		TArray<TArray<TSharedRef<DeviceChild>>>						m_pDeviceResourcesToDestroy;
+
+		TArray<RenderTarget>										m_RenderTargets;
 	};
 }

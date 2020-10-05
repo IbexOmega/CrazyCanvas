@@ -20,6 +20,7 @@
 #include "Rendering/Core/API/Shader.h"
 #include "Rendering/Core/API/Buffer.h"
 #include "Rendering/EntityMaskManager.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "Game/ECS/Components/Misc/MeshPaintComponent.h"
 
@@ -44,10 +45,16 @@ namespace LambdaEngine
 			{
 				SAFERELEASE(m_ppRenderCommandLists[b]);
 				SAFERELEASE(m_ppRenderCommandAllocators[b]);
+
+				for (TSharedRef<DeviceChild> pDeviceChild : m_pDeviceResourcesToDestroy[b])
+				{
+					SAFERELEASE(pDeviceChild);
+				}
 			}
 
 			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+			m_pDeviceResourcesToDestroy.Clear();
 		}
 	}
 
@@ -55,6 +62,8 @@ namespace LambdaEngine
 	{
 		m_BackBuffers.Resize(backBufferCount);
 		m_BackBufferCount = backBufferCount;
+
+		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
 
 		m_pGraphicsDevice = pGraphicsDevice;
 
@@ -128,8 +137,6 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(backBufferBound);
-
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
 			for (uint32 i = 0; i < count; i++)
@@ -140,69 +147,25 @@ namespace LambdaEngine
 
 		if (resourceName == "BRUSH_MASK")
 		{
+			VALIDATE(count == 1);
+			VALIDATE(backBufferBound == false);
+
 			// This should not be necessary, because we already know that the brush mask texture is not back buffer bound.
 			Sampler* sampler = Sampler::GetLinearSampler();
-			if (!m_BrushMaskDescriptorSet.IsEmpty())
+			if (!m_BrushMaskDescriptorSet.has_value())
 			{
-				if (backBufferBound)
-				{
-					// If it is back buffer bound then create copies for each backbuffer
-					uint32 backBufferCount = m_BackBuffers.GetSize();
-					m_BrushMaskDescriptorSet.Resize(backBufferCount);
-					for (uint32 b = 0; b < backBufferCount; b++)
-					{
-						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-						m_BrushMaskDescriptorSet[b] = descriptorSet;
-
-						descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-					}
-				}
-				else
-				{
-					// Else create as many as requested
-					m_BrushMaskDescriptorSet.Resize(count);
-					for (uint32 b = 0; b < count; b++)
-					{
-						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-						m_BrushMaskDescriptorSet[b] = descriptorSet;
-
-						descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-					}
-				}
+				m_BrushMaskDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
+				m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 			}
 			else
 			{
-				// Else the resource exists
-				if (backBufferBound)
+				if (m_BrushMaskDescriptorSet.has_value())
 				{
-					uint32 backBufferCount = m_BackBuffers.GetSize();
-					if (m_BrushMaskDescriptorSet.GetSize() == backBufferCount)
-					{
-						for (uint32 b = 0; b < backBufferCount; b++)
-						{
-							TSharedRef<DescriptorSet> descriptorSet = m_BrushMaskDescriptorSet[b];
-							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-						}
-					}
-					else
-					{
-						LOG_ERROR("[Paint Mask Renderer]: Backbuffer count does not match the amount of descriptors to update for resource \"%s\"", resourceName.c_str());
-					}
+					m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 				}
 				else
 				{
-					if (m_BrushMaskDescriptorSet.GetSize() == count)
-					{
-						for (uint32 b = 0; b < count; b++)
-						{
-							TSharedRef<DescriptorSet> descriptorSet = m_BrushMaskDescriptorSet[b];
-							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-						}
-					}
-					else
-					{
-						LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
-					}
+					LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
 				}
 			}
 		}
@@ -212,73 +175,23 @@ namespace LambdaEngine
 	{
 		if (count == 1 || backBufferBound)
 		{
-			auto bufferIt = m_BufferResourceNameDescriptorSetsMap.find(resourceName);
-			if (bufferIt == m_BufferResourceNameDescriptorSetsMap.end())
+			if (resourceName == PER_FRAME_BUFFER)
 			{
-				// If resource doesn't exist, create descriptor and write it
-				TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_BufferResourceNameDescriptorSetsMap[resourceName];
-				if (backBufferBound)
+				if (!m_PerFrameTransformBufferDescriptorSets.has_value())
 				{
-					// If it is backbufferbound then create copies for each backbuffer
-					uint32 backBufferCount = m_BackBuffers.GetSize();
-					descriptorSets.Resize(backBufferCount);
-					for (uint32 b = 0; b < backBufferCount; b++)
-					{
-						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-						descriptorSets[b] = descriptorSet;
-
-						descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-					}
+					m_PerFrameTransformBufferDescriptorSets = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom PerFrameBuffer and Transform Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+					m_PerFrameTransformBufferDescriptorSets.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 				}
 				else
 				{
-					// Else create as many as requested
-					descriptorSets.Resize(count);
-					for (uint32 b = 0; b < count; b++)
+					if (m_BrushMaskDescriptorSet.has_value())
 					{
-						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-						descriptorSets[b] = descriptorSet;
-
-						descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-					}
-				}
-			}
-			else
-			{
-				// Else the resource exists
-				TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_BufferResourceNameDescriptorSetsMap[resourceName];
-				if (backBufferBound)
-				{
-					uint32 backBufferCount = m_BackBuffers.GetSize();
-					if (descriptorSets.GetSize() == backBufferCount)
-					{
-						for (uint32 b = 0; b < backBufferCount; b++)
-						{
-							TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-							descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-						}
-					}
-					else
-					{
-						LOG_ERROR("[Paint Mask Renderer]: Backbuffer count does not match the amount of descriptors to update for resource \"%s\"", resourceName.c_str());
-					}
-
-				}
-				else
-				{
-					if (descriptorSets.GetSize() == count)
-					{
-						for (uint32 b = 0; b < count; b++)
-						{
-							TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-							descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-						}
+						m_BrushMaskDescriptorSet.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 					}
 					else
 					{
 						LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
 					}
-
 				}
 			}
 		}
@@ -292,23 +205,54 @@ namespace LambdaEngine
 	
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
-		//Kallas när ett DrawArg har uppdaterats i RenderGraphen, du kan anta att DrawArgMasken överenstämmer med det som är angivet i RenderGraphen
-		for (uint32 i = 0; i < pDrawArgs->InstanceCount; i++)
+		m_pDrawArgs = pDrawArgs;
+		
+		uint32 backBufferCount = m_BackBuffers.GetSize();
+		for (uint32 b = 0; b < backBufferCount; b++)
 		{
-			DrawArgExtensionGroup* extensionGroup = pDrawArgs->ppExtensionGroups[i];
-
-			// TODO: We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
-			uint32 numExtensions = extensionGroup->ExtensionCount;
-			for (uint32 e = 0; e < numExtensions; e++)
+			if (m_VerticesDescriptorSets.IsEmpty())
 			{
-				uint32 mask = extensionGroup->pExtensionMasks[e];
-				DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+				m_VerticesDescriptorSets.Resize(backBufferCount);
+			}
 
-				for (uint32 t = 0; t < extension.TextureCount; t++)
+			// Remove all descriptor sets.
+			for (TSharedRef<DescriptorSet> descriptorSet : m_VerticesDescriptorSets[b])
+				m_pDeviceResourcesToDestroy[b].PushBack(std::move(descriptorSet));
+			m_VerticesDescriptorSets[b].Clear();
+
+			for (uint32 d = 0; d < count; d++)
+			{
+				const DrawArg& drawArg = pDrawArgs[d];
+
+				// Create new descriptor sets.
+				TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
+				uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
+				uint64 offset = 0;
+				descriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+				m_VerticesDescriptorSets[b].PushBack(descriptorSet);
+			}
+		}
+
+		m_RenderTargets.Clear();
+		for (uint32 d = 0; d < count; d++)
+		{
+			const DrawArg& drawArg = pDrawArgs[d];
+
+			for (uint32 i = 0; i < drawArg.InstanceCount; i++)
+			{
+				DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
+
+				// TODO: We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
+				uint32 numExtensions = extensionGroup->ExtensionCount;
+				for (uint32 e = 0; e < numExtensions; e++)
 				{
-					Texture* texture = extension.ppTextures[t];
-					TextureView* textureView = extension.ppTextureViews[t];
-					// TODO: Make the render function use each texture as a render target.
+					uint32 mask = extensionGroup->pExtensionMasks[e];
+					if (mask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
+					{
+						DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+						TextureView* textureView = extension.ppTextureViews[0];
+						m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
+					}
 				}
 			}
 		}
@@ -318,82 +262,109 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];
-		uint32 width = backBuffer->GetDesc().pTexture->GetDesc().Width;
-		uint32 height = backBuffer->GetDesc().pTexture->GetDesc().Height;
+		// Delete old resources.
+		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
+		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
+		{
+			for (TSharedRef<DeviceChild> pDeviceChild : currentFrameDeviceResourcesToDestroy)
+			{
+				//pDeviceChild.Get()->Release();
+				//SAFERELEASE(pDeviceChild);
+			}
 
-		BeginRenderPassDesc beginRenderPassDesc = {};
-		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
-		beginRenderPassDesc.ppRenderTargets = &backBuffer;
-		beginRenderPassDesc.RenderTargetCount = 1;
-		//beginRenderPassDesc.pDepthStencil = m_DepthStencilBuffer.Get();
-		beginRenderPassDesc.Width = width;
-		beginRenderPassDesc.Height = height;
-		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPassDesc.pClearColors = nullptr;
-		beginRenderPassDesc.ClearColorCount = 0;
-		beginRenderPassDesc.Offset.x = 0;
-		beginRenderPassDesc.Offset.y = 0;
+			currentFrameDeviceResourcesToDestroy.Clear();
+		}
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
-		
-		//TODO: Do this once if no data is avaliable
-		//if (m_LineGroups.size() == 0 && m_Verticies.GetSize() == 0)
-		//{
-		//	m_ppRenderCommandAllocators[modFrameIndex]->Reset();
-		//	pCommandList->Begin(nullptr);
-		//	//Begin and End RenderPass to transition Texture State (Lazy)
-		//	pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		//	pCommandList->EndRenderPass();
-		//
-		//	pCommandList->End();
-		//
-		//	(*ppFirstExecutionStage) = pCommandList;
-		//	return;
-		//}
-
-		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
-		pCommandList->Begin(nullptr);
-
-		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
-		Viewport viewport = {};
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.Width = (float32)width;
-		viewport.Height = -(float32)height;
-		viewport.x = 0.0f;
-		viewport.y = (float32)height;
-		pCommandList->SetViewports(&viewport, 0, 1);
-
-		ScissorRect scissorRect = {};
-		scissorRect.Width = width;
-		scissorRect.Height = height;
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
-		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
-
-		if (m_BufferResourceNameDescriptorSetsMap.contains(PER_FRAME_BUFFER))
+		if (m_RenderTargets.IsEmpty())
 		{
-			auto& descriptorSets = m_BufferResourceNameDescriptorSetsMap[PER_FRAME_BUFFER];
-			pCommandList->BindDescriptorSetGraphics(descriptorSets[0].Get(), m_PipelineLayout.Get(), 0);
+			BeginRenderPassDesc beginRenderPassDesc = {};
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+			//Begin and End RenderPass to transition Texture State (Lazy)
+			pCommandList->BeginRenderPass(&beginRenderPassDesc);
+			pCommandList->EndRenderPass();
+
+			pCommandList->End();
+
+			(*ppFirstExecutionStage) = pCommandList;
+			return;
 		}
 
-		if (!m_BrushMaskDescriptorSet.IsEmpty())
+		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 		{
-			auto& descriptorSetBrush = m_BrushMaskDescriptorSet[backBufferIndex];
-			pCommandList->BindDescriptorSetGraphics(descriptorSetBrush.Get(), m_PipelineLayout.Get(), 0);
+			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
+			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
+			uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
+			const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
+			TextureView*	renderTarget		= renderTargetDesc.TextureView;
+
+			for (uint32 i = 0; i < drawArg.InstanceCount; i++)
+			{
+				uint64 size = sizeof(RenderSystem::Instance);
+				uint64 offset = instanceIndex * size;
+				m_PerFrameTransformBufferDescriptorSets.value()->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+			}
+
+			uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
+			uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
+
+			BeginRenderPassDesc beginRenderPassDesc = {};
+			beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
+			beginRenderPassDesc.ppRenderTargets = &renderTarget;
+			beginRenderPassDesc.RenderTargetCount = 1;
+			//beginRenderPassDesc.pDepthStencil = m_DepthStencilBuffer.Get();
+			beginRenderPassDesc.Width = width;
+			beginRenderPassDesc.Height = height;
+			beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+			beginRenderPassDesc.pClearColors = nullptr;
+			beginRenderPassDesc.ClearColorCount = 0;
+			beginRenderPassDesc.Offset.x = 0;
+			beginRenderPassDesc.Offset.y = 0;
+
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+
+			pCommandList->BeginRenderPass(&beginRenderPassDesc);
+
+			Viewport viewport = {};
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = 1.0f;
+			viewport.Width = (float32)width;
+			viewport.Height = -(float32)height;
+			viewport.x = 0.0f;
+			viewport.y = (float32)height;
+			pCommandList->SetViewports(&viewport, 0, 1);
+
+			ScissorRect scissorRect = {};
+			scissorRect.Width = width;
+			scissorRect.Height = height;
+			pCommandList->SetScissorRects(&scissorRect, 0, 1);
+			
+			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
+
+			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+
+			if (m_PerFrameTransformBufferDescriptorSets.has_value())
+			{
+				pCommandList->BindDescriptorSetGraphics(m_PerFrameTransformBufferDescriptorSets.value().Get(), m_PipelineLayout.Get(), 0);
+			}
+
+			if (m_BrushMaskDescriptorSet.has_value())
+			{
+				pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.value().Get(), m_PipelineLayout.Get(), 1);
+			}
+
+			pCommandList->BindDescriptorSetGraphics(m_VerticesDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
+
+			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
+
+			pCommandList->EndRenderPass();
+			pCommandList->End();
+
+			(*ppFirstExecutionStage) = pCommandList;
 		}
-
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 1);
-
-		//pCommandList->DrawInstanced(drawCount, drawCount, 0, 0);
-
-		pCommandList->EndRenderPass();
-		pCommandList->End();
-
-		(*ppFirstExecutionStage) = pCommandList;
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()
@@ -452,32 +423,38 @@ namespace LambdaEngine
 		// PerFrameBuffer (Binding 0) and Transform (Binding 1)
 		DescriptorBindingDesc perFrameBufferDesc = {};
 		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		perFrameBufferDesc.DescriptorCount = 2;
+		perFrameBufferDesc.DescriptorCount = 1;
 		perFrameBufferDesc.Binding = 0;
-		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		DescriptorBindingDesc transformBufferDesc = {};
+		transformBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		transformBufferDesc.DescriptorCount = 1;
+		transformBufferDesc.Binding = 1;
+		transformBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		// Brush mask texture
 		DescriptorBindingDesc brushMaskDesc = {};
 		brushMaskDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		brushMaskDesc.DescriptorCount = 1;
 		brushMaskDesc.Binding = 0;
-		brushMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		brushMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		// Draw Args (No Extension, only Vertices)
 		DescriptorBindingDesc ssboBindingDesc = {};
 		ssboBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		ssboBindingDesc.DescriptorCount = 1;
 		ssboBindingDesc.Binding = 0;
-		ssboBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		ssboBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, transformBufferDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
 		descriptorSetLayoutDesc1.DescriptorBindings = { brushMaskDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { ssboBindingDesc };
+		descriptorSetLayoutDesc2.DescriptorBindings = { ssboBindingDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Paint Mask Renderer Pipeline Layout";
@@ -510,9 +487,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
-
-		return m_DescriptorSet != nullptr;
+		return true;
 	}
 
 	bool PaintMaskRenderer::CreateShaders()
@@ -561,14 +536,11 @@ namespace LambdaEngine
 		colorAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
 		colorAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
-		//colorAttachmentDesc.InitialState = ETextureState::;
-		//colorAttachmentDesc.FinalState = pBackBufferAttachmentDesc->FinalState;
-
-		//RenderPassAttachmentDesc depthAttachmentDesc = *pDepthStencilAttachmentDesc;
+		colorAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		//subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass = EXTERNAL_SUBPASS;

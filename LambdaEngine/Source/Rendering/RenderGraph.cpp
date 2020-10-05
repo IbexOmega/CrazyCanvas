@@ -2937,33 +2937,19 @@ namespace LambdaEngine
 						textureBarrier.QueueAfter = nextQueue;
 						textureBarrier.SrcMemoryAccessFlags = srcMemoryAccessFlags;
 						textureBarrier.DstMemoryAccessFlags = dstMemoryAccessFlags;
-						textureBarrier.StateBefore = CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
-						textureBarrier.StateAfter = CalculateResourceTextureState(pResource->Type, pResourceSynchronizationDesc->NextBindingType, pResource->Texture.Format);
+						textureBarrier.StateBefore = CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
+						textureBarrier.StateAfter = CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->NextBindingType, pResource->Texture.Format);
 						textureBarrier.TextureFlags = pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : 0;
 
 						uint32 targetSynchronizationIndex = 0;
 
 						if (prevQueue == nextQueue)
 						{
-							if (pResource->BackBufferBound)
-							{
-								targetSynchronizationIndex = SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX;
-							}
-							else
-							{
-								targetSynchronizationIndex = SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX;
-							}
+							targetSynchronizationIndex = 0; // SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX
 						}
 						else
 						{
-							if (pResource->BackBufferBound)
-							{
-								targetSynchronizationIndex = OTHER_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX;
-							}
-							else
-							{
-								targetSynchronizationIndex = OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX;
-							}
+							targetSynchronizationIndex = 1; // OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX
 						}
 
 						uint32 actualSubResourceCount = 0;
@@ -2988,14 +2974,16 @@ namespace LambdaEngine
 						{
 							TArray<PipelineTextureBarrierDesc>& targetArray = pSynchronizationStage->DrawTextureBarriers[targetSynchronizationIndex];
 							targetArray.PushBack(textureBarrier);
-							uint32 barrierIndex = targetArray.GetSize() - 1;
 
+							/*
+							uint32 barrierIndex = targetArray.GetSize() - 1;
 							ResourceBarrierInfo barrierInfo = {};
 							barrierInfo.SynchronizationStageIndex = s;
 							barrierInfo.SynchronizationTypeIndex = targetSynchronizationIndex;
 							barrierInfo.BarrierIndex = barrierIndex;
 
 							pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
+							*/
 						}
 					}
 				}
@@ -3449,9 +3437,8 @@ namespace LambdaEngine
 						}
 
 						// Meshlet Buffer
+						if(pDrawArg->pMeshletBuffer)
 						{
-							VALIDATE(pDrawArg->pMeshletBuffer);
-
 							bufferBarrierTemplate.pBuffer		= pDrawArg->pMeshletBuffer;
 							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pMeshletBuffer->GetDesc().SizeInBytes;
 							bufferBarrierTemplate.Offset		= 0;
@@ -3459,9 +3446,8 @@ namespace LambdaEngine
 						}
 
 						// UniqueIndices Buffer
+						if (pDrawArg->pUniqueIndicesBuffer)
 						{
-							VALIDATE(pDrawArg->pUniqueIndicesBuffer);
-
 							bufferBarrierTemplate.pBuffer		= pDrawArg->pUniqueIndicesBuffer;
 							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pUniqueIndicesBuffer->GetDesc().SizeInBytes;
 							bufferBarrierTemplate.Offset		= 0;
@@ -3469,14 +3455,14 @@ namespace LambdaEngine
 						}
 
 						// PrimitiveIndices Buffer
+						if (pDrawArg->pPrimitiveIndices)
 						{
-							VALIDATE(pDrawArg->pPrimitiveIndices);
-
 							bufferBarrierTemplate.pBuffer		= pDrawArg->pPrimitiveIndices;
 							bufferBarrierTemplate.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
 							bufferBarrierTemplate.Offset		= 0;
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
+						
 
 						// For draw arg extensions
 						if (drawArgMask > 1)
@@ -3496,6 +3482,8 @@ namespace LambdaEngine
 										{
 											uint32 masks = extensionGroup->pExtensionMasks[e];
 											const TextureViewDesc& textureViewDesc = extension.ppTextureViews[t]->GetDesc();
+											textureBarrierTemplate.StateBefore = ETextureState::TEXTURE_STATE_UNKNOWN;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
+											textureBarrierTemplate.StateAfter = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 											textureBarrierTemplate.pTexture = extension.ppTextures[t];
 											textureBarrierTemplate.Miplevel = textureViewDesc.Miplevel;
 											textureBarrierTemplate.MiplevelCount = textureViewDesc.MiplevelCount;
@@ -3941,27 +3929,12 @@ namespace LambdaEngine
 
 		// Draw Texture Synchronizations
 		{
-			const TArray<PipelineTextureBarrierDesc>& sameQueueBackBufferBarriers = pSynchronizationStage->DrawTextureBarriers[SAME_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX];
-			const TArray<PipelineTextureBarrierDesc>& sameQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX];
-			const TArray<PipelineTextureBarrierDesc>& otherQueueBackBufferBarriers = pSynchronizationStage->DrawTextureBarriers[OTHER_QUEUE_BACK_BUFFER_BOUND_SYNCHRONIZATION_INDEX];
-			const TArray<PipelineTextureBarrierDesc>& otherQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX];
-
-			if (sameQueueBackBufferBarriers.GetSize() > 0)
-			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, &otherQueueBackBufferBarriers[m_BackBufferIndex], 1);
-			}
+			const TArray<PipelineTextureBarrierDesc>& sameQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[0]; // SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX
+			const TArray<PipelineTextureBarrierDesc>& otherQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[1]; // OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX
 
 			if (sameQueueDrawTextureBarriers.GetSize() > 0)
 			{
 				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueDrawTextureBarriers.GetData(), sameQueueDrawTextureBarriers.GetSize());
-			}
-
-			if (otherQueueBackBufferBarriers.GetSize() > 0)
-			{
-				const PipelineTextureBarrierDesc* pTextureBarrier = &otherQueueBackBufferBarriers[m_BackBufferIndex];
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, pTextureBarrier, 1);
-				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, pTextureBarrier, 1);
-				(*ppSecondExecutionStage) = pSecondExecutionCommandList; // Can I do this like normal textures?
 			}
 
 			if (otherQueueDrawTextureBarriers.GetSize() > 0)
