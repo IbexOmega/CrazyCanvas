@@ -5,8 +5,46 @@
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   mc:Ignorable="d"
   Background="#00124C7A" d:DesignWidth="443.419" d:DesignHeight="235.461">
-             
-         <StackPanel HorizontalAlignment="Center" Height="262.834" Margin="0" VerticalAlignment="Center" Width="211.334" MinWidth="49" MinHeight="52" RenderTransformOrigin="0.525,0.51" Background="#33FFFFFF">
+
+
+  <Grid.Background>
+    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+      <GradientStop Color="#FF7B12AC" Offset="0.277"/>
+      <GradientStop Color="#FF4A11C5" Offset="0.736"/>
+    </LinearGradientBrush>
+  </Grid.Background>
+  <Grid.ColumnDefinitions>
+    <ColumnDefinition></ColumnDefinition>
+    <ColumnDefinition></ColumnDefinition>
+    <ColumnDefinition></ColumnDefinition>
+    <ColumnDefinition></ColumnDefinition>
+    <ColumnDefinition></ColumnDefinition>
+  </Grid.ColumnDefinitions>
+ 
+  <GroupBox Header="Main Menu" Grid.Column="0" VerticalAlignment="Center" Margin="30" FontSize="56">
+    <StackPanel>
+      <Button Click="OnButtonSingleplayerClick" Content="Singleplayer"  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+      <Button Click="OnButtonMultiplayerClick"  Content="Multiplayer"   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+      <Button Click="OnButtonSettingsClick"     Content="Settings"      HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+      <Button Click="OnButtonExitClick"         Content="Exit"          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+    </StackPanel>
+  </GroupBox>
+  
+  <GroupBox x:Name="SettingsGroupBox" Visibility="Hidden" FontSize="56" Header="Settings" Grid.Column="1" VerticalAlignment="Center" Margin="30">
+    <StackPanel>
+      <ToggleButton  Click="OnMeshShadersChecked" Content="Mesh Shading" HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Top" Width="180"     FontSize="22" />
+      <ToggleButton  Click="OnRayTracingChecked"  Content="Ray Tracing"  HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Bottom" Width="180"  FontSize="22"/>
+      <Label                                      Content="Volume"       HorizontalAlignment="Center" Margin="10" FontSize="22"/>
+      <Slider        ValueChanged="OnVolumeSliderChanged" x:Name="VolumeSlider"  HorizontalAlignment="Center" Margin="10" Height="50" Minimum="0.0" SmallChange="0.02" LargeChange="0.1" Maximum="1.0" VerticalAlignment="Stretch" Width="220.0"/>
+      <Button        Click="OnButtonBackClick"    Content="Back"         HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="32"/>
+    </StackPanel>
+  </GroupBox>
+  
+</Grid>
+  
+  
+  
+         <!--<StackPanel HorizontalAlignment="Center" Height="262.834" Margin="0" VerticalAlignment="Center" Width="211.334" MinWidth="49" MinHeight="52" RenderTransformOrigin="0.525,0.51" Background="#33FFFFFF">
             <Label x:Name="label" Content="Main Menu" Margin="0,0,3,0" FontSize="18" HorizontalAlignment="Center" Foreground="White" RenderTransformOrigin="0.505,0.555" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="5,5,6,5" VerticalAlignment="Center"/>
             <Button
 
@@ -51,5 +89,5 @@
                 </CheckBox.Background>
             </CheckBox>
         </StackPanel>
-</Grid>
+</Grid>-->
 

@@ -10,13 +10,25 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Engine/EngineConfig.h"
+#include "Audio/AudioAPI.h"
 
+using namespace LambdaEngine;
+using namespace Noesis;
 
 MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 {
-	using namespace LambdaEngine;
+	GUI::LoadComponent(this, xamlFile.c_str());
 
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+
+	m_pSettingsGroupBox = FrameworkElement::FindName<GroupBox>("SettingsGroupBox");
+	NS_ASSERT(m_pSettingsGroupBox != 0);
+	m_pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	NS_ASSERT(m_pVolumeSlider != 0);
+
+	// Set inital volume
+	float volume = EngineConfig::GetFloatProperty("VolumeMasterInital");	
+	m_pVolumeSlider->SetValue(volume);
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 }
@@ -25,19 +37,22 @@ MainMenuGUI::~MainMenuGUI()
 {
 }
 
-bool MainMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
+bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
 
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton1Click);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButton2Click);
-	NS_CONNECT_EVENT(Noesis::CheckBox, Click, OnRayTracingChecked);
-	NS_CONNECT_EVENT(Noesis::CheckBox, Click, OnMeshShadersChecked);
+	NS_CONNECT_EVENT(Button, Click, OnButtonSingleplayerClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonMultiplayerClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonBackClick);
+	NS_CONNECT_EVENT(CheckBox, Click, OnRayTracingChecked);
+	NS_CONNECT_EVENT(CheckBox, Click, OnMeshShadersChecked);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnVolumeSliderChanged);
 
 	return false;
 }
 
-void MainMenuGUI::OnButton1Click(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MainMenuGUI::OnButtonSingleplayerClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -49,7 +64,36 @@ void MainMenuGUI::OnButton1Click(Noesis::BaseComponent* pSender, const Noesis::R
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-void MainMenuGUI::OnButton2Click(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	using namespace LambdaEngine;
+	SetRenderStagesSleeping();
+
+	/*State* pLobbyState = DBG_NEW LobbyState();
+	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);*/
+}
+
+void MainMenuGUI::OnButtonSettingsClick(BaseComponent* pSender, const RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	ToggleSettingsView();
+}
+
+void MainMenuGUI::OnButtonBackClick(BaseComponent* pSender, const RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	ToggleSettingsView();
+}
+
+
+void MainMenuGUI::OnButtonExitClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -62,22 +106,29 @@ void MainMenuGUI::OnButton2Click(Noesis::BaseComponent* pSender, const Noesis::R
 }
 
 
-void MainMenuGUI::OnRayTracingChecked(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+
+void MainMenuGUI::OnRayTracingChecked(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	LOG_WARNING("RT checked");
 
-	Noesis::ToggleButton* pFE = (Noesis::ToggleButton*)args.source;
+	ToggleButton* pFE = (ToggleButton*)args.source;
 	m_RayTracingSleeping = pFE->GetIsChecked().GetValue();
 }
 
-void MainMenuGUI::OnMeshShadersChecked(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MainMenuGUI::OnMeshShadersChecked(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	LOG_WARNING("MeshShaders checked");
 
-	Noesis::ToggleButton* pFE = (Noesis::ToggleButton*)args.source;
+	ToggleButton* pFE = (ToggleButton*)args.source;
 	m_MeshShadersSleeping = pFE->GetIsChecked().GetValue();
+}
+
+void MainMenuGUI::OnVolumeSliderChanged(BaseComponent* pSender, const RoutedPropertyChangedEventArgs<float>& args)
+{
+	AudioAPI::GetDevice()->SetMasterVolume(args.newValue);
+	LOG_MESSAGE("Changed volume! %f", AudioAPI::GetDevice()->GetMasterVolume());
 }
 
 void MainMenuGUI::SetRenderStagesSleeping()
@@ -96,4 +147,16 @@ void MainMenuGUI::SetRenderStagesSleeping()
 	if (m_RayTracingEnabled)
 		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);
 
+}
+
+void MainMenuGUI::ToggleSettingsView()
+{
+	if (m_pSettingsGroupBox->GetVisibility() == Visibility::Visibility_Hidden)
+	{
+		m_pSettingsGroupBox->SetVisibility(Visibility::Visibility_Visible);
+	}
+	else
+	{
+		m_pSettingsGroupBox->SetVisibility(Visibility::Visibility_Hidden);
+	}
 }
