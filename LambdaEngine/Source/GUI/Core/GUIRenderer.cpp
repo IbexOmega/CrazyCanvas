@@ -552,9 +552,12 @@ namespace LambdaEngine
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
 		CommandList** ppSecondaryExecutionStage,
-		bool Sleeping)
+		bool sleeping)
 	{
-		if (!Sleeping)
+		m_ModFrameIndex		= modFrameIndex;
+		m_BackBufferIndex	= backBufferIndex;
+
+		if (!sleeping)
 		{
 			TArray<DeviceChild*>& resourcesToRemove = m_pGraphicsResourcesToRemove[m_ModFrameIndex];
 
@@ -594,16 +597,16 @@ namespace LambdaEngine
 					descriptorsNowAvailable.Clear();
 				}
 			}
-
-			if (m_View.GetPtr() == nullptr)
-				return;
 		}
+
+		if (m_View.GetPtr() == nullptr)
+			return;
 
 		//Todo: Use UpdateRenderTree return value
 		m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());
 		m_View->GetRenderer()->UpdateRenderTree();
 
-		if (!Sleeping)
+		if (!sleeping)
 		{
 			m_View->GetRenderer()->RenderOffscreen();
 			m_View->GetRenderer()->Render();
