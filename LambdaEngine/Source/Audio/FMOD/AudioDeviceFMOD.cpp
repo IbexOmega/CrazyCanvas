@@ -8,6 +8,7 @@
 #include "Log/Log.h"
 
 #include "Threading/API/Thread.h"
+#include <algorithm>
 
 namespace LambdaEngine
 {
@@ -204,13 +205,18 @@ namespace LambdaEngine
 
 	void AudioDeviceFMOD::SetMasterVolume(float volume)
 	{
-		UNREFERENCED_VARIABLE(volume);
-		LOG_WARNING("[AudioDeviceFMOD]: SetMasterVolume called but not implemented!");
+		FMOD_CHANNELGROUP* pChannelGroup;
+		FMOD_System_GetMasterChannelGroup(pSystem, &pChannelGroup);
+		FMOD_ChannelGroup_SetVolume(pChannelGroup, volume);
 	}
 
 	float AudioDeviceFMOD::GetMasterVolume() const
 	{
-		LOG_WARNING("[AudioDeviceFMOD]: GetMasterVolume called but not implemented!");
-		return 0;
+		FMOD_CHANNELGROUP* pChannelGroup;
+		float volume = -1.0f;
+		FMOD_System_GetMasterChannelGroup(pSystem, &pChannelGroup);
+		FMOD_ChannelGroup_GetVolume(pChannelGroup, &volume);
+
+		return volume;
 	}
 };
