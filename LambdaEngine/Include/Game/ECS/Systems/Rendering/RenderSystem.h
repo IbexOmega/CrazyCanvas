@@ -27,6 +27,8 @@
 
 #include "Rendering/RenderGraphTypes.h"
 
+#include "Rendering/LightRenderer.h"
+
 namespace LambdaEngine
 {
 	class Window;
@@ -37,7 +39,9 @@ namespace LambdaEngine
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
+	// Custom Renderers
 	class LineRenderer;
+	class LightRenderer;
 
 	struct CameraComponent;
 	struct RenderGraphStructureDesc;
@@ -289,7 +293,6 @@ namespace LambdaEngine
 		IDVector m_CameraEntities;
 		IDVector m_AnimatedEntities;
 
-		LineRenderer*		m_pLineRenderer	= nullptr;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -366,6 +369,12 @@ namespace LambdaEngine
 		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
+
+		// Custom Renderers
+		LineRenderer*				m_pLineRenderer		= nullptr;
+		LightRenderer*				m_pLightRenderer	= nullptr;
+
+
 
 	private:
 		static RenderSystem		s_Instance;

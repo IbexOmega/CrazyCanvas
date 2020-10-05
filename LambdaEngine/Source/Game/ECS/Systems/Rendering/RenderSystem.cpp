@@ -178,6 +178,16 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 			}
 
+			// Light Renderer
+			m_LightsDirty = true; // Initilize Light buffer to avoid validation layer errors
+			if (false)
+			{
+				m_pLightRenderer = DBG_NEW LightRenderer();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+			}
+
+
 			//GUI Renderer
 			{
 				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
@@ -299,7 +309,7 @@ namespace LambdaEngine
 			}
 		}
 
-		m_LightsDirty = true; // Initilize Light buffer to avoid validation layer errors
+		
 		UpdateBuffers();
 		UpdateRenderGraph();
 
