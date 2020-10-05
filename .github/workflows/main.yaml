@@ -5,8 +5,15 @@ jobs:
   Build-LambdaEngine-Debug:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build LambdaEngine Debug
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: LambdaEngine/LambdaEngine.vcxproj
@@ -15,8 +22,15 @@ jobs:
   Build-LambdaEngine-Release:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build LambdaEngine Release
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: LambdaEngine/LambdaEngine.vcxproj
@@ -25,8 +39,15 @@ jobs:
   Build-CrazyCanvas-Debug:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build CrazyCanvas Debug
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
@@ -35,8 +56,15 @@ jobs:
   Build-CrazyCanvas-Release:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build CrazyCanvas Release
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
@@ -45,8 +73,15 @@ jobs:
   Build-Sandbox-Debug:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build Sandbox Debug
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: Sandbox/Sandbox.vcxproj
@@ -55,8 +90,15 @@ jobs:
   Build-Sandbox-Release:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build Sandbox Release
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: Sandbox/Sandbox.vcxproj
@@ -65,8 +107,15 @@ jobs:
   Build-Client-Debug:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build Client Debug
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: Client/Client.vcxproj
@@ -75,8 +124,15 @@ jobs:
   Build-Client-Release:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build Client Release
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: Client/Client.vcxproj
@@ -85,8 +141,15 @@ jobs:
   Build-Server-Debug:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build Server Debug
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: Server/Server.vcxproj
@@ -95,8 +158,15 @@ jobs:
   Build-Server-Release:
     runs-on: [self-hosted, Windows, X64]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
       - name: Build Server Release
-        uses: IbexOmega/lambda-build-action@v1.0
+        uses: IbexOmega/lambda-build-action@v1.0.1
         with:
           branch: ${{ github.ref }}
           project-path: Server/Server.vcxproj

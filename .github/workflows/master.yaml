@@ -8,10 +8,16 @@ jobs:
   benchmark:
     runs-on: [self-hosted, benchmarker, Windows, X64]
     steps:
-      - name: Build CrazyCanvas Production
-        uses: IbexOmega/lambda-build-action@v1.0
+      - uses: actions/checkout@v2
         with:
-          branch: ${{ github.ref }}
+          submodules: true
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.1
+
+      - name: Build CrazyCanvas Production
+        uses: IbexOmega/lambda-build-action@v1.0.1
+        with:
           project-path: CrazyCanvas/CrazyCanvas.vcxproj
           build-configuration: Production x64_StaticLib
 
