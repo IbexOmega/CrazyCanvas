@@ -79,11 +79,14 @@ namespace LambdaEngine
 			// Interpolate position
 			glm::vec3 position;
 			{
+				// If the clip is looping the last frame is redundant
+				const uint32 NumPositions = animation.IsLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
+
 				Animation::Channel::KeyFrame pos0 = channel.Positions[0];
 				Animation::Channel::KeyFrame pos1 = channel.Positions[0];
-				if (channel.Positions.GetSize() > 1)
+				if (NumPositions > 1)
 				{
-					for (uint32 i = 0; i < (channel.Positions.GetSize() - 1); i++)
+					for (uint32 i = 0; i < (NumPositions - 1); i++)
 					{
 						if (animation.DurationInTicks < channel.Positions[i + 1].Time)
 						{
@@ -101,11 +104,14 @@ namespace LambdaEngine
 			// Interpolate rotation
 			glm::quat rotation;
 			{
+				// If the clip is looping the last frame is redundant
+				const uint32 NumRotations = animation.IsLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
+
 				Animation::Channel::RotationKeyFrame rot0 = channel.Rotations[0];
 				Animation::Channel::RotationKeyFrame rot1 = channel.Rotations[0];
-				if (channel.Rotations.GetSize() > 1)
+				if (NumRotations > 1)
 				{
-					for (uint32 i = 0; i < (channel.Rotations.GetSize() - 1); i++)
+					for (uint32 i = 0; i < (NumRotations - 1); i++)
 					{
 						if (animation.DurationInTicks < channel.Rotations[i + 1].Time)
 						{
@@ -124,11 +130,14 @@ namespace LambdaEngine
 			// Interpolate scale
 			glm::vec3 scale;
 			{
+				// If the clip is looping the last frame is redundant
+				const uint32 NumScales = animation.IsLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
+
 				Animation::Channel::KeyFrame scale0 = channel.Scales[0];
 				Animation::Channel::KeyFrame scale1 = channel.Scales[0];
-				if (channel.Positions.GetSize() > 1)
+				if (NumScales > 1)
 				{
-					for (uint32 i = 0; i < (channel.Scales.GetSize() - 1); i++)
+					for (uint32 i = 0; i < (NumScales - 1); i++)
 					{
 						if (animation.DurationInTicks < channel.Scales[i + 1].Time)
 						{
