@@ -19,6 +19,7 @@ layout(location = 4) out vec3 out_Bitangent;
 layout(location = 5) out vec2 out_TexCoord;
 layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
+layout(location = 8) out flat uint out_ExtensionIndex;
 
 void main()
 {
@@ -41,6 +42,7 @@ void main()
 	out_TexCoord 		    = vertex.TexCoord.xy;
     out_ClipPosition        = perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
     out_PrevClipPosition    = perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
+    out_ExtensionIndex      = instance.ExtensionIndex;
 
     gl_Position = out_ClipPosition;
 }

@@ -974,14 +974,14 @@
                 {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "FXAA"
                 },
                 {
                     "name": "NOESIS_GUI_DEPTH_STENCIL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }

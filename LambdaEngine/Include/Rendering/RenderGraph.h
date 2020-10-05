@@ -228,45 +228,47 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			String					Name						= "";
-			RenderStageParameters	Parameters					= {};
+			String					Name								= "";
+			RenderStageParameters	Parameters							= {};
 
 			//Triggering
-			ERenderStageExecutionTrigger	TriggerType			= ERenderStageExecutionTrigger::NONE;
-			uint32							FrameDelay			= 0;
-			uint32							FrameOffset			= 0;
-			uint32							FrameCounter		= 0;
+			ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::NONE;
+			uint32							FrameDelay					= 0;
+			uint32							FrameOffset					= 0;
+			uint32							FrameCounter				= 0;
 
 			//Special Draw Params
-			uint32					ExecutionCount				= 1;
+			uint32					ExecutionCount						= 1;
 
-			glm::uvec3				Dimensions					= glm::uvec3(0);
+			glm::uvec3				Dimensions							= glm::uvec3(0);
 
-			bool					UsesCustomRenderer			= false;
-			ICustomRenderer*		pCustomRenderer				= nullptr;
+			bool					UsesCustomRenderer					= false;
+			ICustomRenderer*		pCustomRenderer						= nullptr;
 
-			FPipelineStageFlags		FirstPipelineStage			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags		LastPipelineStage			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
-			uint32					PipelineStageMask			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		FirstPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		LastPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			uint32					PipelineStageMask					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
-			ERenderStageDrawType	DrawType					= ERenderStageDrawType::NONE;
+			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
 
-			uint64					PipelineStateID				= 0;
-			PipelineState*			pPipelineState				= nullptr;
-			PipelineLayout*			pPipelineLayout				= nullptr;
-			SBT*					pSBT						= nullptr;
-			DescriptorSet**			ppBufferDescriptorSets		= nullptr; //# m_BackBufferCount
-			uint32					BufferSetIndex				= 0;
-			DescriptorSet**			ppTextureDescriptorSets		= nullptr; //# m_BackBufferCount
-			uint32					TextureSetIndex				= 0;
-			DescriptorSet***		pppDrawArgDescriptorSets	= nullptr; //# m_BackBufferCount
-			DrawArg*				pDrawArgs					= nullptr;
-			uint32					NumDrawArgsPerFrame			= 0;
-			uint32					DrawSetIndex				= 0;
-			Resource*				pDrawArgsResource			= nullptr;
-			uint32					DrawArgsMask				= 0x0;
-			RenderPass*				pRenderPass					= nullptr;
-			RenderPass*				pDisabledRenderPass			= nullptr;
+			uint64					PipelineStateID						= 0;
+			PipelineState*			pPipelineState						= nullptr;
+			PipelineLayout*			pPipelineLayout						= nullptr;
+			SBT*					pSBT								= nullptr;
+			DescriptorSet**			ppBufferDescriptorSets				= nullptr; //# m_BackBufferCount
+			uint32					BufferSetIndex						= 0;
+			DescriptorSet**			ppTextureDescriptorSets				= nullptr; //# m_BackBufferCount
+			uint32					TextureSetIndex						= 0;
+			DescriptorSet***		pppDrawArgDescriptorSets			= nullptr; //# m_BackBufferCount
+			DescriptorSet***		pppDrawArgExtensionsDescriptorSets	= nullptr; //# m_BackBufferCount
+			DrawArg*				pDrawArgs							= nullptr;
+			uint32					NumDrawArgsPerFrame					= 0;
+			uint32					DrawSetIndex						= 0;
+			uint32					DrawExtensionSetIndex				= 0;
+			Resource*				pDrawArgsResource					= nullptr;
+			uint32					DrawArgsMask						= 0x0;
+			RenderPass*				pRenderPass							= nullptr;
+			RenderPass*				pDisabledRenderPass					= nullptr;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants		= {};

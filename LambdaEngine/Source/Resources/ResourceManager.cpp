@@ -1139,16 +1139,21 @@ namespace LambdaEngine
 
 		{
 			byte defaultColor[4]				= { 255, 255, 255, 255 };
-			byte defaultNormal[4]				= { 127, 127, 255, 0   };
+			byte defaultNormal[4]				= { 127, 127, 255,   0 };
+			byte defaultMask[4]					= {	  0,   0,   0, 255 };
 			void* pDefaultColor					= (void*)defaultColor;
 			void* pDefaultNormal				= (void*)defaultNormal;
+			void* pDefaultMask					= (void*)defaultMask;
 			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
 			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			Texture* pDefaultMaskMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Mask Map", &pDefaultMask, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
-			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_COLOR_MAP;
+			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_COLOR_MAP;
 			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
+			s_TextureNamesToGUIDs[pDefaultMaskMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_MASK_MAP;
 			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
+			s_Textures[GUID_TEXTURE_DEFAULT_MASK_MAP]		= pDefaultNormalMap;
 
 			TextureViewDesc defaultColorMapViewDesc = {};
 			defaultColorMapViewDesc.DebugName		= "Default Color Map View";

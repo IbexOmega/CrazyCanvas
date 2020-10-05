@@ -291,6 +291,7 @@ namespace LambdaEngine
 		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
 		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]		= { nullptr };
 		uint32			TextureCount								= 0;
+		uint32			ExtensionID									= 0; // Zero is an invalid id.
 	};
 
 	struct DrawArgExtensionGroup
@@ -314,6 +315,7 @@ namespace LambdaEngine
 
 		// Extensions
 		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount! The size of the array is MAX_EXTENSION_GROUPS_PER_MESH_TYPE
+		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used. 
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

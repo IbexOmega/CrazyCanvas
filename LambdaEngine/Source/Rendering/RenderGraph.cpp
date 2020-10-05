@@ -679,21 +679,42 @@ namespace LambdaEngine
 							DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
 							DescriptorSet** ppNewDrawArgsPerFrame = nullptr;
 
+							DescriptorSet** ppPrevDrawArgsExtensionsPerFrame = pRenderStage->pppDrawArgExtensionsDescriptorSets ? pRenderStage->pppDrawArgExtensionsDescriptorSets[b] : nullptr;
+							DescriptorSet** ppNewDrawArgsExtensionsPerFrame = nullptr;
+
+							// Check if it need to expand the list of descriptor sets
 							if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
 							{
 								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
+
+								if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
+								{
+									ppNewDrawArgsExtensionsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
+								}
 							}
 							else
 							{
 								ppNewDrawArgsPerFrame = ppPrevDrawArgsPerFrame;
+								ppNewDrawArgsExtensionsPerFrame = ppPrevDrawArgsExtensionsPerFrame;
 							}
 
 							for (uint32 d = 0; d < drawArgsMaskToArgsIt->second.Args.GetSize(); d++)
 							{
+								// Destroy the previous descriptor sets.
 								if (d < pRenderStage->NumDrawArgsPerFrame)
 								{
-									DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
-									m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+									{
+										DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
+										m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+									}
+
+									// Destroy previous extension descriptor sets if it had any.
+									if (ppPrevDrawArgsExtensionsPerFrame)
+									{
+										DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsExtensionsPerFrame[d];
+										if(pSrcDescriptorSet)
+											m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+									}
 								}
 
 								DescriptorSet* pWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, m_pDescriptorHeap);
@@ -720,16 +741,89 @@ namespace LambdaEngine
 								}
 
 								ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
+
+								// Only create a desciptor set for the extensions if it is needed.
+								if (drawArg.HasExtensions)
+								{
+									DescriptorSet* pExtensionsWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Extensions Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex, m_pDescriptorHeap);
+
+									// Fetch data for the write texture descirptors.
+									THashTable<uint32, std::tuple<TArray<TextureView*>, TArray<Sampler*>>> bindingToDataMap;
+									for (uint32 eGroup = 0; eGroup < drawArg.InstanceCount; eGroup++)
+									{
+										DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[eGroup];
+										if (extensionGroup)
+										{
+											uint32 numExtensions = extensionGroup->ExtensionCount;
+											for (uint32 e = 0; e < numExtensions; e++)
+											{
+												DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+												VALIDATE(extension.ExtensionID != 0);
+
+												// TODO: This might be wrong!
+												uint32 extensionID = extension.ExtensionID;
+												for (uint32 t = 0; t < extension.TextureCount; t++)
+												{
+													// If it is the first, set it to the default texture.
+													if (auto it = bindingToDataMap.find(extensionID); it == bindingToDataMap.end())
+													{
+														TextureView* pDefaultMaskMapView = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
+														get<0>(it->second).PushBack(pDefaultMaskMapView);
+														get<1>(it->second).PushBack(Sampler::GetLinearSampler());
+													}
+
+													get<0>(bindingToDataMap[extensionID]).PushBack(extension.ppTextureViews[t]);
+													get<1>(bindingToDataMap[extensionID]).PushBack(extension.ppSamplers[t]);
+												}
+											}
+										}
+									}
+
+									// Write texture descirptors
+									for (uint32 binding = 0; auto& entry : bindingToDataMap)
+									{
+										// TODO: Make this more general. Do not hardcode the texture state and descriptor type!
+										const uint32 textureCount = get<0>(entry.second).GetSize();
+										pExtensionsWriteDescriptorSet->WriteTextureDescriptors(
+											get<0>(entry.second).GetData(),
+											get<1>(entry.second).GetData(),
+											ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+											binding++,
+											textureCount,
+											EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+									}
+
+									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
+								}
+								else
+								{
+									if(ppNewDrawArgsExtensionsPerFrame)
+										ppNewDrawArgsExtensionsPerFrame[d] = nullptr;
+								}
 							}
 
 							//If drawArgsMaskToArgsIt->second.Args.GetSize() is smaller than pRenderStage->NumDrawArgsPerFrame then some Descriptor Sets are not destroyed that should be destroyed
 							for (uint32 d = drawArgsMaskToArgsIt->second.Args.GetSize(); d < pRenderStage->NumDrawArgsPerFrame; d++)
 							{
-								DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
-								m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+								{
+									DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
+									m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+								}
+
+								if (ppPrevDrawArgsExtensionsPerFrame)
+								{
+									DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsExtensionsPerFrame[d];
+									if(pSrcDescriptorSet)
+										m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+								}
 							}
 
 							pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
+
+							if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
+							{
+								pRenderStage->pppDrawArgExtensionsDescriptorSets[b] = ppNewDrawArgsExtensionsPerFrame;
+							}
 						}
 
 						pRenderStage->NumDrawArgsPerFrame = drawArgsMaskToArgsIt->second.Args.GetSize();
@@ -1177,11 +1271,28 @@ namespace LambdaEngine
 
 						SAFEDELETE_ARRAY(ppDrawArgDescriptorSets);
 					}
+
+					// Release draw arg extensions descriptor sets.
+					if (pRenderStage->pppDrawArgExtensionsDescriptorSets != nullptr)
+					{
+						DescriptorSet** ppDrawArgExtensionsDescriptrSet = pRenderStage->pppDrawArgExtensionsDescriptorSets[b];
+
+						if (ppDrawArgExtensionsDescriptrSet)
+						{
+							for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
+							{
+								SAFERELEASE(ppDrawArgExtensionsDescriptrSet[d]);
+							}
+						}
+
+						SAFEDELETE_ARRAY(ppDrawArgExtensionsDescriptrSet);
+					}
 				}
 
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets);
+				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
 				SAFERELEASE(pRenderStage->pSBT);
 				SAFERELEASE(pRenderStage->pRenderPass);
@@ -1937,15 +2048,33 @@ namespace LambdaEngine
 						descriptorBinding.Binding			= 4;
 						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
 
-						// Create a new descriptor set for extensions.
+						/*
+						*	Create a new descriptor set for extensions.
+						*	If the render stage uses two extensions and the first extension has two textures and the second has one, the binding will be like this:
+						*	
+						*	First extension's first texture has binding 0
+						*	First extension's second texture has binding 1
+						*	Second extension's texture has binding 2
+						* 
+						*	Each holding a array of textures for each instance which uses an extension.
+						*	
+						*	The Instance buffer has an ExtensionIndex to point to the right element in the array. 
+						*	The first element is used for instances which does not have an extension.
+						*/
 						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMask);
 						uint32 binding = 0;
 						for (uint32 mask : extensionMasks)
 						{
 							const DrawArgExtensionDesc& extensionDesc = EntityMaskManager::GetExtensionDescFromExtensionMask(mask);
-							descriptorBinding.DescriptorCount	= extensionDesc.TextureCount;
-							descriptorBinding.Binding			= binding++;
-							drawArgExtensionDescriptorSetDescriptions.PushBack(descriptorBinding);
+							for (uint32 t = 0; t < extensionDesc.TextureCount; t++)
+							{
+								// TODO: Do not hardcode the descriptor type!
+								descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+								descriptorBinding.DescriptorCount	= 10000u;
+								descriptorBinding.Binding			= binding++;
+								descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+								drawArgExtensionDescriptorSetDescriptions.PushBack(descriptorBinding);
+							}
 						}
 
 						renderStageDrawArgResources.PushBack(std::make_tuple(pResource, descriptorType));
@@ -2366,6 +2495,18 @@ namespace LambdaEngine
 
 						pRenderStage->DrawSetIndex = setIndex;
 						setIndex++;
+
+						// Draw Arg Extensions descriptor set
+						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
+						{
+							pRenderStage->pppDrawArgExtensionsDescriptorSets = DBG_NEW DescriptorSet**[m_BackBufferCount];
+							for (uint32 i = 0; i < m_BackBufferCount; i++)
+							{
+								pRenderStage->pppDrawArgExtensionsDescriptorSets[i] = nullptr;
+							}
+							pRenderStage->DrawExtensionSetIndex = setIndex;
+							setIndex++;
+						}
 					}
 				}
 
@@ -3925,9 +4066,13 @@ namespace LambdaEngine
 		uint32 frameBufferHeight	= 0;
 
 		DescriptorSet** ppDrawArgsDescriptorSetsPerFrame = nullptr;
+		DescriptorSet** ppDrawArgsExtensionsDescriptorSetsPerFrame = nullptr;
 		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 		{
 			ppDrawArgsDescriptorSetsPerFrame = pRenderStage->pppDrawArgDescriptorSets[m_ModFrameIndex];
+
+			if(pRenderStage->pppDrawArgExtensionsDescriptorSets)
+				ppDrawArgsExtensionsDescriptorSetsPerFrame = pRenderStage->pppDrawArgExtensionsDescriptorSets[m_ModFrameIndex];
 		}
 
 		for (uint32 r = 0; r < pRenderStage->ExecutionCount; r++)
@@ -4026,6 +4171,11 @@ namespace LambdaEngine
 						if (ppDrawArgsDescriptorSetsPerFrame)
 						{
 							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+
+							if (ppDrawArgsExtensionsDescriptorSetsPerFrame && ppDrawArgsExtensionsDescriptorSetsPerFrame[d])
+							{
+								pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsExtensionsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex);
+							}
 						}
 
 						pGraphicsCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
@@ -4039,6 +4189,11 @@ namespace LambdaEngine
 						if (ppDrawArgsDescriptorSetsPerFrame)
 						{
 							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+
+							if (ppDrawArgsExtensionsDescriptorSetsPerFrame)
+							{
+								pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsExtensionsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex);
+							}
 						}
 
 						const uint32 maxTaskCount = m_Features.MaxDrawMeshTasksCount;

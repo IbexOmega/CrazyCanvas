@@ -143,14 +143,14 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(m_Entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(m_Entity, { true, rotation });
 		pECS->AddComponent<MeshComponent>(m_Entity, sphereMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(m_Entity, meshPaintComponent);
+		//pECS->AddComponent<MeshPaintComponent>(m_Entity, meshPaintComponent);
 
 		DrawArgExtensionData drawArgExtensionData = {};
-		drawArgExtensionData.TextureCount = 1;
-		drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-		drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-		//drawArgExtensionData.ppSamplers[0] = ;
-		EntityMaskManager::AddExtensionToEntity(m_Entity, MeshPaintComponent::Type(), drawArgExtensionData);
+		drawArgExtensionData.TextureCount		= 1;
+		drawArgExtensionData.ppTextures[0]		= ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
+		drawArgExtensionData.ppTextureViews[0]	= ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
+		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
+		//EntityMaskManager::AddExtensionToEntity(m_Entity, MeshPaintComponent::Type(), drawArgExtensionData);
 	}
 
 	{
@@ -190,14 +190,14 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, rotation });
 		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
+		//pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
 
 		DrawArgExtensionData drawArgExtensionData = {};
-		drawArgExtensionData.TextureCount = 1;
-		drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-		drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-		//drawArgExtensionData.ppSamplers[0] = ;
-		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
+		drawArgExtensionData.TextureCount		= 1;
+		drawArgExtensionData.ppTextures[0]		= ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
+		drawArgExtensionData.ppTextureViews[0]	= ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
+		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
+		//EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
 	}
 
 	//Scene

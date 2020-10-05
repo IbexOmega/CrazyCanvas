@@ -59,7 +59,7 @@ namespace LambdaEngine
 		bool CreateDescriptorSet();
 		bool CreateShaders();
 		bool CreateCommandLists();
-		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
+		bool CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc);
 		bool CreatePipelineState();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
@@ -88,8 +88,11 @@ namespace LambdaEngine
 		TSharedRef<RenderPass> m_RenderPass = nullptr;
 
 		TSharedRef<Sampler> m_Sampler = nullptr;
+		TArray<TSharedRef<Buffer>> m_TransformCopyBuffers;
+		TSharedRef<Buffer> m_TransformBuffer = nullptr;
 
-		//THashTable<String, TArray<TSharedRef<DescriptorSet>>>		m_BufferResourceNameDescriptorSetsMap;
+		THashTable<String, TArray<TSharedRef<DescriptorSet>>>		m_BufferResourceNameDescriptorSetsMap;
+		TArray<TSharedRef<DescriptorSet>>							m_BrushMaskDescriptorSet;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 	};
 }

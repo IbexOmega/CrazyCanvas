@@ -455,7 +455,7 @@
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_mask": 1,
+                    "draw_args_mask": 3,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "RENDER_GRAPH_PAINT_MASK_STAGE"
                 },
@@ -744,14 +744,14 @@
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "BRUSH_MASK",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 }

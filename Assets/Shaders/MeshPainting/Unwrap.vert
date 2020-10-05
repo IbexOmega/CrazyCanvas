@@ -6,9 +6,9 @@
 #include "../Defines.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform TransformBuffer             { mat4 transform; }         u_Transform;
 
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
-layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
 
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_Normal;
@@ -26,11 +26,11 @@ layout(location = 3) out vec3 out_TargetDirection;
 void main()
 {
     SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
-    SInstance instance                          = b_Instances.val[gl_InstanceIndex];
+    mat4 transform                              = u_Transform.transform;
     SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
 
-    vec4 worldPosition      = instance.Transform * vec4(vertex.Position.xyz, 1.0f);
-    vec3 normal 	        = normalize((instance.Transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+    vec4 worldPosition      = transform * vec4(vertex.Position.xyz, 1.0f);
+    vec3 normal 	        = normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
 
     out_WorldPosition   = worldPosition.xyz;
     out_Normal          = normal;

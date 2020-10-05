@@ -2,6 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shader_draw_parameters : enable
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
@@ -14,6 +15,7 @@ layout(location = 4) in vec3        in_Bitangent;
 layout(location = 5) in vec2        in_TexCoord;
 layout(location = 6) in vec4        in_ClipPosition;
 layout(location = 7) in vec4        in_PrevClipPosition;
+layout(location = 8) in flat uint 	in_ExtensionIndex;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
 
@@ -24,7 +26,7 @@ layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_RoughnessMaps[M
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_MetallicMaps[MAX_UNIQUE_MATERIALS];
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_MaskTexture;
 
-layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+//layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
 layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;
@@ -77,6 +79,6 @@ void main()
 	out_Velocity              	= vec2(screenVelocity);
 
     // 5
-    //vec3 paintMask         = texture(u_MaskTexture, texCoord).rgb;
+    //vec3 paintMask         = texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
 	//out_Albedo = paintMask;
 }

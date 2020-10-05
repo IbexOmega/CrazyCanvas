@@ -26,18 +26,22 @@ void LambdaEngine::EntityMaskManager::AddExtensionToEntity(Entity entity, const 
 	auto it = s_EntityToExtensionGroupEntryMap.find(entity);
 	if (it != s_EntityToExtensionGroupEntryMap.end())
 	{
-		uint32 newIndex = it->second.extensionGroup.ExtensionCount++;
-		CopyDrawArgExtensionData(it->second.extensionGroup.pExtensions[newIndex], DrawArgExtension);
+		DrawArgExtensionGroup& extensionGroup = it->second.extensionGroup;
+		uint32 newIndex = extensionGroup.ExtensionCount++;
+		CopyDrawArgExtensionData(extensionGroup.pExtensions[newIndex], DrawArgExtension);
+		extensionGroup.pExtensions[newIndex].ExtensionID = extensionMask;
 
-		it->second.extensionGroup.pExtensionMasks[newIndex] = extensionMask;
+		extensionGroup.pExtensionMasks[newIndex] = extensionMask;
 		it->second.Mask |= extensionMask;
 		return;
 	}
 
 	DrawArgExtensionGroupEntry& groupEntry = s_EntityToExtensionGroupEntryMap[entity];
-	groupEntry.extensionGroup.ExtensionCount = 1;
-	groupEntry.extensionGroup.pExtensionMasks[0] = extensionMask;
-	CopyDrawArgExtensionData(groupEntry.extensionGroup.pExtensions[0], DrawArgExtension);
+	DrawArgExtensionGroup& extensionGroup = groupEntry.extensionGroup;
+	extensionGroup.ExtensionCount = 1;
+	extensionGroup.pExtensionMasks[0] = extensionMask;
+	CopyDrawArgExtensionData(extensionGroup.pExtensions[0], DrawArgExtension);
+	extensionGroup.pExtensions[0].ExtensionID = extensionMask;
 	groupEntry.Mask = 1 | extensionMask;
 }
 
@@ -70,8 +74,7 @@ TArray<uint32> LambdaEngine::EntityMaskManager::ExtractComponentMasksFromEntityM
 
 uint32 LambdaEngine::EntityMaskManager::GetExtensionMask(const ComponentType* type)
 {
-	auto it = s_ComponentTypeToMaskMap.find(type);
-	if (it != s_ComponentTypeToMaskMap.end())
+	if (auto it = s_ComponentTypeToMaskMap.find(type); it != s_ComponentTypeToMaskMap.end())
 		return it->second;
 
 	// Generate a mask for this component type. Mask 0 is used as an error code.

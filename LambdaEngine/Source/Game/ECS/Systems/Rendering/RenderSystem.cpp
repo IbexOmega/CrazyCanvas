@@ -648,6 +648,7 @@ namespace LambdaEngine
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
+		uint32 extensionIndex = 0;
 		uint32 materialSlot = MAX_UNIQUE_MATERIALS;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
@@ -860,30 +861,22 @@ namespace LambdaEngine
 
 			// Add Draw Arg Extensions.
 			{
+				bool hasExtensions = false;
 				MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
 				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
 				if (entityMask > 1) // If the entity has extensions add them to the entry.
 				{
 					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
-
-					/*uint32 numExtensions = extensionGroup.ExtensionCount;
-					for (uint32 e = 0; e < numExtensions; e++)
-					{
-						// This might be too specific. Try to make this more general. 
-						uint32 mask = extensionGroup.pExtensionMasks[e];
-						if (mask == EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
-						{
-							m_PaintMaskTextures.PushBack(extensionGroup.pExtensions[e].ppTextures[0]);
-							m_PaintMaskTextureViews.PushBack(extensionGroup.pExtensions[e].ppTextureViews[0]);
-							m_PaintMaskResourcesDirty = true;
-						}
-					}*/
+					extensionIndex = meshEntry.ExtensionGroups.GetSize();
+					hasExtensions = true;
 				}
 				else
 				{
-					meshEntry.ExtensionGroups.PushBack(nullptr);
+					extensionIndex = 0;
 				}
+
+				meshEntry.HasExtensions = hasExtensions;
 			}
 		}
 
@@ -965,6 +958,7 @@ namespace LambdaEngine
 		instance.Transform		= transform;
 		instance.PrevTransform	= transform;
 		instance.MaterialSlot	= materialSlot;
+		instance.ExtensionIndex = extensionIndex;
 		instance.MeshletCount	= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
@@ -972,9 +966,10 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		// Fetch entity mask and extract the individual component masks and add them to the set.
+		// Fetch the entity mask and extract their individual component masks and add them to the set if the mask exist.
 		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
 		TArray<uint32> componentMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(drawArgMask);
+		componentMasks.PushBack(1);
 		for (uint32 mask : componentMasks)
 		{
 			if (m_RequiredDrawArgs.count(mask))
@@ -1232,7 +1227,11 @@ namespace LambdaEngine
 			drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
 			drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
 
-			drawArg.ppExtensionGroups		= meshEntryPair.second.ExtensionGroups.GetData();
+			if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
+			{
+				drawArg.ppExtensionGroups		= meshEntryPair.second.ExtensionGroups.GetData();
+				drawArg.HasExtensions			= meshEntryPair.second.HasExtensions;
+			}
 
 			drawArgs.PushBack(drawArg);
 		}

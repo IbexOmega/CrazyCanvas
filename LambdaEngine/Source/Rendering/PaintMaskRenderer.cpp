@@ -21,6 +21,8 @@
 #include "Rendering/Core/API/Buffer.h"
 #include "Rendering/EntityMaskManager.h"
 
+#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
+
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
@@ -85,15 +87,13 @@ namespace LambdaEngine
 			LOG_ERROR("[PaintMaskRenderer]: Failed to create Shaders");
 			return false;
 		}
-
+		
 		return false;
 	}
 
 	bool PaintMaskRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
-
-		VALIDATE(pPreInitDesc->ColorAttachmentCount == 1);
 
 		m_BackBufferCount = pPreInitDesc->BackBufferCount;
 
@@ -103,7 +103,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0], &pPreInitDesc->pDepthStencilAttachmentDesc[0]))
+		if (!CreateRenderPass(pPreInitDesc))
 		{
 			LOG_ERROR("[PaintMaskRenderer]: Failed to create RenderPass");
 			return false;
@@ -114,7 +114,7 @@ namespace LambdaEngine
 			LOG_ERROR("[PaintMaskRenderer]: Failed to create PipelineState");
 			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -137,23 +137,151 @@ namespace LambdaEngine
 				m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
 			}
 		}
-		// Might be a bit too hard coded
-		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+
+		if (resourceName == "BRUSH_MASK")
 		{
-			m_DepthStencilBuffer = MakeSharedRef(ppTextureViews[0]);
+			// This should not be necessary, because we already know that the brush mask texture is not back buffer bound.
+			Sampler* sampler = Sampler::GetLinearSampler();
+			if (!m_BrushMaskDescriptorSet.IsEmpty())
+			{
+				if (backBufferBound)
+				{
+					// If it is back buffer bound then create copies for each backbuffer
+					uint32 backBufferCount = m_BackBuffers.GetSize();
+					m_BrushMaskDescriptorSet.Resize(backBufferCount);
+					for (uint32 b = 0; b < backBufferCount; b++)
+					{
+						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+						m_BrushMaskDescriptorSet[b] = descriptorSet;
+
+						descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+					}
+				}
+				else
+				{
+					// Else create as many as requested
+					m_BrushMaskDescriptorSet.Resize(count);
+					for (uint32 b = 0; b < count; b++)
+					{
+						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+						m_BrushMaskDescriptorSet[b] = descriptorSet;
+
+						descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+					}
+				}
+			}
+			else
+			{
+				// Else the resource exists
+				if (backBufferBound)
+				{
+					uint32 backBufferCount = m_BackBuffers.GetSize();
+					if (m_BrushMaskDescriptorSet.GetSize() == backBufferCount)
+					{
+						for (uint32 b = 0; b < backBufferCount; b++)
+						{
+							TSharedRef<DescriptorSet> descriptorSet = m_BrushMaskDescriptorSet[b];
+							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+						}
+					}
+					else
+					{
+						LOG_ERROR("[Paint Mask Renderer]: Backbuffer count does not match the amount of descriptors to update for resource \"%s\"", resourceName.c_str());
+					}
+				}
+				else
+				{
+					if (m_BrushMaskDescriptorSet.GetSize() == count)
+					{
+						for (uint32 b = 0; b < count; b++)
+						{
+							TSharedRef<DescriptorSet> descriptorSet = m_BrushMaskDescriptorSet[b];
+							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+						}
+					}
+					else
+					{
+						LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
+					}
+				}
+			}
 		}
 	}
 
 	void PaintMaskRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppBuffers);
-		UNREFERENCED_VARIABLE(pOffsets);
-		UNREFERENCED_VARIABLE(pSizesInBytes);
-		UNREFERENCED_VARIABLE(count);
-		UNREFERENCED_VARIABLE(backBufferBound);
+		if (count == 1 || backBufferBound)
+		{
+			auto bufferIt = m_BufferResourceNameDescriptorSetsMap.find(resourceName);
+			if (bufferIt == m_BufferResourceNameDescriptorSetsMap.end())
+			{
+				// If resource doesn't exist, create descriptor and write it
+				TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_BufferResourceNameDescriptorSetsMap[resourceName];
+				if (backBufferBound)
+				{
+					// If it is backbufferbound then create copies for each backbuffer
+					uint32 backBufferCount = m_BackBuffers.GetSize();
+					descriptorSets.Resize(backBufferCount);
+					for (uint32 b = 0; b < backBufferCount; b++)
+					{
+						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+						descriptorSets[b] = descriptorSet;
 
-		// TODO: Add perFrameBuffer to the descriptor!
+						descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+					}
+				}
+				else
+				{
+					// Else create as many as requested
+					descriptorSets.Resize(count);
+					for (uint32 b = 0; b < count; b++)
+					{
+						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+						descriptorSets[b] = descriptorSet;
+
+						descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+					}
+				}
+			}
+			else
+			{
+				// Else the resource exists
+				TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_BufferResourceNameDescriptorSetsMap[resourceName];
+				if (backBufferBound)
+				{
+					uint32 backBufferCount = m_BackBuffers.GetSize();
+					if (descriptorSets.GetSize() == backBufferCount)
+					{
+						for (uint32 b = 0; b < backBufferCount; b++)
+						{
+							TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
+							descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+						}
+					}
+					else
+					{
+						LOG_ERROR("[Paint Mask Renderer]: Backbuffer count does not match the amount of descriptors to update for resource \"%s\"", resourceName.c_str());
+					}
+
+				}
+				else
+				{
+					if (descriptorSets.GetSize() == count)
+					{
+						for (uint32 b = 0; b < count; b++)
+						{
+							TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
+							descriptorSet->WriteBufferDescriptors(&ppBuffers[b], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+						}
+					}
+					else
+					{
+						LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
+					}
+
+				}
+			}
+		}
 	}
 
 	void PaintMaskRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
@@ -161,7 +289,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
-
+	
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
 		//Kallas när ett DrawArg har uppdaterats i RenderGraphen, du kan anta att DrawArgMasken överenstämmer med det som är angivet i RenderGraphen
@@ -180,7 +308,7 @@ namespace LambdaEngine
 				{
 					Texture* texture = extension.ppTextures[t];
 					TextureView* textureView = extension.ppTextureViews[t];
-
+					// TODO: Make the render function use each texture as a render target.
 				}
 			}
 		}
@@ -198,7 +326,7 @@ namespace LambdaEngine
 		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
 		beginRenderPassDesc.ppRenderTargets = &backBuffer;
 		beginRenderPassDesc.RenderTargetCount = 1;
-		beginRenderPassDesc.pDepthStencil = m_DepthStencilBuffer.Get();
+		//beginRenderPassDesc.pDepthStencil = m_DepthStencilBuffer.Get();
 		beginRenderPassDesc.Width = width;
 		beginRenderPassDesc.Height = height;
 		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
@@ -209,21 +337,21 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
-		/*
-		* TODO: Do this once if no data is avaliable
-		if (m_LineGroups.size() == 0 && m_Verticies.GetSize() == 0)
-		{
-			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
-			pCommandList->Begin(nullptr);
-			//Begin and End RenderPass to transition Texture State (Lazy)
-			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-			pCommandList->EndRenderPass();
-
-			pCommandList->End();
-
-			(*ppFirstExecutionStage) = pCommandList;
-			return;
-		}*/
+		
+		//TODO: Do this once if no data is avaliable
+		//if (m_LineGroups.size() == 0 && m_Verticies.GetSize() == 0)
+		//{
+		//	m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+		//	pCommandList->Begin(nullptr);
+		//	//Begin and End RenderPass to transition Texture State (Lazy)
+		//	pCommandList->BeginRenderPass(&beginRenderPassDesc);
+		//	pCommandList->EndRenderPass();
+		//
+		//	pCommandList->End();
+		//
+		//	(*ppFirstExecutionStage) = pCommandList;
+		//	return;
+		//}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
@@ -246,11 +374,17 @@ namespace LambdaEngine
 
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
-		/*if (m_BufferResourceNameDescriptorSetsMap.contains(PER_FRAME_BUFFER))
+		if (m_BufferResourceNameDescriptorSetsMap.contains(PER_FRAME_BUFFER))
 		{
 			auto& descriptorSets = m_BufferResourceNameDescriptorSetsMap[PER_FRAME_BUFFER];
 			pCommandList->BindDescriptorSetGraphics(descriptorSets[0].Get(), m_PipelineLayout.Get(), 0);
-		}*/
+		}
+
+		if (!m_BrushMaskDescriptorSet.IsEmpty())
+		{
+			auto& descriptorSetBrush = m_BrushMaskDescriptorSet[backBufferIndex];
+			pCommandList->BindDescriptorSetGraphics(descriptorSetBrush.Get(), m_PipelineLayout.Get(), 0);
+		}
 
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet.Get(), m_PipelineLayout.Get(), 1);
 
@@ -282,24 +416,45 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreateBuffers()
 	{
-		return true;
+		BufferDesc uniformCopyBufferDesc = {};
+		uniformCopyBufferDesc.DebugName = "Paint Mask Renderer Transform Copy Buffer";
+		uniformCopyBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		uniformCopyBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+		uniformCopyBufferDesc.SizeInBytes = sizeof(glm::mat4);
+
+		uint32 backBufferCount = m_BackBuffers.GetSize();
+		m_TransformCopyBuffers.Resize(backBufferCount);
+		for (uint32 b = 0; b < backBufferCount; b++)
+		{
+			TSharedRef<Buffer> uniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformCopyBufferDesc);
+			if (uniformBuffer != nullptr)
+			{
+				m_TransformCopyBuffers[b] = uniformBuffer;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		BufferDesc uniformBufferDesc = {};
+		uniformBufferDesc.DebugName = "Paint Mask Renderer Transform Buffer";
+		uniformBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+		uniformBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+		uniformBufferDesc.SizeInBytes = uniformCopyBufferDesc.SizeInBytes;
+
+		m_TransformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformBufferDesc);
+		return m_TransformBuffer != nullptr;
 	}
 
 	bool PaintMaskRenderer::CreatePipelineLayout()
 	{
-		// PerFrameBuffer
+		// PerFrameBuffer (Binding 0) and Transform (Binding 1)
 		DescriptorBindingDesc perFrameBufferDesc = {};
 		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		perFrameBufferDesc.DescriptorCount = 1;
+		perFrameBufferDesc.DescriptorCount = 2;
 		perFrameBufferDesc.Binding = 0;
 		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-
-		// Draw Args (No Extension, Vertices and Instances)
-		DescriptorBindingDesc ssboBindingDesc = {};
-		ssboBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		ssboBindingDesc.DescriptorCount = 2;
-		ssboBindingDesc.Binding = 0;
-		ssboBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
 		// Brush mask texture
 		DescriptorBindingDesc brushMaskDesc = {};
@@ -308,6 +463,13 @@ namespace LambdaEngine
 		brushMaskDesc.Binding = 0;
 		brushMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
+		// Draw Args (No Extension, only Vertices)
+		DescriptorBindingDesc ssboBindingDesc = {};
+		ssboBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		ssboBindingDesc.DescriptorCount = 1;
+		ssboBindingDesc.Binding = 0;
+		ssboBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
 		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc };
 
@@ -315,7 +477,7 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc1.DescriptorBindings = { brushMaskDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { ssboBindingDesc };
+		descriptorSetLayoutDesc1.DescriptorBindings = { ssboBindingDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Paint Mask Renderer Pipeline Layout";
@@ -331,8 +493,8 @@ namespace LambdaEngine
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
-		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 1;
+		descriptorCountDesc.ConstantBufferDescriptorCount = 2;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
@@ -390,7 +552,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool PaintMaskRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc)
+	bool PaintMaskRenderer::CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
@@ -399,14 +561,14 @@ namespace LambdaEngine
 		colorAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
 		colorAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
-		colorAttachmentDesc.InitialState = pBackBufferAttachmentDesc->InitialState;
-		colorAttachmentDesc.FinalState = pBackBufferAttachmentDesc->FinalState;
+		//colorAttachmentDesc.InitialState = ETextureState::;
+		//colorAttachmentDesc.FinalState = pBackBufferAttachmentDesc->FinalState;
 
-		RenderPassAttachmentDesc depthAttachmentDesc = *pDepthStencilAttachmentDesc;
+		//RenderPassAttachmentDesc depthAttachmentDesc = *pDepthStencilAttachmentDesc;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+		//subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass = EXTERNAL_SUBPASS;
@@ -418,7 +580,7 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName = "Paint Mask Renderer Render Pass";
-		renderPassDesc.Attachments = { colorAttachmentDesc, depthAttachmentDesc };
+		renderPassDesc.Attachments = { colorAttachmentDesc };
 		renderPassDesc.Subpasses = { subpassDesc };
 		renderPassDesc.SubpassDependencies = { subpassDependencyDesc };
 
@@ -453,7 +615,7 @@ namespace LambdaEngine
 
 		pipelineStateDesc.DepthStencilState = {};
 		pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
-		pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
+		pipelineStateDesc.DepthStencilState.DepthWriteEnable = false;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{
