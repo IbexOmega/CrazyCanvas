@@ -1906,6 +1906,9 @@ namespace LambdaEngine
 						descriptorBinding.DescriptorCount	= actualSubResourceCount;
 						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
+						if (pResource->Texture.UnboundedArray)
+							descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
 						textureDescriptorSetDescriptions.PushBack(descriptorBinding);
 						renderStageTextureResources.PushBack(std::make_tuple(pResource, textureState, descriptorType));
 					}
