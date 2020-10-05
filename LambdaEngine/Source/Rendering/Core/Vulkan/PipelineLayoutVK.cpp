@@ -49,6 +49,7 @@ namespace LambdaEngine
 		// DescriptorSetLayouts
 		TArray<VkSampler> immutableSamplers;
 		TArray<VkDescriptorSetLayoutBinding> layoutBindings;
+		TArray<VkDescriptorBindingFlags> layoutBindingFlags;
 		for (const DescriptorSetLayoutDesc& descriptorSetLayout : pDesc->DescriptorSetLayouts)
 		{
 			VkDescriptorSetLayout layout = VK_NULL_HANDLE;
@@ -125,13 +126,28 @@ namespace LambdaEngine
 
 				layoutBindings.EmplaceBack(bindingVk);
 				m_DescriptorCounts.EmplaceBack(heapInfo);
+				
+				VkFlags bindingFlags = 0;
+
+				if (binding.Flags & FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND)
+				{
+					bindingFlags |= VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+				}
+
+				layoutBindingFlags.PushBack(bindingFlags);
 			}
 
 			m_DescriptorSetBindings.PushBack({ descriptorSetLayout.DescriptorBindings });
 
+			VkDescriptorSetLayoutBindingFlagsCreateInfo descriptorSetLayoutBindingFlags = {};
+			descriptorSetLayoutBindingFlags.sType			= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+			descriptorSetLayoutBindingFlags.pNext			= nullptr;
+			descriptorSetLayoutBindingFlags.bindingCount	= static_cast<uint32>(layoutBindingFlags.GetSize());
+			descriptorSetLayoutBindingFlags.pBindingFlags	= layoutBindingFlags.GetData();
+
 			VkDescriptorSetLayoutCreateInfo createInfo = { };
 			createInfo.sType		= VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			createInfo.pNext		= nullptr;
+			createInfo.pNext		= &descriptorSetLayoutBindingFlags;
 			createInfo.flags		= 0;
 			createInfo.pBindings	= layoutBindings.GetData();
 			createInfo.bindingCount	= static_cast<uint32>(layoutBindings.GetSize());
@@ -157,6 +173,7 @@ namespace LambdaEngine
 				
 				m_DescriptorSetLayouts.EmplaceBack(layout);
 				layoutBindings.Clear();
+				layoutBindingFlags.Clear();
 				immutableSamplers.Clear();
 			}
 		}
