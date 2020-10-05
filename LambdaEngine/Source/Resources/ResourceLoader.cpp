@@ -1012,8 +1012,8 @@ namespace LambdaEngine
 		String name = pNode->mName.C_Str();
 
 		int32 myID = -1;
-		auto it = pSkeleton->BoneMap.find(name);
-		if (it != pSkeleton->BoneMap.end())
+		auto it = pSkeleton->JointMap.find(name);
+		if (it != pSkeleton->JointMap.end())
 		{
 			myID = it->second;
 		}
@@ -1029,10 +1029,10 @@ namespace LambdaEngine
 			{
 				String childName = pChild->mName.C_Str();
 				
-				auto childIt = pSkeleton->BoneMap.find(childName);
-				if (childIt != pSkeleton->BoneMap.end())
+				auto childIt = pSkeleton->JointMap.find(childName);
+				if (childIt != pSkeleton->JointMap.end())
 				{
-					pSkeleton->Bones[childIt->second].ParentBoneIndex = myID;
+					pSkeleton->Joints[childIt->second].ParentBoneIndex = myID;
 				}
 
 				FindSkeletalParent(pNode->mChildren[child], pSkeleton);
@@ -1046,42 +1046,26 @@ namespace LambdaEngine
 		pMesh->pSkeleton = pSkeleton;
 
 		// Retrive all the bones
-		pSkeleton->Bones.Resize(pMeshAI->mNumBones);
+		pSkeleton->Joints.Resize(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			Bone& bone = pSkeleton->Bones[boneIndex];
+			Joint& bone = pSkeleton->Joints[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			bone.Name = pBoneAI->mName.C_Str();
 			
-			auto it = pSkeleton->BoneMap.find(bone.Name);
-			if (it != pSkeleton->BoneMap.end())
+			auto it = pSkeleton->JointMap.find(bone.Name);
+			if (it != pSkeleton->JointMap.end())
 			{
 				LOG_ERROR("[ResourceLoader] Multiple bones with the same name");
 				return;
 			}
 			else
 			{
-				pSkeleton->BoneMap[bone.Name] = boneIndex;
+				pSkeleton->JointMap[bone.Name] = boneIndex;
 			}
 			
-			bone.OffsetTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
-			bone.Weights.Resize(pBoneAI->mNumWeights);
-			for (uint32 weightIndex = 0; weightIndex < pBoneAI->mNumWeights; weightIndex++)
-			{
-				bone.Weights[weightIndex].VertexIndex	= pBoneAI->mWeights[weightIndex].mVertexId;
-				bone.Weights[weightIndex].VertexWeight	= pBoneAI->mWeights[weightIndex].mWeight;
-			}
-		}
-
-		// Retrive the parent index for all nodes with the node
-		{
-			aiNode* pNodeAI = pMeshAI->mBones[0]->mNode;
-			if (pNodeAI)
-			{
-				aiNode* pRoot = FindSkeletalRoot(pNodeAI);
-				FindSkeletalParent(pRoot, pSkeleton);
-			}
+			bone.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
 #if 0
@@ -1096,68 +1080,84 @@ namespace LambdaEngine
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
 			// We already found the parent
-			Bone& bone = pSkeleton->Bones[boneIndex];
-			if (bone.ParentBoneIndex != -1)
-			{
-				continue;
-			}
+			Joint& joint = pSkeleton->Joints[boneIndex];
 
 			// Search the armature aswell
-			aiNode* pNodeAI = pMeshAI->mBones[boneIndex]->mArmature;
+			aiNode* pNodeAI = pMeshAI->mBones[boneIndex]->mNode;
 			if (pNodeAI)
 			{
 				aiNode* pParent = pNodeAI->mParent;
 				if (pParent)
 				{
-					auto it = pSkeleton->BoneMap.find(String(pParent->mName.C_Str()));
-					if (it != pSkeleton->BoneMap.end())
+					auto it = pSkeleton->JointMap.find(String(pParent->mName.C_Str()));
+					if (it != pSkeleton->JointMap.end())
 					{
-						bone.ParentBoneIndex = it->second;
+						joint.ParentBoneIndex = it->second;
+					}
+				}
+			}
+
+			if (joint.ParentBoneIndex != INVALID_JOINT_ID)
+			{
+				continue;
+			}
+
+			// Search the armature aswell
+			pNodeAI = pMeshAI->mBones[boneIndex]->mArmature;
+			if (pNodeAI)
+			{
+				aiNode* pParent = pNodeAI->mParent;
+				if (pParent)
+				{
+					auto it = pSkeleton->JointMap.find(String(pParent->mName.C_Str()));
+					if (it != pSkeleton->JointMap.end())
+					{
+						joint.ParentBoneIndex = it->second;
 					}
 				}
 			}
 		}
 
-#if 0
+#if 1
 		LOG_INFO("-----------------------------------");
 
-		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
 		{
-			Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.GetString().c_str(), boneID, bone.ParentBoneIndex);
+			Joint& joint = pSkeleton->Joints[jointID];
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", joint.Name.GetString().c_str(), jointID, joint.ParentBoneIndex);
 		}
 #endif
 
 		// Set weights
-		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());
-		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		pMesh->VertexJointData.Resize(pMesh->Vertices.GetSize());
+		for (uint32 boneID = 0; boneID < pMeshAI->mNumBones; boneID++)
 		{
-			Bone& bone = pSkeleton->Bones[boneID];
-			for (uint32 weightID = 0; weightID < bone.Weights.GetSize(); weightID++)
+			aiBone* pBone = pMeshAI->mBones[boneID];
+			for (uint32 weightID = 0; weightID < pBone->mNumWeights; weightID++)
 			{
-				const uint32	vertexID	= bone.Weights[weightID].VertexIndex;
-				const float32	weight		= bone.Weights[weightID].VertexWeight;
+				const uint32	vertexID	= pBone->mWeights[weightID].mVertexId;
+				const float32	weight		= pBone->mWeights[weightID].mWeight;
 
-				VertexBoneData& vertex = pMesh->VertexBoneData[vertexID];
-				if (vertex.Bone0.BoneID == -1)
+				VertexJointData& vertex = pMesh->VertexJointData[vertexID];
+				if (vertex.Joint0.JointID == INVALID_JOINT_ID)
 				{
-					vertex.Bone0.BoneID = boneID;
-					vertex.Bone0.Weight = weight;
+					vertex.Joint0.JointID	= boneID;
+					vertex.Joint0.Weight	= weight;
 				}
-				else if (vertex.Bone1.BoneID == -1)
+				else if (vertex.Joint1.JointID == INVALID_JOINT_ID)
 				{
-					vertex.Bone1.BoneID = boneID;
-					vertex.Bone1.Weight = weight;
+					vertex.Joint1.JointID	= boneID;
+					vertex.Joint1.Weight	= weight;
 				}
-				else if (vertex.Bone2.BoneID == -1)
+				else if (vertex.Joint2.JointID == INVALID_JOINT_ID)
 				{
-					vertex.Bone2.BoneID = boneID;
-					vertex.Bone2.Weight = weight;
+					vertex.Joint2.JointID	= boneID;
+					vertex.Joint2.Weight	= weight;
 				}
-				else if (vertex.Bone3.BoneID == -1)
+				else if (vertex.Joint3.JointID == INVALID_JOINT_ID)
 				{
-					vertex.Bone3.BoneID = boneID;
-					vertex.Bone3.Weight = weight;
+					vertex.Joint3.JointID	= boneID;
+					vertex.Joint3.Weight	= weight;
 				}
 				else
 				{
@@ -1169,7 +1169,7 @@ namespace LambdaEngine
 #if 0
 		for (VertexBoneData& bone : pMesh->VertexBoneData)
 		{
-			LOG_WARNING("BoneData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
+			LOG_WARNING("JointData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
 				bone.Bone0.BoneID, bone.Bone0.Weight,
 				bone.Bone1.BoneID, bone.Bone1.Weight,
 				bone.Bone2.BoneID, bone.Bone2.Weight,
@@ -1309,6 +1309,8 @@ namespace LambdaEngine
 		}
 
 		context.Animations.EmplaceBack(pAnimation);
+
+		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", Duration=%.4f ticks, TicksPerSecond=%.4f", pAnimation->Name.GetString().c_str(), pAnimation->DurationInTicks, pAnimation->TicksPerSecond);
 	}
 
 	bool ResourceLoader::LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest)
@@ -1340,6 +1342,24 @@ namespace LambdaEngine
 			.pTextures		= sceneLoadRequest.pTextures
 		};
 
+		// Metadata
+		if (pScene->mMetaData)
+		{
+			aiMetadata* pMetaData = pScene->mMetaData;
+
+			LOG_INFO("%s metadata:", filepath.c_str());
+			for (uint32 i = 0; i < pMetaData->mNumProperties; i++)
+			{
+				aiString string = pMetaData->mKeys[i];
+				if (pMetaData->mValues[i].mType == AI_AISTRING)
+				{
+					string = *static_cast<aiString*>(pMetaData->mValues[i].mData);
+				}
+				
+				LOG_INFO("    [%s]=%s", pMetaData->mKeys[i].C_Str(), string.C_Str());
+			}
+		}
+
 		// Load all meshes
 		ProcessAssimpNode(context, pScene->mRootNode, pScene);
 
@@ -1358,10 +1378,10 @@ namespace LambdaEngine
 	void ResourceLoader::ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
 	{
 		context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
-		for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
+		for (uint32 i = 0; i < pNode->mNumMeshes; i++)
 		{
 			Mesh*	pMesh	= DBG_NEW Mesh;
-			aiMesh*	pMeshAI	= pScene->mMeshes[pNode->mMeshes[meshIdx]];
+			aiMesh*	pMeshAI	= pScene->mMeshes[pNode->mMeshes[i]];
 
 			LoadVertices(pMesh, pMeshAI);
 			LoadIndices(pMesh, pMeshAI);
@@ -1376,7 +1396,11 @@ namespace LambdaEngine
 				LoadSkeleton(pMesh, pMeshAI);
 				if (pMesh->pSkeleton)
 				{
-					pMesh->pSkeleton->GlobalTransform = AssimpToGLMMat4(pNode->mTransformation);
+					glm::mat4 meshTransform		= AssimpToGLMMat4(pNode->mTransformation);
+					glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
+					pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
+
+					LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
 				}
 			}
 

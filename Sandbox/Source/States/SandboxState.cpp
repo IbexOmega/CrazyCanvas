@@ -121,7 +121,7 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Shuffling.fbx", animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
@@ -144,8 +144,10 @@ void SandboxState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID = animations[0];
-		robotAnimationComp.PlaybackSpeed = 2.0f;
+		robotAnimationComp.AnimationGUID	= animations[0];
+		robotAnimationComp.PlaybackSpeed	= 1.0f;
+		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
@@ -157,6 +159,24 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		
+		position = glm::vec3(-5.0f, 1.25f, 0.0f);
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(5.0f, 1.25f, 0.0f);
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());

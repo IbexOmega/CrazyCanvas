@@ -15,9 +15,6 @@ namespace LambdaEngine
 	public:
 		bool Init();
 
-		void OnEntityAdded(Entity entity);
-		void OnEntityRemoved(Entity entity);
-
 		// Inherited from system
 		virtual void Tick(Timestamp deltaTime) override final;
 
@@ -26,7 +23,7 @@ namespace LambdaEngine
 		~AnimationSystem();
 
 		void Animate(Timestamp deltaTime, AnimationComponent& animation, MeshComponent& mesh);
-		glm::mat4 ApplyParent(Bone& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
+		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
 	public:
 		static AnimationSystem& GetInstance();

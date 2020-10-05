@@ -22,15 +22,13 @@ namespace LambdaEngine
 		Animation* pAnimation = ResourceManager::GetAnimation(animation.AnimationGUID);
 		VALIDATE(pAnimation);
 
-		Mesh* pMesh = ResourceManager::GetMesh(mesh.MeshGUID);
-		VALIDATE(pMesh);
-
-		Skeleton* pSkeleton = pMesh->pSkeleton;
+		Skeleton* pSkeleton = animation.Pose.pSkeleton;
 		VALIDATE(pSkeleton);
 
 		// Move timer
 		const float64 ticksPerSeconds	= animation.PlaybackSpeed * pAnimation->TicksPerSecond;
 		const float64 deltaTicks		= ticksPerSeconds * deltaTime.AsSeconds();
+		
 		animation.DurationInTicks += deltaTicks;
 		if (animation.DurationInTicks > pAnimation->DurationInTicks)
 		{
@@ -38,14 +36,17 @@ namespace LambdaEngine
 		}
 
 		// Make sure we have enough matrices
-		animation.BoneMatrices.Resize(pSkeleton->Bones.GetSize());
+		if (animation.Pose.LocalTransforms.GetSize() < pSkeleton->Joints.GetSize())
+		{
+			animation.Pose.LocalTransforms.Resize(pSkeleton->Joints.GetSize());
+		}
 		
 		// Find keyframes
 		for (Animation::Channel& channel : pAnimation->Channels)
 		{
 			// Retrive the bone ID
-			auto it = pSkeleton->BoneMap.find(channel.Name);
-			if (it == pSkeleton->BoneMap.end())
+			auto it = pSkeleton->JointMap.find(channel.Name);
+			if (it == pSkeleton->JointMap.end())
 			{
 				continue;
 			}
@@ -70,7 +71,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float32 factor = (pos1.Time != pos0.Time) ? (animation.DurationInTicks - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
+				const float64 factor = (pos1.Time != pos0.Time) ? (animation.DurationInTicks - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
 				position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
 			}
 
@@ -92,8 +93,8 @@ namespace LambdaEngine
 					}
 				}
 
-				const float32 factor = (rot1.Time != rot0.Time) ? (animation.DurationInTicks - rot0.Time) / (rot1.Time - rot0.Time) : 0.0f;
-				rotation = glm::slerp(rot0.Value, rot1.Value, factor);
+				const float64 factor = (rot1.Time != rot0.Time) ? (animation.DurationInTicks - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
+				rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
 				rotation = glm::normalize(rotation);
 			}
 
@@ -115,7 +116,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float32 factor = (scale1.Time != scale0.Time) ? (animation.DurationInTicks - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
+				const float64 factor = (scale1.Time != scale0.Time) ? (animation.DurationInTicks - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
 				scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
 			}
 
@@ -125,30 +126,32 @@ namespace LambdaEngine
 			transform			= glm::scale(transform, scale);
 
 			// Increase boneID
-			animation.BoneMatrices[boneID] = transform;
+			animation.Pose.LocalTransforms[boneID] = transform;
 		}
 
-		// Apply parent transform
-		TArray<glm::mat4> tempBones = animation.BoneMatrices;
-		for (uint32 i = 0; i < pSkeleton->Bones.GetSize(); i++)
+		// Make sure we have enough matrices
+		if (animation.Pose.GlobalTransforms.GetSize() < pSkeleton->Joints.GetSize())
 		{
-			Bone& bone = pSkeleton->Bones[i];
-			tempBones[i] = pSkeleton->GlobalTransform * ApplyParent(bone, *pSkeleton, animation.BoneMatrices) * bone.OffsetTransform;
+			animation.Pose.GlobalTransforms.Resize(pSkeleton->Joints.GetSize());
 		}
-
-		animation.BoneMatrices.Swap(tempBones);
+		
+		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
+		{
+			Joint& joint = pSkeleton->Joints[i];
+			animation.Pose.GlobalTransforms[i] = pSkeleton->InverseGlobalTransform * ApplyParent(joint, *pSkeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
+		}
 	}
 
-	glm::mat4 AnimationSystem::ApplyParent(Bone& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
+	glm::mat4 AnimationSystem::ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
 	{
 		int32 parentID	= bone.ParentBoneIndex;
-		int32 myID		= skeleton.BoneMap[bone.Name];
-		if (parentID == -1)
+		int32 myID		= skeleton.JointMap[bone.Name];
+		if (parentID == INVALID_JOINT_ID)
 		{
 			return matrices[myID];
 		}
 
-		return ApplyParent(skeleton.Bones[parentID], skeleton, matrices) * matrices[myID];
+		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
 	bool AnimationSystem::Init()
@@ -159,12 +162,9 @@ namespace LambdaEngine
 		{
 			{
 				{
-					{ RW,	AnimationComponent::Type() }, 
-					{ R,	MeshComponent::Type() }
+					{ RW, AnimationComponent::Type() }
 				},
-				&m_AnimationEntities,	
-				std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1), 
-				std::bind(&AnimationSystem::OnEntityRemoved, this, std::placeholders::_1) 
+				&m_AnimationEntities
 			},
 		};
 
@@ -187,16 +187,6 @@ namespace LambdaEngine
 				Animate(deltaTime, animation, mesh);
 			}
 		}
-	}
-
-	void AnimationSystem::OnEntityAdded(Entity entity)
-	{
-		LOG_INFO("Animated Enity added");
-	}
-
-	void AnimationSystem::OnEntityRemoved(Entity entity)
-	{
-		LOG_INFO("Animated Enity removed");
 	}
 	
 	AnimationSystem& AnimationSystem::GetInstance()

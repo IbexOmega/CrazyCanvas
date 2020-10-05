@@ -8,14 +8,18 @@
 
 namespace LambdaEngine
 {
+	/*
+	* AnimationComponent
+	*/
+
 	struct AnimationComponent
 	{
 		DECL_COMPONENT(AnimationComponent);
 
-		GUID_Lambda			AnimationGUID	= GUID_NONE;
-		float64				DurationInTicks	= 0.0f;
-		float32				PlaybackSpeed	= 1.0f;
-		bool				IsPaused		= false;
-		TArray<glm::mat4>	BoneMatrices;
+		GUID_Lambda		AnimationGUID	= GUID_NONE;
+		float64			DurationInTicks	= 0.0f;
+		float32			PlaybackSpeed	= 1.0f;
+		bool			IsPaused		= false;
+		SkeletonPose	Pose;
 	};
 }

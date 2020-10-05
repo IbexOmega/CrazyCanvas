@@ -709,15 +709,15 @@ namespace LambdaEngine
 						vertexWeightBufferDesc.DebugName	= "Vertex Weight Staging Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-						vertexWeightBufferDesc.SizeInBytes	= pMesh->VertexBoneData.GetSize() * sizeof(VertexBoneData);
+						vertexWeightBufferDesc.SizeInBytes	= pMesh->VertexJointData.GetSize() * sizeof(VertexJointData);
 
-						VALIDATE(pMesh->VertexBoneData.GetSize() == pMesh->Vertices.GetSize());
+						VALIDATE(pMesh->VertexJointData.GetSize() == pMesh->Vertices.GetSize());
 
 						Buffer* pVertexWeightStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexWeightBufferDesc);
 						VALIDATE(pVertexWeightStagingBuffer != nullptr);
 
 						void* pMappedWeights = pVertexWeightStagingBuffer->Map();
-						memcpy(pMappedWeights, pMesh->VertexBoneData.GetData(), vertexWeightBufferDesc.SizeInBytes);
+						memcpy(pMappedWeights, pMesh->VertexJointData.GetData(), vertexWeightBufferDesc.SizeInBytes);
 						pVertexWeightStagingBuffer->Unmap();
 
 						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
@@ -1262,8 +1262,8 @@ namespace LambdaEngine
 	void RenderSystem::UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry)
 	{
 		// If needed create new buffers
-		const uint64 sizeInBytes = animationComp.BoneMatrices.GetSize() * sizeof(glm::mat4);
-		if (animationComp.BoneMatrices.GetSize() > meshEntry.BoneMatrixCount)
+		const uint64 sizeInBytes = animationComp.Pose.GlobalTransforms.GetSize() * sizeof(glm::mat4);
+		if (animationComp.Pose.GlobalTransforms.GetSize() > meshEntry.BoneMatrixCount)
 		{
 			if (meshEntry.pBoneMatrixBuffer)
 			{
@@ -1272,7 +1272,7 @@ namespace LambdaEngine
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pAnimationDescriptorSet);
 			}
 
-			BufferDesc matrixBufferDesc = {};
+			BufferDesc matrixBufferDesc;
 			matrixBufferDesc.DebugName		= "Matrix Staging Buffer";
 			matrixBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			matrixBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
@@ -1285,7 +1285,7 @@ namespace LambdaEngine
 			matrixBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 
 			meshEntry.pBoneMatrixBuffer			= RenderAPI::GetDevice()->CreateBuffer(&matrixBufferDesc);
-			meshEntry.BoneMatrixCount			= animationComp.BoneMatrices.GetSize();
+			meshEntry.BoneMatrixCount			= animationComp.Pose.GlobalTransforms.GetSize();
 			meshEntry.pAnimationDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet("Animation Descriptor Set", m_SkinningPipelineLayout.Get(), 0, m_AnimationDescriptorHeap.Get());
 			
 			const uint64 offset = 0;
@@ -1293,13 +1293,13 @@ namespace LambdaEngine
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexBuffer,			&offset, &size,			0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pAnimatedVertexBuffer,	&offset, &size,			1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pBoneMatrixBuffer,		&offset, &sizeInBytes,	2, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-			size = meshEntry.VertexCount * sizeof(VertexBoneData);
+			size = meshEntry.VertexCount * sizeof(VertexJointData);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexWeightsBuffer, &offset, &size, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 		}
 
 		// Copy data
 		void* pMapped = meshEntry.pStagingMatrixBuffer->Map();
-		memcpy(pMapped, animationComp.BoneMatrices.GetData(), sizeInBytes);
+		memcpy(pMapped, animationComp.Pose.GlobalTransforms.GetData(), sizeInBytes);
 		meshEntry.pStagingMatrixBuffer->Unmap();
 		
 		m_PendingBufferUpdates.PushBack({ meshEntry.pStagingMatrixBuffer, 0, meshEntry.pBoneMatrixBuffer, 0, sizeInBytes });
