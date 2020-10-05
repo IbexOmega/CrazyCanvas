@@ -157,7 +157,6 @@ namespace LambdaEngine
 	bool ImGuiRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
-
 		VALIDATE(pPreInitDesc->ColorAttachmentCount == 1);
 
 		m_BackBufferCount = pPreInitDesc->BackBufferCount;
@@ -998,6 +997,18 @@ namespace LambdaEngine
 	
 	bool ImGuiRenderer::CreateRenderCommandLists()
 	{
+		if (m_ppRenderCommandLists != nullptr && m_ppRenderCommandAllocators != nullptr)
+		{
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppRenderCommandLists[b]);
+				SAFERELEASE(m_ppRenderCommandAllocators[b]);
+			}
+
+			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
+			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
+		}
+
 		m_ppRenderCommandAllocators	= DBG_NEW CommandAllocator*[m_BackBufferCount];
 		m_ppRenderCommandLists		= DBG_NEW CommandList*[m_BackBufferCount];
 
@@ -1038,6 +1049,9 @@ namespace LambdaEngine
 
 	bool ImGuiRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)
 	{
+		if (m_RenderPass.Get())
+			m_RenderPass.Reset();
+
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
 		colorAttachmentDesc.SampleCount		= 1;

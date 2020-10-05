@@ -1068,18 +1068,9 @@ namespace LambdaEngine
 			bone.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
-#if 0
-		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
-		{
-			Bone& bone = pSkeleton->Bones[boneID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.GetString().c_str(), boneID, bone.ParentBoneIndex);
-		}
-#endif
-
-		// Go through and correct mistakes with the armature
+		// We find the parent
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			// We already found the parent
 			Joint& joint = pSkeleton->Joints[boneIndex];
 
 			// Search the armature aswell
@@ -1118,7 +1109,7 @@ namespace LambdaEngine
 			}
 		}
 
-#if 1
+#if 0
 		LOG_INFO("-----------------------------------");
 
 		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
