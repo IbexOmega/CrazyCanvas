@@ -41,10 +41,14 @@ namespace LambdaEngine
 
 	struct CameraComponent;
 	struct RenderGraphStructureDesc;
+	struct AnimationComponent;
 	struct ViewProjectionMatricesComponent;
 
 	class LAMBDA_API RenderSystem : public System
 	{
+		DECL_REMOVE_COPY(RenderSystem);
+		DECL_REMOVE_MOVE(RenderSystem);
+
 		struct Instance
 		{
 			glm::mat4	Transform		= glm::mat4(1.0f);
@@ -57,18 +61,26 @@ namespace LambdaEngine
 
 		struct MeshKey
 		{
-			GUID_Lambda		MeshGUID;
-			bool			IsAnimated;
-			Entity			EntityID;
-			mutable size_t	Hash = 0;
+		public:
+			MeshKey() = default;
+
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated)
+				: MeshGUID(meshGUID)
+				, EntityID(entityID)
+				, IsAnimated(isAnimated)
+			{
+				GetHash();
+			}
 
 			size_t GetHash() const
 			{
 				if (Hash == 0)
 				{
 					Hash = std::hash<GUID_Lambda>()(MeshGUID);
-
-					if (IsAnimated) HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
+					if (IsAnimated)
+					{
+						HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
+					}
 				}
 
 				return Hash;
@@ -77,16 +89,26 @@ namespace LambdaEngine
 			bool operator==(const MeshKey& other) const
 			{
 				if (MeshGUID != other.MeshGUID)
+				{
 					return false;
+				}
 
 				if (IsAnimated)
 				{
 					if (!other.IsAnimated || EntityID != other.EntityID)
+					{
 						return false;
+					}
 				}
 
 				return true;
 			}
+
+		public:
+			GUID_Lambda		MeshGUID;
+			bool			IsAnimated;
+			Entity			EntityID;
+			mutable size_t	Hash = 0;
 		};
 
 		struct MeshKeyHasher
@@ -99,20 +121,26 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
-			AccelerationStructure* pBLAS		= nullptr;
+			AccelerationStructure* pBLAS	= nullptr;
 			SBTRecord ShaderRecord			= {};
 
-			Buffer* pVertexBuffer		= nullptr;
-			uint32	VertexCount			= 0;
-			Buffer* pIndexBuffer		= nullptr;
-			uint32	IndexCount			= 0;
-			Buffer* pUniqueIndices		= nullptr;
-			uint32	UniqueIndexCount	= 0;
-			Buffer* pPrimitiveIndices	= nullptr;
-			uint32	PrimtiveIndexCount	= 0;
-			Buffer* pMeshlets			= nullptr;
-			uint32	MeshletCount		= 0;
+			DescriptorSet* pAnimationDescriptorSet = nullptr;
 
+			Buffer* pVertexWeightsBuffer	= nullptr;
+			Buffer* pAnimatedVertexBuffer	= nullptr;
+			Buffer* pVertexBuffer			= nullptr;
+			uint32	VertexCount				= 0;
+			Buffer* pStagingMatrixBuffer	= nullptr;
+			Buffer* pBoneMatrixBuffer		= nullptr;
+			uint32	BoneMatrixCount			= 0;
+			Buffer* pIndexBuffer			= nullptr;
+			uint32	IndexCount				= 0;
+			Buffer* pUniqueIndices			= nullptr;
+			uint32	UniqueIndexCount		= 0;
+			Buffer* pPrimitiveIndices		= nullptr;
+			uint32	PrimtiveIndexCount		= 0;
+			Buffer* pMeshlets				= nullptr;
+			uint32	MeshletCount			= 0;
 
 			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
@@ -183,18 +211,25 @@ namespace LambdaEngine
 		};
 
 	public:
-		DECL_REMOVE_COPY(RenderSystem);
-		DECL_REMOVE_MOVE(RenderSystem);
 		~RenderSystem() = default;
 
 		bool Init();
 		bool Release();
 
-		void Tick(Timestamp deltaTime) override final;
+		virtual void Tick(Timestamp deltaTime) override final;
 
 		bool Render();
 
+		/*
+		* Set new rendergraph to be executed
+		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
+
+		/*
+		* Puts given render stage to sleep, this will prevent execution of renderstage
+		* Useful for optimization when a rendergraph can still execute without given renderstage
+		*/
+		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
 		uint64			GetFrameIndex() const	 	{ return m_FrameIndex; }
@@ -207,15 +242,20 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
+		glm::mat4 CreateEntityTransform(Entity entity);
+		
 		void OnEntityAdded(Entity entity);
 		void OnEntityRemoved(Entity entity);
+
+		void OnAnimatedEntityAdded(Entity entity);
+		void OnAnimatedEntityRemoved(Entity entity);
 
 		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
 
 		void OnDirectionalEntityAdded(Entity entity);
-		void OnPointLightEntityAdded(Entity entity);
-
 		void OnDirectionalEntityRemoved(Entity entity);
+
+		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
 
 		void RemoveEntityInstance(Entity entity);
@@ -228,6 +268,8 @@ namespace LambdaEngine
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
 		void UpdateBuffers();
+		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
+		void PerformMeshSkinning(CommandList* pCommandList);
 		void ExecutePendingBufferUpdates(CommandList* pCommandList);
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
@@ -241,13 +283,13 @@ namespace LambdaEngine
 		void UpdateRenderGraph();
 
 	private:
+		IDVector m_DirectionalLightEntities;
+		IDVector m_PointLightEntities;
+		IDVector m_RenderableEntities;
+		IDVector m_CameraEntities;
+		IDVector m_AnimatedEntities;
 
-		IDVector				m_DirectionalLightEntities;
-		IDVector				m_PointLightEntities;
-		IDVector				m_RenderableEntities;
-		IDVector				m_CameraEntities;
-
-		LineRenderer*		m_pLineRenderer	= nullptr;
+		LineRenderer* m_pLineRenderer	= nullptr;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -258,7 +300,7 @@ namespace LambdaEngine
 		uint32					m_BackBufferIndex	= 0;
 		bool					m_RayTracingEnabled	= false;
 		bool					m_MeshShadersEnabled = false;
-		//Mesh/Instance/Entity
+		// Mesh/Instance/Entity
 		bool						m_LightsDirty			= true;
 		bool						m_LightsResourceDirty	= false;
 		bool						m_DirectionalExist		= false;
@@ -267,12 +309,12 @@ namespace LambdaEngine
 		THashTable<uint32, Entity>	m_PointLightToEntity;
 		TArray<PointLight>			m_PointLights;
 
-		//Data Supplied to the RenderGraph
+		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
-		//Materials
+		// Materials
 		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
 		Texture*			m_ppCombinedMaterialMaps[MAX_UNIQUE_MATERIALS];
@@ -282,30 +324,34 @@ namespace LambdaEngine
 		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
 		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
 		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*				m_pMaterialParametersBuffer				= nullptr;
+		Buffer*				m_pMaterialParametersBuffer = nullptr;
 		TStack<uint32>		m_FreeMaterialSlots;
 
-		//Per Frame
+		// Per Frame
 		PerFrameBuffer		m_PerFrameData;
 
+		Buffer* m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
+		Buffer* m_pLightsBuffer								= nullptr;
+		Buffer* m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
+		Buffer* m_pPerFrameBuffer			= nullptr;
 
-		Buffer*				m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
-		Buffer*				m_pLightsBuffer								= nullptr;
-		Buffer*				m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*				m_pPerFrameBuffer			= nullptr;
+		// Draw Args
+		TSet<uint32> m_RequiredDrawArgs;
 
-		//Draw Args
-		TSet<uint32>		m_RequiredDrawArgs;
+		// Ray Tracing
+		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
+		Buffer*						m_pCompleteInstanceBuffer		= nullptr;
+		uint32						m_MaxInstances					= 0;
+		AccelerationStructure*		m_pTLAS							= nullptr;
+		TArray<PendingBufferUpdate>	m_CompleteInstanceBufferPendingCopies;
+		TArray<SBTRecord>			m_SBTRecords;
 
-		//Ray Tracing
-		Buffer*					m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
-		Buffer*					m_pCompleteInstanceBuffer		= nullptr;
-		uint32					m_MaxInstances					= 0;
-		AccelerationStructure*	m_pTLAS							= nullptr;
-		TArray<PendingBufferUpdate> m_CompleteInstanceBufferPendingCopies;
-		TArray<SBTRecord> m_SBTRecords;
+		// Animation
+		uint64						m_SkinningPipelineID;
+		TSharedRef<PipelineLayout>	m_SkinningPipelineLayout;
+		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
 
-		//Pending/Dirty
+		// Pending/Dirty
 		bool						m_SBTRecordsDirty					= true;
 		bool						m_RenderGraphSBTRecordsDirty		= true;
 		bool						m_MaterialsPropertiesBufferDirty	= true;
@@ -315,6 +361,7 @@ namespace LambdaEngine
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyBLASs;
+		TSet<MeshEntry*>			m_AnimationsToUpdate;
 		bool						m_TLASDirty							= true;
 		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;

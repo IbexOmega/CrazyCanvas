@@ -22,15 +22,16 @@
 
 namespace LambdaEngine
 {
-	GraphicsDevice*				RenderAPI::s_pGraphicsDevice = nullptr;
-
-	TSharedRef<CommandQueue>	RenderAPI::s_GraphicsQueue	= nullptr;
-	TSharedRef<CommandQueue>	RenderAPI::s_ComputeQueue	= nullptr;
-	TSharedRef<CommandQueue>	RenderAPI::s_CopyQueue		= nullptr;
+	GraphicsDevice* RenderAPI::s_pGraphicsDevice = nullptr;
+	
+	TSharedRef<CommandQueue> RenderAPI::s_GraphicsQueue	= nullptr;
+	TSharedRef<CommandQueue> RenderAPI::s_ComputeQueue	= nullptr;
+	TSharedRef<CommandQueue> RenderAPI::s_CopyQueue		= nullptr;
 
 	/*
 	* RenderAPI
 	*/
+
 	bool RenderAPI::Init()
 	{
 		GraphicsDeviceDesc deviceDesc = { };

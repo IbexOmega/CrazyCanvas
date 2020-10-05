@@ -24,7 +24,6 @@ namespace LambdaEngine
     {
         // Filter the component accesses present in excluded list
         TArray<ComponentAccess> componentAccessesFiltered;
-
         for (auto component : ComponentAccesses)
         {
             if (std::none_of(excludedComponentTypes.Begin(), excludedComponentTypes.End(),

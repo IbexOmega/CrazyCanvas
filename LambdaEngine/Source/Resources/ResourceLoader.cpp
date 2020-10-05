@@ -199,7 +199,7 @@ namespace LambdaEngine
 		TArray<LoadedMaterial*>& materials,
 		TArray<LoadedTexture*>& textures)
 	{
-		const int32 assimpFlags =
+		int32 assimpFlags =
 			aiProcess_FlipWindingOrder			|
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
@@ -208,13 +208,22 @@ namespace LambdaEngine
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
 			aiProcess_LimitBoneWeights			|
-			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_SplitLargeMeshes			|
+			aiProcess_RemoveRedundantMaterials	|
+			aiProcess_SortByPType				|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
-			aiProcess_SortByPType				|
 			aiProcess_FindDegenerates			|
+			aiProcess_OptimizeMeshes			|
+			aiProcess_OptimizeGraph				|
 			aiProcess_FindInvalidData;
+
+		// Prevent crashes in assimp when using this flag
+		String path = ConvertSlashes(filepath);
+		if (path.find(".obj") == String::npos)
+		{
+			//assimpFlags |= aiProcess_PopulateArmatureData;
+		}
 
 		SceneLoadRequest loadRequest = 
 		{
@@ -230,9 +239,9 @@ namespace LambdaEngine
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath)
+	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations)
 	{
-		const int32 assimpFlags =
+		int32 assimpFlags = 
 			aiProcess_FlipWindingOrder			|
 			aiProcess_FlipUVs					|
 			aiProcess_CalcTangentSpace			|
@@ -244,14 +253,20 @@ namespace LambdaEngine
 			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
-			aiProcess_SortByPType				|
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
 			aiProcess_OptimizeGraph				|
+			//aiProcess_SortByPType				|
 			aiProcess_FindInvalidData;
+		
+		// Prevent crashes in assimp when using this flag
+		String path = ConvertSlashes(filepath);
+		if (path.find(".obj") == String::npos)
+		{
+			assimpFlags |= aiProcess_PopulateArmatureData;
+		}
 
 		TArray<Mesh*>			meshes;
-		TArray<Animation*>		animations;
 		TArray<MeshComponent>	meshComponent;
 
 		SceneLoadRequest loadRequest =
@@ -292,12 +307,6 @@ namespace LambdaEngine
 			}
 		}
 
-		// DELETES ALL ANIMATIONS HERE FOR NOW TO AVOID MEMORY LEAKS -> Needs system for this
-		for (Animation* pAnimation : animations)
-		{
-			SAFEDELETE(pAnimation);
-		}
-
 		return meshes[biggest];
 	}
 
@@ -316,12 +325,11 @@ namespace LambdaEngine
 
 	Texture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
 	{
-		int texWidth = 0;
-		int texHeight = 0;
-		int bpp = 0;
+		int texWidth	= 0;
+		int texHeight	= 0;
+		int bpp			= 0;
 
 		TArray<void*> stbi_pixels(count);
-
 		for (uint32 i = 0; i < count; i++)
 		{
 			String filepath = dir + ConvertSlashes(pFilenames[i]);
@@ -954,38 +962,216 @@ namespace LambdaEngine
 		memcpy(pMesh->Indices.GetData(), indices.GetData(), sizeof(MeshIndexType) * indices.GetSize());
 	}
 
+	inline glm::mat4 AssimpToGLMMat4(const aiMatrix4x4& mat)
+	{
+		glm::mat4 retMat;
+
+		retMat[0][0] = mat.a1;
+		retMat[0][1] = mat.b1;
+		retMat[0][2] = mat.c1;
+		retMat[0][3] = mat.d1;
+
+		retMat[1][0] = mat.a2;
+		retMat[1][1] = mat.b2;
+		retMat[1][2] = mat.c2;
+		retMat[1][3] = mat.d2;
+
+		retMat[2][0] = mat.a3;
+		retMat[2][1] = mat.b3;
+		retMat[2][2] = mat.c3;
+		retMat[2][3] = mat.d3;
+
+		retMat[3][0] = mat.a4;
+		retMat[3][1] = mat.b4;
+		retMat[3][2] = mat.c4;
+		retMat[3][3] = mat.d4;
+
+		return retMat;
+	}
+
+	static aiNode* FindSkeletalRoot(aiNode* pNode)
+	{
+		VALIDATE(pNode != nullptr);
+
+		aiNode* pParent = pNode->mParent;
+		if (pParent)
+		{
+			return FindSkeletalRoot(pParent);
+		}
+		else
+		{
+			return pNode;
+		}
+	}
+
+	static void FindSkeletalParent(aiNode* pNode, Skeleton* pSkeleton)
+	{
+		VALIDATE(pNode		!= nullptr);
+		VALIDATE(pSkeleton	!= nullptr);
+
+		String name = pNode->mName.C_Str();
+
+		int32 myID = -1;
+		auto it = pSkeleton->BoneMap.find(name);
+		if (it != pSkeleton->BoneMap.end())
+		{
+			myID = it->second;
+		}
+
+#if 0
+		LOG_INFO("Name=%s, ID=%d", name.c_str(), myID);
+#endif
+
+		for (uint32 child = 0; child < pNode->mNumChildren; child++)
+		{
+			aiNode* pChild = pNode->mChildren[child];
+			if (pChild)
+			{
+				String childName = pChild->mName.C_Str();
+				
+				auto childIt = pSkeleton->BoneMap.find(childName);
+				if (childIt != pSkeleton->BoneMap.end())
+				{
+					pSkeleton->Bones[childIt->second].ParentBoneIndex = myID;
+				}
+
+				FindSkeletalParent(pNode->mChildren[child], pSkeleton);
+			}
+		}
+	}
+
 	void ResourceLoader::LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		Skeleton* pSkeleton = DBG_NEW Skeleton();
 		pMesh->pSkeleton = pSkeleton;
 
+		// Retrive all the bones
+		pSkeleton->Bones.Resize(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			Skeleton::Bone bone;
+			Bone& bone = pSkeleton->Bones[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			bone.Name = pBoneAI->mName.C_Str();
 			
-			for (uint32 row = 0; row < 4; row++)
+			auto it = pSkeleton->BoneMap.find(bone.Name);
+			if (it != pSkeleton->BoneMap.end())
 			{
-				ai_real* pRow = pBoneAI->mOffsetMatrix[row];
-				for (uint32 i = 0; i < 4; i++)
-				{
-					bone.Transform[row][i] = pRow[i];
-				}
+				LOG_ERROR("[ResourceLoader] Multiple bones with the same name");
+				return;
 			}
-
+			else
+			{
+				pSkeleton->BoneMap[bone.Name] = boneIndex;
+			}
+			
+			bone.OffsetTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 			bone.Weights.Resize(pBoneAI->mNumWeights);
 			for (uint32 weightIndex = 0; weightIndex < pBoneAI->mNumWeights; weightIndex++)
 			{
 				bone.Weights[weightIndex].VertexIndex	= pBoneAI->mWeights[weightIndex].mVertexId;
 				bone.Weights[weightIndex].VertexWeight	= pBoneAI->mWeights[weightIndex].mWeight;
 			}
-
-			pSkeleton->Bones.PushBack(bone);
 		}
 
-		pSkeleton->Bones.ShrinkToFit();
+		// Retrive the parent index for all nodes with the node
+		{
+			aiNode* pNodeAI = pMeshAI->mBones[0]->mNode;
+			if (pNodeAI)
+			{
+				aiNode* pRoot = FindSkeletalRoot(pNodeAI);
+				FindSkeletalParent(pRoot, pSkeleton);
+			}
+		}
+
+		//for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		//{
+		//	Skeleton::Bone& bone = pSkeleton->Bones[boneID];
+		//	LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
+		//}
+
+		// Go through and correct mistakes with the armature
+		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
+		{
+			// We already found the parent
+			Bone& bone = pSkeleton->Bones[boneIndex];
+			if (bone.ParentBoneIndex != -1)
+			{
+				continue;
+			}
+
+			// Search the armature aswell
+			aiNode* pNodeAI = pMeshAI->mBones[boneIndex]->mArmature;
+			if (pNodeAI)
+			{
+				aiNode* pParent = pNodeAI->mParent;
+				if (pParent)
+				{
+					auto it = pSkeleton->BoneMap.find(String(pParent->mName.C_Str()));
+					if (it != pSkeleton->BoneMap.end())
+					{
+						bone.ParentBoneIndex = it->second;
+					}
+				}
+			}
+		}
+
+		//LOG_INFO("-----------------------------------");
+
+		//for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		//{
+		//	Skeleton::Bone& bone = pSkeleton->Bones[boneID];
+		//	LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
+		//}
+
+		// Set weights
+		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());
+		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		{
+			Bone& bone = pSkeleton->Bones[boneID];
+			for (uint32 weightID = 0; weightID < bone.Weights.GetSize(); weightID++)
+			{
+				const uint32	vertexID	= bone.Weights[weightID].VertexIndex;
+				const float32	weight		= bone.Weights[weightID].VertexWeight;
+
+				VertexBoneData& vertex = pMesh->VertexBoneData[vertexID];
+				if (vertex.Bone0.BoneID == -1)
+				{
+					vertex.Bone0.BoneID = boneID;
+					vertex.Bone0.Weight = weight;
+				}
+				else if (vertex.Bone1.BoneID == -1)
+				{
+					vertex.Bone1.BoneID = boneID;
+					vertex.Bone1.Weight = weight;
+				}
+				else if (vertex.Bone2.BoneID == -1)
+				{
+					vertex.Bone2.BoneID = boneID;
+					vertex.Bone2.Weight = weight;
+				}
+				else if (vertex.Bone3.BoneID == -1)
+				{
+					vertex.Bone3.BoneID = boneID;
+					vertex.Bone3.Weight = weight;
+				}
+				else
+				{
+					LOG_WARNING("More than 4 bones affect this vertex");
+				}
+			}
+		}
+
+#if 0
+		for (VertexBoneData& bone : pMesh->VertexBoneData)
+		{
+			LOG_WARNING("BoneData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
+				bone.Bone0.BoneID, bone.Bone0.Weight,
+				bone.Bone1.BoneID, bone.Bone1.Weight,
+				bone.Bone2.BoneID, bone.Bone2.Weight,
+				bone.Bone3.BoneID, bone.Bone3.Weight);
+		}
+#endif
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
@@ -1079,13 +1265,15 @@ namespace LambdaEngine
 
 		Animation* pAnimation = DBG_NEW Animation();
 		pAnimation->Name			= pAnimationAI->mName.C_Str();
-		pAnimation->Duration		= pAnimationAI->mDuration;
-		pAnimation->TicksPerSecond	= static_cast<float64>(pAnimationAI->mTicksPerSecond);
-		
+		pAnimation->DurationInTicks	= pAnimationAI->mDuration;
+		pAnimation->TicksPerSecond	= (pAnimationAI->mTicksPerSecond != 0.0) ? pAnimationAI->mTicksPerSecond : 30.0;
+		pAnimationAI->mChannels[0]->mNodeName;
+
 		pAnimation->Channels.Resize(pAnimationAI->mNumChannels);
 		for (uint32 channelIndex = 0; channelIndex < pAnimationAI->mNumChannels; channelIndex++)
 		{
 			aiNodeAnim* pChannel = pAnimationAI->mChannels[channelIndex];
+			pAnimation->Channels[channelIndex].Name = pChannel->mNodeName.C_Str();
 			
 			pAnimation->Channels[channelIndex].Positions.Resize(pChannel->mNumPositionKeys);
 			for (uint32 i = 0; i < pChannel->mNumPositionKeys; i++)
@@ -1096,15 +1284,6 @@ namespace LambdaEngine
 				pAnimation->Channels[channelIndex].Positions[i].Value.z = pChannel->mPositionKeys[i].mValue.z;
 			}
 
-			pAnimation->Channels[channelIndex].Rotations.Resize(pChannel->mNumRotationKeys);
-			for (uint32 i = 0; i < pChannel->mNumRotationKeys; i++)
-			{
-				pAnimation->Channels[channelIndex].Rotations[i].Time	= pChannel->mRotationKeys[i].mTime;
-				pAnimation->Channels[channelIndex].Rotations[i].Value.x	= pChannel->mRotationKeys[i].mValue.x;
-				pAnimation->Channels[channelIndex].Rotations[i].Value.y	= pChannel->mRotationKeys[i].mValue.y;
-				pAnimation->Channels[channelIndex].Rotations[i].Value.z	= pChannel->mRotationKeys[i].mValue.z;
-			}
-
 			pAnimation->Channels[channelIndex].Scales.Resize(pChannel->mNumScalingKeys);
 			for (uint32 i = 0; i < pChannel->mNumScalingKeys; i++)
 			{
@@ -1112,6 +1291,16 @@ namespace LambdaEngine
 				pAnimation->Channels[channelIndex].Scales[i].Value.x	= pChannel->mScalingKeys[i].mValue.x;
 				pAnimation->Channels[channelIndex].Scales[i].Value.y	= pChannel->mScalingKeys[i].mValue.y;
 				pAnimation->Channels[channelIndex].Scales[i].Value.z	= pChannel->mScalingKeys[i].mValue.z;
+			}
+
+			pAnimation->Channels[channelIndex].Rotations.Resize(pChannel->mNumRotationKeys);
+			for (uint32 i = 0; i < pChannel->mNumRotationKeys; i++)
+			{
+				pAnimation->Channels[channelIndex].Rotations[i].Time	= pChannel->mRotationKeys[i].mTime;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.x	= pChannel->mRotationKeys[i].mValue.x;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.y	= pChannel->mRotationKeys[i].mValue.y;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.z	= pChannel->mRotationKeys[i].mValue.z;
+				pAnimation->Channels[channelIndex].Rotations[i].Value.w = pChannel->mRotationKeys[i].mValue.w;
 			}
 		}
 
@@ -1137,8 +1326,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		VALIDATE(pScene != nullptr);
-
 		SceneLoadingContext context = 
 		{
 			.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1),
@@ -1150,10 +1337,7 @@ namespace LambdaEngine
 		};
 
 		// Load all meshes
-		if (pScene->mRootNode)
-		{
-			ProcessAssimpNode(context, pScene->mRootNode, pScene);
-		}
+		ProcessAssimpNode(context, pScene->mRootNode, pScene);
 
 		// Load all animations
 		if (pScene->mNumAnimations > 0)
@@ -1186,6 +1370,10 @@ namespace LambdaEngine
 			if (pMeshAI->mNumBones > 0)
 			{
 				LoadSkeleton(pMesh, pMeshAI);
+				if (pMesh->pSkeleton)
+				{
+					pMesh->pSkeleton->GlobalTransform = AssimpToGLMMat4(pNode->mTransformation);
+				}
 			}
 
 			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);

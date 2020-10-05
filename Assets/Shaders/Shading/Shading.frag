@@ -52,8 +52,10 @@ void main()
 	float metallic	= aoRoughMetalValid.b;
 
 	vec3 worldPos = texture(u_GBufferPosition, in_TexCoord).rgb;
-	vec3 N = UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
-	vec3 V = normalize(perFrameBuffer.CameraPosition.xyz - worldPos);
+	vec3 N 				= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
+	vec3 viewVector		= perFrameBuffer.CameraPosition.xyz - worldPos;
+	float viewDistance	= length(viewVector);
+	vec3 V 				= normalize(viewVector);
 
 	vec3 Lo = vec3(0.0f);
 	vec3 F0 = vec3(0.04f);
@@ -98,7 +100,7 @@ void main()
 		L = normalize(L);
 		vec3 H = normalize(V + L);
 		
-		float inShadow 			= PointShadowDepthTest(worldPos, light.Position, u_PointLShadowMap[i], light.FarPlane);
+		float inShadow 			= PointShadowDepthTest(worldPos, light.Position, viewDistance, N, u_PointLShadowMap[i], light.FarPlane);
 		float attenuation   	= 1.0f / (distance * distance);
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);

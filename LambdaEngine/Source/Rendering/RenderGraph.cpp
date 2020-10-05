@@ -438,6 +438,22 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderGraph::SetRenderStageSleeping(const String& renderStageName, bool sleeping)
+	{
+		auto it = m_RenderStageMap.find(renderStageName);
+
+		if (it != m_RenderStageMap.end())
+		{
+			RenderStage* pRenderStage = &m_pRenderStages[it->second];
+			pRenderStage->Sleeping = sleeping;
+		}
+		else
+		{
+			LOG_WARNING("[RenderGraph]: SetRenderStageSleeping failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
+			return;
+		}
+	}
+
 	void RenderGraph::Update()
 	{
 		//We need to copy descriptor sets here since they may become invalidated after recreating internal resources
@@ -689,14 +705,21 @@ namespace LambdaEngine
 							const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
 							VALIDATE(drawArg.pVertexBuffer);
 							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
+							
 							VALIDATE(drawArg.pInstanceBuffer);
 							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
-							VALIDATE(drawArg.pMeshletBuffer);
-							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
-							VALIDATE(drawArg.pUniqueIndicesBuffer);
-							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
-							VALIDATE(drawArg.pPrimitiveIndices);
-							pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
+							
+							// If meshletbuffer is nullptr we assume that meshshaders are disabled
+							if (drawArg.pMeshletBuffer)
+							{
+								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
+								
+								VALIDATE(drawArg.pUniqueIndicesBuffer);
+								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
+								
+								VALIDATE(drawArg.pPrimitiveIndices);
+								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
+							}
 
 							ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 						}
@@ -759,7 +782,8 @@ namespace LambdaEngine
 							uint32(m_ModFrameIndex),
 							m_BackBufferIndex,
 							&m_ppExecutionStages[currentExecutionStage],
-							&m_ppExecutionStages[currentExecutionStage + 1]);
+							&m_ppExecutionStages[currentExecutionStage + 1],
+							pRenderStage->Sleeping);
 
 						currentExecutionStage += 2;
 					}
@@ -1072,7 +1096,6 @@ namespace LambdaEngine
 		for (uint32 r = 0; r < m_RenderStageCount; r++)
 		{
 			RenderStage* pRenderStage = &m_pRenderStages[r];
-
 			if (!pRenderStage->UsesCustomRenderer)
 			{
 				pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
@@ -2403,6 +2426,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
@@ -2418,6 +2442,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 				else if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
@@ -2455,6 +2480,7 @@ namespace LambdaEngine
 					}
 
 					pRenderStage->PipelineStateID = PipelineStateManager::CreateRayTracingPipelineState(&pipelineDesc);
+					VALIDATE(pRenderStage->PipelineStateID != 0);
 					pRenderStage->pPipelineState = PipelineStateManager::GetPipelineState(pRenderStage->PipelineStateID);
 				}
 			}
@@ -3248,37 +3274,39 @@ namespace LambdaEngine
 					intialBarriers.PushBack(initialIndexBufferTransitionBarrier);
 				}
 
-				// Meshlet Buffer
+				// If meshlet buffer is nullptr we assume that we are not using meshshaders
+				if (pDrawArg->pMeshletBuffer)
 				{
-					VALIDATE(pDrawArg->pMeshletBuffer);
+					// Meshlet Buffer
+					{
+						PipelineBufferBarrierDesc initialMeshletBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+						initialMeshletBufferTransitionBarrier.pBuffer		= pDrawArg->pMeshletBuffer;
+						initialMeshletBufferTransitionBarrier.Offset		= 0;
+						initialMeshletBufferTransitionBarrier.SizeInBytes	= pDrawArg->pMeshletBuffer->GetDesc().SizeInBytes;
+						intialBarriers.PushBack(initialMeshletBufferTransitionBarrier);
+					}
 
-					PipelineBufferBarrierDesc initialMeshletBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
-					initialMeshletBufferTransitionBarrier.pBuffer		= pDrawArg->pMeshletBuffer;
-					initialMeshletBufferTransitionBarrier.Offset		= 0;
-					initialMeshletBufferTransitionBarrier.SizeInBytes	= pDrawArg->pMeshletBuffer->GetDesc().SizeInBytes;
-					intialBarriers.PushBack(initialMeshletBufferTransitionBarrier);
-				}
+					// Unique Indices Buffer
+					{
+						VALIDATE(pDrawArg->pUniqueIndicesBuffer);
 
-				// Unique Indices Buffer
-				{
-					VALIDATE(pDrawArg->pUniqueIndicesBuffer);
+						PipelineBufferBarrierDesc initialUniqueIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+						initialUniqueIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pUniqueIndicesBuffer;
+						initialUniqueIndicesBufferTransitionBarrier.Offset		= 0;
+						initialUniqueIndicesBufferTransitionBarrier.SizeInBytes = pDrawArg->pUniqueIndicesBuffer->GetDesc().SizeInBytes;
+						intialBarriers.PushBack(initialUniqueIndicesBufferTransitionBarrier);
+					}
 
-					PipelineBufferBarrierDesc initialUniqueIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
-					initialUniqueIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pUniqueIndicesBuffer;
-					initialUniqueIndicesBufferTransitionBarrier.Offset		= 0;
-					initialUniqueIndicesBufferTransitionBarrier.SizeInBytes = pDrawArg->pUniqueIndicesBuffer->GetDesc().SizeInBytes;
-					intialBarriers.PushBack(initialUniqueIndicesBufferTransitionBarrier);
-				}
+					// Primitive Indices Buffer
+					{
+						VALIDATE(pDrawArg->pPrimitiveIndices);
 
-				// Primitive Indices Buffer
-				{
-					VALIDATE(pDrawArg->pPrimitiveIndices);
-
-					PipelineBufferBarrierDesc initialPrimitiveIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
-					initialPrimitiveIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pPrimitiveIndices;
-					initialPrimitiveIndicesBufferTransitionBarrier.Offset		= 0;
-					initialPrimitiveIndicesBufferTransitionBarrier.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
-					intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
+						PipelineBufferBarrierDesc initialPrimitiveIndicesBufferTransitionBarrier = drawArgsArgsIt->second.InitialTransitionBarrierTemplate;
+						initialPrimitiveIndicesBufferTransitionBarrier.pBuffer		= pDrawArg->pPrimitiveIndices;
+						initialPrimitiveIndicesBufferTransitionBarrier.Offset		= 0;
+						initialPrimitiveIndicesBufferTransitionBarrier.SizeInBytes	= pDrawArg->pPrimitiveIndices->GetDesc().SizeInBytes;
+						intialBarriers.PushBack(initialPrimitiveIndicesBufferTransitionBarrier);
+					}
 				}
 			}
 
@@ -3607,7 +3635,7 @@ namespace LambdaEngine
 		CommandList*		pGraphicsCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter != pRenderStage->FrameOffset && pRenderStage->pDisabledRenderPass == nullptr)
+		if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset || pRenderStage->Sleeping) && pRenderStage->pDisabledRenderPass == nullptr )
 			return;
 
 		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
@@ -3718,8 +3746,7 @@ namespace LambdaEngine
 
 				clearColorCount++;
 			}
-
-			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
+			if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
 			{
 				BeginRenderPassDesc beginRenderPassDesc = { };
 				beginRenderPassDesc.pRenderPass			= pRenderStage->pRenderPass;
@@ -3832,7 +3859,7 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
 		{
 			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 			pComputeCommandAllocator->Reset();
@@ -3863,7 +3890,7 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping && pRenderStage->pSBT != nullptr)
 		{
 			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 			pComputeCommandAllocator->Reset();

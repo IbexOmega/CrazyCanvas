@@ -2,7 +2,10 @@
 #include "LambdaEngine.h"
 
 #include "Math/Math.h"
+
 #include "Physics/BoundingBox.h"
+
+#include "Containers/PrehashedString.h"
 
 #include "Rendering/Core/API/Buffer.h"
 
@@ -28,6 +31,20 @@ namespace LambdaEngine
 		}
 	};
 
+	struct VertexBoneData
+	{
+		struct BoneData
+		{
+			int32	BoneID = -1;
+			float32	Weight = 0.0f;
+		};
+
+		BoneData Bone0;
+		BoneData Bone1;
+		BoneData Bone2;
+		BoneData Bone3;
+	};
+
 	struct Meshlet
 	{
 		uint32 VertCount;
@@ -47,22 +64,26 @@ namespace LambdaEngine
 	// Moved out from mesh due to dependency issue
 	using MeshIndexType = uint32;
 	
+	struct VertexWeight
+	{
+		MeshIndexType	VertexIndex;
+		float32			VertexWeight;
+	};
+
+	struct Bone
+	{
+		PrehashedString			Name;
+		glm::mat4				OffsetTransform;
+		TArray<VertexWeight>	Weights;
+		int32					ParentBoneIndex = -1;
+	};
+
 	struct Skeleton
 	{
-		struct Bone
-		{
-			struct Weight
-			{
-				MeshIndexType	VertexIndex;
-				float32			VertexWeight;
-			};
-
-			String			Name;
-			glm::mat4		Transform;
-			TArray<Weight>	Weights;
-		};
-
-		TArray<Bone> Bones;
+		glm::mat4		GlobalTransform;
+		int32			RootBone = -1;
+		TArray<Bone>	Bones;
+		THashTable<PrehashedString, uint32, PrehashedStringHasher>	BoneMap;
 	};
 
 	struct Animation
@@ -75,13 +96,20 @@ namespace LambdaEngine
 				float32		Time;
 			};
 
-			TArray<KeyFrame> Positions;
-			TArray<KeyFrame> Rotations;
-			TArray<KeyFrame> Scales;
+			struct RotationKeyFrame
+			{
+				glm::quat	Value;
+				float32		Time;
+			};
+
+			PrehashedString				Name;
+			TArray<KeyFrame>			Positions;
+			TArray<KeyFrame>			Scales;
+			TArray<RotationKeyFrame>	Rotations;
 		};
 
-		String			Name;
-		float64			Duration;
+		PrehashedString	Name;
+		float64			DurationInTicks;
 		float64			TicksPerSecond;
 		TArray<Channel>	Channels;
 	};
@@ -94,6 +122,7 @@ namespace LambdaEngine
 		}
 
 		TArray<Vertex>			Vertices;
+		TArray<VertexBoneData>	VertexBoneData;
 		TArray<MeshIndexType>	Indices;
 		TArray<MeshIndexType>	UniqueIndices;
 		TArray<PackedTriangle>	PrimitiveIndices;

@@ -9,6 +9,11 @@
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
 
+#define NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler) \
+	Noesis::BaseComponent* source = pSource;\
+	const char* event = pEvent; \
+	const char* handler = pHandler;
+
 namespace NoesisApp
 {
 	class LocalXamlProvider;
