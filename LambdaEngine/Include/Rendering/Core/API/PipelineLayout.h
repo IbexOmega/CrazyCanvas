@@ -8,12 +8,20 @@
 
 namespace LambdaEngine
 {
+	/*
+	* ConstantRangeDesc
+	*/
+
 	struct ConstantRangeDesc
 	{
 		uint32 ShaderStageFlags = 0;
 		uint32 SizeInBytes		= 0;
 		uint32 OffsetInBytes	= 0;
 	};
+
+	/*
+	* DescriptorBindingDesc
+	*/
 
 	struct DescriptorBindingDesc
 	{
@@ -24,11 +32,19 @@ namespace LambdaEngine
 		TArray<TSharedRef<Sampler>>	ImmutableSamplers;
 	};
 
+	/*
+	* DescriptorSetLayoutDesc
+	*/
+
 	struct DescriptorSetLayoutDesc
 	{
 		FDescriptorSetLayoutsFlags		DescriptorSetLayoutFlags = FDescriptorSetLayoutsFlag::DESCRIPTOR_SET_LAYOUT_FLAG_NONE;
 		TArray<DescriptorBindingDesc>	DescriptorBindings;
 	};
+
+	/*
+	* PipelineLayoutDesc
+	*/
 
 	struct PipelineLayoutDesc
 	{
@@ -36,6 +52,10 @@ namespace LambdaEngine
 		TArray<DescriptorSetLayoutDesc>	DescriptorSetLayouts;
 		TArray<ConstantRangeDesc>		ConstantRanges;
 	};
+
+	/*
+	* PipelineLayout
+	*/
 
 	class PipelineLayout : public DeviceChild
 	{

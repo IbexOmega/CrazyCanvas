@@ -1018,7 +1018,9 @@ namespace LambdaEngine
 			myID = it->second;
 		}
 
+#if 0
 		LOG_INFO("Name=%s, ID=%d", name.c_str(), myID);
+#endif
 
 		for (uint32 child = 0; child < pNode->mNumChildren; child++)
 		{
@@ -1047,7 +1049,7 @@ namespace LambdaEngine
 		pSkeleton->Bones.Resize(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneIndex];
+			Bone& bone = pSkeleton->Bones[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			bone.Name = pBoneAI->mName.C_Str();
@@ -1092,7 +1094,7 @@ namespace LambdaEngine
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
 			// We already found the parent
-			Skeleton::Bone& bone = pSkeleton->Bones[boneIndex];
+			Bone& bone = pSkeleton->Bones[boneIndex];
 			if (bone.ParentBoneIndex != -1)
 			{
 				continue;
@@ -1126,7 +1128,7 @@ namespace LambdaEngine
 		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());
 		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
 		{
-			Skeleton::Bone& bone = pSkeleton->Bones[boneID];
+			Bone& bone = pSkeleton->Bones[boneID];
 			for (uint32 weightID = 0; weightID < bone.Weights.GetSize(); weightID++)
 			{
 				const uint32	vertexID	= bone.Weights[weightID].VertexIndex;
@@ -1264,7 +1266,7 @@ namespace LambdaEngine
 		Animation* pAnimation = DBG_NEW Animation();
 		pAnimation->Name			= pAnimationAI->mName.C_Str();
 		pAnimation->DurationInTicks	= pAnimationAI->mDuration;
-		pAnimation->TicksPerSecond	= static_cast<float64>(pAnimationAI->mTicksPerSecond);
+		pAnimation->TicksPerSecond	= (pAnimationAI->mTicksPerSecond != 0.0) ? pAnimationAI->mTicksPerSecond : 30.0;
 		pAnimationAI->mChannels[0]->mNodeName;
 
 		pAnimation->Channels.Resize(pAnimationAI->mNumChannels);
