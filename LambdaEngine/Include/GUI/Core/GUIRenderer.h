@@ -99,7 +99,7 @@ namespace LambdaEngine
 			uint32 backBufferIndex, 
 			CommandList** ppFirstExecutionStage, 
 			CommandList** ppSecondaryExecutionStage,
-			bool Sleeping) override final;
+			bool sleeping) override final;
 
 		void SetView(Noesis::Ptr<Noesis::IView> view);
 
@@ -158,7 +158,7 @@ namespace LambdaEngine
 		Buffer* m_pIndexBuffer	= nullptr;
 		TArray<Buffer*> m_AvailableParamsBuffers;
 		TArray<Buffer*> m_pUsedParamsBuffers[BACK_BUFFER_COUNT];
-		TArray<Buffer*> m_pBuffersToRemove[BACK_BUFFER_COUNT];
+		TArray<DeviceChild*> m_pGraphicsResourcesToRemove[BACK_BUFFER_COUNT];
 
 		DescriptorHeap*			m_pDescriptorHeap = nullptr;
 		TArray<DescriptorSet*>	m_AvailableDescriptorSets;
@@ -172,5 +172,6 @@ namespace LambdaEngine
 		Noesis::Ptr<Noesis::IView> m_View;
 
 		bool m_RenderPassBegun = false;
+		bool m_Initialized = false;
 	};
 }

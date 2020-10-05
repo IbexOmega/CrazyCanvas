@@ -221,12 +221,13 @@ namespace LambdaEngine
 	private:
 		static GUID_Lambda s_NextFreeGUID;
 
-		static std::unordered_map<String, GUID_Lambda> s_MeshNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda> s_MaterialNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda> s_AnimationNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda> s_TextureNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda> s_ShaderNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda> s_SoundEffectNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_MeshNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_MaterialNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_AnimationNamesToGUIDs;
+		static std::unordered_map<String, TArray<GUID_Lambda>>	s_MeshNamesToAnimationGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_TextureNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_ShaderNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>			s_SoundEffectNamesToGUIDs;
 
 		static std::unordered_map<GUID_Lambda, Mesh*>			s_Meshes;
 		static std::unordered_map<GUID_Lambda, Material*>		s_Materials;
