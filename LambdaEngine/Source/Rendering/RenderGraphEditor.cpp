@@ -1487,13 +1487,10 @@ namespace LambdaEngine
 				imnodes::EndInputAttribute();
 				PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 
-				if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS || pRenderStage->OverrideRecommendedBindingType)
-				{
-					PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
-					imnodes::BeginOutputAttribute(outputAttributeIndex);
-					imnodes::EndOutputAttribute();
-					PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
-				}
+				PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
+				imnodes::BeginOutputAttribute(outputAttributeIndex);
+				imnodes::EndOutputAttribute();
+				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
 
 				static TArray<ERenderGraphResourceBindingType> bindingTypes;
 				static TArray<const char*> bindingTypeNames;
