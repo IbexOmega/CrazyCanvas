@@ -1749,7 +1749,7 @@ namespace LambdaEngine
 				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.Count			= drawArgs.GetSize();
 
 				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 			}

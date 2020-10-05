@@ -126,6 +126,7 @@ namespace LambdaEngine
 		CommandList* BeginOrGetUtilityCommandList();
 		CommandList* BeginOrGetRenderCommandList();
 		void BeginMainRenderPass(CommandList* pCommandList);
+		void EndMainRenderPass(CommandList* pCommandList);
 		Buffer* CreateOrGetParamsBuffer();
 		DescriptorSet* CreateOrGetDescriptorSet();
 
@@ -164,13 +165,15 @@ namespace LambdaEngine
 		TArray<DescriptorSet*>	m_AvailableDescriptorSets;
 		TArray<DescriptorSet*>	m_pUsedDescriptorSets[BACK_BUFFER_COUNT];
 
-		RenderPass* m_pMainRenderPass = nullptr;
+		RenderPass* m_pMainRenderPassClearDS = nullptr;
+		RenderPass* m_pMainRenderPassLoadDS = nullptr;
 
 		TArray<Noesis::Ptr<Noesis::Texture>> m_GUITextures;
 		TArray<Noesis::Ptr<Noesis::RenderTarget>> m_GUIRenderTargets;
 
 		Noesis::Ptr<Noesis::IView> m_View;
 
-		bool m_RenderPassBegun = false;
+		bool m_RenderPassBegun		= false;
+		bool m_RenderPassClearBegun	= false;
 	};
 }
