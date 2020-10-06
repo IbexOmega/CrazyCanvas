@@ -182,10 +182,10 @@ namespace LambdaEngine
 
 	void AnimationSystem::OnEntityAdded(Entity entity)
 	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
 		if (m_HasInitClock)
 		{
+		        ECSCore* pECSCore = ECSCore::GetInstance();
+		        AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
 			animationComp.StartTime = GetTotalTimeInSeconds();
 		}
 	}
