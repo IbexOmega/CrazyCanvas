@@ -1220,14 +1220,16 @@ namespace LambdaEngine
 		enabledRayTracingFeatures.rayTracing	= supportedRayTracingFeatures.rayTracing;
 
 		VkPhysicalDeviceVulkan12Features enabledDeviceFeatures12 = {};
-		enabledDeviceFeatures12.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		enabledDeviceFeatures12.pNext					= &enabledRayTracingFeatures;
-		enabledDeviceFeatures12.bufferDeviceAddress		= supportedDeviceFeatures12.bufferDeviceAddress;
-		enabledDeviceFeatures12.timelineSemaphore		= supportedDeviceFeatures12.timelineSemaphore;
-		enabledDeviceFeatures12.descriptorIndexing		= supportedDeviceFeatures12.descriptorIndexing;
-		enabledDeviceFeatures12.shaderInt8				= supportedDeviceFeatures12.shaderInt8;
-		enabledDeviceFeatures12.shaderFloat16			= supportedDeviceFeatures12.shaderFloat16;
-		enabledDeviceFeatures12.storageBuffer8BitAccess	= supportedDeviceFeatures12.storageBuffer8BitAccess;
+		enabledDeviceFeatures12.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		enabledDeviceFeatures12.pNext							= &enabledRayTracingFeatures;
+		enabledDeviceFeatures12.bufferDeviceAddress				= supportedDeviceFeatures12.bufferDeviceAddress;
+		enabledDeviceFeatures12.timelineSemaphore				= supportedDeviceFeatures12.timelineSemaphore;
+		enabledDeviceFeatures12.descriptorIndexing				= supportedDeviceFeatures12.descriptorIndexing;
+		enabledDeviceFeatures12.shaderInt8						= supportedDeviceFeatures12.shaderInt8;
+		enabledDeviceFeatures12.shaderFloat16					= supportedDeviceFeatures12.shaderFloat16;
+		enabledDeviceFeatures12.storageBuffer8BitAccess			= supportedDeviceFeatures12.storageBuffer8BitAccess;
+		enabledDeviceFeatures12.runtimeDescriptorArray			= supportedDeviceFeatures12.runtimeDescriptorArray;
+		enabledDeviceFeatures12.descriptorBindingPartiallyBound	= supportedDeviceFeatures12.descriptorBindingPartiallyBound;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
 		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;

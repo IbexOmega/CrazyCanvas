@@ -230,30 +230,6 @@ namespace LambdaEngine
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
 		}
 
-		//Material Defaults
-		{
-			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
-			{
-				m_FreeMaterialSlots.push(i);
-			}
-
-			Texture*		pDefaultColorMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_COLOR_MAP);
-			TextureView*	pDefaultColorMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_COLOR_MAP);
-			Texture*		pDefaultNormalMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
-			TextureView*	pDefaultNormalMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
-
-			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
-			{
-				m_ppAlbedoMaps[i]					= pDefaultColorMap;
-				m_ppNormalMaps[i]					= pDefaultNormalMap;
-				m_ppCombinedMaterialMaps[i]			= pDefaultColorMap;
-				m_ppAlbedoMapViews[i]				= pDefaultColorMapView;
-				m_ppNormalMapViews[i]				= pDefaultNormalMapView;
-				m_ppCombinedMaterialMapViews[i]		= pDefaultColorMapView;
-				m_pMaterialInstanceCounts[i]		= 0;
-			}
-		}
-
 		// Create animation resources
 		{
 			DescriptorHeapDesc descriptorHeap;
@@ -687,7 +663,7 @@ namespace LambdaEngine
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
-		uint32 materialSlot = MAX_UNIQUE_MATERIALS;
+		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
 		MeshKey meshKey;
@@ -899,57 +875,61 @@ namespace LambdaEngine
 
 		//Get Material Slot
 		{
-			THashTable<uint32, uint32>::iterator materialSlotIt = m_MaterialMap.find(materialGUID);
+			THashTable<uint32, uint32>::iterator materialIndexIt = m_MaterialMap.find(materialGUID);
 
 			//Push new Material if the Material is yet to be registered
-			if (materialSlotIt == m_MaterialMap.end())
+			if (materialIndexIt == m_MaterialMap.end())
 			{
 				const Material* pMaterial = ResourceManager::GetMaterial(materialGUID);
 				VALIDATE(pMaterial != nullptr);
-
-				if (!m_FreeMaterialSlots.empty())
+				
+				if (!m_ReleasedMaterialIndices.IsEmpty())
 				{
-					materialSlot = m_FreeMaterialSlots.top();
-					m_FreeMaterialSlots.pop();
+					materialIndex = m_ReleasedMaterialIndices.GetBack();
+					m_ReleasedMaterialIndices.PopBack();
+
+					m_AlbedoMaps[materialIndex]					= pMaterial->pAlbedoMap;
+					m_NormalMaps[materialIndex]					= pMaterial->pNormalMap;
+					m_CombinedMaterialMaps[materialIndex]		= pMaterial->pAOMetallicRoughnessMap;
+
+					m_AlbedoMapViews[materialIndex]				= pMaterial->pAlbedoMapView;
+					m_NormalMapViews[materialIndex]				= pMaterial->pNormalMapView;
+					m_CombinedMaterialMapViews[materialIndex]	= pMaterial->pAOMetallicRoughnessMapView;
+
+					m_MaterialProperties[materialIndex]			= pMaterial->Properties;
+
+					m_MaterialInstanceCounts[materialIndex]		= 0;
+
+					m_MaterialMap.insert({ materialGUID, materialIndex });
 				}
 				else
 				{
-					for (uint32 m = 0; m < MAX_UNIQUE_MATERIALS; m++)
-					{
-						if (m_pMaterialInstanceCounts[m] == 0)
-						{
-							materialSlot = m;
-							break;
-						}
-					}
+					materialIndex = m_AlbedoMaps.GetSize();
 
-					if (materialSlot == MAX_UNIQUE_MATERIALS)
-					{
-						LOG_WARNING("[RenderSystem]: No free Material Slots, Entity will be given a random material");
-						materialSlot = 0;
-					}
+					m_AlbedoMaps.PushBack(pMaterial->pAlbedoMap);
+					m_NormalMaps.PushBack(pMaterial->pNormalMap);
+					m_CombinedMaterialMaps.PushBack(pMaterial->pAOMetallicRoughnessMap);
+
+					m_AlbedoMapViews.PushBack(pMaterial->pAlbedoMapView);
+					m_NormalMapViews.PushBack(pMaterial->pNormalMapView);
+					m_CombinedMaterialMapViews.PushBack(pMaterial->pAOMetallicRoughnessMapView);
+
+					m_MaterialProperties.PushBack(pMaterial->Properties);
+
+					m_MaterialInstanceCounts.PushBack(0);
+
+					m_MaterialMap.insert({ materialGUID, materialIndex });
 				}
 
-				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
-				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pAOMetallicRoughnessMap;
-
-				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
-				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pAOMetallicRoughnessMapView;
-
-				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
-
-				m_MaterialMap.insert({ materialGUID, materialSlot });
 				m_MaterialsResourceDirty = true;
 				m_MaterialsPropertiesBufferDirty = true;
 			}
 			else
 			{
-				materialSlot = materialSlotIt->second;
+				materialIndex = materialIndexIt->second;
 			}
 
-			m_pMaterialInstanceCounts[materialSlot]++;
+			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
 		InstanceKey instanceKey = {};
@@ -961,7 +941,7 @@ namespace LambdaEngine
 		{
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= materialSlot;
+			asInstance.CustomIndex		= materialIndex;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
 			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
@@ -974,7 +954,7 @@ namespace LambdaEngine
 		Instance instance = {};
 		instance.Transform		= transform;
 		instance.PrevTransform	= transform;
-		instance.MaterialSlot	= materialSlot;
+		instance.MaterialIndex	= materialIndex;
 		instance.MeshletCount	= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
@@ -1012,7 +992,14 @@ namespace LambdaEngine
 
 		//Update Material Instance Counts
 		{
-			m_pMaterialInstanceCounts[rasterInstance.MaterialSlot]--;
+			uint32& materialInstanceCount = m_MaterialInstanceCounts[rasterInstance.MaterialIndex];
+			materialInstanceCount--;
+			
+			if (materialInstanceCount == 0)
+			{
+				//Mark material as empty
+				m_ReleasedMaterialIndices.PushBack(rasterInstance.MaterialIndex);
+			}
 		}
 
 		if (m_RayTracingEnabled)
@@ -1438,7 +1425,7 @@ namespace LambdaEngine
 	{
 		if (m_MaterialsPropertiesBufferDirty)
 		{
-			uint32 requiredBufferSize = sizeof(m_pMaterialProperties);
+			uint32 requiredBufferSize = m_MaterialProperties.GetSize() * sizeof(MaterialProperties);
 
 			Buffer* pStagingBuffer = m_ppStaticStagingInstanceBuffers[m_ModFrameIndex];
 
@@ -1457,7 +1444,7 @@ namespace LambdaEngine
 			}
 
 			void* pMapped = pStagingBuffer->Map();
-			memcpy(pMapped, m_pMaterialProperties, requiredBufferSize);
+			memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
 			pStagingBuffer->Unmap();
 
 			if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
@@ -1780,7 +1767,7 @@ namespace LambdaEngine
 				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.Count			= drawArgs.GetSize();
 
 				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 			}
@@ -1803,6 +1790,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
@@ -1814,6 +1802,7 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			m_LightsResourceDirty = false;
@@ -1824,28 +1813,32 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			TArray<Sampler*> linearSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetLinearSampler());
+			TArray<Sampler*> linearSamplers(m_AlbedoMaps.GetSize(), Sampler::GetLinearSampler());
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName										= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppAlbedoMaps;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
+			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.Count			= m_AlbedoMaps.GetSize();
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName										= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppNormalMaps;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
+			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+			normalMapsUpdateDesc.ExternalTextureUpdate.Count			= m_NormalMapViews.GetSize();
 
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
 			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppCombinedMaterialMaps;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppCombinedMaterialMapViews;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_CombinedMaterialMaps.GetData();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_CombinedMaterialMapViews.GetData();
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.Count				= m_CombinedMaterialMaps.GetSize();
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
