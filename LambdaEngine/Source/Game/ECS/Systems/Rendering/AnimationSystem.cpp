@@ -17,18 +17,7 @@ namespace LambdaEngine
 	{
 	}
 
-	void AnimationSystem::InitClock()
-	{
-		if (!m_HasInitClock)
-		{
-			m_Clock.Reset();
-			m_Clock.Tick();
-
-			m_HasInitClock = true;
-		}
-	}
-
-	void AnimationSystem::Animate(float64 seconds, AnimationComponent& animation, MeshComponent& mesh)
+	void AnimationSystem::Animate(AnimationComponent& animation)
 	{
 		Animation* pAnimation = ResourceManager::GetAnimation(animation.AnimationGUID);
 		VALIDATE(pAnimation);
@@ -47,21 +36,31 @@ namespace LambdaEngine
 			animation.Pose.GlobalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
 		}
 
-		// Move timer
-		const float64 ticksPerSeconds	= animation.PlaybackSpeed * pAnimation->TicksPerSecond;
-		const float64 deltaTicks		= ticksPerSeconds * seconds;
-		animation.DurationInTicks += deltaTicks;
-		if (animation.DurationInTicks >= pAnimation->DurationInTicks)
+		// Get localtime for the clip
+		float64 localTime = (GetTotalTimeInSeconds() - animation.StartTime);
+		if (animation.IsLooping)
 		{
-			// If the animation is looping we reset and start over, otherwise we stop here
-			if (animation.IsLooping)
+			if (animation.NumLoops != INFINITE_LOOPS)
 			{
-				animation.DurationInTicks = 0.0f;
+				float64 totalDuration = animation.NumLoops * pAnimation->DurationInSeconds();
+				localTime = glm::clamp(localTime, 0.0, totalDuration);
 			}
-			else
-			{
-				return;
-			}
+
+			localTime = fmod(localTime, pAnimation->DurationInSeconds());
+		}
+		else
+		{
+			localTime = glm::clamp(localTime, 0.0, pAnimation->DurationInSeconds());
+		}
+
+		const float64 normalizedLocalTime = localTime / pAnimation->DurationInSeconds();
+
+		// Convert into ticks
+		const float64 ticksPerSeconds = fabs(animation.PlaybackSpeed) * pAnimation->TicksPerSecond;
+		float64 time = localTime * ticksPerSeconds;
+		if (animation.PlaybackSpeed < 0.0)
+		{
+			time = pAnimation->DurationInTicks - time;
 		}
 
 		// Find keyframes
@@ -88,7 +87,7 @@ namespace LambdaEngine
 				{
 					for (uint32 i = 0; i < (NumPositions - 1); i++)
 					{
-						if (animation.DurationInTicks < channel.Positions[i + 1].Time)
+						if (time < channel.Positions[i + 1].Time)
 						{
 							pos0 = channel.Positions[i];
 							pos1 = channel.Positions[i + 1];
@@ -97,7 +96,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float64 factor = (pos1.Time != pos0.Time) ? (animation.DurationInTicks - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
+				const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
 				position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
 			}
 
@@ -113,7 +112,7 @@ namespace LambdaEngine
 				{
 					for (uint32 i = 0; i < (NumRotations - 1); i++)
 					{
-						if (animation.DurationInTicks < channel.Rotations[i + 1].Time)
+						if (time < channel.Rotations[i + 1].Time)
 						{
 							rot0 = channel.Rotations[i];
 							rot1 = channel.Rotations[i + 1];
@@ -122,7 +121,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float64 factor = (rot1.Time != rot0.Time) ? (animation.DurationInTicks - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
+				const float64 factor = (rot1.Time != rot0.Time) ? (time - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
 				rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
 				rotation = glm::normalize(rotation);
 			}
@@ -139,7 +138,7 @@ namespace LambdaEngine
 				{
 					for (uint32 i = 0; i < (NumScales - 1); i++)
 					{
-						if (animation.DurationInTicks < channel.Scales[i + 1].Time)
+						if (time < channel.Scales[i + 1].Time)
 						{
 							scale0 = channel.Scales[i];
 							scale1 = channel.Scales[i + 1];
@@ -148,7 +147,7 @@ namespace LambdaEngine
 					}
 				}
 
-				const float64 factor = (scale1.Time != scale0.Time) ? (animation.DurationInTicks - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
+				const float64 factor = (scale1.Time != scale0.Time) ? (time - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
 				scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
 			}
 
@@ -181,6 +180,20 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
+	void AnimationSystem::OnEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
+		if (m_HasInitClock)
+		{
+			animationComp.StartTime = GetTotalTimeInSeconds();
+		}
+	}
+
+	void AnimationSystem::OnEntityRemoved(Entity entity)
+	{
+	}
+
 	bool AnimationSystem::Init()
 	{
 		SystemRegistration systemReg = {};
@@ -201,11 +214,26 @@ namespace LambdaEngine
 
 	void AnimationSystem::Tick(Timestamp deltaTime)
 	{
-		InitClock();
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
-		ComponentArray<AnimationComponent>*	pAnimationComponents	= pECSCore->GetComponentArray<AnimationComponent>();
-		ComponentArray<MeshComponent>*		pMeshComponents			= pECSCore->GetComponentArray<MeshComponent>();
+		ComponentArray<AnimationComponent>* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
+
+		// This will only be run once a better way to handle this would be nice
+		if (!m_HasInitClock)
+		{
+			m_Clock.Reset();
+
+			// If we are initializing the clock we now need to init all the animations since they were not initialized in OnEntityAdded
+			for (Entity entity : m_AnimationEntities.GetIDs())
+			{
+				AnimationComponent& animation = pAnimationComponents->GetData(entity);
+				if (animation.StartTime != 0.0)
+				{
+					animation.StartTime = GetTotalTimeInSeconds();
+				}
+			}
+			
+			m_HasInitClock = true;
+		}
 
 		// Animation system has its own clock to keep track of time
 		m_Clock.Tick();
@@ -213,11 +241,10 @@ namespace LambdaEngine
 		Timestamp deltatime = m_Clock.GetDeltaTime();
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
-			MeshComponent&		mesh		= pMeshComponents->GetData(entity);
-			AnimationComponent&	animation	= pAnimationComponents->GetData(entity);
+			AnimationComponent&	animation = pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
-				Animate(deltatime.AsSeconds(), animation, mesh);
+				Animate(animation);
 			}
 		}
 	}

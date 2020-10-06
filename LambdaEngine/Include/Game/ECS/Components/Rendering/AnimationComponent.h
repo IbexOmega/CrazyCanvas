@@ -6,6 +6,8 @@
 
 #include "Resources/Mesh.h"
 
+#define INFINITE_LOOPS -1
+
 namespace LambdaEngine
 {
 	/*
@@ -16,11 +18,12 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(AnimationComponent);
 
-		GUID_Lambda		AnimationGUID	= GUID_NONE;
-		float64			DurationInTicks	= 0.0f;
-		float32			PlaybackSpeed	= 1.0f;
 		bool			IsPaused		= false;
 		bool			IsLooping		= true;
+		int32			NumLoops		= INFINITE_LOOPS;
+		GUID_Lambda		AnimationGUID	= GUID_NONE;
+		float64			StartTime		= 0.0;
+		float32			PlaybackSpeed	= 1.0f;
 		SkeletonPose	Pose;
 	};
 }

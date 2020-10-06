@@ -1130,25 +1130,25 @@ namespace LambdaEngine
 				const float32	weight		= pBone->mWeights[weightID].mWeight;
 
 				VertexJointData& vertex = pMesh->VertexJointData[vertexID];
-				if (vertex.Joint0.JointID == INVALID_JOINT_ID)
+				if (vertex.JointID0 == INVALID_JOINT_ID)
 				{
-					vertex.Joint0.JointID	= boneID;
-					vertex.Joint0.Weight	= weight;
+					vertex.JointID0 = boneID;
+					vertex.Weight0	= weight;
 				}
-				else if (vertex.Joint1.JointID == INVALID_JOINT_ID)
+				else if (vertex.JointID1 == INVALID_JOINT_ID)
 				{
-					vertex.Joint1.JointID	= boneID;
-					vertex.Joint1.Weight	= weight;
+					vertex.JointID1 = boneID;
+					vertex.Weight1	= weight;
 				}
-				else if (vertex.Joint2.JointID == INVALID_JOINT_ID)
+				else if (vertex.JointID2 == INVALID_JOINT_ID)
 				{
-					vertex.Joint2.JointID	= boneID;
-					vertex.Joint2.Weight	= weight;
+					vertex.JointID2 = boneID;
+					vertex.Weight2	= weight;
 				}
-				else if (vertex.Joint3.JointID == INVALID_JOINT_ID)
+				else if (vertex.JointID3 == INVALID_JOINT_ID)
 				{
-					vertex.Joint3.JointID	= boneID;
-					vertex.Joint3.Weight	= weight;
+					vertex.JointID3 = boneID;
+					// This weight will be calculated in the shader
 				}
 				else
 				{

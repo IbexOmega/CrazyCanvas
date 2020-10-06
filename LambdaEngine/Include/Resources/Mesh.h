@@ -56,17 +56,14 @@ namespace LambdaEngine
 	// Animation
 	struct VertexJointData
 	{
-		struct JointData
-		{
-			// TODO: Use less space
-			int32	JointID = INVALID_JOINT_ID;
-			float32	Weight	= 0.0f;
-		};
-
-		JointData Joint0;
-		JointData Joint1;
-		JointData Joint2;
-		JointData Joint3;
+		JointIndexType JointID0 = INVALID_JOINT_ID;
+		JointIndexType JointID1 = INVALID_JOINT_ID;
+		JointIndexType JointID2 = INVALID_JOINT_ID;
+		JointIndexType JointID3 = INVALID_JOINT_ID;
+		float32 Weight0;
+		float32 Weight1;
+		float32 Weight2;
+		// Last weight is calculated in shader since they must equal 1.0
 	};
 
 	struct VertexWeight

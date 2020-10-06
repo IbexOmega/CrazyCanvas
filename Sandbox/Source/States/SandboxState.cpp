@@ -148,7 +148,7 @@ void SandboxState::Init()
 		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
-		glm::vec3 position(0.0f, 1.25f, 0.0f);
+		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -158,8 +158,19 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		
+		position = glm::vec3(0.0f, 1.25f, 0.0f);
+		robotAnimationComp.IsLooping	= true;
+		robotAnimationComp.NumLoops		= 10;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
 		position = glm::vec3(-5.0f, 1.25f, 0.0f);
-		robotAnimationComp.IsLooping = true;
+		robotAnimationComp.NumLoops = INFINITE_LOOPS;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -169,6 +180,8 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(5.0f, 1.25f, 0.0f);
+
+		robotAnimationComp.PlaybackSpeed *= -1.0f;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });

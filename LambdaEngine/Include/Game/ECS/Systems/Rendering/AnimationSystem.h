@@ -20,14 +20,20 @@ namespace LambdaEngine
 		// Inherited from system
 		virtual void Tick(Timestamp deltaTime) override final;
 
+		FORCEINLINE float64 GetTotalTimeInSeconds() const
+		{
+			return m_HasInitClock ? m_Clock.GetTotalTime().AsSeconds() : 0.0f;
+		}
+
 	private:
 		AnimationSystem();
 		~AnimationSystem();
 
-		void InitClock();
-
-		void Animate(float64 seconds, AnimationComponent& animation, MeshComponent& mesh);
+		void Animate(AnimationComponent& animation);
 		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
+
+		void OnEntityAdded(Entity entity);
+		void OnEntityRemoved(Entity entity);
 
 	public:
 		static AnimationSystem& GetInstance();
