@@ -123,10 +123,13 @@ void SandboxState::Init()
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
+		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
+		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
+
 		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness = 1.0f;
-		materialProperties.Metallic = 1.0f;
+		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness	= 1.0f;
+		materialProperties.Metallic		= 1.0f;
 
 		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
@@ -138,15 +141,16 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID = robotGUID;
-		robotMeshComp.MaterialGUID = robotMaterialGUID;
+		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID	= animations[0];
-		robotAnimationComp.PlaybackSpeed	= 1.0f;
-		robotAnimationComp.IsLooping		= false;
+		robotAnimationComp.AnimationGUID			= animations[0];
+		robotAnimationComp.BlendingAnimationGUID	= running[0];
+		robotAnimationComp.PlaybackSpeed			= 1.0f;
+		robotAnimationComp.IsLooping				= false;
 		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
-		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		robotAnimationComp.Pose.pSkeleton			= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
 		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
 		glm::vec3 scale(0.01f);
@@ -159,8 +163,10 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		
 		position = glm::vec3(0.0f, 1.25f, 0.0f);
-		robotAnimationComp.IsLooping	= true;
-		robotAnimationComp.NumLoops		= 10;
+		robotAnimationComp.BlendingAnimationGUID	= GUID_NONE;
+		robotAnimationComp.IsLooping				= true;
+		robotAnimationComp.NumLoops					= 10;
+		robotAnimationComp.PlaybackSpeed			= 2.0f;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -181,6 +187,7 @@ void SandboxState::Init()
 
 		position = glm::vec3(5.0f, 1.25f, 0.0f);
 
+		robotAnimationComp.AnimationGUID = thriller[0];
 		robotAnimationComp.PlaybackSpeed *= -1.0f;
 
 		entity = pECS->CreateEntity();

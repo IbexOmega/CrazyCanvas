@@ -37,7 +37,7 @@ namespace LambdaEngine
 		}
 
 		// Get localtime for the clip
-		float64 localTime = (GetTotalTimeInSeconds() - animation.StartTime);
+		float64 localTime = (GetTotalTimeInSeconds() - animation.StartTime) * fabs(animation.PlaybackSpeed);
 		if (animation.IsLooping)
 		{
 			if (animation.NumLoops != INFINITE_LOOPS)
@@ -56,7 +56,7 @@ namespace LambdaEngine
 		const float64 normalizedLocalTime = localTime / pAnimation->DurationInSeconds();
 
 		// Convert into ticks
-		const float64 ticksPerSeconds = fabs(animation.PlaybackSpeed) * pAnimation->TicksPerSecond;
+		const float64 ticksPerSeconds = pAnimation->TicksPerSecond;
 		float64 time = localTime * ticksPerSeconds;
 		if (animation.PlaybackSpeed < 0.0)
 		{
@@ -73,83 +73,10 @@ namespace LambdaEngine
 				continue;
 			}
 
-			const uint32 boneID = it->second;
-
-			// Interpolate position
-			glm::vec3 position;
-			{
-				// If the clip is looping the last frame is redundant
-				const uint32 NumPositions = animation.IsLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
-
-				Animation::Channel::KeyFrame pos0 = channel.Positions[0];
-				Animation::Channel::KeyFrame pos1 = channel.Positions[0];
-				if (NumPositions > 1)
-				{
-					for (uint32 i = 0; i < (NumPositions - 1); i++)
-					{
-						if (time < channel.Positions[i + 1].Time)
-						{
-							pos0 = channel.Positions[i];
-							pos1 = channel.Positions[i + 1];
-							break;
-						}
-					}
-				}
-
-				const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
-				position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
-			}
-
-			// Interpolate rotation
-			glm::quat rotation;
-			{
-				// If the clip is looping the last frame is redundant
-				const uint32 NumRotations = animation.IsLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
-
-				Animation::Channel::RotationKeyFrame rot0 = channel.Rotations[0];
-				Animation::Channel::RotationKeyFrame rot1 = channel.Rotations[0];
-				if (NumRotations > 1)
-				{
-					for (uint32 i = 0; i < (NumRotations - 1); i++)
-					{
-						if (time < channel.Rotations[i + 1].Time)
-						{
-							rot0 = channel.Rotations[i];
-							rot1 = channel.Rotations[i + 1];
-							break;
-						}
-					}
-				}
-
-				const float64 factor = (rot1.Time != rot0.Time) ? (time - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
-				rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
-				rotation = glm::normalize(rotation);
-			}
-
-			// Interpolate scale
-			glm::vec3 scale;
-			{
-				// If the clip is looping the last frame is redundant
-				const uint32 NumScales = animation.IsLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
-
-				Animation::Channel::KeyFrame scale0 = channel.Scales[0];
-				Animation::Channel::KeyFrame scale1 = channel.Scales[0];
-				if (NumScales > 1)
-				{
-					for (uint32 i = 0; i < (NumScales - 1); i++)
-					{
-						if (time < channel.Scales[i + 1].Time)
-						{
-							scale0 = channel.Scales[i];
-							scale1 = channel.Scales[i + 1];
-							break;
-						}
-					}
-				}
-
-				const float64 factor = (scale1.Time != scale0.Time) ? (time - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
-				scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
-			}
+			// Sample SQT for this animation
+			glm::vec3 position	= SamplePosition(channel, time, animation.IsLooping);
+			glm::quat rotation	= SampleRotation(channel, time, animation.IsLooping);
+			glm::vec3 scale		= SampleScale(channel, time, animation.IsLooping);
 
 			// Calculate transform
 			glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
@@ -157,6 +84,7 @@ namespace LambdaEngine
 			transform			= glm::scale(transform, scale);
 
 			// Increase boneID
+			const uint32 boneID = it->second;
 			animation.Pose.LocalTransforms[boneID] = transform;
 		}
 		
@@ -178,6 +106,82 @@ namespace LambdaEngine
 		}
 
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
+	}
+
+	glm::vec3 AnimationSystem::SamplePosition(Animation::Channel& channel, float64 time, bool isLooping)
+	{
+		// If the clip is looping the last frame is redundant
+		const uint32 NumPositions = isLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
+
+		Animation::Channel::KeyFrame pos0 = channel.Positions[0];
+		Animation::Channel::KeyFrame pos1 = channel.Positions[0];
+		if (NumPositions > 1)
+		{
+			for (uint32 i = 0; i < (NumPositions - 1); i++)
+			{
+				if (time < channel.Positions[i + 1].Time)
+				{
+					pos0 = channel.Positions[i];
+					pos1 = channel.Positions[i + 1];
+					break;
+				}
+			}
+		}
+
+		const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
+		glm::vec3 position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
+		return position;
+	}
+
+	glm::vec3 AnimationSystem::SampleScale(Animation::Channel& channel, float64 time, bool isLooping)
+	{
+		// If the clip is looping the last frame is redundant
+		const uint32 NumScales = isLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
+
+		Animation::Channel::KeyFrame scale0 = channel.Scales[0];
+		Animation::Channel::KeyFrame scale1 = channel.Scales[0];
+		if (NumScales > 1)
+		{
+			for (uint32 i = 0; i < (NumScales - 1); i++)
+			{
+				if (time < channel.Scales[i + 1].Time)
+				{
+					scale0 = channel.Scales[i];
+					scale1 = channel.Scales[i + 1];
+					break;
+				}
+			}
+		}
+
+		const float64 factor = (scale1.Time != scale0.Time) ? (time - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
+		glm::vec3 scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
+		return scale;
+	}
+
+	glm::quat AnimationSystem::SampleRotation(Animation::Channel& channel, float64 time, bool isLooping)
+	{
+		// If the clip is looping the last frame is redundant
+		const uint32 NumRotations = isLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
+
+		Animation::Channel::RotationKeyFrame rot0 = channel.Rotations[0];
+		Animation::Channel::RotationKeyFrame rot1 = channel.Rotations[0];
+		if (NumRotations > 1)
+		{
+			for (uint32 i = 0; i < (NumRotations - 1); i++)
+			{
+				if (time < channel.Rotations[i + 1].Time)
+				{
+					rot0 = channel.Rotations[i];
+					rot1 = channel.Rotations[i + 1];
+					break;
+				}
+			}
+		}
+
+		const float64 factor = (rot1.Time != rot0.Time) ? (time - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
+		glm::quat rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
+		rotation = glm::normalize(rotation);
+		return rotation;
 	}
 
 	void AnimationSystem::OnEntityAdded(Entity entity)

@@ -56,7 +56,7 @@ namespace LambdaEngine
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MeshNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MaterialNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_AnimationNamesToGUIDs;
-	std::unordered_map<String, TArray<GUID_Lambda>>		ResourceManager::s_MeshNamesToAnimationGUIDs;
+	std::unordered_map<String, TArray<GUID_Lambda>>		ResourceManager::s_FileNamesToAnimationGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_TextureNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_ShaderNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_SoundEffectNamesToGUIDs;
@@ -338,8 +338,8 @@ namespace LambdaEngine
 		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename);
 		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
-			auto loadedAnimations = s_MeshNamesToAnimationGUIDs.find(filename);
-			if (loadedAnimations != s_MeshNamesToAnimationGUIDs.end())
+			auto loadedAnimations = s_FileNamesToAnimationGUIDs.find(filename);
+			if (loadedAnimations != s_FileNamesToAnimationGUIDs.end())
 			{
 				animations = loadedAnimations->second;
 			}
@@ -361,8 +361,9 @@ namespace LambdaEngine
 		TArray<Animation*> rawAnimations;
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, rawAnimations);
 
-		// If we load with this function, we do not care about the animations, and therefore delete them
+		// Register animations
 		animations.Clear();
+		animations.Reserve(rawAnimations.GetSize());
 		for (Animation* pAnimation : rawAnimations)
 		{
 			VALIDATE(pAnimation);
@@ -371,8 +372,36 @@ namespace LambdaEngine
 			animations.EmplaceBack(animationsGuid);
 		}
 
-		s_MeshNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
+		s_FileNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
 		return guid;
+	}
+
+	TArray<GUID_Lambda> ResourceManager::LoadAnimationsFromFile(const String& filename)
+	{
+		TArray<GUID_Lambda> animations;
+
+		auto loadedAnimations = s_FileNamesToAnimationGUIDs.find(filename);
+		if (loadedAnimations != s_FileNamesToAnimationGUIDs.end())
+		{
+			animations = loadedAnimations->second;
+			return animations;
+		}
+
+		// Load animations
+		TArray<Animation*> rawAnimations = ResourceLoader::LoadAnimationsFromFile(ANIMATIONS_DIR + filename);
+
+		// Register animations
+		animations.Reserve(rawAnimations.GetSize());
+		for (Animation* pAnimation : rawAnimations)
+		{
+			VALIDATE(pAnimation);
+
+			GUID_Lambda animationsGuid = RegisterLoadedAnimation(pAnimation->Name, pAnimation);
+			animations.EmplaceBack(animationsGuid);
+		}
+
+		s_FileNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
+		return animations;
 	}
 
 	GUID_Lambda ResourceManager::LoadMeshFromMemory(const String& name, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
@@ -870,12 +899,12 @@ namespace LambdaEngine
 					return false;
 				}
 
-				auto animationsIt = s_MeshNamesToAnimationGUIDs.find(meshGUIDToNameIt->second);
+				auto animationsIt = s_FileNamesToAnimationGUIDs.find(meshGUIDToNameIt->second);
 
 				//Clean Mesh GUID -> Name
 				s_MeshGUIDsToNames.erase(meshGUIDToNameIt);
 
-				if (animationsIt != s_MeshNamesToAnimationGUIDs.end())
+				if (animationsIt != s_FileNamesToAnimationGUIDs.end())
 				{
 					bool result = true;
 
@@ -885,7 +914,7 @@ namespace LambdaEngine
 					}
 
 					//Clean Mesh Name -> Animation GUID
-					s_MeshNamesToAnimationGUIDs.erase(animationsIt);
+					s_FileNamesToAnimationGUIDs.erase(animationsIt);
 
 					if (!result)
 					{
@@ -895,7 +924,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToAnimationGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_FileNamesToAnimationGUIDs");
 					return false;
 				}
 			}

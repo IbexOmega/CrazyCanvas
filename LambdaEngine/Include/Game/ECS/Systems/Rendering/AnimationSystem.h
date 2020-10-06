@@ -32,6 +32,10 @@ namespace LambdaEngine
 		void Animate(AnimationComponent& animation);
 		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
+		glm::vec3 SamplePosition(Animation::Channel& channel, float64 time, bool isLooping);
+		glm::vec3 SampleScale(Animation::Channel& channel, float64 time, bool isLooping);
+		glm::quat SampleRotation(Animation::Channel& channel, float64 time, bool isLooping);
+
 		void OnEntityAdded(Entity entity);
 		void OnEntityRemoved(Entity entity);
 

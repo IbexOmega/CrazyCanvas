@@ -233,7 +233,8 @@ namespace LambdaEngine
 			.Animations		= animations,
 			.MeshComponents	= meshComponents,
 			.pMaterials		= &materials,
-			.pTextures		= &textures
+			.pTextures		= &textures,
+			.AnimationsOnly = false
 		};
 
 		return LoadSceneWithAssimp(loadRequest);
@@ -256,7 +257,6 @@ namespace LambdaEngine
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
 			aiProcess_OptimizeGraph				|
-			//aiProcess_SortByPType				|
 			aiProcess_FindInvalidData;
 		
 		// Prevent crashes in assimp when using this flag
@@ -278,6 +278,7 @@ namespace LambdaEngine
 			.MeshComponents = meshComponent,
 			.pMaterials		= nullptr,
 			.pTextures		= nullptr,
+			.AnimationsOnly = false
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -308,6 +309,51 @@ namespace LambdaEngine
 		}
 
 		return meshes[biggest];
+	}
+
+	TArray<Animation*> ResourceLoader::LoadAnimationsFromFile(const String& filepath)
+	{
+		int32 assimpFlags =
+			aiProcess_FindInstances			|
+			aiProcess_JoinIdenticalVertices	|
+			aiProcess_ImproveCacheLocality	|
+			aiProcess_LimitBoneWeights		|
+			aiProcess_Triangulate			|
+			aiProcess_FindDegenerates		|
+			aiProcess_OptimizeMeshes		|
+			aiProcess_OptimizeGraph			|
+			aiProcess_FindInvalidData;
+
+		// Prevent crashes in assimp when using this flag
+		String path = ConvertSlashes(filepath);
+		if (path.find(".obj") == String::npos)
+		{
+			assimpFlags |= aiProcess_PopulateArmatureData;
+		}
+
+		TArray<Mesh*>			meshes;
+		TArray<Animation*>		animations;
+		TArray<MeshComponent>	meshComponent;
+
+		SceneLoadRequest loadRequest =
+		{
+			.Filepath		= ConvertSlashes(filepath),
+			.AssimpFlags	= assimpFlags,
+			.Meshes			= meshes,
+			.Animations		= animations,
+			.MeshComponents	= meshComponent,
+			.pMaterials		= nullptr,
+			.pTextures		= nullptr,
+			.AnimationsOnly = true
+		};
+
+		if (!LoadSceneWithAssimp(loadRequest))
+		{
+			return animations;
+		}
+
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Animations \"%s\"", filepath.c_str());
+		return animations;
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
@@ -1352,7 +1398,10 @@ namespace LambdaEngine
 		}
 
 		// Load all meshes
-		ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		if (!sceneLoadRequest.AnimationsOnly)
+		{
+			ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		}
 
 		// Load all animations
 		if (pScene->mNumAnimations > 0)
