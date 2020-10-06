@@ -25,7 +25,7 @@ void main()
     vec3 worldPosition  = in_WorldPosition;    
     vec3 normal 	    = normalize(in_Normal);
     vec3 targetPosition = in_TargetPosition;    
-    vec3 direction      = normalize(in_TargetDirection); 
+    vec3 direction      = -normalize(in_TargetDirection); 
     
     vec3 targetPosToWorldPos = worldPosition-targetPosition;
 

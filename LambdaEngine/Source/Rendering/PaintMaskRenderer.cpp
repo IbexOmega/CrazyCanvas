@@ -292,6 +292,8 @@ namespace LambdaEngine
 			return;
 		}
 
+		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
 		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 		{
 			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
@@ -300,6 +302,8 @@ namespace LambdaEngine
 			const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
 			TextureView*	renderTarget		= renderTargetDesc.TextureView;
 
+			// TODO: Write descriptor might overrite the previous drawn render target and only use the previous.
+			// A solution for this would be to have unique descriptor sets for each render target.
 			for (uint32 i = 0; i < drawArg.InstanceCount; i++)
 			{
 				uint64 size = sizeof(RenderSystem::Instance);
@@ -322,9 +326,6 @@ namespace LambdaEngine
 			beginRenderPassDesc.ClearColorCount = 0;
 			beginRenderPassDesc.Offset.x = 0;
 			beginRenderPassDesc.Offset.y = 0;
-
-			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
-			pCommandList->Begin(nullptr);
 
 			pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
@@ -361,10 +362,10 @@ namespace LambdaEngine
 			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
 			pCommandList->EndRenderPass();
-			pCommandList->End();
 
-			(*ppFirstExecutionStage) = pCommandList;
 		}
+		pCommandList->End();
+		(*ppFirstExecutionStage) = pCommandList;
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()

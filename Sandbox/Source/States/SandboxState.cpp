@@ -88,26 +88,26 @@ void SandboxState::Init()
 	}
 
 	// Load scene
-	//{
-	//	TArray<MeshComponent> meshComponents;
-	//	ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+	// {
+	// 	TArray<MeshComponent> meshComponents;
+	// 	ResourceManager::LoadSceneFromFile("map/Scene.obj", meshComponents);
 
-	//	const glm::vec3 position(0.0f, 0.0f, 0.0f);
-	//	const glm::vec3 scale(0.01f);
+	// 	const glm::vec3 position(0.0f, 0.0f, 0.0f);
+	// 	const glm::vec3 scale(0.01f);
 
-	//	for (const MeshComponent& meshComponent : meshComponents)
-	//	{
-	//		Entity entity = ECSCore::GetInstance()->CreateEntity();
-	//		pECS->AddComponent<PositionComponent>(entity, { position, true });
-	//		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-	//		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-	//		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	//		m_Entities.PushBack(entity);
-	//	}
-	//}
+	// 	for (const MeshComponent& meshComponent : meshComponents)
+	// 	{
+	// 		Entity entity = ECSCore::GetInstance()->CreateEntity();
+	// 		pECS->AddComponent<PositionComponent>(entity, { true, position });
+	// 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+	// 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+	// 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	// 		m_Entities.PushBack(entity);
+	// 	}
+	// }
 
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("cube.obj");
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 		MaterialProperties materialProperties;
 		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -126,7 +126,7 @@ void SandboxState::Init()
 			materialProperties);
 
 		glm::vec3 position(0.f, 0.f, -4.5f);
-		glm::vec3 scale(1/5.f);
+		glm::vec3 scale(2.f);
 		glm::quat rotation = glm::identity<glm::quat>();
 
 		MeshPaintComponent meshPaintComponent;
@@ -154,7 +154,7 @@ void SandboxState::Init()
 	}
 
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("quad.obj");
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("triangle.obj");
 
 		MaterialProperties materialProperties;
 		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -173,7 +173,7 @@ void SandboxState::Init()
 			materialProperties);
 
 		glm::vec3 position(0.f, -1.f, -4.f);
-		glm::vec3 scale(40.f);
+		glm::vec3 scale(1.f);
 		glm::quat rotation = glm::rotate(glm::identity<glm::quat>(), glm::radians(-180.f), glm::vec3(0.f, 1.f, 0.f));
 
 		MeshPaintComponent meshPaintComponent;
@@ -190,14 +190,14 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, rotation });
 		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
+		// pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
 
 		DrawArgExtensionData drawArgExtensionData = {};
 		drawArgExtensionData.TextureCount		= 1;
 		drawArgExtensionData.ppTextures[0]		= ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
 		drawArgExtensionData.ppTextureViews[0]	= ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
 		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
-		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
+		// EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
 	}
 
 	//Scene
