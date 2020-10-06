@@ -53,6 +53,7 @@ namespace LambdaEngine
 			localTime = glm::clamp(localTime, 0.0, pAnimation->DurationInSeconds());
 		}
 
+		// Get normalized time
 		const float64 normalizedLocalTime = localTime / pAnimation->DurationInSeconds();
 
 		// Convert into ticks
@@ -63,28 +64,26 @@ namespace LambdaEngine
 			time = pAnimation->DurationInTicks - time;
 		}
 
-		// Find keyframes
-		for (Animation::Channel& channel : pAnimation->Channels)
+		// Calculate SQT for each animation to blend between
+		TArray<SQT> mainAnimation = CalculateSQT(*pAnimation, *pSkeleton, time, animation.IsLooping);
+		
+		TArray<SQT> blendAnimation;
+		if (animation.BlendingAnimationGUID != GUID_NONE)
 		{
-			// Retrive the bone ID
-			auto it = pSkeleton->JointMap.find(channel.Name);
-			if (it == pSkeleton->JointMap.end())
-			{
-				continue;
-			}
+			Animation* pBlendAnimation = ResourceManager::GetAnimation(animation.BlendingAnimationGUID);
+			VALIDATE(pBlendAnimation);
 
-			// Sample SQT for this animation
-			glm::vec3 position	= SamplePosition(channel, time, animation.IsLooping);
-			glm::quat rotation	= SampleRotation(channel, time, animation.IsLooping);
-			glm::vec3 scale		= SampleScale(channel, time, animation.IsLooping);
+			blendAnimation = CalculateSQT(*pBlendAnimation, *pSkeleton, time, animation.IsLooping);
+		}
 
-			// Calculate transform
-			glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
-			transform			= transform * glm::toMat4(rotation);
-			transform			= glm::scale(transform, scale);
+		for (SQT& sqt : mainAnimation)
+		{
+			glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
+			transform			= transform * glm::toMat4(sqt.Rotation);
+			transform			= glm::scale(transform, sqt.Scale);
 
-			// Increase boneID
-			const uint32 boneID = it->second;
+			// set transform
+			const uint32 boneID = sqt.BoneID;
 			animation.Pose.LocalTransforms[boneID] = transform;
 		}
 		
@@ -94,6 +93,30 @@ namespace LambdaEngine
 			Joint& joint = pSkeleton->Joints[i];
 			animation.Pose.GlobalTransforms[i] = pSkeleton->InverseGlobalTransform * ApplyParent(joint, *pSkeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
 		}
+	}
+
+	TArray<SQT> AnimationSystem::CalculateSQT(Animation& animation, Skeleton& skeleton, float64 time, bool isLooping)
+	{
+		TArray<SQT> sqt;
+		sqt.Reserve(skeleton.Joints.GetSize());
+
+		for (Animation::Channel& channel : animation.Channels)
+		{
+			// Retrive the bone ID
+			auto it = skeleton.JointMap.find(channel.Name);
+			if (it == skeleton.JointMap.end())
+			{
+				continue;
+			}
+
+			// Sample SQT for this animation
+			glm::vec3 position	= SamplePosition(channel,	time, isLooping);
+			glm::quat rotation	= SampleRotation(channel,	time, isLooping);
+			glm::vec3 scale		= SampleScale(channel,		time, isLooping);
+			sqt.EmplaceBack(it->second, position, scale, rotation);
+		}
+
+		return sqt;
 	}
 
 	glm::mat4 AnimationSystem::ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
@@ -111,13 +134,13 @@ namespace LambdaEngine
 	glm::vec3 AnimationSystem::SamplePosition(Animation::Channel& channel, float64 time, bool isLooping)
 	{
 		// If the clip is looping the last frame is redundant
-		const uint32 NumPositions = isLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
+		const uint32 numPositions = isLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
 
 		Animation::Channel::KeyFrame pos0 = channel.Positions[0];
 		Animation::Channel::KeyFrame pos1 = channel.Positions[0];
-		if (NumPositions > 1)
+		if (numPositions > 1)
 		{
-			for (uint32 i = 0; i < (NumPositions - 1); i++)
+			for (uint32 i = 0; i < (numPositions - 1); i++)
 			{
 				if (time < channel.Positions[i + 1].Time)
 				{
@@ -136,13 +159,13 @@ namespace LambdaEngine
 	glm::vec3 AnimationSystem::SampleScale(Animation::Channel& channel, float64 time, bool isLooping)
 	{
 		// If the clip is looping the last frame is redundant
-		const uint32 NumScales = isLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
+		const uint32 numScales = isLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
 
 		Animation::Channel::KeyFrame scale0 = channel.Scales[0];
 		Animation::Channel::KeyFrame scale1 = channel.Scales[0];
-		if (NumScales > 1)
+		if (numScales > 1)
 		{
-			for (uint32 i = 0; i < (NumScales - 1); i++)
+			for (uint32 i = 0; i < (numScales - 1); i++)
 			{
 				if (time < channel.Scales[i + 1].Time)
 				{
@@ -161,13 +184,13 @@ namespace LambdaEngine
 	glm::quat AnimationSystem::SampleRotation(Animation::Channel& channel, float64 time, bool isLooping)
 	{
 		// If the clip is looping the last frame is redundant
-		const uint32 NumRotations = isLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
+		const uint32 numRotations = isLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
 
 		Animation::Channel::RotationKeyFrame rot0 = channel.Rotations[0];
 		Animation::Channel::RotationKeyFrame rot1 = channel.Rotations[0];
-		if (NumRotations > 1)
+		if (numRotations > 1)
 		{
-			for (uint32 i = 0; i < (NumRotations - 1); i++)
+			for (uint32 i = 0; i < (numRotations - 1); i++)
 			{
 				if (time < channel.Rotations[i + 1].Time)
 				{
@@ -186,16 +209,12 @@ namespace LambdaEngine
 
 	void AnimationSystem::OnEntityAdded(Entity entity)
 	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
 		if (m_HasInitClock)
 		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+			AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
 			animationComp.StartTime = GetTotalTimeInSeconds();
 		}
-	}
-
-	void AnimationSystem::OnEntityRemoved(Entity entity)
-	{
 	}
 
 	bool AnimationSystem::Init()
@@ -208,7 +227,8 @@ namespace LambdaEngine
 				{
 					{ RW, AnimationComponent::Type() }
 				},
-				&m_AnimationEntities
+				&m_AnimationEntities,
+				std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1)
 			},
 		};
 

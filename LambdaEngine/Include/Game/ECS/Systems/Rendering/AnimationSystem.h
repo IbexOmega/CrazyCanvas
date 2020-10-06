@@ -30,6 +30,8 @@ namespace LambdaEngine
 		~AnimationSystem();
 
 		void Animate(AnimationComponent& animation);
+
+		TArray<SQT> CalculateSQT(Animation& animation, Skeleton& skeleton, float64 time, bool isLooping);
 		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
 		glm::vec3 SamplePosition(Animation::Channel& channel, float64 time, bool isLooping);
@@ -37,7 +39,6 @@ namespace LambdaEngine
 		glm::quat SampleRotation(Animation::Channel& channel, float64 time, bool isLooping);
 
 		void OnEntityAdded(Entity entity);
-		void OnEntityRemoved(Entity entity);
 
 	public:
 		static AnimationSystem& GetInstance();
