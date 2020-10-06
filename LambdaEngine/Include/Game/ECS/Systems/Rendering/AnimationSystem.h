@@ -30,10 +30,9 @@ namespace LambdaEngine
 		~AnimationSystem();
 
 		void Animate(AnimationComponent& animation);
-		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
+		glm::mat4 ApplyParent(const Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
 		void OnEntityAdded(Entity entity);
-		void OnEntityRemoved(Entity entity);
 
 	public:
 		static AnimationSystem& GetInstance();

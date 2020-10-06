@@ -1052,9 +1052,9 @@ namespace LambdaEngine
 			Joint& joint = pSkeleton->Joints[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
-			bone.Name = pBoneAI->mName.C_Str();
+			joint.Name = pBoneAI->mName.C_Str();
 			
-			auto it = pSkeleton->JointMap.find(bone.Name);
+			auto it = pSkeleton->JointMap.find(joint.Name);
 			if (it != pSkeleton->JointMap.end())
 			{
 				LOG_ERROR("[ResourceLoader] Multiple bones with the same name");
@@ -1062,10 +1062,10 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pSkeleton->JointMap[bone.Name] = boneIndex;
+				pSkeleton->JointMap[joint.Name] = boneIndex;
 			}
 			
-			bone.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
+			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
 		// We find the parent

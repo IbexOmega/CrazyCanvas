@@ -83,9 +83,9 @@ namespace LambdaEngine
 
 				Animation::Channel::KeyFrame pos0 = channel.Positions[0];
 				Animation::Channel::KeyFrame pos1 = channel.Positions[0];
-				if (NumPositions > 1)
+				if (numPositions > 1)
 				{
-					for (uint32 i = 0; i < (NumPositions - 1); i++)
+					for (uint32 i = 0; i < (numPositions - 1); i++)
 					{
 						if (time < channel.Positions[i + 1].Time)
 						{
@@ -104,13 +104,13 @@ namespace LambdaEngine
 			glm::quat rotation;
 			{
 				// If the clip is looping the last frame is redundant
-				const uint32 NumRotations = animation.IsLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
+				const uint32 numRotations = animation.IsLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
 
 				Animation::Channel::RotationKeyFrame rot0 = channel.Rotations[0];
 				Animation::Channel::RotationKeyFrame rot1 = channel.Rotations[0];
-				if (NumRotations > 1)
+				if (numRotations > 1)
 				{
-					for (uint32 i = 0; i < (NumRotations - 1); i++)
+					for (uint32 i = 0; i < (numRotations - 1); i++)
 					{
 						if (time < channel.Rotations[i + 1].Time)
 						{
@@ -130,13 +130,13 @@ namespace LambdaEngine
 			glm::vec3 scale;
 			{
 				// If the clip is looping the last frame is redundant
-				const uint32 NumScales = animation.IsLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
+				const uint32 numScales = animation.IsLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
 
 				Animation::Channel::KeyFrame scale0 = channel.Scales[0];
 				Animation::Channel::KeyFrame scale1 = channel.Scales[0];
-				if (NumScales > 1)
+				if (numScales > 1)
 				{
-					for (uint32 i = 0; i < (NumScales - 1); i++)
+					for (uint32 i = 0; i < (numScales - 1); i++)
 					{
 						if (time < channel.Scales[i + 1].Time)
 						{
@@ -170,8 +170,8 @@ namespace LambdaEngine
 
 	glm::mat4 AnimationSystem::ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices)
 	{
-		int32 parentID	= bone.ParentBoneIndex;
-		int32 myID		= skeleton.JointMap[bone.Name];
+		int32 parentID	= joint.ParentBoneIndex;
+		int32 myID		= skeleton.JointMap[joint.Name];
 		if (parentID == INVALID_JOINT_ID)
 		{
 			return matrices[myID];
@@ -190,10 +190,6 @@ namespace LambdaEngine
 		}
 	}
 
-	void AnimationSystem::OnEntityRemoved(Entity entity)
-	{
-	}
-
 	bool AnimationSystem::Init()
 	{
 		SystemRegistration systemReg = {};
@@ -204,7 +200,8 @@ namespace LambdaEngine
 				{
 					{ RW, AnimationComponent::Type() }
 				},
-				&m_AnimationEntities
+				&m_AnimationEntities,
+				std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1),
 			},
 		};
 
