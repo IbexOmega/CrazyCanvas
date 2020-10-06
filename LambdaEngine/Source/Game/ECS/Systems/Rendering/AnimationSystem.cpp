@@ -168,7 +168,7 @@ namespace LambdaEngine
 		}
 	}
 
-	glm::mat4 AnimationSystem::ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
+	glm::mat4 AnimationSystem::ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices)
 	{
 		int32 parentID	= bone.ParentBoneIndex;
 		int32 myID		= skeleton.JointMap[bone.Name];
