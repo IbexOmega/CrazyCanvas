@@ -238,7 +238,7 @@ namespace LambdaEngine
 		Timestamp deltatime = m_Clock.GetDeltaTime();
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
-			AnimationComponent&	animation = pAnimationComponents->GetData(entity);
+			AnimationComponent& animation = pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
 				Animate(animation);
