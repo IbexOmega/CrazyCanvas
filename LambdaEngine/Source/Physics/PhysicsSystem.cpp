@@ -341,7 +341,8 @@ namespace LambdaEngine
 			VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
 			glm::vec3& velocity = velocityComp.Velocity;
 
-			const PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+			translationPX *= dt;
 
 			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
 			PxController* pController = characterCollider.pController;
@@ -355,6 +356,8 @@ namespace LambdaEngine
 				(float)newPositionPX.y - position.y,
 				(float)newPositionPX.z - position.z
 			};
+
+			velocity /= dt;
 		}
 	}
 
