@@ -152,7 +152,7 @@ void SandboxState::Init()
 		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 		robotAnimationComp.Pose.pSkeleton			= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
-		glm::vec3 position = glm::vec3(0.0f, 1.25f, -2.5f);
+		glm::vec3 position = glm::vec3(0.0f, 1.1f, -2.5f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -172,7 +172,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(-5.0f, 1.25f, 0.0f);
+		position = glm::vec3(-5.0f, 1.1f, 0.0f);
 		robotAnimationComp.AnimationGUID = running[0];
 
 		entity = pECS->CreateEntity();
@@ -182,7 +182,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(5.0f, 1.25f, 0.0f);
+		position = glm::vec3(5.0f, 1.1f, 0.0f);
 
 		robotAnimationComp.AnimationGUID			= animations[0];
 		robotAnimationComp.BlendingAnimationGUID	= running[0];
