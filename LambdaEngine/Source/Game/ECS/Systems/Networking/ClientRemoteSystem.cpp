@@ -16,7 +16,7 @@ namespace LambdaEngine
 {
 	glm::vec3 ClientRemoteSystem::s_StartPositions[10] =
 	{
-		glm::vec3(0.0f, 1.0f, 5.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 1.0f),
 		glm::vec3(0.0f, 1.0f, 2.0f),
 		glm::vec3(1.0f, 1.0f, 0.0f),
@@ -85,10 +85,10 @@ namespace LambdaEngine
 
 				m_CurrentGameState = gameState;
 
-				PlayerMovementSystem::GetInstance().PredictVelocity(deltaTime, gameState.DeltaForward, gameState.DeltaLeft, velocityComp.Velocity);
+				PlayerMovementSystem::GetInstance().PredictVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComp.Velocity);
 
 				CharacterControllerSystem::TickCharacterController(dt, entityPlayer, characterCollider, positionComp, velocityComp);
-				glm::vec3 newPosition = positionComp.Position + velocityComp.Velocity;
+				glm::vec3 newPosition = positionComp.Position + velocityComp.Velocity * dt;
 
 				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 				BinaryEncoder encoder(pPacket);

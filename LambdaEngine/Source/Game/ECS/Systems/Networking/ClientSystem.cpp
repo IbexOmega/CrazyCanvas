@@ -107,6 +107,7 @@ namespace LambdaEngine
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 			Entity entityPlayer = GetEntityPlayer();
+			float32 dt = deltaTime.AsSeconds();
 
 			int8 deltaForward	= int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 			int8 deltaLeft		= int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
@@ -121,23 +122,38 @@ namespace LambdaEngine
 			CharacterLocalColliderComponent& characterLocalColliderComponent = pCharacterLocalColliderComponents->GetData(entityPlayer);
 			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
+
+
+			PlayerMovementSystem::GetInstance().PredictVelocity(deltaForward, deltaLeft, velocityComponent.Velocity);
+
+
+
 			const glm::vec3& position = positionComponent.Position;
 			const glm::vec3& velocity = velocityComponent.Velocity;
 
-			const PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+			translationPX *= dt;
 
 			PxController* pController = characterLocalColliderComponent.pController;
 
 			pController->setPosition(characterColliderComponent.pController->getPosition());
-			pController->move(translationPX, 0.0f, (float32)deltaTime.AsSeconds(), characterLocalColliderComponent.Filters);
+
+			/*LOG_WARNING("POS: %f, %f, %f", pController->getPosition().x, pController->getPosition().y, pController->getPosition().z);
+			LOG_WARNING("VEL: %f, %f, %f", translationPX.x, translationPX.y, translationPX.z);*/
+
+			pController->move(translationPX, 0.0f, dt, characterLocalColliderComponent.Filters);
 
 			const PxExtendedVec3& positionPX = pController->getPosition();
 			const glm::vec3 positionPredicted((float32)positionPX.x, (float32)positionPX.y, (float32)positionPX.z);
-			const glm::vec3 velocityPredicted = positionPredicted - position;
+			const glm::vec3 velocityPredicted = (positionPredicted - position) / dt;
 
+			/*LOG_WARNING("POS2: %f, %f, %f", positionPredicted.x, positionPredicted.y, positionPredicted.z);
+			LOG_WARNING("VEL2: %f, %f, %f", velocityPredicted.x, velocityPredicted.y, velocityPredicted.z);*/
+
+			LOG_WARNING("C GameState %d: %f, %f, %f, %f, %f, %f | %d, %d", m_SimulationTick, positionPredicted.x, positionPredicted.y, positionPredicted.z, position.x, position.y, position.z, deltaForward, deltaLeft);
 			if (velocityPredicted.x != 0 || velocityPredicted.z != 0)
 			{
-				LOG_INFO("Prediction: [Vel: %f, %f, %f] [VelP: %f, %f, %f] [Pos: %f, %f, %f] [Tick: %d]", velocity.x, velocity.y, velocity.z, velocityPredicted.x, velocityPredicted.y, velocityPredicted.z, positionPredicted.x, positionPredicted.y, positionPredicted.z, m_SimulationTick);
+				//LOG_INFO("Prediction: [Vel: %f, %f, %f] [VelP: %f, %f, %f] [Pos: %f, %f, %f] [Tick: %d]", velocity.x, velocity.y, velocity.z, velocityPredicted.x, velocityPredicted.y, velocityPredicted.z, positionPredicted.x, positionPredicted.y, positionPredicted.z, m_SimulationTick);
 			}
 
 
@@ -154,12 +170,12 @@ namespace LambdaEngine
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
 			gameState.Position			= positionPredicted;
-			gameState.Velocity			= velocity;
+			gameState.Velocity			= velocityPredicted;
 
 			m_FramesToReconcile.PushBack(gameState);
-			m_SimulationTick++;
-
 			Reconcile();
+
+			m_SimulationTick++;
 		}
 	}
 
@@ -279,17 +295,17 @@ namespace LambdaEngine
 		materialProperties.Metallic		= 0.0f;
 		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
-		/*TArray<GUID_Lambda> animations;
+		//TArray<GUID_Lambda> animations;
 
-		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);*/
+		//const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		//const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		MeshComponent meshComponent;
-		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("sphere.obj");/*ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);*/
+		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("Sphere.obj");
 		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 			"Mirror Material" + std::to_string(entity),
-			/*robotAlbedoGUID,
-			robotNormalGUID,*/
+			//robotAlbedoGUID,
+			//robotNormalGUID,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
@@ -297,13 +313,13 @@ namespace LambdaEngine
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		/*AnimationComponent animationComp;
-		animationComp.AnimationGUID = animations[0];*/
+		//AnimationComponent animationComp;
+		//animationComp.AnimationGUID = animations[0];
 
 
 		pECS->AddComponent<PositionComponent>(entity,	{ true, position });
 		pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(0.01f) });
+		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(1.0f) });
 		pECS->AddComponent<VelocityComponent>(entity,	{ true, glm::vec3(0.0f) });
 		//pECS->AddComponent<AnimationComponent>(entity,	animationComp);
 		pECS->AddComponent<MeshComponent>(entity,		meshComponent);
@@ -355,7 +371,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void ClientSystem::ReplayGameStatesBasedOnServerGameState(const GameState* pGameStates, uint32 count, const GameState& gameStateServer)
+	void ClientSystem::ReplayGameStatesBasedOnServerGameState(GameState* pGameStates, uint32 count, const GameState& gameStateServer)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
@@ -369,13 +385,8 @@ namespace LambdaEngine
 		PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
-		positionComponent.Position	= gameStateServer.Position;
+		positionComponent.Position = gameStateServer.Position;
 		velocityComponent.Velocity = gameStateServer.Velocity;
-
-		const glm::vec3& velocity = gameStateServer.Velocity;
-		const glm::vec3& positionPredicted = gameStateServer.Position;
-		LOG_INFO("Response: [Vel: %f, %f, %f] [Pos: %f, %f, %f] [Tick: %d]", velocity.x, velocity.y, velocity.z, positionPredicted.x, positionPredicted.y, positionPredicted.z, gameStateServer.SimulationTick);
-
 
 		//Replay all game states since the game state which resulted in prediction ERROR
 
@@ -384,26 +395,54 @@ namespace LambdaEngine
 		const Timestamp deltaTime = EngineLoop::GetFixedTimestep();
 		const float32 dt = deltaTime.AsSeconds();
 
-		for (uint32 i = 0; i < count; i++)
+		for (uint32 i = 1; i < count; i++)
 		{
-			const GameState& gameState = pGameStates[i];
+			GameState& gameState = pGameStates[i];
 
-			PlayerMovementSystem::GetInstance().PredictVelocity(deltaTime, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+			/*
+			* Returns the velocity based on key presses
+			*/
+			PlayerMovementSystem::GetInstance().PredictVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
 
+			/*
+			* Sets the position of the PxController taken from the PositionComponent.
+			* Move the PxController using the VelocityComponent by the deltatime.
+			* Calculates a new Velocity based on the difference of the last position and the new one.
+			*/
 			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, characterColliderComponent, positionComponent, velocityComponent);
-			positionComponent.Position = positionComponent.Position + velocityComponent.Velocity;
+			positionComponent.Position += velocityComponent.Velocity * dt;
+
+			gameState.Position = positionComponent.Position;
+			gameState.Velocity = velocityComponent.Velocity;
+
+
+			LOG_MESSAGE("U GameState %d: %f, %f, %f | %d, %d", gameState.SimulationTick, gameState.Position.x, gameState.Position.y, gameState.Position.z, gameState.DeltaForward, gameState.DeltaLeft);
+
 			//PlayerUpdate(entityPlayer, pGameStates[i]);
 		}
+
+		const GameState& nextToLastGameState = m_FramesToReconcile[m_FramesToReconcile.GetSize() - 2];
+
+		positionComponent.Position = nextToLastGameState.Position;
+		//velocityComponent.Velocity = nextToLastGameState.Velocity;
+		
+
+		const GameState& g = m_FramesToReconcile[m_FramesToReconcile.GetSize() - 1];
+		LOG_MESSAGE("R GameState %d: %f, %f, %f | %d, %d", g.SimulationTick, g.Position.x, g.Position.y, g.Position.z, g.DeltaForward, g.DeltaLeft);
 	}
 
 	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
 	{
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
+		{
+			LOG_ERROR("E GameState %d: [L: %f, %f, %f] [S: %f, %f, %f]  | %d, %d", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z, gameStateLocal.DeltaForward, gameStateLocal.DeltaLeft);
 			return false;
-
+		}
+			
 		if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
 			return false;
 
+		LOG_INFO("G GameState %d: [L: %f, %f, %f] [S: %f, %f, %f]  | %d, %d", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z, gameStateLocal.DeltaForward, gameStateLocal.DeltaLeft);
 		return true;
 	}
 

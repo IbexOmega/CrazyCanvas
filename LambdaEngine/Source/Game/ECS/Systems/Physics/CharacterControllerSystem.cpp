@@ -62,12 +62,18 @@ namespace LambdaEngine
 		}
 	}
 
+	/*
+	* Sets the position of the PxController taken from the PositionComponent.
+	* Move the PxController using the VelocityComponent by the deltatime.
+	* Calculates a new Velocity based on the difference of the last position and the new one.
+	*/
 	void CharacterControllerSystem::TickCharacterController(float32 dt, Entity entity, CharacterColliderComponent& characterCollider, const PositionComponent& positionComp, VelocityComponent& velocityComp)
 	{
 		const glm::vec3& position = positionComp.Position;
 		glm::vec3& velocity = velocityComp.Velocity;
 
-		const PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+		translationPX *= dt;
 
 		PxController* pController = characterCollider.pController;
 
@@ -80,6 +86,7 @@ namespace LambdaEngine
 			(float)newPositionPX.y - position.y,
 			(float)newPositionPX.z - position.z
 		};
+		velocity /= dt;
 	}
 
 	void CharacterControllerSystem::OnCharacterColliderRemoval(Entity entity)

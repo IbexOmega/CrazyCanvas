@@ -51,7 +51,7 @@ namespace LambdaEngine
 
 	void PlayerMovementSystem::FixedTick(Timestamp deltaTime)
 	{
-		int8 deltaForward	= int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
+		/*int8 deltaForward	= int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 		int8 deltaLeft		= int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
 
 		for (Entity entity : m_ControllableEntities)
@@ -64,13 +64,12 @@ namespace LambdaEngine
 
 			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
 
-			PredictVelocity(deltaTime, deltaForward, deltaLeft, velocityComponent.Velocity);
-			LOG_MESSAGE("%f, %f, %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
+			PredictVelocity(deltaForward, deltaLeft, velocityComponent.Velocity);
 
 			/*controllableComponent.StartPosition = controllableComponent.EndPosition;
 			PredictMove(deltaTime, deltaForward, deltaLeft, controllableComponent.EndPosition);
-			controllableComponent.StartTimestamp = EngineLoop::GetTimeSinceStart();*/
-		}
+			controllableComponent.StartTimestamp = EngineLoop::GetTimeSinceStart();
+		}*/
 	}
 
 	void PlayerMovementSystem::Tick(Timestamp deltaTime)
@@ -140,17 +139,11 @@ namespace LambdaEngine
 		//PredictMove(deltaTime, deltaForward, deltaLeft, positionComponent.Position);
 	}*/
 
-	void PlayerMovementSystem::PredictVelocity(Timestamp deltaTime, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
+	void PlayerMovementSystem::PredictVelocity(int8 deltaForward, int8 deltaLeft, glm::vec3& result)
 	{
-		if (deltaForward != 0)
-		{
-			result.z = (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaForward);
-		}
+		result.z = (float32)(1.0 * (float64)deltaForward);
 
-		if (deltaLeft != 0)
-		{
-			result.x = (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaLeft);
-		}
+		result.x = (float32)(1.0 * (float64)deltaLeft);
 	}
 	
 	/*void PlayerMovementSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage)

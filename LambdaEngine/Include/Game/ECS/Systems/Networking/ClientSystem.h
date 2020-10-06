@@ -49,7 +49,7 @@ namespace LambdaEngine
 	private:
 		void Init();
 
-		void ReplayGameStatesBasedOnServerGameState(const GameState* pGameStates, uint32 count, const GameState& gameStateServer);
+		void ReplayGameStatesBasedOnServerGameState(GameState* pGameStates, uint32 count, const GameState& gameStateServer);
 		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
 
 		void OnPacketCreateEntity(NetworkSegment* pPacket);

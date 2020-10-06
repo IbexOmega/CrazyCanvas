@@ -3,7 +3,7 @@
     800,
     600
   ],
-  "FixedTimestep": 60,
+  "FixedTimestep": 10,
   "RayTracingEnabled": false,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
