@@ -292,7 +292,7 @@ namespace LambdaEngine
 			return;
 		}
 
-		for (uint32 t = 1; t < m_RenderTargets.GetSize(); t++)
+		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 		{
 			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
 			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;

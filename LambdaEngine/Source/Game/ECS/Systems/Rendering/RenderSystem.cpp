@@ -968,14 +968,21 @@ namespace LambdaEngine
 
 		// Fetch the entity mask and extract their individual component masks and add them to the set if the mask exist.
 		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
-		TArray<uint32> componentMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(drawArgMask);
-		componentMasks.PushBack(1);
-		for (uint32 mask : componentMasks)
+		//TArray<uint32> componentMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(drawArgMask);
+		//componentMasks.PushBack(1);
+		//for (uint32 mask : componentMasks)
 		{
-			if (m_RequiredDrawArgs.count(mask))
+			for (uint32 mask : m_RequiredDrawArgs)
 			{
-				m_DirtyDrawArgs.insert(mask);
+				if ((mask & drawArgMask) > 0)
+				{
+					m_DirtyDrawArgs.insert(mask);
+				}
 			}
+			//if (m_RequiredDrawArgs.count(drawArgMask))
+			//{
+			//	m_DirtyDrawArgs.insert(drawArgMask);
+			//}
 		}
 	}
 

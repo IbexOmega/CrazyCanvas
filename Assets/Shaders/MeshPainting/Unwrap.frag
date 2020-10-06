@@ -34,7 +34,7 @@ void main()
     
     //float rand = random(worldPosition);
 
-    float BRUSH_SIZE = 0.1f;
+    float BRUSH_SIZE = 1.0f;
 
     // Calculate uv-coordinates for a square encapsulating the sphere.
     vec3 right = normalize(cross(direction, GLOBAL_UP));
@@ -50,5 +50,5 @@ void main()
         out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
     else
     //   discard;
-        out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
+        out_UnwrappedTexture = vec4(worldPosition, 1.f);
 }

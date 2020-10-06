@@ -130,8 +130,8 @@ void SandboxState::Init()
 		glm::quat rotation = glm::identity<glm::quat>();
 
 		MeshPaintComponent meshPaintComponent;
-		const uint32 width = 512;
-		const uint32 height = 512;
+		const uint32 width = 1024;
+		const uint32 height = 1024;
 		char* data = DBG_NEW char[width * height * 4];
 		memset(data, 0, width * height * 4);
 		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("CubeUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
@@ -153,7 +153,7 @@ void SandboxState::Init()
 		EntityMaskManager::AddExtensionToEntity(m_Entity, MeshPaintComponent::Type(), drawArgExtensionData);
 	}
 
-	{
+	/*{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("quad.obj");
 
 		MaterialProperties materialProperties;
@@ -198,7 +198,7 @@ void SandboxState::Init()
 		drawArgExtensionData.ppTextureViews[0]	= ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
 		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
 		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
-	}
+	}*/
 
 	//Scene
 	/*{
