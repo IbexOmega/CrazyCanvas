@@ -1177,8 +1177,20 @@ namespace LambdaEngine
 			defaultNormalMapViewDesc.Miplevel		= 0;
 			defaultNormalMapViewDesc.ArrayIndex		= 0;
 
+			TextureViewDesc defaultMaskMapViewDesc = {};
+			defaultMaskMapViewDesc.DebugName = "Default Mask Map View";
+			defaultMaskMapViewDesc.pTexture = pDefaultMaskMap;
+			defaultMaskMapViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			defaultMaskMapViewDesc.Format = pDefaultMaskMap->GetDesc().Format;
+			defaultMaskMapViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+			defaultMaskMapViewDesc.MiplevelCount = pDefaultMaskMap->GetDesc().Miplevels;
+			defaultMaskMapViewDesc.ArrayCount = pDefaultMaskMap->GetDesc().ArrayCount;
+			defaultMaskMapViewDesc.Miplevel = 0;
+			defaultMaskMapViewDesc.ArrayIndex = 0;
+
 			s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
 			s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
+			s_TextureViews[GUID_TEXTURE_DEFAULT_MASK_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultMaskMapViewDesc);
 		}
 
 		{

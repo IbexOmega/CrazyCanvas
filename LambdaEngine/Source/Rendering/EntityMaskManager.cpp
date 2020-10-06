@@ -13,7 +13,7 @@ THashTable<uint32, DrawArgExtensionDesc>			EntityMaskManager::s_ExtensionMaskToE
 
 bool LambdaEngine::EntityMaskManager::Init()
 {
-	BindTypeToExtensionDesc(MeshPaintComponent::Type(), {1});
+	BindTypeToExtensionDesc(MeshPaintComponent::Type(), {1}); // Mask = 0x2
 
 	return true;
 }

@@ -768,8 +768,8 @@ namespace LambdaEngine
 													if (auto it = bindingToDataMap.find(extensionID); it == bindingToDataMap.end())
 													{
 														TextureView* pDefaultMaskMapView = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-														get<0>(it->second).PushBack(pDefaultMaskMapView);
-														get<1>(it->second).PushBack(Sampler::GetLinearSampler());
+														get<0>(bindingToDataMap[extensionID]).PushBack(pDefaultMaskMapView);
+														get<1>(bindingToDataMap[extensionID]).PushBack(Sampler::GetLinearSampler());
 													}
 
 													get<0>(bindingToDataMap[extensionID]).PushBack(extension.ppTextureViews[t]);
@@ -2075,7 +2075,7 @@ namespace LambdaEngine
 							{
 								// TODO: Do not hardcode the descriptor type!
 								descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-								descriptorBinding.DescriptorCount	= 100u;
+								descriptorBinding.DescriptorCount	= 1000u;
 								descriptorBinding.Binding			= binding++;
 								descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 								drawArgExtensionDescriptorSetDescriptions.PushBack(descriptorBinding);
