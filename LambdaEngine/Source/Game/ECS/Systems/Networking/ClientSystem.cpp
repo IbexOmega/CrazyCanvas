@@ -105,6 +105,8 @@ namespace LambdaEngine
 
 		if (m_pClient->IsConnected() && m_Entities.size() > 0)
 		{
+			Reconcile();
+
 			ECSCore* pECS = ECSCore::GetInstance();
 			Entity entityPlayer = GetEntityPlayer();
 			float32 dt = deltaTime.AsSeconds();
@@ -138,23 +140,11 @@ namespace LambdaEngine
 
 			pController->setPosition(characterColliderComponent.pController->getPosition());
 
-			/*LOG_WARNING("POS: %f, %f, %f", pController->getPosition().x, pController->getPosition().y, pController->getPosition().z);
-			LOG_WARNING("VEL: %f, %f, %f", translationPX.x, translationPX.y, translationPX.z);*/
-
 			pController->move(translationPX, 0.0f, dt, characterLocalColliderComponent.Filters);
 
 			const PxExtendedVec3& positionPX = pController->getPosition();
 			const glm::vec3 positionPredicted((float32)positionPX.x, (float32)positionPX.y, (float32)positionPX.z);
 			const glm::vec3 velocityPredicted = (positionPredicted - position) / dt;
-
-			/*LOG_WARNING("POS2: %f, %f, %f", positionPredicted.x, positionPredicted.y, positionPredicted.z);
-			LOG_WARNING("VEL2: %f, %f, %f", velocityPredicted.x, velocityPredicted.y, velocityPredicted.z);*/
-
-			LOG_WARNING("C GameState %d: %f, %f, %f, %f, %f, %f | %d, %d", m_SimulationTick, positionPredicted.x, positionPredicted.y, positionPredicted.z, position.x, position.y, position.z, deltaForward, deltaLeft);
-			if (velocityPredicted.x != 0 || velocityPredicted.z != 0)
-			{
-				//LOG_INFO("Prediction: [Vel: %f, %f, %f] [VelP: %f, %f, %f] [Pos: %f, %f, %f] [Tick: %d]", velocity.x, velocity.y, velocity.z, velocityPredicted.x, velocityPredicted.y, velocityPredicted.z, positionPredicted.x, positionPredicted.y, positionPredicted.z, m_SimulationTick);
-			}
 
 
 
@@ -173,7 +163,6 @@ namespace LambdaEngine
 			gameState.Velocity			= velocityPredicted;
 
 			m_FramesToReconcile.PushBack(gameState);
-			Reconcile();
 
 			m_SimulationTick++;
 		}
@@ -414,35 +403,23 @@ namespace LambdaEngine
 
 			gameState.Position = positionComponent.Position;
 			gameState.Velocity = velocityComponent.Velocity;
-
-
-			LOG_MESSAGE("U GameState %d: %f, %f, %f | %d, %d", gameState.SimulationTick, gameState.Position.x, gameState.Position.y, gameState.Position.z, gameState.DeltaForward, gameState.DeltaLeft);
-
-			//PlayerUpdate(entityPlayer, pGameStates[i]);
 		}
-
-		const GameState& nextToLastGameState = m_FramesToReconcile[m_FramesToReconcile.GetSize() - 2];
-
-		positionComponent.Position = nextToLastGameState.Position;
-		//velocityComponent.Velocity = nextToLastGameState.Velocity;
-		
-
-		const GameState& g = m_FramesToReconcile[m_FramesToReconcile.GetSize() - 1];
-		LOG_MESSAGE("R GameState %d: %f, %f, %f | %d, %d", g.SimulationTick, g.Position.x, g.Position.y, g.Position.z, g.DeltaForward, g.DeltaLeft);
 	}
 
 	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
 	{
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
 		{
-			LOG_ERROR("E GameState %d: [L: %f, %f, %f] [S: %f, %f, %f]  | %d, %d", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z, gameStateLocal.DeltaForward, gameStateLocal.DeltaLeft);
+			LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z);
 			return false;
 		}
 			
 		if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
+		{
+			LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Velocity.x, gameStateLocal.Velocity.y, gameStateLocal.Velocity.z, gameStateServer.Velocity.x, gameStateServer.Velocity.y, gameStateServer.Velocity.z);
 			return false;
+		}	
 
-		LOG_INFO("G GameState %d: [L: %f, %f, %f] [S: %f, %f, %f]  | %d, %d", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z, gameStateLocal.DeltaForward, gameStateLocal.DeltaLeft);
 		return true;
 	}
 
