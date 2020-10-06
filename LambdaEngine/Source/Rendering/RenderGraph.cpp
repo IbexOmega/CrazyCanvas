@@ -950,7 +950,7 @@ namespace LambdaEngine
 		//Execute the recorded Command Lists, we do this in a Batched mode where we batch as many "same queue" command lists that execute in succession together. This reduced the overhead caused by QueueSubmit
 		{
 			//This is safe since the first Execution Stage should never be nullptr
-			ECommandQueueType currentBatchType = m_ppExecutionStages[0]->GetType();
+			ECommandQueueType currentBatchType = ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 
 			static TArray<CommandList*> currentBatch;
 
@@ -960,6 +960,11 @@ namespace LambdaEngine
 				if (pCommandList != nullptr)
 				{
 					ECommandQueueType currentType = pCommandList->GetType();
+
+					if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_NONE)
+					{
+						currentBatchType = currentType;
+					}
 
 					if (currentType != currentBatchType)
 					{
@@ -1955,10 +1960,10 @@ namespace LambdaEngine
 
 							drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore			= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 							drawArgsData.InitialTextureTransitionBarrierTemplate.QueueAfter				= drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore;
-							drawArgsData.InitialTextureTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;	// Should this be this????
-							drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);	// Should this be this????
-							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN; // Should this be this????
-							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.PrevBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);; // Should this be this????
+							drawArgsData.InitialTextureTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+							drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN;
+							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
 						}
@@ -2070,7 +2075,7 @@ namespace LambdaEngine
 							{
 								// TODO: Do not hardcode the descriptor type!
 								descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-								descriptorBinding.DescriptorCount	= 10000u;
+								descriptorBinding.DescriptorCount	= 100u;
 								descriptorBinding.Binding			= binding++;
 								descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 								drawArgExtensionDescriptorSetDescriptions.PushBack(descriptorBinding);
@@ -3482,7 +3487,7 @@ namespace LambdaEngine
 										{
 											uint32 masks = extensionGroup->pExtensionMasks[e];
 											const TextureViewDesc& textureViewDesc = extension.ppTextureViews[t]->GetDesc();
-											textureBarrierTemplate.StateBefore = ETextureState::TEXTURE_STATE_UNKNOWN;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
+											textureBarrierTemplate.StateBefore = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
 											textureBarrierTemplate.StateAfter = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 											textureBarrierTemplate.pTexture = extension.ppTextures[t];
 											textureBarrierTemplate.Miplevel = textureViewDesc.Miplevel;

@@ -137,7 +137,7 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
 	{
-		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+		/*if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
 			for (uint32 i = 0; i < count; i++)
 			{
@@ -168,12 +168,12 @@ namespace LambdaEngine
 					LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
 				}
 			}
-		}
+		}*/
 	}
 
 	void PaintMaskRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
-		if (count == 1 || backBufferBound)
+		/*if (count == 1 || backBufferBound)
 		{
 			if (resourceName == PER_FRAME_BUFFER)
 			{
@@ -194,7 +194,7 @@ namespace LambdaEngine
 					}
 				}
 			}
-		}
+		}*/
 	}
 
 	void PaintMaskRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
@@ -205,7 +205,7 @@ namespace LambdaEngine
 	
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
-		m_pDrawArgs = pDrawArgs;
+		/*m_pDrawArgs = pDrawArgs;
 		
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
@@ -255,7 +255,7 @@ namespace LambdaEngine
 					}
 				}
 			}
-		}
+		}*/
 	}
 
 	void PaintMaskRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage)
@@ -263,7 +263,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
 		// Delete old resources.
-		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
+		/*TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
 		{
 			for (TSharedRef<DeviceChild> pDeviceChild : currentFrameDeviceResourcesToDestroy)
@@ -292,7 +292,7 @@ namespace LambdaEngine
 			return;
 		}
 
-		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
+		for (uint32 t = 1; t < m_RenderTargets.GetSize(); t++)
 		{
 			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
 			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
@@ -364,7 +364,7 @@ namespace LambdaEngine
 			pCommandList->End();
 
 			(*ppFirstExecutionStage) = pCommandList;
-		}
+		}*/
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()
@@ -530,7 +530,7 @@ namespace LambdaEngine
 	bool PaintMaskRenderer::CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
-		colorAttachmentDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
+		colorAttachmentDesc.Format = EFormat::FORMAT_R8G8B8A8_UNORM;
 		colorAttachmentDesc.SampleCount = 1;
 		colorAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
 		colorAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
@@ -538,7 +538,7 @@ namespace LambdaEngine
 		colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
 		colorAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 		colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-
+		
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 
