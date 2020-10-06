@@ -151,13 +151,14 @@ namespace LambdaEngine
 
 	void ECSCore::PerformComponentRegistrations()
 	{
-		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToPublish)
+		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
 		{
+			m_EntityRegistry.RegisterComponentType(component.first, component.second);
 			m_EntityPublisher.PublishComponent(component.first, component.second);
 		}
 
-		m_ComponentsToPublish.ShrinkToFit();
-		m_ComponentsToPublish.Clear();
+		m_ComponentsToRegister.ShrinkToFit();
+		m_ComponentsToRegister.Clear();
 	}
 
 	void ECSCore::PerformComponentDeletions()
