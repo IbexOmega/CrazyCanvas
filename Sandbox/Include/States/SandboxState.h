@@ -39,7 +39,6 @@ private:
 private:
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[3];
-	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
 	Noesis::Ptr<GUITest> m_GUITest;
 	Noesis::Ptr<Noesis::IView> m_View;
