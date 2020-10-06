@@ -79,7 +79,7 @@ namespace LambdaEngine
 			glm::vec3 position;
 			{
 				// If the clip is looping the last frame is redundant
-				const uint32 NumPositions = animation.IsLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
+				const uint32 numPositions = animation.IsLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
 
 				Animation::Channel::KeyFrame pos0 = channel.Positions[0];
 				Animation::Channel::KeyFrame pos1 = channel.Positions[0];
