@@ -36,7 +36,7 @@ namespace LambdaEngine
 			animation.Pose.GlobalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
 		}
 
-		// Get localtime for the clip
+		// Get localtime for the animation-clip
 		float64 localTime = (GetTotalTimeInSeconds() - animation.StartTime) * fabs(animation.PlaybackSpeed);
 		if (animation.IsLooping)
 		{
@@ -54,18 +54,14 @@ namespace LambdaEngine
 		}
 
 		// Get normalized time
-		const float64 normalizedLocalTime = localTime / pAnimation->DurationInSeconds();
-
-		// Convert into ticks
-		const float64 ticksPerSeconds = pAnimation->TicksPerSecond;
-		float64 time = localTime * ticksPerSeconds;
+		float64 normalizedLocalTime = localTime / pAnimation->DurationInSeconds();
 		if (animation.PlaybackSpeed < 0.0)
 		{
-			time = pAnimation->DurationInTicks - time;
+			normalizedLocalTime = 1.0 - normalizedLocalTime;
 		}
 
 		// Calculate SQT for each animation to blend between
-		TArray<SQT> mainAnimation = CalculateSQT(*pAnimation, *pSkeleton, time, animation.IsLooping);
+		TArray<SQT> mainAnimation = CalculateSQT(*pAnimation, *pSkeleton, normalizedLocalTime, animation.IsLooping);
 		
 		TArray<SQT> blendAnimation;
 		if (animation.BlendingAnimationGUID != GUID_NONE)
@@ -73,18 +69,39 @@ namespace LambdaEngine
 			Animation* pBlendAnimation = ResourceManager::GetAnimation(animation.BlendingAnimationGUID);
 			VALIDATE(pBlendAnimation);
 
-			blendAnimation = CalculateSQT(*pBlendAnimation, *pSkeleton, time, animation.IsLooping);
+			blendAnimation = CalculateSQT(*pBlendAnimation, *pSkeleton, normalizedLocalTime, animation.IsLooping);
+			VALIDATE(blendAnimation.GetSize() == mainAnimation.GetSize());
+
+			// Calculate local transforms
+			for (uint32 i = 0; i < blendAnimation.GetSize(); i++)
+			{
+				SQT& sqt0 = mainAnimation[i];
+				SQT& sqt1 = blendAnimation[i];
+
+				const float32 factor = 0.75f;
+				glm::vec3 translation	= glm::mix(sqt0.Translation, sqt1.Translation, glm::vec3(factor));
+				glm::vec3 scale			= glm::mix(sqt0.Scale, sqt1.Scale, glm::vec3(factor));
+				glm::quat rotation		= glm::slerp(sqt0.Rotation, sqt1.Rotation, factor);
+				rotation = glm::normalize(rotation);
+
+				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), translation);
+				transform			= transform * glm::toMat4(rotation);
+				transform			= glm::scale(transform, scale);
+				animation.Pose.LocalTransforms[i] = transform;
+			}
 		}
-
-		for (SQT& sqt : mainAnimation)
+		else
 		{
-			glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
-			transform			= transform * glm::toMat4(sqt.Rotation);
-			transform			= glm::scale(transform, sqt.Scale);
+			// Calculate local transforms
+			for (uint32 i = 0; i < mainAnimation.GetSize(); i++)
+			{
+				SQT& sqt = mainAnimation[i];
 
-			// set transform
-			const uint32 boneID = sqt.BoneID;
-			animation.Pose.LocalTransforms[boneID] = transform;
+				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
+				transform			= transform * glm::toMat4(sqt.Rotation);
+				transform			= glm::scale(transform, sqt.Scale);
+				animation.Pose.LocalTransforms[i] = transform;
+			}
 		}
 		
 		// Calculate global transforms
@@ -95,10 +112,12 @@ namespace LambdaEngine
 		}
 	}
 
-	TArray<SQT> AnimationSystem::CalculateSQT(Animation& animation, Skeleton& skeleton, float64 time, bool isLooping)
+	TArray<SQT> AnimationSystem::CalculateSQT(Animation& animation, Skeleton& skeleton, float64 normalizedTime, bool isLooping)
 	{
+		const float64 time = normalizedTime * animation.DurationInTicks;
+
 		TArray<SQT> sqt;
-		sqt.Reserve(skeleton.Joints.GetSize());
+		sqt.Resize(skeleton.Joints.GetSize());
 
 		for (Animation::Channel& channel : animation.Channels)
 		{
@@ -113,7 +132,9 @@ namespace LambdaEngine
 			glm::vec3 position	= SamplePosition(channel,	time, isLooping);
 			glm::quat rotation	= SampleRotation(channel,	time, isLooping);
 			glm::vec3 scale		= SampleScale(channel,		time, isLooping);
-			sqt.EmplaceBack(it->second, position, scale, rotation);
+			
+			const uint32 boneID = it->second;
+			sqt[boneID] = SQT(position, scale, rotation);
 		}
 
 		return sqt;

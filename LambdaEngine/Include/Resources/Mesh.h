@@ -83,15 +83,15 @@ namespace LambdaEngine
 	// Scale, Quaterinion Rotation, Translation
 	struct SQT
 	{
-		inline SQT(uint32 boneID, const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation)
-			: BoneID(boneID)
-			, Translation(translation)
+		SQT() = default;
+
+		inline SQT(const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation)
+			: Translation(translation)
 			, Scale(scale)
 			, Rotation(rotation)
 		{
 		}
 
-		uint32 BoneID;
 		glm::vec3 Translation;
 		glm::vec3 Scale;
 		glm::quat Rotation;

@@ -145,14 +145,14 @@ void SandboxState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID			= animations[0];
-		robotAnimationComp.BlendingAnimationGUID	= running[0];
+		robotAnimationComp.AnimationGUID			= thriller[0];
+		robotAnimationComp.BlendingAnimationGUID	= GUID_NONE;
 		robotAnimationComp.PlaybackSpeed			= 1.0f;
-		robotAnimationComp.IsLooping				= false;
+		robotAnimationComp.IsLooping				= true;
 		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 		robotAnimationComp.Pose.pSkeleton			= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
-		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
+		glm::vec3 position = glm::vec3(0.0f, 1.25f, -2.5f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -163,10 +163,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		
 		position = glm::vec3(0.0f, 1.25f, 0.0f);
-		robotAnimationComp.BlendingAnimationGUID	= GUID_NONE;
-		robotAnimationComp.IsLooping				= true;
-		robotAnimationComp.NumLoops					= 10;
-		robotAnimationComp.PlaybackSpeed			= 2.0f;
+		robotAnimationComp.AnimationGUID = animations[0];
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -176,7 +173,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(-5.0f, 1.25f, 0.0f);
-		robotAnimationComp.NumLoops = INFINITE_LOOPS;
+		robotAnimationComp.AnimationGUID = running[0];
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -187,8 +184,8 @@ void SandboxState::Init()
 
 		position = glm::vec3(5.0f, 1.25f, 0.0f);
 
-		robotAnimationComp.AnimationGUID = thriller[0];
-		robotAnimationComp.PlaybackSpeed *= -1.0f;
+		robotAnimationComp.AnimationGUID			= animations[0];
+		robotAnimationComp.BlendingAnimationGUID	= running[0];
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });

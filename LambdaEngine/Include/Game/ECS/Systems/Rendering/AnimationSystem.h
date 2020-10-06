@@ -31,7 +31,7 @@ namespace LambdaEngine
 
 		void Animate(AnimationComponent& animation);
 
-		TArray<SQT> CalculateSQT(Animation& animation, Skeleton& skeleton, float64 time, bool isLooping);
+		TArray<SQT> CalculateSQT(Animation& animation, Skeleton& skeleton, float64 normalizedTime, bool isLooping);
 		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
 		glm::vec3 SamplePosition(Animation::Channel& channel, float64 time, bool isLooping);
