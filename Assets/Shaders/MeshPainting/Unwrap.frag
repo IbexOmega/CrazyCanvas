@@ -27,10 +27,10 @@ void main()
     vec3 targetPosition = in_TargetPosition;    
     vec3 direction      = normalize(in_TargetDirection); 
     
-    vec3 worldPosToTargetPos = worldPosition-targetPosition;
+    vec3 targetPosToWorldPos = worldPosition-targetPosition;
 
-    float dir = step(0.f, dot(normal, -direction));
-    vec3 projectedPosition = targetPosition + dot(worldPosToTargetPos,direction)*direction*dir;
+    float dir = step(0.f, dot(normal, -direction)); // Checks if looking from infront, else 0
+    vec3 projectedPosition = targetPosition + dot(targetPosToWorldPos,direction)*direction*dir;
     
     //float rand = random(worldPosition);
 
@@ -39,8 +39,8 @@ void main()
     // Calculate uv-coordinates for a square encapsulating the sphere.
     vec3 right = normalize(cross(direction, GLOBAL_UP));
     vec3 up = normalize(cross(right, direction));
-    float u = (dot(-worldPosToTargetPos, right)/BRUSH_SIZE)*0.5f+0.5f;
-    float v = (dot(-worldPosToTargetPos, up)/BRUSH_SIZE)*0.5f+0.5f;
+    float u = (dot(-targetPosToWorldPos, right)/BRUSH_SIZE)*0.5f+0.5f;
+    float v = (dot(-targetPosToWorldPos, up)/BRUSH_SIZE)*0.5f+0.5f;
     vec2 maskUV = vec2(u, v);
 
     // Apply brush mask
@@ -49,6 +49,6 @@ void main()
     if(brushMask.a > 0.01f && length(worldPosition-projectedPosition) <= BRUSH_SIZE)
         out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
     else
-    //   discard;
-        out_UnwrappedTexture = vec4(worldPosition, 1.f);
+        // discard;
+        out_UnwrappedTexture = vec4(maskUV, 0.f, 1.f);
 }

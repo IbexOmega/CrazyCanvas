@@ -6,7 +6,7 @@
 #include "../Defines.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }    u_PerFrameBuffer;
-layout(binding = 0, set = BUFFER_SET_INDEX) uniform TransformBuffer             { mat4 transform; }         u_Transform;
+layout(binding = 1, set = BUFFER_SET_INDEX) uniform TransformBuffer             { mat4 transform; }         u_Transform;
 
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
 

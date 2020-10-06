@@ -153,7 +153,7 @@ void SandboxState::Init()
 		EntityMaskManager::AddExtensionToEntity(m_Entity, MeshPaintComponent::Type(), drawArgExtensionData);
 	}
 
-	/*{
+	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("quad.obj");
 
 		MaterialProperties materialProperties;
@@ -198,7 +198,7 @@ void SandboxState::Init()
 		drawArgExtensionData.ppTextureViews[0]	= ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
 		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
 		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
-	}*/
+	}
 
 	//Scene
 	/*{
