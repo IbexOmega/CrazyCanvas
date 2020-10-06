@@ -14,7 +14,8 @@ namespace LambdaEngine
 
 	ServerSystem::ServerSystem() : 
 		m_NetworkEntities(),
-		m_pServer(nullptr)
+		m_pServer(nullptr),
+		m_SimulationTick(0)
 	{
 		ServerDesc desc = {};
 		desc.Handler				= this;
@@ -55,6 +56,8 @@ namespace LambdaEngine
 
 	void ServerSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
+		m_SimulationTick++;
+
 		const ClientMap& pClients = m_pServer->GetClients();
 		for (auto& pair : pClients)
 		{
@@ -73,6 +76,11 @@ namespace LambdaEngine
 			ClientRemoteSystem* pClientSystem = (ClientRemoteSystem*)pair.second->GetHandler();
 			pClientSystem->TickMainThread(deltaTime);
 		}
+	}
+
+	int32 ServerSystem::GetSimulationTick() const
+	{
+		return m_SimulationTick;
 	}
 
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()

@@ -18,4 +18,12 @@ namespace LambdaEngine
 		physx::PxController* pController;
 		physx::PxControllerFilters Filters;
 	};
+
+	/*
+	* A duplicate of the Local Player used for prediction. Should not be used on other Entities than the Local Player 
+	*/
+	struct CharacterLocalColliderComponent : public CharacterColliderComponent
+	{
+		DECL_COMPONENT(CharacterLocalColliderComponent);
+	};
 }

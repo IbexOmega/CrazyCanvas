@@ -20,9 +20,9 @@ namespace LambdaEngine
 		void FixedTick(Timestamp deltaTime);
 		void Tick(Timestamp deltaTime) override;
 
-		void Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft);
-		void PredictMove(Timestamp deltaTime, int8 deltaForward, int8 deltaLeft, glm::vec3& result);
-		void Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage);
+		//void Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft);
+		void PredictVelocity(Timestamp deltaTime, int8 deltaForward, int8 deltaLeft, glm::vec3& result);
+		//void Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage);
 
 	public:
 		static PlayerMovementSystem& GetInstance() { return s_Instance; }

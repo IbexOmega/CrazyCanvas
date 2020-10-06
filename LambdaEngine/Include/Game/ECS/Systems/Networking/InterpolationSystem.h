@@ -19,6 +19,8 @@ namespace LambdaEngine
 	private:
 		InterpolationSystem();
 
+		void Init();
+
 		void OnPacketPlayerAction(NetworkSegment* pPacket);
 
 		void Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage);

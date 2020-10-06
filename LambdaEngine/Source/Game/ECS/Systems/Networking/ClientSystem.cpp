@@ -3,10 +3,14 @@
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/InterpolationSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Player/ControllableComponent.h"
 #include "Game/ECS/Components/Networking/InterpolationComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Physics/Collision.h"
+
+#include "Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 
@@ -32,6 +36,7 @@ namespace LambdaEngine
 		m_LastNetworkSimulationTick(0),
 		m_Entities(),
 		m_NetworkUID(-1),
+		m_CharacterControllerSystem(),
 		m_pInterpolationSystem(nullptr)
 	{
 
@@ -40,7 +45,6 @@ namespace LambdaEngine
 	ClientSystem::~ClientSystem()
 	{
 		m_pClient->Release();
-		SAFEDELETE(m_pInterpolationSystem);
 	}
 
 	void ClientSystem::Init()
@@ -58,19 +62,13 @@ namespace LambdaEngine
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
 
-		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
-		{
-			{{{R, ControllableComponent::Type()}, {R, PositionComponent::Type()} }, {}, &m_ControllableEntities}
-		};
-		systemReg.Phase = 0;
-
-		RegisterSystem(systemReg);
-
 		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
 		SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&ClientSystem::OnPacketPlayerAction, this, std::placeholders::_1));
 
 		m_pInterpolationSystem = DBG_NEW InterpolationSystem();
+		m_pInterpolationSystem->Init();
+
+		m_CharacterControllerSystem.Init();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
@@ -102,12 +100,47 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
+		using namespace physx;
 		UNREFERENCED_VARIABLE(deltaTime);
 
 		if (m_pClient->IsConnected() && m_Entities.size() > 0)
 		{
+			ECSCore* pECS = ECSCore::GetInstance();
+			Entity entityPlayer = GetEntityPlayer();
+
 			int8 deltaForward	= int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 			int8 deltaLeft		= int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
+
+			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+			auto* pCharacterLocalColliderComponents = pECS->GetComponentArray<CharacterLocalColliderComponent>();
+			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+
+			const PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+			CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
+			CharacterLocalColliderComponent& characterLocalColliderComponent = pCharacterLocalColliderComponents->GetData(entityPlayer);
+			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+
+			const glm::vec3& position = positionComponent.Position;
+			const glm::vec3& velocity = velocityComponent.Velocity;
+
+			const PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+
+			PxController* pController = characterLocalColliderComponent.pController;
+
+			pController->setPosition(characterColliderComponent.pController->getPosition());
+			pController->move(translationPX, 0.0f, (float32)deltaTime.AsSeconds(), characterLocalColliderComponent.Filters);
+
+			const PxExtendedVec3& positionPX = pController->getPosition();
+			const glm::vec3 positionPredicted((float32)positionPX.x, (float32)positionPX.y, (float32)positionPX.z);
+			const glm::vec3 velocityPredicted = positionPredicted - position;
+
+			if (velocityPredicted.x != 0 || velocityPredicted.z != 0)
+			{
+				LOG_INFO("Prediction: [Vel: %f, %f, %f] [VelP: %f, %f, %f] [Pos: %f, %f, %f] [Tick: %d]", velocity.x, velocity.y, velocity.z, velocityPredicted.x, velocityPredicted.y, velocityPredicted.z, positionPredicted.x, positionPredicted.y, positionPredicted.z, m_SimulationTick);
+			}
+
+
 
 			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 			BinaryEncoder encoder(pPacket);
@@ -116,19 +149,12 @@ namespace LambdaEngine
 			encoder.WriteInt8(deltaLeft);
 			m_pClient->SendReliable(pPacket);
 
-			ECSCore* pECS = ECSCore::GetInstance();
-			const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-
-			if (!pPositionComponents)
-				return;
-
-			const PositionComponent& positionComponent = pPositionComponents->GetData(GetEntityPlayer());
-			GameState gameState = {};
-
+			GameState gameState			= {};
 			gameState.SimulationTick	= m_SimulationTick;
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
-			gameState.Position			= positionComponent.Position;
+			gameState.Position			= positionPredicted;
+			gameState.Velocity			= velocity;
 
 			m_FramesToReconcile.PushBack(gameState);
 			m_SimulationTick++;
@@ -201,12 +227,14 @@ namespace LambdaEngine
 		Job addEntityJob;
 		addEntityJob.Components =
 		{
-			{ RW, PositionComponent::Type()		},
-			{ RW, RotationComponent::Type()		},
-			{ RW, ScaleComponent::Type()		},
-			{ RW, MeshComponent::Type()			},
-			{ RW, NetworkComponent::Type()		},
-			{ RW, ControllableComponent::Type() }
+			{ RW, PositionComponent::Type()					},
+			{ RW, RotationComponent::Type()					},
+			{ RW, ScaleComponent::Type()					},
+			{ RW, MeshComponent::Type()						},
+			{ RW, NetworkComponent::Type()					},
+			{ RW, VelocityComponent::Type()					},
+			{ RW, CharacterColliderComponent::Type()		},
+			{ RW, CharacterLocalColliderComponent::Type()	}
 		};
 		addEntityJob.Function = std::bind(&ClientSystem::CreateEntity, this, networkUID, position, color);
 
@@ -221,6 +249,7 @@ namespace LambdaEngine
 		int32 networkUID				= decoder.ReadInt32();
 		serverGameState.SimulationTick	= decoder.ReadInt32();
 		serverGameState.Position		= decoder.ReadVec3();
+		serverGameState.Velocity		= decoder.ReadVec3();
 
 		if (IsLocalClient(networkUID))
 		{
@@ -250,36 +279,62 @@ namespace LambdaEngine
 		materialProperties.Metallic		= 0.0f;
 		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
-		TArray<GUID_Lambda> animations;
+		/*TArray<GUID_Lambda> animations;
 
 		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);*/
 
 		MeshComponent meshComponent;
-		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("sphere.obj");/*ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);*/
 		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 			"Mirror Material" + std::to_string(entity),
-			robotAlbedoGUID,
-			robotNormalGUID,
+			/*robotAlbedoGUID,
+			robotNormalGUID,*/
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		AnimationComponent animationComp;
-		animationComp.AnimationGUID = animations[0];
+		/*AnimationComponent animationComp;
+		animationComp.AnimationGUID = animations[0];*/
+
 
 		pECS->AddComponent<PositionComponent>(entity,	{ true, position });
 		pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() });
 		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(0.01f) });
-		pECS->AddComponent<AnimationComponent>(entity,	animationComp);
+		pECS->AddComponent<VelocityComponent>(entity,	{ true, glm::vec3(0.0f) });
+		//pECS->AddComponent<AnimationComponent>(entity,	animationComp);
 		pECS->AddComponent<MeshComponent>(entity,		meshComponent);
 		pECS->AddComponent<NetworkComponent>(entity,	{ networkUID });
+
+		const CharacterColliderInfo colliderInfo = {
+			.Entity = entity,
+			.Position = pECS->GetComponent<PositionComponent>(entity),
+			.Rotation = pECS->GetComponent<RotationComponent>(entity),
+			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
+			.CollisionMask = FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+		};
+
+		constexpr const float capsuleHeight = 1.8f;
+		constexpr const float capsuleRadius = 0.2f;
+		CharacterColliderComponent characterColliderComponent;
+		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterColliderComponent);
+		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+
 
 		m_Entities.insert({ networkUID, entity });
 
 		if (IsLocalClient(networkUID))
-			pECS->AddComponent<ControllableComponent>(entity,	{ true });
+		{
+			pECS->AddComponent<ControllableComponent>(entity, { true });
+
+
+			CharacterLocalColliderComponent characterLocalColliderComponent;
+			PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterLocalColliderComponent);
+			pECS->AddComponent<CharacterLocalColliderComponent>(entity, characterLocalColliderComponent);
+		}
 		else
 			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });
 	}
@@ -306,25 +361,48 @@ namespace LambdaEngine
 
 		Entity entityPlayer = GetEntityPlayer();
 
-		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+
+		CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
 		PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
 		positionComponent.Position	= gameStateServer.Position;
-		positionComponent.Dirty		= true;
+		velocityComponent.Velocity = gameStateServer.Velocity;
+
+		const glm::vec3& velocity = gameStateServer.Velocity;
+		const glm::vec3& positionPredicted = gameStateServer.Position;
+		LOG_INFO("Response: [Vel: %f, %f, %f] [Pos: %f, %f, %f] [Tick: %d]", velocity.x, velocity.y, velocity.z, positionPredicted.x, positionPredicted.y, positionPredicted.z, gameStateServer.SimulationTick);
+
 
 		//Replay all game states since the game state which resulted in prediction ERROR
+
+		// TODO: Rollback other entities not just the player 
+
+		const Timestamp deltaTime = EngineLoop::GetFixedTimestep();
+		const float32 dt = deltaTime.AsSeconds();
+
 		for (uint32 i = 0; i < count; i++)
 		{
-			PlayerUpdate(entityPlayer, pGameStates[i]);
+			const GameState& gameState = pGameStates[i];
+
+			PlayerMovementSystem::GetInstance().PredictVelocity(deltaTime, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+
+			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, characterColliderComponent, positionComponent, velocityComponent);
+			positionComponent.Position = positionComponent.Position + velocityComponent.Velocity;
+			//PlayerUpdate(entityPlayer, pGameStates[i]);
 		}
 	}
 
 	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
 	{
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
-		{
 			return false;
-		}
+
+		if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
+			return false;
 
 		return true;
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
+#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -85,6 +86,7 @@ namespace LambdaEngine
 		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
 		PacketSubscriberMap m_PacketSubscribers;
 
+		CharacterControllerSystem m_CharacterControllerSystem;
 		InterpolationSystem* m_pInterpolationSystem;
 
 	private:

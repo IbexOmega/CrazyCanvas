@@ -2,6 +2,7 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Player/ControllableComponent.h"
+#include "Game/ECS/Components/Physics/Collision.h"
 
 #include "ECS/ECSCore.h"
 
@@ -27,7 +28,18 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, ControllableComponent::Type()}}, {&transformComponents}, &m_ControllableEntities}
+				{
+					{
+						{RW, ControllableComponent::Type()},
+						{RW, VelocityComponent::Type()},
+						{RW, CharacterColliderComponent::Type()},
+						{RW, CharacterLocalColliderComponent::Type()}
+					},
+					{
+						&transformComponents
+					}, 
+					&m_ControllableEntities
+				}
 			};
 			systemReg.Phase = 0;
 
@@ -45,16 +57,19 @@ namespace LambdaEngine
 		for (Entity entity : m_ControllableEntities)
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pControllableComponents = pECS->GetComponentArray<ControllableComponent>();
+			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
-			if (!pControllableComponents)
+			if (!pVelocityComponents)
 				return;
 
-			ControllableComponent& controllableComponent = pControllableComponents->GetData(entity);
+			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
 
-			controllableComponent.StartPosition = controllableComponent.EndPosition;
+			PredictVelocity(deltaTime, deltaForward, deltaLeft, velocityComponent.Velocity);
+			LOG_MESSAGE("%f, %f, %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
+
+			/*controllableComponent.StartPosition = controllableComponent.EndPosition;
 			PredictMove(deltaTime, deltaForward, deltaLeft, controllableComponent.EndPosition);
-			controllableComponent.StartTimestamp = EngineLoop::GetTimeSinceStart();
+			controllableComponent.StartTimestamp = EngineLoop::GetTimeSinceStart();*/
 		}
 	}
 
@@ -62,7 +77,7 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 
-		ECSCore* pECS = ECSCore::GetInstance();
+		/*ECSCore* pECS = ECSCore::GetInstance();
 		auto* pControllableComponents	= pECS->GetComponentArray<ControllableComponent>();
 		auto* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
 
@@ -82,40 +97,66 @@ namespace LambdaEngine
 			percentage = percentage > 1.0f ? 1.0f : percentage < 0.0f ? 0.0f : percentage;
 
 			Interpolate(controllableComponent.StartPosition, controllableComponent.EndPosition, positionComponent.Position, (float32)percentage);
-		}
+		}*/
 	}
 
-	void PlayerMovementSystem::Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft)
+	/*void PlayerMovementSystem::Move(Entity entity, Timestamp deltaTime, int8 deltaForward, int8 deltaLeft)
 	{
+		using namespace physx;
+
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+		auto* pCharacterLocalColliderComponents = pECS->GetComponentArray<CharacterLocalColliderComponent>();
+		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 		if (!pPositionComponents && !pPositionComponents->HasComponent(entity))
 			return;
 
-		PositionComponent& positionComponent = pPositionComponents->GetData(entity);
+		const PositionComponent& positionComponent = pPositionComponents->GetData(entity);
+		CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entity);
+		CharacterLocalColliderComponent& characterLocalColliderComponent = pCharacterLocalColliderComponents->GetData(entity);
+		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
 
-		PredictMove(deltaTime, deltaForward, deltaLeft, positionComponent.Position);
-	}
+		const glm::vec3& position = positionComponent.Position;
+		glm::vec3& velocity = velocityComponent.Velocity;
 
-	void PlayerMovementSystem::PredictMove(Timestamp deltaTime, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
+		const PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+
+		PxController* pController = characterLocalColliderComponent.pController;
+
+		pController->setPosition(characterColliderComponent.pController->getPosition());
+		pController->move(translationPX, 0.0f, (float32)deltaTime.AsSeconds(), characterLocalColliderComponent.Filters);
+
+		const PxExtendedVec3& newPositionPX = pController->getPosition();
+		velocity = {
+			(float)newPositionPX.x - position.x,
+			(float)newPositionPX.y - position.y,
+			(float)newPositionPX.z - position.z
+		};
+
+
+		//PredictMove(deltaTime, deltaForward, deltaLeft, positionComponent.Position);
+	}*/
+
+	void PlayerMovementSystem::PredictVelocity(Timestamp deltaTime, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
 	{
 		if (deltaForward != 0)
 		{
-			result.z += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaForward);
+			result.z = (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaForward);
 		}
 
 		if (deltaLeft != 0)
 		{
-			result.x += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaLeft);
+			result.x = (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaLeft);
 		}
 	}
 	
-	void PlayerMovementSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage)
+	/*void PlayerMovementSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage)
 	{
 		result.x = (end.x - start.x) * percentage + start.x;
 		result.y = (end.y - start.y) * percentage + start.y;
 		result.z = (end.z - start.z) * percentage + start.z;
-	}
+	}*/
 }

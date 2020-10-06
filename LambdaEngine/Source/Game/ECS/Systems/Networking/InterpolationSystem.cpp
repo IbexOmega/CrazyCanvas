@@ -13,6 +13,16 @@ namespace LambdaEngine
 	InterpolationSystem::InterpolationSystem() :
 		m_InterpolationEntities()
 	{
+		
+	}
+
+	InterpolationSystem::~InterpolationSystem()
+	{
+
+	}
+
+	void InterpolationSystem::Init()
+	{
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
@@ -23,11 +33,6 @@ namespace LambdaEngine
 		RegisterSystem(systemReg);
 
 		ClientSystem::GetInstance().SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&InterpolationSystem::OnPacketPlayerAction, this, std::placeholders::_1));
-	}
-
-	InterpolationSystem::~InterpolationSystem()
-	{
-
 	}
 
 	void InterpolationSystem::Tick(Timestamp deltaTime)
