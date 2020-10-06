@@ -136,9 +136,11 @@ bool LevelManager::Init()
 					levelDesc.SHA256Chunk3);
 			}
 		}
-	}
 
-	fclose(pLevelsFile);
+		SAFEDELETE_ARRAY(pReadBuffer);
+		fclose(pLevelsFile);
+	}
+	
 	return true;
 }
 
