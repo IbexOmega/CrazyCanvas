@@ -146,11 +146,13 @@ namespace LambdaEngine
 	{
 		/*	ComponentSerializationHeader is written to the beginning of the buffer. This is done last, when the size of
 			the serialization is known. */
+	#pragma pack(push, 1)
 		struct ComponentSerializationHeader
 		{
 			uint32 TotalSerializationSize;
 			uint32 TypeHash;
 		};
+	#pragma pack(pop)
 
 		uint8* pHeaderPosition = pBuffer;
 		constexpr const uint32 headerSize = sizeof(ComponentSerializationHeader);

@@ -14,12 +14,14 @@ namespace LambdaEngine
 	class RegularWorker;
 
 	// EntitySerializationHeader is written to the beginning of an entity serialization
+#pragma pack(push, 1)
 	struct EntitySerializationHeader
 	{
 		uint32 TotalSerializationSize;
 		Entity Entity;
 		uint32 ComponentCount;
 	};
+#pragma pack(pop)
 
     class LAMBDA_API ECSCore
     {
