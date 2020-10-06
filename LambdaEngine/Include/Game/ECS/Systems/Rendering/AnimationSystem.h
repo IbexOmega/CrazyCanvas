@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 		FORCEINLINE float64 GetTotalTimeInSeconds() const
 		{
-			return m_HasInitClock ? m_Clock.GetTotalTime().AsSeconds() : 0.0f;
+			return m_HasInitClock ? m_Clock.GetTotalTime().AsSeconds() : 0.0;
 		}
 
 	private:
