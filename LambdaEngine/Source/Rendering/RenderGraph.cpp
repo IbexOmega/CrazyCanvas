@@ -1365,6 +1365,8 @@ namespace LambdaEngine
 				newResource.Texture.TextureType		= pResourceDesc->TextureParams.TextureType;
 				newResource.Texture.IsOfArrayType	= pResourceDesc->TextureParams.IsOfArrayType;
 				newResource.Texture.UnboundedArray	= pResourceDesc->TextureParams.UnboundedArray;
+				newResource.Texture.Format			= pResourceDesc->TextureParams.TextureFormat;
+				newResource.Texture.TextureType		= pResourceDesc->TextureParams.TextureType;
 
 				if (!pResourceDesc->TextureParams.UnboundedArray)
 				{
@@ -1442,8 +1444,6 @@ namespace LambdaEngine
 				if (pResourceDesc->Type == ERenderGraphResourceType::TEXTURE)
 				{
 					newResource.OwnershipType				= newResource.IsBackBuffer ? EResourceOwnershipType::EXTERNAL : EResourceOwnershipType::INTERNAL;
-					newResource.Texture.Format				= pResourceDesc->TextureParams.TextureFormat;
-					newResource.Texture.TextureType			= pResourceDesc->TextureParams.TextureType;
 
 					if (!newResource.IsBackBuffer)
 					{
@@ -1953,13 +1953,6 @@ namespace LambdaEngine
 				//RenderPass Attachments
 				else if (pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 				{
-					if (pResource->OwnershipType != EResourceOwnershipType::INTERNAL && !pResource->IsBackBuffer)
-					{
-						//This may be okay, but we then need to do the check below, where we check that all attachment are of the same size, somewhere else because we don't know the size att RenderGraph Init Time.
-						LOG_ERROR("[RenderGraph]: Resource \"%s\" is bound as RenderPass Attachment but is not INTERNAL", pResourceStateDesc->ResourceName.c_str());
-						return false;
-					}
-
 					// Check if attachment is unchanged after renderstage
 					auto prevBinding = pResourceStateDesc->AttachmentSynchronizations.PrevBindingType;
 					auto nextBinding = pResourceStateDesc->AttachmentSynchronizations.NextBindingType;
@@ -1968,84 +1961,88 @@ namespace LambdaEngine
 						attachmentStateUnchanged = false;
 					}
 
-					float32						xDimVariable;
-					float32						yDimVariable;
-					ERenderGraphDimensionType	xDimType;
-					ERenderGraphDimensionType	yDimType;
-
-					if (!pResource->IsBackBuffer)
+					if (pResource->OwnershipType != EResourceOwnershipType::EXTERNAL)
 					{
-						auto resourceUpdateDescIt = m_InternalResourceUpdateDescriptions.find(pResourceStateDesc->ResourceName);
 
-						if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
+						float32						xDimVariable;
+						float32						yDimVariable;
+						ERenderGraphDimensionType	xDimType;
+						ERenderGraphDimensionType	yDimType;
+
+						if (!pResource->IsBackBuffer)
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
-							return false;
+							auto resourceUpdateDescIt = m_InternalResourceUpdateDescriptions.find(pResourceStateDesc->ResourceName);
+
+							if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
+								return false;
+							}
+
+							xDimVariable = resourceUpdateDescIt->second.TextureUpdate.XDimVariable;
+							yDimVariable = resourceUpdateDescIt->second.TextureUpdate.YDimVariable;
+							xDimType = resourceUpdateDescIt->second.TextureUpdate.XDimType;
+							yDimType = resourceUpdateDescIt->second.TextureUpdate.YDimType;
+						}
+						else
+						{
+							xDimVariable = 1.0f;
+							yDimVariable = 1.0f;
+							xDimType = ERenderGraphDimensionType::RELATIVE;
+							yDimType = ERenderGraphDimensionType::RELATIVE;
 						}
 
-						xDimVariable	= resourceUpdateDescIt->second.TextureUpdate.XDimVariable;
-						yDimVariable	= resourceUpdateDescIt->second.TextureUpdate.YDimVariable;
-						xDimType		= resourceUpdateDescIt->second.TextureUpdate.XDimType;
-						yDimType		= resourceUpdateDescIt->second.TextureUpdate.YDimType;
-					}
-					else
-					{
-						xDimVariable	= 1.0f;
-						yDimVariable	= 1.0f;
-						xDimType		= ERenderGraphDimensionType::RELATIVE;
-						yDimType		= ERenderGraphDimensionType::RELATIVE;
-					}
-
-					//Just use the width to check if its ever been set
-					if (renderPassAttachmentsWidth == 0)
-					{
-						renderPassAttachmentsWidth			= xDimVariable;
-						renderPassAttachmentsHeight			= yDimVariable;
-						renderPassAttachmentDimensionTypeX	= xDimType;
-						renderPassAttachmentDimensionTypeY	= yDimType;
-					}
-					else
-					{
-						bool success = true;
-
-						if (renderPassAttachmentsWidth != xDimVariable)
+						//Just use the width to check if its ever been set
+						if (renderPassAttachmentsWidth == 0)
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d",
-								pResourceStateDesc->ResourceName.c_str(),
-								xDimVariable,
-								renderPassAttachmentsWidth);
-							success = false;
+							renderPassAttachmentsWidth = xDimVariable;
+							renderPassAttachmentsHeight = yDimVariable;
+							renderPassAttachmentDimensionTypeX = xDimType;
+							renderPassAttachmentDimensionTypeY = yDimType;
 						}
-
-						if (renderPassAttachmentsHeight != yDimVariable)
+						else
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
-								pResourceStateDesc->ResourceName.c_str(),
-								yDimVariable,
-								renderPassAttachmentsHeight);
-							success = false;
-						}
+							bool success = true;
 
-						if (renderPassAttachmentDimensionTypeX != xDimType)
-						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
-								pResourceStateDesc->ResourceName.c_str(),
-								RenderGraphDimensionTypeToString(xDimType),
-								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
-							success = false;
-						}
+							if (renderPassAttachmentsWidth != xDimVariable)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d",
+									pResourceStateDesc->ResourceName.c_str(),
+									xDimVariable,
+									renderPassAttachmentsWidth);
+								success = false;
+							}
 
-						if (renderPassAttachmentDimensionTypeY != yDimType)
-						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
-								pResourceStateDesc->ResourceName.c_str(),
-								RenderGraphDimensionTypeToString(yDimType),
-								RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
-							success = false;
-						}
+							if (renderPassAttachmentsHeight != yDimVariable)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
+									pResourceStateDesc->ResourceName.c_str(),
+									yDimVariable,
+									renderPassAttachmentsHeight);
+								success = false;
+							}
 
-						if (!success)
-							return false;
+							if (renderPassAttachmentDimensionTypeX != xDimType)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+									pResourceStateDesc->ResourceName.c_str(),
+									RenderGraphDimensionTypeToString(xDimType),
+									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
+								success = false;
+							}
+
+							if (renderPassAttachmentDimensionTypeY != yDimType)
+							{
+								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+									pResourceStateDesc->ResourceName.c_str(),
+									RenderGraphDimensionTypeToString(yDimType),
+									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
+								success = false;
+							}
+
+							if (!success)
+								return false;
+						}
 					}
 
 					pResource->Texture.UsedAsRenderTarget = true;
@@ -3012,7 +3009,7 @@ namespace LambdaEngine
 			pResource->Texture.Textures.Resize(actualSubResourceCount);
 			pResource->Texture.PerImageTextureViews.Resize(actualSubResourceCount);
 			pResource->Texture.Samplers.Resize(actualSubResourceCount);
-			pResource->Texture.PerSubImageTextureViews.Resize(actualSubResourceCount * (pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews != nullptr ? pDesc->ExternalTextureUpdate.PerSubImageTextureViewsCount : 1));
+			pResource->Texture.PerSubImageTextureViews.Resize(actualSubResourceCount * (pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews != nullptr ? pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount : 1));
 
 			//We must clear all non-template barriers
 			for (uint32 b = 0; b < pResource->BarriersPerSynchronizationStage.GetSize(); b++)
@@ -3109,9 +3106,9 @@ namespace LambdaEngine
 
 				if (pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews != nullptr)
 				{
-					uint32 subImageBaseIndex = sr * pDesc->ExternalTextureUpdate.PerSubImageTextureViewsCount;
+					uint32 subImageBaseIndex = sr * pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount;
 
-					for (uint32 si = 0; si < pDesc->ExternalTextureUpdate.PerSubImageTextureViewsCount; si++)
+					for (uint32 si = 0; si < pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount; si++)
 					{
 						pResource->Texture.PerSubImageTextureViews[subImageBaseIndex + si] = pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews[subImageBaseIndex + si];
 					}

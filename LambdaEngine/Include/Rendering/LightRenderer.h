@@ -5,6 +5,13 @@
 
 namespace LambdaEngine
 {
+	struct PushConstant
+	{
+		byte*	pData = nullptr;
+		uint32	DataSize = 0;
+		uint32	Offset = 0;
+		uint32	MaxDataSize = 0;
+	};
 
 	class LightRenderer : public ICustomRenderer
 	{
@@ -15,7 +22,7 @@ namespace LambdaEngine
 		LightRenderer();
 		~LightRenderer();
 
-		bool init(uint32 backBufferCount);
+		bool init();
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
@@ -48,7 +55,7 @@ namespace LambdaEngine
 		bool CreateDescriptorSets();
 		bool CreateShaders();
 		bool CreateCommandLists();
-		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
+		bool CreateRenderPass(RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 
 		DescriptorSet* GetDrawArgsDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
@@ -79,6 +86,8 @@ namespace LambdaEngine
 		uint32									m_BackBufferCount = 0;
 		uint32									m_PointLightCount = 0;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
+
+		PushConstant							m_PushConstant;
 	private:
 		static LightRenderer* s_pInstance;
 

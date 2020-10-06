@@ -283,6 +283,7 @@ namespace LambdaEngine
 		void BuildBLASs(CommandList* pCommandList);
 		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
+		void UpdatePointLightTextureResource();
 
 		void UpdateRenderGraph();
 
@@ -311,6 +312,9 @@ namespace LambdaEngine
 		THashTable<Entity, uint32>	m_EntityToPointLight;
 		THashTable<uint32, Entity>	m_PointLightToEntity;
 		TArray<PointLight>			m_PointLights;
+		TArray<Texture*>			m_CubeTextures;
+		TArray<TextureView*>		m_CubeTextureViews;
+		TArray<TextureView*>		m_CubeSubImageTextureViews;
 
 		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
@@ -373,8 +377,6 @@ namespace LambdaEngine
 		// Custom Renderers
 		LineRenderer*				m_pLineRenderer		= nullptr;
 		LightRenderer*				m_pLightRenderer	= nullptr;
-
-
 
 	private:
 		static RenderSystem		s_Instance;

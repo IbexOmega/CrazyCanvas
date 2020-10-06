@@ -27,6 +27,8 @@ namespace LambdaEngine
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
 
+		SAFEDELETE(m_PushConstant.pData);
+
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
 			SAFERELEASE(m_ppGraphicCommandLists[b]);
@@ -37,9 +39,9 @@ namespace LambdaEngine
 		SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
 	}
 
-	bool LightRenderer::init(uint32 backBufferCount)
+	bool LightRenderer::init()
 	{
-		m_BackBufferCount = backBufferCount;
+		m_BackBufferCount = BACK_BUFFER_COUNT;
 
 		m_UsingMeshShader = EngineConfig::GetBoolProperty("MeshShadersEnabled");
 
@@ -61,13 +63,19 @@ namespace LambdaEngine
 			return false;
 		}
 
+		// Allocate pushConstant data
+		m_PushConstant.pData = DBG_NEW byte[DRAW_ITERATION_PUSH_CONSTANTS_SIZE];
+		m_PushConstant.DataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
+		m_PushConstant.Offset = 0U;
+		m_PushConstant.MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
+
 		return true;
 	}
 
 	bool LightRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
-		VALIDATE(pPreInitDesc->pDepthStencilAttachmentDesc == nullptr);
+		VALIDATE(pPreInitDesc->pDepthStencilAttachmentDesc != nullptr);
 
 		if (!CreateCommandLists())
 		{
@@ -75,7 +83,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderPass(&pPreInitDesc->pDepthStencilAttachmentDesc[0]))
+		if (!CreateRenderPass(pPreInitDesc->pDepthStencilAttachmentDesc))
 		{
 			LOG_ERROR("[LightRenderer]: Failed to create RenderPass");
 			return false;
@@ -174,9 +182,9 @@ namespace LambdaEngine
 
 					if (m_DrawArgsDescriptorSets[d] != nullptr)
 					{
-						Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pIndexBuffer };
+						Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
 						uint64 pOffsets[2]	 = { 0, 0 };
-						uint64 pSizes[2]	 = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pIndexBuffer->GetDesc().SizeInBytes };
+						uint64 pSizes[2]	 = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
 
 						m_DrawArgsDescriptorSets[d]->WriteBufferDescriptors(
 							ppBuffers,
@@ -214,7 +222,7 @@ namespace LambdaEngine
 		constexpr uint32 CUBE_FACE_COUNT = 6U;
 		for (uint32 c = 0; c < m_PointLightCount; c++)
 		{
-			for (uint32 f = 0; f < m_PointLFaceViews.GetSize(); f++)
+			for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
 			{
 				auto pFaceView = m_PointLFaceViews[c * CUBE_FACE_COUNT + f];
 
@@ -235,72 +243,47 @@ namespace LambdaEngine
 				scissorRect.Height = height;
 				pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
+
+				ClearColorDesc clearColorDesc = {};
+				clearColorDesc.Depth = 1.0;
+				clearColorDesc.Stencil = 0U;
+
 				BeginRenderPassDesc beginRenderPassDesc = {};
 				beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
 				beginRenderPassDesc.ppRenderTargets = nullptr;
-				beginRenderPassDesc.RenderTargetCount = 1;
+				beginRenderPassDesc.RenderTargetCount = 0;
 				beginRenderPassDesc.pDepthStencil = pFaceView.Get();
 				beginRenderPassDesc.Width = width;
 				beginRenderPassDesc.Height = height;
 				beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-				beginRenderPassDesc.pClearColors = nullptr;
-				beginRenderPassDesc.ClearColorCount = 0;
+				beginRenderPassDesc.pClearColors = &clearColorDesc;
+				beginRenderPassDesc.ClearColorCount = 1;
 				beginRenderPassDesc.Offset.x = 0;
 				beginRenderPassDesc.Offset.y = 0;
+				
+				uint32 iteration = c * CUBE_FACE_COUNT + f;
+
+				memcpy(m_PushConstant.pData, &iteration, sizeof(uint32));
+				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, m_PushConstant.pData, m_PushConstant.DataSize, m_PushConstant.Offset);
 
 				pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-				if (!m_UsingMeshShader)
+			
+				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
-					for (uint32 d = 0; d < m_DrawCount; d++)
-					{
-						const DrawArg& drawArg = m_pDrawArgs[d];
-						pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+					const DrawArg& drawArg = m_pDrawArgs[d];
+					pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-						auto* descriptorSet = m_DrawArgsDescriptorSets[d].Get();
-						VALIDATE(descriptorSet != nullptr);
+					auto* descriptorSet = m_DrawArgsDescriptorSets[d].Get();
+					VALIDATE(descriptorSet != nullptr);
 
-						pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 1);
+					pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 1);
 
-						pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
-					}
+					pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 				}
-				/*else
-				{
-					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
-					{
-						const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
-						if (ppDrawArgsDescriptorSetsPerFrame)
-						{
-							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
-						}
-
-						const uint32 maxTaskCount = m_Features.MaxDrawMeshTasksCount;
-						const uint32 totalMeshletCount = drawArg.MeshletCount * drawArg.InstanceCount;
-						if (totalMeshletCount > maxTaskCount)
-						{
-							int32 meshletsLeft = static_cast<int32>(totalMeshletCount);
-							int32 meshletOffset = 0;
-							while (meshletsLeft > 0)
-							{
-								int32 meshletCount = std::min<int32>(maxTaskCount, meshletsLeft);
-								pGraphicsCommandList->DispatchMesh(meshletCount, meshletOffset);
-
-								meshletOffset += meshletCount;
-								meshletsLeft -= meshletCount;
-							}
-						}
-						else
-						{
-							pGraphicsCommandList->DispatchMesh(totalMeshletCount, 0);
-						}
-					}
-				}*/
+				
+				pCommandList->EndRenderPass();
 			}
-
-
-			pCommandList->EndRenderPass();
-
 		}
 		pCommandList->End();
 
@@ -333,9 +316,15 @@ namespace LambdaEngine
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
 		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
 
+		ConstantRangeDesc constantRangeDesc = {};
+		constantRangeDesc.OffsetInBytes = 0U;
+		constantRangeDesc.SizeInBytes = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
+		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Light Renderer Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
 
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
@@ -411,18 +400,18 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool LightRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)
+	bool LightRenderer::CreateRenderPass(RenderPassAttachmentDesc* pDepthStencilAttachmentDesc)
 	{
 		RenderPassAttachmentDesc depthAttachmentDesc = {};
 		depthAttachmentDesc.Format = EFormat::FORMAT_D24_UNORM_S8_UINT;
 		depthAttachmentDesc.SampleCount = 1;
-		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
+		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_CLEAR;
 		depthAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
 		depthAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		depthAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
-		depthAttachmentDesc.InitialState = pBackBufferAttachmentDesc->InitialState;
-		depthAttachmentDesc.FinalState = pBackBufferAttachmentDesc->FinalState;
-
+		depthAttachmentDesc.InitialState = pDepthStencilAttachmentDesc->InitialState;
+		depthAttachmentDesc.FinalState = pDepthStencilAttachmentDesc->FinalState;
+		
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = {};
 		subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
@@ -460,7 +449,7 @@ namespace LambdaEngine
 		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_BACK;
 
 		pipelineStateDesc.DepthStencilState = {};
-		pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
+		pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
 		pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
