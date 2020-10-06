@@ -1153,7 +1153,7 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[pDefaultMaskMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_MASK_MAP;
 			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
-			s_Textures[GUID_TEXTURE_DEFAULT_MASK_MAP]		= pDefaultNormalMap;
+			s_Textures[GUID_TEXTURE_DEFAULT_MASK_MAP]		= pDefaultMaskMap;
 
 			TextureViewDesc defaultColorMapViewDesc = {};
 			defaultColorMapViewDesc.DebugName		= "Default Color Map View";
