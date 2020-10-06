@@ -743,7 +743,7 @@ namespace LambdaEngine
 								ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 
 								// Only create a desciptor set for the extensions if it is needed.
-								if (drawArg.HasExtensions)
+								if (drawArg.HasExtensions && ppNewDrawArgsExtensionsPerFrame)
 								{
 									DescriptorSet* pExtensionsWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Extensions Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex, m_pDescriptorHeap);
 
