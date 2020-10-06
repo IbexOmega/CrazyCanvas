@@ -26,6 +26,22 @@
 #define SAFEDELETE_ALL(map)     for (auto it = map.begin(); it != map.end(); it++) { SAFEDELETE(it->second); }	map.clear()
 #define SAFERELEASE_ALL(map)    for (auto it = map.begin(); it != map.end(); it++) { SAFERELEASE(it->second); }	map.clear()
 
+#define REGISTER_TEXTURE_IN_MATERIAL(GUID, FALLBACK_GUID, pTexture, pTextureView) \
+if (albedoMap != GUID_NONE) \
+{ \
+	pTexture		= s_Textures[GUID]; \
+	pTextureView	= s_TextureViews[GUID]; \
+	s_TextureMaterialRefs[albedoMap]++; \
+} \
+else \
+{ \
+	pTexture		= s_Textures[FALLBACK_GUID]; \
+	pTextureView	= s_TextureViews[FALLBACK_GUID]; \
+} \
+
+#define REGISTER_COLOR_MAP_IN_MATERIAL(GUID, pTexture, pTextureView) REGISTER_TEXTURE_IN_MATERIAL(GUID, GUID_TEXTURE_DEFAULT_COLOR_MAP, pTexture, pTextureView)
+#define REGISTER_NORMAL_MAP_IN_MATERIAL(GUID, pTexture, pTextureView) REGISTER_TEXTURE_IN_MATERIAL(GUID, GUID_TEXTURE_DEFAULT_NORMAL_MAP, pTexture, pTextureView)
+
 namespace LambdaEngine
 {
 	GUID_Lambda ResourceManager::s_NextFreeGUID = SMALLEST_UNRESERVED_GUID;
@@ -417,65 +433,11 @@ namespace LambdaEngine
 		TextureView* pMetallicMapView;
 		TextureView* pRoughnessMapView;
 
-		if (albedoMap != GUID_NONE)
-		{
-			pAlbedoMap		= s_Textures[albedoMap];
-			pAlbedoMapView	= s_TextureViews[albedoMap];
-			s_TextureMaterialRefs[albedoMap]++;
-		}
-		else
-		{
-			pAlbedoMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pAlbedoMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		}
-
-		if (normalMap != GUID_NONE)
-		{
-			pNormalMap		= s_Textures[normalMap];
-			pNormalMapView	= s_TextureViews[normalMap];
-			s_TextureMaterialRefs[normalMap]++;
-		}
-		else
-		{
-			pNormalMap		= s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-			pNormalMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP];
-		}
-
-		if (ambientOcclusionMap != GUID_NONE)
-		{
-			pAmbientOcclusionMap		= s_Textures[ambientOcclusionMap];
-			pAmbientOcclusionMapView	= s_TextureViews[ambientOcclusionMap];
-			s_TextureMaterialRefs[ambientOcclusionMap]++;
-		}
-		else
-		{
-			pAmbientOcclusionMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pAmbientOcclusionMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		}
-
-		if (metallicMap != GUID_NONE)
-		{
-			pMetallicMap		= s_Textures[metallicMap];
-			pMetallicMapView	= s_TextureViews[metallicMap];
-			s_TextureMaterialRefs[metallicMap]++;
-		}
-		else
-		{
-			pMetallicMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pMetallicMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		}
-
-		if (roughnessMap != GUID_NONE)
-		{
-			pRoughnessMap		= s_Textures[roughnessMap];
-			pRoughnessMapView	= s_TextureViews[roughnessMap];
-			s_TextureMaterialRefs[roughnessMap]++;
-		}
-		else
-		{
-			pRoughnessMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			pRoughnessMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-		}
+		REGISTER_COLOR_MAP_IN_MATERIAL(albedoMap, pAlbedoMap, pAlbedoMapView);
+		REGISTER_NORMAL_MAP_IN_MATERIAL(normalMap, pNormalMap, pNormalMapView);
+		REGISTER_COLOR_MAP_IN_MATERIAL(ambientOcclusionMap, pAmbientOcclusionMap, pAmbientOcclusionMapView);
+		REGISTER_COLOR_MAP_IN_MATERIAL(metallicMap, pMetallicMap, pMetallicMapView);
+		REGISTER_COLOR_MAP_IN_MATERIAL(roughnessMap, pRoughnessMap, pRoughnessMapView);
 
 		(*ppMappedMaterial)->Properties = properties;
 
@@ -904,29 +866,54 @@ namespace LambdaEngine
 				//Clean Mesh Name -> GUID
 				auto meshNameToGUIDIt = s_MeshNamesToGUIDs.find(meshGUIDToNameIt->second);
 				if (meshNameToGUIDIt != s_MeshNamesToGUIDs.end()) s_MeshNamesToGUIDs.erase(meshNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToGUIDs");
+					return false;
+				}
 
 				auto animationsIt = s_MeshNamesToAnimationGUIDs.find(meshGUIDToNameIt->second);
 
+				//Clean Mesh GUID -> Name
+				s_MeshGUIDsToNames.erase(meshGUIDToNameIt);
+
 				if (animationsIt != s_MeshNamesToAnimationGUIDs.end())
 				{
+					bool result = true;
+
 					for (GUID_Lambda animationGUID : animationsIt->second)
 					{
-						UnloadAnimation(animationGUID);
+						result = result && UnloadAnimation(animationGUID);
 					}
 
 					//Clean Mesh Name -> Animation GUID
 					s_MeshNamesToAnimationGUIDs.erase(animationsIt);
+
+					if (!result)
+					{
+						LOG_ERROR("[ResourceManager]: UnloadMesh Failed at unloading some Animation");
+						return false;
+					}
 				}
-
-				//Clean Mesh GUID -> Name
-				s_MeshGUIDsToNames.erase(meshGUIDToNameIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToAnimationGUIDs");
+					return false;
+				}
 			}
-
-			return true;
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshGUIDsToNames");
+				return false;
+			}
+		}
+		else
+		{
+			LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_Meshes");
+			return false;
 		}
 
-		LOG_ERROR("[ResourceManager]: Failed to unload Mesh: %d", guid);
-		return false;
+		return true;
 	}
 
 	bool ResourceManager::UnloadMaterial(GUID_Lambda guid)
@@ -943,9 +930,19 @@ namespace LambdaEngine
 				//Clean Material Name -> GUID
 				auto materialNameToGUIDIt = s_MaterialNamesToGUIDs.find(materialGUIDToNameIt->second);
 				if (materialNameToGUIDIt != s_MaterialNamesToGUIDs.end()) s_MaterialNamesToGUIDs.erase(materialNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialNamesToGUIDs");
+					return false;
+				}
 
 				//Clean Material GUID -> Name
 				s_MaterialGUIDsToNames.erase(materialGUIDToNameIt);
+			}
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialGUIDsToNames");
+				return false;
 			}
 
 			auto materialLoadConfigIt = s_MaterialLoadConfigurations.find(guid);
@@ -961,12 +958,19 @@ namespace LambdaEngine
 				//Clean Material Load Config
 				s_MaterialLoadConfigurations.erase(materialLoadConfigIt);
 			}
-
-			return true;
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialLoadConfigurations");
+				return false;
+			}
+		}
+		else
+		{
+			LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_Materials");
+			return false;
 		}
 
-		LOG_ERROR("[ResourceManager]: Failed to unload Material: %d", guid);
-		return false;
+		return true;
 	}
 
 	bool ResourceManager::UnloadAnimation(GUID_Lambda guid)
@@ -983,16 +987,28 @@ namespace LambdaEngine
 				//Clean Animation Name -> GUID
 				auto animationNameToGUIDIt = s_AnimationNamesToGUIDs.find(animationGUIDToNameIt->second);
 				if (animationNameToGUIDIt != s_AnimationNamesToGUIDs.end()) s_AnimationNamesToGUIDs.erase(animationNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationNamesToGUIDs");
+					return false;
+				}
 
 				//Clean Animation GUID -> Name
 				s_AnimationGUIDsToNames.erase(animationGUIDToNameIt);
 			}
-
-			return true;
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationGUIDsToNames");
+				return false;
+			}
+		}
+		else
+		{
+			LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_Animations");
+			return false;
 		}
 
-		LOG_ERROR("[ResourceManager]: Failed to unload Animation: %d", guid);
-		return false;
+		return true;
 	}
 
 	bool ResourceManager::UnloadTexture(GUID_Lambda guid)
@@ -1009,16 +1025,28 @@ namespace LambdaEngine
 				//Clean Texture Name -> GUID
 				auto textureNameToGUIDIt = s_TextureNamesToGUIDs.find(textureGUIDToNameIt->second);
 				if (textureNameToGUIDIt != s_TextureNamesToGUIDs.end()) s_TextureNamesToGUIDs.erase(textureNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureNamesToGUIDs");
+					return false;
+				}
 
 				//Clean Texture GUID -> Name
 				s_TextureGUIDsToNames.erase(textureGUIDToNameIt);
 			}
-
-			return true;
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureGUIDsToNames");
+				return false;
+			}
+		}
+		else
+		{
+			LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_Textures");
+			return false;
 		}
 
-		LOG_ERROR("[ResourceManager]: Failed to unload Animation: %d", guid);
-		return false;
+		return true;
 	}
 
 	bool ResourceManager::UnloadShader(GUID_Lambda guid)
@@ -1035,16 +1063,28 @@ namespace LambdaEngine
 				//Clean Shader Name -> GUID
 				auto shaderNameToGUIDIt = s_ShaderNamesToGUIDs.find(shaderGUIDToNameIt->second);
 				if (shaderNameToGUIDIt != s_ShaderNamesToGUIDs.end()) s_ShaderNamesToGUIDs.erase(shaderNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderNamesToGUIDs");
+					return false;
+				}
 
 				//Clean Shader GUID -> Name
 				s_ShaderGUIDsToNames.erase(shaderGUIDToNameIt);
 			}
-
-			return true;
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderGUIDsToNames");
+				return false;
+			}
+		}
+		else
+		{
+			LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_Shaders");
+			return false;
 		}
 
-		LOG_ERROR("[ResourceManager]: Failed to unload Shader: %d", guid);
-		return false;
+		return true;
 	}
 
 	bool ResourceManager::UnloadSoundEffect(GUID_Lambda guid)
@@ -1061,16 +1101,28 @@ namespace LambdaEngine
 				//Clean Sound Effect Name -> GUID
 				auto soundEffectNameToGUIDIt = s_SoundEffectNamesToGUIDs.find(soundEffectGUIDToNameIt->second);
 				if (soundEffectNameToGUIDIt != s_SoundEffectNamesToGUIDs.end()) s_SoundEffectNamesToGUIDs.erase(soundEffectNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectNamesToGUIDs");
+					return false;
+				}
 
 				//Clean Sound Effect GUID -> Name
 				s_SoundEffectGUIDsToNames.erase(soundEffectGUIDToNameIt);
 			}
-
-			return true;
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectGUIDsToNames");
+				return false;
+			}
+		}
+		else
+		{
+			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects");
+			return false;
 		}
 
-		LOG_ERROR("[ResourceManager]: Failed to unload Shader: %d", guid);
-		return false;
+		return true;
 	}
 
 	bool ResourceManager::DecrementTextureMaterialRef(GUID_Lambda guid)
@@ -1087,12 +1139,14 @@ namespace LambdaEngine
 
 				return UnloadTexture(guid);
 			}
-
-			return true;
+		}
+		else
+		{
+			LOG_ERROR("[ResourceManager]: Failed to DecrementTextureMaterialRef: %d", guid);
+			return false;
 		}
 
-		LOG_ERROR("[ResourceManager]: Failed to DecrementTextureMaterialRef: %d", guid);
-		return false;
+		return true;
 	}
 
 	GUID_Lambda ResourceManager::GetMeshGUID(const String& name)
