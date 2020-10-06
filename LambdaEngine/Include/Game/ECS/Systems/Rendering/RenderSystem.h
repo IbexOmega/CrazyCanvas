@@ -146,6 +146,7 @@ namespace LambdaEngine
 
 			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
 			bool	HasExtensions			= false;
+			uint32	DrawArgsMask			= 0x0;
 
 			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];

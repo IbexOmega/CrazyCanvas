@@ -3470,7 +3470,7 @@ namespace LambdaEngine
 						
 
 						// For draw arg extensions
-						if (drawArgMask > 1)
+						if (pDrawArg->HasExtensions)
 						{
 							uint32 numExtensionGroups = pDrawArg->InstanceCount;
 							for (uint32 i = 0; i < numExtensionGroups; i++)
@@ -3583,7 +3583,7 @@ namespace LambdaEngine
 				}
 
 				// Draw arg extensions
-				if (drawArgMask > 1)
+				if (pDrawArg->HasExtensions)
 				{
 					PipelineTextureBarrierDesc initialMaskTexturesTransitionBarrier = drawArgsArgsIt->second.InitialTextureTransitionBarrierTemplate;
 					uint32 numExtensionGroups = pDrawArg->InstanceCount;
@@ -3672,12 +3672,7 @@ namespace LambdaEngine
 						pCommandList->Begin(nullptr);
 					}
 
-					uint32 remaining = intialTextureBarriers.GetSize() % MAX_IMAGE_BARRIERS;
-					uint32 i = 0;
-					for (; i < floor(intialTextureBarriers.GetSize() / MAX_IMAGE_BARRIERS); i++)
-						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], MAX_IMAGE_BARRIERS);
-					if (remaining != 0)
-						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], remaining);
+					PipelineTextureBarriers(pCommandList, intialTextureBarriers, srcPipelineStage, dstPipelineStage);
 				}
 				else if (intialTextureBarriers[0].QueueAfter == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
@@ -3689,12 +3684,7 @@ namespace LambdaEngine
 						pCommandList->Begin(nullptr);
 					}
 
-					uint32 remaining = intialTextureBarriers.GetSize() % MAX_IMAGE_BARRIERS;
-					uint32 i = 0;
-					for (; i < floor(intialTextureBarriers.GetSize() / MAX_IMAGE_BARRIERS); i++)
-						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], MAX_IMAGE_BARRIERS);
-					if (remaining != 0)
-						pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &intialTextureBarriers[i * MAX_IMAGE_BARRIERS], remaining);
+					PipelineTextureBarriers(pCommandList, intialTextureBarriers, srcPipelineStage, dstPipelineStage);
 				}
 			}
 
@@ -3939,13 +3929,13 @@ namespace LambdaEngine
 
 			if (sameQueueDrawTextureBarriers.GetSize() > 0)
 			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueDrawTextureBarriers.GetData(), sameQueueDrawTextureBarriers.GetSize());
+				PipelineTextureBarriers(pFirstExecutionCommandList, sameQueueDrawTextureBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage);
 			}
 
 			if (otherQueueDrawTextureBarriers.GetSize() > 0)
 			{
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawTextureBarriers.GetData(), otherQueueDrawTextureBarriers.GetSize());
-				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawTextureBarriers.GetData(), otherQueueDrawTextureBarriers.GetSize());
+				PipelineTextureBarriers(pFirstExecutionCommandList, otherQueueDrawTextureBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
+				PipelineTextureBarriers(pSecondExecutionCommandList, otherQueueDrawTextureBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList; // Can I do this like normal textures?
 			}
 		}
@@ -3957,13 +3947,13 @@ namespace LambdaEngine
 
 			if (sameQueueDrawBufferBarriers.GetSize() > 0)
 			{
-				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueDrawBufferBarriers.GetData(), sameQueueDrawBufferBarriers.GetSize());
+				PipelineBufferBarriers(pFirstExecutionCommandList, sameQueueDrawBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage);
 			}
 
 			if (otherQueueDrawBufferBarriers.GetSize() > 0)
 			{
-				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawBufferBarriers.GetData(), otherQueueDrawBufferBarriers.GetSize());
-				pSecondExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueDrawBufferBarriers.GetData(), otherQueueDrawBufferBarriers.GetSize());
+				PipelineBufferBarriers(pFirstExecutionCommandList, otherQueueDrawBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
+				PipelineBufferBarriers(pSecondExecutionCommandList, otherQueueDrawBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
 			}
 		}
@@ -3975,13 +3965,13 @@ namespace LambdaEngine
 
 			if (sameQueueBufferBarriers.GetSize() > 0)
 			{
-				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueBufferBarriers.GetData(), sameQueueBufferBarriers.GetSize());
+				PipelineBufferBarriers(pFirstExecutionCommandList, sameQueueBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage);
 			}
 
 			if (otherQueueBufferBarriers.GetSize() > 0)
 			{
-				pFirstExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueBufferBarriers.GetData(), otherQueueBufferBarriers.GetSize());
-				pSecondExecutionCommandList->PipelineBufferBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueBufferBarriers.GetData(), otherQueueBufferBarriers.GetSize());
+				PipelineBufferBarriers(pFirstExecutionCommandList, otherQueueBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
+				PipelineBufferBarriers(pSecondExecutionCommandList, otherQueueBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
 			}
 		}
@@ -4292,5 +4282,25 @@ namespace LambdaEngine
 
 			(*ppExecutionStage) = pComputeCommandList;
 		}
+	}
+
+	void RenderGraph::PipelineTextureBarriers(CommandList* pCommandList, const TArray<PipelineTextureBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage)
+	{
+		uint32 remaining = textureBarriers.GetSize() % MAX_IMAGE_BARRIERS;
+		uint32 i = 0;
+		for (; i < floor(textureBarriers.GetSize() / MAX_IMAGE_BARRIERS); i++)
+			pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &textureBarriers[i * MAX_IMAGE_BARRIERS], MAX_IMAGE_BARRIERS);
+		if (remaining != 0)
+			pCommandList->PipelineTextureBarriers(srcPipelineStage, dstPipelineStage, &textureBarriers[i * MAX_IMAGE_BARRIERS], remaining);
+	}
+
+	void RenderGraph::PipelineBufferBarriers(CommandList* pCommandList, const TArray<PipelineBufferBarrierDesc>& bufferBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage)
+	{
+		uint32 remaining = bufferBarriers.GetSize() % MAX_BUFFER_BARRIERS;
+		uint32 i = 0;
+		for (; i < floor(bufferBarriers.GetSize() / MAX_BUFFER_BARRIERS); i++)
+			pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &bufferBarriers[i * MAX_BUFFER_BARRIERS], MAX_BUFFER_BARRIERS);
+		if (remaining != 0)
+			pCommandList->PipelineBufferBarriers(srcPipelineStage, dstPipelineStage, &bufferBarriers[i * MAX_BUFFER_BARRIERS], remaining);
 	}
 }

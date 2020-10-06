@@ -968,6 +968,8 @@ namespace LambdaEngine
 
 		// Fetch the entity mask and extract their individual component masks and add them to the set if the mask exist.
 		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
+		MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
+		meshEntry.DrawArgsMask = drawArgMask;
 		//TArray<uint32> componentMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(drawArgMask);
 		//componentMasks.PushBack(1);
 		//for (uint32 mask : componentMasks)
@@ -1210,37 +1212,43 @@ namespace LambdaEngine
 
 		for (auto& meshEntryPair : m_MeshAndInstancesMap)
 		{
-			// Todo: Check Key (or whatever we end up using)
-			DrawArg drawArg = { };
-
-			// Assume animated
-			if (meshEntryPair.second.pAnimatedVertexBuffer)
+			if ((meshEntryPair.second.DrawArgsMask & mask) > 0)
 			{
-				drawArg.pVertexBuffer = meshEntryPair.second.pAnimatedVertexBuffer;
-			}
-			else
-			{
-				drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
-			}
+				DrawArg drawArg = { };
 
-			drawArg.pIndexBuffer	= meshEntryPair.second.pIndexBuffer;
-			drawArg.IndexCount		= meshEntryPair.second.IndexCount;
-			
-			drawArg.pInstanceBuffer	= meshEntryPair.second.pRasterInstanceBuffer;
-			drawArg.InstanceCount	= meshEntryPair.second.RasterInstances.GetSize();
-			
-			drawArg.pMeshletBuffer			= meshEntryPair.second.pMeshlets;
-			drawArg.MeshletCount			= meshEntryPair.second.MeshletCount;
-			drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
-			drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
+				// Assume animated
+				if (meshEntryPair.second.pAnimatedVertexBuffer)
+				{
+					drawArg.pVertexBuffer = meshEntryPair.second.pAnimatedVertexBuffer;
+				}
+				else
+				{
+					drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
+				}
 
-			if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
-			{
-				drawArg.ppExtensionGroups		= meshEntryPair.second.ExtensionGroups.GetData();
-				drawArg.HasExtensions			= meshEntryPair.second.HasExtensions;
+				drawArg.pIndexBuffer = meshEntryPair.second.pIndexBuffer;
+				drawArg.IndexCount = meshEntryPair.second.IndexCount;
+
+				drawArg.pInstanceBuffer = meshEntryPair.second.pRasterInstanceBuffer;
+				drawArg.InstanceCount = meshEntryPair.second.RasterInstances.GetSize();
+
+				drawArg.pMeshletBuffer = meshEntryPair.second.pMeshlets;
+				drawArg.MeshletCount = meshEntryPair.second.MeshletCount;
+				drawArg.pUniqueIndicesBuffer = meshEntryPair.second.pUniqueIndices;
+				drawArg.pPrimitiveIndices = meshEntryPair.second.pPrimitiveIndices;
+
+				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
+				{
+					drawArg.ppExtensionGroups = meshEntryPair.second.ExtensionGroups.GetData();
+					drawArg.HasExtensions = meshEntryPair.second.HasExtensions;
+				}
+				else
+				{
+					drawArg.HasExtensions = false;
+				}
+
+				drawArgs.PushBack(drawArg);
 			}
-
-			drawArgs.PushBack(drawArg);
 		}
 	}
 

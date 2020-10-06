@@ -242,7 +242,7 @@ namespace LambdaEngine
 			{
 				DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
 
-				// TODO: We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
+				// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
 				uint32 numExtensions = extensionGroup->ExtensionCount;
 				for (uint32 e = 0; e < numExtensions; e++)
 				{
@@ -479,7 +479,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName = "Paint Mask Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount = 64;
+		descriptorHeapDesc.DescriptorSetCount = 227;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
