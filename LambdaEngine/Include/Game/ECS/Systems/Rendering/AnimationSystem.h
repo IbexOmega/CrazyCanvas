@@ -5,6 +5,8 @@
 
 #include "Resources/Mesh.h"
 
+#include "Time/API/Clock.h"
+
 namespace LambdaEngine
 {
 	struct MeshComponent;
@@ -15,23 +17,29 @@ namespace LambdaEngine
 	public:
 		bool Init();
 
-		void OnEntityAdded(Entity entity);
-		void OnEntityRemoved(Entity entity);
-
 		// Inherited from system
 		virtual void Tick(Timestamp deltaTime) override final;
+
+		FORCEINLINE float64 GetTotalTimeInSeconds() const
+		{
+			return m_HasInitClock ? m_Clock.GetTotalTime().AsSeconds() : 0.0;
+		}
 
 	private:
 		AnimationSystem();
 		~AnimationSystem();
 
-		void Animate(Timestamp deltaTime, AnimationComponent& animation, MeshComponent& mesh);
-		glm::mat4 ApplyParent(Bone& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
+		void Animate(AnimationComponent& animation);
+		glm::mat4 ApplyParent(const Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
+
+		void OnEntityAdded(Entity entity);
 
 	public:
 		static AnimationSystem& GetInstance();
 
 	private:
-		IDVector m_AnimationEntities;
+		bool		m_HasInitClock = false;
+		Clock		m_Clock;
+		IDVector	m_AnimationEntities;
 	};
 }
