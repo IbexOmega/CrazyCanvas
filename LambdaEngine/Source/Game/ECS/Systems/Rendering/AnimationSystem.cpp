@@ -107,7 +107,7 @@ namespace LambdaEngine
 		// Calculate global transforms
 		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
 		{
-			Joint& joint = pSkeleton->Joints[i];
+			const Joint& joint = pSkeleton->Joints[i];
 			animation.Pose.GlobalTransforms[i] = pSkeleton->InverseGlobalTransform * ApplyParent(joint, *pSkeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
 		}
 	}
@@ -140,10 +140,10 @@ namespace LambdaEngine
 		return sqt;
 	}
 
-	glm::mat4 AnimationSystem::ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices)
+	glm::mat4 AnimationSystem::ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices)
 	{
-		int32 parentID	= bone.ParentBoneIndex;
-		int32 myID		= skeleton.JointMap[bone.Name];
+		int32 parentID	= joint.ParentBoneIndex;
+		int32 myID		= skeleton.JointMap[joint.Name];
 		if (parentID == INVALID_JOINT_ID)
 		{
 			return matrices[myID];
@@ -286,7 +286,7 @@ namespace LambdaEngine
 		Timestamp deltatime = m_Clock.GetDeltaTime();
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
-			AnimationComponent&	animation = pAnimationComponents->GetData(entity);
+			AnimationComponent& animation = pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
 				Animate(animation);

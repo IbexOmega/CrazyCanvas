@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 		FORCEINLINE float64 GetTotalTimeInSeconds() const
 		{
-			return m_HasInitClock ? m_Clock.GetTotalTime().AsSeconds() : 0.0f;
+			return m_HasInitClock ? m_Clock.GetTotalTime().AsSeconds() : 0.0;
 		}
 
 	private:
@@ -32,7 +32,7 @@ namespace LambdaEngine
 		void Animate(AnimationComponent& animation);
 
 		TArray<SQT> CalculateSQT(Animation& animation, Skeleton& skeleton, float64 normalizedTime, bool isLooping);
-		glm::mat4 ApplyParent(Joint& bone, Skeleton& skeleton, TArray<glm::mat4>& matrices);
+		glm::mat4 ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
 		glm::vec3 SamplePosition(Animation::Channel& channel, float64 time, bool isLooping);
 		glm::vec3 SampleScale(Animation::Channel& channel, float64 time, bool isLooping);
