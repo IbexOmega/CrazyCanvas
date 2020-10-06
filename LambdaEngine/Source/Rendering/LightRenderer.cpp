@@ -275,7 +275,6 @@ namespace LambdaEngine
 					pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 					auto* descriptorSet = m_DrawArgsDescriptorSets[d].Get();
-					VALIDATE(descriptorSet != nullptr);
 
 					pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 1);
 

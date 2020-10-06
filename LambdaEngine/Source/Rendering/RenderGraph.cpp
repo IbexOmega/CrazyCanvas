@@ -789,8 +789,10 @@ namespace LambdaEngine
 
 					if (pRenderStage->UsesCustomRenderer)
 					{
-						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
+						if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset || pRenderStage->Sleeping) && pRenderStage->pDisabledRenderPass == nullptr)
+							continue;
 
+						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 						pCustomRenderer->Render(
 							uint32(m_ModFrameIndex),
 							m_BackBufferIndex,
@@ -808,23 +810,22 @@ namespace LambdaEngine
 						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
 						}
-
-						if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::EVERY)
-						{
-							pRenderStage->FrameCounter++;
-
-							if (pRenderStage->FrameCounter > pRenderStage->FrameDelay)
-							{
-								pRenderStage->FrameCounter = 0;
-							}
-						}
-						else
-						{
-							//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
-							pRenderStage->FrameCounter = 1;
-						}
-
 						currentExecutionStage++;
+					}
+
+					if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::EVERY)
+					{
+						pRenderStage->FrameCounter++;
+
+						if (pRenderStage->FrameCounter > pRenderStage->FrameDelay)
+						{
+							pRenderStage->FrameCounter = 0;
+						}
+					}
+					else
+					{
+						//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
+						pRenderStage->FrameCounter = 1;
 					}
 				}
 				else if (pPipelineStage->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)

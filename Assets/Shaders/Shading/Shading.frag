@@ -1,6 +1,7 @@
 #version 460
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
@@ -26,8 +27,7 @@ layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVeloci
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
 
 // Todo implement octahedron sampling
-const uint MAX_POINT_SHADOWMAPS = 8;
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[MAX_POINT_SHADOWMAPS];
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
 
 layout(location = 0) out vec4 out_Color;
 

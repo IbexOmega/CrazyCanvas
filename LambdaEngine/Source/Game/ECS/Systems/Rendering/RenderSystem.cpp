@@ -1476,7 +1476,7 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Material Properties Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
+				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
@@ -1811,12 +1811,12 @@ namespace LambdaEngine
 		TArray<Sampler*> nearestSamplers(pointLightCount, Sampler::GetNearestSampler());
 		ResourceUpdateDesc resourceUpdateDesc = {};
 		resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
-		resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_CubeTextures.GetData();
-		resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_CubeTextureViews.GetData();
-		resourceUpdateDesc.ExternalTextureUpdate.Count = m_CubeTextureViews.GetSize();
-		resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews = m_CubeSubImageTextureViews.GetData();
-		resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount = CUBE_FACE_COUNT;
-		resourceUpdateDesc.ExternalTextureUpdate.ppSamplers = nearestSamplers.GetData();
+		resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
+		resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
+		resourceUpdateDesc.ExternalTextureUpdate.Count								= m_CubeTextureViews.GetSize();
+		resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
+		resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
+		resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
 
 		m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 	}
