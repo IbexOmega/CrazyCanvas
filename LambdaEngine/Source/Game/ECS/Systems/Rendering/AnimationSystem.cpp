@@ -184,8 +184,8 @@ namespace LambdaEngine
 	{
 		if (m_HasInitClock)
 		{
-		        ECSCore* pECSCore = ECSCore::GetInstance();
-		        AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
+			ECSCore* pECSCore = ECSCore::GetInstance();
+			AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
 			animationComp.StartTime = GetTotalTimeInSeconds();
 		}
 	}
