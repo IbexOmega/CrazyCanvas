@@ -1049,7 +1049,7 @@ namespace LambdaEngine
 		pSkeleton->Joints.Resize(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			Joint& bone = pSkeleton->Joints[boneIndex];
+			Joint& joint = pSkeleton->Joints[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			bone.Name = pBoneAI->mName.C_Str();
