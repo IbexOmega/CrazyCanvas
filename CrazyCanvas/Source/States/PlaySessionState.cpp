@@ -36,7 +36,7 @@ void PlaySessionState::Init()
 			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity e = CreateFPSCameraEntity(cameraDesc);
+		CreateFPSCameraEntity(cameraDesc);
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();

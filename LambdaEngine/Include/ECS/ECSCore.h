@@ -13,6 +13,14 @@ namespace LambdaEngine
 	class EntitySubscriber;
 	class RegularWorker;
 
+	// EntitySerializationHeader is written to the beginning of an entity serialization
+	struct EntitySerializationHeader
+	{
+		uint32 TotalSerializationSize;
+		Entity Entity;
+		uint32 ComponentCount;
+	};
+
     class LAMBDA_API ECSCore
     {
     public:
@@ -67,6 +75,28 @@ namespace LambdaEngine
 		void DeleteTopRegistryPage();
 		void ReinstateTopRegistryPage();
 
+		/**
+		* Serializes the entity into the following format:
+		* Total Serialization Size			- 4 bytes (includes the size of the header)
+		* Entity ID							- 4 bytes
+		* Component Count					- 4 bytes
+		* [
+		*	Component Serialization Size	- 4 bytes (includes the size of the header)
+		* 	Component Type Hash				- 4 bytes
+		*	Component Data					- Component Serialization Size
+		* ]
+		*
+		* \return The required of the serialization.
+		* If said return value is greater than the provided bufferSize, the serialization failed.
+		* Providing a zero bufferSize and nullptr pBuffer is a slow but valid strategy for getting the required buffer size.
+		*/
+		uint32 SerializeEntity(Entity entity, uint8* pBuffer, uint32 bufferSize) const;
+
+		// See the above documentation for the layout of a component serialization
+		template <typename Comp>
+		uint32 SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const;
+		uint32 SerializeComponent(Entity entity, const ComponentType* pComponentType, uint8* pBuffer, uint32 bufferSize) const;
+
         Timestamp GetDeltaTime() const { return m_DeltaTime; }
 
 	public:
@@ -95,7 +125,7 @@ namespace LambdaEngine
 
 		TArray<Entity> m_EntitiesToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToDelete;
-		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToRegister;
+		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToPublish;
 
 		Timestamp m_DeltaTime;
 
@@ -115,7 +145,8 @@ namespace LambdaEngine
 		/*	Create component immediately, but hold off on registering and publishing it until the end of the frame.
 			This is to prevent concurrency issues. Publishing a component means pushing entity IDs to IDVectors,
 			and there is no guarentee that no one is simultaneously reading from these IDVectors. */
-		m_ComponentsToRegister.PushBack({entity, Comp::Type()});
+		m_EntityRegistry.RegisterComponentType(entity, Comp::Type());
+		m_ComponentsToPublish.PushBack({entity, Comp::Type()});
 		return m_ComponentStorage.AddComponent<Comp>(entity, component);
 	}
 
@@ -148,5 +179,11 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_LockRemoveComponent);
 		m_ComponentsToDelete.PushBack({entity, Comp::Type()});
+	}
+
+	template<typename Comp>
+	inline uint32 ECSCore::SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const
+	{
+		return m_ComponentStorage.SerializeComponent<Comp>(component, pBuffer, bufferSize);
 	}
 }
