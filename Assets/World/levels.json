@@ -1,0 +1,38 @@
+{
+    "levels": [
+        {
+            "name": "Test Level 0",
+            "modules": [
+                {
+                    "filename": "Prototype.dae",
+                    "translation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Test Level 1",
+            "modules": [
+                {
+                    "filename": "Prototype.dae",
+                    "translation": {
+                        "x": 1.0,
+                        "y": 45.0,
+                        "z": 0.0
+                    }
+                },
+                {
+                    "filename": "Prototype.dae",
+                    "translation": {
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    }
+                }
+            ]
+        }
+    ] 
+}
