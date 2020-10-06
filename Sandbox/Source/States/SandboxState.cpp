@@ -76,7 +76,7 @@ void SandboxState::Init()
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const CameraDesc cameraDesc =
 		{
-			.Position	= { 0.0f, 20.0f, -2.0f },
+			.Position	= { 0.0f, 2.0f, -2.0f },
 			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
 			.Width		= (float32)window->GetWidth(),
 			.Height		= (float32)window->GetHeight(),
