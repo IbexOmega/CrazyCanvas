@@ -163,7 +163,7 @@ namespace LambdaEngine
 		// Calculate global transforms
 		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
 		{
-			Joint& joint = pSkeleton->Joints[i];
+			const Joint& joint = pSkeleton->Joints[i];
 			animation.Pose.GlobalTransforms[i] = pSkeleton->InverseGlobalTransform * ApplyParent(joint, *pSkeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
 		}
 	}
