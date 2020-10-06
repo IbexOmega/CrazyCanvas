@@ -118,15 +118,33 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result)
+	bool ResourceManager::LoadSceneFromFile(
+		const SceneLoadDesc* pSceneLoadDesc,
+		TArray<MeshComponent>& meshComponents,
+		TArray<LoadedDirectionalLight>& directionalLights,
+		TArray<LoadedPointLight>& pointLights,
+		TArray<SpecialObject>& specialObjects,
+		const String& directory)
 	{
+		VALIDATE(pSceneLoadDesc != nullptr);
+
 		TArray<MeshComponent>	sceneLocalMeshComponents;
 		TArray<Mesh*>			meshes;
 		TArray<Animation*>		animations;
 		TArray<LoadedMaterial*>	materials;
 		TArray<LoadedTexture*>	textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalMeshComponents, meshes, animations, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(
+			directory + pSceneLoadDesc->Filename,
+			pSceneLoadDesc->SpecialObjectDescriptions,
+			sceneLocalMeshComponents,
+			directionalLights,
+			pointLights,
+			specialObjects,
+			meshes, 
+			animations, 
+			materials, 
+			textures))
 		{
 			return false;
 		}
@@ -136,7 +154,7 @@ namespace LambdaEngine
 
 		TArray<TextureView*> textureViewsToDelete;
 
-		result = sceneLocalMeshComponents;
+		meshComponents = sceneLocalMeshComponents;
 		for (uint32 i = 0; i < textures.GetSize(); i++)
 		{
 			LoadedTexture* pLoadedTexture = textures[i];
@@ -206,7 +224,7 @@ namespace LambdaEngine
 			{
 				if (sceneLocalMeshComponents[g].MeshGUID == i)
 				{
-					result[g].MeshGUID = guid;
+					meshComponents[g].MeshGUID = guid;
 				}
 			}
 		}
@@ -256,7 +274,7 @@ namespace LambdaEngine
 			{
 				if (sceneLocalMeshComponents[g].MaterialGUID == i)
 				{
-					result[g].MaterialGUID = guid;
+					meshComponents[g].MaterialGUID = guid;
 				}
 			}
 
@@ -268,13 +286,13 @@ namespace LambdaEngine
 		{
 			if (sceneLocalMeshComponents[g].MeshGUID >= meshes.GetSize())
 			{
-				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, filename.c_str());
+				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, pSceneLoadDesc->Filename.c_str());
 			}
 
 			if (sceneLocalMeshComponents[g].MaterialGUID >= materials.GetSize())
 			{
-				result[g].MaterialGUID = GUID_MATERIAL_DEFAULT;
-				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());
+				meshComponents[g].MaterialGUID = GUID_MATERIAL_DEFAULT;
+				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, pSceneLoadDesc->Filename.c_str());
 			}
 		}
 

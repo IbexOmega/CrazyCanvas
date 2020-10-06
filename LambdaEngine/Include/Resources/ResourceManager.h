@@ -1,8 +1,6 @@
 #pragma once
 #include "ResourceLoader.h"
 
-#include "Game/ECS/Components/Rendering/MeshComponent.h"
-
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
@@ -35,6 +33,12 @@ namespace LambdaEngine
 	constexpr const char* SHADER_DIR		= "../Assets/Shaders/";
 	constexpr const char* SOUND_DIR			= "../Assets/Sounds/";
 
+	struct SceneLoadDesc
+	{
+		String	Filename = "";
+		TArray<SpecialObjectDesc> SpecialObjectDescriptions = {};
+	};
+
 	class LAMBDA_API ResourceManager
 	{
 		struct MaterialLoadDesc
@@ -63,11 +67,20 @@ namespace LambdaEngine
 
 		/*
 		* Load a Scene from file, (experimental, only tested with Sponza Scene)
-		*	filename	- The name of the .obj file
-		*	result		- A vector where all loaded MeshComponent(s) will be stored
+		*	pSceneLoadDesc		- A load desc, containing the filename and the definition of special objects
+		*	meshComponents		- A vector where all loaded MeshComponent(s) will be stored
+		*	directionalLights	- A vector where all loaded LoadedDirectionalLight(s) will be stored
+		*	pointLights			- A vector where all loaded LoadedPointLight(s) will be stored
+		*	specialObjects		- A vector where all loaded SpecialObject(s) will be stored according to the definition given in SceneLoadDesc::SpecialObjectDescriptions
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result);
+		static bool LoadSceneFromFile(
+			const SceneLoadDesc* pSceneLoadDesc,
+			TArray<MeshComponent>& meshComponents,
+			TArray<LoadedDirectionalLight>& directionalLights,
+			TArray<LoadedPointLight>& pointLights,
+			TArray<SpecialObject>& specialObjects,
+			const String& directory = SCENE_DIR);
 
 		/*
 		* Load a mesh from file

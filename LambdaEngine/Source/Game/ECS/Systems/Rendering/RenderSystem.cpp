@@ -69,6 +69,7 @@ namespace LambdaEngine
 				{
 					{
 						{ R, DirectionalLightComponent::Type() }, 
+						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					}, 
 					&m_DirectionalLightEntities,	
@@ -418,10 +419,10 @@ namespace LambdaEngine
 					dirLight.ColorIntensity,
 					position.Position,
 					rotation.Quaternion,
-					dirLight.frustumWidth,
-					dirLight.frustumHeight,
-					dirLight.frustumZNear,
-					dirLight.frustumZFar
+					dirLight.FrustumWidth,
+					dirLight.FrustumHeight,
+					dirLight.FrustumZNear,
+					dirLight.FrustumZFar
 				);
 			}
 		}
@@ -625,10 +626,10 @@ namespace LambdaEngine
 				dirLight.ColorIntensity,
 				position.Position,
 				rotation.Quaternion,
-				dirLight.frustumWidth,
-				dirLight.frustumHeight,
-				dirLight.frustumZNear,
-				dirLight.frustumZFar
+				dirLight.FrustumWidth,
+				dirLight.FrustumHeight,
+				dirLight.FrustumZNear,
+				dirLight.FrustumZFar
 			);
 
 			m_DirectionalExist = true;

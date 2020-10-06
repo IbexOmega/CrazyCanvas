@@ -1,23 +1,25 @@
 #include "World/LevelManager.h"
+#include "World/LevelObjectCreator.h"
 
 #include "Resources/ResourceLoader.h"
 
 #include "Log/Log.h"
-
-#include "Utilities/SHA256.h"
 
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/filereadstream.h>
 
-LambdaEngine::TArray<LambdaEngine::String> LevelManager::s_LevelNames;
-LambdaEngine::TArray<LevelManager::LevelDesc> LevelManager::s_LevelDescriptions;
-
-bool LevelManager::Init()
+bool LevelManager::Init(bool clientSide)
 {
 	using namespace LambdaEngine;
 	using namespace rapidjson;
+
+	if (!LevelObjectCreator::Init(clientSide))
+	{
+		LOG_ERROR("[LevelManager]: Failed to initialize LevelObjectCreator");
+		return false;
+	}
 
 	FILE* pLevelsFile = fopen("../Assets/World/levels.json", "r");
 
@@ -119,21 +121,18 @@ bool LevelManager::Init()
 					}
 				}
 
-				String hash = SHA256::Hash(byteRepresentation);
-				memcpy(levelDesc.SHA256, hash.data(), hash.size());
+				levelDesc.Hash			= SHA256::Hash(byteRepresentation);
 
 				s_LevelNames[l]			= levelDesc.Name;
 				s_LevelDescriptions[l]	= levelDesc;
 
 				byteRepresentation.clear();
 
-				D_LOG_INFO("\n[LevelManager]: Level Loaded:\nName: %s\nNum Modules: %d\nSHA256: %d%d%d%d\n",
+				D_LOG_INFO("\n[LevelManager]: Level Loaded:\nName: %s\nNum Modules: %d\nSHA256: %x%x\n",
 					levelDesc.Name.c_str(),
 					levelDesc.LevelModules.GetSize(),
-					levelDesc.SHA256Chunk0,
-					levelDesc.SHA256Chunk1,
-					levelDesc.SHA256Chunk2,
-					levelDesc.SHA256Chunk3);
+					levelDesc.Hash.SHA256Chunk0,
+					levelDesc.Hash.SHA256Chunk1);
 			}
 		}
 
@@ -144,15 +143,90 @@ bool LevelManager::Init()
 	return true;
 }
 
-const LambdaEngine::TArray<LambdaEngine::String>& LevelManager::GetLevelNames()
+bool LevelManager::Release()
 {
-	return s_LevelNames;
+	for (auto modulesToDeleteIt = s_LoadedModules.begin(); modulesToDeleteIt != s_LoadedModules.end(); modulesToDeleteIt++)
+	{
+		SAFEDELETE(modulesToDeleteIt->second);
+	}
+	s_LoadedModules.clear();
+
+	return true;
 }
 
-void LevelManager::LoadLevel(const LambdaEngine::String& levelName)
+bool LevelManager::LoadLevel(const LambdaEngine::SHA256Hash& levelHash)
 {
+	for (uint32 l = 0; l < s_LevelHashes.GetSize(); l++)
+	{
+		if (levelHash == s_LevelHashes[l])
+		{
+			return LoadLevel(l);
+		}
+	}
+
+	LOG_ERROR("[LevelManager]: Can't find level with Hash: %x%x", levelHash.SHA256Chunk0, levelHash.SHA256Chunk1);
+	return false;
 }
 
-void LevelManager::LoadLevel(uint32 index)
+bool LevelManager::LoadLevel(const LambdaEngine::String& levelName)
 {
+	for (uint32 l = 0; l < s_LevelNames.GetSize(); l++)
+	{
+		if (levelName == s_LevelNames[l])
+		{
+			return LoadLevel(l);
+		}
+	}
+
+	LOG_ERROR("[LevelManager]: Can't find level with Name: %s", levelName.c_str());
+	return false;
+}
+
+bool LevelManager::LoadLevel(uint32 index)
+{
+	using namespace LambdaEngine;
+
+	if (index < s_LevelDescriptions.GetSize())
+	{
+		const LevelDesc& levelDesc = s_LevelDescriptions[index];
+
+		//Create copy of loaded modules so that we can reuse similar ones
+		THashTable<String, LevelModule*> loadedModules = s_LoadedModules;
+		s_LoadedModules.clear();
+
+		for (const ModuleDesc& moduleDesc : levelDesc.LevelModules)
+		{
+			auto moduleIt = loadedModules.find(moduleDesc.Filename);
+
+			if (moduleIt != loadedModules.end())
+			{
+				moduleIt->second->RecreateEntities(moduleDesc.Translation);
+				s_LoadedModules[moduleIt->first] = moduleIt->second;
+				loadedModules.erase(moduleIt);
+			}
+			else
+			{
+				LevelModule* pModule = DBG_NEW LevelModule();
+
+				if (!pModule->Init(moduleDesc.Filename))
+				{
+					LOG_ERROR("[LevelManager]: Failed to initialize Level Module");
+					return false;
+				}
+
+				pModule->RecreateEntities(moduleDesc.Translation);
+				s_LoadedModules[moduleDesc.Filename] = pModule;
+			}
+		}
+
+		for (auto modulesToDeleteIt = loadedModules.begin(); modulesToDeleteIt != loadedModules.end(); modulesToDeleteIt++)
+		{
+			SAFEDELETE(modulesToDeleteIt->second);
+		}
+
+		return true;
+	}
+
+	LOG_ERROR("[LevelManager]: Level with index %d is out of bounds", index);
+	return false;
 }
