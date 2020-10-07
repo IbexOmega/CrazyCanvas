@@ -12,6 +12,7 @@
 #include "States/BenchmarkState.h"
 #include "States/PlaySessionState.h"
 #include "States/SandboxState.h"
+#include "States/LobbyState.h"
 
 
 
@@ -123,8 +124,8 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 
 	//SetRenderStagesSleeping();
 
-	/*State* pLobbyState = DBG_NEW LobbyState();
-	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);*/
+	State* pLobbyState = DBG_NEW LobbyState();
+	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void MainMenuGUI::OnButtonSettingsClick(BaseComponent* pSender, const RoutedEventArgs& args)
