@@ -27,7 +27,7 @@ namespace LambdaEngine
 		void WriteFloat64(float64 value);
 		void WriteBool(bool value);
 		void WriteString(const std::string& value);
-		void WriteBuffer(const uint8* buffer, uint16 size);
+		void WriteBuffer(const uint8* pBuffer, uint16 size);
 
 		void WriteVec2(const glm::vec2& value);
 		void WriteVec3(const glm::vec3& value);

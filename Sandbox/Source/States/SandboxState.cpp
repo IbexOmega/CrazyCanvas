@@ -71,18 +71,12 @@ void SandboxState::Init()
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	// Create Systems
-	TrackSystem::GetInstance().Init();
-	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
-	ECSCore* pECS = ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const CameraDesc cameraDesc = 
+		const CameraDesc cameraDesc =
 		{
-			.Position	= { 0.0f, 20.0f, -2.0f },
+			.Position	= { 0.0f, 2.0f, 5.0f },
 			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
 			.Width		= (float32)window->GetWidth(),
 			.Height		= (float32)window->GetHeight(),
@@ -92,17 +86,22 @@ void SandboxState::Init()
 		Entity e = CreateFPSCameraEntity(cameraDesc);
 	}
 
+	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
 	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
 		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
 
-		const glm::vec3 position(0.0f, 0.0f, 0.0f);
-		const glm::vec3 scale(1.0f);
+		glm::vec3 position(0.0f, 0.0f, 0.0f);
+		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
+		glm::vec3 scale(1.0f);
+
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = 
+			const StaticCollisionInfo collisionCreateInfo =
 			{
 				.Entity			= entity,
 				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -114,7 +113,6 @@ void SandboxState::Init()
 			};
 
 			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-			m_Entities.PushBack(entity);
 		}
 	}
 
@@ -126,9 +124,9 @@ void SandboxState::Init()
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		MaterialProperties materialProperties;
-		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness	= 1.0f;
-		materialProperties.Metallic		= 1.0f;
+		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness = 1.0f;
+		materialProperties.Metallic = 1.0f;
 
 		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
@@ -140,14 +138,17 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
-		robotMeshComp.MaterialGUID	= robotMaterialGUID;
+		robotMeshComp.MeshGUID = robotGUID;
+		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID = animations[0];
-		robotAnimationComp.PlaybackSpeed = 2.0f;
+		robotAnimationComp.AnimationGUID	= animations[0];
+		robotAnimationComp.PlaybackSpeed	= 1.0f;
+		robotAnimationComp.IsLooping		= false;
+		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
-		glm::vec3 position(0.0f, 1.25f, 0.0f);
+		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -156,11 +157,43 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		
+
+		position = glm::vec3(0.0f, 1.25f, 0.0f);
+		robotAnimationComp.IsLooping	= true;
+		robotAnimationComp.NumLoops		= 10;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(-5.0f, 1.25f, 0.0f);
+		robotAnimationComp.NumLoops = INFINITE_LOOPS;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(5.0f, 1.25f, 0.0f);
+
+		robotAnimationComp.PlaybackSpeed *= -1.0f;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc = 
+		const SoundInstance3DDesc desc =
 		{
 			.pName			= "RobotSoundInstance",
 			.pSoundEffect	= ResourceManager::GetSoundEffect(soundGUID),
@@ -168,10 +201,9 @@ void SandboxState::Init()
 			.Position		= position,
 			.Volume			= 0.03f
 		};
-		
+
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
-		m_Entities.PushBack(entity);
 	}
 
 	//Sphere Grid
@@ -181,6 +213,7 @@ void SandboxState::Init()
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
+
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
 				float32 metallic = x / float32(gridRadius - 1);
@@ -190,7 +223,7 @@ void SandboxState::Init()
 				materialProperties.Roughness	= roughness;
 				materialProperties.Metallic		= metallic;
 
-				MeshComponent sphereMeshComp = { };
+				MeshComponent sphereMeshComp = {};
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
 				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
 					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
@@ -205,7 +238,6 @@ void SandboxState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				m_Entities.PushBack(entity);
 				const StaticCollisionInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -217,42 +249,30 @@ void SandboxState::Init()
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
-
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
-				transform *= glm::toMat4(glm::identity<glm::quat>());
-				transform = glm::scale(transform, scale);
 			}
 		}
 
-		//// Directional Light
-		{
-			/*m_DirLight = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { {0.f, 0.f, 0.f}, true });
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(glm::normalize(-g_DefaultRight - g_DefaultUp), g_DefaultUp), true });
-			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight,
-				DirectionalLightComponent{
-					.ColorIntensity = {1.0f, 1.0f, 1.0f, 15.0f},
-					.frustumWidth = 20.0f,
-					.frustumHeight = 20.0f,
-					.frustumZNear = -40.0f,
-					.frustumZFar = 10.0f,
-				}
-			);*/
-		}
+		// Directional Light
+		//{
+		//	Entity dirLight = ECSCore::GetInstance()->CreateEntity();
+		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, { { 0.0f, 0.0f, 0.0f} });
+		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
+		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
+		//}
 
 		// Add PointLights
 		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 100.0f}, .FarPlane = 25.0f},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{-1.0f, 5.0f, 1.0f},
+				{4.0f, 2.0f, -3.0f},
 				{-4.0f, 2.0f, -3.0f},
 				{0.0f, 2.0f, 3.0f},
 			};
@@ -261,8 +281,6 @@ void SandboxState::Init()
 			const float32 RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float32 positive = std::powf(-1.0, i);
-
 				glm::vec3 color = pointLights[i].ColorIntensity;
 				MaterialProperties materialProperties;
 				materialProperties.Albedo		= glm::vec4(color, 1.0f);
@@ -336,14 +354,6 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
 	using namespace LambdaEngine;
-
-	if (event.Key == EKey::KEY_6)
-	{
-		int32 entityIndex = Random::Int32(0, int32(m_Entities.GetSize() - 1));
-		Entity entity = m_Entities[entityIndex];
-		m_Entities.Erase(m_Entities.Begin() + entityIndex);
-		ECSCore::GetInstance()->RemoveEntity(entity);
-	}
 
 	return true;
 }
