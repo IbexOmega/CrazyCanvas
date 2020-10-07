@@ -177,10 +177,10 @@ namespace LambdaEngine
 		{
 			if (resourceName == PER_FRAME_BUFFER)
 			{
-				if (!m_PerFrameTransformBufferDescriptorSets.has_value())
+				if (!m_PerFrameBufferDescriptorSets.has_value())
 				{
-					m_PerFrameTransformBufferDescriptorSets = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom PerFrameBuffer and Transform Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-					m_PerFrameTransformBufferDescriptorSets.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+					m_PerFrameBufferDescriptorSets = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom PerFrameBuffer Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+					m_PerFrameBufferDescriptorSets.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 				}
 				else
 				{
@@ -211,25 +211,49 @@ namespace LambdaEngine
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
 			if (m_VerticesDescriptorSets.IsEmpty())
-			{
 				m_VerticesDescriptorSets.Resize(backBufferCount);
-			}
 
-			// Remove all descriptor sets.
+			if (m_TransformDescriptorSets.IsEmpty())
+				m_TransformDescriptorSets.Resize(backBufferCount);
+
+			// Remove all descriptor sets for the vertices.
 			for (TSharedRef<DescriptorSet> descriptorSet : m_VerticesDescriptorSets[b])
 				m_pDeviceResourcesToDestroy[b].PushBack(std::move(descriptorSet));
 			m_VerticesDescriptorSets[b].Clear();
 
-			for (uint32 d = 0; d < count; d++)
+			// Remove all previous descriptor sets for the transforms.
+			for (auto& drawArgs : m_TransformDescriptorSets[b])
 			{
-				const DrawArg& drawArg = pDrawArgs[d];
+				for (TSharedRef<DescriptorSet> descriptorSet : drawArgs)
+					m_pDeviceResourcesToDestroy[b].PushBack(std::move(descriptorSet));
+				drawArgs.Clear();
+			}
+			m_TransformDescriptorSets[b].Resize(count);
 
-				// Create new descriptor sets.
-				TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
-				uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
-				uint64 offset = 0;
-				descriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-				m_VerticesDescriptorSets[b].PushBack(descriptorSet);
+			for (uint32 drawArgIndex = 0; drawArgIndex < count; drawArgIndex++)
+			{
+				const DrawArg& drawArg = pDrawArgs[drawArgIndex];
+
+				// Create new descriptor sets for the vertices.
+				{
+					TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
+					uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
+					uint64 offset = 0;
+					descriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+					m_VerticesDescriptorSets[b].PushBack(descriptorSet);
+				}
+
+				// Create new descriptor sets for the transforms.
+				for (uint32 instanceIndex = 0; instanceIndex < drawArg.InstanceCount; instanceIndex++)
+				{
+					{
+						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Transform Buffer Descriptor Set", m_PipelineLayout.Get(), 3, m_DescriptorHeap.Get());
+						uint64 size = sizeof(RenderSystem::Instance);
+						uint64 offset = instanceIndex * size;
+						descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+						m_TransformDescriptorSets[b][drawArgIndex].PushBack(descriptorSet);
+					}
+				}
 			}
 		}
 
@@ -266,12 +290,12 @@ namespace LambdaEngine
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
 		{
-			for (TSharedRef<DeviceChild> pDeviceChild : currentFrameDeviceResourcesToDestroy)
-			{
+			// TODO: This might need to be done. Should need to release the resources, but seems to work if it isn't done too.
+			//for (TSharedRef<DeviceChild> pDeviceChild : currentFrameDeviceResourcesToDestroy)
+			//{
 				//pDeviceChild.Get()->Release();
 				//SAFERELEASE(pDeviceChild);
-			}
-
+			//}
 			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 
@@ -279,7 +303,6 @@ namespace LambdaEngine
 
 		if (m_RenderTargets.IsEmpty())
 		{
-
 			return;
 		}
 
@@ -293,15 +316,6 @@ namespace LambdaEngine
 			const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
 			TextureView*	renderTarget		= renderTargetDesc.TextureView;
 
-			// TODO: Write descriptor might overrite the previous drawn render target and only use the previous.
-			// A solution for this would be to have unique descriptor sets for each render target.
-			for (uint32 i = 0; i < drawArg.InstanceCount; i++)
-			{
-				uint64 size = sizeof(RenderSystem::Instance);
-				uint64 offset = instanceIndex * size;
-				m_PerFrameTransformBufferDescriptorSets.value()->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-			}
-
 			uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
 			uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
 
@@ -309,7 +323,6 @@ namespace LambdaEngine
 			beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
 			beginRenderPassDesc.ppRenderTargets = &renderTarget;
 			beginRenderPassDesc.RenderTargetCount = 1;
-			//beginRenderPassDesc.pDepthStencil = m_DepthStencilBuffer.Get();
 			beginRenderPassDesc.Width = width;
 			beginRenderPassDesc.Height = height;
 			beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
@@ -338,9 +351,9 @@ namespace LambdaEngine
 
 			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-			if (m_PerFrameTransformBufferDescriptorSets.has_value())
+			if (m_PerFrameBufferDescriptorSets.has_value())
 			{
-				pCommandList->BindDescriptorSetGraphics(m_PerFrameTransformBufferDescriptorSets.value().Get(), m_PipelineLayout.Get(), 0);
+				pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSets.value().Get(), m_PipelineLayout.Get(), 0);
 			}
 
 			if (m_BrushMaskDescriptorSet.has_value())
@@ -349,6 +362,11 @@ namespace LambdaEngine
 			}
 
 			pCommandList->BindDescriptorSetGraphics(m_VerticesDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
+
+			if (!m_TransformDescriptorSets.IsEmpty())
+			{
+				pCommandList->BindDescriptorSetGraphics(m_TransformDescriptorSets[modFrameIndex][drawArgIndex][instanceIndex].Get(), m_PipelineLayout.Get(), 3);
+			}
 
 			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
@@ -412,18 +430,12 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreatePipelineLayout()
 	{
-		// PerFrameBuffer (Binding 0) and Transform (Binding 1)
+		// PerFrameBuffer
 		DescriptorBindingDesc perFrameBufferDesc = {};
 		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		perFrameBufferDesc.DescriptorCount = 1;
 		perFrameBufferDesc.Binding = 0;
 		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-
-		DescriptorBindingDesc transformBufferDesc = {};
-		transformBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		transformBufferDesc.DescriptorCount = 1;
-		transformBufferDesc.Binding = 1;
-		transformBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		// Brush mask texture
 		DescriptorBindingDesc brushMaskDesc = {};
@@ -439,8 +451,15 @@ namespace LambdaEngine
 		ssboBindingDesc.Binding = 0;
 		ssboBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
+		// Transform
+		DescriptorBindingDesc transformBufferDesc = {};
+		transformBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		transformBufferDesc.DescriptorCount = 1;
+		transformBufferDesc.Binding = 0;
+		transformBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, transformBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
 		descriptorSetLayoutDesc1.DescriptorBindings = { brushMaskDesc };
@@ -448,9 +467,12 @@ namespace LambdaEngine
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
 		descriptorSetLayoutDesc2.DescriptorBindings = { ssboBindingDesc };
 
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
+		descriptorSetLayoutDesc3.DescriptorBindings = { transformBufferDesc };
+
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Paint Mask Renderer Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2, descriptorSetLayoutDesc3 };
 
 		m_PipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 
