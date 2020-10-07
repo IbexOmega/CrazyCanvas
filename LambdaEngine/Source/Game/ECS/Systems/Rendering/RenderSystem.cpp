@@ -629,6 +629,7 @@ namespace LambdaEngine
 			);
 
 			m_DirectionalExist = true;
+			m_DirectionalLightDirty = true;
 		}
 		else
 		{
@@ -642,7 +643,6 @@ namespace LambdaEngine
 
 		const auto& pointLight = pECSCore->GetComponent<PointLightComponent>(entity);
 		const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
-
 
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
@@ -660,10 +660,14 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
 		m_LightsResourceDirty = true;
+		m_DirectionalLightDirty = true;
 	}
 
 	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
 	{
+		if (m_PointLights.IsEmpty())
+			return;
+
 		uint32 lastIndex = m_PointLights.GetSize() - 1U;
 		uint32 lastEntity = m_PointLightToEntity[lastIndex];
 		uint32 currentIndex = m_EntityToPointLight[entity];
@@ -678,6 +682,7 @@ namespace LambdaEngine
 		m_PointLights.PopBack();
 
 		m_LightsResourceDirty = true;
+		m_PointLightDirty = true;
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
@@ -1110,6 +1115,7 @@ namespace LambdaEngine
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsResourceDirty = true;
+		m_DirectionalLightDirty = true;
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
@@ -1158,7 +1164,9 @@ namespace LambdaEngine
 		}
 
 		m_pRenderGraph->TriggerRenderStage("RENDER_STAGE_LIGHT");
+		
 		m_LightsResourceDirty = true;
+		m_PointLightDirty = true;
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
@@ -1927,13 +1935,22 @@ namespace LambdaEngine
 
 		if (m_LightsResourceDirty)
 		{
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
-			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+			if (m_PointLightDirty || m_DirectionalLightDirty)
+			{
+				ResourceUpdateDesc resourceUpdateDesc = {};
+				resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
+				resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
+				resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
+				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			UpdatePointLightTextureResource();
+				m_DirectionalLightDirty = false;
+			}
+
+			if (m_PointLightDirty)
+			{
+				UpdatePointLightTextureResource();
+				m_PointLightDirty = false;
+			}
 
 			m_LightsResourceDirty = false;
 		}

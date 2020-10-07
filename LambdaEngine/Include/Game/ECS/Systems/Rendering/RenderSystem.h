@@ -306,6 +306,8 @@ namespace LambdaEngine
 		bool					m_MeshShadersEnabled = false;
 		// Mesh/Instance/Entity
 		bool						m_LightsResourceDirty	= true;
+		bool						m_PointLightDirty		= true;
+		bool						m_DirectionalLightDirty	= true;
 		bool						m_DirectionalExist		= false;
 		LightBuffer					m_LightBufferData;
 		THashTable<Entity, uint32>	m_EntityToPointLight;
