@@ -849,6 +849,7 @@ namespace LambdaEngine
 		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
 		const DescriptorSetVK*	pSrcVk			= reinterpret_cast<const DescriptorSetVK*>(pSrc);
 		uint32					bindingCount	= pSrcVk->GetDescriptorBindingDescCount();
+		
 
 		VkCopyDescriptorSet copyDescriptorSet = {};
 		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
@@ -863,12 +864,15 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < bindingCount; i++)
 		{
 			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
+			uint32 bindingDescriptorCount = pSrcVk->GetBindingDescriptorCount(binding.Binding);
 
-			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
+			copyDescriptorSet.descriptorCount	= bindingDescriptorCount;
 			copyDescriptorSet.srcBinding		= binding.Binding;
 			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
+
+			pDstVk->SetBindingDescriptorCount(binding.Binding, bindingDescriptorCount);
 		}
 
 		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
@@ -896,6 +900,8 @@ namespace LambdaEngine
 			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
+
+			pDstVk->SetBindingDescriptorCount(copyDescriptorSet.dstBinding, pSrcVk->GetBindingDescriptorCount(copyDescriptorSet.srcBinding));
 		}
 
 		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());

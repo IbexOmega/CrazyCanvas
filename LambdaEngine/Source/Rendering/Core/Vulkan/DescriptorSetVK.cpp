@@ -41,6 +41,7 @@ namespace LambdaEngine
 
 			const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
 			m_Bindings = pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
+			m_BindingDescriptorCount.Resize(m_Bindings.GetSize());
 			m_DescriptorHeap = pVkDescriptorHeap;
 			m_DescriptorHeap->AddRef();
 			return true;
@@ -51,6 +52,13 @@ namespace LambdaEngine
 		}
 	}
 
+	void DescriptorSetVK::SetBindingDescriptorCount(uint32 binding, uint32 count)
+	{
+		VALIDATE(binding < m_BindingDescriptorCount.GetSize());
+
+		m_BindingDescriptorCount[binding] = count;
+	}
+
 	void DescriptorSetVK::SetName(const String& debugName)
 	{
 		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_DescriptorSet), VK_OBJECT_TYPE_DESCRIPTOR_SET);
@@ -59,6 +67,7 @@ namespace LambdaEngine
 	void DescriptorSetVK::WriteTextureDescriptors(const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
 		VALIDATE(ppTextures != nullptr);
+		VALIDATE(firstBinding < m_Bindings.GetSize());
 
 		const TextureViewVK* const* ppVkTextureViews	= reinterpret_cast<const TextureViewVK* const*>(ppTextures);
 		const SamplerVK* const*		ppVkSamplers		= reinterpret_cast<const SamplerVK* const*>(ppSamplers);
@@ -89,6 +98,8 @@ namespace LambdaEngine
 				}
 			}
 		}
+
+		m_BindingDescriptorCount[firstBinding] = descriptorCount;
 
 		VkWriteDescriptorSet descriptorImageWrite = {};
 		descriptorImageWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -124,6 +135,8 @@ namespace LambdaEngine
 			bufferInfo.buffer	= ppVkBuffers[i]->GetBuffer();
 		}
 
+		m_BindingDescriptorCount[firstBinding] = descriptorCount;
+
 		VkWriteDescriptorSet descriptorBufferWrite = {};
 		descriptorBufferWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorBufferWrite.dstSet			= m_DescriptorSet;
@@ -151,6 +164,8 @@ namespace LambdaEngine
 			accelerationStructures[i] = pAccelerationStructureVk->GetAccelerationStructure();
 		}
 		
+		m_BindingDescriptorCount[firstBinding] = 1;
+
 		VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = {};
 		descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 		descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;
