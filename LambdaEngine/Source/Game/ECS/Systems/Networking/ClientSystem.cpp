@@ -56,7 +56,7 @@ namespace LambdaEngine
 		clientDesc.Handler				= this;
 		clientDesc.Protocol				= EProtocol::UDP;
 		clientDesc.PingInterval			= Timestamp::Seconds(1);
-		clientDesc.PingTimeout			= Timestamp::Seconds(3);
+		clientDesc.PingTimeout			= Timestamp::Seconds(10);
 		clientDesc.UsePingSystem		= true;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
@@ -127,24 +127,7 @@ namespace LambdaEngine
 
 
 			PlayerMovementSystem::GetInstance().PredictVelocity(deltaForward, deltaLeft, velocityComponent.Velocity);
-
-
-
-			const glm::vec3& position = positionComponent.Position;
-			const glm::vec3& velocity = velocityComponent.Velocity;
-
-			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
-			translationPX *= dt;
-
-			PxController* pController = characterLocalColliderComponent.pController;
-
-			pController->setPosition(characterColliderComponent.pController->getPosition());
-
-			pController->move(translationPX, 0.0f, dt, characterLocalColliderComponent.Filters);
-
-			const PxExtendedVec3& positionPX = pController->getPosition();
-			const glm::vec3 positionPredicted((float32)positionPX.x, (float32)positionPX.y, (float32)positionPX.z);
-			const glm::vec3 velocityPredicted = (positionPredicted - position) / dt;
+			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pPositionComponents, pVelocityComponents);
 
 
 
@@ -159,8 +142,8 @@ namespace LambdaEngine
 			gameState.SimulationTick	= m_SimulationTick;
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
-			gameState.Position			= positionPredicted;
-			gameState.Velocity			= velocityPredicted;
+			gameState.Position			= positionComponent.Position;
+			gameState.Velocity			= velocityComponent.Velocity;
 
 			m_FramesToReconcile.PushBack(gameState);
 
@@ -398,8 +381,7 @@ namespace LambdaEngine
 			* Move the PxController using the VelocityComponent by the deltatime.
 			* Calculates a new Velocity based on the difference of the last position and the new one.
 			*/
-			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, characterColliderComponent, positionComponent, velocityComponent);
-			positionComponent.Position += velocityComponent.Velocity * dt;
+			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pPositionComponents, pVelocityComponents);
 
 			gameState.Position = positionComponent.Position;
 			gameState.Velocity = velocityComponent.Velocity;

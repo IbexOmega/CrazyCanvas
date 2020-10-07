@@ -28,7 +28,7 @@ namespace LambdaEngine
 
 	public:
 		static CharacterControllerSystem* GetInstance() { return s_pInstance; }
-		static void TickCharacterController(float32 dt, Entity entity, CharacterColliderComponent& characterCollider, const PositionComponent& positionComp, VelocityComponent& velocityComp);
+		static void TickCharacterController(float32 dt, Entity entity, ComponentArray<CharacterColliderComponent>* pCharacterColliders, ComponentArray<PositionComponent>* pPositionComponents, ComponentArray<VelocityComponent>* pVelocityComponents);
 
 	private:
 		IDVector m_CharacterColliderEntities;

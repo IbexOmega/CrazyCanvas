@@ -66,6 +66,11 @@ namespace LambdaEngine
 			return *s_pInstance;
 		}
 
+		static bool HasInstance()
+		{
+			return s_pInstance;
+		}
+
 	private:
 		ClientSystem();
 		void Reconcile();

@@ -25,7 +25,7 @@ namespace LambdaEngine
 		desc.PoolSize				= 1024;
 		desc.Protocol				= EProtocol::UDP;
 		desc.PingInterval			= Timestamp::Seconds(1);
-		desc.PingTimeout			= Timestamp::Seconds(3);
+		desc.PingTimeout			= Timestamp::Seconds(10);
 		desc.UsePingSystem			= true;
 
 		m_pServer = NetworkUtils::CreateServer(desc);

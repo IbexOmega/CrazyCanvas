@@ -5,6 +5,7 @@
 #include "ECS/ECSCore.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Physics/Collision.h"
 
 namespace LambdaEngine
 {
@@ -25,6 +26,12 @@ namespace LambdaEngine
 			{
 				{
 					{RW, PositionComponent::Type()}, {R, VelocityComponent::Type()}
+				},
+				{
+
+				},
+				{
+					CharacterColliderComponent::Type()
 				},
 				&m_VelocityEntities
 			}

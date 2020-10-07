@@ -72,11 +72,10 @@ namespace LambdaEngine
 
 			ECSCore* pECS = ECSCore::GetInstance();
 			ComponentArray<CharacterColliderComponent>* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-			const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 			ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
-			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entityPlayer);
-			const PositionComponent& positionComp = pPositionComponents->GetData(entityPlayer);
+			PositionComponent& positionComp = pPositionComponents->GetData(entityPlayer);
 			VelocityComponent& velocityComp = pVelocityComponents->GetData(entityPlayer);
 
 			for (const GameState& gameState : m_Buffer)
@@ -86,15 +85,13 @@ namespace LambdaEngine
 				m_CurrentGameState = gameState;
 
 				PlayerMovementSystem::GetInstance().PredictVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComp.Velocity);
-
-				CharacterControllerSystem::TickCharacterController(dt, entityPlayer, characterCollider, positionComp, velocityComp);
-				glm::vec3 newPosition = positionComp.Position + velocityComp.Velocity * dt;
+				CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliders, pPositionComponents, pVelocityComponents);
 
 				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 				BinaryEncoder encoder(pPacket);
 				encoder.WriteInt32(entityPlayer);
 				encoder.WriteInt32(m_CurrentGameState.SimulationTick);
-				encoder.WriteVec3(newPosition);
+				encoder.WriteVec3(positionComp.Position);
 				encoder.WriteVec3(velocityComp.Velocity);
 				m_pClient->SendReliableBroadcast(pPacket);
 			}
