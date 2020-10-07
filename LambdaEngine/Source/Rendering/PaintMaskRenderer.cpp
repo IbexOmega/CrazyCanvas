@@ -279,16 +279,7 @@ namespace LambdaEngine
 
 		if (m_RenderTargets.IsEmpty())
 		{
-			BeginRenderPassDesc beginRenderPassDesc = {};
-			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
-			pCommandList->Begin(nullptr);
-			//Begin and End RenderPass to transition Texture State (Lazy)
-			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-			pCommandList->EndRenderPass();
 
-			pCommandList->End();
-
-			(*ppFirstExecutionStage) = pCommandList;
 			return;
 		}
 

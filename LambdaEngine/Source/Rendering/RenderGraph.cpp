@@ -3878,32 +3878,31 @@ namespace LambdaEngine
 		CommandList**			ppFirstExecutionStage,
 		CommandList**			ppSecondExecutionStage)
 	{
-		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
-		pGraphicsCommandAllocator->Reset();
-		pGraphicsCommandList->Begin(nullptr);
-		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
-
-		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
-		pComputeCommandAllocator->Reset();
-		pComputeCommandList->Begin(nullptr);
-		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
-		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 		CommandList* pFirstExecutionCommandList = nullptr;
 		CommandList* pSecondExecutionCommandList = nullptr;
 
 		if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 		{
+			Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
+			pGraphicsCommandAllocator->Reset();
+			pGraphicsCommandList->Begin(nullptr);
 			(*ppFirstExecutionStage) = pGraphicsCommandList;
 			pFirstExecutionCommandList = pGraphicsCommandList;
 			pSecondExecutionCommandList = pComputeCommandList;
+			Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 		}
 		else if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 		{
+			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
+			pComputeCommandAllocator->Reset();
+			pComputeCommandList->Begin(nullptr);
 			(*ppFirstExecutionStage) = pComputeCommandList;
 			pFirstExecutionCommandList = pComputeCommandList;
 			pSecondExecutionCommandList = pGraphicsCommandList;
+			Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 		}
 
 		//Texture Synchronizations
@@ -3944,12 +3943,12 @@ namespace LambdaEngine
 			const TArray<PipelineTextureBarrierDesc>& sameQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[0]; // SAME_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX
 			const TArray<PipelineTextureBarrierDesc>& otherQueueDrawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[1]; // OTHER_QUEUE_TEXTURE_SYNCHRONIZATION_INDEX
 
-			if (sameQueueDrawTextureBarriers.GetSize() > 0)
+			if (sameQueueDrawTextureBarriers.GetSize() > 0 && sameQueueDrawTextureBarriers[0].pTexture != nullptr)
 			{
 				PipelineTextureBarriers(pFirstExecutionCommandList, sameQueueDrawTextureBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage);
 			}
 
-			if (otherQueueDrawTextureBarriers.GetSize() > 0)
+			if (otherQueueDrawTextureBarriers.GetSize() > 0 && otherQueueDrawTextureBarriers[0].pTexture != nullptr)
 			{
 				PipelineTextureBarriers(pFirstExecutionCommandList, otherQueueDrawTextureBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
 				PipelineTextureBarriers(pSecondExecutionCommandList, otherQueueDrawTextureBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
@@ -3962,12 +3961,12 @@ namespace LambdaEngine
 			const TArray<PipelineBufferBarrierDesc>& sameQueueDrawBufferBarriers		= pSynchronizationStage->DrawBufferBarriers[SAME_QUEUE_BUFFER_SYNCHRONIZATION_INDEX];
 			const TArray<PipelineBufferBarrierDesc>& otherQueueDrawBufferBarriers		= pSynchronizationStage->DrawBufferBarriers[OTHER_QUEUE_BUFFER_SYNCHRONIZATION_INDEX];
 
-			if (sameQueueDrawBufferBarriers.GetSize() > 0)
+			if (sameQueueDrawBufferBarriers.GetSize() > 0 && sameQueueDrawBufferBarriers[0].pBuffer != nullptr)
 			{
 				PipelineBufferBarriers(pFirstExecutionCommandList, sameQueueDrawBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage);
 			}
 
-			if (otherQueueDrawBufferBarriers.GetSize() > 0)
+			if (otherQueueDrawBufferBarriers.GetSize() > 0 && otherQueueDrawBufferBarriers[0].pBuffer != nullptr)
 			{
 				PipelineBufferBarriers(pFirstExecutionCommandList, otherQueueDrawBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
 				PipelineBufferBarriers(pSecondExecutionCommandList, otherQueueDrawBufferBarriers, pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage);
@@ -3993,11 +3992,17 @@ namespace LambdaEngine
 			}
 		}
 
-		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
-		pGraphicsCommandList->End();
+		if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
+		{
+			Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
+			pGraphicsCommandList->End();
+		}
+		else if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
+		{
+			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
+			pComputeCommandList->End();
+		}
 
-		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
-		pComputeCommandList->End();
 	}
 
 	void RenderGraph::ExecuteGraphicsRenderStage(
