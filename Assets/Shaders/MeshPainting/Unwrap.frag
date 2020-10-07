@@ -21,20 +21,22 @@ float random (in vec3 x) {
 void main()
 {
     const vec3 GLOBAL_UP = vec3(0.f, 1.f, 0.f);
+    float BRUSH_SIZE = 1.0f;
 
-    vec3 worldPosition  = in_WorldPosition;    
+    vec3 worldPosition  = in_WorldPosition;
     vec3 normal 	    = normalize(in_Normal);
-    vec3 targetPosition = in_TargetPosition;    
-    vec3 direction      = -normalize(in_TargetDirection); 
+    vec3 targetPosition = in_TargetPosition;
+    vec3 direction      = -normalize(in_TargetDirection);
     
     vec3 targetPosToWorldPos = worldPosition-targetPosition;
 
-    float dir = step(0.f, dot(normal, -direction)); // Checks if looking from infront, else 0
-    vec3 projectedPosition = targetPosition + dot(targetPosToWorldPos,direction)*direction*dir;
+    float valid = step(0.f, dot(normal, -direction)); // Checks if looking from infront, else 0
+    float len = dot(targetPosToWorldPos, direction);
+    valid *= 1.0f - step(BRUSH_SIZE, len);
+    vec3 projectedPosition = targetPosition + len * direction * valid;
     
     //float rand = random(worldPosition);
 
-    float BRUSH_SIZE = 1.0f;
 
     // Calculate uv-coordinates for a square encapsulating the sphere.
     vec3 right = normalize(cross(direction, GLOBAL_UP));
@@ -50,5 +52,5 @@ void main()
         out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
     else
         discard;
-        // out_UnwrappedTexture = vec4(maskUV, 0.f, 1.f);
+        // out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
 }

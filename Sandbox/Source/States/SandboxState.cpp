@@ -109,17 +109,24 @@ void SandboxState::Init()
 			SAFEDELETE_ARRAY(data);
 
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entity, { true, position });
-			pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-			pECS->AddComponent<MeshComponent>(entity, meshComponent);
-			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
+			const StaticCollisionInfo collisionCreateInfo =
+			{
+				.Entity			= entity,
+				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+			};
+			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
 
 			DrawArgExtensionData drawArgExtensionData = {};
 			drawArgExtensionData.TextureCount = 1;
 			drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
 			drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
 			drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
+			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
 			EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
 		}
 	}
