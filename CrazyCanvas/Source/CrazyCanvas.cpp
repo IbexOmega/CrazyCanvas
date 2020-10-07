@@ -113,5 +113,22 @@ bool CrazyCanvas::LoadRendererResources()
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
+	// For Mesh painting in RenderGraph
+	{
+		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV2.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
+
+		Texture* pTexture = ResourceManager::GetTexture(brushMaskID);
+		TextureView* pTextureView = ResourceManager::GetTextureView(brushMaskID);
+		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+
+		ResourceUpdateDesc cubeTextureUpdateDesc = {};
+		cubeTextureUpdateDesc.ResourceName = "BRUSH_MASK";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures = &pTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
+
+		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+	}
+
 	return true;
 }
