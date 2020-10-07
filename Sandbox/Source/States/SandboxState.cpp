@@ -228,7 +228,7 @@ void SandboxState::Init()
 		//}
 
 		// Add PointLights
-		{
+		/*{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[3] =
 			{
@@ -274,7 +274,7 @@ void SandboxState::Init()
 				pECS->AddComponent<PointLightComponent>(pt, pointLights[i % 3]);
 				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
-		}
+		}*/
 	}
 
 	//Mirrors
@@ -364,14 +364,14 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	using namespace LambdaEngine;
 
 
-	constexpr uint32 MAX_ENTITIES = 3;
+	constexpr uint32 MAX_ENTITIES = 10;
 	static float timer = 0.0f;
 	static uint32 id = 0U;
 	static Entity entities[MAX_ENTITIES];
 	static bool remove = true;
 	//timer += delta.AsSeconds();
 
-	if (id < 3 && event.Key == EKey::KEY_SPACE)
+	if (event.Key == EKey::KEY_SPACE)
 	{
 		timer = 0.f;
 		uint32 index = id % MAX_ENTITIES;
@@ -390,7 +390,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			const float32 PI = glm::pi<float>();
 			const float32 RADIUS = 3.0f;
 
-			/*glm::vec3 color = { 1.0f, 1.0f, 1.0f };
+			glm::vec3 color = { 1.0f, 1.0f, 1.0f };
 			MaterialProperties materialProperties;
 			materialProperties.Albedo = glm::vec4(color, 1.0f);
 			materialProperties.Roughness = 0.1f;
@@ -405,7 +405,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				materialProperties);*/
+				materialProperties);
 
 			entities[index] = pECS->CreateEntity();
 			pECS->AddComponent<PositionComponent>(entities[index], { true, startPosition });
@@ -413,9 +413,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			pECS->AddComponent<RotationComponent>(entities[index], { true, glm::identity<glm::quat>() });
 			pECS->AddComponent<PointLightComponent>(entities[index], pointLights);
 
-			//pECS->AddComponent<MeshComponent>(entities[index], sphereMeshComp);
-
-		
+			pECS->AddComponent<MeshComponent>(entities[index], sphereMeshComp);
 		}
 		else
 		{

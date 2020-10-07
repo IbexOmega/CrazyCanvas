@@ -13,6 +13,9 @@ namespace LambdaEngine
 		uint32	MaxDataSize = 0;
 	};
 
+	using ReleaseFrame = uint32;
+	using DescriptorSetIndex = uint32;
+
 	class LightRenderer : public ICustomRenderer
 	{
 	public:
@@ -51,6 +54,8 @@ namespace LambdaEngine
 		}
 	
 	private:
+		void HandleUnavailableDescriptors(uint32 modFrameIndex);
+
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
 		bool CreateShaders();
@@ -58,9 +63,10 @@ namespace LambdaEngine
 		bool CreateRenderPass(RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 
-		DescriptorSet* GetDrawArgsDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
+		TSharedRef<DescriptorSet> GetDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
 
 	private:
+		uint32									m_CurrModFrameIndex = 0;
 
 		const DrawArg*							m_pDrawArgs = nullptr;
 		uint32									m_DrawCount	= 0;
@@ -82,6 +88,9 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
 		TSharedRef<DescriptorSet>				m_LightDescriptorSet;
 		TArray<TSharedRef<DescriptorSet>>		m_DrawArgsDescriptorSets;
+
+		THashTable<DescriptorSetIndex, TArray<std::pair<TSharedRef<DescriptorSet>, ReleaseFrame>>>	m_UnavailableDescriptorSets;
+		THashTable<DescriptorSetIndex, TArray<TSharedRef<DescriptorSet>>>							m_AvailableDescriptorSets;
 
 		uint32									m_BackBufferCount = 0;
 		uint32									m_PointLightCount = 0;

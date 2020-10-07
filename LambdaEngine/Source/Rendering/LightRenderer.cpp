@@ -171,6 +171,13 @@ namespace LambdaEngine
 				m_pDrawArgs = pDrawArgs;
 				m_DrawCount = count;
 
+				constexpr DescriptorSetIndex setIndex = 1U;
+
+				// Prepare Descriptors for later reusage
+				for (auto DescriptorSet : m_DrawArgsDescriptorSets)
+				{
+					m_UnavailableDescriptorSets[setIndex].PushBack(std::make_pair(DescriptorSet, m_CurrModFrameIndex));
+				}
 				m_DrawArgsDescriptorSets.Clear();
 				m_DrawArgsDescriptorSets.Resize(m_DrawCount);
 				
@@ -178,7 +185,8 @@ namespace LambdaEngine
 				// TODO: Get descriptors instead of reacreating them
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
-					m_DrawArgsDescriptorSets[d] = GetDrawArgsDescriptorSet("Light Renderer Descriptor Set 1", 1);
+					// Create a new descriptor or use an old descriptor
+					m_DrawArgsDescriptorSets[d] = GetDescriptorSet("Light Renderer Descriptor Set" + std::to_string(d), setIndex);
 
 					if (m_DrawArgsDescriptorSets[d] != nullptr)
 					{
@@ -207,6 +215,8 @@ namespace LambdaEngine
 	void LightRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+		
+		HandleUnavailableDescriptors(modFrameIndex);
 
 		if (Sleeping)
 			return;
@@ -285,6 +295,28 @@ namespace LambdaEngine
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
+	}
+
+	void LightRenderer::HandleUnavailableDescriptors(uint32 modFrameIndex)
+	{
+		m_CurrModFrameIndex = modFrameIndex;
+
+		// Go through descriptorSetsd and see if they are still in use
+
+		for (auto setIndexArray : m_UnavailableDescriptorSets)
+		{
+			for (auto descriptorSet = setIndexArray.second.begin(); descriptorSet != setIndexArray.second.end();)
+			{
+				// Move to available list if 3 frames have pasted since Descriptor Set stopped being used
+				if (descriptorSet->second == m_CurrModFrameIndex)
+				{
+					m_AvailableDescriptorSets[setIndexArray.first].PushBack(descriptorSet->first);
+					descriptorSet = setIndexArray.second.Erase(descriptorSet);
+				}
+				else
+					descriptorSet++;
+			}
+		}
 	}
 
 	bool LightRenderer::CreatePipelineLayout()
@@ -470,19 +502,25 @@ namespace LambdaEngine
 		return true;
 	}
 
-	DescriptorSet* LightRenderer::GetDrawArgsDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex)
+	TSharedRef<DescriptorSet> LightRenderer::GetDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex)
 	{
-		DescriptorSet* ds;
-			
-		ds = RenderAPI::GetDevice()->CreateDescriptorSet("Light Renderer Descriptor Set 1", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
-		if (ds == nullptr)
+		TSharedRef<DescriptorSet> ds;
+
+		if (m_AvailableDescriptorSets.find(descriptorLayoutIndex) != m_AvailableDescriptorSets.end() && !m_AvailableDescriptorSets[descriptorLayoutIndex].IsEmpty())
 		{
-			LOG_ERROR("[LightRenderer]: Failed to create DescriptorSet[%d]", 1);
-			return nullptr;
+			ds = m_AvailableDescriptorSets[descriptorLayoutIndex].GetBack();
+			m_AvailableDescriptorSets[descriptorLayoutIndex].PopBack();
+		}
+		else
+		{
+			ds = RenderAPI::GetDevice()->CreateDescriptorSet(debugname, m_PipelineLayout.Get(), descriptorLayoutIndex, m_DescriptorHeap.Get());
+			if (ds == nullptr)
+			{
+				LOG_ERROR("[LightRenderer]: Failed to create DescriptorSet[%d]", 1);
+				return nullptr;
+			}
 		}
 
-		return 	ds;
-		return nullptr;
+		return ds;
 	}
-
 }

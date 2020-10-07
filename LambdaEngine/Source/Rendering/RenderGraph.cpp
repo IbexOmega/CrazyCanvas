@@ -789,7 +789,7 @@ namespace LambdaEngine
 
 					if (pRenderStage->UsesCustomRenderer)
 					{
-						if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset || pRenderStage->Sleeping) && pRenderStage->pDisabledRenderPass == nullptr)
+						if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset) && pRenderStage->pDisabledRenderPass == nullptr)
 							continue;
 
 						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
