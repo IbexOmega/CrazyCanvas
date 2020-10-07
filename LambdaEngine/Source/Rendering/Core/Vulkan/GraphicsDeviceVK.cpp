@@ -78,6 +78,7 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
+		Extension(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
@@ -1184,9 +1185,13 @@ namespace LambdaEngine
 		}
 
 		// Query support for features
+		VkPhysicalDeviceRobustness2FeaturesEXT supportedRobustnessFeatures = { };
+		supportedRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+		supportedRobustnessFeatures.pNext = nullptr;
+
 		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = { };
 		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-		supportedMeshShaderFeatures.pNext = nullptr;
+		supportedMeshShaderFeatures.pNext = &supportedRobustnessFeatures;
 
 		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = { };
 		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
@@ -1214,9 +1219,14 @@ namespace LambdaEngine
 		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
 
 		// Enabled features
+		VkPhysicalDeviceRobustness2FeaturesEXT enabledRobustnessFeatures = { };
+		enabledRobustnessFeatures.sType				= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+		enabledRobustnessFeatures.pNext				= nullptr;
+		enabledRobustnessFeatures.nullDescriptor	= supportedRobustnessFeatures.nullDescriptor;
+
 		VkPhysicalDeviceMeshShaderFeaturesNV enabledMeshShaderFeatures = {};
 		enabledMeshShaderFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-		enabledMeshShaderFeatures.pNext			= nullptr;
+		enabledMeshShaderFeatures.pNext			= &enabledRobustnessFeatures;
 		enabledMeshShaderFeatures.meshShader	= supportedMeshShaderFeatures.meshShader;
 		enabledMeshShaderFeatures.taskShader	= supportedMeshShaderFeatures.taskShader;
 
