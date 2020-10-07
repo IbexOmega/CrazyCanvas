@@ -79,10 +79,7 @@ workspace "LambdaEngine"
 	-- Platform
 	platforms
 	{
-		"x64_CrazyCanvas",
-		"x64_Sandbox",
-		"x64_Client",
-		"x64_Server"
+		"x64"
     }
 	defines
 	{
@@ -503,6 +500,50 @@ workspace "LambdaEngine"
 		filter {}
 	project "*"
 
+	-- CrazyCanvas, Sandbox, Client and Server are identical projects besides from their debugargs
+	-- The variables beneath are used in all projects
+	prj_include_dirs =
+	{
+		"LambdaEngine/Include",
+		"CrazyCanvas/Include",
+	}
+
+	prj_sys_include_dirs =
+	{
+		"Dependencies/",
+		"Dependencies/glm",
+		"Dependencies/imgui",
+		"Dependencies/NoesisGUI/Include",
+		"Dependencies/ordered-map/include",
+		"Dependencies/PhysX/include",
+		"Dependencies/rapidjson/include",
+		"Dependencies/NoesisGUI/Include",
+		-- FMOD
+		"C:/FMOD Studio API Windows/api/core/inc",
+		"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+		"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
+		"D:/FMOD Studio API Windows/api/core/inc",
+	}
+
+	prj_files =
+	{
+		"LambdaEngine/Source/Launch/**",
+		"CrazyCanvas/**.hpp",
+		"CrazyCanvas/**.h",
+		"CrazyCanvas/**.inl",
+		"CrazyCanvas/**.cpp",
+		"CrazyCanvas/**.c",
+		"CrazyCanvas/**.hlsl",
+	}
+
+	prj_excludes = { "**.hlsl" }
+
+	prj_links =
+	{
+		"LambdaEngine",
+		"ImGui",
+	}
+
 	-- CrazyCanvas Project
 	project "CrazyCanvas"
 		kind "WindowedApp"
@@ -512,66 +553,101 @@ workspace "LambdaEngine"
 		location "CrazyCanvas"
 
 		-- Targets
-		targetdir ("Build/bin/" .. outputdir .. "/%{prj.name}")
-		objdir ("Build/bin-int/" .. outputdir .. "/%{prj.name}")
+		targetdir ("Build/bin/" .. outputdir .. "/CrazyCanvas")
+		objdir ("Build/bin-int/" .. outputdir .. "/CrazyCanvas")
 
-		filter "platforms:x64_CrazyCanvas"
-			debugargs { "--state=crazycanvas" }
-
-		filter "platforms:x64_Sandbox"
-			debugargs { "--state=sandbox" }
-
-		filter "platforms:x64_Client"
-			debugargs { "--state=client" }
-
-		filter "platforms:x64_Server"
-			debugargs { "--state=server" }
+		debugargs { "--state=crazycanvas" }
 
 		--Includes
-		includedirs
-		{
-			"LambdaEngine/Include",
-			"%{prj.name}/Include",
-		}
-
-		sysincludedirs
-		{
-			"Dependencies/",
-			"Dependencies/glm",
-			"Dependencies/imgui",
-			"Dependencies/NoesisGUI/Include",
-			"Dependencies/ordered-map/include",
-			"Dependencies/PhysX/include",
-			"Dependencies/rapidjson/include",
-			"Dependencies/NoesisGUI/Include",
-			-- FMOD
-			"C:/FMOD Studio API Windows/api/core/inc",
-			"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
-			"D:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",
-			"D:/FMOD Studio API Windows/api/core/inc",
-		}
+		includedirs { prj_include_dirs }
+		sysincludedirs { prj_sys_include_dirs }
 
 		-- Files
-		files
-		{
-			"LambdaEngine/Source/Launch/**",
-			"%{prj.name}/**.hpp",
-			"%{prj.name}/**.h",
-			"%{prj.name}/**.inl",
-			"%{prj.name}/**.cpp",
-			"%{prj.name}/**.c",
-			"%{prj.name}/**.hlsl",
-		}
+		files { prj_files }
 		-- We do not want to compile HLSL files
-		excludes
-		{
-			"**.hlsl",
-		}
+		excludes { prj_excludes }
 		-- Linking
-		links
-		{
-			"LambdaEngine",
-			"ImGui",
-		}
+		links { prj_links }
+
+	project "*"
+
+	-- Sandbox Project
+	project "Sandbox"
+		kind "WindowedApp"
+		language "C++"
+		cppdialect "C++latest"
+		systemversion "latest"
+		location "CrazyCanvas"
+
+		-- Targets
+		targetdir ("Build/bin/" .. outputdir .. "/CrazyCanvas")
+		objdir ("Build/bin-int/" .. outputdir .. "/CrazyCanvas")
+
+		debugargs { "--state=sandbox" }
+
+		--Includes
+		includedirs { prj_include_dirs }
+		sysincludedirs { prj_sys_include_dirs }
+
+		-- Files
+		files { prj_files }
+		-- We do not want to compile HLSL files
+		excludes { prj_excludes }
+		-- Linking
+		links { prj_links }
+
+	project "*"
+
+	-- Client Project
+	project "Client"
+		kind "WindowedApp"
+		language "C++"
+		cppdialect "C++latest"
+		systemversion "latest"
+		location "CrazyCanvas"
+
+		-- Targets
+		targetdir ("Build/bin/" .. outputdir .. "/CrazyCanvas")
+		objdir ("Build/bin-int/" .. outputdir .. "/CrazyCanvas")
+
+		debugargs { "--state=client" }
+
+		--Includes
+		includedirs { prj_include_dirs }
+		sysincludedirs { prj_sys_include_dirs }
+
+		-- Files
+		files { prj_files }
+		-- We do not want to compile HLSL files
+		excludes { prj_excludes }
+		-- Linking
+		links { prj_links }
+
+	project "*"
+
+	-- Server Project
+	project "Server"
+		kind "WindowedApp"
+		language "C++"
+		cppdialect "C++latest"
+		systemversion "latest"
+		location "CrazyCanvas"
+
+		-- Targets
+		targetdir ("Build/bin/" .. outputdir .. "/CrazyCanvas")
+		objdir ("Build/bin-int/" .. outputdir .. "/CrazyCanvas")
+
+		debugargs { "--state=server" }
+
+		--Includes
+		includedirs { prj_include_dirs }
+		sysincludedirs { prj_sys_include_dirs }
+
+		-- Files
+		files { prj_files }
+		-- We do not want to compile HLSL files
+		excludes { prj_excludes }
+		-- Linking
+		links { prj_links }
 
 	project "*"
