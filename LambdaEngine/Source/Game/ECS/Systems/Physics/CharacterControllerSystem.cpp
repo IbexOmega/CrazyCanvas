@@ -1,4 +1,5 @@
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
+
 #include "Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
@@ -25,7 +26,7 @@ namespace LambdaEngine
 		{
 			{
 				{
-					{RW, CharacterColliderComponent::Type()}, {RW, PositionComponent::Type()}, {RW, VelocityComponent::Type()}
+					{RW, CharacterColliderComponent::Type()}, {RW, NetworkPositionComponent::Type()}, {RW, VelocityComponent::Type()}
 				},
 				&m_CharacterColliderEntities,
 				nullptr,
@@ -43,6 +44,12 @@ namespace LambdaEngine
 
 	void CharacterControllerSystem::Tick(Timestamp deltaTime)
 	{
+		/*const float32 dt = (float32)deltaTime.AsSeconds();
+		TickCharacterControllers(dt);*/
+	}
+
+	void CharacterControllerSystem::FixedTickMainThread(Timestamp deltaTime)
+	{
 		const float32 dt = (float32)deltaTime.AsSeconds();
 		TickCharacterControllers(dt);
 	}
@@ -50,15 +57,39 @@ namespace LambdaEngine
 	void CharacterControllerSystem::TickCharacterControllers(float32 dt)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		ComponentArray<CharacterColliderComponent>* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-		ComponentArray<CharacterLocalColliderComponent>* pCharacterLocalColliders = pECS->GetComponentArray<CharacterLocalColliderComponent>();
-		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+		auto* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
+		auto* pCharacterLocalColliders = pECS->GetComponentArray<CharacterLocalColliderComponent>();
+		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 		for (Entity entity : m_CharacterColliderEntities)
 		{
-			if(!pCharacterLocalColliders->HasComponent(entity))
-				TickCharacterController(dt, entity, pCharacterColliders, pPositionComponents, pVelocityComponents);
+			if (!pCharacterLocalColliders->HasComponent(entity))
+			{
+				CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
+				const PositionComponent& positionComp = pPositionComponents->GetData(entity);
+
+				glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
+				const glm::vec3& position = positionComp.Position;
+
+				PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+				translationPX *= dt;
+
+				PxController* pController = characterCollider.pController;
+
+				pController->setPosition({ position.x, position.y, position.z });
+				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
+
+				const PxExtendedVec3& newPositionPX = pController->getPosition();
+				velocity = {
+					(float)newPositionPX.x - position.x,
+					(float)newPositionPX.y - position.y,
+					(float)newPositionPX.z - position.z
+				};
+				velocity /= dt;
+
+				//Maybe add something to change the rendered PositionComponent here in case we collide
+			}
 		}
 	}
 
@@ -66,14 +97,15 @@ namespace LambdaEngine
 	* Sets the position of the PxController taken from the PositionComponent.
 	* Move the PxController using the VelocityComponent by the deltatime.
 	* Calculates a new Velocity based on the difference of the last position and the new one.
+	* Sets the new position of the PositionComponent
 	*/
-	void CharacterControllerSystem::TickCharacterController(float32 dt, Entity entity, ComponentArray<CharacterColliderComponent>* pCharacterColliders, ComponentArray<PositionComponent>* pPositionComponents, ComponentArray<VelocityComponent>* pVelocityComponents)
+	void CharacterControllerSystem::TickCharacterController(float32 dt, Entity entity, ComponentArray<CharacterColliderComponent>* pCharacterColliders, ComponentArray<NetworkPositionComponent>* pNetPosComponents, ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
 		CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
-		const PositionComponent& positionComp = pPositionComponents->GetData(entity);
+		NetworkPositionComponent& positionComp = pNetPosComponents->GetData(entity);
 
 		glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
-		const glm::vec3& position = positionComp.Position;
+		glm::vec3& position = positionComp.Position;
 
 		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 		translationPX *= dt;
@@ -91,18 +123,11 @@ namespace LambdaEngine
 		};
 		velocity /= dt;
 
-		if (glm::length2(velocity) > glm::epsilon<float32>())
-		{
-			PositionComponent& positionCompMutable = const_cast<PositionComponent&>(positionComp);
-
-			positionCompMutable.Position = {
-				(float)newPositionPX.x,
-				(float)newPositionPX.y,
-				(float)newPositionPX.z
-			};
-
-			positionCompMutable.Dirty = true;
-		}
+		position = {
+			(float)newPositionPX.x,
+			(float)newPositionPX.y,
+			(float)newPositionPX.z
+		};
 	}
 
 	void CharacterControllerSystem::OnCharacterColliderRemoval(Entity entity)

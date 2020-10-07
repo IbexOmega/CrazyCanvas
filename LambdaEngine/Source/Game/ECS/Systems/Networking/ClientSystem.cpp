@@ -7,6 +7,7 @@
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Player/ControllableComponent.h"
 #include "Game/ECS/Components/Networking/InterpolationComponent.h"
+#include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 
@@ -37,6 +38,7 @@ namespace LambdaEngine
 		m_Entities(),
 		m_NetworkUID(-1),
 		m_CharacterControllerSystem(),
+		m_NetworkPositionSystem(),
 		m_pInterpolationSystem(nullptr)
 	{
 
@@ -69,6 +71,8 @@ namespace LambdaEngine
 		m_pInterpolationSystem->Init();
 
 		m_CharacterControllerSystem.Init();
+
+		m_NetworkPositionSystem.Init();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
@@ -114,21 +118,20 @@ namespace LambdaEngine
 			int8 deltaForward	= int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
 			int8 deltaLeft		= int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
 
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 			auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-			auto* pCharacterLocalColliderComponents = pECS->GetComponentArray<CharacterLocalColliderComponent>();
+			auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
 			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
-			const PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
 			CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
-			CharacterLocalColliderComponent& characterLocalColliderComponent = pCharacterLocalColliderComponents->GetData(entityPlayer);
+			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
 			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
 
+			netPosComponent.PositionLast	= netPosComponent.Position;
+			netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
 
 			PlayerMovementSystem::GetInstance().PredictVelocity(deltaForward, deltaLeft, velocityComponent.Velocity);
-			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pPositionComponents, pVelocityComponents);
-
+			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 
 			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
@@ -142,13 +145,15 @@ namespace LambdaEngine
 			gameState.SimulationTick	= m_SimulationTick;
 			gameState.DeltaForward		= deltaForward;
 			gameState.DeltaLeft			= deltaLeft;
-			gameState.Position			= positionComponent.Position;
+			gameState.Position			= netPosComponent.Position;
 			gameState.Velocity			= velocityComponent.Velocity;
 
 			m_FramesToReconcile.PushBack(gameState);
 
 			m_SimulationTick++;
 		}
+
+		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);
 	}
 
 	Entity ClientSystem::GetEntityPlayer() const
@@ -221,6 +226,7 @@ namespace LambdaEngine
 			{ RW, MeshComponent::Type()						},
 			{ RW, NetworkComponent::Type()					},
 			{ RW, VelocityComponent::Type()					},
+			{ RW, NetworkPositionComponent::Type()			},
 			{ RW, CharacterColliderComponent::Type()		},
 			{ RW, CharacterLocalColliderComponent::Type()	}
 		};
@@ -242,6 +248,24 @@ namespace LambdaEngine
 		if (IsLocalClient(networkUID))
 		{
 			m_FramesProcessedByServer.PushBack(serverGameState);
+		}
+		else
+		{
+			ECSCore* pECS = ECSCore::GetInstance();
+			Entity entity = GetEntityFromNetworkUID(networkUID);
+
+			auto* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
+			auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+
+			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entity);
+
+			netPosComponent.PositionLast	= netPosComponent.Position;
+			netPosComponent.Position		= serverGameState.Position;
+			netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+		
+			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
+			velocityComponent.Velocity = serverGameState.Velocity;
 		}
 	}
 
@@ -289,13 +313,14 @@ namespace LambdaEngine
 		//animationComp.AnimationGUID = animations[0];
 
 
-		pECS->AddComponent<PositionComponent>(entity,	{ true, position });
-		pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(1.0f) });
-		pECS->AddComponent<VelocityComponent>(entity,	{ true, glm::vec3(0.0f) });
-		//pECS->AddComponent<AnimationComponent>(entity,	animationComp);
-		pECS->AddComponent<MeshComponent>(entity,		meshComponent);
-		pECS->AddComponent<NetworkComponent>(entity,	{ networkUID });
+		pECS->AddComponent<PositionComponent>(entity,			{ true, position });
+		pECS->AddComponent<RotationComponent>(entity,			{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(entity,				{ true, glm::vec3(1.0f) });
+		pECS->AddComponent<VelocityComponent>(entity,			{ true, glm::vec3(0.0f) });
+		//pECS->AddComponent<AnimationComponent>(entity,		animationComp);
+		pECS->AddComponent<MeshComponent>(entity,				meshComponent);
+		pECS->AddComponent<NetworkComponent>(entity,			{ networkUID });
+		pECS->AddComponent<NetworkPositionComponent>(entity,	{ position, position, EngineLoop::GetTimeSinceStart(), EngineLoop::GetFixedTimestep() });
 
 		const CharacterColliderInfo colliderInfo = {
 			.Entity = entity,
@@ -318,13 +343,10 @@ namespace LambdaEngine
 		{
 			pECS->AddComponent<ControllableComponent>(entity, { true });
 
-
 			CharacterLocalColliderComponent characterLocalColliderComponent;
 			PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterLocalColliderComponent);
 			pECS->AddComponent<CharacterLocalColliderComponent>(entity, characterLocalColliderComponent);
 		}
-		else
-			pECS->AddComponent<InterpolationComponent>(entity, { glm::vec3(0.0f), glm::vec3(0.0f), 0 });
 	}
 
 	void ClientSystem::Reconcile()
@@ -350,14 +372,14 @@ namespace LambdaEngine
 		Entity entityPlayer = GetEntityPlayer();
 
 		auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
 		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 		CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
-		PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+		NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
-		positionComponent.Position = gameStateServer.Position;
+		netPosComponent.Position = gameStateServer.Position;
 		velocityComponent.Velocity = gameStateServer.Velocity;
 
 		//Replay all game states since the game state which resulted in prediction ERROR
@@ -381,9 +403,9 @@ namespace LambdaEngine
 			* Move the PxController using the VelocityComponent by the deltatime.
 			* Calculates a new Velocity based on the difference of the last position and the new one.
 			*/
-			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pPositionComponents, pVelocityComponents);
+			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
-			gameState.Position = positionComponent.Position;
+			gameState.Position = netPosComponent.Position;
 			gameState.Velocity = velocityComponent.Velocity;
 		}
 	}

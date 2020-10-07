@@ -2,6 +2,7 @@
 
 #include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
+#include "Game/ECS/Systems/Networking/Client/NetworkPositionSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -93,6 +94,7 @@ namespace LambdaEngine
 
 		CharacterControllerSystem m_CharacterControllerSystem;
 		InterpolationSystem* m_pInterpolationSystem;
+		NetworkPositionSystem m_NetworkPositionSystem;
 
 	private:
 		static ClientSystem* s_pInstance;
