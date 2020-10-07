@@ -28,16 +28,6 @@ void LobbyState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
 
-	//// Check if raytracing is enabled/supported
-	//GraphicsDeviceFeatureDesc deviceFeatures;
-	//RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-	//bool rayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
-
-	//if (rayTracingEnabled)
-	//	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
-
-	//RenderGraphStructureDesc renderGraphStructure = {};
-
 	m_LobbyGUI = *new LobbyGUI("Lobby.xaml");
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);

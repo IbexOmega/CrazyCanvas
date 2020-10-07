@@ -253,5 +253,4 @@ void PlaySessionState::Init()
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp)
 {
-	LOG_MESSAGE("Current Master Volume! %f", LambdaEngine::AudioAPI::GetDevice()->GetMasterVolume());
 }
