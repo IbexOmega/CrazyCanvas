@@ -41,6 +41,5 @@ namespace LambdaEngine
 
 		uint32			m_MaxNumAudioListeners	= 0;
 		uint32			m_NumAudioListeners		= 0;
-		float			m_MasterVolume = 1.0f;
 	};
 }

@@ -8,7 +8,6 @@
 #include "Log/Log.h"
 
 #include "Threading/API/Thread.h"
-#include <algorithm>
 
 namespace LambdaEngine
 {
