@@ -30,6 +30,8 @@ namespace LambdaEngine
 		// QueryHeap interface
 		virtual bool GetResults(uint32 firstQuery, uint32 queryCount, uint64 dataSize, uint64* pData) const override final;
 
+		virtual bool GetResultsAvailable(uint32 firstQuery, uint32 queryCount, uint64 dataSize, QueryHeapAvailabilityResult* pData) const override final;
+
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
 			return reinterpret_cast<uint64>(m_QueryPool);

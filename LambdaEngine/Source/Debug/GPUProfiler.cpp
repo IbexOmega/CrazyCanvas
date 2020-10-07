@@ -14,6 +14,9 @@
 #include <fstream>
 #include <sstream>
 
+// TODO: Remove
+#define LAMBDA_DEBUG
+
 namespace LambdaEngine
 {
 	GPUProfiler::GPUProfiler() : m_TimeUnit(TimeUnit::MILLI), m_PlotDataSize(100), m_UpdateFreq(1.0f)
@@ -287,13 +290,23 @@ namespace LambdaEngine
 		}
 
 		uint32_t timestampCount = 2;
-		TArray<uint64_t> results(timestampCount);
-		bool res = m_pTimestampHeap->GetResults((uint32_t)m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
+		TArray<QueryHeapAvailabilityResult> results(timestampCount);
+		bool res = m_pTimestampHeap->GetResultsAvailable((uint32_t)m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(QueryHeapAvailabilityResult), results.GetData());
 
 		if (res)
 		{
-			uint64_t start = glm::bitfieldExtract<uint64_t>(results[0], 0, m_TimestampValidBits);
-			uint64_t end = glm::bitfieldExtract<uint64_t>(results[1], 0, m_TimestampValidBits);
+			for (auto& result : results)
+			{
+				if (result.Availability == 0)
+				{
+					// If any value of the pair is not available yet, do not use the values
+					// TODO: Try to gather result later in tick as a backup?
+					return;
+				}
+			}
+
+			uint64_t start = glm::bitfieldExtract<uint64_t>(results[0].Result, 0, m_TimestampValidBits);
+			uint64_t end = glm::bitfieldExtract<uint64_t>(results[1].Result, 0, m_TimestampValidBits);
 
 			if (m_StartTimestamp == 0)
 				m_StartTimestamp = start;
@@ -316,6 +329,10 @@ namespace LambdaEngine
 				}
 				m_PlotResultsStart = (m_PlotResultsStart + 1) % m_PlotDataSize;
 			}
+		}
+		else
+		{
+			D_LOG_ERROR("[GPUProfiler]: Failed to get available results with %d number of timestamps", timestampCount);
 		}
 #endif
 	}
