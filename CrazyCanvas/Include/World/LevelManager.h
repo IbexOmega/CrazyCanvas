@@ -9,6 +9,8 @@
 
 #include "Math/Math.h"
 
+#include "World.h"
+
 class Level;
 class LevelModule;
 

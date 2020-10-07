@@ -17,10 +17,10 @@
             "name": "Test Level 1",
             "modules": [
                 {
-                    "filename": "Prototype.dae",
+                    "filename": "module_0.dae",
                     "translation": {
                         "x": 0.0,
-                        "y": 0.0,
+                        "y": -10.0,
                         "z": 0.0
                     }
                 }

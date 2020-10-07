@@ -23,7 +23,7 @@ bool LevelManager::Init(bool clientSide)
 		return false;
 	}
 
-	FILE* pLevelsFile = fopen("../Assets/World/levels.json", "r");
+	FILE* pLevelsFile = fopen((String(LEVELS_JSON_DIRECTORY) + "levels.json").c_str(), "r");
 
 	if (pLevelsFile == nullptr)
 	{
@@ -83,7 +83,7 @@ bool LevelManager::Init(bool clientSide)
 							{
 								byte* pData;
 								uint32 dataSize;
-								if (!ResourceLoader::ReadDataFromFile("../Assets/World/Levels/" + moduleDesc.Filename, "rb", &pData, &dataSize))
+								if (!ResourceLoader::ReadDataFromFile(LEVEL_MODULES_DIRECTORY + moduleDesc.Filename, "rb", &pData, &dataSize))
 								{
 									LOG_ERROR("[LevelManager]: Failed to load level %s, module %s does not exist", levelDesc.Name.c_str(), moduleDesc.Filename.c_str());
 									return false;
@@ -130,7 +130,7 @@ bool LevelManager::Init(bool clientSide)
 
 				byteRepresentation.clear();
 
-				D_LOG_INFO("\n[LevelManager]: Level Loaded:\nName: %s\nNum Modules: %d\nSHA256: %x%x\n",
+				D_LOG_INFO("\n[LevelManager]: Level Registered:\nName: %s\nNum Modules: %d\nSHA256: %x%x\n",
 					levelDesc.Name.c_str(),
 					levelDesc.LevelModuleDescriptions.GetSize(),
 					levelDesc.Hash.SHA256Chunk0,

@@ -34,7 +34,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 		const TArray<MeshComponent>& meshComponents				= pModule->GetMeshComponents();
 		const TArray<LoadedDirectionalLight>& directionalLights = pModule->GetDirectionalLights();
 		const TArray<LoadedPointLight>& pointLights				= pModule->GetPointLights();
-		const TArray<SpecialObject>& specialObject				= pModule->GetSpecialObjects();
+		const TArray<SpecialObject>& specialObjects				= pModule->GetSpecialObjects();
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
@@ -56,7 +56,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 		TArray<Entity> newlyCreatedEntities;
 
-		for (const SpecialObject& specialObject : specialObject)
+		for (const SpecialObject& specialObject : specialObjects)
 		{
 			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObject(specialObject, newlyCreatedEntities, translation);
 

@@ -44,15 +44,15 @@ namespace LambdaEngine
 
 	struct LoadedDirectionalLight
 	{
-		glm::vec3 Color			= glm::vec3(0.0f);
-		glm::vec3 Direction		= glm::vec3(0.0f);
+		glm::vec4 ColorIntensity	= glm::vec4(0.0f);
+		glm::vec3 Direction			= glm::vec3(0.0f);
 	};
 
 	struct LoadedPointLight
 	{
-		glm::vec3 Color			= glm::vec3(0.0f);
-		glm::vec3 Position		= glm::vec3(0.0f);
-		glm::vec3 Attenuation	= glm::vec3(1.0f, 0.09f, 0.032f);
+		glm::vec4 ColorIntensity	= glm::vec4(0.0f);
+		glm::vec3 Position			= glm::vec3(0.0f);
+		glm::vec3 Attenuation		= glm::vec3(1.0f, 0.09f, 0.032f);
 	};
 
 	/*	SceneLoadRequest contains information needed to begin loading a scene. It is also used to specify whether to

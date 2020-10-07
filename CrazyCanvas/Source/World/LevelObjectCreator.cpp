@@ -50,7 +50,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(const LambdaEngi
 
 		DirectionalLightComponent directionalLightComponent =
 		{
-			.ColorIntensity = glm::vec4(directionalLight.Color, 1.0f)
+			.ColorIntensity = directionalLight.ColorIntensity
 		};
 
 		entity = pECS->CreateSpecialObject();
@@ -76,7 +76,7 @@ LambdaEngine::Entity LevelObjectCreator::CreatePointLight(const LambdaEngine::Lo
 
 		PointLightComponent pointLightComponent =
 		{
-			.ColorIntensity = glm::vec4(pointLight.Color, 1.0f)
+			.ColorIntensity = pointLight.ColorIntensity
 		};
 
 		entity = pECS->CreateSpecialObject();

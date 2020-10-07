@@ -1299,6 +1299,9 @@ namespace LambdaEngine
 			for (uint32 l = 0; l < pScene->mNumLights; l++)
 			{
 				aiLight* pLight = pScene->mLights[l];
+				glm::vec3 lightRadiance = glm::vec3(pLight->mColorDiffuse.r, pLight->mColorDiffuse.g, pLight->mColorDiffuse.b);
+				float intensity = glm::length(lightRadiance);
+				lightRadiance /= intensity;
 
 				switch (pLight->mType)
 				{
@@ -1306,8 +1309,8 @@ namespace LambdaEngine
 					{
 						LoadedDirectionalLight loadedDirectionalLight =
 						{
-							.Color		= glm::vec3(pLight->mColorDiffuse.r, pLight->mColorDiffuse.g, pLight->mColorDiffuse.b),
-							.Direction	= glm::vec3(pLight->mDirection.x, pLight->mDirection.y, pLight->mDirection.z)
+							.ColorIntensity	= glm::vec4(lightRadiance, intensity),
+							.Direction		= glm::vec3(pLight->mDirection.x, pLight->mDirection.y, pLight->mDirection.z)
 						};
 
 						context.DirectionalLights.PushBack(loadedDirectionalLight);
@@ -1317,7 +1320,7 @@ namespace LambdaEngine
 					{
 						LoadedPointLight loadedPointLight =
 						{
-							.Color			= glm::vec3(pLight->mColorDiffuse.r, pLight->mColorDiffuse.g, pLight->mColorDiffuse.b),
+							.ColorIntensity	= glm::vec4(lightRadiance, intensity),
 							.Position		= glm::vec3(pLight->mPosition.x, pLight->mPosition.y, pLight->mPosition.z),
 							.Attenuation	= glm::vec3(pLight->mAttenuationConstant, pLight->mAttenuationLinear, pLight->mAttenuationQuadratic)
 						};

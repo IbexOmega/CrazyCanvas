@@ -7,6 +7,8 @@
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Resources/ResourceLoader.h"
 
+#include "World.h"
+
 class LevelModule
 {
 public:

@@ -36,6 +36,11 @@
 
 #include "World/LevelManager.h"
 
+BenchmarkState::~BenchmarkState()
+{
+	SAFEDELETE(m_pLevel);
+}
+
 void BenchmarkState::Init()
 {
 	using namespace LambdaEngine;
@@ -74,7 +79,7 @@ void BenchmarkState::Init()
 
 	// Scene
 	{
-		LevelManager::LoadLevel(0);
+		m_pLevel = LevelManager::LoadLevel(0);
 	}
 
 	// Robot
