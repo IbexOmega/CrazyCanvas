@@ -12,14 +12,25 @@ jobs:
         with:
           submodules: true
 
+      - name: Read LFS Cache
+        run: cp -r -Force ../../.git/lfs .git/
+        shell: powershell
+
+      # Fetches changes and replaces LFS pointers with their actual contents
+      - name: Pull From LFS
+        run: git lfs pull
+
+      - name: Update LFS Cache
+        run: cp -r -Force .git/lfs ../../.git/
+
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
+
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
-      - name: Build CrazyCanvas Production
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Production
+      - name: Build Production
+        run: msbuild LambdaEngine.sln -p:Configuration=Production -p:Platform=x64
 
       - name: Benchmark
         run: python .github/workflows/benchmark.py --bin .\Build\bin\Production-windows-x86_64-x64\CrazyCanvas\CrazyCanvas.exe

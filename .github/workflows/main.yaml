@@ -2,7 +2,7 @@ name: Välfärden
 on: pull_request
 
 jobs:
-  Build-LambdaEngine-Debug:
+  Build:
     runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v2
@@ -12,59 +12,24 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.1
 
-      - name: Build LambdaEngine Debug
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: LambdaEngine/LambdaEngine.vcxproj
-          build-configuration: Debug
+      - name: Read LFS Cache
+        run: cp -r -Force ../../.git/lfs .git/
 
-  Build-LambdaEngine-Release:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+      # Fetches changes and replaces LFS pointers with their actual contents
+      - name: Pull From LFS
+        run: git lfs pull
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
+      - name: Update LFS Cache
+        run: cp -r -Force .git/lfs ../../.git/
 
-      - name: Build LambdaEngine Release
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: LambdaEngine/LambdaEngine.vcxproj
-          build-configuration: Release
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
 
-  Build-CrazyCanvas-Debug:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+      - name: Build Debug
+        run: msbuild LambdaEngine.sln -p:Configuration=Debug -p:Platform=x64
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build CrazyCanvas Debug
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Debug
-
-  Build-CrazyCanvas-Release:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build CrazyCanvas Release
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Release
+      - name: Build Release
+        run: msbuild LambdaEngine.sln -p:Configuration=Release -p:Platform=x64
 
   Lint:
     runs-on: [self-hosted, Windows, X64]
