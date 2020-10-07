@@ -28,7 +28,7 @@ namespace LambdaEngine
 		void ReadFloat64(float64& value);
 		void ReadBool(bool& value);
 		void ReadString(std::string& value);
-		void ReadBuffer(uint8* buffer, uint16 bytesToRead);
+		void ReadBuffer(uint8* pBuffer, uint16 bytesToRead);
 
 		void ReadVec2(glm::vec2& value);
 		void ReadVec3(glm::vec3& value);

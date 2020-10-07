@@ -2,7 +2,10 @@
 #include "LambdaEngine.h"
 
 #include "Math/Math.h"
+
 #include "Physics/BoundingBox.h"
+
+#include "Containers/PrehashedString.h"
 
 #include "Rendering/Core/API/Buffer.h"
 
@@ -12,6 +15,8 @@
 
 #define MAX_PRIMS 124
 #define MAX_VERTS 64
+
+#define INVALID_JOINT_ID 0xff
 
 namespace LambdaEngine
 {
@@ -28,20 +33,7 @@ namespace LambdaEngine
 		}
 	};
 
-	struct VertexBoneData
-	{
-		struct BoneData
-		{
-			int32	BoneID = -1;
-			float32	Weight = 0.0f;
-		};
-
-		BoneData Bone0;
-		BoneData Bone1;
-		BoneData Bone2;
-		BoneData Bone3;
-	};
-
+	// Meshlet data
 	struct Meshlet
 	{
 		uint32 VertCount;
@@ -58,29 +50,50 @@ namespace LambdaEngine
 		uint8 Padding;
 	};
 
-	// Moved out from mesh due to dependency issue
-	using MeshIndexType = uint32;
-	
+	using MeshIndexType = uint32; // Moved out from mesh due to dependency issue
+	using JointIndexType = uint8; // Limited to 128 bones, enough for now
+
+	// Animation
+	struct VertexJointData
+	{
+		JointIndexType JointID0 = INVALID_JOINT_ID;
+		JointIndexType JointID1 = INVALID_JOINT_ID;
+		JointIndexType JointID2 = INVALID_JOINT_ID;
+		JointIndexType JointID3 = INVALID_JOINT_ID;
+		float32 Weight0;
+		float32 Weight1;
+		float32 Weight2;
+		// Last weight is calculated in shader since they must equal 1.0
+	};
+
+	struct VertexWeight
+	{
+		MeshIndexType	VertexIndex;
+		float32			VertexWeight;
+	};
+
+	struct Joint
+	{
+		// TODO: Change into mat4x3
+		glm::mat4x4		InvBindTransform;
+		PrehashedString	Name;
+		JointIndexType	ParentBoneIndex = INVALID_JOINT_ID;
+	};
+
 	struct Skeleton
 	{
-		struct Bone
-		{
-			struct Weight
-			{
-				MeshIndexType	VertexIndex;
-				float32			VertexWeight;
-			};
+		using JointHashTable = THashTable<PrehashedString, JointIndexType, PrehashedStringHasher>;
 
-			String			Name;
-			glm::mat4		OffsetTransform;
-			TArray<Weight>	Weights;
-			int32			ParentBoneIndex = -1;
-		};
+		glm::mat4x4		InverseGlobalTransform;
+		TArray<Joint>	Joints;
+		JointHashTable	JointMap;
+	};
 
-		glm::mat4					GlobalTransform;
-		int32						RootBone = -1;
-		TArray<Bone>				Bones;
-		THashTable<String, uint32>	BoneMap;
+	struct SkeletonPose
+	{
+		Skeleton*			pSkeleton;
+		TArray<glm::mat4>	LocalTransforms;
+		TArray<glm::mat4>	GlobalTransforms;
 	};
 
 	struct Animation
@@ -90,22 +103,27 @@ namespace LambdaEngine
 			struct KeyFrame
 			{
 				glm::vec3	Value;
-				float32		Time;
+				float64		Time;
 			};
 
 			struct RotationKeyFrame
 			{
 				glm::quat	Value;
-				float32		Time;
+				float64		Time;
 			};
 
-			String						Name;
+			PrehashedString				Name;
 			TArray<KeyFrame>			Positions;
 			TArray<KeyFrame>			Scales;
 			TArray<RotationKeyFrame>	Rotations;
 		};
 
-		String			Name;
+		inline float64 DurationInSeconds() const
+		{
+			return DurationInTicks / TicksPerSecond;
+		}
+
+		PrehashedString	Name;
 		float64			DurationInTicks;
 		float64			TicksPerSecond;
 		TArray<Channel>	Channels;
@@ -119,7 +137,7 @@ namespace LambdaEngine
 		}
 
 		TArray<Vertex>			Vertices;
-		TArray<VertexBoneData>	VertexBoneData;
+		TArray<VertexJointData>	VertexJointData;
 		TArray<MeshIndexType>	Indices;
 		TArray<MeshIndexType>	UniqueIndices;
 		TArray<PackedTriangle>	PrimitiveIndices;

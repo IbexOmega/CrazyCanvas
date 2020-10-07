@@ -1,9 +1,28 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
 
 #include "../Helpers.glsl"
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+#define THREAD_COUNT 32
+layout(local_size_x = THREAD_COUNT, local_size_y = 1, local_size_z = 1) in;
+
+struct SVertexJointData
+{
+	uint8_t JointID0;
+	uint8_t JointID1;
+	uint8_t JointID2;
+	uint8_t JointID3;
+	float	Weight0;
+	float	Weight1;
+	float	Weight2;
+};
+
+// Pushconstants
+layout(push_constant) uniform PushConstants
+{
+	uint VertexCount;
+} u_PC;
 
 // Buffers
 layout(binding = 0, set = 0) restrict readonly buffer OriginalVertices
@@ -19,24 +38,32 @@ layout(binding = 1, set = 0) restrict writeonly	buffer SkinnedVertices
 layout(binding = 2, set = 0) restrict readonly buffer Matrices
 { 
 	mat4 Val[]; 
-} b_BoneMatrices;
+} b_JointMatrices;
 
-layout(binding = 3, set = 0) restrict readonly buffer BoneWeights
+layout(binding = 3, set = 0) restrict readonly buffer JointData
 { 
-	SVertexBoneData Val[]; 
-} b_BoneWeights;
+	SVertexJointData Val[]; 
+} b_JointData;
 
 #define PASSTHROUGH 0
 
 // Main
 void main()
 {
-	SVertexBoneData weights = b_BoneWeights.Val[gl_GlobalInvocationID.x];
-	mat4 bone0 = b_BoneMatrices.Val[weights.Bone0.BoneID] * weights.Bone0.Weight;
-	mat4 bone1 = b_BoneMatrices.Val[weights.Bone1.BoneID] * weights.Bone1.Weight;
-	mat4 bone2 = b_BoneMatrices.Val[weights.Bone2.BoneID] * weights.Bone2.Weight;
-	mat4 bone3 = b_BoneMatrices.Val[weights.Bone3.BoneID] * weights.Bone3.Weight;
-	mat4 transform = bone0 + bone1 + bone2 + bone3;
+	// Return in case this thread is outside of our VertexCount
+	if (gl_GlobalInvocationID.x >= u_PC.VertexCount)
+	{
+		return;
+	}
+
+	SVertexJointData jointData = b_JointData.Val[gl_GlobalInvocationID.x];
+	float weight3 = 1.0f - (jointData.Weight0 + jointData.Weight1 + jointData.Weight2);
+	
+	mat4 joint0 = b_JointMatrices.Val[uint(jointData.JointID0)] * jointData.Weight0;
+	mat4 joint1 = b_JointMatrices.Val[uint(jointData.JointID1)] * jointData.Weight1;
+	mat4 joint2 = b_JointMatrices.Val[uint(jointData.JointID2)] * jointData.Weight2;
+	mat4 joint3 = b_JointMatrices.Val[uint(jointData.JointID3)] * weight3;
+	mat4 transform = joint0 + joint1 + joint2 + joint3;
 
 	SVertex vertex	= b_OriginalVertices.Val[gl_GlobalInvocationID.x];
 	vertex.Position	= transform * vec4(vertex.Position.xyz, 1.0f);

@@ -67,4 +67,13 @@ namespace LambdaEngine
 		m_LastTime	= now;
 		m_TotalTime += m_DeltaTime;
 	}
+	
+	void Clock::Reset()
+	{
+		// Set lasttime in reset so that next deltatime does not become huge
+		m_LastTime = PlatformTime::GetPerformanceCounter();
+
+		m_TotalTime = Timestamp(0);
+		m_DeltaTime = Timestamp(0);
+	}
 }

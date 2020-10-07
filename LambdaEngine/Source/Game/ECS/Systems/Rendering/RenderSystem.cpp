@@ -129,8 +129,8 @@ namespace LambdaEngine
 				return false;
 			}
 
-			m_ppBackBuffers = DBG_NEW Texture*[BACK_BUFFER_COUNT];
-			m_ppBackBufferViews = DBG_NEW TextureView*[BACK_BUFFER_COUNT];
+			m_ppBackBuffers		= DBG_NEW Texture*[BACK_BUFFER_COUNT];
+			m_ppBackBufferViews	= DBG_NEW TextureView*[BACK_BUFFER_COUNT];
 
 			m_FrameIndex++;
 			m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
@@ -289,8 +289,16 @@ namespace LambdaEngine
 
 			PipelineLayoutDesc pipelineLayoutDesc;
 			pipelineLayoutDesc.DebugName			= "Skinning pipeline";
-			pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc };
-			
+			pipelineLayoutDesc.DescriptorSetLayouts	= { descriptorSetLayoutDesc };
+			pipelineLayoutDesc.ConstantRanges		=
+			{
+				{
+					FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+					4,
+					0
+				}
+			};
+
 			m_SkinningPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 			if (!m_SkinningPipelineLayout)
 			{
@@ -449,6 +457,9 @@ namespace LambdaEngine
 		{
 			MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
 			AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
+			const auto&			positionComp	= pPositionComponents->GetData(entity);
+			const auto&			rotationComp	= pRotationComponents->GetData(entity);
+			const auto&			scaleComp		= pScaleComponents->GetData(entity);
 			
 			if (!animationComp.IsPaused)
 			{
@@ -464,6 +475,15 @@ namespace LambdaEngine
 					m_DirtyBLASs.insert(pMeshEntry);
 					m_TLASDirty = true;
 				}
+			}
+
+			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
+			{
+				glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
+				transform			*= glm::toMat4(rotationComp.Quaternion);
+				transform			= glm::scale(transform, scaleComp.Scale);
+
+				UpdateTransform(entity, transform);
 			}
 		}
 
@@ -513,7 +533,26 @@ namespace LambdaEngine
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 
-		// TODO: Fill custom renderes also!
+		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
+		{
+			m_pLineRenderer = DBG_NEW LineRenderer();
+			m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+
+			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+		}
+
+		//GUI Renderer
+		{
+			ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
+		}
+
+		{
+			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
+			m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+
+			renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
+		}
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
@@ -528,7 +567,25 @@ namespace LambdaEngine
 		m_RenderGraphSBTRecordsDirty		= true;
 		m_LightsResourceDirty				= true;
 
+		if (m_RayTracingEnabled)
+		{
+			m_TLASResourceDirty = true;
+		}
+
 		UpdateRenderGraph();
+	}
+
+	void RenderSystem::SetRenderStageSleeping(const String& renderStageName, bool sleeping)
+	{
+		if (m_pRenderGraph != nullptr)
+		{
+			m_pRenderGraph->SetRenderStageSleeping(renderStageName, sleeping);
+		}
+		else
+		{
+			LOG_WARNING("[RenderSystem]: SetRenderStageSleeping failed - Rendergraph not initilised");
+		}
+
 	}
 
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity)
@@ -702,15 +759,15 @@ namespace LambdaEngine
 						vertexWeightBufferDesc.DebugName	= "Vertex Weight Staging Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-						vertexWeightBufferDesc.SizeInBytes	= pMesh->VertexBoneData.GetSize() * sizeof(VertexBoneData);
+						vertexWeightBufferDesc.SizeInBytes	= pMesh->VertexJointData.GetSize() * sizeof(VertexJointData);
 
-						VALIDATE(pMesh->VertexBoneData.GetSize() == pMesh->Vertices.GetSize());
+						VALIDATE(pMesh->VertexJointData.GetSize() == pMesh->Vertices.GetSize());
 
 						Buffer* pVertexWeightStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexWeightBufferDesc);
 						VALIDATE(pVertexWeightStagingBuffer != nullptr);
 
 						void* pMappedWeights = pVertexWeightStagingBuffer->Map();
-						memcpy(pMappedWeights, pMesh->VertexBoneData.GetData(), vertexWeightBufferDesc.SizeInBytes);
+						memcpy(pMappedWeights, pMesh->VertexJointData.GetData(), vertexWeightBufferDesc.SizeInBytes);
 						pVertexWeightStagingBuffer->Unmap();
 
 						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
@@ -1034,7 +1091,7 @@ namespace LambdaEngine
 		swappedInstanceKeyIt->second.InstanceIndex = instanceKeyIt->second.InstanceIndex;
 		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
 
-		//Unload Mesh, Todo: Should we always do this?
+		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
@@ -1303,8 +1360,8 @@ namespace LambdaEngine
 	void RenderSystem::UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry)
 	{
 		// If needed create new buffers
-		const uint64 sizeInBytes = animationComp.BoneMatrices.GetSize() * sizeof(glm::mat4);
-		if (animationComp.BoneMatrices.GetSize() > meshEntry.BoneMatrixCount)
+		const uint64 sizeInBytes = animationComp.Pose.GlobalTransforms.GetSize() * sizeof(glm::mat4);
+		if (animationComp.Pose.GlobalTransforms.GetSize() > meshEntry.BoneMatrixCount)
 		{
 			if (meshEntry.pBoneMatrixBuffer)
 			{
@@ -1313,7 +1370,7 @@ namespace LambdaEngine
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pAnimationDescriptorSet);
 			}
 
-			BufferDesc matrixBufferDesc = {};
+			BufferDesc matrixBufferDesc;
 			matrixBufferDesc.DebugName		= "Matrix Staging Buffer";
 			matrixBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			matrixBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
@@ -1326,7 +1383,7 @@ namespace LambdaEngine
 			matrixBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 
 			meshEntry.pBoneMatrixBuffer			= RenderAPI::GetDevice()->CreateBuffer(&matrixBufferDesc);
-			meshEntry.BoneMatrixCount			= animationComp.BoneMatrices.GetSize();
+			meshEntry.BoneMatrixCount			= animationComp.Pose.GlobalTransforms.GetSize();
 			meshEntry.pAnimationDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet("Animation Descriptor Set", m_SkinningPipelineLayout.Get(), 0, m_AnimationDescriptorHeap.Get());
 			
 			const uint64 offset = 0;
@@ -1334,13 +1391,13 @@ namespace LambdaEngine
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexBuffer,			&offset, &size,			0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pAnimatedVertexBuffer,	&offset, &size,			1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pBoneMatrixBuffer,		&offset, &sizeInBytes,	2, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-			size = meshEntry.VertexCount * sizeof(VertexBoneData);
+			size = meshEntry.VertexCount * sizeof(VertexJointData);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexWeightsBuffer, &offset, &size, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 		}
 
 		// Copy data
 		void* pMapped = meshEntry.pStagingMatrixBuffer->Map();
-		memcpy(pMapped, animationComp.BoneMatrices.GetData(), sizeInBytes);
+		memcpy(pMapped, animationComp.Pose.GlobalTransforms.GetData(), sizeInBytes);
 		meshEntry.pStagingMatrixBuffer->Unmap();
 		
 		m_PendingBufferUpdates.PushBack({ meshEntry.pStagingMatrixBuffer, 0, meshEntry.pBoneMatrixBuffer, 0, sizeInBytes });
@@ -1348,6 +1405,9 @@ namespace LambdaEngine
 
 	void RenderSystem::PerformMeshSkinning(CommandList* pCommandList)
 	{
+		// TODO: Investigate the best groupsize for us (THIS MUST MATCH THE SHADER-DEFINE)
+		constexpr uint32 THREADS_PER_WORKGROUP = 32;
+		
 		PipelineState* pPipeline = PipelineStateManager::GetPipelineState(m_SkinningPipelineID);
 		VALIDATE(pPipeline != nullptr);
 		
@@ -1355,7 +1415,12 @@ namespace LambdaEngine
 		{
 			pCommandList->BindDescriptorSetCompute(pMeshEntry->pAnimationDescriptorSet, m_SkinningPipelineLayout.Get(), 0);
 			pCommandList->BindComputePipeline(pPipeline);
-			pCommandList->Dispatch(pMeshEntry->VertexCount, 1, 1);
+
+			const uint32 vertexCount = pMeshEntry->VertexCount;
+			pCommandList->SetConstantRange(m_SkinningPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &vertexCount, sizeof(uint32), 0);
+
+			const uint32 workGroupCount = std::max<uint32>(AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
+			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
 
 		m_AnimationsToUpdate.clear();

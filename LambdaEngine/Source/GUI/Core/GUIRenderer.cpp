@@ -57,12 +57,12 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppRenderCommandLists[b]);
 			SAFERELEASE(m_ppRenderCommandAllocators[b]);
 
-			for (Buffer* pBuffer : m_pBuffersToRemove[b])
+			for (DeviceChild* pGraphicsResource : m_pGraphicsResourcesToRemove[b])
 			{
-				SAFERELEASE(pBuffer);
+				SAFERELEASE(pGraphicsResource);
 			}
 
-			m_pBuffersToRemove[b].Clear();
+			m_pGraphicsResourcesToRemove[b].Clear();
 
 			for (Buffer* pParamsBuffer : m_pUsedParamsBuffers[b])
 			{
@@ -116,6 +116,8 @@ namespace LambdaEngine
 
 	bool GUIRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
+		if (m_Initialized) return true;
+
 		VALIDATE(pPreInitDesc != nullptr);
 		VALIDATE(pPreInitDesc->BackBufferCount == BACK_BUFFER_COUNT);
 
@@ -143,6 +145,7 @@ namespace LambdaEngine
 			return false;
 		}
 
+		m_Initialized = true;
 		return true;
 	}
 	
@@ -319,7 +322,7 @@ namespace LambdaEngine
 		{
 			if (m_pVertexBuffer == nullptr || m_pVertexBuffer->GetDesc().SizeInBytes < m_RequiredVertexBufferSize)
 			{
-				if (m_pVertexBuffer != nullptr) m_pBuffersToRemove->PushBack(m_pVertexBuffer);
+				if (m_pVertexBuffer != nullptr) m_pGraphicsResourcesToRemove[m_ModFrameIndex].PushBack(m_pVertexBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "GUI Vertex Buffer";
@@ -351,7 +354,7 @@ namespace LambdaEngine
 		{
 			if (m_pIndexBuffer == nullptr || m_pIndexBuffer->GetDesc().SizeInBytes < m_RequiredIndexBufferSize)
 			{
-				if (m_pIndexBuffer != nullptr) m_pBuffersToRemove->PushBack(m_pIndexBuffer);
+				if (m_pIndexBuffer != nullptr) m_pGraphicsResourcesToRemove[m_ModFrameIndex].PushBack(m_pIndexBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "GUI Index Buffer";
@@ -555,32 +558,30 @@ namespace LambdaEngine
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
 		CommandList** ppFirstExecutionStage,
-		CommandList** ppSecondaryExecutionStage)
+		CommandList** ppSecondaryExecutionStage,
+		bool sleeping)
 	{
 		m_ModFrameIndex		= modFrameIndex;
 		m_BackBufferIndex	= backBufferIndex;
 
-		//Delete Buffers
+		if (!sleeping)
 		{
-			TArray<Buffer*>& frameBuffersToRemove = m_pBuffersToRemove[m_ModFrameIndex];
+			TArray<DeviceChild*>& resourcesToRemove = m_pGraphicsResourcesToRemove[m_ModFrameIndex];
 
-			if (!frameBuffersToRemove.IsEmpty())
+			if (!resourcesToRemove.IsEmpty())
 			{
-				for (Buffer* pBuffer : frameBuffersToRemove)
+				for (DeviceChild* pGraphicsResource : resourcesToRemove)
 				{
-					SAFERELEASE(pBuffer);
+					SAFERELEASE(pGraphicsResource);
 				}
 
-				frameBuffersToRemove.Clear();
+				resourcesToRemove.Clear();
 			}
-		}
 
-		//Make Param Buffers available again
-		{
-			TArray<Buffer*>& buffersNowAvailable = m_pUsedParamsBuffers[m_ModFrameIndex];
-
-			if (!buffersNowAvailable.IsEmpty())
+			//Make Param Buffers available again
 			{
+				TArray<Buffer*>& buffersNowAvailable = m_pUsedParamsBuffers[m_ModFrameIndex];
+
 				for (Buffer* pParamsBuffer : buffersNowAvailable)
 				{
 					m_AvailableParamsBuffers.PushBack(pParamsBuffer);
@@ -588,20 +589,20 @@ namespace LambdaEngine
 
 				buffersNowAvailable.Clear();
 			}
-		}
 
-		//Make Descriptor Sets available again
-		{
-			TArray<DescriptorSet*>& descriptorsNowAvailable = m_pUsedDescriptorSets[m_ModFrameIndex];
-
-			if (!descriptorsNowAvailable.IsEmpty())
+			//Make Descriptor Sets available again
 			{
-				for (DescriptorSet* pDescriptorSet : descriptorsNowAvailable)
-				{
-					m_AvailableDescriptorSets.PushBack(pDescriptorSet);
-				}
+				TArray<DescriptorSet*>& descriptorsNowAvailable = m_pUsedDescriptorSets[m_ModFrameIndex];
 
-				descriptorsNowAvailable.Clear();
+				if (!descriptorsNowAvailable.IsEmpty())
+				{
+					for (DescriptorSet* pDescriptorSet : descriptorsNowAvailable)
+					{
+						m_AvailableDescriptorSets.PushBack(pDescriptorSet);
+					}
+
+					descriptorsNowAvailable.Clear();
+				}
 			}
 		}
 
@@ -612,21 +613,24 @@ namespace LambdaEngine
 		m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());
 		m_View->GetRenderer()->UpdateRenderTree();
 
-		m_View->GetRenderer()->RenderOffscreen();
-		m_View->GetRenderer()->Render();
-
-		CommandList* pUtilityCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
-		CommandList* pRenderCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
-
-		if (pUtilityCommandList->IsBegin())
+		if (!sleeping)
 		{
-			pUtilityCommandList->End();
-			(*ppFirstExecutionStage)		= pUtilityCommandList;
-			(*ppSecondaryExecutionStage)	= pRenderCommandList;
-		}
-		else
-		{
-			(*ppFirstExecutionStage) = pRenderCommandList;
+			m_View->GetRenderer()->RenderOffscreen();
+			m_View->GetRenderer()->Render();
+
+			CommandList* pUtilityCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
+			CommandList* pRenderCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
+
+			if (pUtilityCommandList->IsBegin())
+			{
+				pUtilityCommandList->End();
+				(*ppFirstExecutionStage)		= pUtilityCommandList;
+				(*ppSecondaryExecutionStage)	= pRenderCommandList;
+			}
+			else
+			{
+				(*ppFirstExecutionStage) = pRenderCommandList;
+			}
 		}
 	}
 

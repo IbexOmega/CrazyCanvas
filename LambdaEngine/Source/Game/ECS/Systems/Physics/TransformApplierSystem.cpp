@@ -36,6 +36,8 @@ namespace LambdaEngine
 
 	void TransformApplierSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECS = ECSCore::GetInstance();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		const auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();

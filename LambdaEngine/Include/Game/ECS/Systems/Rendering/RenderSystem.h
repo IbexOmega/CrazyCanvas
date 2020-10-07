@@ -226,7 +226,16 @@ namespace LambdaEngine
 
 		bool Render();
 
+		/*
+		* Set new rendergraph to be executed
+		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
+
+		/*
+		* Puts given render stage to sleep, this will prevent execution of renderstage
+		* Useful for optimization when a rendergraph can still execute without given renderstage
+		*/
+		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
 		uint64			GetFrameIndex() const	 	{ return m_FrameIndex; }
@@ -286,7 +295,7 @@ namespace LambdaEngine
 		IDVector m_CameraEntities;
 		IDVector m_AnimatedEntities;
 
-		LineRenderer*			m_pLineRenderer	= nullptr;
+		LineRenderer*			m_pLineRenderer			= nullptr;
 		PaintMaskRenderer*		m_pPaintMaskRenderer	= nullptr;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
@@ -328,10 +337,10 @@ namespace LambdaEngine
 		// Per Frame
 		PerFrameBuffer		m_PerFrameData;
 
-		Buffer*	m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
-		Buffer*	m_pLightsBuffer								= nullptr;
-		Buffer*	m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*	m_pPerFrameBuffer			= nullptr;
+		Buffer* m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
+		Buffer* m_pLightsBuffer								= nullptr;
+		Buffer* m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
+		Buffer* m_pPerFrameBuffer			= nullptr;
 
 		// Draw Args
 		TSet<uint32> m_RequiredDrawArgs;
