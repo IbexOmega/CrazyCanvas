@@ -38,7 +38,7 @@ void PlaySessionState::Init()
 			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity e = CreateFPSCameraEntity(cameraDesc);
+		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -46,7 +46,7 @@ void PlaySessionState::Init()
 
 	// Scene
 	{
-		LevelManager::LoadLevel(0);
+		LevelManager::LoadLevel(1);
 	}
 
 	// Robot

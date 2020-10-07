@@ -219,6 +219,7 @@ namespace LambdaEngine
 			aiProcess_GenUVCoords				|
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
+			aiProcess_PreTransformVertices		|
 			aiProcess_FindInvalidData;
 
 		// Prevent crashes in assimp when using this flag

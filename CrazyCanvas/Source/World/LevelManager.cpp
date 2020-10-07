@@ -207,7 +207,6 @@ bool LevelManager::LoadLevel(uint32 index)
 			else
 			{
 				LevelModule* pModule = DBG_NEW LevelModule();
-
 				if (!pModule->Init(moduleDesc.Filename))
 				{
 					LOG_ERROR("[LevelManager]: Failed to initialize Level Module");
