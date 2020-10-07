@@ -146,7 +146,7 @@ namespace LambdaEngine
 
 		/*	Create component immediately, but hold off on registering and publishing it until the end of the frame.
 			This is to prevent concurrency issues. Publishing a component means pushing entity IDs to IDVectors,
-			and there is no guarentee that no one is simultaneously reading from these IDVectors. */
+			and there is no guarantee that no one is simultaneously reading from these IDVectors. */
 		m_ComponentsToRegister.PushBack({entity, Comp::Type()});
 		return m_ComponentStorage.AddComponent<Comp>(entity, component);
 	}
