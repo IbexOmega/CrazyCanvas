@@ -222,7 +222,7 @@ namespace LambdaEngine
 		GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
 		memcpy(&sys, &fsys, sizeof(FILETIME));
 		memcpy(&user, &fuser, sizeof(FILETIME));
-		float64 percent = (sys.QuadPart - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.QuadPart);
+		float64 percent = float64(sys.QuadPart - lastSysCPU.QuadPart) + float64(user.QuadPart - lastUserCPU.QuadPart);
 		percent /= (now.QuadPart - lastCPU.QuadPart);
 		percent /= numProcessors;
 		lastCPU = now;

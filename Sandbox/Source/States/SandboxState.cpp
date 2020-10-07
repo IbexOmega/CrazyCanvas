@@ -1,6 +1,7 @@
 #include "States/SandboxState.h"
 
 #include "Resources/ResourceManager.h"
+#include "Resources/AnimationBlendState.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -145,12 +146,8 @@ void SandboxState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID			= thriller[0];
-		robotAnimationComp.BlendingAnimationGUID	= GUID_NONE;
-		robotAnimationComp.PlaybackSpeed			= 1.0f;
-		robotAnimationComp.IsLooping				= true;
-		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
-		robotAnimationComp.Pose.pSkeleton			= ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		robotAnimationComp.State			= AnimationState(ClipState("thriller", thriller[0]));
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 1.1f, -2.5f);
 		glm::vec3 scale(0.01f);
@@ -161,9 +158,9 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		
+	
 		position = glm::vec3(0.0f, 1.25f, 0.0f);
-		robotAnimationComp.AnimationGUID = animations[0];
+		robotAnimationComp.State = AnimationState(ClipState("walking", animations[0]));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -173,7 +170,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(-5.0f, 1.1f, 0.0f);
-		robotAnimationComp.AnimationGUID = running[0];
+		robotAnimationComp.State = AnimationState(ClipState("running", running[0]));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -184,8 +181,16 @@ void SandboxState::Init()
 
 		position = glm::vec3(5.0f, 1.1f, 0.0f);
 
-		robotAnimationComp.AnimationGUID			= animations[0];
-		robotAnimationComp.BlendingAnimationGUID	= running[0];
+		AnimationState animationState;
+		animationState.PushClip(ClipState("running", running[0]));
+		animationState.PushClip(ClipState("walking", animations[0]));
+		
+		AnimationBlendState blendState;
+		blendState.PushBlendInfo(AnimationBlendInfo("running", 0.5f), false);
+		blendState.PushBlendInfo(AnimationBlendInfo("walking", 0.5f));
+		animationState.PushBlendState(blendState);
+
+		robotAnimationComp.State = animationState;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });

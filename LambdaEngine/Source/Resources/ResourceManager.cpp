@@ -1238,7 +1238,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		D_LOG_WARNING("[ResourceManager]: GetAnimation called with invalid GUID %u", guid);
+		D_LOG_WARNING("[ResourceManager]: GetClip called with invalid GUID %u", guid);
 		return nullptr;
 	}
 

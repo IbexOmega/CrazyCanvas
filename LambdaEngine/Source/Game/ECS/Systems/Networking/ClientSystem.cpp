@@ -268,7 +268,7 @@ namespace LambdaEngine
 			materialProperties);
 
 		AnimationComponent animationComp;
-		animationComp.AnimationGUID = animations[0];
+		animationComp.State = AnimationState(ClipState("dancing", animations[0]));
 
 		pECS->AddComponent<PositionComponent>(entity,	{ true, position });
 		pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() });

@@ -19,96 +19,101 @@ namespace LambdaEngine
 
 	void AnimationSystem::Animate(AnimationComponent& animation)
 	{
-		Animation* pAnimation = ResourceManager::GetAnimation(animation.AnimationGUID);
-		VALIDATE(pAnimation);
-
-		Skeleton* pSkeleton = animation.Pose.pSkeleton;
-		VALIDATE(pSkeleton);
-
 		// Make sure we have enough matrices
-		if (animation.Pose.LocalTransforms.GetSize() < pSkeleton->Joints.GetSize())
+		Skeleton& skeleton = *animation.Pose.pSkeleton;
+		if (animation.Pose.LocalTransforms.GetSize() < skeleton.Joints.GetSize())
 		{
-			animation.Pose.LocalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
+			animation.Pose.LocalTransforms.Resize(skeleton.Joints.GetSize(), glm::mat4(1.0f));
 		}
 
-		if (animation.Pose.GlobalTransforms.GetSize() < pSkeleton->Joints.GetSize())
+		if (animation.Pose.GlobalTransforms.GetSize() < skeleton.Joints.GetSize())
 		{
-			animation.Pose.GlobalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
+			animation.Pose.GlobalTransforms.Resize(skeleton.Joints.GetSize(), glm::mat4(1.0f));
 		}
 
-		// Get localtime for the animation-clip
-		float64 localTime = (GetTotalTimeInSeconds() - animation.StartTime) * fabs(animation.PlaybackSpeed);
-		if (animation.IsLooping)
-		{
-			if (animation.NumLoops != INFINITE_LOOPS)
-			{
-				float64 totalDuration = animation.NumLoops * pAnimation->DurationInSeconds();
-				localTime = glm::clamp(localTime, 0.0, totalDuration);
-			}
-
-			localTime = fmod(localTime, pAnimation->DurationInSeconds());
-		}
-		else
-		{
-			localTime = glm::clamp(localTime, 0.0, pAnimation->DurationInSeconds());
-		}
-
-		// Get normalized time
-		float64 normalizedLocalTime = localTime / pAnimation->DurationInSeconds();
-		if (animation.PlaybackSpeed < 0.0)
-		{
-			normalizedLocalTime = 1.0 - normalizedLocalTime;
-		}
-
-		// Calculate SQT for each animation to blend between
-		TArray<SQT> mainAnimation = CalculateSQT(*pAnimation, *pSkeleton, normalizedLocalTime, animation.IsLooping);
+		const AnimationBlendState& blendState = animation.State.GetCurrentBlendState();
 		
-		TArray<SQT> blendAnimation;
-		if (animation.BlendingAnimationGUID != GUID_NONE)
+		TArray<TArray<SQT>> sqtArrays;
+		sqtArrays.Reserve(blendState.GetBlendInfoCount());
+
+		for (const AnimationBlendInfo& blendInfo : blendState)
 		{
-			Animation* pBlendAnimation = ResourceManager::GetAnimation(animation.BlendingAnimationGUID);
-			VALIDATE(pBlendAnimation);
+			VALIDATE(animation.State.HasClip(blendInfo.AnimationName) == true);
 
-			blendAnimation = CalculateSQT(*pBlendAnimation, *pSkeleton, normalizedLocalTime, animation.IsLooping);
-			VALIDATE(blendAnimation.GetSize() == mainAnimation.GetSize());
-
-			// Calculate local transforms
-			for (uint32 i = 0; i < blendAnimation.GetSize(); i++)
+			ClipState& clip = animation.State.GetClip(blendInfo.AnimationName);
+			Animation& anim = *ResourceManager::GetAnimation(clip.AnimationGUID);
+			
+			// Get localtime for the animation-clip
+			float64 localTime = (GetTotalTimeInSeconds() - clip.StartTime) * fabs(clip.PlaybackSpeed);
+			if (clip.IsLooping)
 			{
-				SQT& sqt0 = mainAnimation[i];
-				SQT& sqt1 = blendAnimation[i];
+				if (clip.NumLoops != INFINITE_LOOPS)
+				{
+					float64 totalDuration = clip.NumLoops * anim.DurationInSeconds();
+					localTime = glm::clamp(localTime, 0.0, totalDuration);
+				}
 
-				const float32 factor = 0.75f;
-				glm::vec3 translation	= glm::mix(sqt0.Translation, sqt1.Translation, glm::vec3(factor));
-				glm::vec3 scale			= glm::mix(sqt0.Scale, sqt1.Scale, glm::vec3(factor));
-				glm::quat rotation		= glm::slerp(sqt0.Rotation, sqt1.Rotation, factor);
-				rotation = glm::normalize(rotation);
+				localTime = fmod(localTime, anim.DurationInSeconds());
+			}
+			else
+			{
+				localTime = glm::clamp(localTime, 0.0, anim.DurationInSeconds());
+			}
 
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), translation);
-				transform			= transform * glm::toMat4(rotation);
-				transform			= glm::scale(transform, scale);
-				animation.Pose.LocalTransforms[i] = transform;
+			clip.LocalTime = localTime / anim.DurationInSeconds();
+			if (clip.PlaybackSpeed < 0.0)
+			{
+				clip.LocalTime = 1.0 - clip.LocalTime;
+			}
+
+			// Interpolate between keyframes
+			sqtArrays.EmplaceBack(CalculateSQT(anim, skeleton, clip.LocalTime, clip.IsLooping));
+		}
+
+		// Blend
+		if (sqtArrays.GetSize() > 1)
+		{
+			// Get blend weight factor
+
+
+			// Perform blending
+			const float32 weight = blendState.GetBlendInfo(i).NormalizedWeight;
+			for (uint32 i = 0; i < sqtArrays.GetSize() - 1; i++)
+			{
+				TArray<SQT>& array0 = sqtArrays[i];
+				TArray<SQT>& array1 = sqtArrays[i + 1];
+
+				// TODO: Other blending technique than a simple learp is necessary if we want to blend more than two meshes
+				for (uint32 j = 0; j < array0.GetSize(); j++)
+				{
+					SQT& sqt0 = array0[j];
+					SQT& sqt1 = array1[j];
+
+					// Save in array slot 0
+					sqt0.Translation	= glm::mix(sqt1.Translation, sqt0.Translation, glm::vec3(weight));
+					sqt0.Scale			= glm::mix(sqt1.Scale, sqt0.Scale, glm::vec3(weight));
+					sqt0.Rotation		= glm::slerp(sqt1.Rotation, sqt0.Rotation, weight);
+					sqt0.Rotation		= glm::normalize(sqt0.Rotation);
+				}
 			}
 		}
-		else
-		{
-			// Calculate local transforms
-			for (uint32 i = 0; i < mainAnimation.GetSize(); i++)
-			{
-				SQT& sqt = mainAnimation[i];
 
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
-				transform			= transform * glm::toMat4(sqt.Rotation);
-				transform			= glm::scale(transform, sqt.Scale);
-				animation.Pose.LocalTransforms[i] = transform;
-			}
+		// Create localtransforms
+		for (uint32 i = 0; i < sqtArrays[0].GetSize(); i++)
+		{
+			SQT& sqt = sqtArrays[0][i];
+
+			glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
+			transform			= transform * glm::toMat4(sqt.Rotation);
+			transform			= glm::scale(transform, sqt.Scale);
+			animation.Pose.LocalTransforms[i] = transform;
 		}
 		
-		// Calculate global transforms
-		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
+		// Create global transforms
+		for (uint32 i = 0; i < skeleton.Joints.GetSize(); i++)
 		{
-			const Joint& joint = pSkeleton->Joints[i];
-			animation.Pose.GlobalTransforms[i] = pSkeleton->InverseGlobalTransform * ApplyParent(joint, *pSkeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
+			const Joint& joint = skeleton.Joints[i];
+			animation.Pose.GlobalTransforms[i] = skeleton.InverseGlobalTransform * ApplyParent(joint, skeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
 		}
 	}
 
@@ -274,6 +279,16 @@ namespace LambdaEngine
 				if (animation.StartTime != 0.0)
 				{
 					animation.StartTime = GetTotalTimeInSeconds();
+				}
+
+				// TODO: Fix better way for this
+				const AnimationBlendState& blendState = animation.State.GetCurrentBlendState();
+				for (const AnimationBlendInfo& blendInfo : blendState)
+				{
+					VALIDATE(animation.State.HasClip(blendInfo.AnimationName) == true);
+
+					ClipState& clip = animation.State.GetClip(blendInfo.AnimationName);
+					clip.StartTime = GetTotalTimeInSeconds();
 				}
 			}
 			

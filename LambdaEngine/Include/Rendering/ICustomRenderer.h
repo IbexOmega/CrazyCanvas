@@ -14,7 +14,7 @@ namespace LambdaEngine
 	class TextureView;
 	class Buffer;
 	class AccelerationStructure;
-	class DrawArg;
+	struct DrawArg;
 
 	struct CustomRendererRenderGraphInitDesc
 	{
