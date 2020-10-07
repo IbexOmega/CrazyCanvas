@@ -27,6 +27,7 @@ public:
 
 private:
 	static void CreateSpawnpoint(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
+	static void CreateFlag(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
 
 private:
 	inline static bool m_ClientSide = false;

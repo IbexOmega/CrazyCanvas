@@ -34,6 +34,8 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
+#include "World/LevelManager.h"
+
 void BenchmarkState::Init()
 {
 	using namespace LambdaEngine;
@@ -72,35 +74,7 @@ void BenchmarkState::Init()
 
 	// Scene
 	{
-		TArray<MeshComponent>			meshComponents;
-		TArray<LoadedDirectionalLight>	directionalLights;
-		TArray<LoadedPointLight>		pointLights;
-		TArray<SpecialObject>			specialObjects;
-
-		SceneLoadDesc sceneLoadDesc = {};
-		sceneLoadDesc.Filename = "Prototype/PrototypeScene.dae";
-
-		ResourceManager::LoadSceneFromFile(&sceneLoadDesc, meshComponents, directionalLights, pointLights, specialObjects);
-
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
-
-		for (const MeshComponent& meshComponent : meshComponents)
-		{
-			Entity entity = pECS->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = {
-				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-			};
-
-			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-		}
+		LevelManager::LoadLevel(0);
 	}
 
 	// Robot

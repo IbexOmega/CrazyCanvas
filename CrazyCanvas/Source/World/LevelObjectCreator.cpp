@@ -17,12 +17,22 @@ bool LevelObjectCreator::Init(bool clientSide)
 	{
 		SpecialObjectDesc specialObjectDesc =
 		{
-			.Prefix			= "SPAWN_",
-			.IncludeMesh	= true
+			.Prefix			= "SO_SPAWN_"
 		};
 
 		s_SpecialObjectDescriptions.PushBack(specialObjectDesc);
 		s_CreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateSpawnpoint;
+	}
+
+	//Spawnpoint
+	{
+		SpecialObjectDesc specialObjectDesc =
+		{
+			.Prefix			= "SO_FLAG_"
+		};
+
+		s_SpecialObjectDescriptions.PushBack(specialObjectDesc);
+		s_CreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateFlag;
 	}
 
 	return true;
@@ -125,4 +135,13 @@ void LevelObjectCreator::CreateSpawnpoint(const LambdaEngine::SpecialObject& spe
 	UNREFERENCED_VARIABLE(translation);
 
 	LOG_WARNING("[LevelObjectCreator]: Spawnpoint not implemented!");
+}
+
+void LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	UNREFERENCED_VARIABLE(specialObject);
+	UNREFERENCED_VARIABLE(createdEntities);
+	UNREFERENCED_VARIABLE(translation);
+
+	LOG_WARNING("[LevelObjectCreator]: Create Flag not implemented!");
 }

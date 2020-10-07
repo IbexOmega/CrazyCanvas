@@ -263,6 +263,7 @@ namespace LambdaEngine
 			aiProcess_GenUVCoords				|
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
+			aiProcess_OptimizeGraph				|
 			aiProcess_FindInvalidData;
 		
 		// Prevent crashes in assimp when using this flag
@@ -1338,6 +1339,8 @@ namespace LambdaEngine
 		bool isSpecial		= false;
 		TArray<SpecialObject*> specialObjectToBeSet;
 
+		LOG_WARNING("Node Name: %s", pNode->mName.C_Str());
+
 		//Check if there are any special object descriptions referencing this object
 		for (const SpecialObjectDesc& specialObjectDesc : context.SpecialObjectDescriptions)
 		{
@@ -1349,9 +1352,8 @@ namespace LambdaEngine
 				isSpecial = true;
 
 				//If any special object wants this mesh included in the scene, we include it
-				if (specialObjectDesc.IncludeMesh)
+				if (nodeName.find("INCLUDEMESH") != String::npos)
 				{
-					
 					loadNormally = true;
 				}
 

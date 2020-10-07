@@ -32,7 +32,6 @@ namespace LambdaEngine
 	struct SpecialObjectDesc
 	{
 		String	Prefix		= "";
-		bool	IncludeMesh = true;
 	};
 
 	struct SpecialObject
