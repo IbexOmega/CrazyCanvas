@@ -185,10 +185,13 @@ void SandboxState::Init()
 		animationState.PushClip(ClipState("running", running[0]));
 		animationState.PushClip(ClipState("walking", animations[0]));
 		
-		AnimationBlendState blendState;
-		blendState.PushBlendInfo(AnimationBlendInfo("running", 0.5f), false);
-		blendState.PushBlendInfo(AnimationBlendInfo("walking", 0.5f));
-		animationState.PushBlendState(blendState);
+		AnimationBlendState blendState0;
+		blendState0.PushBlendInfo(AnimationBlendInfo("running"), true);
+		animationState.PushBlendState(blendState0);
+
+		AnimationBlendState blendState1;
+		blendState1.PushBlendInfo(AnimationBlendInfo("walking"), true);
+		animationState.PushBlendState(blendState0);
 
 		robotAnimationComp.State = animationState;
 

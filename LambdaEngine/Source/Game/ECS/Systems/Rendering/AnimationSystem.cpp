@@ -31,8 +31,9 @@ namespace LambdaEngine
 			animation.Pose.GlobalTransforms.Resize(skeleton.Joints.GetSize(), glm::mat4(1.0f));
 		}
 
-		const AnimationBlendState& blendState = animation.State.GetCurrentBlendState();
-		
+		AnimationBlendState& blendState = animation.State.GetCurrentBlendState();
+		blendState.CalculateWeights(); // Calculates the weights if they are dirty
+
 		TArray<TArray<SQT>> sqtArrays;
 		sqtArrays.Reserve(blendState.GetBlendInfoCount());
 

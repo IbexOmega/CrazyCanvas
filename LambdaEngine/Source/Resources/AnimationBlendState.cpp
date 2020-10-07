@@ -7,8 +7,19 @@ namespace LambdaEngine
 	*/
 
 	AnimationBlendState::AnimationBlendState()
-		: m_Name()
+		: m_IsDirty(true)
 		, m_TotalWeight(0.0f)
+		, m_Name()
+		, m_BlendType(EAnimationBlendType::ANIMATION_BLEND_TYPE_STATIC)
+		, m_BlendInfos()
+	{
+	}
+
+	AnimationBlendState::AnimationBlendState(EAnimationBlendType blendType)
+		: m_IsDirty(true)
+		, m_TotalWeight(0.0f)
+		, m_Name()
+		, m_BlendType(blendType)
 		, m_BlendInfos()
 	{
 	}
@@ -22,6 +33,8 @@ namespace LambdaEngine
 		}
 
 		m_BlendInfos.PushBack(animationBlendInfo);
+		m_IsDirty = true;
+
 		if (normalizeWeights)
 		{
 			CalculateWeights();
@@ -37,6 +50,8 @@ namespace LambdaEngine
 		}
 
 		m_BlendInfos.PushBack(animationBlendInfo);
+		m_IsDirty = true;
+
 		if (normalizeWeights)
 		{
 			CalculateWeights();
@@ -48,6 +63,7 @@ namespace LambdaEngine
 		if (!m_BlendInfos.IsEmpty())
 		{
 			m_BlendInfos.PopBack();
+			m_IsDirty = true;
 
 			if (normalizeWeights)
 			{
@@ -58,22 +74,27 @@ namespace LambdaEngine
 
 	void AnimationBlendState::CalculateWeights()
 	{
-		float32 totalWeight = 0.0f;
-		for (AnimationBlendInfo& info : m_BlendInfos)
+		if (m_IsDirty)
 		{
-			info.StaticWeight = fabs(info.StaticWeight);
-			totalWeight += info.StaticWeight;
-		}
-
-		// Protect against divide by zero
-		if (totalWeight > 0.0f)
-		{
+			float32 totalWeight = 0.0f;
 			for (AnimationBlendInfo& info : m_BlendInfos)
 			{
-				info.NormalizedWeight = info.StaticWeight / totalWeight;
+				info.StaticWeight = fabs(info.StaticWeight);
+				totalWeight += info.StaticWeight;
 			}
 
-			m_TotalWeight = totalWeight;
+			// Protect against divide by zero
+			if (totalWeight > 0.0f)
+			{
+				for (AnimationBlendInfo& info : m_BlendInfos)
+				{
+					info.NormalizedWeight = info.StaticWeight / totalWeight;
+				}
+
+				m_TotalWeight = totalWeight;
+			}
+
+			m_IsDirty = false;
 		}
 	}
 
@@ -147,6 +168,14 @@ namespace LambdaEngine
 		if (!m_BlendStates.IsEmpty())
 		{
 			m_BlendStates.PopBack();
+		}
+	}
+
+	void AnimationState::SetCurrentBlendState(const String& name)
+	{
+		if (HasBlendState(name))
+		{
+
 		}
 	}
 
@@ -238,6 +267,12 @@ namespace LambdaEngine
 		// Should not reach here
 		VALIDATE(0);
 		return m_BlendStates[0];
+	}
+
+	int32 AnimationState::GetBlendStateIndex(const String& name) const
+	{
+
+		return int32();
 	}
 
 	AnimationBlendState& AnimationState::GetCurrentBlendState()

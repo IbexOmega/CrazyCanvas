@@ -28,6 +28,13 @@ namespace LambdaEngine
 		{
 		}
 
+		inline AnimationBlendInfo(const String& animationName)
+			: AnimationName(animationName)
+			, StaticWeight(1.0f)
+			, NormalizedWeight(0.0f)
+		{
+		}
+
 		inline AnimationBlendInfo(const String& animationName, float32 weight)
 			: AnimationName(animationName)
 			, StaticWeight(weight)
@@ -57,6 +64,11 @@ namespace LambdaEngine
 
 		void CalculateWeights();
 		
+		FORCEINLINE EAnimationBlendType GetBlendType() const
+		{
+			return m_BlendType;
+		}
+
 		FORCEINLINE const String& GetName() const
 		{
 			return m_Name;
@@ -83,8 +95,9 @@ namespace LambdaEngine
 		}
 
 	private:
-		String	m_Name;
+		bool	m_IsDirty = true;
 		float32	m_TotalWeight;
+		String	m_Name;
 		EAnimationBlendType			m_BlendType;
 		TArray<AnimationBlendInfo>	m_BlendInfos;
 	};
@@ -149,6 +162,8 @@ namespace LambdaEngine
 		void PushBlendState(const AnimationBlendState& animationBlendState);
 		void PushBlendState(AnimationBlendState&& animationBlendState);
 		void PopBlendState();
+
+		void SetCurrentBlendState(const String& name);
 
 		// Returns true if an animation with this name exists
 		bool HasClip(const String& name) const;
