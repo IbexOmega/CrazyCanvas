@@ -36,6 +36,8 @@ namespace LambdaEngine
 
 	void TransformApplierSystem::Tick(Timestamp deltaTime)
 	{
+		const float32 dt = (float32)deltaTime.AsSeconds();
+
 		ECSCore* pECS = ECSCore::GetInstance();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		const auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
@@ -46,10 +48,10 @@ namespace LambdaEngine
 		for (Entity entity : m_VelocityEntities)
 		{
 			const VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
-			if (velocityComp.Dirty)
+			if (glm::length2(velocityComp.Velocity))
 			{
 				PositionComponent& positionComp = pPositionComponents->GetData(entity);
-				positionComp.Position += velocityComp.Velocity;
+				positionComp.Position += velocityComp.Velocity * dt;
 			}
 		}
 

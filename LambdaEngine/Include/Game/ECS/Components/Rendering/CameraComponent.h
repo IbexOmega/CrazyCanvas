@@ -2,6 +2,7 @@
 
 #include "ECS/Component.h"
 #include "ECS/Entity.h"
+#include "Game/ECS/Components/Physics/Transform.h"
 #include "Math/Math.h"
 
 namespace LambdaEngine
@@ -40,8 +41,8 @@ namespace LambdaEngine
 
 	struct CameraDesc
 	{
-		glm::vec3 Position 	= glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 Direction = glm::vec3(0.0f, 0.0f, -1.0f);
+		glm::vec3 Position 	= 2.0f * g_DefaultUp;
+		glm::vec3 Direction = g_DefaultForward;
 		float FOVDegrees 	= 45.0f;
 		float Width 		= 1280.0f;
 		float Height 		= 720.0f;
