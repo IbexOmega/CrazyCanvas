@@ -311,7 +311,7 @@ namespace LambdaEngine
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
 		controllerDesc.height			= height;
-		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eEASY;
+		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eCONSTRAINED;
 
 		FinalizeCharacterController(characterColliderInfo, controllerDesc);
 	}
@@ -341,13 +341,23 @@ namespace LambdaEngine
 			VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
 			glm::vec3& velocity = velocityComp.Velocity;
 
-			const PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+			translationPX *= dt;
 
 			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
 			PxController* pController = characterCollider.pController;
 
+			// Don't move downwards if the character is already on the ground
+			PxControllerState controllerState;
+			pController->getState(controllerState);
+
+			if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+			{
+				velocity.y = std::max<float32>(velocity.y, 0.0f);
+			}
+
 			pController->setPosition({ position.x, position.y, position.z });
-			characterCollider.pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
+			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 			const PxExtendedVec3& newPositionPX = pController->getPosition();
 			velocity = {
@@ -355,6 +365,8 @@ namespace LambdaEngine
 				(float)newPositionPX.y - position.y,
 				(float)newPositionPX.z - position.z
 			};
+
+			velocity /= dt;
 		}
 	}
 
@@ -421,7 +433,7 @@ namespace LambdaEngine
 		/*	Max height of obstacles that can be climbed. Note that capsules can automatically climb obstacles because
 			of their round bottoms, so the total step height is taller than the specified one below.
 			This can be turned off however. */
-		constexpr const float stepOffset = 0.15f;
+		constexpr const float stepOffset = 0.0f;
 
 		const glm::vec3& position = characterColliderInfo.Position.Position;
 		const glm::vec3 upDirection = g_DefaultUp * characterColliderInfo.Rotation.Quaternion;
