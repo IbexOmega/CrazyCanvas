@@ -1795,18 +1795,20 @@ namespace LambdaEngine
 		{
 			uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
 
+			TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
+
 			// Remove Cube Texture Context for removed pointlights
 			for (uint32 r = 0; r < diff; r++)
 			{
-				SAFERELEASE(m_CubeTextures.GetBack()); 
+				resourcesToRemove.PushBack(m_CubeTextures.GetBack());
 				m_CubeTextures.PopBack();
 
-				SAFERELEASE(m_CubeTextureViews.GetBack()); 
+				resourcesToRemove.PushBack(m_CubeTextureViews.GetBack());
 				m_CubeTextureViews.PopBack();
 
 				for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
 				{
-					SAFERELEASE(m_CubeSubImageTextureViews.GetBack()); 
+					resourcesToRemove.PushBack(m_CubeSubImageTextureViews.GetBack());
 					m_CubeSubImageTextureViews.PopBack();
 				}
 			}
@@ -1817,7 +1819,7 @@ namespace LambdaEngine
 		resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
 		resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
-		resourceUpdateDesc.ExternalTextureUpdate.Count								= m_CubeTextureViews.GetSize();
+		resourceUpdateDesc.ExternalTextureUpdate.Count								= m_CubeTextures.GetSize();
 		resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
 		resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
 		resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
