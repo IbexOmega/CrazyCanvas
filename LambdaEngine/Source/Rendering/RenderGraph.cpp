@@ -3878,31 +3878,32 @@ namespace LambdaEngine
 		CommandList**			ppFirstExecutionStage,
 		CommandList**			ppSecondExecutionStage)
 	{
+		Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
+		pGraphicsCommandAllocator->Reset();
+		pGraphicsCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
+
+		Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
+		pComputeCommandAllocator->Reset();
+		pComputeCommandList->Begin(nullptr);
+		Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
+		Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 		CommandList* pFirstExecutionCommandList = nullptr;
 		CommandList* pSecondExecutionCommandList = nullptr;
 
 		if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 		{
-			Profiler::GetGPUProfiler()->GetTimestamp(pGraphicsCommandList);
-			pGraphicsCommandAllocator->Reset();
-			pGraphicsCommandList->Begin(nullptr);
 			(*ppFirstExecutionStage) = pGraphicsCommandList;
 			pFirstExecutionCommandList = pGraphicsCommandList;
 			pSecondExecutionCommandList = pComputeCommandList;
-			Profiler::GetGPUProfiler()->ResetTimestamp(pGraphicsCommandList);
-			Profiler::GetGPUProfiler()->StartTimestamp(pGraphicsCommandList);
 		}
 		else if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 		{
-			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
-			pComputeCommandAllocator->Reset();
-			pComputeCommandList->Begin(nullptr);
 			(*ppFirstExecutionStage) = pComputeCommandList;
 			pFirstExecutionCommandList = pComputeCommandList;
 			pSecondExecutionCommandList = pGraphicsCommandList;
-			Profiler::GetGPUProfiler()->ResetTimestamp(pComputeCommandList);
-			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 		}
 
 		//Texture Synchronizations
@@ -3992,16 +3993,16 @@ namespace LambdaEngine
 			}
 		}
 
-		if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
-		{
-			Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
-			pGraphicsCommandList->End();
-		}
-		else if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
-		{
-			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
-			pComputeCommandList->End();
-		}
+		Profiler::GetGPUProfiler()->EndTimestamp(pGraphicsCommandList);
+		pGraphicsCommandList->End();
+		Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
+		pComputeCommandList->End();
+		//if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
+		//{
+		//}
+		//else if (pSynchronizationStage->ExecutionQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
+		//{
+		//}
 
 	}
 
