@@ -40,7 +40,6 @@ using namespace LambdaEngine;
 
 Client::Client()
 {
-
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Client::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Client");

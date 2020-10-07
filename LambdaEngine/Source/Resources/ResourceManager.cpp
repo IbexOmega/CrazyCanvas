@@ -89,6 +89,8 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::s_MaterialShaderGUID = GUID_NONE;
 
+	TSet<GUID_Lambda> ResourceManager::s_UnloadedGUIDs;
+
 	bool ResourceManager::Init()
 	{
 		InitMaterialCreation();
@@ -886,7 +888,7 @@ namespace LambdaEngine
 				if (meshNameToGUIDIt != s_MeshNamesToGUIDs.end()) s_MeshNamesToGUIDs.erase(meshNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -894,7 +896,8 @@ namespace LambdaEngine
 
 				//Clean Mesh GUID -> Name
 				s_MeshGUIDsToNames.erase(meshGUIDToNameIt);
-
+				
+				//It's not an error if this is false, meshes aren't required to have animations ofcourse
 				if (animationsIt != s_MeshNamesToAnimationGUIDs.end())
 				{
 					bool result = true;
@@ -909,28 +912,28 @@ namespace LambdaEngine
 
 					if (!result)
 					{
-						LOG_ERROR("[ResourceManager]: UnloadMesh Failed at unloading some Animation");
+						LOG_ERROR("[ResourceManager]: UnloadMesh Failed at unloading some Animation GUID: %d", guid);
 						return false;
 					}
-				}
-				else
-				{
-					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToAnimationGUIDs");
-					return false;
 				}
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_Meshes");
+			LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_Meshes GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -939,6 +942,8 @@ namespace LambdaEngine
 		auto materialIt = s_Materials.find(guid);
 		if (materialIt != s_Materials.end())
 		{
+			D_LOG_WARNING("Deleted Material GUID: %d", guid);
+
 			SAFEDELETE(materialIt->second);
 			s_Materials.erase(materialIt);
 
@@ -950,7 +955,7 @@ namespace LambdaEngine
 				if (materialNameToGUIDIt != s_MaterialNamesToGUIDs.end()) s_MaterialNamesToGUIDs.erase(materialNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -959,7 +964,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 
@@ -978,16 +983,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialLoadConfigurations");
+				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialLoadConfigurations GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_Materials");
+			LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_Materials GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -996,6 +1006,8 @@ namespace LambdaEngine
 		auto animationIt = s_Animations.find(guid);
 		if (animationIt != s_Animations.end())
 		{
+			D_LOG_WARNING("Deleted Animation GUID: %d", guid);
+
 			SAFEDELETE(animationIt->second);
 			s_Animations.erase(animationIt);
 
@@ -1007,7 +1019,7 @@ namespace LambdaEngine
 				if (animationNameToGUIDIt != s_AnimationNamesToGUIDs.end()) s_AnimationNamesToGUIDs.erase(animationNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -1016,16 +1028,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_Animations");
+			LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_Animations GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1034,6 +1051,8 @@ namespace LambdaEngine
 		auto textureIt = s_Textures.find(guid);
 		if (textureIt != s_Textures.end())
 		{
+			D_LOG_WARNING("Deleted Texture GUID: %d", guid);
+
 			SAFEDELETE(textureIt->second);
 			s_Textures.erase(textureIt);
 
@@ -1045,7 +1064,7 @@ namespace LambdaEngine
 				if (textureNameToGUIDIt != s_TextureNamesToGUIDs.end()) s_TextureNamesToGUIDs.erase(textureNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -1054,16 +1073,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_Textures");
+			LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_Textures GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1072,6 +1096,8 @@ namespace LambdaEngine
 		auto shaderIt = s_Shaders.find(guid);
 		if (shaderIt != s_Shaders.end())
 		{
+			D_LOG_WARNING("Deleted Shader GUID: %d", guid);
+
 			SAFEDELETE(shaderIt->second);
 			s_Shaders.erase(shaderIt);
 
@@ -1083,7 +1109,7 @@ namespace LambdaEngine
 				if (shaderNameToGUIDIt != s_ShaderNamesToGUIDs.end()) s_ShaderNamesToGUIDs.erase(shaderNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -1092,16 +1118,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_Shaders");
+			LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_Shaders GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1110,6 +1141,8 @@ namespace LambdaEngine
 		auto soundEffectIt = s_SoundEffects.find(guid);
 		if (soundEffectIt != s_SoundEffects.end())
 		{
+			D_LOG_WARNING("Deleted Sound Effect GUID: %d", guid);
+
 			SAFEDELETE(soundEffectIt->second);
 			s_SoundEffects.erase(soundEffectIt);
 
@@ -1121,7 +1154,7 @@ namespace LambdaEngine
 				if (soundEffectNameToGUIDIt != s_SoundEffectNamesToGUIDs.end()) s_SoundEffectNamesToGUIDs.erase(soundEffectNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -1130,16 +1163,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects");
+			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1160,7 +1198,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_ERROR("[ResourceManager]: Failed to DecrementTextureMaterialRef: %d", guid);
+			LOG_ERROR("[ResourceManager]: Failed to DecrementTextureMaterialRef GUID: %d", guid);
 			return false;
 		}
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "ResourceLoader.h"
 
+#include "Containers/TSet.h"
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
@@ -296,5 +297,7 @@ namespace LambdaEngine
 		static PipelineState* s_pMaterialPipelineState;
 
 		static GUID_Lambda s_MaterialShaderGUID;
+
+		static TSet<GUID_Lambda> s_UnloadedGUIDs;
 	};
 }

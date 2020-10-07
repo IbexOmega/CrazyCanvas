@@ -1342,8 +1342,6 @@ namespace LambdaEngine
 		bool isSpecial		= false;
 		TArray<SpecialObject*> specialObjectToBeSet;
 
-		LOG_WARNING("Node Name: %s", pNode->mName.C_Str());
-
 		//Check if there are any special object descriptions referencing this object
 		for (const SpecialObjectDesc& specialObjectDesc : context.SpecialObjectDescriptions)
 		{
