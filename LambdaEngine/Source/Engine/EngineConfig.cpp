@@ -42,12 +42,10 @@ namespace LambdaEngine
 
 	bool EngineConfig::WriteToFile()
 	{
-		const char* pEngineConfigPath = "engine_config.json";
-
-		FILE* pFile = fopen(pEngineConfigPath, "w");
+		FILE* pFile = fopen(s_FilePath.c_str(), "w");
 		if (!pFile)
 		{
-			LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
+			LOG_WARNING("Engine config could not be opened: %s", s_FilePath.c_str());
 			return false;
 		}
 
@@ -57,9 +55,7 @@ namespace LambdaEngine
 		PrettyWriter<FileWriteStream> writer(outputStream);
 		s_ConfigDocument.Accept(writer);
 
-		fclose(pFile);
-
-		return true;
+		return fclose(pFile) == 0;
 	}
 
 	bool EngineConfig::GetBoolProperty(const String& propertyName)
