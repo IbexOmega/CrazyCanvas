@@ -4,10 +4,10 @@
 
 namespace LambdaEngine
 {
-	BinaryEncoder::BinaryEncoder(NetworkSegment* packet) : 
+	BinaryEncoder::BinaryEncoder(NetworkSegment* packet) :
 		m_pNetworkPacket(packet)
 	{
-		
+
 	}
 
 	BinaryEncoder::~BinaryEncoder()
@@ -76,30 +76,24 @@ namespace LambdaEngine
 		WriteBuffer((const uint8*)value.c_str(), (uint16)value.length());
 	}
 
-	void BinaryEncoder::WriteBuffer(const uint8* buffer, uint16 size)
+	void BinaryEncoder::WriteBuffer(const uint8* pBuffer, uint16 size)
 	{
-		memcpy(m_pNetworkPacket->GetBuffer() + m_pNetworkPacket->GetBufferSize(), buffer, size);
+		memcpy(m_pNetworkPacket->GetBuffer() + m_pNetworkPacket->GetBufferSize(), pBuffer, size);
 		m_pNetworkPacket->AppendBytes(size);
 	}
 
 	void BinaryEncoder::WriteVec2(const glm::vec2& value)
 	{
-		WriteFloat32(value.x);
-		WriteFloat32(value.y);
+		WriteBuffer((const uint8*)&value.data, sizeof(glm::vec2));
 	}
 
 	void BinaryEncoder::WriteVec3(const glm::vec3& value)
 	{
-		WriteFloat32(value.x);
-		WriteFloat32(value.y);
-		WriteFloat32(value.z);
+		WriteBuffer((const uint8*)&value.data, sizeof(glm::vec3));
 	}
 
 	void BinaryEncoder::WriteVec4(const glm::vec4& value)
 	{
-		WriteFloat32(value.x);
-		WriteFloat32(value.y);
-		WriteFloat32(value.z);
-		WriteFloat32(value.w);
+		WriteBuffer((const uint8*)&value.data, sizeof(glm::vec4));
 	}
 }
