@@ -42,7 +42,8 @@ namespace LambdaEngine
 			uint32 modFrameIndex,
 			uint32 backBufferIndex,
 			CommandList** ppFirstExecutionStage,
-			CommandList** ppSecondaryExecutionStage) override final;
+			CommandList** ppSecondaryExecutionStage,
+			bool sleeping) override final;
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }

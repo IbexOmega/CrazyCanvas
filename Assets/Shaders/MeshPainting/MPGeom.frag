@@ -73,5 +73,5 @@ void main()
 
 	// 5
 	vec3 paintMask         = texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
-	out_Albedo = paintMask;
+	out_Albedo = mix(out_Albedo, vec3(1.0f, 1.0f, 1.0f), paintMask.r);
 }

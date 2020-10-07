@@ -302,6 +302,31 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pDrawArgs);
 		UNREFERENCED_VARIABLE(count);
+
+		for (uint32 i = 0; i < count; i++)
+		{
+			const DrawArg& drawArg = pDrawArgs[i];
+			
+			if (drawArg.HasExtensions)
+			{
+				for (uint32 groupIndex = 0; groupIndex < drawArg.InstanceCount; groupIndex++)
+				{
+					DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[groupIndex];
+					if (extensionGroup)
+					{
+						for (uint32 extensionIndex = 0; extensionIndex < extensionGroup->ExtensionCount; extensionIndex++)
+						{
+							DrawArgExtensionData& extensionData = extensionGroup->pExtensions[extensionIndex];
+							for (uint32 textureIndex = 0; textureIndex < extensionData.TextureCount; textureIndex++)
+							{
+								UpdateTextureResource(extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
+									&extensionData.ppTextureViews[textureIndex], 1, false);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	void ImGuiRenderer::Render(

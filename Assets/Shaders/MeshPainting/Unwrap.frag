@@ -49,6 +49,6 @@ void main()
     if(brushMask.a > 0.01f && length(worldPosition-projectedPosition) <= BRUSH_SIZE)
         out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
     else
-        // discard;
-        out_UnwrappedTexture = vec4(maskUV, 0.f, 1.f);
+        discard;
+        // out_UnwrappedTexture = vec4(maskUV, 0.f, 1.f);
 }

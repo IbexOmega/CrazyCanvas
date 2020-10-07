@@ -73,6 +73,9 @@ void SandboxState::Init()
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
+	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
@@ -88,9 +91,9 @@ void SandboxState::Init()
 	}
 
 	//Load scene
-	/*{
+	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("sponza/sponza.obj", meshComponents);
+		ResourceManager::LoadSceneFromFile("Prototype/PrototypePrototypeScene.dae", meshComponents);
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
@@ -98,8 +101,8 @@ void SandboxState::Init()
 		for (uint32 i = 0; const MeshComponent& meshComponent : meshComponents)
 		{
 			MeshPaintComponent meshPaintComponent;
-			const uint32 width = 512;
-			const uint32 height = 512;
+			const uint32 width = 2048;
+			const uint32 height = 2048;
 			char* data = DBG_NEW char[width * height * 4];
 			memset(data, 0, width * height * 4);
 			meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("SceneUnwrappedTexture_" + std::to_string(i++), data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
@@ -111,7 +114,6 @@ void SandboxState::Init()
 			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
-			m_Entities.PushBack(entity);
 
 			DrawArgExtensionData drawArgExtensionData = {};
 			drawArgExtensionData.TextureCount = 1;
@@ -120,10 +122,7 @@ void SandboxState::Init()
 			drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
 			EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
 		}
-	}*/
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+	}
 
 	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");

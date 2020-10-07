@@ -258,7 +258,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void PaintMaskRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage)
+	void PaintMaskRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool sleeping)
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
