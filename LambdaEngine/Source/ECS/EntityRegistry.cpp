@@ -90,7 +90,7 @@ namespace LambdaEngine
 		});
 	}
 
-	Entity EntityRegistry::CreateEntity()
+	Entity EntityRegistry::CreateSpecialObject()
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 

@@ -9,7 +9,8 @@
 
 #include "Math/Math.h"
 
-#include "LevelModule.h"
+class Level;
+class LevelModule;
 
 class LevelManager
 {
@@ -22,7 +23,7 @@ class LevelManager
 	struct LevelDesc
 	{
 		LambdaEngine::String				Name = "";
-		LambdaEngine::TArray<ModuleDesc>	LevelModules;
+		LambdaEngine::TArray<ModuleDesc>	LevelModuleDescriptions;
 		LambdaEngine::SHA256Hash			Hash;
 	};
 
@@ -32,9 +33,13 @@ public:
 	static bool Init(bool clientSide);
 	static bool Release();
 	
-	static bool LoadLevel(const LambdaEngine::SHA256Hash& levelHash);
-	static bool LoadLevel(const LambdaEngine::String& levelName);
-	static bool LoadLevel(uint32 index);
+	/*
+	*	Loads a level, the level can then be used to create new entities which are tied to the level
+	*	The caller is responsible of deleting the Level
+	*/
+	static Level* LoadLevel(const LambdaEngine::SHA256Hash& levelHash);
+	static Level* LoadLevel(const LambdaEngine::String& levelName);
+	static Level* LoadLevel(uint32 index);
 
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& GetLevelHashes() { return s_LevelHashes; }
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::String>& GetLevelNames() { return s_LevelNames; }

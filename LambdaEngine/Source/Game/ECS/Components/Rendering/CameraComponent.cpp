@@ -80,7 +80,7 @@ namespace LambdaEngine
 	Entity CreateCameraEntity(const CameraDesc& cameraDesc)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		const Entity entity = pECS->CreateEntity();
+		const Entity entity = pECS->CreateSpecialObject();
 
 		const ViewProjectionMatricesComponent viewProjComp = {
 			.Projection = glm::perspective(glm::radians(cameraDesc.FOVDegrees), cameraDesc.Width / cameraDesc.Height, cameraDesc.NearPlane, cameraDesc.FarPlane),

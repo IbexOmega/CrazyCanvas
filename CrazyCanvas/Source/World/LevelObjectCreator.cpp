@@ -53,7 +53,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(const LambdaEngi
 			.ColorIntensity = glm::vec4(directionalLight.Color, 1.0f)
 		};
 
-		entity = pECS->CreateEntity();
+		entity = pECS->CreateSpecialObject();
 		pECS->AddComponent<PositionComponent>(entity, { true, (translation) });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });
 		pECS->AddComponent<DirectionalLightComponent>(entity, directionalLightComponent);
@@ -79,7 +79,7 @@ LambdaEngine::Entity LevelObjectCreator::CreatePointLight(const LambdaEngine::Lo
 			.ColorIntensity = glm::vec4(pointLight.Color, 1.0f)
 		};
 
-		entity = pECS->CreateEntity();
+		entity = pECS->CreateSpecialObject();
 		pECS->AddComponent<PositionComponent>(entity, { true, (pointLight.Position + translation) });
 		pECS->AddComponent<PointLightComponent>(entity, pointLightComponent);
 
@@ -96,7 +96,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
-	Entity entity = pECS->CreateEntity();
+	Entity entity = pECS->CreateSpecialObject();
 	const StaticCollisionInfo collisionCreateInfo = 
 	{
 		.Entity			= entity,
@@ -112,36 +112,37 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	return entity;
 }
 
-bool LevelObjectCreator::CreateSpecialObject(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ESpecialObjectType LevelObjectCreator::CreateSpecialObject(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
 	auto createFuncIt = s_CreateFunctions.find(specialObject.Prefix);
 
 	if (createFuncIt != s_CreateFunctions.end())
 	{
-		createFuncIt->second(specialObject, createdEntities, translation);
-		return true;
+		return createFuncIt->second(specialObject, createdEntities, translation);
 	}
 	else
 	{
 		LOG_ERROR("[LevelObjectCreator]: Failed to create entity %s with prefix %s", specialObject.Name, specialObject.Prefix);
-		return false;
+		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
 	}
 }
 
-void LevelObjectCreator::CreateSpawnpoint(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ESpecialObjectType LevelObjectCreator::CreateSpawnpoint(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
 	UNREFERENCED_VARIABLE(specialObject);
 	UNREFERENCED_VARIABLE(createdEntities);
 	UNREFERENCED_VARIABLE(translation);
 
 	LOG_WARNING("[LevelObjectCreator]: Spawnpoint not implemented!");
+	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_SPAWN_POINT;
 }
 
-void LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
 	UNREFERENCED_VARIABLE(specialObject);
 	UNREFERENCED_VARIABLE(createdEntities);
 	UNREFERENCED_VARIABLE(translation);
 
 	LOG_WARNING("[LevelObjectCreator]: Create Flag not implemented!");
+	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG;
 }
