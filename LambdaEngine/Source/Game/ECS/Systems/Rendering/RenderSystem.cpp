@@ -180,7 +180,6 @@ namespace LambdaEngine
 
 			// Light Renderer
 			{
-				m_LightsDirty = true; // Initilize Light buffer to avoid validation layer errors
 				m_pLightRenderer = DBG_NEW LightRenderer();
 				m_pLightRenderer->init();
 
@@ -660,7 +659,7 @@ namespace LambdaEngine
 
 		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
-		m_LightsDirty = true;
+		m_LightsResourceDirty = true;
 	}
 
 	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
@@ -678,7 +677,7 @@ namespace LambdaEngine
 		m_EntityToPointLight.erase(entity);
 		m_PointLights.PopBack();
 
-		m_LightsDirty = true;
+		m_LightsResourceDirty = true;
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
@@ -1110,7 +1109,7 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
-		m_LightsDirty = true;
+		m_LightsResourceDirty = true;
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
@@ -1159,7 +1158,7 @@ namespace LambdaEngine
 		}
 
 		m_pRenderGraph->TriggerRenderStage("RENDER_STAGE_LIGHT");
-		m_LightsDirty = true;
+		m_LightsResourceDirty = true;
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
@@ -1829,7 +1828,7 @@ namespace LambdaEngine
 	void RenderSystem::UpdateLightsBuffer(CommandList* pCommandList)
 	{
 		// Light Buffer Initilization
-		if (m_LightsDirty)
+		if (m_LightsResourceDirty)
 		{
 			size_t pointLightCount			= m_PointLights.GetSize();
 			size_t dirLightBufferSize		= sizeof(LightBuffer);
@@ -1872,11 +1871,9 @@ namespace LambdaEngine
 
 				m_pLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightBufferDesc);
 
-				m_LightsResourceDirty = true;
 			}
 
 			pCommandList->CopyBuffer(pCurrentStagingBuffer, 0, m_pLightsBuffer, 0, lightBufferSize);
-			m_LightsDirty = false;
 		}
 	}
 
