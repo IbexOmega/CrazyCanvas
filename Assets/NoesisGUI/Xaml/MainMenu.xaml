@@ -41,7 +41,7 @@
   </GroupBox>
 
   <GroupBox x:Name="KeybindingsGroupBox" Visibility="Hidden" FontSize="56" Header="Keybindings" Grid.Column="2" VerticalAlignment="Center" Margin="30">
-    <StackPanel Header="Player Movement">
+    <StackPanel>
       <Label FontSize="28" >Player Movement</Label>
         <Separator/>
         <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Forward</Label>
