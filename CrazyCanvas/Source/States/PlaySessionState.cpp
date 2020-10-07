@@ -29,14 +29,14 @@ void PlaySessionState::Init()
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const CameraDesc cameraDesc = {
-			.Position = { 0.0f, 20.0f, -2.0f },
+			.Position = { 0.0f, 2.0f, -2.0f },
 			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
 			.Width = (float)window->GetWidth(),
 			.Height = (float)window->GetHeight(),
 			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity e = CreateFPSCameraEntity(cameraDesc);
+		CreateFPSCameraEntity(cameraDesc);
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();

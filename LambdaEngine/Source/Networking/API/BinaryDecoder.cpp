@@ -79,34 +79,28 @@ namespace LambdaEngine
 		ReadBuffer((uint8*)value.data(), length);
 	}
 
-	void BinaryDecoder::ReadBuffer(uint8* buffer, uint16 bytesToRead)
+	void BinaryDecoder::ReadBuffer(uint8* pBuffer, uint16 bytesToRead)
 	{
 		//If this assert is triggerd then you are reading more data than what exists in the Packet
 		ASSERT(m_ReadHead + bytesToRead <= m_pNetworkPacket->GetBufferSize());
 
-		memcpy(buffer, m_pNetworkPacket->GetBufferReadOnly() + m_ReadHead, bytesToRead);
+		memcpy(pBuffer, m_pNetworkPacket->GetBufferReadOnly() + m_ReadHead, bytesToRead);
 		m_ReadHead += bytesToRead;
 	}
 
 	void BinaryDecoder::ReadVec2(glm::vec2& value)
 	{
-		ReadFloat32(value.x);
-		ReadFloat32(value.y);
+		ReadBuffer((uint8*)&value.data, sizeof(glm::vec2));
 	}
 
 	void BinaryDecoder::ReadVec3(glm::vec3& value)
 	{
-		ReadFloat32(value.x);
-		ReadFloat32(value.y);
-		ReadFloat32(value.z);
+		ReadBuffer((uint8*)&value.data, sizeof(glm::vec3));
 	}
 
 	void BinaryDecoder::ReadVec4(glm::vec4& value)
 	{
-		ReadFloat32(value.x);
-		ReadFloat32(value.y);
-		ReadFloat32(value.z);
-		ReadFloat32(value.w);
+		ReadBuffer((uint8*)&value.data, sizeof(glm::vec4));
 	}
 
 	int8 BinaryDecoder::ReadInt8()
