@@ -1337,8 +1337,6 @@ namespace LambdaEngine
 		bool isSpecial		= false;
 		TArray<SpecialObject*> specialObjectToBeSet;
 
-		LOG_INFO("Node Name %s", nodeName.c_str());
-
 		//Check if there are any special object descriptions referencing this object
 		for (const SpecialObjectDesc& specialObjectDesc : context.SpecialObjectDescriptions)
 		{
@@ -1352,6 +1350,7 @@ namespace LambdaEngine
 				//If any special object wants this mesh included in the scene, we include it
 				if (specialObjectDesc.IncludeMesh)
 				{
+					
 					loadNormally = true;
 				}
 
@@ -1372,8 +1371,6 @@ namespace LambdaEngine
 			{
 				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 				Mesh* pMesh = DBG_NEW Mesh;
-
-				LOG_INFO("Mesh Name %s", pMeshAI->mName.C_Str());
 
 				glm::vec3 centroid;
 				LoadVertices(pMesh, centroid, pMeshAI);
