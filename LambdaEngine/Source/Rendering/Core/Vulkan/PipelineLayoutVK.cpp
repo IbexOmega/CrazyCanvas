@@ -73,14 +73,9 @@ namespace LambdaEngine
 			for (const DescriptorBindingDesc& binding : descriptorSetLayout.DescriptorBindings)
 			{
 				VkFlags bindingFlags = 0;
-				uint32 descriptorCount = binding.DescriptorCount;
-
 				if (binding.Flags & FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND)
 				{
 					bindingFlags |= VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-
-					//Partially Bound overrides descriptor count
-					descriptorCount = PARTIALLY_BOUND_DESCRIPTOR_COUNT;
 				}
 
 				layoutBindingFlags.PushBack(bindingFlags);
@@ -102,36 +97,36 @@ namespace LambdaEngine
 
 				if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE)
 				{
-					heapInfo.AccelerationStructureDescriptorCount += descriptorCount;
+					heapInfo.AccelerationStructureDescriptorCount += binding.DescriptorCount;
 				}
 				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER)
 				{
-					heapInfo.ConstantBufferDescriptorCount += descriptorCount;
+					heapInfo.ConstantBufferDescriptorCount += binding.DescriptorCount;
 				}
 				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_SAMPLER)
 				{
-					heapInfo.SamplerDescriptorCount += descriptorCount;
+					heapInfo.SamplerDescriptorCount += binding.DescriptorCount;
 				}
 				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER)
 				{
-					heapInfo.TextureCombinedSamplerDescriptorCount += descriptorCount;
+					heapInfo.TextureCombinedSamplerDescriptorCount += binding.DescriptorCount;
 				}
 				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_TEXTURE)
 				{
-					heapInfo.TextureDescriptorCount += descriptorCount;
+					heapInfo.TextureDescriptorCount += binding.DescriptorCount;
 				}
 				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER)
 				{
-					heapInfo.UnorderedAccessBufferDescriptorCount += descriptorCount;
+					heapInfo.UnorderedAccessBufferDescriptorCount += binding.DescriptorCount;
 				}
 				else if (binding.DescriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE)
 				{
-					heapInfo.UnorderedAccessTextureDescriptorCount += descriptorCount;
+					heapInfo.UnorderedAccessTextureDescriptorCount += binding.DescriptorCount;
 				}
 
 				bindingVk.descriptorType		= ConvertDescriptorType(binding.DescriptorType);
 				bindingVk.binding				= binding.Binding;
-				bindingVk.descriptorCount		= descriptorCount;
+				bindingVk.descriptorCount		= binding.DescriptorCount;
 				bindingVk.pImmutableSamplers	= binding.ImmutableSamplers.IsEmpty() ? nullptr : (immutableSamplers.GetData() + immutableSamplerOffset);
 				bindingVk.stageFlags			= ConvertShaderStageMask(binding.ShaderStageMask);
 				

@@ -1799,11 +1799,16 @@ namespace LambdaEngine
 			// Remove Cube Texture Context for removed pointlights
 			for (uint32 r = 0; r < diff; r++)
 			{
-				SAFEDELETE(m_CubeTextures.GetBack()); m_CubeTextures.PopBack();
-				SAFEDELETE(m_CubeTextureViews.GetBack()); m_CubeTextures.PopBack();
+				SAFERELEASE(m_CubeTextures.GetBack()); 
+				m_CubeTextures.PopBack();
+
+				SAFERELEASE(m_CubeTextureViews.GetBack()); 
+				m_CubeTextureViews.PopBack();
+
 				for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
 				{
-					SAFEDELETE(m_CubeSubImageTextureViews.GetBack()); m_CubeTextures.PopBack();
+					SAFERELEASE(m_CubeSubImageTextureViews.GetBack()); 
+					m_CubeSubImageTextureViews.PopBack();
 				}
 			}
 		}

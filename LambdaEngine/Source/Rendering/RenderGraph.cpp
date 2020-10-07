@@ -1904,11 +1904,17 @@ namespace LambdaEngine
 
 						uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
 
-						descriptorBinding.DescriptorCount	= actualSubResourceCount;
 						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
 						if (pResource->Texture.UnboundedArray)
+						{
 							descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+							descriptorBinding.DescriptorCount	= PARTIALLY_BOUND_DESCRIPTOR_COUNT;
+						}
+						else
+						{
+							descriptorBinding.DescriptorCount	= actualSubResourceCount;
+						}
 
 						textureDescriptorSetDescriptions.PushBack(descriptorBinding);
 						renderStageTextureResources.PushBack(std::make_tuple(pResource, textureState, descriptorType));
