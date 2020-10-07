@@ -274,13 +274,11 @@ namespace LambdaEngine
 
 	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent)
 	{
-		m_pScene->removeActor(*collisionComponent.pActor);
 		PX_RELEASE(collisionComponent.pActor);
 	}
 
 	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent)
 	{
-		m_pScene->removeActor(*characterColliderComponent.pController->getActor());
 		PX_RELEASE(characterColliderComponent.pController);
 		SAFEDELETE(characterColliderComponent.Filters.mFilterData);
 	}
