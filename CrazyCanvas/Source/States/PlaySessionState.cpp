@@ -94,6 +94,7 @@ void PlaySessionState::Init()
 		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		robotAnimationComp.AnimationGUID = animations[0];
 
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
