@@ -1244,9 +1244,9 @@ namespace LambdaEngine
 		enabledDeviceFeatures12.runtimeDescriptorArray			= supportedDeviceFeatures12.runtimeDescriptorArray;
 		enabledDeviceFeatures12.descriptorBindingPartiallyBound	= supportedDeviceFeatures12.descriptorBindingPartiallyBound;
 
-		enabledDeviceFeatures12.shaderInt8				= supportedDeviceFeatures12.shaderInt8;
-		enabledDeviceFeatures12.shaderFloat16			= supportedDeviceFeatures12.shaderFloat16;
-		enabledDeviceFeatures12.storageBuffer8BitAccess	= supportedDeviceFeatures12.storageBuffer8BitAccess;
+		enabledDeviceFeatures12.shaderInt8						= supportedDeviceFeatures12.shaderInt8;
+		enabledDeviceFeatures12.shaderFloat16					= supportedDeviceFeatures12.shaderFloat16;
+		enabledDeviceFeatures12.storageBuffer8BitAccess			= supportedDeviceFeatures12.storageBuffer8BitAccess;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
 		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
