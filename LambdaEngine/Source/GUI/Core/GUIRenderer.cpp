@@ -595,9 +595,11 @@ namespace LambdaEngine
 				}
 			}
 
-			if (m_View.GetPtr() == nullptr)
-				return;
+			
 		}
+
+		if (m_View.GetPtr() == nullptr)
+			return;
 
 		//Todo: Use UpdateRenderTree return value
 		m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());
@@ -628,7 +630,10 @@ namespace LambdaEngine
 	{
 		m_View.Reset();
 		m_View = view;
-		m_View->GetRenderer()->Init(this);
+		if (m_View != nullptr)
+		{
+			m_View->GetRenderer()->Init(this);
+		}
 	}
 
 	CommandList* GUIRenderer::BeginOrGetUtilityCommandList()

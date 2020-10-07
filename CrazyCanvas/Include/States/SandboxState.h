@@ -8,9 +8,6 @@
 
 #include "Application/API/Events/KeyEvents.h"
 
-#include "NsCore/Ptr.h"
-#include "NsGui/IView.h"
-
 namespace LambdaEngine
 {
 	class StateManager;
@@ -40,7 +37,4 @@ private:
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[3];
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
-
-	Noesis::Ptr<GUITest> m_GUITest;
-	Noesis::Ptr<Noesis::IView> m_View;
 };

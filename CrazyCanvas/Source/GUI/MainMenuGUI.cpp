@@ -91,6 +91,8 @@ void MainMenuGUI::OnButtonCrazyCanvasClick(BaseComponent* pSender, const RoutedE
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	SetRenderStagesSleeping();
 
 	State* pStartingState = DBG_NEW PlaySessionState();
@@ -102,6 +104,8 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	SetRenderStagesSleeping();
 	State* pSandboxState = DBG_NEW SandboxState();
 	StateManager::GetInstance()->EnqueueStateTransition(pSandboxState, STATE_TRANSITION::POP_AND_PUSH);
@@ -111,6 +115,8 @@ void MainMenuGUI::OnButtonBenchmarkClick(BaseComponent* pSender, const RoutedEve
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesSleeping();
 	State* pBenchmarkState = DBG_NEW BenchmarkState();

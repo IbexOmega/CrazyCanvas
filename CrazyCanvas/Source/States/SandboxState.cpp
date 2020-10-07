@@ -53,23 +53,11 @@ SandboxState::SandboxState(LambdaEngine::State* pOther) : LambdaEngine::State(pO
 
 SandboxState::~SandboxState()
 {
-	if (m_GUITest.GetPtr() != nullptr)
-	{
-		int32 ref = m_GUITest->GetNumReferences();
-
-		m_GUITest.Reset();
-		m_View.Reset();
-	}
-
 	// Remove System
 }
 
 void SandboxState::Init()
 {
-	m_GUITest	= *new GUITest("Test.xaml");
-	m_View		= Noesis::GUI::CreateView(m_GUITest);
-	LambdaEngine::GUIApplication::SetView(m_View);
-
 	// Create Systems
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
