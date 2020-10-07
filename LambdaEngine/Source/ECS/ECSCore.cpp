@@ -97,6 +97,58 @@ namespace LambdaEngine
 		}
 	}
 
+	uint32 ECSCore::SerializeEntity(Entity entity, uint8* pBuffer, uint32 bufferSize) const
+	{
+		const EntityRegistryPage& entityPage = m_EntityRegistry.GetTopRegistryPage();
+		const std::unordered_set<const ComponentType*>& componentTypes = entityPage.IndexID(entity);
+
+		/*	EntitySerializationHeader is written to the beginning of the buffer. This is done last, when the size of
+			the serialization is known. */
+		uint8* pHeaderPosition = pBuffer;
+
+		uint32 remainingSize = bufferSize;
+		constexpr const uint32 headerSize = sizeof(EntitySerializationHeader);
+		const bool hasRoomForHeader = bufferSize >= headerSize;
+		if (hasRoomForHeader)
+		{
+			pBuffer			+= headerSize;
+			remainingSize	-= headerSize;
+		}
+
+		// Serialize all components
+		uint32 requiredTotalSize = headerSize;
+		for (const ComponentType* pComponentType : componentTypes)
+		{
+			const uint32 requiredComponentSize = m_ComponentStorage.SerializeComponent(entity, pComponentType, pBuffer, remainingSize);
+			requiredTotalSize += requiredComponentSize;
+			if (requiredComponentSize <= remainingSize)
+			{
+				pBuffer += requiredComponentSize;
+				remainingSize -= requiredComponentSize;
+			}
+		}
+
+		// Finalize the serialization by writing the header
+		if (hasRoomForHeader)
+		{
+			const EntitySerializationHeader header =
+			{
+				.TotalSerializationSize	= requiredTotalSize,
+				.Entity					= entity,
+				.ComponentCount			= (uint32)componentTypes.size()
+			};
+
+			memcpy(pHeaderPosition, &header, headerSize);
+		}
+
+		return requiredTotalSize;
+	}
+
+	uint32 ECSCore::SerializeComponent(Entity entity, const ComponentType* pComponentType, uint8* pBuffer, uint32 bufferSize) const
+	{
+		return m_ComponentStorage.SerializeComponent(entity, pComponentType, pBuffer, bufferSize);
+	}
+
 	void ECSCore::PerformComponentRegistrations()
 	{
 		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
