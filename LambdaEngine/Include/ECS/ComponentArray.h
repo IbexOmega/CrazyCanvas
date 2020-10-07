@@ -5,6 +5,8 @@
 #include "ECS/Component.h"
 #include "ECS/Entity.h"
 
+#include <type_traits>
+
 namespace LambdaEngine
 {
 	class ComponentStorage;
@@ -17,6 +19,8 @@ namespace LambdaEngine
 		virtual void UnsetComponentOwner() = 0;
 
 		virtual const TArray<uint32>& GetIDs() const = 0;
+
+		virtual uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const = 0;
 
 		virtual bool HasComponent(Entity entity) const = 0;
 		virtual void ResetDirtyFlags() = 0;
@@ -35,13 +39,16 @@ namespace LambdaEngine
 		~ComponentArray() override final;
 
 		void SetComponentOwner(const ComponentOwnership<Comp>& componentOwnership) { m_ComponentOwnership = componentOwnership; }
-		void UnsetComponentOwner() override final { m_ComponentOwnership = {}; };
+		void UnsetComponentOwner() override final { m_ComponentOwnership = {}; }
 
 		Comp& Insert(Entity entity, const Comp& comp);
 
 		Comp& GetData(Entity entity);
 		const Comp& GetData(Entity entity) const;
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
+
+		uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const override final { return SerializeComponent(GetData(entity), pBuffer, bufferSize); }
+		uint32 SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const;
 
 		bool HasComponent(Entity entity) const override final { return m_EntityToIndex.find(entity) != m_EntityToIndex.end(); }
 		void ResetDirtyFlags() override final;
@@ -132,6 +139,61 @@ namespace LambdaEngine
 
 		// Remove the deleted component's entry.
 		m_EntityToIndex.erase(indexItr);
+	}
+
+	template<typename Comp>
+	inline uint32 ComponentArray<Comp>::SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const
+	{
+		/*	ComponentSerializationHeader is written to the beginning of the buffer. This is done last, when the size of
+			the serialization is known. */
+	#pragma pack(push, 1)
+		struct ComponentSerializationHeader
+		{
+			uint32 TotalSerializationSize;
+			uint32 TypeHash;
+		};
+	#pragma pack(pop)
+
+		uint8* pHeaderPosition = pBuffer;
+		constexpr const uint32 headerSize = sizeof(ComponentSerializationHeader);
+		const bool hasRoomForHeader = bufferSize >= headerSize;
+		if (hasRoomForHeader)
+		{
+			pBuffer		+= headerSize;
+			bufferSize	-= headerSize;
+		}
+
+		uint32 requiredTotalSize = headerSize;
+
+		// Use a component owner's serialize function, or memcpy the component directly
+		if (m_ComponentOwnership.Serialize)
+		{
+			requiredTotalSize += m_ComponentOwnership.Serialize(component, pBuffer, bufferSize);
+		}
+		else if constexpr (std::is_trivially_copyable<Comp>::value)
+		{
+			// The if-statements have to be nested to avoid the compiler warning: 'use constexpr on if-statement'
+			if (bufferSize >= sizeof(Comp))
+			{
+				constexpr const uint32 componentSize = sizeof(Comp);
+				memcpy(pBuffer, &component, componentSize);
+				requiredTotalSize += componentSize;
+			}
+		}
+
+		// Finalize the serialization by writing the header
+		if (hasRoomForHeader)
+		{
+			const ComponentSerializationHeader header =
+			{
+				.TotalSerializationSize	= requiredTotalSize,
+				.TypeHash				= Comp::Type()->GetHash()
+			};
+
+			memcpy(pHeaderPosition, &header, headerSize);
+		}
+
+		return requiredTotalSize;
 	}
 
 	template<typename Comp>
