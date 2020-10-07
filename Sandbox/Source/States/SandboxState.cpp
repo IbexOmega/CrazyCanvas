@@ -319,44 +319,44 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 {
 	// Update State specfic objects
 
-	constexpr uint32 MAX_ENTITIES =  3;
-	static float timer = 0.0f;
-	static uint32 id = 0U;
-	static Entity entities[MAX_ENTITIES];
-	static bool remove = true;
-	timer += delta.AsSeconds();
+	//constexpr uint32 MAX_ENTITIES =  3;
+	//static float timer = 0.0f;
+	//static uint32 id = 0U;
+	//static Entity entities[MAX_ENTITIES];
+	//static bool remove = true;
+	//timer += delta.AsSeconds();
 
-	if (id  < 3 && timer > 0.5)
-	{
-		timer = 0.f;
-		uint32 index = id % MAX_ENTITIES;
+	//if (id  < 3 && timer > 0.5)
+	//{
+	//	timer = 0.f;
+	//	uint32 index = id % MAX_ENTITIES;
 
-		if (index == 0)
-			remove = !remove;
+	//	if (index == 0)
+	//		remove = !remove;
 
-		if (!remove)
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			const uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+	//	if (!remove)
+	//	{
+	//		ECSCore* pECS = ECSCore::GetInstance();
+	//		const uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
-			const PointLightComponent pointLights = { .ColorIntensity = {index % 3, (index + 1U) % 3, (index + 2U) % 3, 25.0f}, .FarPlane = 20.0f };
-			const glm::vec3 startPosition = { 0.0f, 2.0f, 3.0f - float(index) };
+	//		const PointLightComponent pointLights = { .ColorIntensity = {index % 3, (index + 1U) % 3, (index + 2U) % 3, 25.0f}, .FarPlane = 20.0f };
+	//		const glm::vec3 startPosition = { 0.0f, 2.0f, 3.0f - float(index) };
 
-			const float32 PI = glm::pi<float>();
-			const float32 RADIUS = 3.0f;
-		
-			entities[index] = pECS->CreateEntity();
-			pECS->AddComponent<PositionComponent>(entities[index], { true, startPosition });
-			pECS->AddComponent<ScaleComponent>(entities[index], { true, glm::vec3(0.4f) });
-			pECS->AddComponent<RotationComponent>(entities[index], { true, glm::identity<glm::quat>() });
-			pECS->AddComponent<PointLightComponent>(entities[index], pointLights);
-		}
-		else
-		{
-			ECSCore::GetInstance()->RemoveEntity(entities[index]);
-		}
-		id++;
-	}
+	//		const float32 PI = glm::pi<float>();
+	//		const float32 RADIUS = 3.0f;
+	//	
+	//		entities[index] = pECS->CreateEntity();
+	//		pECS->AddComponent<PositionComponent>(entities[index], { true, startPosition });
+	//		pECS->AddComponent<ScaleComponent>(entities[index], { true, glm::vec3(0.4f) });
+	//		pECS->AddComponent<RotationComponent>(entities[index], { true, glm::identity<glm::quat>() });
+	//		pECS->AddComponent<PointLightComponent>(entities[index], pointLights);
+	//	}
+	//	else
+	//	{
+	//		ECSCore::GetInstance()->RemoveEntity(entities[index]);
+	//	}
+	//	id++;
+	//}
 }
 
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)

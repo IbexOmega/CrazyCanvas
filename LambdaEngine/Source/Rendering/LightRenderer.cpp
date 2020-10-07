@@ -265,10 +265,8 @@ namespace LambdaEngine
 
 				memcpy(m_PushConstant.pData, &iteration, sizeof(uint32));
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, m_PushConstant.pData, m_PushConstant.DataSize, m_PushConstant.Offset);
-
 				pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-			
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					const DrawArg& drawArg = m_pDrawArgs[d];
