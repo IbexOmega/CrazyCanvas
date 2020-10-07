@@ -182,7 +182,6 @@ namespace LambdaEngine
 		m_NextIndex				= 0;
 		m_TimestampValidBits	= 0;
 		m_TimestampPeriod		= 0.0f;
-		m_StartTimestamp		= 0;
 
 		m_Results.clear();
 		m_PlotResults.Clear();
@@ -308,9 +307,6 @@ namespace LambdaEngine
 			uint64 start = glm::bitfieldExtract<uint64>(results[0].Result, 0, m_TimestampValidBits);
 			uint64 end = glm::bitfieldExtract<uint64>(results[1].Result, 0, m_TimestampValidBits);
 
-			if (m_StartTimestamp == 0)
-				m_StartTimestamp = start;
-
 			const String& name = m_Timestamps[pCommandList].Name;
 			m_Results[name].Start = start;
 			m_Results[name].End = end;
@@ -393,51 +389,6 @@ namespace LambdaEngine
 	{
 		static GPUProfiler instance;
 		return &instance;
-	}
-
-	void GPUProfiler::SaveResults()
-	{
-		/*
-			GPU Timestamps are not optimal to represent in a serial fashion that
-			chrome://tracing does.
-			This feature is therefore possible unnecessary
-		*/
-
-#ifdef LAMBDA_DEBUG
-		const char* filePath = "GPUResults.txt";
-
-		std::ofstream file;
-		file.open(filePath);
-		file << "{\"otherData\": {}, \"displayTimeUnit\": \"ms\", \"traceEvents\": [";
-		file.flush();
-
-		uint32 j = 0;
-		for (auto& res : m_Results)
-		{
-			//for (uint32 i = 0; i < res.second.size(); i++, j++)
-			//{
-				if (j > 0) file << ",";
-
-				std::string name = "Render Graph Graphics Command List";
-				std::replace(name.begin(), name.end(), '"', '\'');
-
-				file << "{";
-				file << "\"name\": \"" << name << " " << j << "\",";
-				file << "\"cat\": \"function\",";
-				file << "\"ph\": \"X\",";
-				file << "\"pid\": " << 1 << ",";
-				file << "\"tid\": " << 0 << ",";
-				file << "\"ts\": " << (((res.second.Start - m_StartTimestamp) * m_TimestampPeriod) / (uint64)m_TimeUnit) << ",";
-				file << "\"dur\": " << res.second.Duration;
-				file << "}";
-				j++;
-			//}
-		}
-
-		file << "]" << std::endl << "}";
-		file.flush();
-		file.close();
-#endif
 	}
 
 	std::string GPUProfiler::GetTimeUnitName() const
