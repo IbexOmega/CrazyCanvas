@@ -15,6 +15,7 @@ namespace LambdaEngine
 }
 
 class GUITest;
+class Level;
 
 class SandboxState : public LambdaEngine::State
 {
@@ -37,4 +38,6 @@ private:
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[3];
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
+
+	Level* m_pLevel = nullptr;
 };

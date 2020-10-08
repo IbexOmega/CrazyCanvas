@@ -40,6 +40,9 @@
 
 #include "NoesisPCH.h"
 
+#include "World/LevelManager.h"
+#include "World/Level.h"
+
 using namespace LambdaEngine;
 
 SandboxState::SandboxState()
@@ -54,6 +57,7 @@ SandboxState::SandboxState(LambdaEngine::State* pOther) : LambdaEngine::State(pO
 SandboxState::~SandboxState()
 {
 	// Remove System
+	SAFEDELETE(m_pLevel);
 }
 
 void SandboxState::Init()
@@ -81,48 +85,20 @@ void SandboxState::Init()
 
 	// Scene
 	{
-		TArray<MeshComponent> meshComponents;
-		LambdaEngine::TArray<LambdaEngine::LoadedDirectionalLight>	directionalLights;
-		LambdaEngine::TArray<LambdaEngine::LoadedPointLight>		pointLights;
-		LambdaEngine::TArray<LambdaEngine::SpecialObject>			specialObjects;
-
-		SceneLoadDesc sceneLoadDesc = {};
-		sceneLoadDesc.Filename = "Prototype/PrototypeScene.dae";
-
-		ResourceManager::LoadSceneFromFile(&sceneLoadDesc, meshComponents, directionalLights, pointLights, specialObjects);
-
-		const glm::vec3 position(0.0f, 0.0f, 0.0f);
-		const glm::vec3 scale(1.0f);
-		for (const MeshComponent& meshComponent : meshComponents)
-		{
-			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = 
-			{
-				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-			};
-
-			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-			m_Entities.PushBack(entity);
-		}
+		m_pLevel = LevelManager::LoadLevel(0);
 	}
 
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		MaterialProperties materialProperties;
-		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness	= 1.0f;
-		materialProperties.Metallic		= 1.0f;
+		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness = 1.0f;
+		materialProperties.Metallic = 1.0f;
 
 		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
@@ -134,12 +110,12 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
-		robotMeshComp.MaterialGUID	= robotMaterialGUID;
+		robotMeshComp.MeshGUID = robotGUID;
+		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		robotAnimationComp.AnimationGUID = animations[0];
-		robotAnimationComp.PlaybackSpeed = 2.0f;
 
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
@@ -150,22 +126,21 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		
+
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc = 
+		const SoundInstance3DDesc desc =
 		{
-			.pName			= "RobotSoundInstance",
-			.pSoundEffect	= ResourceManager::GetSoundEffect(soundGUID),
-			.Flags			= FSoundModeFlags::SOUND_MODE_NONE,
-			.Position		= position,
-			.Volume			= 0.03f
+				.pName = "RobotSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = position,
+				.Volume = 0.03f
 		};
-		
+
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
-		m_Entities.PushBack(entity);
 	}
 
 	//Sphere Grid
