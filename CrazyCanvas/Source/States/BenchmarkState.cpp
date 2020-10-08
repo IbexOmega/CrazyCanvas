@@ -34,6 +34,13 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
+#include "World/LevelManager.h"
+
+BenchmarkState::~BenchmarkState()
+{
+	SAFEDELETE(m_pLevel);
+}
+
 void BenchmarkState::Init()
 {
 	using namespace LambdaEngine;
@@ -72,28 +79,7 @@ void BenchmarkState::Init()
 
 	// Scene
 	{
-		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
-
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
-
-		for (const MeshComponent& meshComponent : meshComponents)
-		{
-			Entity entity = pECS->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = {
-				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-			};
-
-			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-		}
+		m_pLevel = LevelManager::LoadLevel(0);
 	}
 
 	// Robot
@@ -122,7 +108,8 @@ void BenchmarkState::Init()
 		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID = animations[0];
+		robotAnimationComp.AnimationGUID	= animations[0];
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);

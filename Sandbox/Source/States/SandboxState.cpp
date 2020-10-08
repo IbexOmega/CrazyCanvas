@@ -76,7 +76,7 @@ void SandboxState::Init()
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const CameraDesc cameraDesc =
 		{
-			.Position	= { 0.0f, 20.0f, -2.0f },
+			.Position	= { 0.0f, 2.0f, 5.0f },
 			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
 			.Width		= (float32)window->GetWidth(),
 			.Height		= (float32)window->GetHeight(),
@@ -92,7 +92,14 @@ void SandboxState::Init()
 	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
+		LambdaEngine::TArray<LambdaEngine::LoadedDirectionalLight>	directionalLights;
+		LambdaEngine::TArray<LambdaEngine::LoadedPointLight>		pointLights;
+		LambdaEngine::TArray<LambdaEngine::SpecialObject>			specialObjects;
+
+		SceneLoadDesc sceneLoadDesc = {};
+		sceneLoadDesc.Filename = "Prototype/PrototypeScene.dae";
+
+		ResourceManager::LoadSceneFromFile(&sceneLoadDesc, meshComponents, directionalLights, pointLights, specialObjects);
 
 		glm::vec3 position(0.0f, 0.0f, 0.0f);
 		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
@@ -142,13 +149,48 @@ void SandboxState::Init()
 		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID = animations[0];
-		robotAnimationComp.PlaybackSpeed = 2.0f;
+		robotAnimationComp.AnimationGUID	= animations[0];
+		robotAnimationComp.PlaybackSpeed	= 1.0f;
+		robotAnimationComp.IsLooping		= false;
+		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
-		glm::vec3 position(0.0f, 1.25f, 0.0f);
+		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(0.0f, 1.25f, 0.0f);
+		robotAnimationComp.IsLooping	= true;
+		robotAnimationComp.NumLoops		= 10;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(-5.0f, 1.25f, 0.0f);
+		robotAnimationComp.NumLoops = INFINITE_LOOPS;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(5.0f, 1.25f, 0.0f);
+
+		robotAnimationComp.PlaybackSpeed *= -1.0f;
+
+		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });

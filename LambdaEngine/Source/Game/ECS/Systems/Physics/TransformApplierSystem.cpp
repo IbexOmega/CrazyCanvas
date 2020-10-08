@@ -46,7 +46,7 @@ namespace LambdaEngine
 		const float32 dt = (float32)deltaTime.AsSeconds();
 
 		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
 		const auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 		const auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		auto* pCameraComponents			= pECS->GetComponentArray<CameraComponent>();

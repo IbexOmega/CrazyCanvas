@@ -11,6 +11,8 @@
 #include "States/PlaySessionState.h"
 #include "States/MainMenuState.h"
 
+#include "World/LevelManager.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -26,6 +28,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
+	bool clientSide = true;
+	if (!LevelManager::Init(clientSide))
+	{
+		LOG_ERROR("Level Manager Init Failed");
+	}
+
 	LoadRendererResources();
 
 	State* pStartingState = nullptr;
@@ -35,6 +43,14 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		pStartingState = DBG_NEW MainMenuState();
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+}
+
+CrazyCanvas::~CrazyCanvas()
+{
+	if (!LevelManager::Release())
+	{
+		LOG_ERROR("Level Manager Release Failed");
+	}
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)

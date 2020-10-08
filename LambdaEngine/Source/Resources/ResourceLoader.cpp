@@ -193,7 +193,11 @@ namespace LambdaEngine
 
 	bool ResourceLoader::LoadSceneFromFile(
 		const String& filepath,
+		const TArray<SpecialObjectDesc>& specialObjectDescriptions,
 		TArray<MeshComponent>& meshComponents,
+		TArray<LoadedDirectionalLight>& directionalLights,
+		TArray<LoadedPointLight>& pointLights,
+		TArray<SpecialObject>& specialObjects,
 		TArray<Mesh*>& meshes,
 		TArray<Animation*>& animations,
 		TArray<LoadedMaterial*>& materials,
@@ -215,7 +219,7 @@ namespace LambdaEngine
 			aiProcess_GenUVCoords				|
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
-			aiProcess_OptimizeGraph				|
+			aiProcess_PreTransformVertices		|
 			aiProcess_FindInvalidData;
 
 		// Prevent crashes in assimp when using this flag
@@ -227,13 +231,17 @@ namespace LambdaEngine
 
 		SceneLoadRequest loadRequest = 
 		{
-			.Filepath		= ConvertSlashes(filepath),
-			.AssimpFlags	= assimpFlags,
-			.Meshes			= meshes,
-			.Animations		= animations,
-			.MeshComponents	= meshComponents,
-			.pMaterials		= &materials,
-			.pTextures		= &textures
+			.Filepath					= ConvertSlashes(filepath),
+			.AssimpFlags				= assimpFlags,
+			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.DirectionalLights			= directionalLights,
+			.PointLights				= pointLights,
+			.SpecialObjects				= specialObjects,
+			.Meshes						= meshes,
+			.Animations					= animations,
+			.MeshComponents				= meshComponents,
+			.pMaterials					= &materials,
+			.pTextures					= &textures
 		};
 
 		return LoadSceneWithAssimp(loadRequest);
@@ -256,7 +264,6 @@ namespace LambdaEngine
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
 			aiProcess_OptimizeGraph				|
-			//aiProcess_SortByPType				|
 			aiProcess_FindInvalidData;
 		
 		// Prevent crashes in assimp when using this flag
@@ -269,15 +276,24 @@ namespace LambdaEngine
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 
+		const TArray<SpecialObjectDesc>		specialObjectDescriptions;
+		TArray<LoadedDirectionalLight>		directionalLightComponents;
+		TArray<LoadedPointLight>			pointLightComponents;
+		TArray<SpecialObject>				specialObjects;
+
 		SceneLoadRequest loadRequest =
 		{
-			.Filepath		= ConvertSlashes(filepath),
-			.AssimpFlags	= assimpFlags,
-			.Meshes			= meshes,
-			.Animations		= animations,
-			.MeshComponents = meshComponent,
-			.pMaterials		= nullptr,
-			.pTextures		= nullptr,
+			.Filepath					= ConvertSlashes(filepath),
+			.AssimpFlags				= assimpFlags,
+			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.DirectionalLights			= directionalLightComponents,
+			.PointLights				= pointLightComponents,
+			.SpecialObjects				= specialObjects,
+			.Meshes						= meshes,
+			.Animations					= animations,
+			.MeshComponents				= meshComponent,
+			.pMaterials					= nullptr,
+			.pTextures					= nullptr,
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -801,112 +817,34 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	void ResourceLoader::LoadBoundingBox(BoundingBox& boundingBox, glm::vec3& centroid, const aiMesh* pMeshAI)
 	{
-		std::string source			= std::string(pSource);
-		int32 size					= int32(source.size());
-		const char* pFinalSource	= source.c_str();
+		glm::vec3& halfExtent = boundingBox.HalfExtent;
+		halfExtent = glm::vec3(0.0f);
 
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
-		glslang::TShader shader(shaderType);
-
-		shader.setStringsWithLengths(&pFinalSource, &size, 1);
-
-		//Todo: Fetch this
-		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
-		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
-		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
-		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
-		EShMessages messages								= GetDefaultMessages();
-		int32 defaultVersion								= GetDefaultVersion();
-
-		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
-		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
-		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
-
-		DirStackFileIncluder includer;
-
-		// Get Directory Path of File
-		size_t found				= filepath.find_last_of("/\\");
-		std::string directoryPath	= filepath.substr(0, found);
-
-		includer.pushExternalLocalDirectory(directoryPath);
-
-		//std::string preprocessedGLSL;
-		//if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
-		//{
-		//	LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-		//	return false;
-		//}
-
-		//const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
-		//shader.setStrings(&pPreprocessedGLSL, 1);
-
-		if (!shader.parse(pResources, defaultVersion, false, messages, includer))
+		glm::vec3 vertexPosition;
+		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
-			const char* pShaderInfoLog = shader.getInfoLog();
-			const char* pShaderDebugInfo = shader.getInfoDebugLog();
-			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), pShaderInfoLog, pShaderDebugInfo);
-			return false;
+			vertexPosition.x = pMeshAI->mVertices[vertexIdx].x;
+			vertexPosition.y = pMeshAI->mVertices[vertexIdx].y;
+			vertexPosition.z = pMeshAI->mVertices[vertexIdx].z;
+
+			halfExtent.x = std::max(halfExtent.x, std::abs(vertexPosition.x));
+			halfExtent.y = std::max(halfExtent.y, std::abs(vertexPosition.y));
+			halfExtent.z = std::max(halfExtent.z, std::abs(vertexPosition.z));
+
+			//Moving Average
+			centroid += (vertexPosition - centroid) / float32(vertexIdx + 1);
 		}
-
-		glslang::TProgram program;
-		program.addShader(&shader);
-
-		if (!program.link(messages))
-		{
-			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
-		}
-
-		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
-
-		String sourcesss = pIntermediate->getSourceText();
-
-		if (pSourceSPIRV != nullptr)
-		{
-			spv::SpvBuildLogger logger;
-			glslang::SpvOptions spvOptions;
-			std::vector<uint32> std_sourceSPIRV;
-			glslang::GlslangToSpv(*pIntermediate, std_sourceSPIRV, &logger, &spvOptions);
-			pSourceSPIRV->Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
-		}
-
-		if (pReflection != nullptr)
-		{
-			if (!CreateShaderReflection(pIntermediate, stage, pReflection))
-			{
-				LOG_ERROR("[ResourceLoader]: Failed to Create Shader Reflection");
-				return false;
-			}
-		}
-
-		return true;
 	}
 
-	bool ResourceLoader::CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection)
-	{
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
-		glslang::TReflection glslangReflection(EShReflectionOptions::EShReflectionAllIOVariables, shaderType, shaderType);
-		glslangReflection.addStage(shaderType, *pIntermediate);
-
-		pReflection->NumAtomicCounters		= glslangReflection.getNumAtomicCounters();
-		pReflection->NumBufferVariables		= glslangReflection.getNumBufferVariables();
-		pReflection->NumPipeInputs			= glslangReflection.getNumPipeInputs();
-		pReflection->NumPipeOutputs			= glslangReflection.getNumPipeOutputs();
-		pReflection->NumStorageBuffers		= glslangReflection.getNumStorageBuffers();
-		pReflection->NumUniformBlocks		= glslangReflection.getNumUniformBlocks();
-		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
-
-		return true;
-	}
-
-	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
+	void ResourceLoader::LoadVertices(Mesh* pMesh, glm::vec3& centroid, const aiMesh* pMeshAI)
 	{
 		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
 
 		glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
 		halfExtent = glm::vec3(0.0f);
+		centroid = glm::vec3(0.0f);
 
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
@@ -918,6 +856,9 @@ namespace LambdaEngine
 			halfExtent.x = std::max(halfExtent.x, std::abs(vertex.Position.x));
 			halfExtent.y = std::max(halfExtent.y, std::abs(vertex.Position.y));
 			halfExtent.z = std::max(halfExtent.z, std::abs(vertex.Position.z));
+
+			//Moving Average
+			centroid += (vertex.Position - centroid) / float32(vertexIdx + 1);
 
 			if (pMeshAI->HasNormals())
 			{
@@ -1012,8 +953,8 @@ namespace LambdaEngine
 		String name = pNode->mName.C_Str();
 
 		int32 myID = -1;
-		auto it = pSkeleton->BoneMap.find(name);
-		if (it != pSkeleton->BoneMap.end())
+		auto it = pSkeleton->JointMap.find(name);
+		if (it != pSkeleton->JointMap.end())
 		{
 			myID = it->second;
 		}
@@ -1029,10 +970,10 @@ namespace LambdaEngine
 			{
 				String childName = pChild->mName.C_Str();
 				
-				auto childIt = pSkeleton->BoneMap.find(childName);
-				if (childIt != pSkeleton->BoneMap.end())
+				auto childIt = pSkeleton->JointMap.find(childName);
+				if (childIt != pSkeleton->JointMap.end())
 				{
-					pSkeleton->Bones[childIt->second].ParentBoneIndex = myID;
+					pSkeleton->Joints[childIt->second].ParentBoneIndex = myID;
 				}
 
 				FindSkeletalParent(pNode->mChildren[child], pSkeleton);
@@ -1046,114 +987,109 @@ namespace LambdaEngine
 		pMesh->pSkeleton = pSkeleton;
 
 		// Retrive all the bones
-		pSkeleton->Bones.Resize(pMeshAI->mNumBones);
+		pSkeleton->Joints.Resize(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			Bone& bone = pSkeleton->Bones[boneIndex];
+			Joint& joint = pSkeleton->Joints[boneIndex];
 			
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
-			bone.Name = pBoneAI->mName.C_Str();
+			joint.Name = pBoneAI->mName.C_Str();
 			
-			auto it = pSkeleton->BoneMap.find(bone.Name);
-			if (it != pSkeleton->BoneMap.end())
+			auto it = pSkeleton->JointMap.find(joint.Name);
+			if (it != pSkeleton->JointMap.end())
 			{
 				LOG_ERROR("[ResourceLoader] Multiple bones with the same name");
 				return;
 			}
 			else
 			{
-				pSkeleton->BoneMap[bone.Name] = boneIndex;
+				pSkeleton->JointMap[joint.Name] = boneIndex;
 			}
 			
-			bone.OffsetTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
-			bone.Weights.Resize(pBoneAI->mNumWeights);
-			for (uint32 weightIndex = 0; weightIndex < pBoneAI->mNumWeights; weightIndex++)
-			{
-				bone.Weights[weightIndex].VertexIndex	= pBoneAI->mWeights[weightIndex].mVertexId;
-				bone.Weights[weightIndex].VertexWeight	= pBoneAI->mWeights[weightIndex].mWeight;
-			}
+			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
-		// Retrive the parent index for all nodes with the node
-		{
-			aiNode* pNodeAI = pMeshAI->mBones[0]->mNode;
-			if (pNodeAI)
-			{
-				aiNode* pRoot = FindSkeletalRoot(pNodeAI);
-				FindSkeletalParent(pRoot, pSkeleton);
-			}
-		}
-
-		//for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
-		//{
-		//	Skeleton::Bone& bone = pSkeleton->Bones[boneID];
-		//	LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
-		//}
-
-		// Go through and correct mistakes with the armature
+		// We find the parent
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
-			// We already found the parent
-			Bone& bone = pSkeleton->Bones[boneIndex];
-			if (bone.ParentBoneIndex != -1)
-			{
-				continue;
-			}
+			Joint& joint = pSkeleton->Joints[boneIndex];
 
 			// Search the armature aswell
-			aiNode* pNodeAI = pMeshAI->mBones[boneIndex]->mArmature;
+			aiNode* pNodeAI = pMeshAI->mBones[boneIndex]->mNode;
 			if (pNodeAI)
 			{
 				aiNode* pParent = pNodeAI->mParent;
 				if (pParent)
 				{
-					auto it = pSkeleton->BoneMap.find(String(pParent->mName.C_Str()));
-					if (it != pSkeleton->BoneMap.end())
+					auto it = pSkeleton->JointMap.find(String(pParent->mName.C_Str()));
+					if (it != pSkeleton->JointMap.end())
 					{
-						bone.ParentBoneIndex = it->second;
+						joint.ParentBoneIndex = it->second;
+					}
+				}
+			}
+
+			if (joint.ParentBoneIndex != INVALID_JOINT_ID)
+			{
+				continue;
+			}
+
+			// Search the armature aswell
+			pNodeAI = pMeshAI->mBones[boneIndex]->mArmature;
+			if (pNodeAI)
+			{
+				aiNode* pParent = pNodeAI->mParent;
+				if (pParent)
+				{
+					auto it = pSkeleton->JointMap.find(String(pParent->mName.C_Str()));
+					if (it != pSkeleton->JointMap.end())
+					{
+						joint.ParentBoneIndex = it->second;
 					}
 				}
 			}
 		}
 
-		//LOG_INFO("-----------------------------------");
+#if 0
+		LOG_INFO("-----------------------------------");
 
-		//for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
-		//{
-		//	Skeleton::Bone& bone = pSkeleton->Bones[boneID];
-		//	LOG_INFO("Name=%s, MyID=%d, ParentID=%d", bone.Name.c_str(), boneID, bone.ParentBoneIndex);
-		//}
+		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
+		{
+			Joint& joint = pSkeleton->Joints[jointID];
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", joint.Name.GetString().c_str(), jointID, joint.ParentBoneIndex);
+		}
+#endif
 
 		// Set weights
-		pMesh->VertexBoneData.Resize(pMesh->Vertices.GetSize());
-		for (uint32 boneID = 0; boneID < pSkeleton->Bones.GetSize(); boneID++)
+		pMesh->VertexJointData.Resize(pMesh->Vertices.GetSize());
+		for (uint32 boneID = 0; boneID < pMeshAI->mNumBones; boneID++)
 		{
-			Bone& bone = pSkeleton->Bones[boneID];
-			for (uint32 weightID = 0; weightID < bone.Weights.GetSize(); weightID++)
+			aiBone* pBone = pMeshAI->mBones[boneID];
+			for (uint32 weightID = 0; weightID < pBone->mNumWeights; weightID++)
 			{
-				const uint32	vertexID	= bone.Weights[weightID].VertexIndex;
-				const float32	weight		= bone.Weights[weightID].VertexWeight;
+				const uint32	vertexID	= pBone->mWeights[weightID].mVertexId;
+				const float32	weight		= pBone->mWeights[weightID].mWeight;
 
-				VertexBoneData& vertex = pMesh->VertexBoneData[vertexID];
-				if (vertex.Bone0.BoneID == -1)
+				VertexJointData& vertex = pMesh->VertexJointData[vertexID];
+				if (vertex.JointID0 == INVALID_JOINT_ID)
 				{
-					vertex.Bone0.BoneID = boneID;
-					vertex.Bone0.Weight = weight;
+					vertex.JointID0 = boneID;
+					vertex.Weight0	= weight;
 				}
-				else if (vertex.Bone1.BoneID == -1)
+				else if (vertex.JointID1 == INVALID_JOINT_ID)
 				{
-					vertex.Bone1.BoneID = boneID;
-					vertex.Bone1.Weight = weight;
+					vertex.JointID1 = boneID;
+					vertex.Weight1	= weight;
 				}
-				else if (vertex.Bone2.BoneID == -1)
+				else if (vertex.JointID2 == INVALID_JOINT_ID)
 				{
-					vertex.Bone2.BoneID = boneID;
-					vertex.Bone2.Weight = weight;
+					vertex.JointID2 = boneID;
+					vertex.Weight2	= weight;
 				}
-				else if (vertex.Bone3.BoneID == -1)
+				else if (vertex.JointID3 == INVALID_JOINT_ID)
 				{
-					vertex.Bone3.BoneID = boneID;
-					vertex.Bone3.Weight = weight;
+					vertex.JointID3 = boneID;
+					// This weight will be calculated in the shader
 				}
 				else
 				{
@@ -1165,7 +1101,7 @@ namespace LambdaEngine
 #if 0
 		for (VertexBoneData& bone : pMesh->VertexBoneData)
 		{
-			LOG_WARNING("BoneData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
+			LOG_WARNING("JointData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
 				bone.Bone0.BoneID, bone.Bone0.Weight,
 				bone.Bone1.BoneID, bone.Bone1.Weight,
 				bone.Bone2.BoneID, bone.Bone2.Weight,
@@ -1305,6 +1241,8 @@ namespace LambdaEngine
 		}
 
 		context.Animations.EmplaceBack(pAnimation);
+
+		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", Duration=%.4f ticks, TicksPerSecond=%.4f", pAnimation->Name.GetString().c_str(), pAnimation->DurationInTicks, pAnimation->TicksPerSecond);
 	}
 
 	bool ResourceLoader::LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest)
@@ -1328,13 +1266,35 @@ namespace LambdaEngine
 
 		SceneLoadingContext context = 
 		{
-			.DirectoryPath	= filepath.substr(0, lastPathDivisor + 1),
-			.Meshes			= sceneLoadRequest.Meshes,
-			.MeshComponents	= sceneLoadRequest.MeshComponents,
-			.Animations		= sceneLoadRequest.Animations,
-			.pMaterials		= sceneLoadRequest.pMaterials,
-			.pTextures		= sceneLoadRequest.pTextures
+			.DirectoryPath				= filepath.substr(0, lastPathDivisor + 1),
+			.SpecialObjectDescriptions	= sceneLoadRequest.SpecialObjectDescriptions,
+			.DirectionalLights			= sceneLoadRequest.DirectionalLights,
+			.PointLights				= sceneLoadRequest.PointLights,
+			.SpecialObjects				= sceneLoadRequest.SpecialObjects,
+			.Meshes						= sceneLoadRequest.Meshes,
+			.MeshComponents				= sceneLoadRequest.MeshComponents,
+			.Animations					= sceneLoadRequest.Animations,
+			.pMaterials					= sceneLoadRequest.pMaterials,
+			.pTextures					= sceneLoadRequest.pTextures
 		};
+
+		// Metadata
+		if (pScene->mMetaData)
+		{
+			aiMetadata* pMetaData = pScene->mMetaData;
+
+			LOG_INFO("%s metadata:", filepath.c_str());
+			for (uint32 i = 0; i < pMetaData->mNumProperties; i++)
+			{
+				aiString string = pMetaData->mKeys[i];
+				if (pMetaData->mValues[i].mType == AI_AISTRING)
+				{
+					string = *static_cast<aiString*>(pMetaData->mValues[i].mData);
+				}
+				
+				LOG_INFO("    [%s]=%s", pMetaData->mKeys[i].C_Str(), string.C_Str());
+			}
+		}
 
 		// Load all meshes
 		ProcessAssimpNode(context, pScene->mRootNode, pScene);
@@ -1348,47 +1308,248 @@ namespace LambdaEngine
 			}
 		}
 
+		//Load Lights
+		if (pScene->HasLights())
+		{
+			for (uint32 l = 0; l < pScene->mNumLights; l++)
+			{
+				aiLight* pLight = pScene->mLights[l];
+				glm::vec3 lightRadiance = glm::vec3(pLight->mColorDiffuse.r, pLight->mColorDiffuse.g, pLight->mColorDiffuse.b);
+				float intensity = glm::length(lightRadiance);
+				lightRadiance /= intensity;
+
+				switch (pLight->mType)
+				{
+					case aiLightSourceType::aiLightSource_DIRECTIONAL:
+					{
+						LoadedDirectionalLight loadedDirectionalLight =
+						{
+							.ColorIntensity	= glm::vec4(lightRadiance, intensity),
+							.Direction		= glm::vec3(pLight->mDirection.x, pLight->mDirection.y, pLight->mDirection.z)
+						};
+
+						context.DirectionalLights.PushBack(loadedDirectionalLight);
+						break;
+					}
+					case aiLightSourceType::aiLightSource_POINT:
+					{
+						LoadedPointLight loadedPointLight =
+						{
+							.ColorIntensity	= glm::vec4(lightRadiance, intensity),
+							.Position		= glm::vec3(pLight->mPosition.x, pLight->mPosition.y, pLight->mPosition.z),
+							.Attenuation	= glm::vec3(pLight->mAttenuationConstant, pLight->mAttenuationLinear, pLight->mAttenuationQuadratic)
+						};
+
+						context.PointLights.PushBack(loadedPointLight);
+						break;
+					}
+				}
+			}
+		}
+
 		return true;
 	}
 
 	void ResourceLoader::ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
 	{
-		context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
-		for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
+		String nodeName = pNode->mName.C_Str();
+		bool loadNormally	= false;
+		bool isSpecial		= false;
+		TArray<SpecialObject*> specialObjectToBeSet;
+
+		//Check if there are any special object descriptions referencing this object
+		for (const SpecialObjectDesc& specialObjectDesc : context.SpecialObjectDescriptions)
 		{
-			Mesh*	pMesh	= DBG_NEW Mesh;
-			aiMesh*	pMeshAI	= pScene->mMeshes[pNode->mMeshes[meshIdx]];
+			size_t prefixIndex = nodeName.find(specialObjectDesc.Prefix);
 
-			LoadVertices(pMesh, pMeshAI);
-			LoadIndices(pMesh, pMeshAI);
-
-			if (context.pMaterials)
+			//We only check for prefixes, so index must be 0
+			if (prefixIndex == 0)
 			{
-				LoadMaterial(context, pScene, pMeshAI);
-			}
+				isSpecial = true;
 
-			if (pMeshAI->mNumBones > 0)
-			{
-				LoadSkeleton(pMesh, pMeshAI);
-				if (pMesh->pSkeleton)
+				//If any special object wants this mesh included in the scene, we include it
+				if (nodeName.find("INCLUDEMESH") != String::npos)
 				{
-					pMesh->pSkeleton->GlobalTransform = AssimpToGLMMat4(pNode->mTransformation);
+					loadNormally = true;
+				}
+
+				SpecialObject specialObject =
+				{
+					.Prefix		= specialObjectDesc.Prefix,
+					.Name		= nodeName.substr(specialObjectDesc.Prefix.length() + 1)
+				};
+
+				specialObjectToBeSet.PushBack(&context.SpecialObjects.PushBack(specialObject));
+			}
+		}
+
+		if (loadNormally || !isSpecial)
+		{
+			context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
+			for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
+			{
+				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
+				Mesh* pMesh = DBG_NEW Mesh;
+
+				glm::vec3 centroid;
+				LoadVertices(pMesh, centroid, pMeshAI);
+				LoadIndices(pMesh, pMeshAI);
+
+				if (context.pMaterials)
+				{
+					LoadMaterial(context, pScene, pMeshAI);
+				}
+
+				if (pMeshAI->mNumBones > 0)
+				{
+					LoadSkeleton(pMesh, pMeshAI);
+					if (pMesh->pSkeleton)
+					{
+						glm::mat4 meshTransform		= AssimpToGLMMat4(pNode->mTransformation);
+					    glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
+					    pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
+
+                        LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+					}
+				}
+
+				MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+
+				context.Meshes.EmplaceBack(pMesh);
+
+				MeshComponent newMeshComponent;
+				newMeshComponent.MeshGUID = context.Meshes.GetSize() - 1;
+				newMeshComponent.MaterialGUID = context.MaterialIndices[pMeshAI->mMaterialIndex];
+				context.MeshComponents.PushBack(newMeshComponent);
+
+				for (SpecialObject* pSpecialObject : specialObjectToBeSet)
+				{
+					pSpecialObject->Centroids.PushBack(centroid);
+					pSpecialObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
 				}
 			}
+		}
+		else
+		{
+			for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
+			{
+				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
-			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+				BoundingBox boundingBox;
+				glm::vec3 centroid;
+				LoadBoundingBox(boundingBox, centroid, pMeshAI);
 
-			context.Meshes.EmplaceBack(pMesh);
-
-			MeshComponent newMeshComponent;
-			newMeshComponent.MeshGUID		= context.Meshes.GetSize() - 1;
-			newMeshComponent.MaterialGUID	= context.MaterialIndices[pMeshAI->mMaterialIndex];
-			context.MeshComponents.PushBack(newMeshComponent);
+				for (SpecialObject* pSpecialObject : specialObjectToBeSet)
+				{
+					pSpecialObject->Centroids.PushBack(centroid);
+					pSpecialObject->BoundingBoxes.PushBack(boundingBox);
+				}
+			}
 		}
 
 		for (uint32 childIdx = 0; childIdx < pNode->mNumChildren; childIdx++)
 		{
 			ProcessAssimpNode(context, pNode->mChildren[childIdx], pScene);
 		}
+	}
+
+	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	{
+		std::string source			= std::string(pSource);
+		int32 size					= int32(source.size());
+		const char* pFinalSource	= source.c_str();
+
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TShader shader(shaderType);
+
+		shader.setStringsWithLengths(&pFinalSource, &size, 1);
+
+		//Todo: Fetch this
+		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
+		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
+		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
+		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
+		EShMessages messages								= GetDefaultMessages();
+		int32 defaultVersion								= GetDefaultVersion();
+
+		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
+		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
+		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
+
+		DirStackFileIncluder includer;
+
+		// Get Directory Path of File
+		size_t found				= filepath.find_last_of("/\\");
+		std::string directoryPath	= filepath.substr(0, found);
+
+		includer.pushExternalLocalDirectory(directoryPath);
+
+		//std::string preprocessedGLSL;
+		//if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		//{
+		//	LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+		//	return false;
+		//}
+
+		//const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
+		//shader.setStrings(&pPreprocessedGLSL, 1);
+
+		if (!shader.parse(pResources, defaultVersion, false, messages, includer))
+		{
+			const char* pShaderInfoLog = shader.getInfoLog();
+			const char* pShaderDebugInfo = shader.getInfoDebugLog();
+			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), pShaderInfoLog, pShaderDebugInfo);
+			return false;
+		}
+
+		glslang::TProgram program;
+		program.addShader(&shader);
+
+		if (!program.link(messages))
+		{
+			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
+
+		String sourcesss = pIntermediate->getSourceText();
+
+		if (pSourceSPIRV != nullptr)
+		{
+			spv::SpvBuildLogger logger;
+			glslang::SpvOptions spvOptions;
+			std::vector<uint32> std_sourceSPIRV;
+			glslang::GlslangToSpv(*pIntermediate, std_sourceSPIRV, &logger, &spvOptions);
+			pSourceSPIRV->Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
+		}
+
+		if (pReflection != nullptr)
+		{
+			if (!CreateShaderReflection(pIntermediate, stage, pReflection))
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to Create Shader Reflection");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool ResourceLoader::CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection)
+	{
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TReflection glslangReflection(EShReflectionOptions::EShReflectionAllIOVariables, shaderType, shaderType);
+		glslangReflection.addStage(shaderType, *pIntermediate);
+
+		pReflection->NumAtomicCounters		= glslangReflection.getNumAtomicCounters();
+		pReflection->NumBufferVariables		= glslangReflection.getNumBufferVariables();
+		pReflection->NumPipeInputs			= glslangReflection.getNumPipeInputs();
+		pReflection->NumPipeOutputs			= glslangReflection.getNumPipeOutputs();
+		pReflection->NumStorageBuffers		= glslangReflection.getNumStorageBuffers();
+		pReflection->NumUniformBlocks		= glslangReflection.getNumUniformBlocks();
+		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
+
+		return true;
 	}
 }

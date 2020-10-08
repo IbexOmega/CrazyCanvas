@@ -23,7 +23,7 @@
 namespace LambdaEngine
 {
 	GraphicsDevice* RenderAPI::s_pGraphicsDevice = nullptr;
-	
+
 	TSharedRef<CommandQueue> RenderAPI::s_GraphicsQueue	= nullptr;
 	TSharedRef<CommandQueue> RenderAPI::s_ComputeQueue	= nullptr;
 	TSharedRef<CommandQueue> RenderAPI::s_CopyQueue		= nullptr;
@@ -36,7 +36,7 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceDesc deviceDesc = { };
 #ifdef LAMBDA_DEVELOPMENT
-		deviceDesc.Debug = true;
+		deviceDesc.Debug = false;
 #else
 		deviceDesc.Debug = false;
 #endif

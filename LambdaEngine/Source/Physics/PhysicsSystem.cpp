@@ -265,7 +265,6 @@ namespace LambdaEngine
 
 	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent)
 	{
-		m_pScene->removeActor(*collisionComponent.pActor);
 		PX_RELEASE(collisionComponent.pActor);
 	}
 
@@ -286,7 +285,7 @@ namespace LambdaEngine
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
 		controllerDesc.height			= height;
-		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eEASY;
+		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eCONSTRAINED;
 
 		FinalizeCharacterController(characterColliderInfo, controllerDesc, characterColliderComp);
 	}
@@ -369,7 +368,7 @@ namespace LambdaEngine
 		/*	Max height of obstacles that can be climbed. Note that capsules can automatically climb obstacles because
 			of their round bottoms, so the total step height is taller than the specified one below.
 			This can be turned off however. */
-		constexpr const float stepOffset = 0.15f;
+		constexpr const float stepOffset = 0.0f;
 
 		const glm::vec3& position = characterColliderInfo.Position.Position;
 		const glm::vec3 upDirection = g_DefaultUp * characterColliderInfo.Rotation.Quaternion;

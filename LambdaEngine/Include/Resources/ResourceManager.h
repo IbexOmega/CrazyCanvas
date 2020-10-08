@@ -1,8 +1,7 @@
 #pragma once
 #include "ResourceLoader.h"
 
-#include "Game/ECS/Components/Rendering/MeshComponent.h"
-
+#include "Containers/TSet.h"
 #include "Containers/THashTable.h"
 #include "Containers/String.h"
 
@@ -35,8 +34,24 @@ namespace LambdaEngine
 	constexpr const char* SHADER_DIR		= "../Assets/Shaders/";
 	constexpr const char* SOUND_DIR			= "../Assets/Sounds/";
 
+	struct SceneLoadDesc
+	{
+		String	Filename = "";
+		TArray<SpecialObjectDesc> SpecialObjectDescriptions = {};
+	};
+
 	class LAMBDA_API ResourceManager
 	{
+		struct MaterialLoadDesc
+		{
+			GUID_Lambda AlbedoMapGUID				= GUID_NONE;
+			GUID_Lambda NormalMapGUID				= GUID_NONE;
+			GUID_Lambda AOMapGUID					= GUID_NONE;
+			GUID_Lambda MetallicMapGUID				= GUID_NONE;
+			GUID_Lambda RoughnessMapGUID			= GUID_NONE;
+			GUID_Lambda AOMetallicRoughnessMapGUID	= GUID_NONE;
+		};
+
 		struct ShaderLoadDesc
 		{
 			String				Filepath	= "";
@@ -53,11 +68,20 @@ namespace LambdaEngine
 
 		/*
 		* Load a Scene from file, (experimental, only tested with Sponza Scene)
-		*	filename	- The name of the .obj file
-		*	result		- A vector where all loaded MeshComponent(s) will be stored
+		*	pSceneLoadDesc		- A load desc, containing the filename and the definition of special objects
+		*	meshComponents		- A vector where all loaded MeshComponent(s) will be stored
+		*	directionalLights	- A vector where all loaded LoadedDirectionalLight(s) will be stored
+		*	pointLights			- A vector where all loaded LoadedPointLight(s) will be stored
+		*	specialObjects		- A vector where all loaded SpecialObject(s) will be stored according to the definition given in SceneLoadDesc::SpecialObjectDescriptions
 		* return - true if the scene was loaded, false otherwise
 		*/
-		static bool LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result);
+		static bool LoadSceneFromFile(
+			const SceneLoadDesc* pSceneLoadDesc,
+			TArray<MeshComponent>& meshComponents,
+			TArray<LoadedDirectionalLight>& directionalLights,
+			TArray<LoadedPointLight>& pointLights,
+			TArray<SpecialObject>& specialObjects,
+			const String& directory = SCENE_DIR);
 
 		/*
 		* Load a mesh from file
@@ -164,7 +188,7 @@ namespace LambdaEngine
 		/*
 		* Combine PBR materials into one texture
 		*/
-		static void CombineMaterials(
+		static GUID_Lambda CombineMaterialTextures(
 			Material* pMaterial,
 			Texture* pAOMap,
 			Texture* pMetallicMap,
@@ -172,6 +196,15 @@ namespace LambdaEngine
 			TextureView* pAOMapView,
 			TextureView* pMetallicMapView,
 			TextureView* pRoughnessMapView);
+
+		static bool UnloadMesh(GUID_Lambda guid);
+		static bool UnloadMaterial(GUID_Lambda guid);
+		static bool UnloadAnimation(GUID_Lambda guid);
+		static bool UnloadTexture(GUID_Lambda guid);
+		static bool UnloadShader(GUID_Lambda guid);
+		static bool UnloadSoundEffect(GUID_Lambda guid);
+
+		static bool DecrementTextureMaterialRef(GUID_Lambda guid);
 
 		static GUID_Lambda GetMeshGUID(const String& name);
 		static GUID_Lambda GetMaterialGUID(const String& name);
@@ -221,6 +254,13 @@ namespace LambdaEngine
 	private:
 		static GUID_Lambda s_NextFreeGUID;
 
+		static std::unordered_map<GUID_Lambda, String>			s_MeshGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>			s_MaterialGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>			s_AnimationGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>			s_TextureGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>			s_ShaderGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>			s_SoundEffectGUIDsToNames;
+
 		static std::unordered_map<String, GUID_Lambda>			s_MeshNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_MaterialNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_AnimationNamesToGUIDs;
@@ -229,15 +269,17 @@ namespace LambdaEngine
 		static std::unordered_map<String, GUID_Lambda>			s_ShaderNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_SoundEffectNamesToGUIDs;
 
-		static std::unordered_map<GUID_Lambda, Mesh*>			s_Meshes;
-		static std::unordered_map<GUID_Lambda, Material*>		s_Materials;
-		static std::unordered_map<GUID_Lambda, Animation*>		s_Animations;
-		static std::unordered_map<GUID_Lambda, Texture*>		s_Textures;
-		static std::unordered_map<GUID_Lambda, TextureView*>	s_TextureViews;
-		static std::unordered_map<GUID_Lambda, Shader*>			s_Shaders;
-		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>	s_SoundEffects;
+		static std::unordered_map<GUID_Lambda, Mesh*>				s_Meshes;
+		static std::unordered_map<GUID_Lambda, Material*>			s_Materials;
+		static std::unordered_map<GUID_Lambda, Animation*>			s_Animations;
+		static std::unordered_map<GUID_Lambda, Texture*>			s_Textures;
+		static std::unordered_map<GUID_Lambda, TextureView*>		s_TextureViews;
+		static std::unordered_map<GUID_Lambda, Shader*>				s_Shaders;
+		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>		s_SoundEffects;
 
-		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>	s_ShaderLoadConfigurations;
+		static std::unordered_map<GUID_Lambda, uint32>				s_TextureMaterialRefs;
+		static std::unordered_map<GUID_Lambda, MaterialLoadDesc>	s_MaterialLoadConfigurations;
+		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>		s_ShaderLoadConfigurations;
 
 		//Material Combine 
 		static CommandAllocator* s_pMaterialComputeCommandAllocator;
@@ -255,5 +297,7 @@ namespace LambdaEngine
 		static PipelineState* s_pMaterialPipelineState;
 
 		static GUID_Lambda s_MaterialShaderGUID;
+
+		static TSet<GUID_Lambda> s_UnloadedGUIDs;
 	};
 }
