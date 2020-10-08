@@ -24,7 +24,7 @@ namespace LambdaEngine
 class GUITest;
 class Level;
 
-class SandboxState : public LambdaEngine::State
+class SandboxState : public LambdaEngine::State, public LambdaEngine::IRenderGraphCreateHandler
 {
 public:
 	SandboxState() = default;

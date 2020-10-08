@@ -22,115 +22,37 @@ namespace LambdaEngine
 
 		m_ClientSide = clientSide;
 
-		//Spawnpoint
+		//Register Create Special Object by Prefix Functions
 		{
-			SpecialObjectDesc specialObjectDesc =
+			//Spawnpoint
 			{
-				.Prefix			= "SO_SPAWN_"
-			};
-
-			s_SpecialObjectDescriptions.PushBack(specialObjectDesc);
-			s_CreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateSpawnpoint;
-		}
-
-		//Spawnpoint
-		{
-			SpecialObjectDesc specialObjectDesc =
-			{
-				.Prefix			= "SO_FLAG_"
-			};
-
-			s_SpecialObjectDescriptions.PushBack(specialObjectDesc);
-			s_CreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateFlag;
-		}
-
-		return true;
-	}
-
-	LambdaEngine::Entity LevelObjectCreator::CreatePlayer(
-		bool isLocal,
-		const glm::vec3& position,
-		const glm::vec3& forward,
-		const LambdaEngine::MeshComponent& meshComponent,
-		const LambdaEngine::AnimationComponent& animationComponent,
-		const LambdaEngine::CameraDesc* pCameraDesc)
-	{
-		using namespace LambdaEngine;
-
-		ECSCore* pECS = ECSCore::GetInstance();
-		Entity playerEntity = pECS->CreateEntity();
-
-		glm::quat lookDirQuat = glm::quatLookAt(pCameraDesc->Direction, g_DefaultUp);
-
-		pECS->AddComponent<PlayerComponent>(playerEntity,	PlayerComponent{ .IsLocal = isLocal });
-		pECS->AddComponent<PositionComponent>(playerEntity, PositionComponent{ .Position = position });
-		pECS->AddComponent<RotationComponent>(playerEntity, RotationComponent{ .Quaternion = lookDirQuat });
-		pECS->AddComponent<ScaleComponent>(playerEntity,	ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
-		pECS->AddComponent<VelocityComponent>(playerEntity, VelocityComponent());
-	
-		const CharacterColliderInfo colliderInfo = 
-		{
-				.Entity			= playerEntity,
-				.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
-				.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_PLAYER,
-				.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
-		};
-
-		CharacterColliderComponent characterColliderComponent;
-		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS, characterColliderComponent);
-		pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
-
-		if (m_ClientSide)
-		{
-			//Todo: Set DrawArgs Mask here to avoid rendering local mesh
-			pECS->AddComponent<MeshComponent>(playerEntity, meshComponent);
-			pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
-
-			if (isLocal)
-			{
-				VALIDATE(pCameraDesc != nullptr);
-
-				//Create Camera Entity
-				Entity cameraEntity = pECS->CreateEntity();
-
-				//Todo: Better implementation for this somehow maybe?
-				const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
-
-				OffsetComponent offsetComponent = { .Offset = glm::vec3(0.0f, 2.0f * pMesh->BoundingBox.HalfExtent.y, 0.0f) };
-
-				pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
-				pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = position + offsetComponent.Offset });
-				pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
-
-				const ViewProjectionMatricesComponent viewProjComp = 
+				SpecialObjectOnLoadDesc specialObjectDesc =
 				{
-					.Projection = glm::perspective(
-						glm::radians(pCameraDesc->FOVDegrees), 
-						pCameraDesc->Width / pCameraDesc->Height, 
-						pCameraDesc->NearPlane, 
-						pCameraDesc->FarPlane),
-
-					.View = glm::lookAt(
-						pCameraDesc->Position, 
-						pCameraDesc->Position + pCameraDesc->Direction, 
-						g_DefaultUp)
+					.Prefix = "SO_SPAWN_"
 				};
-				pECS->AddComponent<ViewProjectionMatricesComponent>(cameraEntity, viewProjComp);
 
-				const CameraComponent cameraComp = 
+				s_SpecialObjectOnLoadDescriptions.PushBack(specialObjectDesc);
+				s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateSpawnpoint;
+			}
+
+			//Spawnpoint
+			{
+				SpecialObjectOnLoadDesc specialObjectDesc =
 				{
-					.NearPlane	= pCameraDesc->NearPlane,
-					.FarPlane	= pCameraDesc->FarPlane,
-					.FOV		= pCameraDesc->FOVDegrees
+					.Prefix = "SO_FLAG_"
 				};
-				pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 
-				pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
+				s_SpecialObjectOnLoadDescriptions.PushBack(specialObjectDesc);
+				s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateFlag;
 			}
 		}
 
-		return LambdaEngine::Entity();
+		//Register Create Special Object by Type Functions
+		{
+			s_SpecialObjectByTypeCreateFunctions[ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER] = &LevelObjectCreator::CreatePlayer;
+		}
+
+		return true;
 	}
 
 	LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(const LambdaEngine::LoadedDirectionalLight& directionalLight, const glm::vec3& translation)
@@ -207,22 +129,37 @@ namespace LambdaEngine
 		return entity;
 	}
 
-	ESpecialObjectType LevelObjectCreator::CreateSpecialObject(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+	ESpecialObjectType LevelObjectCreator::CreateSpecialObjectFromPrefix(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 	{
-		auto createFuncIt = s_CreateFunctions.find(specialObject.Prefix);
+		auto createFuncIt = s_SpecialObjectByPrefixCreateFunctions.find(specialObject.Prefix);
 
-		if (createFuncIt != s_CreateFunctions.end())
+		if (createFuncIt != s_SpecialObjectByPrefixCreateFunctions.end())
 		{
 			return createFuncIt->second(specialObject, createdEntities, translation);
 		}
 		else
 		{
-			LOG_ERROR("[LevelObjectCreator]: Failed to create entity %s with prefix %s", specialObject.Name, specialObject.Prefix);
+			LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name, specialObject.Prefix);
 			return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
 		}
 	}
 
-	ESpecialObjectType LevelObjectCreator::CreateSpawnpoint(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+	bool LevelObjectCreator::CreateSpecialObjectOfType(ESpecialObjectType specialObjectType, const void* pData, TArray<Entity>& createdEntities)
+	{
+		auto createFuncIt = s_SpecialObjectByTypeCreateFunctions.find(specialObjectType);
+
+		if (createFuncIt != s_SpecialObjectByTypeCreateFunctions.end())
+		{
+			return createFuncIt->second(pData, createdEntities);
+		}
+		else
+		{
+			LOG_ERROR("[LevelObjectCreator]: Failed to create special object, no create function could be found");
+			return false;
+		}
+	}
+
+	ESpecialObjectType LevelObjectCreator::CreateSpawnpoint(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 	{
 		UNREFERENCED_VARIABLE(specialObject);
 		UNREFERENCED_VARIABLE(createdEntities);
@@ -232,7 +169,7 @@ namespace LambdaEngine
 		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_SPAWN_POINT;
 	}
 
-	ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObject& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+	ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 	{
 		UNREFERENCED_VARIABLE(specialObject);
 		UNREFERENCED_VARIABLE(createdEntities);
@@ -240,5 +177,96 @@ namespace LambdaEngine
 
 		LOG_WARNING("[LevelObjectCreator]: Create Flag not implemented!");
 		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG;
+	}
+
+	bool LevelObjectCreator::CreatePlayer(const void* pData, TArray<Entity>& createdEntities)
+	{
+		if (pData == nullptr) return false;
+
+		using namespace LambdaEngine;
+
+		const CreatePlayerDesc* pPlayerDesc = reinterpret_cast<const CreatePlayerDesc*>(pData);
+
+		ECSCore* pECS = ECSCore::GetInstance();
+		Entity playerEntity = pECS->CreateEntity();
+		createdEntities.PushBack(playerEntity);
+
+		glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
+
+		pECS->AddComponent<PlayerComponent>(playerEntity,	PlayerComponent{ .IsLocal = pPlayerDesc->IsLocal });
+		pECS->AddComponent<PositionComponent>(playerEntity, PositionComponent{ .Position = pPlayerDesc->Position });
+		pECS->AddComponent<RotationComponent>(playerEntity, RotationComponent{ .Quaternion = lookDirQuat });
+		pECS->AddComponent<ScaleComponent>(playerEntity,	ScaleComponent{ .Scale = pPlayerDesc->Scale });
+		pECS->AddComponent<VelocityComponent>(playerEntity, VelocityComponent());
+	
+		const CharacterColliderInfo colliderInfo = 
+		{
+			.Entity			= playerEntity,
+			.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
+			.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
+			.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_PLAYER,
+			.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+		};
+
+		CharacterColliderComponent characterColliderComponent;
+		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS, characterColliderComponent);
+		pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
+
+		if (m_ClientSide)
+		{
+			//Todo: Set DrawArgs Mask here to avoid rendering local mesh
+			pECS->AddComponent<MeshComponent>(playerEntity, pPlayerDesc->MeshComponent);
+			pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
+
+			if (pPlayerDesc->IsLocal)
+			{
+				if (pPlayerDesc->pCameraDesc == nullptr)
+				{
+					pECS->RemoveEntity(playerEntity);
+					return false;
+				}
+
+				//Create Camera Entity
+				Entity cameraEntity = pECS->CreateEntity();
+				createdEntities.PushBack(cameraEntity);
+
+				//Todo: Better implementation for this somehow maybe?
+				const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshComponent.MeshGUID);
+
+				OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 2.0f * pMesh->BoundingBox.HalfExtent.y, 0.0f) };
+
+				pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
+				pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
+				pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
+
+				const ViewProjectionMatricesComponent viewProjComp = 
+				{
+					.Projection = glm::perspective(
+						glm::radians(pPlayerDesc->pCameraDesc->FOVDegrees),
+						pPlayerDesc->pCameraDesc->Width / pPlayerDesc->pCameraDesc->Height,
+						pPlayerDesc->pCameraDesc->NearPlane, 
+						pPlayerDesc->pCameraDesc->FarPlane),
+
+					.View = glm::lookAt(
+						pPlayerDesc->Position, 
+						pPlayerDesc->Position + pPlayerDesc->Forward,
+						g_DefaultUp)
+				};
+				pECS->AddComponent<ViewProjectionMatricesComponent>(cameraEntity, viewProjComp);
+
+				const CameraComponent cameraComp = 
+				{
+					.NearPlane	= pPlayerDesc->pCameraDesc->NearPlane,
+					.FarPlane	= pPlayerDesc->pCameraDesc->FarPlane,
+					.FOV		= pPlayerDesc->pCameraDesc->FOVDegrees
+				};
+				pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
+
+				pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
+			}
+		}
+
+		D_LOG_INFO("Created Player");
+		return true;
 	}
 }

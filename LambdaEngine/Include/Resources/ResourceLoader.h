@@ -29,12 +29,12 @@ namespace LambdaEngine
 {
 	class GLSLShaderSource;
 
-	struct SpecialObjectDesc
+	struct SpecialObjectOnLoadDesc
 	{
 		String	Prefix		= "";
 	};
 
-	struct SpecialObject
+	struct SpecialObjectOnLoad
 	{
 		String		Prefix		= "";
 		String		Name		= "";
@@ -59,35 +59,35 @@ namespace LambdaEngine
 		skip loading optional resources by setting fields to nullptr. */
 	struct SceneLoadRequest 
 	{
-		String								Filepath;
-		int32								AssimpFlags;
-		const TArray<SpecialObjectDesc>&	SpecialObjectDescriptions;
-		TArray<LoadedDirectionalLight>&		DirectionalLights;
-		TArray<LoadedPointLight>&			PointLights;
-		TArray<SpecialObject>&				SpecialObjects;
-		TArray<Mesh*>&						Meshes;
-		TArray<Animation*>&					Animations;
-		TArray<MeshComponent>&				MeshComponents;
+		String									Filepath;
+		int32									AssimpFlags;
+		const TArray<SpecialObjectOnLoadDesc>&	SpecialObjectDescriptions;
+		TArray<LoadedDirectionalLight>&			DirectionalLights;
+		TArray<LoadedPointLight>&				PointLights;
+		TArray<SpecialObjectOnLoad>&			SpecialObjects;
+		TArray<Mesh*>&							Meshes;
+		TArray<Animation*>&						Animations;
+		TArray<MeshComponent>&					MeshComponents;
 		// Either both materials and textures are nullptr, or they are both non-null pointers
-		TArray<LoadedMaterial*>*			pMaterials;
-		TArray<LoadedTexture*>*				pTextures;
+		TArray<LoadedMaterial*>*				pMaterials;
+		TArray<LoadedTexture*>*					pTextures;
 	};
 
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
-		String								DirectoryPath;
-		const TArray<SpecialObjectDesc>&	SpecialObjectDescriptions;
-		TArray<LoadedDirectionalLight>&		DirectionalLights;
-		TArray<LoadedPointLight>&			PointLights;
-		TArray<SpecialObject>&				SpecialObjects;
-		TArray<Mesh*>&						Meshes;
-		TArray<MeshComponent>&				MeshComponents;
-		TArray<Animation*>&					Animations;
-		TArray<LoadedMaterial*>*			pMaterials;
-		TArray<LoadedTexture*>*				pTextures;
-		THashTable<String, LoadedTexture*>	LoadedTextures;
-		THashTable<uint32, uint32>			MaterialIndices;
+		String									DirectoryPath;
+		const TArray<SpecialObjectOnLoadDesc>&	SpecialObjectDescriptions;
+		TArray<LoadedDirectionalLight>&			DirectionalLights;
+		TArray<LoadedPointLight>&				PointLights;
+		TArray<SpecialObjectOnLoad>&			SpecialObjects;
+		TArray<Mesh*>&							Meshes;
+		TArray<MeshComponent>&					MeshComponents;
+		TArray<Animation*>&						Animations;
+		TArray<LoadedMaterial*>*				pMaterials;
+		TArray<LoadedTexture*>*					pTextures;
+		THashTable<String, LoadedTexture*>		LoadedTextures;
+		THashTable<uint32, uint32>				MaterialIndices;
 	};
 
 	class LAMBDA_API ResourceLoader
@@ -107,11 +107,11 @@ namespace LambdaEngine
 		*/
 		static bool LoadSceneFromFile(
 			const String& filepath,
-			const TArray<SpecialObjectDesc>& specialObjectDescriptions,
+			const TArray<SpecialObjectOnLoadDesc>& specialObjectDescriptions,
 			TArray<MeshComponent>& meshComponents,
 			TArray<LoadedDirectionalLight>& directionalLights,
 			TArray<LoadedPointLight>& pointLights,
-			TArray<SpecialObject>& specialObjects,
+			TArray<SpecialObjectOnLoad>& specialObjects,
 			TArray<Mesh*>& meshes,
 			TArray<Animation*>& animations,
 			TArray<LoadedMaterial*>& materials,

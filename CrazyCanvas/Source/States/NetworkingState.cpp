@@ -32,7 +32,7 @@ void NetworkingState::Init()
 		TArray<MeshComponent> meshComponents;
 		LambdaEngine::TArray<LambdaEngine::LoadedDirectionalLight>	directionalLights;
 		LambdaEngine::TArray<LambdaEngine::LoadedPointLight>		pointLights;
-		LambdaEngine::TArray<LambdaEngine::SpecialObject>			specialObjects;
+		LambdaEngine::TArray<LambdaEngine::SpecialObjectOnLoad>		specialObjects;
 
 		SceneLoadDesc sceneLoadDesc = {};
 		sceneLoadDesc.Filename = "Testing/Testing.obj";

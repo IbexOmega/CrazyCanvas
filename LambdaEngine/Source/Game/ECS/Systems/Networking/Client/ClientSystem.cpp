@@ -111,6 +111,11 @@ namespace LambdaEngine
 
 			m_FramesToReconcile.PushBack(gameState);
 		}
+		else
+		{
+			GameState gameState = {};
+			m_PlayerActionSystem.TickLocalPlayerAction(deltaTime, GetEntityPlayer(), &gameState);
+		}
 
 		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);
 	}

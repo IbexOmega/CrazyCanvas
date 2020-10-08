@@ -64,12 +64,6 @@ SandboxState::~SandboxState()
 	}
 
 	SAFEDELETE(m_pRenderGraphEditor);
-	// Remove Systems
-}
-
-SandboxState::~SandboxState()
-{
-	// Remove System
 	SAFEDELETE(m_pLevel);
 }
 
