@@ -6,6 +6,8 @@
 
 #include "ECS/ECSCore.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 namespace LambdaEngine
 {
 	AnimationSystem::AnimationSystem()
@@ -32,7 +34,19 @@ namespace LambdaEngine
 		}
 
 		// Call the graphs tick
-		animation.Graph.Tick(GetTotalTimeInSeconds(), skeleton);
+		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
+
+		if (m_ChangeState)
+		{
+			if (animation.Graph.GetCurrentState().GetName() == "running")
+			{
+				animation.Graph.TransitionToState("walking");
+			}
+			else
+			{
+				animation.Graph.TransitionToState("running");
+			}
+		}
 
 		// Create localtransforms
 		const TArray<SQT>& currentFrame = animation.Graph.GetCurrentFrame();
@@ -66,6 +80,16 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
+	bool AnimationSystem::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
+	{
+		if (keyPressedEvent.Key == EKey::KEY_Q)
+		{
+			m_ChangeState = true;
+		}
+
+		return false;
+	}
+
 	bool AnimationSystem::Init()
 	{
 		SystemRegistration systemReg = {};
@@ -81,6 +105,8 @@ namespace LambdaEngine
 		};
 
 		RegisterSystem(systemReg);
+
+		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
 		return true;
 	}
 
@@ -108,6 +134,8 @@ namespace LambdaEngine
 				Animate(animation);
 			}
 		}
+
+		m_ChangeState = false;
 	}
 	
 	AnimationSystem& AnimationSystem::GetInstance()

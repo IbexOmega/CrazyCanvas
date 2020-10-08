@@ -8,6 +8,26 @@
 namespace LambdaEngine
 {
 	/*
+	* BinaryInterpolator
+	*/
+
+	struct BinaryInterpolator
+	{
+		inline BinaryInterpolator(const TArray<SQT>& input0, const TArray<SQT>& input1, TArray<SQT>& output)
+			: Input0(input0)
+			, Input1(input1)
+			, Output(output)
+		{
+		}
+
+		void Interpolate(float32 factor);
+
+		const TArray<SQT>&	Input0;
+		const TArray<SQT>&	Input1; 
+		TArray<SQT>&		Output;
+	};
+
+	/*
 	* TransitionState -> Stores the state one transition
 	*/
 
@@ -16,12 +36,23 @@ namespace LambdaEngine
 		friend class AnimationGraph;
 
 	public:
-		Transition(const String& fromState, const String& toState);
+		Transition(const String& fromState, const String& toState, float64 beginAt = 0.8);
 		~Transition() = default;
 
-		void Tick();
+		void Tick(float64 currentClipsNormalizedTime);
 
 		bool Equals(const String& fromState, const String& toState) const;
+
+		FORCEINLINE void Reset()
+		{
+			m_LocalClock	= m_BeginAt;
+			m_IsActive		= false;
+		}
+
+		FORCEINLINE bool IsFinished() const
+		{
+			return m_LocalClock >= GetMaxWithEpsilon();
+		}
 
 		FORCEINLINE const String& From() const
 		{
@@ -33,9 +64,26 @@ namespace LambdaEngine
 			return m_ToState;
 		}
 
+		FORCEINLINE float64 GetWeight() const
+		{
+			const float64 distance = GetMaxWithEpsilon() - m_BeginAt;
+			const float64 traveled = m_LocalClock - m_BeginAt;
+			return traveled / distance;
+		}
+
 	private:
-		String m_FromState;
-		String m_ToState;
+		constexpr float64 GetMaxWithEpsilon() const
+		{
+			constexpr float64 EPSILON = 0.025;
+			return 1.0 - EPSILON;
+		}
+
+	private:
+		bool	m_IsActive;
+		float64	m_LocalClock;
+		float64 m_BeginAt;
+		String	m_FromState;
+		String	m_ToState;
 	};
 
 	/*
@@ -60,6 +108,11 @@ namespace LambdaEngine
 		{
 			m_StartTime = startTime;
 			m_IsPlaying = true;
+		}
+
+		FORCEINLINE void Stop()
+		{
+			m_IsPlaying = false;
 		}
 
 		FORCEINLINE bool IsLooping() const
@@ -148,7 +201,7 @@ namespace LambdaEngine
 		explicit AnimationGraph(AnimationState&& animationState);
 		~AnimationGraph() = default;
 
-		void Tick(float64 globalTimeInSeconds, const Skeleton& skeleton);
+		void Tick(float64 deltaTimeSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton);
 
 		// Adds a new state to the graph if there currently are no state with the same name
 		void AddState(const AnimationState& animationState);
@@ -196,9 +249,13 @@ namespace LambdaEngine
 		}
 
 	private:
+		bool m_IsBlending;
+
 		int32	m_CurrentTransition;
 		uint32	m_CurrentState;
+
 		TArray<AnimationState>	m_States;
 		TArray<Transition>		m_Transitions;
+		TArray<SQT>				m_TransitionResult;
 	};
 }

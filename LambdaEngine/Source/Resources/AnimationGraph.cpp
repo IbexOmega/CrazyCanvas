@@ -4,17 +4,62 @@
 namespace LambdaEngine
 {
 	/*
+	* BinaryInterpolator
+	*/
+
+	void BinaryInterpolator::Interpolate(float32 factor)
+	{
+		VALIDATE(Input0.GetSize() == Input1.GetSize());
+		
+		const uint32 size = Input0.GetSize();
+		const float32 realFactor = glm::clamp(factor, 0.0f, 1.0f);
+
+		if (Output.GetSize() < size)
+		{
+			Output.Resize(size);
+		}
+
+		for (uint32 i = 0; i < size; i++)
+		{
+			const SQT& in0	= Input0[i];
+			const SQT& in1	= Input1[i];
+			SQT& out		= Output[i];
+
+			out.Translation	= glm::mix(in0.Translation, in1.Translation,	realFactor);
+			out.Scale		= glm::mix(in0.Scale,		in1.Scale,			realFactor);
+			out.Rotation	= glm::slerp(in0.Rotation,	in1.Rotation,		realFactor);
+			out.Rotation	= glm::normalize(out.Rotation);
+		}
+	}
+
+	/*
 	* Transition
 	*/
 
-	Transition::Transition(const String& fromState, const String& toState)
-		: m_FromState(fromState)
+	Transition::Transition(const String& fromState, const String& toState, float64 beginAt)
+		: m_IsActive(false)
+		, m_FromState(fromState)
+		, m_BeginAt(beginAt)
+		, m_LocalClock(0.0f)
 		, m_ToState(toState)
 	{
+		Reset();
 	}
 
-	void Transition::Tick()
+	void Transition::Tick(float64 currentClipsNormalizedTime)
 	{
+		// Only transition if the clip has reached correct timing
+		if (currentClipsNormalizedTime >= m_BeginAt)
+		{
+			if (m_IsActive)
+			{
+				m_LocalClock = currentClipsNormalizedTime;
+			}
+		}
+		else
+		{
+			m_IsActive = true;
+		}
 	}
 
 	bool Transition::Equals(const String& fromState, const String& toState) const
@@ -206,37 +251,91 @@ namespace LambdaEngine
 	*/
 
 	AnimationGraph::AnimationGraph()
-		: m_States()
+		: m_IsBlending(false)
+		, m_CurrentTransition(INVALID_TRANSITION)
 		, m_CurrentState(0)
+		, m_States()
+		, m_Transitions()
+		, m_TransitionResult()
 	{
 	}
 
 	AnimationGraph::AnimationGraph(const AnimationState& animationState)
-		: m_States()
+		: m_IsBlending(false)
+		, m_CurrentTransition(INVALID_TRANSITION)
 		, m_CurrentState(0)
+		, m_States()
+		, m_Transitions()
+		, m_TransitionResult()
 	{
 		AddState(animationState);
 	}
 
 	AnimationGraph::AnimationGraph(AnimationState&& animationState)
-		: m_States()
+		: m_IsBlending(false)
+		, m_CurrentTransition(INVALID_TRANSITION)
 		, m_CurrentState(0)
+		, m_States()
+		, m_Transitions()
+		, m_TransitionResult()
 	{
 		AddState(animationState);
 	}
 
-	void AnimationGraph::Tick(float64 globalTimeInSeconds, const Skeleton& skeleton)
+	void AnimationGraph::Tick(float64 deltaTimeSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton)
 	{
-		AnimationState& currentState = GetCurrentState();
-		
-		// If the currentState is current but not playing we must start it
-		if (!currentState.IsPlaying())
+		if (IsTransitioning())
 		{
-			currentState.StartUp(globalTimeInSeconds);
-		}
+			AnimationState& fromState = GetCurrentState();
+			fromState.Tick(globalTimeInSeconds);
+			fromState.Interpolate(skeleton);
 
-		currentState.Tick(globalTimeInSeconds);
-		currentState.Interpolate(skeleton);
+			Transition& currentTransition = GetCurrentTransition();
+			currentTransition.Tick(fromState.GetNormlizedTime());
+
+			LOG_INFO("Weight=%.4f, LocalTime=%.4f", currentTransition.GetWeight(), fromState.GetNormlizedTime());
+
+			VALIDATE(HasState(currentTransition.To()));
+			AnimationState& toState = GetState(currentTransition.To());
+			if (currentTransition.GetWeight() > 0.0f)
+			{
+				if (!toState.IsPlaying())
+				{
+					toState.StartUp(globalTimeInSeconds);
+				}
+
+				toState.Tick(globalTimeInSeconds);
+				toState.Interpolate(skeleton);
+
+				BinaryInterpolator interpolator(fromState.GetCurrentFrame(), toState.GetCurrentFrame(), m_TransitionResult);
+				interpolator.Interpolate(currentTransition.GetWeight());
+				if (!m_IsBlending)
+				{
+					m_IsBlending = true;
+				}
+
+				if (currentTransition.IsFinished())
+				{
+					currentTransition.Reset();
+
+					MakeCurrentState(GetCurrentTransition().To());
+					m_CurrentTransition = INVALID_TRANSITION;
+					m_IsBlending = false;
+				}
+			}
+		}
+		else
+		{
+			AnimationState& currentState = GetCurrentState();
+			// If the currentState is current but not playing we must start it
+			if (!currentState.IsPlaying())
+			{
+				currentState.StartUp(globalTimeInSeconds);
+			}
+
+			currentState.Tick(globalTimeInSeconds);
+			currentState.Interpolate(skeleton);
+		}
 	}
 
 	void AnimationGraph::AddState(const AnimationState& animationState)
@@ -299,6 +398,8 @@ namespace LambdaEngine
 
 	void AnimationGraph::TransitionToState(const String& name)
 	{
+		// TODO: What if we already are transitioning? Should we queue up transitions? Transition instantly? Ignore?
+
 		if (!HasState(name))
 		{
 			LOG_WARNING("[AnimationGraph::TransitionToState] No state with name '%s'", name.c_str());
@@ -308,9 +409,21 @@ namespace LambdaEngine
 		AnimationState& currentState = GetCurrentState();
 		if (!HasTransition(currentState.GetName(), name))
 		{
-			LOG_WARNING("[AnimationGraph::TransitionToState] No transition defined from '%s' to '&s'", currentState.GetName().c_str(), name.c_str());
+			LOG_WARNING("[AnimationGraph::TransitionToState] No transition defined from '%s' to '%s'", currentState.GetName().c_str(), name.c_str());
 			return;
 		}
+
+		// Find correct transition
+		for (uint32 i = 0; i < m_Transitions.GetSize(); i++)
+		{
+			if (m_Transitions[i].Equals(currentState.GetName(), name))
+			{
+				m_CurrentTransition = static_cast<int32>(i);
+				break;
+			}
+		}
+
+		LOG_INFO("Transition from '%s' to '%s'", currentState.GetName().c_str(), name.c_str());
 	}
 
 	void AnimationGraph::MakeCurrentState(const String& name)
@@ -319,6 +432,8 @@ namespace LambdaEngine
 		{
 			if (m_States[i].GetName() == name)
 			{
+				GetCurrentState().Stop();
+
 				m_CurrentState = i;
 				return;
 			}
@@ -445,6 +560,13 @@ namespace LambdaEngine
 	
 	const TArray<SQT>& AnimationGraph::GetCurrentFrame() const
 	{
-		return GetCurrentState().GetCurrentFrame();
+		if (m_IsBlending)
+		{
+			return m_TransitionResult;
+		}
+		else
+		{
+			return GetCurrentState().GetCurrentFrame();
+		}
 	}
 }

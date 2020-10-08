@@ -27,6 +27,11 @@ namespace LambdaEngine
 			return m_HasInitClock ? m_Clock.GetTotalTime().AsSeconds() : 0.0;
 		}
 
+		FORCEINLINE float64 GetDeltaTimeInSeconds() const
+		{
+			return m_HasInitClock ? m_Clock.GetDeltaTime().AsSeconds() : 0.0;
+		}
+
 	private:
 		AnimationSystem();
 		~AnimationSystem();
@@ -40,6 +45,7 @@ namespace LambdaEngine
 		static AnimationSystem& GetInstance();
 
 	private:
+		bool		m_ChangeState = false;
 		bool		m_HasInitClock = false;
 		Clock		m_Clock;
 		IDVector	m_AnimationEntities;
