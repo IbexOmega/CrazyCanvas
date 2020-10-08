@@ -316,7 +316,7 @@ void SandboxState::Init()
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
 
-				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + 1), 256, 256));
+				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string((x + y* gridRadius) + 1), 256, 256));
 			}
 		}
 	}
