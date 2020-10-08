@@ -191,9 +191,12 @@ namespace LambdaEngine
 
 		//Release Old Stuff
 		{
-			m_DirtyDescriptorSetTextures.clear();
-			m_DirtyDescriptorSetBuffers.clear();
-			m_DirtyDescriptorSetAccelerationStructures.clear();
+			m_DirtyBoundTextureResources.clear();
+			m_DirtyBoundBufferResources.clear();
+			m_DirtyBoundAccelerationStructureResources.clear();
+			m_DirtyBoundDrawArgResources.clear();
+			m_DirtyRenderStageTextureSets.clear();
+			m_DirtyRenderStageBufferSets.clear();
 			m_WindowRelativeRenderStages.clear();
 			m_WindowRelativeResources.Clear();
 
@@ -458,71 +461,54 @@ namespace LambdaEngine
 	{
 		//We need to copy descriptor sets here since they may become invalidated after recreating internal resources
 		{
-			if (m_DirtyDescriptorSetTextures.size() > 0)
+			if (m_DirtyRenderStageTextureSets.size() > 0)
 			{
-				static TSet<RenderStage*> updatedRenderStages;
-
 				//Copy old descriptor set and replace old with copy, then write into the new copy
-				for (uint32 r = 0; r < m_RenderStageCount; r++)
+				for (RenderStage* pRenderStage : m_DirtyRenderStageTextureSets)
 				{
-					RenderStage* pRenderStage = &m_pRenderStages[r];
-
-					//Insert returns a pair, the second value in the bool can therefore be used to check if the element already existed
-					if (updatedRenderStages.insert(pRenderStage).second)
+					if (pRenderStage->ppTextureDescriptorSets != nullptr)
 					{
-						if (pRenderStage->ppTextureDescriptorSets != nullptr)
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
 						{
-							for (uint32 b = 0; b < m_BackBufferCount; b++)
-							{
-								DescriptorSet* pSrcDescriptorSet = pRenderStage->ppTextureDescriptorSets[b];
-								DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex, m_pDescriptorHeap);
-								m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-								m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-								pRenderStage->ppTextureDescriptorSets[b] = pDescriptorSet;
-							}
+							DescriptorSet* pSrcDescriptorSet = pRenderStage->ppTextureDescriptorSets[b];
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex, m_pDescriptorHeap);
+							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+							m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+							pRenderStage->ppTextureDescriptorSets[b] = pDescriptorSet;
 						}
-						else if (pRenderStage->UsesCustomRenderer)
-						{
-							pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
-						}
+					}
+					else if (pRenderStage->UsesCustomRenderer)
+					{
+						pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
 					}
 				}
 
-				updatedRenderStages.clear();
+				m_DirtyRenderStageTextureSets.clear();
 			}
 
-			if (m_DirtyDescriptorSetBuffers.size() > 0 ||
-				m_DirtyDescriptorSetAccelerationStructures.size() > 0)
+			if (m_DirtyRenderStageBufferSets.size() > 0)
 			{
-				static TSet<RenderStage*> updatedRenderStages;
-
 				//Copy old descriptor set and replace old with copy, then write into the new copy
-				for (uint32 r = 0; r < m_RenderStageCount; r++)
+				for (RenderStage* pRenderStage : m_DirtyRenderStageBufferSets)
 				{
-					RenderStage* pRenderStage = &m_pRenderStages[r];
-
-					//Insert returns a pair, the second value in the bool can therefore be used to check if the element already existed
-					if (updatedRenderStages.insert(pRenderStage).second)
+					if (pRenderStage->ppBufferDescriptorSets != nullptr)
 					{
-						if (pRenderStage->ppBufferDescriptorSets != nullptr)
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
 						{
-							for (uint32 b = 0; b < m_BackBufferCount; b++)
-							{
-								DescriptorSet* pSrcDescriptorSet = pRenderStage->ppBufferDescriptorSets[b];
-								DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex, m_pDescriptorHeap);
-								m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-								m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-								pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
-							}
+							DescriptorSet* pSrcDescriptorSet = pRenderStage->ppBufferDescriptorSets[b];
+							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex, m_pDescriptorHeap);
+							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+							m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+							pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
 						}
-						else if (pRenderStage->UsesCustomRenderer)
-						{
-							pRenderStage->pCustomRenderer->PreBuffersDescriptorSetWrite();
-						}
+					}
+					else if (pRenderStage->UsesCustomRenderer)
+					{
+						pRenderStage->pCustomRenderer->PreBuffersDescriptorSetWrite();
 					}
 				}
 
-				updatedRenderStages.clear();
+				m_DirtyRenderStageBufferSets.clear();
 			}
 		}
 
@@ -536,99 +522,95 @@ namespace LambdaEngine
 			m_DirtyInternalResources.clear();
 		}
 
-		if (m_DirtyDescriptorSetBuffers.size()					> 0 ||
-			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
+		if (m_DirtyBoundBufferResources.size() > 0)
 		{
-			if (m_DirtyDescriptorSetBuffers.size() > 0)
+			for (Resource* pResource : m_DirtyBoundBufferResources)
 			{
-				for (Resource* pResource : m_DirtyDescriptorSetBuffers)
+				for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)
 				{
-					for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)
-					{
-						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
-						RenderStage* pRenderStage = pResourceBinding->pRenderStage;
+					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
-						if (pRenderStage->UsesCustomRenderer)
-						{
-							pRenderStage->pCustomRenderer->UpdateBufferResource(
-								pResource->Name,
-								pResource->Buffer.Buffers.GetData(),
-								pResource->Buffer.Offsets.GetData(),
-								pResource->Buffer.SizesInBytes.GetData(),
-								pResource->SubResourceCount,
-								pResource->BackBufferBound);
-						}
-						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
-						{
-							if (pResource->BackBufferBound)
-							{
-								for (uint32 b = 0; b < m_BackBufferCount; b++)
-								{
-									pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
-										&pResource->Buffer.Buffers[b],
-										&pResource->Buffer.Offsets[b],
-										&pResource->Buffer.SizesInBytes[b],
-										pResourceBinding->Binding,
-										1,
-										pResourceBinding->DescriptorType);
-								}
-							}
-							else
-							{
-								for (uint32 b = 0; b < m_BackBufferCount; b++)
-								{
-									pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
-										pResource->Buffer.Buffers.GetData(),
-										pResource->Buffer.Offsets.GetData(),
-										pResource->Buffer.SizesInBytes.GetData(),
-										pResourceBinding->Binding,
-										pResource->SubResourceCount,
-										pResourceBinding->DescriptorType);
-								}
-							}
-						}
+					if (pRenderStage->UsesCustomRenderer)
+					{
+						pRenderStage->pCustomRenderer->UpdateBufferResource(
+							pResource->Name,
+							pResource->Buffer.Buffers.GetData(),
+							pResource->Buffer.Offsets.GetData(),
+							pResource->Buffer.SizesInBytes.GetData(),
+							pResource->SubResourceCount,
+							pResource->BackBufferBound);
 					}
-				}
-
-				m_DirtyDescriptorSetBuffers.clear();
-			}
-
-			//Acceleration Structures
-			if (m_DirtyDescriptorSetAccelerationStructures.size() > 0)
-			{
-				for (Resource* pResource : m_DirtyDescriptorSetAccelerationStructures)
-				{
-					if (!pResource->ResourceBindings.IsEmpty())
+					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 					{
-						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[0]; //Assume only one acceleration structure
-						RenderStage* pRenderStage = pResourceBinding->pRenderStage;
-
-						if (pRenderStage->UsesCustomRenderer)
-						{
-							pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
-								pResource->Name,
-								pResource->AccelerationStructure.pTLAS);
-						}
-						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
+						if (pResource->BackBufferBound)
 						{
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
-								pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
-									&pResource->AccelerationStructure.pTLAS,
+								pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+									&pResource->Buffer.Buffers[b],
+									&pResource->Buffer.Offsets[b],
+									&pResource->Buffer.SizesInBytes[b],
 									pResourceBinding->Binding,
-									1);
+									1,
+									pResourceBinding->DescriptorType);
+							}
+						}
+						else
+						{
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteBufferDescriptors(
+									pResource->Buffer.Buffers.GetData(),
+									pResource->Buffer.Offsets.GetData(),
+									pResource->Buffer.SizesInBytes.GetData(),
+									pResourceBinding->Binding,
+									pResource->SubResourceCount,
+									pResourceBinding->DescriptorType);
 							}
 						}
 					}
 				}
-
-				m_DirtyDescriptorSetAccelerationStructures.clear();
 			}
+
+			m_DirtyBoundBufferResources.clear();
 		}
 
-		if (m_DirtyDescriptorSetTextures.size() > 0)
+		//Acceleration Structures
+		if (m_DirtyBoundAccelerationStructureResources.size() > 0)
 		{
-			for (Resource* pResource : m_DirtyDescriptorSetTextures)
+			for (Resource* pResource : m_DirtyBoundAccelerationStructureResources)
+			{
+				if (!pResource->ResourceBindings.IsEmpty())
+				{
+					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[0]; //Assume only one acceleration structure
+					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
+
+					if (pRenderStage->UsesCustomRenderer)
+					{
+						pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
+							pResource->Name,
+							pResource->AccelerationStructure.pTLAS);
+					}
+					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
+					{
+						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						{
+							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
+								&pResource->AccelerationStructure.pTLAS,
+								pResourceBinding->Binding,
+								1);
+						}
+					}
+				}
+			}
+
+			m_DirtyBoundAccelerationStructureResources.clear();
+		}
+
+		if (m_DirtyBoundTextureResources.size() > 0)
+		{
+			for (Resource* pResource : m_DirtyBoundTextureResources)
 			{
 				for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)
 				{
@@ -677,12 +659,12 @@ namespace LambdaEngine
 				}
 			}
 
-			m_DirtyDescriptorSetTextures.clear();
+			m_DirtyBoundTextureResources.clear();
 		}
 
-		if (m_DirtyDescriptorSetDrawArgs.size() > 0)
+		if (m_DirtyBoundDrawArgResources.size() > 0)
 		{
-			for (Resource* pResource : m_DirtyDescriptorSetDrawArgs)
+			for (Resource* pResource : m_DirtyBoundDrawArgResources)
 			{
 				for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)
 				{
@@ -754,7 +736,7 @@ namespace LambdaEngine
 				}
 			}
 
-			m_DirtyDescriptorSetDrawArgs.clear();
+			m_DirtyBoundDrawArgResources.clear();
 		}
 	}
 
@@ -3155,7 +3137,14 @@ namespace LambdaEngine
 		}
 
 		if (pResource->ResourceBindings.GetSize() > 0)
-			m_DirtyDescriptorSetTextures.insert(pResource);
+		{
+			m_DirtyBoundTextureResources.insert(pResource);
+
+			for (const ResourceBinding& binding : pResource->ResourceBindings)
+			{
+				m_DirtyRenderStageTextureSets.insert(binding.pRenderStage);
+			}
+		}
 	}
 
 	void RenderGraph::UpdateResourceDrawArgs(Resource* pResource, const ResourceUpdateDesc* pDesc)
@@ -3368,7 +3357,7 @@ namespace LambdaEngine
 				}
 			}
 
-			m_DirtyDescriptorSetDrawArgs.insert(pResource);
+			m_DirtyBoundDrawArgResources.insert(pResource);
 		}
 		else
 		{
@@ -3473,7 +3462,14 @@ namespace LambdaEngine
 		}
 
 		if (pResource->ResourceBindings.GetSize() > 0)
-			m_DirtyDescriptorSetBuffers.insert(pResource);
+		{
+			m_DirtyBoundBufferResources.insert(pResource);
+
+			for (const ResourceBinding& binding : pResource->ResourceBindings)
+			{
+				m_DirtyRenderStageBufferSets.insert(binding.pRenderStage);
+			}
+		}
 	}
 
 	void RenderGraph::UpdateResourceAccelerationStructure(Resource* pResource, const ResourceUpdateDesc* pDesc)
@@ -3481,7 +3477,12 @@ namespace LambdaEngine
 		//Update Acceleration Structure
 		pResource->AccelerationStructure.pTLAS = pDesc->ExternalAccelerationStructure.pTLAS;
 
-		m_DirtyDescriptorSetAccelerationStructures.insert(pResource);
+		m_DirtyBoundAccelerationStructureResources.insert(pResource);
+
+		for (const ResourceBinding& binding : pResource->ResourceBindings)
+		{
+			m_DirtyRenderStageBufferSets.insert(binding.pRenderStage);
+		}
 	}
 
 	void RenderGraph::UpdateRelativeRenderStageDimensions(RenderStage* pRenderStage)

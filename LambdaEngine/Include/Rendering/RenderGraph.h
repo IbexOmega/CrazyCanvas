@@ -473,10 +473,13 @@ namespace LambdaEngine
 		TArray<String>									m_WindowRelativeResources;
 		TSet<String>									m_DirtyInternalResources;
 
-		TSet<Resource*>									m_DirtyDescriptorSetTextures;
-		TSet<Resource*>									m_DirtyDescriptorSetBuffers;
-		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
-		TSet<Resource*>									m_DirtyDescriptorSetDrawArgs;
+		TSet<Resource*>									m_DirtyBoundTextureResources;
+		TSet<Resource*>									m_DirtyBoundBufferResources;
+		TSet<Resource*>									m_DirtyBoundAccelerationStructureResources;
+		TSet<Resource*>									m_DirtyBoundDrawArgResources;
+
+		TSet<RenderStage*>								m_DirtyRenderStageTextureSets;
+		TSet<RenderStage*>								m_DirtyRenderStageBufferSets;
 
 		TArray<DeviceChild*>*							m_pDeviceResourcesToDestroy;
 
