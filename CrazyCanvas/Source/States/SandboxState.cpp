@@ -8,6 +8,8 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
+#include "Debug/Profiler.h"
+
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -22,6 +24,7 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+#include "Game/GameConsole.h"
 
 #include "Input/API/Input.h"
 
@@ -29,31 +32,36 @@
 
 #include "Physics/PhysicsSystem.h"
 
+#include "Rendering/Core/API/GraphicsTypes.h"
+#include "Rendering/ImGuiRenderer.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
-#include "Rendering/Core/API/GraphicsTypes.h"
+#include "Rendering/RenderGraphEditor.h"
 
 #include "Math/Random.h"
 
-#include "GUI/Core/GUIApplication.h"
 #include "GUI/GUITest.h"
+
+#include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
 
+#include <imgui.h>
+
 using namespace LambdaEngine;
-
-SandboxState::SandboxState()
-{
-
-}
-
-SandboxState::SandboxState(LambdaEngine::State* pOther) : LambdaEngine::State(pOther)
-{
-}
 
 SandboxState::~SandboxState()
 {
-	// Remove System
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
+
+	if (m_GUITest.GetPtr() != nullptr)
+	{
+		m_GUITest.Reset();
+		m_View.Reset();
+	}
+
+	SAFEDELETE(m_pRenderGraphEditor);
+	// Remove Systems
 }
 
 void SandboxState::Init()
@@ -64,19 +72,27 @@ void SandboxState::Init()
 	ECSCore* pECS = ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
+	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
+	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
+
+	m_GUITest	= *new GUITest("Test.xaml");
+	m_View		= Noesis::GUI::CreateView(m_GUITest);
+	LambdaEngine::GUIApplication::SetView(m_View);
+
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const CameraDesc cameraDesc = 
+		const CameraDesc cameraDesc =
 		{
-			.Position	= { 0.0f, 20.0f, -2.0f },
+			.Position	= { 0.0f, 2.0f, 5.0f },
 			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
 			.Width		= (float32)window->GetWidth(),
 			.Height		= (float32)window->GetHeight(),
 			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity e = CreateFPSCameraEntity(cameraDesc);
+		CreateFPSCameraEntity(cameraDesc);
 	}
 
 	// Scene
@@ -86,10 +102,11 @@ void SandboxState::Init()
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
+
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = 
+			const StaticCollisionInfo collisionCreateInfo =
 			{
 				.Entity			= entity,
 				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -101,7 +118,6 @@ void SandboxState::Init()
 			};
 
 			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-			m_Entities.PushBack(entity);
 		}
 	}
 
@@ -113,9 +129,9 @@ void SandboxState::Init()
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		MaterialProperties materialProperties;
-		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness	= 1.0f;
-		materialProperties.Metallic		= 1.0f;
+		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness = 1.0f;
+		materialProperties.Metallic = 1.0f;
 
 		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
@@ -127,14 +143,17 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
-		robotMeshComp.MaterialGUID	= robotMaterialGUID;
+		robotMeshComp.MeshGUID = robotGUID;
+		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID = animations[0];
-		robotAnimationComp.PlaybackSpeed = 2.0f;
+		robotAnimationComp.AnimationGUID	= animations[0];
+		robotAnimationComp.PlaybackSpeed	= 1.0f;
+		robotAnimationComp.IsLooping		= false;
+		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
-		glm::vec3 position(0.0f, 1.25f, 0.0f);
+		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -143,11 +162,43 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		
+
+		position = glm::vec3(0.0f, 1.25f, 0.0f);
+		robotAnimationComp.IsLooping	= true;
+		robotAnimationComp.NumLoops		= 10;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(-5.0f, 1.25f, 0.0f);
+		robotAnimationComp.NumLoops = INFINITE_LOOPS;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		position = glm::vec3(5.0f, 1.25f, 0.0f);
+
+		robotAnimationComp.PlaybackSpeed *= -1.0f;
+
+		entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc = 
+		const SoundInstance3DDesc desc =
 		{
 			.pName			= "RobotSoundInstance",
 			.pSoundEffect	= ResourceManager::GetSoundEffect(soundGUID),
@@ -155,10 +206,9 @@ void SandboxState::Init()
 			.Position		= position,
 			.Volume			= 0.03f
 		};
-		
+
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
-		m_Entities.PushBack(entity);
 	}
 
 	//Sphere Grid
@@ -177,7 +227,7 @@ void SandboxState::Init()
 				materialProperties.Roughness	= roughness;
 				materialProperties.Metallic		= metallic;
 
-				MeshComponent sphereMeshComp = { };
+				MeshComponent sphereMeshComp = {};
 				sphereMeshComp.MeshGUID = sphereMeshGUID;
 				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
 					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
@@ -192,7 +242,6 @@ void SandboxState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				m_Entities.PushBack(entity);
 				const StaticCollisionInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -204,42 +253,30 @@ void SandboxState::Init()
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
-
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
-				transform *= glm::toMat4(glm::identity<glm::quat>());
-				transform = glm::scale(transform, scale);
 			}
 		}
 
-		//// Directional Light
-		{
-			/*m_DirLight = ECSCore::GetInstance()->CreateEntity();
-			ECSCore::GetInstance()->AddComponent<PositionComponent>(m_DirLight, { {0.f, 0.f, 0.f}, true });
-			ECSCore::GetInstance()->AddComponent<RotationComponent>(m_DirLight, { glm::quatLookAt(glm::normalize(-g_DefaultRight - g_DefaultUp), g_DefaultUp), true });
-			ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(m_DirLight,
-				DirectionalLightComponent{
-					.ColorIntensity = {1.0f, 1.0f, 1.0f, 15.0f},
-					.frustumWidth = 20.0f,
-					.frustumHeight = 20.0f,
-					.frustumZNear = -40.0f,
-					.frustumZFar = 10.0f,
-				}
-			);*/
-		}
+		// Directional Light
+		//{
+		//	Entity dirLight = ECSCore::GetInstance()->CreateEntity();
+		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, { { 0.0f, 0.0f, 0.0f} });
+		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
+		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
+		//}
 
 		// Add PointLights
 		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 100.0f}, .FarPlane = 25.0f},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 100.0f}, .FarPlane = 25.0f},
+				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
+				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
 			};
 
 			const glm::vec3 startPosition[3] =
 			{
-				{-1.0f, 5.0f, 1.0f},
+				{4.0f, 2.0f, -3.0f},
 				{-4.0f, 2.0f, -3.0f},
 				{0.0f, 2.0f, 3.0f},
 			};
@@ -248,8 +285,6 @@ void SandboxState::Init()
 			const float32 RADIUS = 3.0f;
 			for (uint32 i = 0; i < 3; i++)
 			{
-				float32 positive = std::powf(-1.0, i);
-
 				glm::vec3 color = pointLights[i].ColorIntensity;
 				MaterialProperties materialProperties;
 				materialProperties.Albedo		= glm::vec4(color, 1.0f);
@@ -299,6 +334,54 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
+
+	if constexpr (IMGUI_ENABLED)
+	{
+		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
+
+		m_pRenderGraphEditor = DBG_NEW RenderGraphEditor();
+		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
+	}
+
+	ConsoleCommand cmd1;
+	cmd1.Init("render_graph", true);
+	cmd1.AddArg(Arg::EType::BOOL);
+	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
+	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand cmd2;
+	cmd2.Init("imgui_demo", true);
+	cmd2.AddArg(Arg::EType::BOOL);
+	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'imgui_demo true'");
+	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand cmd3;
+	cmd3.Init("show_debug_window", false);
+	cmd3.AddArg(Arg::EType::BOOL);
+	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
+	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand showTextureCMD;
+	showTextureCMD.Init("debug_texture", true);
+	showTextureCMD.AddArg(Arg::EType::BOOL);
+	showTextureCMD.AddFlag("t", Arg::EType::STRING);
+	showTextureCMD.AddFlag("ps", Arg::EType::STRING);
+	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph");
+	GameConsole::Get().BindCommand(showTextureCMD, [&, this](GameConsole::CallbackInput& input)->void
+		{
+			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+
+			auto textureNameIt				= input.Flags.find("t");
+			auto shaderNameIt				= input.Flags.find("ps");
+			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.String : "";
+			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.String) : GUID_NONE;
+		});
 }
 
 void SandboxState::Resume()
@@ -318,18 +401,105 @@ void SandboxState::Pause()
 void SandboxState::Tick(LambdaEngine::Timestamp delta)
 {
 	// Update State specfic objects
+	m_pRenderGraphEditor->Update();
+	LambdaEngine::Profiler::Tick(delta);
+
+	if constexpr (IMGUI_ENABLED)
+	{
+		RenderImgui();
+	}
+}
+
+void SandboxState::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
+{
+	using namespace LambdaEngine;
+
+	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
+
+	GUID_Lambda blueNoiseID = ResourceManager::GetTextureGUID("Blue Noise Texture");
+
+	Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
+	TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
+
+	ResourceUpdateDesc blueNoiseUpdateDesc = {};
+	blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= &pBlueNoiseTexture;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
+
+	pRenderGraph->UpdateResource(&blueNoiseUpdateDesc);
+
+	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
+
+	Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+	TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+
+	ResourceUpdateDesc cubeTextureUpdateDesc = {};
+	cubeTextureUpdateDesc.ResourceName = "SKYBOX";
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+	pRenderGraph->UpdateResource(&cubeTextureUpdateDesc);
+}
+
+void SandboxState::RenderImgui()
+{
+	using namespace LambdaEngine;
+
+	ImGuiRenderer::Get().DrawUI([&]()
+	{
+		if (m_RenderGraphWindow)
+			m_pRenderGraphEditor->RenderGUI();
+
+		if (m_ShowDemoWindow)
+			ImGui::ShowDemoWindow();
+
+		if (m_DebuggingWindow)
+		{
+			Profiler::Render();
+		}
+
+		if (m_ShowTextureDebuggingWindow)
+		{
+			if (ImGui::Begin("Texture Debugging"))
+			{
+				if (!m_TextureDebuggingName.empty())
+				{
+					static ImGuiTexture texture = {};
+					texture.ResourceName		= m_TextureDebuggingName;
+					texture.PixelShaderGUID		= m_TextureDebuggingShaderGUID;
+
+					ImGui::Image(&texture, ImGui::GetWindowSize());
+				}
+			}
+
+			ImGui::End();
+		}
+	});
 }
 
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
 	using namespace LambdaEngine;
 
-	if (event.Key == EKey::KEY_6)
+	if (!IsEventOfType<KeyPressedEvent>(event))
 	{
-		int32 entityIndex = Random::Int32(0, int32(m_Entities.GetSize() - 1));
-		Entity entity = m_Entities[entityIndex];
-		m_Entities.Erase(m_Entities.Begin() + entityIndex);
-		ECSCore::GetInstance()->RemoveEntity(entity);
+		return false;
+	}
+
+	if (event.IsRepeat)
+	{
+		return false;
+	}
+
+	static bool geometryAudioActive = true;
+	static bool reverbSphereActive = true;
+
+	if (event.Key == EKey::KEY_5)
+	{
+		EventQueue::SendEvent(ShaderRecompileEvent());
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
 
 	return true;

@@ -21,7 +21,7 @@ def lint(cppcheck_path, report_path, ignore_path):
 		'--inconclusive',
 		'-q',
 		'--project=LambdaEngine.sln',
-		'--project-configuration=Release x64_StaticLib|x64'
+		'--project-configuration=Release|x64'
 	]
 
 	if ignore_path:

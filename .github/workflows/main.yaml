@@ -2,7 +2,7 @@ name: Välfärden
 on: pull_request
 
 jobs:
-  Build-LambdaEngine-Debug:
+  Build:
     runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v2
@@ -10,157 +10,26 @@ jobs:
           submodules: true
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
+        uses: microsoft/setup-msbuild@v1.0.2
 
-      - name: Build LambdaEngine Debug
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: LambdaEngine/LambdaEngine.vcxproj
-          build-configuration: Debug x64_StaticLib
+      - name: Read LFS Cache
+        run: cp -r -Force ../../.git/lfs .git/
 
-  Build-LambdaEngine-Release:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+      # Fetches changes and replaces LFS pointers with their actual contents
+      - name: Pull From LFS
+        run: git lfs pull
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
+      - name: Update LFS Cache
+        run: cp -r -Force .git/lfs ../../.git/
 
-      - name: Build LambdaEngine Release
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: LambdaEngine/LambdaEngine.vcxproj
-          build-configuration: Release x64_StaticLib
+      - name: Execute Premake
+        run: .\premake5.exe vs2019
 
-  Build-CrazyCanvas-Debug:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+      - name: Build Debug
+        run: msbuild LambdaEngine.sln -p:Configuration=Debug -p:Platform=x64
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build CrazyCanvas Debug
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Debug x64_StaticLib
-
-  Build-CrazyCanvas-Release:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build CrazyCanvas Release
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: CrazyCanvas/CrazyCanvas.vcxproj
-          build-configuration: Release x64_StaticLib
-
-  Build-Sandbox-Debug:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build Sandbox Debug
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: Sandbox/Sandbox.vcxproj
-          build-configuration: Debug x64_StaticLib
-
-  Build-Sandbox-Release:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build Sandbox Release
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: Sandbox/Sandbox.vcxproj
-          build-configuration: Release x64_StaticLib
-
-  Build-Client-Debug:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build Client Debug
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: Client/Client.vcxproj
-          build-configuration: Debug x64_StaticLib
-
-  Build-Client-Release:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build Client Release
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: Client/Client.vcxproj
-          build-configuration: Release x64_StaticLib
-
-  Build-Server-Debug:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build Server Debug
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: Server/Server.vcxproj
-          build-configuration: Debug x64_StaticLib
-
-  Build-Server-Release:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.1
-
-      - name: Build Server Release
-        uses: IbexOmega/lambda-build-action@v1.0.2
-        with:
-          project-path: Server/Server.vcxproj
-          build-configuration: Release x64_StaticLib
+      - name: Build Release
+        run: msbuild LambdaEngine.sln -p:Configuration=Release -p:Platform=x64
 
   Lint:
     runs-on: [self-hosted, Windows, X64]
