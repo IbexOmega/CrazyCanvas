@@ -1,7 +1,7 @@
 #include "States/SandboxState.h"
 
 #include "Resources/ResourceManager.h"
-#include "Resources/AnimationBlendState.h"
+#include "Resources/AnimationGraph.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -146,7 +146,7 @@ void SandboxState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.State			= AnimationState(ClipState("thriller", thriller[0]));
+		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 1.1f, -2.5f);
@@ -160,7 +160,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 	
 		position = glm::vec3(0.0f, 1.25f, 0.0f);
-		robotAnimationComp.State = AnimationState(ClipState("walking", animations[0]));
+		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -170,7 +170,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(-5.0f, 1.1f, 0.0f);
-		robotAnimationComp.State = AnimationState(ClipState("running", running[0]));
+		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -181,19 +181,12 @@ void SandboxState::Init()
 
 		position = glm::vec3(5.0f, 1.1f, 0.0f);
 
-		AnimationState animationState;
-		animationState.PushClip(ClipState("running", running[0]));
-		animationState.PushClip(ClipState("walking", animations[0]));
-		
-		AnimationBlendState blendState0;
-		blendState0.PushBlendInfo(AnimationBlendInfo("running"), true);
-		animationState.PushBlendState(blendState0);
-
-		AnimationBlendState blendState1;
-		blendState1.PushBlendInfo(AnimationBlendInfo("walking"), true);
-		animationState.PushBlendState(blendState0);
-
-		robotAnimationComp.State = animationState;
+		AnimationGraph animationGraph;
+		animationGraph.AddState(AnimationState("running", running[0]));
+		animationGraph.AddState(AnimationState("walking", animations[0]));
+		animationGraph.AddTransition(Transition("running", "walking"));
+		animationGraph.AddTransition(Transition("walking", "running"));
+		robotAnimationComp.Graph = animationGraph;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });

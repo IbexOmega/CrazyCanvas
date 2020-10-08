@@ -1,0 +1,450 @@
+#include "Resources/AnimationGraph.h"
+#include "Resources/ResourceManager.h"
+
+namespace LambdaEngine
+{
+	/*
+	* Transition
+	*/
+
+	Transition::Transition(const String& fromState, const String& toState)
+		: m_FromState(fromState)
+		, m_ToState(toState)
+	{
+	}
+
+	void Transition::Tick()
+	{
+	}
+
+	bool Transition::Equals(const String& fromState, const String& toState) const
+	{
+		return m_FromState == fromState && m_ToState == toState;
+	}
+
+	/*
+	* AnimationState
+	*/
+
+	AnimationState::AnimationState()
+		: m_IsLooping(true)
+		, m_NumLoops(INFINITE_LOOPS)
+		, m_StartTime(0.0f)
+		, m_PlaybackSpeed(1.0f)
+		, m_NormalizedTime(0.0f)
+		, m_LocalTimeInSeconds(0.0f)
+		, m_DurationInSeconds(0.0f)
+		, m_Name()
+		, m_AnimationGUID(GUID_NONE)
+	{
+	}
+
+	AnimationState::AnimationState(const String& name, GUID_Lambda animationGUID, bool isLooping)
+		: m_IsLooping(isLooping)
+		, m_NumLoops(1)
+		, m_StartTime(0.0f)
+		, m_PlaybackSpeed(1.0f)
+		, m_NormalizedTime(0.0f)
+		, m_LocalTimeInSeconds(0.0f)
+		, m_DurationInSeconds(0.0f)
+		, m_Name(name)
+		, m_AnimationGUID(animationGUID)
+	{
+		Animation* pAnimation = ResourceManager::GetAnimation(animationGUID);
+		if (pAnimation)
+		{
+			m_DurationInSeconds = pAnimation->DurationInSeconds();
+		}
+
+		if (m_IsLooping)
+		{
+			m_NumLoops = INFINITE_LOOPS;
+		}
+	}
+
+	void AnimationState::Tick(float64 globalTimeInSeconds)
+	{
+		// Get localtime for the animation-clip
+		float64 localTime = (globalTimeInSeconds - m_StartTime) * fabs(m_PlaybackSpeed);
+		if (m_IsLooping)
+		{
+			if (m_NumLoops != INFINITE_LOOPS)
+			{
+				float64 totalDuration = m_NumLoops * GetDurationInSeconds();
+				localTime = glm::clamp(localTime, 0.0, totalDuration);
+			}
+
+			localTime = fmod(localTime, GetDurationInSeconds());
+		}
+		else
+		{
+			localTime = glm::clamp(localTime, 0.0, GetDurationInSeconds());
+		}
+
+		m_LocalTimeInSeconds	= localTime;
+		m_NormalizedTime		= m_LocalTimeInSeconds / m_DurationInSeconds;
+		if (m_PlaybackSpeed < 0.0)
+		{
+			m_NormalizedTime = 1.0 - m_NormalizedTime;
+		}
+	}
+
+	void AnimationState::Interpolate(const Skeleton& skeleton)
+	{
+		Animation& animation = GetAnimation();
+		const float64 time = GetNormlizedTime() * animation.DurationInTicks;
+
+		if (m_CurrentFrame.GetSize() < skeleton.Joints.GetSize())
+		{
+			m_CurrentFrame.Resize(skeleton.Joints.GetSize());
+		}
+
+		for (Animation::Channel& channel : animation.Channels)
+		{
+			// Retrive the bone ID
+			auto it = skeleton.JointMap.find(channel.Name);
+			if (it == skeleton.JointMap.end())
+			{
+				continue;
+			}
+
+			// Sample SQT for this animation
+			glm::vec3 position	= SamplePosition(channel, time);
+			glm::quat rotation	= SampleRotation(channel, time);
+			glm::vec3 scale		= SampleScale(channel, time);
+
+			const uint32 jointID = it->second;
+			m_CurrentFrame[jointID] = SQT(position, scale, rotation);
+		}
+	}
+
+	Animation& AnimationState::GetAnimation() const
+	{
+		Animation* pAnimation = ResourceManager::GetAnimation(m_AnimationGUID);
+		VALIDATE(pAnimation != nullptr);
+		return *pAnimation;
+	}
+
+	glm::vec3 AnimationState::SamplePosition(Animation::Channel& channel, float64 time)
+	{
+		// If the clip is looping the last frame is redundant
+		const uint32 numPositions = m_IsLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
+
+		Animation::Channel::KeyFrame pos0 = channel.Positions[0];
+		Animation::Channel::KeyFrame pos1 = channel.Positions[0];
+		if (numPositions > 1)
+		{
+			for (uint32 i = 0; i < (numPositions - 1); i++)
+			{
+				if (time < channel.Positions[i + 1].Time)
+				{
+					pos0 = channel.Positions[i];
+					pos1 = channel.Positions[i + 1];
+					break;
+				}
+			}
+		}
+
+		const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
+		glm::vec3 position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
+		return position;
+	}
+
+	glm::vec3 AnimationState::SampleScale(Animation::Channel& channel, float64 time)
+	{
+		// If the clip is looping the last frame is redundant
+		const uint32 numScales = m_IsLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
+
+		Animation::Channel::KeyFrame scale0 = channel.Scales[0];
+		Animation::Channel::KeyFrame scale1 = channel.Scales[0];
+		if (numScales > 1)
+		{
+			for (uint32 i = 0; i < (numScales - 1); i++)
+			{
+				if (time < channel.Scales[i + 1].Time)
+				{
+					scale0 = channel.Scales[i];
+					scale1 = channel.Scales[i + 1];
+					break;
+				}
+			}
+		}
+
+		const float64 factor = (scale1.Time != scale0.Time) ? (time - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
+		glm::vec3 scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
+		return scale;
+	}
+
+	glm::quat AnimationState::SampleRotation(Animation::Channel& channel, float64 time)
+	{
+		// If the clip is looping the last frame is redundant
+		const uint32 numRotations = m_IsLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
+
+		Animation::Channel::RotationKeyFrame rot0 = channel.Rotations[0];
+		Animation::Channel::RotationKeyFrame rot1 = channel.Rotations[0];
+		if (numRotations > 1)
+		{
+			for (uint32 i = 0; i < (numRotations - 1); i++)
+			{
+				if (time < channel.Rotations[i + 1].Time)
+				{
+					rot0 = channel.Rotations[i];
+					rot1 = channel.Rotations[i + 1];
+					break;
+				}
+			}
+		}
+
+		const float64 factor = (rot1.Time != rot0.Time) ? (time - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
+		glm::quat rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
+		rotation = glm::normalize(rotation);
+		return rotation;
+	}
+
+	/*
+	* AnimationGraph
+	*/
+
+	AnimationGraph::AnimationGraph()
+		: m_States()
+		, m_CurrentState(0)
+	{
+	}
+
+	AnimationGraph::AnimationGraph(const AnimationState& animationState)
+		: m_States()
+		, m_CurrentState(0)
+	{
+		AddState(animationState);
+	}
+
+	AnimationGraph::AnimationGraph(AnimationState&& animationState)
+		: m_States()
+		, m_CurrentState(0)
+	{
+		AddState(animationState);
+	}
+
+	void AnimationGraph::Tick(float64 globalTimeInSeconds, const Skeleton& skeleton)
+	{
+		AnimationState& currentState = GetCurrentState();
+		
+		// If the currentState is current but not playing we must start it
+		if (!currentState.IsPlaying())
+		{
+			currentState.StartUp(globalTimeInSeconds);
+		}
+
+		currentState.Tick(globalTimeInSeconds);
+		currentState.Interpolate(skeleton);
+	}
+
+	void AnimationGraph::AddState(const AnimationState& animationState)
+	{
+		if (!HasState(animationState.GetName()))
+		{
+			m_States.EmplaceBack(animationState);
+		}
+	}
+
+	void AnimationGraph::AddState(AnimationState&& animationState)
+	{
+		if (!HasState(animationState.GetName()))
+		{
+			m_States.EmplaceBack(animationState);
+		}
+	}
+
+	void AnimationGraph::RemoveState(const String& name)
+	{
+		for (StateIterator it = m_States.Begin(); it != m_States.End(); it++)
+		{
+			if (it->GetName() == name)
+			{
+				m_States.Erase(it);
+				return;
+			}
+		}
+
+		LOG_WARNING("[AnimationGraph::RemoveState] No state with name '%s'", name.c_str());
+	}
+
+	void AnimationGraph::AddTransition(const Transition& transition)
+	{
+		if (!HasTransition(transition.From(), transition.To()))
+		{
+			m_Transitions.EmplaceBack(transition);
+		}
+	}
+
+	void AnimationGraph::AddTransition(Transition&& transition)
+	{
+		if (!HasTransition(transition.From(), transition.To()))
+		{
+			m_Transitions.EmplaceBack(transition);
+		}
+	}
+
+	void AnimationGraph::RemoveTransition(const String& fromState, const String& toState)
+	{
+		for (TransitionIterator it = m_Transitions.Begin(); it != m_Transitions.End(); it++)
+		{
+			if (it->Equals(fromState, toState))
+			{
+				m_Transitions.Erase(it);
+				return;
+			}
+		}
+	}
+
+	void AnimationGraph::TransitionToState(const String& name)
+	{
+		if (!HasState(name))
+		{
+			LOG_WARNING("[AnimationGraph::TransitionToState] No state with name '%s'", name.c_str());
+			return;
+		}
+
+		AnimationState& currentState = GetCurrentState();
+		if (!HasTransition(currentState.GetName(), name))
+		{
+			LOG_WARNING("[AnimationGraph::TransitionToState] No transition defined from '%s' to '&s'", currentState.GetName().c_str(), name.c_str());
+			return;
+		}
+	}
+
+	void AnimationGraph::MakeCurrentState(const String& name)
+	{
+		for (uint32 i = 0; i < m_States.GetSize(); i++)
+		{
+			if (m_States[i].GetName() == name)
+			{
+				m_CurrentState = i;
+				return;
+			}
+		}
+
+		LOG_WARNING("[AnimationGraph::MakeCurrentState] No state with name '%s'", name.c_str());
+	}
+
+	bool AnimationGraph::HasState(const String& name)
+	{
+		for (AnimationState& state : m_States)
+		{
+			if (state.GetName() == name)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool AnimationGraph::HasTransition(const String& fromState, const String& toState)
+	{
+		for (Transition& transition : m_Transitions)
+		{
+			if (transition.Equals(fromState, toState))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	AnimationState& AnimationGraph::GetState(const String& name)
+	{
+		VALIDATE(m_States.IsEmpty() == false);
+
+		for (AnimationState& state : m_States)
+		{
+			if (state.GetName() == name)
+			{
+				return state;
+			}
+		}
+
+		VALIDATE(false);
+		return m_States[0];
+	}
+
+	const AnimationState& AnimationGraph::GetState(const String& name) const
+	{
+		VALIDATE(m_States.IsEmpty() == false);
+
+		for (const AnimationState& state : m_States)
+		{
+			if (state.GetName() == name)
+			{
+				return state;
+			}
+		}
+
+		VALIDATE(false);
+		return m_States[0];
+	}
+
+	AnimationState& AnimationGraph::GetCurrentState()
+	{
+		VALIDATE(m_States.IsEmpty() == false);
+		return m_States[m_CurrentState];
+	}
+
+	const AnimationState& AnimationGraph::GetCurrentState() const
+	{
+		VALIDATE(m_States.IsEmpty() == false);
+		return m_States[m_CurrentState];
+	}
+
+	Transition& AnimationGraph::GetTransition(const String& fromState, const String& toState)
+	{
+		VALIDATE(m_Transitions.IsEmpty() == false);
+
+		for (Transition& transition : m_Transitions)
+		{
+			if (transition.Equals(fromState, toState))
+			{
+				return transition;
+			}
+		}
+
+		VALIDATE(false);
+		return m_Transitions[0];
+	}
+
+	const Transition& AnimationGraph::GetTransition(const String& fromState, const String& toState) const
+	{
+		VALIDATE(m_Transitions.IsEmpty() == false);
+
+		for (const Transition& transition : m_Transitions)
+		{
+			if (transition.Equals(fromState, toState))
+			{
+				return transition;
+			}
+		}
+
+		VALIDATE(false);
+		return m_Transitions[0];
+	}
+
+	Transition& AnimationGraph::GetCurrentTransition()
+	{
+		VALIDATE(m_Transitions.IsEmpty() == false);
+		VALIDATE(m_CurrentTransition > INVALID_TRANSITION);
+		return m_Transitions[m_CurrentTransition];
+	}
+
+	const Transition& AnimationGraph::GetCurrentTransition() const
+	{
+		VALIDATE(m_Transitions.IsEmpty() == false);
+		VALIDATE(m_CurrentTransition > INVALID_TRANSITION);
+		return m_Transitions[m_CurrentTransition];
+	}
+	
+	const TArray<SQT>& AnimationGraph::GetCurrentFrame() const
+	{
+		return GetCurrentState().GetCurrentFrame();
+	}
+}

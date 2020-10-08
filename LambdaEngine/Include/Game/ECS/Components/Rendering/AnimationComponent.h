@@ -5,7 +5,7 @@
 #include "Math/Math.h"
 
 #include "Resources/Mesh.h"
-#include "Resources/AnimationBlendState.h"
+#include "Resources/AnimationGraph.h"
 
 namespace LambdaEngine
 {
@@ -17,9 +17,8 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(AnimationComponent);
 
-		bool				IsPaused	= false;
-		float64				StartTime	= 0.0;
-		AnimationState		State;
-		SkeletonPose		Pose;
+		bool			IsPaused = false;
+		AnimationGraph	Graph;
+		SkeletonPose	Pose;
 	};
 }
