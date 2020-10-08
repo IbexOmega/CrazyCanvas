@@ -7,6 +7,7 @@
 
 layout( push_constant ) uniform PushConstants {
     uint Iteration;
+    uint PointLightIndex;
 } pc;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer
@@ -28,12 +29,8 @@ void main()
     SInstance instance                          = b_Instances.val[gl_InstanceIndex];
     SLightsBuffer lightsBuffer                  = b_LightsBuffer.val;
     
-    uint pointLightIndex    = pc.Iteration / 6U;
-    if (pointLightIndex >= uint(lightsBuffer.PointLightCount))
-        gl_Position = vec4(0.f);
     uint faceIndex          = pc.Iteration % 6U;
-
-    SPointLight pointLight = b_LightsBuffer.pointLights[pointLightIndex];
+    SPointLight pointLight = b_LightsBuffer.pointLights[pc.PointLightIndex];
 
     out_FarPlane            = pointLight.FarPlane;
     out_WorldPos            = instance.Transform * vec4(vertex.Position.xyz, 1.0f);

@@ -100,7 +100,7 @@ void main()
 		L = normalize(L);
 		vec3 H = normalize(V + L);
 		
-		float inShadow 			= PointShadowDepthTest(worldPos, light.Position, viewDistance, N, u_PointLShadowMap[i], light.FarPlane);
+		float inShadow 			= PointShadowDepthTest(worldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 		float attenuation   	= 1.0f / (distance * distance);
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);

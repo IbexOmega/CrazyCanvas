@@ -39,7 +39,7 @@ namespace LambdaEngine
 		SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
 	}
 
-	bool LightRenderer::init()
+	bool LightRenderer::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 
@@ -64,10 +64,11 @@ namespace LambdaEngine
 		}
 
 		// Allocate pushConstant data
-		m_PushConstant.pData = DBG_NEW byte[DRAW_ITERATION_PUSH_CONSTANTS_SIZE];
-		m_PushConstant.DataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
+		constexpr uint32 PushConstantSize = sizeof(uint32) * 2U;
+		m_PushConstant.pData = DBG_NEW byte[PushConstantSize];
+		m_PushConstant.DataSize = PushConstantSize;
 		m_PushConstant.Offset = 0U;
-		m_PushConstant.MaxDataSize = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
+		m_PushConstant.MaxDataSize = PushConstantSize;
 
 		return true;
 	}
@@ -77,25 +78,36 @@ namespace LambdaEngine
 		VALIDATE(pPreInitDesc);
 		VALIDATE(pPreInitDesc->pDepthStencilAttachmentDesc != nullptr);
 
-		if (!CreateCommandLists())
+		if (!m_Initilized)
 		{
-			LOG_ERROR("[LightRenderer]: Failed to create render command lists");
-			return false;
-		}
+			if (!CreateCommandLists())
+			{
+				LOG_ERROR("[LightRenderer]: Failed to create render command lists");
+				return false;
+			}
 
-		if (!CreateRenderPass(pPreInitDesc->pDepthStencilAttachmentDesc))
-		{
-			LOG_ERROR("[LightRenderer]: Failed to create RenderPass");
-			return false;
-		}
+			if (!CreateRenderPass(pPreInitDesc->pDepthStencilAttachmentDesc))
+			{
+				LOG_ERROR("[LightRenderer]: Failed to create RenderPass");
+				return false;
+			}
 
-		if (!CreatePipelineState())
-		{
-			LOG_ERROR("[LightRenderer]: Failed to create PipelineState");
-			return false;
+			if (!CreatePipelineState())
+			{
+				LOG_ERROR("[LightRenderer]: Failed to create PipelineState");
+				return false;
+			}
+
+			m_Initilized = true;
 		}
 
 		return true;
+	}
+
+	void LightRenderer::PrepareTextureUpdates(const TArray<LightUpdateData>& textureIndices)
+	{
+		if(!textureIndices.IsEmpty())
+			m_TextureUpdateQueue.Insert(std::end(m_TextureUpdateQueue), std::begin(textureIndices), std::end(textureIndices));
 	}
 
 	void LightRenderer::PreBuffersDescriptorSetWrite()
@@ -106,6 +118,11 @@ namespace LambdaEngine
 	{
 	}
 
+	void LightRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		HandleUnavailableDescriptors(modFrameIndex);
+	}
+
 	void LightRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
@@ -114,8 +131,6 @@ namespace LambdaEngine
 		if (resourceName == SCENE_POINT_SHADOWMAPS)
 		{
 			constexpr uint32 CUBE_FACE_COUNT = 6U;
-
-			m_PointLightCount = imageCount;
 
 			m_PointLFaceViews.Clear();
 			m_PointLFaceViews.Resize(imageCount * CUBE_FACE_COUNT);
@@ -135,9 +150,12 @@ namespace LambdaEngine
 
 		if (resourceName == SCENE_LIGHTS_BUFFER)
 		{
-			DescriptorSet* ds;
+			constexpr DescriptorSetIndex setIndex = 0U;
 
-			m_LightDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Light Renderer Descriptor Set 0", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+			// Prepare Descriptors for later reusage
+			m_UnavailableDescriptorSets[setIndex].PushBack(std::make_pair(m_LightDescriptorSet, m_CurrModFrameIndex));
+			
+			m_LightDescriptorSet = GetDescriptorSet("Light Renderer Buffer Descriptor Set 0", setIndex);
 			if (m_LightDescriptorSet != nullptr)
 			{
 				m_LightDescriptorSet->WriteBufferDescriptors(
@@ -174,9 +192,9 @@ namespace LambdaEngine
 				constexpr DescriptorSetIndex setIndex = 1U;
 
 				// Prepare Descriptors for later reusage
-				for (auto DescriptorSet : m_DrawArgsDescriptorSets)
+				for (auto descriptorSet : m_DrawArgsDescriptorSets)
 				{
-					m_UnavailableDescriptorSets[setIndex].PushBack(std::make_pair(DescriptorSet, m_CurrModFrameIndex));
+					m_UnavailableDescriptorSets[setIndex].PushBack(std::make_pair(descriptorSet, m_CurrModFrameIndex));
 				}
 				m_DrawArgsDescriptorSets.Clear();
 				m_DrawArgsDescriptorSets.Resize(m_DrawCount);
@@ -186,7 +204,7 @@ namespace LambdaEngine
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					// Create a new descriptor or use an old descriptor
-					m_DrawArgsDescriptorSets[d] = GetDescriptorSet("Light Renderer Descriptor Set" + std::to_string(d), setIndex);
+					m_DrawArgsDescriptorSets[d] = GetDescriptorSet("Light Renderer Descriptor Set " + std::to_string(d), setIndex);
 
 					if (m_DrawArgsDescriptorSets[d] != nullptr)
 					{
@@ -215,26 +233,28 @@ namespace LambdaEngine
 	void LightRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
-		
-		HandleUnavailableDescriptors(modFrameIndex);
 
-		if (Sleeping)
+		if (Sleeping || m_TextureUpdateQueue.IsEmpty())
 			return;
 
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
-	
+
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 		pCommandList->BindDescriptorSetGraphics(m_LightDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// LightsBuffer
-		
+
 		constexpr uint32 CUBE_FACE_COUNT = 6U;
-		for (uint32 c = 0; c < m_PointLightCount; c++)
+		PushConstantData psData = {};
+
+		// Render to queued texture indices
+		for (auto lightUpdateData : m_TextureUpdateQueue)
 		{
+			psData.PointLightIndex = lightUpdateData.PointLightIndex;
 			for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
 			{
-				auto pFaceView = m_PointLFaceViews[c * CUBE_FACE_COUNT + f];
+				auto pFaceView = m_PointLFaceViews[lightUpdateData.TextureIndex * CUBE_FACE_COUNT + f];
 
 				uint32 width = pFaceView->GetDesc().pTexture->GetDesc().Width;
 				uint32 height = pFaceView->GetDesc().pTexture->GetDesc().Height;
@@ -271,9 +291,8 @@ namespace LambdaEngine
 				beginRenderPassDesc.Offset.x = 0;
 				beginRenderPassDesc.Offset.y = 0;
 				
-				uint32 iteration = c * CUBE_FACE_COUNT + f;
-
-				memcpy(m_PushConstant.pData, &iteration, sizeof(uint32));
+				psData.Iteration = f;
+				memcpy(m_PushConstant.pData, &psData, sizeof(uint32) * 2U);
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, m_PushConstant.pData, m_PushConstant.DataSize, m_PushConstant.Offset);
 				pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
@@ -295,15 +314,17 @@ namespace LambdaEngine
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
+
+		// Clear Texture Queue
+		m_TextureUpdateQueue.Clear();
 	}
 
 	void LightRenderer::HandleUnavailableDescriptors(uint32 modFrameIndex)
 	{
 		m_CurrModFrameIndex = modFrameIndex;
 
-		// Go through descriptorSetsd and see if they are still in use
-
-		for (auto setIndexArray : m_UnavailableDescriptorSets)
+		// Go through descriptorSet and see if they are still in use
+		for (auto& setIndexArray : m_UnavailableDescriptorSets)
 		{
 			for (auto descriptorSet = setIndexArray.second.begin(); descriptorSet != setIndexArray.second.end();)
 			{
@@ -347,7 +368,7 @@ namespace LambdaEngine
 
 		ConstantRangeDesc constantRangeDesc = {};
 		constantRangeDesc.OffsetInBytes = 0U;
-		constantRangeDesc.SizeInBytes = DRAW_ITERATION_PUSH_CONSTANTS_SIZE;
+		constantRangeDesc.SizeInBytes = sizeof(uint32) * 2U;
 		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
@@ -382,7 +403,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_LightDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Light Renderer Descriptor Set 0", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+		m_LightDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Light Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 		if (m_LightDescriptorSet == nullptr)
 		{
 			LOG_ERROR("[LightRenderer]: Failed to create DescriptorSet[%d]", 0);

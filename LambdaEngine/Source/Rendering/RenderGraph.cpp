@@ -264,7 +264,7 @@ namespace LambdaEngine
 			pCreateHandler->OnRenderGraphRecreate(this);
 		}
 
-		Update();
+		UpdateResourceBindings();
 
 		return true;
 	}
@@ -457,7 +457,17 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::Update()
+	void RenderGraph::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		for (auto& customRenderer : m_CustomRenderers)
+		{
+			customRenderer->Update(delta, m_ModFrameIndex, m_BackBufferIndex);
+		}
+
+		UpdateResourceBindings();
+	}
+
+	void RenderGraph::UpdateResourceBindings()
 	{
 		//We need to copy descriptor sets here since they may become invalidated after recreating internal resources
 		{
@@ -523,8 +533,8 @@ namespace LambdaEngine
 			m_DirtyInternalResources.clear();
 		}
 
-		if (m_DirtyDescriptorSetBuffers.size()					> 0 ||
-			m_DirtyDescriptorSetAccelerationStructures.size()	> 0)
+		if (m_DirtyDescriptorSetBuffers.size() > 0 ||
+			m_DirtyDescriptorSetAccelerationStructures.size() > 0)
 		{
 			if (m_DirtyDescriptorSetBuffers.size() > 0)
 			{
@@ -695,7 +705,7 @@ namespace LambdaEngine
 
 							if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
 							{
-								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet*[drawArgsMaskToArgsIt->second.Args.GetSize()];
+								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
 							}
 							else
 							{
@@ -717,18 +727,18 @@ namespace LambdaEngine
 								const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
 								VALIDATE(drawArg.pVertexBuffer);
 								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
-							
+
 								VALIDATE(drawArg.pInstanceBuffer);
 								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
-							
+
 								// If meshletbuffer is nullptr we assume that meshshaders are disabled
 								if (drawArg.pMeshletBuffer)
 								{
 									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
-								
+
 									VALIDATE(drawArg.pUniqueIndicesBuffer);
 									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
-								
+
 									VALIDATE(drawArg.pPrimitiveIndices);
 									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
 								}
@@ -2181,6 +2191,9 @@ namespace LambdaEngine
 						pCustomRenderer = *customRendererIt;
 					}
 				}
+
+				// Track all custom renderers
+				m_CustomRenderers.PushBack(pCustomRenderer);
 
 				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
 				customRendererInitDesc.BackBufferCount				= m_BackBufferCount;

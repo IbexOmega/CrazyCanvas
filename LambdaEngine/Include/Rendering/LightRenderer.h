@@ -13,6 +13,18 @@ namespace LambdaEngine
 		uint32	MaxDataSize = 0;
 	};
 
+	struct PushConstantData
+	{
+		uint32 Iteration;
+		uint32 PointLightIndex;
+	};
+
+	struct LightUpdateData
+	{
+		uint32 PointLightIndex;
+		uint32 TextureIndex;
+	};
+
 	using ReleaseFrame = uint32;
 	using DescriptorSetIndex = uint32;
 
@@ -25,13 +37,16 @@ namespace LambdaEngine
 		LightRenderer();
 		~LightRenderer();
 
-		bool init();
+		bool Init();
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
+
+		void PrepareTextureUpdates(const TArray<LightUpdateData>& textureIndices);
 
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
 
+		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
@@ -66,6 +81,8 @@ namespace LambdaEngine
 		TSharedRef<DescriptorSet> GetDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
 
 	private:
+		bool									m_Initilized = false;
+
 		uint32									m_CurrModFrameIndex = 0;
 
 		const DrawArg*							m_pDrawArgs = nullptr;
@@ -93,7 +110,7 @@ namespace LambdaEngine
 		THashTable<DescriptorSetIndex, TArray<TSharedRef<DescriptorSet>>>							m_AvailableDescriptorSets;
 
 		uint32									m_BackBufferCount = 0;
-		uint32									m_PointLightCount = 0;
+		TArray<LightUpdateData>					m_TextureUpdateQueue;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
 
 		PushConstant							m_PushConstant;

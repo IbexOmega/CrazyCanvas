@@ -181,7 +181,7 @@ namespace LambdaEngine
 			// Light Renderer
 			{
 				m_pLightRenderer = DBG_NEW LightRenderer();
-				m_pLightRenderer->init();
+				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
@@ -490,7 +490,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderSystem::Render()
+	bool RenderSystem::Render(Timestamp delta)
 	{
 		m_BackBufferIndex = uint32(m_SwapChain->GetCurrentBackBufferIndex());
 
@@ -503,7 +503,7 @@ namespace LambdaEngine
 		UpdateBuffers();
 		UpdateRenderGraph();
 
-		m_pRenderGraph->Update();
+		m_pRenderGraph->Update(delta, m_ModFrameIndex, m_BackBufferIndex);
 
 		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
@@ -525,6 +525,11 @@ namespace LambdaEngine
 			m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
 			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+		}
+
+		// Light Renderer
+		{
+			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 		}
 
 		//GUI Renderer
@@ -629,7 +634,7 @@ namespace LambdaEngine
 			);
 
 			m_DirectionalExist = true;
-			m_DirectionalLightDirty = true;
+			m_LightsResourceDirty = true;
 		}
 		else
 		{
@@ -649,8 +654,19 @@ namespace LambdaEngine
 		m_PointLightToEntity[pointLightIndex] = entity;
 
 		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
-	
-		UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
+		
+		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
+		{
+			m_PointLights.GetBack().TextureIndex = pointLightIndex;
+		}
+		else
+		{
+			// Check for free texture index instead of creating new index
+			uint32 textureIndex = m_FreeTextureIndices.GetBack();
+			m_FreeTextureIndices.PopBack();
+
+			m_PointLights.GetBack().TextureIndex = textureIndex;
+		}
 	}
 
 	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
@@ -660,7 +676,6 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
 		m_LightsResourceDirty = true;
-		m_DirectionalLightDirty = true;
 	}
 
 	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
@@ -672,6 +687,7 @@ namespace LambdaEngine
 		uint32 lastEntity = m_PointLightToEntity[lastIndex];
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
+		uint32 freeTexIndex = m_PointLights[currentIndex].TextureIndex;
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
 
 		m_EntityToPointLight[lastEntity] = currentIndex;
@@ -681,8 +697,26 @@ namespace LambdaEngine
 		m_EntityToPointLight.erase(entity);
 		m_PointLights.PopBack();
 
+		if (!m_RemoveTexturesOnDeletion)
+		{
+			// Free Texture for new point lights
+			m_FreeTextureIndices.PushBack(freeTexIndex);
+		}
+		else
+		{
+			// Update all point lights shadowmaps to handle removal of texture
+			for (uint32 i = 0; i < m_PointLights.GetSize(); i++)
+			{
+					LightUpdateData lightUpdateData = {};
+					lightUpdateData.PointLightIndex = i;
+					lightUpdateData.TextureIndex = m_PointLights[i].TextureIndex;
+					m_PointLightTextureUpdateQueue.PushBack(lightUpdateData);
+			}
+
+			m_PointLightDirty = true;
+		}
+
 		m_LightsResourceDirty = true;
-		m_PointLightDirty = true;
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
@@ -1115,7 +1149,6 @@ namespace LambdaEngine
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsResourceDirty = true;
-		m_DirectionalLightDirty = true;
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
@@ -1126,47 +1159,57 @@ namespace LambdaEngine
 			return;
 		}
 		uint32 index = m_EntityToPointLight[entity];
+		PointLight& pointLight = m_PointLights[index];
+		pointLight.ColorIntensity = colorIntensity;
 
-		m_PointLights[index].ColorIntensity = colorIntensity;
-		m_PointLights[index].Position = position;
-
-		const glm::vec3 directions[6] =
-		{
-			{1.0f, 0.0f, 0.0f},
-			{-1.0f, 0.0f, 0.0f},
-			{0.0f, 1.0f, 0.0f},
-			{0.0f, -1.0f, 0.0f},
-			{0.0f, 0.0f, 1.0f},
-			{0.0f, 0.0f, -1.0f},
-		};
-
-		const glm::vec3 defaultUp[6] =
-		{
-			-g_DefaultUp,
-			-g_DefaultUp,
-			-g_DefaultForward,
-			g_DefaultForward,
-			-g_DefaultUp,
-			-g_DefaultUp,
-		};
-
-		constexpr uint32 PROJECTIONS = 6;
-		constexpr float FOV = 90.f;
-		constexpr float ASPECT_RATIO = 1.0f;
-		m_PointLights[index].FarPlane = farPlane;
-
-		glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
-		// Create projection matrices for each face
-		for (uint32 p = 0; p < PROJECTIONS; p++)
-		{
-			m_PointLights[index].ProjViews[p] = perspective;
-			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
-		}
-
-		m_pRenderGraph->TriggerRenderStage("RENDER_STAGE_LIGHT");
-		
 		m_LightsResourceDirty = true;
-		m_PointLightDirty = true;
+
+		if (pointLight.Position != position
+			|| pointLight.FarPlane != farPlane
+			|| pointLight.NearPlane != nearPlane)
+		{
+			pointLight.Position = position;
+
+			const glm::vec3 directions[6] =
+			{
+				{1.0f, 0.0f, 0.0f},
+				{-1.0f, 0.0f, 0.0f},
+				{0.0f, 1.0f, 0.0f},
+				{0.0f, -1.0f, 0.0f},
+				{0.0f, 0.0f, 1.0f},
+				{0.0f, 0.0f, -1.0f},
+			};
+
+			const glm::vec3 defaultUp[6] =
+			{
+				-g_DefaultUp,
+				-g_DefaultUp,
+				-g_DefaultForward,
+				g_DefaultForward,
+				-g_DefaultUp,
+				-g_DefaultUp,
+			};
+
+			constexpr uint32 PROJECTIONS = 6;
+			constexpr float FOV = 90.f;
+			constexpr float ASPECT_RATIO = 1.0f;
+			pointLight.FarPlane = farPlane;
+
+			glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			// Create projection matrices for each face
+			for (uint32 p = 0; p < PROJECTIONS; p++)
+			{
+				pointLight.ProjViews[p] = perspective;
+				pointLight.ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
+			}
+
+			LightUpdateData lightTextureUpdate = {};
+			lightTextureUpdate.PointLightIndex = index;
+			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
+			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
+		
+			m_PointLightDirty = true;
+		}
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
@@ -1732,6 +1775,8 @@ namespace LambdaEngine
 		if (pointLightCount == m_CubeTextures.GetSize())
 			return;
 
+		bool needUpdate = m_RemoveTexturesOnDeletion;
+
 		constexpr uint32 CUBE_FACE_COUNT = 6;
 		if (pointLightCount > m_CubeTextures.GetSize())
 		{
@@ -1797,42 +1842,53 @@ namespace LambdaEngine
 					(*ppSubImageView) = pGraphicsDevice->CreateTextureView(&subImageTextureViewDesc); // Used for writing to CubeTexture
 					ppSubImageView++;
 				}
+
+				needUpdate = true;
 			}
 		}
 		else if (pointLightCount < m_CubeTextures.GetSize())
 		{
-			uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
-
-			TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
-
-			// Remove Cube Texture Context for removed pointlights
-			for (uint32 r = 0; r < diff; r++)
+			if (m_RemoveTexturesOnDeletion)
 			{
-				resourcesToRemove.PushBack(m_CubeTextures.GetBack());
-				m_CubeTextures.PopBack();
+				uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
 
-				resourcesToRemove.PushBack(m_CubeTextureViews.GetBack());
-				m_CubeTextureViews.PopBack();
+				TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
 
-				for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
+				// Remove Cube Texture Context for removed pointlights
+				for (uint32 r = 0; r < diff; r++)
 				{
-					resourcesToRemove.PushBack(m_CubeSubImageTextureViews.GetBack());
-					m_CubeSubImageTextureViews.PopBack();
+					resourcesToRemove.PushBack(m_CubeTextures.GetBack());
+					m_CubeTextures.PopBack();
+
+					resourcesToRemove.PushBack(m_CubeTextureViews.GetBack());
+					m_CubeTextureViews.PopBack();
+
+					for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
+					{
+						resourcesToRemove.PushBack(m_CubeSubImageTextureViews.GetBack());
+						m_CubeSubImageTextureViews.PopBack();
+					}
 				}
 			}
 		}
 
-		TArray<Sampler*> nearestSamplers(pointLightCount, Sampler::GetNearestSampler());
-		ResourceUpdateDesc resourceUpdateDesc = {};
-		resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
-		resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
-		resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
-		resourceUpdateDesc.ExternalTextureUpdate.Count								= m_CubeTextures.GetSize();
-		resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
-		resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
-		resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
-
-		m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		/*
+			If textures are not removed on pointlight deletion(m_RemoveTexturesOnDeletion == false), updates are only needed when new point light textures are added
+		*/
+		if (needUpdate)
+		{
+			uint32 texturesExisting = m_CubeTextures.GetSize();
+			TArray<Sampler*> nearestSamplers(texturesExisting, Sampler::GetNearestSampler());
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.Count								= texturesExisting;
+			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
 	}
 
 	void RenderSystem::UpdateLightsBuffer(CommandList* pCommandList)
@@ -1840,6 +1896,9 @@ namespace LambdaEngine
 		// Light Buffer Initilization
 		if (m_LightsResourceDirty)
 		{
+			// Resource only needs to be updated if new buffers are allocated
+			m_LightsResourceDirty = false;
+
 			size_t pointLightCount			= m_PointLights.GetSize();
 			size_t dirLightBufferSize		= sizeof(LightBuffer);
 			size_t pointLightsBufferSize	= sizeof(PointLight) * pointLightCount;
@@ -1880,6 +1939,7 @@ namespace LambdaEngine
 				lightBufferDesc.SizeInBytes		= lightBufferSize;
 
 				m_pLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightBufferDesc);
+				m_LightsResourceDirty = true;
 
 			}
 
@@ -1933,18 +1993,21 @@ namespace LambdaEngine
 			m_PerFrameResourceDirty = false;
 		}
 
-		if (m_LightsResourceDirty)
+		// Trigger LightRenderer
+		if (!m_PointLightTextureUpdateQueue.IsEmpty())
 		{
-			if (m_PointLightDirty || m_DirectionalLightDirty)
-			{
-				ResourceUpdateDesc resourceUpdateDesc = {};
-				resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
-				resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
-				resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
-				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+			m_pLightRenderer->PrepareTextureUpdates(m_PointLightTextureUpdateQueue);
+			m_PointLightTextureUpdateQueue.Clear();
+			m_pRenderGraph->TriggerRenderStage("RENDER_STAGE_LIGHT");
+		}
 
-				m_DirectionalLightDirty = false;
-			}
+		if (m_LightsResourceDirty || m_PointLightDirty)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			if (m_PointLightDirty)
 			{
