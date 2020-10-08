@@ -5,6 +5,7 @@
 	"CAM_RIGHT": "D",
 	"CAM_UP": "Q",
 	"CAM_DOWN": "E",
+	"CAM_JUMP": "SPACE",
 	"CAM_ROT_UP": "UP",
 	"CAM_ROT_DOWN": "DOWN",
 	"CAM_ROT_LEFT": "LEFT",

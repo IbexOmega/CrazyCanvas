@@ -220,11 +220,16 @@ namespace LambdaEngine
 	void ECSCore::PerformEntityDeletions()
 	{
 		const EntityRegistryPage& registryPage = m_EntityRegistry.GetTopRegistryPage();
+		/*	The component types to delete of each entity. It is a copy of the entity's set of component types in
+			the entity registry. Copying the set is necessary as the set is popped each time it is iterated. */
+		TArray<const ComponentType*> componentTypes;
 
 		for (Entity entity : m_EntitiesToDelete)
 		{
 			// Delete every component belonging to the entity
-			const std::unordered_set<const ComponentType*>& componentTypes = registryPage.IndexID(entity);
+			const std::unordered_set<const ComponentType*>& componentTypesSet = registryPage.IndexID(entity);
+			componentTypes.Assign(componentTypesSet.begin(), componentTypesSet.end());
+
 			for (const ComponentType* pComponentType : componentTypes)
 				DeleteComponent(entity, pComponentType);
 
@@ -238,6 +243,7 @@ namespace LambdaEngine
 
 	bool ECSCore::DeleteComponent(Entity entity, const ComponentType* pComponentType)
 	{
+		m_EntityRegistry.DeregisterComponentType(entity, pComponentType);
 		m_EntityPublisher.UnpublishComponent(entity, pComponentType);
 		return m_ComponentStorage.DeleteComponent(entity, pComponentType);
 	}
