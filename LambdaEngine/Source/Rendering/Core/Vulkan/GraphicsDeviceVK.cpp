@@ -1194,17 +1194,9 @@ namespace LambdaEngine
 		supportedDeviceFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 		supportedDeviceFeatures11.pNext = &supportedDeviceFeatures12;
 
-		VkPhysicalDevice8BitStorageFeatures supportedStorageFeatures = { };
-		supportedStorageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
-		supportedStorageFeatures.pNext = &supportedDeviceFeatures11;
-
-		VkPhysicalDeviceShaderFloat16Int8Features supportedExplicitArithmeticFeatures = { };
-		supportedExplicitArithmeticFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES;
-		supportedExplicitArithmeticFeatures.pNext = &supportedStorageFeatures;
-
 		VkPhysicalDeviceFeatures2 deviceFeatures2 = { };
 		deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		deviceFeatures2.pNext = &supportedExplicitArithmeticFeatures;
+		deviceFeatures2.pNext = &supportedDeviceFeatures11;
 		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
 
 		// Enabled features
@@ -1236,19 +1228,6 @@ namespace LambdaEngine
 		VkPhysicalDeviceFeatures supportedDeviceFeatures10;
 		supportedDeviceFeatures10 = deviceFeatures2.features;
 
-		VkPhysicalDevice8BitStorageFeaturesKHR enabledStorageFeatures = { };
-		enabledStorageFeatures.sType								= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR;
-		enabledStorageFeatures.pNext								= &enabledDeviceFeatures11;
-		enabledStorageFeatures.storageBuffer8BitAccess				= supportedStorageFeatures.storageBuffer8BitAccess;
-		enabledStorageFeatures.uniformAndStorageBuffer8BitAccess	= supportedStorageFeatures.uniformAndStorageBuffer8BitAccess;
-		enabledStorageFeatures.storagePushConstant8					= supportedStorageFeatures.storagePushConstant8;
-
-		VkPhysicalDeviceFloat16Int8FeaturesKHR enabledExplicitArithmeticFeatures = { };
-		enabledExplicitArithmeticFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
-		enabledExplicitArithmeticFeatures.pNext			= &enabledStorageFeatures;
-		enabledExplicitArithmeticFeatures.shaderInt8	= supportedExplicitArithmeticFeatures.shaderInt8;
-		enabledExplicitArithmeticFeatures.shaderFloat16 = supportedExplicitArithmeticFeatures.shaderFloat16;
-
 		VkPhysicalDeviceFeatures enabledDeviceFeatures10 = {};
 		enabledDeviceFeatures10.fillModeNonSolid				= supportedDeviceFeatures10.fillModeNonSolid;
 		enabledDeviceFeatures10.vertexPipelineStoresAndAtomics	= supportedDeviceFeatures10.vertexPipelineStoresAndAtomics;
@@ -1260,7 +1239,7 @@ namespace LambdaEngine
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		enabledDeviceFeatures2.pNext		= &enabledExplicitArithmeticFeatures;
+		enabledDeviceFeatures2.pNext		= &enabledDeviceFeatures11;
 		enabledDeviceFeatures2.features		= enabledDeviceFeatures10;
 
 		VkDeviceCreateInfo createInfo = {};
