@@ -86,7 +86,7 @@ void PlaySessionState::Init()
 		glm::vec3 position(0.0f, 1.25f, 0.0f);
 		glm::vec3 scale(0.01f);
 
-		Entity entity = pECS->CreateSpecialObject();
+		Entity entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -142,7 +142,7 @@ void PlaySessionState::Init()
 				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
 				glm::vec3 scale(1.0f);
 
-				Entity entity = pECS->CreateSpecialObject();
+				Entity entity = pECS->CreateEntity();
 				const StaticCollisionInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -174,7 +174,7 @@ void PlaySessionState::Init()
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			mirrorProperties);
 
-		Entity entity = ECSCore::GetInstance()->CreateSpecialObject();
+		Entity entity = ECSCore::GetInstance()->CreateEntity();
 
 		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });

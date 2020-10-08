@@ -103,7 +103,7 @@ namespace LambdaEngine
 		const glm::vec3& position = s_StartPositions[index];
 		m_Color = s_StartColors[index];
 
-		m_EntityPlayer = pECS->CreateSpecialObject();
+		m_EntityPlayer = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(m_EntityPlayer,		{ true, position });
 		pECS->AddComponent<RotationComponent>(m_EntityPlayer,		{ true, glm::identity<glm::quat>() });
 		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,			{ true, glm::vec3(1.0f) });

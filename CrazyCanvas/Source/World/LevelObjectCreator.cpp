@@ -53,7 +53,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(const LambdaEngi
 			.ColorIntensity = directionalLight.ColorIntensity
 		};
 
-		entity = pECS->CreateSpecialObject();
+		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, (translation) });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });
 		pECS->AddComponent<DirectionalLightComponent>(entity, directionalLightComponent);
@@ -79,7 +79,7 @@ LambdaEngine::Entity LevelObjectCreator::CreatePointLight(const LambdaEngine::Lo
 			.ColorIntensity = pointLight.ColorIntensity
 		};
 
-		entity = pECS->CreateSpecialObject();
+		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, (pointLight.Position + translation) });
 		pECS->AddComponent<PointLightComponent>(entity, pointLightComponent);
 
@@ -96,7 +96,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
-	Entity entity = pECS->CreateSpecialObject();
+	Entity entity = pECS->CreateEntity();
 	const StaticCollisionInfo collisionCreateInfo = 
 	{
 		.Entity			= entity,

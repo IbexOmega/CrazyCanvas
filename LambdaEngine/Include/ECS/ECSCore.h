@@ -26,7 +26,7 @@ namespace LambdaEngine
 
         void Tick(Timestamp deltaTime);
 
-		Entity CreateSpecialObject() { return m_EntityRegistry.CreateSpecialObject(); }
+		Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
 
 		// Add a component to a specific entity.
 		template<typename Comp>
