@@ -460,53 +460,69 @@ namespace LambdaEngine
 		{
 			if (m_DirtyDescriptorSetTextures.size() > 0)
 			{
+				static TSet<RenderStage*> updatedRenderStages;
+
 				//Copy old descriptor set and replace old with copy, then write into the new copy
 				for (uint32 r = 0; r < m_RenderStageCount; r++)
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[r];
 
-					if (pRenderStage->ppTextureDescriptorSets != nullptr)
+					//Insert returns a pair, the second value in the bool can therefore be used to check if the element already existed
+					if (updatedRenderStages.insert(pRenderStage).second)
 					{
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						if (pRenderStage->ppTextureDescriptorSets != nullptr)
 						{
-							DescriptorSet* pSrcDescriptorSet = pRenderStage->ppTextureDescriptorSets[b];
-							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex, m_pDescriptorHeap);
-							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-							m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-							pRenderStage->ppTextureDescriptorSets[b] = pDescriptorSet;
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								DescriptorSet* pSrcDescriptorSet = pRenderStage->ppTextureDescriptorSets[b];
+								DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex, m_pDescriptorHeap);
+								m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+								m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+								pRenderStage->ppTextureDescriptorSets[b] = pDescriptorSet;
+							}
+						}
+						else if (pRenderStage->UsesCustomRenderer)
+						{
+							pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
 						}
 					}
-					else if (pRenderStage->UsesCustomRenderer)
-					{
-						pRenderStage->pCustomRenderer->PreTexturesDescriptorSetWrite();
-					}
 				}
+
+				updatedRenderStages.clear();
 			}
 
 			if (m_DirtyDescriptorSetBuffers.size() > 0 ||
 				m_DirtyDescriptorSetAccelerationStructures.size() > 0)
 			{
+				static TSet<RenderStage*> updatedRenderStages;
+
 				//Copy old descriptor set and replace old with copy, then write into the new copy
 				for (uint32 r = 0; r < m_RenderStageCount; r++)
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[r];
 
-					if (pRenderStage->ppBufferDescriptorSets != nullptr)
+					//Insert returns a pair, the second value in the bool can therefore be used to check if the element already existed
+					if (updatedRenderStages.insert(pRenderStage).second)
 					{
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						if (pRenderStage->ppBufferDescriptorSets != nullptr)
 						{
-							DescriptorSet* pSrcDescriptorSet = pRenderStage->ppBufferDescriptorSets[b];
-							DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex, m_pDescriptorHeap);
-							m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
-							m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-							pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								DescriptorSet* pSrcDescriptorSet = pRenderStage->ppBufferDescriptorSets[b];
+								DescriptorSet* pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet(pSrcDescriptorSet->GetName(), pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex, m_pDescriptorHeap);
+								m_pGraphicsDevice->CopyDescriptorSet(pSrcDescriptorSet, pDescriptorSet);
+								m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
+								pRenderStage->ppBufferDescriptorSets[b] = pDescriptorSet;
+							}
+						}
+						else if (pRenderStage->UsesCustomRenderer)
+						{
+							pRenderStage->pCustomRenderer->PreBuffersDescriptorSetWrite();
 						}
 					}
-					else if (pRenderStage->UsesCustomRenderer)
-					{
-						pRenderStage->pCustomRenderer->PreBuffersDescriptorSetWrite();
-					}
 				}
+
+				updatedRenderStages.clear();
 			}
 		}
 
