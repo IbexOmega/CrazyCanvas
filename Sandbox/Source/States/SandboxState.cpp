@@ -157,7 +157,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		
+
 		position = glm::vec3(0.0f, 1.25f, 0.0f);
 		robotAnimationComp.IsLooping	= true;
 		robotAnimationComp.NumLoops		= 10;
