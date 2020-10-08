@@ -1,21 +1,25 @@
 #pragma once
-#include "Game/Game.h"
+
+#include "Game/State.h"
 
 #include "Application/API/Events/KeyEvents.h"
 
 #include "Networking/API/UDP/INetworkDiscoveryServer.h"
 
-class Server : 
-	public LambdaEngine::Game,
+class ServerState :
+	public LambdaEngine::State,
 	public LambdaEngine::INetworkDiscoveryServer
 {
 public:
-	Server();
-	~Server();
+	ServerState() = default;
+	~ServerState();
 
-	// Inherited via Game
-	virtual void Tick(LambdaEngine::Timestamp delta)        override;
-	virtual void FixedTick(LambdaEngine::Timestamp delta)   override;
+	void Init() override final;
+
+	void Resume() override final {};
+	void Pause() override final {};
+
+	virtual void Tick(LambdaEngine::Timestamp delta) override;
 
 	virtual void OnNetworkDiscoveryPreTransmit(const LambdaEngine::BinaryEncoder& encoder) override;
 
