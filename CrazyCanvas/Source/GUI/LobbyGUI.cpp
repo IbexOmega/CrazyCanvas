@@ -2,6 +2,8 @@
 #include "Game/State.h"
 #include "Game/StateManager.h"
 
+#include "Game/ECS/Systems/Networking/ClientSystem.h"
+
 #include "GUI/LobbyGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
@@ -40,6 +42,14 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	LOG_MESSAGE(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
+
+	IPAddress* ip = IPAddress::Get(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
+
+	if (!ClientSystem::GetInstance().Connect(ip))
+	{
+		LOG_MESSAGE("Couldn't connect");
+	}
+
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }

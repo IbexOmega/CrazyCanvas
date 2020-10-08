@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS/System.h"
+#include "Math/Math.h"
 
 namespace LambdaEngine
 {
