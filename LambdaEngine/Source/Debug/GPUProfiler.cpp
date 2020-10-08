@@ -14,9 +14,6 @@
 #include <fstream>
 #include <sstream>
 
-// TODO: Remove
-#define LAMBDA_DEBUG
-
 namespace LambdaEngine
 {
 	GPUProfiler::GPUProfiler() : m_TimeUnit(TimeUnit::MILLI), m_PlotDataSize(100), m_UpdateFreq(1.0f)
