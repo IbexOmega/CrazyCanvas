@@ -461,7 +461,7 @@ namespace LambdaEngine
 			
 			if (!animationComp.IsPaused)
 			{
-				MeshKey key(meshComp.MeshGUID, entity, true);
+				MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
 				
 				auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 				if (meshEntryIt != m_MeshAndInstancesMap.end())
@@ -711,6 +711,7 @@ namespace LambdaEngine
 		meshKey.MeshGUID	= meshGUID;
 		meshKey.IsAnimated	= isAnimated;
 		meshKey.EntityID	= entity;
+		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
 
 		//Get meshAndInstancesIterator
 		{

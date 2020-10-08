@@ -66,10 +66,11 @@ namespace LambdaEngine
 		public:
 			MeshKey() = default;
 
-			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated)
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask)
 				: MeshGUID(meshGUID)
 				, EntityID(entityID)
 				, IsAnimated(isAnimated)
+				, EntityMask(entityMask)
 			{
 				GetHash();
 			}
@@ -79,6 +80,7 @@ namespace LambdaEngine
 				if (Hash == 0)
 				{
 					Hash = std::hash<GUID_Lambda>()(MeshGUID);
+					HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityMask);
 					if (IsAnimated)
 					{
 						HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
@@ -90,7 +92,7 @@ namespace LambdaEngine
 
 			bool operator==(const MeshKey& other) const
 			{
-				if (MeshGUID != other.MeshGUID)
+				if (MeshGUID != other.MeshGUID || EntityMask != other.EntityMask)
 				{
 					return false;
 				}
@@ -110,6 +112,7 @@ namespace LambdaEngine
 			GUID_Lambda		MeshGUID;
 			bool			IsAnimated;
 			Entity			EntityID;
+			uint32			EntityMask;
 			mutable size_t	Hash = 0;
 		};
 
