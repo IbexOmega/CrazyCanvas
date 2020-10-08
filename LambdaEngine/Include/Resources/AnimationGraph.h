@@ -255,7 +255,7 @@ namespace LambdaEngine
 		uint32	m_CurrentState;
 
 		TArray<AnimationState>	m_States;
-		TArray<Transition>		m_Transitions;
 		TArray<SQT>				m_TransitionResult;
+		TArray<Transition>		m_Transitions;
 	};
 }
