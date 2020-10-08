@@ -26,7 +26,6 @@
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
-#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 
@@ -104,7 +103,6 @@ namespace LambdaEngine
 					std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1) 
 				}
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, MeshPaintComponent::Type()}} };
 
 			RegisterSystem(systemReg);
 		}

@@ -3,7 +3,7 @@
 #include "Utilities/StringUtilities.h"
 #include "ECS/ECSCore.h"
 
-#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 
 using namespace LambdaEngine;
 

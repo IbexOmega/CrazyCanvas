@@ -22,7 +22,7 @@
 #include "Rendering/EntityMaskManager.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"

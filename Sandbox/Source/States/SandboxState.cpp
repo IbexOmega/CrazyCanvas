@@ -20,7 +20,7 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
-#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
 
@@ -94,21 +94,13 @@ void SandboxState::Init()
 	//Load scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypePrototypeScene.dae", meshComponents);
+		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
 
 		for (uint32 i = 0; const MeshComponent& meshComponent : meshComponents)
 		{
-			MeshPaintComponent meshPaintComponent;
-			const uint32 width = 2048;
-			const uint32 height = 2048;
-			char* data = DBG_NEW char[width * height * 4];
-			memset(data, 0, width * height * 4);
-			meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("SceneUnwrappedTexture_" + std::to_string(i++), data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-			SAFEDELETE_ARRAY(data);
-
 			Entity entity = ECSCore::GetInstance()->CreateEntity();
 			const StaticCollisionInfo collisionCreateInfo =
 			{
@@ -122,13 +114,7 @@ void SandboxState::Init()
 			};
 			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
 
-			DrawArgExtensionData drawArgExtensionData = {};
-			drawArgExtensionData.TextureCount = 1;
-			drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
-			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
-			EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
+			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "SceneUnwrappedTexture_" + std::to_string(i++), 2048, 2048));
 		}
 	}
 
@@ -155,136 +141,14 @@ void SandboxState::Init()
 		glm::vec3 scale(2.f);
 		glm::quat rotation = glm::identity<glm::quat>();
 
-		MeshPaintComponent meshPaintComponent;
-		const uint32 width = 1024;
-		const uint32 height = 1024;
-		char* data = DBG_NEW char[width * height * 4];
-		memset(data, 0, width * height * 4);
-		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("CubeUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-		SAFEDELETE_ARRAY(data);
-
 		Entity entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, rotation });
 		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
 
-		DrawArgExtensionData drawArgExtensionData = {};
-		drawArgExtensionData.TextureCount		= 1;
-		drawArgExtensionData.ppTextures[0]		= ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-		drawArgExtensionData.ppTextureViews[0]	= ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
-		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "CubeUnwrappedTexture_1", 1024, 1024));
 	}
-
-
-	// Scene
-	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("triangle.obj");
-
-		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		materialProperties.Roughness = 1.f;
-		materialProperties.Metallic = 0.f;
-
-		MeshComponent sphereMeshComp = {};
-		sphereMeshComp.MeshGUID = sphereMeshGUID;
-		sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Default r: " + std::to_string(materialProperties.Roughness) + " m: " + std::to_string(materialProperties.Metallic),
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
-
-		glm::vec3 position(0.f, -1.f, -5.f);
-		glm::vec3 scale(1.f);
-		glm::quat rotation = glm::rotate(glm::identity<glm::quat>(), glm::radians(0.f), glm::vec3(0.f, 1.f, 0.f));
-
-		MeshPaintComponent meshPaintComponent;
-		const uint32 width = 512;
-		const uint32 height = 512;
-		char* data = DBG_NEW char[width * height * 4];
-		memset(data, 0, width* height * 4);
-		meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("PlaneUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-		SAFEDELETE_ARRAY(data);
-
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, position });
-		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-		pECS->AddComponent<RotationComponent>(entity, { true, rotation });
-		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-		// pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
-
-		DrawArgExtensionData drawArgExtensionData = {};
-		drawArgExtensionData.TextureCount		= 1;
-		drawArgExtensionData.ppTextures[0]		= ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-		drawArgExtensionData.ppTextureViews[0]	= ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
-		// EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
-	}
-
-	//Scene
-	/*{
-		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
-
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
-
-		for (const MeshComponent& meshComponent : meshComponents)
-		{
-			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo =
-			{
-				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-			};
-
-			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-		}
-	}*/
-
-	// Simple Scene (One object, One texture)
-	//{
-		/*
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("bunny.obj");
-
-		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		materialProperties.Roughness = 0.5f;
-		materialProperties.Metallic = 0.5f;
-
-		MeshComponent sphereMeshComp = {};
-		sphereMeshComp.MeshGUID = sphereMeshGUID;
-		sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Default r: " + std::to_string(materialProperties.Roughness) + " m: " + std::to_string(materialProperties.Metallic),
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
-
-		glm::vec3 position(0.f, 0.f, 0.0f);
-		glm::vec3 scale(1.f);
-
-		Entity entity = pECS->CreateEntity();
-		m_Entities.PushBack(entity);
-		pECS->AddComponent<PositionComponent>(entity, { position, true });
-		pECS->AddComponent<ScaleComponent>(entity, { scale, true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-		pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-		*/
-	//}
 
 	// Robot
 	{
@@ -327,22 +191,8 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		{
-			MeshPaintComponent meshPaintComponent;
-			const uint32 width = 512;
-			const uint32 height = 512;
-			char* data = DBG_NEW char[width * height * 4];
-			memset(data, 0, width * height * 4);
-			meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("RobotUnwrappedTexture_0", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-			SAFEDELETE_ARRAY(data);
-			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
-			DrawArgExtensionData drawArgExtensionData = {};
-			drawArgExtensionData.TextureCount = 1;
-			drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
-			EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
-		}
+		
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
 
 		position = glm::vec3(0.0f, 1.25f, 0.0f);
 		robotAnimationComp.IsLooping = true;
@@ -354,22 +204,8 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		{
-			MeshPaintComponent meshPaintComponent;
-			const uint32 width = 512;
-			const uint32 height = 512;
-			char* data = DBG_NEW char[width * height * 4];
-			memset(data, 0, width * height * 4);
-			meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("RobotUnwrappedTexture_1", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-			SAFEDELETE_ARRAY(data);
-			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
-			DrawArgExtensionData drawArgExtensionData = {};
-			drawArgExtensionData.TextureCount = 1;
-			drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
-			EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
-		}
+
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
 
 		position = glm::vec3(-5.0f, 1.25f, 0.0f);
 		robotAnimationComp.NumLoops = INFINITE_LOOPS;
@@ -380,22 +216,8 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		{
-			MeshPaintComponent meshPaintComponent;
-			const uint32 width = 512;
-			const uint32 height = 512;
-			char* data = DBG_NEW char[width * height * 4];
-			memset(data, 0, width * height * 4);
-			meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("RobotUnwrappedTexture_2", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-			SAFEDELETE_ARRAY(data);
-			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
-			DrawArgExtensionData drawArgExtensionData = {};
-			drawArgExtensionData.TextureCount = 1;
-			drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
-			EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
-		}
+
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
 
 		position = glm::vec3(5.0f, 1.25f, 0.0f);
 
@@ -407,22 +229,8 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		{
-			MeshPaintComponent meshPaintComponent;
-			const uint32 width = 512;
-			const uint32 height = 512;
-			char* data = DBG_NEW char[width * height * 4];
-			memset(data, 0, width * height * 4);
-			meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory("RobotUnwrappedTexture_3", data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
-			SAFEDELETE_ARRAY(data);
-			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComponent);
-			DrawArgExtensionData drawArgExtensionData = {};
-			drawArgExtensionData.TextureCount = 1;
-			drawArgExtensionData.ppTextures[0] = ResourceManager::GetTexture(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
-			drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
-			EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
-		}
+
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512));
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
@@ -441,7 +249,7 @@ void SandboxState::Init()
 	}
 
 	//Sphere Grid
-	/*{
+	{
 		const uint32 sphereMeshGUID	= ResourceManager::LoadMeshFromFile("sphere.obj");
 		const uint32 gridRadius		= 5;
 		for (uint32 y = 0; y < gridRadius; y++)
@@ -483,8 +291,10 @@ void SandboxState::Init()
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
+
+				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + 1), 256, 256));
 			}
-		}*/
+		}
 
 		// Directional Light
 		//{
@@ -495,7 +305,7 @@ void SandboxState::Init()
 		//}
 
 		// Add PointLights
-		/*{
+		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
 			{
@@ -539,11 +349,11 @@ void SandboxState::Init()
 				pECS->AddComponent<PointLightComponent>(pt, pointLights[i]);
 				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
-		}*/
-	//}
+		}
+	}
 
 	//Mirrors
-	/*{
+	{
 		MaterialProperties mirrorProperties = {};
 		mirrorProperties.Roughness = 0.0f;
 
@@ -563,7 +373,9 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
 		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	}*/
+
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "MirrorUnwrappedTexture", 1048, 1048));
+	}
 }
 
 void SandboxState::Resume()

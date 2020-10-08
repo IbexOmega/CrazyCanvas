@@ -25,8 +25,6 @@
 #include "Rendering/IRenderGraphCreateHandler.h"
 #include "Rendering/EntityMaskManager.h"
 
-#include "Game/ECS/Components/Misc/MeshPaintComponent.h"
-
 #include "Log/Log.h"
 
 #include "Application/API/CommonApplication.h"
@@ -4180,7 +4178,7 @@ namespace LambdaEngine
 						{
 							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
 
-							if (ppDrawArgsExtensionsDescriptorSetsPerFrame)
+							if (ppDrawArgsExtensionsDescriptorSetsPerFrame && ppDrawArgsExtensionsDescriptorSetsPerFrame[d])
 							{
 								pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsExtensionsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex);
 							}
