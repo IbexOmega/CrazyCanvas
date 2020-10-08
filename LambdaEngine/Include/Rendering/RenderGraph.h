@@ -369,7 +369,13 @@ namespace LambdaEngine
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets
 		*/
-		void Update();
+		void Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex);
+
+		/*
+		* Updates dirty resource bindings
+		*/
+		void UpdateResourceBindings();
+
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.

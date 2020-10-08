@@ -31,6 +31,12 @@ namespace LambdaEngine
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) = 0;
 
+
+		/*
+		* Called every frame, can be used for internal resource handling in custom renderers
+		*/
+		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) = 0;
+
 		/*
 		* Called before when a/multiple buffer descriptor write(s) are discovered.
 		* Allows the callee to recreate Descriptor Sets if needed.
@@ -85,6 +91,7 @@ namespace LambdaEngine
 		*	drawArgs - The draw args that represent the update data
 		*/
 		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count) = 0;
+
 
 		/*
 		* Called at rendertime to allow recording device commands
