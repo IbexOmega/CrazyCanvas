@@ -1,8 +1,6 @@
 #include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
 #include "Game/ECS/Systems/Networking/Server/ClientRemoteSystem.h"
 
-#include "Game/ECS/Components/Physics/Transform.h"
-
 #include "ECS/ECSCore.h"
 
 #include "Networking/API/NetworkDebugger.h"
@@ -14,7 +12,7 @@ namespace LambdaEngine
 	ServerSystem::ServerSystem() : 
 		m_NetworkEntities(),
 		m_pServer(nullptr),
-		m_SimulationTick(0)
+		m_CharacterControllerSystem()
 	{
 		ServerDesc desc = {};
 		desc.Handler				= this;
@@ -31,6 +29,8 @@ namespace LambdaEngine
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 
 		RegisterSystem({});
+
+		m_CharacterControllerSystem.Init();
 	}
 
 	ServerSystem::~ServerSystem()
@@ -55,8 +55,6 @@ namespace LambdaEngine
 
 	void ServerSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		m_SimulationTick++;
-
 		const ClientMap& pClients = m_pServer->GetClients();
 		for (auto& pair : pClients)
 		{
@@ -75,11 +73,6 @@ namespace LambdaEngine
 			ClientRemoteSystem* pClientSystem = (ClientRemoteSystem*)pair.second->GetHandler();
 			pClientSystem->TickMainThread(deltaTime);
 		}
-	}
-
-	int32 ServerSystem::GetSimulationTick() const
-	{
-		return m_SimulationTick;
 	}
 
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()

@@ -15,6 +15,7 @@ namespace LambdaEngine
 	class CharacterControllerSystem : public System, public ComponentOwner
 	{
 		friend class ClientSystem;
+		friend class ServerSystem;
 
 	public:
 		virtual ~CharacterControllerSystem();

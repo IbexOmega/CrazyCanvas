@@ -48,6 +48,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
+	/*
+	* Only called on the client side
+	*/
 	void CharacterControllerSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
 		const float32 dt = (float32)deltaTime.AsSeconds();

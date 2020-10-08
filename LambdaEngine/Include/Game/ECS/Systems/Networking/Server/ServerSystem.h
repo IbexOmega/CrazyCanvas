@@ -2,8 +2,7 @@
 
 #include "ECS/System.h"
 
-#include "Game/ECS/Components/Misc/Components.h"
-#include "Game/ECS/Components/Networking/NetworkComponent.h"
+#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
@@ -47,9 +46,9 @@ namespace LambdaEngine
 		static void StaticRelease();
 
 	private:
-		IDVector	m_NetworkEntities;
-		ServerBase* m_pServer;
-		int32		m_SimulationTick;
+		IDVector					m_NetworkEntities;
+		ServerBase*					m_pServer;
+		CharacterControllerSystem	m_CharacterControllerSystem;
 
 	private:
 		static ServerSystem* s_pInstance;
