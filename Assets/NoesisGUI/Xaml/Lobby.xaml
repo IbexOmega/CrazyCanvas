@@ -67,7 +67,7 @@
                         <Rectangle x:Name="ManualInput" Fill="#FF25252B" Grid.RowSpan="28" Grid.Column="1" Stroke="Black" Margin="0,0,5,0"/>
                         <TextBlock TextWrapping="Wrap" Grid.Row="0" Margin="20.291,5,20.292,0" Width="112.484" Height="24.307" MinHeight="30" ><Run Foreground="White" FontSize="18" FontFamily="Verdana" Text="Find "/><Run Foreground="White" FontSize="20" FontFamily="Verdana" Text="Server"/></TextBlock>
                         <Label Content="IP Address:" Margin="5,0" Grid.Row="1" FontFamily="Verdana" Foreground="White" FontSize="20" />
-                        <TextBox x:Name="CAM_FORWARD" FontSize="24" Background="#FFE0E0E0"  Grid.Row="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="20,0,10,0"/>
+                        <TextBox x:Name="IP_ADDRESS" FontSize="24" Background="White"  Grid.Row="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="20,0,10,0" Foreground="Black"/>
                         <Button Content="Connect"  Grid.Row="25" Grid.RowSpan="26" Click="OnButtonConnectClick" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
                     </Grid>
 
