@@ -106,7 +106,7 @@ namespace LambdaEngine
 		{
 			const glm::vec3 right = GetRight(rotComp.Quaternion);
 			const float shiftSpeedFactor = InputActionSystem::IsActive("CAM_SPEED_MODIFIER") ? 2.0f : 1.0f;
-			velocity = glm::normalize(velocity) * freeCamComp.SpeedFactor * shiftSpeedFactor * dt;
+			velocity = glm::normalize(velocity) * freeCamComp.SpeedFactor * shiftSpeedFactor;
 
 			velocity = velocity.x * right + velocity.y * GetUp(rotComp.Quaternion) + velocity.z * forward;
 		}

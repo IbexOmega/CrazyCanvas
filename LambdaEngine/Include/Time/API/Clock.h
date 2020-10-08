@@ -19,12 +19,7 @@ namespace LambdaEngine
 		* has been active. This is the time between the last call to Clock::Reset and this call to Clock::Tick
 		*/
 		void Tick();
-
-		FORCEINLINE void Reset()
-		{
-			m_DeltaTime = Timestamp(0);
-			m_TotalTime = Timestamp(0);
-		}
+		void Reset();
 
 		FORCEINLINE const Timestamp& GetDeltaTime() const
 		{

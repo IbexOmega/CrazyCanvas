@@ -57,5 +57,11 @@ namespace LambdaEngine
 	{
 		// Called just before deleting a component
 		std::function<void(Comp&)> Destructor;
+		/**
+		 * Serialize the component into the buffer, excluding the type hash.
+		 * \return The required size of the serialization in bytes.
+		 * Does not write to the buffer if said size is greater than the provided bufferSize.
+		*/
+		std::function<uint32(const Comp& component, uint8* pBuffer, uint32 bufferSize)> Serialize;
 	};
 }

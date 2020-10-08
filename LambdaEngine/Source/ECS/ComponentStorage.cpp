@@ -31,6 +31,12 @@ namespace LambdaEngine
 		}
 	}
 
+	uint32 ComponentStorage::SerializeComponent(Entity entity, const ComponentType* pComponentType, uint8* pBuffer, uint32 bufferSize) const
+	{
+		const IComponentArray* pComponentArray = GetComponentArray(pComponentType);
+		return pComponentArray->SerializeComponent(entity, pBuffer, bufferSize);
+	}
+
 	IComponentArray* ComponentStorage::GetComponentArray(const ComponentType* pComponentType)
 	{
 		auto arrayItr = m_CompTypeToArrayMap.find(pComponentType);
