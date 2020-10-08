@@ -8,6 +8,8 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
+#include "Debug/Profiler.h"
+
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -22,6 +24,7 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+#include "Game/GameConsole.h"
 
 #include "Input/API/Input.h"
 
@@ -29,9 +32,11 @@
 
 #include "Physics/PhysicsSystem.h"
 
+#include "Rendering/Core/API/GraphicsTypes.h"
+#include "Rendering/ImGuiRenderer.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
-#include "Rendering/Core/API/GraphicsTypes.h"
+#include "Rendering/RenderGraphEditor.h"
 
 #include "Math/Random.h"
 
@@ -41,32 +46,36 @@
 
 #include "NoesisPCH.h"
 
+#include <imgui.h>
+
 using namespace LambdaEngine;
-
-SandboxState::SandboxState()
-{
-
-}
-
-SandboxState::SandboxState(LambdaEngine::State* pOther) : LambdaEngine::State(pOther)
-{
-}
 
 SandboxState::~SandboxState()
 {
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
+
 	if (m_GUITest.GetPtr() != nullptr)
 	{
-		int32 ref = m_GUITest->GetNumReferences();
-
 		m_GUITest.Reset();
 		m_View.Reset();
 	}
 
-	// Remove System
+	SAFEDELETE(m_pRenderGraphEditor);
+	// Remove Systems
 }
 
 void SandboxState::Init()
 {
+	// Create Systems
+	TrackSystem::GetInstance().Init();
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
+	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
+	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
+	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
+
 	m_GUITest	= *new GUITest("Test.xaml");
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
 	LambdaEngine::GUIApplication::SetView(m_View);
@@ -85,20 +94,16 @@ void SandboxState::Init()
 			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity e = CreateFPSCameraEntity(cameraDesc);
+		CreateFPSCameraEntity(cameraDesc);
 	}
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
 		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
 
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
+		const glm::vec3 position(0.0f, 0.0f, 0.0f);
+		const glm::vec3 scale(1.0f);
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
@@ -215,7 +220,6 @@ void SandboxState::Init()
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
-
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
 				float32 metallic = x / float32(gridRadius - 1);
@@ -334,6 +338,54 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
+
+	if constexpr (IMGUI_ENABLED)
+	{
+		ImGui::SetCurrentContext(ImGuiRenderer::GetImguiContext());
+
+		m_pRenderGraphEditor = DBG_NEW RenderGraphEditor();
+		m_pRenderGraphEditor->InitGUI();	//Must Be called after Renderer is initialized
+	}
+
+	ConsoleCommand cmd1;
+	cmd1.Init("render_graph", true);
+	cmd1.AddArg(Arg::EType::BOOL);
+	cmd1.AddDescription("Activate/Deactivate rendergraph window.\n\t'render_graph true'");
+	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
+		m_RenderGraphWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand cmd2;
+	cmd2.Init("imgui_demo", true);
+	cmd2.AddArg(Arg::EType::BOOL);
+	cmd2.AddDescription("Activate/Deactivate demo window.\n\t'imgui_demo true'");
+	GameConsole::Get().BindCommand(cmd2, [&, this](GameConsole::CallbackInput& input)->void {
+		m_ShowDemoWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand cmd3;
+	cmd3.Init("show_debug_window", false);
+	cmd3.AddArg(Arg::EType::BOOL);
+	cmd3.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
+	GameConsole::Get().BindCommand(cmd3, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand showTextureCMD;
+	showTextureCMD.Init("debug_texture", true);
+	showTextureCMD.AddArg(Arg::EType::BOOL);
+	showTextureCMD.AddFlag("t", Arg::EType::STRING);
+	showTextureCMD.AddFlag("ps", Arg::EType::STRING);
+	showTextureCMD.AddDescription("Show a texture resource which is used in the RenderGraph");
+	GameConsole::Get().BindCommand(showTextureCMD, [&, this](GameConsole::CallbackInput& input)->void
+		{
+			m_ShowTextureDebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+
+			auto textureNameIt				= input.Flags.find("t");
+			auto shaderNameIt				= input.Flags.find("ps");
+			m_TextureDebuggingName			= textureNameIt != input.Flags.end() ? textureNameIt->second.Arg.Value.String : "";
+			m_TextureDebuggingShaderGUID	= shaderNameIt != input.Flags.end() ? ResourceManager::GetShaderGUID(shaderNameIt->second.Arg.Value.String) : GUID_NONE;
+		});
 }
 
 void SandboxState::Resume()
@@ -353,54 +405,106 @@ void SandboxState::Pause()
 void SandboxState::Tick(LambdaEngine::Timestamp delta)
 {
 	// Update State specfic objects
-	
+	m_pRenderGraphEditor->Update();
+	LambdaEngine::Profiler::Tick(delta);
+
+	if constexpr (IMGUI_ENABLED)
+	{
+		RenderImgui();
+	}
+}
+
+void SandboxState::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
+{
+	using namespace LambdaEngine;
+
+	Sampler* pNearestSampler				= Sampler::GetNearestSampler();
+
+	GUID_Lambda blueNoiseID = ResourceManager::GetTextureGUID("Blue Noise Texture");
+
+	Texture* pBlueNoiseTexture				= ResourceManager::GetTexture(blueNoiseID);
+	TextureView* pBlueNoiseTextureView		= ResourceManager::GetTextureView(blueNoiseID);
+
+	ResourceUpdateDesc blueNoiseUpdateDesc = {};
+	blueNoiseUpdateDesc.ResourceName								= "BLUE_NOISE_LUT";
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures			= &pBlueNoiseTexture;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews		= &pBlueNoiseTextureView;
+	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pNearestSampler;
+
+	pRenderGraph->UpdateResource(&blueNoiseUpdateDesc);
+
+	GUID_Lambda cubemapTexID = ResourceManager::GetTextureGUID("Cubemap Texture");
+
+	Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
+	TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+
+	ResourceUpdateDesc cubeTextureUpdateDesc = {};
+	cubeTextureUpdateDesc.ResourceName = "SKYBOX";
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
+	cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+	pRenderGraph->UpdateResource(&cubeTextureUpdateDesc);
+}
+
+void SandboxState::RenderImgui()
+{
+	using namespace LambdaEngine;
+
+	ImGuiRenderer::Get().DrawUI([&]()
+	{
+		if (m_RenderGraphWindow)
+			m_pRenderGraphEditor->RenderGUI();
+
+		if (m_ShowDemoWindow)
+			ImGui::ShowDemoWindow();
+
+		if (m_DebuggingWindow)
+		{
+			Profiler::Render();
+		}
+
+		if (m_ShowTextureDebuggingWindow)
+		{
+			if (ImGui::Begin("Texture Debugging"))
+			{
+				if (!m_TextureDebuggingName.empty())
+				{
+					static ImGuiTexture texture = {};
+					texture.ResourceName		= m_TextureDebuggingName;
+					texture.PixelShaderGUID		= m_TextureDebuggingShaderGUID;
+
+					ImGui::Image(&texture, ImGui::GetWindowSize());
+				}
+			}
+
+			ImGui::End();
+		}
+	});
 }
 
 bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 {
 	using namespace LambdaEngine;
 
-	constexpr uint32 MAX_ENTITIES = 3;
-	static float timer = 0.0f;
-	static uint32 id = 0U;
-	
-	static bool remove = true;
-	//timer += delta.AsSeconds();
-
-	if (event.Key == EKey::KEY_SPACE)
+	if (!IsEventOfType<KeyPressedEvent>(event))
 	{
-		timer = 0.f;
-		uint32 index = id % MAX_ENTITIES;
-
-		if (index == 0)
-			remove = !remove;
-
-		if (!remove)
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			const uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-
-			const PointLightComponent pointLights = { .ColorIntensity = {index % 3, (index + 1U) % 3, (index + 2U) % 3, 25.0f}, .FarPlane = 20.0f };
-			const glm::vec3 startPosition = { 0.0f, 2.0f, 3.0f - 3.33f*float(index) };
-
-			const float32 PI = glm::pi<float>();
-			const float32 RADIUS = 3.0f;
-
-
-			m_PointLights[index] = pECS->CreateEntity();
-			pECS->AddComponent<PositionComponent>(m_PointLights[index], { true, startPosition });
-			pECS->AddComponent<ScaleComponent>(m_PointLights[index], { true, glm::vec3(0.4f) });
-			pECS->AddComponent<RotationComponent>(m_PointLights[index], { true, glm::identity<glm::quat>() });
-			pECS->AddComponent<PointLightComponent>(m_PointLights[index], pointLights);
-
-		}
-		else
-		{
-			ECSCore::GetInstance()->RemoveEntity(m_PointLights[index]);
-		}
-		id++;
+		return false;
 	}
-	
+
+	if (event.IsRepeat)
+	{
+		return false;
+	}
+
+	static bool geometryAudioActive = true;
+	static bool reverbSphereActive = true;
+
+	if (event.Key == EKey::KEY_5)
+	{
+		EventQueue::SendEvent(ShaderRecompileEvent());
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
+	}
 
 	return true;
 }

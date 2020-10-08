@@ -1,17 +1,17 @@
 #pragma once
 #include "Game/State.h"
 
-#include "GUI/MainMenuGUI.h"
+#include "GUI/LobbyGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
 
-class MainMenuState : public LambdaEngine::State
+class LobbyState : public LambdaEngine::State
 {
 public:
-	MainMenuState() = default;
-	~MainMenuState();
+	LobbyState() = default;
+	~LobbyState();
 
 	void Init() override final;
 
@@ -22,6 +22,6 @@ public:
 
 
 private:
-	Noesis::Ptr<MainMenuGUI> m_MainMenuGUI;
+	Noesis::Ptr<LobbyGUI> m_LobbyGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
 };

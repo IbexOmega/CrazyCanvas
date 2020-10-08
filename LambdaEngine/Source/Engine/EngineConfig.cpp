@@ -11,19 +11,32 @@
 namespace LambdaEngine
 {
 	rapidjson::Document EngineConfig::s_ConfigDocument = {};
+	String EngineConfig::s_FilePath;
 	using namespace rapidjson;
 
-	bool EngineConfig::LoadFromFile()
+	bool EngineConfig::LoadFromFile(const argh::parser& flagParser)
 	{
-		const char* pEngineConfigPath = "engine_config.json";
+		/*	Production-released products will likely not be started with any command line arguments,
+			that is when the production config is used */
+		constexpr const char* pDefaultPathPostfix = "production";
+		String pathPostfix;
+		flagParser({ "--state" }, pDefaultPathPostfix) >> pathPostfix;
+		s_FilePath = "engine_config_" + String(pathPostfix) + ".json";
 
-		FILE* pFile = fopen(pEngineConfigPath, "r");
+		FILE* pFile = fopen(s_FilePath.c_str(), "r");
 		if (!pFile)
 		{
-			// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
-			LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
-			DEBUGBREAK();
-			return false;
+			// The state does not have its own config file, try the default config path
+			s_FilePath = "engine_config_" + String(pDefaultPathPostfix) + ".json";
+
+			pFile = fopen(s_FilePath.c_str(), "r");
+			if (!pFile)
+			{
+				// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
+				LOG_WARNING("Engine config could not be opened: %s", s_FilePath.c_str());
+				DEBUGBREAK();
+				return false;
+			}
 		}
 
 		char readBuffer[2048];
@@ -31,19 +44,15 @@ namespace LambdaEngine
 
 		s_ConfigDocument.ParseStream(inputStream);
 
-		fclose(pFile);
-
-		return true;
+		return fclose(pFile) == 0;
 	}
 
 	bool EngineConfig::WriteToFile()
 	{
-		const char* pEngineConfigPath = "engine_config.json";
-
-		FILE* pFile = fopen(pEngineConfigPath, "w");
+		FILE* pFile = fopen(s_FilePath.c_str(), "w");
 		if (!pFile)
 		{
-			LOG_WARNING("Engine config could not be opened: %s", pEngineConfigPath);
+			LOG_WARNING("Engine config could not be opened: %s", s_FilePath.c_str());
 			return false;
 		}
 
@@ -53,9 +62,7 @@ namespace LambdaEngine
 		PrettyWriter<FileWriteStream> writer(outputStream);
 		s_ConfigDocument.Accept(writer);
 
-		fclose(pFile);
-
-		return true;
+		return fclose(pFile) == 0;
 	}
 
 	bool EngineConfig::GetBoolProperty(const String& propertyName)

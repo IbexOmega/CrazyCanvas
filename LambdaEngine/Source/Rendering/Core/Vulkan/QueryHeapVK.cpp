@@ -65,4 +65,21 @@ namespace LambdaEngine
 			return true;
 		}
 	}
+
+	bool QueryHeapVK::GetResultsAvailable(uint32 firstQuery, uint32 queryCount, uint64 dataSize, QueryHeapAvailabilityResult* pData) const
+	{
+		VkResult result = vkGetQueryPoolResults(m_pDevice->Device, m_QueryPool, firstQuery, queryCount, dataSize, reinterpret_cast<void*>(pData), sizeof(QueryHeapAvailabilityResult), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+
+		// QueryPoolResults return a VK_NOT_READY if some requested queries were not available for collection.
+		// The available uint64 will be non-zero if the result is finished.
+		if (result != VK_SUCCESS && result != VK_NOT_READY)
+		{
+			LOG_VULKAN_ERROR(result, "[QueryHeapVK]: Failed to retrive query results");
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
 }

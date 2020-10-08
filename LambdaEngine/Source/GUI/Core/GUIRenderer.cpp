@@ -680,7 +680,10 @@ namespace LambdaEngine
 	{
 		m_View.Reset();
 		m_View = view;
-		m_View->GetRenderer()->Init(this);
+		if (m_View != nullptr)
+		{
+			m_View->GetRenderer()->Init(this);
+		}
 	}
 
 	CommandList* GUIRenderer::BeginOrGetUtilityCommandList()

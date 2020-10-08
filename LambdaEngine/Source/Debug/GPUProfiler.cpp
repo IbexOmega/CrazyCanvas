@@ -125,7 +125,7 @@ namespace LambdaEngine
 					m_TimeSinceUpdate = 0.0f;
 					float average = 0.0f;
 
-					for (uint32_t i = 0; i < m_PlotDataSize; i++)
+					for (uint32 i = 0; i < m_PlotDataSize; i++)
 					{
 						average += stage.Results[i];
 					}
@@ -156,7 +156,7 @@ namespace LambdaEngine
 					"Fragment shader invocations        "
 				};
 
-				for (uint32_t i = 0; i < m_GraphicsStats.GetSize(); i++) {
+				for (uint32 i = 0; i < m_GraphicsStats.GetSize(); i++) {
 					std::string caption = statNames[i] + ": %d";
 					ImGui::BulletText(caption.c_str(), m_GraphicsStats[i]);
 				}
@@ -179,7 +179,6 @@ namespace LambdaEngine
 		m_NextIndex				= 0;
 		m_TimestampValidBits	= 0;
 		m_TimestampPeriod		= 0.0f;
-		m_StartTimestamp		= 0;
 
 		m_Results.clear();
 		m_PlotResults.Clear();
@@ -194,7 +193,7 @@ namespace LambdaEngine
 #endif
 	}
 
-	void GPUProfiler::CreateTimestamps(uint32_t listCount)
+	void GPUProfiler::CreateTimestamps(uint32 listCount)
 	{
 #ifdef LAMBDA_DEBUG
 		// Need two timestamps per list
@@ -247,7 +246,7 @@ namespace LambdaEngine
 				PlotResult plotResult = {};
 				plotResult.Name = name;
 				plotResult.Results.Resize(m_PlotDataSize);
-					for (uint32_t i = 0; i < m_PlotDataSize; i++)
+					for (uint32 i = 0; i < m_PlotDataSize; i++)
 						plotResult.Results[i] = 0.0f;
 
 				m_PlotResults.PushBack(plotResult);
@@ -286,22 +285,29 @@ namespace LambdaEngine
 			return;
 		}
 
-		uint32_t timestampCount = 2;
-		TArray<uint64_t> results(timestampCount);
-		bool res = m_pTimestampHeap->GetResults((uint32_t)m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(uint64), results.GetData());
+		uint32 timestampCount = 2;
+		TArray<QueryHeapAvailabilityResult> results(timestampCount);
+		bool res = m_pTimestampHeap->GetResultsAvailable((uint32)m_Timestamps[pCommandList].Start, timestampCount, timestampCount * sizeof(QueryHeapAvailabilityResult), results.GetData());
 
 		if (res)
 		{
-			uint64_t start = glm::bitfieldExtract<uint64_t>(results[0], 0, m_TimestampValidBits);
-			uint64_t end = glm::bitfieldExtract<uint64_t>(results[1], 0, m_TimestampValidBits);
+			for (auto& result : results)
+			{
+				if (result.Availability == 0)
+				{
+					// If any value of the pair is not available yet, do not use the values
+					// TODO: Try to gather result later in tick as a backup?
+					return;
+				}
+			}
 
-			if (m_StartTimestamp == 0)
-				m_StartTimestamp = start;
+			uint64 start = glm::bitfieldExtract<uint64>(results[0].Result, 0, m_TimestampValidBits);
+			uint64 end = glm::bitfieldExtract<uint64>(results[1].Result, 0, m_TimestampValidBits);
 
 			const String& name = m_Timestamps[pCommandList].Name;
 			m_Results[name].Start = start;
 			m_Results[name].End = end;
-			float duration = ((end - start) * m_TimestampPeriod) / (uint64_t)m_TimeUnit;
+			float duration = ((end - start) * m_TimestampPeriod) / (uint64)m_TimeUnit;
 			m_Results[name].Duration = duration;
 
 			if (duration > m_CurrentMaxDuration[name])
@@ -317,13 +323,17 @@ namespace LambdaEngine
 				m_PlotResultsStart = (m_PlotResultsStart + 1) % m_PlotDataSize;
 			}
 		}
+		else
+		{
+			D_LOG_ERROR("[GPUProfiler]: Failed to get available results with %d number of timestamps", timestampCount);
+		}
 #endif
 	}
 
 	void GPUProfiler::ResetTimestamp(CommandList* pCommandList)
 	{
 #ifdef LAMBDA_DEBUG
-		pCommandList->ResetQuery(m_pTimestampHeap, (uint32_t)m_Timestamps[pCommandList].Start, 2);
+		pCommandList->ResetQuery(m_pTimestampHeap, (uint32)m_Timestamps[pCommandList].Start, 2);
 #endif
 	}
 
@@ -376,51 +386,6 @@ namespace LambdaEngine
 	{
 		static GPUProfiler instance;
 		return &instance;
-	}
-
-	void GPUProfiler::SaveResults()
-	{
-		/*
-			GPU Timestamps are not optimal to represent in a serial fashion that
-			chrome://tracing does.
-			This feature is therefore possible unnecessary
-		*/
-
-#ifdef LAMBDA_DEBUG
-		const char* filePath = "GPUResults.txt";
-
-		std::ofstream file;
-		file.open(filePath);
-		file << "{\"otherData\": {}, \"displayTimeUnit\": \"ms\", \"traceEvents\": [";
-		file.flush();
-
-		uint32_t j = 0;
-		for (auto& res : m_Results)
-		{
-			//for (uint32_t i = 0; i < res.second.size(); i++, j++)
-			//{
-				if (j > 0) file << ",";
-
-				std::string name = "Render Graph Graphics Command List";
-				std::replace(name.begin(), name.end(), '"', '\'');
-
-				file << "{";
-				file << "\"name\": \"" << name << " " << j << "\",";
-				file << "\"cat\": \"function\",";
-				file << "\"ph\": \"X\",";
-				file << "\"pid\": " << 1 << ",";
-				file << "\"tid\": " << 0 << ",";
-				file << "\"ts\": " << (((res.second.Start - m_StartTimestamp) * m_TimestampPeriod) / (uint64_t)m_TimeUnit) << ",";
-				file << "\"dur\": " << res.second.Duration;
-				file << "}";
-				j++;
-			//}
-		}
-
-		file << "]" << std::endl << "}";
-		file.flush();
-		file.close();
-#endif
 	}
 
 	std::string GPUProfiler::GetTimeUnitName() const
