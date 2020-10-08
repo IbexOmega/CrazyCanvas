@@ -1083,6 +1083,8 @@ namespace LambdaEngine
 		swappedInstanceKeyIt->second.InstanceIndex = instanceKeyIt->second.InstanceIndex;
 		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
 
+		m_DirtyDrawArgs = m_RequiredDrawArgs;
+
 		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
@@ -1112,7 +1114,6 @@ namespace LambdaEngine
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 
-			m_DirtyDrawArgs = m_RequiredDrawArgs;
 			m_SBTRecordsDirty = true;
 
 			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
@@ -1291,7 +1292,7 @@ namespace LambdaEngine
 			
 			drawArg.pInstanceBuffer	= meshEntryPair.second.pRasterInstanceBuffer;
 			drawArg.InstanceCount	= meshEntryPair.second.RasterInstances.GetSize();
-			
+
 			drawArg.pMeshletBuffer			= meshEntryPair.second.pMeshlets;
 			drawArg.MeshletCount			= meshEntryPair.second.MeshletCount;
 			drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
