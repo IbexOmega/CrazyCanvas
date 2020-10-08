@@ -3,6 +3,8 @@
 
 #include "Application/API/Events/Event.h"
 
+#include "Threading/API/SpinLock.h"
+
 namespace LambdaEngine
 {
 	#define STATE_READ_INDEX 0
@@ -55,6 +57,9 @@ namespace LambdaEngine
 		// Input states are double buffered. The first one is read from, the second is written to.
 		static KeyboardState s_KeyboardStates[2];
 		static MouseState s_MouseStates[2];
+		// Make sure nothing is being written to the write buffer when copying write buffer to read buffer in Input::Tick
+		static SpinLock s_WriteBufferLockMouse;
+		static SpinLock s_WriteBufferLockKeyboard;
 		static bool s_InputEnabled;
 	};
 }
