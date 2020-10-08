@@ -210,49 +210,28 @@ namespace LambdaEngine
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
-			if (m_VerticesDescriptorSets.IsEmpty())
-				m_VerticesDescriptorSets.Resize(backBufferCount);
+			if (m_VerticesInstanceDescriptorSets.IsEmpty())
+				m_VerticesInstanceDescriptorSets.Resize(backBufferCount);
 
-			if (m_TransformDescriptorSets.IsEmpty())
-				m_TransformDescriptorSets.Resize(backBufferCount);
-
-			// Remove all descriptor sets for the vertices.
-			for (TSharedRef<DescriptorSet> descriptorSet : m_VerticesDescriptorSets[b])
+			// Remove all previous descriptor sets for the vertices and instance data.
+			for (TSharedRef<DescriptorSet> descriptorSet : m_VerticesInstanceDescriptorSets[b])
 				m_pDeviceResourcesToDestroy[b].PushBack(std::move(descriptorSet));
-			m_VerticesDescriptorSets[b].Clear();
-
-			// Remove all previous descriptor sets for the transforms.
-			for (auto& drawArgs : m_TransformDescriptorSets[b])
-			{
-				for (TSharedRef<DescriptorSet> descriptorSet : drawArgs)
-					m_pDeviceResourcesToDestroy[b].PushBack(std::move(descriptorSet));
-				drawArgs.Clear();
-			}
-			m_TransformDescriptorSets[b].Resize(count);
+			m_VerticesInstanceDescriptorSets[b].Clear();
 
 			for (uint32 drawArgIndex = 0; drawArgIndex < count; drawArgIndex++)
 			{
 				const DrawArg& drawArg = pDrawArgs[drawArgIndex];
 
-				// Create new descriptor sets for the vertices.
+				// Create new descriptor sets for the vertices and instances.
 				{
 					TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
 					uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
 					uint64 offset = 0;
 					descriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-					m_VerticesDescriptorSets[b].PushBack(descriptorSet);
-				}
-
-				// Create new descriptor sets for the transforms.
-				for (uint32 instanceIndex = 0; instanceIndex < drawArg.InstanceCount; instanceIndex++)
-				{
-					{
-						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Transform Buffer Descriptor Set", m_PipelineLayout.Get(), 3, m_DescriptorHeap.Get());
-						uint64 size = sizeof(RenderSystem::Instance);
-						uint64 offset = instanceIndex * size;
-						descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-						m_TransformDescriptorSets[b][drawArgIndex].PushBack(descriptorSet);
-					}
+					size = drawArg.pInstanceBuffer->GetDesc().SizeInBytes;
+					offset = 0;
+					descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+					m_VerticesInstanceDescriptorSets[b].PushBack(descriptorSet);
 				}
 			}
 		}
@@ -266,16 +245,19 @@ namespace LambdaEngine
 			{
 				DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
 
-				// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
-				uint32 numExtensions = extensionGroup->ExtensionCount;
-				for (uint32 e = 0; e < numExtensions; e++)
+				if (extensionGroup)
 				{
-					uint32 mask = extensionGroup->pExtensionMasks[e];
-					if (mask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
+					// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
+					uint32 numExtensions = extensionGroup->ExtensionCount;
+					for (uint32 e = 0; e < numExtensions; e++)
 					{
-						DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-						TextureView* textureView = extension.ppTextureViews[0];
-						m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
+						uint32 mask = extensionGroup->pExtensionMasks[e];
+						if (mask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
+						{
+							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+							TextureView* textureView = extension.ppTextureViews[0];
+							m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
+						}
 					}
 				}
 			}
@@ -361,12 +343,9 @@ namespace LambdaEngine
 				pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.value().Get(), m_PipelineLayout.Get(), 1);
 			}
 
-			pCommandList->BindDescriptorSetGraphics(m_VerticesDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
+			pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
 
-			if (!m_TransformDescriptorSets.IsEmpty())
-			{
-				pCommandList->BindDescriptorSetGraphics(m_TransformDescriptorSets[modFrameIndex][drawArgIndex][instanceIndex].Get(), m_PipelineLayout.Get(), 3);
-			}
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
 
 			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
@@ -430,6 +409,11 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreatePipelineLayout()
 	{
+		ConstantRangeDesc constantRangeVertexDesc = { };
+		constantRangeVertexDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeVertexDesc.SizeInBytes = sizeof(uint32);
+		constantRangeVertexDesc.OffsetInBytes = 0;
+
 		// PerFrameBuffer
 		DescriptorBindingDesc perFrameBufferDesc = {};
 		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
@@ -444,12 +428,18 @@ namespace LambdaEngine
 		brushMaskDesc.Binding = 0;
 		brushMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
-		// Draw Args (No Extension, only Vertices)
-		DescriptorBindingDesc ssboBindingDesc = {};
-		ssboBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		ssboBindingDesc.DescriptorCount = 1;
-		ssboBindingDesc.Binding = 0;
-		ssboBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		// Draw Args (No Extension, only Vertices and Instances)
+		DescriptorBindingDesc ssboVerticesBindingDesc = {};
+		ssboVerticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		ssboVerticesBindingDesc.DescriptorCount = 1;
+		ssboVerticesBindingDesc.Binding = 0;
+		ssboVerticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		DescriptorBindingDesc ssboInstancesBindingDesc = {};
+		ssboInstancesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		ssboInstancesBindingDesc.DescriptorCount = 1;
+		ssboInstancesBindingDesc.Binding = 1;
+		ssboInstancesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		// Transform
 		DescriptorBindingDesc transformBufferDesc = {};
@@ -465,7 +455,7 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc1.DescriptorBindings = { brushMaskDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { ssboBindingDesc };
+		descriptorSetLayoutDesc2.DescriptorBindings = { ssboVerticesBindingDesc, ssboInstancesBindingDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
 		descriptorSetLayoutDesc3.DescriptorBindings = { transformBufferDesc };
@@ -473,6 +463,7 @@ namespace LambdaEngine
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Paint Mask Renderer Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2, descriptorSetLayoutDesc3 };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeVertexDesc };
 
 		m_PipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 

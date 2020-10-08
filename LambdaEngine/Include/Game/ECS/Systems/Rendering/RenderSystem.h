@@ -145,6 +145,7 @@ namespace LambdaEngine
 			uint32	MeshletCount			= 0;
 
 			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
+			TArray<uint32>					InstanceIndexToExtensionGroup;
 			bool	HasExtensions			= false;
 			uint32	DrawArgsMask			= 0x0;
 
