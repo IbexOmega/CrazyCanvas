@@ -1,6 +1,5 @@
 #include "CrazyCanvas.h"
 
-
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
@@ -8,8 +7,11 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
 #include "States/BenchmarkState.h"
-#include "States/PlaySessionState.h"
 #include "States/MainMenuState.h"
+#include "States/NetworkingState.h"
+#include "States/PlaySessionState.h"
+#include "States/SandboxState.h"
+#include "States/ServerState.h"
 
 #include "World/LevelManager.h"
 
@@ -35,11 +37,31 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	LoadRendererResources();
 
+	constexpr const char* pDefaultStateStr = "crazycanvas";
 	State* pStartingState = nullptr;
-	if (flagParser[{"-b", "--benchmark"}])
-		pStartingState = DBG_NEW BenchmarkState();
-	else
+	String stateStr;
+	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
+
+	if (stateStr == "crazycanvas")
+	{
 		pStartingState = DBG_NEW MainMenuState();
+	}
+	else if (stateStr == "sandbox")
+	{
+		pStartingState = DBG_NEW SandboxState();
+	}
+	else if (stateStr == "client")
+	{
+		pStartingState = DBG_NEW NetworkingState();
+	}
+	else if (stateStr == "server")
+	{
+		pStartingState = DBG_NEW ServerState();
+	}
+	else if (stateStr == "benchmark")
+	{
+		pStartingState = DBG_NEW BenchmarkState();
+	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 }

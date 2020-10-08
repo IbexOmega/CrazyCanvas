@@ -77,11 +77,13 @@ namespace LambdaEngine
 	{
 		s_pView.Reset();
 
-		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-
 		s_pView = view;
-		s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
-		s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
+		if (s_pView != nullptr)
+		{
+			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+			s_pView->SetFlags(Noesis::RenderFlags_PPAA | Noesis::RenderFlags_LCD);
+			s_pView->SetSize(uint32(mainWindow->GetWidth()), uint32(mainWindow->GetHeight()));
+		}
 
 		s_pRenderer->SetView(view);
 	}
