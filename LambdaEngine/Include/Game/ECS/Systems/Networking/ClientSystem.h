@@ -89,7 +89,8 @@ namespace LambdaEngine
 		TArray<GameState> m_FramesProcessedByServer;
 		int32 m_SimulationTick;
 		int32 m_LastNetworkSimulationTick;
-		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
+		std::unordered_map<int32, Entity> m_Entities; // <NetworkUID, Entity>
+		std::unordered_map<int32, TArray<GameState>> m_EntityStates; // <NetworkUID, GameState>
 		PacketSubscriberMap m_PacketSubscribers;
 
 		CharacterControllerSystem m_CharacterControllerSystem;

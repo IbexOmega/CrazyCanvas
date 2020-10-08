@@ -66,7 +66,7 @@ namespace LambdaEngine
 		{
 			if (!pCharacterLocalColliders->HasComponent(entity))
 			{
-				CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
+				/*CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
 				const PositionComponent& positionComp = pPositionComponents->GetData(entity);
 
 				glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
@@ -78,15 +78,15 @@ namespace LambdaEngine
 				PxController* pController = characterCollider.pController;
 
 				pController->setPosition({ position.x, position.y, position.z });
-				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
+				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);*/
 
-				const PxExtendedVec3& newPositionPX = pController->getPosition();
+				/*const PxExtendedVec3& newPositionPX = pController->getPosition();
 				velocity = {
 					(float)newPositionPX.x - position.x,
 					(float)newPositionPX.y - position.y,
 					(float)newPositionPX.z - position.z
 				};
-				velocity /= dt;
+				velocity /= dt;*/
 
 				//Maybe add something to change the rendered PositionComponent here in case we collide
 			}

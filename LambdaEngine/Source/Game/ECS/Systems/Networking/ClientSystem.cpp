@@ -109,48 +109,98 @@ namespace LambdaEngine
 
 		if (m_pClient->IsConnected() && m_Entities.size() > 0)
 		{
-			Reconcile();
-
 			ECSCore* pECS = ECSCore::GetInstance();
-			Entity entityPlayer = GetEntityPlayer();
 			float32 dt = deltaTime.AsSeconds();
 
-			int8 deltaForward	= int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
-			int8 deltaLeft		= int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
-
-			auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-			auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-			CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
-			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
-			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+			{
+				Reconcile();
 
 
-			netPosComponent.PositionLast	= netPosComponent.Position;
-			netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+				Entity entityPlayer = GetEntityPlayer();
 
-			PlayerMovementSystem::GetInstance().PredictVelocity(deltaForward, deltaLeft, velocityComponent.Velocity);
-			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+				int8 deltaForward = int8(Input::IsKeyDown(EKey::KEY_T) - Input::IsKeyDown(EKey::KEY_G));
+				int8 deltaLeft = int8(Input::IsKeyDown(EKey::KEY_F) - Input::IsKeyDown(EKey::KEY_H));
+
+				auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+				auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+				auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+				auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+
+				CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
+				NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
+				VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+				const PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
 
 
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
-			BinaryEncoder encoder(pPacket);
-			encoder.WriteInt32(m_SimulationTick);
-			encoder.WriteInt8(deltaForward);
-			encoder.WriteInt8(deltaLeft);
-			m_pClient->SendReliable(pPacket);
+				netPosComponent.PositionLast	= positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
+				netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
 
-			GameState gameState			= {};
-			gameState.SimulationTick	= m_SimulationTick;
-			gameState.DeltaForward		= deltaForward;
-			gameState.DeltaLeft			= deltaLeft;
-			gameState.Position			= netPosComponent.Position;
-			gameState.Velocity			= velocityComponent.Velocity;
+				PlayerMovementSystem::GetInstance().PredictVelocity(deltaForward, deltaLeft, velocityComponent.Velocity);
+				CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
-			m_FramesToReconcile.PushBack(gameState);
 
-			m_SimulationTick++;
+				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
+				BinaryEncoder encoder(pPacket);
+				encoder.WriteInt32(m_SimulationTick);
+				encoder.WriteInt8(deltaForward);
+				encoder.WriteInt8(deltaLeft);
+				m_pClient->SendReliable(pPacket);
+
+				GameState gameState = {};
+				gameState.SimulationTick = m_SimulationTick;
+				gameState.DeltaForward = deltaForward;
+				gameState.DeltaLeft = deltaLeft;
+				gameState.Position = netPosComponent.Position;
+				gameState.Velocity = velocityComponent.Velocity;
+
+				m_FramesToReconcile.PushBack(gameState);
+
+				m_SimulationTick++;
+			}
+
+
+
+			{
+				auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+				auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+				auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+
+				for (auto& pair : m_EntityStates)
+				{
+					TArray<GameState>& state = pair.second;
+					int32 networkUID = pair.first;
+					Entity entity = GetEntityFromNetworkUID(networkUID);
+
+					NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entity);
+					const PositionComponent& positionComponent = pPositionComponents->GetData(entity);
+					VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
+
+					if (state.IsEmpty()) //Data does not exist for the current frame :(
+					{
+						netPosComponent.PositionLast	= positionComponent.Position;
+						netPosComponent.Position		+= velocityComponent.Velocity * dt;
+						netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+					}
+					else //Data exist for the current frame :)
+					{
+						GameState& gameStateData = state[0];
+
+						netPosComponent.PositionLast	= positionComponent.Position;
+						netPosComponent.Position		= gameStateData.Position;
+						netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+
+						velocityComponent.Velocity = gameStateData.Velocity;
+
+						state.Clear();
+					}
+				}
+			}
+
+
+			
+		
+
+
 		}
 
 		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);
@@ -251,21 +301,14 @@ namespace LambdaEngine
 		}
 		else
 		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			Entity entity = GetEntityFromNetworkUID(networkUID);
-
-			auto* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-			auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entity);
-
-			netPosComponent.PositionLast	= netPosComponent.Position;
-			netPosComponent.Position		= serverGameState.Position;
-			netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
-		
-			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
-			velocityComponent.Velocity = serverGameState.Velocity;
+			if (m_EntityStates[networkUID].IsEmpty())
+			{
+				m_EntityStates[networkUID].PushBack(serverGameState);
+			}
+			else
+			{
+				m_EntityStates[networkUID][0] = serverGameState;
+			}
 		}
 	}
 
