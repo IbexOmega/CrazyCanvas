@@ -157,6 +157,8 @@ namespace LambdaEngine
 		memcpy(&entityHeader, pBuffer, entityHeaderSize);
 		pBuffer += entityHeaderSize;
 
+		ASSERT_MSG(m_EntityRegistry.GetTopRegistryPage().HasElement(entityHeader.Entity), "Attempted to deserialize unknown entity: %d", entityHeader.Entity);
+
 		// Deserialize each component. If the entity already has the component, update its data. Otherwise, create it.
 		const uint32 componentCount = entityHeader.ComponentCount;
 		bool success = true;
