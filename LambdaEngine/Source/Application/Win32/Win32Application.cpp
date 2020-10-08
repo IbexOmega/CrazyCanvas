@@ -150,7 +150,7 @@ namespace LambdaEngine
 				point.y = y;
 
 				ClientToScreen(hWnd, &point);
-				
+
 				BOOL bResult = SetCursorPos(point.x, point.y);
 				if (!bResult)
 				{
@@ -181,7 +181,7 @@ namespace LambdaEngine
 				UnregisterRawInputDevices();
 			}
 		}
-		
+
 		m_InputMode = inputMode;
 	}
 
@@ -222,7 +222,7 @@ namespace LambdaEngine
 		GetProcessTimes(self, &ftime, &ftime, &fsys, &fuser);
 		memcpy(&sys, &fsys, sizeof(FILETIME));
 		memcpy(&user, &fuser, sizeof(FILETIME));
-		float64 percent = (sys.QuadPart - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.QuadPart);
+		float64 percent = float64((sys.QuadPart - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.QuadPart));
 		percent /= (now.QuadPart - lastCPU.QuadPart);
 		percent /= numProcessors;
 		lastCPU = now;
@@ -259,6 +259,7 @@ namespace LambdaEngine
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
 			{
+				// LOG_INFO("A");
 				const ModifierKeyState modifierState = ModifierKeyState(Win32InputCodeTable::GetModifierMask());
 				const uint16 scancode = HIWORD(lParam) & SCAN_CODE_MASK;
 				EKey keyCode = Win32InputCodeTable::GetKeyFromScanCode(scancode);
