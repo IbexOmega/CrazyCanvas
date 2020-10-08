@@ -155,7 +155,7 @@ namespace LambdaEngine
 		NetworkUtils::FixedTick(delta);
 	}
 
-	bool EngineLoop::PreInit()
+	bool EngineLoop::PreInit(const argh::parser& flagParser)
 	{
 #ifdef LAMBDA_DEVELOPMENT
 		PlatformConsole::Show();
@@ -165,7 +165,7 @@ namespace LambdaEngine
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
-		if (!EngineConfig::LoadFromFile())
+		if (!EngineConfig::LoadFromFile(flagParser))
 		{
 			return false;
 		}
@@ -237,7 +237,7 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-		
+
 		if (!GUIApplication::Init())
 		{
 			return false;

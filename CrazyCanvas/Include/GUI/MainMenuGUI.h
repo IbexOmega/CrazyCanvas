@@ -16,9 +16,6 @@ public:
 
 	bool ConnectEvent(Noesis::BaseComponent* pSoruce, const char* pEvent, const char* pHandler) override;
 	void OnButtonSingleplayerClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonCrazyCanvasClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonSandboxClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonMultiplayerClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -40,7 +37,6 @@ private:
 	Noesis::GroupBox*	m_pMainMenu;
 	Noesis::GroupBox*	m_pSettingsGroupBox;
 	Noesis::GroupBox*	m_pKeybindingsGroupBox;	
-	Noesis::GroupBox*	m_pStatesGroupBox;
 	Noesis::Slider*		m_pVolumeSlider;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;

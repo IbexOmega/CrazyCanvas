@@ -61,14 +61,5 @@
       <Button  Click="OnButtonBackClick" Content="Back"  HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
     </StackPanel>
   </GroupBox>
-  
-  <GroupBox x:Name="StatesGroupBox" Visibility="Hidden" FontSize="56" Header="Single Player States" Grid.Column="0" VerticalAlignment="Center" Margin="30">
-      <StackPanel>
-        <Button Click="OnButtonCrazyCanvasClick" Content="Crazy Canvas"  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-        <Button Click="OnButtonSandboxClick"     Content="Sandbox"       HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-        <Button Click="OnButtonBenchmarkClick"   Content="Benchmark"       HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-        <Button Click="OnButtonBackClick"        Content="Back"         HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="32"/>
-      </StackPanel>
-    </GroupBox>
 
 </Grid>
