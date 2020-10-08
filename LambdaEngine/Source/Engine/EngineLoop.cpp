@@ -42,10 +42,9 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
-#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/ECS/Systems/Networking/Client/ClientSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -109,11 +108,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!PlayerMovementSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
 		TransformApplierSystem::GetInstance()->Init();
 		return true;
 	}
@@ -155,7 +149,6 @@ namespace LambdaEngine
 	{
 		Game::Get().FixedTick(delta);
 
-		PlayerMovementSystem::GetInstance().FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);

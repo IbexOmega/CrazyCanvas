@@ -14,24 +14,29 @@ namespace LambdaEngine
 
 	class CharacterControllerSystem : public System, public ComponentOwner
 	{
+		friend class ClientSystem;
+
 	public:
-		CharacterControllerSystem();
-		~CharacterControllerSystem();
-
-		bool Init();
-
-		void Tick(Timestamp deltaTime) override final;
-
-		void FixedTickMainThread(Timestamp deltaTime);
+		virtual ~CharacterControllerSystem();
 
 	private:
+		CharacterControllerSystem();
+
+		bool Init();
+		void Tick(Timestamp deltaTime) override final;
+		void FixedTickMainThread(Timestamp deltaTime);
+
 		void TickCharacterControllers(float32 dt);
 		void OnCharacterColliderRemoval(Entity entity);
 		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
 
 	public:
 		static CharacterControllerSystem* GetInstance() { return s_pInstance; }
-		static void TickCharacterController(float32 dt, Entity entity, ComponentArray<CharacterColliderComponent>* pCharacterColliders, ComponentArray<NetworkPositionComponent>* pNetPosComponents, ComponentArray<VelocityComponent>* pVelocityComponents);
+		static void TickCharacterController(float32 dt,
+			Entity entity,
+			ComponentArray<CharacterColliderComponent>* pCharacterColliders,
+			ComponentArray<NetworkPositionComponent>* pNetPosComponents,
+			ComponentArray<VelocityComponent>* pVelocityComponents);
 
 	private:
 		IDVector m_CharacterColliderEntities;

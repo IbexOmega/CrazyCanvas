@@ -31,6 +31,7 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime) override;
 
+
 	protected:
 		ClientBaseSystem();
 
@@ -38,6 +39,7 @@ namespace LambdaEngine
 		virtual void FixedTickMainThread(Timestamp deltaTime) = 0;
 		virtual Entity GetEntityPlayer() const = 0;
 
+		void PredictVelocity(int8 deltaForward, int8 deltaLeft, glm::vec3& result);
 		//void PlayerUpdate(Entity entity, const GameState& gameState);
 
 	private:

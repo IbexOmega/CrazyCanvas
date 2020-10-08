@@ -26,7 +26,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
+#include "Game/ECS/Systems/Networking/Client/ClientSystem.h"
 
 #include "ECS/ECSCore.h"
 

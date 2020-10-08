@@ -15,6 +15,7 @@ namespace LambdaEngine
 
 	CharacterControllerSystem::~CharacterControllerSystem()
 	{
+
 	}
 
 	bool CharacterControllerSystem::Init()
@@ -44,8 +45,7 @@ namespace LambdaEngine
 
 	void CharacterControllerSystem::Tick(Timestamp deltaTime)
 	{
-		/*const float32 dt = (float32)deltaTime.AsSeconds();
-		TickCharacterControllers(dt);*/
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void CharacterControllerSystem::FixedTickMainThread(Timestamp deltaTime)
@@ -58,15 +58,15 @@ namespace LambdaEngine
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		auto* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pCharacterLocalColliders = pECS->GetComponentArray<CharacterLocalColliderComponent>();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 		for (Entity entity : m_CharacterColliderEntities)
 		{
-			if (!pCharacterLocalColliders->HasComponent(entity))
+			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
+
+			if (!characterCollider.IsLocal)
 			{
-				/*CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
 				const PositionComponent& positionComp = pPositionComponents->GetData(entity);
 
 				glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
@@ -78,15 +78,15 @@ namespace LambdaEngine
 				PxController* pController = characterCollider.pController;
 
 				pController->setPosition({ position.x, position.y, position.z });
-				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);*/
+				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
-				/*const PxExtendedVec3& newPositionPX = pController->getPosition();
+				const PxExtendedVec3& newPositionPX = pController->getPosition();
 				velocity = {
 					(float)newPositionPX.x - position.x,
 					(float)newPositionPX.y - position.y,
 					(float)newPositionPX.z - position.z
 				};
-				velocity /= dt;*/
+				velocity /= dt;
 
 				//Maybe add something to change the rendered PositionComponent here in case we collide
 			}

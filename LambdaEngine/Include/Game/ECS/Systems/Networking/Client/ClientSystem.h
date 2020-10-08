@@ -94,7 +94,6 @@ namespace LambdaEngine
 		PacketSubscriberMap m_PacketSubscribers;
 
 		CharacterControllerSystem m_CharacterControllerSystem;
-		InterpolationSystem* m_pInterpolationSystem;
 		NetworkPositionSystem m_NetworkPositionSystem;
 
 	private:

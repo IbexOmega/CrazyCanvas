@@ -1,10 +1,8 @@
-#include "Game/ECS/Systems/Networking/ClientRemoteSystem.h"
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
-#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ClientRemoteSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
-#include "Game/ECS/Components/Player/ControllableComponent.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 
@@ -69,7 +67,7 @@ namespace LambdaEngine
 	{
 		if (m_pClient->IsConnected())
 		{
-			const float32 dt = deltaTime.AsSeconds();
+			const float32 dt = (float32)deltaTime.AsSeconds();
 			Entity entityPlayer = GetEntityPlayer();
 
 			ECSCore* pECS = ECSCore::GetInstance();
@@ -88,7 +86,7 @@ namespace LambdaEngine
 
 				m_CurrentGameState = gameState;
 
-				PlayerMovementSystem::GetInstance().PredictVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+				PredictVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
 				CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);

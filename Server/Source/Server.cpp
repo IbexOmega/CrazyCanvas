@@ -20,7 +20,7 @@
 
 #include <argh/argh.h>
 
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
 
 using namespace LambdaEngine;
 

@@ -1,10 +1,9 @@
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ClientRemoteSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 
 #include "ECS/ECSCore.h"
-
-#include "Game/ECS/Systems/Networking/ClientRemoteSystem.h"
 
 #include "Networking/API/NetworkDebugger.h"
 
