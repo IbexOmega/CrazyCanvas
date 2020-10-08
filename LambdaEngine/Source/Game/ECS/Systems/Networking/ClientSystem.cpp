@@ -57,14 +57,18 @@ namespace LambdaEngine
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
-
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
-			{{{R, ControllableComponent::Type()}, {R, PositionComponent::Type()} }, {}, &m_ControllableEntities}
+			{
+				.pSubscriber = &m_ControllableEntities,
+				.ComponentAccesses =
+				{
+					{R, ControllableComponent::Type()}, {R, PositionComponent::Type()}
+				}
+			}
 		};
 		systemReg.Phase = 0;
-
 		RegisterSystem(systemReg);
 
 		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
