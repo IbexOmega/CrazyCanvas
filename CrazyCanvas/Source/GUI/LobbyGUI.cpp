@@ -10,6 +10,7 @@
 #include "NoesisPCH.h"
 
 #include "States/MainMenuState.h"
+#include "States/NetworkingState.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
@@ -50,7 +51,7 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 		LOG_MESSAGE("Couldn't connect");
 	}
 
-	State* pMainMenuState = DBG_NEW MainMenuState();
-	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+	State* pNetworkingState = DBG_NEW NetworkingState();
+	StateManager::GetInstance()->EnqueueStateTransition(pNetworkingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
