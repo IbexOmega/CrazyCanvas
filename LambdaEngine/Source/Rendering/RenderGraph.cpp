@@ -809,10 +809,22 @@ namespace LambdaEngine
 
 									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
 								}
-								else
+								else if (ppNewDrawArgsExtensionsPerFrame)
 								{
-									if(ppNewDrawArgsExtensionsPerFrame)
-										ppNewDrawArgsExtensionsPerFrame[d] = nullptr;
+									DescriptorSet* pExtensionsWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Extensions Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex, m_pDescriptorHeap);
+
+									TextureView* pDefaultMaskMapView = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
+									Sampler* pDefaultSampler = Sampler::GetNearestSampler();
+									pExtensionsWriteDescriptorSet->WriteTextureDescriptors(
+										&pDefaultMaskMapView,
+										&pDefaultSampler,
+										ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+										0,
+										1,
+										EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER
+									);
+									
+									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
 								}
 							}
 
