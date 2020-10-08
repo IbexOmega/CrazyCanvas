@@ -56,4 +56,6 @@ private:
 	bool					m_ShowTextureDebuggingWindow	= false;
 	LambdaEngine::String	m_TextureDebuggingName			= "";
 	GUID_Lambda				m_TextureDebuggingShaderGUID	= GUID_NONE;
+
+	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 };

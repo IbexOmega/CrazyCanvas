@@ -66,7 +66,11 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
-	EventQueue::RegisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
+	// Create Systems
+	TrackSystem::GetInstance().Init();
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
+	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
 	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
@@ -88,20 +92,16 @@ void SandboxState::Init()
 			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity e = CreateFPSCameraEntity(cameraDesc);
+		CreateFPSCameraEntity(cameraDesc);
 	}
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
 		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
 
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
+		const glm::vec3 position(0.0f, 0.0f, 0.0f);
+		const glm::vec3 scale(1.0f);
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
@@ -218,7 +218,6 @@ void SandboxState::Init()
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
-
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
 				float32 metallic = x / float32(gridRadius - 1);
