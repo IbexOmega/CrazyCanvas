@@ -1,10 +1,9 @@
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ClientRemoteSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 
 #include "ECS/ECSCore.h"
-
-#include "Game/ECS/Systems/Networking/ClientRemoteSystem.h"
 
 #include "Networking/API/NetworkDebugger.h"
 
@@ -14,7 +13,8 @@ namespace LambdaEngine
 
 	ServerSystem::ServerSystem() : 
 		m_NetworkEntities(),
-		m_pServer(nullptr)
+		m_pServer(nullptr),
+		m_SimulationTick(0)
 	{
 		ServerDesc desc = {};
 		desc.Handler				= this;
@@ -24,7 +24,7 @@ namespace LambdaEngine
 		desc.PoolSize				= 1024;
 		desc.Protocol				= EProtocol::UDP;
 		desc.PingInterval			= Timestamp::Seconds(1);
-		desc.PingTimeout			= Timestamp::Seconds(3);
+		desc.PingTimeout			= Timestamp::Seconds(10);
 		desc.UsePingSystem			= true;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
@@ -55,6 +55,8 @@ namespace LambdaEngine
 
 	void ServerSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
+		m_SimulationTick++;
+
 		const ClientMap& pClients = m_pServer->GetClients();
 		for (auto& pair : pClients)
 		{
@@ -73,6 +75,11 @@ namespace LambdaEngine
 			ClientRemoteSystem* pClientSystem = (ClientRemoteSystem*)pair.second->GetHandler();
 			pClientSystem->TickMainThread(deltaTime);
 		}
+	}
+
+	int32 ServerSystem::GetSimulationTick() const
+	{
+		return m_SimulationTick;
 	}
 
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()

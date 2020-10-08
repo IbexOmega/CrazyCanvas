@@ -68,30 +68,28 @@ namespace LambdaEngine
 
 		/* Character controllers */
 		// CreateCharacterCapsule creates a character collider capsule. Total height is height + radius * 2
-		void CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius);
+		void CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius, CharacterColliderComponent& characterColliderComp);
 		// CreateCharacterBox creates a character collider box
-		void CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents);
+		void CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents, CharacterColliderComponent& characterColliderComp);
+
+		PxScene* GetScene();
 
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
 	private:
 		void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent);
-		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
 		void OnStaticCollisionRemoval(Entity entity);
-		void OnCharacterColliderRemoval(Entity entity);
 
-		void TickCharacterControllers(float32 dt);
 		static glm::vec3 GetCharacterTranslation(float32 dt, const glm::vec3& forward, const glm::vec3& right, const FPSControllerComponent& FPSComp);
 
 		void FinalizeCollisionComponent(const StaticCollisionInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation = PxQuat(PxIDENTITY::PxIdentity));
-		void FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
+		void FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc, CharacterColliderComponent& characterColliderComp);
 
 	private:
 		static PhysicsSystem s_Instance;
 
 	private:
 		IDVector m_StaticCollisionEntities;
-		IDVector m_CharacterColliderEntities;
 
 		PxDefaultAllocator		m_Allocator;
 		PhysXErrorCallback		m_ErrorCallback;

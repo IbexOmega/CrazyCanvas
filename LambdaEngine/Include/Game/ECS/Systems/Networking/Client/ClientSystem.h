@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
+#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
+#include "Game/ECS/Systems/Networking/Client/NetworkPositionSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -48,7 +50,7 @@ namespace LambdaEngine
 	private:
 		void Init();
 
-		void ReplayGameStatesBasedOnServerGameState(const GameState* pGameStates, uint32 count, const GameState& gameStateServer);
+		void ReplayGameStatesBasedOnServerGameState(GameState* pGameStates, uint32 count, const GameState& gameStateServer);
 		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
 
 		void OnPacketCreateEntity(NetworkSegment* pPacket);
@@ -63,6 +65,11 @@ namespace LambdaEngine
 				s_pInstance->Init();
 			}
 			return *s_pInstance;
+		}
+
+		static bool HasInstance()
+		{
+			return s_pInstance;
 		}
 
 	private:
@@ -82,10 +89,12 @@ namespace LambdaEngine
 		TArray<GameState> m_FramesProcessedByServer;
 		int32 m_SimulationTick;
 		int32 m_LastNetworkSimulationTick;
-		std::unordered_map<int32, Entity> m_Entities; // <Network, Client>
+		std::unordered_map<int32, Entity> m_Entities; // <NetworkUID, Entity>
+		std::unordered_map<int32, TArray<GameState>> m_EntityStates; // <NetworkUID, GameState>
 		PacketSubscriberMap m_PacketSubscribers;
 
-		InterpolationSystem* m_pInterpolationSystem;
+		CharacterControllerSystem m_CharacterControllerSystem;
+		NetworkPositionSystem m_NetworkPositionSystem;
 
 	private:
 		static ClientSystem* s_pInstance;

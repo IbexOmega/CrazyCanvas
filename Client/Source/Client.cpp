@@ -26,7 +26,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
+#include "Game/ECS/Systems/Networking/Client/ClientSystem.h"
 
 #include "ECS/ECSCore.h"
 
@@ -51,7 +51,7 @@ Client::Client()
 
 	m_MeshSphereGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
-	ClientSystem::GetInstance().Connect(IPAddress::Get("192.168.1.65"));
+	ClientSystem::GetInstance().Connect(IPAddress::Get("192.168.0.104"));
 
 	//NetworkDiscovery::EnableClient("Crazy Canvas", this);
 }

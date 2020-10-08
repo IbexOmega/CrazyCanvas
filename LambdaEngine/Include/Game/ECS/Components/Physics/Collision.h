@@ -17,5 +17,6 @@ namespace LambdaEngine
 		DECL_COMPONENT(CharacterColliderComponent);
 		physx::PxController* pController;
 		physx::PxControllerFilters Filters;
+		bool IsLocal;
 	};
 }

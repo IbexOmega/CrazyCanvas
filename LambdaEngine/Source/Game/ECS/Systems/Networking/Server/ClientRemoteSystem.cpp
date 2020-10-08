@@ -1,8 +1,12 @@
-#include "Game/ECS/Systems/Networking/ClientRemoteSystem.h"
-#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ClientRemoteSystem.h"
+#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
+#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
-#include "Game/ECS/Components/Player/ControllableComponent.h"
+#include "Game/ECS/Components/Physics/Collision.h"
+#include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
+
+#include "Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 
@@ -61,26 +65,41 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		UNREFERENCED_VARIABLE(deltaTime);
-
 		if (m_pClient->IsConnected())
 		{
+			const float32 dt = (float32)deltaTime.AsSeconds();
+			Entity entityPlayer = GetEntityPlayer();
+
+			ECSCore* pECS = ECSCore::GetInstance();
+			auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+
+			PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
+			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+
 			for (const GameState& gameState : m_Buffer)
 			{
 				ASSERT(gameState.SimulationTick - 1 == m_CurrentGameState.SimulationTick);
 
 				m_CurrentGameState = gameState;
-				PlayerUpdate(GetEntityPlayer(), m_CurrentGameState);
 
-				auto* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+				PredictVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+				CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 				BinaryEncoder encoder(pPacket);
-				encoder.WriteInt32(GetEntityPlayer());
+				encoder.WriteInt32(entityPlayer);
 				encoder.WriteInt32(m_CurrentGameState.SimulationTick);
-				encoder.WriteVec3(pPositionComponents->GetData(GetEntityPlayer()).Position);
+				encoder.WriteVec3(netPosComponent.Position);
+				encoder.WriteVec3(velocityComponent.Velocity);
 				m_pClient->SendReliableBroadcast(pPacket);
 			}
+
+			positionComponent.Position = netPosComponent.Position;
+
 			m_Buffer.clear();
 		}
 	}
@@ -103,15 +122,39 @@ namespace LambdaEngine
 		const glm::vec3& position = s_StartPositions[index];
 		m_Color = s_StartColors[index];
 
-		m_EntityPlayer = pECS->CreateSpecialObject();
-		pECS->AddComponent<PositionComponent>(m_EntityPlayer,		{ true, position });
-		pECS->AddComponent<RotationComponent>(m_EntityPlayer,		{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,			{ true, glm::vec3(1.0f) });
-		pECS->AddComponent<NetworkComponent>(m_EntityPlayer,		{ (int32)m_EntityPlayer });
+		m_EntityPlayer = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(m_EntityPlayer,			{ true, position });
+		pECS->AddComponent<RotationComponent>(m_EntityPlayer,			{ true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,				{ true, glm::vec3(1.0f) });
+		pECS->AddComponent<VelocityComponent>(m_EntityPlayer,			{ true, glm::vec3(0.0f) });
+		pECS->AddComponent<NetworkComponent>(m_EntityPlayer,			{ (int32)m_EntityPlayer });
+		pECS->AddComponent<NetworkPositionComponent>(m_EntityPlayer,	{ position, position, EngineLoop::GetTimeSinceStart(), EngineLoop::GetFixedTimestep() });
+
+
+		const CharacterColliderInfo colliderInfo = {
+			.Entity = m_EntityPlayer,
+			.Position = pECS->GetComponent<PositionComponent>(m_EntityPlayer),
+			.Rotation = pECS->GetComponent<RotationComponent>(m_EntityPlayer),
+			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
+			.CollisionMask = FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+		};
+
+		constexpr const float capsuleHeight = 1.8f;
+		constexpr const float capsuleRadius = 0.2f;
+		CharacterColliderComponent characterColliderComponent;
+		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterColliderComponent);
+		pECS->AddComponent<CharacterColliderComponent>(m_EntityPlayer, characterColliderComponent);
+
+
+
+
+
+
 
 		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
 		BinaryEncoder encoder = BinaryEncoder(pPacket);
 		encoder.WriteBool(true);
+		//encoder.WriteInt32(ServerSystem::GetInstance().GetSimulationTick());
 		encoder.WriteInt32((int32)m_EntityPlayer);
 		encoder.WriteVec3(position);
 		encoder.WriteVec3(m_Color);

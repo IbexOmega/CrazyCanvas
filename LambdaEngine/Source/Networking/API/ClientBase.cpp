@@ -24,7 +24,9 @@ namespace LambdaEngine
 		m_State(STATE_DISCONNECTED),
 		m_SendDisconnectPacket(false),
 		m_ReceivedPackets(),
-		m_BufferIndex(0)
+		m_BufferIndex(0),
+		m_Lock(),
+		m_LockReceivedPackets()
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Clients.insert(this);
@@ -181,9 +183,13 @@ namespace LambdaEngine
 
 	void ClientBase::HandleReceivedPacketsMainThread()
 	{
-		int8 index = m_BufferIndex;
-		m_BufferIndex = (m_BufferIndex + 1) % 2;
-		TArray<NetworkSegment*>& packets = m_ReceivedPackets[index];
+		TArray<NetworkSegment*>& packets = m_ReceivedPackets[m_BufferIndex];
+
+		{
+			std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
+			m_BufferIndex = (m_BufferIndex + 1) % 2;
+		}
+		
 		for (NetworkSegment* pPacket : packets)
 		{
 			m_pHandler->OnPacketReceived(this, pPacket);
@@ -202,6 +208,8 @@ namespace LambdaEngine
 	{
 		TArray<NetworkSegment*> packets;
 		GetPacketManager()->QueryBegin(GetTransceiver(), packets);
+
+		std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
 		for (NetworkSegment* pPacket : packets)
 		{
 			if (!HandleReceivedPacket(pPacket))

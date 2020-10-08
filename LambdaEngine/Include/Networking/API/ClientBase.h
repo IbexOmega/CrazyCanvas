@@ -78,6 +78,7 @@ namespace LambdaEngine
 		Timestamp m_PingTimeout;
 		Timestamp m_LastPingTimestamp;
 		bool m_UsePingSystem;
+		SpinLock m_LockReceivedPackets;
 		std::atomic_int8_t m_BufferIndex;
 		TArray<NetworkSegment*> m_ReceivedPackets[2];
 

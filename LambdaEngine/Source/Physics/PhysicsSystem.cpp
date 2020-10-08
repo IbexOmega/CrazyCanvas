@@ -51,7 +51,6 @@ namespace LambdaEngine
 		{
 			// Subscribe to entities to register a destructor for collision components
 			auto onStaticCollisionRemoval = std::bind(&PhysicsSystem::OnStaticCollisionRemoval, this, std::placeholders::_1);
-			auto onCharacterColliderRemoval = std::bind(&PhysicsSystem::OnCharacterColliderRemoval, this, std::placeholders::_1);
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -61,19 +60,12 @@ namespace LambdaEngine
 					&m_StaticCollisionEntities,
 					nullptr,
 					onStaticCollisionRemoval
-				},
-				{
-					{{RW, CharacterColliderComponent::Type()}, {R, PositionComponent::Type()}, {RW, VelocityComponent::Type()}},
-					&m_CharacterColliderEntities,
-					nullptr,
-					onCharacterColliderRemoval
 				}
 			};
 			systemReg.Phase = 1;
 
 			RegisterSystem(systemReg);
 			SetComponentOwner<StaticCollisionComponent>({ std::bind(&PhysicsSystem::StaticCollisionDestructor, this, std::placeholders::_1) });
-			SetComponentOwner<CharacterColliderComponent>({ std::bind(&PhysicsSystem::CharacterColliderDestructor, this, std::placeholders::_1) });
 		}
 
 		// PhysX setup
@@ -161,7 +153,6 @@ namespace LambdaEngine
 	void PhysicsSystem::Tick(Timestamp deltaTime)
 	{
 		const float32 dt = (float32)deltaTime.AsSeconds();
-		TickCharacterControllers(dt);
 
 		m_pScene->simulate(dt);
 		m_pScene->fetchResults(true);
@@ -278,12 +269,6 @@ namespace LambdaEngine
 		PX_RELEASE(collisionComponent.pActor);
 	}
 
-	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent)
-	{
-		m_pScene->removeActor(*characterColliderComponent.pController->getActor());
-		PX_RELEASE(characterColliderComponent.pController);
-		SAFEDELETE(characterColliderComponent.Filters.mFilterData);
-	}
 
 	void PhysicsSystem::OnStaticCollisionRemoval(Entity entity)
 	{
@@ -296,66 +281,29 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsSystem::OnCharacterColliderRemoval(Entity entity)
-	{
-		CharacterColliderComponent& characterCollider = ECSCore::GetInstance()->GetComponent<CharacterColliderComponent>(entity);
-		PxActor* pActor = characterCollider.pController->getActor();
-		if (pActor)
-		{
-			m_pScene->removeActor(*pActor);
-		}
-	}
-
-	void PhysicsSystem::CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius)
+	void PhysicsSystem::CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius, CharacterColliderComponent& characterColliderComp)
 	{
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
 		controllerDesc.height			= height;
 		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eEASY;
 
-		FinalizeCharacterController(characterColliderInfo, controllerDesc);
+		FinalizeCharacterController(characterColliderInfo, controllerDesc, characterColliderComp);
 	}
 
-	void PhysicsSystem::CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents)
+	void PhysicsSystem::CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents, CharacterColliderComponent& characterColliderComp)
 	{
 		PxBoxControllerDesc controllerDesc = {};
 		controllerDesc.halfHeight			= halfExtents.y;
 		controllerDesc.halfSideExtent		= halfExtents.x;
 		controllerDesc.halfForwardExtent	= halfExtents.z;
 
-		FinalizeCharacterController(characterColliderInfo, controllerDesc);
+		FinalizeCharacterController(characterColliderInfo, controllerDesc, characterColliderComp);
 	}
 
-	void PhysicsSystem::TickCharacterControllers(float32 dt)
+	PxScene* PhysicsSystem::GetScene()
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		ComponentArray<CharacterColliderComponent>* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-		const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-		for (Entity entity : m_CharacterColliderEntities)
-		{
-			const PositionComponent& positionComp = pPositionComponents->GetData(entity);
-			const glm::vec3& position = positionComp.Position;
-
-			VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
-			glm::vec3& velocity = velocityComp.Velocity;
-
-			const PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
-
-			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
-			PxController* pController = characterCollider.pController;
-
-			pController->setPosition({ position.x, position.y, position.z });
-			characterCollider.pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
-
-			const PxExtendedVec3& newPositionPX = pController->getPosition();
-			velocity = {
-				(float)newPositionPX.x - position.x,
-				(float)newPositionPX.y - position.y,
-				(float)newPositionPX.z - position.z
-			};
-		}
+		return m_pScene;
 	}
 
 	glm::vec3 PhysicsSystem::GetCharacterTranslation(float32 dt, const glm::vec3& forward, const glm::vec3& right, const FPSControllerComponent& FPSComp)
@@ -413,7 +361,7 @@ namespace LambdaEngine
 		ECSCore::GetInstance()->AddComponent<StaticCollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
 	}
 
-	void PhysicsSystem::FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc)
+	void PhysicsSystem::FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc, CharacterColliderComponent& characterColliderComp)
 	{
 		/*	For information about PhysX character controllers in general:
 			https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/guide/Manual/CharacterControllers.html */
@@ -441,11 +389,7 @@ namespace LambdaEngine
 		);
 
 		PxControllerFilters controllerFilters(pFilterData);
-		const CharacterColliderComponent characterColliderComp = {
-			.pController	= pController,
-			.Filters		= controllerFilters
-		};
-
-		ECSCore::GetInstance()->AddComponent<CharacterColliderComponent>(characterColliderInfo.Entity, characterColliderComp);
+		characterColliderComp.pController = pController;
+		characterColliderComp.Filters = controllerFilters;
 	}
 }

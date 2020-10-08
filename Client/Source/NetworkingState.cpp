@@ -6,7 +6,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
-#include "Game/ECS/Components/Player/ControllableComponent.h"
+#include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Input/API/Input.h"
 
@@ -50,6 +50,13 @@ void NetworkingState::Init()
 			pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		}
+	}
+
+	{
+		Entity dirLight = ECSCore::GetInstance()->CreateEntity();
+		ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, {true, { 0.0f, 0.0f, 0.0f} });
+		ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, {true, glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp) });
+		ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{.ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
 	}
 
 	//Create Player

@@ -5,6 +5,7 @@
 #include "ECS/ECSCore.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Physics/Collision.h"
 
 namespace LambdaEngine
 {
@@ -26,6 +27,12 @@ namespace LambdaEngine
 				{
 					{RW, PositionComponent::Type()}, {R, VelocityComponent::Type()}
 				},
+				{
+
+				},
+				{
+					CharacterColliderComponent::Type()
+				},
 				&m_VelocityEntities
 			}
 		};
@@ -36,7 +43,7 @@ namespace LambdaEngine
 
 	void TransformApplierSystem::Tick(Timestamp deltaTime)
 	{
-		UNREFERENCED_VARIABLE(deltaTime);
+		const float32 dt = (float32)deltaTime.AsSeconds();
 
 		ECSCore* pECS = ECSCore::GetInstance();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -48,10 +55,10 @@ namespace LambdaEngine
 		for (Entity entity : m_VelocityEntities)
 		{
 			const VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
-			if (velocityComp.Dirty)
+			if (glm::length2(velocityComp.Velocity))
 			{
 				PositionComponent& positionComp = pPositionComponents->GetData(entity);
-				positionComp.Position += velocityComp.Velocity;
+				positionComp.Position += velocityComp.Velocity * dt;
 			}
 		}
 
