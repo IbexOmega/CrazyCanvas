@@ -270,7 +270,7 @@ namespace LambdaEngine
 			{ RW, NetworkPositionComponent::Type()			},
 			{ RW, CharacterColliderComponent::Type()		}
 		};
-		addEntityJob.Function = std::bind(&ClientSystem::CreateSpecialObject, this, networkUID, position, color);
+		addEntityJob.Function = std::bind(&ClientSystem::CreateEntity, this, networkUID, position, color);
 
 		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
 	}
@@ -312,10 +312,10 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pClient);
 	}
 
-	void ClientSystem::CreateSpecialObject(int32 networkUID, const glm::vec3& position, const glm::vec3& color)
+	void ClientSystem::CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		Entity entity = pECS->CreateSpecialObject();
+		Entity entity = pECS->CreateEntity();
 
 		LOG_INFO("Creating Entity with ID %d and NetworkID %d", entity, networkUID);
 

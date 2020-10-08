@@ -32,7 +32,7 @@ namespace LambdaEngine
         // EntityHasAnyOfTypes returns true if the entity has at least one of the specified types
         bool EntityHasAnyOfTypes(Entity entity, const TArray<const ComponentType*>& types) const;
 
-        Entity CreateSpecialObject();
+        Entity CreateEntity();
         void DeregisterEntity(Entity entity);
 
         void AddPage();
