@@ -82,7 +82,14 @@ void SandboxState::Init()
 	// Scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
+		LambdaEngine::TArray<LambdaEngine::LoadedDirectionalLight>	directionalLights;
+		LambdaEngine::TArray<LambdaEngine::LoadedPointLight>		pointLights;
+		LambdaEngine::TArray<LambdaEngine::SpecialObject>			specialObjects;
+
+		SceneLoadDesc sceneLoadDesc = {};
+		sceneLoadDesc.Filename = "Prototype/PrototypeScene.dae";
+
+		ResourceManager::LoadSceneFromFile(&sceneLoadDesc, meshComponents, directionalLights, pointLights, specialObjects);
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);
