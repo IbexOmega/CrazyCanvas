@@ -106,7 +106,7 @@ namespace LambdaEngine
 				#ifdef LAMBDA_DEBUG
 					if (Input::IsKeyDown(EKey::KEY_T))
 					{
-						RenderFrustum(entity);
+						RenderFrustum(entity, pPositionComponents->GetData(entity), rotationComp);
 					}
 				#endif // LAMBDA_DEBUG
 			}

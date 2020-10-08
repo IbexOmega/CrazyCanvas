@@ -3,7 +3,7 @@
 #include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 #include "Game/ECS/Systems/Networking/Client/NetworkPositionSystem.h"
-#include "Game/ECS/Systems/Actions/PlayerActionSystem.h"
+#include "Game/World/Player/PlayerActionSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"

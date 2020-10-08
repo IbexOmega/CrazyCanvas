@@ -6,6 +6,7 @@
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
+#include "Game/ECS/Components/Player/PlayerComponent.h"
 
 #include "Physics/PhysicsSystem.h"
 
@@ -267,6 +268,7 @@ namespace LambdaEngine
 		//animationComp.AnimationGUID = animations[0];
 
 
+		pECS->AddComponent<PlayerComponent>(entity,				PlayerComponent{ .IsLocal = IsLocalClient(networkUID) });
 		pECS->AddComponent<PositionComponent>(entity,			{ true, position });
 		pECS->AddComponent<RotationComponent>(entity,			{ true, glm::identity<glm::quat>() });
 		pECS->AddComponent<ScaleComponent>(entity,				{ true, glm::vec3(1.0f) });
@@ -287,7 +289,6 @@ namespace LambdaEngine
 		constexpr const float capsuleHeight = 1.8f;
 		constexpr const float capsuleRadius = 0.2f;
 		CharacterColliderComponent characterColliderComponent;
-		characterColliderComponent.IsLocal = IsLocalClient(networkUID);
 		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterColliderComponent);
 		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 

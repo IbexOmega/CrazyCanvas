@@ -1,7 +1,7 @@
 #include "Game/ECS/Systems/Networking/Server/ClientRemoteSystem.h"
 #include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
-#include "Game/ECS/Systems/Actions/PlayerActionSystem.h"
+#include "Game/World/Player/PlayerActionSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
