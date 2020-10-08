@@ -928,6 +928,7 @@ namespace LambdaEngine
 				}
 				else
 				{
+					meshEntry.ExtensionGroups.PushBack(nullptr);
 					extensionIndex = 0;
 				}
 
@@ -1021,25 +1022,15 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		// Fetch the entity mask and extract their individual component masks and add them to the set if the mask exist.
 		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
 		MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
 		meshEntry.DrawArgsMask = drawArgMask;
-		//TArray<uint32> componentMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(drawArgMask);
-		//componentMasks.PushBack(1);
-		//for (uint32 mask : componentMasks)
+		for (uint32 mask : m_RequiredDrawArgs)
 		{
-			for (uint32 mask : m_RequiredDrawArgs)
+			if ((mask & drawArgMask) > 0)
 			{
-				if ((mask & drawArgMask) > 0)
-				{
-					m_DirtyDrawArgs.insert(mask);
-				}
+				m_DirtyDrawArgs.insert(mask);
 			}
-			//if (m_RequiredDrawArgs.count(drawArgMask))
-			//{
-			//	m_DirtyDrawArgs.insert(drawArgMask);
-			//}
 		}
 	}
 
@@ -1263,8 +1254,6 @@ namespace LambdaEngine
 
 	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
 	{
-		UNREFERENCED_VARIABLE(mask);
-
 		for (auto& meshEntryPair : m_MeshAndInstancesMap)
 		{
 			if ((meshEntryPair.second.DrawArgsMask & mask) > 0)
