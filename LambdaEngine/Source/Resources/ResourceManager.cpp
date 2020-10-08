@@ -389,8 +389,6 @@ namespace LambdaEngine
 			
 			GUID_Lambda animationsGuid = RegisterLoadedAnimation(pAnimation->Name, pAnimation);
 			animations.EmplaceBack(animationsGuid);
-
-			LOG_INFO("Loaded animation %s, Duration=%.4f ticks, TicksPerSecond=%.4f", pAnimation->Name.GetString().c_str(), pAnimation->DurationInTicks, pAnimation->TicksPerSecond);
 		}
 
 		s_MeshNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));

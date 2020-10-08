@@ -34,6 +34,12 @@ namespace LambdaEngine
 
 		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
+		void SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize);
+
+		template <typename Comp>
+		uint32 SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const;
+		uint32 SerializeComponent(Entity entity, const ComponentType* pComponentType, uint8* pBuffer, uint32 bufferSize) const;
+
 		template<typename Comp>
 		bool HasType() const;
 
@@ -108,11 +114,18 @@ namespace LambdaEngine
 		pCompArray->Remove(entity);
 	}
 
+	template <typename Comp>
+	inline uint32 ComponentStorage::SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const
+	{
+		const ComponentArray<Comp>* pComponentArray = GetComponentArray<Comp>();
+		return pComponentArray->SerializeComponent(component, pBuffer, bufferSize);
+	}
+
 	template<typename Comp>
 	inline Comp& ComponentStorage::GetComponent(Entity entity)
 	{
 		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
-		VALIDATE_MSG(pCompArray, "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
 		return pCompArray->GetData(entity);
 	}
@@ -121,7 +134,7 @@ namespace LambdaEngine
 	inline const Comp& ComponentStorage::GetComponent(Entity entity) const
 	{
 		const ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
-		VALIDATE_MSG(pCompArray, "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
 		return pCompArray->GetData(entity);
 	}

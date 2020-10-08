@@ -3,6 +3,7 @@
     1920,
     1080
   ],
+  "VolumeMasterInital": 1.0,
   "FixedTimestep": 60,
   "RayTracingEnabled": true,
   "MeshShadersEnabled": true,
