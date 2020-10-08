@@ -85,9 +85,15 @@ namespace LambdaEngine
 
 		if (itr != m_CurrentKeyBindings.end()) {
 			itr->second = key;
-			LOG_INFO("Action %s has changed keybinding to %s\n",
-				action.c_str(), KeyToString(key));
-			return true;
+			if (s_ConfigDocument.HasMember(action.c_str()))
+			{
+				String keyStr = KeyToString(key);
+				s_ConfigDocument[action.c_str()].SetString(keyStr.c_str(), static_cast<rapidjson::SizeType>(strlen(keyStr.c_str())), s_ConfigDocument.GetAllocator());
+
+				LOG_INFO("Action %s has changed keybinding to %s\n",
+					action.c_str(), KeyToString(key));
+				return true;
+			}
 		}
 
 		LOG_ERROR("Action %s is not defined.", action.c_str());
@@ -105,7 +111,19 @@ namespace LambdaEngine
 
 		LOG_ERROR("Action %s is not defined.", action.c_str());
 		return false;
+	}
 
+	EKey InputActionSystem::GetKey(const String& action)
+	{
+		auto itr = m_CurrentKeyBindings.find(action);
+
+		if (itr != m_CurrentKeyBindings.end()) {
+			EKey keyPressed = itr->second;
+			return keyPressed;
+		}
+
+		LOG_ERROR("Action %s is not defined.", action.c_str());
+		return EKey::KEY_UNKNOWN;
 	}
 
 }

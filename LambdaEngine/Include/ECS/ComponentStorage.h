@@ -125,7 +125,7 @@ namespace LambdaEngine
 	inline Comp& ComponentStorage::GetComponent(Entity entity)
 	{
 		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
-		VALIDATE_MSG(pCompArray, "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
 		return pCompArray->GetData(entity);
 	}
@@ -134,7 +134,7 @@ namespace LambdaEngine
 	inline const Comp& ComponentStorage::GetComponent(Entity entity) const
 	{
 		const ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
-		VALIDATE_MSG(pCompArray, "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
 		return pCompArray->GetData(entity);
 	}

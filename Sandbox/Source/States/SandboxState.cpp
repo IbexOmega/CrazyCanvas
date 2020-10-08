@@ -79,13 +79,14 @@ void SandboxState::Init()
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const CameraDesc cameraDesc = {
-			.Position 	= { 0.0f, 0.0f, 2.0f },
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width 		= (float32)window->GetWidth(),
-			.Height 	= (float32)window->GetHeight(),
-			.NearPlane 	= EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane 	= EngineConfig::GetFloatProperty("CameraFarPlane")
+		const CameraDesc cameraDesc =
+		{
+			.Position	= { 0.0f, 2.0f, 5.0f },
+			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
+			.Width		= (float32)window->GetWidth(),
+			.Height		= (float32)window->GetHeight(),
+			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
 		Entity e = CreateFreeCameraEntity(cameraDesc);
 	}
