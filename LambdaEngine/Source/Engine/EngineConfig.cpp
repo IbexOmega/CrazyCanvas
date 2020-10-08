@@ -26,10 +26,17 @@ namespace LambdaEngine
 		FILE* pFile = fopen(s_FilePath.c_str(), "r");
 		if (!pFile)
 		{
-			// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
-			LOG_WARNING("Engine config could not be opened: %s", s_FilePath.c_str());
-			DEBUGBREAK();
-			return false;
+			// The state does not have its own config file, try the default config path
+			s_FilePath = "engine_config_" + String(pDefaultPathPostfix) + ".json";
+
+			pFile = fopen(s_FilePath.c_str(), "r");
+			if (!pFile)
+			{
+				// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
+				LOG_WARNING("Engine config could not be opened: %s", s_FilePath.c_str());
+				DEBUGBREAK();
+				return false;
+			}
 		}
 
 		char readBuffer[2048];
