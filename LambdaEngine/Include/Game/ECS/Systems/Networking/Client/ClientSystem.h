@@ -3,6 +3,7 @@
 #include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 #include "Game/ECS/Systems/Networking/Client/NetworkPositionSystem.h"
+#include "Game/World/Player/PlayerActionSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
@@ -48,13 +49,17 @@ namespace LambdaEngine
 		void CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color);
 
 	private:
+		ClientSystem();
+
 		void Init();
+		void Reconcile();
+		void SendGameState(const GameState& gameState);
 
 		void ReplayGameStatesBasedOnServerGameState(GameState* pGameStates, uint32 count, const GameState& gameStateServer);
 		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
 
-		void OnPacketCreateEntity(NetworkSegment* pPacket);
 		void OnPacketPlayerAction(NetworkSegment* pPacket);
+		void OnPacketCreateEntity(NetworkSegment* pPacket);
 
 	public:
 		static ClientSystem& GetInstance()
@@ -73,10 +78,6 @@ namespace LambdaEngine
 		}
 
 	private:
-		ClientSystem();
-		void Reconcile();
-
-	private:
 		static void StaticFixedTickMainThread(Timestamp deltaTime);
 		static void StaticTickMainThread(Timestamp deltaTime);
 		static void StaticRelease();
@@ -90,11 +91,11 @@ namespace LambdaEngine
 		int32 m_SimulationTick;
 		int32 m_LastNetworkSimulationTick;
 		std::unordered_map<int32, Entity> m_Entities; // <NetworkUID, Entity>
-		std::unordered_map<int32, TArray<GameState>> m_EntityStates; // <NetworkUID, GameState>
 		PacketSubscriberMap m_PacketSubscribers;
 
 		CharacterControllerSystem m_CharacterControllerSystem;
 		NetworkPositionSystem m_NetworkPositionSystem;
+		PlayerActionSystem m_PlayerActionSystem;
 
 	private:
 		static ClientSystem* s_pInstance;

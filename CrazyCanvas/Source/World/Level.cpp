@@ -79,7 +79,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	return true;
 }
 
-void Level::CreateSpecialObject(ESpecialObjectType specialObjectType, void* pData, const glm::vec3& translation, bool fromServer)
+void Level::CreateSpecialObject(LambdaEngine::ESpecialObjectType specialObjectType, void* pData, const glm::vec3& translation, bool fromServer)
 {
 	UNREFERENCED_VARIABLE(specialObjectType);
 	UNREFERENCED_VARIABLE(pData);
@@ -89,7 +89,7 @@ void Level::CreateSpecialObject(ESpecialObjectType specialObjectType, void* pDat
 	//Should call LevelObjectCreator::CreateSpecialObject or something
 }
 
-uint32 Level::GetEntityCount(ESpecialObjectType specialObjectType) const
+uint32 Level::GetEntityCount(LambdaEngine::ESpecialObjectType specialObjectType) const
 {
 	uint32 count = 0;
 

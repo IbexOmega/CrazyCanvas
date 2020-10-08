@@ -1,5 +1,7 @@
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 
+#include "Game/ECS/Components/Player/PlayerComponent.h"
+
 #include "Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
@@ -27,7 +29,10 @@ namespace LambdaEngine
 		{
 			{
 				{
-					{RW, CharacterColliderComponent::Type()}, {RW, NetworkPositionComponent::Type()}, {RW, VelocityComponent::Type()}
+					{RW, CharacterColliderComponent::Type()},
+					{RW, NetworkPositionComponent::Type()},
+					{RW, VelocityComponent::Type()},
+					{RW, PlayerComponent::Type()}
 				},
 				&m_CharacterColliderEntities,
 				nullptr,
@@ -60,20 +65,23 @@ namespace LambdaEngine
 	void CharacterControllerSystem::TickCharacterControllers(float32 dt)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+		auto* pCharacterColliders	= pECS->GetComponentArray<CharacterColliderComponent>();
+		auto* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+		auto* pVelocityComponents	= pECS->GetComponentArray<VelocityComponent>();
+		auto* pPlayerComponents		= pECS->GetComponentArray<PlayerComponent>();
 
 		for (Entity entity : m_CharacterColliderEntities)
 		{
-			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
+			const PlayerComponent& playerComp = pPlayerComponents->GetData(entity);
 
-			if (!characterCollider.IsLocal)
+			if (!playerComp.IsLocal)
 			{
-				const PositionComponent& positionComp = pPositionComponents->GetData(entity);
+				CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
+				const PositionComponent& positionComp			= pPositionComponents->GetData(entity);
+				VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
-				glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
-				const glm::vec3& position = positionComp.Position;
+				glm::vec3& velocity			= velocityComp.Velocity;
+				const glm::vec3& position	= positionComp.Position;
 
 				PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 				translationPX *= dt;
