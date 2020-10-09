@@ -46,7 +46,7 @@ namespace LambdaEngine
 		void AddFlag(const std::string& name, Arg::EType type, uint32 count);
 
 		void AddDescription(const std::string& mainDescription);
-		void AddDescription(const std::string& mainDescription, std::unordered_map<std::string, std::string> flagDescriptions);
+		void AddDescription(const std::string& mainDescription, const std::unordered_map<std::string, std::string>& flagDescriptions);
 
 		std::string GetName() const;
 		Description GetDescription() const;
