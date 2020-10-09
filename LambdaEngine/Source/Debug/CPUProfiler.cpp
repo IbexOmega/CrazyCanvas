@@ -161,7 +161,7 @@ namespace LambdaEngine
 
 			ImGui::SliderFloat("Update frequency (per second)", &m_UpdateFrequency, 0.1f, 20.0f, "%.2f");
 
-			float32 percentage = (float64)(m_CPUStat.PhysicalMemoryUsage / (float64)m_CPUStat.PhysicalMemoryAvailable);
+			float32 percentage = (float32)(m_CPUStat.PhysicalMemoryUsage / (float32)m_CPUStat.PhysicalMemoryAvailable);
 			char buf[64];
 			sprintf(buf, "%.3f/%.3f (%s)", (float64)m_CPUStat.PhysicalMemoryUsage / byteDivider, (float64)m_CPUStat.PhysicalMemoryAvailable / byteDivider, items[itemSelected]);
 			ImGui::Text("Memory usage for process");
@@ -169,7 +169,7 @@ namespace LambdaEngine
 			ImGui::Text("Peak memory usage: %.3f (%s)", m_CPUStat.PhysicalPeakMemoryUsage / byteDivider, items[itemSelected]);
 			ImGui::Text("CPU Usage for process");
 			sprintf(buf, "%.3f%%", m_CPUStat.CPUPercentage);
-			ImGui::ProgressBar(m_CPUStat.CPUPercentage / 100.f, ImVec2(-1.0f, 0.0f), buf);
+			ImGui::ProgressBar((float)(m_CPUStat.CPUPercentage / 100.0), ImVec2(-1.0f, 0.0f), buf);
 
 			ImGui::Dummy(ImVec2(0.0f, 20.0f));
 			ImGui::Unindent(10.0f);
