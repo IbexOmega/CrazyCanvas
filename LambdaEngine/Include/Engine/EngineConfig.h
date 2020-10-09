@@ -3,6 +3,7 @@
 #include "Defines.h"
 #include "Containers/String.h"
 
+#include <argh/argh.h>
 #include <rapidjson/document.h>
 
 namespace LambdaEngine
@@ -12,7 +13,7 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(EngineConfig);
 
-		static bool				LoadFromFile();
+		static bool				LoadFromFile(const argh::parser& flagParser);
 		static bool				WriteToFile();
 
 		static bool				GetBoolProperty(const String& propertyName);
@@ -33,5 +34,6 @@ namespace LambdaEngine
 
 	private:
 		static rapidjson::Document s_ConfigDocument;
+		static String s_FilePath;
 	};
 }

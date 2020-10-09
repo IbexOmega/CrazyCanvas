@@ -5,6 +5,8 @@
 
 #include "Application/API/PlatformApplication.h"
 
+#include <argh/argh.h>
+
 namespace LambdaEngine
 {
 	/*
@@ -20,7 +22,7 @@ namespace LambdaEngine
 		* Initializes modules that are needed in EngineLoop::Init()
 		*	return - Returns true if successful
 		*/
-		static bool PreInit();
+		static bool PreInit(const argh::parser& flagParser);
 
 		/*
 		* Initializes all engine modules

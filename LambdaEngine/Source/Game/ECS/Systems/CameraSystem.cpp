@@ -19,20 +19,20 @@ namespace LambdaEngine
 
 	bool CameraSystem::Init()
 	{
-		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
+					.pSubscriber = &m_CameraEntities,
+					.ComponentAccesses =
 					{
 						{R, CameraComponent::Type()}, {NDA, ViewProjectionMatricesComponent::Type()}, {RW, VelocityComponent::Type()},
 						{NDA, PositionComponent::Type()}, {RW, RotationComponent::Type()}
-					},
-					&m_CameraEntities
+					}
 				}
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
+			systemReg.SubscriberRegistration.AdditionalAccesses = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
 			systemReg.Phase = 0;
 
 			RegisterSystem(systemReg);
@@ -106,7 +106,7 @@ namespace LambdaEngine
 		{
 			const glm::vec3 right = GetRight(rotComp.Quaternion);
 			const float shiftSpeedFactor = InputActionSystem::IsActive("CAM_SPEED_MODIFIER") ? 2.0f : 1.0f;
-			velocity = glm::normalize(velocity) * freeCamComp.SpeedFactor * shiftSpeedFactor * dt;
+			velocity = glm::normalize(velocity) * freeCamComp.SpeedFactor * shiftSpeedFactor;
 
 			velocity = velocity.x * right + velocity.y * GetUp(rotComp.Quaternion) + velocity.z * forward;
 		}
@@ -119,20 +119,22 @@ namespace LambdaEngine
 		// First calculate translation relative to the character's rotation (i.e. right, up, forward).
 		// Then convert the translation be relative to the world axes.
 		glm::vec3& velocity = velocityComp.Velocity;
-		velocity = {
-			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-			0.0f,																								// Y: Up
-			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
+
+		glm::vec2 horizontalVelocity = {
+			float(InputActionSystem::IsActive("CAM_RIGHT") - InputActionSystem::IsActive("CAM_LEFT")),			// X: Right
+			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Y: Forward
 		};
 
-		if (glm::length2(velocity) > glm::epsilon<float>())
+		if (glm::length2(horizontalVelocity) > glm::epsilon<float>())
 		{
-			const int isSprinting = InputActionSystem::IsActive("CAM_SPEED_MODIFIER");
-			const float sprintFactor = std::max(1.0f, FPSComp.SprintSpeedFactor * isSprinting);
-			velocity = glm::normalize(velocity) * FPSComp.SpeedFactor * sprintFactor * dt;
+			const int8 isSprinting = InputActionSystem::IsActive("CAM_SPEED_MODIFIER");
+			const float32 sprintFactor = std::max(1.0f, FPSComp.SprintSpeedFactor * isSprinting);
+			horizontalVelocity = glm::normalize(horizontalVelocity) * FPSComp.SpeedFactor * sprintFactor;
 		}
 
-		velocity.y = -GRAVITATIONAL_ACCELERATION * dt;
+		velocity.x = horizontalVelocity.x;
+		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+		velocity.z = horizontalVelocity.y;
 
 		const glm::vec3 forward	= GetForward(rotComp.Quaternion);
 		const glm::vec3 right	= GetRight(rotComp.Quaternion);

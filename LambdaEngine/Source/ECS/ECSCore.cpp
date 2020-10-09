@@ -97,6 +97,99 @@ namespace LambdaEngine
 		}
 	}
 
+	uint32 ECSCore::SerializeEntity(Entity entity, const TArray<const ComponentType*>& componentsFilter, uint8* pBuffer, uint32 bufferSize) const
+	{
+		/*	EntitySerializationHeader is written to the beginning of the buffer. This is done last, when the size of
+			the serialization is known. */
+		uint8* pHeaderPosition = pBuffer;
+
+		uint32 remainingSize = bufferSize;
+		constexpr const uint32 headerSize = sizeof(EntitySerializationHeader);
+		const bool hasRoomForHeader = bufferSize >= headerSize;
+		if (hasRoomForHeader)
+		{
+			pBuffer			+= headerSize;
+			remainingSize	-= headerSize;
+		}
+
+		// Serialize all components
+		uint32 requiredTotalSize = headerSize;
+		uint32 serializedComponentsCount = 0u;
+		for (const ComponentType* pComponentType : componentsFilter)
+		{
+			const IComponentArray* pComponentArray = m_ComponentStorage.GetComponentArray(pComponentType);
+			if (pComponentArray && !pComponentArray->HasComponent(entity))
+			{
+				LOG_WARNING("Attempted to serialize a component type which entity %d does not have: %s", entity, pComponentType->GetName());
+				continue;
+			}
+
+			const uint32 requiredComponentSize = m_ComponentStorage.SerializeComponent(entity, pComponentType, pBuffer, remainingSize);
+			requiredTotalSize += requiredComponentSize;
+			if (requiredComponentSize <= remainingSize)
+			{
+				pBuffer += requiredComponentSize;
+				remainingSize -= requiredComponentSize;
+				++serializedComponentsCount;
+			}
+		}
+
+		// Finalize the serialization by writing the header
+		if (hasRoomForHeader)
+		{
+			const EntitySerializationHeader header =
+			{
+				.TotalSerializationSize	= requiredTotalSize,
+				.Entity					= entity,
+				.ComponentCount			= serializedComponentsCount
+			};
+
+			memcpy(pHeaderPosition, &header, headerSize);
+		}
+
+		return requiredTotalSize;
+	}
+
+	bool ECSCore::DeserializeEntity(const uint8* pBuffer)
+	{
+		constexpr const uint32 entityHeaderSize = sizeof(EntitySerializationHeader);
+		EntitySerializationHeader entityHeader;
+		memcpy(&entityHeader, pBuffer, entityHeaderSize);
+		pBuffer += entityHeaderSize;
+
+		ASSERT_MSG(m_EntityRegistry.GetTopRegistryPage().HasElement(entityHeader.Entity), "Attempted to deserialize unknown entity: %d", entityHeader.Entity);
+
+		// Deserialize each component. If the entity already has the component, update its data. Otherwise, create it.
+		const uint32 componentCount = entityHeader.ComponentCount;
+		bool success = true;
+		for (uint32 componentIdx = 0u; componentIdx < componentCount; ++componentIdx)
+		{
+			constexpr const uint32 componentHeaderSize = sizeof(ComponentSerializationHeader);
+			ComponentSerializationHeader componentHeader;
+			memcpy(&componentHeader, pBuffer, componentHeaderSize);
+			pBuffer += componentHeaderSize;
+
+			const ComponentType* pComponentType = m_ComponentStorage.GetComponentType(componentHeader.TypeHash);
+			if (!pComponentType)
+			{
+				LOG_WARNING("Attempted to deserialize an unregistered component type, hash: %d", componentHeader.TypeHash);
+				success = false;
+				continue;
+			}
+
+			bool entityHadComponent = false;
+			const uint32 componentDataSize = componentHeader.TotalSerializationSize - componentHeaderSize;
+			success = m_ComponentStorage.DeserializeComponent(entityHeader.Entity, pComponentType, componentDataSize, pBuffer, entityHadComponent) && success;
+
+			if (!entityHadComponent)
+			{
+				m_ComponentsToRegister.PushBack({entityHeader.Entity, pComponentType});
+			}
+		}
+
+		return success;
+	}
+
 	void ECSCore::PerformComponentRegistrations()
 	{
 		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
@@ -129,11 +222,16 @@ namespace LambdaEngine
 	void ECSCore::PerformEntityDeletions()
 	{
 		const EntityRegistryPage& registryPage = m_EntityRegistry.GetTopRegistryPage();
+		/*	The component types to delete of each entity. It is a copy of the entity's set of component types in
+			the entity registry. Copying the set is necessary as the set is popped each time it is iterated. */
+		TArray<const ComponentType*> componentTypes;
 
 		for (Entity entity : m_EntitiesToDelete)
 		{
 			// Delete every component belonging to the entity
-			const std::unordered_set<const ComponentType*>& componentTypes = registryPage.IndexID(entity);
+			const std::unordered_set<const ComponentType*>& componentTypesSet = registryPage.IndexID(entity);
+			componentTypes.Assign(componentTypesSet.begin(), componentTypesSet.end());
+
 			for (const ComponentType* pComponentType : componentTypes)
 				DeleteComponent(entity, pComponentType);
 
@@ -147,6 +245,7 @@ namespace LambdaEngine
 
 	bool ECSCore::DeleteComponent(Entity entity, const ComponentType* pComponentType)
 	{
+		m_EntityRegistry.DeregisterComponentType(entity, pComponentType);
 		m_EntityPublisher.UnpublishComponent(entity, pComponentType);
 		return m_ComponentStorage.DeleteComponent(entity, pComponentType);
 	}

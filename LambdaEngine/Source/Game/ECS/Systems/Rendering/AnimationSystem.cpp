@@ -93,17 +93,18 @@ namespace LambdaEngine
 	bool AnimationSystem::Init()
 	{
 		SystemRegistration systemReg = {};
-		systemReg.Phase = 0;
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
+				.pSubscriber = &m_AnimationEntities,
+				.ComponentAccesses =
 				{
 					{ RW, AnimationComponent::Type() }
 				},
 				&m_AnimationEntities
 			},
 		};
-
+		systemReg.Phase = 0;
 		RegisterSystem(systemReg);
 
 		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
@@ -137,7 +138,7 @@ namespace LambdaEngine
 
 		m_ChangeState = false;
 	}
-	
+
 	AnimationSystem& AnimationSystem::GetInstance()
 	{
 		static AnimationSystem instance;

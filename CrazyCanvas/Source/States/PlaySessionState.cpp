@@ -12,6 +12,7 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "Input/API/Input.h"
@@ -19,7 +20,6 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
-#include "Physics/PhysicsSystem.h"
 
 void PlaySessionState::Init()
 {
@@ -29,14 +29,14 @@ void PlaySessionState::Init()
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const CameraDesc cameraDesc = {
-			.Position = { 0.0f, 20.0f, -2.0f },
+			.Position = { 0.0f, 2.0f, -2.0f },
 			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
 			.Width = (float)window->GetWidth(),
 			.Height = (float)window->GetHeight(),
 			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity e = CreateFPSCameraEntity(cameraDesc);
+		CreateFPSCameraEntity(cameraDesc);
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -94,6 +94,7 @@ void PlaySessionState::Init()
 		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		robotAnimationComp.AnimationGUID = animations[0];
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
@@ -253,4 +254,5 @@ void PlaySessionState::Init()
 }
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp)
-{}
+{
+}

@@ -4,7 +4,7 @@ BENCHMARK_RESULTS_PATH          = 'benchmark_results.json'
 BENCHMARK_RESULTS_PATH_RT_ON    = 'benchmark_results_rt_on.json'
 BENCHMARK_RESULTS_PATH_RT_OFF   = 'benchmark_results_rt_off.json'
 
-ENGINE_CONFIG_PATH      = 'engine_config.json'
+ENGINE_CONFIG_PATH      = 'engine_config_production.json'
 TEMP_ENGINE_CONFIG_PATH = 'engine_config_original.json'
 
 ENGINE_CONFIG = {
@@ -39,7 +39,7 @@ def set_engine_config(original_engine_config, ray_tracing_enabled):
 def run_benchmark(bin_path, original_engine_config, ray_tracing_enabled):
 	set_engine_config(original_engine_config, ray_tracing_enabled)
 	print('Benchmarking with ray tracing {}... '.format('enabled' if ray_tracing_enabled else 'disabled'), end='', flush=True)
-	completed_process = subprocess.run([bin_path, '--benchmark'], capture_output=True)
+	completed_process = subprocess.run([bin_path, '--state=benchmark'], capture_output=True)
 	if completed_process.returncode != 0:
 		print(f'Failed:\n{str(completed_process.stdout)}\n\n{str(completed_process.stderr)}')
 		sys.exit(1)

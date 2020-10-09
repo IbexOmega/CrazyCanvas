@@ -183,12 +183,13 @@ namespace LambdaEngine
             // Use indices stored in the component type -> component storage mapping to get the component subscription
             EntitySubscription& sysSub = m_SubscriptionStorage.IndexID(subBucketItr->second.SystemID)[subBucketItr->second.SubIdx];
 
-            // Check if this component was excluded, and therefore preventing an entity to being pushed to a subscriber
-            if (!sysSub.pSubscriber->HasElement(entity) && m_pEntityRegistry->EntityHasAllowedTypes(entity, sysSub.ComponentTypes, sysSub.ExcludedComponentTypes))
+            if (!sysSub.pSubscriber->HasElement(entity))
             {
-                sysSub.pSubscriber->PushBack(entity);
-                subBucketItr++;
-                continue;
+                // Check if this component was excluded, and therefore preventing an entity to being pushed to a subscriber
+                if (m_pEntityRegistry->EntityHasAllowedTypes(entity, sysSub.ComponentTypes, sysSub.ExcludedComponentTypes))
+                {
+                    sysSub.pSubscriber->PushBack(entity);
+                }
             }
             else
             {

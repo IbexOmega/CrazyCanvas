@@ -27,7 +27,17 @@ namespace LambdaEngine
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{RW, ControllableComponent::Type()}}, {&transformComponents}, &m_ControllableEntities}
+				{
+					.pSubscriber = &m_ControllableEntities,
+					.ComponentAccesses =
+					{
+						{RW, ControllableComponent::Type()}
+					},
+					.ComponentGroups =
+					{
+						&transformComponents
+					}
+				}
 			};
 			systemReg.Phase = 0;
 
@@ -111,7 +121,7 @@ namespace LambdaEngine
 			result.x += (float32)((1.0 * deltaTime.AsSeconds()) * (float64)deltaLeft);
 		}
 	}
-	
+
 	void PlayerMovementSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage)
 	{
 		result.x = (end.x - start.x) * percentage + start.x;

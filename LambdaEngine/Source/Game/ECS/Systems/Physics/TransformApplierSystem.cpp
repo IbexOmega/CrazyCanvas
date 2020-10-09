@@ -16,17 +16,19 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
+				.pSubscriber = &m_MatrixEntities,
+				.ComponentAccesses =
 				{
 					{RW, CameraComponent::Type()}, {RW, ViewProjectionMatricesComponent::Type()},
 					{R, PositionComponent::Type()}, {R, RotationComponent::Type()}
-				},
-				&m_MatrixEntities
+				}
 			},
 			{
+				.pSubscriber = &m_VelocityEntities,
+				.ComponentAccesses =
 				{
 					{RW, PositionComponent::Type()}, {R, VelocityComponent::Type()}
-				},
-				&m_VelocityEntities
+				}
 			}
 		};
 		systemReg.Phase = g_LastPhase - 1;
@@ -36,7 +38,7 @@ namespace LambdaEngine
 
 	void TransformApplierSystem::Tick(Timestamp deltaTime)
 	{
-		UNREFERENCED_VARIABLE(deltaTime);
+		const float32 dt = (float32)deltaTime.AsSeconds();
 
 		ECSCore* pECS = ECSCore::GetInstance();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -48,10 +50,10 @@ namespace LambdaEngine
 		for (Entity entity : m_VelocityEntities)
 		{
 			const VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
-			if (velocityComp.Dirty)
+			if (glm::length2(velocityComp.Velocity))
 			{
 				PositionComponent& positionComp = pPositionComponents->GetData(entity);
-				positionComp.Position += velocityComp.Velocity;
+				positionComp.Position += velocityComp.Velocity * dt;
 			}
 		}
 
