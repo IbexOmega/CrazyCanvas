@@ -234,7 +234,7 @@ namespace LambdaEngine
 			.Animations					= animations,
 			.MeshComponents				= meshComponents,
 			.pMaterials					= &materials,
-			.pTextures					= &textures
+			.pTextures					= &textures,
 			.AnimationsOnly 			= false
 		};
 
@@ -341,25 +341,44 @@ namespace LambdaEngine
 			assimpFlags |= aiProcess_PopulateArmatureData;
 		}
 
-		TArray<Mesh*>			meshes;
-		TArray<Animation*>		animations;
-		TArray<MeshComponent>	meshComponent;
+		TArray<Mesh*>						meshes;
+		TArray<Animation*>					animations;
+		TArray<MeshComponent>				meshComponent;
+		const TArray<SpecialObjectDesc>		specialObjectDescriptions;
+		TArray<LoadedDirectionalLight>		directionalLightComponents;
+		TArray<LoadedPointLight>			pointLightComponents;
+		TArray<SpecialObject>				specialObjects;
 
 		SceneLoadRequest loadRequest =
 		{
-			.Filepath		= ConvertSlashes(filepath),
-			.AssimpFlags	= assimpFlags,
-			.Meshes			= meshes,
-			.Animations		= animations,
-			.MeshComponents	= meshComponent,
-			.pMaterials		= nullptr,
-			.pTextures		= nullptr,
-			.AnimationsOnly = true
+			.Filepath					= ConvertSlashes(filepath),
+			.AssimpFlags				= assimpFlags,
+			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.DirectionalLights			= directionalLightComponents,
+			.PointLights				= pointLightComponents,
+			.SpecialObjects				= specialObjects,
+			.Meshes						= meshes,
+			.Animations					= animations,
+			.MeshComponents				= meshComponent,
+			.pMaterials					= nullptr,
+			.pTextures					= nullptr,
+			.AnimationsOnly				= true
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
 		{
 			return animations;
+		}
+
+		// In case there are meshes -> delete them
+		if (!meshes.IsEmpty())
+		{
+			for (Mesh* pMesh : meshes)
+			{
+				SAFEDELETE(pMesh);
+			}
+
+			meshes.Clear();
 		}
 
 		D_LOG_MESSAGE("[ResourceLoader]: Loaded Animations \"%s\"", filepath.c_str());

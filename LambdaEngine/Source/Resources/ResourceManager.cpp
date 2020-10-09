@@ -341,11 +341,11 @@ namespace LambdaEngine
 			s_MeshNamesToGUIDs[filename]	= guid;
 		}
 
-		TArray<Animation*> animations;
-		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, animations);
+		TArray<Animation*> rawAnimations;
+		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, rawAnimations);
 
 		// If we load with this function, we do not care about the animations, and therefore delete them
-		for (Animation* pAnimation : animations)
+		for (Animation* pAnimation : rawAnimations)
 		{
 			SAFEDELETE(pAnimation);
 		}
