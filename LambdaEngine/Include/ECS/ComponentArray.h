@@ -11,6 +11,14 @@ namespace LambdaEngine
 {
 	class ComponentStorage;
 
+	#pragma pack(push, 1)
+		struct ComponentSerializationHeader
+		{
+			uint32 TotalSerializationSize; // Size of header + component data
+			uint32 TypeHash;
+		};
+	#pragma pack(pop)
+
 	class IComponentArray
 	{
 	public:
@@ -21,6 +29,8 @@ namespace LambdaEngine
 		virtual const TArray<uint32>& GetIDs() const = 0;
 
 		virtual uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const = 0;
+		// DeserializeComponent adds a component if it does not already exist, otherwise the existing component is updated
+		virtual bool DeserializeComponent(Entity entity, const uint8* pBuffer, uint32 serializationSize, bool& entityHadComponent) = 0;
 
 		virtual bool HasComponent(Entity entity) const = 0;
 		virtual void ResetDirtyFlags() = 0;
@@ -49,6 +59,7 @@ namespace LambdaEngine
 
 		uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const override final { return SerializeComponent(GetData(entity), pBuffer, bufferSize); }
 		uint32 SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const;
+		bool DeserializeComponent(Entity entity, const uint8* pBuffer, uint32 serializationSize, bool& entityHadComponent);
 
 		bool HasComponent(Entity entity) const override final { return m_EntityToIndex.find(entity) != m_EntityToIndex.end(); }
 		void ResetDirtyFlags() override final;
@@ -146,14 +157,6 @@ namespace LambdaEngine
 	{
 		/*	ComponentSerializationHeader is written to the beginning of the buffer. This is done last, when the size of
 			the serialization is known. */
-	#pragma pack(push, 1)
-		struct ComponentSerializationHeader
-		{
-			uint32 TotalSerializationSize;
-			uint32 TypeHash;
-		};
-	#pragma pack(pop)
-
 		uint8* pHeaderPosition = pBuffer;
 		constexpr const uint32 headerSize = sizeof(ComponentSerializationHeader);
 		const bool hasRoomForHeader = bufferSize >= headerSize;
@@ -194,6 +197,32 @@ namespace LambdaEngine
 		}
 
 		return requiredTotalSize;
+	}
+
+	template<typename Comp>
+	inline bool ComponentArray<Comp>::DeserializeComponent(Entity entity, const uint8* pBuffer, uint32 serializationSize, bool& entityHadComponent)
+	{
+		Comp component = {};
+		Comp* pComponent = &component;
+		entityHadComponent = false;
+		if (HasComponent(entity))
+		{
+			entityHadComponent = true;
+			pComponent = &GetData(entity);
+		}
+
+		if (m_ComponentOwnership.Deserialize)
+		{
+			return m_ComponentOwnership.Deserialize(*pComponent, serializationSize, pBuffer);
+		}
+
+		memcpy(pComponent, pBuffer, serializationSize);
+		if (!entityHadComponent)
+		{
+			Insert(entity, *pComponent);
+		}
+
+		return true;
 	}
 
 	template<typename Comp>

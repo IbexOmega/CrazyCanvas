@@ -63,5 +63,12 @@ namespace LambdaEngine
 		 * Does not write to the buffer if said size is greater than the provided bufferSize.
 		*/
 		std::function<uint32(const Comp& component, uint8* pBuffer, uint32 bufferSize)> Serialize;
+		/**
+		 * Deserialize the buffer into the referenced component. Does not add or register the component.
+		 * The passed component could be referencing an already existing component. One should be aware of this to
+		 * to avoid allocating memory for members of the component without deleting previous allocations.
+		 * \return Success or failure.
+		*/
+		std::function<bool(Comp& component, uint32 serializationSize, const uint8* pBuffer)> Deserialize;
 	};
 }
