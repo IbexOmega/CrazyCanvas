@@ -24,7 +24,14 @@ namespace LambdaEngine
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
-			{{{RW, PositionComponent::Type()}, {RW, NetworkPositionComponent::Type()} }, {}, &m_Entities}
+			{
+				.pSubscriber = &m_Entities,
+				.ComponentAccesses =
+				{
+					{RW, PositionComponent::Type()}, 
+					{RW, NetworkPositionComponent::Type()} 
+				}
+			}
 		};
 		systemReg.Phase = 0;
 

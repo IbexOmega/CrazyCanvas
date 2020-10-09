@@ -1,8 +1,7 @@
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 
 #include "Game/ECS/Components/Player/PlayerComponent.h"
-
-#include "Physics/PhysicsSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 
@@ -28,15 +27,15 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
+				.pSubscriber = &m_CharacterColliderEntities,
+				.ComponentAccesses =
 				{
 					{RW, CharacterColliderComponent::Type()},
 					{RW, NetworkPositionComponent::Type()},
 					{RW, VelocityComponent::Type()},
 					{RW, PlayerComponent::Type()}
 				},
-				&m_CharacterColliderEntities,
-				nullptr,
-				onCharacterColliderRemoval
+				.OnEntityRemoval = onCharacterColliderRemoval
 			}
 		};
 		systemReg.Phase = 1;

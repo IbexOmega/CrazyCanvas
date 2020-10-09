@@ -7,8 +7,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
-
-#include "Physics/PhysicsSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 
@@ -110,11 +109,6 @@ namespace LambdaEngine
 			SendGameState(gameState);
 
 			m_FramesToReconcile.PushBack(gameState);
-		}
-		else
-		{
-			GameState gameState = {};
-			m_PlayerActionSystem.TickLocalPlayerAction(deltaTime, GetEntityPlayer(), &gameState);
 		}
 
 		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);

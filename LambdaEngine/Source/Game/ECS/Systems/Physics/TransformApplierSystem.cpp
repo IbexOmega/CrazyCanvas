@@ -30,9 +30,7 @@ namespace LambdaEngine
 				{
 					{RW, PositionComponent::Type()}, {R, VelocityComponent::Type()}
 				},
-				{
-
-				},
+				.ExcludedComponentTypes =
 				{
 					CharacterColliderComponent::Type()
 				}

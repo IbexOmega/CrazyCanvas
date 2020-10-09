@@ -35,7 +35,8 @@ namespace LambdaEngine
 					},
 				},
 				{
-                    .pSubscriber = &m_AttachedCameraEntities,
+					.pSubscriber = &m_AttachedCameraEntities,
+					.ComponentAccesses =
 					{
 						{R, CameraComponent::Type()}, 
 						{NDA, ViewProjectionMatricesComponent::Type()}, 
