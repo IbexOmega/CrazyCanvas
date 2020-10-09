@@ -369,10 +369,11 @@ namespace LambdaEngine
 			RenderGraphResourceDesc resource = {};
 			resource.Name							= SCENE_ALBEDO_MAPS;
 			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
+			resource.SubResourceCount				= 1;
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
+			resource.TextureParams.UnboundedArray	= true;
 			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -382,10 +383,11 @@ namespace LambdaEngine
 			RenderGraphResourceDesc resource = {};
 			resource.Name							= SCENE_NORMAL_MAPS;
 			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
+			resource.SubResourceCount				= 1;
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
+			resource.TextureParams.UnboundedArray	= true;
 			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -395,10 +397,11 @@ namespace LambdaEngine
 			RenderGraphResourceDesc resource = {};
 			resource.Name							= SCENE_COMBINED_MATERIAL_MAPS;
 			resource.Type							= ERenderGraphResourceType::TEXTURE;
-			resource.SubResourceCount				= MAX_UNIQUE_MATERIALS;
+			resource.SubResourceCount				= 1;
 			resource.Editable						= false;
 			resource.External						= true;
 			resource.TextureParams.TextureFormat	= EFormat::FORMAT_R8G8B8A8_UNORM;
+			resource.TextureParams.UnboundedArray	= true;
 			m_Resources.PushBack(resource);
 
 			externalResourcesGroup.ResourceStateIdents.PushBack(CreateResourceState(resource.Name, resource.Type, externalResourcesGroup.Name, false, ERenderGraphResourceBindingType::NONE));
@@ -836,18 +839,50 @@ namespace LambdaEngine
 		ImGui::SameLine();
 		ImGui::InputText("##Resource Name", pNameBuffer, nameBufferLength, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
 
+		bool isUnboundedTextureArray = pResource->Type == ERenderGraphResourceType::TEXTURE && pResource->TextureParams.UnboundedArray;
+
+		//Unbounded Texture Arrays must be External, how should the RenderGraph know how many subresources to create?
+		if (isUnboundedTextureArray)
+		{
+			pResource->External = true;
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+		}
+
 		ImGui::Text("External: ");
 		ImGui::SameLine();
 		ImGui::Checkbox("##External", &pResource->External);
 
-		ImGui::Text("Back Buffer Bound: ");
-		ImGui::SameLine();
-		ImGui::Checkbox("##Back Buffer Bound", &pResource->BackBufferBound);
+		if (isUnboundedTextureArray)
+		{
+			ImGui::PopItemFlag();
+			ImGui::PopStyleVar();
+		}
+
+		if (pResource->Type != ERenderGraphResourceType::TEXTURE || !pResource->TextureParams.UnboundedArray)
+		{
+			ImGui::Text("Back Buffer Bound: ");
+			ImGui::SameLine();
+			ImGui::Checkbox("##Back Buffer Bound", &pResource->BackBufferBound);
+		}
+
+		//We don't allow Array Type to be Unbounded, first of all I'm not sure if this is allowed, secondly it could become quite complicated in the RenderGraph
+		if (pResource->Type == ERenderGraphResourceType::TEXTURE && !pResource->BackBufferBound && !pResource->TextureParams.IsOfArrayType)
+		{
+			ImGui::Text("Unbounded Array: ");
+			ImGui::SameLine();
+			if (ImGui::Checkbox("##Unbounded Array", &pResource->TextureParams.UnboundedArray))
+			{
+				isUnboundedTextureArray = pResource->TextureParams.UnboundedArray;
+			}
+		}
 
 		ImGui::Text("Sub Resource Count: ");
 		ImGui::SameLine();
 
-		if (pResource->BackBufferBound)
+		bool disableSubResourceCount = pResource->BackBufferBound || (isUnboundedTextureArray);
+
+		if (disableSubResourceCount)
 		{
 			pResource->SubResourceCount = 1;
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
@@ -859,7 +894,7 @@ namespace LambdaEngine
 			pResource->SubResourceCount = glm::clamp<int32>(pResource->SubResourceCount, 1, 1024);
 		}
 
-		if (pResource->BackBufferBound)
+		if (disableSubResourceCount)
 		{
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
@@ -1452,13 +1487,10 @@ namespace LambdaEngine
 				imnodes::EndInputAttribute();
 				PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 
-				if (!pResource->External || pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS || pRenderStage->OverrideRecommendedBindingType)
-				{
-					PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
-					imnodes::BeginOutputAttribute(outputAttributeIndex);
-					imnodes::EndOutputAttribute();
-					PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
-				}
+				PushPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
+				imnodes::BeginOutputAttribute(outputAttributeIndex);
+				imnodes::EndOutputAttribute();
+				PopPinColorIfNeeded(EEditorPinType::OUTPUT, pResourceState, outputAttributeIndex);
 
 				static TArray<ERenderGraphResourceBindingType> bindingTypes;
 				static TArray<const char*> bindingTypeNames;

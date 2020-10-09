@@ -15,7 +15,6 @@
 #include "States/LobbyState.h"
 
 
-
 using namespace LambdaEngine;
 using namespace Noesis;
 
@@ -24,8 +23,6 @@ MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 	GUI::LoadComponent(this, xamlFile.c_str());
 
 	m_pMainMenu = FrameworkElement::FindName<GroupBox>("MainMenuGroupBox");
-	NS_ASSERT(m_pKeybindingsGroupBox != 0);
-	m_pStatesGroupBox = FrameworkElement::FindName<GroupBox>("StatesGroupBox");
 	NS_ASSERT(m_pKeybindingsGroupBox != 0);
 	m_pSettingsGroupBox = FrameworkElement::FindName<GroupBox>("SettingsGroupBox");
 	NS_ASSERT(m_pSettingsGroupBox != 0);
@@ -59,9 +56,6 @@ bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
 
 	NS_CONNECT_EVENT(Button, Click, OnButtonSingleplayerClick);
-	NS_CONNECT_EVENT(Button, Click, OnButtonCrazyCanvasClick);
-	NS_CONNECT_EVENT(Button, Click, OnButtonSandboxClick);
-	NS_CONNECT_EVENT(Button, Click, OnButtonBenchmarkClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonMultiplayerClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonKeybindingsClick);
@@ -80,16 +74,6 @@ void MainMenuGUI::OnButtonSingleplayerClick(BaseComponent* pSender, const Routed
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	m_ContextStack.push(m_pStatesGroupBox);
-	ToggleView(m_pStatesGroupBox);
-	m_pMainMenu->SetVisibility(Visibility::Visibility_Collapsed);
-}
-
-
-void MainMenuGUI::OnButtonCrazyCanvasClick(BaseComponent* pSender, const RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
@@ -99,36 +83,10 @@ void MainMenuGUI::OnButtonCrazyCanvasClick(BaseComponent* pSender, const RoutedE
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	LambdaEngine::GUIApplication::SetView(nullptr);
-
-	SetRenderStagesSleeping();
-	State* pSandboxState = DBG_NEW SandboxState();
-	StateManager::GetInstance()->EnqueueStateTransition(pSandboxState, STATE_TRANSITION::POP_AND_PUSH);
-}
-
-void MainMenuGUI::OnButtonBenchmarkClick(BaseComponent* pSender, const RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	LambdaEngine::GUIApplication::SetView(nullptr);
-
-	SetRenderStagesSleeping();
-	State* pBenchmarkState = DBG_NEW BenchmarkState();
-	StateManager::GetInstance()->EnqueueStateTransition(pBenchmarkState, STATE_TRANSITION::POP_AND_PUSH);
-}
-
 void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
-
-	//SetRenderStagesSleeping();
 
 	State* pLobbyState = DBG_NEW LobbyState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
@@ -169,15 +127,7 @@ void MainMenuGUI::OnButtonBackClick(BaseComponent* pSender, const RoutedEventArg
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (m_ContextStack.top() == m_pStatesGroupBox)
-	{
-		m_pStatesGroupBox->SetVisibility(Visibility::Visibility_Collapsed);
-		m_pMainMenu->SetVisibility(Visibility::Visibility_Visible);
-	}
-	else
-	{
-		ToggleView(m_ContextStack.top());
-	}
+	ToggleView(m_ContextStack.top());
 	m_ContextStack.pop();
 }
 

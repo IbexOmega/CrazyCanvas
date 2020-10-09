@@ -201,15 +201,21 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(dataSize);
 	}*/
 
-	void ImGuiRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void ImGuiRenderer::UpdateTextureResource(
+		const String& resourceName, 
+		const TextureView* const* ppPerImageTextureViews, 
+		const TextureView* const* ppPerSubImageTextureViews, 
+		uint32 imageCount, 
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
-		if (count == 1 || backBufferBound)
+		if (subImageCount == 1 || backBufferBound)
 		{
 			if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 			{
-				for (uint32 i = 0; i < count; i++)
+				for (uint32 i = 0; i < imageCount; i++)
 				{
-					m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+					m_BackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
 				}
 			}
 			else
@@ -227,18 +233,18 @@ namespace LambdaEngine
 							TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 							descriptorSets[b] = descriptorSet;
 
-							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 						}
 					}
 					else
 					{
-						descriptorSets.Resize(count);
-						for (uint32 b = 0; b < count; b++)
+						descriptorSets.Resize(imageCount);
+						for (uint32 b = 0; b < imageCount; b++)
 						{
 							TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 							descriptorSets[b] = descriptorSet;
 
-							descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 						}
 					}
 				}
@@ -253,18 +259,18 @@ namespace LambdaEngine
 							for (uint32 b = 0; b < backBufferCount; b++)
 							{
 								TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-								descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 							}
 						}
 					}
 					else
 					{
-						if (descriptorSets.GetSize() == count)
+						if (descriptorSets.GetSize() == imageCount)
 						{
-							for (uint32 b = 0; b < count; b++)
+							for (uint32 b = 0; b < imageCount; b++)
 							{
 								TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-								descriptorSet->WriteTextureDescriptors(&ppTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 							}
 						}
 						else
@@ -320,7 +326,7 @@ namespace LambdaEngine
 							for (uint32 textureIndex = 0; textureIndex < extensionData.TextureCount; textureIndex++)
 							{
 								UpdateTextureResource(extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
-									&extensionData.ppTextureViews[textureIndex], 1, false);
+									&extensionData.ppTextureViews[textureIndex], &extensionData.ppTextureViews[textureIndex], 1, 1, false);
 							}
 						}
 					}

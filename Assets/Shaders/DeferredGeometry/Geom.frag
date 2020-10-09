@@ -19,9 +19,9 @@ layout(location = 8) in flat uint 	in_ExtensionIndex;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
 layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 

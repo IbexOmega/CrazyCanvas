@@ -8,7 +8,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Networking/InterpolationComponent.h"
 
-namespace LambdaEngine 
+namespace LambdaEngine
 {
 	InterpolationSystem::InterpolationSystem() :
 		m_InterpolationEntities()
@@ -16,10 +16,15 @@ namespace LambdaEngine
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
-			{{{RW, PositionComponent::Type()}, {RW, InterpolationComponent::Type()} }, {}, &m_InterpolationEntities}
+			{
+				.pSubscriber = &m_InterpolationEntities,
+				.ComponentAccesses =
+				{
+					{RW, PositionComponent::Type()}, {RW, InterpolationComponent::Type()}
+				}
+			}
 		};
 		systemReg.Phase = 0;
-
 		RegisterSystem(systemReg);
 
 		ClientSystem::GetInstance().SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&InterpolationSystem::OnPacketPlayerAction, this, std::placeholders::_1));
@@ -49,18 +54,18 @@ namespace LambdaEngine
 			percentage = percentage > 1.0f ? 1.0f : percentage < 0.0f ? 0.0f : percentage;
 
 			Interpolate(interpolationComponent.StartPosition, interpolationComponent.EndPosition, positionComponent.Position, (float32)percentage);
-			
+
 		}
 	}
 
 	void InterpolationSystem::OnPacketPlayerAction(NetworkSegment* pPacket)
 	{
 		const ClientSystem& clientSystem = ClientSystem::GetInstance();
-		
+
 		BinaryDecoder decoder(pPacket);
 		int32 networkUID				= decoder.ReadInt32();
 		int32 simulationtick			= decoder.ReadInt32();
-		
+
 		if (!clientSystem.IsLocalClient(networkUID))
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
@@ -75,8 +80,8 @@ namespace LambdaEngine
 			interpolationComponent.EndPosition		= decoder.ReadVec3();
 			interpolationComponent.StartTimestamp	= EngineLoop::GetTimeSinceStart();
 		}
-	}	
-	
+	}
+
 	void InterpolationSystem::Interpolate(const glm::vec3& start, const glm::vec3& end, glm::vec3& result, float32 percentage)
 	{
 		result.x = (end.x - start.x) * percentage + start.x;

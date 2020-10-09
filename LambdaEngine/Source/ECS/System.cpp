@@ -5,7 +5,7 @@
 
 namespace LambdaEngine
 {
-    void System::RegisterSystem(const SystemRegistration& systemRegistration)
+    void System::RegisterSystem(SystemRegistration& systemRegistration)
     {
         Job job = {
             .Function = [this] {

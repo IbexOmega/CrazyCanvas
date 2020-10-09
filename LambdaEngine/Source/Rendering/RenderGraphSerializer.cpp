@@ -66,6 +66,9 @@ namespace LambdaEngine
 									writer.String("is_of_array_type");
 									writer.Bool(resource.TextureParams.IsOfArrayType);
 
+									writer.String("unbounded_array");
+									writer.Bool(resource.TextureParams.UnboundedArray);
+
 									writer.String("texture_type");
 									writer.String(ResourceTextureTypeToString(resource.TextureParams.TextureType));
 
@@ -554,9 +557,10 @@ namespace LambdaEngine
 						{
 							case ERenderGraphResourceType::TEXTURE:
 							{
-								resource.TextureParams.TextureFormat															= TextureFormatFromString(resourceTypeParamsObject["texture_format"].GetString());
-								resource.TextureParams.IsOfArrayType															= resourceTypeParamsObject["is_of_array_type"].GetBool();
-								if (resourceTypeParamsObject.HasMember("texture_type")) resource.TextureParams.TextureType		= ResourceTextureTypeFromString(resourceTypeParamsObject["texture_type"].GetString());
+								resource.TextureParams.TextureFormat																= TextureFormatFromString(resourceTypeParamsObject["texture_format"].GetString());
+								resource.TextureParams.IsOfArrayType																= resourceTypeParamsObject["is_of_array_type"].GetBool();
+								if (resourceTypeParamsObject.HasMember("unbounded_array")) resource.TextureParams.UnboundedArray	= resourceTypeParamsObject["unbounded_array"].GetBool();
+								if (resourceTypeParamsObject.HasMember("texture_type")) resource.TextureParams.TextureType			= ResourceTextureTypeFromString(resourceTypeParamsObject["texture_type"].GetString());
 
 								if (!resource.External && resource.Name != RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 								{
