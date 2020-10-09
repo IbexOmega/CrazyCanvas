@@ -21,7 +21,6 @@
 #include "Input/API/InputActionSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Physics/PhysicsSystem.h"
 
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
@@ -43,6 +42,7 @@
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/ServerSystem.h"
@@ -146,7 +146,7 @@ namespace LambdaEngine
 		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
-		RenderSystem::GetInstance().Render();
+		RenderSystem::GetInstance().Render(delta);
 
 		return true;
 	}

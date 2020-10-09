@@ -17,19 +17,23 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
+				.pSubscriber = &m_MatrixEntities,
+				.ComponentAccesses =
 				{
 					{RW, CameraComponent::Type()}, {RW, ViewProjectionMatricesComponent::Type()},
 					{R, PositionComponent::Type()}, {R, RotationComponent::Type()}
-				},
-				&m_MatrixEntities
+				}
 			},
 			{
+				.pSubscriber = &m_VelocityEntities,
+				.ComponentAccesses =
 				{
 					{RW, PositionComponent::Type()}, {R, VelocityComponent::Type()}
 				},
-				{},
-				{ CharacterColliderComponent::Type() },
-				&m_VelocityEntities
+				.ExcludedComponentTypes =
+				{
+					CharacterColliderComponent::Type()
+				}
 			}
 		};
 		systemReg.Phase = g_LastPhase - 1;

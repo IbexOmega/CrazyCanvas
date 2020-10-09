@@ -801,106 +801,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
-	{
-		std::string source			= std::string(pSource);
-		int32 size					= int32(source.size());
-		const char* pFinalSource	= source.c_str();
-
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
-		glslang::TShader shader(shaderType);
-
-		shader.setStringsWithLengths(&pFinalSource, &size, 1);
-
-		//Todo: Fetch this
-		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
-		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
-		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
-		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
-		EShMessages messages								= GetDefaultMessages();
-		int32 defaultVersion								= GetDefaultVersion();
-
-		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
-		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
-		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
-
-		DirStackFileIncluder includer;
-
-		// Get Directory Path of File
-		size_t found				= filepath.find_last_of("/\\");
-		std::string directoryPath	= filepath.substr(0, found);
-
-		includer.pushExternalLocalDirectory(directoryPath);
-
-		//std::string preprocessedGLSL;
-		//if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
-		//{
-		//	LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-		//	return false;
-		//}
-
-		//const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
-		//shader.setStrings(&pPreprocessedGLSL, 1);
-
-		if (!shader.parse(pResources, defaultVersion, false, messages, includer))
-		{
-			const char* pShaderInfoLog = shader.getInfoLog();
-			const char* pShaderDebugInfo = shader.getInfoDebugLog();
-			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), pShaderInfoLog, pShaderDebugInfo);
-			return false;
-		}
-
-		glslang::TProgram program;
-		program.addShader(&shader);
-
-		if (!program.link(messages))
-		{
-			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
-		}
-
-		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
-
-		String sourcesss = pIntermediate->getSourceText();
-
-		if (pSourceSPIRV != nullptr)
-		{
-			spv::SpvBuildLogger logger;
-			glslang::SpvOptions spvOptions;
-			std::vector<uint32> std_sourceSPIRV;
-			glslang::GlslangToSpv(*pIntermediate, std_sourceSPIRV, &logger, &spvOptions);
-			pSourceSPIRV->Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
-		}
-
-		if (pReflection != nullptr)
-		{
-			if (!CreateShaderReflection(pIntermediate, stage, pReflection))
-			{
-				LOG_ERROR("[ResourceLoader]: Failed to Create Shader Reflection");
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool ResourceLoader::CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection)
-	{
-		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
-		glslang::TReflection glslangReflection(EShReflectionOptions::EShReflectionAllIOVariables, shaderType, shaderType);
-		glslangReflection.addStage(shaderType, *pIntermediate);
-
-		pReflection->NumAtomicCounters		= glslangReflection.getNumAtomicCounters();
-		pReflection->NumBufferVariables		= glslangReflection.getNumBufferVariables();
-		pReflection->NumPipeInputs			= glslangReflection.getNumPipeInputs();
-		pReflection->NumPipeOutputs			= glslangReflection.getNumPipeOutputs();
-		pReflection->NumStorageBuffers		= glslangReflection.getNumStorageBuffers();
-		pReflection->NumUniformBlocks		= glslangReflection.getNumUniformBlocks();
-		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
-
-		return true;
-	}
-
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
@@ -1409,5 +1309,105 @@ namespace LambdaEngine
 		{
 			ProcessAssimpNode(context, pNode->mChildren[childIdx], pScene);
 		}
+	}
+
+		bool ResourceLoader::CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection)
+	{
+		std::string source			= std::string(pSource);
+		int32 size					= int32(source.size());
+		const char* pFinalSource	= source.c_str();
+
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TShader shader(shaderType);
+
+		shader.setStringsWithLengths(&pFinalSource, &size, 1);
+
+		//Todo: Fetch this
+		int32 clientInputSemanticsVersion					= GetDefaultClientInputSemanticsVersion();
+		glslang::EShTargetClientVersion vulkanClientVersion	= GetDefaultVulkanClientVersion();
+		glslang::EShTargetLanguageVersion targetVersion		= GetDefaultSPIRVTargetVersion();
+		const TBuiltInResource* pResources					= GetDefaultBuiltInResources();
+		EShMessages messages								= GetDefaultMessages();
+		int32 defaultVersion								= GetDefaultVersion();
+
+		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
+		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
+		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
+
+		DirStackFileIncluder includer;
+
+		// Get Directory Path of File
+		size_t found				= filepath.find_last_of("/\\");
+		std::string directoryPath	= filepath.substr(0, found);
+
+		includer.pushExternalLocalDirectory(directoryPath);
+
+		//std::string preprocessedGLSL;
+		//if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
+		//{
+		//	LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+		//	return false;
+		//}
+
+		//const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
+		//shader.setStrings(&pPreprocessedGLSL, 1);
+
+		if (!shader.parse(pResources, defaultVersion, false, messages, includer))
+		{
+			const char* pShaderInfoLog = shader.getInfoLog();
+			const char* pShaderDebugInfo = shader.getInfoDebugLog();
+			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), pShaderInfoLog, pShaderDebugInfo);
+			return false;
+		}
+
+		glslang::TProgram program;
+		program.addShader(&shader);
+
+		if (!program.link(messages))
+		{
+			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+			return false;
+		}
+
+		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
+
+		
+
+		if (pSourceSPIRV != nullptr)
+		{
+			spv::SpvBuildLogger logger;
+			glslang::SpvOptions spvOptions;
+			std::vector<uint32> std_sourceSPIRV;
+			glslang::GlslangToSpv(*pIntermediate, std_sourceSPIRV, &logger, &spvOptions);
+			pSourceSPIRV->Assign(std_sourceSPIRV.data(), std_sourceSPIRV.data() + std_sourceSPIRV.size());
+		}
+
+		if (pReflection != nullptr)
+		{
+			if (!CreateShaderReflection(pIntermediate, stage, pReflection))
+			{
+				LOG_ERROR("[ResourceLoader]: Failed to Create Shader Reflection");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool ResourceLoader::CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection)
+	{
+		EShLanguage shaderType = ConvertShaderStageToEShLanguage(stage);
+		glslang::TReflection glslangReflection(EShReflectionOptions::EShReflectionAllIOVariables, shaderType, shaderType);
+		glslangReflection.addStage(shaderType, *pIntermediate);
+
+		pReflection->NumAtomicCounters		= glslangReflection.getNumAtomicCounters();
+		pReflection->NumBufferVariables		= glslangReflection.getNumBufferVariables();
+		pReflection->NumPipeInputs			= glslangReflection.getNumPipeInputs();
+		pReflection->NumPipeOutputs			= glslangReflection.getNumPipeOutputs();
+		pReflection->NumStorageBuffers		= glslangReflection.getNumStorageBuffers();
+		pReflection->NumUniformBlocks		= glslangReflection.getNumUniformBlocks();
+		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
+
+		return true;
 	}
 }
