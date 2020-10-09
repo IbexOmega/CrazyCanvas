@@ -19,12 +19,13 @@ namespace LambdaEngine
 
 	bool CameraSystem::Init()
 	{
-		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
+					.pSubscriber = &m_CameraEntities,
+					.ComponentAccesses =
 					{
 						{R, CameraComponent::Type()}, 
 						{NDA, ViewProjectionMatricesComponent::Type()}, 
@@ -32,9 +33,9 @@ namespace LambdaEngine
 						{NDA, PositionComponent::Type()}, 
 						{RW, RotationComponent::Type()},
 					},
-					&m_CameraEntities
 				},
 				{
+                    .pSubscriber = &m_AttachedCameraEntities,
 					{
 						{R, CameraComponent::Type()}, 
 						{NDA, ViewProjectionMatricesComponent::Type()}, 
@@ -43,10 +44,9 @@ namespace LambdaEngine
 						{RW, PositionComponent::Type()}, 
 						{RW, RotationComponent::Type()},
 					},
-					&m_AttachedCameraEntities
 				}
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
+			systemReg.SubscriberRegistration.AdditionalAccesses = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
 			systemReg.Phase = 0;
 
 			RegisterSystem(systemReg);

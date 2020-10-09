@@ -51,7 +51,8 @@ namespace LambdaEngine
 		m_CurrentGameState(),
 		m_Color()
 	{
-		RegisterSystem({});
+		SystemRegistration systemReg = {};
+		RegisterSystem(systemReg);
 	}
 
 	ClientRemoteSystem::~ClientRemoteSystem()

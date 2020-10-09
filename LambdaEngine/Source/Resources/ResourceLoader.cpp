@@ -1517,7 +1517,7 @@ namespace LambdaEngine
 
 		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
 
-		String sourcesss = pIntermediate->getSourceText();
+		
 
 		if (pSourceSPIRV != nullptr)
 		{

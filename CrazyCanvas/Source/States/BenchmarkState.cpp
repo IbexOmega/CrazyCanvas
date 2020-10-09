@@ -15,15 +15,13 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Misc/Components.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Systems/TrackSystem.h"
 
 #include "Input/API/Input.h"
 
 #include "Utilities/RuntimeStats.h"
-
-#include "Game/ECS/Systems/TrackSystem.h"
-
-#include "Physics/PhysicsSystem.h"
 
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
