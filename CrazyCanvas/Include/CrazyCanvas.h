@@ -13,7 +13,7 @@ class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::ApplicationE
 {
 public:
 	CrazyCanvas(const argh::parser& flagParser);
-	~CrazyCanvas() = default;
+	~CrazyCanvas();
 
 	// Inherited via Game
 	virtual void Tick(LambdaEngine::Timestamp delta) override;

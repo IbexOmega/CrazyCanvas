@@ -30,7 +30,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	if (!LevelManager::Init())
+	bool clientSide = true;
+	if (!LevelManager::Init(clientSide))
 	{
 		LOG_ERROR("Level Manager Init Failed");
 	}
@@ -64,6 +65,14 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+}
+
+CrazyCanvas::~CrazyCanvas()
+{
+	if (!LevelManager::Release())
+	{
+		LOG_ERROR("Level Manager Release Failed");
+	}
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)

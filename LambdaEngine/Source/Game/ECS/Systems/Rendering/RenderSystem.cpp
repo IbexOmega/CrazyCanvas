@@ -77,7 +77,8 @@ namespace LambdaEngine
 					.pSubscriber = &m_DirectionalLightEntities,
 					.ComponentAccesses =
 					{
-						{ R, DirectionalLightComponent::Type() },
+						{ R, DirectionalLightComponent::Type() }, 
+						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1),
@@ -432,10 +433,10 @@ namespace LambdaEngine
 					dirLight.ColorIntensity,
 					position.Position,
 					rotation.Quaternion,
-					dirLight.frustumWidth,
-					dirLight.frustumHeight,
-					dirLight.frustumZNear,
-					dirLight.frustumZFar
+					dirLight.FrustumWidth,
+					dirLight.FrustumHeight,
+					dirLight.FrustumZNear,
+					dirLight.FrustumZFar
 				);
 			}
 		}
@@ -644,10 +645,10 @@ namespace LambdaEngine
 				dirLight.ColorIntensity,
 				position.Position,
 				rotation.Quaternion,
-				dirLight.frustumWidth,
-				dirLight.frustumHeight,
-				dirLight.frustumZNear,
-				dirLight.frustumZFar
+				dirLight.FrustumWidth,
+				dirLight.FrustumHeight,
+				dirLight.FrustumZNear,
+				dirLight.FrustumZFar
 			);
 
 			m_DirectionalExist = true;

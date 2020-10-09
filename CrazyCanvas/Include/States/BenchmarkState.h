@@ -3,11 +3,13 @@
 #include "Game/State.h"
 #include "ECS/Entity.h"
 
+class Level;
+
 class BenchmarkState : public LambdaEngine::State
 {
 public:
 	BenchmarkState() = default;
-	~BenchmarkState() = default;
+	~BenchmarkState();
 
 	void Init() override final;
 
@@ -23,4 +25,5 @@ private:
 	LambdaEngine::Entity m_Camera;
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[3];
+	Level* m_pLevel = nullptr;
 };
