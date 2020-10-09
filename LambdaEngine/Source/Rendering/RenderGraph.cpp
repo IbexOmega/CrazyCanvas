@@ -662,7 +662,7 @@ namespace LambdaEngine
 			m_DirtyBoundTextureResources.clear();
 		}
 
-		if (m_DirtyBoundDrawArgResources.size() > 0)
+		if (!m_DirtyBoundDrawArgResources.empty())
 		{
 			for (Resource* pResource : m_DirtyBoundDrawArgResources)
 			{
