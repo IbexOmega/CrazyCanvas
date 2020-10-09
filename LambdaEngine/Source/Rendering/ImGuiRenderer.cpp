@@ -209,13 +209,34 @@ namespace LambdaEngine
 		uint32 subImageCount,
 		bool backBufferBound)
 	{
-		if (subImageCount == 1 || backBufferBound)
+		if (subImageCount == 1 || backBufferBound || subImageCount == imageCount)
 		{
 			if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 			{
 				for (uint32 i = 0; i < imageCount; i++)
 				{
 					m_BackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
+				}
+			}
+			else if (imageCount > 1 && imageCount == subImageCount)
+			{
+				for (uint32 imageIndex = 0; imageIndex < imageCount; imageIndex++)
+				{
+					String currentResourceName = resourceName + "_" + std::to_string(imageIndex);
+
+					if (!m_TextureResourceNameDescriptorSetsMap.contains(currentResourceName))
+					{
+						TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_TextureResourceNameDescriptorSetsMap[currentResourceName];
+						descriptorSets.Resize(1);
+						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+						descriptorSets[0] = descriptorSet;
+						descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[imageIndex], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+					}
+					else
+					{
+						TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_TextureResourceNameDescriptorSetsMap[currentResourceName];
+						descriptorSets[0]->WriteTextureDescriptors(&ppPerImageTextureViews[imageIndex], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+					}
 				}
 			}
 			else
@@ -283,7 +304,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[ImGuiRenderer]: Textures with count > 1 and not BackBufferBound is not implemented");
+			LOG_WARNING("[ImGuiRenderer]: Textures with subImageCount or imageCount != subImageCount and not BackBufferBound is not implemented. imageCount: %d, subImageCount: %d", imageCount, subImageCount);
 		}
 	}
 
@@ -1012,7 +1033,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName			= "ImGui Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount	= 64;
+		descriptorHeapDesc.DescriptorSetCount	= 256;
 		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);

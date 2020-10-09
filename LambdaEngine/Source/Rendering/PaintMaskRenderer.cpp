@@ -135,19 +135,19 @@ namespace LambdaEngine
 	{
 	}
 
-	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
-			for (uint32 i = 0; i < count; i++)
+			for (uint32 i = 0; i < imageCount; i++)
 			{
-				m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+				m_BackBuffers[i] = MakeSharedRef(ppPerImageTextureViews[i]);
 			}
 		}
 
 		if (resourceName == "BRUSH_MASK")
 		{
-			VALIDATE(count == 1);
+			VALIDATE(imageCount == 1);
 			VALIDATE(backBufferBound == false);
 
 			// This should not be necessary, because we already know that the brush mask texture is not back buffer bound.
@@ -155,13 +155,13 @@ namespace LambdaEngine
 			if (!m_BrushMaskDescriptorSet.has_value())
 			{
 				m_BrushMaskDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
-				m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 			}
 			else
 			{
 				if (m_BrushMaskDescriptorSet.has_value())
 				{
-					m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+					m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 				}
 				else
 				{
