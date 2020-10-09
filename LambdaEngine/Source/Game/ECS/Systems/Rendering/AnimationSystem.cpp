@@ -96,14 +96,14 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
-				.pSubscriber = &m_AnimationEntities,
-				.ComponentAccesses =
+				.pSubscriber		= &m_AnimationEntities,
+				.ComponentAccesses	=
 				{
 					{ RW, AnimationComponent::Type() }
 				},
-				&m_AnimationEntities
 			},
 		};
+
 		systemReg.Phase = 0;
 		RegisterSystem(systemReg);
 
