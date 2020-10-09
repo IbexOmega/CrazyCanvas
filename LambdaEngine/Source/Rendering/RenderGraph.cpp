@@ -522,7 +522,7 @@ namespace LambdaEngine
 			m_DirtyInternalResources.clear();
 		}
 
-		if (m_DirtyBoundBufferResources.size() > 0)
+		if (!m_DirtyBoundBufferResources.empty())
 		{
 			for (Resource* pResource : m_DirtyBoundBufferResources)
 			{
