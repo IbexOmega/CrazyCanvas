@@ -30,7 +30,7 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
 
-                    <Grid x:Name="FIND_SERVER_CONTAINER" Grid.Column="0" Grid.ColumnSpan="3">
+                    <Grid x:Name="FindServerContainer" Grid.Column="0" Grid.ColumnSpan="3">
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition></ColumnDefinition>
@@ -77,17 +77,114 @@
 
                         <Rectangle  x:Name="ServerBrowse" Grid.ColumnSpan="2" Grid.Column="1" Fill="#FF25252B" Stroke="Black" Margin="0,0,5,0" Grid.RowSpan="28"/>
                         <TextBlock TextWrapping="Wrap" Text="List of Servers" Margin="0" FontFamily="Verdana" FontSize="20" Foreground="White" Grid.Column="1" Grid.Row="1"/>
-                        <TextBlock Grid.Column="1" Grid.Row="2" FontSize="20" Margin="0"  Foreground="White" Text="Servers" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Grid.Row="2" FontSize="20" Margin="0"  Foreground="White" Text="Number of Players" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Button Content="Refresh" Grid.Column="2" Click="OnButtonRefreshClick" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Grid.Row="2" FontSize="20" Margin="0"  Foreground="White" Text="Servers" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Grid.Row="2" FontSize="20" Margin="0"  Foreground="White" Text="Number of Players" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Button Content="Refresh" Click="OnButtonRefreshClick" Grid.Column="2" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+                        <Button Content="Error" Grid.Column="1" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
+                            <Button.Triggers>
+                                <EventTrigger RoutedEvent="Button.Click">
+                                    <BeginStoryboard>
+                                        <!-- Storyboard property is the content property of BeginStoryboard -->
+                                        <!-- class, so we don't need to make it explicit in the code -->
+                                        <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
+                                            <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Button.Triggers>
+                        </Button>
+
                     </Grid>
-                    <Rectangle x:Name="ERROR_BOX" Visibility="Hidden" Fill="#FFF4F4F5" Stroke="Black" Margin="0" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1" Width="250" Height="100"/>     
+                    <Grid x:Name="ERROR_BOX_CONTAINER" Grid.Column="1" HorizontalAlignment="Center" Height="100" VerticalAlignment="Center" Width="250">
+                        <Grid.Background>
+                            <SolidColorBrush Color="Teal" Opacity="0"/>
+                        </Grid.Background>
+                        <Rectangle x:Name="ERROR_BOX"  Margin="0">
+                            <Rectangle.RenderTransform>
+                                <TranslateTransform X="0" Y="0"/>
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" Text="Couldn't Find Server" VerticalAlignment="Center" FontSize="20" FontWeight="Bold"/>
+                        
+                        <Button Content="OK" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Margin="0,0,0,-59">
+                            <Button.Triggers>
+                                <EventTrigger RoutedEvent="Button.Click">
+                                    <BeginStoryboard>
+                                        <!-- Storyboard property is the content property of BeginStoryboard -->
+                                        <!-- class, so we don't need to make it explicit in the code -->
+                                        <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
+                                            <DoubleAnimation Duration="0:0:0.1" From="1" To="0" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Button.Triggers>
+                        </Button>
+                    </Grid>
 
                 </Grid>
             </TabItem>
-            <TabItem Header="Host">Hosting Game view</TabItem>
+            <TabItem Header="Host Game">
+                <Grid x:Name="HostContainer" Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="128*"/>
+                        <ColumnDefinition Width="370*"/>
+                        <ColumnDefinition Width="129*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Rectangle Grid.Column="1" Fill="#FF25252B" Stroke="Black"/>
+                    <TextBlock Grid.Column="1" HorizontalAlignment="Center" TextWrapping="Wrap" Text="Server Settings" VerticalAlignment="Top" FontSize="20" Foreground="White" FontFamily="Verdana" Margin="0,5,0,0"/>
+
+                    <Grid x:Name="Host" Grid.Column="0" Grid.ColumnSpan="3" Margin="10">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="131*"/>
+                            <ColumnDefinition Width="173*"/>
+                            <ColumnDefinition Width="174*"/>
+                            <ColumnDefinition Width="130*"/>
+
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+
+
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" Text="Number Of Players:" Foreground="White" FontFamily="Verdana" FontSize="20" Grid.ColumnSpan="2" Grid.RowSpan="2" Height="53"/>
+                        <ComboBox x:Name="PLAYER_NUMBER" Grid.Column="2" Grid.Row="2" Foreground="Black" FontFamily="Verdana" BorderBrush="Black" Background="#FFA8A8A8" Cursor="Hand" Margin="10,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="16">
+                            <ComboBoxItem Background="#FFA8A8A8" BorderBrush="Black" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">4</ComboBoxItem>
+                            <ComboBoxItem Background="#FFA8A8A8" BorderBrush="Black" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">6</ComboBoxItem>
+                            <ComboBoxItem IsSelected="True" Background="#FFA8A8A8" BorderBrush="Black" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">8</ComboBoxItem>
+                            <ComboBoxItem Background="#FFA8A8A8" BorderBrush="Black" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">10</ComboBoxItem>
+                        </ComboBox>
+                        <Button Click="OnButtonHostGameClick" Grid.Column="2" Grid.Row="21" Content="Host Game" Margin="10,-11,10,10"/>
+
+                    </Grid>
+                </Grid>
+            </TabItem>
 
 
         </TabControl >
-        <Button Grid.Column="0" Margin="20" Click="OnButtonBackClick" Content="Back"  HorizontalAlignment="Center" VerticalAlignment="Bottom"  Padding="20"  MinWidth="220" FontSize="22"/>
+        <Button Grid.Column="0" Margin="20" Content="Back"  Click="OnButtonBackClick" HorizontalAlignment="Center" VerticalAlignment="Bottom"  Padding="20"  MinWidth="220" FontSize="22"/>
     </Grid>

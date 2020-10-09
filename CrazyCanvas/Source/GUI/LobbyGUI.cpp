@@ -40,6 +40,9 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, co
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonBackClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonConnectClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonRefreshClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonErrorOKClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonErrorClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonHostGameClick);
 	return false;
 }
 
@@ -73,7 +76,7 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-	ErrorPopUp();
+
 	for (int i = 0; i < 4; i++)
 	{
 		Ptr<TextBlock> textBlock	= *new TextBlock();
@@ -94,11 +97,33 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 		pServerGrid->GetChildren()->Add(textBlock2);
 
 		pServerGrid->SetColumn(textBlock, 2);
-		pServerGrid->SetColumn(textBlock2, 1);
-
 		pServerGrid->SetRow(textBlock, i + 3);
+
+		pServerGrid->SetColumn(textBlock2, 1);
 		pServerGrid->SetRow(textBlock2, i + 3);
 	}
+}
+
+void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	ErrorPopUp();
+}
+
+void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	//FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
+}
+
+void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	ComboBox* pComboBox = FrameworkElement::FindName<ComboBox>("PLAYER_NUMBER");
+	ComboBoxItem* item = (ComboBoxItem*)pComboBox->GetSelectedItem();
+	Noesis::String nr = item->GetContent()->ToString();
+
+	LOG_MESSAGE(nr.Str());
+
+
+	//ItemCollection pComboBox->GetItems()
 }
 
 void LobbyGUI::SetRenderStagesActive()
@@ -119,6 +144,6 @@ void LobbyGUI::SetRenderStagesActive()
 
 void LobbyGUI::ErrorPopUp()
 {
-	FrameworkElement::FindName<Grid>("ERROR_BOX")->SetVisibility(Visibility_Visible);
+	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
