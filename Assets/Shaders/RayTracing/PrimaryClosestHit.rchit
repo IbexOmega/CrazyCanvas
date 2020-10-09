@@ -4,9 +4,9 @@
 #extension GL_EXT_buffer_reference : enable
 #extension GL_EXT_scalar_block_layout : enable
 
+#include "RayTracingInclude.glsl"
 #include "../Helpers.glsl"
 #include "../Defines.glsl"
-#include "RayTracingInclude.glsl"
 
 struct SRayHitDescription
 {

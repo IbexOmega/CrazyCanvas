@@ -84,19 +84,23 @@ namespace LambdaEngine
 			{
 				Texture**		ppTextures;
 				TextureView**	ppTextureViews;
+				TextureView**	ppPerSubImageTextureViews;
 				Sampler**		ppSamplers;
+				uint32			Count;
+				uint32			PerSubImageTextureViewsCount;
 			} ExternalTextureUpdate;
 
 			struct
 			{
 				uint32		DrawArgsMask;
 				DrawArg*	pDrawArgs;
-				uint32		DrawArgsCount;
+				uint32		Count;
 			} ExternalDrawArgsUpdate;
 
 			struct
 			{
 				Buffer**	ppBuffer;
+				uint32		Count;
 			} ExternalBufferUpdate;
 
 			struct
@@ -196,10 +200,11 @@ namespace LambdaEngine
 			{
 				ERenderGraphTextureType				TextureType						= ERenderGraphTextureType::TEXTURE_2D;
 				bool								IsOfArrayType					= false;
+				bool								UnboundedArray					= false;
 				bool								UsedAsRenderTarget				= false;
 				bool								PerSubImageUniquelyAllocated	= false;
 				EFormat								Format							= EFormat::FORMAT_NONE;
-				TArray<PipelineTextureBarrierDesc>	InitialTransitionBarriers;
+				PipelineTextureBarrierDesc			InitialTransitionBarrier;
 				TArray<Texture*>					Textures;
 				TArray<TextureView*>				PerImageTextureViews;
 				TArray<TextureView*>				PerSubImageTextureViews;
@@ -213,7 +218,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				TArray<PipelineBufferBarrierDesc>	InitialTransitionBarriers;
+				PipelineBufferBarrierDesc			InitialTransitionBarrier;
 				TArray<Buffer*>						Buffers;
 				TArray<uint64>						Offsets;
 				TArray<uint64>						SizesInBytes;
@@ -288,9 +293,10 @@ namespace LambdaEngine
 			FPipelineStageFlags		OtherQueueDstPipelineStage	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 			uint32					DrawArgsMask				= 0x0;
 
-			TArray<PipelineBufferBarrierDesc>	DrawBufferBarriers[2];
-			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
-			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
+			TArray<PipelineBufferBarrierDesc>			DrawBufferBarriers[2]; //This works while we only have one Draw Arg resource, otherwise we have to do like Unbounded Textures
+			TArray<PipelineBufferBarrierDesc>			BufferBarriers[2];
+			TArray<PipelineTextureBarrierDesc>			TextureBarriers[4];
+			TArray<TArray<PipelineTextureBarrierDesc>>	UnboundedTextureBarriers[2]; //Unbounded Arrays of textures do not have a known count at init time -> we cant store them densely
 		};
 
 		struct PipelineStage
@@ -441,7 +447,7 @@ namespace LambdaEngine
 		uint32											m_BackBufferIndex					= 0;
 		uint32											m_BackBufferCount					= 0;
 
-		Fence*											s_pMaterialFence							= nullptr;
+		Fence*											s_pMaterialFence					= nullptr;
 		uint64											m_SignalValue						= 1;
 
 		TArray<ICustomRenderer*>						m_CustomRenderers;

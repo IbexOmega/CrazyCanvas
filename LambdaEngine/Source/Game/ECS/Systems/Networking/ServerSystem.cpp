@@ -12,7 +12,7 @@ namespace LambdaEngine
 {
 	ServerSystem* ServerSystem::s_pInstance = nullptr;
 
-	ServerSystem::ServerSystem() : 
+	ServerSystem::ServerSystem() :
 		m_NetworkEntities(),
 		m_pServer(nullptr)
 	{
@@ -30,7 +30,8 @@ namespace LambdaEngine
 		m_pServer = NetworkUtils::CreateServer(desc);
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 
-		RegisterSystem({});
+		SystemRegistration systemReg = {};
+		RegisterSystem(systemReg);
 	}
 
 	ServerSystem::~ServerSystem()
