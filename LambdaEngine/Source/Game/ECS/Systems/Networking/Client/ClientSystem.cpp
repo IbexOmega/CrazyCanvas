@@ -19,24 +19,18 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
-#define EPSILON 0.01f
+#include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/Multiplayer/ClientUtilsImpl.h"
 
 namespace LambdaEngine
 {
 	ClientSystem* ClientSystem::s_pInstance = nullptr;
 
 	ClientSystem::ClientSystem() :
-		m_ControllableEntities(),
 		m_pClient(nullptr),
-		m_FramesToReconcile(),
-		m_FramesProcessedByServer(),
-		m_SimulationTick(0),
-		m_LastNetworkSimulationTick(0),
-		m_Entities(),
-		m_NetworkUID(-1),
 		m_CharacterControllerSystem(),
 		m_NetworkPositionSystem(),
-		m_PlayerActionSystem()
+		m_PlayerSystem()
 	{
 
 	}
@@ -44,10 +38,13 @@ namespace LambdaEngine
 	ClientSystem::~ClientSystem()
 	{
 		m_pClient->Release();
+		MultiplayerUtils::Release();
 	}
 
 	void ClientSystem::Init()
 	{
+		MultiplayerUtils::Init(false);
+
 		ClientDesc clientDesc			= {};
 		clientDesc.PoolSize				= 1024;
 		clientDesc.MaxRetries			= 10;
@@ -61,12 +58,11 @@ namespace LambdaEngine
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
 
-		SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1));
-		SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&ClientSystem::OnPacketPlayerAction, this, std::placeholders::_1));
+		MultiplayerUtils::SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1, std::placeholders::_2));
 
 		m_CharacterControllerSystem.Init();
 		m_NetworkPositionSystem.Init();
-		m_PlayerActionSystem.Init();
+		m_PlayerSystem.Init();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
@@ -79,55 +75,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ClientSystem::SubscribeToPacketType(uint16 packetType, const std::function<void(NetworkSegment*)>& func)
-	{
-		m_PacketSubscribers[packetType].PushBack(func);
-	}
-
-	Entity ClientSystem::GetEntityFromNetworkUID(int32 networkUID) const
-	{
-		auto pair = m_Entities.find(networkUID);
-		ASSERT(pair != m_Entities.end());
-		return pair->second;
-	}
-
-	bool ClientSystem::IsLocalClient(int32 networkUID) const
-	{
-		return m_NetworkUID == networkUID;
-	}
-
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		if (m_pClient->IsConnected() && m_Entities.size() > 0)
+		if (m_pClient->IsConnected())
 		{
-			Reconcile();
-
-			GameState gameState = {};
-			gameState.SimulationTick = m_SimulationTick++;
-
-			m_PlayerActionSystem.TickLocalPlayerAction(deltaTime, GetEntityPlayer(), &gameState);
-			m_PlayerActionSystem.TickOtherPlayersAction(deltaTime);
-			SendGameState(gameState);
-
-			m_FramesToReconcile.PushBack(gameState);
+			m_PlayerSystem.FixedTickMainThread(deltaTime, m_pClient);
 		}
 
 		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);
-	}
-
-	void ClientSystem::SendGameState(const GameState& gameState)
-	{
-		NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteInt32(gameState.SimulationTick);
-		encoder.WriteInt8(gameState.DeltaForward);
-		encoder.WriteInt8(gameState.DeltaLeft);
-		m_pClient->SendReliable(pPacket);
-	}
-
-	Entity ClientSystem::GetEntityPlayer() const
-	{
-		return GetEntityFromNetworkUID(m_NetworkUID);
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
@@ -158,24 +113,10 @@ namespace LambdaEngine
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-		UNREFERENCED_VARIABLE(pClient);
-
-		auto iterator = m_PacketSubscribers.find(pPacket->GetType());
-		if (iterator != m_PacketSubscribers.end())
-		{
-			const TArray<std::function<void(NetworkSegment*)>>& functions = iterator->second;
-			for (const auto& func : functions)
-			{
-				func(pPacket);
-			}
-		}
-		else
-		{
-			LOG_WARNING("No packet subscription of type: %hu", pPacket->GetType());
-		}
+		MultiplayerUtils::s_pMultiplayerUtility->FirePacketEvent(pClient, pPacket);
 	}
 
-	void ClientSystem::OnPacketCreateEntity(NetworkSegment* pPacket)
+	void ClientSystem::OnPacketCreateEntity(IClient* pClient, NetworkSegment* pPacket)
 	{
 		BinaryDecoder decoder(pPacket);
 		bool isMySelf		= decoder.ReadBool();
@@ -184,67 +125,17 @@ namespace LambdaEngine
 		glm::vec3 color		= decoder.ReadVec3();
 
 		if (isMySelf)
-			m_NetworkUID = networkUID;
+			m_PlayerSystem.m_NetworkUID = networkUID;
 
-		Job addEntityJob;
-		addEntityJob.Components =
-		{
-			{ RW, PositionComponent::Type()					},
-			{ RW, RotationComponent::Type()					},
-			{ RW, ScaleComponent::Type()					},
-			{ RW, MeshComponent::Type()						},
-			{ RW, NetworkComponent::Type()					},
-			{ RW, VelocityComponent::Type()					},
-			{ RW, NetworkPositionComponent::Type()			},
-			{ RW, CharacterColliderComponent::Type()		}
-		};
-		addEntityJob.Function = std::bind(&ClientSystem::CreateEntity, this, networkUID, position, color);
-
-		ECSCore::GetInstance()->ScheduleJobASAP(addEntityJob);
-	}
-
-	void ClientSystem::OnPacketPlayerAction(NetworkSegment* pPacket)
-	{
-		GameState serverGameState = {};
-
-		BinaryDecoder decoder(pPacket);
-		int32 networkUID				= decoder.ReadInt32();
-		serverGameState.SimulationTick	= decoder.ReadInt32();
-		serverGameState.Position		= decoder.ReadVec3();
-		serverGameState.Velocity		= decoder.ReadVec3();
-
-		if (IsLocalClient(networkUID))
-		{
-			m_FramesProcessedByServer.PushBack(serverGameState);
-		}
-		else
-		{
-			Entity entity = GetEntityFromNetworkUID(networkUID);
-			m_PlayerActionSystem.OnPacketPlayerAction(entity, &serverGameState);
-		}
-	}
-
-	void ClientSystem::OnClientReleased(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-	}
-
-	void ClientSystem::OnServerFull(IClient* pClient)
-	{
-		UNREFERENCED_VARIABLE(pClient);
-	}
-
-	void ClientSystem::CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color)
-	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		Entity entity = pECS->CreateEntity();
 
 		LOG_INFO("Creating Entity with ID %d and NetworkID %d", entity, networkUID);
 
 		MaterialProperties materialProperties = {};
-		materialProperties.Roughness	= 0.1f;
-		materialProperties.Metallic		= 0.0f;
-		materialProperties.Albedo		= glm::vec4(color, 1.0f);
+		materialProperties.Roughness = 0.1f;
+		materialProperties.Metallic = 0.0f;
+		materialProperties.Albedo = glm::vec4(color, 1.0f);
 
 		//TArray<GUID_Lambda> animations;
 
@@ -252,8 +143,8 @@ namespace LambdaEngine
 		//const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		MeshComponent meshComponent;
-		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("Sphere.obj");
-		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("Sphere.obj");
+		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Mirror Material" + std::to_string(entity),
 			//robotAlbedoGUID,
 			//robotNormalGUID,
@@ -268,15 +159,15 @@ namespace LambdaEngine
 		//animationComp.AnimationGUID = animations[0];
 
 
-		pECS->AddComponent<PlayerComponent>(entity,				PlayerComponent{ .IsLocal = IsLocalClient(networkUID) });
-		pECS->AddComponent<PositionComponent>(entity,			{ true, position });
-		pECS->AddComponent<RotationComponent>(entity,			{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(entity,				{ true, glm::vec3(1.0f) });
-		pECS->AddComponent<VelocityComponent>(entity,			{ true, glm::vec3(0.0f) });
+		pECS->AddComponent<PlayerComponent>(entity, PlayerComponent{ .IsLocal = isMySelf });
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.0f) });
+		pECS->AddComponent<VelocityComponent>(entity, { true, glm::vec3(0.0f) });
 		//pECS->AddComponent<AnimationComponent>(entity,		animationComp);
-		pECS->AddComponent<MeshComponent>(entity,				meshComponent);
-		pECS->AddComponent<NetworkComponent>(entity,			{ networkUID });
-		pECS->AddComponent<NetworkPositionComponent>(entity,	{ position, position, EngineLoop::GetTimeSinceStart(), EngineLoop::GetFixedTimestep() });
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		pECS->AddComponent<NetworkComponent>(entity, { networkUID });
+		pECS->AddComponent<NetworkPositionComponent>(entity, { position, position, EngineLoop::GetTimeSinceStart(), EngineLoop::GetFixedTimestep() });
 
 		const CharacterColliderInfo colliderInfo = {
 			.Entity = entity,
@@ -293,85 +184,18 @@ namespace LambdaEngine
 		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 
 
-		m_Entities.insert({ networkUID, entity });
+		ClientUtilsImpl* pUtil = (ClientUtilsImpl*)MultiplayerUtils::s_pMultiplayerUtility;
+		pUtil->RegisterEntity(entity, networkUID);
 	}
 
-	void ClientSystem::Reconcile()
+	void ClientSystem::OnClientReleased(IClient* pClient)
 	{
-		while (!m_FramesProcessedByServer.IsEmpty())
-		{
-			ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
-
-			if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[0]))
-			{
-				ReplayGameStatesBasedOnServerGameState(m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[0]);
-			}
-
-			m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
-			m_FramesProcessedByServer.Erase(m_FramesProcessedByServer.Begin());
-		}
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
-	void ClientSystem::ReplayGameStatesBasedOnServerGameState(GameState* pGameStates, uint32 count, const GameState& gameStateServer)
+	void ClientSystem::OnServerFull(IClient* pClient)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-
-		Entity entityPlayer = GetEntityPlayer();
-
-		auto* pCharacterColliderComponents	= pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pNetPosComponents				= pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents			= pECS->GetComponentArray<VelocityComponent>();
-
-		NetworkPositionComponent& netPosComponent	= pNetPosComponents->GetData(entityPlayer);
-		VelocityComponent& velocityComponent		= pVelocityComponents->GetData(entityPlayer);
-
-		netPosComponent.Position	= gameStateServer.Position;
-		velocityComponent.Velocity	= gameStateServer.Velocity;
-
-		//Replay all game states since the game state which resulted in prediction ERROR
-
-		// TODO: Rollback other entities not just the player 
-
-		const Timestamp deltaTime = EngineLoop::GetFixedTimestep();
-		const float32 dt = (float32)deltaTime.AsSeconds();
-
-		for (uint32 i = 1; i < count; i++)
-		{
-			GameState& gameState = pGameStates[i];
-
-			/*
-			* Returns the velocity based on key presses
-			*/
-			PlayerActionSystem::ComputeVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
-
-			/*
-			* Sets the position of the PxController taken from the PositionComponent.
-			* Move the PxController using the VelocityComponent by the deltatime.
-			* Calculates a new Velocity based on the difference of the last position and the new one.
-			* Sets the new position of the PositionComponent
-			*/
-			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
-
-			gameState.Position = netPosComponent.Position;
-			gameState.Velocity = velocityComponent.Velocity;
-		}
-	}
-
-	bool ClientSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
-	{
-		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
-		{
-			LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z);
-			return false;
-		}
-			
-		if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
-		{
-			LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Velocity.x, gameStateLocal.Velocity.y, gameStateLocal.Velocity.z, gameStateServer.Velocity.x, gameStateServer.Velocity.y, gameStateServer.Velocity.z);
-			return false;
-		}	
-
-		return true;
+		UNREFERENCED_VARIABLE(pClient);
 	}
 
 	void ClientSystem::StaticFixedTickMainThread(Timestamp deltaTime)

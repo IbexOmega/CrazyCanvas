@@ -7,6 +7,8 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
+#include "Game/Multiplayer/GameState.h"
+
 #include "Containers/CCBuffer.h"
 #include "Containers/TSet.h"
 
@@ -23,7 +25,7 @@ namespace LambdaEngine
 	protected:
 		virtual void TickMainThread(Timestamp deltaTime) override;
 		virtual void FixedTickMainThread(Timestamp deltaTime) override;
-		virtual Entity GetEntityPlayer() const override;
+		virtual Entity GetEntityPlayer() const;
 
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;

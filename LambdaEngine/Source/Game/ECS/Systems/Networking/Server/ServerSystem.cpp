@@ -5,6 +5,8 @@
 
 #include "Networking/API/NetworkDebugger.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 namespace LambdaEngine
 {
 	ServerSystem* ServerSystem::s_pInstance = nullptr;
@@ -14,6 +16,8 @@ namespace LambdaEngine
 		m_pServer(nullptr),
 		m_CharacterControllerSystem()
 	{
+		MultiplayerUtils::Init(true);
+
 		ServerDesc desc = {};
 		desc.Handler				= this;
 		desc.MaxRetries				= 10;
@@ -36,6 +40,7 @@ namespace LambdaEngine
 	ServerSystem::~ServerSystem()
 	{
 		m_pServer->Release();
+		MultiplayerUtils::Release();
 	}
 
 	bool ServerSystem::Start()
