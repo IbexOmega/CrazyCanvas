@@ -68,10 +68,10 @@ void main()
 	out_Compact_Normal       	= PackNormal(shadingNormal);
 
 	//4
-	vec2 screenVelocity 	  	= (prevNDC - currentNDC);// + in_CameraJitter;
-	out_Velocity              	= vec2(screenVelocity);
+	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
+	out_Velocity				= vec2(screenVelocity);
 
 	// 5
-	vec3 paintMask         = texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
-	out_Albedo = mix(out_Albedo, vec3(1.0f, 1.0f, 1.0f), paintMask.r);
+	vec3 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
+	out_Albedo 					= mix(out_Albedo, vec3(1.0f, 1.0f, 1.0f), paintMask.r);
 }

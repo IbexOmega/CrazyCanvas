@@ -127,6 +127,11 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+	}
+
+
 	void PaintMaskRenderer::PreBuffersDescriptorSetWrite()
 	{
 	}

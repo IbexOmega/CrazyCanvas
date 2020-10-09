@@ -32,6 +32,7 @@ namespace LambdaEngine
 		bool init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
+		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 		virtual void PreBuffersDescriptorSetWrite() override final;
 		virtual void PreTexturesDescriptorSetWrite() override final;
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
@@ -50,7 +51,7 @@ namespace LambdaEngine
 
 		FORCEINLINE virtual const String& GetName() const override final
 		{
-			static String name = RENDER_GRAPH_PAINT_MASK_STAGE;
+			static String name = RENDER_GRAPH_MESH_UNWRAP_NAME;
 			return name;
 		}
 
