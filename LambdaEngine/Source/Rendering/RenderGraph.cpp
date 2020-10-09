@@ -577,7 +577,7 @@ namespace LambdaEngine
 		}
 
 		//Acceleration Structures
-		if (m_DirtyBoundAccelerationStructureResources.size() > 0)
+		if (!m_DirtyBoundAccelerationStructureResources.empty())
 		{
 			for (Resource* pResource : m_DirtyBoundAccelerationStructureResources)
 			{
