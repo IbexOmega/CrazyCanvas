@@ -40,10 +40,30 @@ namespace LambdaEngine
 		RW  = 2		// Read & Write
 	};
 
+	template <typename Comp>
+	class GroupedComponent
+	{
+	public:
+		ComponentPermissions Permissions = NDA; // The default permissions for any component type in a component group
+	};
+
 	struct ComponentAccess
 	{
+		template <typename Comp>
+		ComponentAccess(GroupedComponent<Comp> groupedComponent)
+			:
+			Permissions(groupedComponent.Permissions),
+			pTID(Comp::Type())
+		{}
+
+		ComponentAccess(ComponentPermissions permissions, const ComponentType* pType)
+			:
+			Permissions(permissions),
+			pTID(pType)
+		{}
+
 		ComponentPermissions Permissions;
-		const ComponentType* TID;
+		const ComponentType* pTID;
 	};
 
 	class IComponentGroup

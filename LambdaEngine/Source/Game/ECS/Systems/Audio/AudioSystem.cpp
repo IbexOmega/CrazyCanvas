@@ -15,7 +15,6 @@ namespace LambdaEngine
 		{
 			TransformComponents transformComponents;
 			transformComponents.Position.Permissions	= R;
-			transformComponents.Scale.Permissions		= NDA;
 			transformComponents.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
