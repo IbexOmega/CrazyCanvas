@@ -47,11 +47,14 @@ namespace LambdaEngine
 		{
 			m_LocalClock	= m_BeginAt;
 			m_IsActive		= false;
+			m_LastTime		= 0.0;
+			m_DeltaTime		= 0.0;
 		}
 
 		FORCEINLINE bool IsFinished() const
 		{
-			return m_LocalClock >= GetMaxWithEpsilon();
+			// Use deltatime to predict if we are finished (This prevents the animation to replay due to large DT)
+			return (m_LocalClock + m_DeltaTime) >= GetMaxWithEpsilon();
 		}
 
 		FORCEINLINE const String& From() const
@@ -80,6 +83,8 @@ namespace LambdaEngine
 
 	private:
 		bool	m_IsActive;
+		float64	m_DeltaTime;
+		float64	m_LastTime;
 		float64	m_LocalClock;
 		float64 m_BeginAt;
 		String	m_FromState;
@@ -247,6 +252,9 @@ namespace LambdaEngine
 		{
 			return (m_CurrentTransition > INVALID_TRANSITION);
 		}
+
+	private:
+		void FinishTransition();
 
 	private:
 		bool m_IsBlending;

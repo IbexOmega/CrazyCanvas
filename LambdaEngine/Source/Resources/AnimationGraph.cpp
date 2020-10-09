@@ -61,6 +61,14 @@ namespace LambdaEngine
 		{
 			m_IsActive = true;
 		}
+
+		// Calculate deltatime, used for determine if we should finish transition
+		if (m_LastTime > 0.0f)
+		{
+			m_DeltaTime = currentClipsNormalizedTime - m_LastTime;
+		}
+
+		m_LastTime = currentClipsNormalizedTime;
 	}
 
 	bool Transition::Equals(const String& fromState, const String& toState) const
@@ -317,11 +325,7 @@ namespace LambdaEngine
 
 				if (currentTransition.IsFinished())
 				{
-					currentTransition.Reset();
-
-					MakeCurrentState(GetCurrentTransition().To());
-					m_CurrentTransition = INVALID_TRANSITION;
-					m_IsBlending = false;
+					FinishTransition();
 				}
 			}
 		}
@@ -399,8 +403,6 @@ namespace LambdaEngine
 
 	void AnimationGraph::TransitionToState(const String& name)
 	{
-		// TODO: What if we already are transitioning? Should we queue up transitions? (NO) Transition instantly? Ignore?
-
 		if (!HasState(name))
 		{
 			LOG_WARNING("[AnimationGraph::TransitionToState] No state with name '%s'", name.c_str());
@@ -412,6 +414,12 @@ namespace LambdaEngine
 		{
 			LOG_WARNING("[AnimationGraph::TransitionToState] No transition defined from '%s' to '%s'", currentState.GetName().c_str(), name.c_str());
 			return;
+		}
+
+		// If we already are transitioning we finish it directly
+		if (IsTransitioning())
+		{
+			FinishTransition();
 		}
 
 		// Find correct transition
@@ -569,5 +577,14 @@ namespace LambdaEngine
 		{
 			return GetCurrentState().GetCurrentFrame();
 		}
+	}
+	
+	void AnimationGraph::FinishTransition()
+	{
+		GetCurrentTransition().Reset();
+
+		MakeCurrentState(GetCurrentTransition().To());
+		m_CurrentTransition = INVALID_TRANSITION;
+		m_IsBlending = false;
 	}
 }

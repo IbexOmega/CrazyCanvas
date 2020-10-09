@@ -105,9 +105,9 @@ void BenchmarkState::Init()
 		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
 
 		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness = 1.0f;
-		materialProperties.Metallic = 1.0f;
+		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness	= 1.0f;
+		materialProperties.Metallic		= 1.0f;
 
 		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",

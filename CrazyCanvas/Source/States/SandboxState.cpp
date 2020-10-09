@@ -272,7 +272,7 @@ void SandboxState::Init()
 		//}
 
 		// Add PointLights
-		/*{
+		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
 			const PointLightComponent pointLights[3] =
 			{
@@ -318,7 +318,7 @@ void SandboxState::Init()
 				pECS->AddComponent<PointLightComponent>(pt, pointLights[i % 3]);
 				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
-		}*/
+		}
 	}
 
 	//Mirrors
