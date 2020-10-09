@@ -60,6 +60,6 @@ namespace LambdaEngine
 		// Make sure nothing is being written to the write buffer when copying write buffer to read buffer in Input::Tick
 		static SpinLock s_WriteBufferLockMouse;
 		static SpinLock s_WriteBufferLockKeyboard;
-		static bool s_InputEnabled;
+		static std::atomic_bool s_InputEnabled;
 	};
 }
