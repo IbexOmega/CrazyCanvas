@@ -1409,7 +1409,7 @@ namespace LambdaEngine
 					    glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
 					    pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
 
-					    LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+                        LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
 					}
 				}
 
