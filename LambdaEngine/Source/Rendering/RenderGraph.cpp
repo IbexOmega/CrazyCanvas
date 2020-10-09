@@ -1912,8 +1912,6 @@ namespace LambdaEngine
 					{
 						ETextureState textureState = CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType, pResource->Texture.Format);
 
-						uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
-
 						descriptorBinding.Binding			= textureDescriptorBindingIndex++;
 
 						if (pResource->Texture.UnboundedArray)
@@ -1923,6 +1921,7 @@ namespace LambdaEngine
 						}
 						else
 						{
+							uint32 actualSubResourceCount		= (pResource->BackBufferBound || pResource->Texture.IsOfArrayType) ? 1 : pResource->SubResourceCount;
 							descriptorBinding.DescriptorCount	= actualSubResourceCount;
 						}
 

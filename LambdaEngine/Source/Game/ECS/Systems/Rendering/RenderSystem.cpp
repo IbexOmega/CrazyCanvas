@@ -57,50 +57,67 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
+					.pSubscriber = &m_RenderableEntities,
+					.ComponentAccesses =
 					{
 						{ NDA, MeshComponent::Type() }
 					},
-					{ &transformComponents },
-					{ AnimationComponent::Type() },
-					&m_RenderableEntities,
-					std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)
+					.ComponentGroups =
+					{
+						&transformComponents
+					},
+					.ExcludedComponentTypes =
+					{
+						AnimationComponent::Type(),
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)
 				},
 				{
+					.pSubscriber = &m_DirectionalLightEntities,
+					.ComponentAccesses =
 					{
-						{ R, DirectionalLightComponent::Type() }, 
+						{ R, DirectionalLightComponent::Type() },
 						{ R, RotationComponent::Type() }
-					}, 
-					&m_DirectionalLightEntities,	
-					std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
 				},
 				{
+					.pSubscriber = &m_PointLightEntities,
+					.ComponentAccesses =
 					{
-						{ R, PointLightComponent::Type() }, 
+						{ R, PointLightComponent::Type() },
 						{ R, PositionComponent::Type() }
-					}, 
-					&m_PointLightEntities,
-					std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) 
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1)
 				},
 				{
+					.pSubscriber = &m_CameraEntities,
+					.ComponentAccesses =
 					{
-						{ R, ViewProjectionMatricesComponent::Type() }, 
+						{ R, ViewProjectionMatricesComponent::Type() },
 						{ R, CameraComponent::Type() }
-					}, 
-					{ &transformComponents }, 
-					&m_CameraEntities
+					},
+					.ComponentGroups =
+					{
+						&transformComponents
+					}
 				},
 				{
+					.pSubscriber = &m_AnimatedEntities,
+					.ComponentAccesses =
 					{
-						{ R, AnimationComponent::Type() }, 
+						{ R, AnimationComponent::Type() },
 						{ R, MeshComponent::Type() }
-					}, 
-					{ &transformComponents }, 
-					&m_AnimatedEntities, 
-					std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1) 
+					},
+					.ComponentGroups =
+					{
+						&transformComponents
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1)
 				}
 			};
 
@@ -284,7 +301,7 @@ namespace LambdaEngine
 			pipelineDesc.DebugName			= "Skinning pipeline";
 			pipelineDesc.PipelineLayout		= m_SkinningPipelineLayout;
 			pipelineDesc.Shader.ShaderGUID	= ResourceManager::LoadShaderFromFile("Animation/Skinning.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
-			
+
 			m_SkinningPipelineID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 			if (m_SkinningPipelineID == 0)
 			{
@@ -446,16 +463,16 @@ namespace LambdaEngine
 			const auto&			positionComp	= pPositionComponents->GetData(entity);
 			const auto&			rotationComp	= pRotationComponents->GetData(entity);
 			const auto&			scaleComp		= pScaleComponents->GetData(entity);
-			
+
 			if (!animationComp.IsPaused)
 			{
 				MeshKey key(meshComp.MeshGUID, entity, true);
-				
+
 				auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 				if (meshEntryIt != m_MeshAndInstancesMap.end())
 				{
 					UpdateAnimationBuffers(animationComp, meshEntryIt->second);
-					
+
 					MeshEntry* pMeshEntry = &meshEntryIt->second;
 					m_AnimationsToUpdate.insert(pMeshEntry);
 					m_DirtyBLASs.insert(pMeshEntry);
@@ -738,9 +755,9 @@ namespace LambdaEngine
 			{
 				const Mesh* pMesh = ResourceManager::GetMesh(meshGUID);
 				VALIDATE(pMesh != nullptr);
-				
+
 				MeshEntry meshEntry = {};
-				
+
 				// Vertices
 				{
 					BufferDesc vertexStagingBufferDesc = {};
@@ -790,7 +807,7 @@ namespace LambdaEngine
 						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
-					
+
 						meshEntry.pVertexWeightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexWeightBufferDesc);
 						VALIDATE(meshEntry.pVertexWeightsBuffer != nullptr);
 
@@ -1118,7 +1135,7 @@ namespace LambdaEngine
 
 			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
 				{
-					return pMeshEntry == &meshAndInstancesIt->second; 
+					return pMeshEntry == &meshAndInstancesIt->second;
 				});
 			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
 				{
@@ -1129,11 +1146,11 @@ namespace LambdaEngine
 					return pMeshEntry == &meshAndInstancesIt->second;
 				});
 
-			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end()) 
+			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end())
 				m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
-			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end()) 
+			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end())
 				m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
-			if (dirtyBLASToRemove != m_DirtyBLASs.end()) 
+			if (dirtyBLASToRemove != m_DirtyBLASs.end())
 				m_DirtyBLASs.erase(dirtyBLASToRemove);
 
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
@@ -1289,7 +1306,7 @@ namespace LambdaEngine
 
 			drawArg.pIndexBuffer	= meshEntryPair.second.pIndexBuffer;
 			drawArg.IndexCount		= meshEntryPair.second.IndexCount;
-			
+
 			drawArg.pInstanceBuffer	= meshEntryPair.second.pRasterInstanceBuffer;
 			drawArg.InstanceCount	= meshEntryPair.second.RasterInstances.GetSize();
 
@@ -1378,7 +1395,7 @@ namespace LambdaEngine
 			meshEntry.pBoneMatrixBuffer			= RenderAPI::GetDevice()->CreateBuffer(&matrixBufferDesc);
 			meshEntry.BoneMatrixCount			= animationComp.Pose.GlobalTransforms.GetSize();
 			meshEntry.pAnimationDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet("Animation Descriptor Set", m_SkinningPipelineLayout.Get(), 0, m_AnimationDescriptorHeap.Get());
-			
+
 			const uint64 offset = 0;
 			uint64 size = meshEntry.VertexCount * sizeof(Vertex);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexBuffer,			&offset, &size,			0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
@@ -1392,7 +1409,7 @@ namespace LambdaEngine
 		void* pMapped = meshEntry.pStagingMatrixBuffer->Map();
 		memcpy(pMapped, animationComp.Pose.GlobalTransforms.GetData(), sizeInBytes);
 		meshEntry.pStagingMatrixBuffer->Unmap();
-		
+
 		m_PendingBufferUpdates.PushBack({ meshEntry.pStagingMatrixBuffer, 0, meshEntry.pBoneMatrixBuffer, 0, sizeInBytes });
 	}
 
@@ -1400,10 +1417,10 @@ namespace LambdaEngine
 	{
 		// TODO: Investigate the best groupsize for us (THIS MUST MATCH THE SHADER-DEFINE)
 		constexpr uint32 THREADS_PER_WORKGROUP = 32;
-		
+
 		PipelineState* pPipeline = PipelineStateManager::GetPipelineState(m_SkinningPipelineID);
 		VALIDATE(pPipeline != nullptr);
-		
+
 		for (MeshEntry* pMeshEntry : m_AnimationsToUpdate)
 		{
 			pCommandList->BindDescriptorSetCompute(pMeshEntry->pAnimationDescriptorSet, m_SkinningPipelineLayout.Get(), 0);
@@ -1412,7 +1429,7 @@ namespace LambdaEngine
 			const uint32 vertexCount = pMeshEntry->VertexCount;
 			pCommandList->SetConstantRange(m_SkinningPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &vertexCount, sizeof(uint32), 0);
 
-			const uint32 workGroupCount = std::max<uint32>(AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
+			const uint32 workGroupCount = std::max<uint32>((uint32)AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
 			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
 
@@ -1445,7 +1462,7 @@ namespace LambdaEngine
 
 				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pStagingBuffer != nullptr) 
+					if (pStagingBuffer != nullptr)
 						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
 
 					BufferDesc bufferDesc = {};
@@ -1464,7 +1481,7 @@ namespace LambdaEngine
 
 				if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pRasterInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer != nullptr) 
+					if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer != nullptr)
 						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pRasterInstanceBuffer);
 
 					BufferDesc bufferDesc = {};

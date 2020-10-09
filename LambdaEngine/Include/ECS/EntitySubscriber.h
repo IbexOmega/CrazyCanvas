@@ -9,19 +9,12 @@ namespace LambdaEngine
 {
 	class IDVector;
 
-	// EntitySubscriptionRegistration contains all required information to request a single entity subscription
-	class EntitySubscriptionRegistration
+	struct EntitySubscriptionRegistration
 	{
-	public:
-		EntitySubscriptionRegistration(TArray<ComponentAccess> componentAccesses, const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
-		EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, const TArray<IComponentGroup*>& componentGroups, const TArray<const ComponentType*>& excludedComponentTypes, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
-		EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
-		EntitySubscriptionRegistration(const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded = nullptr, std::function<void(Entity)>onEntityRemoval = nullptr);
-
-	public:
-		TArray<ComponentAccess> ComponentAccesses;
-		TArray<const ComponentType*> ExcludedComponentTypes;
 		IDVector* pSubscriber;
+		TArray<ComponentAccess> ComponentAccesses;
+		const TArray<IComponentGroup*> ComponentGroups;
+		TArray<const ComponentType*> ExcludedComponentTypes;
 		// Optional: Called after an entity is added due to the subscription
 		std::function<void(Entity)> OnEntityAdded;
 		// Optional: Called before an entity is removed
@@ -32,9 +25,9 @@ namespace LambdaEngine
 	struct EntitySubscriberRegistration
 	{
 		TArray<EntitySubscriptionRegistration> EntitySubscriptionRegistrations;
-		/*  AdditionalDependencies are components that the subscriber will process.
-			However, the subscriber will not store an array of the entities whose components it will process. */
-		TArray<ComponentAccess> AdditionalDependencies;
+		/*  AdditionalAccesses are components that the subscriber will process, but are not part of any subscriptions.
+			The subscriber will not store the entities whose components it will process. */
+		TArray<ComponentAccess> AdditionalAccesses;
 	};
 
 	// EntitySubscriber deregisters its entity subscriptions at destruction
@@ -45,7 +38,13 @@ namespace LambdaEngine
 		~EntitySubscriber();
 
 		// subscribeToEntities enqueues entity subscriptions. initFn is called when all dependencies have been initialized.
-		void SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration);
+		void SubscribeToEntities(EntitySubscriberRegistration& subscriberRegistration);
+
+	private:
+		// ProcessComponentGroups removes duplicate component access registrations
+		static void ProcessComponentGroups(EntitySubscriptionRegistration& subscriptionRegistration);
+		// ProcessExcludedTypes asserts that the same component type isn't both included and excluded in a subscription
+		static void ProcessExcludedTypes(EntitySubscriptionRegistration& subscriptionRegistration);
 
 	private:
 		uint32 m_SubscriptionID = UINT32_MAX;

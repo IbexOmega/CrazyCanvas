@@ -78,7 +78,6 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
-		Extension(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME),
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
@@ -850,7 +849,6 @@ namespace LambdaEngine
 		DescriptorSetVK*		pDstVk			= reinterpret_cast<DescriptorSetVK*>(pDst);
 		const DescriptorSetVK*	pSrcVk			= reinterpret_cast<const DescriptorSetVK*>(pSrc);
 		uint32					bindingCount	= pSrcVk->GetDescriptorBindingDescCount();
-		
 
 		VkCopyDescriptorSet copyDescriptorSet = {};
 		copyDescriptorSet.sType				= VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
@@ -865,15 +863,12 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < bindingCount; i++)
 		{
 			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
-			uint32 bindingDescriptorCount = pSrcVk->GetBindingDescriptorCount(binding.Binding);
 
-			copyDescriptorSet.descriptorCount	= bindingDescriptorCount;
+			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
 			copyDescriptorSet.srcBinding		= binding.Binding;
 			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
-
-			pDstVk->SetBindingDescriptorCount(binding.Binding, bindingDescriptorCount);
 		}
 
 		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
@@ -901,8 +896,6 @@ namespace LambdaEngine
 			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
-
-			pDstVk->SetBindingDescriptorCount(copyDescriptorSet.dstBinding, pSrcVk->GetBindingDescriptorCount(copyDescriptorSet.srcBinding));
 		}
 
 		vkUpdateDescriptorSets(Device, 0, nullptr, uint32(descriptorSetCopies.GetSize()), descriptorSetCopies.GetData());
@@ -1185,13 +1178,9 @@ namespace LambdaEngine
 		}
 
 		// Query support for features
-		VkPhysicalDeviceRobustness2FeaturesEXT supportedRobustnessFeatures = { };
-		supportedRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
-		supportedRobustnessFeatures.pNext = nullptr;
-
 		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = { };
 		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-		supportedMeshShaderFeatures.pNext = &supportedRobustnessFeatures;
+		supportedMeshShaderFeatures.pNext = nullptr;
 
 		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = { };
 		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
@@ -1211,14 +1200,9 @@ namespace LambdaEngine
 		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
 
 		// Enabled features
-		VkPhysicalDeviceRobustness2FeaturesEXT enabledRobustnessFeatures = { };
-		enabledRobustnessFeatures.sType				= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
-		enabledRobustnessFeatures.pNext				= nullptr;
-		enabledRobustnessFeatures.nullDescriptor	= supportedRobustnessFeatures.nullDescriptor;
-
 		VkPhysicalDeviceMeshShaderFeaturesNV enabledMeshShaderFeatures = {};
 		enabledMeshShaderFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-		enabledMeshShaderFeatures.pNext			= &enabledRobustnessFeatures;
+		enabledMeshShaderFeatures.pNext			= nullptr;
 		enabledMeshShaderFeatures.meshShader	= supportedMeshShaderFeatures.meshShader;
 		enabledMeshShaderFeatures.taskShader	= supportedMeshShaderFeatures.taskShader;
 
@@ -1235,10 +1219,9 @@ namespace LambdaEngine
 		enabledDeviceFeatures12.descriptorIndexing				= supportedDeviceFeatures12.descriptorIndexing;
 		enabledDeviceFeatures12.runtimeDescriptorArray			= supportedDeviceFeatures12.runtimeDescriptorArray;
 		enabledDeviceFeatures12.descriptorBindingPartiallyBound	= supportedDeviceFeatures12.descriptorBindingPartiallyBound;
-
-		enabledDeviceFeatures12.shaderInt8						= supportedDeviceFeatures12.shaderInt8;
-		enabledDeviceFeatures12.shaderFloat16					= supportedDeviceFeatures12.shaderFloat16;
-		enabledDeviceFeatures12.storageBuffer8BitAccess			= supportedDeviceFeatures12.storageBuffer8BitAccess;
+		enabledDeviceFeatures12.shaderInt8				        = supportedDeviceFeatures12.shaderInt8;
+		enabledDeviceFeatures12.shaderFloat16			        = supportedDeviceFeatures12.shaderFloat16;
+		enabledDeviceFeatures12.storageBuffer8BitAccess	        = supportedDeviceFeatures12.storageBuffer8BitAccess;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
 		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
