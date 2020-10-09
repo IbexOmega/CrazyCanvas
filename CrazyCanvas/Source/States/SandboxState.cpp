@@ -191,7 +191,7 @@ void SandboxState::Init()
 		AnimationGraph animationGraph;
 		animationGraph.AddState(AnimationState("running", running[0]));
 		animationGraph.AddState(AnimationState("walking", animations[0]));
-		animationGraph.AddTransition(Transition("running", "walking", 0.1));
+		animationGraph.AddTransition(Transition("running", "walking", 0.2));
 		animationGraph.AddTransition(Transition("walking", "running", 0.5));
 		robotAnimationComp.Graph = animationGraph;
 

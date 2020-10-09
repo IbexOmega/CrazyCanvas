@@ -76,6 +76,11 @@ namespace LambdaEngine
 		return m_FromState == fromState && m_ToState == toState;
 	}
 
+	bool Transition::UsesState(const String& state) const
+	{
+		return m_FromState == state || m_ToState == state;
+	}
+
 	/*
 	* AnimationState
 	*/
@@ -361,6 +366,20 @@ namespace LambdaEngine
 
 	void AnimationGraph::RemoveState(const String& name)
 	{
+		// Remove all transitions using this state
+		for (TransitionIterator it = m_Transitions.Begin(); it != m_Transitions.End();)
+		{
+			if (it->UsesState(name))
+			{
+				it = m_Transitions.Erase(it);
+			}
+			else
+			{
+				it++;
+			}
+		}
+
+		// Remove state
 		for (StateIterator it = m_States.Begin(); it != m_States.End(); it++)
 		{
 			if (it->GetName() == name)

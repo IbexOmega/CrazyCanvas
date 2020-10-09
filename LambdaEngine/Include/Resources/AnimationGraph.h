@@ -42,6 +42,7 @@ namespace LambdaEngine
 		void Tick(float64 currentClipsNormalizedTime);
 
 		bool Equals(const String& fromState, const String& toState) const;
+		bool UsesState(const String& state) const;
 
 		FORCEINLINE void Reset()
 		{
@@ -54,7 +55,7 @@ namespace LambdaEngine
 		FORCEINLINE bool IsFinished() const
 		{
 			// Use deltatime to predict if we are finished (This prevents the animation to replay due to large DT)
-			return (m_LocalClock + m_DeltaTime) >= GetMaxWithEpsilon();
+			return (m_LocalClock + m_DeltaTime) >= 1.0;
 		}
 
 		FORCEINLINE const String& From() const
@@ -69,16 +70,9 @@ namespace LambdaEngine
 
 		FORCEINLINE float64 GetWeight() const
 		{
-			const float64 distance = GetMaxWithEpsilon() - m_BeginAt;
+			const float64 distance = 1.0 - m_BeginAt;
 			const float64 traveled = m_LocalClock - m_BeginAt;
 			return traveled / distance;
-		}
-
-	private:
-		constexpr float64 GetMaxWithEpsilon() const
-		{
-			constexpr float64 EPSILON = 0.025;
-			return 1.0 - EPSILON;
 		}
 
 	private:
@@ -109,7 +103,7 @@ namespace LambdaEngine
 
 		Animation& GetAnimation() const;
 
-		FORCEINLINE void StartUp(float64 startTime)
+		FORCEINLINE void StartUp(float64 startTime, float64 startAt = 0.0)
 		{
 			m_StartTime = startTime;
 			m_IsPlaying = true;
