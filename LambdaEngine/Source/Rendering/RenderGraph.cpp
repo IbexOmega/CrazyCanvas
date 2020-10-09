@@ -608,7 +608,7 @@ namespace LambdaEngine
 			m_DirtyBoundAccelerationStructureResources.clear();
 		}
 
-		if (m_DirtyBoundTextureResources.size() > 0)
+		if (!m_DirtyBoundTextureResources.empty())
 		{
 			for (Resource* pResource : m_DirtyBoundTextureResources)
 			{
