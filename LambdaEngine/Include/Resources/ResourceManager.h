@@ -25,8 +25,9 @@ namespace LambdaEngine
 	//Textures
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_COLOR_MAP	= GUID_MATERIAL_DEFAULT + 1;
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_NORMAL_MAP	= GUID_TEXTURE_DEFAULT_COLOR_MAP + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_MASK_MAP		= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
 
-	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
+	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_MASK_MAP + 1;
 
 	constexpr const char* SCENE_DIR			= "../Assets/Scenes/";
 	constexpr const char* MESH_DIR			= "../Assets/Meshes/";

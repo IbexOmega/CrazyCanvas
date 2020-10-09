@@ -49,7 +49,7 @@ namespace LambdaEngine
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 		FORCEINLINE virtual const String& GetName() const override
 		{
-			static String name = RENDER_GRAPH_PHYSICS_DEBUG_STAGE;
+			static String name = RENDER_GRAPH_PHYSICS_DEBUG_NAME;
 			return name;
 		}
 

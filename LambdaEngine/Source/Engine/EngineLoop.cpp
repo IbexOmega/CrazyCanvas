@@ -25,6 +25,7 @@
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
 
+#include "Rendering/EntityMaskManager.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/StagingBufferCache.h"
 #include "Rendering/Core/API/CommandQueue.h"
@@ -215,6 +216,11 @@ namespace LambdaEngine
 		}
 
 		if (!PlatformNetworkUtils::Init())
+		{
+			return false;
+		}
+
+		if (!EntityMaskManager::Init())
 		{
 			return false;
 		}
