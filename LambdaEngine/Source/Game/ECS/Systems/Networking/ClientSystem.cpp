@@ -251,29 +251,31 @@ namespace LambdaEngine
 		materialProperties.Metallic		= 0.0f;
 		materialProperties.Albedo		= glm::vec4(color, 1.0f);
 
-		TArray<GUID_Lambda> animations;
+		//TArray<GUID_Lambda> animations;
 
-		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		//const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		//const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		MeshComponent meshComponent;
-		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("Sphere.obj");
 		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 			"Mirror Material" + std::to_string(entity),
-			robotAlbedoGUID,
-			robotNormalGUID,
+			//robotAlbedoGUID,
+			//robotNormalGUID,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
-		AnimationComponent animationComp;
-		animationComp.AnimationGUID = animations[0];
+		/*AnimationComponent animationComp;
+		animationComp.AnimationGUID = animations[0];*/
 
 		pECS->AddComponent<PositionComponent>(entity,	{ true, position });
 		pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(0.01f) });
-		pECS->AddComponent<AnimationComponent>(entity,	animationComp);
+		pECS->AddComponent<ScaleComponent>(entity,		{ true, glm::vec3(1.0f) });
+		//pECS->AddComponent<AnimationComponent>(entity,	animationComp);
 		pECS->AddComponent<MeshComponent>(entity,		meshComponent);
 		pECS->AddComponent<NetworkComponent>(entity,	{ networkUID });
 
