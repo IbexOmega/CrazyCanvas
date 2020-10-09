@@ -486,7 +486,7 @@ namespace LambdaEngine
 				m_DirtyRenderStageTextureSets.clear();
 			}
 
-			if (m_DirtyRenderStageBufferSets.size() > 0)
+			if (!m_DirtyRenderStageBufferSets.empty())
 			{
 				//Copy old descriptor set and replace old with copy, then write into the new copy
 				for (RenderStage* pRenderStage : m_DirtyRenderStageBufferSets)
