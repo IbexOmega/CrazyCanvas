@@ -8,17 +8,17 @@ TrackSystem TrackSystem::s_Instance;
 
 bool TrackSystem::Init()
 {
-	TransformComponents transformComponents;
-	transformComponents.Position.Permissions	= RW;
-	transformComponents.Scale.Permissions		= NDA;
-	transformComponents.Rotation.Permissions	= RW;
-
-	// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 	{
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
-			{{{RW, TrackComponent::Type()}}, {&transformComponents}, &m_CameraEntities}
+			{
+				.pSubscriber = &m_CameraEntities,
+				.ComponentAccesses =
+				{
+					{RW, TrackComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}
+				}
+			}
 		};
 		systemReg.Phase = 0;
 
