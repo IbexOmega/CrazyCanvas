@@ -1019,7 +1019,7 @@ namespace LambdaEngine
 		}
 
 #if 0
-		LOG_INFO("AnimationName=%s, ID=%d", name.c_str(), myID);
+		LOG_INFO("Name=%s, ID=%d", name.c_str(), myID);
 #endif
 
 		for (uint32 child = 0; child < pNode->mNumChildren; child++)
@@ -1115,7 +1115,7 @@ namespace LambdaEngine
 		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
 		{
 			Joint& joint = pSkeleton->Joints[jointID];
-			LOG_INFO("AnimationName=%s, MyID=%d, ParentID=%d", joint.Name.GetString().c_str(), jointID, joint.ParentBoneIndex);
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", joint.Name.GetString().c_str(), jointID, joint.ParentBoneIndex);
 		}
 #endif
 
