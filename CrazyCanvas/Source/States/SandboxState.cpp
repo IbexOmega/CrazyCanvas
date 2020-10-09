@@ -201,12 +201,52 @@ void SandboxState::Init()
 
 	//Sphere Grid
 	{
-		const uint32 sphereMeshGUID	= ResourceManager::LoadMeshFromFile("sphere.obj");
-		const uint32 gridRadius		= 5;
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+
+		uint32 gridRadius = 5;
+
+		for (uint32 y = 0; y < gridRadius; y++)
+		{
+			float32 roughness = y / float32(gridRadius - 1);
+
+			for (uint32 x = 0; x < gridRadius; x++)
+			{
+				float32 metallic = x / float32(gridRadius - 1);
+
+				MaterialProperties materialProperties;
+				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+				materialProperties.Roughness = roughness;
+				materialProperties.Metallic = metallic;
+
+				MeshComponent sphereMeshComp = {};
+				sphereMeshComp.MeshGUID = sphereMeshGUID;
+				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					materialProperties);
+
+				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
+				glm::vec3 scale(1.0f);
+
+				Entity entity = pECS->CreateEntity();
+				const StaticCollisionInfo collisionCreateInfo = {
+					.Entity = entity,
+					.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
+					.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+					.Rotation = pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+					.Mesh = pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+					.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
 			}
 		}
+	}
 
 	if constexpr (IMGUI_ENABLED)
 	{
