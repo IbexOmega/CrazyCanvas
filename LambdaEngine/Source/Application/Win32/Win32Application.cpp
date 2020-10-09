@@ -223,8 +223,7 @@ namespace LambdaEngine
 		memcpy(&sys, &fsys, sizeof(FILETIME));
 		memcpy(&user, &fuser, sizeof(FILETIME));
 		float64 percent = float64((sys.QuadPart - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.QuadPart));
-		percent /= (now.QuadPart - lastCPU.QuadPart);
-		percent /= numProcessors;
+		percent /= (now.QuadPart - lastCPU.QuadPart) * numProcessors;
 		lastCPU = now;
 		lastUserCPU = user;
 		lastSysCPU = sys;
