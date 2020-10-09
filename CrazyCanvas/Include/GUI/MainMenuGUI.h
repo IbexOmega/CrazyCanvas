@@ -17,6 +17,7 @@ public:
 	bool ConnectEvent(Noesis::BaseComponent* pSoruce, const char* pEvent, const char* pHandler) override;
 	void OnButtonSingleplayerClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonMultiplayerClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonKeybindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
