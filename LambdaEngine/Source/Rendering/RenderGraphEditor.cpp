@@ -835,9 +835,9 @@ namespace LambdaEngine
 
 	void RenderGraphEditor::InternalRenderEditResourceView(RenderGraphResourceDesc* pResource, char* pNameBuffer, int32 nameBufferLength)
 	{
-		ImGui::Text("Resource AnimationName:      ");
+		ImGui::Text("Resource Name:      ");
 		ImGui::SameLine();
-		ImGui::InputText("##Resource AnimationName", pNameBuffer, nameBufferLength, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
+		ImGui::InputText("##Resource Name", pNameBuffer, nameBufferLength, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
 
 		bool isUnboundedTextureArray = pResource->Type == ERenderGraphResourceType::TEXTURE && pResource->TextureParams.UnboundedArray;
 
@@ -1804,9 +1804,9 @@ namespace LambdaEngine
 			{
 				ImGui::AlignTextToFramePadding();
 
-				ImGui::Text("Render Stage AnimationName:");
+				ImGui::Text("Render Stage Name:");
 				ImGui::SameLine();
-				ImGui::InputText("##Render Stage AnimationName", renderStageNameBuffer, RENDER_STAGE_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
+				ImGui::InputText("##Render Stage Name", renderStageNameBuffer, RENDER_STAGE_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
 
 				ImGui::Text("Custom Renderer:  ");
 				ImGui::SameLine();
@@ -1912,9 +1912,9 @@ namespace LambdaEngine
 		ImGui::SetNextWindowSize(ImVec2(360, 120));
 		if (ImGui::BeginPopupModal("Save Render Graph ##Popup"))
 		{
-			ImGui::Text("Render Graph AnimationName:");
+			ImGui::Text("Render Graph Name:");
 			ImGui::SameLine();
-			ImGui::InputText("##Render Graph AnimationName", renderGraphNameBuffer, RENDER_GRAPH_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
+			ImGui::InputText("##Render Graph Name", renderGraphNameBuffer, RENDER_GRAPH_NAME_BUFFER_LENGTH, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank);
 
 			bool done = false;
 			bool renderGraphNameEmpty = renderGraphNameBuffer[0] == 0;
