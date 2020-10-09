@@ -52,7 +52,7 @@ void PlaySessionState::Init()
 
 	// Scene
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
+		m_pLevel = LevelManager::LoadLevel(1);
 	}
 
 	// Robot
