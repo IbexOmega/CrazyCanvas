@@ -13,6 +13,16 @@ namespace LambdaEngine
 	class EntitySubscriber;
 	class RegularWorker;
 
+	// EntitySerializationHeader is written to the beginning of an entity serialization
+#pragma pack(push, 1)
+	struct EntitySerializationHeader
+	{
+		uint32 TotalSerializationSize;
+		Entity Entity;
+		uint32 ComponentCount;
+	};
+#pragma pack(pop)
+
     class LAMBDA_API ECSCore
     {
     public:
@@ -66,6 +76,29 @@ namespace LambdaEngine
 		void DeregisterTopRegistryPage();
 		void DeleteTopRegistryPage();
 		void ReinstateTopRegistryPage();
+
+		/**
+		 * Serializes the entity into the following format:
+		 * Total Serialization Size			- 4 bytes (includes the size of the header)
+		 * Entity ID						- 4 bytes
+		 * Component Count					- 4 bytes
+		 * [
+		 *	Component Serialization Size	- 4 bytes (includes the size of the header)
+		 * 	Component Type Hash				- 4 bytes
+		 *	Component Data					- Component Serialization Size
+		 * ]
+		 *
+		 * @param componentsFilter The component types to serialize
+		 * \return The required of the serialization.
+		 * If said return value is greater than the provided bufferSize, the serialization failed.
+		 * Providing a zero bufferSize and nullptr pBuffer is a slow but valid strategy for getting the required buffer size.
+		*/
+		uint32 SerializeEntity(Entity entity, const TArray<const ComponentType*>& componentsFilter, uint8* pBuffer, uint32 bufferSize) const;
+		/**
+		 * DeserializeEntity uses the entity and component data to add new components and update existing ones.
+		 * \return Whether deserializing all components succeeded.
+		*/
+		bool DeserializeEntity(const uint8* pBuffer);
 
         Timestamp GetDeltaTime() const { return m_DeltaTime; }
 

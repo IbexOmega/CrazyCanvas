@@ -1,13 +1,10 @@
 #pragma once
-
-
 #include "Game/State.h"
 
 #include "GUI/MainMenuGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
-
 
 
 class MainMenuState : public LambdaEngine::State

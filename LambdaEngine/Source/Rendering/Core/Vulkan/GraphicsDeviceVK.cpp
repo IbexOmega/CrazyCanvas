@@ -1177,31 +1177,29 @@ namespace LambdaEngine
 			queueCreateInfos.PushBack(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = {};
+		// Query support for features
+		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = { };
 		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 		supportedMeshShaderFeatures.pNext = nullptr;
 
-		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = {};
+		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = { };
 		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
 		supportedRayTracingFeatures.pNext = &supportedMeshShaderFeatures;
 
-		VkPhysicalDeviceVulkan12Features supportedDeviceFeatures12 = {};
+		VkPhysicalDeviceVulkan12Features supportedDeviceFeatures12 = { };
 		supportedDeviceFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 		supportedDeviceFeatures12.pNext = &supportedRayTracingFeatures;
 
-		VkPhysicalDeviceVulkan11Features supportedDeviceFeatures11 = {};
+		VkPhysicalDeviceVulkan11Features supportedDeviceFeatures11 = { };
 		supportedDeviceFeatures11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 		supportedDeviceFeatures11.pNext = &supportedDeviceFeatures12;
 
-		VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+		VkPhysicalDeviceFeatures2 deviceFeatures2 = { };
 		deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures2.pNext = &supportedDeviceFeatures11;
-
 		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
 
-		VkPhysicalDeviceFeatures supportedDeviceFeatures10;
-		supportedDeviceFeatures10 = deviceFeatures2.features;
-
+		// Enabled features
 		VkPhysicalDeviceMeshShaderFeaturesNV enabledMeshShaderFeatures = {};
 		enabledMeshShaderFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 		enabledMeshShaderFeatures.pNext			= nullptr;
@@ -1214,15 +1212,21 @@ namespace LambdaEngine
 		enabledRayTracingFeatures.rayTracing	= supportedRayTracingFeatures.rayTracing;
 
 		VkPhysicalDeviceVulkan12Features enabledDeviceFeatures12 = {};
-		enabledDeviceFeatures12.sType				= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		enabledDeviceFeatures12.pNext				= &enabledRayTracingFeatures;
-		enabledDeviceFeatures12.bufferDeviceAddress	= supportedDeviceFeatures12.bufferDeviceAddress;
-		enabledDeviceFeatures12.timelineSemaphore	= supportedDeviceFeatures12.timelineSemaphore;
-		enabledDeviceFeatures12.descriptorIndexing	= supportedDeviceFeatures12.descriptorIndexing;
+		enabledDeviceFeatures12.sType					= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		enabledDeviceFeatures12.pNext					= &enabledRayTracingFeatures;
+		enabledDeviceFeatures12.bufferDeviceAddress		= supportedDeviceFeatures12.bufferDeviceAddress;
+		enabledDeviceFeatures12.timelineSemaphore		= supportedDeviceFeatures12.timelineSemaphore;
+		enabledDeviceFeatures12.descriptorIndexing		= supportedDeviceFeatures12.descriptorIndexing;
+		enabledDeviceFeatures12.shaderInt8				= supportedDeviceFeatures12.shaderInt8;
+		enabledDeviceFeatures12.shaderFloat16			= supportedDeviceFeatures12.shaderFloat16;
+		enabledDeviceFeatures12.storageBuffer8BitAccess	= supportedDeviceFeatures12.storageBuffer8BitAccess;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
 		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 		enabledDeviceFeatures11.pNext	= &enabledDeviceFeatures12;
+
+		VkPhysicalDeviceFeatures supportedDeviceFeatures10;
+		supportedDeviceFeatures10 = deviceFeatures2.features;
 
 		VkPhysicalDeviceFeatures enabledDeviceFeatures10 = {};
 		enabledDeviceFeatures10.fillModeNonSolid				= supportedDeviceFeatures10.fillModeNonSolid;
@@ -1231,6 +1235,7 @@ namespace LambdaEngine
 		enabledDeviceFeatures10.multiDrawIndirect				= supportedDeviceFeatures10.multiDrawIndirect;
 		enabledDeviceFeatures10.pipelineStatisticsQuery			= supportedDeviceFeatures10.pipelineStatisticsQuery;
 		enabledDeviceFeatures10.imageCubeArray					= supportedDeviceFeatures10.imageCubeArray;
+		enabledDeviceFeatures10.shaderInt16						= supportedDeviceFeatures10.shaderInt16;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
