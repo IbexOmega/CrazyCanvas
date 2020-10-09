@@ -89,6 +89,8 @@ namespace LambdaEngine
 		virtual void DrawBatch(const Noesis::Batch& batch) override final;
 
 		//ICustomRenderer
+		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
+
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
 

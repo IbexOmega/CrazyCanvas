@@ -36,6 +36,7 @@ namespace LambdaEngine
 
 		bool init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
 
+		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final {};
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 		virtual void PreBuffersDescriptorSetWrite() override final;
 		virtual void PreTexturesDescriptorSetWrite() override final;

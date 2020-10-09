@@ -81,6 +81,8 @@ void SandboxState::Init()
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
+
 	// Create Camera
 	{
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
@@ -270,9 +272,9 @@ void SandboxState::Init()
 		//}
 
 		// Add PointLights
-		{
+		/*{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
-			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
+			const PointLightComponent pointLights[3] =
 			{
 				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
 				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
@@ -288,9 +290,11 @@ void SandboxState::Init()
 
 			const float32 PI = glm::pi<float>();
 			const float32 RADIUS = 3.0f;
-			for (uint32 i = 0; i < 3; i++)
+			for (uint32 i = 0; i < POINT_LIGHT_COUNT; i++)
 			{
-				glm::vec3 color = pointLights[i].ColorIntensity;
+				float32 positive = std::powf(-1.0, i);
+
+				glm::vec3 color = pointLights[i % 3].ColorIntensity;
 				MaterialProperties materialProperties;
 				materialProperties.Albedo		= glm::vec4(color, 1.0f);
 				materialProperties.Roughness	= 0.1f;
@@ -308,13 +312,13 @@ void SandboxState::Init()
 					materialProperties);
 
 				Entity pt = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(pt, { true, startPosition[i] });
+				pECS->AddComponent<PositionComponent>(pt, { true, startPosition[i % 3] });
 				pECS->AddComponent<ScaleComponent>(pt, { true, glm::vec3(0.4f) });
 				pECS->AddComponent<RotationComponent>(pt, { true, glm::identity<glm::quat>() });
-				pECS->AddComponent<PointLightComponent>(pt, pointLights[i]);
+				pECS->AddComponent<PointLightComponent>(pt, pointLights[i % 3]);
 				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
-		}
+		}*/
 	}
 
 	//Mirrors
