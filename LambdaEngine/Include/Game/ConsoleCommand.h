@@ -39,7 +39,7 @@ namespace LambdaEngine
 		ConsoleCommand();
 		~ConsoleCommand() = default;
 
-		void Init(std::string name, bool isDebug);
+		void Init(const std::string& name, bool isDebug);
 		void AddArg(Arg::EType type);
 		void AddArray(Arg::EType type, uint32 count);
 		void AddFlag(const std::string& name, Arg::EType type);

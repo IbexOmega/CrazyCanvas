@@ -38,6 +38,8 @@ namespace LambdaEngine
 {
 	CommandListVK::CommandListVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
+		, m_MemoryBarriers()
+		, m_BufferBarriers()
 		, m_ImageBarriers()
 		, m_Viewports()
 		, m_ScissorRects()
@@ -67,7 +69,7 @@ namespace LambdaEngine
 			level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 		}
 
-		CommandAllocatorVK*	pVkCommandAllocator = (CommandAllocatorVK*)pAllocator;
+		CommandAllocatorVK*	pVkCommandAllocator = reinterpret_cast<CommandAllocatorVK*>(pAllocator);
 		m_CommandList = pVkCommandAllocator->AllocateCommandBuffer(level);
 		if (m_CommandList != VK_NULL_HANDLE)
 		{

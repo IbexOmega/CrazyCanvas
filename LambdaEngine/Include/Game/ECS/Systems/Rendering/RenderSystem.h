@@ -68,8 +68,8 @@ namespace LambdaEngine
 
 			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask)
 				: MeshGUID(meshGUID)
-				, EntityID(entityID)
 				, IsAnimated(isAnimated)
+				, EntityID(entityID)
 				, EntityMask(entityMask)
 			{
 				GetHash();

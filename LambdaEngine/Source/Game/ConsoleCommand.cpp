@@ -6,7 +6,7 @@ namespace LambdaEngine
 	{
 	}
 
-	void ConsoleCommand::Init(std::string name, bool isDebug)
+	void ConsoleCommand::Init(const std::string& name, bool isDebug)
 	{
 		m_Name = name;
 		m_IsDebug = isDebug;
@@ -57,7 +57,7 @@ namespace LambdaEngine
 		m_Description.MainDesc = mainDescription;
 	}
 
-	void ConsoleCommand::AddDescription(const std::string& mainDescription, std::unordered_map<std::string, std::string> flagDescriptions)
+	void ConsoleCommand::AddDescription(const std::string& mainDescription, const std::unordered_map<std::string, std::string>& flagDescriptions)
 	{
 		m_Description.MainDesc = mainDescription;
 		m_Description.FlagDescs = flagDescriptions;
