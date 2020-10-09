@@ -1,4 +1,4 @@
-#include "Physics/PhysicsSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
@@ -57,16 +57,20 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
-					{{RW, StaticCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}},
-					&m_StaticCollisionEntities,
-					nullptr,
-					onStaticCollisionRemoval
+					.pSubscriber = &m_StaticCollisionEntities,
+					.ComponentAccesses =
+					{
+						{RW, StaticCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}
+					},
+					.OnEntityRemoval = onStaticCollisionRemoval
 				},
 				{
-					{{RW, CharacterColliderComponent::Type()}, {R, PositionComponent::Type()}, {RW, VelocityComponent::Type()}},
-					&m_CharacterColliderEntities,
-					nullptr,
-					onCharacterColliderRemoval
+					.pSubscriber = &m_CharacterColliderEntities,
+					.ComponentAccesses =
+					{
+						{RW, CharacterColliderComponent::Type()}, {R, PositionComponent::Type()}, {RW, VelocityComponent::Type()}
+					},
+					.OnEntityRemoval = onCharacterColliderRemoval
 				}
 			};
 			systemReg.Phase = 1;

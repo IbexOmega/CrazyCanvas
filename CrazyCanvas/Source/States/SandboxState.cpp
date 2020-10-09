@@ -22,6 +22,7 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
 #include "Game/GameConsole.h"
@@ -30,7 +31,6 @@
 
 #include "Math/Random.h"
 
-#include "Physics/PhysicsSystem.h"
 
 #include "Rendering/Core/API/GraphicsTypes.h"
 #include "Rendering/ImGuiRenderer.h"

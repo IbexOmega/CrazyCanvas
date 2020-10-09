@@ -133,6 +133,7 @@ namespace LambdaEngine
 		{
 			ERenderGraphTextureType			TextureType					= ERenderGraphTextureType::TEXTURE_2D;
 			EFormat							TextureFormat				= EFormat::FORMAT_NONE;
+			bool							UnboundedArray				= false;
 			bool							IsOfArrayType				= false;
 			ERenderGraphDimensionType		XDimType					= ERenderGraphDimensionType::RELATIVE;
 			ERenderGraphDimensionType		YDimType					= ERenderGraphDimensionType::RELATIVE;
