@@ -1134,6 +1134,30 @@ namespace LambdaEngine
 			m_TLASDirty = true;
 		}
 
+		// Remove extension
+		{
+			// Need to change all extension indices which is higher than the removed entity's.
+			Instance& currentInstance = rasterInstances[instanceIndex];
+			uint32 extensionIndex = currentInstance.ExtensionIndex;
+
+			// This is bad, should not be solved using a linear method! But it works for now.
+			for (Entity entity : meshAndInstancesIt->second.EntityIDs)
+			{
+				InstanceKey& instanceKey = m_EntityIDsToInstanceKey[entity];
+				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
+				if (instance.ExtensionIndex > extensionIndex)
+					instance.ExtensionIndex--;
+			}
+
+			// Remove the group in the list which will be used in the render graph.
+			TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
+			extensionGroups[instanceIndex] = extensionGroups.GetBack();
+			extensionGroups.PopBack();
+
+			// Remove data from the storage.
+			EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+		}
+
 		rasterInstances[instanceIndex] = rasterInstances.GetBack();
 		rasterInstances.PopBack();
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
