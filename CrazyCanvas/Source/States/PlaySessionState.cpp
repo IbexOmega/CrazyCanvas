@@ -159,29 +159,6 @@ void PlaySessionState::Init()
 		}
 	}
 
-	//Mirrors
-	{
-		MaterialProperties mirrorProperties = {};
-		mirrorProperties.Roughness = 0.0f;
-
-		MeshComponent meshComponent;
-		meshComponent.MeshGUID = GUID_MESH_QUAD;
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Mirror Material",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			mirrorProperties);
-
-		Entity entity = ECSCore::GetInstance()->CreateEntity();
-
-		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
-		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	}
 }
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp)
