@@ -1,4 +1,4 @@
-#include "Physics/PhysicsSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
@@ -56,10 +56,12 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
-					{{RW, StaticCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}},
-					&m_StaticCollisionEntities,
-					nullptr,
-					onStaticCollisionRemoval
+					.pSubscriber = &m_StaticCollisionEntities,
+					.ComponentAccesses =
+					{
+						{RW, StaticCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}
+					},
+					.OnEntityRemoval = onStaticCollisionRemoval
 				}
 			};
 			systemReg.Phase = 1;
@@ -268,7 +270,6 @@ namespace LambdaEngine
 		PX_RELEASE(collisionComponent.pActor);
 	}
 
-
 	void PhysicsSystem::OnStaticCollisionRemoval(Entity entity)
 	{
 		// Remove the actor from the scene
@@ -298,11 +299,6 @@ namespace LambdaEngine
 		controllerDesc.halfForwardExtent	= halfExtents.z;
 
 		FinalizeCharacterController(characterColliderInfo, controllerDesc, characterColliderComp);
-	}
-
-	PxScene* PhysicsSystem::GetScene()
-	{
-		return m_pScene;
 	}
 
 	glm::vec3 PhysicsSystem::GetCharacterTranslation(float32 dt, const glm::vec3& forward, const glm::vec3& right, const FPSControllerComponent& FPSComp)
@@ -388,7 +384,7 @@ namespace LambdaEngine
 		);
 
 		PxControllerFilters controllerFilters(pFilterData);
-		characterColliderComp.pController = pController;
-		characterColliderComp.Filters = controllerFilters;
+		characterColliderComp.pController	= pController;
+		characterColliderComp.Filters		= controllerFilters;
 	}
 }

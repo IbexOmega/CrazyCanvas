@@ -31,7 +31,15 @@ public:
 	// Server & Client Loads Level, Client only loads clientside level objects,
 	// Server then sends packages about server side entities that need to be created in the client, those should use this method
 	// This method should delegate to LevelObjectCreator
-	void CreateSpecialObject(LambdaEngine::ESpecialObjectType specialObjectType, void* pData, const glm::vec3& translation, bool fromServer);
+	bool CreateObject(LambdaEngine::ESpecialObjectType specialObjectType, void* pData);
+
+	/*
+	*	Spawns a player at a random Spawnpoint, the player is forced to be local
+	*/
+	void SpawnPlayer(
+		const LambdaEngine::MeshComponent& meshComponent,
+		const LambdaEngine::AnimationComponent& animationComponent,
+		const LambdaEngine::CameraDesc* pCameraDesc);
 
 	uint32 GetEntityCount(LambdaEngine::ESpecialObjectType specialObjectType) const;
 

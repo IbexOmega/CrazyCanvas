@@ -32,8 +32,6 @@ namespace LambdaEngine
 		m_pServer = NetworkUtils::CreateServer(desc);
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 
-		RegisterSystem({});
-
 		m_CharacterControllerSystem.Init();
 	}
 

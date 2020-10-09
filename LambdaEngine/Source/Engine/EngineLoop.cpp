@@ -21,7 +21,6 @@
 #include "Input/API/InputActionSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Physics/PhysicsSystem.h"
 
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
@@ -42,6 +41,7 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/ECS/Systems/Networking/Client/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
@@ -141,7 +141,7 @@ namespace LambdaEngine
 		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
-		RenderSystem::GetInstance().Render();
+		RenderSystem::GetInstance().Render(delta);
 
 		return true;
 	}
@@ -155,7 +155,7 @@ namespace LambdaEngine
 		NetworkUtils::FixedTick(delta);
 	}
 
-	bool EngineLoop::PreInit()
+	bool EngineLoop::PreInit(const argh::parser& flagParser)
 	{
 #ifdef LAMBDA_DEVELOPMENT
 		PlatformConsole::Show();
@@ -165,7 +165,7 @@ namespace LambdaEngine
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
-		if (!EngineConfig::LoadFromFile())
+		if (!EngineConfig::LoadFromFile(flagParser))
 		{
 			return false;
 		}
@@ -237,7 +237,7 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-		
+
 		if (!GUIApplication::Init())
 		{
 			return false;

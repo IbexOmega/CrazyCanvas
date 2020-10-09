@@ -7,8 +7,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
-
-#include "Physics/PhysicsSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 

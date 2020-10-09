@@ -33,6 +33,6 @@ namespace LambdaEngine
 		virtual void Tick(Timestamp deltaTime) = 0;
 
 	protected:
-		void RegisterSystem(const SystemRegistration& systemRegistration);
+		void RegisterSystem(SystemRegistration& systemRegistration);
 	};
 }

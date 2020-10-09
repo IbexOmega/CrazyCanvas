@@ -25,6 +25,8 @@ namespace LambdaEngine
 
 		bool Init(const String& name, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap);
 
+		void SetBindingDescriptorCount(uint32 binding, uint32 count);
+
 		FORCEINLINE VkDescriptorSet GetDescriptorSet() const
 		{
 			return m_DescriptorSet;
@@ -38,6 +40,11 @@ namespace LambdaEngine
 		FORCEINLINE uint32 GetDescriptorBindingDescCount() const
 		{
 			return m_Bindings.GetSize();
+		}
+
+		FORCEINLINE uint32 GetBindingDescriptorCount(uint32 binding) const
+		{
+			return m_BindingDescriptorCount[binding];
 		}
 
 	public:
@@ -60,5 +67,6 @@ namespace LambdaEngine
 		VkDescriptorSet					m_DescriptorSet		= VK_NULL_HANDLE;
 		TSharedRef<DescriptorHeapVK>	m_DescriptorHeap	= nullptr;
 		TArray<DescriptorBindingDesc>	m_Bindings;
+		TArray<uint32>					m_BindingDescriptorCount;
 	};
 }

@@ -24,7 +24,7 @@ public:
 	FORCEINLINE const LambdaEngine::TArray<LambdaEngine::MeshComponent>&			GetMeshComponents()		const { return m_MeshComponents; }
 	FORCEINLINE const LambdaEngine::TArray<LambdaEngine::LoadedDirectionalLight>&	GetDirectionalLights()	const { return m_DirectionalLights; }
 	FORCEINLINE const LambdaEngine::TArray<LambdaEngine::LoadedPointLight>&			GetPointLights()		const { return m_PointLights; }
-	FORCEINLINE const LambdaEngine::TArray<LambdaEngine::SpecialObject>&			GetSpecialObjects()		const { return m_SpecialObjects; }
+	FORCEINLINE const LambdaEngine::TArray<LambdaEngine::SpecialObjectOnLoad>&		GetSpecialObjects()		const { return m_SpecialObjects; }
 
 private:
 	LambdaEngine::String										m_Name;
@@ -32,5 +32,5 @@ private:
 	LambdaEngine::TArray<LambdaEngine::MeshComponent>			m_MeshComponents;
 	LambdaEngine::TArray<LambdaEngine::LoadedDirectionalLight>	m_DirectionalLights;
 	LambdaEngine::TArray<LambdaEngine::LoadedPointLight>		m_PointLights;
-	LambdaEngine::TArray<LambdaEngine::SpecialObject>			m_SpecialObjects;
+	LambdaEngine::TArray<LambdaEngine::SpecialObjectOnLoad>		m_SpecialObjects;
 };

@@ -6,8 +6,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
-
-#include "Physics/PhysicsSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 
@@ -51,7 +50,8 @@ namespace LambdaEngine
 		m_CurrentGameState(),
 		m_Color()
 	{
-		RegisterSystem({});
+		SystemRegistration systemReg = {};
+		RegisterSystem(systemReg);
 	}
 
 	ClientRemoteSystem::~ClientRemoteSystem()

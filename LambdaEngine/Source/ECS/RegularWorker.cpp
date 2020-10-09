@@ -28,7 +28,7 @@ namespace LambdaEngine
 			RegularWorker::MapComponentAccesses(subReq.ComponentAccesses, uniqueRegs);
 		}
 
-		RegularWorker::MapComponentAccesses(subscriberRegistration.AdditionalDependencies, uniqueRegs);
+		RegularWorker::MapComponentAccesses(subscriberRegistration.AdditionalAccesses, uniqueRegs);
 
 		// Merge all of the system's subscribed component types into one vector
 		TArray<ComponentAccess> componentAccesses;

@@ -34,7 +34,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 		const TArray<MeshComponent>& meshComponents				= pModule->GetMeshComponents();
 		const TArray<LoadedDirectionalLight>& directionalLights = pModule->GetDirectionalLights();
 		const TArray<LoadedPointLight>& pointLights				= pModule->GetPointLights();
-		const TArray<SpecialObject>& specialObjects				= pModule->GetSpecialObjects();
+		const TArray<SpecialObjectOnLoad>& specialObjects		= pModule->GetSpecialObjects();
 
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
@@ -56,9 +56,9 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 		TArray<Entity> newlyCreatedEntities;
 
-		for (const SpecialObject& specialObject : specialObjects)
+		for (const SpecialObjectOnLoad& specialObject : specialObjects)
 		{
-			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObject(specialObject, newlyCreatedEntities, translation);
+			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObjectFromPrefix(specialObject, newlyCreatedEntities, translation);
 
 			if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
 			{
@@ -79,14 +79,36 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	return true;
 }
 
-void Level::CreateSpecialObject(LambdaEngine::ESpecialObjectType specialObjectType, void* pData, const glm::vec3& translation, bool fromServer)
+bool Level::CreateObject(LambdaEngine::ESpecialObjectType specialObjectType, void* pData)
 {
-	UNREFERENCED_VARIABLE(specialObjectType);
-	UNREFERENCED_VARIABLE(pData);
-	UNREFERENCED_VARIABLE(translation);
-	UNREFERENCED_VARIABLE(fromServer);
-	LOG_ERROR("[Level]: CreateSpecialObject not implemented");
-	//Should call LevelObjectCreator::CreateSpecialObject or something
+	using namespace LambdaEngine;
+
+	if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
+	{
+		TArray<Entity> newlyCreatedEntities;
+		if (LevelObjectCreator::CreateSpecialObjectOfType(specialObjectType, pData, newlyCreatedEntities))
+		{
+			for (Entity entity : newlyCreatedEntities)
+			{
+				if (entity != UINT32_MAX)
+				{
+					m_EntityTypeMap[specialObjectType].PushBack(m_Entities.GetSize());
+					m_Entities.PushBack(entity);
+				}
+			}
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Level::SpawnPlayer(
+	const LambdaEngine::MeshComponent& meshComponent, 
+	const LambdaEngine::AnimationComponent& animationComponent, 
+	const LambdaEngine::CameraDesc* pCameraDesc)
+{
 }
 
 uint32 Level::GetEntityCount(LambdaEngine::ESpecialObjectType specialObjectType) const

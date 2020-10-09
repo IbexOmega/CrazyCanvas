@@ -95,7 +95,8 @@ namespace LambdaEngine
 
 		m_AvailableDescriptorSets.Clear();
 
-		SAFERELEASE(m_pMainRenderPass);
+		SAFERELEASE(m_pMainRenderPassClearDS);
+		SAFERELEASE(m_pMainRenderPassLoadDS);
 
 		if (!GUIPipelineStateCache::Release())
 		{
@@ -288,11 +289,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
 
-		if (m_RenderPassBegun)
-		{
-			pCommandList->EndRenderPass();
-			m_RenderPassBegun = false;
-		}
+		EndMainRenderPass(pCommandList);
 
 		pCommandList->End();
 	}
@@ -300,12 +297,8 @@ namespace LambdaEngine
 	void* GUIRenderer::MapVertices(uint32_t bytes)
 	{
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
-
-		if (m_RenderPassBegun)
-		{
-			pCommandList->EndRenderPass();
-			m_RenderPassBegun = false;
-		}
+		
+		EndMainRenderPass(pCommandList);
 
 		m_RequiredVertexBufferSize = uint64(bytes);
 		m_pVertexStagingBuffer = StagingBufferCache::RequestBuffer(m_RequiredVertexBufferSize);
@@ -504,6 +497,48 @@ namespace LambdaEngine
 		}
 	}
 
+	void GUIRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		TArray<DeviceChild*>& resourcesToRemove = m_pGraphicsResourcesToRemove[m_ModFrameIndex];
+
+		if (!resourcesToRemove.IsEmpty())
+		{
+			for (DeviceChild* pGraphicsResource : resourcesToRemove)
+			{
+				SAFERELEASE(pGraphicsResource);
+			}
+
+			resourcesToRemove.Clear();
+		}
+
+		//Make Param Buffers available again
+		{
+			TArray<Buffer*>& buffersNowAvailable = m_pUsedParamsBuffers[m_ModFrameIndex];
+
+			for (Buffer* pParamsBuffer : buffersNowAvailable)
+			{
+				m_AvailableParamsBuffers.PushBack(pParamsBuffer);
+			}
+
+			buffersNowAvailable.Clear();
+		}
+
+		//Make Descriptor Sets available again
+		{
+			TArray<DescriptorSet*>& descriptorsNowAvailable = m_pUsedDescriptorSets[m_ModFrameIndex];
+
+			if (!descriptorsNowAvailable.IsEmpty())
+			{
+				for (DescriptorSet* pDescriptorSet : descriptorsNowAvailable)
+				{
+					m_AvailableDescriptorSets.PushBack(pDescriptorSet);
+				}
+
+				descriptorsNowAvailable.Clear();
+			}
+		}
+	}
+
 	void GUIRenderer::PreBuffersDescriptorSetWrite()
 	{
 	}
@@ -512,22 +547,28 @@ namespace LambdaEngine
 	{
 	}
 
-	void GUIRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void GUIRenderer::UpdateTextureResource(
+		const String& resourceName,
+		const TextureView* const* ppPerImageTextureViews,
+		const TextureView* const* ppPerSubImageTextureViews,
+		uint32 imageCount,
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
-			VALIDATE(count == BACK_BUFFER_COUNT);
+			VALIDATE(imageCount == BACK_BUFFER_COUNT);
 
-			for (uint32 i = 0; i < count; i++)
+			for (uint32 i = 0; i < imageCount; i++)
 			{
-				m_pBackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+				m_pBackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
 			}
 		}
-		else if (resourceName == "GUI_DEPTH_STENCIL" && count == 1)
+		else if (resourceName == "NOESIS_GUI_DEPTH_STENCIL" && subImageCount == 1)
 		{
-			m_DepthStencilTextureView = MakeSharedRef(ppTextureViews[0]);
+			m_DepthStencilTextureView = MakeSharedRef(ppPerSubImageTextureViews[0]);
 		}
 	}
 
@@ -545,6 +586,13 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
+	}
+
+	void GUIRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
+	{
+		UNREFERENCED_VARIABLE(resourceName);
+		UNREFERENCED_VARIABLE(pDrawArgs);
+		UNREFERENCED_VARIABLE(count);
 	}
 
 	void GUIRenderer::Render(
@@ -608,6 +656,7 @@ namespace LambdaEngine
 
 		if (!sleeping)
 		{
+			m_RenderPassClearBegun = false;
 			m_View->GetRenderer()->RenderOffscreen();
 			m_View->GetRenderer()->Render();
 
@@ -675,20 +724,30 @@ namespace LambdaEngine
 			const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
 
 			BeginRenderPassDesc beginRenderPassDesc = {};
-			beginRenderPassDesc.pRenderPass			= m_pMainRenderPass;
+			beginRenderPassDesc.pRenderPass			= m_RenderPassClearBegun ? m_pMainRenderPassLoadDS : m_pMainRenderPassClearDS;
 			beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
 			beginRenderPassDesc.RenderTargetCount	= 1;
 			beginRenderPassDesc.pDepthStencil		= m_DepthStencilTextureView.Get();
 			beginRenderPassDesc.Width				= pBackBuffer->GetDesc().pTexture->GetDesc().Width;
 			beginRenderPassDesc.Height				= pBackBuffer->GetDesc().pTexture->GetDesc().Height;
 			beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-			beginRenderPassDesc.pClearColors		= nullptr;
-			beginRenderPassDesc.ClearColorCount		= 0;
+			beginRenderPassDesc.pClearColors		= m_pMainRenderPassClearColors;
+			beginRenderPassDesc.ClearColorCount		= 2;
 			beginRenderPassDesc.Offset.x			= 0;
 			beginRenderPassDesc.Offset.y			= 0;
 
 			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-			m_RenderPassBegun = true;
+			m_RenderPassBegun		= true;
+			m_RenderPassClearBegun	= true;
+		}
+	}
+
+	void GUIRenderer::EndMainRenderPass(CommandList* pCommandList)
+	{
+		if (m_RenderPassBegun)
+		{
+			pCommandList->EndRenderPass();
+			m_RenderPassBegun = false;
 		}
 	}
 
@@ -855,9 +914,17 @@ namespace LambdaEngine
 		colorAttachmentDesc.InitialState	= pBackBufferAttachmentDesc->InitialState;
 		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
 
+		RenderPassAttachmentDesc depthStencilAttachmentDesc = {};
+		depthStencilAttachmentDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
+		depthStencilAttachmentDesc.SampleCount		= 1;
+		depthStencilAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_DONT_CARE;
+		depthStencilAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_DONT_CARE;
+		depthStencilAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_STORE;
+		depthStencilAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
+		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
@@ -867,13 +934,39 @@ namespace LambdaEngine
 		subpassDependencyDesc.SrcStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 		subpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
-		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.DebugName			= "GUI Render Pass";
-		renderPassDesc.Attachments			= { colorAttachmentDesc };
-		renderPassDesc.Subpasses			= { subpassDesc };
-		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
+		{
+			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DONT_CARE;
+			depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_CLEAR;
 
-		m_pMainRenderPass = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
+			RenderPassDesc renderPassDesc = {};
+			renderPassDesc.DebugName			= "GUI Render Pass Clear DS";
+			renderPassDesc.Attachments			= { colorAttachmentDesc, depthStencilAttachmentDesc };
+			renderPassDesc.Subpasses			= { subpassDesc };
+			renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
+
+			m_pMainRenderPassClearDS = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
+		}
+
+		{
+			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+			depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_LOAD;
+
+			RenderPassDesc renderPassDesc = {};
+			renderPassDesc.DebugName			= "GUI Render Pass Load DS";
+			renderPassDesc.Attachments			= { colorAttachmentDesc, depthStencilAttachmentDesc };
+			renderPassDesc.Subpasses			= { subpassDesc };
+			renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
+
+			m_pMainRenderPassLoadDS = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
+		}
+
+		m_pMainRenderPassClearColors[0].Color[0]	= 0.0f;
+		m_pMainRenderPassClearColors[0].Color[1]	= 0.0f;
+		m_pMainRenderPassClearColors[0].Color[2]	= 0.0f;
+		m_pMainRenderPassClearColors[0].Color[3]	= 0.0f;
+
+		m_pMainRenderPassClearColors[1].Depth	= 1.0f;
+		m_pMainRenderPassClearColors[1].Stencil	= 0;
 
 		return true;
 	}

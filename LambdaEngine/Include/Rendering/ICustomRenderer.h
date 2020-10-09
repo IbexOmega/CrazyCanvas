@@ -14,6 +14,7 @@ namespace LambdaEngine
 	class TextureView;
 	class Buffer;
 	class AccelerationStructure;
+	class DrawArg;
 
 	struct CustomRendererRenderGraphInitDesc
 	{
@@ -29,6 +30,12 @@ namespace LambdaEngine
 		DECL_INTERFACE(ICustomRenderer);
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) = 0;
+
+
+		/*
+		* Called every frame, can be used for internal resource handling in custom renderers
+		*/
+		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) = 0;
 
 		/*
 		* Called before when a/multiple buffer descriptor write(s) are discovered.
@@ -52,11 +59,14 @@ namespace LambdaEngine
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given texture
 		*	resourceName - Name of the resource being updated
-		*	ppTextureViews - An array of textureviews that represent the update data
-		*	count - Size of ppTextureViews
+		*	ppPerImageTextureViews - An array of textureviews that represent the update data, this is per Texture (or Image), normally, use this when writing to Descriptor Set
+		*	ppPerSubImageTextureViews - An array of textureviews that represent the update data, this is per Sub Texture (or Sub Image), normally, use these when binding to FBO
+		*	imageCount - Size of ppPerImageTextureViews
+		*	subImageCount - Size of ppPerSubImageTextureViews, guaranteed to be an integer multiple of imageCount
 		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
-		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const * ppTextureViews, uint32 count, bool backBufferBound)	= 0;
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)	= 0;
+
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given buffer
 		*	resourceName - Name of the resource being updated
@@ -67,12 +77,21 @@ namespace LambdaEngine
 		*	backBufferBound - Describes if subresources are bound in array or 1 / Back buffer
 		*/
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const * ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)	= 0;
+
 		/*
 		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given acceleration structure
 		*	resourceName - Name of the resource being updated
 		*	pAccelerationStructure - The acceleration structure that represent the update data
 		*/
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)	= 0;
+
+		/*
+		* Called when a ResourceUpdate is scheduled in the RenderGraph for the given draw arg
+		*	resourceName - Name of the resource being updated
+		*	drawArgs - The draw args that represent the update data
+		*/
+		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count) = 0;
+
 
 		/*
 		* Called at rendertime to allow recording device commands

@@ -72,7 +72,7 @@ namespace LambdaEngine
 		// CreateCharacterBox creates a character collider box
 		void CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents, CharacterColliderComponent& characterColliderComp);
 
-		PxScene* GetScene();
+		PxScene* GetScene() { return m_pScene; }
 
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
