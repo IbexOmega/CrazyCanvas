@@ -64,7 +64,7 @@ namespace LambdaEngine
 
 	struct ResourceUpdateDesc
 	{
-		String ResourceName	= "No Resource AnimationName";
+		String ResourceName	= "No Resource Name";
 
 		union
 		{
@@ -145,7 +145,7 @@ namespace LambdaEngine
 
 		struct InternalResourceUpdateDesc
 		{
-			String						ResourceName	= "No Resource AnimationName";
+			String						ResourceName	= "No Resource Name";
 			ERenderGraphResourceType	Type			= ERenderGraphResourceType::NONE;
 
 			struct

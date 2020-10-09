@@ -49,7 +49,7 @@ namespace LambdaEngine
 	*/
 	struct ImGuiTexture
 	{
-		String		ResourceName		= "No AnimationName";
+		String		ResourceName		= "No Name";
 		float32		ChannelMul[4]		= { 1.0f, 1.0f, 1.0f, 1.0f };
 		float32		ChannelAdd[4]		= { 0.0f, 0.0f, 0.0f, 0.0f };
 		uint32		ReservedIncludeMask = 0x00008421; //0000 0000 0000 0000 1000 0100 0010 0001
