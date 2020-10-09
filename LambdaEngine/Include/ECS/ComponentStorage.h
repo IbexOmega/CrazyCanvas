@@ -34,11 +34,8 @@ namespace LambdaEngine
 
 		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
-		void SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize);
-
-		template <typename Comp>
-		uint32 SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const;
 		uint32 SerializeComponent(Entity entity, const ComponentType* pComponentType, uint8* pBuffer, uint32 bufferSize) const;
+		bool DeserializeComponent(Entity entity, const ComponentType* pComponentType, uint32 componentDataSize, const uint8* pBuffer, bool& entityHadComponent);
 
 		template<typename Comp>
 		bool HasType() const;
@@ -56,8 +53,11 @@ namespace LambdaEngine
 		template<typename Comp>
 		const ComponentArray<Comp>* GetComponentArray() const;
 
+		const ComponentType* GetComponentType(uint32 componentTypeHash) const;
+
 	private:
 		std::unordered_map<const ComponentType*, uint32> m_CompTypeToArrayMap;
+		std::unordered_map<ComponentTypeHash, const ComponentType*> m_TypeHashToCompTypeMap;
 
 		TArray<IComponentArray*> m_ComponentArrays;
 		// All component types with dirty flags. Used for resetting dirty flags at the end of each frame.
@@ -73,6 +73,8 @@ namespace LambdaEngine
 		m_CompTypeToArrayMap[pComponentType] = m_ComponentArrays.GetSize();
 		ComponentArray<Comp>* pCompArray = DBG_NEW ComponentArray<Comp>();
 		m_ComponentArrays.PushBack(pCompArray);
+
+		m_TypeHashToCompTypeMap[pComponentType->GetHash()] = pComponentType;
 
 		if constexpr (Comp::HasDirtyFlag())
 		{
@@ -114,18 +116,11 @@ namespace LambdaEngine
 		pCompArray->Remove(entity);
 	}
 
-	template <typename Comp>
-	inline uint32 ComponentStorage::SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const
-	{
-		const ComponentArray<Comp>* pComponentArray = GetComponentArray<Comp>();
-		return pComponentArray->SerializeComponent(component, pBuffer, bufferSize);
-	}
-
 	template<typename Comp>
 	inline Comp& ComponentStorage::GetComponent(Entity entity)
 	{
 		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
-		VALIDATE_MSG(pCompArray, "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
 		return pCompArray->GetData(entity);
 	}
@@ -134,7 +129,7 @@ namespace LambdaEngine
 	inline const Comp& ComponentStorage::GetComponent(Entity entity) const
 	{
 		const ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
-		VALIDATE_MSG(pCompArray, "Trying to fetch a component which was not registered!");
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
 		return pCompArray->GetData(entity);
 	}

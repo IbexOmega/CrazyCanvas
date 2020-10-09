@@ -1,4 +1,4 @@
-#include "Server.h"
+#include "States/ServerState.h"
 
 #include "Memory/API/Malloc.h"
 
@@ -24,51 +24,35 @@
 
 using namespace LambdaEngine;
 
-Server::Server()
+ServerState::~ServerState()
 {
-	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
+}
+
+void ServerState::Init()
+{
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
-
 
 	//NetworkDiscovery::EnableServer("Crazy Canvas", 4444, this);
 
 	ServerSystem::GetInstance().Start();
 }
 
-Server::~Server()
-{
-	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &Server::OnKeyPressed);
-}
-
-bool Server::OnKeyPressed(const KeyPressedEvent& event)
+bool ServerState::OnKeyPressed(const KeyPressedEvent& event)
 {
 	UNREFERENCED_VARIABLE(event);
 	return false;
 }
 
-void Server::Tick(Timestamp delta)
+void ServerState::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 }
 
-void Server::FixedTick(Timestamp delta)
-{
-	UNREFERENCED_VARIABLE(delta);
-}
-
-void Server::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
+void ServerState::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
 {
 	UNREFERENCED_VARIABLE(encoder);
-}
-
-namespace LambdaEngine
-{
-	Game* CreateGame(const argh::parser& flagParser)
-	{
-		UNREFERENCED_VARIABLE(flagParser);
-		Server* pServer = DBG_NEW Server();
-		return pServer;
-	}
 }
