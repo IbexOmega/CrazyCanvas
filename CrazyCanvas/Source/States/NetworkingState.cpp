@@ -30,7 +30,14 @@ void NetworkingState::Init()
 	// Load scene
 	{
 		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Testing/Testing.obj", meshComponents);
+		LambdaEngine::TArray<LambdaEngine::LoadedDirectionalLight>	directionalLights;
+		LambdaEngine::TArray<LambdaEngine::LoadedPointLight>		pointLights;
+		LambdaEngine::TArray<LambdaEngine::SpecialObject>			specialObjects;
+
+		SceneLoadDesc sceneLoadDesc = {};
+		sceneLoadDesc.Filename = "Testing/Testing.obj";
+
+		ResourceManager::LoadSceneFromFile(&sceneLoadDesc, meshComponents, directionalLights, pointLights, specialObjects);
 
 		const glm::vec3 position(0.0f, 0.0f, 0.0f);
 		const glm::vec3 scale(1.0f);

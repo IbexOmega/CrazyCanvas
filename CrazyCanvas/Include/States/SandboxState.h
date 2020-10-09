@@ -21,6 +21,9 @@ namespace LambdaEngine
 	class RenderGraphEditor;
 }
 
+class GUITest;
+class Level;
+
 class SandboxState : public LambdaEngine::State, public LambdaEngine::IRenderGraphCreateHandler
 {
 public:
@@ -58,4 +61,6 @@ private:
 	GUID_Lambda				m_TextureDebuggingShaderGUID	= GUID_NONE;
 
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
+
+	Level* m_pLevel = nullptr;
 };
