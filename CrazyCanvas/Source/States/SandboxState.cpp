@@ -109,9 +109,9 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
-		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
 		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
@@ -138,7 +138,7 @@ void SandboxState::Init()
 		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
-		glm::vec3 position = glm::vec3(0.0f, 0.9f, -2.5f);
+		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -148,7 +148,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 	
-		position = glm::vec3(0.0f, 1.0f, 0.0f);
+		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
 
 		entity = pECS->CreateEntity();
@@ -158,7 +158,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(-3.5f, 0.9f, 0.0f);
+		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
@@ -168,7 +168,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(3.5f, 0.9f, 0.0f);
+		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
 		AnimationGraph animationGraph;
 		animationGraph.AddState(AnimationState("running", running[0]));
