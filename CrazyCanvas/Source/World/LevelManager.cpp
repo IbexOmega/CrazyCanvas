@@ -1,25 +1,29 @@
 #include "World/LevelManager.h"
+#include "World/LevelObjectCreator.h"
+#include "World/LevelModule.h"
+#include "World/Level.h"
 
 #include "Resources/ResourceLoader.h"
 
 #include "Log/Log.h"
-
-#include "Utilities/SHA256.h"
 
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/filereadstream.h>
 
-LambdaEngine::TArray<LambdaEngine::String> LevelManager::s_LevelNames;
-LambdaEngine::TArray<LevelManager::LevelDesc> LevelManager::s_LevelDescriptions;
-
-bool LevelManager::Init()
+bool LevelManager::Init(bool clientSide)
 {
 	using namespace LambdaEngine;
 	using namespace rapidjson;
 
-	FILE* pLevelsFile = fopen("../Assets/World/levels.json", "r");
+	if (!LevelObjectCreator::Init(clientSide))
+	{
+		LOG_ERROR("[LevelManager]: Failed to initialize LevelObjectCreator");
+		return false;
+	}
+
+	FILE* pLevelsFile = fopen((String(LEVELS_JSON_DIRECTORY) + "levels.json").c_str(), "r");
 
 	if (pLevelsFile == nullptr)
 	{
@@ -59,7 +63,7 @@ bool LevelManager::Init()
 				{
 					GenericArray levelModules = level["modules"].GetArray();
 
-					levelDesc.LevelModules.Resize(levelModules.Size());
+					levelDesc.LevelModuleDescriptions.Resize(levelModules.Size());
 
 					for (uint32 m = 0; m < levelModules.Size(); m++)
 					{
@@ -79,7 +83,7 @@ bool LevelManager::Init()
 							{
 								byte* pData;
 								uint32 dataSize;
-								if (!ResourceLoader::ReadDataFromFile("../Assets/World/Levels/" + moduleDesc.Filename, "rb", &pData, &dataSize))
+								if (!ResourceLoader::ReadDataFromFile(LEVEL_MODULES_DIRECTORY + moduleDesc.Filename, "rb", &pData, &dataSize))
 								{
 									LOG_ERROR("[LevelManager]: Failed to load level %s, module %s does not exist", levelDesc.Name.c_str(), moduleDesc.Filename.c_str());
 									return false;
@@ -115,25 +119,22 @@ bool LevelManager::Init()
 							LOG_WARNING("[LevelManager]: Module %d in level %s, has no translation", m, levelDesc.Name.c_str());
 						}
 
-						levelDesc.LevelModules[m] = moduleDesc;
+						levelDesc.LevelModuleDescriptions[m] = moduleDesc;
 					}
 				}
 
-				String hash = SHA256::Hash(byteRepresentation);
-				memcpy(levelDesc.SHA256, hash.data(), hash.size());
+				levelDesc.Hash			= SHA256::Hash(byteRepresentation);
 
 				s_LevelNames[l]			= levelDesc.Name;
 				s_LevelDescriptions[l]	= levelDesc;
 
 				byteRepresentation.clear();
 
-				D_LOG_INFO("\n[LevelManager]: Level Loaded:\nName: %s\nNum Modules: %d\nSHA256: %d%d%d%d\n",
+				D_LOG_INFO("\n[LevelManager]: Level Registered:\nName: %s\nNum Modules: %d\nSHA256: %x%x\n",
 					levelDesc.Name.c_str(),
-					levelDesc.LevelModules.GetSize(),
-					levelDesc.SHA256Chunk0,
-					levelDesc.SHA256Chunk1,
-					levelDesc.SHA256Chunk2,
-					levelDesc.SHA256Chunk3);
+					levelDesc.LevelModuleDescriptions.GetSize(),
+					levelDesc.Hash.SHA256Chunk0,
+					levelDesc.Hash.SHA256Chunk1);
 			}
 		}
 
@@ -144,15 +145,106 @@ bool LevelManager::Init()
 	return true;
 }
 
-const LambdaEngine::TArray<LambdaEngine::String>& LevelManager::GetLevelNames()
+bool LevelManager::Release()
 {
-	return s_LevelNames;
+	for (auto modulesToDeleteIt = s_LoadedModules.begin(); modulesToDeleteIt != s_LoadedModules.end(); modulesToDeleteIt++)
+	{
+		SAFEDELETE(modulesToDeleteIt->second);
+	}
+	s_LoadedModules.clear();
+
+	return true;
 }
 
-void LevelManager::LoadLevel(const LambdaEngine::String& levelName)
+Level* LevelManager::LoadLevel(const LambdaEngine::SHA256Hash& levelHash)
 {
+	for (uint32 l = 0; l < s_LevelHashes.GetSize(); l++)
+	{
+		if (levelHash == s_LevelHashes[l])
+		{
+			return LoadLevel(l);
+		}
+	}
+
+	LOG_ERROR("[LevelManager]: Can't find level with Hash: %x%x", levelHash.SHA256Chunk0, levelHash.SHA256Chunk1);
+	return nullptr;
 }
 
-void LevelManager::LoadLevel(uint32 index)
+Level* LevelManager::LoadLevel(const LambdaEngine::String& levelName)
 {
+	for (uint32 l = 0; l < s_LevelNames.GetSize(); l++)
+	{
+		if (levelName == s_LevelNames[l])
+		{
+			return LoadLevel(l);
+		}
+	}
+
+	LOG_ERROR("[LevelManager]: Can't find level with Name: %s", levelName.c_str());
+	return nullptr;
+}
+
+Level* LevelManager::LoadLevel(uint32 index)
+{
+	using namespace LambdaEngine;
+
+	if (index < s_LevelDescriptions.GetSize())
+	{
+		const LevelDesc& levelDesc = s_LevelDescriptions[index];
+		LevelCreateDesc levelCreateDesc = {};
+		levelCreateDesc.Name = levelDesc.Name;
+
+		//Create copy of loaded modules so that we can reuse similar ones
+		THashTable<String, LevelModule*> loadedModules = s_LoadedModules;
+		s_LoadedModules.clear();
+
+		for (const ModuleDesc& moduleDesc : levelDesc.LevelModuleDescriptions)
+		{
+			auto moduleIt = loadedModules.find(moduleDesc.Filename);
+
+			if (moduleIt != loadedModules.end())
+			{
+				//Module is already loaded, just update translation
+				moduleIt->second->SetTranslation(moduleDesc.Translation);
+				s_LoadedModules[moduleIt->first] = moduleIt->second;
+				levelCreateDesc.LevelModules.PushBack(moduleIt->second);
+				loadedModules.erase(moduleIt);
+			}
+			else
+			{
+				//Module is not loaded
+				LevelModule* pModule = DBG_NEW LevelModule();
+				if (!pModule->Init(moduleDesc.Filename, moduleDesc.Translation))
+				{
+					LOG_ERROR("[LevelManager]: Failed to initialize Level Module");
+					return false;
+				}
+
+				s_LoadedModules[moduleDesc.Filename] = pModule;
+				levelCreateDesc.LevelModules.PushBack(pModule);
+			}
+		}
+
+		for (auto modulesToDeleteIt = loadedModules.begin(); modulesToDeleteIt != loadedModules.end(); modulesToDeleteIt++)
+		{
+			SAFEDELETE(modulesToDeleteIt->second);
+		}
+
+		Level* pLevel = DBG_NEW Level();
+
+		if (!pLevel->Init(&levelCreateDesc))
+		{
+			LOG_ERROR("[LevelManager]: Failed to create level %s", levelDesc.Name.c_str());
+			SAFEDELETE(pLevel);
+			return nullptr;
+		}
+		else
+		{
+			D_LOG_INFO("[LevelManager]: Level %s created", levelDesc.Name.c_str());
+			return pLevel;
+		}
+	}
+
+	LOG_ERROR("[LevelManager]: Level with index %d is out of bounds", index);
+	return nullptr;
 }

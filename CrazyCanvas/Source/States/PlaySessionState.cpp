@@ -21,6 +21,14 @@
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 
+#include "World/LevelManager.h"
+#include "World/Level.h"
+
+PlaySessionState::~PlaySessionState()
+{
+	SAFEDELETE(m_pLevel);
+}
+
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
@@ -44,28 +52,7 @@ void PlaySessionState::Init()
 
 	// Scene
 	{
-		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
-
-		glm::vec3 position(0.0f, 0.0f, 0.0f);
-		glm::vec4 rotation(0.0f, 1.0f, 0.0f, 0.0f);
-		glm::vec3 scale(1.0f);
-
-		for (const MeshComponent& meshComponent : meshComponents)
-		{
-			Entity entity = pECS->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo = {
-				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-			};
-
-			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-		}
+		m_pLevel = LevelManager::LoadLevel(0);
 	}
 
 	// Robot
@@ -168,61 +155,6 @@ void PlaySessionState::Init()
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
-			}
-		}
-
-		// Directional Light
-		//{
-		//	Entity dirLight = ECSCore::GetInstance()->CreateEntity();
-		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, { { 0.0f, 0.0f, 0.0f} });
-		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
-		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-		//}
-
-		// Add PointLights
-		{
-			constexpr uint32 POINT_LIGHT_COUNT = 3;
-			const PointLightComponent pointLights[POINT_LIGHT_COUNT] =
-			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
-			};
-
-			const glm::vec3 startPosition[3] =
-			{
-				{4.0f, 2.0f, -3.0f},
-				{-4.0f, 2.0f, -3.0f},
-				{0.0f, 2.0f, 3.0f},
-			};
-
-			const float PI = glm::pi<float>();
-			const float RADIUS = 3.0f;
-			for (uint32 i = 0; i < 3; i++)
-			{
-				MaterialProperties materialProperties;
-				glm::vec3 color = pointLights[i].ColorIntensity;
-				materialProperties.Albedo = glm::vec4(color, 1.0f);
-				materialProperties.Roughness = 0.1f;
-				materialProperties.Metallic = 0.1f;
-
-				MeshComponent sphereMeshComp = {};
-				sphereMeshComp.MeshGUID = sphereMeshGUID;
-				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-					"Default r: " + std::to_string(0.1f) + " m: " + std::to_string(0.1f),
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					materialProperties);
-
-				Entity pt = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(pt, { true, startPosition[i] });
-				pECS->AddComponent<ScaleComponent>(pt, { true, glm::vec3(0.4f) });
-				pECS->AddComponent<RotationComponent>(pt, { true, glm::identity<glm::quat>() });
-				pECS->AddComponent<PointLightComponent>(pt, pointLights[i]);
-				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
 			}
 		}
 	}

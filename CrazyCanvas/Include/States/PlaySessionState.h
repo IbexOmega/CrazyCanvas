@@ -2,11 +2,13 @@
 
 #include "Game/State.h"
 
+class Level;
+
 class PlaySessionState : public LambdaEngine::State
 {
 public:
 	PlaySessionState() = default;
-	~PlaySessionState() = default;
+	~PlaySessionState();
 
 	void Init() override final;
 
@@ -15,5 +17,6 @@ public:
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 
-
+private:
+	Level* m_pLevel = nullptr;
 };

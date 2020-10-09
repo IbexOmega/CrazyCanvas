@@ -29,24 +29,58 @@ namespace LambdaEngine
 {
 	class GLSLShaderSource;
 
+	struct SpecialObjectDesc
+	{
+		String	Prefix		= "";
+	};
+
+	struct SpecialObject
+	{
+		String		Prefix		= "";
+		String		Name		= "";
+		TArray<glm::vec3>	Centroids;
+		TArray<BoundingBox>	BoundingBoxes;
+	};
+
+	struct LoadedDirectionalLight
+	{
+		glm::vec4 ColorIntensity	= glm::vec4(0.0f);
+		glm::vec3 Direction			= glm::vec3(0.0f);
+	};
+
+	struct LoadedPointLight
+	{
+		glm::vec4 ColorIntensity	= glm::vec4(0.0f);
+		glm::vec3 Position			= glm::vec3(0.0f);
+		glm::vec3 Attenuation		= glm::vec3(1.0f, 0.09f, 0.032f);
+	};
+
 	/*	SceneLoadRequest contains information needed to begin loading a scene. It is also used to specify whether to
 		skip loading optional resources by setting fields to nullptr. */
 	struct SceneLoadRequest 
 	{
-		String						Filepath;
-		int32						AssimpFlags;
-		TArray<Mesh*>&				Meshes;
-		TArray<Animation*>&			Animations;
-		TArray<MeshComponent>&		MeshComponents;
+		String								Filepath;
+		int32								AssimpFlags;
+		const TArray<SpecialObjectDesc>&	SpecialObjectDescriptions;
+		TArray<LoadedDirectionalLight>&		DirectionalLights;
+		TArray<LoadedPointLight>&			PointLights;
+		TArray<SpecialObject>&				SpecialObjects;
+		TArray<Mesh*>&						Meshes;
+		TArray<Animation*>&					Animations;
+		TArray<MeshComponent>&				MeshComponents;
 		// Either both materials and textures are nullptr, or they are both non-null pointers
-		TArray<LoadedMaterial*>*	pMaterials;
-		TArray<LoadedTexture*>*		pTextures;
+		TArray<LoadedMaterial*>*			pMaterials;
+		TArray<LoadedTexture*>*				pTextures;
 	};
 
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
 		String								DirectoryPath;
+		const TArray<SpecialObjectDesc>&	SpecialObjectDescriptions;
+		TArray<LoadedDirectionalLight>&		DirectionalLights;
+		TArray<LoadedPointLight>&			PointLights;
+		TArray<SpecialObject>&				SpecialObjects;
 		TArray<Mesh*>&						Meshes;
 		TArray<MeshComponent>&				MeshComponents;
 		TArray<Animation*>&					Animations;
@@ -73,7 +107,11 @@ namespace LambdaEngine
 		*/
 		static bool LoadSceneFromFile(
 			const String& filepath,
+			const TArray<SpecialObjectDesc>& specialObjectDescriptions,
 			TArray<MeshComponent>& meshComponents,
+			TArray<LoadedDirectionalLight>& directionalLights,
+			TArray<LoadedPointLight>& pointLights,
+			TArray<SpecialObject>& specialObjects,
 			TArray<Mesh*>& meshes,
 			TArray<Animation*>& animations,
 			TArray<LoadedMaterial*>& materials,
@@ -169,7 +207,8 @@ namespace LambdaEngine
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
 	private:
-		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadBoundingBox(BoundingBox& boundingBox, glm::vec3& centroid, const aiMesh* pMeshAI);
+		static void LoadVertices(Mesh* pMesh, glm::vec3& centroid, const aiMesh* pMeshAI);
 		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
