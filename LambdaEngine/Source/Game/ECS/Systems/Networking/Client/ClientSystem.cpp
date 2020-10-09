@@ -21,6 +21,9 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/ClientUtilsImpl.h"
 
+#include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/NetworkEvents.h"
+
 namespace LambdaEngine
 {
 	ClientSystem* ClientSystem::s_pInstance = nullptr;
@@ -55,9 +58,6 @@ namespace LambdaEngine
 		clientDesc.UsePingSystem		= true;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
-
-
-		MultiplayerUtils::SubscribeToPacketType(NetworkSegment::TYPE_ENTITY_CREATE, std::bind(&ClientSystem::OnPacketCreateEntity, this, std::placeholders::_1, std::placeholders::_2));
 
 		m_CharacterControllerSystem.Init();
 		m_NetworkPositionSystem.Init();
@@ -97,7 +97,10 @@ namespace LambdaEngine
 
 	void ClientSystem::OnConnected(IClient* pClient)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		ClientConnectedEvent event = {};
+		event.pClient = pClient;
+
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientSystem::OnDisconnecting(IClient* pClient)
@@ -107,84 +110,30 @@ namespace LambdaEngine
 
 	void ClientSystem::OnDisconnected(IClient* pClient)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		ClientDisconnectedEvent event = {};
+		event.pClient = pClient;
+
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-		MultiplayerUtils::s_pMultiplayerUtility->FirePacketEvent(pClient, pPacket);
-	}
+		PacketReceivedEvent event = {};
+		event.pClient = pClient;
+		event.pPacket = pPacket;
+		event.Type = pPacket->GetType();
 
-	void ClientSystem::OnPacketCreateEntity(IClient* pClient, NetworkSegment* pPacket)
-	{
-		BinaryDecoder decoder(pPacket);
-		bool isMySelf		= decoder.ReadBool();
-		int32 networkUID	= decoder.ReadInt32();
-		glm::vec3 position	= decoder.ReadVec3();
-		glm::vec3 color		= decoder.ReadVec3();
+		EventQueue::SendEventImmediate(event);
 
-		if (isMySelf)
-			m_PlayerSystem.m_NetworkUID = networkUID;
+		if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
+		{
+			BinaryDecoder decoder(pPacket);
+			bool isMySelf = decoder.ReadBool();
+			int32 networkUID = decoder.ReadInt32();
 
-		ECSCore* pECS = ECSCore::GetInstance();
-		Entity entity = pECS->CreateEntity();
-
-		LOG_INFO("Creating Entity with ID %d and NetworkID %d", entity, networkUID);
-
-		MaterialProperties materialProperties = {};
-		materialProperties.Roughness = 0.1f;
-		materialProperties.Metallic = 0.0f;
-		materialProperties.Albedo = glm::vec4(color, 1.0f);
-
-		//TArray<GUID_Lambda> animations;
-
-		//const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		//const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-
-		MeshComponent meshComponent;
-		meshComponent.MeshGUID = ResourceManager::LoadMeshFromFile("Sphere.obj");
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Mirror Material" + std::to_string(entity),
-			//robotAlbedoGUID,
-			//robotNormalGUID,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
-
-		//AnimationComponent animationComp;
-		//animationComp.AnimationGUID = animations[0];
-
-
-		pECS->AddComponent<PlayerComponent>(entity, PlayerComponent{ .IsLocal = isMySelf });
-		pECS->AddComponent<PositionComponent>(entity, { true, position });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.0f) });
-		pECS->AddComponent<VelocityComponent>(entity, { true, glm::vec3(0.0f) });
-		//pECS->AddComponent<AnimationComponent>(entity,		animationComp);
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<NetworkComponent>(entity, { networkUID });
-		pECS->AddComponent<NetworkPositionComponent>(entity, { position, position, EngineLoop::GetTimeSinceStart(), EngineLoop::GetFixedTimestep() });
-
-		const CharacterColliderInfo colliderInfo = {
-			.Entity = entity,
-			.Position = pECS->GetComponent<PositionComponent>(entity),
-			.Rotation = pECS->GetComponent<RotationComponent>(entity),
-			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
-			.CollisionMask = FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
-		};
-
-		constexpr const float capsuleHeight = 1.8f;
-		constexpr const float capsuleRadius = 0.2f;
-		CharacterColliderComponent characterColliderComponent;
-		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterColliderComponent);
-		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
-
-
-		ClientUtilsImpl* pUtil = (ClientUtilsImpl*)MultiplayerUtils::s_pMultiplayerUtility;
-		pUtil->RegisterEntity(entity, networkUID);
+			if (isMySelf)
+				m_PlayerSystem.m_NetworkUID = networkUID;
+		}
 	}
 
 	void ClientSystem::OnClientReleased(IClient* pClient)

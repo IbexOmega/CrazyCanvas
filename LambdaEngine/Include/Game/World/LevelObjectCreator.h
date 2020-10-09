@@ -14,19 +14,25 @@
 
 namespace LambdaEngine
 {
+	class IClient;
 	class CameraDesc;
 
 	enum class ESpecialObjectType : uint8
 	{
-		SPECIAL_OBJECT_TYPE_NONE		= 0,
-		SPECIAL_OBJECT_TYPE_SPAWN_POINT	= 1,
-		SPECIAL_OBJECT_TYPE_FLAG		= 2,
-		SPECIAL_OBJECT_TYPE_PLAYER		= 3,
+		SPECIAL_OBJECT_TYPE_NONE			= 0,
+		SPECIAL_OBJECT_TYPE_STATIC_GEOMTRY	= 1,
+		SPECIAL_OBJECT_TYPE_DIR_LIGHT		= 2,
+		SPECIAL_OBJECT_TYPE_POINT_LIGHT		= 3,
+		SPECIAL_OBJECT_TYPE_SPAWN_POINT		= 4,
+		SPECIAL_OBJECT_TYPE_FLAG			= 5,
+		SPECIAL_OBJECT_TYPE_PLAYER			= 6,
 	};
 
 	struct CreatePlayerDesc
 	{
 		bool				IsLocal				= false;
+		int32				NetworkUID			= -1;
+		IClient*			pClient				= nullptr;
 		glm::vec3			Position			= glm::vec3(0.0f);
 		glm::vec3			Forward				= glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3			Scale				= glm::vec3(1.0f);
@@ -38,7 +44,7 @@ namespace LambdaEngine
 	class LevelObjectCreator
 	{
 		typedef ESpecialObjectType(*SpecialObjectCreateByPrefixFunc)(const SpecialObjectOnLoad&, TArray<Entity>&, const glm::vec3&);
-		typedef bool(*SpecialObjectCreateByTypeFunc)(const void* pData, TArray<Entity>&);
+		typedef bool(*SpecialObjectCreateByTypeFunc)(const void* pData, TArray<Entity>&, TArray<uint64>&);
 
 		static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.0f;
 		static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
@@ -46,7 +52,7 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(LevelObjectCreator);
 
-		static bool Init(bool clientSide);
+		static bool Init();
 
 		static Entity CreateDirectionalLight(const LoadedDirectionalLight& directionalLight, const glm::vec3& translation);
 		static Entity CreatePointLight(const LoadedPointLight& pointLight, const glm::vec3& translation);
@@ -64,7 +70,7 @@ namespace LambdaEngine
 		*	Special Objects are similar to ECS::Entities but one Special Object can create many entities.
 		*/
 		static ESpecialObjectType CreateSpecialObjectFromPrefix(const SpecialObjectOnLoad& specialObject, TArray<Entity>& createdEntities, const glm::vec3& translation);
-		static bool CreateSpecialObjectOfType(ESpecialObjectType specialObjectType, const void* pData, TArray<Entity>& createdEntities);
+		static bool CreateSpecialObjectOfType(ESpecialObjectType specialObjectType, const void* pData, TArray<Entity>& createdEntities, TArray<uint64>& saltUIDs);
 
 		FORCEINLINE static const TArray<SpecialObjectOnLoadDesc>& GetSpecialObjectOnLoadDescriptions() { return s_SpecialObjectOnLoadDescriptions; }
 
@@ -72,10 +78,9 @@ namespace LambdaEngine
 		static ESpecialObjectType CreateSpawnpoint(const SpecialObjectOnLoad& specialObject, TArray<Entity>& createdEntities, const glm::vec3& translation);
 		static ESpecialObjectType CreateFlag(const SpecialObjectOnLoad& specialObject, TArray<Entity>& createdEntities, const glm::vec3& translation);
 
-		static bool CreatePlayer(const void* pData, TArray<Entity>& createdEntities);
+		static bool CreatePlayer(const void* pData, TArray<Entity>& createdEntities, TArray<uint64>& saltUIDs);
 
 	private:
-		inline static bool m_ClientSide = false;
 		inline static TArray<SpecialObjectOnLoadDesc> s_SpecialObjectOnLoadDescriptions;
 		inline static THashTable<String, SpecialObjectCreateByPrefixFunc> s_SpecialObjectByPrefixCreateFunctions;
 		inline static THashTable<ESpecialObjectType, SpecialObjectCreateByTypeFunc> s_SpecialObjectByTypeCreateFunctions;

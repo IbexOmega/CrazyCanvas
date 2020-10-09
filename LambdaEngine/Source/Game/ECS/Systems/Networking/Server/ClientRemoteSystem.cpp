@@ -12,46 +12,19 @@
 
 #include "Engine/EngineLoop.h"
 
+#include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/NetworkEvents.h"
+
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 namespace LambdaEngine
 {
-	glm::vec3 ClientRemoteSystem::s_StartPositions[10] =
-	{
-		glm::vec3(0.0f, 1.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 1.0f),
-		glm::vec3(0.0f, 1.0f, 2.0f),
-		glm::vec3(1.0f, 1.0f, 0.0f),
-		glm::vec3(1.0f, 1.0f, 1.0f),
-		glm::vec3(1.0f, 1.0f, 2.0f),
-		glm::vec3(2.0f, 1.0f, 0.0f),
-		glm::vec3(2.0f, 1.0f, 1.0f),
-		glm::vec3(2.0f, 1.0f, 2.0f),
-		glm::vec3(3.0f, 1.0f, 0.0f)
-	};
-
-	glm::vec3 ClientRemoteSystem::s_StartColors[10] =
-	{
-		glm::vec3(1.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 1.0f),
-		glm::vec3(1.0f, 1.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 1.0f),
-		glm::vec3(1.0f, 0.0f, 1.0f),
-		glm::vec3(1.0f, 1.0f, 1.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(1.0f, 0.5f, 0.5f),
-		glm::vec3(0.5f, 0.5f, 1.0f)
-	};
-
 	ClientRemoteSystem::ClientRemoteSystem() :
-		m_NetworkEntities(),
 		m_Buffer(),
 		m_pClient(nullptr),
-		m_EntityPlayer(UINT32_MAX),
-		m_CurrentGameState(),
-		m_Color()
+		m_CurrentGameState()
 	{
-		SystemRegistration systemReg = {};
-		RegisterSystem(systemReg);
+		
 	}
 
 	ClientRemoteSystem::~ClientRemoteSystem()
@@ -69,45 +42,43 @@ namespace LambdaEngine
 		if (m_pClient->IsConnected())
 		{
 			const float32 dt = (float32)deltaTime.AsSeconds();
-			Entity entityPlayer = GetEntityPlayer();
+			Entity entityPlayer = MultiplayerUtils::GetEntityPlayer(m_pClient);
 
-			ECSCore* pECS = ECSCore::GetInstance();
-			auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-			auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-			auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-			auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-			PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
-			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
-			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
-
-			for (const GameState& gameState : m_Buffer)
+			if (entityPlayer < UINT32_MAX)
 			{
-				ASSERT(gameState.SimulationTick - 1 == m_CurrentGameState.SimulationTick);
+				ECSCore* pECS = ECSCore::GetInstance();
+				auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+				auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+				auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+				auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
-				m_CurrentGameState = gameState;
+				PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+				NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
+				VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
-				PlayerActionSystem::ComputeVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
-				CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+				for (const GameState& gameState : m_Buffer)
+				{
+					ASSERT(gameState.SimulationTick - 1 == m_CurrentGameState.SimulationTick);
 
-				NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
-				BinaryEncoder encoder(pPacket);
-				encoder.WriteInt32(entityPlayer);
-				encoder.WriteInt32(m_CurrentGameState.SimulationTick);
-				encoder.WriteVec3(netPosComponent.Position);
-				encoder.WriteVec3(velocityComponent.Velocity);
-				m_pClient->SendReliableBroadcast(pPacket);
+					m_CurrentGameState = gameState;
+
+					PlayerActionSystem::ComputeVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+					CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+
+					NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
+					BinaryEncoder encoder(pPacket);
+					encoder.WriteInt32(entityPlayer);
+					encoder.WriteInt32(m_CurrentGameState.SimulationTick);
+					encoder.WriteVec3(netPosComponent.Position);
+					encoder.WriteVec3(velocityComponent.Velocity);
+					m_pClient->SendReliableBroadcast(pPacket);
+				}
+
+				positionComponent.Position = netPosComponent.Position;
+
+				m_Buffer.clear();
 			}
-
-			positionComponent.Position = netPosComponent.Position;
-
-			m_Buffer.clear();
 		}
-	}
-
-	Entity ClientRemoteSystem::GetEntityPlayer() const
-	{
-		return m_EntityPlayer;
 	}
 
 	void ClientRemoteSystem::OnConnecting(IClient* pClient)
@@ -117,81 +88,10 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::OnConnected(IClient* pClient)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
+		ClientConnectedEvent event = {};
+		event.pClient = pClient;
 
-		uint8 index = m_pClient->GetServer()->GetClientCount() % 10 - 1;
-		const glm::vec3& position = s_StartPositions[index];
-		m_Color = s_StartColors[index];
-
-		m_EntityPlayer = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(m_EntityPlayer,			{ true, position });
-		pECS->AddComponent<RotationComponent>(m_EntityPlayer,			{ true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ScaleComponent>(m_EntityPlayer,				{ true, glm::vec3(1.0f) });
-		pECS->AddComponent<VelocityComponent>(m_EntityPlayer,			{ true, glm::vec3(0.0f) });
-		pECS->AddComponent<NetworkComponent>(m_EntityPlayer,			{ (int32)m_EntityPlayer });
-		pECS->AddComponent<NetworkPositionComponent>(m_EntityPlayer,	{ position, position, EngineLoop::GetTimeSinceStart(), EngineLoop::GetFixedTimestep() });
-
-
-		const CharacterColliderInfo colliderInfo = {
-			.Entity = m_EntityPlayer,
-			.Position = pECS->GetComponent<PositionComponent>(m_EntityPlayer),
-			.Rotation = pECS->GetComponent<RotationComponent>(m_EntityPlayer),
-			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
-			.CollisionMask = FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
-		};
-
-		constexpr const float capsuleHeight = 1.8f;
-		constexpr const float capsuleRadius = 0.2f;
-		CharacterColliderComponent characterColliderComponent;
-		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterColliderComponent);
-		pECS->AddComponent<CharacterColliderComponent>(m_EntityPlayer, characterColliderComponent);
-
-
-
-
-
-
-
-		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
-		BinaryEncoder encoder = BinaryEncoder(pPacket);
-		encoder.WriteBool(true);
-		//encoder.WriteInt32(ServerSystem::GetInstance().GetSimulationTick());
-		encoder.WriteInt32((int32)m_EntityPlayer);
-		encoder.WriteVec3(position);
-		encoder.WriteVec3(m_Color);
-		pClient->SendReliable(pPacket, this);
-
-
-
-		const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		const ClientMap& clients = m_pClient->GetClients();
-
-		for (auto& clientPair : clients)
-		{
-			if (clientPair.second != m_pClient)
-			{
-				//Send to everyone already connected
-				NetworkSegment* pPacket2 = clientPair.second->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
-				BinaryEncoder encoder2(pPacket2);
-				encoder2.WriteBool(false);
-				encoder2.WriteInt32((int32)m_EntityPlayer);
-				encoder2.WriteVec3(position);
-				encoder2.WriteVec3(m_Color);
-				clientPair.second->SendReliable(pPacket2, this);
-
-				//Send everyone to my self
-				ClientRemoteSystem* pHandler = (ClientRemoteSystem*)clientPair.second->GetHandler();
-				const PositionComponent& positionComponent = pPositionComponents->GetData(pHandler->m_EntityPlayer);
-
-				NetworkSegment* pPacket3 = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
-				BinaryEncoder encoder3(pPacket3);
-				encoder3.WriteBool(false);
-				encoder3.WriteInt32((int32)pHandler->m_EntityPlayer);
-				encoder3.WriteVec3(positionComponent.Position);
-				encoder3.WriteVec3(pHandler->m_Color);
-				pClient->SendReliable(pPacket3, this);
-			}
-		}
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientRemoteSystem::OnDisconnecting(IClient* pClient)
@@ -201,14 +101,22 @@ namespace LambdaEngine
 
 	void ClientRemoteSystem::OnDisconnected(IClient* pClient)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		ClientDisconnectedEvent event = {};
+		event.pClient = pClient;
+
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientRemoteSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		PacketReceivedEvent event = {};
+		event.pClient = pClient;
+		event.pPacket = pPacket;
+		event.Type = pPacket->GetType();
 
-		if (pPacket->GetType() == NetworkSegment::TYPE_PLAYER_ACTION)
+		EventQueue::SendEventImmediate(event);
+
+		if (event.Type == NetworkSegment::TYPE_PLAYER_ACTION)
 		{
 			GameState gameState = {};
 

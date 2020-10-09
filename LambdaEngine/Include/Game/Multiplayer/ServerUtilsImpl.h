@@ -13,6 +13,8 @@ namespace LambdaEngine
 		virtual ~ServerUtilsImpl();
 
 		virtual Entity GetEntity(int32 networkUID) const override final;
+		virtual void RegisterEntity(Entity entity, int32 networkUID) override final;
+		virtual uint64 GetSaltAsUID(IClient* pClient) override final;
 
 	private:
 		ServerUtilsImpl();

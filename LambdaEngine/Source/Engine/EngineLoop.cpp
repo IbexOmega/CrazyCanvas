@@ -243,11 +243,10 @@ namespace LambdaEngine
 			return false;
 		}
 
-		bool clientSide = true;
-		if (!LevelObjectCreator::Init(clientSide))
+		/*if (!LevelObjectCreator::Init())
 		{
 			return false;
-		}
+		}*/
 
 		if (!InitSystems())
 		{

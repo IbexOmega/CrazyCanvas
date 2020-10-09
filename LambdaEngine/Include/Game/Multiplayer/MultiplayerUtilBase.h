@@ -8,7 +8,7 @@
 
 namespace LambdaEngine
 {
-	typedef std::unordered_map<uint16, TArray<PacketFunction>> PacketSubscriberMap;
+	class IClient;
 
 	class MultiplayerUtilBase
 	{
@@ -19,12 +19,7 @@ namespace LambdaEngine
 		DECL_ABSTRACT_CLASS(MultiplayerUtilBase);
 
 		virtual Entity GetEntity(int32 networkUID) const = 0;
-		void SubscribeToPacketType(uint16 packetType, const PacketFunction& func);
-
-	private:
-		void FirePacketEvent(IClient* pClient, NetworkSegment* pPacket);
-
-	private:
-		PacketSubscriberMap m_PacketSubscribers;
+		virtual void RegisterEntity(Entity entity, int32 networkUID) = 0;
+		virtual uint64 GetSaltAsUID(IClient* pClient) = 0;
 	};
 }

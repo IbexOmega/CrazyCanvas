@@ -3,10 +3,11 @@
 
 #include "Game/World/Player/PlayerActionSystem.h"
 
+#include "Application/API/Events/NetworkEvents.h"
+
 namespace LambdaEngine
 {
 	struct GameState;
-	class NetworkSegment;
 	class IClient;
 
 	struct GameStateOther
@@ -35,7 +36,7 @@ namespace LambdaEngine
 		PlayerSystem();
 
 		void SendGameState(const GameState& gameState, IClient* pClient);
-		void OnPacketPlayerAction(IClient* pClient, NetworkSegment* pPacket);
+		bool OnPacketReceived(const PacketReceivedEvent& event);
 		void Reconcile();
 		void ReplayGameStatesBasedOnServerGameState(GameState* pGameStates, uint32 count, const GameState& gameStateServer);
 		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);

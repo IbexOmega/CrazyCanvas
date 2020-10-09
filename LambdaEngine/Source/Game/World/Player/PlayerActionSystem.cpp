@@ -57,6 +57,9 @@ namespace LambdaEngine
 			};
 			
 			ComputeVelocity(deltaVelocity.x, deltaVelocity.y, velocityComponent.Velocity);
+
+			pGameState->DeltaForward	= deltaVelocity.x;
+			pGameState->DeltaLeft		= deltaVelocity.y;
 		}
 
 		//Update Rotational Movement

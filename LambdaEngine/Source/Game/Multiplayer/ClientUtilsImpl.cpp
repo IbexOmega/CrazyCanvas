@@ -1,6 +1,9 @@
 #include "Game/Multiplayer/ClientUtilsImpl.h"
 
 #include "Networking/API/NetworkSegment.h"
+#include "Networking/API/NetworkStatistics.h"
+
+#include "Networking/API/IClient.h"
 
 namespace LambdaEngine
 {
@@ -26,5 +29,10 @@ namespace LambdaEngine
 		auto pair = m_NetworkUIDToEntityMapper.find(networkUID);
 		ASSERT(pair == m_NetworkUIDToEntityMapper.end());
 		m_NetworkUIDToEntityMapper.insert({ networkUID, entity });
+	}
+
+	uint64 ClientUtilsImpl::GetSaltAsUID(IClient* pClient)
+	{
+		return pClient->GetStatistics()->GetRemoteSalt();
 	}
 }

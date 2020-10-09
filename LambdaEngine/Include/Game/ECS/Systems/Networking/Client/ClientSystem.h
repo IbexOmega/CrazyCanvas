@@ -37,14 +37,10 @@ namespace LambdaEngine
 		virtual void OnClientReleased(IClient* pClient) override;
 		virtual void OnServerFull(IClient* pClient) override;
 
-		void CreateEntity(int32 networkUID, const glm::vec3& position, const glm::vec3& color);
-
 	private:
 		ClientSystem();
 
 		void Init();
-
-		void OnPacketCreateEntity(IClient* pClient, NetworkSegment* pPacket);
 
 	public:
 		static ClientSystem& GetInstance()

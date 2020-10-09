@@ -20,6 +20,9 @@
 
 #include "Engine/EngineLoop.h"
 
+#include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/NetworkEvents.h"
+
 #define EPSILON 0.01f
 
 namespace LambdaEngine
@@ -42,7 +45,7 @@ namespace LambdaEngine
 
 	void PlayerSystem::Init()
 	{
-		MultiplayerUtils::SubscribeToPacketType(NetworkSegment::TYPE_PLAYER_ACTION, std::bind(&PlayerSystem::OnPacketPlayerAction, this, std::placeholders::_1, std::placeholders::_2));
+		EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlayerSystem::OnPacketReceived);
 	}
 
 	void PlayerSystem::FixedTickMainThread(Timestamp deltaTime, IClient* pClient)
@@ -132,33 +135,40 @@ namespace LambdaEngine
 				netPosComponent.Position += velocityComponent.Velocity * dt;
 				netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 			}
+
+			LOG_INFO("%f, %f, %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
 		}
 	}
 
-	void PlayerSystem::OnPacketPlayerAction(IClient* pClient, NetworkSegment* pPacket)
+	bool PlayerSystem::OnPacketReceived(const PacketReceivedEvent& event)
 	{
-		GameState serverGameState = {};
-
-		BinaryDecoder decoder(pPacket);
-		int32 networkUID = decoder.ReadInt32();
-		serverGameState.SimulationTick = decoder.ReadInt32();
-		serverGameState.Position = decoder.ReadVec3();
-		serverGameState.Velocity = decoder.ReadVec3();
-
-		if (networkUID == m_NetworkUID)
+		if (event.Type == NetworkSegment::TYPE_PLAYER_ACTION)
 		{
-			m_FramesProcessedByServer.PushBack(serverGameState);
-		}
-		else
-		{
-			Entity entity = MultiplayerUtils::GetEntity(networkUID);
+			GameState serverGameState = {};
 
-			m_EntityOtherStates[entity] = {
-				serverGameState.Position,
-				serverGameState.Velocity,
-				true
-			};
+			BinaryDecoder decoder(event.pPacket);
+			int32 networkUID = decoder.ReadInt32();
+			serverGameState.SimulationTick = decoder.ReadInt32();
+			serverGameState.Position = decoder.ReadVec3();
+			serverGameState.Velocity = decoder.ReadVec3();
+
+			if (networkUID == m_NetworkUID)
+			{
+				m_FramesProcessedByServer.PushBack(serverGameState);
+			}
+			else
+			{
+				Entity entity = MultiplayerUtils::GetEntity(networkUID);
+
+				m_EntityOtherStates[entity] = {
+					serverGameState.Position,
+					serverGameState.Velocity,
+					true
+				};
+			}
+			return true;
 		}
+		return false;
 	}
 
 	void PlayerSystem::Reconcile()
