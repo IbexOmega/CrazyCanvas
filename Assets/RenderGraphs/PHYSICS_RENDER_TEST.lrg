@@ -124,24 +124,16 @@
             }
         },
         {
-            "name": "G_BUFFER_POSITION",
+            "name": "PAINT_MASK_TEXTURES",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
-            "editable": true,
-            "external": false,
+            "editable": false,
+            "external": true,
             "type_params": {
-                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
-                "texture_type": "TEXTURE_2D",
-                "x_dim_type": "RELATIVE",
-                "y_dim_type": "RELATIVE",
-                "x_dim_var": 1.0,
-                "y_dim_var": 1.0,
-                "sample_count": 1,
-                "miplevel_count": 1,
-                "sampler_type": "LINEAR",
-                "memory_type": "MEMORY_TYPE_GPU"
+                "texture_type": "TEXTURE_2D"
             }
         },
         {
@@ -162,11 +154,13 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "LINEAR",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
-            "name": "G_BUFFER_AO_ROUGH_METAL_VALID",
+            "name": "G_BUFFER_AO_ROUGH_METAL",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
@@ -183,18 +177,20 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "LINEAR",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
         {
-            "name": "G_BUFFER_COMPACT_NORMAL",
+            "name": "G_BUFFER_COMPACT_NORMALS",
             "type": "TEXTURE",
             "back_buffer_bound": false,
             "sub_resource_count": 1,
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R16G16_SFLOAT",
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
@@ -204,6 +200,8 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "LINEAR",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -225,6 +223,8 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "LINEAR",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -246,6 +246,8 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "LINEAR",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -260,6 +262,65 @@
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
                 "texture_type": "TEXTURE_CUBE"
+            }
+        },
+        {
+            "name": "BRUSH_MASK",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D"
+            }
+        },
+        {
+            "name": "G_BUFFER_POSITION",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": false,
+            "type_params": {
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D",
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "LINEAR",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+                "memory_type": "MEMORY_TYPE_GPU"
+            }
+        },
+        {
+            "name": "UNWRAPPED_TEXTURE",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": false,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "texture_type": "TEXTURE_2D",
+                "x_dim_type": "CONSTANT",
+                "y_dim_type": "CONSTANT",
+                "x_dim_var": 1024.0,
+                "y_dim_var": 1024.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+                "memory_type": "MEMORY_TYPE_GPU"
             }
         }
     ],
@@ -328,7 +389,19 @@
                     "src_stage": ""
                 },
                 {
+                    "name": "PAINT_MASK_TEXTURES",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
                     "name": "SKYBOX",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "BRUSH_MASK",
                     "removable": false,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": ""
@@ -346,7 +419,7 @@
             "name": "BACK_BUFFER_TEXTURE",
             "removable": false,
             "binding_type": "COMBINED_SAMPLER",
-            "src_stage": "RENDER_STAGE_PHYSICS_DEBUG"
+            "src_stage": "SKYBOX_PASS"
         }
     },
     "render_stages": [
@@ -354,6 +427,7 @@
             "name": "DEFERRED_GEOMETRY_PASS",
             "type": "GRAPHICS",
             "custom_renderer": false,
+            "allow_overriding_of_binding_types": false,
             "trigger_type": "EVERY",
             "frame_delay": 0,
             "frame_offset": 0,
@@ -371,108 +445,108 @@
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "/DeferredGeometry\\Geom.vert",
+                "vertex_shader": "/MeshPainting\\MPGeom.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "/DeferredGeometry\\Geom.frag"
+                "pixel_shader": "/MeshPainting\\MPGeom.frag"
             },
             "resource_states": [
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
+                    "src_stage": "RENDER_GRAPH_PAINT_MASK_STAGE"
                 },
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_MAT_PARAM_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_ALBEDO_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_NORMAL_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_AO_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_ROUGHNESS_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_METALLIC_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "G_BUFFER_POSITION",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_ALBEDO",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
-                    "name": "G_BUFFER_AO_ROUGH_METAL_VALID",
+                    "name": "G_BUFFER_AO_ROUGH_METAL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
-                    "name": "G_BUFFER_COMPACT_NORMAL",
+                    "name": "G_BUFFER_COMPACT_NORMALS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_VELOCITY",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_DEPTH_STENCIL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }
@@ -482,6 +556,7 @@
             "name": "SKYBOX_PASS",
             "type": "GRAPHICS",
             "custom_renderer": false,
+            "allow_overriding_of_binding_types": false,
             "trigger_type": "EVERY",
             "frame_delay": 0,
             "frame_offset": 0,
@@ -509,28 +584,28 @@
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SKYBOX",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "G_BUFFER_DEPTH_STENCIL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SHADING_PASS"
                 }
@@ -540,6 +615,7 @@
             "name": "SHADING_PASS",
             "type": "GRAPHICS",
             "custom_renderer": false,
+            "allow_overriding_of_binding_types": false,
             "trigger_type": "EVERY",
             "frame_delay": 0,
             "frame_offset": 0,
@@ -561,85 +637,93 @@
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "/Shading\\Shading.frag"
+                "pixel_shader": "/MeshPainting\\MPShading.frag"
             },
             "resource_states": [
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_LIGHTS_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "G_BUFFER_POSITION",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "G_BUFFER_ALBEDO",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
-                    "name": "G_BUFFER_AO_ROUGH_METAL_VALID",
+                    "name": "G_BUFFER_AO_ROUGH_METAL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
-                    "name": "G_BUFFER_COMPACT_NORMAL",
+                    "name": "G_BUFFER_COMPACT_NORMALS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "G_BUFFER_VELOCITY",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "DEFERRED_GEOMETRY_PASS"
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "removable": true,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }
             ]
         },
         {
-            "name": "RENDER_STAGE_PHYSICS_DEBUG",
+            "name": "RENDER_GRAPH_PAINT_MASK_STAGE",
             "type": "GRAPHICS",
             "custom_renderer": true,
+            "allow_overriding_of_binding_types": false,
             "trigger_type": "EVERY",
             "frame_delay": 0,
             "frame_offset": 0,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
+            "x_dim_type": "CONSTANT",
+            "y_dim_type": "CONSTANT",
             "z_dim_type": "CONSTANT",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
+            "x_dim_var": 1024.0,
+            "y_dim_var": 1024.0,
             "z_dim_var": 1.0,
             "draw_type": "SCENE_INSTANCES",
-            "depth_test_enabled": true,
-            "cull_mode": "CULL_MODE_NONE",
-            "polygon_mode": "POLYGON_MODE_LINE",
-            "primitive_topology": "PRIMITIVE_TOPOLOGY_LINE_LIST",
+            "depth_test_enabled": false,
+            "cull_mode": "CULL_MODE_BACK",
+            "polygon_mode": "POLYGON_MODE_FILL",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
@@ -651,6 +735,13 @@
             },
             "resource_states": [
                 {
+                    "name": "SCENE_DRAW_ARGS",
+                    "removable": true,
+                    "draw_args_mask": 2,
+                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
                     "draw_args_mask": 4294967295,
@@ -658,18 +749,11 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "BACK_BUFFER_TEXTURE",
+                    "name": "BRUSH_MASK",
                     "removable": true,
                     "draw_args_mask": 4294967295,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": "SKYBOX_PASS"
-                },
-                {
-                    "name": "G_BUFFER_DEPTH_STENCIL",
-                    "removable": true,
-                    "draw_args_mask": 4294967295,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": "SKYBOX_PASS"
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]
         }

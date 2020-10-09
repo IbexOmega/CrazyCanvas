@@ -109,6 +109,9 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	};
 
 	pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
+
+	// pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "SceneUnwrappedTexture_" + std::to_string(++i), 2048, 2048));
+
 	return entity;
 }
 
