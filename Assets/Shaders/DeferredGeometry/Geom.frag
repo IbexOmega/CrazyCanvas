@@ -16,7 +16,7 @@ layout(location = 5) in vec2        in_TexCoord;
 layout(location = 6) in vec4        in_ClipPosition;
 layout(location = 7) in vec4        in_PrevClipPosition;
 
-layout(binding = 1, set = BUFFER_SET_INDEX) uniform MaterialParameters  	{ SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -44,7 +44,7 @@ void main()
 	vec3 shadingNormal 	   	= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal 			= normalize(TBN * normalize(shadingNormal));
 
-	SMaterialParameters materialParameters = u_MaterialParameters.val[in_MaterialSlot];
+	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
 	vec2 currentNDC 	= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC 		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;

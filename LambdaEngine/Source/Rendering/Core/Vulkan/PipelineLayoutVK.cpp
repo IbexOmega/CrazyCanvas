@@ -73,7 +73,6 @@ namespace LambdaEngine
 			for (const DescriptorBindingDesc& binding : descriptorSetLayout.DescriptorBindings)
 			{
 				VkFlags bindingFlags = 0;
-
 				if (binding.Flags & FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND)
 				{
 					bindingFlags |= VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;

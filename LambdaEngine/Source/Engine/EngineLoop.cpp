@@ -146,7 +146,7 @@ namespace LambdaEngine
 		ECSCore::GetInstance()->Tick(delta);
 		Game::Get().Tick(delta);
 
-		RenderSystem::GetInstance().Render();
+		RenderSystem::GetInstance().Render(delta);
 
 		return true;
 	}

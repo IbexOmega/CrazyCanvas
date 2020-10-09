@@ -27,6 +27,8 @@
 
 #include "Rendering/RenderGraphTypes.h"
 
+#include "Rendering/LightRenderer.h"
+
 namespace LambdaEngine
 {
 	class Window;
@@ -37,7 +39,9 @@ namespace LambdaEngine
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
+	// Custom Renderers
 	class LineRenderer;
+	class LightRenderer;
 
 	struct CameraComponent;
 	struct RenderGraphStructureDesc;
@@ -197,7 +201,10 @@ namespace LambdaEngine
 		{
 			glm::vec4	ColorIntensity	= glm::vec4(1.0f);
 			glm::vec3	Position		= glm::vec3(0.0f);
-			float		FarPlane		= 10.0f;
+			float32		NearPlane		= 0.1f;
+			float32		FarPlane		= 10.0f;
+			uint32		TextureIndex	= 0;
+			glm::vec2	padding0		= glm::vec2(0.0f);
 			glm::mat4	ProjViews[6];
 		};
 
@@ -218,7 +225,7 @@ namespace LambdaEngine
 
 		virtual void Tick(Timestamp deltaTime) override final;
 
-		bool Render();
+		bool Render(Timestamp delta);
 
 		/*
 		* Set new rendergraph to be executed
@@ -274,11 +281,12 @@ namespace LambdaEngine
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
-		void UpdateLightsBuffer(CommandList* pCommandList);
 		void UpdateShaderRecords();
 		void BuildBLASs(CommandList* pCommandList);
 		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
+		void UpdateLightsBuffer(CommandList* pCommandList);
+		void UpdatePointLightTextureResource();
 
 		void UpdateRenderGraph();
 
@@ -288,8 +296,6 @@ namespace LambdaEngine
 		IDVector m_RenderableEntities;
 		IDVector m_CameraEntities;
 		IDVector m_AnimatedEntities;
-
-		LineRenderer* m_pLineRenderer	= nullptr;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -301,13 +307,19 @@ namespace LambdaEngine
 		bool					m_RayTracingEnabled	= false;
 		bool					m_MeshShadersEnabled = false;
 		// Mesh/Instance/Entity
-		bool						m_LightsDirty			= true;
-		bool						m_LightsResourceDirty	= false;
-		bool						m_DirectionalExist		= false;
+		bool						m_LightsResourceDirty		= true;
+		bool						m_PointLightDirty			= true;
+		bool						m_DirectionalExist			= false;
+		bool						m_RemoveTexturesOnDeletion	= false;
+		TArray<LightUpdateData>		m_PointLightTextureUpdateQueue;
+		TArray<uint32>				m_FreeTextureIndices;
 		LightBuffer					m_LightBufferData;
 		THashTable<Entity, uint32>	m_EntityToPointLight;
 		THashTable<uint32, Entity>	m_PointLightToEntity;
 		TArray<PointLight>			m_PointLights;
+		TArray<Texture*>			m_CubeTextures;
+		TArray<TextureView*>		m_CubeTextureViews;
+		TArray<TextureView*>		m_CubeSubImageTextureViews;
 
 		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
@@ -366,6 +378,10 @@ namespace LambdaEngine
 		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
+
+		// Custom Renderers
+		LineRenderer*				m_pLineRenderer		= nullptr;
+		LightRenderer*				m_pLightRenderer	= nullptr;
 
 	private:
 		static RenderSystem		s_Instance;
