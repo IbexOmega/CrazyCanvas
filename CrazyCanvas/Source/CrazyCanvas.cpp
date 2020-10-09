@@ -13,6 +13,8 @@
 #include "States/SandboxState.h"
 #include "States/ServerState.h"
 
+#include "World/LevelManager.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -27,6 +29,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+
+	bool clientSide = true;
+	if (!LevelManager::Init(clientSide))
+	{
+		LOG_ERROR("Level Manager Init Failed");
+	}
 
 	LoadRendererResources();
 
@@ -57,6 +65,14 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+}
+
+CrazyCanvas::~CrazyCanvas()
+{
+	if (!LevelManager::Release())
+	{
+		LOG_ERROR("Level Manager Release Failed");
+	}
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)

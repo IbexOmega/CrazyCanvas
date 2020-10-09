@@ -10,6 +10,7 @@
             "type_params": {
                 "texture_format": "FORMAT_B8G8R8A8_UNORM",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D"
             }
         },
@@ -110,6 +111,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -133,6 +135,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -156,6 +159,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -179,6 +183,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R10G10B10A2_UNORM",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -202,6 +207,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R16G16_SFLOAT",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -225,6 +231,7 @@
             "type_params": {
                 "texture_format": "FORMAT_D24_UNORM_S8_UINT",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -248,6 +255,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_CUBE"
             }
         },
@@ -261,6 +269,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -284,34 +293,12 @@
             "type_params": {
                 "texture_format": "FORMAT_D24_UNORM_S8_UINT",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "CONSTANT",
                 "y_dim_type": "CONSTANT",
                 "x_dim_var": 1024.0,
                 "y_dim_var": 1024.0,
-                "sample_count": 1,
-                "miplevel_count": 1,
-                "sampler_type": "NEAREST",
-                "sampler_address_mode": "CLAMP_TO_BORDER",
-                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_WHITE",
-                "memory_type": "MEMORY_TYPE_GPU"
-            }
-        },
-        {
-            "name": "POINTL_SHADOWMAPS",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "sub_resource_count": 8,
-            "editable": true,
-            "external": false,
-            "type_params": {
-                "texture_format": "FORMAT_D24_UNORM_S8_UINT",
-                "is_of_array_type": false,
-                "texture_type": "TEXTURE_CUBE",
-                "x_dim_type": "CONSTANT",
-                "y_dim_type": "CONSTANT",
-                "x_dim_var": 512.0,
-                "y_dim_var": 512.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
@@ -330,6 +317,7 @@
             "type_params": {
                 "texture_format": "FORMAT_D24_UNORM_S8_UINT",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
                 "x_dim_type": "RELATIVE",
                 "y_dim_type": "RELATIVE",
@@ -344,6 +332,20 @@
             }
         },
         {
+            "name": "SCENE_POINT_SHADOWMAPS",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_D24_UNORM_S8_UINT",
+                "is_of_array_type": false,
+                "unbounded_array": true,
+                "texture_type": "TEXTURE_CUBE"
+            }
+        },
+        {
             "name": "BRUSH_MASK",
             "type": "TEXTURE",
             "back_buffer_bound": false,
@@ -353,6 +355,7 @@
             "type_params": {
                 "texture_format": "FORMAT_R8G8B8A8_UNORM",
                 "is_of_array_type": false,
+                "unbounded_array": false,
                 "texture_type": "TEXTURE_2D"
             }
         }
@@ -416,6 +419,12 @@
                     "src_stage": ""
                 },
                 {
+                    "name": "SCENE_POINT_SHADOWMAPS",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
                     "name": "BRUSH_MASK",
                     "removable": false,
                     "binding_type": "COMBINED_SAMPLER",
@@ -472,7 +481,7 @@
                     "removable": true,
                     "draw_args_mask": 3,
                     "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "RENDER_GRAPH_PAINT_MASK_STAGE"
+                    "src_stage": "RENDER_STAGE_MESH_UNWRAP"
                 },
                 {
                     "name": "PER_FRAME_BUFFER",
@@ -485,7 +494,7 @@
                     "name": "SCENE_MAT_PARAM_BUFFER",
                     "removable": true,
                     "draw_args_mask": 1,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
@@ -550,6 +559,65 @@
                     "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
+                }
+            ]
+        },
+        {
+            "name": "SKYBOX_PASS",
+            "type": "GRAPHICS",
+            "custom_renderer": false,
+            "allow_overriding_of_binding_types": false,
+            "trigger_type": "EVERY",
+            "frame_delay": 0,
+            "frame_offset": 0,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 1.0,
+            "draw_type": "CUBE",
+            "depth_test_enabled": true,
+            "cull_mode": "CULL_MODE_FRONT",
+            "polygon_mode": "POLYGON_MODE_FILL",
+            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
+            "shaders": {
+                "task_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "/Helpers\\Cube.vert",
+                "geometry_shader": "",
+                "hull_shader": "",
+                "domain_shader": "",
+                "pixel_shader": "/Skybox\\Skybox.frag"
+            },
+            "resource_states": [
+                {
+                    "name": "PER_FRAME_BUFFER",
+                    "removable": true,
+                    "draw_args_mask": 1,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SKYBOX",
+                    "removable": true,
+                    "draw_args_mask": 1,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "removable": true,
+                    "draw_args_mask": 1,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": "DEFERRED_GEOMETRY_PASS"
+                },
+                {
+                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
+                    "removable": true,
+                    "draw_args_mask": 1,
+                    "binding_type": "ATTACHMENT",
+                    "src_stage": "SHADING_PASS"
                 }
             ]
         },
@@ -651,65 +719,6 @@
             ]
         },
         {
-            "name": "SKYBOX_PASS",
-            "type": "GRAPHICS",
-            "custom_renderer": false,
-            "allow_overriding_of_binding_types": false,
-            "trigger_type": "EVERY",
-            "frame_delay": 0,
-            "frame_offset": 0,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 1.0,
-            "y_dim_var": 1.0,
-            "z_dim_var": 1.0,
-            "draw_type": "CUBE",
-            "depth_test_enabled": true,
-            "cull_mode": "CULL_MODE_FRONT",
-            "polygon_mode": "POLYGON_MODE_FILL",
-            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
-            "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "/Helpers\\Cube.vert",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": "/Skybox\\Skybox.frag"
-            },
-            "resource_states": [
-                {
-                    "name": "PER_FRAME_BUFFER",
-                    "removable": true,
-                    "draw_args_mask": 1,
-                    "binding_type": "CONSTANT_BUFFER",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SKYBOX",
-                    "removable": true,
-                    "draw_args_mask": 1,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "G_BUFFER_DEPTH_STENCIL",
-                    "removable": true,
-                    "draw_args_mask": 1,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS"
-                },
-                {
-                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
-                    "removable": true,
-                    "draw_args_mask": 1,
-                    "binding_type": "ATTACHMENT",
-                    "src_stage": "SHADING_PASS"
-                }
-            ]
-        },
-        {
             "name": "SHADING_PASS",
             "type": "GRAPHICS",
             "custom_renderer": false,
@@ -802,18 +811,18 @@
                     "src_stage": "DIRL_SHADOWMAP"
                 },
                 {
-                    "name": "POINTL_SHADOWMAPS",
+                    "name": "SCENE_POINT_SHADOWMAPS",
                     "removable": true,
                     "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "POINTL_SHADOW"
+                    "src_stage": "RENDER_STAGE_LIGHT"
                 }
             ]
         },
         {
-            "name": "POINTL_SHADOW",
+            "name": "RENDER_STAGE_LIGHT",
             "type": "GRAPHICS",
-            "custom_renderer": false,
+            "custom_renderer": true,
             "allow_overriding_of_binding_types": false,
             "trigger_type": "TRIGGERED",
             "frame_delay": 0,
@@ -825,18 +834,18 @@
             "y_dim_var": 512.0,
             "z_dim_var": 1.0,
             "draw_type": "SCENE_INSTANCES",
-            "depth_test_enabled": true,
+            "depth_test_enabled": false,
             "cull_mode": "CULL_MODE_BACK",
             "polygon_mode": "POLYGON_MODE_FILL",
             "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
                 "mesh_shader": "",
-                "vertex_shader": "/ShadowMap\\PointLShadowMap.vert",
+                "vertex_shader": "",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "/ShadowMap\\PointLShadowMap.frag"
+                "pixel_shader": ""
             },
             "resource_states": [
                 {
@@ -854,7 +863,7 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "POINTL_SHADOWMAPS",
+                    "name": "SCENE_POINT_SHADOWMAPS",
                     "removable": true,
                     "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
@@ -894,21 +903,21 @@
                 {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "FXAA"
                 },
                 {
                     "name": "NOESIS_GUI_DEPTH_STENCIL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }
             ]
         },
         {
-            "name": "RENDER_GRAPH_PAINT_MASK_STAGE",
+            "name": "RENDER_STAGE_MESH_UNWRAP",
             "type": "GRAPHICS",
             "custom_renderer": true,
             "allow_overriding_of_binding_types": false,

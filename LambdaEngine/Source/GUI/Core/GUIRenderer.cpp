@@ -497,6 +497,48 @@ namespace LambdaEngine
 		}
 	}
 
+	void GUIRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		TArray<DeviceChild*>& resourcesToRemove = m_pGraphicsResourcesToRemove[m_ModFrameIndex];
+
+		if (!resourcesToRemove.IsEmpty())
+		{
+			for (DeviceChild* pGraphicsResource : resourcesToRemove)
+			{
+				SAFERELEASE(pGraphicsResource);
+			}
+
+			resourcesToRemove.Clear();
+		}
+
+		//Make Param Buffers available again
+		{
+			TArray<Buffer*>& buffersNowAvailable = m_pUsedParamsBuffers[m_ModFrameIndex];
+
+			for (Buffer* pParamsBuffer : buffersNowAvailable)
+			{
+				m_AvailableParamsBuffers.PushBack(pParamsBuffer);
+			}
+
+			buffersNowAvailable.Clear();
+		}
+
+		//Make Descriptor Sets available again
+		{
+			TArray<DescriptorSet*>& descriptorsNowAvailable = m_pUsedDescriptorSets[m_ModFrameIndex];
+
+			if (!descriptorsNowAvailable.IsEmpty())
+			{
+				for (DescriptorSet* pDescriptorSet : descriptorsNowAvailable)
+				{
+					m_AvailableDescriptorSets.PushBack(pDescriptorSet);
+				}
+
+				descriptorsNowAvailable.Clear();
+			}
+		}
+	}
+
 	void GUIRenderer::PreBuffersDescriptorSetWrite()
 	{
 	}

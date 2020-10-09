@@ -107,7 +107,10 @@ struct SPointLight
 {
     vec4    ColorIntensity;
     vec3    Position;
+	float	NearPlane;
 	float	FarPlane;
+	uint	TextureIndex;
+	vec2	padding0;
     mat4    ProjView[6];
 };
 
