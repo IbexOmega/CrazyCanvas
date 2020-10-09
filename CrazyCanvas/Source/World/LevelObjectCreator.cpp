@@ -3,9 +3,9 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
-#include "Physics/PhysicsSystem.h"
 
 bool LevelObjectCreator::Init(bool clientSide)
 {
