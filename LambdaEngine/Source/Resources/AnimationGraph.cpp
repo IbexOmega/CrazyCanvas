@@ -51,6 +51,7 @@ namespace LambdaEngine
 		// Only transition if the clip has reached correct timing
 		if (currentClipsNormalizedTime >= m_BeginAt)
 		{
+			// This makes sure that we loop around one time if we start a transition after the sync-point
 			if (m_IsActive)
 			{
 				m_LocalClock = currentClipsNormalizedTime;
@@ -398,7 +399,7 @@ namespace LambdaEngine
 
 	void AnimationGraph::TransitionToState(const String& name)
 	{
-		// TODO: What if we already are transitioning? Should we queue up transitions? Transition instantly? Ignore?
+		// TODO: What if we already are transitioning? Should we queue up transitions? (NO) Transition instantly? Ignore?
 
 		if (!HasState(name))
 		{
