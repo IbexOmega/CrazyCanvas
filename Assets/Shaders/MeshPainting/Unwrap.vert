@@ -30,18 +30,18 @@ layout(location = 3) out vec3 out_TargetDirection;
 
 void main()
 {
-    SVertex vertex                              = b_Vertices.val[gl_VertexIndex];
-    mat4 transform                              = b_Instances.val[p_TransformIndex.index].Transform;
-    SPerFrameBuffer perFrameBuffer              = u_PerFrameBuffer.val;
+    SVertex vertex					= b_Vertices.val[gl_VertexIndex];
+    mat4 transform					= b_Instances.val[p_TransformIndex.index].Transform;
+    SPerFrameBuffer perFrameBuffer 	= u_PerFrameBuffer.val;
 
-    vec4 worldPosition      = transform * vec4(vertex.Position.xyz, 1.0f);
-    vec3 normal 	        = normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+    vec4 worldPosition				= transform * vec4(vertex.Position.xyz, 1.0f);
+    vec3 normal						= normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
 
-    out_WorldPosition   = worldPosition.xyz;
-    out_Normal          = normal;
+    out_WorldPosition				= worldPosition.xyz;
+    out_Normal						= normal;
 
-    out_TargetDirection = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
-    out_TargetPosition  = perFrameBuffer.CameraPosition.xyz;
+    out_TargetDirection				= -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
+    out_TargetPosition				= perFrameBuffer.CameraPosition.xyz;
 
     vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);
     texCoord.y = 1.f - texCoord.y;

@@ -5,10 +5,10 @@
 
 #include "../Defines.glsl"
 
-layout(location = 0) in vec3    in_WorldPosition;
-layout(location = 1) in vec3    in_Normal;
-layout(location = 2) in vec3    in_TargetPosition;
-layout(location = 3) in vec3    in_TargetDirection;
+layout(location = 0) in vec3	in_WorldPosition;
+layout(location = 1) in vec3	in_Normal;
+layout(location = 2) in vec3	in_TargetPosition;
+layout(location = 3) in vec3	in_TargetDirection;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
@@ -20,13 +20,13 @@ float random (in vec3 x) {
 
 void main()
 {
-    const vec3 GLOBAL_UP = vec3(0.f, 1.f, 0.f);
-    float BRUSH_SIZE = 1.0f;
+    const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
+    float BRUSH_SIZE		= 1.0f;
 
-    vec3 worldPosition  = in_WorldPosition;
-    vec3 normal 	    = normalize(in_Normal);
-    vec3 targetPosition = in_TargetPosition;
-    vec3 direction      = -normalize(in_TargetDirection);
+    vec3 worldPosition		= in_WorldPosition;
+    vec3 normal 			= normalize(in_Normal);
+    vec3 targetPosition		= in_TargetPosition;
+    vec3 direction			= -normalize(in_TargetDirection);
     
     vec3 targetPosToWorldPos = worldPosition-targetPosition;
 
@@ -39,10 +39,10 @@ void main()
 
 
     // Calculate uv-coordinates for a square encapsulating the sphere.
-    vec3 right = normalize(cross(direction, GLOBAL_UP));
-    vec3 up = normalize(cross(right, direction));
-    float u = (dot(-targetPosToWorldPos, right)/BRUSH_SIZE)*0.5f+0.5f;
-    float v = (dot(-targetPosToWorldPos, up)/BRUSH_SIZE)*0.5f+0.5f;
+    vec3 right	= normalize(cross(direction, GLOBAL_UP));
+    vec3 up		= normalize(cross(right, direction));
+    float u		= (dot(-targetPosToWorldPos, right)/BRUSH_SIZE)*0.5f+0.5f;
+    float v		= (dot(-targetPosToWorldPos, up)/BRUSH_SIZE)*0.5f+0.5f;
     vec2 maskUV = vec2(u, v);
 
     // Apply brush mask
