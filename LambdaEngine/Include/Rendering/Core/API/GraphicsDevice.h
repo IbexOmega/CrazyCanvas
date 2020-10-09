@@ -93,8 +93,12 @@ namespace LambdaEngine
 	*/
 	struct GraphicsDeviceDesc
 	{
-		String	DebugName	= "";
-		bool	Debug		= false;
+		String	Name			= "";
+		String	AdapterName		= "";
+		String	RenderApi		= "";
+		String	ApiVersion		= "";
+		String	DriverVersion	= "";
+		bool	Debug			= false;
 	};
 
 	/*

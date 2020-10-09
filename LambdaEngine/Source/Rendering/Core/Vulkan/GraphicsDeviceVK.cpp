@@ -131,6 +131,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc != nullptr);
 
+		// Application and instance
 		if (!InitInstance(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
@@ -141,6 +142,7 @@ namespace LambdaEngine
 			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Instance initialized!");
 		}
 
+		// Logical and physical device
 		if (!InitDevice(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Device could not be initialized!");
@@ -151,8 +153,10 @@ namespace LambdaEngine
 			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Device initialized!");
 		}
 
+		// FrameBufferCache
 		m_pFrameBufferCache = DBG_NEW FrameBufferCacheVK(this);
 
+		// Allocators
 		if (!InitAllocators())
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Could not create deviceallocators!");
@@ -162,6 +166,22 @@ namespace LambdaEngine
 		{
 			LOG_MESSAGE("[GraphicsDeviceVK]: Created vulkan allocators!");
 		}
+
+		// Setup desc
+		VkPhysicalDeviceProperties properties = GetPhysicalDeviceProperties();
+		m_Desc				= *pDesc;
+		m_Desc.RenderApi	= "Vulkan";
+		m_Desc.AdapterName	= properties.deviceName;
+		m_Desc.ApiVersion	= 
+			std::to_string(VK_VERSION_MAJOR(properties.apiVersion)) + "." + 
+			std::to_string(VK_VERSION_MINOR(properties.apiVersion)) + "." +
+			std::to_string(VK_VERSION_PATCH(properties.apiVersion)) + "(" + 
+			std::to_string(properties.apiVersion) + ")";
+		m_Desc.DriverVersion =
+			std::to_string(VK_VERSION_MAJOR(properties.driverVersion)) + "." +
+			std::to_string(VK_VERSION_MINOR(properties.driverVersion)) + "." +
+			std::to_string(VK_VERSION_PATCH(properties.driverVersion)) + "(" +
+			std::to_string(properties.driverVersion) + ")";
 
 		return true;
 	}
@@ -1113,7 +1133,7 @@ namespace LambdaEngine
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);
 		if (deviceCount == 0)
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Presentation is not supported by the selected physicaldevice");
+			LOG_ERROR("[GraphicsDeviceVK]: No Vulkan supported devices found");
 			return false;
 		}
 
@@ -1150,9 +1170,9 @@ namespace LambdaEngine
 		m_DeviceLimits = deviceProperties.limits;
 		vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_DeviceFeaturesVk);
 
+
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
 		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
-
 		return true;
 	}
 
