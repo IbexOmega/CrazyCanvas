@@ -5,7 +5,14 @@
 #include "Containers/String.h"
 #include "Containers/THashTable.h"
 
+#include "Utilities/SHA256.h"
+
 #include "Math/Math.h"
+
+#include "World.h"
+
+class Level;
+class LevelModule;
 
 class LevelManager
 {
@@ -18,32 +25,30 @@ class LevelManager
 	struct LevelDesc
 	{
 		LambdaEngine::String				Name = "";
-		LambdaEngine::TArray<ModuleDesc>	LevelModules;
-
-		union
-		{
-			byte SHA256[256];
-
-			struct
-			{
-				uint32 SHA256Chunk0;
-				uint32 SHA256Chunk1;
-				uint32 SHA256Chunk2;
-				uint32 SHA256Chunk3;
-			};
-		};
+		LambdaEngine::TArray<ModuleDesc>	LevelModuleDescriptions;
+		LambdaEngine::SHA256Hash			Hash;
 	};
 
 public:
 	DECL_STATIC_CLASS(LevelManager);
 
-	static bool Init();
+	static bool Init(bool clientSide);
+	static bool Release();
+	
+	/*
+	*	Loads a level, the level can then be used to create new entities which are tied to the level
+	*	The caller is responsible of deleting the Level
+	*/
+	static Level* LoadLevel(const LambdaEngine::SHA256Hash& levelHash);
+	static Level* LoadLevel(const LambdaEngine::String& levelName);
+	static Level* LoadLevel(uint32 index);
 
-	static const LambdaEngine::TArray<LambdaEngine::String>& GetLevelNames();
-	static void LoadLevel(const LambdaEngine::String& levelName);
-	static void LoadLevel(uint32 index);
-
+	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& GetLevelHashes() { return s_LevelHashes; }
+	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::String>& GetLevelNames() { return s_LevelNames; }
 private:
-	static LambdaEngine::TArray<LambdaEngine::String> s_LevelNames;
-	static LambdaEngine::TArray<LevelDesc> s_LevelDescriptions;
+	static inline LambdaEngine::TArray<LambdaEngine::SHA256Hash> s_LevelHashes;
+	static inline LambdaEngine::TArray<LambdaEngine::String> s_LevelNames;
+	static inline LambdaEngine::TArray<LevelDesc> s_LevelDescriptions;
+
+	static inline LambdaEngine::THashTable<LambdaEngine::String, LevelModule*> s_LoadedModules;
 };

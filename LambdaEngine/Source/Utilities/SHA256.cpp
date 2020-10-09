@@ -116,20 +116,16 @@ namespace LambdaEngine
 		}
 	}
 
-	std::string SHA256::Hash(const String& input)
+	SHA256Hash SHA256::Hash(const String& input)
 	{
-		byte digest[SHA256::DIGEST_SIZE];
-		memset(digest, 0, SHA256::DIGEST_SIZE);
+		SHA256Hash hash;
+		memset(hash.Data, 0, DIGEST_SIZE);
 
 		SHA256 ctx = SHA256();
 		ctx.Init();
 		ctx.Update((byte*)input.c_str(), input.length());
-		ctx.Final(digest);
+		ctx.Final(hash.Data);
 
-		char buf[2 * SHA256::DIGEST_SIZE + 1];
-		buf[2 * SHA256::DIGEST_SIZE] = 0;
-		for (int i = 0; i < SHA256::DIGEST_SIZE; i++)
-			sprintf(buf + i * 2, "%02x", digest[i]);
-		return std::string(buf);
+		return hash;
 	}
 }

@@ -48,11 +48,14 @@
 
 #include <imgui.h>
 
+#include "World/LevelManager.h"
+#include "World/Level.h"
+
 using namespace LambdaEngine;
 
 SandboxState::~SandboxState()
 {
-	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
+    EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
 
 	if (m_GUITest.GetPtr() != nullptr)
 	{
@@ -61,7 +64,7 @@ SandboxState::~SandboxState()
 	}
 
 	SAFEDELETE(m_pRenderGraphEditor);
-	// Remove Systems
+	SAFEDELETE(m_pLevel);
 }
 
 void SandboxState::Init()
@@ -99,36 +102,15 @@ void SandboxState::Init()
 
 	// Scene
 	{
-		TArray<MeshComponent> meshComponents;
-		ResourceManager::LoadSceneFromFile("Prototype/PrototypeScene.dae", meshComponents);
-
-		const glm::vec3 position(0.0f, 0.0f, 0.0f);
-		const glm::vec3 scale(1.0f);
-
-		for (const MeshComponent& meshComponent : meshComponents)
-		{
-			Entity entity = ECSCore::GetInstance()->CreateEntity();
-			const StaticCollisionInfo collisionCreateInfo =
-			{
-				.Entity			= entity,
-				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
-				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-				.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
-				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-			};
-
-			pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
-		}
+		m_pLevel = LevelManager::LoadLevel(0);
 	}
 
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		MaterialProperties materialProperties;
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -202,11 +184,11 @@ void SandboxState::Init()
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc =
 		{
-			.pName			= "RobotSoundInstance",
-			.pSoundEffect	= ResourceManager::GetSoundEffect(soundGUID),
-			.Flags			= FSoundModeFlags::SOUND_MODE_NONE,
-			.Position		= position,
-			.Volume			= 0.03f
+				.pName = "RobotSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = position,
+				.Volume = 0.03f
 		};
 
 		pSoundInstance->Init(&desc);

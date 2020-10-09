@@ -38,19 +38,39 @@ namespace LambdaEngine
 			|	((uint32) *((str) + 1) << 16)	\
 			|	((uint32) *((str) + 0) << 24);	\
 }
+	constexpr const uint32 SHA224_256_BLOCK_SIZE = (512 / 8);
+	constexpr const uint32 DIGEST_SIZE = (256 / 8);
+
+	struct SHA256Hash
+	{
+		union
+		{
+			byte Data[DIGEST_SIZE];
+
+			struct
+			{
+				uint64 SHA256Chunk0;
+				uint64 SHA256Chunk1;
+			};
+		};
+
+		FORCEINLINE bool operator==(const SHA256Hash& other) const noexcept
+		{
+			return 
+				SHA256Chunk0 == other.SHA256Chunk0 && 
+				SHA256Chunk1 == other.SHA256Chunk1;
+		}
+	};
 
 	class SHA256
 	{
-		static constexpr const uint32 SHA224_256_BLOCK_SIZE = (512 / 8);
-		static constexpr const uint32 DIGEST_SIZE = (256 / 8);
-
 	public:
 		void Init();
 		void Update(const byte* pMessage, uint32 len);
 		void Final(byte* pDigest);
 
 	public:
-		static std::string Hash(const String& input);
+		static SHA256Hash Hash(const String& input);
 
 	private:
 		void Transform(const byte* pMessage, uint32 block_nb);
@@ -63,6 +83,5 @@ namespace LambdaEngine
 
 	private:
 		const static uint32 sha256_k[];
-		
 	};
 }
