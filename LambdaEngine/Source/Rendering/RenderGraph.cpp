@@ -461,7 +461,7 @@ namespace LambdaEngine
 	{
 		//We need to copy descriptor sets here since they may become invalidated after recreating internal resources
 		{
-			if (m_DirtyRenderStageTextureSets.size() > 0)
+			if (!m_DirtyRenderStageTextureSets.empty())
 			{
 				//Copy old descriptor set and replace old with copy, then write into the new copy
 				for (RenderStage* pRenderStage : m_DirtyRenderStageTextureSets)
