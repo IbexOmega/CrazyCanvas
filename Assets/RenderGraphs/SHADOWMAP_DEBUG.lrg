@@ -439,98 +439,98 @@
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_MAT_PARAM_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_ALBEDO_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_NORMAL_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_AO_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_ROUGHNESS_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_METALLIC_MAPS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "G_BUFFER_POSITION",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_ALBEDO",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_AO_ROUGH_METAL_VALID",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_COMPACT_NORMAL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_VELOCITY",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 },
                 {
                     "name": "G_BUFFER_DEPTH_STENCIL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }
@@ -567,21 +567,21 @@
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_LIGHTS_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "DIRL_SHADOWMAP",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }
@@ -618,28 +618,28 @@
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SKYBOX",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "G_BUFFER_DEPTH_STENCIL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SHADING_PASS"
                 }
@@ -676,70 +676,70 @@
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_LIGHTS_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "G_BUFFER_POSITION",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "G_BUFFER_ALBEDO",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "G_BUFFER_AO_ROUGH_METAL_VALID",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "G_BUFFER_COMPACT_NORMAL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "G_BUFFER_VELOCITY",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS"
                 },
                 {
                     "name": "DIRL_SHADOWMAP",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DIRL_SHADOWMAP"
                 },
                 {
                     "name": "POINTL_SHADOWMAP",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "POINTL_SHADOW"
                 },
                 {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }
@@ -776,21 +776,21 @@
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "SCENE_LIGHTS_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "POINTL_SHADOWMAP",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
                 }
@@ -827,21 +827,21 @@
                 {
                     "name": "PER_FRAME_BUFFER",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "BACK_BUFFER_TEXTURE",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SKYBOX_PASS"
                 },
                 {
                     "name": "G_BUFFER_DEPTH_STENCIL",
                     "removable": true,
-                    "draw_args_mask": 4294967295,
+                    "draw_args_mask": 1,
                     "binding_type": "ATTACHMENT",
                     "src_stage": "SKYBOX_PASS"
                 }

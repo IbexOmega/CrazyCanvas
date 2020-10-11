@@ -6,7 +6,7 @@ namespace LambdaEngine
 	{
 	}
 
-	void ConsoleCommand::Init(std::string name, bool isDebug)
+	void ConsoleCommand::Init(const std::string& name, bool isDebug)
 	{
 		m_Name = name;
 		m_IsDebug = isDebug;
@@ -19,6 +19,17 @@ namespace LambdaEngine
 		m_Arguments.PushBack(arg);
 	}
 
+	void ConsoleCommand::AddArray(Arg::EType type, uint32 count)
+	{
+		for (uint32 i = 0; i < count; i++)
+		{
+			Arg arg;
+			arg.Type = type;
+			arg.IsArray = true;
+			m_Arguments.PushBack(arg);
+		}
+	}
+
 	void ConsoleCommand::AddFlag(const std::string& name, Arg::EType type)
 	{
 		Flag flag;
@@ -27,12 +38,26 @@ namespace LambdaEngine
 		m_Flags[name] = flag;
 	}
 
+	void ConsoleCommand::AddFlag(const std::string& name, Arg::EType type, uint32 count)
+	{
+		Flag flag;
+		flag.Name = name;
+		for (uint32 i = 0; i < count; i++)
+		{
+			Arg arg;
+			arg.Type = type;
+			arg.IsArray = true;
+			flag.Args.PushBack(arg);
+		}
+		m_Flags[name] = flag;
+	}
+
 	void ConsoleCommand::AddDescription(const std::string& mainDescription)
 	{
 		m_Description.MainDesc = mainDescription;
 	}
 
-	void ConsoleCommand::AddDescription(const std::string& mainDescription, std::unordered_map<std::string, std::string> flagDescriptions)
+	void ConsoleCommand::AddDescription(const std::string& mainDescription, const std::unordered_map<std::string, std::string>& flagDescriptions)
 	{
 		m_Description.MainDesc = mainDescription;
 		m_Description.FlagDescs = flagDescriptions;
