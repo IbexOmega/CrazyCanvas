@@ -330,6 +330,9 @@ namespace LambdaEngine
 
 	void PhysicsSystem::TickCharacterControllers(float32 dt)
 	{
+		// TODO: Temporary solution until there's a separate camera entity with an offset
+		constexpr const float characterHeight = 1.8f;
+
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<CharacterColliderComponent>* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
 		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -337,8 +340,8 @@ namespace LambdaEngine
 
 		for (Entity entity : m_CharacterColliderEntities)
 		{
-			PositionComponent& positionComp = pPositionComponents->GetData(entity);
-			glm::vec3& position = positionComp.Position;
+			const PositionComponent& positionComp = pPositionComponents->GetData(entity);
+			const glm::vec3& position = positionComp.Position;
 
 			VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
 			glm::vec3& velocity = velocityComp.Velocity;
@@ -351,13 +354,11 @@ namespace LambdaEngine
 
 			const PxExtendedVec3 oldPositionPX = pController->getPosition();
 
-			// Don't move downwards if the character is already on the ground
-			PxControllerState controllerState;
-			pController->getState(controllerState);
-
-			if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+			if (positionComp.Dirty)
 			{
-				velocity.y = std::max<float32>(velocity.y, 0.0f);
+				// Distance between the capsule's feet to its center position. Includes contact offset.
+				const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
+				pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
 			}
 
 			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
@@ -371,20 +372,27 @@ namespace LambdaEngine
 
 			velocity /= dt;
 
-			// Disable vertical movement if the character is on the ground
-			pController->getState(controllerState);
-			if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+			if (glm::length2(velocity) > glm::epsilon<float>())
 			{
-				velocity.y = 0.0f;
-			}
+				// Disable vertical movement if the character is on the ground
+				PxControllerState controllerState;
+				pController->getState(controllerState);
+				if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+				{
+					velocity.y = 0.0f;
+				}
 
-			// TODO: Temporary solution until we have a separate camera entity with an offset
-			constexpr const float characterHeight = 1.8f;
-			position = {
-				newPositionPX.x,
-				pController->getFootPosition().y + characterHeight,
-				newPositionPX.z
-			};
+				// Update entity's position
+				PositionComponent& positionCompMutable = const_cast<PositionComponent&>(positionComp);
+				positionCompMutable.Dirty = true;
+				glm::vec3& positionMutable = const_cast<glm::vec3&>(position);
+
+				positionMutable = {
+					newPositionPX.x,
+					pController->getFootPosition().y + characterHeight,
+					newPositionPX.z
+				};
+			}
 		}
 	}
 
