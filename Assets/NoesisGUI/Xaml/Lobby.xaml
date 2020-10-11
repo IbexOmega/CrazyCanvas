@@ -76,11 +76,16 @@
                         <Button Content="Connect" Click="OnButtonConnectClick" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
 
                         <Rectangle  x:Name="ServerBrowse" Grid.ColumnSpan="2" Grid.Column="1" Fill="#FF25252B" Stroke="Black" Margin="0,0,5,0" Grid.RowSpan="28"/>
-                        <TextBlock TextWrapping="Wrap" Text="List of Servers" Margin="0" FontFamily="Verdana" FontSize="20" Foreground="White" Grid.Column="1" Grid.Row="1"/>
-                        <TextBlock Grid.Column="1" Grid.Row="2" FontSize="20" Margin="0"  Foreground="White" Text="Servers" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="2" Grid.Row="2" FontSize="20" Margin="0"  Foreground="White" Text="Number of Players" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Grid.Row="1" FontSize="20" Margin="0,0,-63,0"  Foreground="White" Text="List Of Servers" HorizontalAlignment="Right" VerticalAlignment="Center" />
+
+                        <ListBox x:Name="SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="4" Grid.RowSpan="20" Margin="5,0,10,0" Background="#FF171717">
+                            <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #1</ListBoxItem>
+                            <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #2</ListBoxItem>
+                            <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #3</ListBoxItem>
+                        </ListBox>
+                        
                         <Button Content="Refresh" Click="OnButtonRefreshClick" Grid.Column="2" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
-                        <Button Content="Error" Grid.Column="1" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
+                        <Button Content="Error" Click="OnButtonErrorClick"  Grid.Column="1" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
                             <Button.Triggers>
                                 <EventTrigger RoutedEvent="Button.Click">
                                     <BeginStoryboard>
@@ -104,9 +109,9 @@
                                 <TranslateTransform X="0" Y="0"/>
                             </Rectangle.RenderTransform>
                         </Rectangle>
-                        <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" Text="Couldn't Find Server" VerticalAlignment="Center" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock x:Name="ERROR_BOX_TEXT" HorizontalAlignment="Center" TextWrapping="Wrap" Text="Couldn't Find Server" VerticalAlignment="Center" FontSize="20" FontWeight="Bold"/>
                         
-                        <Button Content="OK" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Margin="0,0,0,-59">
+                        <Button Content="OK" Click="OnButtonErrorOKClick" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Margin="0,0,0,-59">
                             <Button.Triggers>
                                 <EventTrigger RoutedEvent="Button.Click">
                                     <BeginStoryboard>
@@ -173,11 +178,20 @@
 
                         <TextBlock Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" Text="Number Of Players:" Foreground="White" FontFamily="Verdana" FontSize="20" Grid.ColumnSpan="2" Grid.RowSpan="2" Height="53"/>
                         <ComboBox x:Name="PLAYER_NUMBER" Grid.Column="2" Grid.Row="2" Foreground="Black" FontFamily="Verdana" BorderBrush="Black" Background="#FFA8A8A8" Cursor="Hand" Margin="10,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="16">
+
                             <ComboBoxItem Background="#FFA8A8A8" BorderBrush="Black" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">4</ComboBoxItem>
                             <ComboBoxItem Background="#FFA8A8A8" BorderBrush="Black" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">6</ComboBoxItem>
                             <ComboBoxItem IsSelected="True" Background="#FFA8A8A8" BorderBrush="Black" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">8</ComboBoxItem>
                             <ComboBoxItem Background="#FFA8A8A8" BorderBrush="Black" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">10</ComboBoxItem>
+
                         </ComboBox>
+
+                        <TextBlock Grid.Column="1" Grid.Row="3" TextWrapping="Wrap" Text="Map:" Foreground="White" FontFamily="Verdana" FontSize="20" Grid.ColumnSpan="2" Grid.RowSpan="2" Height="53"/>
+                        <ComboBox  x:Name="MAP_OPTION" Grid.Column="2" Grid.Row="3" Foreground="Black" FontFamily="Verdana" BorderBrush="Black" Background="#FFA8A8A8" Cursor="Hand" Margin="10,3,0,3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="16">
+                            <ComboBoxItem Background="#FFA8A8A8" BorderBrush="Black" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" IsSelected="True">Standard</ComboBoxItem>
+                        </ComboBox>
+
+
                         <Button Click="OnButtonHostGameClick" Grid.Column="2" Grid.Row="21" Content="Host Game" Margin="10,-11,10,10"/>
 
                     </Grid>

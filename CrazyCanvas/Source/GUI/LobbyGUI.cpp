@@ -15,11 +15,13 @@
 #include "States/MainMenuState.h"
 #include "States/NetworkingState.h"
 
+#include <string>
+
 using namespace LambdaEngine;
 using namespace Noesis;
 
-LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile)
-
+LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
+	m_HostGameDesc()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
@@ -28,6 +30,8 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile)
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(ip);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
+
+	ErrorPopUpClose();
 }
 
 LobbyGUI::~LobbyGUI()
@@ -77,53 +81,39 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 {
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
+	ListBox* pList = FrameworkElement::FindName<ListBox>("SERVER_LIST");
+
 	for (int i = 0; i < 4; i++)
 	{
-		Ptr<TextBlock> textBlock	= *new TextBlock();
-		Ptr<TextBlock> textBlock2	= *new TextBlock();
+		Ptr<ListBoxItem> listBlock	= *new ListBoxItem();
 
-		char* text	= "Row Row Row Your Boat";
-		char* text2 = "Gently Down The Stream";
+		std::string text	= "Server " + std::to_string(i);
 
-		textBlock->SetText(text);
-		textBlock->SetHorizontalAlignment(HorizontalAlignment_Center);
-		textBlock->SetVerticalAlignment(VerticalAlignment_Center);
-		
-		textBlock2->SetText(text2);
-		textBlock2->SetHorizontalAlignment(HorizontalAlignment_Center);
-		textBlock2->SetVerticalAlignment(VerticalAlignment_Center);
+		listBlock->SetContent(text.c_str());
+		listBlock->SetHorizontalAlignment(HorizontalAlignment_Center);
+		listBlock->SetVerticalAlignment(VerticalAlignment_Center);
 
-		pServerGrid->GetChildren()->Add(textBlock);
-		pServerGrid->GetChildren()->Add(textBlock2);
 
-		pServerGrid->SetColumn(textBlock, 2);
-		pServerGrid->SetRow(textBlock, i + 3);
 
-		pServerGrid->SetColumn(textBlock2, 1);
-		pServerGrid->SetRow(textBlock2, i + 3);
+		pServerGrid->SetColumn(listBlock, 2);
+		pServerGrid->SetRow(listBlock, i + 3);
 	}
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	ErrorPopUp();
+	ErrorPopUp(OTHER_ERROR);
 }
 
 void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	//FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
+	ErrorPopUpClose();
 }
 
 void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	ComboBox* pComboBox = FrameworkElement::FindName<ComboBox>("PLAYER_NUMBER");
-	ComboBoxItem* item = (ComboBoxItem*)pComboBox->GetSelectedItem();
-	Noesis::String nr = item->GetContent()->ToString();
-
-	LOG_MESSAGE(nr.Str());
-
-
-	//ItemCollection pComboBox->GetItems()
+	PopulateServerInfo();
+	//start Server with populated struct
 }
 
 void LobbyGUI::SetRenderStagesActive()
@@ -142,8 +132,52 @@ void LobbyGUI::SetRenderStagesActive()
 
 }
 
-void LobbyGUI::ErrorPopUp()
+void LobbyGUI::ErrorPopUp(ErrorCode errorCode)
 {
+	TextBlock* textBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
+	
+	switch (errorCode)
+	{
+	case CONNECT_ERROR:		textBox->SetText("Couldn't Connect To server"); break;
+	case HOST_ERROR:		textBox->SetText("Couldn't Host Server"); break;
+	case OTHER_ERROR:		textBox->SetText("Something Went Wrong"); break;
+	}
+
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
+}
+
+void LobbyGUI::ErrorPopUpClose()
+{
+	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
+}
+
+const HostGameDescription& LobbyGUI::PopulateServerInfo()
+{
+	ComboBox* pCBPlayerCount = FrameworkElement::FindName<ComboBox>("PLAYER_NUMBER");
+	ComboBoxItem* item = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
+	int8 playersNumber = (int8)std::stoi(item->GetContent()->ToString().Str());
+
+	m_HostGameDesc.PlayersNumber = playersNumber;
+
+	//Only necessary if we allow none to be chosen
+	/*switch (playersNumber)
+	{
+	case 4:		m_HostGameDesc.PlayersNumber	= playersNumber; break;
+	case 6:		m_HostGameDesc.PlayersNumber	= playersNumber; break;
+	case 8:		m_HostGameDesc.PlayersNumber	= playersNumber; break;
+	case 10:	m_HostGameDesc.PlayersNumber	= playersNumber; break;
+	default: LOG_ERROR("No Player Count Set"); break;
+	}*/
+
+	ComboBox* pCBPMapOption = FrameworkElement::FindName<ComboBox>("MAP_OPTION");
+	item = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
+	const char*  map = item->GetContent()->ToString().Str();
+
+	if(map == "Standard")
+		m_HostGameDesc.MapNumber = 0;
+
+	LOG_MESSAGE("Player count %d", playersNumber);
+
+	return m_HostGameDesc;
 }
 

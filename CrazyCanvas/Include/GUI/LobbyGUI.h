@@ -6,9 +6,24 @@
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
 
+struct HostGameDescription
+{
+	int8 PlayersNumber = 10;
+	int8 MapNumber = 0;
+};
+
+enum ErrorCode
+{
+	CONNECT_ERROR,
+	HOST_ERROR,
+	OTHER_ERROR
+
+};
 
 class LobbyGUI : public Noesis::Grid
 {
+	//ObservableCollection<HostGameDescription> Servers;
+
 public:
 	LobbyGUI(const LambdaEngine::String& xamlFile);
 	~LobbyGUI();
@@ -25,10 +40,16 @@ public:
 
 private:
 	void SetRenderStagesActive();
-	void ErrorPopUp();
+
+	void ErrorPopUp(ErrorCode errorCode);
+	void ErrorPopUpClose();
+
+	const HostGameDescription& PopulateServerInfo();
+
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)
 
 private:
 
 	bool m_RayTracingEnabled = false;
+	HostGameDescription m_HostGameDesc;
 };
