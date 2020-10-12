@@ -48,6 +48,7 @@ void main()
 
 	if(brushMask.a > 0.01f && length(worldPosition-projectedPosition) <= BRUSH_SIZE && valid > 0.5f)
 	{
+		// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
 		if (in_PaintMode == 1)
 			out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
 		else

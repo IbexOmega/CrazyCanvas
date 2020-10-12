@@ -23,6 +23,12 @@ namespace LambdaEngine
 	class Buffer;
 	class Window;
 
+	enum class EPaintMode
+	{
+		REMOVE = 0,
+		PAINT
+	};
+
 	class PaintMaskRenderer : public ICustomRenderer
 	{
 	public:
@@ -62,7 +68,7 @@ namespace LambdaEngine
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintingEnabled - true to paint on target, false to remove paint on target
 		*/
-		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, uint32 paintMode);
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode);
 
 	private:
 		bool CreateCopyCommandList();
@@ -88,7 +94,7 @@ namespace LambdaEngine
 		{
 			glm::vec4	TargetPosition;
 			glm::vec4	TargetDirection;
-			uint32		PaintMode = 1; // TODO: Change to an enum for clearer use
+			EPaintMode	PaintMode = EPaintMode::PAINT;
 		};
 
 	private:

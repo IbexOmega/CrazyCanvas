@@ -129,10 +129,11 @@ namespace LambdaEngine
 				GameConsole::Get().PushMsg("Direction not given or too few positions for flag", {0.8f, 0.8f, 0.0f, 1.0f});
 			}
 
-			uint32 paintMode = 1;
+			EPaintMode paintMode = EPaintMode::PAINT;
 			if (input.Flags.contains("paint") && input.Flags["paint"].Arg.Value.Int32 >= 0)
 			{
-				paintMode = (uint32)input.Flags["paint"].Arg.Value.Int32;
+				int32 mode = input.Flags["paint"].Arg.Value.Int32;
+				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
 			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode);
@@ -360,7 +361,7 @@ namespace LambdaEngine
 			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
 
 			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
-			const UnwrapData& data			= s_Collisions.front();
+			const UnwrapData& data	= s_Collisions.front();
 
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
 			s_Collisions.pop_front();
@@ -440,7 +441,7 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, uint32 paintMode)
+	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
