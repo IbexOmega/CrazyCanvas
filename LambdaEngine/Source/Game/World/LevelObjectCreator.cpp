@@ -121,7 +121,7 @@ namespace LambdaEngine
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 		Entity entity = pECS->CreateEntity();
-		const StaticCollisionInfo collisionCreateInfo = 
+		const CollisionInfo collisionCreateInfo =
 		{
 			.Entity			= entity,
 			.Position		= pECS->AddComponent<PositionComponent>(entity, { true, translation }),
@@ -132,7 +132,7 @@ namespace LambdaEngine
 			.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 		};
 
-		pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
+		pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
 		return entity;
 	}
 
@@ -220,6 +220,7 @@ namespace LambdaEngine
 		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS, characterColliderComponent);
 		pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 		pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
+
 
 		if (!MultiplayerUtils::IsServer())
 		{

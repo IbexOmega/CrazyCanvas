@@ -51,12 +51,6 @@ void PlaySessionState::Init()
 	ClientSystem& clientSystem = ClientSystem::GetInstance();
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlaySessionState::OnPacketReceived);
 
-	Entity weaponEntity = pECS->CreateEntity();
-	pECS->AddComponent<WeaponComponent>(weaponEntity, {
-		.WeaponOwner = playerEntity,
-	});
-	}
-
 	// Scene
 	{
 		m_pLevel = LevelManager::LoadLevel(0);
@@ -224,6 +218,9 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		robotAnimationComp.AnimationGUID = animations[0];
+
+		/*Entity weaponEntity = pECS->CreateEntity();
+		pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });*/
 
 		CreatePlayerDesc createPlayerDesc =
 		{

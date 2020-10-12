@@ -272,26 +272,6 @@ namespace LambdaEngine
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
 	}
 
-	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius)
-	{
-		PxCapsuleControllerDesc controllerDesc = {};
-		controllerDesc.radius			= radius;
-		controllerDesc.height			= height;
-		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eCONSTRAINED;
-
-		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
-	}
-
-	CharacterColliderComponent PhysicsSystem::CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents)
-	{
-		PxBoxControllerDesc controllerDesc = {};
-		controllerDesc.halfHeight			= halfExtents.y;
-		controllerDesc.halfSideExtent		= halfExtents.x;
-		controllerDesc.halfForwardExtent	= halfExtents.z;
-
-		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
-	}
-
 	PxShape* PhysicsSystem::CreateCollisionSphere(const CollisionInfo& staticCollisionInfo) const
 	{
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
