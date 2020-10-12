@@ -73,12 +73,12 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		Entity otherPlayerEntity = pOtherPlayerEntities[i];
 		const PositionComponent& positionComponent = pPositionComponents->GetData(otherPlayerEntity);
 
-		NetworkSegment* pPacket3 = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
-		BinaryEncoder encoder3(pPacket3);
+		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+		BinaryEncoder encoder3(pPacket);
 		encoder3.WriteBool(false);
 		encoder3.WriteInt32((int32)otherPlayerEntity);
 		encoder3.WriteVec3(positionComponent.Position);
-		pClient->SendReliable(pPacket3, nullptr);
+		pClient->SendReliable(pPacket, nullptr);
 	}
 
 	glm::vec3 position(0.0f, 2.0f, 0.0f);

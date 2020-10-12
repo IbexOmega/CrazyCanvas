@@ -66,6 +66,23 @@ namespace LambdaEngine
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
 	{
+		if (pAddress == IPAddress::LOOPBACK)
+		{
+			MultiplayerUtils::s_IsSinglePlayer = true;
+
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+			BinaryEncoder encoder3(pPacket);
+			encoder3.WriteBool(true);
+			encoder3.WriteInt32(0);
+			encoder3.WriteVec3(glm::vec3(0, 2, 0));
+			OnPacketReceived(m_pClient, pPacket);
+			m_pClient->ReturnPacket(pPacket);
+
+			return true;
+		}
+
+		MultiplayerUtils::s_IsSinglePlayer = false;
+
 		if (!m_pClient->Connect(IPEndPoint(pAddress, 4444)))
 		{
 			LOG_ERROR("Failed to connect!");
@@ -76,11 +93,7 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		if (m_pClient->IsConnected())
-		{
-			m_PlayerSystem.FixedTickMainThread(deltaTime, m_pClient);
-		}
-
+		m_PlayerSystem.FixedTickMainThread(deltaTime, m_pClient);
 		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);
 	}
 

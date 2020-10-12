@@ -11,6 +11,7 @@ namespace LambdaEngine
 {
 	MultiplayerUtilBase* MultiplayerUtils::s_pMultiplayerUtility = nullptr;
 	bool MultiplayerUtils::s_IsServer = false;
+	bool MultiplayerUtils::s_IsSinglePlayer = false;
 	IClientEntityAccessor* MultiplayerUtils::s_pClientEntityAccessor = nullptr;
 
 	bool MultiplayerUtils::IsServer()
@@ -36,6 +37,11 @@ namespace LambdaEngine
 	void MultiplayerUtils::RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor)
 	{
 		s_pClientEntityAccessor = pAccessor;
+	}
+
+	bool MultiplayerUtils::IsSingleplayer()
+	{
+		return s_IsSinglePlayer;
 	}
 
 	void MultiplayerUtils::Init(bool server)
