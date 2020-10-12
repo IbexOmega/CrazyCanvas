@@ -197,16 +197,16 @@ namespace LambdaEngine
 
 			// This should not be necessary, because we already know that the brush mask texture is not back buffer bound.
 			Sampler* sampler = Sampler::GetLinearSampler();
-			if (!m_BrushMaskDescriptorSet.has_value())
+			if (!m_BrushMaskDescriptorSet.Get())
 			{
 				m_BrushMaskDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
-				m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 			}
 			else
 			{
-				if (m_BrushMaskDescriptorSet.has_value())
+				if (m_BrushMaskDescriptorSet.Get())
 				{
-					m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+					m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 				}
 				else
 				{
@@ -222,16 +222,16 @@ namespace LambdaEngine
 		{
 			if (resourceName == PER_FRAME_BUFFER)
 			{
-				if (!m_PerFrameBufferDescriptorSet.has_value())
+				if (!m_PerFrameBufferDescriptorSet.Get())
 				{
 					m_PerFrameBufferDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom PerFrameBuffer Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-					m_PerFrameBufferDescriptorSet.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+					m_PerFrameBufferDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 				}
 				else
 				{
-					if (m_BrushMaskDescriptorSet.has_value())
+					if (m_BrushMaskDescriptorSet.Get())
 					{
-						m_BrushMaskDescriptorSet.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+						m_BrushMaskDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 					}
 					else
 					{
@@ -241,14 +241,14 @@ namespace LambdaEngine
 			}
 			else if (resourceName == "UNWRAP_DATA_BUFFER")
 			{
-				if (!m_UnwrapDataDescriptorSet.has_value())
+				if (!m_UnwrapDataDescriptorSet.Get())
 				{
 					m_UnwrapDataDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Unwrap Data Buffer Descriptor Set", m_PipelineLayout.Get(), 3, m_DescriptorHeap.Get());
-					m_UnwrapDataDescriptorSet.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+					m_UnwrapDataDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 				}
 				else
 				{
-					m_UnwrapDataDescriptorSet.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+					m_UnwrapDataDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 				}
 			}
 		}
@@ -353,10 +353,10 @@ namespace LambdaEngine
 			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
 
 			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
-			UnwrapData data			= s_Collisions.front();
-			s_Collisions.pop_front();
+			const UnwrapData& data			= s_Collisions.front();
 
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
+			s_Collisions.pop_front();
 
 			unwrapDataCopyBuffer->Unmap();
 			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
@@ -405,19 +405,19 @@ namespace LambdaEngine
 
 			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-			if (m_PerFrameBufferDescriptorSet.has_value())
+			if (m_PerFrameBufferDescriptorSet.Get())
 			{
-				pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.value().Get(), m_PipelineLayout.Get(), 0);
+				pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 			}
 
-			if (m_BrushMaskDescriptorSet.has_value())
+			if (m_BrushMaskDescriptorSet.Get())
 			{
-				pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.value().Get(), m_PipelineLayout.Get(), 1);
+				pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
 			}
 
-			if (m_UnwrapDataDescriptorSet.has_value())
+			if (m_UnwrapDataDescriptorSet.Get())
 			{
-				pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.value().Get(), m_PipelineLayout.Get(), 3);
+				pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.Get(), m_PipelineLayout.Get(), 3);
 			}
 
 			pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);

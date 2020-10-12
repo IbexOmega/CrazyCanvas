@@ -118,9 +118,9 @@ namespace LambdaEngine
 		const DrawArg*												m_pDrawArgs;
 		TArray<TArray<TSharedRef<DescriptorSet>>>					m_VerticesInstanceDescriptorSets;
 
-		std::optional<TSharedRef<DescriptorSet>>					m_UnwrapDataDescriptorSet;
-		std::optional<TSharedRef<DescriptorSet>>					m_PerFrameBufferDescriptorSet;
-		std::optional<TSharedRef<DescriptorSet>>					m_BrushMaskDescriptorSet;
+		TSharedRef<DescriptorSet>									m_UnwrapDataDescriptorSet;
+		TSharedRef<DescriptorSet>									m_PerFrameBufferDescriptorSet;
+		TSharedRef<DescriptorSet>									m_BrushMaskDescriptorSet;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 
 		TArray<TArray<TSharedRef<DeviceChild>>>						m_pDeviceResourcesToDestroy;
