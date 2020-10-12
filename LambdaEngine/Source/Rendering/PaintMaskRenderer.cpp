@@ -168,9 +168,7 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
-		if (!s_Collisions.empty())
-		{
-		}
+		
 	}
 
 

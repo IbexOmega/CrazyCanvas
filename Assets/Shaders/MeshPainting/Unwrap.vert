@@ -48,8 +48,6 @@ void main()
 	out_WorldPosition				= worldPosition.xyz;
 	out_Normal						= normal;
 
-	// out_TargetDirection				= -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
-	// out_TargetPosition				= perFrameBuffer.CameraPosition.xyz;
 	out_TargetDirection				= u_UnwrapData.val.TargetDirection.xyz;
 	out_TargetPosition				= u_UnwrapData.val.TargetPosition.xyz;
 
