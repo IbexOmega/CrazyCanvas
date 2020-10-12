@@ -286,7 +286,7 @@ namespace LambdaEngine
 		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
 
 		void CleanBuffers();
-		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
+		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 requestedMask) const;
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);

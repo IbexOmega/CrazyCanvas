@@ -479,7 +479,7 @@
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_mask": 3,
+                    "draw_args_mask": 7,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "RENDER_STAGE_MESH_UNWRAP"
                 },

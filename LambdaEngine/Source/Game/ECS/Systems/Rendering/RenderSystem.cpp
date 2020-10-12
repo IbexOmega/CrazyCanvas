@@ -1377,11 +1377,12 @@ namespace LambdaEngine
 		resourcesToRemove.Clear();
 	}
 
-	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
+	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 requestedMask) const
 	{
 		for (auto& meshEntryPair : m_MeshAndInstancesMap)
 		{
-			if ((meshEntryPair.second.DrawArgsMask & mask) > 0)
+			uint32 mask = meshEntryPair.second.DrawArgsMask;
+			if ((mask & requestedMask) == requestedMask)
 			{
 				DrawArg drawArg = { };
 
