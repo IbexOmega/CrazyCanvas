@@ -50,6 +50,8 @@ namespace LambdaEngine
 
 	void PlayerSystem::TickMainThread(Timestamp deltaTime, IClient* pClient)
 	{
+		UNREFERENCED_VARIABLE(pClient);
+
 		if (m_NetworkUID >= 0)
 		{
 			Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);

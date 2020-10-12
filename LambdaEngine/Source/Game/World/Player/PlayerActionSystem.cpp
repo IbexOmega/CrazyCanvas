@@ -35,7 +35,7 @@ namespace LambdaEngine
 	void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		float32 dt = deltaTime.AsSeconds();
+		float32 dt = (float32)deltaTime.AsSeconds();
 
 		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
@@ -59,16 +59,11 @@ namespace LambdaEngine
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		float32 dt = float32(deltaTime.AsSeconds());
-
-		const ComponentArray<PlayerComponent>* pPlayerComponents = pECS->GetComponentArray<PlayerComponent>();
 		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
-		const PlayerComponent& playerComponent = pPlayerComponents->GetData(entityPlayer);
 		RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
-
 
 		glm::i8vec2 deltaVelocity =
 		{
