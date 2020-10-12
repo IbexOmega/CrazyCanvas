@@ -52,9 +52,9 @@ namespace LambdaEngine
 			return { Position, Scale, Rotation };
 		}
 
-		ComponentAccess Position    = {R, PositionComponent::Type()};
-		ComponentAccess Scale       = {R, ScaleComponent::Type()};
-		ComponentAccess Rotation    = {R, RotationComponent::Type()};
+		GroupedComponent<PositionComponent>	Position;
+		GroupedComponent<ScaleComponent>	Scale;
+		GroupedComponent<RotationComponent>	Rotation;
 	};
 
 	// Transform calculation functions

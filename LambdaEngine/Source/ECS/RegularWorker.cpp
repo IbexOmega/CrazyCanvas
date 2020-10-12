@@ -50,10 +50,10 @@ namespace LambdaEngine
 				continue;
 			}
 
-			auto uniqueRegsItr = uniqueRegs.find(componentUpdateReg.TID);
+			auto uniqueRegsItr = uniqueRegs.find(componentUpdateReg.pTID);
 			if (uniqueRegsItr == uniqueRegs.end() || componentUpdateReg.Permissions > uniqueRegsItr->second)
 			{
-				uniqueRegs.insert(uniqueRegsItr, {componentUpdateReg.TID, componentUpdateReg.Permissions});
+				uniqueRegs.insert(uniqueRegsItr, {componentUpdateReg.pTID, componentUpdateReg.Permissions});
 			}
 		}
 	}
