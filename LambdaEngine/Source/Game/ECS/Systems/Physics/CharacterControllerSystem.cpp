@@ -9,6 +9,9 @@
 
 namespace LambdaEngine
 {
+	// TODO: Temporary solution until there's a separate camera entity with an offset
+	constexpr const float characterHeight = 1.8f;
+
 	CharacterControllerSystem::CharacterControllerSystem()
 	{
 
@@ -89,7 +92,15 @@ namespace LambdaEngine
 
 				PxController* pController = characterCollider.pController;
 
-				pController->setPosition({ position.x, position.y, position.z });
+				const PxExtendedVec3 oldPositionPX = pController->getPosition();
+
+				if (positionComp.Dirty)
+				{
+					// Distance between the capsule's feet to its center position. Includes contact offset.
+					const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
+					pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
+				}
+
 				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 				const PxExtendedVec3& newPositionPX = pController->getPosition();
@@ -99,6 +110,17 @@ namespace LambdaEngine
 					(float)newPositionPX.z - position.z
 				};
 				velocity /= dt;
+
+				if (glm::length2(velocity) > glm::epsilon<float>())
+				{
+					// Disable vertical movement if the character is on the ground
+					PxControllerState controllerState;
+					pController->getState(controllerState);
+					if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+					{
+						velocity.y = 0.0f;
+					}
+				}
 
 				//Maybe add something to change the rendered PositionComponent here in case we collide
 			}
@@ -114,10 +136,10 @@ namespace LambdaEngine
 	void CharacterControllerSystem::TickCharacterController(float32 dt, Entity entity, ComponentArray<CharacterColliderComponent>* pCharacterColliders, ComponentArray<NetworkPositionComponent>* pNetPosComponents, ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
 		CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
-		NetworkPositionComponent& positionComp = pNetPosComponents->GetData(entity);
+		const NetworkPositionComponent& positionComp = pNetPosComponents->GetData(entity);
 
 		glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
-		glm::vec3& position = positionComp.Position;
+		const glm::vec3& position = positionComp.Position;
 
 		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
 
@@ -126,22 +148,45 @@ namespace LambdaEngine
 
 		PxController* pController = characterCollider.pController;
 
-		pController->setPosition({ position.x, position.y, position.z });
+		const PxExtendedVec3 oldPositionPX = pController->getPosition();
+
+		if (positionComp.Dirty)
+		{
+			// Distance between the capsule's feet to its center position. Includes contact offset.
+			const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
+			pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
+		}
+
 		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 		const PxExtendedVec3& newPositionPX = pController->getPosition();
 		velocity = {
-			(float)newPositionPX.x - position.x,
-			(float)newPositionPX.y - position.y,
-			(float)newPositionPX.z - position.z
+			(float)newPositionPX.x - oldPositionPX.x,
+			(float)newPositionPX.y - oldPositionPX.y,
+			(float)newPositionPX.z - oldPositionPX.z
 		};
 		velocity /= dt;
 
-		position = {
-			(float)newPositionPX.x,
-			(float)newPositionPX.y,
-			(float)newPositionPX.z
-		};
+		if (glm::length2(velocity) > glm::epsilon<float>())
+		{
+			// Disable vertical movement if the character is on the ground
+			PxControllerState controllerState;
+			pController->getState(controllerState);
+			if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+			{
+				velocity.y = 0.0f;
+			}
+
+			// Update entity's position
+			NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
+			positionCompMutable.Dirty = true;
+
+			positionCompMutable.Position = {
+				newPositionPX.x,
+				pController->getFootPosition().y + characterHeight,
+				newPositionPX.z
+			};
+		}
 	}
 
 	void CharacterControllerSystem::OnCharacterColliderRemoval(Entity entity)

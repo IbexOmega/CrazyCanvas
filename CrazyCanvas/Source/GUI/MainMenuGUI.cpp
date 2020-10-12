@@ -75,7 +75,6 @@ void MainMenuGUI::OnButtonSingleplayerClick(BaseComponent* pSender, const Routed
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesSleeping();

@@ -30,9 +30,6 @@ void NetworkingState::Init()
 	ClientSystem& clientSystem = ClientSystem::GetInstance();
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &NetworkingState::OnPacketReceived);
 	
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Load scene
@@ -40,40 +37,6 @@ void NetworkingState::Init()
 		m_pLevel = LevelManager::LoadLevel(0);
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
-
-	{
-		Entity dirLight = ECSCore::GetInstance()->CreateEntity();
-		ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, {true, { 0.0f, 0.0f, 0.0f} });
-		ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, {true, glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp) });
-		ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{.ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-	}
-
-	//Create Player
-	/*{
-		MaterialProperties materialProperties = {};
-		materialProperties.Roughness	= 0.1f;
-		materialProperties.Metallic	= 0.0f;
-		materialProperties.Albedo		= glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-
-		MeshComponent meshComponent;
-		meshComponent.MeshGUID		= ResourceManager::LoadMeshFromFile("sphere.obj");
-		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
-			"Mirror Material",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
-
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { glm::vec3(1.0f, 1.0f, 0.0f), true });
-		pECS->AddComponent<RotationComponent>(entity, { glm::identity<glm::quat>(), true });
-		pECS->AddComponent<ScaleComponent>(entity, { glm::vec3(1.0f), true });
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<NetworkComponent>(entity, {});
-		pECS->AddComponent<ControllableComponent>(entity, {true});
-	}*/
 
 	clientSystem.Connect(NetworkUtils::GetLocalAddress());
 }
