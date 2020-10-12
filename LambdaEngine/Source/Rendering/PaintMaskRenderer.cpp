@@ -101,14 +101,34 @@ namespace LambdaEngine
 
 		ConsoleCommand cmdHitTest;
 		cmdHitTest.Init("add_hit_point", true);
-		cmdHitTest.AddArg(Arg::EType::FLOAT);
-		cmdHitTest.AddArg(Arg::EType::FLOAT);
-		cmdHitTest.AddArg(Arg::EType::FLOAT);
-		cmdHitTest.AddDescription("Add a hitpoint for the paint mask renderer\n\t'add_hit_point 0.0f 1.0f 1.0f'");
+		cmdHitTest.AddFlag("p", Arg::EType::FLOAT, 3);
+		cmdHitTest.AddFlag("d", Arg::EType::FLOAT, 3);
+		cmdHitTest.AddDescription("Add a hitpoint for the paint mask renderer\n [-p] position of point in world\n [-d] direction of point in world\n\t'add_hit_point <-p x y z> [-d x y z]'");
 		GameConsole::Get().BindCommand(cmdHitTest, [&, this](GameConsole::CallbackInput& input)->void {
-			PaintMaskRenderer::AddHitPoint(
-				{input.Arguments[0].Value.Float32, input.Arguments[1].Value.Float32, input.Arguments[2].Value.Float32},
-				{1.f, 0.f, 1.f});
+			if (!input.Flags.contains("p"))
+			{
+				GameConsole::Get().PushError("-p (position) is required");
+				return;
+			}
+			else if (input.Flags["p"].NumUsedArgs != 3)
+			{
+				GameConsole::Get().PushError("-p (position) requires three coordinates, but only " + std::to_string(input.Flags["p"].NumUsedArgs) + " were given");
+				return;
+			}
+
+			glm::vec3 pos = {input.Flags["p"].Args[0].Value.Float32, input.Flags["p"].Args[1].Value.Float32, input.Flags["p"].Args[2].Value.Float32};
+			glm::vec3 dir = {1.0f, 0.0f, 0.0f};
+
+			if (input.Flags.contains("d") && input.Flags["d"].NumUsedArgs == 3)
+			{
+				dir = {input.Flags["d"].Args[0].Value.Float32, input.Flags["d"].Args[1].Value.Float32, input.Flags["d"].Args[2].Value.Float32};
+			}
+			else
+			{
+				GameConsole::Get().PushMsg("Direction not given or too few positions for flag", {0.8f, 0.8f, 0.0f, 1.0f});
+			}
+
+			PaintMaskRenderer::AddHitPoint(pos, dir);
 			});
 		
 		return false;
