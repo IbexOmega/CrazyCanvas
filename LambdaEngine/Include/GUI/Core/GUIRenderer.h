@@ -1,11 +1,12 @@
 #pragma once
-
 #include "Rendering/ICustomRenderer.h"
 #include "Rendering/RenderGraphTypes.h"
 
 #include "NsRender/RenderDevice.h"
 #include "NsCore/Ptr.h"
 #include "NsGui/IView.h"
+
+#define FORCED_SAMPLE_COUNT 1
 
 namespace LambdaEngine
 {
@@ -125,9 +126,15 @@ namespace LambdaEngine
 	private:
 		CommandList* BeginOrGetUtilityCommandList();
 		CommandList* BeginOrGetRenderCommandList();
+		
 		void BeginMainRenderPass(CommandList* pCommandList);
+		void BeginTileRenderPass(CommandList* pCommandList);
+
 		Buffer* CreateOrGetParamsBuffer();
 		DescriptorSet* CreateOrGetDescriptorSet();
+
+		void ResumeRenderPass();
+		void EndCurrentRenderPass();
 
 		bool CreateCommandLists();
 		bool CreateDescriptorHeap();
@@ -136,7 +143,7 @@ namespace LambdaEngine
 
 	private:
 		TSharedRef<const TextureView>	m_pBackBuffers[BACK_BUFFER_COUNT];
-		TSharedRef<const TextureView> m_DepthStencilTextureView;
+		TSharedRef<const TextureView>	m_DepthStencilTextureView;
 		uint32 m_BackBufferIndex	= 0;
 		uint32 m_ModFrameIndex		= 0;
 
@@ -145,6 +152,9 @@ namespace LambdaEngine
 
 		CommandAllocator*	m_ppRenderCommandAllocators[BACK_BUFFER_COUNT];
 		CommandList*		m_ppRenderCommandLists[BACK_BUFFER_COUNT];
+
+		uint32_t m_CurrentSurfaceWidth	= 0;
+		uint32_t m_CurrentSurfaceHeight	= 0;
 
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
 		Sampler* m_pGUISampler = nullptr;
@@ -171,7 +181,9 @@ namespace LambdaEngine
 
 		Noesis::Ptr<Noesis::IView> m_View;
 
-		bool m_RenderPassBegun = false;
-		bool m_Initialized = false;
+		bool m_IsInRenderPass	= false;
+		bool m_TileBegun		= false;
+		bool m_RenderPassBegun	= false;
+		bool m_Initialized		= false;
 	};
 }
