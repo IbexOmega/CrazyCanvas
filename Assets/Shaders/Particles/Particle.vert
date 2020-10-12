@@ -4,21 +4,6 @@
 
 #include "../Defines.glsl"
 
-
-struct PVertex {
-	vec3 Position;
-};
-
-struct SParticle
-{
-	mat4 Transform;
-	vec4 Color;
-	vec3 Velocity;
-	vec3 Acceleration;
-	float LifeTime;
-	float Radius;
-};
-
 layout (binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 {
 	SPerFrameBuffer perFrameBuffer;
@@ -26,7 +11,7 @@ layout (binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 
 layout(binding = 0, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Vertices
 { 
-	PVertex Val[]; 
+	SParticleVertex Val[]; 
 } b_Vertices;
 
 layout(binding = 1, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer ParticleInstances

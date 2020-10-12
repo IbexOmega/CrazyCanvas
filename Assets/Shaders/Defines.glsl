@@ -155,4 +155,19 @@ struct SShapeSample
 	float	PDF;
 };
 
+struct SParticleVertex
+{
+	vec3 Position;
+};
+
+struct SParticle
+{
+	mat4 Transform;
+	vec4 Color;
+	vec3 Velocity;
+	vec3 Acceleration;
+	float LifeTime;
+	float Radius;
+};
+
 #endif

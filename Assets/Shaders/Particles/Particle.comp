@@ -2,77 +2,51 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
-#include "../Helpers.glsl"
+#include "../Defines.glsl"
 
 #define THREAD_COUNT 32
 layout(local_size_x = THREAD_COUNT, local_size_y = 1, local_size_z = 1) in;
 
-struct SVertexJointData
-{
-	uint8_t JointID0;
-	uint8_t JointID1;
-	uint8_t JointID2;
-	uint8_t JointID3;
-	float	Weight0;
-	float	Weight1;
-	float	Weight2;
-};
-
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
-	uint VertexCount;
+	float   DeltaTime;
+    uint    ParticleCount; 
 } u_PC;
 
 // Buffers
-layout(binding = 0, set = 0) restrict readonly buffer OriginalVertices
+layout(binding = 0, set = 0) restrict readonly buffer Vertices
 { 
-	SVertex Val[]; 
-} b_OriginalVertices;
+	PVertex Val[]; 
+} b_Vertices;
 
-layout(binding = 1, set = 0) restrict writeonly	buffer SkinnedVertices
+layout(binding = 1, set = 0) restrict readonly buffer ParticleInstances
 { 
-	SVertex Val[]; 
-} b_SkinnedVertices;
-
-layout(binding = 2, set = 0) restrict readonly buffer Matrices
-{ 
-	mat4 Val[]; 
-} b_JointMatrices;
-
-layout(binding = 3, set = 0) restrict readonly buffer JointData
-{ 
-	SVertexJointData Val[]; 
-} b_JointData;
-
-#define PASSTHROUGH 0
+	SParticle Val[]; 
+} b_ParticleInstances;
 
 // Main
 void main()
 {
-	// Return in case this thread is outside of our VertexCount
-	if (gl_GlobalInvocationID.x >= u_PC.VertexCount)
+	// Return in case this thread is outside of our ParticleCount
+	if (gl_GlobalInvocationID.x >= u_PC.ParticleCount)
 	{
 		return;
 	}
 
-	SVertexJointData jointData = b_JointData.Val[gl_GlobalInvocationID.x];
-	float weight3 = 1.0f - (jointData.Weight0 + jointData.Weight1 + jointData.Weight2);
-	
-	mat4 joint0 = b_JointMatrices.Val[uint(jointData.JointID0)] * jointData.Weight0;
-	mat4 joint1 = b_JointMatrices.Val[uint(jointData.JointID1)] * jointData.Weight1;
-	mat4 joint2 = b_JointMatrices.Val[uint(jointData.JointID2)] * jointData.Weight2;
-	mat4 joint3 = b_JointMatrices.Val[uint(jointData.JointID3)] * weight3;
-	mat4 transform = joint0 + joint1 + joint2 + joint3;
+    const float dt = u_PC.DeltaTime;
 
-	SVertex vertex	= b_OriginalVertices.Val[gl_GlobalInvocationID.x];
-	vertex.Position	= transform * vec4(vertex.Position.xyz, 1.0f);
-	vertex.Normal	= transform * vec4(vertex.Normal.xyz, 0.0f);
-	vertex.Tangent	= transform * vec4(vertex.Tangent.xyz, 0.0f);
+    // Update particle data 
+	SParticle particle = b_ParticleInstances.Val[gl_GlobalInvocationID.x];
+    particle.Acceleration = particle.Acceleration*dt;
+	particle.Velocity = particle.Velocity + particle.Acceleration*dt;
+    particle.Transform[2] = vec4(particle.Velocity*dt, 1.f); 
 
-#if PASSTHROUGH
-	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = b_OriginalVertices.Val[gl_GlobalInvocationID.x];
-#else
-	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = vertex;
-#endif
+    b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
+
+    // Update position
+	SParticleVertex vertex	= b_Vertices.Val[gl_GlobalInvocationID.x];
+	vertex.Position	= particle.Transform * vec4(vertex.Position.xyz, 1.0f);
+
+	b_Vertices.Val[gl_GlobalInvocationID.x] = vertex;
 }
