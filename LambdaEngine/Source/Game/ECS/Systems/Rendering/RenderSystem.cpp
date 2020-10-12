@@ -81,7 +81,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					},
 					.ExcludedComponentTypes =
 					{
@@ -100,7 +100,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnPlayerEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
@@ -774,6 +774,7 @@ namespace LambdaEngine
 
 	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
 	{
+		LOG_ERROR("Add Entity %d", entity);
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
 		uint32 extensionIndex = 0;
@@ -976,6 +977,23 @@ namespace LambdaEngine
 					}
 				}
 
+				// Add Draw Arg Extensions.
+				{
+					meshEntry.DrawArgsMask = meshKey.EntityMask;
+					if (meshEntry.DrawArgsMask > 1) // If the entity has extensions add them to the entry.
+					{
+						DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+						meshEntry.ExtensionGroups.PushBack(&extensionGroup);
+						extensionIndex = meshEntry.ExtensionGroups.GetSize();
+						meshEntry.HasExtensions = true;
+					}
+					else
+					{
+						meshEntry.ExtensionGroups.PushBack(nullptr);
+						extensionIndex = 0;
+					}
+				}
+
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
 
 				if (m_RayTracingEnabled)
@@ -984,25 +1002,6 @@ namespace LambdaEngine
 					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
 					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 					m_SBTRecordsDirty = true;
-				}
-
-			}
-
-			// Add Draw Arg Extensions.
-			{
-				MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
-				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
-				if (entityMask > 1) // If the entity has extensions add them to the entry.
-				{
-					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
-					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
-					extensionIndex = meshEntry.ExtensionGroups.GetSize();
-					meshEntry.HasExtensions = true;
-				}
-				else
-				{
-					meshEntry.ExtensionGroups.PushBack(nullptr);
-					extensionIndex = 0;
 				}
 			}
 		}
@@ -1097,20 +1096,19 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
-		MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
-		meshEntry.DrawArgsMask = drawArgMask;
-		for (uint32 mask : m_RequiredDrawArgs)
+		for (uint32 requiredMask : m_RequiredDrawArgs)
 		{
-			if ((mask & drawArgMask) > 0)
+			if ((meshAndInstancesIt->second.DrawArgsMask & requiredMask) == requiredMask)
 			{
-				m_DirtyDrawArgs.insert(mask);
+				m_DirtyDrawArgs.insert(requiredMask);
 			}
 		}
 	}
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
+		LOG_ERROR("Remove Entity %d", entity);
+
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
@@ -1417,6 +1415,7 @@ namespace LambdaEngine
 			uint32 mask = meshEntryPair.second.DrawArgsMask;
 			if ((mask & requestedMask) == requestedMask)
 			{
+				LOG_ERROR("Mesh with mask %d added to DrawArg with mask %d", mask, requestedMask);
 				DrawArg drawArg = { };
 
 				// Assume animated
@@ -2107,6 +2106,8 @@ namespace LambdaEngine
 		{
 			for (uint32 drawArgMask : m_DirtyDrawArgs)
 			{
+				LOG_ERROR("RenderSystem: CREATING DRAW ARGS %u", drawArgMask);
+
 				TArray<DrawArg> drawArgs;
 				CreateDrawArgs(drawArgs, drawArgMask);
 

@@ -123,7 +123,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 
 	Entity entity = pECS->CreateEntity();
 	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
-	const StaticCollisionInfo collisionCreateInfo = 
+	const CollisionInfo collisionCreateInfo = 
 	{
 		.Entity			= entity,
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, translation }),
@@ -134,7 +134,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	};
 
-	pPhysicsSystem->CreateCollisionTriangleMesh(collisionCreateInfo);
+	pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
 	return entity;
 }
 

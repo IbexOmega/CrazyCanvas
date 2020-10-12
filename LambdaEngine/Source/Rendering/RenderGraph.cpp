@@ -3530,10 +3530,12 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResourceDrawArgs(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
+		LOG_ERROR("RenderGraph: UPDATING DRAW ARG: %u", pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
 		auto drawArgsArgsIt = pResource->DrawArgs.MaskToArgs.find(pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
 
 		if (drawArgsArgsIt != pResource->DrawArgs.MaskToArgs.end())
 		{
+			LOG_ERROR("RenderGraph: FOUND");
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);
