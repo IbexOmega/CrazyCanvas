@@ -13,6 +13,8 @@
 #include "States/SandboxState.h"
 #include "States/ServerState.h"
 
+#include "World/LevelManager.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -27,6 +29,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+
+	bool clientSide = true;
+	if (!LevelManager::Init(clientSide))
+	{
+		LOG_ERROR("Level Manager Init Failed");
+	}
 
 	LoadRendererResources();
 
@@ -57,6 +65,14 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+}
+
+CrazyCanvas::~CrazyCanvas()
+{
+	if (!LevelManager::Release())
+	{
+		LOG_ERROR("Level Manager Release Failed");
+	}
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -131,6 +147,23 @@ bool CrazyCanvas::LoadRendererResources()
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+
+		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
+	}
+
+	// For Mesh painting in RenderGraph
+	{
+		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV2.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
+
+		Texture* pTexture = ResourceManager::GetTexture(brushMaskID);
+		TextureView* pTextureView = ResourceManager::GetTextureView(brushMaskID);
+		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+
+		ResourceUpdateDesc cubeTextureUpdateDesc = {};
+		cubeTextureUpdateDesc.ResourceName = "BRUSH_MASK";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures = &pTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}

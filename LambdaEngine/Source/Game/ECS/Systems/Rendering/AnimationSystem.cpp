@@ -159,7 +159,7 @@ namespace LambdaEngine
 			// Increase boneID
 			animation.Pose.LocalTransforms[boneID] = transform;
 		}
-		
+
 		// Calculate global transforms
 		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
 		{
@@ -193,19 +193,20 @@ namespace LambdaEngine
 	bool AnimationSystem::Init()
 	{
 		SystemRegistration systemReg = {};
-		systemReg.Phase = 0;
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
+				.pSubscriber = &m_AnimationEntities,
+				.ComponentAccesses =
 				{
 					{ RW, AnimationComponent::Type() }
 				},
-				&m_AnimationEntities,
-				std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1),
-			},
+				.OnEntityAdded = std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1)
+			}
 		};
-
+		systemReg.Phase = 0;
 		RegisterSystem(systemReg);
+
 		return true;
 	}
 
@@ -228,7 +229,7 @@ namespace LambdaEngine
 					animation.StartTime = GetTotalTimeInSeconds();
 				}
 			}
-			
+
 			m_HasInitClock = true;
 		}
 
@@ -245,7 +246,7 @@ namespace LambdaEngine
 			}
 		}
 	}
-	
+
 	AnimationSystem& AnimationSystem::GetInstance()
 	{
 		static AnimationSystem instance;

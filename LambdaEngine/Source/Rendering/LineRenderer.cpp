@@ -254,21 +254,29 @@ namespace LambdaEngine
 	{
 	}
 
-	void LineRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppTextureViews, uint32 count, bool backBufferBound)
+	void LineRenderer::UpdateTextureResource(
+		const String& resourceName,
+		const TextureView* const* ppPerImageTextureViews,
+		const TextureView* const* ppPerSubImageTextureViews,
+		uint32 imageCount,
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
+		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
-			for (uint32 i = 0; i < count;  i++)
+			for (uint32 i = 0; i < imageCount; i++)
 			{
-				m_BackBuffers[i] = MakeSharedRef(ppTextureViews[i]);
+				m_BackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
 			}
 		}
 		// Might be a bit too hard coded
 		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
 		{
-			m_DepthStencilBuffer = MakeSharedRef(ppTextureViews[0]);
+			m_DepthStencilBuffer = MakeSharedRef(ppPerSubImageTextureViews[0]);
 		}
 	}
 
@@ -352,6 +360,13 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
+	}
+
+	void LineRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
+	{
+		UNREFERENCED_VARIABLE(resourceName);
+		UNREFERENCED_VARIABLE(pDrawArgs);
+		UNREFERENCED_VARIABLE(count);
 	}
 
 	void LineRenderer::Render(

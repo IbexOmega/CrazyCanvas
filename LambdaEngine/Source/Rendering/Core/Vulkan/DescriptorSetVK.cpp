@@ -41,6 +41,7 @@ namespace LambdaEngine
 
 			const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
 			m_Bindings = pPipelineLayoutVk->GetDescriptorBindings(descriptorLayoutIndex);
+			m_BindingDescriptorCount.Resize(m_Bindings.GetSize());
 			m_DescriptorHeap = pVkDescriptorHeap;
 			m_DescriptorHeap->AddRef();
 			return true;
@@ -51,6 +52,13 @@ namespace LambdaEngine
 		}
 	}
 
+	void DescriptorSetVK::SetBindingDescriptorCount(uint32 binding, uint32 count)
+	{
+		VALIDATE(binding < m_BindingDescriptorCount.GetSize());
+
+		m_BindingDescriptorCount[binding] = count;
+	}
+
 	void DescriptorSetVK::SetName(const String& debugName)
 	{
 		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_DescriptorSet), VK_OBJECT_TYPE_DESCRIPTOR_SET);
@@ -59,6 +67,7 @@ namespace LambdaEngine
 	void DescriptorSetVK::WriteTextureDescriptors(const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
 	{
 		VALIDATE(ppTextures != nullptr);
+		VALIDATE(firstBinding < m_Bindings.GetSize());
 
 		const TextureViewVK* const* ppVkTextureViews	= reinterpret_cast<const TextureViewVK* const*>(ppTextures);
 		const SamplerVK* const*		ppVkSamplers		= reinterpret_cast<const SamplerVK* const*>(ppSamplers);
@@ -68,27 +77,48 @@ namespace LambdaEngine
 		VkImageLayout imageLayout = ConvertTextureState(textureState);
 
 		TArray<VkDescriptorImageInfo> imageInfos(descriptorCount);
-		for (uint32_t i = 0; i < descriptorCount; i++)
+		if (descriptorCount > 0)
 		{
-			VkDescriptorImageInfo& imageInfo = imageInfos[i];
-			imageInfo.imageLayout = imageLayout;
-
-			VALIDATE(ppVkTextureViews[i] != nullptr);
-			imageInfo.imageView	= ppVkTextureViews[i]->GetImageView();
-			
-			if (descriptorTypeVk == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+			for (uint32_t i = 0; i < descriptorCount; i++)
 			{
-				if (ppVkSamplers != nullptr)
+				VkDescriptorImageInfo& imageInfo = imageInfos[i];
+				imageInfo.imageLayout = imageLayout;
+
+				if (ppVkTextureViews[i] != nullptr)
 				{
-					VALIDATE(ppVkSamplers[i]	!= nullptr);
-					imageInfo.sampler = ppVkSamplers[i]->GetSampler();
+					imageInfo.imageView = ppVkTextureViews[i]->GetImageView();
+
+					if (descriptorTypeVk == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+					{
+						if (ppVkSamplers != nullptr)
+						{
+							VALIDATE(ppVkSamplers[i] != nullptr);
+							imageInfo.sampler = ppVkSamplers[i]->GetSampler();
+						}
+						else
+						{
+							imageInfo.sampler = VK_NULL_HANDLE;
+						}
+					}
 				}
 				else
 				{
+					imageInfo.imageView = VK_NULL_HANDLE;
 					imageInfo.sampler = VK_NULL_HANDLE;
 				}
 			}
 		}
+		else
+		{
+			//Push one null descriptor to validate the write (VK_EXT_robustness2::nullDescriptor)
+			VkDescriptorImageInfo imageInfo = {};
+			imageInfo.imageLayout	= imageLayout;
+			imageInfo.imageView		= VK_NULL_HANDLE;
+			imageInfo.sampler		= static_cast<SamplerVK*>(Sampler::GetLinearSampler())->GetSampler();
+			imageInfos.PushBack(imageInfo);
+		}
+
+		m_BindingDescriptorCount[firstBinding] = descriptorCount;
 
 		VkWriteDescriptorSet descriptorImageWrite = {};
 		descriptorImageWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -114,15 +144,28 @@ namespace LambdaEngine
 		VkDescriptorType		descriptorTypeVk	= ConvertDescriptorType(descriptorType);
 
 		TArray<VkDescriptorBufferInfo> bufferInfos(descriptorCount);
-		for (uint32_t i = 0; i < descriptorCount; i++)
+		if (descriptorCount > 0)
 		{
-			VkDescriptorBufferInfo& bufferInfo = bufferInfos[i];
-			bufferInfo.offset		= pOffsets[i];
-			bufferInfo.range		= pSizes[i];
+			for (uint32_t i = 0; i < descriptorCount; i++)
+			{
+				VkDescriptorBufferInfo& bufferInfo = bufferInfos[i];
+				bufferInfo.offset = pOffsets[i];
+				bufferInfo.range = pSizes[i];
 
-			VALIDATE(ppVkBuffers[i] != nullptr);
-			bufferInfo.buffer	= ppVkBuffers[i]->GetBuffer();
+				bufferInfo.buffer = ppVkBuffers[i] != nullptr ? ppVkBuffers[i]->GetBuffer() : VK_NULL_HANDLE;
+			}
 		}
+		else
+		{
+			//Push one null descriptor to validate the write (VK_EXT_robustness2::nullDescriptor)
+			VkDescriptorBufferInfo bufferInfo = {};
+			bufferInfo.offset	= 0;
+			bufferInfo.range	= 0;
+			bufferInfo.buffer	= VK_NULL_HANDLE;
+			bufferInfos.PushBack(bufferInfo);
+		}
+
+		m_BindingDescriptorCount[firstBinding] = descriptorCount;
 
 		VkWriteDescriptorSet descriptorBufferWrite = {};
 		descriptorBufferWrite.sType				= VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -143,14 +186,23 @@ namespace LambdaEngine
 		VALIDATE(ppAccelerationStructures != nullptr);
 		
 		TArray<VkAccelerationStructureKHR> accelerationStructures(descriptorCount);
-		for (uint32_t i = 0; i < descriptorCount; i++)
+		if (descriptorCount > 0)
 		{
-			const AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<const AccelerationStructureVK*>(ppAccelerationStructures[i]);
+			for (uint32_t i = 0; i < descriptorCount; i++)
+			{
+				const AccelerationStructureVK* pAccelerationStructureVk = reinterpret_cast<const AccelerationStructureVK*>(ppAccelerationStructures[i]);
 
-			VALIDATE(pAccelerationStructureVk != nullptr);
-			accelerationStructures[i] = pAccelerationStructureVk->GetAccelerationStructure();
+				accelerationStructures[i] = pAccelerationStructureVk != nullptr ? pAccelerationStructureVk->GetAccelerationStructure() : nullptr;
+			}
+		}
+		else
+		{
+			//Push one null descriptor to validate the write (VK_EXT_robustness2::nullDescriptor)
+			accelerationStructures.PushBack(nullptr);
 		}
 		
+		m_BindingDescriptorCount[firstBinding] = 1;
+
 		VkWriteDescriptorSetAccelerationStructureKHR descriptorAccelerationStructureInfo = {};
 		descriptorAccelerationStructureInfo.sType                       = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 		descriptorAccelerationStructureInfo.accelerationStructureCount  = descriptorCount;

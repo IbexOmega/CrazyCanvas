@@ -19,20 +19,20 @@ namespace LambdaEngine
 
 	bool CameraSystem::Init()
 	{
-		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
+					.pSubscriber = &m_CameraEntities,
+					.ComponentAccesses =
 					{
 						{R, CameraComponent::Type()}, {NDA, ViewProjectionMatricesComponent::Type()}, {RW, VelocityComponent::Type()},
 						{NDA, PositionComponent::Type()}, {RW, RotationComponent::Type()}
-					},
-					&m_CameraEntities
+					}
 				}
 			};
-			systemReg.SubscriberRegistration.AdditionalDependencies = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
+			systemReg.SubscriberRegistration.AdditionalAccesses = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
 			systemReg.Phase = 0;
 
 			RegisterSystem(systemReg);
@@ -121,7 +121,7 @@ namespace LambdaEngine
 		glm::vec3& velocity = velocityComp.Velocity;
 
 		glm::vec2 horizontalVelocity = {
-			float(InputActionSystem::IsActive("CAM_RIGHT") - InputActionSystem::IsActive("CAM_LEFT")),			// X: Right
+			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
 			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Y: Forward
 		};
 

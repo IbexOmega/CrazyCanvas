@@ -18,7 +18,7 @@ namespace LambdaEngine
 	{
 		/*	Production-released products will likely not be started with any command line arguments,
 			that is when the production config is used */
-		constexpr const char* pDefaultPathPostfix = "production";
+		constexpr const char* pDefaultPathPostfix = "crazycanvas";
 		String pathPostfix;
 		flagParser({ "--state" }, pDefaultPathPostfix) >> pathPostfix;
 		s_FilePath = "engine_config_" + String(pathPostfix) + ".json";

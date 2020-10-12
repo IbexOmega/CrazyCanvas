@@ -1,4 +1,4 @@
-#include "Physics/PhysicsSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 #include "Engine/EngineConfig.h"
@@ -57,16 +57,20 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
-					{{RW, StaticCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}},
-					&m_StaticCollisionEntities,
-					nullptr,
-					onStaticCollisionRemoval
+					.pSubscriber = &m_StaticCollisionEntities,
+					.ComponentAccesses =
+					{
+						{RW, StaticCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}
+					},
+					.OnEntityRemoval = onStaticCollisionRemoval
 				},
 				{
-					{{RW, CharacterColliderComponent::Type()}, {R, PositionComponent::Type()}, {RW, VelocityComponent::Type()}},
-					&m_CharacterColliderEntities,
-					nullptr,
-					onCharacterColliderRemoval
+					.pSubscriber = &m_CharacterColliderEntities,
+					.ComponentAccesses =
+					{
+						{RW, CharacterColliderComponent::Type()}, {RW, PositionComponent::Type()}, {RW, VelocityComponent::Type()}
+					},
+					.OnEntityRemoval = onCharacterColliderRemoval
 				}
 			};
 			systemReg.Phase = 1;
@@ -309,7 +313,7 @@ namespace LambdaEngine
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
 		controllerDesc.height			= height;
-		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eCONSTRAINED;
+		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eEASY;
 
 		FinalizeCharacterController(characterColliderInfo, controllerDesc);
 	}
@@ -326,9 +330,12 @@ namespace LambdaEngine
 
 	void PhysicsSystem::TickCharacterControllers(float32 dt)
 	{
+		// TODO: Temporary solution until there's a separate camera entity with an offset
+		constexpr const float characterHeight = 1.8f;
+
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<CharacterColliderComponent>* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-		const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 		for (Entity entity : m_CharacterColliderEntities)
@@ -345,26 +352,47 @@ namespace LambdaEngine
 			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
 			PxController* pController = characterCollider.pController;
 
-			// Don't move downwards if the character is already on the ground
-			PxControllerState controllerState;
-			pController->getState(controllerState);
+			const PxExtendedVec3 oldPositionPX = pController->getPosition();
 
-			if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+			if (positionComp.Dirty)
 			{
-				velocity.y = std::max<float32>(velocity.y, 0.0f);
+				// Distance between the capsule's feet to its center position. Includes contact offset.
+				const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
+				pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
 			}
 
-			pController->setPosition({ position.x, position.y, position.z });
 			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 			const PxExtendedVec3& newPositionPX = pController->getPosition();
 			velocity = {
-				(float)newPositionPX.x - position.x,
-				(float)newPositionPX.y - position.y,
-				(float)newPositionPX.z - position.z
+				newPositionPX.x - oldPositionPX.x,
+				newPositionPX.y - oldPositionPX.y,
+				newPositionPX.z - oldPositionPX.z
 			};
 
 			velocity /= dt;
+
+			if (glm::length2(velocity) > glm::epsilon<float>())
+			{
+				// Disable vertical movement if the character is on the ground
+				PxControllerState controllerState;
+				pController->getState(controllerState);
+				if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+				{
+					velocity.y = 0.0f;
+				}
+
+				// Update entity's position
+				PositionComponent& positionCompMutable = const_cast<PositionComponent&>(positionComp);
+				positionCompMutable.Dirty = true;
+				glm::vec3& positionMutable = const_cast<glm::vec3&>(position);
+
+				positionMutable = {
+					newPositionPX.x,
+					pController->getFootPosition().y + characterHeight,
+					newPositionPX.z
+				};
+			}
 		}
 	}
 
@@ -431,7 +459,7 @@ namespace LambdaEngine
 		/*	Max height of obstacles that can be climbed. Note that capsules can automatically climb obstacles because
 			of their round bottoms, so the total step height is taller than the specified one below.
 			This can be turned off however. */
-		constexpr const float stepOffset = 0.0f;
+		constexpr const float stepOffset = 0.20f;
 
 		const glm::vec3& position = characterColliderInfo.Position.Position;
 		const glm::vec3 upDirection = g_DefaultUp * characterColliderInfo.Rotation.Quaternion;

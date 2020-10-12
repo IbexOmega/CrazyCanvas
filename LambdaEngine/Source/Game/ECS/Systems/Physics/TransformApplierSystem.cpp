@@ -3,6 +3,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Window.h"
 #include "ECS/ECSCore.h"
+#include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 
@@ -16,17 +17,23 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
+				.pSubscriber = &m_MatrixEntities,
+				.ComponentAccesses =
 				{
 					{RW, CameraComponent::Type()}, {RW, ViewProjectionMatricesComponent::Type()},
 					{R, PositionComponent::Type()}, {R, RotationComponent::Type()}
-				},
-				&m_MatrixEntities
+				}
 			},
 			{
+				.pSubscriber = &m_VelocityEntities,
+				.ComponentAccesses =
 				{
 					{RW, PositionComponent::Type()}, {R, VelocityComponent::Type()}
 				},
-				&m_VelocityEntities
+				.ExcludedComponentTypes =
+				{
+					CharacterColliderComponent::Type()
+				}
 			}
 		};
 		systemReg.Phase = g_LastPhase - 1;

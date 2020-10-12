@@ -1,3 +1,6 @@
+#extension GL_EXT_nonuniform_qualifier : enable
+
+#include "../Defines.glsl"
 
 const float RAY_NORMAL_OFFSET   = 0.01f;
 
@@ -18,13 +21,13 @@ struct SRayDirections
     vec3    ViewDir;
 };
 
-layout(binding = 0,     set = BUFFER_SET_INDEX) uniform accelerationStructureEXT                                                u_TLAS;
-layout(binding = 1,     set = BUFFER_SET_INDEX) uniform PerFrameBuffer      { SPerFrameBuffer val; }                            u_PerFrameBuffer;
-layout(binding = 2,     set = BUFFER_SET_INDEX) uniform MaterialParameters  { SMaterialParameters val[MAX_UNIQUE_MATERIALS]; }  u_MaterialParameters;
+layout(binding = 0,     set = BUFFER_SET_INDEX) uniform accelerationStructureEXT                            u_TLAS;
+layout(binding = 1,     set = BUFFER_SET_INDEX) uniform PerFrameBuffer      { SPerFrameBuffer val; }        u_PerFrameBuffer;
+layout(binding = 2,     set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  { SMaterialParameters val[]; }  u_MaterialParameters;
 
-layout(binding = 0,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_AlbedoMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 1,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_NormalMaps[MAX_UNIQUE_MATERIALS];
-layout(binding = 2,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_CombinedMaterialMaps[MAX_UNIQUE_MATERIALS];
+layout(binding = 0,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_AlbedoMaps[];
+layout(binding = 1,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_NormalMaps[];
+layout(binding = 2,     set = TEXTURE_SET_INDEX) uniform sampler2D                  u_CombinedMaterialMaps[];
 layout(binding = 3,     set = TEXTURE_SET_INDEX) uniform samplerCube                u_Skybox;
 
 layout(binding = 4,     set = TEXTURE_SET_INDEX, rgba32f) restrict uniform image2D  u_GBufferPosition;

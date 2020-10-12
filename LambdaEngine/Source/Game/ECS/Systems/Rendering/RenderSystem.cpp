@@ -12,7 +12,9 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
+#include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
+#include "Rendering/PaintMaskRenderer.h"
 #include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
@@ -36,8 +38,6 @@ namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
 
-	constexpr const uint32 TEMP_DRAW_ARG_MASK = UINT32_MAX;
-
 	bool RenderSystem::Init()
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
@@ -57,50 +57,68 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
+					.pSubscriber = &m_RenderableEntities,
+					.ComponentAccesses =
 					{
 						{ NDA, MeshComponent::Type() }
 					},
-					{ &transformComponents },
-					{ AnimationComponent::Type() },
-					&m_RenderableEntities,
-					std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)
+					.ComponentGroups =
+					{
+						&transformComponents
+					},
+					.ExcludedComponentTypes =
+					{
+						AnimationComponent::Type(),
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)
 				},
 				{
+					.pSubscriber = &m_DirectionalLightEntities,
+					.ComponentAccesses =
 					{
 						{ R, DirectionalLightComponent::Type() }, 
+						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
-					}, 
-					&m_DirectionalLightEntities,	
-					std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
 				},
 				{
+					.pSubscriber = &m_PointLightEntities,
+					.ComponentAccesses =
 					{
-						{ R, PointLightComponent::Type() }, 
+						{ R, PointLightComponent::Type() },
 						{ R, PositionComponent::Type() }
-					}, 
-					&m_PointLightEntities,
-					std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1) 
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1)
 				},
 				{
+					.pSubscriber = &m_CameraEntities,
+					.ComponentAccesses =
 					{
-						{ R, ViewProjectionMatricesComponent::Type() }, 
+						{ R, ViewProjectionMatricesComponent::Type() },
 						{ R, CameraComponent::Type() }
-					}, 
-					{ &transformComponents }, 
-					&m_CameraEntities
+					},
+					.ComponentGroups =
+					{
+						&transformComponents
+					}
 				},
 				{
+					.pSubscriber = &m_AnimatedEntities,
+					.ComponentAccesses =
 					{
-						{ R, AnimationComponent::Type() }, 
+						{ R, AnimationComponent::Type() },
 						{ R, MeshComponent::Type() }
-					}, 
-					{ &transformComponents }, 
-					&m_AnimatedEntities, 
-					std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1), 
-					std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1) 
+					},
+					.ComponentGroups =
+					{
+						&transformComponents
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1)
 				}
 			};
 
@@ -178,6 +196,23 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 			}
 
+			// Add paint mask renderer to the custom renderers inside the render graph.
+			{
+				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
+				m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
+			}
+			
+			// Light Renderer
+			{
+				m_pLightRenderer = DBG_NEW LightRenderer();
+				m_pLightRenderer->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+			}
+
+
 			//GUI Renderer
 			{
 				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
@@ -230,30 +265,6 @@ namespace LambdaEngine
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
 		}
 
-		//Material Defaults
-		{
-			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
-			{
-				m_FreeMaterialSlots.push(i);
-			}
-
-			Texture*		pDefaultColorMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_COLOR_MAP);
-			TextureView*	pDefaultColorMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_COLOR_MAP);
-			Texture*		pDefaultNormalMap		= ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
-			TextureView*	pDefaultNormalMapView	= ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_NORMAL_MAP);
-
-			for (uint32 i = 0; i < MAX_UNIQUE_MATERIALS; i++)
-			{
-				m_ppAlbedoMaps[i]					= pDefaultColorMap;
-				m_ppNormalMaps[i]					= pDefaultNormalMap;
-				m_ppCombinedMaterialMaps[i]			= pDefaultColorMap;
-				m_ppAlbedoMapViews[i]				= pDefaultColorMapView;
-				m_ppNormalMapViews[i]				= pDefaultNormalMapView;
-				m_ppCombinedMaterialMapViews[i]		= pDefaultColorMapView;
-				m_pMaterialInstanceCounts[i]		= 0;
-			}
-		}
-
 		// Create animation resources
 		{
 			DescriptorHeapDesc descriptorHeap;
@@ -299,7 +310,7 @@ namespace LambdaEngine
 			pipelineDesc.DebugName			= "Skinning pipeline";
 			pipelineDesc.PipelineLayout		= m_SkinningPipelineLayout;
 			pipelineDesc.Shader.ShaderGUID	= ResourceManager::LoadShaderFromFile("Animation/Skinning.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
-			
+
 			m_SkinningPipelineID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
 			if (m_SkinningPipelineID == 0)
 			{
@@ -307,7 +318,7 @@ namespace LambdaEngine
 			}
 		}
 
-		m_LightsDirty = true; // Initilize Light buffer to avoid validation layer errors
+		
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -340,6 +351,20 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(m_pLineRenderer);
+		SAFEDELETE(m_pPaintMaskRenderer);
+		SAFEDELETE(m_pLightRenderer);
+
+		// Remove Pointlight Texture and Texture Views
+		for (uint32 c = 0; c < m_CubeTextures.GetSize(); c++)
+		{
+			SAFERELEASE(m_CubeTextures[c]);
+			SAFERELEASE(m_CubeTextureViews[c]);
+		}
+
+		for (uint32 f = 0; f < m_CubeSubImageTextureViews.GetSize(); f++)
+		{
+			SAFERELEASE(m_CubeSubImageTextureViews[f]);
+		}
 
 		SAFERELEASE(m_pTLAS);
 		SAFERELEASE(m_pCompleteInstanceBuffer);
@@ -363,7 +388,6 @@ namespace LambdaEngine
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pLightsBuffer);
-
 
 		SAFEDELETE(m_pRenderGraph);
 
@@ -418,10 +442,10 @@ namespace LambdaEngine
 					dirLight.ColorIntensity,
 					position.Position,
 					rotation.Quaternion,
-					dirLight.frustumWidth,
-					dirLight.frustumHeight,
-					dirLight.frustumZNear,
-					dirLight.frustumZFar
+					dirLight.FrustumWidth,
+					dirLight.FrustumHeight,
+					dirLight.FrustumZNear,
+					dirLight.FrustumZFar
 				);
 			}
 		}
@@ -449,16 +473,16 @@ namespace LambdaEngine
 			const auto&			positionComp	= pPositionComponents->GetData(entity);
 			const auto&			rotationComp	= pRotationComponents->GetData(entity);
 			const auto&			scaleComp		= pScaleComponents->GetData(entity);
-			
+
 			if (!animationComp.IsPaused)
 			{
-				MeshKey key(meshComp.MeshGUID, entity, true);
+				MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
 				
 				auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 				if (meshEntryIt != m_MeshAndInstancesMap.end())
 				{
 					UpdateAnimationBuffers(animationComp, meshEntryIt->second);
-					
+
 					MeshEntry* pMeshEntry = &meshEntryIt->second;
 					m_AnimationsToUpdate.insert(pMeshEntry);
 					m_DirtyBLASs.insert(pMeshEntry);
@@ -493,7 +517,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderSystem::Render()
+	bool RenderSystem::Render(Timestamp delta)
 	{
 		m_BackBufferIndex = uint32(m_SwapChain->GetCurrentBackBufferIndex());
 
@@ -506,7 +530,7 @@ namespace LambdaEngine
 		UpdateBuffers();
 		UpdateRenderGraph();
 
-		m_pRenderGraph->Update();
+		m_pRenderGraph->Update(delta, m_ModFrameIndex, m_BackBufferIndex);
 
 		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
@@ -530,10 +554,22 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 		}
 
+		// Light Renderer
+		{
+			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+		}
+
 		//GUI Renderer
 		{
 			ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
+		}
+
+		{
+			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
+			m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+
+			renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
 		}
 
 		m_RequiredDrawArgs.clear();
@@ -625,13 +661,14 @@ namespace LambdaEngine
 				dirLight.ColorIntensity,
 				position.Position,
 				rotation.Quaternion,
-				dirLight.frustumWidth,
-				dirLight.frustumHeight,
-				dirLight.frustumZNear,
-				dirLight.frustumZFar
+				dirLight.FrustumWidth,
+				dirLight.FrustumHeight,
+				dirLight.FrustumZNear,
+				dirLight.FrustumZFar
 			);
 
 			m_DirectionalExist = true;
+			m_LightsResourceDirty = true;
 		}
 		else
 		{
@@ -646,14 +683,24 @@ namespace LambdaEngine
 		const auto& pointLight = pECSCore->GetComponent<PointLightComponent>(entity);
 		const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
 
-
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
 
 		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
-	
-		UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
+		
+		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
+		{
+			m_PointLights.GetBack().TextureIndex = pointLightIndex;
+		}
+		else
+		{
+			// Check for free texture index instead of creating new index
+			uint32 textureIndex = m_FreeTextureIndices.GetBack();
+			m_FreeTextureIndices.PopBack();
+
+			m_PointLights.GetBack().TextureIndex = textureIndex;
+		}
 	}
 
 	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
@@ -662,15 +709,19 @@ namespace LambdaEngine
 
 		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
 		m_DirectionalExist = false;
-		m_LightsDirty = true;
+		m_LightsResourceDirty = true;
 	}
 
 	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
 	{
+		if (m_PointLights.IsEmpty())
+			return;
+
 		uint32 lastIndex = m_PointLights.GetSize() - 1U;
 		uint32 lastEntity = m_PointLightToEntity[lastIndex];
 		uint32 currentIndex = m_EntityToPointLight[entity];
 
+		uint32 freeTexIndex = m_PointLights[currentIndex].TextureIndex;
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
 
 		m_EntityToPointLight[lastEntity] = currentIndex;
@@ -680,20 +731,41 @@ namespace LambdaEngine
 		m_EntityToPointLight.erase(entity);
 		m_PointLights.PopBack();
 
-		m_LightsDirty = true;
+		if (!m_RemoveTexturesOnDeletion)
+		{
+			// Free Texture for new point lights
+			m_FreeTextureIndices.PushBack(freeTexIndex);
+		}
+		else
+		{
+			// Update all point lights shadowmaps to handle removal of texture
+			for (uint32 i = 0; i < m_PointLights.GetSize(); i++)
+			{
+					LightUpdateData lightUpdateData = {};
+					lightUpdateData.PointLightIndex = i;
+					lightUpdateData.TextureIndex = m_PointLights[i].TextureIndex;
+					m_PointLightTextureUpdateQueue.PushBack(lightUpdateData);
+			}
+
+			m_PointLightDirty = true;
+		}
+
+		m_LightsResourceDirty = true;
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
-		uint32 materialSlot = MAX_UNIQUE_MATERIALS;
+		uint32 extensionIndex = 0;
+		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
 		MeshKey meshKey;
 		meshKey.MeshGUID	= meshGUID;
 		meshKey.IsAnimated	= isAnimated;
 		meshKey.EntityID	= entity;
+		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
 
 		//Get meshAndInstancesIterator
 		{
@@ -702,9 +774,9 @@ namespace LambdaEngine
 			{
 				const Mesh* pMesh = ResourceManager::GetMesh(meshGUID);
 				VALIDATE(pMesh != nullptr);
-				
+
 				MeshEntry meshEntry = {};
-				
+
 				// Vertices
 				{
 					BufferDesc vertexStagingBufferDesc = {};
@@ -754,7 +826,7 @@ namespace LambdaEngine
 						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
-					
+
 						meshEntry.pVertexWeightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexWeightBufferDesc);
 						VALIDATE(meshEntry.pVertexWeightsBuffer != nullptr);
 
@@ -889,67 +961,93 @@ namespace LambdaEngine
 
 				if (m_RayTracingEnabled)
 				{
-					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress	= meshEntry.pVertexBuffer->GetDeviceAdress();
-					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress	= meshEntry.pIndexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
 					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 					m_SBTRecordsDirty = true;
 				}
+
+			}
+
+			// Add Draw Arg Extensions.
+			{
+				bool hasExtensions = false;
+				MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
+				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
+				if (entityMask > 1) // If the entity has extensions add them to the entry.
+				{
+					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
+					extensionIndex = meshEntry.ExtensionGroups.GetSize();
+					hasExtensions = true;
+				}
+				else
+				{
+					meshEntry.ExtensionGroups.PushBack(nullptr);
+					extensionIndex = 0;
+				}
+
+				meshEntry.HasExtensions = hasExtensions;
 			}
 		}
 
 		//Get Material Slot
 		{
-			THashTable<uint32, uint32>::iterator materialSlotIt = m_MaterialMap.find(materialGUID);
+			THashTable<uint32, uint32>::iterator materialIndexIt = m_MaterialMap.find(materialGUID);
 
 			//Push new Material if the Material is yet to be registered
-			if (materialSlotIt == m_MaterialMap.end())
+			if (materialIndexIt == m_MaterialMap.end())
 			{
 				const Material* pMaterial = ResourceManager::GetMaterial(materialGUID);
 				VALIDATE(pMaterial != nullptr);
-
-				if (!m_FreeMaterialSlots.empty())
+				
+				if (!m_ReleasedMaterialIndices.IsEmpty())
 				{
-					materialSlot = m_FreeMaterialSlots.top();
-					m_FreeMaterialSlots.pop();
+					materialIndex = m_ReleasedMaterialIndices.GetBack();
+					m_ReleasedMaterialIndices.PopBack();
+
+					m_AlbedoMaps[materialIndex]					= pMaterial->pAlbedoMap;
+					m_NormalMaps[materialIndex]					= pMaterial->pNormalMap;
+					m_CombinedMaterialMaps[materialIndex]		= pMaterial->pAOMetallicRoughnessMap;
+
+					m_AlbedoMapViews[materialIndex]				= pMaterial->pAlbedoMapView;
+					m_NormalMapViews[materialIndex]				= pMaterial->pNormalMapView;
+					m_CombinedMaterialMapViews[materialIndex]	= pMaterial->pAOMetallicRoughnessMapView;
+
+					m_MaterialProperties[materialIndex]			= pMaterial->Properties;
+
+					m_MaterialInstanceCounts[materialIndex]		= 0;
+
+					m_MaterialMap.insert({ materialGUID, materialIndex });
 				}
 				else
 				{
-					for (uint32 m = 0; m < MAX_UNIQUE_MATERIALS; m++)
-					{
-						if (m_pMaterialInstanceCounts[m] == 0)
-						{
-							materialSlot = m;
-							break;
-						}
-					}
+					materialIndex = m_AlbedoMaps.GetSize();
 
-					if (materialSlot == MAX_UNIQUE_MATERIALS)
-					{
-						LOG_WARNING("[RenderSystem]: No free Material Slots, Entity will be given a random material");
-						materialSlot = 0;
-					}
+					m_AlbedoMaps.PushBack(pMaterial->pAlbedoMap);
+					m_NormalMaps.PushBack(pMaterial->pNormalMap);
+					m_CombinedMaterialMaps.PushBack(pMaterial->pAOMetallicRoughnessMap);
+
+					m_AlbedoMapViews.PushBack(pMaterial->pAlbedoMapView);
+					m_NormalMapViews.PushBack(pMaterial->pNormalMapView);
+					m_CombinedMaterialMapViews.PushBack(pMaterial->pAOMetallicRoughnessMapView);
+
+					m_MaterialProperties.PushBack(pMaterial->Properties);
+
+					m_MaterialInstanceCounts.PushBack(0);
+
+					m_MaterialMap.insert({ materialGUID, materialIndex });
 				}
 
-				m_ppAlbedoMaps[materialSlot]					= pMaterial->pAlbedoMap;
-				m_ppNormalMaps[materialSlot]					= pMaterial->pNormalMap;
-				m_ppCombinedMaterialMaps[materialSlot]			= pMaterial->pAOMetallicRoughnessMap;
-
-				m_ppAlbedoMapViews[materialSlot]				= pMaterial->pAlbedoMapView;
-				m_ppNormalMapViews[materialSlot]				= pMaterial->pNormalMapView;
-				m_ppCombinedMaterialMapViews[materialSlot]		= pMaterial->pAOMetallicRoughnessMapView;
-
-				m_pMaterialProperties[materialSlot]				= pMaterial->Properties;
-
-				m_MaterialMap.insert({ materialGUID, materialSlot });
 				m_MaterialsResourceDirty = true;
 				m_MaterialsPropertiesBufferDirty = true;
 			}
 			else
 			{
-				materialSlot = materialSlotIt->second;
+				materialIndex = materialIndexIt->second;
 			}
 
-			m_pMaterialInstanceCounts[materialSlot]++;
+			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
 		InstanceKey instanceKey = {};
@@ -961,7 +1059,7 @@ namespace LambdaEngine
 		{
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= materialSlot;
+			asInstance.CustomIndex		= materialIndex;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
 			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
@@ -974,7 +1072,8 @@ namespace LambdaEngine
 		Instance instance = {};
 		instance.Transform		= transform;
 		instance.PrevTransform	= transform;
-		instance.MaterialSlot	= materialSlot;
+		instance.ExtensionIndex = extensionIndex;
+		instance.MaterialIndex	= materialIndex;
 		instance.MeshletCount	= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
@@ -982,11 +1081,15 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		// Todo: This needs to come from the Entity in some way
-		uint32 drawArgHash = TEMP_DRAW_ARG_MASK;
-		if (m_RequiredDrawArgs.count(drawArgHash))
+		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
+		MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
+		meshEntry.DrawArgsMask = drawArgMask;
+		for (uint32 mask : m_RequiredDrawArgs)
 		{
-			m_DirtyDrawArgs.insert(drawArgHash);
+			if ((mask & drawArgMask) > 0)
+			{
+				m_DirtyDrawArgs.insert(mask);
+			}
 		}
 	}
 
@@ -1012,7 +1115,14 @@ namespace LambdaEngine
 
 		//Update Material Instance Counts
 		{
-			m_pMaterialInstanceCounts[rasterInstance.MaterialSlot]--;
+			uint32& materialInstanceCount = m_MaterialInstanceCounts[rasterInstance.MaterialIndex];
+			materialInstanceCount--;
+			
+			if (materialInstanceCount == 0)
+			{
+				//Mark material as empty
+				m_ReleasedMaterialIndices.PushBack(rasterInstance.MaterialIndex);
+			}
 		}
 
 		if (m_RayTracingEnabled)
@@ -1035,6 +1145,8 @@ namespace LambdaEngine
 		auto swappedInstanceKeyIt = m_EntityIDsToInstanceKey.find(swappedEntityID);
 		swappedInstanceKeyIt->second.InstanceIndex = instanceKeyIt->second.InstanceIndex;
 		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
+
+		m_DirtyDrawArgs = m_RequiredDrawArgs;
 
 		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
@@ -1065,12 +1177,11 @@ namespace LambdaEngine
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 
-			m_DirtyDrawArgs = m_RequiredDrawArgs;
 			m_SBTRecordsDirty = true;
 
 			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
 				{
-					return pMeshEntry == &meshAndInstancesIt->second; 
+					return pMeshEntry == &meshAndInstancesIt->second;
 				});
 			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
 				{
@@ -1081,11 +1192,11 @@ namespace LambdaEngine
 					return pMeshEntry == &meshAndInstancesIt->second;
 				});
 
-			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end()) 
+			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end())
 				m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
-			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end()) 
+			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end())
 				m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
-			if (dirtyBLASToRemove != m_DirtyBLASs.end()) 
+			if (dirtyBLASToRemove != m_DirtyBLASs.end())
 				m_DirtyBLASs.erase(dirtyBLASToRemove);
 
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
@@ -1101,7 +1212,7 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
-		m_LightsDirty = true;
+		m_LightsResourceDirty = true;
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
@@ -1112,45 +1223,57 @@ namespace LambdaEngine
 			return;
 		}
 		uint32 index = m_EntityToPointLight[entity];
+		PointLight& pointLight = m_PointLights[index];
+		pointLight.ColorIntensity = colorIntensity;
 
-		m_PointLights[index].ColorIntensity = colorIntensity;
-		m_PointLights[index].Position = position;
+		m_LightsResourceDirty = true;
 
-		const glm::vec3 directions[6] =
+		if (pointLight.Position != position
+			|| pointLight.FarPlane != farPlane
+			|| pointLight.NearPlane != nearPlane)
 		{
-			{1.0f, 0.0f, 0.0f},
-			{-1.0f, 0.0f, 0.0f},
-			{0.0f, 1.0f, 0.0f},
-			{0.0f, -1.0f, 0.0f},
-			{0.0f, 0.0f, 1.0f},
-			{0.0f, 0.0f, -1.0f},
-		};
+			pointLight.Position = position;
 
-		const glm::vec3 defaultUp[6] =
-		{
-			-g_DefaultUp,
-			-g_DefaultUp,
-			-g_DefaultForward,
-			g_DefaultForward,
-			-g_DefaultUp,
-			-g_DefaultUp,
-		};
+			const glm::vec3 directions[6] =
+			{
+				{1.0f, 0.0f, 0.0f},
+				{-1.0f, 0.0f, 0.0f},
+				{0.0f, 1.0f, 0.0f},
+				{0.0f, -1.0f, 0.0f},
+				{0.0f, 0.0f, 1.0f},
+				{0.0f, 0.0f, -1.0f},
+			};
 
-		constexpr uint32 PROJECTIONS = 6;
-		constexpr float FOV = 90.f;
-		constexpr float ASPECT_RATIO = 1.0f;
-		m_PointLights[index].FarPlane = farPlane;
+			const glm::vec3 defaultUp[6] =
+			{
+				-g_DefaultUp,
+				-g_DefaultUp,
+				-g_DefaultForward,
+				g_DefaultForward,
+				-g_DefaultUp,
+				-g_DefaultUp,
+			};
 
-		glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
-		// Create projection matrices for each face
-		for (uint32 p = 0; p < PROJECTIONS; p++)
-		{
-			m_PointLights[index].ProjViews[p] = perspective;
-			m_PointLights[index].ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
+			constexpr uint32 PROJECTIONS = 6;
+			constexpr float FOV = 90.f;
+			constexpr float ASPECT_RATIO = 1.0f;
+			pointLight.FarPlane = farPlane;
+
+			glm::mat4 perspective = glm::perspective(glm::radians(FOV), ASPECT_RATIO, nearPlane, farPlane);
+			// Create projection matrices for each face
+			for (uint32 p = 0; p < PROJECTIONS; p++)
+			{
+				pointLight.ProjViews[p] = perspective;
+				pointLight.ProjViews[p] *= glm::lookAt(position, position + directions[p], defaultUp[p]);
+			}
+
+			LightUpdateData lightTextureUpdate = {};
+			lightTextureUpdate.PointLightIndex = index;
+			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
+			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
+		
+			m_PointLightDirty = true;
 		}
-
-		m_pRenderGraph->TriggerRenderStage("POINTL_SHADOW");
-		m_LightsDirty = true;
 	}
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
@@ -1210,35 +1333,45 @@ namespace LambdaEngine
 
 	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
 	{
-		UNREFERENCED_VARIABLE(mask);
-
 		for (auto& meshEntryPair : m_MeshAndInstancesMap)
 		{
-			// Todo: Check Key (or whatever we end up using)
-			DrawArg drawArg = { };
-
-			// Assume animated
-			if (meshEntryPair.second.pAnimatedVertexBuffer)
+			if ((meshEntryPair.second.DrawArgsMask & mask) > 0)
 			{
-				drawArg.pVertexBuffer = meshEntryPair.second.pAnimatedVertexBuffer;
-			}
-			else
-			{
-				drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
-			}
+				DrawArg drawArg = { };
 
-			drawArg.pIndexBuffer	= meshEntryPair.second.pIndexBuffer;
-			drawArg.IndexCount		= meshEntryPair.second.IndexCount;
-			
-			drawArg.pInstanceBuffer	= meshEntryPair.second.pRasterInstanceBuffer;
-			drawArg.InstanceCount	= meshEntryPair.second.RasterInstances.GetSize();
-			
-			drawArg.pMeshletBuffer			= meshEntryPair.second.pMeshlets;
-			drawArg.MeshletCount			= meshEntryPair.second.MeshletCount;
-			drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
-			drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
+				// Assume animated
+				if (meshEntryPair.second.pAnimatedVertexBuffer)
+				{
+					drawArg.pVertexBuffer = meshEntryPair.second.pAnimatedVertexBuffer;
+				}
+				else
+				{
+					drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
+				}
 
-			drawArgs.PushBack(drawArg);
+				drawArg.pIndexBuffer = meshEntryPair.second.pIndexBuffer;
+				drawArg.IndexCount = meshEntryPair.second.IndexCount;
+
+				drawArg.pInstanceBuffer = meshEntryPair.second.pRasterInstanceBuffer;
+				drawArg.InstanceCount = meshEntryPair.second.RasterInstances.GetSize();
+
+				drawArg.pMeshletBuffer = meshEntryPair.second.pMeshlets;
+				drawArg.MeshletCount = meshEntryPair.second.MeshletCount;
+				drawArg.pUniqueIndicesBuffer = meshEntryPair.second.pUniqueIndices;
+				drawArg.pPrimitiveIndices = meshEntryPair.second.pPrimitiveIndices;
+
+				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
+				{
+					drawArg.ppExtensionGroups = meshEntryPair.second.ExtensionGroups.GetData();
+					drawArg.HasExtensions = meshEntryPair.second.HasExtensions;
+				}
+				else
+				{
+					drawArg.HasExtensions = false;
+				}
+
+				drawArgs.PushBack(drawArg);
+			}
 		}
 	}
 
@@ -1318,7 +1451,7 @@ namespace LambdaEngine
 			meshEntry.pBoneMatrixBuffer			= RenderAPI::GetDevice()->CreateBuffer(&matrixBufferDesc);
 			meshEntry.BoneMatrixCount			= animationComp.Pose.GlobalTransforms.GetSize();
 			meshEntry.pAnimationDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet("Animation Descriptor Set", m_SkinningPipelineLayout.Get(), 0, m_AnimationDescriptorHeap.Get());
-			
+
 			const uint64 offset = 0;
 			uint64 size = meshEntry.VertexCount * sizeof(Vertex);
 			meshEntry.pAnimationDescriptorSet->WriteBufferDescriptors(&meshEntry.pVertexBuffer,			&offset, &size,			0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
@@ -1332,7 +1465,7 @@ namespace LambdaEngine
 		void* pMapped = meshEntry.pStagingMatrixBuffer->Map();
 		memcpy(pMapped, animationComp.Pose.GlobalTransforms.GetData(), sizeInBytes);
 		meshEntry.pStagingMatrixBuffer->Unmap();
-		
+
 		m_PendingBufferUpdates.PushBack({ meshEntry.pStagingMatrixBuffer, 0, meshEntry.pBoneMatrixBuffer, 0, sizeInBytes });
 	}
 
@@ -1340,10 +1473,10 @@ namespace LambdaEngine
 	{
 		// TODO: Investigate the best groupsize for us (THIS MUST MATCH THE SHADER-DEFINE)
 		constexpr uint32 THREADS_PER_WORKGROUP = 32;
-		
+
 		PipelineState* pPipeline = PipelineStateManager::GetPipelineState(m_SkinningPipelineID);
 		VALIDATE(pPipeline != nullptr);
-		
+
 		for (MeshEntry* pMeshEntry : m_AnimationsToUpdate)
 		{
 			pCommandList->BindDescriptorSetCompute(pMeshEntry->pAnimationDescriptorSet, m_SkinningPipelineLayout.Get(), 0);
@@ -1352,7 +1485,7 @@ namespace LambdaEngine
 			const uint32 vertexCount = pMeshEntry->VertexCount;
 			pCommandList->SetConstantRange(m_SkinningPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &vertexCount, sizeof(uint32), 0);
 
-			const uint32 workGroupCount = std::max<uint32>(AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
+			const uint32 workGroupCount = std::max<uint32>((uint32)AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
 			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
 
@@ -1385,7 +1518,7 @@ namespace LambdaEngine
 
 				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pStagingBuffer != nullptr) 
+					if (pStagingBuffer != nullptr)
 						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
 
 					BufferDesc bufferDesc = {};
@@ -1404,13 +1537,13 @@ namespace LambdaEngine
 
 				if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pRasterInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer != nullptr) 
+					if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer != nullptr)
 						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pRasterInstanceBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName		= "Raster Instance Buffer";
 					bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-					bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 					bufferDesc.SizeInBytes		= requiredBufferSize;
 
 					pDirtyInstanceBufferEntry->pRasterInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
@@ -1438,7 +1571,7 @@ namespace LambdaEngine
 	{
 		if (m_MaterialsPropertiesBufferDirty)
 		{
-			uint32 requiredBufferSize = sizeof(m_pMaterialProperties);
+			uint32 requiredBufferSize = m_MaterialProperties.GetSize() * sizeof(MaterialProperties);
 
 			Buffer* pStagingBuffer = m_ppStaticStagingInstanceBuffers[m_ModFrameIndex];
 
@@ -1457,7 +1590,7 @@ namespace LambdaEngine
 			}
 
 			void* pMapped = pStagingBuffer->Map();
-			memcpy(pMapped, m_pMaterialProperties, requiredBufferSize);
+			memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
 			pStagingBuffer->Unmap();
 
 			if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
@@ -1467,7 +1600,7 @@ namespace LambdaEngine
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Material Properties Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
+				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
@@ -1710,11 +1843,136 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderSystem::UpdatePointLightTextureResource()
+	{
+		uint32 pointLightCount = m_PointLights.GetSize();
+		if (pointLightCount == m_CubeTextures.GetSize())
+			return;
+
+		bool needUpdate = m_RemoveTexturesOnDeletion;
+
+		constexpr uint32 CUBE_FACE_COUNT = 6;
+		if (pointLightCount > m_CubeTextures.GetSize())
+		{
+			GraphicsDevice* pGraphicsDevice = RenderAPI::GetDevice();
+			uint32 diff = pointLightCount - m_CubeTextures.GetSize();
+
+			// TODO: Create inteface for changing resolution
+			const uint32 width = 512; 
+			const uint32 height = 512;
+
+			uint32 prevSubImageCount = m_CubeSubImageTextureViews.GetSize();
+			m_CubeSubImageTextureViews.Resize(prevSubImageCount + CUBE_FACE_COUNT * diff);
+
+			for (uint32 c = 0; c < diff; c++)
+			{
+				// Create cube texture
+				TextureDesc cubeTexDesc = {};
+				cubeTexDesc.DebugName = "PointLight Texture Cube " + std::to_string(c);
+				cubeTexDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				cubeTexDesc.Format = EFormat::FORMAT_D24_UNORM_S8_UINT;
+				cubeTexDesc.Type = ETextureType::TEXTURE_TYPE_2D;
+				cubeTexDesc.Flags = FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE;
+				cubeTexDesc.Width = width;
+				cubeTexDesc.Height = height;
+				cubeTexDesc.Depth = 1U;
+				cubeTexDesc.ArrayCount = 6;
+				cubeTexDesc.Miplevels = 1;
+				cubeTexDesc.SampleCount = 1;
+
+				Texture* pCubeTexture = pGraphicsDevice->CreateTexture(&cubeTexDesc);
+				m_CubeTextures.PushBack(pCubeTexture);
+
+				// Create cube texture view
+				TextureViewDesc cubeTexViewDesc = {};
+				cubeTexViewDesc.DebugName = "PointLight Texture Cube View " + std::to_string(c);
+				cubeTexViewDesc.pTexture = pCubeTexture;
+				cubeTexViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL | FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+				cubeTexViewDesc.Format = cubeTexDesc.Format;
+				cubeTexViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+				cubeTexViewDesc.MiplevelCount = 1;
+				cubeTexViewDesc.ArrayCount = 6;
+				cubeTexViewDesc.Miplevel = 0U;
+				cubeTexViewDesc.ArrayIndex = 0U;
+
+				m_CubeTextureViews.PushBack(pGraphicsDevice->CreateTextureView(&cubeTexViewDesc)); // Used for reading from CubeTexture
+
+				// Create per face texture views
+				TextureViewDesc subImageTextureViewDesc = {};
+				subImageTextureViewDesc.pTexture = pCubeTexture;
+				subImageTextureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
+				subImageTextureViewDesc.Format = cubeTexDesc.Format;
+				subImageTextureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+				subImageTextureViewDesc.Miplevel = cubeTexViewDesc.Miplevel;
+				subImageTextureViewDesc.MiplevelCount = cubeTexViewDesc.MiplevelCount;
+				subImageTextureViewDesc.ArrayCount = 1;
+
+				TextureView** ppSubImageView = &m_CubeSubImageTextureViews[prevSubImageCount + (CUBE_FACE_COUNT) * c];
+				for (uint32 si = 0; si < CUBE_FACE_COUNT; si++)
+				{
+					subImageTextureViewDesc.DebugName = "PointLight Sub Image Texture View " + std::to_string(si);
+					subImageTextureViewDesc.ArrayIndex = si;
+
+					(*ppSubImageView) = pGraphicsDevice->CreateTextureView(&subImageTextureViewDesc); // Used for writing to CubeTexture
+					ppSubImageView++;
+				}
+
+				needUpdate = true;
+			}
+		}
+		else if (pointLightCount < m_CubeTextures.GetSize())
+		{
+			if (m_RemoveTexturesOnDeletion)
+			{
+				uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
+
+				TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
+
+				// Remove Cube Texture Context for removed pointlights
+				for (uint32 r = 0; r < diff; r++)
+				{
+					resourcesToRemove.PushBack(m_CubeTextures.GetBack());
+					m_CubeTextures.PopBack();
+
+					resourcesToRemove.PushBack(m_CubeTextureViews.GetBack());
+					m_CubeTextureViews.PopBack();
+
+					for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
+					{
+						resourcesToRemove.PushBack(m_CubeSubImageTextureViews.GetBack());
+						m_CubeSubImageTextureViews.PopBack();
+					}
+				}
+			}
+		}
+
+		/*
+			If textures are not removed on pointlight deletion(m_RemoveTexturesOnDeletion == false), updates are only needed when new point light textures are added
+		*/
+		if (needUpdate)
+		{
+			uint32 texturesExisting = m_CubeTextures.GetSize();
+			TArray<Sampler*> nearestSamplers(texturesExisting, Sampler::GetNearestSampler());
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.Count								= texturesExisting;
+			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+	}
+
 	void RenderSystem::UpdateLightsBuffer(CommandList* pCommandList)
 	{
 		// Light Buffer Initilization
-		if (m_LightsDirty)
+		if (m_LightsResourceDirty)
 		{
+			// Resource only needs to be updated if new buffers are allocated
+			m_LightsResourceDirty = false;
+
 			size_t pointLightCount			= m_PointLights.GetSize();
 			size_t dirLightBufferSize		= sizeof(LightBuffer);
 			size_t pointLightsBufferSize	= sizeof(PointLight) * pointLightCount;
@@ -1755,12 +2013,11 @@ namespace LambdaEngine
 				lightBufferDesc.SizeInBytes		= lightBufferSize;
 
 				m_pLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightBufferDesc);
-
 				m_LightsResourceDirty = true;
+
 			}
 
 			pCommandList->CopyBuffer(pCurrentStagingBuffer, 0, m_pLightsBuffer, 0, lightBufferSize);
-			m_LightsDirty = false;
 		}
 	}
 
@@ -1780,7 +2037,7 @@ namespace LambdaEngine
 				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
 				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsCount	= drawArgs.GetSize();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.Count			= drawArgs.GetSize();
 
 				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 			}
@@ -1803,18 +2060,34 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= PER_FRAME_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPerFrameBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			m_PerFrameResourceDirty = false;
 		}
 
-		if (m_LightsResourceDirty)
+		// Trigger LightRenderer
+		if (!m_PointLightTextureUpdateQueue.IsEmpty())
+		{
+			m_pLightRenderer->PrepareTextureUpdates(m_PointLightTextureUpdateQueue);
+			m_PointLightTextureUpdateQueue.Clear();
+			m_pRenderGraph->TriggerRenderStage("RENDER_STAGE_LIGHT");
+		}
+
+		if (m_LightsResourceDirty || m_PointLightDirty)
 		{
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			if (m_PointLightDirty)
+			{
+				UpdatePointLightTextureResource();
+				m_PointLightDirty = false;
+			}
 
 			m_LightsResourceDirty = false;
 		}
@@ -1824,28 +2097,32 @@ namespace LambdaEngine
 			ResourceUpdateDesc resourceUpdateDesc				= {};
 			resourceUpdateDesc.ResourceName						= SCENE_MAT_PARAM_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pMaterialParametersBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			TArray<Sampler*> linearSamplers(MAX_UNIQUE_MATERIALS, Sampler::GetLinearSampler());
+			TArray<Sampler*> linearSamplers(m_AlbedoMaps.GetSize(), Sampler::GetLinearSampler());
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName										= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppAlbedoMaps;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppAlbedoMapViews;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
+			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.Count			= m_AlbedoMaps.GetSize();
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName										= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures					= m_ppNormalMaps;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews				= m_ppNormalMapViews;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers					= linearSamplers.GetData();
+			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
+			normalMapsUpdateDesc.ExternalTextureUpdate.Count			= m_NormalMapViews.GetSize();
 
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
 			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_ppCombinedMaterialMaps;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_ppCombinedMaterialMapViews;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_CombinedMaterialMaps.GetData();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_CombinedMaterialMapViews.GetData();
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.Count				= m_CombinedMaterialMaps.GetSize();
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
