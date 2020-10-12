@@ -364,6 +364,7 @@ namespace LambdaEngine
 			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 			const PxExtendedVec3& newPositionPX = pController->getPosition();
+			const float32 oldVerticalSpeed = velocity.y;
 			velocity = {
 				newPositionPX.x - oldPositionPX.x,
 				newPositionPX.y - oldPositionPX.y,
@@ -374,12 +375,10 @@ namespace LambdaEngine
 
 			if (glm::length2(velocity) > glm::epsilon<float>())
 			{
-				// Disable vertical movement if the character is on the ground
-				PxControllerState controllerState;
-				pController->getState(controllerState);
-				if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+				// Prevent pController->move(...) from causing vertical acceleration because of stepping
+				if (std::fabs(oldVerticalSpeed) < std::fabs(velocity.y))
 				{
-					velocity.y = 0.0f;
+					velocity.y = oldVerticalSpeed;
 				}
 
 				// Update entity's position
