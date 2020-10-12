@@ -2,6 +2,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Player/Weapon.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -32,6 +34,9 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
+	m_WeaponSystem.Init();
+
+	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Create Camera
 	{
@@ -44,11 +49,14 @@ void PlaySessionState::Init()
 			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		CreateFPSCameraEntity(cameraDesc);
-	}
+		Entity playerEntity = CreateFPSCameraEntity(cameraDesc);
+		pECS->AddComponent<PlayerTag>(playerEntity, {});
 
-	ECSCore* pECS = ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+		Entity weaponEntity = pECS->CreateEntity();
+		pECS->AddComponent<WeaponComponent>(weaponEntity, {
+			.WeaponOwner = playerEntity,
+		});
+	}
 
 	// Scene
 	{
@@ -155,12 +163,12 @@ void PlaySessionState::Init()
 					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
+				PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 				StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
 				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 			}
 		}
 	}
-
 }
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp)
