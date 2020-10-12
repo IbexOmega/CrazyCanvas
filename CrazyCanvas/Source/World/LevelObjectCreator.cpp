@@ -208,7 +208,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
-	pECS->AddComponent<PlayerComponent>(playerEntity,			PlayerComponent{ .IsLocal = pPlayerDesc->IsLocal });
+	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	NetworkPositionComponent{ .Position = pPlayerDesc->Position, .PositionLast = pPlayerDesc->Position, .TimestampStart = EngineLoop::GetTimeSinceStart(), .Duration = EngineLoop::GetFixedTimestep() });
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
@@ -235,13 +235,20 @@ bool LevelObjectCreator::CreatePlayer(
 		pECS->AddComponent<MeshComponent>(playerEntity, pPlayerDesc->MeshComponent);
 		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 
-		if (pPlayerDesc->IsLocal)
+		if (!pPlayerDesc->IsLocal)
+		{
+			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
+		}
+		else
 		{
 			if (pPlayerDesc->pCameraDesc == nullptr)
 			{
 				pECS->RemoveEntity(playerEntity);
+				LOG_ERROR("[LevelObjectCreator]: Local Player must have a camera description");
 				return false;
 			}
+
+			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();

@@ -63,11 +63,9 @@ namespace LambdaEngine
 
 		float32 dt = float32(deltaTime.AsSeconds());
 
-		const ComponentArray<PlayerComponent>* pPlayerComponents = pECS->GetComponentArray<PlayerComponent>();
 		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
-		const PlayerComponent& playerComponent = pPlayerComponents->GetData(entityPlayer);
 		RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 

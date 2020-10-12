@@ -40,7 +40,7 @@ namespace LambdaEngine
 			ComponentArray<VelocityComponent>* pVelocityComponents);
 
 	private:
-		IDVector m_CharacterColliderEntities;
+		IDVector m_ForeignPlayerEntities;
 
 	private:
 		static CharacterControllerSystem* s_pInstance;

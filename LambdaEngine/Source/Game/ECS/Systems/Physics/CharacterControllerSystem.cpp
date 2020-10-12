@@ -30,13 +30,13 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
-				.pSubscriber = &m_CharacterColliderEntities,
+				.pSubscriber = &m_ForeignPlayerEntities,
 				.ComponentAccesses =
 				{
 					{RW, CharacterColliderComponent::Type()},
 					{RW, NetworkPositionComponent::Type()},
 					{RW, VelocityComponent::Type()},
-					{RW, PlayerComponent::Type()}
+					{NDA, PlayerForeignComponent::Type()}
 				},
 				.OnEntityRemoval = onCharacterColliderRemoval
 			}
@@ -67,63 +67,57 @@ namespace LambdaEngine
 	void CharacterControllerSystem::TickCharacterControllers(float32 dt)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pCharacterColliders	= pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-		auto* pVelocityComponents	= pECS->GetComponentArray<VelocityComponent>();
-		auto* pPlayerComponents		= pECS->GetComponentArray<PlayerComponent>();
+		auto* pCharacterColliders		= pECS->GetComponentArray<CharacterColliderComponent>();
+		auto* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
+		auto* pVelocityComponents		= pECS->GetComponentArray<VelocityComponent>();
 
-		for (Entity entity : m_CharacterColliderEntities)
+		for (Entity entity : m_ForeignPlayerEntities)
 		{
-			const PlayerComponent& playerComp = pPlayerComponents->GetData(entity);
+			CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
+			const PositionComponent& positionComp			= pPositionComponents->GetData(entity);
+			VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
-			if (!playerComp.IsLocal)
+			glm::vec3& velocity			= velocityComp.Velocity;
+			const glm::vec3& position	= positionComp.Position;
+
+			velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+
+			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+			translationPX *= dt;
+
+			PxController* pController = characterCollider.pController;
+
+			const PxExtendedVec3 oldPositionPX = pController->getPosition();
+
+			if (positionComp.Dirty)
 			{
-				CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
-				const PositionComponent& positionComp			= pPositionComponents->GetData(entity);
-				VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
-
-				glm::vec3& velocity			= velocityComp.Velocity;
-				const glm::vec3& position	= positionComp.Position;
-
-				velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
-
-				PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
-				translationPX *= dt;
-
-				PxController* pController = characterCollider.pController;
-
-				const PxExtendedVec3 oldPositionPX = pController->getPosition();
-
-				if (positionComp.Dirty)
-				{
-					// Distance between the capsule's feet to its center position. Includes contact offset.
-					const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-					pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
-				}
-
-				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
-
-				const PxExtendedVec3& newPositionPX = pController->getPosition();
-				velocity = {
-					(float)newPositionPX.x - position.x,
-					(float)newPositionPX.y - position.y,
-					(float)newPositionPX.z - position.z
-				};
-				velocity /= dt;
-
-				if (glm::length2(velocity) > glm::epsilon<float>())
-				{
-					// Disable vertical movement if the character is on the ground
-					PxControllerState controllerState;
-					pController->getState(controllerState);
-					if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
-					{
-						velocity.y = 0.0f;
-					}
-				}
-
-				//Maybe add something to change the rendered PositionComponent here in case we collide
+				// Distance between the capsule's feet to its center position. Includes contact offset.
+				const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
+				pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
 			}
+
+			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
+
+			const PxExtendedVec3& newPositionPX = pController->getPosition();
+			velocity = {
+				(float)newPositionPX.x - position.x,
+				(float)newPositionPX.y - position.y,
+				(float)newPositionPX.z - position.z
+			};
+			velocity /= dt;
+
+			if (glm::length2(velocity) > glm::epsilon<float>())
+			{
+				// Disable vertical movement if the character is on the ground
+				PxControllerState controllerState;
+				pController->getState(controllerState);
+				if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+				{
+					velocity.y = 0.0f;
+				}
+			}
+
+			//Maybe add something to change the rendered PositionComponent here in case we collide
 		}
 	}
 

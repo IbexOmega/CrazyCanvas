@@ -4,11 +4,21 @@
 
 namespace LambdaEngine
 {
-	struct PlayerComponent
+	struct PlayerBaseComponent
 	{
-		DECL_COMPONENT(PlayerComponent);
+		DECL_COMPONENT(PlayerBaseComponent);
+
 		float WalkSpeedFactor	= 1.4f;
 		float SprintSpeedFactor = 1.6f;
-		bool IsLocal;
+	};
+
+	struct PlayerLocalComponent : PlayerBaseComponent
+	{
+		DECL_COMPONENT(PlayerLocalComponent);
+	};
+
+	struct PlayerForeignComponent : PlayerBaseComponent
+	{
+		DECL_COMPONENT(PlayerForeignComponent);
 	};
 }

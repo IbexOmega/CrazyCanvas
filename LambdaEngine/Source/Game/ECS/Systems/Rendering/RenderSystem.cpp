@@ -66,8 +66,8 @@ namespace LambdaEngine
 					},
 					.ExcludedComponentTypes =
 					{
-						PlayerComponent::Type(),
 						AnimationComponent::Type(),
+						PlayerBaseComponent::Type(),
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnStaticMeshEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
@@ -85,7 +85,7 @@ namespace LambdaEngine
 					},
 					.ExcludedComponentTypes =
 					{
-						PlayerComponent::Type(),
+						PlayerBaseComponent::Type(),
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
@@ -94,7 +94,7 @@ namespace LambdaEngine
 					.pSubscriber = &m_PlayerEntities,
 					.ComponentAccesses =
 					{
-						{ NDA, PlayerComponent::Type() },
+						{ NDA, PlayerBaseComponent::Type() },
 						{ R, AnimationComponent::Type() },
 						{ R, MeshComponent::Type() }
 					},
@@ -493,7 +493,6 @@ namespace LambdaEngine
 
 				UpdateAnimation(entity, meshComp, animationComp);
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(false, true, false));
-				MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
 			}
 
 			for (Entity entity : m_AnimatedEntities)
@@ -1184,14 +1183,14 @@ namespace LambdaEngine
 			{
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 
-				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimationDescriptorSet);
+				if (meshAndInstancesIt->second.pAnimationDescriptorSet != nullptr)
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimationDescriptorSet);
 
-				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBoneMatrixBuffer);
+				if (meshAndInstancesIt->second.pBoneMatrixBuffer != nullptr)
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBoneMatrixBuffer);
 
-				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexWeightsBuffer);
+				if (meshAndInstancesIt->second.pVertexWeightsBuffer != nullptr)
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexWeightsBuffer);
 			}
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
@@ -1304,7 +1303,7 @@ namespace LambdaEngine
 		if (animationComp.IsPaused)
 			return;
 
-		MeshKey key(meshComp.MeshGUID, entity, true);
+		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
 
 		auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 		if (meshEntryIt != m_MeshAndInstancesMap.end())
