@@ -1,8 +1,8 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Game/Multiplayer/MultiplayerUtilBase.h"
-#include "Game/Multiplayer/ServerUtilsImpl.h"
-#include "Game/Multiplayer/ClientUtilsImpl.h"
+#include "Game/Multiplayer/Server/ServerUtilsImpl.h"
+#include "Game/Multiplayer/Client/ClientUtilsImpl.h"
 
 #include "Networking/API/IClient.h"
 #include "Networking/API/NetworkStatistics.h"

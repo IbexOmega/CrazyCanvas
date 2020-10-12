@@ -1,4 +1,4 @@
-#include "Game/Multiplayer/ClientUtilsImpl.h"
+#include "Game/Multiplayer/Client/ClientUtilsImpl.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/NetworkStatistics.h"

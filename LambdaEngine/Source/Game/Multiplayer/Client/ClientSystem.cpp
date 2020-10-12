@@ -1,6 +1,6 @@
 #include "Engine/EngineLoop.h"
 
-#include "Game/ECS/Systems/Networking/Client/ClientSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
 
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
@@ -19,7 +19,7 @@
 #include "Resources/ResourceManager.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Game/Multiplayer/ClientUtilsImpl.h"
+#include "Game/Multiplayer/Client/ClientUtilsImpl.h"
 
 #include "Application/API/Events/EventQueue.h"
 #include "Application/API/Events/NetworkEvents.h"

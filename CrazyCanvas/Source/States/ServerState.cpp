@@ -20,7 +20,7 @@
 
 #include <argh/argh.h>
 
-#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "World/Level.h"
 #include "World/LevelManager.h"

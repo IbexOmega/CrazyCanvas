@@ -24,7 +24,7 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
-#include "Game/ECS/Systems/Networking/Client/ClientSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -60,6 +60,62 @@ void PlaySessionState::Init()
 	else
 		ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
 	
+	// Robot
+	{
+		TArray<GUID_Lambda> animations;
+		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+
+		MaterialProperties materialProperties;
+		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness = 1.0f;
+		materialProperties.Metallic = 1.0f;
+
+		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Robot Material",
+			robotAlbedoGUID,
+			robotNormalGUID,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		MeshComponent robotMeshComp = {};
+		robotMeshComp.MeshGUID = robotGUID;
+		robotMeshComp.MaterialGUID = robotMaterialGUID;
+
+		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		robotAnimationComp.AnimationGUID = animations[0];
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+
+		glm::vec3 position(0.0f, 1.25f, 0.0f);
+		glm::vec3 scale(0.01f);
+
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
+		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+
+		// Audio
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		const SoundInstance3DDesc desc =
+		{
+				.pName = "RobotSoundInstance",
+				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
+				.Position = position,
+				.Volume = 0.03f
+		};
+
+		pSoundInstance->Init(&desc);
+		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
+	}
+
 	//Sphere Grid
 	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
