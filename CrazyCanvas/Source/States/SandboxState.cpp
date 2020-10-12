@@ -141,6 +141,7 @@ void SandboxState::Init()
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -153,6 +154,7 @@ void SandboxState::Init()
 		robotAnimationComp.NumLoops = 10;
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -164,6 +166,7 @@ void SandboxState::Init()
 		robotAnimationComp.NumLoops = INFINITE_LOOPS;
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -176,6 +179,7 @@ void SandboxState::Init()
 		robotAnimationComp.PlaybackSpeed *= -1.0f;
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -233,6 +237,7 @@ void SandboxState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
+				m_Entities.PushBack(entity);
 				const StaticCollisionInfo collisionCreateInfo = {
 					.Entity = entity,
 					.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -244,6 +249,8 @@ void SandboxState::Init()
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
+
+				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + y*gridRadius), 256, 256));
 			}
 		}
 	}
@@ -418,6 +425,22 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	{
 		EventQueue::SendEvent(ShaderRecompileEvent());
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
+	}
+
+	if (event.Key == EKey::KEY_DELETE)
+	{
+		if (!m_Entities.IsEmpty())
+		{
+			const uint32 numEntities = m_Entities.GetSize();
+			const uint32 index = Random::UInt32(0, numEntities-1);
+			Entity entity = m_Entities[index];
+			m_Entities.Erase(m_Entities.Begin() + index);
+			ECSCore::GetInstance()->RemoveEntity(entity);
+
+			std::string info = "Removed entity with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
+			GameConsole::Get().PushInfo(info);
+			LOG_INFO(info.c_str());
+		}
 	}
 
 	return true;

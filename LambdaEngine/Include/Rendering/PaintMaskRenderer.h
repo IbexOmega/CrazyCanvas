@@ -55,6 +55,14 @@ namespace LambdaEngine
 			return name;
 		}
 
+	public:
+		/* Adds a hitpoint to draw out a splash at
+		* Note: Currently only one hitpoint will be handled at each frame
+		*	position - vec3 of the hit point position
+		*	direction - vec3 of the direction the hit position had during collision
+		*/
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction);
+
 	private:
 		bool CreateCopyCommandList();
 		bool CreateBuffers();
@@ -75,6 +83,12 @@ namespace LambdaEngine
 			uint32			InstanceIndex	= 0;
 		};
 
+		struct UnwrapData
+		{
+			glm::vec4 TargetPosition;
+			glm::vec4 TargetDirection;
+		};
+
 	private:
 		const GraphicsDevice* m_pGraphicsDevice = nullptr;
 
@@ -85,32 +99,35 @@ namespace LambdaEngine
 		TSharedRef<CommandAllocator>	m_CopyCommandAllocator = nullptr;
 		TSharedRef<CommandList>			m_CopyCommandList = nullptr;
 
-		CommandAllocator** m_ppRenderCommandAllocators = nullptr;
-		CommandList** m_ppRenderCommandLists = nullptr;
+		CommandAllocator**			m_ppRenderCommandAllocators = nullptr;
+		CommandList**				m_ppRenderCommandLists = nullptr;
 
 		uint64						m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>	m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>	m_DescriptorHeap = nullptr;
 
-		GUID_Lambda m_VertexShaderGUID = 0;
-		GUID_Lambda m_PixelShaderGUID = 0;
+		GUID_Lambda					m_VertexShaderGUID = 0;
+		GUID_Lambda					m_PixelShaderGUID = 0;
 
-		TSharedRef<RenderPass> m_RenderPass = nullptr;
+		TSharedRef<RenderPass>		m_RenderPass = nullptr;
 
-		TSharedRef<Sampler> m_Sampler = nullptr;
-		TArray<TSharedRef<Buffer>> m_TransformCopyBuffers;
-		TSharedRef<Buffer> m_TransformBuffer = nullptr;
+		TSharedRef<Sampler>			m_Sampler = nullptr;
+		TArray<TSharedRef<Buffer>>	m_UnwrapDataCopyBuffers;
+		TSharedRef<Buffer>			m_UnwrapDataBuffer = nullptr;
 
 		const DrawArg*												m_pDrawArgs;
 		TArray<TArray<TSharedRef<DescriptorSet>>>					m_VerticesInstanceDescriptorSets;
-		//TArray<TArray<TArray<TSharedRef<DescriptorSet>>>>			m_TransformDescriptorSets;
 
-		std::optional<TSharedRef<DescriptorSet>>					m_PerFrameBufferDescriptorSets;
-		std::optional<TSharedRef<DescriptorSet>>					m_BrushMaskDescriptorSet;
+		TSharedRef<DescriptorSet>									m_UnwrapDataDescriptorSet;
+		TSharedRef<DescriptorSet>									m_PerFrameBufferDescriptorSet;
+		TSharedRef<DescriptorSet>									m_BrushMaskDescriptorSet;
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 
 		TArray<TArray<TSharedRef<DeviceChild>>>						m_pDeviceResourcesToDestroy;
 
 		TArray<RenderTarget>										m_RenderTargets;
+
+	private:
+		static std::list<UnwrapData>	s_Collisions;
 	};
 }
