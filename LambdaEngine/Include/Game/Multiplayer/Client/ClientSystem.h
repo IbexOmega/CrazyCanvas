@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
-#include "Game/ECS/Systems/Networking/Client/NetworkPositionSystem.h"
+#include "Game/Multiplayer/Client/NetworkPositionSystem.h"
 #include "Game/World/Player/PlayerSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"

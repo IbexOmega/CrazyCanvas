@@ -1,5 +1,5 @@
-#include "Game/ECS/Systems/Networking/Server/ClientRemoteSystem.h"
-#include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
+#include "Game/Multiplayer/Server/ClientRemoteSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 #include "Game/World/Player/PlayerActionSystem.h"
 

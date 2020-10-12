@@ -1,4 +1,4 @@
-#include "Game/ECS/Systems/Networking/Client/NetworkPositionSystem.h"
+#include "Game/Multiplayer/Client/NetworkPositionSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
