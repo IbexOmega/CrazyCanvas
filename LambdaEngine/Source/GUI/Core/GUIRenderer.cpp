@@ -167,17 +167,6 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		CommandList* pCommandList	= BeginOrGetRenderCommandList();
-		GUITexture*	 pTexture		= static_cast<GUITexture*>(pRenderTarget->GetTexture());
-		pCommandList->TransitionBarrier(
-			pTexture->GetTexture(),
-			PIPELINE_STAGE_FLAG_BOTTOM,
-			PIPELINE_STAGE_FLAG_TOP,
-			0,
-			0,
-			ETextureState::TEXTURE_STATE_UNKNOWN,
-			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
 		m_GUIRenderTargets.PushBack(renderTarget);
 		return renderTarget;
@@ -194,17 +183,6 @@ namespace LambdaEngine
 			SAFEDELETE(pRenderTarget);
 			return nullptr;
 		}
-
-		CommandList*	pCommandList	= BeginOrGetRenderCommandList();
-		GUITexture*		pTexture		= static_cast<GUITexture*>(pRenderTarget->GetTexture());
-		pCommandList->TransitionBarrier(
-			pTexture->GetTexture(),
-			PIPELINE_STAGE_FLAG_TOP,
-			PIPELINE_STAGE_FLAG_BOTTOM,
-			0,
-			0,
-			ETextureState::TEXTURE_STATE_UNKNOWN,
-			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
 		m_GUIRenderTargets.PushBack(renderTarget);
@@ -521,12 +499,36 @@ namespace LambdaEngine
 			uint64 paramsSize		= sizeof(GUIParamsData);
 
 			DescriptorSet* pDescriptorSet = CreateOrGetDescriptorSet();
-			pDescriptorSet->WriteBufferDescriptors(&pParamsBuffer,		&paramsOffset,		&paramsSize,		0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-			if (batch.pattern != 0) pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.pattern)->GetTextureViewToBind(),	&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.ramps != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.ramps)->GetTextureViewToBind(),		&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.image != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.image)->GetTextureViewToBind(),		&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.glyphs != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.glyphs)->GetTextureViewToBind(),	&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 4, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.shadow != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.shadow)->GetTextureViewToBind(),	&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 5, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			pDescriptorSet->WriteBufferDescriptors(&pParamsBuffer, &paramsOffset, &paramsSize, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+			if (batch.pattern != nullptr) 
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.pattern)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			if (batch.ramps != nullptr)	
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.ramps)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			
+			if (batch.image != nullptr)
+			{
+				// Cannot explain why we need this part, but we get no validation errors now
+				GUITexture* pTexture = reinterpret_cast<GUITexture*>(batch.image);
+				{
+					EndCurrentRenderPass();
+
+					pRenderCommandList->TransitionBarrier(
+						pTexture->GetTexture(),
+						PIPELINE_STAGE_FLAG_TOP,
+						PIPELINE_STAGE_FLAG_PIXEL_SHADER,
+						0,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_SHADER_READ,
+						ETextureState::TEXTURE_STATE_DONT_CARE,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+				}
+
+				pDescriptorSet->WriteTextureDescriptors(pTexture->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			}
+
+			if (batch.glyphs != nullptr)	
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.glyphs)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 4, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			if (batch.shadow != nullptr)	
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.shadow)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 5, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 
 			pRenderCommandList->BindDescriptorSetGraphics(pDescriptorSet, GUIPipelineStateCache::GetPipelineLayout(), 0);
 		}

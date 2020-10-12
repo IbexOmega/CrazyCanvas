@@ -6,7 +6,7 @@
 #include "NsCore/Ptr.h"
 #include "NsGui/IView.h"
 
-#define FORCED_SAMPLE_COUNT 4
+#define FORCED_SAMPLE_COUNT 1
 
 namespace LambdaEngine
 {
