@@ -4,16 +4,13 @@
 
 namespace LambdaEngine
 {
-	class ClientBaseSystem : public System
+	class ClientBaseSystem
 	{
 		friend class ServerSystem;
 
 	public:
 		DECL_UNIQUE_CLASS(ClientBaseSystem);
 		virtual ~ClientBaseSystem();
-
-		void Tick(Timestamp deltaTime) override;
-
 
 	protected:
 		ClientBaseSystem();

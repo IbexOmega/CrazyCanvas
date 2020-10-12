@@ -45,7 +45,6 @@
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/ECS/Systems/Networking/Client/ClientSystem.h"
 #include "Game/ECS/Systems/Networking/Server/ServerSystem.h"
-#include "Game/World/LevelObjectCreator.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -242,11 +241,6 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-
-		/*if (!LevelObjectCreator::Init())
-		{
-			return false;
-		}*/
 
 		if (!InitSystems())
 		{

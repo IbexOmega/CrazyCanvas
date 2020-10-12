@@ -15,14 +15,4 @@ namespace LambdaEngine
 	{
 
 	}
-
-	void ClientBaseSystem::Tick(Timestamp deltaTime)
-	{
-		UNREFERENCED_VARIABLE(deltaTime);
-	}
-
-	/*void ClientBaseSystem::PlayerUpdate(Entity entity, const GameState& gameState)
-	{
-		PlayerMovementSystem::GetInstance().Move(entity, EngineLoop::GetFixedTimestep(), gameState.DeltaForward, gameState.DeltaLeft);
-	}*/
 }

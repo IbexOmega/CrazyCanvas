@@ -81,7 +81,7 @@ namespace LambdaEngine
 				const OffsetComponent&		cameraOffsetComp	= pOffsetComponents->GetData(entity);
 				PositionComponent&			cameraPositionComp	= pPositionComponents->GetData(entity);
 				RotationComponent&			cameraRotationComp	= pRotationComponents->GetData(entity);
-			
+
 				cameraPositionComp.Position		= parentPositionComp.Position + cameraOffsetComp.Offset;
 				cameraRotationComp.Quaternion	= parentRotationComp.Quaternion;
 			}

@@ -134,7 +134,7 @@ bool NetworkingState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& 
 			.pClient = event.pClient,
 			.Position = position,
 			.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-			.Scale = glm::vec3(0.01f),
+			.Scale = glm::vec3(1.0f),
 			.pCameraDesc = &cameraDesc,
 			.MeshComponent = robotMeshComp,
 			.AnimationComponent = robotAnimationComp,
