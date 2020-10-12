@@ -15,13 +15,14 @@
 #include "States/MainMenuState.h"
 #include "States/NetworkingState.h"
 
-#include <string>
+//#include <string>
 
 using namespace LambdaEngine;
 using namespace Noesis;
 
 LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
-	m_HostGameDesc()
+	m_HostGameDesc(),
+	m_ServerList(xamlFile)
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
@@ -81,9 +82,8 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 {
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-	ListBox* pList = FrameworkElement::FindName<ListBox>("SERVER_LIST");
-
-	for (int i = 0; i < 4; i++)
+	
+	/*for (int i = 0; i < 4; i++)
 	{
 		Ptr<ListBoxItem> listBlock	= *new ListBoxItem();
 
@@ -93,11 +93,16 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 		listBlock->SetHorizontalAlignment(HorizontalAlignment_Center);
 		listBlock->SetVerticalAlignment(VerticalAlignment_Center);
 
-
-
 		pServerGrid->SetColumn(listBlock, 2);
 		pServerGrid->SetRow(listBlock, i + 3);
-	}
+	}*/
+
+	LOG_MESSAGE(m_ServerList.GetList()->GetName());
+	m_ServerList.AddServerItem(pServerGrid, 3, "BajsKorv", "BajsApa", true);
+
+	ItemCollection* pCollection = m_ServerList.GetList()->GetItems();
+
+	LOG_MESSAGE(pCollection->GetItemAt(0)->ToString().Str());
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -139,8 +144,8 @@ void LobbyGUI::ErrorPopUp(ErrorCode errorCode)
 	switch (errorCode)
 	{
 	case CONNECT_ERROR:		textBox->SetText("Couldn't Connect To server"); break;
-	case HOST_ERROR:		textBox->SetText("Couldn't Host Server"); break;
-	case OTHER_ERROR:		textBox->SetText("Something Went Wrong"); break;
+	case HOST_ERROR:		textBox->SetText("Couldn't Host Server");		break;
+	case OTHER_ERROR:		textBox->SetText("Something Went Wrong");		break;
 	}
 
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);

@@ -1,10 +1,12 @@
 #pragma once
-#include "Containers/String.h"
+/*#include "Containers/String.h"
 
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
 #include "NsGui/GroupBox.h"
-#include "NsGui/Slider.h"
+#include "NsGui/Slider.h"*/
+
+#include "GUI/SavedServerGUI.h"
 
 struct HostGameDescription
 {
@@ -52,4 +54,5 @@ private:
 
 	bool m_RayTracingEnabled = false;
 	HostGameDescription m_HostGameDesc;
+	SavedServerGUI m_ServerList;
 };
