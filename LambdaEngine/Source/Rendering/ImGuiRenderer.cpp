@@ -34,6 +34,8 @@
 #include <imgui.h>
 #include <imnodes.h>
 
+#include <d3d12.h>
+
 namespace LambdaEngine
 {
 	ImGuiRenderer* ImGuiRenderer::s_pRendererInstance = nullptr;

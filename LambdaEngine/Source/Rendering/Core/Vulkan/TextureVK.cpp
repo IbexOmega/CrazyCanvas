@@ -40,7 +40,7 @@ namespace LambdaEngine
 		info.samples				= ConvertSampleCount(pDesc->SampleCount);
 		info.sharingMode			= VK_SHARING_MODE_EXCLUSIVE;
 		info.tiling					= VK_IMAGE_TILING_OPTIMAL;
-		
+
 		if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_RENDER_TARGET)
 		{
 			info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;

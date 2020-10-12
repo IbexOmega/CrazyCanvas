@@ -84,7 +84,7 @@ namespace LambdaEngine
 			textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 			textureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
 			textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-			textureDesc.Flags		= FTextureFlag::TEXTURE_FLAG_RENDER_TARGET;
+			textureDesc.Flags		= TEXTURE_FLAG_RENDER_TARGET;
 			textureDesc.Width		= pDesc->Width;
 			textureDesc.Height		= pDesc->Height;
 			textureDesc.Depth		= 1;
@@ -93,7 +93,6 @@ namespace LambdaEngine
 			textureDesc.SampleCount = pDesc->SampleCount;
 
 			m_pColorTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
-
 			if (m_pColorTexture == nullptr)
 			{
 				LOG_ERROR("[GUIRenderTarget]: Failed to create Color Texture");
@@ -103,7 +102,7 @@ namespace LambdaEngine
 			TextureViewDesc textureViewDesc = {};
 			textureViewDesc.DebugName		= pDesc->DebugName + " Color Texture View";
 			textureViewDesc.pTexture		= m_pColorTexture;
-			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+			textureViewDesc.Flags			= TEXTURE_VIEW_FLAG_RENDER_TARGET;
 			textureViewDesc.Format			= textureDesc.Format;
 			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			textureViewDesc.MiplevelCount	= 1;
@@ -112,7 +111,6 @@ namespace LambdaEngine
 			textureViewDesc.ArrayIndex		= 0;
 
 			m_pColorTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-
 			if (m_pColorTextureView == nullptr)
 			{
 				LOG_ERROR("[GUIRenderTarget]: Failed to create Color Texture View");
@@ -127,7 +125,7 @@ namespace LambdaEngine
 			textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 			textureDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
 			textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-			textureDesc.Flags		= FTextureFlag::TEXTURE_FLAG_RENDER_TARGET | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+			textureDesc.Flags		= TEXTURE_FLAG_RENDER_TARGET | TEXTURE_FLAG_SHADER_RESOURCE;
 			textureDesc.Width		= pDesc->Width;
 			textureDesc.Height		= pDesc->Height;
 			textureDesc.Depth		= 1;
@@ -136,7 +134,6 @@ namespace LambdaEngine
 			textureDesc.SampleCount = 1;
 
 			m_pResolveTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
-
 			if (m_pResolveTexture == nullptr)
 			{
 				LOG_ERROR("[GUIRenderTarget]: Failed to create Resolve Texture");
@@ -146,7 +143,7 @@ namespace LambdaEngine
 			TextureViewDesc textureViewDesc = {};
 			textureViewDesc.DebugName		= pDesc->DebugName + " Resolve Texture View";
 			textureViewDesc.pTexture		= m_pResolveTexture;
-			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Flags			= TEXTURE_VIEW_FLAG_RENDER_TARGET | TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 			textureViewDesc.Format			= textureDesc.Format;
 			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 			textureViewDesc.MiplevelCount	= 1;
@@ -155,7 +152,6 @@ namespace LambdaEngine
 			textureViewDesc.ArrayIndex		= 0;
 
 			m_pResolveTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-
 			if (m_pResolveTextureView == nullptr)
 			{
 				LOG_ERROR("[GUIRenderTarget]: Failed to create Resolve Texture View");
@@ -171,7 +167,7 @@ namespace LambdaEngine
 
 		//Init GUITexture
 		{
-			m_Texture.Init(m_pColorTexture, m_pColorTextureView);
+			m_Texture.Init(m_pResolveTexture, m_pResolveTextureView);
 		}
 
 		return true;
@@ -258,26 +254,24 @@ namespace LambdaEngine
 		subpassDesc.RenderTargetStates = 
 		{ 
 			ETextureState::TEXTURE_STATE_RENDER_TARGET, 
-			ETextureState::TEXTURE_STATE_DONT_CARE,
-			ETextureState::TEXTURE_STATE_DONT_CARE 
+			ETextureState::TEXTURE_STATE_DONT_CARE
 		};
 
 		subpassDesc.ResolveAttachmentStates = 
 		{ 
 			ETextureState::TEXTURE_STATE_DONT_CARE, 
-			ETextureState::TEXTURE_STATE_RENDER_TARGET,
-			ETextureState::TEXTURE_STATE_DONT_CARE, 
+			ETextureState::TEXTURE_STATE_RENDER_TARGET
 		};
 
 		subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
-		subpassDependencyDesc.SrcSubpass		= EXTERNAL_SUBPASS;
-		subpassDependencyDesc.DstSubpass		= 0;
-		subpassDependencyDesc.SrcStageMask		= 0;
-		subpassDependencyDesc.DstStageMask		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		subpassDependencyDesc.SrcAccessMask		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
-		subpassDependencyDesc.DstAccessMask		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
+		subpassDependencyDesc.DstSubpass	= 0;
+		subpassDependencyDesc.SrcAccessMask = 0;
+		subpassDependencyDesc.DstAccessMask = MEMORY_ACCESS_FLAG_MEMORY_READ | MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		subpassDependencyDesc.SrcStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName			= pDesc->DebugName + " Render Pass";

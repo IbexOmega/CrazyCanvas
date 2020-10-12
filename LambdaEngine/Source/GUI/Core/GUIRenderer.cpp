@@ -215,15 +215,29 @@ namespace LambdaEngine
 
 	void GUIRenderer::UpdateTexture(Noesis::Texture* pTexture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* pData)
 	{
-		CommandList* pCommandList = BeginOrGetUtilityCommandList();
+		EndCurrentRenderPass();
 
-		GUITexture* pGUITexture = reinterpret_cast<GUITexture*>(pTexture);
+		CommandList*	pCommandList	= BeginOrGetUtilityCommandList();
+		GUITexture*		pGUITexture		= reinterpret_cast<GUITexture*>(pTexture);
 		pGUITexture->UpdateTexture(pCommandList, level, x, y, width, height, pData, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 	}
 
 	void GUIRenderer::BeginRender(bool offscreen)
 	{
 		UNREFERENCED_VARIABLE(offscreen);
+
+		if (!m_IsInRenderPass)
+		{
+			CommandList* pCommandList = BeginOrGetRenderCommandList();
+			if (!offscreen)
+			{
+				BeginMainRenderPass(pCommandList);
+			}
+			else
+			{
+				BeginTileRenderPass(pCommandList);
+			}
+		}
 	}
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)
@@ -231,11 +245,15 @@ namespace LambdaEngine
 		VALIDATE(pSurface != nullptr);
 		
 		m_pCurrentRenderTarget = reinterpret_cast<GUIRenderTarget*>(pSurface);
+		EndCurrentRenderPass();
 	}
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
 	{
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
+		
+		// Do not set to false here will check in end tile if we were in a renderpass
+		EndCurrentRenderPass();
 
 		Viewport viewport = { };
 		viewport.MinDepth	= 0.0f;
@@ -255,26 +273,19 @@ namespace LambdaEngine
 
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		BeginRenderPassDesc beginRenderPass = {};
-		beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
-		beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
-		beginRenderPass.RenderTargetCount	= 1;
-		beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
-		beginRenderPass.Width				= surfaceWidth;
-		beginRenderPass.Height				= surfaceHeight;
-		beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
-		beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
-		beginRenderPass.Offset.x			= 0;
-		beginRenderPass.Offset.y			= 0;
-
-		pCommandList->BeginRenderPass(&beginRenderPass);
+		m_CurrentSurfaceWidth	= surfaceWidth;
+		m_CurrentSurfaceHeight	= surfaceHeight;
 	}
 
 	void GUIRenderer::EndTile()
 	{
-		CommandList* pCommandList = BeginOrGetRenderCommandList();
-		pCommandList->EndRenderPass();
+		EndCurrentRenderPass();
+		m_TileBegun				= false;
+		m_CurrentSurfaceWidth	= 0;
+		m_CurrentSurfaceHeight	= 0;
+
+
+		ResumeRenderPass();
 	}
 
 	void GUIRenderer::ResolveRenderTarget(Noesis::RenderTarget* pSurface, const Noesis::Tile* pTiles, uint32_t numTiles)
@@ -286,27 +297,15 @@ namespace LambdaEngine
 
 	void GUIRenderer::EndRender()
 	{
+		EndCurrentRenderPass();
+		m_RenderPassBegun = false;
+
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
-
-		if (m_RenderPassBegun)
-		{
-			pCommandList->EndRenderPass();
-			m_RenderPassBegun = false;
-		}
-
 		pCommandList->End();
 	}
 
 	void* GUIRenderer::MapVertices(uint32_t bytes)
 	{
-		CommandList* pCommandList = BeginOrGetRenderCommandList();
-
-		if (m_RenderPassBegun)
-		{
-			pCommandList->EndRenderPass();
-			m_RenderPassBegun = false;
-		}
-
 		m_RequiredVertexBufferSize = uint64(bytes);
 		m_pVertexStagingBuffer = StagingBufferCache::RequestBuffer(m_RequiredVertexBufferSize);
 		return m_pVertexStagingBuffer->Map();
@@ -317,6 +316,7 @@ namespace LambdaEngine
 		m_pVertexStagingBuffer->Unmap();
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
+		EndCurrentRenderPass();
 
 		//Update Vertex Buffer
 		{
@@ -335,6 +335,8 @@ namespace LambdaEngine
 
 			pCommandList->CopyBuffer(m_pVertexStagingBuffer, 0, m_pVertexBuffer, 0, m_RequiredVertexBufferSize);
 		}
+
+		ResumeRenderPass();
 	}
 
 	void* GUIRenderer::MapIndices(uint32_t bytes)
@@ -349,6 +351,7 @@ namespace LambdaEngine
 		m_pIndexStagingBuffer->Unmap();
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
+		EndCurrentRenderPass();
 
 		//Update Index Buffer
 		{
@@ -369,7 +372,7 @@ namespace LambdaEngine
 			pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
 		}
 
-		BeginMainRenderPass(pCommandList);
+		ResumeRenderPass();
 	}
 
 	void GUIRenderer::DrawBatch(const Noesis::Batch& batch)
@@ -396,8 +399,10 @@ namespace LambdaEngine
 
 			GUITexture* pTextTexture = nullptr;
 
-			if		(batch.glyphs	!= nullptr)	pTextTexture = reinterpret_cast<GUITexture*>(batch.glyphs);
-			else if (batch.image	!= nullptr)	pTextTexture = reinterpret_cast<GUITexture*>(batch.image);
+			if (batch.glyphs != nullptr)	
+				pTextTexture = reinterpret_cast<GUITexture*>(batch.glyphs);
+			else if (batch.image != nullptr)	
+				pTextTexture = reinterpret_cast<GUITexture*>(batch.image);
 
 			if (pTextTexture != nullptr)
 			{
@@ -471,6 +476,7 @@ namespace LambdaEngine
 				batch.renderState.f.stencilMode,
 				batch.renderState.f.colorEnable != 0,
 				batch.renderState.f.blendMode	!= 0,
+				m_TileBegun,
 				shaderData);
 
 			Viewport viewport = { };
@@ -500,6 +506,7 @@ namespace LambdaEngine
 
 			pRenderCommandList->BindVertexBuffers(&m_pVertexBuffer, 0, &vertexByteOffset, 1);
 
+			ResumeRenderPass();
 			pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
 		}
 	}
@@ -688,7 +695,36 @@ namespace LambdaEngine
 			beginRenderPassDesc.Offset.y			= 0;
 
 			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-			m_RenderPassBegun = true;
+			m_RenderPassBegun	= true;
+			m_IsInRenderPass	= true;
+		}
+	}
+
+	void GUIRenderer::BeginTileRenderPass(CommandList* pCommandList)
+	{
+		//Begin RenderPass
+		if (!m_TileBegun)
+		{
+			if (m_pCurrentRenderTarget)
+			{
+				BeginRenderPassDesc beginRenderPass = {};
+				beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
+				beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
+				beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
+				beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
+				beginRenderPass.Width				= m_CurrentSurfaceWidth;
+				beginRenderPass.Height				= m_CurrentSurfaceHeight;
+				beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+				beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
+				beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
+				beginRenderPass.Offset.x			= 0;
+				beginRenderPass.Offset.y			= 0;
+
+				pCommandList->BeginRenderPass(&beginRenderPass);
+				m_IsInRenderPass = true;
+			}
+			
+			m_TileBegun = true;
 		}
 	}
 
@@ -735,6 +771,47 @@ namespace LambdaEngine
 		}
 
 		return pDescriptorSet;
+	}
+
+	void GUIRenderer::ResumeRenderPass()
+	{
+		if (!m_IsInRenderPass)
+		{
+			CommandList* pCommandList = BeginOrGetRenderCommandList();
+			if (m_RenderPassBegun)
+			{
+				m_RenderPassBegun = false;
+				BeginMainRenderPass(pCommandList);
+#if 0
+				LOG_INFO("Resuming Main");
+#endif
+			}
+
+			if (m_TileBegun)
+			{
+				m_TileBegun = false;
+				BeginTileRenderPass(pCommandList);
+
+#if 0
+				LOG_INFO("Resuming Tile");
+#endif
+			}
+		}
+	}
+
+	void GUIRenderer::EndCurrentRenderPass()
+	{
+		// If we are currently rendering we exit the current renderpass
+		if (m_IsInRenderPass)
+		{
+			CommandList* pCommandList = BeginOrGetRenderCommandList();
+			pCommandList->EndRenderPass();
+
+			m_IsInRenderPass = false;
+#if 0
+			LOG_INFO("Ending RenderPass");
+#endif
+		}
 	}
 
 	bool GUIRenderer::CreateCommandLists()
