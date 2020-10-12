@@ -18,6 +18,11 @@ bool LambdaEngine::EntityMaskManager::Init()
 	return true;
 }
 
+void LambdaEngine::EntityMaskManager::RemoveAllExtensionsFromEntity(Entity entity)
+{
+	s_EntityToExtensionGroupEntryMap.erase(entity);
+}
+
 void LambdaEngine::EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType*  type, const DrawArgExtensionData& DrawArgExtension)
 {
 	uint32 extensionMask = GetExtensionMask(type);
