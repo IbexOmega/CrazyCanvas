@@ -126,7 +126,6 @@ namespace LambdaEngine
 		// Animation system has its own clock to keep track of time
 		m_Clock.Tick();
 
-		Timestamp deltatime = m_Clock.GetDeltaTime();
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
 			AnimationComponent& animation = pAnimationComponents->GetData(entity);
