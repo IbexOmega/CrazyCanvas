@@ -24,6 +24,8 @@
 
 #include "Engine/EngineLoop.h"
 
+//#define PRINT_FUNC
+
 namespace LambdaEngine
 {
 	GUIRenderer::GUIRenderer()
@@ -158,13 +160,23 @@ namespace LambdaEngine
 		renderTargetDesc.SampleCount	= sampleCount;
 
 		GUIRenderTarget* pRenderTarget = new GUIRenderTarget();
-
 		if (!pRenderTarget->Init(&renderTargetDesc))
 		{
 			LOG_ERROR("[GUIRenderer]: Failed to create GUI Render Target");
 			SAFEDELETE(pRenderTarget);
 			return nullptr;
 		}
+
+		CommandList* pCommandList	= BeginOrGetRenderCommandList();
+		GUITexture*	 pTexture		= static_cast<GUITexture*>(pRenderTarget->GetTexture());
+		pCommandList->TransitionBarrier(
+			pTexture->GetTexture(),
+			PIPELINE_STAGE_FLAG_BOTTOM,
+			PIPELINE_STAGE_FLAG_TOP,
+			0,
+			0,
+			ETextureState::TEXTURE_STATE_UNKNOWN,
+			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
 		m_GUIRenderTargets.PushBack(renderTarget);
@@ -176,13 +188,23 @@ namespace LambdaEngine
 		const GUIRenderTarget* pOriginal = reinterpret_cast<const GUIRenderTarget*>(pSurface);
 
 		GUIRenderTarget* pRenderTarget = new GUIRenderTarget();
-
 		if (!pRenderTarget->Init(pOriginal->GetDesc()))
 		{
 			LOG_ERROR("[GUIRenderer]: Failed to create GUI Render Target");
 			SAFEDELETE(pRenderTarget);
 			return nullptr;
 		}
+
+		CommandList*	pCommandList	= BeginOrGetRenderCommandList();
+		GUITexture*		pTexture		= static_cast<GUITexture*>(pRenderTarget->GetTexture());
+		pCommandList->TransitionBarrier(
+			pTexture->GetTexture(),
+			PIPELINE_STAGE_FLAG_TOP,
+			PIPELINE_STAGE_FLAG_BOTTOM,
+			0,
+			0,
+			ETextureState::TEXTURE_STATE_UNKNOWN,
+			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
 		m_GUIRenderTargets.PushBack(renderTarget);
@@ -217,6 +239,10 @@ namespace LambdaEngine
 	{
 		EndCurrentRenderPass();
 
+#ifdef PRINT_FUNC
+		LOG_INFO("UpdateTexture");
+#endif
+
 		CommandList*	pCommandList	= BeginOrGetUtilityCommandList();
 		GUITexture*		pGUITexture		= reinterpret_cast<GUITexture*>(pTexture);
 		pGUITexture->UpdateTexture(pCommandList, level, x, y, width, height, pData, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
@@ -232,12 +258,19 @@ namespace LambdaEngine
 			if (!offscreen)
 			{
 				BeginMainRenderPass(pCommandList);
+#ifdef PRINT_FUNC
+				LOG_INFO("BeginRender");
+#endif
 			}
 			else
 			{
 				BeginTileRenderPass(pCommandList);
+#ifdef PRINT_FUNC
+				LOG_INFO("BeginRender[Offscreen]");
+#endif
 			}
 		}
+
 	}
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)
@@ -246,6 +279,10 @@ namespace LambdaEngine
 		
 		m_pCurrentRenderTarget = reinterpret_cast<GUIRenderTarget*>(pSurface);
 		EndCurrentRenderPass();
+
+#ifdef PRINT_FUNC
+		LOG_INFO("SetRenderTarget");
+#endif
 	}
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
@@ -275,6 +312,10 @@ namespace LambdaEngine
 
 		m_CurrentSurfaceWidth	= surfaceWidth;
 		m_CurrentSurfaceHeight	= surfaceHeight;
+
+#ifdef PRINT_FUNC
+		LOG_INFO("BeginTile");
+#endif
 	}
 
 	void GUIRenderer::EndTile()
@@ -284,8 +325,11 @@ namespace LambdaEngine
 		m_CurrentSurfaceWidth	= 0;
 		m_CurrentSurfaceHeight	= 0;
 
-
 		ResumeRenderPass();
+
+#ifdef PRINT_FUNC
+		LOG_INFO("EndTile");
+#endif
 	}
 
 	void GUIRenderer::ResolveRenderTarget(Noesis::RenderTarget* pSurface, const Noesis::Tile* pTiles, uint32_t numTiles)
@@ -293,6 +337,10 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pSurface);
 		UNREFERENCED_VARIABLE(pTiles);
 		UNREFERENCED_VARIABLE(pSurface);
+
+#ifdef PRINT_FUNC
+		LOG_INFO("ResolveRenderTarget");
+#endif
 	}
 
 	void GUIRenderer::EndRender()
@@ -302,10 +350,17 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
 		pCommandList->End();
+
+#ifdef PRINT_FUNC
+		LOG_INFO("EndRender");
+#endif
 	}
 
 	void* GUIRenderer::MapVertices(uint32_t bytes)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("MapVertices");
+#endif
 		m_RequiredVertexBufferSize = uint64(bytes);
 		m_pVertexStagingBuffer = StagingBufferCache::RequestBuffer(m_RequiredVertexBufferSize);
 		return m_pVertexStagingBuffer->Map();
@@ -313,6 +368,9 @@ namespace LambdaEngine
 
 	void GUIRenderer::UnmapVertices()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("UnmapVertices");
+#endif
 		m_pVertexStagingBuffer->Unmap();
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
@@ -341,6 +399,10 @@ namespace LambdaEngine
 
 	void* GUIRenderer::MapIndices(uint32_t bytes)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("MapIndices");
+#endif
+
 		m_RequiredIndexBufferSize = uint64(bytes);
 		m_pIndexStagingBuffer = StagingBufferCache::RequestBuffer(m_RequiredIndexBufferSize);
 		return m_pIndexStagingBuffer->Map();
@@ -348,6 +410,9 @@ namespace LambdaEngine
 
 	void GUIRenderer::UnmapIndices()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("UnmapIndices");
+#endif
 		m_pIndexStagingBuffer->Unmap();
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
@@ -507,6 +572,10 @@ namespace LambdaEngine
 			pRenderCommandList->BindVertexBuffers(&m_pVertexBuffer, 0, &vertexByteOffset, 1);
 
 			ResumeRenderPass();
+
+#ifdef PRINT_FUNC
+			LOG_INFO("Draw");
+#endif
 			pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
 		}
 	}
@@ -561,6 +630,9 @@ namespace LambdaEngine
 		CommandList** ppSecondaryExecutionStage,
 		bool sleeping)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("Render");
+#endif
 		m_ModFrameIndex		= modFrameIndex;
 		m_BackBufferIndex	= backBufferIndex;
 
@@ -782,7 +854,7 @@ namespace LambdaEngine
 			{
 				m_RenderPassBegun = false;
 				BeginMainRenderPass(pCommandList);
-#if 0
+#ifdef PRINT_FUNC
 				LOG_INFO("Resuming Main");
 #endif
 			}
@@ -792,7 +864,7 @@ namespace LambdaEngine
 				m_TileBegun = false;
 				BeginTileRenderPass(pCommandList);
 
-#if 0
+#ifdef PRINT_FUNC
 				LOG_INFO("Resuming Tile");
 #endif
 			}
@@ -808,7 +880,7 @@ namespace LambdaEngine
 			pCommandList->EndRenderPass();
 
 			m_IsInRenderPass = false;
-#if 0
+#ifdef PRINT_FUNC
 			LOG_INFO("Ending RenderPass");
 #endif
 		}

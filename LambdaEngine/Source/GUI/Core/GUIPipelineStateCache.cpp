@@ -1,6 +1,7 @@
 #include "GUI/Core/GUIPipelineStateCache.h"
 #include "GUI/Core/GUIShaderManager.h"
 #include "GUI/Core/GUIRenderTarget.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
@@ -58,29 +59,29 @@ namespace LambdaEngine
 
 		s_pDummyRenderPass = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
 
+		// TODO: Fix support for MSAA -> Or force noasis to render without -> We need to have a talk?
 		colorAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
-		colorAttachmentDesc.SampleCount		= 1;
-		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_CLEAR;
+		colorAttachmentDesc.SampleCount		= FORCED_SAMPLE_COUNT;
+		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
 		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
 		colorAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
-		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_STORE;
-		colorAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_DONT_CARE;
+		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+		colorAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_RENDER_TARGET;
 		colorAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_RENDER_TARGET;
 
-		// TODO: Fix support for MSAA -> Or force noasis to render without -> We need to have a talk?
 		RenderPassAttachmentDesc colorResolveAttachmentDesc = {};
 		colorResolveAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		colorResolveAttachmentDesc.SampleCount		= 1;
-		colorResolveAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_CLEAR;
+		colorResolveAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
 		colorResolveAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
 		colorResolveAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
-		colorResolveAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_STORE;
-		colorResolveAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DONT_CARE;
+		colorResolveAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+		colorResolveAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 		colorResolveAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 		RenderPassAttachmentDesc depthStencilAttachmentDesc = {};
 		depthStencilAttachmentDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
-		depthStencilAttachmentDesc.SampleCount		= 1;
+		depthStencilAttachmentDesc.SampleCount		= FORCED_SAMPLE_COUNT;
 		depthStencilAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
@@ -366,18 +367,27 @@ namespace LambdaEngine
 		blendStateDesc.LogicOpEnable			= false;
 
 		GraphicsPipelineStateDesc graphicsPipelineStateDesc = {};
-		graphicsPipelineStateDesc.DebugName				= "GUIPipelineStateCache PipelineState"; 
-		graphicsPipelineStateDesc.pRenderPass			= tiled ? s_pTileDummyRenderPass : s_pDummyRenderPass;
-		graphicsPipelineStateDesc.pPipelineLayout		= s_pPipelineLayout;
-		graphicsPipelineStateDesc.DepthStencilState		= depthStencilStateDesc;
-		graphicsPipelineStateDesc.BlendState			= blendStateDesc;
-		graphicsPipelineStateDesc.SampleMask			= 0xFFFFFFFF;
-		graphicsPipelineStateDesc.SampleCount			= 1;
-		graphicsPipelineStateDesc.Subpass				= 0;
-		graphicsPipelineStateDesc.ExtraDynamicState		= EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE;// | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP;
-		graphicsPipelineStateDesc.VertexShader.pShader	= ResourceManager::GetShader(GUIShaderManager::GetGUIVertexShaderGUID(shaderData.VertexShaderID));
-		graphicsPipelineStateDesc.PixelShader.pShader	= ResourceManager::GetShader(GUIShaderManager::GetGUIPixelShaderGUID(shaderData.PixelShaderID));
-		graphicsPipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
+		graphicsPipelineStateDesc.DebugName					= "GUIPipelineStateCache PipelineState"; 
+		graphicsPipelineStateDesc.pRenderPass				= tiled ? s_pTileDummyRenderPass : s_pDummyRenderPass;
+		graphicsPipelineStateDesc.pPipelineLayout			= s_pPipelineLayout;
+		graphicsPipelineStateDesc.DepthStencilState			= depthStencilStateDesc;
+		graphicsPipelineStateDesc.BlendState				= blendStateDesc;
+		graphicsPipelineStateDesc.SampleMask				= 0xFFFFFFFF;
+		graphicsPipelineStateDesc.SampleCount				= 1;
+		graphicsPipelineStateDesc.Subpass					= 0;
+		graphicsPipelineStateDesc.ExtraDynamicState			= EXTRA_DYNAMIC_STATE_FLAG_STENCIL_REFERENCE;// | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_ENABLE | EXTRA_DYNAMIC_STATE_FLAG_STENCIL_OP;
+		graphicsPipelineStateDesc.VertexShader.pShader		= ResourceManager::GetShader(GUIShaderManager::GetGUIVertexShaderGUID(shaderData.VertexShaderID));
+		graphicsPipelineStateDesc.PixelShader.pShader		= ResourceManager::GetShader(GUIShaderManager::GetGUIPixelShaderGUID(shaderData.PixelShaderID));
+		graphicsPipelineStateDesc.RasterizerState.CullMode	= ECullMode::CULL_MODE_NONE;
+
+#ifdef FORCED_SAMPLE_COUNT
+		if (tiled && FORCED_SAMPLE_COUNT > 1)
+		{
+			graphicsPipelineStateDesc.RasterizerState.MultisampleEnable	= true;
+			graphicsPipelineStateDesc.SampleCount						= FORCED_SAMPLE_COUNT;
+		}
+#endif
+
 
 		uint32 offset = 0;
 

@@ -27,6 +27,11 @@ namespace LambdaEngine
 			return m_Image;
 		}
 
+		FORCEINLINE VkImageAspectFlags GetAspectFlags() const
+		{
+			return m_AspectFlags;
+		}
+
 	public:
 		void InternalRelease();
 
@@ -40,7 +45,8 @@ namespace LambdaEngine
 		}
 
 	private:
-		VkImage m_Image = VK_NULL_HANDLE;
-		AllocationVK m_Allocation;
+		VkImage				m_Image = VK_NULL_HANDLE;
+		VkImageAspectFlags	m_AspectFlags;
+		AllocationVK		m_Allocation;
 	};
 }

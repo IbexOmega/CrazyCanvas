@@ -20,10 +20,10 @@ namespace LambdaEngine
 		SAFERELEASE(m_pDepthStencilTexture);
 		SAFERELEASE(m_pDepthStencilTextureView);
 
-		SAFEDELETE(m_pColorTexture);
-		SAFEDELETE(m_pColorTextureView);
-		SAFEDELETE(m_pResolveTexture);
-		SAFEDELETE(m_pResolveTextureView);
+		SAFERELEASE(m_pColorTexture);
+		SAFERELEASE(m_pColorTextureView);
+		SAFERELEASE(m_pResolveTexture);
+		SAFERELEASE(m_pResolveTextureView);
 	}
 
 	bool GUIRenderTarget::Init(const GUIRenderTargetDesc* pDesc)
@@ -90,7 +90,7 @@ namespace LambdaEngine
 			textureDesc.Depth		= 1;
 			textureDesc.ArrayCount	= 1;
 			textureDesc.Miplevels	= 1;
-			textureDesc.SampleCount = pDesc->SampleCount;
+			textureDesc.SampleCount = FORCED_SAMPLE_COUNT;// pDesc->SampleCount;
 
 			m_pColorTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 			if (m_pColorTexture == nullptr)
@@ -186,7 +186,7 @@ namespace LambdaEngine
 		depthStencilTextureDesc.Depth		= 1;
 		depthStencilTextureDesc.ArrayCount	= 1;
 		depthStencilTextureDesc.Miplevels	= 1;
-		depthStencilTextureDesc.SampleCount = pDesc->SampleCount;
+		depthStencilTextureDesc.SampleCount = FORCED_SAMPLE_COUNT; //pDesc->SampleCount;
 
 		m_pDepthStencilTexture = RenderAPI::GetDevice()->CreateTexture(&depthStencilTextureDesc);
 
@@ -221,28 +221,28 @@ namespace LambdaEngine
 	bool GUIRenderTarget::CreateRenderPass(const GUIRenderTargetDesc* pDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
-		colorAttachmentDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
-		colorAttachmentDesc.SampleCount			= pDesc->SampleCount;
-		colorAttachmentDesc.LoadOp				= ELoadOp::LOAD_OP_CLEAR;
-		colorAttachmentDesc.StoreOp				= EStoreOp::STORE_OP_STORE;
-		colorAttachmentDesc.StencilLoadOp		= ELoadOp::LOAD_OP_DONT_CARE;
-		colorAttachmentDesc.StencilStoreOp		= EStoreOp::STORE_OP_STORE;
-		colorAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DONT_CARE;
-		colorAttachmentDesc.FinalState			= ETextureState::TEXTURE_STATE_RENDER_TARGET;
+		colorAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		colorAttachmentDesc.SampleCount		= FORCED_SAMPLE_COUNT;// pDesc->SampleCount;
+		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
+		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
+		colorAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+		colorAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_RENDER_TARGET;
+		colorAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_RENDER_TARGET;
 
 		RenderPassAttachmentDesc colorResolveAttachmentDesc = {};
-		colorResolveAttachmentDesc.Format				= EFormat::FORMAT_R8G8B8A8_UNORM;
-		colorResolveAttachmentDesc.SampleCount			= 1;
-		colorResolveAttachmentDesc.LoadOp				= ELoadOp::LOAD_OP_CLEAR;
-		colorResolveAttachmentDesc.StoreOp				= EStoreOp::STORE_OP_STORE;
-		colorResolveAttachmentDesc.StencilLoadOp		= ELoadOp::LOAD_OP_DONT_CARE;
-		colorResolveAttachmentDesc.StencilStoreOp		= EStoreOp::STORE_OP_STORE;
-		colorResolveAttachmentDesc.InitialState			= ETextureState::TEXTURE_STATE_DONT_CARE;
-		colorResolveAttachmentDesc.FinalState			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		colorResolveAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		colorResolveAttachmentDesc.SampleCount		= 1;
+		colorResolveAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
+		colorResolveAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
+		colorResolveAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+		colorResolveAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+		colorResolveAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		colorResolveAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 		RenderPassAttachmentDesc depthStencilAttachmentDesc = {};
 		depthStencilAttachmentDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
-		depthStencilAttachmentDesc.SampleCount		= pDesc->SampleCount;
+		depthStencilAttachmentDesc.SampleCount		= FORCED_SAMPLE_COUNT;// pDesc->SampleCount;
 		depthStencilAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
@@ -259,7 +259,7 @@ namespace LambdaEngine
 
 		subpassDesc.ResolveAttachmentStates = 
 		{ 
-			ETextureState::TEXTURE_STATE_DONT_CARE, 
+			ETextureState::TEXTURE_STATE_DONT_CARE,
 			ETextureState::TEXTURE_STATE_RENDER_TARGET
 		};
 

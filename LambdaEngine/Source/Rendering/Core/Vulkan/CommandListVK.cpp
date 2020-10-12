@@ -428,12 +428,28 @@ namespace LambdaEngine
 		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
 	}
 
-	void CommandListVK::TransitionBarrier(Texture* pTexture, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState)
+	void CommandListVK::TransitionBarrier(
+		Texture* pTexture, 
+		FPipelineStageFlags srcStage, 
+		FPipelineStageFlags dstStage, 
+		uint32 srcAccessMask, 
+		uint32 destAccessMask,
+		ETextureState beforeState, 
+		ETextureState afterState)
 	{
 		TransitionBarrier(pTexture, srcStage, dstStage, srcAccessMask, destAccessMask, 0, pTexture->GetDesc().ArrayCount, beforeState, afterState);
 	}
 
-	void CommandListVK::TransitionBarrier(Texture* pTexture, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState)
+	void CommandListVK::TransitionBarrier(
+		Texture* pTexture, 
+		FPipelineStageFlags srcStage, 
+		FPipelineStageFlags dstStage, 
+		uint32 srcAccessMask, 
+		uint32 destAccessMask,
+		uint32 arrayIndex, 
+		uint32 arrayCount, 
+		ETextureState beforeState, 
+		ETextureState afterState)
 	{
 		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(pTexture);
 		const TextureDesc& desc = pTextureVk->GetDesc();
@@ -451,6 +467,7 @@ namespace LambdaEngine
 		imageBarrier.subresourceRange.levelCount		= desc.Miplevels;
 		imageBarrier.subresourceRange.baseArrayLayer	= arrayIndex;
 		imageBarrier.subresourceRange.layerCount		= arrayCount;
+		imageBarrier.subresourceRange.aspectMask		= pTextureVk->GetAspectFlags();
 		imageBarrier.srcAccessMask						= ConvertMemoryAccessFlags(srcAccessMask);
 		imageBarrier.dstAccessMask						= ConvertMemoryAccessFlags(destAccessMask);
 

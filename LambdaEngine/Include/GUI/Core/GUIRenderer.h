@@ -1,11 +1,12 @@
 #pragma once
-
 #include "Rendering/ICustomRenderer.h"
 #include "Rendering/RenderGraphTypes.h"
 
 #include "NsRender/RenderDevice.h"
 #include "NsCore/Ptr.h"
 #include "NsGui/IView.h"
+
+#define FORCED_SAMPLE_COUNT 4
 
 namespace LambdaEngine
 {
