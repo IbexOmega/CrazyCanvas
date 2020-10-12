@@ -971,7 +971,6 @@ namespace LambdaEngine
 
 			// Add Draw Arg Extensions.
 			{
-				bool hasExtensions = false;
 				MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
 				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
 				if (entityMask > 1) // If the entity has extensions add them to the entry.
@@ -979,15 +978,13 @@ namespace LambdaEngine
 					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
 					extensionIndex = meshEntry.ExtensionGroups.GetSize();
-					hasExtensions = true;
+					meshEntry.HasExtensions = true;
 				}
 				else
 				{
 					meshEntry.ExtensionGroups.PushBack(nullptr);
 					extensionIndex = 0;
 				}
-
-				meshEntry.HasExtensions = hasExtensions;
 			}
 		}
 
@@ -1134,6 +1131,27 @@ namespace LambdaEngine
 			m_TLASDirty = true;
 		}
 
+		// Remove extension
+		{
+			// Fetch the current instance and its extension index.
+			const Instance& currentInstance = rasterInstances[instanceIndex];
+			uint32 extensionIndex = currentInstance.ExtensionIndex;
+
+			// Set the last entity to use the extension group at the previous removed entity position.
+			Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
+			const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
+			Instance& instance = rasterInstances[instanceKey.InstanceIndex];
+			instance.ExtensionIndex = extensionIndex;
+
+			// Remove the group in the list and replace it with the last group.
+			TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
+			extensionGroups[instanceIndex] = extensionGroups.GetBack();
+			extensionGroups.PopBack();
+
+			// Remove data from the storage.
+			EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+		}
+
 		rasterInstances[instanceIndex] = rasterInstances.GetBack();
 		rasterInstances.PopBack();
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
@@ -1159,6 +1177,9 @@ namespace LambdaEngine
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pMeshlets);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pRasterInstanceBuffer);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pUniqueIndices);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pMeshlets);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pPrimitiveIndices);
 
 			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
 			{
@@ -1172,6 +1193,9 @@ namespace LambdaEngine
 
 				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexWeightsBuffer);
+
+				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pStagingMatrixBuffer);
 			}
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
