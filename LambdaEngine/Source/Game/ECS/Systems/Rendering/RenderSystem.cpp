@@ -28,6 +28,8 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -119,6 +121,19 @@ namespace LambdaEngine
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1)
+				},
+				{
+					.pSubscriber = &m_ParticleEmitters,
+					.ComponentAccesses =
+					{
+						{ NDA, ParticleEmitterComponent::Type() }
+					},
+					.ComponentGroups =
+					{
+						&transformComponents
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnEmitterEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::OnEmitterEntityRemoved, this, std::placeholders::_1)
 				}
 			};
 
@@ -751,6 +766,14 @@ namespace LambdaEngine
 		}
 
 		m_LightsResourceDirty = true;
+	}
+
+	void RenderSystem::OnEmitterEntityAdded(Entity entity)
+	{
+	}
+
+	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
+	{
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)

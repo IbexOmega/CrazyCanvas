@@ -29,6 +29,8 @@
 
 #include "Rendering/LightRenderer.h"
 
+#include "Rendering/ParticleManager.h"
+
 namespace LambdaEngine
 {
 	class Window;
@@ -275,6 +277,9 @@ namespace LambdaEngine
 		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
 
+		void OnEmitterEntityAdded(Entity entity);
+		void OnEmitterEntityRemoved(Entity entity);
+
 		void RemoveEntityInstance(Entity entity);
 		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
@@ -306,6 +311,7 @@ namespace LambdaEngine
 		IDVector m_RenderableEntities;
 		IDVector m_CameraEntities;
 		IDVector m_AnimatedEntities;
+		IDVector m_ParticleEmitters;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -388,6 +394,9 @@ namespace LambdaEngine
 		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
+
+		// Particles
+		ParticleManager				m_ParticleManager;
 
 		// Custom Renderers
 		LineRenderer*				m_pLineRenderer			= nullptr;
