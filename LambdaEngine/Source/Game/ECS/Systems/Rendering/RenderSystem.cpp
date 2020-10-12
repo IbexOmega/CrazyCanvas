@@ -31,7 +31,6 @@
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 
 #include "Rendering/ParticleRenderer.h"
-#include "Rendering/LightRenderer.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"

@@ -4,6 +4,8 @@
 
 namespace LambdaEngine {
 
+
+
 	class ParticleManager
 	{
 	public:
