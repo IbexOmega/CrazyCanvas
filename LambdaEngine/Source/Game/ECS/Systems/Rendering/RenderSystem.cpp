@@ -1119,6 +1119,12 @@ namespace LambdaEngine
 			{
 				//Mark material as empty
 				m_ReleasedMaterialIndices.PushBack(rasterInstance.MaterialIndex);
+				auto materialToRemoveIt = std::find_if(m_MaterialMap.begin(), m_MaterialMap.end(), [rasterInstance](const std::pair<GUID_Lambda, uint32>& pair) {return rasterInstance.MaterialIndex == pair.second; });
+
+				if (materialToRemoveIt != m_MaterialMap.end())
+				{
+					m_MaterialMap.erase(materialToRemoveIt);
+				}
 			}
 		}
 
