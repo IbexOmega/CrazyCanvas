@@ -1,5 +1,4 @@
-#include "PreCompiled.h"
-#include "ParticleRenderer.h"
+#include "Rendering/ParticleRenderer.h"
 
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
@@ -178,7 +177,7 @@ namespace LambdaEngine
 		depthAttachmentDesc.FinalState = pDepthStencilAttachmentDesc->FinalState;
 
 		RenderPassSubpassDesc subpassDesc = {};
-		subpassDesc.RenderTargetStates = {};
+		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 		subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
@@ -191,7 +190,7 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName = "Light Renderer Render Pass";
-		renderPassDesc.Attachments = { depthAttachmentDesc };
+		renderPassDesc.Attachments = { colorAttachmentDesc, depthAttachmentDesc };
 		renderPassDesc.Subpasses = { subpassDesc };
 		renderPassDesc.SubpassDependencies = { subpassDependencyDesc };
 
@@ -202,7 +201,40 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleRenderer::CreatePipelineState()
 	{
-		return false;
+		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
+		pipelineStateDesc.DebugName = "Particle Pipeline State";
+		pipelineStateDesc.RenderPass = m_RenderPass;
+		pipelineStateDesc.PipelineLayout = m_PipelineLayout;
+
+		pipelineStateDesc.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+		pipelineStateDesc.RasterizerState.LineWidth = 1.f;
+		pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
+		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_BACK;
+
+		pipelineStateDesc.DepthStencilState = {};
+		pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
+		pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
+
+		pipelineStateDesc.BlendState.BlendAttachmentStates =
+		{
+			{
+				EBlendOp::BLEND_OP_ADD,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+				EBlendOp::BLEND_OP_ADD,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
+				true
+			}
+		};
+
+		pipelineStateDesc.VertexShader.ShaderGUID = m_VertexShaderGUID;
+		pipelineStateDesc.PixelShader.ShaderGUID = m_PixelShaderGUID;
+
+		m_PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+		return true;
 	}
 
 	bool LambdaEngine::ParticleRenderer::Init()
@@ -244,7 +276,7 @@ namespace LambdaEngine
 				return false;
 			}
 
-			if (!CreateRenderPass(pPreInitDesc->pDepthStencilAttachmentDesc))
+			if (!CreateRenderPass(pPreInitDesc->pColorAttachmentDesc, pPreInitDesc->pDepthStencilAttachmentDesc))
 			{
 				LOG_ERROR("[ParticleRenderer]: Failed to create RenderPass");
 				return false;
