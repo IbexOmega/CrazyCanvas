@@ -12,6 +12,12 @@ namespace LambdaEngine
 		physx::PxActor* pActor;
 	};
 
+	struct DynamicCollisionComponent
+	{
+		DECL_COMPONENT(DynamicCollisionComponent);
+		physx::PxRigidDynamic* pActor;
+	};
+
 	struct CharacterColliderComponent
 	{
 		DECL_COMPONENT(CharacterColliderComponent);

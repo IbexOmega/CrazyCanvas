@@ -17,10 +17,10 @@ namespace LambdaEngine
 
     bool PlayerMovementSystem::Init()
     {
-		TransformComponents transformComponents;
-		transformComponents.Position.Permissions	= RW;
-		transformComponents.Scale.Permissions		= R;
-		transformComponents.Rotation.Permissions	= RW;
+		TransformGroup transformGroup;
+		transformGroup.Position.Permissions	= RW;
+		transformGroup.Scale.Permissions	= R;
+		transformGroup.Rotation.Permissions	= RW;
 
 		// Subscribe on entities with transform and viewProjectionMatrices. They are considered the camera.
 		{
@@ -35,7 +35,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					}
 				}
 			};

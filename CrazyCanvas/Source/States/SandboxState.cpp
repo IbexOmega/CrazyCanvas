@@ -10,6 +10,8 @@
 
 #include "Debug/Profiler.h"
 
+#include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Player/Weapon.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -70,6 +72,7 @@ SandboxState::~SandboxState()
 void SandboxState::Init()
 {
 	// Create Systems
+	m_WeaponSystem.Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -97,7 +100,13 @@ void SandboxState::Init()
 			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		CreateFPSCameraEntity(cameraDesc);
+		Entity playerEntity = CreateFPSCameraEntity(cameraDesc);
+		pECS->AddComponent<PlayerTag>(playerEntity, {});
+
+		Entity weaponEntity = pECS->CreateEntity();
+		pECS->AddComponent<WeaponComponent>(weaponEntity, {
+			.WeaponOwner = playerEntity,
+		});
 	}
 
 	// Scene
@@ -204,14 +213,6 @@ void SandboxState::Init()
 		const uint32 sphereMeshGUID	= ResourceManager::LoadMeshFromFile("sphere.obj");
 		const uint32 gridRadius		= 5;
 
-		// Directional Light
-		//{
-		//	Entity dirLight = ECSCore::GetInstance()->CreateEntity();
-		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, { { 0.0f, 0.0f, 0.0f} });
-		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
-		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-		//}
-
 		// Add PointLights
 		{
 			constexpr uint32 POINT_LIGHT_COUNT = 3;
@@ -233,8 +234,6 @@ void SandboxState::Init()
 			const float32 RADIUS = 3.0f;
 			for (uint32 i = 0; i < POINT_LIGHT_COUNT; i++)
 			{
-				float32 positive = std::powf(-1.0, i);
-
 				glm::vec3 color = pointLights[i % 3].ColorIntensity;
 				MaterialProperties materialProperties;
 				materialProperties.Albedo		= glm::vec4(color, 1.0f);
@@ -288,7 +287,7 @@ void SandboxState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				const StaticCollisionInfo collisionCreateInfo = {
+				const CollisionInfo collisionCreateInfo = {
 					.Entity = entity,
 					.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
@@ -298,7 +297,8 @@ void SandboxState::Init()
 					.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
-				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
+				StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 
 				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string((x + y* gridRadius) + 1), 256, 256));
 			}

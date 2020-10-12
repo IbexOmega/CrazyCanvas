@@ -145,7 +145,7 @@ void PlaySessionState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				const StaticCollisionInfo collisionCreateInfo = {
+				const CollisionInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
@@ -155,7 +155,8 @@ void PlaySessionState::Init()
 					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
-				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
+				StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 			}
 		}
 	}
