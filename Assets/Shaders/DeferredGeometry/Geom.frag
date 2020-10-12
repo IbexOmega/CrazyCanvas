@@ -15,12 +15,15 @@ layout(location = 4) in vec3        in_Bitangent;
 layout(location = 5) in vec2        in_TexCoord;
 layout(location = 6) in vec4        in_ClipPosition;
 layout(location = 7) in vec4        in_PrevClipPosition;
+layout(location = 8) in flat uint 	in_ExtensionIndex;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
+
+layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
 layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;
@@ -39,7 +42,7 @@ void main()
 
 	vec3 sampledAlbedo 	            = texture(u_AlbedoMaps[in_MaterialSlot],            texCoord).rgb;
 	vec3 sampledNormal 	            = texture(u_NormalMaps[in_MaterialSlot],            texCoord).rgb;
-    vec3 sampledCombinedMaterial    = texture(u_CombinedMaterialMaps[in_MaterialSlot],  texCoord).rgb;
+	vec3 sampledCombinedMaterial    = texture(u_CombinedMaterialMaps[in_MaterialSlot],  texCoord).rgb;
 	
 	vec3 shadingNormal 	   	= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal 			= normalize(TBN * normalize(shadingNormal));
@@ -57,7 +60,7 @@ void main()
 	out_Albedo 				  	= storedAlbedo;
 
 	//2
-    vec3 storedMaterial         = vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
+	vec3 storedMaterial         = vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//3
@@ -65,6 +68,10 @@ void main()
 	out_Compact_Normal       	= PackNormal(shadingNormal);
 
 	//4
-	vec2 screenVelocity 	  	= (prevNDC - currentNDC);// + in_CameraJitter;
-	out_Velocity              	= vec2(screenVelocity);    
+	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
+	out_Velocity				= vec2(screenVelocity);
+
+	// 5
+	vec3 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
+	out_Albedo 					= mix(out_Albedo, vec3(1.0f, 1.0f, 1.0f), paintMask.r);
 }

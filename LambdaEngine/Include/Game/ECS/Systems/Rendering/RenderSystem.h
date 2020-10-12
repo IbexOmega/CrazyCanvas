@@ -45,6 +45,7 @@ namespace LambdaEngine
 	class CommandAllocator;
 	// Custom Renderers
 	class LineRenderer;
+	class PaintMaskRenderer;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -54,6 +55,7 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderSystem : public System
 	{
+		friend class PaintMaskRenderer;
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
 
@@ -62,9 +64,9 @@ namespace LambdaEngine
 			glm::mat4	Transform		= glm::mat4(1.0f);
 			glm::mat4	PrevTransform	= glm::mat4(1.0f);
 			uint32		MaterialIndex	= 0;
+			uint32		ExtensionIndex	= 0;
 			uint32		MeshletCount	= 0;
 			uint32		Padding0;
-			uint32		Padding1;
 		};
 
 		struct MeshKey
@@ -72,10 +74,11 @@ namespace LambdaEngine
 		public:
 			MeshKey() = default;
 
-			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated)
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask)
 				: MeshGUID(meshGUID)
-				, EntityID(entityID)
 				, IsAnimated(isAnimated)
+				, EntityID(entityID)
+				, EntityMask(entityMask)
 			{
 				GetHash();
 			}
@@ -85,6 +88,7 @@ namespace LambdaEngine
 				if (Hash == 0)
 				{
 					Hash = std::hash<GUID_Lambda>()(MeshGUID);
+					HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityMask);
 					if (IsAnimated)
 					{
 						HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
@@ -96,7 +100,7 @@ namespace LambdaEngine
 
 			bool operator==(const MeshKey& other) const
 			{
-				if (MeshGUID != other.MeshGUID)
+				if (MeshGUID != other.MeshGUID || EntityMask != other.EntityMask)
 				{
 					return false;
 				}
@@ -116,6 +120,7 @@ namespace LambdaEngine
 			GUID_Lambda		MeshGUID;
 			bool			IsAnimated;
 			Entity			EntityID;
+			uint32			EntityMask;
 			mutable size_t	Hash = 0;
 		};
 
@@ -150,11 +155,16 @@ namespace LambdaEngine
 			Buffer* pMeshlets				= nullptr;
 			uint32	MeshletCount			= 0;
 
+			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
+			TArray<uint32>					InstanceIndexToExtensionGroup;
+			bool	HasExtensions			= false;
+			uint32	DrawArgsMask			= 0x0;
+
 			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<AccelerationStructureInstance> ASInstances;
 
-			Buffer* pRasterInstanceBuffer			= nullptr;
+			Buffer* pRasterInstanceBuffer				= nullptr;
 			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<Instance> RasterInstances;
 
@@ -385,8 +395,9 @@ namespace LambdaEngine
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 		// Custom Renderers
-		LineRenderer*				m_pLineRenderer		= nullptr;
-		LightRenderer*				m_pLightRenderer	= nullptr;
+		LineRenderer*				m_pLineRenderer			= nullptr;
+		LightRenderer*				m_pLightRenderer		= nullptr;
+		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 
 	private:
 		static RenderSystem		s_Instance;

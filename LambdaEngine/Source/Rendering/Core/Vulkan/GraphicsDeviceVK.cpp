@@ -131,6 +131,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc != nullptr);
 
+		// Application and instance
 		if (!InitInstance(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
@@ -141,6 +142,7 @@ namespace LambdaEngine
 			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Instance initialized!");
 		}
 
+		// Logical and physical device
 		if (!InitDevice(pDesc))
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Device could not be initialized!");
@@ -151,8 +153,10 @@ namespace LambdaEngine
 			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Device initialized!");
 		}
 
+		// FrameBufferCache
 		m_pFrameBufferCache = DBG_NEW FrameBufferCacheVK(this);
 
+		// Allocators
 		if (!InitAllocators())
 		{
 			LOG_ERROR("[GraphicsDeviceVK]: Could not create deviceallocators!");
@@ -162,6 +166,22 @@ namespace LambdaEngine
 		{
 			LOG_MESSAGE("[GraphicsDeviceVK]: Created vulkan allocators!");
 		}
+
+		// Setup desc
+		VkPhysicalDeviceProperties properties = GetPhysicalDeviceProperties();
+		m_Desc				= *pDesc;
+		m_Desc.RenderApi	= "Vulkan";
+		m_Desc.AdapterName	= properties.deviceName;
+		m_Desc.ApiVersion	= 
+			std::to_string(VK_VERSION_MAJOR(properties.apiVersion)) + "." + 
+			std::to_string(VK_VERSION_MINOR(properties.apiVersion)) + "." +
+			std::to_string(VK_VERSION_PATCH(properties.apiVersion)) + "(" + 
+			std::to_string(properties.apiVersion) + ")";
+		m_Desc.DriverVersion =
+			std::to_string(VK_VERSION_MAJOR(properties.driverVersion)) + "." +
+			std::to_string(VK_VERSION_MINOR(properties.driverVersion)) + "." +
+			std::to_string(VK_VERSION_PATCH(properties.driverVersion)) + "(" +
+			std::to_string(properties.driverVersion) + ")";
 
 		return true;
 	}
@@ -1113,7 +1133,7 @@ namespace LambdaEngine
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);
 		if (deviceCount == 0)
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Presentation is not supported by the selected physicaldevice");
+			LOG_ERROR("[GraphicsDeviceVK]: No Vulkan supported devices found");
 			return false;
 		}
 
@@ -1150,9 +1170,9 @@ namespace LambdaEngine
 		m_DeviceLimits = deviceProperties.limits;
 		vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_DeviceFeaturesVk);
 
+
 		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
 		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
-
 		return true;
 	}
 
@@ -1217,11 +1237,11 @@ namespace LambdaEngine
 		enabledDeviceFeatures12.bufferDeviceAddress				= supportedDeviceFeatures12.bufferDeviceAddress;
 		enabledDeviceFeatures12.timelineSemaphore				= supportedDeviceFeatures12.timelineSemaphore;
 		enabledDeviceFeatures12.descriptorIndexing				= supportedDeviceFeatures12.descriptorIndexing;
+		enabledDeviceFeatures12.descriptorBindingPartiallyBound = supportedDeviceFeatures12.descriptorBindingPartiallyBound;
 		enabledDeviceFeatures12.runtimeDescriptorArray			= supportedDeviceFeatures12.runtimeDescriptorArray;
-		enabledDeviceFeatures12.descriptorBindingPartiallyBound	= supportedDeviceFeatures12.descriptorBindingPartiallyBound;
-		enabledDeviceFeatures12.shaderInt8				        = supportedDeviceFeatures12.shaderInt8;
-		enabledDeviceFeatures12.shaderFloat16			        = supportedDeviceFeatures12.shaderFloat16;
-		enabledDeviceFeatures12.storageBuffer8BitAccess	        = supportedDeviceFeatures12.storageBuffer8BitAccess;
+		enabledDeviceFeatures12.shaderInt8						= supportedDeviceFeatures12.shaderInt8;
+		enabledDeviceFeatures12.shaderFloat16					= supportedDeviceFeatures12.shaderFloat16;
+		enabledDeviceFeatures12.storageBuffer8BitAccess			= supportedDeviceFeatures12.storageBuffer8BitAccess;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
 		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -1728,8 +1748,8 @@ namespace LambdaEngine
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
-			PlatformConsole::Print("\n");
+			/*LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+			PlatformConsole::Print("\n");*/
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{

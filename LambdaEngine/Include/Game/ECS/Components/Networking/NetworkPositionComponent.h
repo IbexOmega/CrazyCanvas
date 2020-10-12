@@ -9,7 +9,7 @@ namespace LambdaEngine
 {
 	struct NetworkPositionComponent
 	{
-		DECL_COMPONENT(NetworkPositionComponent);
+		DECL_COMPONENT_WITH_DIRTY_FLAG(NetworkPositionComponent);
 		glm::vec3 Position			= glm::vec3(0.0f);
 		glm::vec3 PositionLast		= glm::vec3(0.0f);
 		Timestamp TimestampStart	= EngineLoop::GetTimeSinceStart();

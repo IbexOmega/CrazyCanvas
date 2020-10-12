@@ -731,11 +731,16 @@ namespace LambdaEngine
 
 						if (prevResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 						{
-							uint32 nextDrawArgsMask = currentDrawArgsMask & prevResourceStateIt->second.DrawArgsMask;
+							uint32 nextDrawArgsMask = currentDrawArgsMask;
 
-							//Check if Draw Buffers, if it, check if mask are overlapping
-							if (resourceStateIt->second.ResourceType == ERenderGraphResourceType::SCENE_DRAW_ARGS && nextDrawArgsMask == 0)
-								continue;
+							if (resourceStateIt->second.ResourceType == ERenderGraphResourceType::SCENE_DRAW_ARGS)
+							{
+								//Check if Draw Buffers, if it, check if mask are overlapping
+								nextDrawArgsMask = currentDrawArgsMask & prevResourceStateIt->second.DrawArgsMask;
+
+								if (nextDrawArgsMask == 0)
+									continue;
+							}
 
 							//Make sure parent is a Render Stage and check if it has already been visited
 							if (renderStagesByName.count(prevResourceStateIt->second.RenderStageName) > 0 && parentRenderStageNames.count(prevResourceStateIt->second.RenderStageName) == 0)

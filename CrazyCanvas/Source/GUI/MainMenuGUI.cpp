@@ -57,6 +57,7 @@ bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 
 	NS_CONNECT_EVENT(Button, Click, OnButtonSingleplayerClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonMultiplayerClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonBenchmarkClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonKeybindingsClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonBackClick);
@@ -74,7 +75,6 @@ void MainMenuGUI::OnButtonSingleplayerClick(BaseComponent* pSender, const Routed
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesSleeping();
@@ -90,6 +90,19 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 
 	State* pLobbyState = DBG_NEW LobbyState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
+}
+
+void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
+	SetRenderStagesSleeping();
+
+	State* pStartingState = DBG_NEW BenchmarkState();
+	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void MainMenuGUI::OnButtonSettingsClick(BaseComponent* pSender, const RoutedEventArgs& args)
