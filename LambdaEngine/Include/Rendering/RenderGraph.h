@@ -179,6 +179,7 @@ namespace LambdaEngine
 		struct DrawArgsData
 		{
 			PipelineBufferBarrierDesc			InitialTransitionBarrierTemplate;
+			PipelineTextureBarrierDesc			InitialTextureTransitionBarrierTemplate;
 			TArray<DrawArg>						Args;
 		};
 
@@ -232,8 +233,8 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			String					Name						= "";
-			RenderStageParameters	Parameters					= {};
+			String					Name								= "";
+			RenderStageParameters	Parameters							= {};
 
 			/*
 				If set to true, renderstage will not be submited during execution of rendergraph.
@@ -243,41 +244,43 @@ namespace LambdaEngine
 			bool							Sleeping			= false;
 
 			//Triggering
-			ERenderStageExecutionTrigger	TriggerType			= ERenderStageExecutionTrigger::NONE;
-			uint32							FrameDelay			= 0;
-			uint32							FrameOffset			= 0;
-			uint32							FrameCounter		= 0;
+			ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::NONE;
+			uint32							FrameDelay					= 0;
+			uint32							FrameOffset					= 0;
+			uint32							FrameCounter				= 0;
 
 			//Special Draw Params
-			uint32					ExecutionCount				= 1;
+			uint32					ExecutionCount						= 1;
 
-			glm::uvec3				Dimensions					= glm::uvec3(0);
+			glm::uvec3				Dimensions							= glm::uvec3(0);
 
-			bool					UsesCustomRenderer			= false;
-			ICustomRenderer*		pCustomRenderer				= nullptr;
+			bool					UsesCustomRenderer					= false;
+			ICustomRenderer*		pCustomRenderer						= nullptr;
 
-			FPipelineStageFlags		FirstPipelineStage			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags		LastPipelineStage			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
-			uint32					PipelineStageMask			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		FirstPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		LastPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			uint32					PipelineStageMask					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
-			ERenderStageDrawType	DrawType					= ERenderStageDrawType::NONE;
+			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
 
-			uint64					PipelineStateID				= 0;
-			PipelineState*			pPipelineState				= nullptr;
-			PipelineLayout*			pPipelineLayout				= nullptr;
-			SBT*					pSBT						= nullptr;
-			DescriptorSet**			ppBufferDescriptorSets		= nullptr; //# m_BackBufferCount
-			uint32					BufferSetIndex				= 0;
-			DescriptorSet**			ppTextureDescriptorSets		= nullptr; //# m_BackBufferCount
-			uint32					TextureSetIndex				= 0;
-			DescriptorSet***		pppDrawArgDescriptorSets	= nullptr; //# m_BackBufferCount
-			DrawArg*				pDrawArgs					= nullptr;
-			uint32					NumDrawArgsPerFrame			= 0;
-			uint32					DrawSetIndex				= 0;
-			Resource*				pDrawArgsResource			= nullptr;
-			uint32					DrawArgsMask				= 0x0;
-			RenderPass*				pRenderPass					= nullptr;
-			RenderPass*				pDisabledRenderPass			= nullptr;
+			uint64					PipelineStateID						= 0;
+			PipelineState*			pPipelineState						= nullptr;
+			PipelineLayout*			pPipelineLayout						= nullptr;
+			SBT*					pSBT								= nullptr;
+			DescriptorSet**			ppBufferDescriptorSets				= nullptr; //# m_BackBufferCount
+			uint32					BufferSetIndex						= 0;
+			DescriptorSet**			ppTextureDescriptorSets				= nullptr; //# m_BackBufferCount
+			uint32					TextureSetIndex						= 0;
+			DescriptorSet***		pppDrawArgDescriptorSets			= nullptr; //# m_BackBufferCount
+			DescriptorSet***		pppDrawArgExtensionsDescriptorSets	= nullptr; //# m_BackBufferCount
+			DrawArg*				pDrawArgs							= nullptr;
+			uint32					NumDrawArgsPerFrame					= 0;
+			uint32					DrawSetIndex						= 0;
+			uint32					DrawExtensionSetIndex				= 0;
+			Resource*				pDrawArgsResource					= nullptr;
+			uint32					DrawArgsMask						= 0x0;
+			RenderPass*				pRenderPass							= nullptr;
+			RenderPass*				pDisabledRenderPass					= nullptr;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants		= {};
@@ -293,6 +296,7 @@ namespace LambdaEngine
 			FPipelineStageFlags		OtherQueueDstPipelineStage	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 			uint32					DrawArgsMask				= 0x0;
 
+			TArray<PipelineTextureBarrierDesc>			DrawTextureBarriers[4];
 			TArray<PipelineBufferBarrierDesc>			DrawBufferBarriers[2]; //This works while we only have one Draw Arg resource, otherwise we have to do like Unbounded Textures
 			TArray<PipelineBufferBarrierDesc>			BufferBarriers[2];
 			TArray<PipelineTextureBarrierDesc>			TextureBarriers[4];
@@ -439,6 +443,10 @@ namespace LambdaEngine
 		void ExecuteComputeRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
 		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
 
+		// Helpers
+		void PipelineTextureBarriers(CommandList* pCommandList, const TArray<PipelineTextureBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
+		void PipelineBufferBarriers(CommandList* pCommandList, const TArray<PipelineBufferBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
+
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
 		GraphicsDeviceFeatureDesc						m_Features;
@@ -485,10 +493,13 @@ namespace LambdaEngine
 		TArray<String>									m_WindowRelativeResources;
 		TSet<String>									m_DirtyInternalResources;
 
-		TSet<Resource*>									m_DirtyDescriptorSetTextures;
-		TSet<Resource*>									m_DirtyDescriptorSetBuffers;
-		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
-		TSet<Resource*>									m_DirtyDescriptorSetDrawArgs;
+		TSet<Resource*>									m_DirtyBoundTextureResources;
+		TSet<Resource*>									m_DirtyBoundBufferResources;
+		TSet<Resource*>									m_DirtyBoundAccelerationStructureResources;
+		TSet<Resource*>									m_DirtyBoundDrawArgResources;
+
+		TSet<RenderStage*>								m_DirtyRenderStageTextureSets;
+		TSet<RenderStage*>								m_DirtyRenderStageBufferSets;
 
 		TArray<DeviceChild*>*							m_pDeviceResourcesToDestroy;
 

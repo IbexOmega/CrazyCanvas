@@ -17,6 +17,12 @@ namespace LambdaEngine
 		return dist(s_Generator);
 	}
 
+	uint32 Random::UInt32(uint32 min, uint32 max)
+	{
+		std::uniform_int_distribution<uint32> dist(min, max);
+		return dist(s_Generator);
+	}
+
 	float32 Random::Float32(float32 min, float32 max)
 	{
 		std::uniform_real_distribution<float32> dist(min, max);

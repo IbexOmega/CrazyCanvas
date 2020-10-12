@@ -10,8 +10,10 @@
 #include "GUI/GUITest.h"
 
 #include "Rendering/IRenderGraphCreateHandler.h"
+#include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/Events/KeyEvents.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
@@ -57,10 +59,11 @@ private:
 	bool								m_DebuggingWindow		= false;
 
 	bool					m_ShowTextureDebuggingWindow	= false;
-	LambdaEngine::String	m_TextureDebuggingName			= "";
-	GUID_Lambda				m_TextureDebuggingShaderGUID	= GUID_NONE;
+	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
 	Level* m_pLevel = nullptr;
+
+	WeaponSystem m_WeaponSystem;
 };

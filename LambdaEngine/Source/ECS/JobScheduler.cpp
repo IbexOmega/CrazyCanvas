@@ -148,7 +148,7 @@ namespace LambdaEngine
         // i.e. prevent data races
         for (const ComponentAccess& componentReg : job.Components)
         {
-            auto processingComponentItr = m_ProcessingComponents.find(componentReg.TID);
+            auto processingComponentItr = m_ProcessingComponents.find(componentReg.pTID);
             if (processingComponentItr != m_ProcessingComponents.end() && (componentReg.Permissions == RW || processingComponentItr->second == 0))
             {
                 return false;
@@ -172,10 +172,10 @@ namespace LambdaEngine
         {
             uint32 isReadOnly = componentReg.Permissions == R;
 
-            auto processingComponentItr = m_ProcessingComponents.find(componentReg.TID);
+            auto processingComponentItr = m_ProcessingComponents.find(componentReg.pTID);
             if (processingComponentItr == m_ProcessingComponents.end())
             {
-                m_ProcessingComponents.insert({componentReg.TID, isReadOnly});
+                m_ProcessingComponents.insert({componentReg.pTID, isReadOnly});
             }
             else
             {
@@ -188,7 +188,7 @@ namespace LambdaEngine
     {
         for (const ComponentAccess& componentReg : job.Components)
         {
-            auto processingComponentItr = m_ProcessingComponents.find(componentReg.TID);
+            auto processingComponentItr = m_ProcessingComponents.find(componentReg.pTID);
             if (processingComponentItr->second <= 1u)
             {
                 // The job was the only one reading or writing to the component type

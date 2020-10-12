@@ -590,6 +590,25 @@ namespace LambdaEngine
 		m_CommandMap[cmd.GetName()] = std::pair<ConsoleCommand, std::function<void(CallbackInput&)>>(cmd, callback);
 	}
 
+	void GameConsole::PushError(const std::string& msg)
+	{
+		PushMsg("Error:" + msg, glm::vec4(1.f, 0.f, 0.f, 1.f));
+	}
+
+	void GameConsole::PushInfo(const std::string& msg)
+	{
+		PushMsg(msg, glm::vec4(1.f, 1.f, 0.f, 1.f));
+	}
+
+	void GameConsole::PushMsg(const std::string& line, glm::vec4 color)
+	{
+		Item item = {};
+		item.Str = line;
+		item.Color = color;
+		m_Items.PushBack(item);
+		m_ScrollToBottom = true;
+	}
+
 	GameConsole& GameConsole::Get()
 	{
 		static GameConsole console;
@@ -641,6 +660,7 @@ namespace LambdaEngine
 		std::unordered_map<std::string, Flag> flags;
 
 		bool wasFlag = false;
+		uint32 flagArgIndex = 0;
 		uint32 argIndex = 0;
 		while (((pos = command.find(" ")) != std::string::npos) || ((pos = command.length()) > 0))
 		{
@@ -649,17 +669,17 @@ namespace LambdaEngine
 			if (std::regex_match(token, std::regex("-[[:alpha:]].*")))
 			{
 				wasFlag = true;
-				Flag flag;
-				flag.Name = token.substr(1);
-
-				if (cmd.GetFlags().find(flag.Name) == cmd.GetFlags().end())
+				flagArgIndex = 0;
+				std::string name = token.substr(1);
+				auto flagIt = cmd.GetFlags().find(name);
+				if (flagIt == cmd.GetFlags().end())
 				{
 					PushError("'" + token + "' is an invalid flag!");
 					return 0;
 				}
-
-				flags[flag.Name] = flag;
-				preFlag = &flags[flag.Name];
+				
+				flags[name] = flagIt->second;
+				preFlag = &flags[name];
 			}
 			else
 			{
@@ -668,15 +688,32 @@ namespace LambdaEngine
 				{
 					if (cmd.GetFlags()[preFlag->Name].Arg.Type != Arg::EType::EMPTY)
 					{
-						preFlag->Arg = arg;
+						// Check if it is an array after the flag.
+						if (preFlag->Args.GetSize() > 0)
+						{
+							// An array of arguments is used.
+							preFlag->Args[flagArgIndex++] = arg;
+							preFlag->NumUsedArgs++;
+							if (flagArgIndex >= preFlag->Args.GetSize())
+							{
+								flagArgIndex = 0;
+								wasFlag = false;
+							}
+						}
+						else // One argument is used.
+						{
+							preFlag->NumUsedArgs = 1;
+							preFlag->Arg = arg;
+							wasFlag = false;
+						}
 					}
 					else
 					{
 						bool res = AddArg(argIndex, arg, cmd);
 						if (!res) return 0;
 						argIndex++;
+						wasFlag = false;
 					}
-					wasFlag = false;
 				}
 				else
 				{
@@ -776,25 +813,6 @@ namespace LambdaEngine
 
 		cmd.GetArguments()[index].Value = arg.Value;
 		return true;
-	}
-
-	void GameConsole::PushError(const std::string& msg)
-	{
-		PushMsg("Error:" + msg, glm::vec4(1.f, 0.f, 0.f, 1.f));
-	}
-
-	void GameConsole::PushInfo(const std::string& msg)
-	{
-		PushMsg(msg, glm::vec4(1.f, 1.f, 0.f, 1.f));
-	}
-
-	void GameConsole::PushMsg(const std::string& line, glm::vec4 color)
-	{
-		Item item = {};
-		item.Str = line;
-		item.Color = color;
-		m_Items.PushBack(item);
-		m_ScrollToBottom = true;
 	}
 
 	bool GameConsole::OnKeyPressed(const KeyPressedEvent& event)

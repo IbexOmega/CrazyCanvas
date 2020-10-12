@@ -25,6 +25,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/pbrmaterial.h>
 
 namespace LambdaEngine
 {
@@ -1193,7 +1194,7 @@ namespace LambdaEngine
 				}
 			}
 #endif
-			// Albedo
+			// Albedo parameter
 			aiColor4D diffuse;
 			if (aiGetMaterialColor(pMaterialAI, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
 			{
@@ -1209,6 +1210,29 @@ namespace LambdaEngine
 				pMaterial->Properties.Albedo.b = 1.0f;
 				pMaterial->Properties.Albedo.a = 1.0f;
 			}
+
+			// Metallic parameter
+			float metallicness;
+			if (aiGetMaterialFloat(pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, &metallicness) == AI_SUCCESS)
+			{
+				pMaterial->Properties.Metallic = metallicness;
+			}
+			else
+			{
+				pMaterial->Properties.Metallic = 0.0f;
+			}
+
+			// Roughness parameter
+			float roughness;
+			if (aiGetMaterialFloat(pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, &roughness) == AI_SUCCESS)
+			{
+				pMaterial->Properties.Roughness = roughness;
+			}
+			else
+			{
+				pMaterial->Properties.Roughness = 1.0f;
+			}
+			
 
 			// Albedo
 			pMaterial->pAlbedoMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_BASE_COLOR, 0);

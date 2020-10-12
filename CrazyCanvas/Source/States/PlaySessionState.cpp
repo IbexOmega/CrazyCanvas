@@ -2,6 +2,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Player/Weapon.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -32,6 +34,9 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
+	m_WeaponSystem.Init();
+
+	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Create Camera
 	{
@@ -44,15 +49,18 @@ void PlaySessionState::Init()
 			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		CreateFPSCameraEntity(cameraDesc);
-	}
+		Entity playerEntity = CreateFPSCameraEntity(cameraDesc);
+		pECS->AddComponent<PlayerTag>(playerEntity, {});
 
-	ECSCore* pECS = ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+		Entity weaponEntity = pECS->CreateEntity();
+		pECS->AddComponent<WeaponComponent>(weaponEntity, {
+			.WeaponOwner = playerEntity,
+		});
+	}
 
 	// Scene
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
+		m_pLevel = LevelManager::LoadLevel(1);
 	}
 
 	// Robot
@@ -183,7 +191,7 @@ void PlaySessionState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				const StaticCollisionInfo collisionCreateInfo = {
+				const CollisionInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
@@ -193,33 +201,11 @@ void PlaySessionState::Init()
 					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
-				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
+				PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+				StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 			}
 		}
-	}
-
-	//Mirrors
-	{
-		MaterialProperties mirrorProperties = {};
-		mirrorProperties.Roughness = 0.0f;
-
-		MeshComponent meshComponent;
-		meshComponent.MeshGUID = GUID_MESH_QUAD;
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Mirror Material",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			mirrorProperties);
-
-		Entity entity = ECSCore::GetInstance()->CreateEntity();
-
-		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
-		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
 }
 

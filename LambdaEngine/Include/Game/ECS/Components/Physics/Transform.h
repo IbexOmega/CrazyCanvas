@@ -44,7 +44,7 @@ namespace LambdaEngine
 		glm::vec3 Velocity = glm::vec3(0.0f);
 	};
 
-	class TransformComponents : public IComponentGroup
+	class TransformGroup : public IComponentGroup
 	{
 	public:
 		TArray<ComponentAccess> ToArray() const override final
@@ -52,9 +52,9 @@ namespace LambdaEngine
 			return { Position, Scale, Rotation };
 		}
 
-		ComponentAccess Position    = {R, PositionComponent::Type()};
-		ComponentAccess Scale       = {R, ScaleComponent::Type()};
-		ComponentAccess Rotation    = {R, RotationComponent::Type()};
+		GroupedComponent<PositionComponent>	Position;
+		GroupedComponent<ScaleComponent>	Scale;
+		GroupedComponent<RotationComponent>	Rotation;
 	};
 
 	// Transform calculation functions

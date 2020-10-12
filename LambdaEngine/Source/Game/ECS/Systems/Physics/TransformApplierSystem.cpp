@@ -3,6 +3,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Window.h"
 #include "ECS/ECSCore.h"
+#include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 
@@ -28,6 +29,10 @@ namespace LambdaEngine
 				.ComponentAccesses =
 				{
 					{RW, PositionComponent::Type()}, {R, VelocityComponent::Type()}
+				},
+				.ExcludedComponentTypes =
+				{
+					CharacterColliderComponent::Type()
 				}
 			}
 		};

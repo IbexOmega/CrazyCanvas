@@ -12,7 +12,9 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/ImGuiRenderer.h"
+#include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
+#include "Rendering/PaintMaskRenderer.h"
 #include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
@@ -36,8 +38,6 @@ namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
 
-	constexpr const uint32 TEMP_DRAW_ARG_MASK = UINT32_MAX;
-
 	bool RenderSystem::Init()
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
@@ -47,10 +47,10 @@ namespace LambdaEngine
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{
-			TransformComponents transformComponents;
-			transformComponents.Position.Permissions	= R;
-			transformComponents.Scale.Permissions		= R;
-			transformComponents.Rotation.Permissions	= R;
+			TransformGroup transformGroup;
+			transformGroup.Position.Permissions	= R;
+			transformGroup.Scale.Permissions	= R;
+			transformGroup.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
 			systemReg.Phase = g_LastPhase;
@@ -64,7 +64,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					},
 					.ExcludedComponentTypes =
 					{
@@ -77,7 +77,7 @@ namespace LambdaEngine
 					.pSubscriber = &m_DirectionalLightEntities,
 					.ComponentAccesses =
 					{
-						{ R, DirectionalLightComponent::Type() }, 
+						{ R, DirectionalLightComponent::Type() },
 						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					},
@@ -103,7 +103,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					}
 				},
 				{
@@ -115,7 +115,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1)
@@ -194,6 +194,14 @@ namespace LambdaEngine
 				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+			}
+
+			// Add paint mask renderer to the custom renderers inside the render graph.
+			{
+				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
+				m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
 			}
 
 			// Light Renderer
@@ -310,7 +318,7 @@ namespace LambdaEngine
 			}
 		}
 
-		
+
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -342,7 +350,8 @@ namespace LambdaEngine
 			}
 		}
 
-		SAFEDELETE(m_pLineRenderer); 
+		SAFEDELETE(m_pLineRenderer);
+		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
 
 		// Remove Pointlight Texture and Texture Views
@@ -467,7 +476,7 @@ namespace LambdaEngine
 
 			if (!animationComp.IsPaused)
 			{
-				MeshKey key(meshComp.MeshGUID, entity, true);
+				MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
 
 				auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 				if (meshEntryIt != m_MeshAndInstancesMap.end())
@@ -554,6 +563,13 @@ namespace LambdaEngine
 		{
 			ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
+		}
+
+		{
+			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
+			m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+
+			renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
 		}
 
 		m_RequiredDrawArgs.clear();
@@ -672,7 +688,7 @@ namespace LambdaEngine
 		m_PointLightToEntity[pointLightIndex] = entity;
 
 		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
-		
+
 		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
 		{
 			m_PointLights.GetBack().TextureIndex = pointLightIndex;
@@ -741,6 +757,7 @@ namespace LambdaEngine
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
+		uint32 extensionIndex = 0;
 		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
@@ -748,6 +765,7 @@ namespace LambdaEngine
 		meshKey.MeshGUID	= meshGUID;
 		meshKey.IsAnimated	= isAnimated;
 		meshKey.EntityID	= entity;
+		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
 
 		//Get meshAndInstancesIterator
 		{
@@ -943,10 +961,29 @@ namespace LambdaEngine
 
 				if (m_RayTracingEnabled)
 				{
-					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress	= meshEntry.pVertexBuffer->GetDeviceAdress();
-					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress	= meshEntry.pIndexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
+					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
 					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 					m_SBTRecordsDirty = true;
+				}
+
+			}
+
+			// Add Draw Arg Extensions.
+			{
+				MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
+				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
+				if (entityMask > 1) // If the entity has extensions add them to the entry.
+				{
+					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
+					extensionIndex = meshEntry.ExtensionGroups.GetSize();
+					meshEntry.HasExtensions = true;
+				}
+				else
+				{
+					meshEntry.ExtensionGroups.PushBack(nullptr);
+					extensionIndex = 0;
 				}
 			}
 		}
@@ -960,7 +997,7 @@ namespace LambdaEngine
 			{
 				const Material* pMaterial = ResourceManager::GetMaterial(materialGUID);
 				VALIDATE(pMaterial != nullptr);
-				
+
 				if (!m_ReleasedMaterialIndices.IsEmpty())
 				{
 					materialIndex = m_ReleasedMaterialIndices.GetBack();
@@ -1032,6 +1069,7 @@ namespace LambdaEngine
 		Instance instance = {};
 		instance.Transform		= transform;
 		instance.PrevTransform	= transform;
+		instance.ExtensionIndex = extensionIndex;
 		instance.MaterialIndex	= materialIndex;
 		instance.MeshletCount	= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
@@ -1040,11 +1078,15 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		// Todo: This needs to come from the Entity in some way
-		uint32 drawArgHash = TEMP_DRAW_ARG_MASK;
-		if (m_RequiredDrawArgs.count(drawArgHash))
+		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
+		MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
+		meshEntry.DrawArgsMask = drawArgMask;
+		for (uint32 mask : m_RequiredDrawArgs)
 		{
-			m_DirtyDrawArgs.insert(drawArgHash);
+			if ((mask & drawArgMask) > 0)
+			{
+				m_DirtyDrawArgs.insert(mask);
+			}
 		}
 	}
 
@@ -1072,7 +1114,7 @@ namespace LambdaEngine
 		{
 			uint32& materialInstanceCount = m_MaterialInstanceCounts[rasterInstance.MaterialIndex];
 			materialInstanceCount--;
-			
+
 			if (materialInstanceCount == 0)
 			{
 				//Mark material as empty
@@ -1087,6 +1129,27 @@ namespace LambdaEngine
 			asInstances.PopBack();
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
+		}
+
+		// Remove extension
+		{
+			// Fetch the current instance and its extension index.
+			const Instance& currentInstance = rasterInstances[instanceIndex];
+			uint32 extensionIndex = currentInstance.ExtensionIndex;
+
+			// Set the last entity to use the extension group at the previous removed entity position.
+			Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
+			const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
+			Instance& instance = rasterInstances[instanceKey.InstanceIndex];
+			instance.ExtensionIndex = extensionIndex;
+
+			// Remove the group in the list and replace it with the last group.
+			TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
+			extensionGroups[instanceIndex] = extensionGroups.GetBack();
+			extensionGroups.PopBack();
+
+			// Remove data from the storage.
+			EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
 		}
 
 		rasterInstances[instanceIndex] = rasterInstances.GetBack();
@@ -1111,6 +1174,9 @@ namespace LambdaEngine
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pIndexBuffer);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pRasterInstanceBuffer);
 			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pUniqueIndices);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pMeshlets);
+			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pPrimitiveIndices);
 
 			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
 			{
@@ -1124,6 +1190,9 @@ namespace LambdaEngine
 
 				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
 				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexWeightsBuffer);
+
+				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pStagingMatrixBuffer);
 			}
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
@@ -1226,7 +1295,7 @@ namespace LambdaEngine
 			lightTextureUpdate.PointLightIndex = index;
 			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
 			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
-		
+
 			m_PointLightDirty = true;
 		}
 	}
@@ -1288,35 +1357,45 @@ namespace LambdaEngine
 
 	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
 	{
-		UNREFERENCED_VARIABLE(mask);
-
 		for (auto& meshEntryPair : m_MeshAndInstancesMap)
 		{
-			// Todo: Check Key (or whatever we end up using)
-			DrawArg drawArg = { };
-
-			// Assume animated
-			if (meshEntryPair.second.pAnimatedVertexBuffer)
+			if ((meshEntryPair.second.DrawArgsMask & mask) > 0)
 			{
-				drawArg.pVertexBuffer = meshEntryPair.second.pAnimatedVertexBuffer;
+				DrawArg drawArg = { };
+
+				// Assume animated
+				if (meshEntryPair.second.pAnimatedVertexBuffer)
+				{
+					drawArg.pVertexBuffer = meshEntryPair.second.pAnimatedVertexBuffer;
+				}
+				else
+				{
+					drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
+				}
+
+				drawArg.pIndexBuffer = meshEntryPair.second.pIndexBuffer;
+				drawArg.IndexCount = meshEntryPair.second.IndexCount;
+
+				drawArg.pInstanceBuffer = meshEntryPair.second.pRasterInstanceBuffer;
+				drawArg.InstanceCount = meshEntryPair.second.RasterInstances.GetSize();
+
+				drawArg.pMeshletBuffer = meshEntryPair.second.pMeshlets;
+				drawArg.MeshletCount = meshEntryPair.second.MeshletCount;
+				drawArg.pUniqueIndicesBuffer = meshEntryPair.second.pUniqueIndices;
+				drawArg.pPrimitiveIndices = meshEntryPair.second.pPrimitiveIndices;
+
+				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
+				{
+					drawArg.ppExtensionGroups = meshEntryPair.second.ExtensionGroups.GetData();
+					drawArg.HasExtensions = meshEntryPair.second.HasExtensions;
+				}
+				else
+				{
+					drawArg.HasExtensions = false;
+				}
+
+				drawArgs.PushBack(drawArg);
 			}
-			else
-			{
-				drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
-			}
-
-			drawArg.pIndexBuffer	= meshEntryPair.second.pIndexBuffer;
-			drawArg.IndexCount		= meshEntryPair.second.IndexCount;
-
-			drawArg.pInstanceBuffer	= meshEntryPair.second.pRasterInstanceBuffer;
-			drawArg.InstanceCount	= meshEntryPair.second.RasterInstances.GetSize();
-
-			drawArg.pMeshletBuffer			= meshEntryPair.second.pMeshlets;
-			drawArg.MeshletCount			= meshEntryPair.second.MeshletCount;
-			drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
-			drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
-
-			drawArgs.PushBack(drawArg);
 		}
 	}
 
@@ -1488,7 +1567,7 @@ namespace LambdaEngine
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName		= "Raster Instance Buffer";
 					bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-					bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 					bufferDesc.SizeInBytes		= requiredBufferSize;
 
 					pDirtyInstanceBufferEntry->pRasterInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
@@ -1803,7 +1882,7 @@ namespace LambdaEngine
 			uint32 diff = pointLightCount - m_CubeTextures.GetSize();
 
 			// TODO: Create inteface for changing resolution
-			const uint32 width = 512; 
+			const uint32 width = 512;
 			const uint32 height = 512;
 
 			uint32 prevSubImageCount = m_CubeSubImageTextureViews.GetSize();
