@@ -26,6 +26,7 @@
 #include "Rendering/Core/API/AccelerationStructure.h"
 
 #include "Rendering/RenderGraphTypes.h"
+#include "Rendering/LightRenderer.h"
 
 #include "Rendering/ParticleManager.h"
 
