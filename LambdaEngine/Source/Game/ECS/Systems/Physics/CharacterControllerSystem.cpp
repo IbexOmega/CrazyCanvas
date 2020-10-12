@@ -82,6 +82,8 @@ namespace LambdaEngine
 				glm::vec3& velocity			= velocityComp.Velocity;
 				const glm::vec3& position	= positionComp.Position;
 
+				velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+
 				PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 				translationPX *= dt;
 
@@ -116,6 +118,8 @@ namespace LambdaEngine
 
 		glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
 		glm::vec3& position = positionComp.Position;
+
+		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
 
 		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 		translationPX *= dt;

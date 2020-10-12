@@ -7,6 +7,8 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 
+#include "Game/Multiplayer/GameState.h"
+
 #include "Containers/CCBuffer.h"
 #include "Containers/TSet.h"
 
@@ -23,7 +25,6 @@ namespace LambdaEngine
 	protected:
 		virtual void TickMainThread(Timestamp deltaTime) override;
 		virtual void FixedTickMainThread(Timestamp deltaTime) override;
-		virtual Entity GetEntityPlayer() const override;
 
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
@@ -40,17 +41,8 @@ namespace LambdaEngine
 		ClientRemoteSystem();
 
 	private:
-		IDVector m_NetworkEntities;
 		TSet<GameState, GameStateComparator> m_Buffer;
 		GameState m_CurrentGameState;
 		ClientRemoteBase* m_pClient;
-		Entity m_EntityPlayer;
-
-		//Temp, remove later plz
-		glm::vec3 m_Color;
-
-	private:
-		static glm::vec3 s_StartPositions[10];
-		static glm::vec3 s_StartColors[10];
 	};
 }

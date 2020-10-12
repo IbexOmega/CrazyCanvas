@@ -30,8 +30,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	bool clientSide = true;
-	if (!LevelManager::Init(clientSide))
+	if (!LevelManager::Init())
 	{
 		LOG_ERROR("Level Manager Init Failed");
 	}

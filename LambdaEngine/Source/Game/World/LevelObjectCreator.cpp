@@ -6,21 +6,28 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
+#include "Game/ECS/Components/Networking/NetworkComponent.h"
+
+#include "Networking/API/NetworkSegment.h"
+#include "Networking/API/ClientRemoteBase.h"
+#include "Networking/API/BinaryEncoder.h"
 
 #include "ECS/ECSCore.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "Math/Math.h"
+#include "Math/Random.h"
 
 #include "Resources/ResourceManager.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 namespace LambdaEngine
 {
-	bool LevelObjectCreator::Init(bool clientSide)
+	bool LevelObjectCreator::Init()
 	{
 		using namespace LambdaEngine;
-
-		m_ClientSide = clientSide;
 
 		//Register Create Special Object by Prefix Functions
 		{
@@ -61,7 +68,7 @@ namespace LambdaEngine
 
 		Entity entity = UINT32_MAX;
 
-		if (m_ClientSide)
+		if (!MultiplayerUtils::IsServer())
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 
@@ -87,7 +94,7 @@ namespace LambdaEngine
 
 		Entity entity = UINT32_MAX;
 
-		if (m_ClientSide)
+		if (!MultiplayerUtils::IsServer())
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 
@@ -144,13 +151,13 @@ namespace LambdaEngine
 		}
 	}
 
-	bool LevelObjectCreator::CreateSpecialObjectOfType(ESpecialObjectType specialObjectType, const void* pData, TArray<Entity>& createdEntities)
+	bool LevelObjectCreator::CreateSpecialObjectOfType(ESpecialObjectType specialObjectType, const void* pData, TArray<Entity>& createdEntities, TArray<uint64>& saltUIDs)
 	{
 		auto createFuncIt = s_SpecialObjectByTypeCreateFunctions.find(specialObjectType);
 
 		if (createFuncIt != s_SpecialObjectByTypeCreateFunctions.end())
 		{
-			return createFuncIt->second(pData, createdEntities);
+			return createFuncIt->second(pData, createdEntities, saltUIDs);
 		}
 		else
 		{
@@ -179,7 +186,7 @@ namespace LambdaEngine
 		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG;
 	}
 
-	bool LevelObjectCreator::CreatePlayer(const void* pData, TArray<Entity>& createdEntities)
+	bool LevelObjectCreator::CreatePlayer(const void* pData, TArray<Entity>& createdEntities, TArray<uint64>& saltUIDs)
 	{
 		if (pData == nullptr) return false;
 
@@ -195,6 +202,7 @@ namespace LambdaEngine
 
 		pECS->AddComponent<PlayerComponent>(playerEntity,	PlayerComponent{ .IsLocal = pPlayerDesc->IsLocal });
 		pECS->AddComponent<PositionComponent>(playerEntity, PositionComponent{ .Position = pPlayerDesc->Position });
+		pECS->AddComponent<NetworkPositionComponent>(playerEntity, NetworkPositionComponent{ .Position = pPlayerDesc->Position, .PositionLast = pPlayerDesc->Position, .TimestampStart = EngineLoop::GetTimeSinceStart(), .Duration = EngineLoop::GetFixedTimestep() });
 		pECS->AddComponent<RotationComponent>(playerEntity, RotationComponent{ .Quaternion = lookDirQuat });
 		pECS->AddComponent<ScaleComponent>(playerEntity,	ScaleComponent{ .Scale = pPlayerDesc->Scale });
 		pECS->AddComponent<VelocityComponent>(playerEntity, VelocityComponent());
@@ -211,8 +219,9 @@ namespace LambdaEngine
 		CharacterColliderComponent characterColliderComponent;
 		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS, characterColliderComponent);
 		pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
+		pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
-		if (m_ClientSide)
+		if (!MultiplayerUtils::IsServer())
 		{
 			//Todo: Set DrawArgs Mask here to avoid rendering local mesh
 			pECS->AddComponent<MeshComponent>(playerEntity, pPlayerDesc->MeshComponent);
@@ -233,10 +242,11 @@ namespace LambdaEngine
 				//Todo: Better implementation for this somehow maybe?
 				const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshComponent.MeshGUID);
 
-				OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 2.0f * pMesh->BoundingBox.HalfExtent.y, 0.0f) };
+				OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, pMesh->BoundingBox.HalfExtent.y, 0.0f) };
 
 				pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
 				pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
+				pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 				pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
 
 				const ViewProjectionMatricesComponent viewProjComp = 
@@ -264,7 +274,43 @@ namespace LambdaEngine
 
 				pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 			}
+
+			MultiplayerUtils::RegisterEntity(playerEntity, pPlayerDesc->NetworkUID);
+			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
 		}
+		else
+		{
+			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
+
+			ClientRemoteBase* pClient = reinterpret_cast<ClientRemoteBase*>(pPlayerDesc->pClient);
+
+			NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+			BinaryEncoder encoder = BinaryEncoder(pPacket);
+			encoder.WriteBool(true);
+			encoder.WriteInt32((int32)playerEntity);
+			encoder.WriteVec3(pPlayerDesc->Position);
+
+			//Todo: 2nd argument should not be nullptr if we want a little info
+			pClient->SendReliable(pPacket, nullptr);
+
+			const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			const ClientMap& clients = pClient->GetClients();
+
+			for (auto& clientPair : clients)
+			{
+				if (clientPair.second != pClient)
+				{
+					//Send to everyone already connected
+					NetworkSegment* pPacket2 = clientPair.second->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+					BinaryEncoder encoder2(pPacket2);
+					encoder2.WriteBool(false);
+					encoder2.WriteInt32((int32)playerEntity);
+					encoder2.WriteVec3(pPlayerDesc->Position);
+					clientPair.second->SendReliable(pPacket2, nullptr);
+				}
+			}
+		}
+
 
 		D_LOG_INFO("Created Player");
 		return true;

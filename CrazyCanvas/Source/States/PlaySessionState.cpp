@@ -86,7 +86,7 @@ void PlaySessionState::Init()
 		{
 			.IsLocal			= true,
 			.Position			= glm::vec3(0.0f, 2.0f, -2.0f),
-			.Forward			= glm::normalize(glm::vec3(0.01f, -0.99f, 0.0f)),
+			.Forward			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
 			.Scale				= glm::vec3(0.01f),
 			.pCameraDesc		= &cameraDesc,
 			.MeshComponent		= robotMeshComp,

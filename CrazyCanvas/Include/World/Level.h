@@ -11,14 +11,22 @@
 
 #include "ECS/Entity.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 struct LevelCreateDesc
 {
 	LambdaEngine::String Name	=	"";
 	LambdaEngine::TArray<LevelModule*>		LevelModules;
 };
 
-class Level
+class Level : public LambdaEngine::IClientEntityAccessor
 {
+	struct LevelEntitiesOfType
+	{
+		LambdaEngine::TArray<uint64> SaltUIDs;
+		LambdaEngine::TArray<LambdaEngine::Entity> Entities;
+	};
+
 public:
 	DECL_UNIQUE_CLASS(Level);
 
@@ -41,10 +49,13 @@ public:
 		const LambdaEngine::AnimationComponent& animationComponent,
 		const LambdaEngine::CameraDesc* pCameraDesc);
 
-	uint32 GetEntityCount(LambdaEngine::ESpecialObjectType specialObjectType) const;
+	LambdaEngine::Entity* GetEntities(LambdaEngine::ESpecialObjectType specialObjectType, uint32& countOut);
+
+private:
+	virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
 
 private:
 	LambdaEngine::String m_Name = "";
-	LambdaEngine::THashTable<LambdaEngine::ESpecialObjectType, LambdaEngine::TArray<uint32>> m_EntityTypeMap;
-	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
+	LambdaEngine::THashTable<LambdaEngine::ESpecialObjectType, uint32> m_EntityTypeMap;
+	LambdaEngine::TArray<LevelEntitiesOfType> m_Entities;
 };

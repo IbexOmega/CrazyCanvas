@@ -1,20 +1,16 @@
 #pragma once
-#include "ECS/System.h"
+
+#include "ECS/Entity.h"
+
+#include "Time/API/Timestamp.h"
 
 namespace LambdaEngine
 {
 	struct GameState;
 
-	struct GameStateOther
-	{
-		glm::vec3 Position;
-		glm::vec3 Velocity;
-		bool HasNewData = false;
-	};
-
 	class PlayerActionSystem
 	{
-		friend class ClientSystem;
+		friend class PlayerSystem;
 
 	public:
 		DECL_UNIQUE_CLASS(PlayerActionSystem);
@@ -22,21 +18,14 @@ namespace LambdaEngine
 
 		void Init();
 
-		void TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState);
-		void TickOtherPlayersAction(Timestamp deltaTime);
-
-		void OnPacketPlayerAction(Entity entity, const GameState* pGameState);
+		void TickMainThread(Timestamp deltaTime, Entity entityPlayer);
 
 	private:
 		PlayerActionSystem();
 
-		void DoLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState);
+		void DoAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState);
 
 	public:
-		static void ComputeVelocity(int8 deltaForward, int8 deltaLeft, glm::vec3& result);
-
-	private:
-
-		std::unordered_map<Entity, GameStateOther> m_EntityOtherStates;
+		static void ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result);
 	};
 }

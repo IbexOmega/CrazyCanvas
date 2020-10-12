@@ -11,12 +11,16 @@ Level::~Level()
 	using namespace LambdaEngine;
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	for (LambdaEngine::Entity entity : m_Entities)
+	for (LevelEntitiesOfType& levelEntities : m_Entities)
 	{
-		pECS->RemoveEntity(entity);
+		for (Entity entity : levelEntities.Entities)
+		{
+			pECS->RemoveEntity(entity);
+		}
 	}
 
 	m_Entities.Clear();
+	m_EntityTypeMap.clear();
 }
 
 bool Level::Init(const LevelCreateDesc* pDesc)
@@ -36,43 +40,44 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 		const TArray<LoadedPointLight>& pointLights				= pModule->GetPointLights();
 		const TArray<SpecialObjectOnLoad>& specialObjects		= pModule->GetSpecialObjects();
 
+		LevelEntitiesOfType staticGeometryEntities;
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = LevelObjectCreator::CreateStaticGeometry(meshComponent, translation);
-			if (entity != UINT32_MAX) m_Entities.PushBack(entity);
+			if (entity != UINT32_MAX) staticGeometryEntities.Entities.PushBack(entity);
 		}
+		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_STATIC_GEOMTRY] = m_Entities.GetSize();
+		m_Entities.PushBack(staticGeometryEntities);
 
+		LevelEntitiesOfType dirLightEntities;
 		if (!directionalLights.IsEmpty())
 		{
 			Entity entity = LevelObjectCreator::CreateDirectionalLight(directionalLights[0], translation);
-			if (entity != UINT32_MAX) m_Entities.PushBack(entity);
+			if (entity != UINT32_MAX) dirLightEntities.Entities.PushBack(entity);
 		}
+		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_DIR_LIGHT] = m_Entities.GetSize();
+		m_Entities.PushBack(dirLightEntities);
 
+		LevelEntitiesOfType pointLightEntities;
 		for (const LoadedPointLight& loadedPointLight : pointLights)
 		{
 			Entity entity = LevelObjectCreator::CreatePointLight(loadedPointLight, translation);
-			if (entity != UINT32_MAX) m_Entities.PushBack(entity);
+			if (entity != UINT32_MAX) pointLightEntities.Entities.PushBack(entity);
 		}
-
-		TArray<Entity> newlyCreatedEntities;
+		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_POINT_LIGHT] = m_Entities.GetSize();
+		m_Entities.PushBack(pointLightEntities);
 
 		for (const SpecialObjectOnLoad& specialObject : specialObjects)
 		{
-			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObjectFromPrefix(specialObject, newlyCreatedEntities, translation);
+			LevelEntitiesOfType levelEntities;
+			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObjectFromPrefix(specialObject, levelEntities.Entities, translation);
 
 			if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
 			{
-				for (Entity entity : newlyCreatedEntities)
-				{
-					if (entity != UINT32_MAX)
-					{
-						m_EntityTypeMap[specialObjectType].PushBack(m_Entities.GetSize());
-						m_Entities.PushBack(entity);
-					}
-				}
+				
+				m_EntityTypeMap[specialObjectType] = m_Entities.GetSize();
+				m_Entities.PushBack(levelEntities);
 			}
-
-			newlyCreatedEntities.Clear();
 		}
 	}
 
@@ -85,18 +90,21 @@ bool Level::CreateObject(LambdaEngine::ESpecialObjectType specialObjectType, voi
 
 	if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
 	{
-		TArray<Entity> newlyCreatedEntities;
-		if (LevelObjectCreator::CreateSpecialObjectOfType(specialObjectType, pData, newlyCreatedEntities))
-		{
-			for (Entity entity : newlyCreatedEntities)
-			{
-				if (entity != UINT32_MAX)
-				{
-					m_EntityTypeMap[specialObjectType].PushBack(m_Entities.GetSize());
-					m_Entities.PushBack(entity);
-				}
-			}
+		LevelEntitiesOfType* pLevelEntities = nullptr;
 
+		auto specialObjectTypeIt = m_EntityTypeMap.find(specialObjectType);
+		if (specialObjectTypeIt != m_EntityTypeMap.end())
+		{
+			pLevelEntities = &m_Entities[specialObjectTypeIt->second];
+		}
+		else
+		{
+			m_EntityTypeMap[specialObjectType] = m_Entities.GetSize();
+			pLevelEntities = &m_Entities.PushBack({});
+		}
+
+		if (LevelObjectCreator::CreateSpecialObjectOfType(specialObjectType, pData, pLevelEntities->Entities, pLevelEntities->SaltUIDs))
+		{
 			return true;
 		}
 	}
@@ -111,15 +119,35 @@ void Level::SpawnPlayer(
 {
 }
 
-uint32 Level::GetEntityCount(LambdaEngine::ESpecialObjectType specialObjectType) const
+LambdaEngine::Entity* Level::GetEntities(LambdaEngine::ESpecialObjectType specialObjectType, uint32& countOut)
 {
-	uint32 count = 0;
-
-	auto entityIndicesIt = m_EntityTypeMap.find(specialObjectType);
-	if (entityIndicesIt != m_EntityTypeMap.end())
+	auto specialObjectTypeIt = m_EntityTypeMap.find(specialObjectType);
+	if (specialObjectTypeIt != m_EntityTypeMap.end())
 	{
-		count = entityIndicesIt->second.GetSize();
+		LevelEntitiesOfType& levelEntities = m_Entities[specialObjectTypeIt->second];
+		countOut = levelEntities.Entities.GetSize();
+		return levelEntities.Entities.GetData();
 	}
 
-	return count;
+	return nullptr;
+}
+
+LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
+{
+	using namespace LambdaEngine;
+
+	auto specialObjectTypeIt = m_EntityTypeMap.find(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER);
+	if (specialObjectTypeIt != m_EntityTypeMap.end())
+	{
+		LevelEntitiesOfType& levelEntities = m_Entities[specialObjectTypeIt->second];
+		for (uint32 i = 0; i < levelEntities.SaltUIDs.GetSize(); i++)
+		{
+			if (levelEntities.SaltUIDs[i] == saltUID)
+			{
+				return levelEntities.Entities[i];
+			}
+		}
+	}
+
+	return UINT32_MAX;
 }
