@@ -40,7 +40,8 @@ void main()
 	SParticle particle = b_ParticleInstances.Val[gl_GlobalInvocationID.x];
     particle.Acceleration = particle.Acceleration*dt;
 	particle.Velocity = particle.Velocity + particle.Acceleration*dt;
-    particle.Transform[2] = vec4(particle.Velocity*dt, 1.f); 
+    particle.Transform[3] = vec4(particle.Velocity*dt, 1.f);
+    particle.LifeTime -= dt;
 
     b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
 

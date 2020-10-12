@@ -52,10 +52,10 @@ namespace LambdaEngine
 		bool							m_Initilized = false;
 		bool							m_MeshShaders = false;
 
-		GUID_Lambda						m_ComputeGUID = 0;
-		GUID_Lambda						m_MeshShaderGUID = 0;
-		GUID_Lambda						m_PixelShaderGUID = 0;
-		GUID_Lambda						m_VertexShaderGUID = 0;
+		GUID_Lambda						m_ComputeShaderGUID = 0;
+		GUID_Lambda						m_MeshShaderGUID	= 0;
+		GUID_Lambda						m_PixelShaderGUID	= 0;
+		GUID_Lambda						m_VertexShaderGUID	= 0;
 
 		TSharedRef<RenderPass>			m_RenderPass = nullptr;
 
@@ -70,6 +70,9 @@ namespace LambdaEngine
 
 		CommandAllocator** m_ppGraphicCommandAllocators = nullptr;
 		CommandList** m_ppGraphicCommandLists = nullptr;
+
+		CommandAllocator** m_ppComputeCommandAllocators = nullptr;
+		CommandList** m_ppComputeCommandLists = nullptr;
 
 	private:
 		static ParticleRenderer* s_pInstance;

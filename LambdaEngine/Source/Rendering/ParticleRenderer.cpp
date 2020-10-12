@@ -27,10 +27,14 @@ namespace LambdaEngine
 		{
 			SAFERELEASE(m_ppGraphicCommandLists[b]);
 			SAFERELEASE(m_ppGraphicCommandAllocators[b]);
+			SAFERELEASE(m_ppComputeCommandLists[b]);
+			SAFERELEASE(m_ppComputeCommandAllocators[b]);
 		}
 
 		SAFEDELETE_ARRAY(m_ppGraphicCommandLists);
 		SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
+		SAFEDELETE_ARRAY(m_ppComputeCommandLists);
+		SAFEDELETE_ARRAY(m_ppComputeCommandAllocators);
 	}
 
 	bool LambdaEngine::ParticleRenderer::CreatePipelineLayout()
@@ -104,8 +108,6 @@ namespace LambdaEngine
 	{
 		bool success = false;
 
-		//m_ComputeGUID = ResourceManager::LoadShaderFromFile("/ShadowMap/PointLShadowMap.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
-
 		if (m_MeshShaders)
 		{
 			m_MeshShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.mesh", FShaderStageFlag::SHADER_STAGE_FLAG_MESH_SHADER, EShaderLang::SHADER_LANG_GLSL);
@@ -117,8 +119,11 @@ namespace LambdaEngine
 			success &= m_MeshShaderGUID != m_VertexShaderGUID;
 		}
 
+		m_ComputeShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		success &= m_ComputeShaderGUID != m_VertexShaderGUID;
+
 		m_PixelShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		success &= m_PixelShaderGUID != m_VertexShaderGUID;
+		success &= m_PixelShaderGUID != m_ComputeShaderGUID;
 
 		return success;
 	}
@@ -129,25 +134,53 @@ namespace LambdaEngine
 		m_ppGraphicCommandAllocators = DBG_NEW CommandAllocator * [m_BackBufferCount];
 		m_ppGraphicCommandLists = DBG_NEW CommandList * [m_BackBufferCount];
 
+		m_ppComputeCommandAllocators = DBG_NEW CommandAllocator * [m_BackBufferCount];
+		m_ppComputeCommandLists = DBG_NEW CommandList * [m_BackBufferCount];
+
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
-			m_ppGraphicCommandAllocators[b] = RenderAPI::GetDevice()->CreateCommandAllocator("Particle Renderer Graphics Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
-
-			if (!m_ppGraphicCommandAllocators[b])
+			// Graphics
 			{
-				return false;
+				m_ppGraphicCommandAllocators[b] = RenderAPI::GetDevice()->CreateCommandAllocator("Particle Renderer Graphics Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+
+				if (!m_ppGraphicCommandAllocators[b])
+				{
+					return false;
+				}
+
+				CommandListDesc commandListDesc = {};
+				commandListDesc.DebugName = "Particle Renderer Graphics Command List " + std::to_string(b);
+				commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+				commandListDesc.Flags = FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+				m_ppGraphicCommandLists[b] = RenderAPI::GetDevice()->CreateCommandList(m_ppGraphicCommandAllocators[b], &commandListDesc);
+
+				if (!m_ppGraphicCommandLists[b])
+				{
+					return false;
+				}
 			}
 
-			CommandListDesc commandListDesc = {};
-			commandListDesc.DebugName = "Particle Renderer Graphics Command List " + std::to_string(b);
-			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-			commandListDesc.Flags = FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-
-			m_ppGraphicCommandLists[b] = RenderAPI::GetDevice()->CreateCommandList(m_ppGraphicCommandAllocators[b], &commandListDesc);
-
-			if (!m_ppGraphicCommandLists[b])
+			// Compute
 			{
-				return false;
+				m_ppComputeCommandAllocators[b] = RenderAPI::GetDevice()->CreateCommandAllocator("Particle Renderer Compute Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+
+				if (!m_ppComputeCommandAllocators[b])
+				{
+					return false;
+				}
+
+				CommandListDesc commandListDesc = {};
+				commandListDesc.DebugName = "Particle Renderer Compute Command List " + std::to_string(b);
+				commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+				commandListDesc.Flags = FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+				m_ppComputeCommandLists[b] = RenderAPI::GetDevice()->CreateCommandList(m_ppComputeCommandAllocators[b], &commandListDesc);
+
+				if (!m_ppComputeCommandLists[b])
+				{
+					return false;
+				}
 			}
 		}
 
@@ -342,5 +375,29 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppFirstExecutionStage);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(Sleeping);
-	}
+
+		// TODO: Might need to divide this into two custom renderers, one for compute and one for graphics!!
+
+		/*
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
+		{
+			pComputeCommandAllocator->Reset();
+			pComputeCommandList->Begin(nullptr);
+
+			pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
+
+			if (pRenderStage->ppBufferDescriptorSets != nullptr)
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
+
+			if (pRenderStage->ppTextureDescriptorSets != nullptr)
+				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
+
+			pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
+
+			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
+			pComputeCommandList->End();
+
+			(*ppExecutionStage) = pComputeCommandList;
+		}
+	}*/
 }
