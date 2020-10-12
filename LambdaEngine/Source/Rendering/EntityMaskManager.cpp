@@ -20,8 +20,7 @@ bool LambdaEngine::EntityMaskManager::Init()
 
 void LambdaEngine::EntityMaskManager::RemoveAllExtensionsFromEntity(Entity entity)
 {
-	if(s_EntityToExtensionGroupEntryMap.contains(entity))
-		s_EntityToExtensionGroupEntryMap.erase(entity);
+	s_EntityToExtensionGroupEntryMap.erase(entity);
 }
 
 void LambdaEngine::EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType*  type, const DrawArgExtensionData& DrawArgExtension)

@@ -1134,12 +1134,12 @@ namespace LambdaEngine
 		// Remove extension
 		{
 			// Fetch the current instance and its extension index.
-			Instance& currentInstance = rasterInstances[instanceIndex];
+			const Instance& currentInstance = rasterInstances[instanceIndex];
 			uint32 extensionIndex = currentInstance.ExtensionIndex;
 
 			// Set the last entity to use the extension group at the previous removed entity position.
 			Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
-			InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
+			const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
 			Instance& instance = rasterInstances[instanceKey.InstanceIndex];
 			instance.ExtensionIndex = extensionIndex;
 
