@@ -205,69 +205,14 @@ void SandboxState::Init()
 
 	//Sphere Grid
 	{
-		const uint32 sphereMeshGUID	= ResourceManager::LoadMeshFromFile("sphere.obj");
-		const uint32 gridRadius		= 5;
+		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
-		// Directional Light
-		//{
-		//	Entity dirLight = ECSCore::GetInstance()->CreateEntity();
-		//	ECSCore::GetInstance()->AddComponent<PositionComponent>(dirLight, { { 0.0f, 0.0f, 0.0f} });
-		//	ECSCore::GetInstance()->AddComponent<RotationComponent>(dirLight, { glm::quatLookAt({1.0f, -1.0f, 0.0f}, g_DefaultUp), true });
-		//	ECSCore::GetInstance()->AddComponent<DirectionalLightComponent>(dirLight, DirectionalLightComponent{ .ColorIntensity = {1.0f, 1.0f, 1.0f, 5.0f} });
-		//}
-
-		// Add PointLights
-		{
-			constexpr uint32 POINT_LIGHT_COUNT = 3;
-			const PointLightComponent pointLights[3] =
-			{
-				{.ColorIntensity = {1.0f, 0.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 1.0f, 0.0f, 25.0f}, .FarPlane = 20.0f},
-				{.ColorIntensity = {0.0f, 0.0f, 1.0f, 25.0f}, .FarPlane = 20.0f},
-			};
-
-			const glm::vec3 startPosition[3] =
-			{
-				{4.0f, 2.0f, -3.0f},
-				{-4.0f, 2.0f, -3.0f},
-				{0.0f, 2.0f, 3.0f},
-			};
-
-			const float32 PI = glm::pi<float>();
-			const float32 RADIUS = 3.0f;
-			for (uint32 i = 0; i < POINT_LIGHT_COUNT; i++)
-			{
-				float32 positive = std::powf(-1.0, i);
-
-				glm::vec3 color = pointLights[i % 3].ColorIntensity;
-				MaterialProperties materialProperties;
-				materialProperties.Albedo		= glm::vec4(color, 1.0f);
-				materialProperties.Roughness	= 0.1f;
-				materialProperties.Metallic		= 0.1f;
-
-				MeshComponent sphereMeshComp = {};
-				sphereMeshComp.MeshGUID = sphereMeshGUID;
-				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-					"Default r: " + std::to_string(0.1f) + " m: " + std::to_string(0.1f),
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					materialProperties);
-
-				Entity pt = pECS->CreateEntity();
-				pECS->AddComponent<PositionComponent>(pt, { true, startPosition[i % 3] });
-				pECS->AddComponent<ScaleComponent>(pt, { true, glm::vec3(0.4f) });
-				pECS->AddComponent<RotationComponent>(pt, { true, glm::identity<glm::quat>() });
-				pECS->AddComponent<PointLightComponent>(pt, pointLights[i % 3]);
-				pECS->AddComponent<MeshComponent>(pt, sphereMeshComp);
-			}
-		}
+		uint32 gridRadius = 5;
 
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
 			float32 roughness = y / float32(gridRadius - 1);
+
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
 				float32 metallic = x / float32(gridRadius - 1);
@@ -288,7 +233,7 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
+				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
@@ -304,34 +249,8 @@ void SandboxState::Init()
 				};
 
 				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
-
-				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string((x + y* gridRadius) + 1), 256, 256));
 			}
 		}
-	}
-
-	//Mirrors
-	{
-		MaterialProperties mirrorProperties = {};
-		mirrorProperties.Roughness = 0.0f;
-
-		MeshComponent meshComponent;
-		meshComponent.MeshGUID = GUID_MESH_QUAD;
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Mirror Material",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			mirrorProperties);
-
-		Entity entity = ECSCore::GetInstance()->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
-		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "MirrorUnwrappedTexture_0", 1024, 1024));
 	}
 
 	if constexpr (IMGUI_ENABLED)
