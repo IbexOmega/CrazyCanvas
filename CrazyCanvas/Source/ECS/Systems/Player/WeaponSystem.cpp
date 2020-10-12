@@ -35,7 +35,8 @@ bool WeaponSystem::Init()
 		};
 		systemReg.SubscriberRegistration.AdditionalAccesses =
 		{
-			{NDA, PlayerTag::Type()}, {R, PositionComponent::Type()}, {R, RotationComponent::Type()}
+			{NDA, PlayerTag::Type()}, {RW, PositionComponent::Type()}, {RW, ScaleComponent::Type()}, {RW, RotationComponent::Type()},
+			{RW, VelocityComponent::Type()}, {RW, MeshComponent::Type()}
 		};
 		systemReg.Phase = 1;
 

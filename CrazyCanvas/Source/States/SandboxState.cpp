@@ -150,6 +150,7 @@ void SandboxState::Init()
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -162,6 +163,7 @@ void SandboxState::Init()
 		robotAnimationComp.NumLoops = 10;
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -173,6 +175,7 @@ void SandboxState::Init()
 		robotAnimationComp.NumLoops = INFINITE_LOOPS;
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -185,6 +188,7 @@ void SandboxState::Init()
 		robotAnimationComp.PlaybackSpeed *= -1.0f;
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -237,10 +241,11 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
-				glm::vec3 scale(1.0f);
+				const glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
+				const glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
+				m_Entities.PushBack(entity);
 				const CollisionInfo collisionCreateInfo = {
 					.Entity = entity,
 					.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
@@ -251,8 +256,10 @@ void SandboxState::Init()
 					.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
-				StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
-				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+				StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+				pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
+
+				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + y*gridRadius), 256, 256));
 			}
 		}
 	}
@@ -427,6 +434,22 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	{
 		EventQueue::SendEvent(ShaderRecompileEvent());
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
+	}
+
+	if (event.Key == EKey::KEY_DELETE)
+	{
+		if (!m_Entities.IsEmpty())
+		{
+			const uint32 numEntities = m_Entities.GetSize();
+			const uint32 index = Random::UInt32(0, numEntities-1);
+			Entity entity = m_Entities[index];
+			m_Entities.Erase(m_Entities.Begin() + index);
+			ECSCore::GetInstance()->RemoveEntity(entity);
+
+			std::string info = "Removed entity with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
+			GameConsole::Get().PushInfo(info);
+			LOG_INFO(info.c_str());
+		}
 	}
 
 	return true;

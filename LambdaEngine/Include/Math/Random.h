@@ -19,6 +19,7 @@ namespace LambdaEngine
 		static void PreInit();
 
 		static int32   Int32(int32 min, int32 max);
+		static uint32  UInt32(uint32 min, uint32 max);
 		static float32 Float32(float32 min, float32 max);
 
 		static uint64  UInt64();
