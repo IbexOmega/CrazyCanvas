@@ -10,6 +10,8 @@
 
 #include "Debug/Profiler.h"
 
+#include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Player/Weapon.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -70,6 +72,7 @@ SandboxState::~SandboxState()
 void SandboxState::Init()
 {
 	// Create Systems
+	m_WeaponSystem.Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -97,7 +100,13 @@ void SandboxState::Init()
 			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		CreateFPSCameraEntity(cameraDesc);
+		Entity playerEntity = CreateFPSCameraEntity(cameraDesc);
+		pECS->AddComponent<PlayerTag>(playerEntity, {});
+
+		Entity weaponEntity = pECS->CreateEntity();
+		pECS->AddComponent<WeaponComponent>(weaponEntity, {
+			.WeaponOwner = playerEntity,
+		});
 	}
 
 	// Scene
@@ -206,7 +215,6 @@ void SandboxState::Init()
 	//Sphere Grid
 	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-
 		uint32 gridRadius = 5;
 
 		for (uint32 y = 0; y < gridRadius; y++)
@@ -233,12 +241,12 @@ void SandboxState::Init()
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					materialProperties);
 
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
-				glm::vec3 scale(1.0f);
+				const glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
+				const glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				const StaticCollisionInfo collisionCreateInfo = {
+				const CollisionInfo collisionCreateInfo = {
 					.Entity = entity,
 					.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
@@ -248,7 +256,8 @@ void SandboxState::Init()
 					.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
-				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
+				StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+				pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
 
 				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + y*gridRadius), 256, 256));
 			}

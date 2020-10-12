@@ -44,7 +44,7 @@ namespace LambdaEngine
 		glm::vec3 Velocity = glm::vec3(0.0f);
 	};
 
-	class TransformComponents : public IComponentGroup
+	class TransformGroup : public IComponentGroup
 	{
 	public:
 		TArray<ComponentAccess> ToArray() const override final
