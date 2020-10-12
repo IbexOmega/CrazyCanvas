@@ -10,7 +10,7 @@ namespace LambdaEngine
 	{
 		ParticleRenderer();
 		~ParticleRenderer();
-		
+
 		bool Init();
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
@@ -65,12 +65,13 @@ namespace LambdaEngine
 		// Descriptor sets
 		TSharedRef<DescriptorSet>		m_PerFrameBufferDescriptorSet;
 
-		uint32							m_BackBufferCount	= 0;
+		uint32							m_BackBufferCount = 0;
 
-		CommandAllocator**				m_ppGraphicCommandAllocators		= nullptr;
-		CommandList**					m_ppGraphicCommandLists				= nullptr;
+		CommandAllocator** m_ppGraphicCommandAllocators = nullptr;
+		CommandList** m_ppGraphicCommandLists = nullptr;
 
 	private:
 		static ParticleRenderer* s_pInstance;
-	}
+	};
 }
+
