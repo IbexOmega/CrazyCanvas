@@ -33,7 +33,7 @@ namespace LambdaEngine
 
             newSub.ComponentTypes.Reserve(componentRegs.GetSize());
             for (const ComponentAccess& componentReg : componentRegs)
-                newSub.ComponentTypes.PushBack(componentReg.TID);
+                newSub.ComponentTypes.PushBack(componentReg.pTID);
 
             EliminateDuplicateTIDs(newSub.ComponentTypes);
             newSub.ComponentTypes.ShrinkToFit();
