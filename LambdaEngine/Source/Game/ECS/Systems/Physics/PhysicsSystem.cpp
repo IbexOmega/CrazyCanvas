@@ -51,6 +51,7 @@ namespace LambdaEngine
 		{
 			// Subscribe to entities to register a destructor for collision components
 			auto onStaticCollisionRemoval = std::bind(&PhysicsSystem::OnStaticCollisionRemoval, this, std::placeholders::_1);
+			auto onDynamicCollisionRemoval = std::bind(&PhysicsSystem::OnDynamicCollisionRemoval, this, std::placeholders::_1);
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -59,15 +60,24 @@ namespace LambdaEngine
 					.pSubscriber = &m_StaticCollisionEntities,
 					.ComponentAccesses =
 					{
-						{RW, StaticCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}
+						{NDA, StaticCollisionComponent::Type()}, {NDA, PositionComponent::Type()}, {NDA, RotationComponent::Type()}
 					},
 					.OnEntityRemoval = onStaticCollisionRemoval
+				},
+				{
+					.pSubscriber = &m_DynamicCollisionEntities,
+					.ComponentAccesses =
+					{
+						{NDA, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}, {RW, VelocityComponent::Type()}
+					},
+					.OnEntityRemoval = onDynamicCollisionRemoval
 				}
 			};
 			systemReg.Phase = 1;
 
 			RegisterSystem(systemReg);
 			SetComponentOwner<StaticCollisionComponent>({ std::bind(&PhysicsSystem::StaticCollisionDestructor, this, std::placeholders::_1) });
+			SetComponentOwner<DynamicCollisionComponent>({ std::bind(&PhysicsSystem::DynamicCollisionDestructor, this, std::placeholders::_1) });
 		}
 
 		// PhysX setup
@@ -155,12 +165,134 @@ namespace LambdaEngine
 	void PhysicsSystem::Tick(Timestamp deltaTime)
 	{
 		const float32 dt = (float32)deltaTime.AsSeconds();
+		if (dt > 0.5f)
+		{
+			return;
+		}
 
 		m_pScene->simulate(dt);
 		m_pScene->fetchResults(true);
+
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<DynamicCollisionComponent>* pDynamicCollisionComponents = pECS->GetComponentArray<DynamicCollisionComponent>();
+		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+
+		for (Entity entity : m_DynamicCollisionEntities)
+		{
+			const DynamicCollisionComponent& collisionComp = pDynamicCollisionComponents->GetData(entity);
+			PxRigidDynamic* pActor = collisionComp.pActor;
+			if (!pActor->isSleeping())
+			{
+				PositionComponent& positionComp = pPositionComponents->GetData(entity);
+				RotationComponent& rotationComp = pRotationComponents->GetData(entity);
+				VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
+
+				const PxTransform transformPX = pActor->getGlobalPose();
+				const PxVec3& positionPX = transformPX.p;
+				positionComp.Position =
+				{
+					positionPX.x,
+					positionPX.y,
+					positionPX.z
+				};
+
+				const PxQuat& quatPX = transformPX.q;
+				rotationComp.Quaternion =
+				{
+					quatPX.x,
+					quatPX.y,
+					quatPX.z,
+					quatPX.w
+				};
+
+				const PxVec3 velocityPX = pActor->getLinearVelocity();
+				velocityComp.Velocity =
+				{
+					velocityPX.x,
+					velocityPX.y,
+					velocityPX.z
+				};
+			}
+		}
 	}
 
-	void PhysicsSystem::CreateCollisionSphere(const StaticCollisionInfo& staticCollisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionSphere(const CollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionSphere(collisionInfo);
+		return FinalizeStaticCollisionActor(collisionInfo, pShape);
+	}
+
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionBox(const CollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionBox(collisionInfo);
+		return FinalizeStaticCollisionActor(collisionInfo, pShape);
+	}
+
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionCapsule(const CollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionCapsule(collisionInfo);
+
+		// Rotate around Z-axis to get the capsule pointing upwards
+		const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
+		return FinalizeStaticCollisionActor(collisionInfo, pShape, uprightRotation);
+	}
+
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionMesh(const CollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo);
+		return FinalizeStaticCollisionActor(collisionInfo, pShape);
+	}
+
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionSphere(const DynamicCollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionSphere(collisionInfo);
+		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
+	}
+
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionBox(const DynamicCollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionBox(collisionInfo);
+		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
+	}
+
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionCapsule(const DynamicCollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionCapsule(collisionInfo);
+
+		// Rotate around Z-axis to get the capsule pointing upwards
+		const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
+		return FinalizeDynamicCollisionActor(collisionInfo, pShape, uprightRotation);
+	}
+
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionMesh(const DynamicCollisionInfo& collisionInfo)
+	{
+		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo);
+		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
+	}
+
+	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius)
+	{
+		PxCapsuleControllerDesc controllerDesc = {};
+		controllerDesc.radius			= radius;
+		controllerDesc.height			= height;
+		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eCONSTRAINED;
+
+		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
+	}
+
+	CharacterColliderComponent PhysicsSystem::CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents)
+	{
+		PxBoxControllerDesc controllerDesc = {};
+		controllerDesc.halfHeight			= halfExtents.y;
+		controllerDesc.halfSideExtent		= halfExtents.x;
+		controllerDesc.halfForwardExtent	= halfExtents.z;
+
+		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
+	}
+
+	PxShape* PhysicsSystem::CreateCollisionSphere(const CollisionInfo& staticCollisionInfo) const
 	{
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
 		const TArray<Vertex>& vertices = pMesh->Vertices;
@@ -177,20 +309,20 @@ namespace LambdaEngine
 		const float radius = std::sqrtf(squareRadius) * scaleScalar;
 
 		PxShape* pSphereShape = m_pPhysics->createShape(PxSphereGeometry(radius), *m_pMaterial);
-		FinalizeCollisionComponent(staticCollisionInfo, pSphereShape);
+		return pSphereShape;
 	}
 
-	void PhysicsSystem::CreateCollisionBox(const StaticCollisionInfo& staticCollisionInfo)
+	PxShape* PhysicsSystem::CreateCollisionBox(const CollisionInfo& staticCollisionInfo) const
 	{
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
 		const glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent * staticCollisionInfo.Scale.Scale;
 		const PxVec3 halfExtentPX(halfExtent.x, halfExtent.y, halfExtent.z);
 
 		PxShape* pBoxShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentPX), *m_pMaterial);
-		FinalizeCollisionComponent(staticCollisionInfo, pBoxShape);
+		return pBoxShape;
 	}
 
-	void PhysicsSystem::CreateCollisionCapsule(const StaticCollisionInfo& staticCollisionInfo)
+	PxShape* PhysicsSystem::CreateCollisionCapsule(const CollisionInfo& staticCollisionInfo) const
 	{
 		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
 			it is rotated around the z-axis. */
@@ -209,24 +341,22 @@ namespace LambdaEngine
 		}
 
 		const float capsuleRadius = std::sqrtf(squareRadiusXZ);
-		halfHeight = std::max(0.0f, halfHeight - capsuleRadius);
+		halfHeight = halfHeight - capsuleRadius;
 
 		PxShape* pShape = nullptr;
-		PxQuat uprightRotation = PxQuat(PxIdentity);
-		if (halfHeight != 0.0f)
+		if (halfHeight > 0.0f)
 		{
 			pShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight), *m_pMaterial);
-			uprightRotation = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
 		}
 		else
 		{
 			pShape = m_pPhysics->createShape(PxSphereGeometry(capsuleRadius), *m_pMaterial);
 		}
 
-		FinalizeCollisionComponent(staticCollisionInfo, pShape, uprightRotation);
+		return pShape;
 	}
 
-	void PhysicsSystem::CreateCollisionTriangleMesh(const StaticCollisionInfo& staticCollisionInfo)
+	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const CollisionInfo& staticCollisionInfo) const
 	{
 		/* PhysX is capable of 'cooking' meshes; generating an optimized collision mesh from triangle data */
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
@@ -250,7 +380,7 @@ namespace LambdaEngine
 		if (!status)
 		{
 			LOG_WARNING("Failed to cook mesh with %d vertices", vertices.GetSize());
-			return;
+			return nullptr;
 		}
 
 		PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
@@ -260,12 +390,31 @@ namespace LambdaEngine
 		const glm::vec3 scale = staticCollisionInfo.Scale.Scale;
 
 		PxTriangleMeshGeometry triangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
-		PxShape* pShape = m_pPhysics->createShape(triangleMeshGeometry, *m_pMaterial);
+		return m_pPhysics->createShape(triangleMeshGeometry, *m_pMaterial);
+	}
 
-		FinalizeCollisionComponent(staticCollisionInfo, pShape);
+	void PhysicsSystem::SetFilterData(PxShape* pShape, const CollisionInfo& collisionInfo) const
+	{
+		PxFilterData filterData;
+		filterData.word0 = (PxU32)collisionInfo.CollisionGroup;
+		filterData.word1 = (PxU32)collisionInfo.CollisionMask;
+		pShape->setSimulationFilterData(filterData);
+		pShape->setQueryFilterData(filterData);
+	}
+
+	PxTransform PhysicsSystem::CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const
+	{
+		const PxVec3 positionPX = { position.x, position.y, position.z };
+		const PxQuat rotationPX = PxQuat(rotation.x, rotation.y, rotation.z, rotation.w);
+		return PxTransform(positionPX, rotationPX);
 	}
 
 	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent)
+	{
+		PX_RELEASE(collisionComponent.pActor);
+	}
+
+	void PhysicsSystem::DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent)
 	{
 		PX_RELEASE(collisionComponent.pActor);
 	}
@@ -300,48 +449,25 @@ namespace LambdaEngine
 
 		FinalizeCharacterController(characterColliderInfo, controllerDesc, characterColliderComp);
 	}
-
-	glm::vec3 PhysicsSystem::GetCharacterTranslation(float32 dt, const glm::vec3& forward, const glm::vec3& right, const FPSControllerComponent& FPSComp)
+	
+	void PhysicsSystem::OnDynamicCollisionRemoval(Entity entity)
 	{
-		// First calculate translation relative to the character's rotation (i.e. right, up, forward).
-		// Then convert the translation be relative to the world axes.
-		glm::vec3 translation = {
-			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-			0.0f,																								// Y: Up
-			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
-		};
-
-		if (glm::length2(translation) > glm::epsilon<float>())
+		// Remove the actor from the scene
+		DynamicCollisionComponent& collisionComponent = ECSCore::GetInstance()->GetComponent<DynamicCollisionComponent>(entity);
+		PxRigidDynamic* pActor = collisionComponent.pActor;
+		if (pActor)
 		{
-			const int isSprinting = InputActionSystem::IsActive("CAM_SPEED_MODIFIER");
-			const float sprintFactor = std::max(1.0f, FPSComp.SprintSpeedFactor * isSprinting);
-			translation = glm::normalize(translation) * FPSComp.SpeedFactor * sprintFactor * dt;
+			m_pScene->removeActor(*pActor);
 		}
-
-		translation.y = -GRAVITATIONAL_ACCELERATION * dt;
-
-		const glm::vec3 forwardHorizontal	= glm::normalize(glm::vec3(forward.x, 0.0f, forward.z));
-		const glm::vec3 rightHorizontal		= glm::normalize(glm::vec3(right.x, 0.0f, right.z));
-
-		return translation.x * rightHorizontal + translation.y * g_DefaultUp + translation.z * forwardHorizontal;
 	}
 
-	void PhysicsSystem::FinalizeCollisionComponent(const StaticCollisionInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation)
+	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
 	{
-		// Add filtering data
-		PxFilterData filterData;
-		filterData.word0 = (PxU32)collisionCreateInfo.CollisionGroup;
-		filterData.word1 = (PxU32)collisionCreateInfo.CollisionMask;
-		pShape->setSimulationFilterData(filterData);
-		pShape->setQueryFilterData(filterData);
+		SetFilterData(pShape, collisionInfo);
 
-		// Combine shape and transform to create a static body
-		const glm::vec3& position = collisionCreateInfo.Position.Position;
-		const glm::quat& rotation = collisionCreateInfo.Rotation.Quaternion;
-
-		const PxVec3 positionPX = { position.x, position.y, position.z };
-		const PxQuat rotationPX = PxQuat(rotation.x, rotation.y, rotation.z, rotation.w) * additionalRotation;
-		const PxTransform transformPX(positionPX, rotationPX);
+		const glm::vec3& position = collisionInfo.Position.Position;
+		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
+		const PxTransform transformPX = CreatePxTransform(position, rotation);
 
 		PxRigidStatic* pBody = m_pPhysics->createRigidStatic(transformPX);
 		pBody->attachShape(*pShape);
@@ -352,8 +478,36 @@ namespace LambdaEngine
 			is released */
 		pShape->release();
 
-		StaticCollisionComponent collisionComponent = { pBody };
-		ECSCore::GetInstance()->AddComponent<StaticCollisionComponent>(collisionCreateInfo.Entity, collisionComponent);
+		return { pBody };
+	}
+
+	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(const DynamicCollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
+	{
+		SetFilterData(pShape, collisionInfo);
+
+		const glm::vec3& position = collisionInfo.Position.Position;
+		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
+		const PxTransform transformPX = CreatePxTransform(position, rotation);
+
+		const glm::vec3& initialVelocity = collisionInfo.Velocity.Velocity;
+		const PxVec3 initialVelocityPX =
+		{
+			initialVelocity.x,
+			initialVelocity.y,
+			initialVelocity.z
+		};
+
+		PxRigidDynamic* pBody = m_pPhysics->createRigidDynamic(transformPX);
+		pBody->setLinearVelocity(initialVelocityPX);
+		pBody->attachShape(*pShape);
+
+		m_pScene->addActor(*pBody);
+
+		/*	Decreases the ref count to 1, which will drop to 0 either when explicitly removed, or when the scene
+			is released */
+		pShape->release();
+
+		return { pBody };
 	}
 
 	void PhysicsSystem::FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc, CharacterColliderComponent& characterColliderComp)

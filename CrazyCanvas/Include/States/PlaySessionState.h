@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/State.h"
 
 #include "Application/API/Events/NetworkEvents.h"
@@ -24,4 +25,5 @@ public:
 private:
 	Level* m_pLevel = nullptr;
 	bool m_Online;
+	WeaponSystem m_WeaponSystem;
 };
