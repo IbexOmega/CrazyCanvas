@@ -189,7 +189,7 @@ namespace LambdaEngine
 		subpassDependencyDesc.DstStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.DebugName = "Light Renderer Render Pass";
+		renderPassDesc.DebugName = "Particle Renderer Render Pass";
 		renderPassDesc.Attachments = { colorAttachmentDesc, depthAttachmentDesc };
 		renderPassDesc.Subpasses = { subpassDesc };
 		renderPassDesc.SubpassDependencies = { subpassDependencyDesc };

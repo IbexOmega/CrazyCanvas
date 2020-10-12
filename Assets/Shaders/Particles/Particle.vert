@@ -4,10 +4,19 @@
 
 #include "../Defines.glsl"
 
+
+struct PVertex {
+	vec3 Position;
+};
+
 struct SParticle
 {
 	mat4 Transform;
 	vec4 Color;
+	vec3 Velocity;
+	vec3 Acceleration;
+	float LifeTime;
+	float Radius;
 };
 
 layout (binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
@@ -17,7 +26,7 @@ layout (binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 
 layout(binding = 0, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Vertices
 { 
-	SVertex Val[]; 
+	PVertex Val[]; 
 } b_Vertices;
 
 layout(binding = 1, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer ParticleInstances
@@ -31,7 +40,7 @@ layout (location = 0) out vec4 fragColor;
 void main()
 {
 	SParticle particle = b_ParticleInstances[gl_InstanceID]
-	SVertex vertex = b_Vertices.Val[gl_VertexIndex];
+	PVertex vertex = b_Vertices.Val[gl_VertexIndex];
 
 	gl_Position = perFrameBuffer.Projection * perFrameBuffer.View * particle.Transform * vec4(vertex.Position.xyz, 1.0);
 }
