@@ -51,6 +51,10 @@ void main()
 	out_TargetDirection				= u_UnwrapData.val.TargetDirection.xyz;
 	out_TargetPosition				= u_UnwrapData.val.TargetPosition.xyz;
 
+    // This is not removed because of debug purposes.
+    //out_TargetDirection             = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
+    //out_TargetPosition              = perFrameBuffer.CameraPosition.xyz;  
+
 	vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);
 	texCoord.y = 1.f - texCoord.y;
 	texCoord = (texCoord*2.f - 1.f);
