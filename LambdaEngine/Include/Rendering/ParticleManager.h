@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ECS/ECSCore.h"
 
 namespace LambdaEngine {
 
@@ -11,6 +12,9 @@ namespace LambdaEngine {
 
 		void Init();
 		void Release();
+
+		void OnEmitterEntityAdded(Entity entity);
+		void OnEmitterEntityRemoved(Entity entity);
 
 	private:
 

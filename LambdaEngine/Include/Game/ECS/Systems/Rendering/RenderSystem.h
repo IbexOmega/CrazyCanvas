@@ -27,8 +27,6 @@
 
 #include "Rendering/RenderGraphTypes.h"
 
-#include "Rendering/LightRenderer.h"
-
 #include "Rendering/ParticleManager.h"
 
 namespace LambdaEngine
@@ -44,6 +42,7 @@ namespace LambdaEngine
 	// Custom Renderers
 	class LineRenderer;
 	class PaintMaskRenderer;
+	class ParticleRenderer;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -402,6 +401,7 @@ namespace LambdaEngine
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
+		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 
 	private:
 		static RenderSystem		s_Instance;

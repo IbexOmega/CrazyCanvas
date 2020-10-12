@@ -30,6 +30,8 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 
+#include "Rendering/ParticleRenderer.h"
+#include "Rendering/LightRenderer.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -227,6 +229,15 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
 
+			// Particle Renderer & Manager
+			{
+				m_ParticleManager.Init();
+				m_pParticleRenderer = DBG_NEW ParticleRenderer();
+				m_pParticleRenderer->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+			}
+
 
 			//GUI Renderer
 			{
@@ -368,6 +379,7 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
+		SAFEDELETE(m_pParticleRenderer);
 
 		// Remove Pointlight Texture and Texture Views
 		for (uint32 c = 0; c < m_CubeTextures.GetSize(); c++)
@@ -770,10 +782,12 @@ namespace LambdaEngine
 
 	void RenderSystem::OnEmitterEntityAdded(Entity entity)
 	{
+		m_ParticleManager.OnEmitterEntityAdded(entity);
 	}
 
 	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
 	{
+		m_ParticleManager.OnEmitterEntityRemoved(entity);
 	}
 
 	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)

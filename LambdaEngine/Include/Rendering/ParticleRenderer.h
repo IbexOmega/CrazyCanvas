@@ -8,6 +8,7 @@ namespace LambdaEngine
 
 	class ParticleRenderer : public ICustomRenderer
 	{
+	public:
 		ParticleRenderer();
 		~ParticleRenderer();
 

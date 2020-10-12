@@ -12,7 +12,7 @@ namespace LambdaEngine
 {
 	ParticleRenderer* ParticleRenderer::s_pInstance = nullptr;
 
-	LambdaEngine::ParticleRenderer::ParticleRenderer()
+	ParticleRenderer::ParticleRenderer()
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
