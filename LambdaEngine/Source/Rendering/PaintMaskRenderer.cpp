@@ -103,7 +103,8 @@ namespace LambdaEngine
 		cmdHitTest.Init("add_hit_point", true);
 		cmdHitTest.AddFlag("p", Arg::EType::FLOAT, 3);
 		cmdHitTest.AddFlag("d", Arg::EType::FLOAT, 3);
-		cmdHitTest.AddDescription("Add a hitpoint for the paint mask renderer\n [-p] position of point in world\n [-d] direction of point in world\n\t'add_hit_point <-p x y z> [-d x y z]'");
+		cmdHitTest.AddFlag("paint", Arg::EType::INT);
+		cmdHitTest.AddDescription("Add a hitpoint for the paint mask renderer\n\t[-p] position of point in world\n\t[-d] direction of point in world\n\t[-paint] true to paint, false to remove paint\n\t'add_hit_point <-p x y z> [-d x y z] [-paint true/false]'");
 		GameConsole::Get().BindCommand(cmdHitTest, [&, this](GameConsole::CallbackInput& input)->void {
 			if (!input.Flags.contains("p"))
 			{
@@ -128,7 +129,13 @@ namespace LambdaEngine
 				GameConsole::Get().PushMsg("Direction not given or too few positions for flag", {0.8f, 0.8f, 0.0f, 1.0f});
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir);
+			uint32 paintMode = 1;
+			if (input.Flags.contains("paint") && input.Flags["paint"].Arg.Value.Int32 >= 0)
+			{
+				paintMode = (uint32)input.Flags["paint"].Arg.Value.Int32;
+			}
+
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode);
 			});
 		
 		return false;
@@ -433,11 +440,12 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction)
+	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, uint32 paintMode)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
 		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
+		data.PaintMode			= paintMode;
 		
 		s_Collisions.push_back(data);
 	}

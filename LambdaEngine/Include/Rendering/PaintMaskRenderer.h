@@ -60,8 +60,9 @@ namespace LambdaEngine
 		* Note: Currently only one hitpoint will be handled at each frame
 		*	position - vec3 of the hit point position
 		*	direction - vec3 of the direction the hit position had during collision
+		*	paintingEnabled - true to paint on target, false to remove paint on target
 		*/
-		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction);
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, uint32 paintMode);
 
 	private:
 		bool CreateCopyCommandList();
@@ -85,8 +86,9 @@ namespace LambdaEngine
 
 		struct UnwrapData
 		{
-			glm::vec4 TargetPosition;
-			glm::vec4 TargetDirection;
+			glm::vec4	TargetPosition;
+			glm::vec4	TargetDirection;
+			uint32		PaintMode = 1; // TODO: Change to an enum for clearer use
 		};
 
 	private:
