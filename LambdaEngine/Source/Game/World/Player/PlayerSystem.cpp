@@ -50,6 +50,8 @@ namespace LambdaEngine
 
 	void PlayerSystem::TickMainThread(Timestamp deltaTime, IClient* pClient)
 	{
+		UNREFERENCED_VARIABLE(pClient);
+
 		if (m_NetworkUID >= 0)
 		{
 			Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
@@ -59,7 +61,7 @@ namespace LambdaEngine
 
 	void PlayerSystem::FixedTickMainThread(Timestamp deltaTime, IClient* pClient)
 	{
-		if (m_NetworkUID >= 0)
+		if(m_NetworkUID >= 0)
 		{
 			Reconcile();
 
@@ -69,8 +71,10 @@ namespace LambdaEngine
 			Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
 			TickLocalPlayerAction(deltaTime, entityPlayer, &gameState);
 			TickOtherPlayersAction(deltaTime);
-			SendGameState(gameState, pClient);
-		}	
+
+			if (!MultiplayerUtils::IsSingleplayer())
+				SendGameState(gameState, pClient);
+		}
 	}
 
 	void PlayerSystem::SendGameState(const GameState& gameState, IClient* pClient)

@@ -1,4 +1,4 @@
-#include "Game/Multiplayer/ServerUtilsImpl.h"
+#include "Game/Multiplayer/Server/ServerUtilsImpl.h"
 
 #include "Networking/API/IClient.h"
 
@@ -21,7 +21,8 @@ namespace LambdaEngine
 
 	void ServerUtilsImpl::RegisterEntity(Entity entity, int32 networkUID)
 	{
-
+		UNREFERENCED_VARIABLE(entity);
+		UNREFERENCED_VARIABLE(networkUID);
 	}
 
 	uint64 ServerUtilsImpl::GetSaltAsUID(IClient* pClient)

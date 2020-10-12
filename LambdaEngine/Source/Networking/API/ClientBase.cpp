@@ -52,6 +52,11 @@ namespace LambdaEngine
 		return false;
 	}
 
+	void ClientBase::ReturnPacket(NetworkSegment* pPacket)
+	{
+		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+	}
+
 	void ClientBase::Disconnect(const std::string& reason)
 	{
 		TerminateThreads(reason);

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
-
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
@@ -14,7 +12,7 @@
 
 namespace LambdaEngine
 {
-	class ClientRemoteSystem : public ClientBaseSystem, public IClientRemoteHandler, public IPacketListener
+	class ClientRemoteSystem : public IClientRemoteHandler, public IPacketListener
 	{
 		friend class ServerSystem;
 
@@ -23,8 +21,8 @@ namespace LambdaEngine
 		virtual ~ClientRemoteSystem();
 
 	protected:
-		virtual void TickMainThread(Timestamp deltaTime) override;
-		virtual void FixedTickMainThread(Timestamp deltaTime) override;
+		virtual void TickMainThread(Timestamp deltaTime);
+		virtual void FixedTickMainThread(Timestamp deltaTime);
 
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;

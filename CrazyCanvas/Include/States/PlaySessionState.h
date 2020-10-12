@@ -1,16 +1,21 @@
 #pragma once
 
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/State.h"
+
+#include "Application/API/Events/NetworkEvents.h"
 
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState() = default;
+	PlaySessionState(bool online);
 	~PlaySessionState();
 
 	void Init() override final;
+
+	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
 
 	void Resume() override final {};
 	void Pause() override final {};
@@ -19,4 +24,6 @@ public:
 
 private:
 	Level* m_pLevel = nullptr;
+	bool m_Online;
+	WeaponSystem m_WeaponSystem;
 };

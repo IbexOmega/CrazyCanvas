@@ -31,6 +31,7 @@ namespace LambdaEngine
 
 		static bool Init();
 
+		static void RemoveAllExtensionsFromEntity(Entity entity);
 		static void AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData& drawArgExtension);
 		static DrawArgExtensionGroup& GetExtensionGroup(Entity entity);
 

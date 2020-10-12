@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Game/ECS/Systems/Networking/ClientBaseSystem.h"
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
-#include "Game/ECS/Systems/Networking/Client/NetworkPositionSystem.h"
+#include "Game/Multiplayer/Client/NetworkPositionSystem.h"
 #include "Game/World/Player/PlayerSystem.h"
 
 #include "Game/ECS/Components/Misc/Components.h"
@@ -15,7 +14,7 @@
 
 namespace LambdaEngine
 {
-	class ClientSystem : public ClientBaseSystem, protected IClientHandler
+	class ClientSystem : protected IClientHandler
 	{
 		friend class EngineLoop;
 
@@ -26,8 +25,8 @@ namespace LambdaEngine
 		bool Connect(IPAddress* pAddress);
 
 	protected:
-		virtual void TickMainThread(Timestamp deltaTime) override;
-		virtual void FixedTickMainThread(Timestamp deltaTime) override;
+		void TickMainThread(Timestamp deltaTime);
+		void FixedTickMainThread(Timestamp deltaTime);
 
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
@@ -65,7 +64,6 @@ namespace LambdaEngine
 
 	private:
 		ClientBase* m_pClient;
-
 		CharacterControllerSystem m_CharacterControllerSystem;
 		NetworkPositionSystem m_NetworkPositionSystem;
 		PlayerSystem m_PlayerSystem;

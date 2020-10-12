@@ -16,6 +16,11 @@ namespace LambdaEngine
 		return true;
 	}
 
+    void LambdaEngine::EntityMaskManager::RemoveAllExtensionsFromEntity(Entity entity)
+    {
+	    s_EntityToExtensionGroupEntryMap.erase(entity);
+    }
+
 	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData& drawArgExtension)
 	{
 		bool inverted;

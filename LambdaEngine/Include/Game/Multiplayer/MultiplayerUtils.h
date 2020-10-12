@@ -33,6 +33,7 @@ namespace LambdaEngine
 		static void RegisterEntity(Entity entity, int32 networkUID);
 		static Entity GetEntityPlayer(IClient* pClient);
 		static void RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor);
+		static bool IsSingleplayer();
 
 	private:
 		static void Init(bool server);
@@ -41,6 +42,7 @@ namespace LambdaEngine
 	private:
 		static MultiplayerUtilBase* s_pMultiplayerUtility;
 		static bool s_IsServer;
+		static bool s_IsSinglePlayer;
 		static IClientEntityAccessor* s_pClientEntityAccessor;
 	};
 }

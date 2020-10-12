@@ -13,6 +13,7 @@
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/Events/KeyEvents.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
@@ -63,4 +64,6 @@ private:
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
 	Level* m_pLevel = nullptr;
+
+	WeaponSystem m_WeaponSystem;
 };

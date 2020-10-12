@@ -1,8 +1,8 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Game/Multiplayer/MultiplayerUtilBase.h"
-#include "Game/Multiplayer/ServerUtilsImpl.h"
-#include "Game/Multiplayer/ClientUtilsImpl.h"
+#include "Game/Multiplayer/Server/ServerUtilsImpl.h"
+#include "Game/Multiplayer/Client/ClientUtilsImpl.h"
 
 #include "Networking/API/IClient.h"
 #include "Networking/API/NetworkStatistics.h"
@@ -11,6 +11,7 @@ namespace LambdaEngine
 {
 	MultiplayerUtilBase* MultiplayerUtils::s_pMultiplayerUtility = nullptr;
 	bool MultiplayerUtils::s_IsServer = false;
+	bool MultiplayerUtils::s_IsSinglePlayer = false;
 	IClientEntityAccessor* MultiplayerUtils::s_pClientEntityAccessor = nullptr;
 
 	bool MultiplayerUtils::IsServer()
@@ -36,6 +37,11 @@ namespace LambdaEngine
 	void MultiplayerUtils::RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor)
 	{
 		s_pClientEntityAccessor = pAccessor;
+	}
+
+	bool MultiplayerUtils::IsSingleplayer()
+	{
+		return s_IsSinglePlayer;
 	}
 
 	void MultiplayerUtils::Init(bool server)
