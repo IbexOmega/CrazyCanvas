@@ -4,11 +4,16 @@
 #define BUFFER_SET_INDEX 0
 #define TEXTURE_SET_INDEX 1
 #define DRAW_SET_INDEX 2
+#define DRAW_EXTENSION_SET_INDEX 3
 
 #define NO_BUFFERS_TEXTURE_SET_INDEX 0
 #define NO_BUFFERS_DRAW_SET_INDEX 1
 #define NO_TEXTURES_DRAW_SET_INDEX 1
 #define NO_BUFFERS_OR_TEXTURES_DRAW_SET_INDEX 0
+
+#define NO_BUFFERS_DRAW_EXTENSION_SET_INDEX 2
+#define NO_TEXTURES_DRAW_EXTENSION_SET_INDEX 2
+#define NO_BUFFERS_OR_TEXTURES_DRAW_EXTENSION_SET_INDEX 1
 
 #define MAX_UNIQUE_MATERIALS 32
 
@@ -75,9 +80,9 @@ struct SInstance
 	mat4 Transform;
 	mat4 PrevTransform;
 	uint MaterialSlot;
+	uint ExtensionIndex;
 	uint MeshletCount;
 	uint Padding0;
-	uint Padding1;
 };
 
 struct SIndirectArg

@@ -286,7 +286,7 @@ namespace LambdaEngine
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
 		controllerDesc.height			= height;
-		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eCONSTRAINED;
+		controllerDesc.climbingMode		= PxCapsuleClimbingMode::eEASY;
 
 		FinalizeCharacterController(characterColliderInfo, controllerDesc, characterColliderComp);
 	}
@@ -364,7 +364,7 @@ namespace LambdaEngine
 		/*	Max height of obstacles that can be climbed. Note that capsules can automatically climb obstacles because
 			of their round bottoms, so the total step height is taller than the specified one below.
 			This can be turned off however. */
-		constexpr const float stepOffset = 0.0f;
+		constexpr const float stepOffset = 0.20f;
 
 		const glm::vec3& position = characterColliderInfo.Position.Position;
 		const glm::vec3 upDirection = g_DefaultUp * characterColliderInfo.Rotation.Quaternion;

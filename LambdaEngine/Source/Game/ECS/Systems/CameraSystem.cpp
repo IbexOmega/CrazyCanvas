@@ -158,7 +158,7 @@ namespace LambdaEngine
 		glm::vec3& velocity = velocityComp.Velocity;
 
 		glm::vec2 horizontalVelocity = {
-			float(InputActionSystem::IsActive("CAM_RIGHT") - InputActionSystem::IsActive("CAM_LEFT")),			// X: Right
+			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
 			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Y: Forward
 		};
 
