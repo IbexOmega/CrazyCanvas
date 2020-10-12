@@ -14,6 +14,7 @@ namespace LambdaEngine
 	{
 		glm::vec3 Position;
 		glm::vec3 Velocity;
+		glm::quat Rotation;
 		bool HasNewData = false;
 	};
 
@@ -27,6 +28,7 @@ namespace LambdaEngine
 
 		void Init();
 
+		void TickMainThread(Timestamp deltaTime, IClient* pClient);
 		void FixedTickMainThread(Timestamp deltaTime, IClient* pClient);
 
 		void TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState);

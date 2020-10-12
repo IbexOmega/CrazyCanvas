@@ -51,10 +51,12 @@ namespace LambdaEngine
 				auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 				auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
 				auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+				auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 
 				PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
 				NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
 				VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+				RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
 
 				for (const GameState& gameState : m_Buffer)
 				{
@@ -62,7 +64,9 @@ namespace LambdaEngine
 
 					m_CurrentGameState = gameState;
 
-					PlayerActionSystem::ComputeVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+					rotationComponent.Quaternion = gameState.Rotation;
+
+					PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
 					CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 					NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
@@ -71,6 +75,7 @@ namespace LambdaEngine
 					encoder.WriteInt32(m_CurrentGameState.SimulationTick);
 					encoder.WriteVec3(netPosComponent.Position);
 					encoder.WriteVec3(velocityComponent.Velocity);
+					encoder.WriteQuat(rotationComponent.Quaternion);
 					m_pClient->SendReliableBroadcast(pPacket);
 				}
 
@@ -122,6 +127,7 @@ namespace LambdaEngine
 
 			BinaryDecoder decoder(pPacket);
 			decoder.ReadInt32(gameState.SimulationTick);
+			decoder.ReadQuat(gameState.Rotation);
 			decoder.ReadInt8(gameState.DeltaForward);
 			decoder.ReadInt8(gameState.DeltaLeft);
 

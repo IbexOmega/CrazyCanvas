@@ -48,6 +48,15 @@ namespace LambdaEngine
 		EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlayerSystem::OnPacketReceived);
 	}
 
+	void PlayerSystem::TickMainThread(Timestamp deltaTime, IClient* pClient)
+	{
+		if (m_NetworkUID >= 0)
+		{
+			Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
+			m_PlayerActionSystem.TickMainThread(deltaTime, entityPlayer);
+		}	
+	}
+
 	void PlayerSystem::FixedTickMainThread(Timestamp deltaTime, IClient* pClient)
 	{
 		if (m_NetworkUID >= 0)
@@ -69,6 +78,7 @@ namespace LambdaEngine
 		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteInt32(gameState.SimulationTick);
+		encoder.WriteQuat(gameState.Rotation);
 		encoder.WriteInt8(gameState.DeltaForward);
 		encoder.WriteInt8(gameState.DeltaLeft);
 		pClient->SendReliable(pPacket);
@@ -109,6 +119,7 @@ namespace LambdaEngine
 		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
 		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 
 		for (auto& pair : m_EntityOtherStates)
 		{
@@ -118,8 +129,9 @@ namespace LambdaEngine
 			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entity);
 			const PositionComponent& positionComponent = pPositionComponents->GetData(entity);
 			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
+			RotationComponent& rotationComponent = pRotationComponents->GetData(entity);
 
-			if (gameState.HasNewData) //Data does not exist for the current frame :(
+			if (gameState.HasNewData) //Data exist for the current frame :)
 			{
 				gameState.HasNewData = false;
 
@@ -128,15 +140,15 @@ namespace LambdaEngine
 				netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 
 				velocityComponent.Velocity = gameState.Velocity;
+
+				rotationComponent.Quaternion = gameState.Rotation;
 			}
-			else //Data exist for the current frame :)
+			else  //Data does not exist for the current frame :(
 			{
 				netPosComponent.PositionLast = positionComponent.Position;
 				netPosComponent.Position += velocityComponent.Velocity * dt;
 				netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 			}
-
-			LOG_INFO("%f, %f, %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
 		}
 	}
 
@@ -148,9 +160,11 @@ namespace LambdaEngine
 
 			BinaryDecoder decoder(event.pPacket);
 			int32 networkUID = decoder.ReadInt32();
-			serverGameState.SimulationTick = decoder.ReadInt32();
-			serverGameState.Position = decoder.ReadVec3();
-			serverGameState.Velocity = decoder.ReadVec3();
+
+			decoder.ReadInt32(serverGameState.SimulationTick);
+			decoder.ReadVec3(serverGameState.Position);
+			decoder.ReadVec3(serverGameState.Velocity);
+			decoder.ReadQuat(serverGameState.Rotation);
 
 			if (networkUID == m_NetworkUID)
 			{
@@ -163,6 +177,7 @@ namespace LambdaEngine
 				m_EntityOtherStates[entity] = {
 					serverGameState.Position,
 					serverGameState.Velocity,
+					serverGameState.Rotation,
 					true
 				};
 			}
@@ -217,7 +232,7 @@ namespace LambdaEngine
 			/*
 			* Returns the velocity based on key presses
 			*/
-			PlayerActionSystem::ComputeVelocity(gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+			PlayerActionSystem::ComputeVelocity(gameState.Rotation, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
 
 			/*
 			* Sets the position of the PxController taken from the PositionComponent.

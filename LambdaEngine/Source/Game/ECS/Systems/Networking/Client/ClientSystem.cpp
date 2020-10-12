@@ -86,8 +86,8 @@ namespace LambdaEngine
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
-		UNREFERENCED_VARIABLE(deltaTime);
 		NetworkDebugger::RenderStatistics(m_pClient);
+		m_PlayerSystem.TickMainThread(deltaTime, m_pClient);
 	}
 
 	void ClientSystem::OnConnecting(IClient* pClient)
