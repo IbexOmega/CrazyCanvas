@@ -32,7 +32,7 @@ namespace LambdaEngine
 		static bool Init();
 
 		static void RemoveAllExtensionsFromEntity(Entity entity);
-		static void AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData& drawArgExtension);
+		static void AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension);
 		static DrawArgExtensionGroup& GetExtensionGroup(Entity entity);
 
 		static uint32 FetchEntityMask(Entity entity);
@@ -46,7 +46,7 @@ namespace LambdaEngine
 	private:
 		static void BindTypeToExtensionDesc(const ComponentType* type, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
 
-		static void CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData& src);
+		static void CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc);
 
 	private:
 		inline static THashTable<const ComponentType*, ComponentBit>	s_ComponentTypeToMaskMap;

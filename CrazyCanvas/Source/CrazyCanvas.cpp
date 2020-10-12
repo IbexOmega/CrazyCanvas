@@ -43,7 +43,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	if (stateStr == "crazycanvas")
 	{
-		pStartingState = DBG_NEW PlaySessionState(true);
+		pStartingState = DBG_NEW MainMenuState();
 	}
 	else if (stateStr == "sandbox")
 	{

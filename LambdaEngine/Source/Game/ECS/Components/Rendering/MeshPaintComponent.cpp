@@ -20,7 +20,7 @@ MeshPaintComponent MeshPaint::CreateComponent(Entity entity, const std::string& 
 	drawArgExtensionData.ppTextureViews[0] = ResourceManager::GetTextureView(meshPaintComponent.UnwrappedTexture);
 	drawArgExtensionData.ppSamplers[0] = Sampler::GetLinearSampler();
 
-	EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), drawArgExtensionData);
+	EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), &drawArgExtensionData);
 
 	return meshPaintComponent;
 }

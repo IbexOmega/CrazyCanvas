@@ -21,7 +21,7 @@ namespace LambdaEngine
 	    s_EntityToExtensionGroupEntryMap.erase(entity);
     }
 
-	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData& drawArgExtension)
+	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension)
 	{
 		bool inverted;
 		uint32 extensionMask = GetExtensionMask(type, inverted);
@@ -32,7 +32,12 @@ namespace LambdaEngine
 		{
 			DrawArgExtensionGroup& extensionGroup = it->second.extensionGroup;
 			uint32 newIndex = extensionGroup.ExtensionCount++;
-			CopyDrawArgExtensionData(extensionGroup.pExtensions[newIndex], drawArgExtension);
+
+			if (pDrawArgExtension != nullptr)
+			{
+				CopyDrawArgExtensionData(extensionGroup.pExtensions[newIndex], pDrawArgExtension);
+			}
+
 			extensionGroup.pExtensions[newIndex].ExtensionID = extensionMask;
 
 			extensionGroup.pExtensionMasks[newIndex] = extensionMask;
@@ -53,7 +58,12 @@ namespace LambdaEngine
 		DrawArgExtensionGroup& extensionGroup = groupEntry.extensionGroup;
 		extensionGroup.ExtensionCount = 1;
 		extensionGroup.pExtensionMasks[0] = extensionMask;
-		CopyDrawArgExtensionData(extensionGroup.pExtensions[0], drawArgExtension);
+
+		if (pDrawArgExtension != nullptr)
+		{
+			CopyDrawArgExtensionData(extensionGroup.pExtensions[0], pDrawArgExtension);
+		}
+
 		extensionGroup.pExtensions[0].ExtensionID = extensionMask;
 		groupEntry.Mask = 0x1;
 
@@ -130,8 +140,8 @@ namespace LambdaEngine
 			s_ExtensionMaskToExtensionDescMap[extensionMask] = extensionDesc;
 	}
 
-	void EntityMaskManager::CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData& src)
+	void EntityMaskManager::CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc)
 	{
-		memcpy(&dest, &src, sizeof(DrawArgExtensionData));
+		memcpy(&dest, pSrc, sizeof(DrawArgExtensionData));
 	}
 }

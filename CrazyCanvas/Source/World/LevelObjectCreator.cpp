@@ -254,7 +254,7 @@ bool LevelObjectCreator::CreatePlayer(
 			}
 
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
-			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), {});
+			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();

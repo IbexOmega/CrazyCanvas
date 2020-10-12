@@ -37,7 +37,7 @@ namespace LambdaEngine
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0;
 	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
-	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 1;
+	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 8;
 	constexpr const uint32 MAX_TEXTURES_PER_EXTENSION			= 16;
 	constexpr const uint32 MAX_EXTENSION_GROUPS_PER_MESH_TYPE	= 64; // Number of extension groups per mesh instance
 
