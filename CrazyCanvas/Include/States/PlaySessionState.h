@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/State.h"
 
 class Level;
@@ -19,4 +20,6 @@ public:
 
 private:
 	Level* m_pLevel = nullptr;
+
+	WeaponSystem m_WeaponSystem;
 };

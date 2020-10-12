@@ -47,10 +47,10 @@ namespace LambdaEngine
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{
-			TransformComponents transformComponents;
-			transformComponents.Position.Permissions	= R;
-			transformComponents.Scale.Permissions		= R;
-			transformComponents.Rotation.Permissions	= R;
+			TransformGroup transformGroup;
+			transformGroup.Position.Permissions	= R;
+			transformGroup.Scale.Permissions	= R;
+			transformGroup.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
 			systemReg.Phase = g_LastPhase;
@@ -64,7 +64,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					},
 					.ExcludedComponentTypes =
 					{
@@ -77,7 +77,7 @@ namespace LambdaEngine
 					.pSubscriber = &m_DirectionalLightEntities,
 					.ComponentAccesses =
 					{
-						{ R, DirectionalLightComponent::Type() }, 
+						{ R, DirectionalLightComponent::Type() },
 						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					},
@@ -103,7 +103,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					}
 				},
 				{
@@ -115,7 +115,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1)
@@ -203,7 +203,7 @@ namespace LambdaEngine
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
 			}
-			
+
 			// Light Renderer
 			{
 				m_pLightRenderer = DBG_NEW LightRenderer();
@@ -318,7 +318,7 @@ namespace LambdaEngine
 			}
 		}
 
-		
+
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -477,7 +477,7 @@ namespace LambdaEngine
 			if (!animationComp.IsPaused)
 			{
 				MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
-				
+
 				auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 				if (meshEntryIt != m_MeshAndInstancesMap.end())
 				{
@@ -688,7 +688,7 @@ namespace LambdaEngine
 		m_PointLightToEntity[pointLightIndex] = entity;
 
 		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
-		
+
 		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
 		{
 			m_PointLights.GetBack().TextureIndex = pointLightIndex;
@@ -997,7 +997,7 @@ namespace LambdaEngine
 			{
 				const Material* pMaterial = ResourceManager::GetMaterial(materialGUID);
 				VALIDATE(pMaterial != nullptr);
-				
+
 				if (!m_ReleasedMaterialIndices.IsEmpty())
 				{
 					materialIndex = m_ReleasedMaterialIndices.GetBack();
@@ -1114,7 +1114,7 @@ namespace LambdaEngine
 		{
 			uint32& materialInstanceCount = m_MaterialInstanceCounts[rasterInstance.MaterialIndex];
 			materialInstanceCount--;
-			
+
 			if (materialInstanceCount == 0)
 			{
 				//Mark material as empty
@@ -1295,7 +1295,7 @@ namespace LambdaEngine
 			lightTextureUpdate.PointLightIndex = index;
 			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
 			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
-		
+
 			m_PointLightDirty = true;
 		}
 	}
@@ -1882,7 +1882,7 @@ namespace LambdaEngine
 			uint32 diff = pointLightCount - m_CubeTextures.GetSize();
 
 			// TODO: Create inteface for changing resolution
-			const uint32 width = 512; 
+			const uint32 width = 512;
 			const uint32 height = 512;
 
 			uint32 prevSubImageCount = m_CubeSubImageTextureViews.GetSize();
