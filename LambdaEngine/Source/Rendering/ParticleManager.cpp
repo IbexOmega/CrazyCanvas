@@ -22,10 +22,26 @@ namespace LambdaEngine
 
 	void ParticleManager::Release()
 	{
-		SAFEDELETE(m_pIndirectBuffer);
-		SAFEDELETE(m_pVertexBuffer);
-		SAFEDELETE(m_pIndexBuffer);
-		SAFEDELETE(m_pParticleBuffer);
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		{
+			TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[b];
+			for (DeviceChild* pResource : resourcesToRemove)
+			{
+				SAFERELEASE(pResource);
+			}
+
+			resourcesToRemove.Clear();
+
+			SAFERELEASE(m_ppVertexStagingBuffer[b]);
+			SAFERELEASE(m_ppParticleStagingBuffer[b]);
+			SAFERELEASE(m_ppIndexStagingBuffer[b]);
+			SAFERELEASE(m_ppIndirectStagingBuffer[b]);
+		}
+
+		SAFERELEASE(m_pIndirectBuffer);
+		SAFERELEASE(m_pVertexBuffer);
+		SAFERELEASE(m_pIndexBuffer);
+		SAFERELEASE(m_pParticleBuffer);
 	}
 
 	void ParticleManager::Tick(Timestamp deltaTime, uint32 modFrameIndex)

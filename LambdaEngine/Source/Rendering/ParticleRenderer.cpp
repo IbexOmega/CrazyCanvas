@@ -383,7 +383,7 @@ namespace LambdaEngine
 					ppBuffers,
 					pOffsets,
 					pSizesInBytes,
-					0,
+					1,
 					count,
 					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 				);
