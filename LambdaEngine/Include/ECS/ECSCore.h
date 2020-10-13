@@ -126,7 +126,7 @@ namespace LambdaEngine
 		JobScheduler m_JobScheduler;
 		ComponentStorage m_ComponentStorage;
 
-		TArray<Entity> m_EntitiesToDelete;
+		std::unordered_set<Entity> m_EntitiesToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToRegister;
 

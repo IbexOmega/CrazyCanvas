@@ -125,6 +125,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {m_ProjectileMeshComponent}),
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionCallback */ std::bind(&WeaponSystem::OnProjectileHit, this, projectileEntity),
 		/* Velocity */			initialVelocity
 	};
 
@@ -132,4 +133,13 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 
 	weaponComponent.Projectiles.PushBack(projectileEntity);
+}
+
+void WeaponSystem::OnProjectileHit(LambdaEngine::Entity entity)
+{
+	using namespace LambdaEngine;
+
+	LOG_INFO("Projectile hit, entity: %d", entity);
+	ECSCore* pECS = ECSCore::GetInstance();
+	pECS->RemoveEntity(entity);
 }

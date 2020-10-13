@@ -39,7 +39,7 @@ namespace LambdaEngine
 			.Position = pECS->GetComponent<PositionComponent>(entity),
 			.Rotation = pECS->GetComponent<RotationComponent>(entity),
 			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
-			.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+			.CollisionMask	= UINT32_MAX								// The player collides with everything
 		};
 
 		constexpr const float capsuleHeight = 1.8f;

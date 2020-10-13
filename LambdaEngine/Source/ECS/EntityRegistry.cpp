@@ -94,7 +94,7 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		Entity newEntity = m_EntityIDGen.GenID();
+		const Entity newEntity = m_EntityIDGen.GenID();
 
 		EntityRegistryPage& topPage = m_EntityPages.top();
 		topPage.PushBack({}, newEntity);
