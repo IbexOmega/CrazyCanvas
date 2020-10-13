@@ -38,18 +38,16 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 
 	for (int i = 0; i < 4; i++)
 	{
-		Ptr<ColumnDefinition> columnDef = *new ColumnDefinition();
-		const GridLength gridLength = *new GridLength(25, GridUnitType_Star);
-		columnDef->SetWidth(gridLength);
-		grid->GetColumnDefinitions()->Add(columnDef);
+		Ptr<ColumnDefinition> pColumnDef = *new ColumnDefinition();
+		GridLength gridLength = GridLength(25, GridUnitType_Star);
+		pColumnDef->SetWidth(gridLength);
+		grid->GetColumnDefinitions()->Add(pColumnDef);
 	}
 
-	Ptr<RowDefinition> rowDef = *new RowDefinition();
-	const GridLength rowLength = *new GridLength(50);
-	rowDef->SetHeight(rowLength);
-	grid->GetRowDefinitions()->Add(rowDef);
-
-	ColumnDefinitionCollection* collection = grid->GetColumnDefinitions();
+	Ptr<RowDefinition> pRowDef = *new RowDefinition();
+	GridLength rowLength =GridLength(50);
+	pRowDef->SetHeight(rowLength);
+	grid->GetRowDefinitions()->Add(pRowDef);
 
 	//m_pSavedServerList->SetItemsSource(Servers);
 	//m_pSavedServerList->GetChildren()->Add(m_pSavedServerList);
@@ -68,7 +66,7 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	pping->SetText(pPing);
 
 	Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
-	const Color color = *new Color();
+	Color color = Color();
 
 	if (isRunning)
 		pBrush->SetColor(color.Green());
@@ -96,6 +94,5 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	{
 		LOG_ERROR("SKIT ON ME");
 	}
-
 }
 
