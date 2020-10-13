@@ -48,6 +48,7 @@
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -98,6 +99,16 @@ namespace LambdaEngine
 				}
 			}
 		}
+	}
+
+	bool EngineLoop::InitComponentOwners()
+	{
+		if (!MeshPaintComponentOwner::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool EngineLoop::InitSystems()
@@ -324,6 +335,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!InitComponentOwners())
+		{
+			return false;
+		}
+
 		if (!InitSystems())
 		{
 			return false;
@@ -387,11 +403,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderAPI::Release())
-		{
-			return false;
-		}
-
 		if (!AudioAPI::Release())
 		{
 			return false;
@@ -414,6 +425,11 @@ namespace LambdaEngine
 		ServerSystem::StaticRelease();
 		Thread::Release();
 		PlatformNetworkUtils::PostRelease();
+
+		if (!RenderAPI::Release())
+		{
+			return false;
+		}
 
 		if (!CommonApplication::PostRelease())
 		{

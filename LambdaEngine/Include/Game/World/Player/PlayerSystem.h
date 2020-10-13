@@ -5,19 +5,11 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "Game/Multiplayer/GameState.h"
+
 namespace LambdaEngine
 {
-	struct GameState;
 	class IClient;
-
-	struct GameStateOther
-	{
-		glm::vec3 Position;
-		glm::vec3 Velocity;
-		glm::quat Rotation;
-		bool HasNewData = false;
-		int32 SimulationTick;
-	};
 
 	class PlayerSystem
 	{
@@ -45,7 +37,7 @@ namespace LambdaEngine
 		bool CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer);
 
 	private:
-		std::unordered_map<Entity, GameStateOther> m_EntityOtherStates;
+		std::unordered_map<Entity, TArray<GameState>> m_EntityOtherStates;
 		PlayerActionSystem m_PlayerActionSystem;
 
 		int32 m_NetworkUID;

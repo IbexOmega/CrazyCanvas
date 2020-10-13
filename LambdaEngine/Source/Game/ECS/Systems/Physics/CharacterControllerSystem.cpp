@@ -9,9 +9,6 @@
 
 namespace LambdaEngine
 {
-	// TODO: Temporary solution until there's a separate camera entity with an offset
-	constexpr const float characterHeight = 1.8f;
-
 	CharacterControllerSystem::CharacterControllerSystem()
 	{
 
@@ -55,61 +52,49 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	/*
-	* Only called on the client side
-	*/
-	void CharacterControllerSystem::FixedTickMainThread(Timestamp deltaTime)
+	void CharacterControllerSystem::TickForeignCharacterController(
+		float32 dt,
+		Entity entity,
+		ComponentArray<CharacterColliderComponent>* pCharacterColliders,
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
+		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
-		const float32 dt = (float32)deltaTime.AsSeconds();
-		TickCharacterControllers(dt);
-	}
+		
+		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
+		const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
+		VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
-	void CharacterControllerSystem::TickCharacterControllers(float32 dt)
-	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pCharacterColliders		= pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pPositionComponents		= pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents		= pECS->GetComponentArray<VelocityComponent>();
+		PxController* pController = characterCollider.pController;
 
-		for (Entity entity : m_ForeignPlayerEntities)
+		const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
+		PxVec3 translationPX =
 		{
-			CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
-			const NetworkPositionComponent& positionComp	= pPositionComponents->GetConstData(entity);
-			VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
+			positionComp.Position.x - (float)oldPositionPX.x,
+			positionComp.Position.y - (float)oldPositionPX.y,
+			positionComp.Position.z - (float)oldPositionPX.z
+		};
 
-			PxController* pController = characterCollider.pController;
+		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
-			const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
-			PxVec3 translationPX = 
-			{ 
-				positionComp.Position.x - (float)oldPositionPX.x,
-				positionComp.Position.y - (float)oldPositionPX.y,
-				positionComp.Position.z - (float)oldPositionPX.z
-			};
+		const PxExtendedVec3& newPositionPX = pController->getFootPosition();
+		velocityComp.Velocity = {
+			(float)newPositionPX.x - oldPositionPX.x,
+			(float)newPositionPX.y - oldPositionPX.y,
+			(float)newPositionPX.z - oldPositionPX.z
+		};
+		velocityComp.Velocity /= dt;
 
-			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
-
-			const PxExtendedVec3& newPositionPX = pController->getFootPosition();
-			velocityComp.Velocity = {
-				(float)newPositionPX.x - oldPositionPX.x,
-				(float)newPositionPX.y - oldPositionPX.y,
-				(float)newPositionPX.z - oldPositionPX.z
-			};
-			velocityComp.Velocity /= dt;
-
-			if (glm::length2(velocityComp.Velocity) > glm::epsilon<float>())
+		if (glm::length2(velocityComp.Velocity) > glm::epsilon<float>())
+		{
+			// Disable vertical movement if the character is on the ground
+			PxControllerState controllerState;
+			pController->getState(controllerState);
+			if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
 			{
-				// Disable vertical movement if the character is on the ground
-				PxControllerState controllerState;
-				pController->getState(controllerState);
-				if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
-				{
-					velocityComp.Velocity.y = 0.0f;
-				}
+				velocityComp.Velocity.y = 0.0f;
 			}
-
-			//Maybe add something to change the rendered PositionComponent here in case we collide
 		}
+		//Maybe add something to change the rendered PositionComponent here in case we collide
 	}
 
 	/*

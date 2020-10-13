@@ -10,6 +10,8 @@
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
+#include "ECS/Components/Player/Weapon.h"
+
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/ClientRemoteBase.h"
 #include "Networking/API/BinaryEncoder.h"
@@ -233,19 +235,19 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 	pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
+	Entity weaponEntity = pECS->CreateEntity();
+	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
+
 	if (!MultiplayerUtils::IsServer())
 	{
 		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
 		pECS->AddComponent<MeshComponent>(playerEntity, pPlayerDesc->MeshComponent);
+		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
 
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
-
-			AnimationComponent animationCopy = pPlayerDesc->AnimationComponent;
-			animationCopy.Graph.GetCurrentState().SetPlaybackSpeed(2.0f);
-			pECS->AddComponent<AnimationComponent>(playerEntity, animationCopy);
 		}
 		else
 		{
@@ -256,7 +258,6 @@ bool LevelObjectCreator::CreatePlayer(
 				return false;
 			}
 
-			pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 

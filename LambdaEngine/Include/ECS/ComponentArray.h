@@ -113,15 +113,6 @@ namespace LambdaEngine
 
 		if constexpr (Comp::HasDirtyFlag())
 		{
-			if (Comp::Type() == NetworkPositionComponent::Type())
-				int grandiosa = 0;
-
-			if (Comp::Type() == PositionComponent::Type())
-				int extra = 0;
-
-			if (Comp::Type() == RotationComponent::Type())
-				int allt = 0;
-
 			component.Dirty = true;
 		}
 

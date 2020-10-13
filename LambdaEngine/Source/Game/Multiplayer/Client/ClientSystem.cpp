@@ -94,7 +94,6 @@ namespace LambdaEngine
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
 		m_PlayerSystem.FixedTickMainThread(deltaTime, m_pClient);
-		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)

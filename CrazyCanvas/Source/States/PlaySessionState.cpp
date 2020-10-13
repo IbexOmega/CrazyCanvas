@@ -164,7 +164,7 @@ void PlaySessionState::Init()
 	//	}
 	//}
 	TArray<GUID_Lambda> animations;
-	ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+	ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 
 	MaterialProperties materialProperties;
 	materialProperties.Albedo = glm::vec4(1.0f);
@@ -209,8 +209,8 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		};
 
 		TArray<GUID_Lambda> animations;
-		bool animationsExist			= ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Rumba Dancing.fbx", animations);
-		const uint32 robotGUID			= ResourceManager::GetMeshGUID("Robot/Rumba Dancing.fbx");
+		bool animationsExist			= ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Standard Walk.fbx", animations);
+		const uint32 robotGUID			= ResourceManager::GetMeshGUID("Robot/Standard Walk.fbx");
 		const uint32 robotMaterialGUID	= ResourceManager::GetMaterialGUID("Robot Material");
 
 		MeshComponent robotMeshComp = {};
@@ -221,12 +221,8 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		if (animationsExist)
 		{
-			robotAnimationComp.Graph = AnimationGraph(AnimationState("dancing", animations[0]));
-			robotAnimationComp.IsPaused = true;
+			robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
 		}
-
-		/*Entity weaponEntity = pECS->CreateEntity();
-		pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });*/
 
 		CreatePlayerDesc createPlayerDesc =
 		{
