@@ -10,52 +10,36 @@ using namespace LambdaEngine;
 using namespace Noesis;
 
 
-/*NS_REGISTER_REFLECTION(Noesis::Factory* factory, Noesis::NsBool registerComponents)
-{
-	NS_REGISTER_COMPONENT(ListViewTest)
-}*/
-
 SavedServerGUI::SavedServerGUI(const LambdaEngine::String& xamlFile) :
 	m_ItemCount(0)
 {
-	//Noesis::GUI::LoadComponent(this, xamlFile.c_str());
-	//Noesis::RegisterComponent<ListViewTest>();
-	//m_Test = *new ListViewTest();
 
-	//FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST")
 }
 
-void SavedServerGUI::Init(ListView* pListView)
+void SavedServerGUI::Init(ListBox* pListView)
 {
-	textBlock = *new ObservableCollection<TextBlock>();
+	/*textBlock = *new ObservableCollection<TextBlock>();
 	tBlock = *new TextBlock("ChrilleBoi");
 	textBlock->Add(tBlock);
+	m_pSavedServerList->SetItemsSource(textBlock);*/
 	
 	m_pSavedServerList = *pListView;
 
-	m_pSavedServerList->SetItemsSource(textBlock);
 }
 
 SavedServerGUI::~SavedServerGUI()
 {
 }
 
-/*
-Noesis::ListBox* SavedServerGUI::GetList()
+void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
 {
-	return m_pSavedServerList;
-}*/
-
-void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const char* serverName, const char* mapName, bool isRunning)
-{
-	/*
-	//ListBox* pSavedServerList = FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
+	
 	Ptr<Grid> grid = *new Grid();
 
-	for (int i = 0; i < nrOfColumns; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		Ptr<ColumnDefinition> columnDef = *new ColumnDefinition();
-		const GridLength gridLength = *new GridLength(50);
+		const GridLength gridLength = *new GridLength(25, GridUnitType_Star);
 		columnDef->SetWidth(gridLength);
 		grid->GetColumnDefinitions()->Add(columnDef);
 	}
@@ -67,7 +51,6 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const c
 
 	ColumnDefinitionCollection* collection = grid->GetColumnDefinitions();
 
-	LOG_MESSAGE("Columns: %d", collection->Count());
 	//m_pSavedServerList->SetItemsSource(Servers);
 	//m_pSavedServerList->GetChildren()->Add(m_pSavedServerList);
 	//glöm inte sätta row också när du löst detta bajsproblemet. 
@@ -77,10 +60,12 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const c
 
 	Ptr<TextBlock> pServerName	= *new TextBlock();
 	Ptr<TextBlock> pMapName		= *new TextBlock();
+	Ptr<TextBlock> pping		= *new TextBlock();
 	Ptr<Rectangle> pIsRunning	= *new Rectangle();
 
-	pServerName->SetText(serverName);
-	pMapName->SetText(mapName);
+	pServerName->SetText(pServerN);
+	pMapName->SetText(pMapN);
+	pping->SetText(pPing);
 
 	Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 	const Color color = *new Color();
@@ -94,11 +79,13 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const c
 
 	grid->GetChildren()->Add(pServerName);
 	grid->GetChildren()->Add(pMapName);
+	grid->GetChildren()->Add(pping);
 	grid->GetChildren()->Add(pIsRunning);
 
 	grid->SetColumn(pServerName, 0);
 	grid->SetColumn(pMapName, 1);
-	grid->SetColumn(pIsRunning, 2);
+	grid->SetColumn(pping, 2);
+	grid->SetColumn(pIsRunning, 3);
 	//grid->SetRow(pServerName, m_ItemCount++);
 
 
@@ -109,6 +96,6 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const c
 	{
 		LOG_ERROR("SKIT ON ME");
 	}
-	*/
+
 }
 

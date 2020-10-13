@@ -10,8 +10,8 @@
 
 struct HostGameDescription
 {
-	int8 PlayersNumber = 10;
-	int8 MapNumber = 0;
+	int8 PlayersNumber = -1;
+	int8 MapNumber = -1;
 };
 
 enum ErrorCode
@@ -46,7 +46,9 @@ private:
 	void ErrorPopUp(ErrorCode errorCode);
 	void ErrorPopUpClose();
 
-	const HostGameDescription& PopulateServerInfo();
+	bool CheckServerSettings(const HostGameDescription& serverSettings);
+
+	void PopulateServerInfo();
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)
 

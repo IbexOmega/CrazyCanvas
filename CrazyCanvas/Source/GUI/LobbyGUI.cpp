@@ -5,6 +5,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "Game/ECS/Systems/Networking/ClientSystem.h"
+#include "Game/ECS/Systems/Networking/ServerSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "GUI/LobbyGUI.h"
@@ -14,6 +15,7 @@
 
 #include "States/MainMenuState.h"
 #include "States/NetworkingState.h"
+#include "States/ServerState.h"
 
 //#include <string>
 
@@ -31,7 +33,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(ip);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
-	m_ServerList.Init(FrameworkElement::FindName<ListView>("TEST_LIST_VIEW"));
+	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"));
 	ErrorPopUpClose();
 }
 
@@ -81,22 +83,8 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-	
-	/*for (int i = 0; i < 4; i++)
-	{
-		Ptr<ListBoxItem> listBlock	= *new ListBoxItem();
 
-		std::string text	= "Server " + std::to_string(i);
-
-		listBlock->SetContent(text.c_str());
-		listBlock->SetHorizontalAlignment(HorizontalAlignment_Center);
-		listBlock->SetVerticalAlignment(VerticalAlignment_Center);
-
-		pServerGrid->SetColumn(listBlock, 2);
-		pServerGrid->SetRow(listBlock, i + 3);
-	}*/
-
-	m_ServerList.AddServerItem(pServerGrid, 3, "BajsKorv", "BajsApa", true);
+	m_ServerList.AddServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69",true);
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -112,7 +100,23 @@ void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis
 void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	PopulateServerInfo();
-	//start Server with populated struct
+
+	if (!CheckServerSettings(m_HostGameDesc))
+		ErrorPopUp(HOST_ERROR);
+	else
+	{
+		//start Server with populated struct
+		ServerSystem::GetInstance().Start();
+	
+		LambdaEngine::GUIApplication::SetView(nullptr);
+
+		SetRenderStagesActive();
+
+		State* pServerState = DBG_NEW ServerState();
+		StateManager::GetInstance()->EnqueueStateTransition(pServerState, STATE_TRANSITION::POP_AND_PUSH);
+	}
+
+
 }
 
 void LobbyGUI::SetRenderStagesActive()
@@ -150,32 +154,32 @@ void LobbyGUI::ErrorPopUpClose()
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
 }
 
-const HostGameDescription& LobbyGUI::PopulateServerInfo()
+bool LobbyGUI::CheckServerSettings(const HostGameDescription& serverSettings)
+{
+	if (serverSettings.PlayersNumber == -1)
+		return false;
+	else if (serverSettings.MapNumber == -1)
+		return false;
+
+	return true;
+}
+
+void LobbyGUI::PopulateServerInfo()
 {
 	ComboBox* pCBPlayerCount = FrameworkElement::FindName<ComboBox>("PLAYER_NUMBER");
-	ComboBoxItem* item = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
-	int8 playersNumber = (int8)std::stoi(item->GetContent()->ToString().Str());
+	ComboBoxItem* pItem = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
+	int8 playersNumber = (int8)std::stoi(pItem->GetContent()->ToString().Str());
+
+	ComboBox* pCBPMapOption = FrameworkElement::FindName<ComboBox>("MAP_OPTION");
+	pItem = (ComboBoxItem*)pCBPMapOption->GetSelectedItem();
+	const char*  pMap = pItem->GetContent()->ToString().Str();
 
 	m_HostGameDesc.PlayersNumber = playersNumber;
 
-	//Only necessary if we allow none to be chosen
-	/*switch (playersNumber)
-	{
-	case 4:		m_HostGameDesc.PlayersNumber	= playersNumber; break;
-	case 6:		m_HostGameDesc.PlayersNumber	= playersNumber; break;
-	case 8:		m_HostGameDesc.PlayersNumber	= playersNumber; break;
-	case 10:	m_HostGameDesc.PlayersNumber	= playersNumber; break;
-	default: LOG_ERROR("No Player Count Set"); break;
-	}*/
-
-	ComboBox* pCBPMapOption = FrameworkElement::FindName<ComboBox>("MAP_OPTION");
-	item = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
-	const char*  map = item->GetContent()->ToString().Str();
-
-	if(map == "Standard")
+	if(std::strcmp(pMap, "Standard") == 0)
 		m_HostGameDesc.MapNumber = 0;
 
 	LOG_MESSAGE("Player count %d", playersNumber);
+	LOG_MESSAGE(pMap);
 
-	return m_HostGameDesc;
 }

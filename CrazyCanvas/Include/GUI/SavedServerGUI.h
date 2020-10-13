@@ -9,7 +9,7 @@
 #include "NsGui/Slider.h"
 #include "NsGui/TabItem.h"
 #include "NsGui/TextBlock.h"
-#include "NsGui/ListView.h"
+#include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
 #include "NsGui/ObservableCollection.h"
 
@@ -19,7 +19,7 @@
 
 
 
-struct ServerData : public Noesis::BaseComponent
+/*struct ServerData : public Noesis::BaseComponent
 {
     Noesis::String m_ServerName;
     Noesis::String m_ServerMap;
@@ -61,11 +61,11 @@ public:
     }
 
 private:
-    /*void AddRow_Click(Noesis::BaseComponent* sender, const RoutedEventArgs& e)
+    void AddRow_Click(Noesis::BaseComponent* sender, const RoutedEventArgs& e)
     {
         Ptr<ServerData> gameData = *new ServerData("A New Game", "A New Creator", "A New Publisher", true);
         mGameCollection->Add(gameData.GetPtr());
-    }*/
+    }
 
 private:
     Noesis::Ptr<Noesis::ObservableCollection<ServerData>> mGameCollection;
@@ -76,30 +76,21 @@ private:
         NsProp("GameCollection", &ListViewTest::GetGameCollection);
         //NsFunc("AddRow_Click", &ListViewTest::AddRow_Click);
     }
-};
+};*/
 
 class SavedServerGUI
 {
-	//ObservableCollection<ListBox> Servers;
 public:
 	SavedServerGUI(const LambdaEngine::String& xamlFile);
 	~SavedServerGUI();
 
-	void AddServerItem(Noesis::Grid* pParentGrid, uint8 nrOfColumns, const char* serverName, const char* mapName, bool isRunning);
+	void AddServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning);
 
-    void Init(Noesis::ListView* pListView);
-
-private:
-
-
-	//NS_IMPLEMENT_INLINE_REFLECTION_(SavedServerGUI, Noesis::Grid)
+    void Init(Noesis::ListBox* pListView);
 
     
 private:
 	uint8 m_ItemCount;
 
-    Noesis::Ptr<ListViewTest> m_Test;
-    Noesis::Ptr<Noesis::ObservableCollection<Noesis::TextBlock>> textBlock;
-    Noesis::Ptr<Noesis::TextBlock> tBlock;
-    Noesis::Ptr<Noesis::ListView> m_pSavedServerList;
+    Noesis::Ptr<Noesis::ListBox> m_pSavedServerList;
 };
