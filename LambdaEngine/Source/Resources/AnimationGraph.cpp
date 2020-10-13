@@ -9,21 +9,21 @@ namespace LambdaEngine
 
 	void BinaryInterpolator::Interpolate(float32 factor)
 	{
-		VALIDATE(Input0.GetSize() == Input1.GetSize());
+		VALIDATE(In0.GetSize() == In1.GetSize());
 		
-		const uint32 size = Input0.GetSize();
+		const uint32 size = In0.GetSize();
 		const float32 realFactor = glm::clamp(factor, 0.0f, 1.0f);
 
-		if (Output.GetSize() < size)
+		if (Out.GetSize() < size)
 		{
-			Output.Resize(size);
+			Out.Resize(size);
 		}
 
 		for (uint32 i = 0; i < size; i++)
 		{
-			const SQT& in0	= Input0[i];
-			const SQT& in1	= Input1[i];
-			SQT& out		= Output[i];
+			const SQT& in0	= In0[i];
+			const SQT& in1	= In1[i];
+			SQT& out		= Out[i];
 
 			out.Translation	= glm::mix(in0.Translation, in1.Translation,	realFactor);
 			out.Scale		= glm::mix(in0.Scale,		in1.Scale,			realFactor);
@@ -37,7 +37,10 @@ namespace LambdaEngine
 	*/
 
 	Transition::Transition(const String& fromState, const String& toState, float64 beginAt)
-		: m_IsActive(false)
+		: m_pOwnerGraph(nullptr)
+		, m_pFrom(nullptr)
+		, m_pTo(nullptr)
+		, m_IsActive(false)
 		, m_FromState(fromState)
 		, m_BeginAt(beginAt)
 		, m_LocalClock(0.0f)
@@ -81,12 +84,22 @@ namespace LambdaEngine
 		return m_FromState == state || m_ToState == state;
 	}
 
+	void Transition::SetAnimationGraph(AnimationGraph* pGraph)
+	{
+		VALIDATE(pGraph != nullptr);
+		m_pOwnerGraph = pGraph;
+
+		m_pFrom = &m_pOwnerGraph->GetState(m_FromState);
+		m_pTo	= &m_pOwnerGraph->GetState(m_ToState);
+	}
+
 	/*
 	* AnimationState
 	*/
 
 	AnimationState::AnimationState()
-		: m_IsLooping(true)
+		: m_pOwnerGraph(nullptr)
+		, m_IsLooping(true)
 		, m_NumLoops(INFINITE_LOOPS)
 		, m_StartTime(0.0f)
 		, m_PlaybackSpeed(1.0f)
@@ -99,7 +112,8 @@ namespace LambdaEngine
 	}
 
 	AnimationState::AnimationState(const String& name, GUID_Lambda animationGUID, bool isLooping)
-		: m_IsLooping(isLooping)
+		: m_pOwnerGraph(nullptr)
+		, m_IsLooping(isLooping)
 		, m_NumLoops(1)
 		, m_StartTime(0.0f)
 		, m_PlaybackSpeed(1.0f)
@@ -496,6 +510,33 @@ namespace LambdaEngine
 		return false;
 	}
 
+	uint32 AnimationGraph::GetStateIndex(const String& name) const
+	{
+		VALIDATE(m_States.IsEmpty() == false);
+
+		for (uint32 i = 0; i < m_States.GetSize(); i++)
+		{
+			if (m_States[i].GetName() == name)
+			{
+				return i;
+			}
+		}
+
+		return 0xffffffff;
+	}
+
+	AnimationState& AnimationGraph::GetState(uint32 index)
+	{
+		VALIDATE(index < m_States.GetSize());
+		return m_States[index];
+	}
+
+	const AnimationState& AnimationGraph::GetState(uint32 index) const
+	{
+		VALIDATE(index < m_States.GetSize());
+		return m_States[index];
+	}
+
 	AnimationState& AnimationGraph::GetState(const String& name)
 	{
 		VALIDATE(m_States.IsEmpty() == false);
@@ -538,6 +579,33 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_States.IsEmpty() == false);
 		return m_States[m_CurrentState];
+	}
+
+	uint32 AnimationGraph::GetTransitionIndex(const String& fromState, const String& toState)
+	{
+		VALIDATE(m_Transitions.IsEmpty() == false);
+
+		for (uint32 i = 0; i < m_Transitions.GetSize(); i++)
+		{
+			if (m_Transitions[i].Equals(fromState, toState))
+			{
+				return i;
+			}
+		}
+
+		return 0xffffffff;
+	}
+
+	Transition& AnimationGraph::GetTransition(uint32 index)
+	{
+		VALIDATE(index < m_Transitions.GetSize());
+		return m_Transitions[index];
+	}
+
+	const Transition& AnimationGraph::GetTransition(uint32 index) const
+	{
+		VALIDATE(index < m_Transitions.GetSize());
+		return m_Transitions[index];
 	}
 
 	Transition& AnimationGraph::GetTransition(const String& fromState, const String& toState)

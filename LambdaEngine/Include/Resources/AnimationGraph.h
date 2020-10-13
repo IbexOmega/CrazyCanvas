@@ -7,24 +7,27 @@
 
 namespace LambdaEngine
 {
+	class AnimationGraph;
+	class AnimationState;
+	
 	/*
 	* BinaryInterpolator
 	*/
 
 	struct BinaryInterpolator
 	{
-		inline BinaryInterpolator(const TArray<SQT>& input0, const TArray<SQT>& input1, TArray<SQT>& output)
-			: Input0(input0)
-			, Input1(input1)
-			, Output(output)
+		inline BinaryInterpolator(const TArray<SQT>& in0, const TArray<SQT>& in1, TArray<SQT>& out)
+			: In0(in0)
+			, In1(in1)
+			, Out(out)
 		{
 		}
 
 		void Interpolate(float32 factor);
 
-		const TArray<SQT>&	Input0;
-		const TArray<SQT>&	Input1; 
-		TArray<SQT>&		Output;
+		const TArray<SQT>&	In0;
+		const TArray<SQT>&	In1; 
+		TArray<SQT>&		Out;
 	};
 
 	/*
@@ -76,6 +79,13 @@ namespace LambdaEngine
 		}
 
 	private:
+		void SetAnimationGraph(AnimationGraph* pGraph);
+
+	private:
+		AnimationGraph* m_pOwnerGraph;
+		AnimationState* m_pFrom;
+		AnimationState* m_pTo;
+
 		bool	m_IsActive;
 		float64	m_DeltaTime;
 		float64	m_LastTime;
@@ -169,7 +179,15 @@ namespace LambdaEngine
 		glm::vec3 SampleScale(Animation::Channel& channel, float64 time);
 		glm::quat SampleRotation(Animation::Channel& channel, float64 time);
 
+		FORCEINLINE void SetAnimationGraph(AnimationGraph* pGraph)
+		{
+			VALIDATE(pGraph != nullptr);
+			m_pOwnerGraph = pGraph;
+		}
+
 	private:
+		AnimationGraph* m_pOwnerGraph;
+
 		bool m_IsLooping;
 		bool m_IsPlaying;
 
@@ -228,12 +246,22 @@ namespace LambdaEngine
 		// Returns true if the graph contains a transition with the specified from and to
 		bool HasTransition(const String& fromState, const String& toState);
 
+		// Returns 0xffffffff if not found
+		uint32 GetStateIndex(const String& name) const;
+
+		AnimationState& GetState(uint32 index);
+		const AnimationState& GetState(uint32 index) const;
 		AnimationState& GetState(const String& name);
 		const AnimationState& GetState(const String& name) const;
 
 		AnimationState& GetCurrentState();
 		const AnimationState& GetCurrentState() const;
 
+		// Returns 0xffffffff if not found
+		uint32 GetTransitionIndex(const String& fromState, const String& toState);
+
+		Transition& GetTransition(uint32 index);
+		const Transition& GetTransition(uint32 index) const;
 		Transition& GetTransition(const String& fromState, const String& toState);
 		const Transition& GetTransition(const String& fromState, const String& toState) const;
 

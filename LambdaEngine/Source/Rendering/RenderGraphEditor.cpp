@@ -2184,7 +2184,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 
 				imnodes::BeginOutputAttribute(currentAttributeIndex--);
-				ImGui::InvisibleButton("##Resouce State Invisible Output Button", ImGui::CalcTextSize("-"));
+				ImGui::InvisibleButton("##Resouce State Invisible Out Button", ImGui::CalcTextSize("-"));
 				imnodes::EndOutputAttribute();
 			}
 			else if (pPipelineStage->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
@@ -2235,7 +2235,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 
 				imnodes::BeginOutputAttribute(currentAttributeIndex--);
-				ImGui::InvisibleButton("##Resouce State Invisible Output Button", ImGui::CalcTextSize("-"));
+				ImGui::InvisibleButton("##Resouce State Invisible Out Button", ImGui::CalcTextSize("-"));
 				imnodes::EndOutputAttribute();
 			}
 

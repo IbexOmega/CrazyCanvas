@@ -24,7 +24,7 @@ namespace LambdaEngine
 
 			if (backBufferFinalStateIt->second.InputLinkIndex == -1)
 			{
-				LOG_ERROR("[RenderGraphParser]: No link connected to Final Output");
+				LOG_ERROR("[RenderGraphParser]: No link connected to Final Out");
 				return false;
 			}
 
@@ -32,7 +32,7 @@ namespace LambdaEngine
 
 			if (backBufferFinalLink == resourceStateLinksByLinkIndex.end())
 			{
-				LOG_ERROR("[RenderGraphParser]: Link to Final Output was not found in Link Map");
+				LOG_ERROR("[RenderGraphParser]: Link to Final Out was not found in Link Map");
 				return false;
 			}
 

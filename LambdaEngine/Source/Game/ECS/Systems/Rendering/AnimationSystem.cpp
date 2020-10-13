@@ -36,6 +36,7 @@ namespace LambdaEngine
 		// Call the graphs tick
 		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
 
+		// TODO: Remove this since it is only for testing
 		if (m_ChangeState)
 		{
 			if (animation.Graph.GetCurrentState().GetName() == "running")
@@ -80,6 +81,7 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
+	// TODO: Remove this since it is only for testing
 	bool AnimationSystem::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
 	{
 		if (keyPressedEvent.Key == EKey::KEY_Q)
