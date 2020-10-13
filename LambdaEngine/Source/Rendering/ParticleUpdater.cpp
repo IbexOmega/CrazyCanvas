@@ -81,13 +81,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_PerFrameBufferDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Particle Updater Buffer Descriptor Set 0", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-		if (m_PerFrameBufferDescriptorSet == nullptr)
-		{
-			LOG_ERROR("[ParticleUpdater]: Failed to create PerFrameBuffer Descriptor Set 0");
-			return false;
-		}
-
 		return true;
 	}
 
@@ -201,8 +194,9 @@ namespace LambdaEngine
 	void ParticleUpdater::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
-		UNREFERENCED_VARIABLE(modFrameIndex);
 		UNREFERENCED_VARIABLE(backBufferIndex);
+
+		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
 	}
 	void ParticleUpdater::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
@@ -236,34 +230,20 @@ namespace LambdaEngine
 	}
 	void ParticleUpdater::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
-		UNREFERENCED_VARIABLE(modFrameIndex);
-		UNREFERENCED_VARIABLE(backBufferIndex);
-		UNREFERENCED_VARIABLE(ppFirstExecutionStage);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(Sleeping);
 
-		// TODO: Might need to divide this into two custom renderers, one for compute and one for graphics!!
+		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
+		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
 
-		/*
-		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping)
-		{
-			pComputeCommandAllocator->Reset();
-			pComputeCommandList->Begin(nullptr);
+		pCommandList->BindComputePipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
-			pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
+		//pCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], m_PipelineLayout.Get(), 0);
 
-			if (pRenderStage->ppBufferDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
+		//pCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
 
-			if (pRenderStage->ppTextureDescriptorSets != nullptr)
-				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppTextureDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->TextureSetIndex);
-
-			pComputeCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
-
-			Profiler::GetGPUProfiler()->EndTimestamp(pComputeCommandList);
-			pComputeCommandList->End();
-
-			(*ppExecutionStage) = pComputeCommandList;
-		}*/
+		pCommandList->End();
+		(*ppFirstExecutionStage) = pCommandList;
 	}
 }

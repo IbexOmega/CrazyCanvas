@@ -3,6 +3,8 @@
 #include "RenderGraphTypes.h"
 #include "ICustomRenderer.h"
 
+#include "Rendering/Core/API/DescriptorCache.h"
+
 namespace LambdaEngine
 {
 
@@ -40,6 +42,7 @@ namespace LambdaEngine
 			static String name = RENDER_GRAPH_PARTICLE_RENDER_STAGE_NAME;
 			return name;
 		}
+
 	private:
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
@@ -49,26 +52,28 @@ namespace LambdaEngine
 		bool CreatePipelineState();
 
 	private:
-		bool							m_Initilized = false;
-		bool							m_MeshShaders = false;
+		bool									m_Initilized = false;
+		bool									m_MeshShaders = false;
 
-		GUID_Lambda						m_MeshShaderGUID	= 0;
-		GUID_Lambda						m_PixelShaderGUID	= 0;
-		GUID_Lambda						m_VertexShaderGUID	= 0;
+		GUID_Lambda								m_MeshShaderGUID	= 0;
+		GUID_Lambda								m_PixelShaderGUID	= 0;
+		GUID_Lambda								m_VertexShaderGUID	= 0;
 
-		TSharedRef<RenderPass>			m_RenderPass = nullptr;
+		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
-		uint64							m_PipelineStateID = 0;
-		TSharedRef<PipelineLayout>		m_PipelineLayout = nullptr;
-		TSharedRef<DescriptorHeap>		m_DescriptorHeap = nullptr;
+		uint64									m_PipelineStateID = 0;
+		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
+		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
 
 		// Descriptor sets
-		TSharedRef<DescriptorSet>		m_PerFrameBufferDescriptorSet;
+		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
+		DescriptorCache							m_DescriptorCache;
 
-		uint32							m_BackBufferCount = 0;
+		uint32									m_BackBufferCount = 0;
 
-		CommandAllocator** m_ppGraphicCommandAllocators = nullptr;
-		CommandList** m_ppGraphicCommandLists = nullptr;
+		CommandAllocator**						m_ppGraphicCommandAllocators = nullptr;
+		CommandList**							m_ppGraphicCommandLists = nullptr;
 
 	private:
 		static ParticleRenderer* s_pInstance;

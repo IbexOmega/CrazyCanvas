@@ -44,6 +44,7 @@ namespace LambdaEngine
 	class LineRenderer;
 	class PaintMaskRenderer;
 	class ParticleRenderer;
+	class ParticleUpdater;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -403,6 +404,7 @@ namespace LambdaEngine
 		LightRenderer*				m_pLightRenderer		= nullptr;
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
+		ParticleUpdater*			m_pParticleUpdater		= nullptr;
 
 	private:
 		static RenderSystem		s_Instance;

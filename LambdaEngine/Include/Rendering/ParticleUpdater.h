@@ -3,6 +3,8 @@
 #include "RenderGraphTypes.h"
 #include "ICustomRenderer.h"
 
+#include "Rendering/Core/API/DescriptorCache.h"
+
 namespace LambdaEngine
 {
 
@@ -40,6 +42,7 @@ namespace LambdaEngine
 			static String name = RENDER_GRAPH_PARTICLE_UPDATE_STAGE_NAME;
 			return name;
 		}
+
 	private:
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
@@ -48,21 +51,22 @@ namespace LambdaEngine
 		bool CreatePipelineState();
 
 	private:
-		bool							m_Initilized = false;
+		bool								m_Initilized = false;
 
-		GUID_Lambda						m_ComputeShaderGUID = 0;
+		GUID_Lambda							m_ComputeShaderGUID = 0;
 
-		uint64							m_PipelineStateID = 0;
-		TSharedRef<PipelineLayout>		m_PipelineLayout = nullptr;
-		TSharedRef<DescriptorHeap>		m_DescriptorHeap = nullptr;
+		uint64								m_PipelineStateID = 0;
+		TSharedRef<PipelineLayout>			m_PipelineLayout = nullptr;
+		TSharedRef<DescriptorHeap>			m_DescriptorHeap = nullptr;
 
 		// Descriptor sets
-		TSharedRef<DescriptorSet>		m_PerFrameBufferDescriptorSet;
+		TArray<TSharedRef<DescriptorSet>>	m_DrawArgsDescriptorSets;
+		DescriptorCache						m_DescriptorCache;
 
-		uint32							m_BackBufferCount = 0;
+		uint32								m_BackBufferCount = 0;
 
-		CommandAllocator**				m_ppComputeCommandAllocators = nullptr;
-		CommandList**					m_ppComputeCommandLists = nullptr;
+		CommandAllocator**					m_ppComputeCommandAllocators = nullptr;
+		CommandList**						m_ppComputeCommandLists = nullptr;
 
 	private:
 		static ParticleUpdater* s_pInstance;

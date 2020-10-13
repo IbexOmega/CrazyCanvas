@@ -237,8 +237,6 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleRenderer::Init()
 	{
-		m_BackBufferCount = BACK_BUFFER_COUNT;
-
 		if (!CreatePipelineLayout())
 		{
 			LOG_ERROR("[LightRenderer]: Failed to create PipelineLayout");
@@ -266,6 +264,9 @@ namespace LambdaEngine
 		VALIDATE(pPreInitDesc->pColorAttachmentDesc != nullptr);
 		VALIDATE(pPreInitDesc->pDepthStencilAttachmentDesc != nullptr);
 
+		m_BackBufferCount = pPreInitDesc->BackBufferCount;
+		m_BackBuffers.Resize(m_BackBufferCount);
+
 		if (!m_Initilized)
 		{
 			if (!CreateCommandLists())
@@ -291,27 +292,38 @@ namespace LambdaEngine
 
 		return true;
 	}
+
 	void ParticleRenderer::PreBuffersDescriptorSetWrite()
 	{
 	}
+
 	void ParticleRenderer::PreTexturesDescriptorSetWrite()
 	{
 	}
+
 	void ParticleRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
-		UNREFERENCED_VARIABLE(modFrameIndex);
 		UNREFERENCED_VARIABLE(backBufferIndex);
+
+		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
 	}
+
 	void ParticleRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
-		UNREFERENCED_VARIABLE(imageCount);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
+
+		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+		{
+			for (uint32 i = 0; i < imageCount; i++)
+			{
+				m_BackBuffers[i] = MakeSharedRef(ppPerImageTextureViews[i]);
+			}
+		}
 	}
+
 	void ParticleRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
@@ -327,12 +339,14 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
+
 	void ParticleRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pDrawArgs);
 		UNREFERENCED_VARIABLE(count);
 	}
+
 	void ParticleRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(modFrameIndex);
@@ -341,5 +355,66 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(Sleeping);
 
+		if (Sleeping)
+			return;
+
+		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
+
+		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
+
+		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
+
+		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];
+		uint32 width = backBuffer->GetDesc().pTexture->GetDesc().Width;
+		uint32 height = backBuffer->GetDesc().pTexture->GetDesc().Height;
+
+		Viewport viewport = {};
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.Width = (float32)width;
+		viewport.Height = -(float32)height;
+		viewport.x = 0.0f;
+		viewport.y = (float32)height;
+		pCommandList->SetViewports(&viewport, 0, 1);
+
+		ScissorRect scissorRect = {};
+		scissorRect.Width = width;
+		scissorRect.Height = height;
+		pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+		ClearColorDesc clearColorDesc = {};
+		clearColorDesc.Depth = 1.0;
+		clearColorDesc.Stencil = 0U;
+
+		BeginRenderPassDesc beginRenderPassDesc = {};
+		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
+		beginRenderPassDesc.ppRenderTargets = nullptr;
+		beginRenderPassDesc.RenderTargetCount = 0;
+		beginRenderPassDesc.pDepthStencil = backBuffer.Get();
+		beginRenderPassDesc.Width = width;
+		beginRenderPassDesc.Height = height;
+		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+		beginRenderPassDesc.pClearColors = &clearColorDesc;
+		beginRenderPassDesc.ClearColorCount = 1;
+		beginRenderPassDesc.Offset.x = 0;
+		beginRenderPassDesc.Offset.y = 0;
+
+		pCommandList->BeginRenderPass(&beginRenderPassDesc);
+
+		// Loop through all Emitter types (Mesh types) and call DrawIndexInstanced once per group.
+		/*for (uint32 d = 0; d < m_DrawCount; d++)
+		{
+			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+
+			pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 1);
+
+			pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		}*/
+
+		pCommandList->EndRenderPass();
+		pCommandList->End();
+
+		(*ppFirstExecutionStage) = pCommandList;
 	}
 }
