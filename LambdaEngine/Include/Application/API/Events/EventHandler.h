@@ -79,7 +79,7 @@ namespace LambdaEngine
 			constexpr auto stackSize	= sizeof(m_StackBuffer);
 			constexpr auto handlerSize	= sizeof(FunctionEventHandler<TEvent>);
 
-			VALIDATE(handlerSize <= stackSize);
+			static_assert(handlerSize <= stackSize);
 
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) FunctionEventHandler<TEvent>(pFunc);
@@ -94,7 +94,7 @@ namespace LambdaEngine
 			constexpr auto stackSize	= sizeof(m_StackBuffer);
 			constexpr auto handlerSize	= sizeof(MemberEventHandler<T, TEvent>);
 
-			VALIDATE(handlerSize <= stackSize);
+			static_assert(handlerSize <= stackSize);
 
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) MemberEventHandler<T, TEvent>(pThis, pMemberFunc);
