@@ -4,9 +4,12 @@
 
 #include "Engine/EngineConfig.h"
 
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+
+#include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+
+#include "States/PlaySessionState.h"
 
 #include "GUI/LobbyGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -14,7 +17,6 @@
 #include "NoesisPCH.h"
 
 #include "States/MainMenuState.h"
-#include "States/NetworkingState.h"
 #include "States/ServerState.h"
 
 //#include <string>
@@ -76,8 +78,8 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 	SetRenderStagesActive();
 
-	State* pNetworkingState = DBG_NEW NetworkingState();
-	StateManager::GetInstance()->EnqueueStateTransition(pNetworkingState, STATE_TRANSITION::POP_AND_PUSH);
+	State* pPlayState = DBG_NEW PlaySessionState(true);
+	StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)

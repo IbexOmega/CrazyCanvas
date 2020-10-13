@@ -745,7 +745,6 @@ namespace LambdaEngine
 
 		if (!sleeping)
 		{
-			m_RenderPassClearBegun = false;
 			m_View->GetRenderer()->RenderOffscreen();
 			m_View->GetRenderer()->Render();
 
