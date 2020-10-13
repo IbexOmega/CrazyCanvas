@@ -179,8 +179,7 @@ namespace LambdaEngine
 		TArray<DescriptorSet*>	m_AvailableDescriptorSets;
 		TArray<DescriptorSet*>	m_pUsedDescriptorSets[BACK_BUFFER_COUNT];
 
-		RenderPass* m_pMainRenderPassClearDS	= nullptr;
-		RenderPass* m_pMainRenderPassLoadDS		= nullptr;
+		RenderPass* m_pMainRenderPass = nullptr;
 		ClearColorDesc m_pMainRenderPassClearColors[2];
 
 		TArray<Noesis::Ptr<Noesis::Texture>> m_GUITextures;
@@ -188,9 +187,9 @@ namespace LambdaEngine
 
 		Noesis::Ptr<Noesis::IView> m_View;
 
-		bool m_IsInRenderPass	= false;
-		bool m_TileBegun		= false;
-		bool m_RenderPassBegun	= false;
-		bool m_Initialized		= false;
+		bool m_IsInRenderPass			= false;
+		bool m_TileBegun				= false;
+		bool m_RenderPassBegun			= false;
+		bool m_Initialized				= false;
 	};
 }

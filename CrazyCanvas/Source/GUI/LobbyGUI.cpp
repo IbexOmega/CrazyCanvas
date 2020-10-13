@@ -5,7 +5,6 @@
 #include "Engine/EngineConfig.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
-
 #include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
