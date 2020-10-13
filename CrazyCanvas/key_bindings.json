@@ -1,15 +1,15 @@
 {
-	"CAM_FORWARD": "W",
-	"CAM_BACKWARD": "S",
-	"CAM_LEFT": "A",
-	"CAM_RIGHT": "D",
-	"CAM_UP": "Q",
-	"CAM_DOWN": "E",
-	"CAM_JUMP": "SPACE",
-	"CAM_ROT_UP": "UP",
-	"CAM_ROT_DOWN": "DOWN",
-	"CAM_ROT_LEFT": "LEFT",
-	"CAM_ROT_RIGHT": "RIGHT",
-	"CAM_SPEED_MODIFIER": "LEFT_SHIFT",
-	"TOGGLE_MOUSE": "C"
+    "CAM_FORWARD": "W",
+    "CAM_BACKWARD": "S",
+    "CAM_LEFT": "A",
+    "CAM_RIGHT": "D",
+    "CAM_UP": "Q",
+    "CAM_DOWN": "E",
+    "CAM_JUMP": "SPACE",
+    "CAM_ROT_UP": "UP",
+    "CAM_ROT_DOWN": "DOWN",
+    "CAM_ROT_LEFT": "LEFT",
+    "CAM_ROT_RIGHT": "RIGHT",
+    "CAM_SPEED_MODIFIER": "LEFT_SHIFT",
+    "TOGGLE_MOUSE": "C"
 }

@@ -81,8 +81,6 @@ namespace LambdaEngine
 
 		ImGuiRenderer::Get().DrawUI([]()
 		{
-			ImGui::ShowDemoWindow();
-
 			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 			if (ImGui::Begin("Network Statistics", NULL))
 			{
