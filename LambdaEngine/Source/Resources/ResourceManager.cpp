@@ -56,7 +56,7 @@ namespace LambdaEngine
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MeshNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MaterialNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_AnimationNamesToGUIDs;
-	std::unordered_map<String, TArray<GUID_Lambda>>		ResourceManager::s_MeshNamesToAnimationGUIDs;
+	std::unordered_map<String, TArray<GUID_Lambda>>		ResourceManager::s_FileNamesToAnimationGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_TextureNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_ShaderNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_SoundEffectNamesToGUIDs;
@@ -89,6 +89,8 @@ namespace LambdaEngine
 
 	GUID_Lambda ResourceManager::s_MaterialShaderGUID = GUID_NONE;
 
+	TSet<GUID_Lambda> ResourceManager::s_UnloadedGUIDs;
+
 	bool ResourceManager::Init()
 	{
 		InitMaterialCreation();
@@ -118,15 +120,33 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::LoadSceneFromFile(const String& filename, TArray<MeshComponent>& result)
+	bool ResourceManager::LoadSceneFromFile(
+		const SceneLoadDesc* pSceneLoadDesc,
+		TArray<MeshComponent>& meshComponents,
+		TArray<LoadedDirectionalLight>& directionalLights,
+		TArray<LoadedPointLight>& pointLights,
+		TArray<SpecialObjectOnLoad>& specialObjects,
+		const String& directory)
 	{
+		VALIDATE(pSceneLoadDesc != nullptr);
+
 		TArray<MeshComponent>	sceneLocalMeshComponents;
 		TArray<Mesh*>			meshes;
 		TArray<Animation*>		animations;
 		TArray<LoadedMaterial*>	materials;
 		TArray<LoadedTexture*>	textures;
 
-		if (!ResourceLoader::LoadSceneFromFile(SCENE_DIR + filename, sceneLocalMeshComponents, meshes, animations, materials, textures))
+		if (!ResourceLoader::LoadSceneFromFile(
+			directory + pSceneLoadDesc->Filename,
+			pSceneLoadDesc->SpecialObjectDescriptions,
+			sceneLocalMeshComponents,
+			directionalLights,
+			pointLights,
+			specialObjects,
+			meshes, 
+			animations, 
+			materials, 
+			textures))
 		{
 			return false;
 		}
@@ -136,7 +156,7 @@ namespace LambdaEngine
 
 		TArray<TextureView*> textureViewsToDelete;
 
-		result = sceneLocalMeshComponents;
+		meshComponents = sceneLocalMeshComponents;
 		for (uint32 i = 0; i < textures.GetSize(); i++)
 		{
 			LoadedTexture* pLoadedTexture = textures[i];
@@ -206,7 +226,7 @@ namespace LambdaEngine
 			{
 				if (sceneLocalMeshComponents[g].MeshGUID == i)
 				{
-					result[g].MeshGUID = guid;
+					meshComponents[g].MeshGUID = guid;
 				}
 			}
 		}
@@ -256,7 +276,7 @@ namespace LambdaEngine
 			{
 				if (sceneLocalMeshComponents[g].MaterialGUID == i)
 				{
-					result[g].MaterialGUID = guid;
+					meshComponents[g].MaterialGUID = guid;
 				}
 			}
 
@@ -268,13 +288,13 @@ namespace LambdaEngine
 		{
 			if (sceneLocalMeshComponents[g].MeshGUID >= meshes.GetSize())
 			{
-				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, filename.c_str());
+				LOG_ERROR("[ResourceManager]: GameObject %u in Scene %s has no Mesh", g, pSceneLoadDesc->Filename.c_str());
 			}
 
 			if (sceneLocalMeshComponents[g].MaterialGUID >= materials.GetSize())
 			{
-				result[g].MaterialGUID = GUID_MATERIAL_DEFAULT;
-				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, filename.c_str());
+				meshComponents[g].MaterialGUID = GUID_MATERIAL_DEFAULT;
+				LOG_WARNING("[ResourceManager]: GameObject %u in Scene %s has no Material, default Material assigned", g, pSceneLoadDesc->Filename.c_str());
 			}
 		}
 
@@ -321,11 +341,11 @@ namespace LambdaEngine
 			s_MeshNamesToGUIDs[filename]	= guid;
 		}
 
-		TArray<Animation*> animations;
-		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, animations);
+		TArray<Animation*> rawAnimations;
+		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, rawAnimations);
 
 		// If we load with this function, we do not care about the animations, and therefore delete them
-		for (Animation* pAnimation : animations)
+		for (Animation* pAnimation : rawAnimations)
 		{
 			SAFEDELETE(pAnimation);
 		}
@@ -338,8 +358,8 @@ namespace LambdaEngine
 		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename);
 		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
-			auto loadedAnimations = s_MeshNamesToAnimationGUIDs.find(filename);
-			if (loadedAnimations != s_MeshNamesToAnimationGUIDs.end())
+			auto loadedAnimations = s_FileNamesToAnimationGUIDs.find(filename);
+			if (loadedAnimations != s_FileNamesToAnimationGUIDs.end())
 			{
 				animations = loadedAnimations->second;
 			}
@@ -361,8 +381,9 @@ namespace LambdaEngine
 		TArray<Animation*> rawAnimations;
 		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, rawAnimations);
 
-		// If we load with this function, we do not care about the animations, and therefore delete them
+		// Register animations
 		animations.Clear();
+		animations.Reserve(rawAnimations.GetSize());
 		for (Animation* pAnimation : rawAnimations)
 		{
 			VALIDATE(pAnimation);
@@ -371,8 +392,36 @@ namespace LambdaEngine
 			animations.EmplaceBack(animationsGuid);
 		}
 
-		s_MeshNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
+		s_FileNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
 		return guid;
+	}
+
+	TArray<GUID_Lambda> ResourceManager::LoadAnimationsFromFile(const String& filename)
+	{
+		TArray<GUID_Lambda> animations;
+
+		auto loadedAnimations = s_FileNamesToAnimationGUIDs.find(filename);
+		if (loadedAnimations != s_FileNamesToAnimationGUIDs.end())
+		{
+			animations = loadedAnimations->second;
+			return animations;
+		}
+
+		// Load animations
+		TArray<Animation*> rawAnimations = ResourceLoader::LoadAnimationsFromFile(ANIMATIONS_DIR + filename);
+
+		// Register animations
+		animations.Reserve(rawAnimations.GetSize());
+		for (Animation* pAnimation : rawAnimations)
+		{
+			VALIDATE(pAnimation);
+
+			GUID_Lambda animationsGuid = RegisterLoadedAnimation(pAnimation->Name, pAnimation);
+			animations.EmplaceBack(animationsGuid);
+		}
+
+		s_FileNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
+		return animations;
 	}
 
 	GUID_Lambda ResourceManager::LoadMeshFromMemory(const String& name, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
@@ -866,16 +915,16 @@ namespace LambdaEngine
 				if (meshNameToGUIDIt != s_MeshNamesToGUIDs.end()) s_MeshNamesToGUIDs.erase(meshNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
-				auto animationsIt = s_MeshNamesToAnimationGUIDs.find(meshGUIDToNameIt->second);
+				auto animationsIt = s_FileNamesToAnimationGUIDs.find(meshGUIDToNameIt->second);
 
 				//Clean Mesh GUID -> Name
 				s_MeshGUIDsToNames.erase(meshGUIDToNameIt);
 
-				if (animationsIt != s_MeshNamesToAnimationGUIDs.end())
+				if (animationsIt != s_FileNamesToAnimationGUIDs.end())
 				{
 					bool result = true;
 
@@ -885,32 +934,37 @@ namespace LambdaEngine
 					}
 
 					//Clean Mesh Name -> Animation GUID
-					s_MeshNamesToAnimationGUIDs.erase(animationsIt);
+					s_FileNamesToAnimationGUIDs.erase(animationsIt);
 
 					if (!result)
 					{
-						LOG_ERROR("[ResourceManager]: UnloadMesh Failed at unloading some Animation");
+						LOG_ERROR("[ResourceManager]: UnloadMesh Failed at unloading some Animation GUID: %d", guid);
 						return false;
 					}
 				}
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshNamesToAnimationGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_FileNamesToAnimationGUIDs");
 					return false;
 				}
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_MeshGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_Meshes");
+			LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_Meshes GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -919,6 +973,8 @@ namespace LambdaEngine
 		auto materialIt = s_Materials.find(guid);
 		if (materialIt != s_Materials.end())
 		{
+			D_LOG_WARNING("Deleted Material GUID: %d", guid);
+
 			SAFEDELETE(materialIt->second);
 			s_Materials.erase(materialIt);
 
@@ -930,7 +986,7 @@ namespace LambdaEngine
 				if (materialNameToGUIDIt != s_MaterialNamesToGUIDs.end()) s_MaterialNamesToGUIDs.erase(materialNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -939,7 +995,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 
@@ -958,16 +1014,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialLoadConfigurations");
+				LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_MaterialLoadConfigurations GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_Materials");
+			LOG_ERROR("[ResourceManager]: UnloadMaterial Failed at s_Materials GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -976,6 +1037,8 @@ namespace LambdaEngine
 		auto animationIt = s_Animations.find(guid);
 		if (animationIt != s_Animations.end())
 		{
+			D_LOG_WARNING("Deleted Animation GUID: %d", guid);
+
 			SAFEDELETE(animationIt->second);
 			s_Animations.erase(animationIt);
 
@@ -987,7 +1050,7 @@ namespace LambdaEngine
 				if (animationNameToGUIDIt != s_AnimationNamesToGUIDs.end()) s_AnimationNamesToGUIDs.erase(animationNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -996,16 +1059,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_AnimationGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_Animations");
+			LOG_ERROR("[ResourceManager]: UnloadAnimation Failed at s_Animations GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1014,6 +1082,8 @@ namespace LambdaEngine
 		auto textureIt = s_Textures.find(guid);
 		if (textureIt != s_Textures.end())
 		{
+			D_LOG_WARNING("Deleted Texture GUID: %d", guid);
+
 			SAFEDELETE(textureIt->second);
 			s_Textures.erase(textureIt);
 
@@ -1025,7 +1095,7 @@ namespace LambdaEngine
 				if (textureNameToGUIDIt != s_TextureNamesToGUIDs.end()) s_TextureNamesToGUIDs.erase(textureNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -1034,16 +1104,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_Textures");
+			LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_Textures GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1052,6 +1127,8 @@ namespace LambdaEngine
 		auto shaderIt = s_Shaders.find(guid);
 		if (shaderIt != s_Shaders.end())
 		{
+			D_LOG_WARNING("Deleted Shader GUID: %d", guid);
+
 			SAFEDELETE(shaderIt->second);
 			s_Shaders.erase(shaderIt);
 
@@ -1063,7 +1140,7 @@ namespace LambdaEngine
 				if (shaderNameToGUIDIt != s_ShaderNamesToGUIDs.end()) s_ShaderNamesToGUIDs.erase(shaderNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -1072,16 +1149,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_ShaderGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_Shaders");
+			LOG_ERROR("[ResourceManager]: UnloadShader Failed at s_Shaders GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1090,6 +1172,8 @@ namespace LambdaEngine
 		auto soundEffectIt = s_SoundEffects.find(guid);
 		if (soundEffectIt != s_SoundEffects.end())
 		{
+			D_LOG_WARNING("Deleted Sound Effect GUID: %d", guid);
+
 			SAFEDELETE(soundEffectIt->second);
 			s_SoundEffects.erase(soundEffectIt);
 
@@ -1101,7 +1185,7 @@ namespace LambdaEngine
 				if (soundEffectNameToGUIDIt != s_SoundEffectNamesToGUIDs.end()) s_SoundEffectNamesToGUIDs.erase(soundEffectNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectNamesToGUIDs");
+					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
@@ -1110,16 +1194,21 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectGUIDsToNames");
+				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
-		else
+		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects");
+			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects GUID: %d", guid);
 			return false;
 		}
+		else
+		{
+			return true;
+		}
 
+		s_UnloadedGUIDs.insert(guid);
 		return true;
 	}
 
@@ -1140,7 +1229,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_ERROR("[ResourceManager]: Failed to DecrementTextureMaterialRef: %d", guid);
+			LOG_ERROR("[ResourceManager]: Failed to DecrementTextureMaterialRef GUID: %d", guid);
 			return false;
 		}
 
@@ -1209,7 +1298,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		D_LOG_WARNING("[ResourceManager]: GetAnimation called with invalid GUID %u", guid);
+		D_LOG_WARNING("[ResourceManager]: GetClip called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -1519,19 +1608,25 @@ namespace LambdaEngine
 
 		{
 			byte defaultColor[4]				= { 255, 255, 255, 255 };
-			byte defaultNormal[4]				= { 127, 127, 255, 0   };
+			byte defaultNormal[4]				= { 127, 127, 255,   0 };
+			byte defaultMask[4]					= {	  0,   0,   0, 255 };
 			void* pDefaultColor					= (void*)defaultColor;
 			void* pDefaultNormal				= (void*)defaultNormal;
+			void* pDefaultMask					= (void*)defaultMask;
 			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
 			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			Texture* pDefaultMaskMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Mask Map", &pDefaultMask, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
 
 			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_COLOR_MAP;
-			s_TextureGUIDsToNames[GUID_TEXTURE_DEFAULT_COLOR_MAP]			= pDefaultColorMap->GetDesc().DebugName;
 			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;
+			s_TextureNamesToGUIDs[pDefaultMaskMap->GetDesc().DebugName]		= GUID_TEXTURE_DEFAULT_MASK_MAP;
+			s_TextureGUIDsToNames[GUID_TEXTURE_DEFAULT_COLOR_MAP]			= pDefaultColorMap->GetDesc().DebugName;
 			s_TextureGUIDsToNames[GUID_TEXTURE_DEFAULT_NORMAL_MAP]			= pDefaultNormalMap->GetDesc().DebugName;
+			s_TextureGUIDsToNames[GUID_TEXTURE_DEFAULT_MASK_MAP]			= pDefaultMaskMap->GetDesc().DebugName;
 
 			s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= pDefaultColorMap;
 			s_Textures[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= pDefaultNormalMap;
+			s_Textures[GUID_TEXTURE_DEFAULT_MASK_MAP]		= pDefaultMaskMap;
 
 			TextureViewDesc defaultColorMapViewDesc = {};
 			defaultColorMapViewDesc.DebugName		= "Default Color Map View";
@@ -1555,8 +1650,20 @@ namespace LambdaEngine
 			defaultNormalMapViewDesc.Miplevel		= 0;
 			defaultNormalMapViewDesc.ArrayIndex		= 0;
 
+			TextureViewDesc defaultMaskMapViewDesc = {};
+			defaultMaskMapViewDesc.DebugName = "Default Mask Map View";
+			defaultMaskMapViewDesc.pTexture = pDefaultMaskMap;
+			defaultMaskMapViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			defaultMaskMapViewDesc.Format = pDefaultMaskMap->GetDesc().Format;
+			defaultMaskMapViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+			defaultMaskMapViewDesc.MiplevelCount = pDefaultMaskMap->GetDesc().Miplevels;
+			defaultMaskMapViewDesc.ArrayCount = pDefaultMaskMap->GetDesc().ArrayCount;
+			defaultMaskMapViewDesc.Miplevel = 0;
+			defaultMaskMapViewDesc.ArrayIndex = 0;
+
 			s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultColorMapViewDesc);
 			s_TextureViews[GUID_TEXTURE_DEFAULT_NORMAL_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultNormalMapViewDesc);
+			s_TextureViews[GUID_TEXTURE_DEFAULT_MASK_MAP]		= RenderAPI::GetDevice()->CreateTextureView(&defaultMaskMapViewDesc);
 		}
 
 		{

@@ -28,7 +28,7 @@ namespace LambdaEngine
 			RegularWorker::MapComponentAccesses(subReq.ComponentAccesses, uniqueRegs);
 		}
 
-		RegularWorker::MapComponentAccesses(subscriberRegistration.AdditionalDependencies, uniqueRegs);
+		RegularWorker::MapComponentAccesses(subscriberRegistration.AdditionalAccesses, uniqueRegs);
 
 		// Merge all of the system's subscribed component types into one vector
 		TArray<ComponentAccess> componentAccesses;
@@ -50,10 +50,10 @@ namespace LambdaEngine
 				continue;
 			}
 
-			auto uniqueRegsItr = uniqueRegs.find(componentUpdateReg.TID);
+			auto uniqueRegsItr = uniqueRegs.find(componentUpdateReg.pTID);
 			if (uniqueRegsItr == uniqueRegs.end() || componentUpdateReg.Permissions > uniqueRegsItr->second)
 			{
-				uniqueRegs.insert(uniqueRegsItr, {componentUpdateReg.TID, componentUpdateReg.Permissions});
+				uniqueRegs.insert(uniqueRegsItr, {componentUpdateReg.pTID, componentUpdateReg.Permissions});
 			}
 		}
 	}

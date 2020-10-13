@@ -84,19 +84,23 @@ namespace LambdaEngine
 			{
 				Texture**		ppTextures;
 				TextureView**	ppTextureViews;
+				TextureView**	ppPerSubImageTextureViews;
 				Sampler**		ppSamplers;
+				uint32			Count;
+				uint32			PerImageSubImageTextureViewCount;
 			} ExternalTextureUpdate;
 
 			struct
 			{
 				uint32		DrawArgsMask;
 				DrawArg*	pDrawArgs;
-				uint32		DrawArgsCount;
+				uint32		Count;
 			} ExternalDrawArgsUpdate;
 
 			struct
 			{
 				Buffer**	ppBuffer;
+				uint32		Count;
 			} ExternalBufferUpdate;
 
 			struct
@@ -175,6 +179,7 @@ namespace LambdaEngine
 		struct DrawArgsData
 		{
 			PipelineBufferBarrierDesc			InitialTransitionBarrierTemplate;
+			PipelineTextureBarrierDesc			InitialTextureTransitionBarrierTemplate;
 			TArray<DrawArg>						Args;
 		};
 
@@ -196,10 +201,11 @@ namespace LambdaEngine
 			{
 				ERenderGraphTextureType				TextureType						= ERenderGraphTextureType::TEXTURE_2D;
 				bool								IsOfArrayType					= false;
+				bool								UnboundedArray					= false;
 				bool								UsedAsRenderTarget				= false;
 				bool								PerSubImageUniquelyAllocated	= false;
 				EFormat								Format							= EFormat::FORMAT_NONE;
-				TArray<PipelineTextureBarrierDesc>	InitialTransitionBarriers;
+				PipelineTextureBarrierDesc			InitialTransitionBarrier;
 				TArray<Texture*>					Textures;
 				TArray<TextureView*>				PerImageTextureViews;
 				TArray<TextureView*>				PerSubImageTextureViews;
@@ -213,7 +219,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				TArray<PipelineBufferBarrierDesc>	InitialTransitionBarriers;
+				PipelineBufferBarrierDesc			InitialTransitionBarrier;
 				TArray<Buffer*>						Buffers;
 				TArray<uint64>						Offsets;
 				TArray<uint64>						SizesInBytes;
@@ -227,8 +233,8 @@ namespace LambdaEngine
 
 		struct RenderStage
 		{
-			String					Name						= "";
-			RenderStageParameters	Parameters					= {};
+			String					Name								= "";
+			RenderStageParameters	Parameters							= {};
 
 			/*
 				If set to true, renderstage will not be submited during execution of rendergraph.
@@ -238,41 +244,43 @@ namespace LambdaEngine
 			bool							Sleeping			= false;
 
 			//Triggering
-			ERenderStageExecutionTrigger	TriggerType			= ERenderStageExecutionTrigger::NONE;
-			uint32							FrameDelay			= 0;
-			uint32							FrameOffset			= 0;
-			uint32							FrameCounter		= 0;
+			ERenderStageExecutionTrigger	TriggerType					= ERenderStageExecutionTrigger::NONE;
+			uint32							FrameDelay					= 0;
+			uint32							FrameOffset					= 0;
+			uint32							FrameCounter				= 0;
 
 			//Special Draw Params
-			uint32					ExecutionCount				= 1;
+			uint32					ExecutionCount						= 1;
 
-			glm::uvec3				Dimensions					= glm::uvec3(0);
+			glm::uvec3				Dimensions							= glm::uvec3(0);
 
-			bool					UsesCustomRenderer			= false;
-			ICustomRenderer*		pCustomRenderer				= nullptr;
+			bool					UsesCustomRenderer					= false;
+			ICustomRenderer*		pCustomRenderer						= nullptr;
 
-			FPipelineStageFlags		FirstPipelineStage			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
-			FPipelineStageFlags		LastPipelineStage			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
-			uint32					PipelineStageMask			= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		FirstPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			FPipelineStageFlags		LastPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
+			uint32					PipelineStageMask					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 
-			ERenderStageDrawType	DrawType					= ERenderStageDrawType::NONE;
+			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
 
-			uint64					PipelineStateID				= 0;
-			PipelineState*			pPipelineState				= nullptr;
-			PipelineLayout*			pPipelineLayout				= nullptr;
-			SBT*					pSBT						= nullptr;
-			DescriptorSet**			ppBufferDescriptorSets		= nullptr; //# m_BackBufferCount
-			uint32					BufferSetIndex				= 0;
-			DescriptorSet**			ppTextureDescriptorSets		= nullptr; //# m_BackBufferCount
-			uint32					TextureSetIndex				= 0;
-			DescriptorSet***		pppDrawArgDescriptorSets	= nullptr; //# m_BackBufferCount
-			DrawArg*				pDrawArgs					= nullptr;
-			uint32					NumDrawArgsPerFrame			= 0;
-			uint32					DrawSetIndex				= 0;
-			Resource*				pDrawArgsResource			= nullptr;
-			uint32					DrawArgsMask				= 0x0;
-			RenderPass*				pRenderPass					= nullptr;
-			RenderPass*				pDisabledRenderPass			= nullptr;
+			uint64					PipelineStateID						= 0;
+			PipelineState*			pPipelineState						= nullptr;
+			PipelineLayout*			pPipelineLayout						= nullptr;
+			SBT*					pSBT								= nullptr;
+			DescriptorSet**			ppBufferDescriptorSets				= nullptr; //# m_BackBufferCount
+			uint32					BufferSetIndex						= 0;
+			DescriptorSet**			ppTextureDescriptorSets				= nullptr; //# m_BackBufferCount
+			uint32					TextureSetIndex						= 0;
+			DescriptorSet***		pppDrawArgDescriptorSets			= nullptr; //# m_BackBufferCount
+			DescriptorSet***		pppDrawArgExtensionsDescriptorSets	= nullptr; //# m_BackBufferCount
+			DrawArg*				pDrawArgs							= nullptr;
+			uint32					NumDrawArgsPerFrame					= 0;
+			uint32					DrawSetIndex						= 0;
+			uint32					DrawExtensionSetIndex				= 0;
+			Resource*				pDrawArgsResource					= nullptr;
+			uint32					DrawArgsMask						= 0x0;
+			RenderPass*				pRenderPass							= nullptr;
+			RenderPass*				pDisabledRenderPass					= nullptr;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants		= {};
@@ -288,9 +296,11 @@ namespace LambdaEngine
 			FPipelineStageFlags		OtherQueueDstPipelineStage	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 			uint32					DrawArgsMask				= 0x0;
 
-			TArray<PipelineBufferBarrierDesc>	DrawBufferBarriers[2];
-			TArray<PipelineBufferBarrierDesc>	BufferBarriers[2];
-			TArray<PipelineTextureBarrierDesc>	TextureBarriers[4];
+			TArray<PipelineTextureBarrierDesc>			DrawTextureBarriers[4];
+			TArray<PipelineBufferBarrierDesc>			DrawBufferBarriers[2]; //This works while we only have one Draw Arg resource, otherwise we have to do like Unbounded Textures
+			TArray<PipelineBufferBarrierDesc>			BufferBarriers[2];
+			TArray<PipelineTextureBarrierDesc>			TextureBarriers[4];
+			TArray<TArray<PipelineTextureBarrierDesc>>	UnboundedTextureBarriers[2]; //Unbounded Arrays of textures do not have a known count at init time -> we cant store them densely
 		};
 
 		struct PipelineStage
@@ -363,7 +373,13 @@ namespace LambdaEngine
 		/*
 		* Updates the RenderGraph, applying the updates made to resources with UpdateResource by writing them to the appropriate Descriptor Sets
 		*/
-		void Update();
+		void Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex);
+
+		/*
+		* Updates dirty resource bindings
+		*/
+		void UpdateResourceBindings();
+
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.
@@ -427,6 +443,10 @@ namespace LambdaEngine
 		void ExecuteComputeRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
 		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
 
+		// Helpers
+		void PipelineTextureBarriers(CommandList* pCommandList, const TArray<PipelineTextureBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
+		void PipelineBufferBarriers(CommandList* pCommandList, const TArray<PipelineBufferBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
+
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
 		GraphicsDeviceFeatureDesc						m_Features;
@@ -441,7 +461,7 @@ namespace LambdaEngine
 		uint32											m_BackBufferIndex					= 0;
 		uint32											m_BackBufferCount					= 0;
 
-		Fence*											s_pMaterialFence							= nullptr;
+		Fence*											s_pMaterialFence					= nullptr;
 		uint64											m_SignalValue						= 1;
 
 		TArray<ICustomRenderer*>						m_CustomRenderers;
@@ -473,10 +493,13 @@ namespace LambdaEngine
 		TArray<String>									m_WindowRelativeResources;
 		TSet<String>									m_DirtyInternalResources;
 
-		TSet<Resource*>									m_DirtyDescriptorSetTextures;
-		TSet<Resource*>									m_DirtyDescriptorSetBuffers;
-		TSet<Resource*>									m_DirtyDescriptorSetAccelerationStructures;
-		TSet<Resource*>									m_DirtyDescriptorSetDrawArgs;
+		TSet<Resource*>									m_DirtyBoundTextureResources;
+		TSet<Resource*>									m_DirtyBoundBufferResources;
+		TSet<Resource*>									m_DirtyBoundAccelerationStructureResources;
+		TSet<Resource*>									m_DirtyBoundDrawArgResources;
+
+		TSet<RenderStage*>								m_DirtyRenderStageTextureSets;
+		TSet<RenderStage*>								m_DirtyRenderStageBufferSets;
 
 		TArray<DeviceChild*>*							m_pDeviceResourcesToDestroy;
 

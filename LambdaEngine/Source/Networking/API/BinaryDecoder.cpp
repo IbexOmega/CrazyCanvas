@@ -103,6 +103,11 @@ namespace LambdaEngine
 		ReadBuffer((uint8*)&value.data, sizeof(glm::vec4));
 	}
 
+	void BinaryDecoder::ReadQuat(glm::quat& value)
+	{
+		ReadBuffer((uint8*)&value.data, sizeof(glm::quat));
+	}
+
 	int8 BinaryDecoder::ReadInt8()
 	{
 		int8 value = 0;
@@ -205,6 +210,13 @@ namespace LambdaEngine
 	{
 		glm::vec4 value;
 		ReadVec4(value);
+		return value;
+	}
+
+	glm::quat BinaryDecoder::ReadQuat()
+	{
+		glm::quat value;
+		ReadQuat(value);
 		return value;
 	}
 }

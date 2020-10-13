@@ -38,6 +38,8 @@ namespace LambdaEngine
 {
 	CommandListVK::CommandListVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
+		, m_MemoryBarriers()
+		, m_BufferBarriers()
 		, m_ImageBarriers()
 		, m_Viewports()
 		, m_ScissorRects()
@@ -67,7 +69,7 @@ namespace LambdaEngine
 			level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 		}
 
-		CommandAllocatorVK*	pVkCommandAllocator = (CommandAllocatorVK*)pAllocator;
+		CommandAllocatorVK*	pVkCommandAllocator = reinterpret_cast<CommandAllocatorVK*>(pAllocator);
 		m_CommandList = pVkCommandAllocator->AllocateCommandBuffer(level);
 		if (m_CommandList != VK_NULL_HANDLE)
 		{
@@ -237,7 +239,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -314,7 +316,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -329,6 +331,19 @@ namespace LambdaEngine
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 			}
+		}
+
+		if (pBuildDesc->Update)
+		{
+			accelerationStructureBuildInfo.update					= VK_TRUE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		else
+		{
+			accelerationStructureBuildInfo.update					= VK_FALSE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= VK_NULL_HANDLE;
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
 		}
 
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
@@ -557,7 +572,7 @@ namespace LambdaEngine
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
 	{
 		VALIDATE(pTextureBarriers		!= nullptr);
-		VALIDATE(textureBarrierCount	< MAX_IMAGE_BARRIERS);
+		VALIDATE(textureBarrierCount	<= MAX_IMAGE_BARRIERS);
 
 		TextureVK*		pVkTexture	= nullptr;
 		VkImageLayout	oldLayout	= VK_IMAGE_LAYOUT_UNDEFINED;

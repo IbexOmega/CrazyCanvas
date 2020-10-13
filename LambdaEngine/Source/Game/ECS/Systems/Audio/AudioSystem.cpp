@@ -13,17 +13,38 @@ namespace LambdaEngine
 	bool AudioSystem::Init()
 	{
 		{
-			TransformComponents transformComponents;
-			transformComponents.Position.Permissions = R;
-			transformComponents.Scale.Permissions = R;
-			transformComponents.Rotation.Permissions = R;
+			TransformGroup transformGroup;
+			transformGroup.Position.Permissions	= R;
+			transformGroup.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
-				{{{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}, {R, CameraComponent::Type()}}, {}, &m_CameraEntities},
-				{{{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}},								{},	&m_AudibleEntities},
-				{{{RW, ListenerComponent::Type()}},											{&transformComponents}, &m_ListenerEntities}
+				{
+					.pSubscriber = &m_CameraEntities,
+					.ComponentAccesses =
+					{
+						{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}, {R, CameraComponent::Type()}
+					}
+				},
+				{
+					.pSubscriber = &m_AudibleEntities,
+					.ComponentAccesses =
+					{
+						{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}
+					}
+				},
+				{
+					.pSubscriber = &m_ListenerEntities,
+					.ComponentAccesses =
+					{
+						{RW, ListenerComponent::Type()}
+					},
+					.ComponentGroups =
+					{
+						&transformGroup
+					}
+				}
 			};
 			systemReg.Phase = 0;
 			SetComponentOwner<AudibleComponent>({ std::bind(&AudioSystem::AudibleComponentDestructor, this, std::placeholders::_1) });
@@ -97,9 +118,9 @@ namespace LambdaEngine
 	void AudioSystem::AudibleComponentDestructor(AudibleComponent& audibleComponent)
 	{
 		SAFEDELETE(audibleComponent.pSoundInstance);
-		
+
 	}
 }
-	
+
 
 

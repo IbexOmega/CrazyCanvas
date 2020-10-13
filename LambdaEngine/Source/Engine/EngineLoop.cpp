@@ -21,14 +21,16 @@
 #include "Input/API/InputActionSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
-#include "Physics/PhysicsSystem.h"
 
 #include "Threading/API/Thread.h"
 #include "Threading/API/ThreadPool.h"
 
+#include "Rendering/EntityMaskManager.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/StagingBufferCache.h"
 #include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/ImGuiRenderer.h"
+
 #include "Resources/ResourceLoader.h"
 #include "Resources/ResourceManager.h"
 
@@ -42,12 +44,15 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
-#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+#include "Game/World/LevelObjectCreator.h"
 
 #include "GUI/Core/GUIApplication.h"
+
+#include <imgui/imgui.h>
 
 namespace LambdaEngine
 {
@@ -109,26 +114,26 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!PlayerMovementSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
 		TransformApplierSystem::GetInstance()->Init();
 		return true;
 	}
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
+		// Stats
 		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
+		
+		// Input
 		Input::Tick();
 
+		// Misc
 		GameConsole::Get().Tick();
 
 		Thread::Join();
 
 		PlatformNetworkUtils::Tick(delta);
 
+		// Event
 		if (!CommonApplication::Get()->Tick())
 		{
 			return false;
@@ -136,26 +141,83 @@ namespace LambdaEngine
 
 		EventQueue::Tick();
 
+		// Audio
 		AudioAPI::Tick();
 
+		// States / ECS-systems
 		ClientSystem::StaticTickMainThread(delta);
 		ServerSystem::StaticTickMainThread(delta);
 		CameraSystem::GetInstance().MainThreadTick(delta);
 		StateManager::GetInstance()->Tick(delta);
 		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
+		
+		// Game
 		Game::Get().Tick(delta);
 
-		RenderSystem::GetInstance().Render();
+		// Rendering
+#ifdef LAMBDA_DEVELOPMENT
+		// TODO: Move to somewere else, does someone have a suggestion?
+		ImGuiRenderer::Get().DrawUI([delta]
+		{
+			const ImGuiWindowFlags flags =
+				ImGuiWindowFlags_NoBackground	|
+				ImGuiWindowFlags_NoTitleBar		|
+				ImGuiWindowFlags_NoMove			|
+				ImGuiWindowFlags_NoResize		|
+				ImGuiWindowFlags_NoDecoration	|
+				ImGuiWindowFlags_NoScrollbar	|
+				ImGuiWindowFlags_NoSavedSettings;
+
+			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+			const uint32 windowWidth	= mainWindow->GetWidth();
+			const uint32 size			= 250;
+
+			ImGui::SetNextWindowPos(ImVec2(windowWidth - size, 0));
+			ImGui::SetNextWindowSize(ImVec2((float32)size, (float32)size));
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+
+			if (ImGui::Begin("BuildInfo", (bool*)(0), flags))
+			{
+				const GraphicsDeviceDesc& desc = RenderAPI::GetDevice()->GetDesc();
+				ImGui::Text("RunInfo:");
+				ImGui::Text("FPS: %.2f", 1.0f / delta.AsSeconds());
+				ImGui::Spacing();
+				ImGui::Text("BuildInfo:");
+				ImGui::Text("CrazyCanvas [%s Build]", LAMBDA_CONFIG_NAME);
+				ImGui::Text("API: %s", desc.RenderApi.c_str());
+				ImGui::Text("Version: %s", desc.ApiVersion.c_str());
+				ImGui::Text("Adaper: %s", desc.AdapterName.c_str());
+				ImGui::Text("Driver: %s", desc.DriverVersion.c_str());
+				
+				// Tells the developer if validation layers are on
+				if (!desc.Debug)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+					ImGui::Text("DebugEnabled=false");
+					ImGui::PopStyleColor();
+				}
+				else
+				{
+					ImGui::Text("DebugEnabled=true");
+				}
+			}
+			ImGui::End();
+
+			ImGui::PopStyleColor();
+		});
+#endif
+		RenderSystem::GetInstance().Render(delta);
 
 		return true;
 	}
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
+		// Game
 		Game::Get().FixedTick(delta);
 
-		PlayerMovementSystem::GetInstance().FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
@@ -219,6 +281,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!EntityMaskManager::Init())
+		{
+			return false;
+		}
+
 		if (!RenderAPI::Init())
 		{
 			return false;
@@ -248,6 +315,11 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		/*if (!LevelObjectCreator::Init())
+		{
+			return false;
+		}*/
 
 		if (!InitSystems())
 		{

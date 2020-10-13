@@ -4,58 +4,52 @@
 
 namespace LambdaEngine
 {
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(TArray<ComponentAccess> componentAccesses, const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
-        :pSubscriber(pSubscriber),
-        OnEntityAdded(onEntityAdded),
-        OnEntityRemoval(onEntityRemoval)
+    EntitySubscriber::~EntitySubscriber()
+    {
+        ECSCore* pECS = ECSCore::GetInstance();
+        if (pECS && m_SubscriptionID != UINT32_MAX)
+        {
+            pECS->UnsubscribeFromEntities(m_SubscriptionID);
+        }
+    }
+
+    void EntitySubscriber::SubscribeToEntities(EntitySubscriberRegistration& subscriberRegistration)
+    {
+        for (EntitySubscriptionRegistration& subscriptionRegistration : subscriberRegistration.EntitySubscriptionRegistrations)
+        {
+            ProcessComponentGroups(subscriptionRegistration);
+            ProcessExcludedTypes(subscriptionRegistration);
+        }
+
+        m_SubscriptionID = ECSCore::GetInstance()->SubscribeToEntities(subscriberRegistration);
+    }
+
+    void EntitySubscriber::ProcessComponentGroups(EntitySubscriptionRegistration& subscriptionRegistration)
     {
         // Add the component accesses in the component groups to the component accesses vector
+        const TArray<IComponentGroup*>& componentGroups = subscriptionRegistration.ComponentGroups;
+        TArray<ComponentAccess>& componentAccesses = subscriptionRegistration.ComponentAccesses;
+
         for (const IComponentGroup* pComponentGroup : componentGroups)
         {
             const TArray<ComponentAccess> groupAccesses = pComponentGroup->ToArray();
             componentAccesses.Insert(componentAccesses.end(), groupAccesses.begin(), groupAccesses.end());
         }
-
-        ComponentAccesses = componentAccesses;
     }
 
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, const TArray<IComponentGroup*>& componentGroups, const TArray<const ComponentType*>& excludedComponentTypes, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
-        :EntitySubscriptionRegistration(componentAccesses, componentGroups, pSubscriber, onEntityAdded, onEntityRemoval)
+    void EntitySubscriber::ProcessExcludedTypes(EntitySubscriptionRegistration& subscriptionRegistration)
     {
-        // Filter the component accesses present in excluded list
-        TArray<ComponentAccess> componentAccessesFiltered;
-        for (auto component : ComponentAccesses)
+    #ifdef LAMBDA_DEVELOPMENT
+        const TArray<ComponentAccess>& includedTypes = subscriptionRegistration.ComponentAccesses;
+        const TArray<const ComponentType*>& excludedTypes = subscriptionRegistration.ExcludedComponentTypes;
+
+        for (const ComponentType* pExcludedComponent : excludedTypes)
         {
-            if (std::none_of(excludedComponentTypes.Begin(), excludedComponentTypes.End(),
-                [component](const auto* pExcludedType) {
-                    return pExcludedType == component.TID;
-                }))
+            for (const ComponentAccess& includedComponent : includedTypes)
             {
-                componentAccessesFiltered.PushBack(component);
+                ASSERT_MSG(pExcludedComponent != includedComponent.pTID, "The same component type was both included and excluded in an entity subscription");
             }
         }
-
-        ComponentAccesses = componentAccessesFiltered;
-        ExcludedComponentTypes = excludedComponentTypes;
-    }
-
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<ComponentAccess>& componentAccesses, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
-        :EntitySubscriptionRegistration(componentAccesses, {}, pSubscriber, onEntityAdded, onEntityRemoval)
-    {}
-
-    EntitySubscriptionRegistration::EntitySubscriptionRegistration(const TArray<IComponentGroup*>& componentGroups, IDVector* pSubscriber, std::function<void(Entity)>onEntityAdded, std::function<void(Entity)>onEntityRemoval)
-        :EntitySubscriptionRegistration({}, componentGroups, pSubscriber, onEntityAdded, onEntityRemoval)
-    {}
-
-    EntitySubscriber::~EntitySubscriber()
-    {
-        ECSCore* pECS = ECSCore::GetInstance();
-        if (pECS)
-            pECS->UnsubscribeFromEntities(m_SubscriptionID);
-    }
-
-    void EntitySubscriber::SubscribeToEntities(const EntitySubscriberRegistration& subscriberRegistration)
-    {
-        m_SubscriptionID = ECSCore::GetInstance()->SubscribeToEntities(subscriberRegistration);
+    #endif // LAMBDA_DEVELOPMENT
     }
 }

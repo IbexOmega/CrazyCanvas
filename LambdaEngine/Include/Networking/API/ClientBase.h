@@ -40,6 +40,7 @@ namespace LambdaEngine
 		virtual const NetworkStatistics* GetStatistics() const override;
 		virtual IClientRemoteHandler* GetHandler() override;
 		bool Connect(const IPEndPoint& ipEndPoint);
+		void ReturnPacket(NetworkSegment* pPacket);
 		virtual bool SendUnreliable(NetworkSegment* packet) override;
 		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) override;
 
@@ -78,6 +79,7 @@ namespace LambdaEngine
 		Timestamp m_PingTimeout;
 		Timestamp m_LastPingTimestamp;
 		bool m_UsePingSystem;
+		SpinLock m_LockReceivedPackets;
 		std::atomic_int8_t m_BufferIndex;
 		TArray<NetworkSegment*> m_ReceivedPackets[2];
 

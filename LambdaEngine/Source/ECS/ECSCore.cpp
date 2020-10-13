@@ -97,11 +97,8 @@ namespace LambdaEngine
 		}
 	}
 
-	uint32 ECSCore::SerializeEntity(Entity entity, uint8* pBuffer, uint32 bufferSize) const
+	uint32 ECSCore::SerializeEntity(Entity entity, const TArray<const ComponentType*>& componentsFilter, uint8* pBuffer, uint32 bufferSize) const
 	{
-		const EntityRegistryPage& entityPage = m_EntityRegistry.GetTopRegistryPage();
-		const std::unordered_set<const ComponentType*>& componentTypes = entityPage.IndexID(entity);
-
 		/*	EntitySerializationHeader is written to the beginning of the buffer. This is done last, when the size of
 			the serialization is known. */
 		uint8* pHeaderPosition = pBuffer;
@@ -117,14 +114,23 @@ namespace LambdaEngine
 
 		// Serialize all components
 		uint32 requiredTotalSize = headerSize;
-		for (const ComponentType* pComponentType : componentTypes)
+		uint32 serializedComponentsCount = 0u;
+		for (const ComponentType* pComponentType : componentsFilter)
 		{
+			const IComponentArray* pComponentArray = m_ComponentStorage.GetComponentArray(pComponentType);
+			if (pComponentArray && !pComponentArray->HasComponent(entity))
+			{
+				LOG_WARNING("Attempted to serialize a component type which entity %d does not have: %s", entity, pComponentType->GetName());
+				continue;
+			}
+
 			const uint32 requiredComponentSize = m_ComponentStorage.SerializeComponent(entity, pComponentType, pBuffer, remainingSize);
 			requiredTotalSize += requiredComponentSize;
 			if (requiredComponentSize <= remainingSize)
 			{
 				pBuffer += requiredComponentSize;
 				remainingSize -= requiredComponentSize;
+				++serializedComponentsCount;
 			}
 		}
 
@@ -135,7 +141,7 @@ namespace LambdaEngine
 			{
 				.TotalSerializationSize	= requiredTotalSize,
 				.Entity					= entity,
-				.ComponentCount			= (uint32)componentTypes.size()
+				.ComponentCount			= serializedComponentsCount
 			};
 
 			memcpy(pHeaderPosition, &header, headerSize);
@@ -144,16 +150,56 @@ namespace LambdaEngine
 		return requiredTotalSize;
 	}
 
-	uint32 ECSCore::SerializeComponent(Entity entity, const ComponentType* pComponentType, uint8* pBuffer, uint32 bufferSize) const
+	bool ECSCore::DeserializeEntity(const uint8* pBuffer)
 	{
-		return m_ComponentStorage.SerializeComponent(entity, pComponentType, pBuffer, bufferSize);
+		constexpr const uint32 entityHeaderSize = sizeof(EntitySerializationHeader);
+		EntitySerializationHeader entityHeader;
+		memcpy(&entityHeader, pBuffer, entityHeaderSize);
+		pBuffer += entityHeaderSize;
+
+		ASSERT_MSG(m_EntityRegistry.GetTopRegistryPage().HasElement(entityHeader.Entity), "Attempted to deserialize unknown entity: %d", entityHeader.Entity);
+
+		// Deserialize each component. If the entity already has the component, update its data. Otherwise, create it.
+		const uint32 componentCount = entityHeader.ComponentCount;
+		bool success = true;
+		for (uint32 componentIdx = 0u; componentIdx < componentCount; ++componentIdx)
+		{
+			constexpr const uint32 componentHeaderSize = sizeof(ComponentSerializationHeader);
+			ComponentSerializationHeader componentHeader;
+			memcpy(&componentHeader, pBuffer, componentHeaderSize);
+			pBuffer += componentHeaderSize;
+
+			const ComponentType* pComponentType = m_ComponentStorage.GetComponentType(componentHeader.TypeHash);
+			if (!pComponentType)
+			{
+				LOG_WARNING("Attempted to deserialize an unregistered component type, hash: %d", componentHeader.TypeHash);
+				success = false;
+				continue;
+			}
+
+			bool entityHadComponent = false;
+			const uint32 componentDataSize = componentHeader.TotalSerializationSize - componentHeaderSize;
+			success = m_ComponentStorage.DeserializeComponent(entityHeader.Entity, pComponentType, componentDataSize, pBuffer, entityHadComponent) && success;
+
+			if (!entityHadComponent)
+			{
+				m_ComponentsToRegister.PushBack({entityHeader.Entity, pComponentType});
+			}
+		}
+
+		return success;
 	}
 
 	void ECSCore::PerformComponentRegistrations()
 	{
+		// Register all components first, then publish them
 		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
 		{
 			m_EntityRegistry.RegisterComponentType(component.first, component.second);
+		}
+
+		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
+		{
 			m_EntityPublisher.PublishComponent(component.first, component.second);
 		}
 

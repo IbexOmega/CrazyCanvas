@@ -37,6 +37,12 @@ namespace LambdaEngine
 		return pComponentArray->SerializeComponent(entity, pBuffer, bufferSize);
 	}
 
+	bool ComponentStorage::DeserializeComponent(Entity entity, const ComponentType* pComponentType, uint32 componentDataSize, const uint8* pBuffer, bool& entityHadComponent)
+	{
+		IComponentArray* pComponentArray = GetComponentArray(pComponentType);
+		return pComponentArray->DeserializeComponent(entity, pBuffer, componentDataSize, entityHadComponent);
+	}
+
 	IComponentArray* ComponentStorage::GetComponentArray(const ComponentType* pComponentType)
 	{
 		auto arrayItr = m_CompTypeToArrayMap.find(pComponentType);
@@ -55,5 +61,11 @@ namespace LambdaEngine
 		{
 			pArray->ResetDirtyFlags();
 		}
+	}
+
+	const ComponentType* ComponentStorage::GetComponentType(uint32 componentTypeHash) const
+	{
+		auto componentTypeItr = m_TypeHashToCompTypeMap.find(componentTypeHash);
+		return componentTypeItr != m_TypeHashToCompTypeMap.end() ? componentTypeItr->second : nullptr;
 	}
 }

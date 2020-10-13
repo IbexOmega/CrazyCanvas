@@ -39,9 +39,19 @@ namespace LambdaEngine
 		colorAttachmentDesc.InitialState	= pBackBufferAttachmentDesc->InitialState;
 		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
 
+		RenderPassAttachmentDesc depthStencilAttachmentDesc = {};
+		depthStencilAttachmentDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
+		depthStencilAttachmentDesc.SampleCount		= 1;
+		depthStencilAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_DONT_CARE;
+		depthStencilAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_DONT_CARE;
+		depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_CLEAR;
+		depthStencilAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_STORE;
+		depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DONT_CARE;
+		depthStencilAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
+		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
@@ -53,7 +63,7 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = { };
 		renderPassDesc.DebugName			= "GUI Dummy Render Pass";
-		renderPassDesc.Attachments			= { colorAttachmentDesc };
+		renderPassDesc.Attachments			= { colorAttachmentDesc, depthStencilAttachmentDesc };
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 

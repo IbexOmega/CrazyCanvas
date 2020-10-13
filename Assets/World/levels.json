@@ -1,0 +1,30 @@
+{
+    "levels": [
+        {
+            "name": "Test Level 0",
+            "modules": [
+                {
+                    "filename": "module_0.glb",
+                    "translation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Test Level 1",
+            "modules": [
+                {
+                    "filename": "module_1.glb",
+                    "translation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    }
+                }
+            ]
+        }
+    ] 
+}

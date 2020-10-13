@@ -27,6 +27,8 @@
 
 #include "Rendering/RenderGraphTypes.h"
 
+#include "Rendering/LightRenderer.h"
+
 namespace LambdaEngine
 {
 	class Window;
@@ -37,7 +39,10 @@ namespace LambdaEngine
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
+	// Custom Renderers
 	class LineRenderer;
+	class PaintMaskRenderer;
+	class LightRenderer;
 
 	struct CameraComponent;
 	struct RenderGraphStructureDesc;
@@ -46,6 +51,7 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderSystem : public System
 	{
+		friend class PaintMaskRenderer;
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
 
@@ -53,10 +59,10 @@ namespace LambdaEngine
 		{
 			glm::mat4	Transform		= glm::mat4(1.0f);
 			glm::mat4	PrevTransform	= glm::mat4(1.0f);
-			uint32		MaterialSlot	= 0;
+			uint32		MaterialIndex	= 0;
+			uint32		ExtensionIndex	= 0;
 			uint32		MeshletCount	= 0;
 			uint32		Padding0;
-			uint32		Padding1;
 		};
 
 		struct MeshKey
@@ -64,10 +70,11 @@ namespace LambdaEngine
 		public:
 			MeshKey() = default;
 
-			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated)
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask)
 				: MeshGUID(meshGUID)
-				, EntityID(entityID)
 				, IsAnimated(isAnimated)
+				, EntityID(entityID)
+				, EntityMask(entityMask)
 			{
 				GetHash();
 			}
@@ -77,6 +84,7 @@ namespace LambdaEngine
 				if (Hash == 0)
 				{
 					Hash = std::hash<GUID_Lambda>()(MeshGUID);
+					HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityMask);
 					if (IsAnimated)
 					{
 						HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
@@ -88,7 +96,7 @@ namespace LambdaEngine
 
 			bool operator==(const MeshKey& other) const
 			{
-				if (MeshGUID != other.MeshGUID)
+				if (MeshGUID != other.MeshGUID || EntityMask != other.EntityMask)
 				{
 					return false;
 				}
@@ -108,6 +116,7 @@ namespace LambdaEngine
 			GUID_Lambda		MeshGUID;
 			bool			IsAnimated;
 			Entity			EntityID;
+			uint32			EntityMask;
 			mutable size_t	Hash = 0;
 		};
 
@@ -142,11 +151,16 @@ namespace LambdaEngine
 			Buffer* pMeshlets				= nullptr;
 			uint32	MeshletCount			= 0;
 
+			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
+			TArray<uint32>					InstanceIndexToExtensionGroup;
+			bool	HasExtensions			= false;
+			uint32	DrawArgsMask			= 0x0;
+
 			Buffer* pASInstanceBuffer		= nullptr;
 			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<AccelerationStructureInstance> ASInstances;
 
-			Buffer* pRasterInstanceBuffer			= nullptr;
+			Buffer* pRasterInstanceBuffer				= nullptr;
 			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
 			TArray<Instance> RasterInstances;
 
@@ -197,7 +211,10 @@ namespace LambdaEngine
 		{
 			glm::vec4	ColorIntensity	= glm::vec4(1.0f);
 			glm::vec3	Position		= glm::vec3(0.0f);
-			float		FarPlane		= 10.0f;
+			float32		NearPlane		= 0.1f;
+			float32		FarPlane		= 10.0f;
+			uint32		TextureIndex	= 0;
+			glm::vec2	padding0		= glm::vec2(0.0f);
 			glm::mat4	ProjViews[6];
 		};
 
@@ -218,7 +235,7 @@ namespace LambdaEngine
 
 		virtual void Tick(Timestamp deltaTime) override final;
 
-		bool Render();
+		bool Render(Timestamp delta);
 
 		/*
 		* Set new rendergraph to be executed
@@ -264,6 +281,7 @@ namespace LambdaEngine
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
 
+		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
@@ -274,11 +292,12 @@ namespace LambdaEngine
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
-		void UpdateLightsBuffer(CommandList* pCommandList);
 		void UpdateShaderRecords();
 		void BuildBLASs(CommandList* pCommandList);
 		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
+		void UpdateLightsBuffer(CommandList* pCommandList);
+		void UpdatePointLightTextureResource();
 
 		void UpdateRenderGraph();
 
@@ -288,8 +307,6 @@ namespace LambdaEngine
 		IDVector m_RenderableEntities;
 		IDVector m_CameraEntities;
 		IDVector m_AnimatedEntities;
-
-		LineRenderer* m_pLineRenderer	= nullptr;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -301,13 +318,19 @@ namespace LambdaEngine
 		bool					m_RayTracingEnabled	= false;
 		bool					m_MeshShadersEnabled = false;
 		// Mesh/Instance/Entity
-		bool						m_LightsDirty			= true;
-		bool						m_LightsResourceDirty	= false;
-		bool						m_DirectionalExist		= false;
+		bool						m_LightsResourceDirty		= true;
+		bool						m_PointLightDirty			= true;
+		bool						m_DirectionalExist			= false;
+		bool						m_RemoveTexturesOnDeletion	= false;
+		TArray<LightUpdateData>		m_PointLightTextureUpdateQueue;
+		TArray<uint32>				m_FreeTextureIndices;
 		LightBuffer					m_LightBufferData;
 		THashTable<Entity, uint32>	m_EntityToPointLight;
 		THashTable<uint32, Entity>	m_PointLightToEntity;
 		TArray<PointLight>			m_PointLights;
+		TArray<Texture*>			m_CubeTextures;
+		TArray<TextureView*>		m_CubeTextureViews;
+		TArray<TextureView*>		m_CubeSubImageTextureViews;
 
 		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
@@ -315,17 +338,17 @@ namespace LambdaEngine
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
 		// Materials
-		Texture*			m_ppAlbedoMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppNormalMaps[MAX_UNIQUE_MATERIALS];
-		Texture*			m_ppCombinedMaterialMaps[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppAlbedoMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppNormalMapViews[MAX_UNIQUE_MATERIALS];
-		TextureView*		m_ppCombinedMaterialMapViews[MAX_UNIQUE_MATERIALS];
-		MaterialProperties	m_pMaterialProperties[MAX_UNIQUE_MATERIALS];
-		uint32				m_pMaterialInstanceCounts[MAX_UNIQUE_MATERIALS];
-		Buffer*				m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer*				m_pMaterialParametersBuffer = nullptr;
-		TStack<uint32>		m_FreeMaterialSlots;
+		TArray<Texture*>			m_AlbedoMaps;
+		TArray<Texture*>			m_NormalMaps;
+		TArray<Texture*>			m_CombinedMaterialMaps;
+		TArray<TextureView*>		m_AlbedoMapViews;
+		TArray<TextureView*>		m_NormalMapViews;
+		TArray<TextureView*>		m_CombinedMaterialMapViews;
+		TArray<MaterialProperties>	m_MaterialProperties;
+		TArray<uint32>				m_MaterialInstanceCounts;
+		Buffer*						m_ppMaterialParametersStagingBuffers[BACK_BUFFER_COUNT];
+		Buffer*						m_pMaterialParametersBuffer = nullptr;
+		TArray<uint32>				m_ReleasedMaterialIndices;
 
 		// Per Frame
 		PerFrameBuffer		m_PerFrameData;
@@ -354,8 +377,8 @@ namespace LambdaEngine
 		// Pending/Dirty
 		bool						m_SBTRecordsDirty					= true;
 		bool						m_RenderGraphSBTRecordsDirty		= true;
-		bool						m_MaterialsPropertiesBufferDirty	= true;
-		bool						m_MaterialsResourceDirty			= true;
+		bool						m_MaterialsPropertiesBufferDirty	= false;
+		bool						m_MaterialsResourceDirty			= false;
 		bool						m_PerFrameResourceDirty				= true;
 		TSet<uint32>				m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
@@ -366,6 +389,11 @@ namespace LambdaEngine
 		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
+
+		// Custom Renderers
+		LineRenderer*				m_pLineRenderer			= nullptr;
+		LightRenderer*				m_pLightRenderer		= nullptr;
+		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 
 	private:
 		static RenderSystem		s_Instance;

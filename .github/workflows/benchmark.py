@@ -4,7 +4,7 @@ BENCHMARK_RESULTS_PATH          = 'benchmark_results.json'
 BENCHMARK_RESULTS_PATH_RT_ON    = 'benchmark_results_rt_on.json'
 BENCHMARK_RESULTS_PATH_RT_OFF   = 'benchmark_results_rt_off.json'
 
-ENGINE_CONFIG_PATH      = 'engine_config_production.json'
+ENGINE_CONFIG_PATH      = 'engine_config_crazycanvas.json'
 TEMP_ENGINE_CONFIG_PATH = 'engine_config_original.json'
 
 ENGINE_CONFIG = {

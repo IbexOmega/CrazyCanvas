@@ -6,60 +6,61 @@
   mc:Ignorable="d"
   d:DesignWidth="443.419" d:DesignHeight="235.461">
 
-  <Grid.Background>
-    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-      <GradientStop Color="#FF7B12AC" Offset="0.277"/>
-      <GradientStop Color="#FF4A11C5" Offset="0.736"/>
-    </LinearGradientBrush>
-  </Grid.Background>
-  <Grid.ColumnDefinitions>
-    <ColumnDefinition></ColumnDefinition>
-    <ColumnDefinition></ColumnDefinition>
-    <ColumnDefinition></ColumnDefinition>
-    <ColumnDefinition></ColumnDefinition>
-    <ColumnDefinition></ColumnDefinition>
-  </Grid.ColumnDefinitions>
- 
-  <GroupBox x:Name="MainMenuGroupBox" Header="Main Menu" Grid.Column="0" VerticalAlignment="Center" Margin="30" FontSize="56">
-    <StackPanel>
-      <Button Click="OnButtonSingleplayerClick" Content="Singleplayer"  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-      <Button Click="OnButtonMultiplayerClick"  Content="Multiplayer"   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-      <Button Click="OnButtonSettingsClick"     Content="Settings"      HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-      <Button Click="OnButtonExitClick"         Content="Exit"          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-    </StackPanel>
-  </GroupBox>
-  
-  <GroupBox x:Name="SettingsGroupBox" Visibility="Hidden" FontSize="56" Header="Settings" Grid.Column="1" VerticalAlignment="Center" Margin="30">
-    <StackPanel>
-      <ToggleButton  Click="OnMeshShadersChecked" Content="Mesh Shading" HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Top" Width="180"     FontSize="22" />
-      <ToggleButton  Click="OnRayTracingChecked"  Content="Ray Tracing"  HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Bottom" Width="180"  FontSize="22"/>
-      <Label                                      Content="Volume"       HorizontalAlignment="Center" Margin="10" FontSize="22"/>
-      <Slider        ValueChanged="OnVolumeSliderChanged" x:Name="VolumeSlider"  HorizontalAlignment="Center" Margin="10" Height="50" Minimum="0.0" SmallChange="0.02" LargeChange="0.1" Maximum="1.0" VerticalAlignment="Stretch" Width="220.0"/>
-      <Button        Click="OnButtonKeybindingsClick"    Content="Keybindings"  HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
-      <Button        Click="OnButtonBackClick"    Content="Back"         HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
-    </StackPanel>
-  </GroupBox>
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="#FF7B12AC" Offset="0.277"/>
+                <GradientStop Color="#FF4A11C5" Offset="0.736"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
 
-  <GroupBox x:Name="KeybindingsGroupBox" Visibility="Hidden" FontSize="56" Header="Keybindings" Grid.Column="2" VerticalAlignment="Center" Margin="30">
-    <StackPanel>
-      <Label FontSize="28" >Player Movement</Label>
-        <Separator/>
-        <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Forward</Label>
-        <TextBox x:Name="CAM_FORWARD" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
-        <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Backward</Label>
-        <TextBox x:Name="CAM_BACKWARD" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
-        <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Left</Label>
-        <TextBox x:Name="CAM_LEFT" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
-        <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Right</Label>
-        <TextBox x:Name="CAM_RIGHT" VerticalAlignment="Center" HorizontalAlignment="Right"  FontSize="24" Width="150" Height="50"/>
-        <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Jump</Label>
-        <TextBox x:Name="CAM_JUMP" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
-        <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Sprint</Label>
-        <TextBox x:Name="CAM_SPEED_MODIFIER"  VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
-      <Separator/>
-      <Button  Click="OnButtonApplyClick" Content="Apply" Background="Green" HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
-      <Button  Click="OnButtonBackClick" Content="Back"  HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
-    </StackPanel>
-  </GroupBox>
+        <GroupBox x:Name="MainMenuGroupBox" Header="Main Menu" Grid.Column="0" VerticalAlignment="Center" Margin="30" FontSize="56">
+            <StackPanel>
+                <Button Click="OnButtonSingleplayerClick" Content="Singleplayer"  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+                <Button Click="OnButtonMultiplayerClick"  Content="Multiplayer"   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+                <Button Click="OnButtonBenchmarkClick"  Content="Benchmark"   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="45.2,10" Padding="20"  MinWidth="220" FontSize="32"/>
+                <Button Click="OnButtonSettingsClick"     Content="Settings"      HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+                <Button Click="OnButtonExitClick"         Content="Exit"          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
+            </StackPanel>
+        </GroupBox>
 
-</Grid>
+        <GroupBox x:Name="SettingsGroupBox" Visibility="Hidden" FontSize="56" Header="Settings" Grid.Column="1" VerticalAlignment="Center" Margin="30">
+            <StackPanel>
+                <ToggleButton  Click="OnMeshShadersChecked" Content="Mesh Shading" HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Top" Width="180"     FontSize="22" />
+                <ToggleButton  Click="OnRayTracingChecked"  Content="Ray Tracing"  HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Bottom" Width="180"  FontSize="22"/>
+                <Label                                      Content="Volume"       HorizontalAlignment="Center" Margin="10" FontSize="22"/>
+                <Slider        ValueChanged="OnVolumeSliderChanged" x:Name="VolumeSlider"  HorizontalAlignment="Center" Margin="10" Height="50" Minimum="0.0" SmallChange="0.02" LargeChange="0.1" Maximum="1.0" VerticalAlignment="Stretch" Width="220.0"/>
+                <Button        Click="OnButtonKeybindingsClick"    Content="Keybindings"  HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
+                <Button        Click="OnButtonBackClick"    Content="Back"         HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox x:Name="KeybindingsGroupBox" Visibility="Hidden" FontSize="56" Header="Keybindings" Grid.Column="2" VerticalAlignment="Center" Margin="30">
+            <StackPanel>
+                <Label FontSize="28" >Player Movement</Label>
+                <Separator/>
+                <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Forward</Label>
+                <TextBox x:Name="CAM_FORWARD" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
+                <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Backward</Label>
+                <TextBox x:Name="CAM_BACKWARD" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
+                <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Left</Label>
+                <TextBox x:Name="CAM_LEFT" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
+                <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Right</Label>
+                <TextBox x:Name="CAM_RIGHT" VerticalAlignment="Center" HorizontalAlignment="Right"  FontSize="24" Width="150" Height="50"/>
+                <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Jump</Label>
+                <TextBox x:Name="CAM_JUMP" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
+                <Label    VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="24" >Sprint</Label>
+                <TextBox x:Name="CAM_SPEED_MODIFIER"  VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="24" Width="150" Height="50"/>
+                <Separator/>
+                <Button  Click="OnButtonApplyClick" Content="Apply" Background="Green" HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
+                <Button  Click="OnButtonBackClick" Content="Back"  HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>
+            </StackPanel>
+        </GroupBox>
+
+    </Grid>
