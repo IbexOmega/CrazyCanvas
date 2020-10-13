@@ -8,6 +8,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Threading/API/ThreadPool.h"
+
 namespace LambdaEngine
 {
 	AnimationSystem::AnimationSystem()
@@ -34,7 +36,7 @@ namespace LambdaEngine
 		}
 
 		// Call the graphs tick
-		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
+		animation.Graph.Tick(GetTotalTimeInSeconds(), skeleton);
 
 		// TODO: Remove this since it is only for testing
 		if (m_ChangeState)
@@ -128,13 +130,25 @@ namespace LambdaEngine
 		// Animation system has its own clock to keep track of time
 		m_Clock.Tick();
 
+		TArray<uint32> jobIndices;
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
 			AnimationComponent& animation = pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
-				Animate(animation);
+				std::function<void()> func = [&]
+				{
+					Animate(animation);
+				};
+
+				jobIndices.EmplaceBack(ThreadPool::Execute(func));
 			}
+		}
+
+		// Wait for all jobs to finish
+		for (uint32 index : jobIndices)
+		{
+			ThreadPool::Join(index);
 		}
 
 		m_ChangeState = false;

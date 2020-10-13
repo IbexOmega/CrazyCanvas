@@ -31,7 +31,7 @@ namespace LambdaEngine
 	};
 
 	/*
-	* TransitionState -> Stores the state one transition
+	* Transition -> Stores the state of one transition
 	*/
 
 	class Transition
@@ -42,7 +42,7 @@ namespace LambdaEngine
 		Transition(const String& fromState, const String& toState, float64 beginAt = 0.8);
 		~Transition() = default;
 
-		void Tick(float64 currentClipsNormalizedTime);
+		void Tick();
 
 		bool Equals(const String& fromState, const String& toState) const;
 		bool UsesState(const String& state) const;
@@ -83,8 +83,8 @@ namespace LambdaEngine
 
 	private:
 		AnimationGraph* m_pOwnerGraph;
-		AnimationState* m_pFrom;
-		AnimationState* m_pTo;
+		uint32 m_From;
+		uint32 m_To;
 
 		bool	m_IsActive;
 		float64	m_DeltaTime;
@@ -216,9 +216,11 @@ namespace LambdaEngine
 		AnimationGraph();
 		explicit AnimationGraph(const AnimationState& animationState);
 		explicit AnimationGraph(AnimationState&& animationState);
+		AnimationGraph(AnimationGraph&& other);
+		AnimationGraph(const AnimationGraph& other);
 		~AnimationGraph() = default;
 
-		void Tick(float64 deltaTimeSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton);
+		void Tick(float64 globalTimeInSeconds, const Skeleton& skeleton);
 
 		// Adds a new state to the graph if there currently are no state with the same name
 		void AddState(const AnimationState& animationState);
@@ -270,6 +272,9 @@ namespace LambdaEngine
 
 		const TArray<SQT>& GetCurrentFrame() const;
 
+		AnimationGraph& operator=(AnimationGraph&& other);
+		AnimationGraph& operator=(const AnimationGraph& other);
+
 		FORCEINLINE bool IsTransitioning() const
 		{
 			return (m_CurrentTransition > INVALID_TRANSITION);
@@ -277,6 +282,7 @@ namespace LambdaEngine
 
 	private:
 		void FinishTransition();
+		void SetOwnerGraph();
 
 	private:
 		bool m_IsBlending;

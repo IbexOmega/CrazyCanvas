@@ -38,8 +38,8 @@ namespace LambdaEngine
 
 	Transition::Transition(const String& fromState, const String& toState, float64 beginAt)
 		: m_pOwnerGraph(nullptr)
-		, m_pFrom(nullptr)
-		, m_pTo(nullptr)
+		, m_From(0xffffffff)
+		, m_To(0xffffffff)
 		, m_IsActive(false)
 		, m_FromState(fromState)
 		, m_BeginAt(beginAt)
@@ -49,15 +49,22 @@ namespace LambdaEngine
 		Reset();
 	}
 
-	void Transition::Tick(float64 currentClipsNormalizedTime)
+	void Transition::Tick()
 	{
+		VALIDATE(m_From != 0xffffffff);
+
 		// Only transition if the clip has reached correct timing
-		if (currentClipsNormalizedTime >= m_BeginAt)
+		AnimationState& fromState = m_pOwnerGraph->GetState(m_From);
+		const float64 normalizedTime = fromState.GetNormlizedTime();
+
+		LOG_INFO("normalizedTime=%.4f, m_BeginAt=%.4f", normalizedTime, m_BeginAt);
+
+		if (normalizedTime >= m_BeginAt)
 		{
 			// This makes sure that we loop around one time if we start a transition after the sync-point
 			if (m_IsActive)
 			{
-				m_LocalClock = currentClipsNormalizedTime;
+				m_LocalClock = normalizedTime;
 			}
 		}
 		else
@@ -68,10 +75,10 @@ namespace LambdaEngine
 		// Calculate deltatime, used for determine if we should finish transition
 		if (m_LastTime > 0.0f)
 		{
-			m_DeltaTime = currentClipsNormalizedTime - m_LastTime;
+			m_DeltaTime = normalizedTime - m_LastTime;
 		}
 
-		m_LastTime = currentClipsNormalizedTime;
+		m_LastTime = normalizedTime;
 	}
 
 	bool Transition::Equals(const String& fromState, const String& toState) const
@@ -87,10 +94,10 @@ namespace LambdaEngine
 	void Transition::SetAnimationGraph(AnimationGraph* pGraph)
 	{
 		VALIDATE(pGraph != nullptr);
-		m_pOwnerGraph = pGraph;
 
-		m_pFrom = &m_pOwnerGraph->GetState(m_FromState);
-		m_pTo	= &m_pOwnerGraph->GetState(m_ToState);
+		m_pOwnerGraph = pGraph;
+		m_From	= m_pOwnerGraph->GetStateIndex(m_FromState);
+		m_To	= m_pOwnerGraph->GetStateIndex(m_ToState);
 	}
 
 	/*
@@ -143,7 +150,7 @@ namespace LambdaEngine
 		{
 			if (m_NumLoops != INFINITE_LOOPS)
 			{
-				float64 totalDuration = m_NumLoops * GetDurationInSeconds();
+				const float64 totalDuration = m_NumLoops * GetDurationInSeconds();
 				localTime = glm::clamp(localTime, 0.0, totalDuration);
 			}
 
@@ -310,7 +317,33 @@ namespace LambdaEngine
 		AddState(animationState);
 	}
 
-	void AnimationGraph::Tick(float64 deltaTimeSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton)
+	AnimationGraph::AnimationGraph(AnimationGraph&& other)
+		: m_IsBlending(other.m_IsBlending)
+		, m_CurrentTransition(other.m_CurrentTransition)
+		, m_CurrentState(other.m_CurrentState)
+		, m_States(std::move(other.m_States))
+		, m_Transitions(std::move(other.m_Transitions))
+		, m_TransitionResult(std::move(other.m_TransitionResult))
+	{
+		other.m_IsBlending			= false;
+		other.m_CurrentTransition	= -1;
+		other.m_CurrentState		= -1;
+
+		SetOwnerGraph();
+	}
+
+	AnimationGraph::AnimationGraph(const AnimationGraph& other)
+		: m_IsBlending(other.m_IsBlending)
+		, m_CurrentTransition(other.m_CurrentTransition)
+		, m_CurrentState(other.m_CurrentState)
+		, m_States(other.m_States)
+		, m_Transitions(other.m_Transitions)
+		, m_TransitionResult(other.m_TransitionResult)
+	{
+		SetOwnerGraph();
+	}
+
+	void AnimationGraph::Tick(float64 globalTimeInSeconds, const Skeleton& skeleton)
 	{
 		if (IsTransitioning())
 		{
@@ -319,7 +352,7 @@ namespace LambdaEngine
 			fromState.Interpolate(skeleton);
 
 			Transition& currentTransition = GetCurrentTransition();
-			currentTransition.Tick(fromState.GetNormlizedTime());
+			currentTransition.Tick();
 
 			LOG_INFO("Weight=%.4f, LocalTime=%.4f", currentTransition.GetWeight(), fromState.GetNormlizedTime());
 
@@ -366,7 +399,7 @@ namespace LambdaEngine
 	{
 		if (!HasState(animationState.GetName()))
 		{
-			m_States.EmplaceBack(animationState);
+			m_States.EmplaceBack(animationState).SetAnimationGraph(this);
 		}
 	}
 
@@ -374,7 +407,7 @@ namespace LambdaEngine
 	{
 		if (!HasState(animationState.GetName()))
 		{
-			m_States.EmplaceBack(animationState);
+			m_States.EmplaceBack(animationState).SetAnimationGraph(this);
 		}
 	}
 
@@ -410,7 +443,7 @@ namespace LambdaEngine
 	{
 		if (!HasTransition(transition.From(), transition.To()))
 		{
-			m_Transitions.EmplaceBack(transition);
+			m_Transitions.EmplaceBack(transition).SetAnimationGraph(this);
 		}
 	}
 
@@ -418,7 +451,7 @@ namespace LambdaEngine
 	{
 		if (!HasTransition(transition.From(), transition.To()))
 		{
-			m_Transitions.EmplaceBack(transition);
+			m_Transitions.EmplaceBack(transition).SetAnimationGraph(this);
 		}
 	}
 
@@ -665,6 +698,44 @@ namespace LambdaEngine
 			return GetCurrentState().GetCurrentFrame();
 		}
 	}
+
+	AnimationGraph& AnimationGraph::operator=(AnimationGraph&& other)
+	{
+		if (this != std::addressof(other))
+		{
+			m_IsBlending		= other.m_IsBlending;
+			m_CurrentTransition	= other.m_CurrentTransition;
+			m_CurrentState		= other.m_CurrentState;
+			m_States			= other.m_States;
+			m_Transitions		= other.m_Transitions;
+			m_TransitionResult	= other.m_TransitionResult;
+
+			other.m_IsBlending			= false;
+			other.m_CurrentTransition	= -1;
+			other.m_CurrentState		= -1;
+
+			SetOwnerGraph();
+		}
+
+		return *this;
+	}
+
+	AnimationGraph& AnimationGraph::operator=(const AnimationGraph& other)
+	{
+		if (this != std::addressof(other))
+		{
+			m_IsBlending		= other.m_IsBlending;
+			m_CurrentTransition	= other.m_CurrentTransition;
+			m_CurrentState		= other.m_CurrentState;
+			m_States			= other.m_States;
+			m_Transitions		= other.m_Transitions;
+			m_TransitionResult	= other.m_TransitionResult;
+
+			SetOwnerGraph();
+		}
+
+		return *this;
+	}
 	
 	void AnimationGraph::FinishTransition()
 	{
@@ -673,5 +744,18 @@ namespace LambdaEngine
 		MakeCurrentState(GetCurrentTransition().To());
 		m_CurrentTransition = INVALID_TRANSITION;
 		m_IsBlending = false;
+	}
+	
+	void AnimationGraph::SetOwnerGraph()
+	{
+		for (Transition& transition : m_Transitions)
+		{
+			transition.SetAnimationGraph(this);
+		}
+
+		for (AnimationState& state : m_States)
+		{
+			state.SetAnimationGraph(this);
+		}
 	}
 }
