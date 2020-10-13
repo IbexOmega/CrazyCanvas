@@ -39,17 +39,17 @@ namespace LambdaEngine
 		friend class AnimationGraph;
 
 	public:
-		Transition(const String& fromState, const String& toState, float64 beginAt = 0.8);
+		Transition(const String& fromState, const String& toState, float64 fromBeginAt = 0.8, float64 toBeginAt = 0.0);
 		~Transition() = default;
 
-		void Tick();
+		void Tick(const float64 delta);
 
 		bool Equals(const String& fromState, const String& toState) const;
 		bool UsesState(const String& state) const;
 
 		FORCEINLINE void Reset()
 		{
-			m_LocalClock	= m_BeginAt;
+			m_LocalClock	= m_FromBeginAt;
 			m_IsActive		= false;
 			m_LastTime		= 0.0;
 			m_DeltaTime		= 0.0;
@@ -73,9 +73,19 @@ namespace LambdaEngine
 
 		FORCEINLINE float64 GetWeight() const
 		{
-			const float64 distance = 1.0 - m_BeginAt;
-			const float64 traveled = m_LocalClock - m_BeginAt;
+			const float64 distance = 1.0 - m_FromBeginAt;
+			const float64 traveled = m_LocalClock - m_FromBeginAt;
 			return traveled / distance;
+		}
+
+		FORCEINLINE float64 GetFromBeginAt() const
+		{
+			return m_FromBeginAt;
+		}
+
+		FORCEINLINE float64 GetToBeginAt() const
+		{
+			return m_ToBeginAt;
 		}
 
 	private:
@@ -90,7 +100,8 @@ namespace LambdaEngine
 		float64	m_DeltaTime;
 		float64	m_LastTime;
 		float64	m_LocalClock;
-		float64 m_BeginAt;
+		float64 m_FromBeginAt;
+		float64 m_ToBeginAt;
 		String	m_FromState;
 		String	m_ToState;
 	};
@@ -108,15 +119,18 @@ namespace LambdaEngine
 		AnimationState(const String& name, GUID_Lambda animationGUID, bool isLooping = true);
 		~AnimationState() = default;
 
-		void Tick(float64 globalTimeInSeconds);
+		void Tick(const float64 deltaTime);
 		void Interpolate(const Skeleton& skeleton);
 
 		Animation& GetAnimation() const;
 
 		FORCEINLINE void StartUp(float64 startTime, float64 startAt = 0.0)
 		{
-			m_StartTime = startTime;
-			m_IsPlaying = true;
+			startAt = glm::clamp(startAt, 0.0, 1.0);
+
+			m_StartTime		= startTime;
+			m_RunningTime	= 0.0;
+			m_IsPlaying		= true;
 		}
 
 		FORCEINLINE void Stop()
@@ -132,6 +146,16 @@ namespace LambdaEngine
 		FORCEINLINE bool IsPlaying() const
 		{
 			return m_IsPlaying;
+		}
+
+		FORCEINLINE void SetIsLooping(bool isLooping)
+		{
+			m_IsLooping = isLooping;
+		}
+
+		FORCEINLINE void SetNumLoops(uint32 numLoops)
+		{
+			m_NumLoops = numLoops;
 		}
 
 		FORCEINLINE void SetPlaybackSpeed(float64 speed)
@@ -193,6 +217,7 @@ namespace LambdaEngine
 
 		uint64	m_NumLoops;
 		float64	m_StartTime;
+		float64	m_RunningTime;
 		float64	m_PlaybackSpeed;
 		float64	m_NormalizedTime;
 		float64	m_LocalTimeInSeconds;
@@ -220,7 +245,7 @@ namespace LambdaEngine
 		AnimationGraph(const AnimationGraph& other);
 		~AnimationGraph() = default;
 
-		void Tick(float64 globalTimeInSeconds, const Skeleton& skeleton);
+		void Tick(float64 deltaTimeInSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton);
 
 		// Adds a new state to the graph if there currently are no state with the same name
 		void AddState(const AnimationState& animationState);
@@ -248,7 +273,7 @@ namespace LambdaEngine
 		// Returns true if the graph contains a transition with the specified from and to
 		bool HasTransition(const String& fromState, const String& toState);
 
-		// Returns 0xffffffff if not found
+		// Returns UINT32_MAX if not found
 		uint32 GetStateIndex(const String& name) const;
 
 		AnimationState& GetState(uint32 index);
@@ -259,7 +284,7 @@ namespace LambdaEngine
 		AnimationState& GetCurrentState();
 		const AnimationState& GetCurrentState() const;
 
-		// Returns 0xffffffff if not found
+		// Returns UINT32_MAX if not found
 		uint32 GetTransitionIndex(const String& fromState, const String& toState);
 
 		Transition& GetTransition(uint32 index);

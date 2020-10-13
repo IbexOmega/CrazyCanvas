@@ -36,7 +36,7 @@ namespace LambdaEngine
 		}
 
 		// Call the graphs tick
-		animation.Graph.Tick(GetTotalTimeInSeconds(), skeleton);
+		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
 
 		// TODO: Remove this since it is only for testing
 		if (m_ChangeState)
@@ -130,26 +130,26 @@ namespace LambdaEngine
 		// Animation system has its own clock to keep track of time
 		m_Clock.Tick();
 
-		TArray<uint32> jobIndices;
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
 			AnimationComponent& animation = pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
-				std::function<void()> func = [&]
+				std::function<void()> func = [this, &animation]
 				{
 					Animate(animation);
 				};
 
-				jobIndices.EmplaceBack(ThreadPool::Execute(func));
+				m_JobIndices.EmplaceBack(ThreadPool::Execute(func));
 			}
 		}
 
 		// Wait for all jobs to finish
-		for (uint32 index : jobIndices)
+		for (uint32 index : m_JobIndices)
 		{
 			ThreadPool::Join(index);
 		}
+		m_JobIndices.Clear();
 
 		m_ChangeState = false;
 	}
