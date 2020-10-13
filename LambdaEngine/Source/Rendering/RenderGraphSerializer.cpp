@@ -731,7 +731,7 @@ namespace LambdaEngine
 				auto resourceIt = std::find_if(resources.Begin(), resources.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; });
 				if (resourceIt == resources.End())
 				{
-					LOG_ERROR("[RenderGraphSerializer]: Resource State % in Final Out was not found in Resources Array", pResourceState->ResourceName.c_str());
+					LOG_ERROR("[RenderGraphSerializer]: Resource State % in Final Output was not found in Resources Array", pResourceState->ResourceName.c_str());
 					return false;
 				}
 
