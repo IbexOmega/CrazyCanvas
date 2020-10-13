@@ -359,7 +359,7 @@ namespace LambdaEngine
 			Transition& currentTransition = GetCurrentTransition();
 			currentTransition.Tick(deltaTimeInSeconds);
 
-			LOG_INFO("Weight=%.4f, LocalTime=%.4f", currentTransition.GetWeight(), fromState.GetNormlizedTime());
+			// LOG_INFO("Weight=%.4f, LocalTime=%.4f", currentTransition.GetWeight(), fromState.GetNormlizedTime());
 
 			VALIDATE(HasState(currentTransition.To()));
 			AnimationState& toState = GetState(currentTransition.To());
@@ -398,7 +398,7 @@ namespace LambdaEngine
 			currentState.Tick(deltaTimeInSeconds);
 			currentState.Interpolate(skeleton);
 
-			LOG_INFO("LocalTime=%.4f RunningTime=%.4f", currentState.GetNormlizedTime(), currentState.m_RunningTime);
+			// LOG_INFO("LocalTime=%.4f RunningTime=%.4f", currentState.GetNormlizedTime(), currentState.m_RunningTime);
 		}
 	}
 
