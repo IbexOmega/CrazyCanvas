@@ -44,7 +44,9 @@ namespace LambdaEngine
 
 		constexpr const float capsuleHeight = 1.8f;
 		constexpr const float capsuleRadius = 0.2f;
-		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius);
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+		CharacterColliderComponent colliderComp = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius);
+		pECS->AddComponent<CharacterColliderComponent>(entity, colliderComp);
 
 		// Audio Footsteps
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("walking-short.wav");

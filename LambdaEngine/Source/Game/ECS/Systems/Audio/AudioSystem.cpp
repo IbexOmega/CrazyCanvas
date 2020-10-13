@@ -13,10 +13,9 @@ namespace LambdaEngine
 	bool AudioSystem::Init()
 	{
 		{
-			TransformComponents transformComponents;
-			transformComponents.Position.Permissions	= R;
-			transformComponents.Scale.Permissions		= NDA;
-			transformComponents.Rotation.Permissions	= R;
+			TransformGroup transformGroup;
+			transformGroup.Position.Permissions	= R;
+			transformGroup.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -43,7 +42,7 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					}
 				}
 			};
