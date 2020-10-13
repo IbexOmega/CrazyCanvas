@@ -8,11 +8,11 @@
 namespace LambdaEngine
 {
 
-	class ParticleRenderer : public ICustomRenderer
+	class ParticleUpdater : public ICustomRenderer
 	{
 	public:
-		ParticleRenderer();
-		~ParticleRenderer();
+		ParticleUpdater();
+		~ParticleUpdater();
 
 		bool Init();
 
@@ -39,7 +39,7 @@ namespace LambdaEngine
 
 		virtual const String& GetName() const override final
 		{
-			static String name = RENDER_GRAPH_PARTICLE_RENDER_STAGE_NAME;
+			static String name = RENDER_GRAPH_PARTICLE_UPDATE_STAGE_NAME;
 			return name;
 		}
 
@@ -48,35 +48,28 @@ namespace LambdaEngine
 		bool CreateDescriptorSets();
 		bool CreateShaders();
 		bool CreateCommandLists();
-		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 
 	private:
-		bool									m_Initilized = false;
-		bool									m_MeshShaders = false;
+		bool								m_Initilized = false;
 
-		GUID_Lambda								m_MeshShaderGUID	= 0;
-		GUID_Lambda								m_PixelShaderGUID	= 0;
-		GUID_Lambda								m_VertexShaderGUID	= 0;
+		GUID_Lambda							m_ComputeShaderGUID = 0;
 
-		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
-		TSharedRef<RenderPass>					m_RenderPass = nullptr;
-
-		uint64									m_PipelineStateID = 0;
-		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
-		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
+		uint64								m_PipelineStateID = 0;
+		TSharedRef<PipelineLayout>			m_PipelineLayout = nullptr;
+		TSharedRef<DescriptorHeap>			m_DescriptorHeap = nullptr;
 
 		// Descriptor sets
-		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
-		DescriptorCache							m_DescriptorCache;
+		TArray<TSharedRef<DescriptorSet>>	m_DrawArgsDescriptorSets;
+		DescriptorCache						m_DescriptorCache;
 
-		uint32									m_BackBufferCount = 0;
+		uint32								m_BackBufferCount = 0;
 
-		CommandAllocator**				m_ppGraphicCommandAllocators = nullptr;
-		CommandList**					m_ppGraphicCommandLists = nullptr;
+		CommandAllocator**					m_ppComputeCommandAllocators = nullptr;
+		CommandList**						m_ppComputeCommandLists = nullptr;
 
 	private:
-		static ParticleRenderer* s_pInstance;
+		static ParticleUpdater* s_pInstance;
 	};
 }
 

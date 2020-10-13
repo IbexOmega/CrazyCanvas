@@ -31,6 +31,7 @@
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 
 #include "Rendering/ParticleRenderer.h"
+#include "Rendering/ParticleUpdater.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -241,8 +242,11 @@ namespace LambdaEngine
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
 				m_pParticleRenderer = DBG_NEW ParticleRenderer();
 				m_pParticleRenderer->Init();
-
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+
+				m_pParticleUpdater = DBG_NEW ParticleUpdater();
+				m_pParticleUpdater->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
 			}
 
 			//GUI Renderer
@@ -379,6 +383,7 @@ namespace LambdaEngine
 		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pParticleRenderer);
+		SAFEDELETE(m_pParticleUpdater);
 
 		// Remove Pointlight Texture and Texture Views
 		for (uint32 c = 0; c < m_CubeTextures.GetSize(); c++)

@@ -1,0 +1,53 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "../Defines.glsl"
+
+#define THREAD_COUNT 32
+layout(local_size_x = THREAD_COUNT, local_size_y = 1, local_size_z = 1) in;
+
+// Pushconstants
+layout(push_constant) uniform PushConstants
+{
+	float   DeltaTime;
+    uint    ParticleCount; 
+} u_PC;
+
+// Buffers
+layout(binding = 0, set = 0) restrict readonly buffer Vertices
+{ 
+	PVertex Val[]; 
+} b_Vertices;
+
+layout(binding = 1, set = 0) restrict readonly buffer ParticleInstances
+{ 
+	SParticle Val[]; 
+} b_ParticleInstances;
+
+// Main
+void main()
+{
+	// Return in case this thread is outside of our ParticleCount
+	if (gl_GlobalInvocationID.x >= u_PC.ParticleCount)
+	{
+		return;
+	}
+
+    const float dt = u_PC.DeltaTime;
+
+    // Update particle data 
+	SParticle particle = b_ParticleInstances.Val[gl_GlobalInvocationID.x];
+    particle.Acceleration = particle.Acceleration*dt;
+	particle.Velocity = particle.Velocity + particle.Acceleration*dt;
+    particle.Transform[3] = vec4(particle.Velocity*dt, 1.f);
+    particle.LifeTime -= dt;
+
+    b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
+
+    // Update position
+	SParticleVertex vertex	= b_Vertices.Val[gl_GlobalInvocationID.x];
+	vertex.Position	= particle.Transform * vec4(vertex.Position.xyz, 1.0f);
+
+	b_Vertices.Val[gl_GlobalInvocationID.x] = vertex;
+}
