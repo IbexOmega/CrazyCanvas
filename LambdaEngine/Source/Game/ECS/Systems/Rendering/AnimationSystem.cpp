@@ -135,7 +135,7 @@ namespace LambdaEngine
 			AnimationComponent& animation = pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
-				std::function<void()> func = [&]
+				std::function<void()> func = [this, &animation]
 				{
 					Animate(animation);
 				};
