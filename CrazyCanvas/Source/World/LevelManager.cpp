@@ -1,5 +1,5 @@
 #include "World/LevelManager.h"
-#include "World/LevelObjectCreator.h"
+#include "Game/World/LevelObjectCreator.h"
 #include "World/LevelModule.h"
 #include "World/Level.h"
 
@@ -12,12 +12,12 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/filereadstream.h>
 
-bool LevelManager::Init(bool clientSide)
+bool LevelManager::Init()
 {
 	using namespace LambdaEngine;
 	using namespace rapidjson;
 
-	if (!LevelObjectCreator::Init(clientSide))
+	if (!LevelObjectCreator::Init())
 	{
 		LOG_ERROR("[LevelManager]: Failed to initialize LevelObjectCreator");
 		return false;

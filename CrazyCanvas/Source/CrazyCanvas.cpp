@@ -8,7 +8,6 @@
 #include "Rendering/RenderGraph.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
-#include "States/NetworkingState.h"
 #include "States/PlaySessionState.h"
 #include "States/SandboxState.h"
 #include "States/ServerState.h"
@@ -30,8 +29,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	bool clientSide = true;
-	if (!LevelManager::Init(clientSide))
+	if (!LevelManager::Init())
 	{
 		LOG_ERROR("Level Manager Init Failed");
 	}
@@ -53,7 +51,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 	else if (stateStr == "client")
 	{
-		pStartingState = DBG_NEW NetworkingState();
+		pStartingState = DBG_NEW PlaySessionState(true);
 	}
 	else if (stateStr == "server")
 	{

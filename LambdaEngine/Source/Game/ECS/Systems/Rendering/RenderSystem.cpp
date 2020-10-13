@@ -60,7 +60,7 @@ namespace LambdaEngine
 					.pSubscriber = &m_RenderableEntities,
 					.ComponentAccesses =
 					{
-						{ NDA, MeshComponent::Type() }
+						{ R, MeshComponent::Type() }
 					},
 					.ComponentGroups =
 					{
@@ -110,8 +110,8 @@ namespace LambdaEngine
 					.pSubscriber = &m_AnimatedEntities,
 					.ComponentAccesses =
 					{
+						{ R, MeshComponent::Type() },
 						{ R, AnimationComponent::Type() },
-						{ R, MeshComponent::Type() }
 					},
 					.ComponentGroups =
 					{
@@ -831,11 +831,11 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pVertexWeightsBuffer != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pVertexWeightStagingBuffer, 0, meshEntry.pVertexWeightsBuffer, 0, vertexWeightBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexWeightStagingBuffer);
+						DeleteDeviceResource(pVertexWeightStagingBuffer);
 					}
 
 					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes });
-					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexStagingBuffer);
+					DeleteDeviceResource(pVertexStagingBuffer);
 				}
 
 				// Indices
@@ -864,7 +864,7 @@ namespace LambdaEngine
 					VALIDATE(meshEntry.pIndexBuffer != nullptr);
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes });
-					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
+					DeleteDeviceResource(pIndexStagingBuffer);
 				}
 
 				if (m_MeshShadersEnabled)
@@ -895,7 +895,7 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pMeshlets != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pMeshletStagingBuffer);
+						DeleteDeviceResource(pMeshletStagingBuffer);
 					}
 
 					// Unique Indices
@@ -924,7 +924,7 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pUniqueIndices != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pUniqueIndicesStagingBuffer);
+						DeleteDeviceResource(pUniqueIndicesStagingBuffer);
 					}
 
 					// Primitive indicies
@@ -953,7 +953,7 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pPrimitiveIndices != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pPrimitiveIndicesStagingBuffer);
+						DeleteDeviceResource(pPrimitiveIndicesStagingBuffer);
 					}
 				}
 
@@ -1119,6 +1119,12 @@ namespace LambdaEngine
 			{
 				//Mark material as empty
 				m_ReleasedMaterialIndices.PushBack(rasterInstance.MaterialIndex);
+				auto materialToRemoveIt = std::find_if(m_MaterialMap.begin(), m_MaterialMap.end(), [rasterInstance](const std::pair<GUID_Lambda, uint32>& pair) {return rasterInstance.MaterialIndex == pair.second; });
+
+				if (materialToRemoveIt != m_MaterialMap.end())
+				{
+					m_MaterialMap.erase(materialToRemoveIt);
+				}
 			}
 		}
 
@@ -1169,36 +1175,36 @@ namespace LambdaEngine
 		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pIndexBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pRasterInstanceBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pUniqueIndices);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pMeshlets);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pPrimitiveIndices);
+			DeleteDeviceResource(meshAndInstancesIt->second.pBLAS);
+			DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
+			DeleteDeviceResource(meshAndInstancesIt->second.pPrimitiveIndices);
+			DeleteDeviceResource(meshAndInstancesIt->second.pMeshlets);
+			DeleteDeviceResource(meshAndInstancesIt->second.pRasterInstanceBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pASInstanceBuffer);
 
 			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
 			{
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimatedVertexBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimationDescriptorSet);
+				DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
 
 				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBoneMatrixBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexWeightsBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pStagingMatrixBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
 			}
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
+				DeleteDeviceResource(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
+				DeleteDeviceResource(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 
 			m_SBTRecordsDirty = true;
@@ -1343,12 +1349,18 @@ namespace LambdaEngine
 		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 	}
 
+	void RenderSystem::DeleteDeviceResource(DeviceChild* pDeviceResource)
+	{
+		m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDeviceResource);
+	}
+
 	void RenderSystem::CleanBuffers()
 	{
 		// Todo: Better solution for this, save some Staging Buffers maybe so they don't get recreated all the time?
 		TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
-		for (DeviceChild* pResource : resourcesToRemove)
+		for (uint32 i = 0; i < resourcesToRemove.GetSize(); i++)
 		{
+			DeviceChild* pResource = resourcesToRemove[i];
 			SAFERELEASE(pResource);
 		}
 
@@ -1455,9 +1467,9 @@ namespace LambdaEngine
 		{
 			if (meshEntry.pBoneMatrixBuffer)
 			{
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pStagingMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pBoneMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pAnimationDescriptorSet);
+				DeleteDeviceResource(meshEntry.pStagingMatrixBuffer);
+				DeleteDeviceResource(meshEntry.pBoneMatrixBuffer);
+				DeleteDeviceResource(meshEntry.pAnimationDescriptorSet);
 			}
 
 			BufferDesc matrixBufferDesc;
@@ -1543,7 +1555,7 @@ namespace LambdaEngine
 				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
 					if (pStagingBuffer != nullptr)
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+						DeleteDeviceResource(pStagingBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName	= "Raster Instance Staging Buffer";
@@ -1562,7 +1574,7 @@ namespace LambdaEngine
 				if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pRasterInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
 					if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer != nullptr)
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pRasterInstanceBuffer);
+						DeleteDeviceResource(pDirtyInstanceBufferEntry->pRasterInstanceBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName		= "Raster Instance Buffer";
@@ -1601,7 +1613,7 @@ namespace LambdaEngine
 
 			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+				if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Material Properties Staging Buffer";
@@ -1619,7 +1631,7 @@ namespace LambdaEngine
 
 			if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (m_pMaterialParametersBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersBuffer);
+				if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Material Properties Buffer";
@@ -1741,7 +1753,7 @@ namespace LambdaEngine
 
 				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+					if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName = "AS Instance Staging Buffer";
@@ -1759,7 +1771,7 @@ namespace LambdaEngine
 
 				if (pDirtyInstanceBufferEntry->pASInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pASInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pASInstanceBuffer);
+					if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) DeleteDeviceResource(pDirtyInstanceBufferEntry->pASInstanceBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName = "AS Instance Buffer";
@@ -1812,7 +1824,7 @@ namespace LambdaEngine
 
 			if (m_pCompleteInstanceBuffer == nullptr || m_pCompleteInstanceBuffer->GetDesc().SizeInBytes < requiredCompleteInstancesBufferSize)
 			{
-				if (m_pCompleteInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pCompleteInstanceBuffer);
+				if (m_pCompleteInstanceBuffer != nullptr) DeleteDeviceResource(m_pCompleteInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Complete Instance Buffer";
@@ -1836,7 +1848,7 @@ namespace LambdaEngine
 			//Recreate TLAS completely if oldInstanceCount != newInstanceCount
 			if (m_MaxInstances < newInstanceCount)
 			{
-				if (m_pTLAS != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pTLAS);
+				if (m_pTLAS != nullptr) DeleteDeviceResource(m_pTLAS);
 
 				m_MaxInstances = newInstanceCount;
 
@@ -1950,20 +1962,18 @@ namespace LambdaEngine
 			{
 				uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
 
-				TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
-
 				// Remove Cube Texture Context for removed pointlights
 				for (uint32 r = 0; r < diff; r++)
 				{
-					resourcesToRemove.PushBack(m_CubeTextures.GetBack());
+					DeleteDeviceResource(m_CubeTextures.GetBack());
 					m_CubeTextures.PopBack();
 
-					resourcesToRemove.PushBack(m_CubeTextureViews.GetBack());
+					DeleteDeviceResource(m_CubeTextureViews.GetBack());
 					m_CubeTextureViews.PopBack();
 
 					for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
 					{
-						resourcesToRemove.PushBack(m_CubeSubImageTextureViews.GetBack());
+						DeleteDeviceResource(m_CubeSubImageTextureViews.GetBack());
 						m_CubeSubImageTextureViews.PopBack();
 					}
 				}
@@ -2009,7 +2019,7 @@ namespace LambdaEngine
 
 			if (pCurrentStagingBuffer == nullptr || pCurrentStagingBuffer->GetDesc().SizeInBytes < lightBufferSize)
 			{
-				if (pCurrentStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pCurrentStagingBuffer);
+				if (pCurrentStagingBuffer != nullptr) DeleteDeviceResource(pCurrentStagingBuffer);
 
 				BufferDesc lightCopyBufferDesc = {};
 				lightCopyBufferDesc.DebugName		= "Lights Copy Buffer";
@@ -2028,7 +2038,7 @@ namespace LambdaEngine
 
 			if (m_pLightsBuffer == nullptr || m_pLightsBuffer->GetDesc().SizeInBytes < lightBufferSize)
 			{
-				if (m_pLightsBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pLightsBuffer);
+				if (m_pLightsBuffer != nullptr) DeleteDeviceResource(m_pLightsBuffer);
 
 				BufferDesc lightBufferDesc = {};
 				lightBufferDesc.DebugName		= "Lights Buffer";

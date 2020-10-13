@@ -232,7 +232,6 @@ namespace LambdaEngine
 
 	void ServerBase::FixedTick(Timestamp delta)
 	{
-		TArray<ClientRemoteBase*> clientsApproved;
 		{
 			std::scoped_lock<SpinLock> lock(m_LockClients);
 			for (auto& pair : m_Clients)
@@ -242,42 +241,52 @@ namespace LambdaEngine
 
 			if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
 			{
-				std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
-				for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
+				TArray<ClientRemoteBase*> clientsApproved;
+				TArray<ClientRemoteBase*> unconnectedClientsToTick;
 				{
-					ClientRemoteBase* pClient = m_ClientsToAdd[i];
+					std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
 
-					pClient->FixedTick(delta);
-					if (pClient->IsConnected())
+					for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
 					{
-						LOG_INFO("[ServerBase]: Client Registered");
-						m_Clients.insert({ pClient->GetEndPoint(), pClient });
-						m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
-						clientsApproved.PushBack(pClient);
+						LOG_INFO("[ServerBase]: Client Unregistered");
+
+						for (int32 j = m_ClientsToAdd.GetSize() - 1; j >= 0; j--)
+							if (m_ClientsToAdd[j] == m_ClientsToRemove[i])
+								m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
+
+						m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
+						m_ClientsToRemove[i]->OnTerminationApproved();
 					}
-				}
 
-				for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
+					for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
+					{
+						ClientRemoteBase* pClient = m_ClientsToAdd[i];
+						unconnectedClientsToTick.PushBack(pClient);
+						
+						if (pClient->IsConnected())
+						{
+							LOG_INFO("[ServerBase]: Client Registered");
+							m_Clients.insert({ pClient->GetEndPoint(), pClient });
+							m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
+							clientsApproved.PushBack(pClient);
+						}
+					}	
+
+					m_ClientsToRemove.Clear();
+				}
+				
+				for (ClientRemoteBase* pClient : unconnectedClientsToTick)
 				{
-					LOG_INFO("[ServerBase]: Client Unregistered");
-
-					for (int32 j = m_ClientsToAdd.GetSize() - 1; j >= 0; j--)
-						if (m_ClientsToAdd[j] == m_ClientsToRemove[i])
-							m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
-
-					m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
-					m_ClientsToRemove[i]->OnTerminationApproved();
+					pClient->FixedTick(delta);
 				}
 
-				m_ClientsToRemove.Clear();
+				for (ClientRemoteBase* pClient : clientsApproved)
+				{
+					pClient->OnConnectionApproved();
+				}
 			}
 		}
 		
-		for (ClientRemoteBase* pClient : clientsApproved)
-		{
-			pClient->OnConnectionApproved();
-		}
-
 		Flush();
 	}
 

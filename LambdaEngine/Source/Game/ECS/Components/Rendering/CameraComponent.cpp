@@ -6,6 +6,7 @@
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Misc/Components.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
@@ -44,9 +45,9 @@ namespace LambdaEngine
 
 		constexpr const float capsuleHeight = 1.8f;
 		constexpr const float capsuleRadius = 0.2f;
-		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-		CharacterColliderComponent colliderComp = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius);
-		pECS->AddComponent<CharacterColliderComponent>(entity, colliderComp);
+		CharacterColliderComponent characterColliderComponent;
+		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterColliderComponent);
+		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 
 		// Audio Footsteps
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("walking-short.wav");

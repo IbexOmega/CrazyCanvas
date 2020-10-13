@@ -39,7 +39,7 @@ namespace LambdaEngine
 	struct SceneLoadDesc
 	{
 		String	Filename = "";
-		TArray<SpecialObjectDesc> SpecialObjectDescriptions = {};
+		TArray<SpecialObjectOnLoadDesc> SpecialObjectDescriptions = {};
 	};
 
 	class LAMBDA_API ResourceManager
@@ -82,7 +82,7 @@ namespace LambdaEngine
 			TArray<MeshComponent>& meshComponents,
 			TArray<LoadedDirectionalLight>& directionalLights,
 			TArray<LoadedPointLight>& pointLights,
-			TArray<SpecialObject>& specialObjects,
+			TArray<SpecialObjectOnLoad>& specialObjects,
 			const String& directory = SCENE_DIR);
 
 		/*

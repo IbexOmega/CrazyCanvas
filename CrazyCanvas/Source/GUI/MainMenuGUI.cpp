@@ -75,12 +75,11 @@ void MainMenuGUI::OnButtonSingleplayerClick(BaseComponent* pSender, const Routed
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesSleeping();
 
-	State* pStartingState = DBG_NEW PlaySessionState();
+	State* pStartingState = DBG_NEW PlaySessionState(false);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 

@@ -125,7 +125,7 @@ namespace LambdaEngine
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObject>& specialObjects,
+		TArray<SpecialObjectOnLoad>& specialObjects,
 		const String& directory)
 	{
 		VALIDATE(pSceneLoadDesc != nullptr);

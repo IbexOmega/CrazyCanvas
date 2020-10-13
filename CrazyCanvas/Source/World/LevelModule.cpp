@@ -1,5 +1,5 @@
 #include "World/LevelModule.h"
-#include "World/LevelObjectCreator.h"
+#include "Game/World/LevelObjectCreator.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -28,7 +28,7 @@ bool LevelModule::Init(const LambdaEngine::String& filename, const glm::vec3& tr
 	SceneLoadDesc loadDesc =
 	{
 		.Filename					= filename,
-		.SpecialObjectDescriptions	= LevelObjectCreator::GetSpecialObjectDescriptions()
+		.SpecialObjectDescriptions	= LevelObjectCreator::GetSpecialObjectOnLoadDescriptions()
 	};
 
 	return ResourceManager::LoadSceneFromFile(&loadDesc, m_MeshComponents, m_DirectionalLights, m_PointLights, m_SpecialObjects, LEVEL_MODULES_DIRECTORY);

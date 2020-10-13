@@ -44,11 +44,11 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
-#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+#include "Game/World/LevelObjectCreator.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -110,11 +110,6 @@ namespace LambdaEngine
 		}
 
 		if (!CameraSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
-		if (!PlayerMovementSystem::GetInstance().Init())
 		{
 			return false;
 		}
@@ -223,8 +218,6 @@ namespace LambdaEngine
 		// Game
 		Game::Get().FixedTick(delta);
 
-		// States / ECS-systems
-		PlayerMovementSystem::GetInstance().FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
@@ -322,6 +315,11 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		/*if (!LevelObjectCreator::Init())
+		{
+			return false;
+		}*/
 
 		if (!InitSystems())
 		{

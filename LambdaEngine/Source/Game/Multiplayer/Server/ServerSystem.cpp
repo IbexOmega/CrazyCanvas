@@ -1,21 +1,23 @@
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
-
-#include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+#include "Game/Multiplayer/Server/ClientRemoteSystem.h"
 
 #include "ECS/ECSCore.h"
 
-#include "Game/ECS/Systems/Networking/ClientRemoteSystem.h"
-
 #include "Networking/API/NetworkDebugger.h"
+
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 namespace LambdaEngine
 {
 	ServerSystem* ServerSystem::s_pInstance = nullptr;
 
-	ServerSystem::ServerSystem() :
+	ServerSystem::ServerSystem() : 
 		m_NetworkEntities(),
-		m_pServer(nullptr)
+		m_pServer(nullptr),
+		m_CharacterControllerSystem()
 	{
+		MultiplayerUtils::Init(true);
+
 		ServerDesc desc = {};
 		desc.Handler				= this;
 		desc.MaxRetries				= 10;
@@ -24,19 +26,19 @@ namespace LambdaEngine
 		desc.PoolSize				= 1024;
 		desc.Protocol				= EProtocol::UDP;
 		desc.PingInterval			= Timestamp::Seconds(1);
-		desc.PingTimeout			= Timestamp::Seconds(3);
+		desc.PingTimeout			= Timestamp::Seconds(10);
 		desc.UsePingSystem			= true;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 
-		SystemRegistration systemReg = {};
-		RegisterSystem(systemReg);
+		m_CharacterControllerSystem.Init();
 	}
 
 	ServerSystem::~ServerSystem()
 	{
 		m_pServer->Release();
+		MultiplayerUtils::Release();
 	}
 
 	bool ServerSystem::Start()

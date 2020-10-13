@@ -14,6 +14,9 @@ namespace LambdaEngine
 
 		inline void reportError(physx::PxErrorCode::Enum code, const char* pMessage, const char* pFile, int line) override final
 		{
+			UNREFERENCED_VARIABLE(pFile);
+			UNREFERENCED_VARIABLE(line);
+
 			using namespace physx;
 			switch (code)
 			{
