@@ -86,21 +86,10 @@
                             
                                 </ListBox>
                             </TabItem>
-                            <TabItem Header="Your Servers">
+                            <TabItem x:Name="YOUR_SERVER_LIST" Header="Your Servers">
                                 <StackPanel>
-                                    <ListView ItemsSource="{Binding GameCollection}">
-                                    <ListView.View>
-                                        <GridView>
-                                        <GridViewColumn Width="140" Header="Name" 
-                                            DisplayMemberBinding="{Binding Name}"  />
-                                        <GridViewColumn Width="140" Header="Map"  
-                                            DisplayMemberBinding="{Binding Map}" />
-                                        <GridViewColumn Width="140" Header="Ping" 
-                                            DisplayMemberBinding="{Binding Ping}" />
-                                        <GridViewColumn Width="140" Header="Online" 
-                                            DisplayMemberBinding="{Binding Online}" />
-                                        </GridView>
-                                    </ListView.View>
+                                    <ListView x:Name="TEST_LIST_VIEW" >
+
                                     </ListView>
                                     <Button HorizontalAlignment="Right" Margin="5,5,5,5" 
                                         Content="Add Row" Click="AddRow_Click" />

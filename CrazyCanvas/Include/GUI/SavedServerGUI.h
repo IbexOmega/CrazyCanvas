@@ -7,10 +7,14 @@
 #include "NsGui/Grid.h"
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
-#include "NsGui/ListBox.h"
+#include "NsGui/TabItem.h"
+#include "NsGui/TextBlock.h"
+#include "NsGui/ListView.h"
 #include "NsGui/Collection.h"
+#include "NsGui/ObservableCollection.h"
 
 #include "NsCore/BaseComponent.h"
+#include "NsCore/Type.h"
 
 
 
@@ -30,7 +34,7 @@ struct ServerData : public Noesis::BaseComponent
 
     NS_IMPLEMENT_INLINE_REFLECTION(ServerData, Noesis::BaseComponent)
     {
-        NsMeta<Noesis::TypeId>("ServerData");
+        //NsMeta<< Noesis::UIElementData > (Noesis::TypeOf<SelfClass >>("ServerData");
         NsProp("Name", &ServerData::m_ServerName);
         NsProp("Map", &ServerData::m_ServerMap);
         NsProp("Ping", &ServerData::m_ServerPing);
@@ -41,9 +45,9 @@ struct ServerData : public Noesis::BaseComponent
 class ListViewTest : public Noesis::Grid
 {
 public:
-    ListViewTest() : mGameCollection(*new Noesis::Collection<ServerData>())
+    ListViewTest() : mGameCollection(*new Noesis::ObservableCollection<ServerData>())
     {
-        Ptr<ServerData> gameData = *new ServerData("World Of Warcraft", "Blizzard", "Blizzard", true);
+        Noesis::Ptr<ServerData> gameData = *new ServerData("World Of Warcraft", "Blizzard", "Blizzard", true);
         mGameCollection->Add(gameData.GetPtr());
         gameData = *new ServerData("Halo", "Bungie", "Microsoft", true);
         mGameCollection->Add(gameData.GetPtr());
@@ -51,9 +55,9 @@ public:
         mGameCollection->Add(gameData.GetPtr());
     }
 
-    Noesis::Collection<ServerData>* GetGameCollection() const
+    Noesis::ObservableCollection<ServerData>* GetGameCollection() const
     {
-        return mGameCollection.GetPtr();
+        return mGameCollection;
     }
 
 private:
@@ -64,35 +68,38 @@ private:
     }*/
 
 private:
-    Ptr<Noesis::Collection<ServerData>> mGameCollection;
+    Noesis::Ptr<Noesis::ObservableCollection<ServerData>> mGameCollection;
 
     NS_IMPLEMENT_INLINE_REFLECTION(ListViewTest, Noesis::Grid)
     {
-        NsMeta<Noesis::TypeId>("ListViewTest");
+        //NsMeta<Noesis::UIElementData>(Noesis::TypeOf<SelfClass>"ListViewTest");
         NsProp("GameCollection", &ListViewTest::GetGameCollection);
         //NsFunc("AddRow_Click", &ListViewTest::AddRow_Click);
     }
 };
 
-class SavedServerGUI : public Noesis::Grid
+class SavedServerGUI
 {
 	//ObservableCollection<ListBox> Servers;
 public:
 	SavedServerGUI(const LambdaEngine::String& xamlFile);
 	~SavedServerGUI();
 
-	Noesis::ListBox* GetList();
+	void AddServerItem(Noesis::Grid* pParentGrid, uint8 nrOfColumns, const char* serverName, const char* mapName, bool isRunning);
 
-	void AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const char* serverName, const char* mapName, bool isRunning);
-
+    void Init(Noesis::ListView* pListView);
 
 private:
 
 
-	NS_IMPLEMENT_INLINE_REFLECTION_(SavedServerGUI, Noesis::Grid)
+	//NS_IMPLEMENT_INLINE_REFLECTION_(SavedServerGUI, Noesis::Grid)
 
+    
 private:
 	uint8 m_ItemCount;
 
-	Noesis::ListBox* m_pSavedServerList;
+    Noesis::Ptr<ListViewTest> m_Test;
+    Noesis::Ptr<Noesis::ObservableCollection<Noesis::TextBlock>> textBlock;
+    Noesis::Ptr<Noesis::TextBlock> tBlock;
+    Noesis::Ptr<Noesis::ListView> m_pSavedServerList;
 };

@@ -31,7 +31,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(ip);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
-
+	m_ServerList.Init(FrameworkElement::FindName<ListView>("TEST_LIST_VIEW"));
 	ErrorPopUpClose();
 }
 
@@ -81,7 +81,6 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-
 	
 	/*for (int i = 0; i < 4; i++)
 	{
@@ -97,12 +96,7 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 		pServerGrid->SetRow(listBlock, i + 3);
 	}*/
 
-	LOG_MESSAGE(m_ServerList.GetList()->GetName());
 	m_ServerList.AddServerItem(pServerGrid, 3, "BajsKorv", "BajsApa", true);
-
-	ItemCollection* pCollection = m_ServerList.GetList()->GetItems();
-
-	LOG_MESSAGE(pCollection->GetItemAt(0)->ToString().Str());
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -185,4 +179,3 @@ const HostGameDescription& LobbyGUI::PopulateServerInfo()
 
 	return m_HostGameDesc;
 }
-

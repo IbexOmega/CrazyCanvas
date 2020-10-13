@@ -9,28 +9,46 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
+
+/*NS_REGISTER_REFLECTION(Noesis::Factory* factory, Noesis::NsBool registerComponents)
+{
+	NS_REGISTER_COMPONENT(ListViewTest)
+}*/
+
 SavedServerGUI::SavedServerGUI(const LambdaEngine::String& xamlFile) :
 	m_ItemCount(0)
 {
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
-	m_pSavedServerList = FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
-
+	//Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+	//Noesis::RegisterComponent<ListViewTest>();
+	//m_Test = *new ListViewTest();
 
 	//FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST")
+}
+
+void SavedServerGUI::Init(ListView* pListView)
+{
+	textBlock = *new ObservableCollection<TextBlock>();
+	tBlock = *new TextBlock("ChrilleBoi");
+	textBlock->Add(tBlock);
+	
+	m_pSavedServerList = *pListView;
+
+	m_pSavedServerList->SetItemsSource(textBlock);
 }
 
 SavedServerGUI::~SavedServerGUI()
 {
 }
 
-
+/*
 Noesis::ListBox* SavedServerGUI::GetList()
 {
 	return m_pSavedServerList;
-}
+}*/
 
 void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const char* serverName, const char* mapName, bool isRunning)
 {
+	/*
 	//ListBox* pSavedServerList = FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
 	Ptr<Grid> grid = *new Grid();
 
@@ -42,10 +60,10 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const c
 		grid->GetColumnDefinitions()->Add(columnDef);
 	}
 
-	/*Ptr<RowDefinition> rowDef = *new RowDefinition();
+	Ptr<RowDefinition> rowDef = *new RowDefinition();
 	const GridLength rowLength = *new GridLength(50);
 	rowDef->SetHeight(rowLength);
-	grid->GetRowDefinitions()->Add(rowDef);*/
+	grid->GetRowDefinitions()->Add(rowDef);
 
 	ColumnDefinitionCollection* collection = grid->GetColumnDefinitions();
 
@@ -91,4 +109,6 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, uint8 nrOfColumns, const c
 	{
 		LOG_ERROR("SKIT ON ME");
 	}
+	*/
 }
+
