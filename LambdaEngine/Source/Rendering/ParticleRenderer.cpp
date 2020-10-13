@@ -125,7 +125,6 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleRenderer::CreateCommandLists()
 	{
-
 		m_ppGraphicCommandAllocators = DBG_NEW CommandAllocator * [m_BackBufferCount];
 		m_ppGraphicCommandLists = DBG_NEW CommandList * [m_BackBufferCount];
 
