@@ -48,9 +48,9 @@ namespace LambdaEngine
 		MultiplayerUtils::Init(false);
 
 		ClientDesc clientDesc			= {};
-		clientDesc.PoolSize				= 1024;
+		clientDesc.PoolSize				= 10240;
 		clientDesc.MaxRetries			= 10;
-		clientDesc.ResendRTTMultiplier	= 5.0F;
+		clientDesc.ResendRTTMultiplier	= 5.0f;
 		clientDesc.Handler				= this;
 		clientDesc.Protocol				= EProtocol::UDP;
 		clientDesc.PingInterval			= Timestamp::Seconds(1);

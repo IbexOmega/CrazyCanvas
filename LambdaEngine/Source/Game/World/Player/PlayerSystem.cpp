@@ -70,6 +70,7 @@ namespace LambdaEngine
 
 			Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
 			TickLocalPlayerAction(deltaTime, entityPlayer, &gameState);
+
 			TickOtherPlayersAction(deltaTime);
 
 			if (!MultiplayerUtils::IsSingleplayer())
@@ -93,14 +94,14 @@ namespace LambdaEngine
 		ECSCore* pECS = ECSCore::GetInstance();
 		float32 dt = (float32)deltaTime.AsSeconds();
 
-		auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents	= pECS->GetComponentArray<CharacterColliderComponent>();
+		ComponentArray<NetworkPositionComponent>* pNetPosComponents					= pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents						= pECS->GetComponentArray<VelocityComponent>();
+		const ComponentArray<PositionComponent>* pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
 
-		NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
-		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
-		const PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+		NetworkPositionComponent& netPosComponent	= pNetPosComponents->GetData(entityPlayer);
+		const VelocityComponent& velocityComponent	= pVelocityComponents->GetConstData(entityPlayer);
+		const PositionComponent& positionComponent	= pPositionComponents->GetConstData(entityPlayer);
 
 		netPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
 		netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
@@ -120,39 +121,52 @@ namespace LambdaEngine
 		ECSCore* pECS = ECSCore::GetInstance();
 		float32 dt = (float32)deltaTime.AsSeconds();
 
-		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+		ComponentArray<NetworkPositionComponent>* pNetPosComponents		= pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents			= pECS->GetComponentArray<VelocityComponent>();
+		const ComponentArray<PositionComponent>* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>* pRotationComponents			= pECS->GetComponentArray<RotationComponent>();
 
 		for (auto& pair : m_EntityOtherStates)
 		{
 			GameStateOther& gameState = pair.second;
 			Entity entity = pair.first;
 
-			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entity);
-			const PositionComponent& positionComponent = pPositionComponents->GetData(entity);
-			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
-			RotationComponent& rotationComponent = pRotationComponents->GetData(entity);
+			NetworkPositionComponent& netPosComponent		= pNetPosComponents->GetData(entity);
+			const PositionComponent& positionComponent		= pPositionComponents->GetConstData(entity);
+			VelocityComponent& velocityComponent			= pVelocityComponents->GetData(entity);
 
 			if (gameState.HasNewData) //Data exist for the current frame :)
 			{
+				const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entity);
+
+				if (constRotationComponent.Quaternion != gameState.Rotation)
+				{
+					RotationComponent& rotationComponent = const_cast<RotationComponent&>(constRotationComponent);
+					rotationComponent.Quaternion	= gameState.Rotation;
+					rotationComponent.Dirty			= true;
+				}
+
 				gameState.HasNewData = false;
 
-				netPosComponent.PositionLast = positionComponent.Position;
-				netPosComponent.Position = gameState.Position;
-				netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
+				netPosComponent.PositionLast	= positionComponent.Position;
+				netPosComponent.Position		= gameState.Position;
+				netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
 
-				velocityComponent.Velocity = gameState.Velocity;
+				velocityComponent.Velocity		= gameState.Velocity;
 
-				rotationComponent.Quaternion = gameState.Rotation;
+				LOG_INFO("Tick: %d", gameState.SimulationTick);
+				LOG_INFO("Position Last	: %f %f %f", netPosComponent.PositionLast.x, netPosComponent.PositionLast.y, netPosComponent.PositionLast.z);
+				LOG_INFO("Position		: %f %f %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
 			}
-			else  //Data does not exist for the current frame :(
-			{
-				netPosComponent.PositionLast = positionComponent.Position;
-				netPosComponent.Position += velocityComponent.Velocity * dt;
-				netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
-			}
+			//else  //Data does not exist for the current frame :(
+			//{
+			//	netPosComponent.PositionLast	= positionComponent.Position;
+			//	netPosComponent.Position		+= velocityComponent.Velocity * dt;
+			//	netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+			//	LOG_INFO("Tick: %d", gameState.SimulationTick);
+			//	LOG_ERROR("Position Last	: %f %f %f", netPosComponent.PositionLast.x, netPosComponent.PositionLast.y, netPosComponent.PositionLast.z);
+			//	LOG_ERROR("Position			: %f %f %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
+			//}
 		}
 	}
 
@@ -182,7 +196,8 @@ namespace LambdaEngine
 					serverGameState.Position,
 					serverGameState.Velocity,
 					serverGameState.Rotation,
-					true
+					true,
+					serverGameState.SimulationTick
 				};
 			}
 			return true;
@@ -212,9 +227,9 @@ namespace LambdaEngine
 
 		Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
 
-		auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+		ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+		ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 		NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
@@ -253,18 +268,19 @@ namespace LambdaEngine
 
 	bool PlayerSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
 	{
+		bool result = true;
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
 		{
 			LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z);
-			return false;
+			result = false;
 		}
 
 		if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
 		{
 			LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Velocity.x, gameStateLocal.Velocity.y, gameStateLocal.Velocity.z, gameStateServer.Velocity.x, gameStateServer.Velocity.y, gameStateServer.Velocity.z);
-			return false;
+			result = false;
 		}
 
-		return true;
+		return result;
 	}
 }

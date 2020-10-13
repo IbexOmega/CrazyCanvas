@@ -74,7 +74,7 @@ namespace LambdaEngine
 		for (Entity entity : m_ForeignPlayerEntities)
 		{
 			CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
-			const PositionComponent& positionComp			= pPositionComponents->GetData(entity);
+			const PositionComponent& positionComp			= pPositionComponents->GetConstData(entity);
 			VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
 			glm::vec3& velocity			= velocityComp.Velocity;
@@ -127,15 +127,24 @@ namespace LambdaEngine
 	* Calculates a new Velocity based on the difference of the last position and the new one.
 	* Sets the new position of the PositionComponent
 	*/
-	void CharacterControllerSystem::TickCharacterController(float32 dt, Entity entity, ComponentArray<CharacterColliderComponent>* pCharacterColliders, ComponentArray<NetworkPositionComponent>* pNetPosComponents, ComponentArray<VelocityComponent>* pVelocityComponents)
+	void CharacterControllerSystem::TickCharacterController(
+		float32 dt, 
+		Entity entity, 
+		ComponentArray<CharacterColliderComponent>* pCharacterColliders, 
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents, 
+		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
-		CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
-		const NetworkPositionComponent& positionComp = pNetPosComponents->GetData(entity);
+		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
+		const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
+		VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
-		glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
+		glm::vec3& velocity = velocityComp.Velocity;
 		const glm::vec3& position = positionComp.Position;
+		//LOG_ERROR("Pre Velocity: %f %f %f DT: %f", velocity.x, velocity.y, velocity.z, dt);
 
 		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+
+		//LOG_ERROR("Mid Velocity: %f %f %f DT: %f", velocity.x, velocity.y, velocity.z, dt);
 
 		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 		translationPX *= dt;
@@ -143,23 +152,27 @@ namespace LambdaEngine
 		PxController* pController = characterCollider.pController;
 
 		const PxExtendedVec3 oldPositionPX = pController->getPosition();
+		//LOG_ERROR("Old Position: %f %f %f", oldPositionPX.x, oldPositionPX.y, oldPositionPX.z);
 
-		if (positionComp.Dirty)
-		{
-			// Distance between the capsule's feet to its center position. Includes contact offset.
-			const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-			pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
-		}
+		//if (positionComp.Dirty)
+		//{
+		//	LOG_ERROR("IsDirty");
+		//	// Distance between the capsule's feet to its center position. Includes contact offset.
+		//	const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
+		//	pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
+		//}
 
 		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 		const PxExtendedVec3& newPositionPX = pController->getPosition();
+		//LOG_ERROR("New Position: %f %f %f", newPositionPX.x, newPositionPX.y, newPositionPX.z);
 		velocity = {
 			(float)newPositionPX.x - oldPositionPX.x,
 			(float)newPositionPX.y - oldPositionPX.y,
 			(float)newPositionPX.z - oldPositionPX.z
 		};
 		velocity /= dt;
+		//LOG_ERROR("Post Velocity: %f %f %f DT: %f", velocity.x, velocity.y, velocity.z, dt);
 
 		if (glm::length2(velocity) > glm::epsilon<float>())
 		{

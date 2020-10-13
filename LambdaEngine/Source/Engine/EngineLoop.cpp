@@ -82,11 +82,20 @@ namespace LambdaEngine
 
 			// Fixed update
 			accumulator += delta;
+			uint32 fixedTickCounter = 0;
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
 				FixedTick(g_FixedTimestep);
 				accumulator -= g_FixedTimestep;
+
+				//Bailout so we don't get stuck in Fixed Tick
+				fixedTickCounter++;
+				if (fixedTickCounter > 2)
+				{
+					accumulator = 0;
+					break;
+				}
 			}
 		}
 	}

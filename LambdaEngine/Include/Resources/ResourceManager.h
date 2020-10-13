@@ -210,6 +210,7 @@ namespace LambdaEngine
 		static GUID_Lambda GetMeshGUID(const String& name);
 		static GUID_Lambda GetMaterialGUID(const String& name);
 		static GUID_Lambda GetAnimationGUID(const String& name);
+		static bool GetAnimationGUIDsFromMeshName(const String& name, TArray<GUID_Lambda>& guids);
 		static GUID_Lambda GetTextureGUID(const String& name);
 		static GUID_Lambda GetShaderGUID(const String& name);
 		static GUID_Lambda GetSoundEffectGUID(const String& name);

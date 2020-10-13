@@ -7,6 +7,8 @@
 
 #include <type_traits>
 
+#include "Game/ECS/Components/Physics/Transform.h"
+
 namespace LambdaEngine
 {
 	class ComponentStorage;
@@ -54,10 +56,10 @@ namespace LambdaEngine
 		Comp& Insert(Entity entity, const Comp& comp);
 
 		Comp& GetData(Entity entity);
-		const Comp& GetData(Entity entity) const;
+		const Comp& GetConstData(Entity entity) const;
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
-		uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const override final { return SerializeComponent(GetData(entity), pBuffer, bufferSize); }
+		uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const override final { return SerializeComponent(GetConstData(entity), pBuffer, bufferSize); }
 		uint32 SerializeComponent(const Comp& component, uint8* pBuffer, uint32 bufferSize) const;
 		bool DeserializeComponent(Entity entity, const uint8* pBuffer, uint32 serializationSize, bool& entityHadComponent);
 
@@ -110,6 +112,12 @@ namespace LambdaEngine
 
 		if constexpr (Comp::HasDirtyFlag())
 		{
+			if (Comp::Type() == PositionComponent::Type())
+				int extra = 0;
+
+			if (Comp::Type() == RotationComponent::Type())
+				int allt = 0;
+
 			component.Dirty = true;
 		}
 
@@ -117,7 +125,7 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline const Comp& ComponentArray<Comp>::GetData(Entity entity) const
+	inline const Comp& ComponentArray<Comp>::GetConstData(Entity entity) const
 	{
 		auto indexItr = m_EntityToIndex.find(entity);
 		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");

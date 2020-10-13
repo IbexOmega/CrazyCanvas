@@ -16,6 +16,7 @@ namespace LambdaEngine
 		glm::vec3 Velocity;
 		glm::quat Rotation;
 		bool HasNewData = false;
+		int32 SimulationTick;
 	};
 
 	class PlayerSystem

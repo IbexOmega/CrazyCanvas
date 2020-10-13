@@ -4,9 +4,9 @@
     1080
   ],
   "VolumeMasterInital": 1.0,
-  "FixedTimestep": 60,
+  "FixedTimestep": 30,
   "RayTracingEnabled": true,
-  "MeshShadersEnabled": true,
+  "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
   "EnableLineRenderer": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",

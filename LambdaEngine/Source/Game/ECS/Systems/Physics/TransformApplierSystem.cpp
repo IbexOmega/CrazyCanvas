@@ -47,15 +47,15 @@ namespace LambdaEngine
 		const float32 dt = (float32)deltaTime.AsSeconds();
 
 		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
-		const auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-		const auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-		auto* pCameraComponents			= pECS->GetComponentArray<CameraComponent>();
-		auto* pViewProjectionComponents = pECS->GetComponentArray<ViewProjectionMatricesComponent>();
+		ComponentArray<PositionComponent>* pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
+		const ComponentArray<VelocityComponent>* pVelocityComponents		= pECS->GetComponentArray<VelocityComponent>();
+		const ComponentArray<RotationComponent>* pRotationComponents		= pECS->GetComponentArray<RotationComponent>();
+		ComponentArray<CameraComponent>* pCameraComponents					= pECS->GetComponentArray<CameraComponent>();
+		ComponentArray<ViewProjectionMatricesComponent>* pViewProjectionComponents	= pECS->GetComponentArray<ViewProjectionMatricesComponent>();
 
 		for (Entity entity : m_VelocityEntities)
 		{
-			const VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
+			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(entity);
 			if (glm::length2(velocityComp.Velocity))
 			{
 				PositionComponent& positionComp = pPositionComponents->GetData(entity);
@@ -65,8 +65,8 @@ namespace LambdaEngine
 
 		for (Entity entity : m_MatrixEntities)
 		{
-			const PositionComponent& positionComp = pPositionComponents->GetData(entity);
-			const RotationComponent& rotationComp = pRotationComponents->GetData(entity);
+			const PositionComponent& positionComp = pPositionComponents->GetConstData(entity);
+			const RotationComponent& rotationComp = pRotationComponents->GetConstData(entity);
 			CameraComponent& cameraComp = pCameraComponents->GetData(entity);
 			ViewProjectionMatricesComponent& viewProjComp = pViewProjectionComponents->GetData(entity);
 

@@ -92,9 +92,9 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT) && !onCooldown)
 		{
-			const PositionComponent& positionComp = pPositionComponents->GetData(playerEntity);
-			const RotationComponent& rotationComp = pRotationComponents->GetData(playerEntity);
-			const VelocityComponent& velocityComp = pVelocityComponents->GetData(playerEntity);
+			const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
+			const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
+			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 
 			Fire(weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
 		}
@@ -114,7 +114,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 	ECSCore* pECS = ECSCore::GetInstance();
 	const Entity projectileEntity = pECS->CreateEntity();
 
-	const VelocityComponent initialVelocity = {true, playerVelocity + directionVec * projectileInitialSpeed};
+	const VelocityComponent initialVelocity = {playerVelocity + directionVec * projectileInitialSpeed};
 	pECS->AddComponent<VelocityComponent>(projectileEntity, initialVelocity);
 
 	const DynamicCollisionInfo collisionInfo = {

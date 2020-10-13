@@ -45,7 +45,7 @@ void ServerState::Init()
 
 	// Load scene
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
+		m_pLevel = LevelManager::LoadLevel(2);
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
 

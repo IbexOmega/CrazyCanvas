@@ -36,7 +36,7 @@ namespace LambdaEngine
 		static void TickCharacterController(float32 dt,
 			Entity entity,
 			ComponentArray<CharacterColliderComponent>* pCharacterColliders,
-			ComponentArray<NetworkPositionComponent>* pNetPosComponents,
+			const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
 			ComponentArray<VelocityComponent>* pVelocityComponents);
 
 	private:

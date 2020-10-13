@@ -438,8 +438,8 @@ namespace LambdaEngine
 		const ComponentArray<PointLightComponent>* pPointLightComponents = pECSCore->GetComponentArray<PointLightComponent>();
 		for (Entity entity : m_PointLightEntities.GetIDs())
 		{
-			const auto& pointLight 	= pPointLightComponents->GetData(entity);
-			const auto& position 	= pPositionComponents->GetData(entity);
+			const auto& pointLight 	= pPointLightComponents->GetConstData(entity);
+			const auto& position 	= pPositionComponents->GetConstData(entity);
 			if (pointLight.Dirty || position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
@@ -449,9 +449,9 @@ namespace LambdaEngine
 		ComponentArray<DirectionalLightComponent>* pDirLightComponents = pECSCore->GetComponentArray<DirectionalLightComponent>();
 		for (Entity entity : m_DirectionalLightEntities.GetIDs())
 		{
-			const auto& dirLight = pDirLightComponents->GetData(entity);
-			const auto& position = pPositionComponents->GetData(entity);
-			const auto& rotation = pRotationComponents->GetData(entity);
+			const auto& dirLight = pDirLightComponents->GetConstData(entity);
+			const auto& position = pPositionComponents->GetConstData(entity);
+			const auto& rotation = pRotationComponents->GetConstData(entity);
 			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
 			{
 				UpdateDirectionalLight(
@@ -470,12 +470,12 @@ namespace LambdaEngine
 		const ComponentArray<ViewProjectionMatricesComponent>* 	pViewProjComponents	= pECSCore->GetComponentArray<ViewProjectionMatricesComponent>();
 		for (Entity entity : m_CameraEntities.GetIDs())
 		{
-			const auto& cameraComp = pCameraComponents->GetData(entity);
+			const auto& cameraComp = pCameraComponents->GetConstData(entity);
 			if (cameraComp.IsActive)
 			{
-				const auto& positionComp = pPositionComponents->GetData(entity);
-				const auto& rotationComp = pRotationComponents->GetData(entity);
-				const auto& viewProjComp = pViewProjComponents->GetData(entity);
+				const auto& positionComp = pPositionComponents->GetConstData(entity);
+				const auto& rotationComp = pRotationComponents->GetConstData(entity);
+				const auto& viewProjComp = pViewProjComponents->GetConstData(entity);
 				UpdateCamera(positionComp.Position, rotationComp.Quaternion, cameraComp, viewProjComp);
 			}
 		}
@@ -487,9 +487,9 @@ namespace LambdaEngine
 			{
 				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
 				AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
-				const auto&			positionComp	= pPositionComponents->GetData(entity);
-				const auto&			rotationComp	= pRotationComponents->GetData(entity);
-				const auto&			scaleComp		= pScaleComponents->GetData(entity);
+				const auto&			positionComp	= pPositionComponents->GetConstData(entity);
+				const auto&			rotationComp	= pRotationComponents->GetConstData(entity);
+				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
 
 				UpdateAnimation(entity, meshComp, animationComp);
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(false, true, false));
@@ -499,9 +499,9 @@ namespace LambdaEngine
 			{
 				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
 				AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
-				const auto&			positionComp	= pPositionComponents->GetData(entity);
-				const auto&			rotationComp	= pRotationComponents->GetData(entity);
-				const auto&			scaleComp		= pScaleComponents->GetData(entity);
+				const auto&			positionComp	= pPositionComponents->GetConstData(entity);
+				const auto&			rotationComp	= pRotationComponents->GetConstData(entity);
+				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
 
 				UpdateAnimation(entity, meshComp, animationComp);
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
@@ -510,9 +510,9 @@ namespace LambdaEngine
 
 		for (Entity entity : m_StaticMeshEntities)
 		{
-			const auto& positionComp	= pPositionComponents->GetData(entity);
-			const auto& rotationComp	= pRotationComponents->GetData(entity);
-			const auto& scaleComp		= pScaleComponents->GetData(entity);
+			const auto& positionComp	= pPositionComponents->GetConstData(entity);
+			const auto& rotationComp	= pRotationComponents->GetConstData(entity);
+			const auto& scaleComp		= pScaleComponents->GetConstData(entity);
 
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
@@ -609,10 +609,10 @@ namespace LambdaEngine
 
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)
 	{
-		ECSCore* pECSCore	= ECSCore::GetInstance();
-		auto& positionComp	= pECSCore->GetComponent<PositionComponent>(entity);
-		auto& rotationComp	= pECSCore->GetComponent<RotationComponent>(entity);
-		auto& scaleComp		= pECSCore->GetComponent<ScaleComponent>(entity);
+		const ECSCore* pECSCore	= ECSCore::GetInstance();
+		const PositionComponent& positionComp	= pECSCore->GetConstComponent<PositionComponent>(entity);
+		const RotationComponent& rotationComp	= pECSCore->GetConstComponent<RotationComponent>(entity);
+		const ScaleComponent& scaleComp			= pECSCore->GetConstComponent<ScaleComponent>(entity);
 
 		return CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
 	}
@@ -646,6 +646,7 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
+		LOG_ERROR("Add Static Mesh Entity %d", entity);
 	}
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
@@ -655,6 +656,7 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+		LOG_ERROR("Add Animated Entity %d", entity);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
@@ -664,6 +666,7 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+		LOG_ERROR("Add Player Entity %d", entity);
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
@@ -672,9 +675,9 @@ namespace LambdaEngine
 		{
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
-			const auto& dirLight = pECSCore->GetComponent<DirectionalLightComponent>(entity);
-			const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
-			const auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
+			const auto& dirLight = pECSCore->GetConstComponent<DirectionalLightComponent>(entity);
+			const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
+			const auto& rotation = pECSCore->GetConstComponent<RotationComponent>(entity);
 
 			UpdateDirectionalLight(
 				dirLight.ColorIntensity,
@@ -699,8 +702,8 @@ namespace LambdaEngine
 	{
 		const ECSCore* pECSCore = ECSCore::GetInstance();
 
-		const auto& pointLight = pECSCore->GetComponent<PointLightComponent>(entity);
-		const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+		const auto& pointLight = pECSCore->GetConstComponent<PointLightComponent>(entity);
+		const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
 
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
@@ -774,7 +777,6 @@ namespace LambdaEngine
 
 	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
 	{
-		LOG_ERROR("Add Entity %d", entity);
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
 		uint32 extensionIndex = 0;
@@ -1348,6 +1350,12 @@ namespace LambdaEngine
 			return;
 
 		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+
+		//LOG_ERROR("Position: %f, %f, %f", positionComp.Position.x, positionComp.Position.y, positionComp.Position.z);
+		//LOG_ERROR("Rotation: %f, %f, %f, %f", rotationComp.Quaternion.x, rotationComp.Quaternion.y, rotationComp.Quaternion.z, rotationComp.Quaternion.w);
+		//LOG_ERROR("Scale: %f, %f, %f", scaleComp.Scale.x, scaleComp.Scale.y, scaleComp.Scale.z);
+		//LOG_ERROR("Transform: %s\n", glm::to_string(transform).c_str());
+
 
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())

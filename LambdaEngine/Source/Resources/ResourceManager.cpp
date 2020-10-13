@@ -1218,6 +1218,17 @@ namespace LambdaEngine
 		return GetGUID(s_AnimationNamesToGUIDs, name);
 	}
 
+	bool ResourceManager::GetAnimationGUIDsFromMeshName(const String& name, TArray<GUID_Lambda>& guids)
+	{
+		if (auto it = s_MeshNamesToAnimationGUIDs.find(name); it != s_MeshNamesToAnimationGUIDs.end())
+		{
+			guids = it->second;
+			return true;
+		}
+
+		return false;
+	}
+
 	GUID_Lambda ResourceManager::GetTextureGUID(const String& name)
 	{
 		return GetGUID(s_TextureNamesToGUIDs, name);

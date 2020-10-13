@@ -41,22 +41,35 @@ namespace LambdaEngine
 	void NetworkPositionSystem::Tick(Timestamp deltaTime)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 		float64 percentage;
 
-		for (auto& entity : m_Entities)
+		for (Entity entity : m_Entities)
 		{
-			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entity);
-			PositionComponent& positionComponent = pPositionComponents->GetData(entity);
+			NetworkPositionComponent& netPosComponent		= pNetPosComponents->GetData(entity);
+			const PositionComponent& constPositionComponent = pPositionComponents->GetConstData(entity);
 
-			deltaTime = currentTime - netPosComponent.TimestampStart;
-			percentage = deltaTime.AsSeconds() / netPosComponent.Duration.AsSeconds();
-			percentage = percentage > 1.0f ? 1.0f : percentage < 0.0f ? 0.0f : percentage;
+			if (glm::any(glm::notEqual(netPosComponent.Position, constPositionComponent.Position)))
+			{
+				/*deltaTime = currentTime - netPosComponent.TimestampStart;
+				percentage = deltaTime.AsSeconds() / netPosComponent.Duration.AsSeconds();
+				percentage = glm::clamp<float>(percentage, 0.0f, 1.0f);
 
-			Interpolate(netPosComponent.PositionLast, netPosComponent.Position, positionComponent.Position, (float32)percentage);
+				//LOG_WARNING("Last Net Pos: %f %f %f", netPosComponent.PositionLast.x, netPosComponent.PositionLast.y, netPosComponent.PositionLast.z);
+				//LOG_WARNING("Current Net Pos: %f %f %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
+				//LOG_WARNING("Current Pos: %f %f %f\n", constPositionComponent.Position.x, constPositionComponent.Position.y, constPositionComponent.Position.z);
+
+				PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
+				Interpolate(netPosComponent.PositionLast, netPosComponent.Position, positionComponent.Position, (float32)percentage);
+				positionComponent.Dirty = true;*/
+
+				PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
+				positionComponent.Position = netPosComponent.Position;
+				positionComponent.Dirty = true;
+			}
 		}
 	}
 

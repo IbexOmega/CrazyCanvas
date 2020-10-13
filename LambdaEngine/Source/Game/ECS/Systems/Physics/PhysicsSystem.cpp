@@ -181,7 +181,7 @@ namespace LambdaEngine
 
 		for (Entity entity : m_DynamicCollisionEntities)
 		{
-			const DynamicCollisionComponent& collisionComp = pDynamicCollisionComponents->GetData(entity);
+			const DynamicCollisionComponent& collisionComp = pDynamicCollisionComponents->GetConstData(entity);
 			PxRigidDynamic* pActor = collisionComp.pActor;
 			if (!pActor->isSleeping())
 			{
