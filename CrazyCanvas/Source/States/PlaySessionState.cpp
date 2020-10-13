@@ -53,7 +53,7 @@ void PlaySessionState::Init()
 
 	// Scene
 	{
-		m_pLevel = LevelManager::LoadLevel(2);
+		m_pLevel = LevelManager::LoadLevel(0);
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
 	
@@ -180,9 +180,6 @@ void PlaySessionState::Init()
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		materialProperties);
 
-
-
-
 	if (m_Online)
 		ClientSystem::GetInstance().Connect(NetworkUtils::GetLocalAddress());
 	else
@@ -205,10 +202,10 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		const CameraDesc cameraDesc =
 		{
 			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width = (float)window->GetWidth(),
-			.Height = (float)window->GetHeight(),
-			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+			.Width		= (float)window->GetWidth(),
+			.Height		= (float)window->GetHeight(),
+			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
 
 		TArray<GUID_Lambda> animations;
@@ -222,21 +219,25 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		if (animationsExist) robotAnimationComp.Graph = AnimationGraph(AnimationState("dancing", animations[0]));
+		if (animationsExist)
+		{
+			robotAnimationComp.Graph = AnimationGraph(AnimationState("dancing", animations[0]));
+			robotAnimationComp.IsPaused = true;
+		}
 
 		/*Entity weaponEntity = pECS->CreateEntity();
 		pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });*/
 
 		CreatePlayerDesc createPlayerDesc =
 		{
-			.IsLocal = isLocal,
-			.NetworkUID = networkUID,
-			.pClient = event.pClient,
-			.Position = position,
-			.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-			.Scale = glm::vec3(1.0f),
-			.pCameraDesc = &cameraDesc,
-			.MeshComponent = robotMeshComp,
+			.IsLocal			= isLocal,
+			.NetworkUID			= networkUID,
+			.pClient			= event.pClient,
+			.Position			= position,
+			.Forward			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+			.Scale				= glm::vec3(1.0f),
+			.pCameraDesc		= &cameraDesc,
+			.MeshComponent		= robotMeshComp,
 			.AnimationComponent = robotAnimationComp,
 		};
 

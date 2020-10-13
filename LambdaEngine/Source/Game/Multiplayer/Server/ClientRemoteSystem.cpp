@@ -89,13 +89,8 @@ namespace LambdaEngine
 						{
 							PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
 
-							LOG_WARNING("Tick: %d", gameState.SimulationTick);
-							LOG_WARNING("Prev Position: %f, %f, %f", positionComponent.Position.x, positionComponent.Position.y, positionComponent.Position.z);
-
 							positionComponent.Position = gameState.Position;
 							positionComponent.Dirty = true;
-
-							LOG_WARNING("New Position: %f, %f, %f", positionComponent.Position.x, positionComponent.Position.y, positionComponent.Position.z);
 						}
 					}
 

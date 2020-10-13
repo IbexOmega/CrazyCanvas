@@ -45,7 +45,7 @@ void ServerState::Init()
 
 	// Load scene
 	{
-		m_pLevel = LevelManager::LoadLevel(2);
+		m_pLevel = LevelManager::LoadLevel(0);
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
 
@@ -85,10 +85,10 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 	CreatePlayerDesc createPlayerDesc =
 	{
-		.pClient	= pClient,
-		.Position	= position,
-		.Forward	= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-		.Scale		= glm::vec3(1.0f),
+		.pClient		= pClient,
+		.Position		= position,
+		.Forward		= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+		.Scale			= glm::vec3(1.0f),
 	};
 
 	m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);

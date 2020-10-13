@@ -47,7 +47,7 @@ class LevelObjectCreator
 	typedef ESpecialObjectType(*SpecialObjectCreateByPrefixFunc)(const LambdaEngine::SpecialObjectOnLoad&, LambdaEngine::TArray<LambdaEngine::Entity>&, const glm::vec3&);
 	typedef bool(*SpecialObjectCreateByTypeFunc)(const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>&, LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>&, LambdaEngine::TArray<uint64>&);
 
-	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.0f;
+	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
 	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
 
 public:

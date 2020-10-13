@@ -6,6 +6,7 @@ namespace LambdaEngine
 {
 	struct BoundingBox
 	{
-		glm::vec3 HalfExtent;
+		glm::vec3 Centroid;
+		glm::vec3 Dimensions;
 	};
 }

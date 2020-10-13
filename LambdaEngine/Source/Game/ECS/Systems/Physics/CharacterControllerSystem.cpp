@@ -77,45 +77,34 @@ namespace LambdaEngine
 			const NetworkPositionComponent& positionComp	= pPositionComponents->GetConstData(entity);
 			VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
-			glm::vec3& velocity			= velocityComp.Velocity;
-			const glm::vec3& position	= positionComp.PositionLast;
-
-			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
-			translationPX *= dt;
-
 			PxController* pController = characterCollider.pController;
 
-			const PxExtendedVec3 oldPositionPX = pController->getPosition();
-
-			if (positionComp.Dirty)
-			{
-				// Distance between the capsule's feet to its center position. Includes contact offset.
-				const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-				pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
-			}
-			else
-			{
-				LOG_WARNING("I did not run blyat");
-			}
+			const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
+			PxVec3 translationPX = 
+			{ 
+				positionComp.Position.x - (float)oldPositionPX.x,
+				positionComp.Position.y - (float)oldPositionPX.y,
+				positionComp.Position.z - (float)oldPositionPX.z
+			};
 
 			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
-			const PxExtendedVec3& newPositionPX = pController->getPosition();
-			velocity = {
+			const PxExtendedVec3& newPositionPX = pController->getFootPosition();
+			velocityComp.Velocity = {
 				(float)newPositionPX.x - oldPositionPX.x,
 				(float)newPositionPX.y - oldPositionPX.y,
 				(float)newPositionPX.z - oldPositionPX.z
 			};
-			velocity /= dt;
+			velocityComp.Velocity /= dt;
 
-			if (glm::length2(velocity) > glm::epsilon<float>())
+			if (glm::length2(velocityComp.Velocity) > glm::epsilon<float>())
 			{
 				// Disable vertical movement if the character is on the ground
 				PxControllerState controllerState;
 				pController->getState(controllerState);
 				if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
 				{
-					velocity.y = 0.0f;
+					velocityComp.Velocity.y = 0.0f;
 				}
 			}
 
@@ -140,41 +129,34 @@ namespace LambdaEngine
 		const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
 		VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
-		glm::vec3& velocity = velocityComp.Velocity;
-		const glm::vec3& position = positionComp.Position;
-		//LOG_ERROR("Pre Velocity: %f %f %f DT: %f", velocity.x, velocity.y, velocity.z, dt);
+		PxController* pController = characterCollider.pController;
 
+		//Update velocity
+		glm::vec3& velocity = velocityComp.Velocity;
 		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
 
-		//LOG_ERROR("Mid Velocity: %f %f %f DT: %f", velocity.x, velocity.y, velocity.z, dt);
-
+		//Calculate Tick Translation
 		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 		translationPX *= dt;
 
-		PxController* pController = characterCollider.pController;
-
-		const PxExtendedVec3 oldPositionPX = pController->getPosition();
-		//LOG_ERROR("Old Position: %f %f %f", oldPositionPX.x, oldPositionPX.y, oldPositionPX.z);
-
+		const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
 
 		// Distance between the capsule's feet to its center position. Includes contact offset.
 		if (positionComp.Dirty)
 		{
-			const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-			pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
+			pController->setFootPosition({ positionComp.Position.x,  positionComp.Position.y,  positionComp.Position.z });
 		}
 
 		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
-		const PxExtendedVec3& newPositionPX = pController->getPosition();
-		//LOG_ERROR("New Position: %f %f %f", newPositionPX.x, newPositionPX.y, newPositionPX.z);
-		velocity = {
+		const PxExtendedVec3& newPositionPX = pController->getFootPosition();
+		velocity = 
+		{
 			(float)newPositionPX.x - oldPositionPX.x,
 			(float)newPositionPX.y - oldPositionPX.y,
 			(float)newPositionPX.z - oldPositionPX.z
 		};
 		velocity /= dt;
-		//LOG_ERROR("Post Velocity: %f %f %f DT: %f", velocity.x, velocity.y, velocity.z, dt);
 
 		if (glm::length2(velocity) > glm::epsilon<float>())
 		{
@@ -190,9 +172,10 @@ namespace LambdaEngine
 			NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
 			positionCompMutable.Dirty = true;
 
-			positionCompMutable.Position = {
+			positionCompMutable.Position = 
+			{
 				newPositionPX.x,
-				pController->getFootPosition().y + characterHeight,
+				newPositionPX.y,
 				newPositionPX.z
 			};
 		}

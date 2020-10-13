@@ -237,7 +237,6 @@ bool LevelObjectCreator::CreatePlayer(
 	{
 		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
 		pECS->AddComponent<MeshComponent>(playerEntity, pPlayerDesc->MeshComponent);
-		
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
 
 		if (!pPlayerDesc->IsLocal)
@@ -268,7 +267,7 @@ bool LevelObjectCreator::CreatePlayer(
 			//Todo: Better implementation for this somehow maybe?
 			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshComponent.MeshGUID);
 
-			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, pMesh->BoundingBox.HalfExtent.y, 0.0f) };
+			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
 			pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });

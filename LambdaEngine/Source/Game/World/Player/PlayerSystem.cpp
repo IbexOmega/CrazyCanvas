@@ -160,10 +160,10 @@ namespace LambdaEngine
 
 				velocityComponent.Velocity		= gameState.Velocity;
 
-				LOG_INFO("Tick: %d", gameState.SimulationTick);
-				LOG_INFO("Velocity		: %f %f %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
-				LOG_INFO("Position Last	: %f %f %f", constNetPosComponent.PositionLast.x, constNetPosComponent.PositionLast.y, constNetPosComponent.PositionLast.z);
-				LOG_INFO("Position		: %f %f %f", constNetPosComponent.Position.x, constNetPosComponent.Position.y, constNetPosComponent.Position.z);
+				LOG_INFO("Tick          : %d", gameState.SimulationTick);
+				LOG_INFO("Velocity      : %f %f %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
+				LOG_INFO("Position Last : %f %f %f", constNetPosComponent.PositionLast.x, constNetPosComponent.PositionLast.y, constNetPosComponent.PositionLast.z);
+				LOG_INFO("Position      : %f %f %f", constNetPosComponent.Position.x, constNetPosComponent.Position.y, constNetPosComponent.Position.z);
 			}
 			else  //Data does not exist for the current frame :(
 			{
@@ -175,10 +175,10 @@ namespace LambdaEngine
 				netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
 				netPosComponent.Dirty			= true;
 
-				LOG_ERROR("Tick: %d", gameState.SimulationTick);
-				LOG_ERROR("Velocity		: %f %f %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
-				LOG_ERROR("Position Last	: %f %f %f", constNetPosComponent.PositionLast.x, constNetPosComponent.PositionLast.y, constNetPosComponent.PositionLast.z);
-				LOG_ERROR("Position		: %f %f %f", constNetPosComponent.Position.x, constNetPosComponent.Position.y, constNetPosComponent.Position.z);
+				LOG_ERROR("Tick             : %d", gameState.SimulationTick);
+				LOG_ERROR("Velocity         : %f %f %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
+				LOG_ERROR("Position Last    : %f %f %f", constNetPosComponent.PositionLast.x, constNetPosComponent.PositionLast.y, constNetPosComponent.PositionLast.z);
+				LOG_ERROR("Position         : %f %f %f", constNetPosComponent.Position.x, constNetPosComponent.Position.y, constNetPosComponent.Position.z);
 			}
 		}
 	}
