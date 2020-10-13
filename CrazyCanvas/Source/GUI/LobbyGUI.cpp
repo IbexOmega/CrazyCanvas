@@ -30,7 +30,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
 
-	const char* ip = "192.168.1.65";
+	const char* pIP = "192.168.1.65";
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(ip);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
