@@ -80,8 +80,6 @@ namespace LambdaEngine
 			glm::vec3& velocity			= velocityComp.Velocity;
 			const glm::vec3& position	= positionComp.PositionLast;
 
-			velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
-
 			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 			translationPX *= dt;
 

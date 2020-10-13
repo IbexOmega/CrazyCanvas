@@ -167,14 +167,14 @@ namespace LambdaEngine
 			}
 			else  //Data does not exist for the current frame :(
 			{
-				if (glm::length2(velocityComponent.Velocity) > 0)
-				{
-					NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
-					netPosComponent.PositionLast	= positionComponent.Position;
-					netPosComponent.Position		+= velocityComponent.Velocity * dt;
-					netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
-					netPosComponent.Dirty			= true;
-				}
+				velocityComponent.Velocity.y	-= GRAVITATIONAL_ACCELERATION * dt;
+
+				NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
+				netPosComponent.PositionLast	= positionComponent.Position;
+				netPosComponent.Position		+= velocityComponent.Velocity * dt;
+				netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+				netPosComponent.Dirty			= true;
+
 				LOG_ERROR("Tick: %d", gameState.SimulationTick);
 				LOG_ERROR("Velocity		: %f %f %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
 				LOG_ERROR("Position Last	: %f %f %f", constNetPosComponent.PositionLast.x, constNetPosComponent.PositionLast.y, constNetPosComponent.PositionLast.z);
