@@ -97,8 +97,7 @@ namespace LambdaEngine
 
 		m_AvailableDescriptorSets.Clear();
 
-		SAFERELEASE(m_pMainRenderPassClearDS);
-		SAFERELEASE(m_pMainRenderPassLoadDS);
+		SAFERELEASE(m_pMainRenderPass);
 
 		if (!GUIPipelineStateCache::Release())
 		{
@@ -812,7 +811,7 @@ namespace LambdaEngine
 			const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
 
 			BeginRenderPassDesc beginRenderPassDesc = {};
-			beginRenderPassDesc.pRenderPass			= m_pMainRenderPassLoadDS;
+			beginRenderPassDesc.pRenderPass			= m_pMainRenderPass;
 			beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
 			beginRenderPassDesc.RenderTargetCount	= 1;
 			beginRenderPassDesc.pDepthStencil		= m_DepthStencilTextureView.Get();
@@ -1068,7 +1067,7 @@ namespace LambdaEngine
 		depthStencilAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_STORE;
-		depthStencilAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+		depthStencilAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
@@ -1083,29 +1082,16 @@ namespace LambdaEngine
 		subpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		{
-			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DONT_CARE;
-			depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_CLEAR;
-
-			RenderPassDesc renderPassDesc = {};
-			renderPassDesc.DebugName			= "GUI Render Pass Clear DS";
-			renderPassDesc.Attachments			= { colorAttachmentDesc, depthStencilAttachmentDesc };
-			renderPassDesc.Subpasses			= { subpassDesc };
-			renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
-
-			m_pMainRenderPassClearDS = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
-		}
-
-		{
-			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 			depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_LOAD;
 
 			RenderPassDesc renderPassDesc = {};
-			renderPassDesc.DebugName			= "GUI Render Pass Load DS";
+			renderPassDesc.DebugName			= "GUI Render Pass";
 			renderPassDesc.Attachments			= { colorAttachmentDesc, depthStencilAttachmentDesc };
 			renderPassDesc.Subpasses			= { subpassDesc };
 			renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 
-			m_pMainRenderPassLoadDS = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
+			m_pMainRenderPass = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
 		}
 
 		m_pMainRenderPassClearColors[0].Color[0]	= 0.0f;
