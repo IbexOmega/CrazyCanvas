@@ -166,7 +166,7 @@ namespace LambdaEngine
 		// Rendering
 #ifdef LAMBDA_DEVELOPMENT
 		// TODO: Move to somewere else, does someone have a suggestion?
-		ImGuiRenderer::Get().DrawUI([]
+		ImGuiRenderer::Get().DrawUI([delta]
 		{
 			const ImGuiWindowFlags flags =
 				ImGuiWindowFlags_NoBackground	|
@@ -189,6 +189,9 @@ namespace LambdaEngine
 			if (ImGui::Begin("BuildInfo", (bool*)(0), flags))
 			{
 				const GraphicsDeviceDesc& desc = RenderAPI::GetDevice()->GetDesc();
+				ImGui::Text("RunInfo:");
+				ImGui::Text("FPS: %.2f", 1.0f / delta.AsSeconds());
+				ImGui::Spacing();
 				ImGui::Text("BuildInfo:");
 				ImGui::Text("CrazyCanvas [%s Build]", LAMBDA_CONFIG_NAME);
 				ImGui::Text("API: %s", desc.RenderApi.c_str());

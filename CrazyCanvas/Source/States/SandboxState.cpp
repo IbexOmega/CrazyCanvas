@@ -1,6 +1,7 @@
 #include "States/SandboxState.h"
 
 #include "Resources/ResourceManager.h"
+#include "Resources/AnimationGraph.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -117,14 +118,17 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
-		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+
+		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
+		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
 
 		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness = 1.0f;
-		materialProperties.Metallic = 1.0f;
+		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness	= 1.0f;
+		materialProperties.Metallic		= 1.0f;
 
 		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
@@ -136,17 +140,14 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID = robotGUID;
-		robotMeshComp.MaterialGUID = robotMaterialGUID;
+		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID	= animations[0];
-		robotAnimationComp.PlaybackSpeed	= 1.0f;
-		robotAnimationComp.IsLooping		= false;
-		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
-		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
-		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
+		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -156,11 +157,9 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
-
-		position = glm::vec3(0.0f, 1.25f, 0.0f);
-		robotAnimationComp.IsLooping = true;
-		robotAnimationComp.NumLoops = 10;
+	
+		position = glm::vec3(0.0f, 0.8f, 0.0f);
+		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
 
 		entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -171,8 +170,8 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
 
-		position = glm::vec3(-5.0f, 1.25f, 0.0f);
-		robotAnimationComp.NumLoops = INFINITE_LOOPS;
+		position = glm::vec3(-3.5f, 0.75f, 0.0f);
+		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -183,9 +182,14 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
 
-		position = glm::vec3(5.0f, 1.25f, 0.0f);
+		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
-		robotAnimationComp.PlaybackSpeed *= -1.0f;
+		AnimationGraph animationGraph;
+		animationGraph.AddState(AnimationState("running", running[0]));
+		animationGraph.AddState(AnimationState("walking", animations[0]));
+		animationGraph.AddTransition(Transition("running", "walking", 0.2));
+		animationGraph.AddTransition(Transition("walking", "running", 0.5));
+		robotAnimationComp.Graph = animationGraph;
 
 		entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -258,7 +262,6 @@ void SandboxState::Init()
 
 				StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
 				pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
-
 				pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + y*gridRadius), 256, 256));
 			}
 		}
