@@ -31,8 +31,6 @@ namespace LambdaEngine
 
 		static bool Release();
 
-		void Initialize();
-
 		// Returns index to thread join resources. Calling join() on the returned index is required.
 		static uint32 Execute(std::function<void()> job);
 
