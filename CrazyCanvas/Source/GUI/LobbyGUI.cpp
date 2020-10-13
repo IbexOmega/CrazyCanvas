@@ -30,9 +30,9 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
 
-	const char* ip = "192.168.1.65";
+	const char* pIP = "192.168.1.65";
 
-	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(ip);
+	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"));
 	ErrorPopUpClose();
@@ -62,11 +62,14 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 
 void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	LOG_MESSAGE(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
 
-	IPAddress* ip = IPAddress::Get(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
+	IPAddress* pIP = IPAddress::Get(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
 
-	if (!ClientSystem::GetInstance().Connect(ip))
+	if (!ClientSystem::GetInstance().Connect(pIP))
 	{
 		LOG_MESSAGE("Client already in use");
 		return;
@@ -83,6 +86,9 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
 	m_ServerList.AddServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69",true);
@@ -90,16 +96,25 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	ErrorPopUp(OTHER_ERROR);
 }
 
 void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	ErrorPopUpClose();
 }
 
 void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	PopulateServerInfo();
 
 	if (!CheckServerSettings(m_HostGameDesc))
@@ -138,13 +153,13 @@ void LobbyGUI::SetRenderStagesActive()
 
 void LobbyGUI::ErrorPopUp(ErrorCode errorCode)
 {
-	TextBlock* textBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
+	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
 	
 	switch (errorCode)
 	{
-	case CONNECT_ERROR:		textBox->SetText("Couldn't Connect To server"); break;
-	case HOST_ERROR:		textBox->SetText("Couldn't Host Server");		break;
-	case OTHER_ERROR:		textBox->SetText("Something Went Wrong");		break;
+	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To server"); break;
+	case HOST_ERROR:		pTextBox->SetText("Couldn't Host Server");		break;
+	case OTHER_ERROR:		pTextBox->SetText("Something Went Wrong");		break;
 	}
 
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);

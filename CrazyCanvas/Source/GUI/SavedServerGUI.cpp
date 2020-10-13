@@ -23,7 +23,7 @@ void SavedServerGUI::Init(ListBox* pListView)
 	textBlock->Add(tBlock);
 	m_pSavedServerList->SetItemsSource(textBlock);*/
 	
-	m_pSavedServerList = *pListView;
+	m_SavedServerList = *pListView;
 
 }
 
@@ -38,16 +38,11 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 
 	for (int i = 0; i < 4; i++)
 	{
-		Ptr<ColumnDefinition> pColumnDef = *new ColumnDefinition();
+		Ptr<ColumnDefinition> columnDef = *new ColumnDefinition();
 		GridLength gridLength = GridLength(25, GridUnitType_Star);
-		pColumnDef->SetWidth(gridLength);
-		grid->GetColumnDefinitions()->Add(pColumnDef);
+		columnDef->SetWidth(gridLength);
+		grid->GetColumnDefinitions()->Add(columnDef);
 	}
-
-	Ptr<RowDefinition> pRowDef = *new RowDefinition();
-	GridLength rowLength =GridLength(50);
-	pRowDef->SetHeight(rowLength);
-	grid->GetRowDefinitions()->Add(pRowDef);
 
 	//m_pSavedServerList->SetItemsSource(Servers);
 	//m_pSavedServerList->GetChildren()->Add(m_pSavedServerList);
@@ -56,41 +51,41 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	pParentGrid->SetColumnSpan(grid, 2);
 	pParentGrid->SetRow(grid, 4);
 
-	Ptr<TextBlock> pServerName	= *new TextBlock();
-	Ptr<TextBlock> pMapName		= *new TextBlock();
-	Ptr<TextBlock> pping		= *new TextBlock();
-	Ptr<Rectangle> pIsRunning	= *new Rectangle();
+	Ptr<TextBlock> serverName	= *new TextBlock();
+	Ptr<TextBlock> mapName		= *new TextBlock();
+	Ptr<TextBlock> ping		= *new TextBlock();
+	Ptr<Rectangle> isRun	= *new Rectangle();
 
-	pServerName->SetText(pServerN);
-	pMapName->SetText(pMapN);
-	pping->SetText(pPing);
+	serverName->SetText(pServerN);
+	mapName->SetText(pMapN);
+	ping->SetText(pPing);
 
-	Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
 	Color color = Color();
 
-	if (isRunning)
-		pBrush->SetColor(color.Green());
+	if (isRun)
+		brush->SetColor(color.Green());
 	else
-		pBrush->SetColor(color.Red());
+		brush->SetColor(color.Red());
 
-	pIsRunning->SetFill(pBrush);
+	isRun->SetFill(brush);
 
-	grid->GetChildren()->Add(pServerName);
-	grid->GetChildren()->Add(pMapName);
-	grid->GetChildren()->Add(pping);
-	grid->GetChildren()->Add(pIsRunning);
+	grid->GetChildren()->Add(serverName);
+	grid->GetChildren()->Add(mapName);
+	grid->GetChildren()->Add(ping);
+	grid->GetChildren()->Add(isRun);
 
-	grid->SetColumn(pServerName, 0);
-	grid->SetColumn(pMapName, 1);
-	grid->SetColumn(pping, 2);
-	grid->SetColumn(pIsRunning, 3);
+	grid->SetColumn(serverName, 0);
+	grid->SetColumn(mapName, 1);
+	grid->SetColumn(ping, 2);
+	grid->SetColumn(isRun, 3);
 	//grid->SetRow(pServerName, m_ItemCount++);
 
 
 	LOG_MESSAGE(pParentGrid->GetName());
-	LOG_MESSAGE(m_pSavedServerList->GetName());
+	LOG_MESSAGE(m_SavedServerList->GetName());
 
-	if (m_pSavedServerList->GetItems()->Add(grid) == -1)
+	if (m_SavedServerList->GetItems()->Add(grid) == -1)
 	{
 		LOG_ERROR("SKIT ON ME");
 	}

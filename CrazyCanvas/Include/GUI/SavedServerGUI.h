@@ -92,5 +92,5 @@ public:
 private:
 	uint8 m_ItemCount;
 
-    Noesis::Ptr<Noesis::ListBox> m_pSavedServerList;
+    Noesis::Ptr<Noesis::ListBox> m_SavedServerList;
 };
