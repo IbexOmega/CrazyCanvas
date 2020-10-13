@@ -15,6 +15,10 @@ namespace LambdaEngine
 	class CommandQueueVK;
 	class GraphicsDeviceVK;
 
+	/*
+	* SwapChainVK
+	*/
+
 	class SwapChainVK : public TDeviceChildBase<GraphicsDeviceVK, SwapChain>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, SwapChain>;
@@ -48,13 +52,19 @@ namespace LambdaEngine
 		bool OnWindowResized(const WindowResizedEvent& event);
 		
 	private:
-		bool InitInternal();
-		bool InitSurface();
+		VkResult InitInternal();
+		VkResult InitSurface();
 		void ReleaseInternal();
 		void ReleaseSurface();
 		
 		VkExtent2D GetSizeFromSurface(uint32 width, uint32 height);
 		VkResult AquireNextImage();
+		VkResult HandleOutOfDate();
+
+		FORCEINLINE void AquireNextBufferIndex()
+		{
+			m_SemaphoreIndex = (m_SemaphoreIndex + 1) % m_Desc.BufferCount;
+		}
 		
 	private:
 		VkSurfaceKHR	m_Surface	= VK_NULL_HANDLE;
