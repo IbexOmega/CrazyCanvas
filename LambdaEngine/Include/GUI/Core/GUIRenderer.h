@@ -188,9 +188,10 @@ namespace LambdaEngine
 
 		Noesis::Ptr<Noesis::IView> m_View;
 
-		bool m_IsInRenderPass	= false;
-		bool m_TileBegun		= false;
-		bool m_RenderPassBegun	= false;
-		bool m_Initialized		= false;
+		bool m_RenderPassClearBegun		= false;
+		bool m_IsInRenderPass			= false;
+		bool m_TileBegun				= false;
+		bool m_RenderPassBegun			= false;
+		bool m_Initialized				= false;
 	};
 }

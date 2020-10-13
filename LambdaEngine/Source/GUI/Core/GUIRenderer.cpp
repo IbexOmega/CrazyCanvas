@@ -745,7 +745,6 @@ namespace LambdaEngine
 
 		if (!sleeping)
 		{
-			m_RenderPassClearBegun = false;
 			m_View->GetRenderer()->RenderOffscreen();
 			m_View->GetRenderer()->Render();
 
@@ -813,7 +812,7 @@ namespace LambdaEngine
 			const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
 
 			BeginRenderPassDesc beginRenderPassDesc = {};
-			beginRenderPassDesc.pRenderPass			= m_RenderPassClearBegun ? m_pMainRenderPassLoadDS : m_pMainRenderPassClearDS;
+			beginRenderPassDesc.pRenderPass			= m_pMainRenderPassLoadDS;
 			beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
 			beginRenderPassDesc.RenderTargetCount	= 1;
 			beginRenderPassDesc.pDepthStencil		= m_DepthStencilTextureView.Get();

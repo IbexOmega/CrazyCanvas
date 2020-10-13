@@ -89,7 +89,6 @@ namespace LambdaEngine
 		colorResolveAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 		colorResolveAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
-		RenderPassAttachmentDesc depthStencilAttachmentDesc = {};
 		depthStencilAttachmentDesc.Format			= EFormat::FORMAT_D24_UNORM_S8_UINT;
 		depthStencilAttachmentDesc.SampleCount		= FORCED_SAMPLE_COUNT;
 		depthStencilAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_DONT_CARE;
