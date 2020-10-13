@@ -205,13 +205,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 			renderGraphDesc.CustomRenderers				= { };
 
-			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
-			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
-			{
-				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
-				return false;
-			}
-
 			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 			{
 				m_pLineRenderer = DBG_NEW LineRenderer();
@@ -242,7 +235,7 @@ namespace LambdaEngine
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
 				m_pParticleRenderer = DBG_NEW ParticleRenderer();
 				m_pParticleRenderer->Init();
-				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 
 				m_pParticleUpdater = DBG_NEW ParticleUpdater();
 				m_pParticleUpdater->Init();
@@ -253,6 +246,13 @@ namespace LambdaEngine
 			{
 				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
 				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
+			}
+
+			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
+			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
+			{
+				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
+				return false;
 			}
 		}
 
@@ -419,6 +419,8 @@ namespace LambdaEngine
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pLightsBuffer);
+
+		m_ParticleManager.Release();
 
 		SAFEDELETE(m_pRenderGraph);
 

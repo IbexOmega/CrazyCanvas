@@ -23,6 +23,7 @@
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
@@ -159,6 +160,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
+		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{});
 
 		position = glm::vec3(-5.0f, 1.25f, 0.0f);
 		robotAnimationComp.NumLoops = INFINITE_LOOPS;

@@ -4,11 +4,11 @@
     1080
   ],
   "FixedTimestep": 60,
-  "RayTracingEnabled": false,
+  "RayTracingEnabled": true,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,
   "EnableLineRenderer": false,
-  "RenderGraphName": "DEFERRED_PBR.lrg",
+  "RenderGraphName": "PARTICLES.lrg",
   "ShowDemo": false,
   "Debugging": false,
   "CameraFOV": 90.0,

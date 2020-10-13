@@ -8,8 +8,16 @@
 namespace LambdaEngine
 {
 
+	
+
 	class ParticleUpdater : public ICustomRenderer
 	{
+		struct PushConstantData
+		{
+			float delta;
+			uint32 particleCount;
+		};
+
 	public:
 		ParticleUpdater();
 		~ParticleUpdater();
@@ -34,8 +42,8 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool Sleeping)	override final;
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
-		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
 
 		virtual const String& GetName() const override final
 		{
@@ -60,7 +68,7 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>			m_DescriptorHeap = nullptr;
 
 		// Descriptor sets
-		TArray<TSharedRef<DescriptorSet>>	m_DrawArgsDescriptorSets;
+		TSharedRef<DescriptorSet>			m_InstanceDescriptorSet;
 		DescriptorCache						m_DescriptorCache;
 
 		uint32								m_BackBufferCount = 0;

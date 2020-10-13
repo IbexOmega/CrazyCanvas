@@ -7,6 +7,8 @@
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/TextureView.h"
 
+#include "Rendering/ParticleManager.h"
+
 #include "Rendering/RenderAPI.h"
 namespace LambdaEngine
 {
@@ -102,7 +104,7 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleRenderer::CreateShaders()
 	{
-		bool success = false;
+		bool success = true;
 
 		if (m_MeshShaders)
 		{
@@ -112,11 +114,11 @@ namespace LambdaEngine
 		else
 		{
 			m_VertexShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
-			success &= m_MeshShaderGUID != m_VertexShaderGUID;
+			success &= m_VertexShaderGUID != GUID_NONE;
 		}
 
 		m_PixelShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		success &= m_PixelShaderGUID != m_VertexShaderGUID;
+		success &= m_PixelShaderGUID != GUID_NONE;
 
 		return success;
 	}
@@ -237,21 +239,23 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleRenderer::Init()
 	{
+		m_BackBufferCount = BACK_BUFFER_COUNT;
+
 		if (!CreatePipelineLayout())
 		{
-			LOG_ERROR("[LightRenderer]: Failed to create PipelineLayout");
+			LOG_ERROR("[ParticleRenderer]: Failed to create PipelineLayout");
 			return false;
 		}
 
 		if (!CreateDescriptorSets())
 		{
-			LOG_ERROR("[LightRenderer]: Failed to create DescriptorSet");
+			LOG_ERROR("[ParticleRenderer]: Failed to create DescriptorSet");
 			return false;
 		}
 
 		if (!CreateShaders())
 		{
-			LOG_ERROR("[LightRenderer]: Failed to create Shaders");
+			LOG_ERROR("[ParticleRenderer]: Failed to create Shaders");
 			return false;
 		}
 
@@ -263,9 +267,6 @@ namespace LambdaEngine
 		VALIDATE(pPreInitDesc);
 		VALIDATE(pPreInitDesc->pColorAttachmentDesc != nullptr);
 		VALIDATE(pPreInitDesc->pDepthStencilAttachmentDesc != nullptr);
-
-		m_BackBufferCount = pPreInitDesc->BackBufferCount;
-		m_BackBuffers.Resize(m_BackBufferCount);
 
 		if (!m_Initilized)
 		{
@@ -315,11 +316,27 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
-		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+		if (resourceName == "G_BUFFER_ALBEDO")
 		{
-			for (uint32 i = 0; i < imageCount; i++)
+			if (imageCount == 1)
 			{
-				m_BackBuffers[i] = MakeSharedRef(ppPerImageTextureViews[i]);
+				m_RenderTarget = MakeSharedRef(ppPerImageTextureViews[0]);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update Render Target Resource");
+			}
+		}
+
+		if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+		{
+			if (imageCount == 1)
+			{
+				m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update Depth Stencil Resource");
 			}
 		}
 	}
@@ -332,6 +349,66 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pSizesInBytes);
 		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(backBufferBound);
+
+		if (resourceName == PER_FRAME_BUFFER)
+		{
+			constexpr uint32 setIndex = 0U;
+
+			m_PerFrameBufferDescriptorSet = m_DescriptorCache.GetDescriptorSet("Per Frame Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_PerFrameBufferDescriptorSet != nullptr)
+			{
+				m_PerFrameBufferDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					0,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
+
+		if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
+		{
+			constexpr uint32 setIndex = 1U;
+
+			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_InstanceDescriptorSet != nullptr)
+			{
+				m_InstanceDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					0,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
+
+		if (resourceName == SCENE_PARTICLE_INDEX_BUFFER)
+		{
+			if (count == 1)
+			{
+				m_pIndexBuffer = ppBuffers[0];
+			}
+		}
+
+		if (resourceName == "INDIRECT_PARTICLES")
+		{
+			if (count == 1)
+			{
+				m_pIndirectBuffer = ppBuffers[0];
+			}
+		}
 	}
 
 	void ParticleRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
@@ -365,9 +442,9 @@ namespace LambdaEngine
 
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
-		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];
-		uint32 width = backBuffer->GetDesc().pTexture->GetDesc().Width;
-		uint32 height = backBuffer->GetDesc().pTexture->GetDesc().Height;
+		TSharedRef<const TextureView> renderTarget = m_RenderTarget;
+		uint32 width = renderTarget->GetDesc().pTexture->GetDesc().Width;
+		uint32 height = renderTarget->GetDesc().pTexture->GetDesc().Height;
 
 		Viewport viewport = {};
 		viewport.MinDepth = 0.0f;
@@ -383,34 +460,42 @@ namespace LambdaEngine
 		scissorRect.Height = height;
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		ClearColorDesc clearColorDesc = {};
-		clearColorDesc.Depth = 1.0;
-		clearColorDesc.Stencil = 0U;
+		ClearColorDesc clearColors[2] = {};
+
+		clearColors[0].Color[0] = 0.f;
+		clearColors[0].Color[1] = 0.f;
+		clearColors[0].Color[2] = 0.f;
+		clearColors[0].Color[3] = 0.f;
+
+		clearColors[1].Depth = 1.0f;
+		clearColors[1].Stencil = 0U;
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
-		beginRenderPassDesc.ppRenderTargets = nullptr;
-		beginRenderPassDesc.RenderTargetCount = 0;
-		beginRenderPassDesc.pDepthStencil = backBuffer.Get();
+		beginRenderPassDesc.ppRenderTargets = renderTarget.GetAddressOf();
+		beginRenderPassDesc.RenderTargetCount = 1;
+		beginRenderPassDesc.pDepthStencil = m_DepthStencil.Get();
 		beginRenderPassDesc.Width = width;
 		beginRenderPassDesc.Height = height;
 		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPassDesc.pClearColors = &clearColorDesc;
-		beginRenderPassDesc.ClearColorCount = 1;
+		beginRenderPassDesc.pClearColors = clearColors;
+		beginRenderPassDesc.ClearColorCount = 2;
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
 
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		// Loop through all Emitter types (Mesh types) and call DrawIndexInstanced once per group.
-		/*for (uint32 d = 0; d < m_DrawCount; d++)
-		{
-			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-			pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 1);
+		//	//pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+		//	//pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		//	pCommandList->DrawInstanced(6U, )
 
-			pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
-		}*/
+		pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0); 
+		pCommandList->BindDescriptorSetGraphics(m_InstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 1); 
+		pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+
+		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
 
 		pCommandList->EndRenderPass();
 		pCommandList->End();

@@ -15,12 +15,7 @@ layout(push_constant) uniform PushConstants
 } u_PC;
 
 // Buffers
-layout(binding = 0, set = 0) restrict readonly buffer Vertices
-{ 
-	PVertex Val[]; 
-} b_Vertices;
-
-layout(binding = 1, set = 0) restrict readonly buffer ParticleInstances
+layout(binding = 0, set = BUFFER_SET_INDEX) restrict buffer ParticleInstances
 { 
 	SParticle Val[]; 
 } b_ParticleInstances;
@@ -44,10 +39,4 @@ void main()
     particle.LifeTime -= dt;
 
     b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
-
-    // Update position
-	SParticleVertex vertex	= b_Vertices.Val[gl_GlobalInvocationID.x];
-	vertex.Position	= particle.Transform * vec4(vertex.Position.xyz, 1.0f);
-
-	b_Vertices.Val[gl_GlobalInvocationID.x] = vertex;
 }

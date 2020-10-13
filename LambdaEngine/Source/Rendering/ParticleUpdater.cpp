@@ -35,25 +35,25 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleUpdater::CreatePipelineLayout()
 	{
-		DescriptorBindingDesc verticesBindingDesc = {};
-		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		verticesBindingDesc.DescriptorCount = 1;
-		verticesBindingDesc.Binding = 0;
-		verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-
 		DescriptorBindingDesc instanceBindingDesc = {};
 		instanceBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		instanceBindingDesc.DescriptorCount = 1;
-		instanceBindingDesc.Binding = 1;
-		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		instanceBindingDesc.Binding = 0;
+		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { instanceBindingDesc };
+
+		ConstantRangeDesc constantRange = {};
+		constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		constantRange.SizeInBytes		= sizeof(float) * 2.0f;
+		constantRange.OffsetInBytes		= 0;
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
-		pipelineLayoutDesc.DebugName = "Particle Updater Pipeline Layout";
+		pipelineLayoutDesc.DebugName			= "Particle Updater Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0 };
-
+		pipelineLayoutDesc.ConstantRanges		= { constantRange };
+		
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
 		return m_PipelineLayout != nullptr;
@@ -66,7 +66,7 @@ namespace LambdaEngine
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 0;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 2;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
@@ -86,7 +86,7 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleUpdater::CreateShaders()
 	{
-		bool success = false;
+		bool success = true;
 
 		m_ComputeShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		success &= m_ComputeShaderGUID != GUID_NONE;
@@ -163,8 +163,6 @@ namespace LambdaEngine
 	bool LambdaEngine::ParticleUpdater::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
-		VALIDATE(pPreInitDesc->pColorAttachmentDesc != nullptr);
-		VALIDATE(pPreInitDesc->pDepthStencilAttachmentDesc != nullptr);
 
 		if (!m_Initilized)
 		{
@@ -215,6 +213,28 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pSizesInBytes);
 		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(backBufferBound);
+
+		if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
+		{
+			constexpr uint32 setIndex = 0U;
+
+			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_InstanceDescriptorSet != nullptr)
+			{
+				m_InstanceDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					0,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
 	}
 
 	void ParticleUpdater::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
@@ -236,12 +256,17 @@ namespace LambdaEngine
 		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
-
 		pCommandList->BindComputePipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
-		//pCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[backBufferIndex], m_PipelineLayout.Get(), 0);
 
-		//pCommandList->Dispatch(pRenderStage->Dimensions.x, pRenderStage->Dimensions.y, pRenderStage->Dimensions.z);
+		PushConstantData pushConstant = {};
+		pushConstant.delta = 0.0f;
+		pushConstant.particleCount = 32U;
+
+		pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &pushConstant, sizeof(PushConstantData), 0U);
+		pCommandList->BindDescriptorSetCompute(m_InstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// Particle Instance Buffer
+		
+		pCommandList->Dispatch(32U, 1U, 1U);
 
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;

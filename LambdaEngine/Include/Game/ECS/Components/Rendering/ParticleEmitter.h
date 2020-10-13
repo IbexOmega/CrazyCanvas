@@ -23,12 +23,12 @@ namespace LambdaEngine
 		DECL_COMPONENT(ParticleEmitterComponent);
 		bool			OneTime			= false;
 		bool			Burst			= false;
-		uint32			ParticleCount	= 10U;
+		uint32			ParticleCount	= 32U;
 		EParticleShape  ParticleShape	= EParticleShape::BILLBOARD;
 		GUID_Lambda		MeshID			= 0;
 		EEmitterShape	EmitterShape	= EEmitterShape::CONE;
 		float			Angle			= 90.f;
-		float			Velocity		= 0.0f;
+		float			Velocity		= 1.0f;
 		float			Acceleration	= 0.0f;
 		float			LifeTime		= 1.0f;
 		float			ParticleRadius	= 1.0f;

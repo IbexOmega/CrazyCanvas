@@ -4,6 +4,14 @@
 
 #include "../Defines.glsl"
 
+const vec3 vertices[4] =
+{
+	vec3(-1.0, -1.0, 0.0),
+	vec3(-1.0, 1.0, 0.0),
+	vec3(1.0, -1.0, 0.0),
+	vec3(1.0, 1.0, 0.0),
+};
+
 layout (binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 {
 	SPerFrameBuffer perFrameBuffer;
@@ -19,13 +27,12 @@ layout(binding = 1, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer P
 	SParticle Val[]; 
 } b_ParticleInstances;
 
-
 layout (location = 0) out vec4 fragColor;
 
 void main()
 {
-	SParticle particle = b_ParticleInstances[gl_InstanceID]
-	PVertex vertex = b_Vertices.Val[gl_VertexIndex];
+	SParticle particle = b_ParticleInstances.Val[gl_InstanceIndex];
+	vec3 vertex = vertices[gl_VertexIndex];
 
-	gl_Position = perFrameBuffer.Projection * perFrameBuffer.View * particle.Transform * vec4(vertex.Position.xyz, 1.0);
+	gl_Position = perFrameBuffer.Projection * perFrameBuffer.View * particle.Transform * vec4(vertex, 1.0);
 }

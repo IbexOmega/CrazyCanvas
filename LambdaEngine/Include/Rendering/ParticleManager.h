@@ -11,6 +11,7 @@ namespace LambdaEngine
 	class Buffer;
 	class CommandList;
 	class RenderGraph;
+	class DeviceChild;
 
 	struct ParticleEmitterInstance
 	{
@@ -33,6 +34,14 @@ namespace LambdaEngine
 		glm::vec3 Acceleration;
 		float LifeTime;
 		float Radius;
+	};
+
+	struct IndirectData
+	{
+		uint32 instanceCount;
+		uint32 firstInstance;
+		uint32 firstIndex;
+		uint32 indexCount;
 	};
 
 	class ParticleManager
@@ -58,11 +67,19 @@ namespace LambdaEngine
 	private:
 		uint32						m_ModFrameIndex;
 
-		bool						m_DirtyParticleBuffer;
-		bool						m_DirtyVertexBuffer;
+		bool						m_DirtyParticleBuffer	= false;
+		bool						m_DirtyVertexBuffer		= false;
+		bool						m_DirtyIndexBuffer		= false;
+		bool						m_DirtyIndirectBuffer	= false;
+
+		Buffer*						m_ppIndirectStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*						m_pIndirectBuffer = nullptr;
 
 		Buffer*						m_ppVertexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pVertexBuffer = nullptr;
+
+		Buffer*						m_ppIndexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*						m_pIndexBuffer = nullptr;
 
 		Buffer*						m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pParticleBuffer = nullptr;
@@ -70,6 +87,7 @@ namespace LambdaEngine
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 		TArray<SParticle>			m_Particles;
+		TArray<IndirectData>		m_IndirectData;
 
 		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;
 		THashTable<Entity, ParticleEmitterInstance>	m_SleepingEmitters;

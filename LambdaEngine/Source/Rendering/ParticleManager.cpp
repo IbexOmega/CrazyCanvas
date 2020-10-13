@@ -13,7 +13,7 @@
 
 #include "Math/Random.h"
 
-namespace LambdaEngine 
+namespace LambdaEngine
 {
 	void ParticleManager::Init(uint32 maxParticles)
 	{
@@ -22,6 +22,10 @@ namespace LambdaEngine
 
 	void ParticleManager::Release()
 	{
+		SAFEDELETE(m_pIndirectBuffer);
+		SAFEDELETE(m_pVertexBuffer);
+		SAFEDELETE(m_pIndexBuffer);
+		SAFEDELETE(m_pParticleBuffer);
 	}
 
 	void ParticleManager::Tick(Timestamp deltaTime, uint32 modFrameIndex)
@@ -32,23 +36,35 @@ namespace LambdaEngine
 	void ParticleManager::OnEmitterEntityAdded(Entity entity)
 	{
 		ECSCore* ecsCore = ECSCore::GetInstance();
-		PositionComponent positionComp			= ecsCore->GetComponent<PositionComponent>(entity);
-		RotationComponent rotationComp			= ecsCore->GetComponent<RotationComponent>(entity);
-		ParticleEmitterComponent emitterComp	= ecsCore->GetComponent<ParticleEmitterComponent>(entity);
-		
+		PositionComponent positionComp = ecsCore->GetComponent<PositionComponent>(entity);
+		RotationComponent rotationComp = ecsCore->GetComponent<RotationComponent>(entity);
+		ParticleEmitterComponent emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
+
 		ParticleEmitterInstance instance = {};
-		instance.position		= positionComp.Position;
-		instance.rotation		= rotationComp.Quaternion;
-		instance.ParticleCount	= emitterComp.ParticleCount;
-		instance.Angle			= emitterComp.Angle;
-		instance.Velocity		= emitterComp.Velocity;
-		instance.Acceleration	= emitterComp.Acceleration;
-		instance.LifeTime		= emitterComp.LifeTime;
-		instance.ParticleRadius	= emitterComp.ParticleRadius;
+		instance.position = positionComp.Position;
+		instance.rotation = rotationComp.Quaternion;
+		instance.ParticleCount = emitterComp.ParticleCount;
+		instance.Angle = emitterComp.Angle;
+		instance.Velocity = emitterComp.Velocity;
+		instance.Acceleration = emitterComp.Acceleration;
+		instance.LifeTime = emitterComp.LifeTime;
+		instance.ParticleRadius = emitterComp.ParticleRadius;
+
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
 			CreateConeParticleEmitter(instance);
 		}
+
+		IndirectData indirectData;
+		indirectData.firstInstance = instance.ParticleOffset;
+		indirectData.instanceCount = instance.ParticleCount;
+		indirectData.firstIndex = 0;
+		indirectData.indexCount = 6;
+		m_IndirectData.PushBack(indirectData);
+
+		m_DirtyIndirectBuffer = true;
+		m_DirtyParticleBuffer = true;
+		m_DirtyIndexBuffer = true;
 	}
 
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
@@ -59,10 +75,10 @@ namespace LambdaEngine
 	{
 		emitterInstance.ParticleOffset = m_Particles.GetSize();
 
-		const glm::vec3 forward		= GetForward(emitterInstance.rotation);
-		const glm::vec3 up			= GetUp(emitterInstance.rotation);
-		const glm::vec3 right		= GetRight(emitterInstance.rotation);
-		const float		halfAngle	= emitterInstance.Angle * 0.5f;
+		const glm::vec3 forward = GetForward(emitterInstance.rotation);
+		const glm::vec3 up = GetUp(emitterInstance.rotation);
+		const glm::vec3 right = GetRight(emitterInstance.rotation);
+		const float		halfAngle = emitterInstance.Angle * 0.5f;
 
 		for (uint32 i = 0; i < emitterInstance.ParticleCount; i++)
 		{
@@ -75,12 +91,12 @@ namespace LambdaEngine
 
 			direction = glm::normalize(direction);
 
-			particle.Transform		= glm::translate(emitterInstance.position);
-			particle.Color			= glm::vec4(1.0f);
-			particle.Velocity		= direction * emitterInstance.Velocity;
-			particle.Acceleration	= direction * emitterInstance.Acceleration;
-			particle.LifeTime		= emitterInstance.LifeTime;
-			particle.Radius			= emitterInstance.ParticleRadius;
+			particle.Transform = glm::translate(emitterInstance.position);
+			particle.Color = glm::vec4(1.0f);
+			particle.Velocity = direction * emitterInstance.Velocity;
+			particle.Acceleration = direction * emitterInstance.Acceleration;
+			particle.LifeTime = emitterInstance.LifeTime;
+			particle.Radius = emitterInstance.ParticleRadius;
 
 			m_Particles.PushBack(particle);
 		}
@@ -99,10 +115,52 @@ namespace LambdaEngine
 
 	bool ParticleManager::UpdateBuffers(CommandList* pCommandList)
 	{
+		// Update Instance Buffer
+		if (m_DirtyIndirectBuffer)
+		{
+			uint32 requiredBufferSize = m_IndirectData.GetSize() * sizeof(IndirectData);
+
+			Buffer* pStagingBuffer = m_ppIndirectStagingBuffer[m_ModFrameIndex];
+
+			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			{
+				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName = "Particle Indirect Staging Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				bufferDesc.SizeInBytes = requiredBufferSize;
+
+				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				m_ppIndirectStagingBuffer[m_ModFrameIndex] = pStagingBuffer;
+			}
+
+			void* pMapped = pStagingBuffer->Map();
+			memcpy(pMapped, m_IndirectData.GetData(), requiredBufferSize);
+			pStagingBuffer->Unmap();
+
+			if (m_pIndirectBuffer == nullptr || m_pIndirectBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			{
+				if (m_pIndirectBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pIndirectBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName = "Particle Indirect Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER;
+				bufferDesc.SizeInBytes = requiredBufferSize;
+
+				m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+
+			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pIndirectBuffer, 0, requiredBufferSize);
+		}
+
+
 		// Update Vertex Buffer
 		if (m_DirtyVertexBuffer)
 		{
-			uint32 requiredBufferSize = m_Particles.GetSize();
+			uint32 requiredBufferSize = 0;
 
 			Buffer* pStagingBuffer = m_ppVertexStagingBuffer[m_ModFrameIndex];
 
@@ -137,19 +195,69 @@ namespace LambdaEngine
 				m_pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
 
-			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pParticleBuffer, 0, requiredBufferSize);
-
-			m_DirtyVertexBuffer = false;
+			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pVertexBuffer, 0, requiredBufferSize);
 		}
 		else
 		{
 			m_DirtyVertexBuffer = false; // Only update resource when buffer is recreated
 		}
 
+		// Update Index Buffer
+		if (m_DirtyIndexBuffer)
+		{
+
+			const uint32 indices[6] =
+			{
+				2,1,0,
+				2,3,1
+			};
+
+			uint32 requiredBufferSize = sizeof(uint32) * 6;
+
+			Buffer* pStagingBuffer = m_ppIndexStagingBuffer[m_ModFrameIndex];
+
+			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			{
+				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName = "Particle Index Staging Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				bufferDesc.SizeInBytes = requiredBufferSize;
+
+				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				m_ppIndexStagingBuffer[m_ModFrameIndex] = pStagingBuffer;
+			}
+
+			void* pMapped = pStagingBuffer->Map();
+			memcpy(pMapped, indices, requiredBufferSize);
+			pStagingBuffer->Unmap();
+
+			if (m_pIndexBuffer == nullptr || m_pIndexBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			{
+				if (m_pIndexBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pIndexBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName = "Particle Index Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
+				bufferDesc.SizeInBytes = requiredBufferSize;
+
+				m_pIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+
+			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pIndexBuffer, 0, requiredBufferSize);
+		}
+		else
+		{
+			m_DirtyIndexBuffer = false; // Only update resource when buffer is recreated
+		}
+
 		// Update Particle Instance Buffer
 		if (m_DirtyParticleBuffer)
 		{
-			uint32 requiredBufferSize = m_Particles.GetSize();
+			uint32 requiredBufferSize = m_Particles.GetSize() * sizeof(SParticle);
 
 			Buffer* pStagingBuffer = m_ppParticleStagingBuffer[m_ModFrameIndex];
 
@@ -196,6 +304,17 @@ namespace LambdaEngine
 	}
 	bool ParticleManager::UpdateResources(RenderGraph* pRendergraph)
 	{
+		if (m_DirtyIndirectBuffer)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = "INDIRECT_PARTICLES";
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pIndirectBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
+			pRendergraph->UpdateResource(&resourceUpdateDesc);
+
+			m_DirtyIndirectBuffer = false;
+		}
+
 		if (m_DirtyVertexBuffer)
 		{
 			ResourceUpdateDesc resourceUpdateDesc = {};
@@ -207,6 +326,17 @@ namespace LambdaEngine
 			m_DirtyVertexBuffer = false;
 		}
 
+		if (m_DirtyIndexBuffer)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = SCENE_PARTICLE_INDEX_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pIndexBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
+			pRendergraph->UpdateResource(&resourceUpdateDesc);
+
+			m_DirtyIndexBuffer = false;
+		}
+
 		if (m_DirtyParticleBuffer)
 		{
 			ResourceUpdateDesc resourceUpdateDesc = {};
@@ -214,11 +344,11 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pParticleBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-			
+
 			m_DirtyParticleBuffer = false;
 		}
 
 
 		return false;
 	}
-
+}

@@ -59,7 +59,11 @@ namespace LambdaEngine
 		GUID_Lambda								m_PixelShaderGUID	= 0;
 		GUID_Lambda								m_VertexShaderGUID	= 0;
 
-		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		const Buffer*							m_pIndirectBuffer = nullptr;
+		const Buffer*							m_pIndexBuffer = nullptr;
+
+		TSharedRef<const TextureView>			m_RenderTarget = nullptr;
+		TSharedRef<const TextureView>			m_DepthStencil = nullptr;
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
 		uint64									m_PipelineStateID = 0;
@@ -67,6 +71,8 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
 
 		// Descriptor sets
+		TSharedRef<DescriptorSet>				m_VertexDescriptorSet;
+		TSharedRef<DescriptorSet>				m_InstanceDescriptorSet;
 		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
 		DescriptorCache							m_DescriptorCache;
 
