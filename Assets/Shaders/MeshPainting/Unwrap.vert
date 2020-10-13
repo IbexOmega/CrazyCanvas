@@ -11,7 +11,7 @@ struct SUnwrapData
 {
 	vec4 TargetPosition;
 	vec4 TargetDirection;
-	uint PaintMode; // True when painting, false when removing paint
+	uint PaintMode;
 };
 
 layout(push_constant) uniform TransformBuffer

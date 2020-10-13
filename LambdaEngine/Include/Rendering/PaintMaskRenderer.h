@@ -66,7 +66,7 @@ namespace LambdaEngine
 		* Note: Currently only one hitpoint will be handled at each frame
 		*	position - vec3 of the hit point position
 		*	direction - vec3 of the direction the hit position had during collision
-		*	paintingEnabled - true to paint on target, false to remove paint on target
+		*	paintMode - painting mode to be used for the target
 		*/
 		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode);
 
@@ -123,7 +123,7 @@ namespace LambdaEngine
 		TArray<TSharedRef<Buffer>>	m_UnwrapDataCopyBuffers;
 		TSharedRef<Buffer>			m_UnwrapDataBuffer = nullptr;
 
-		const DrawArg*												m_pDrawArgs;
+		const DrawArg*												m_pDrawArgs = nullptr;
 		TArray<TArray<TSharedRef<DescriptorSet>>>					m_VerticesInstanceDescriptorSets;
 
 		TSharedRef<DescriptorSet>									m_UnwrapDataDescriptorSet;
