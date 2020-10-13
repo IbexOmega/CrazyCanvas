@@ -264,6 +264,6 @@ namespace LambdaEngine
 			pComputeCommandList->End();
 
 			(*ppExecutionStage) = pComputeCommandList;
-		}
-	}*/
+		}*/
 	}
+}
