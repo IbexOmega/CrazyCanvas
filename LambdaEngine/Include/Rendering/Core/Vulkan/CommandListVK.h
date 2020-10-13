@@ -67,8 +67,24 @@ namespace LambdaEngine
 
 		virtual void BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)	override final;
 
-		virtual void TransitionBarrier(Texture* pTexture, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState) override final;
-		virtual void TransitionBarrier(Texture* pTexture, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState) override final;
+		virtual void TransitionBarrier(
+			Texture* pTexture, 
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			uint32 srcAccessMask, 
+			uint32 destAccessMask, 
+			ETextureState beforeState, 
+			ETextureState afterState) override final;
+		virtual void TransitionBarrier(
+			Texture* pTexture, 
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			uint32 srcAccessMask, 
+			uint32 destAccessMask, 
+			uint32 arrayIndex, 
+			uint32 arrayCount, 
+			ETextureState beforeState, 
+			ETextureState afterState) override final;
 
 		virtual void QueueTransferBarrier(Texture* pTexture, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ECommandQueueType srcQueue, ECommandQueueType dstQueue, ETextureState beforeState, ETextureState afterState) override final;
 
