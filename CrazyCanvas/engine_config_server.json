@@ -4,7 +4,7 @@
     150
   ],
   "VolumeMasterInital": 1.0,
-  "FixedTimestep": 30,
+  "FixedTimestep": 60,
   "RayTracingEnabled": false,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,

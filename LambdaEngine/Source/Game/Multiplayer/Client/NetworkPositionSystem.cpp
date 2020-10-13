@@ -49,25 +49,17 @@ namespace LambdaEngine
 
 		for (Entity entity : m_Entities)
 		{
-			NetworkPositionComponent& netPosComponent		= pNetPosComponents->GetData(entity);
+			const NetworkPositionComponent& netPosComponent	= pNetPosComponents->GetConstData(entity);
 			const PositionComponent& constPositionComponent = pPositionComponents->GetConstData(entity);
 
 			if (glm::any(glm::notEqual(netPosComponent.Position, constPositionComponent.Position)))
 			{
-				/*deltaTime = currentTime - netPosComponent.TimestampStart;
+				deltaTime = currentTime - netPosComponent.TimestampStart;
 				percentage = deltaTime.AsSeconds() / netPosComponent.Duration.AsSeconds();
 				percentage = glm::clamp<float>(percentage, 0.0f, 1.0f);
 
-				//LOG_WARNING("Last Net Pos: %f %f %f", netPosComponent.PositionLast.x, netPosComponent.PositionLast.y, netPosComponent.PositionLast.z);
-				//LOG_WARNING("Current Net Pos: %f %f %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
-				//LOG_WARNING("Current Pos: %f %f %f\n", constPositionComponent.Position.x, constPositionComponent.Position.y, constPositionComponent.Position.z);
-
 				PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
 				Interpolate(netPosComponent.PositionLast, netPosComponent.Position, positionComponent.Position, (float32)percentage);
-				positionComponent.Dirty = true;*/
-
-				PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
-				positionComponent.Position = netPosComponent.Position;
 				positionComponent.Dirty = true;
 			}
 		}

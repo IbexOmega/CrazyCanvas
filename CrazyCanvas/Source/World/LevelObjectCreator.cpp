@@ -245,7 +245,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
 
 			AnimationComponent animationCopy = pPlayerDesc->AnimationComponent;
-			animationCopy.PlaybackSpeed = 2.0f;
+			animationCopy.Graph.GetCurrentState().SetPlaybackSpeed(2.0f);
 			pECS->AddComponent<AnimationComponent>(playerEntity, animationCopy);
 		}
 		else
@@ -259,7 +259,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 			pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
-			//EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
+			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();

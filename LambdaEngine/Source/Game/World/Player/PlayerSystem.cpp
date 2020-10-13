@@ -99,12 +99,13 @@ namespace LambdaEngine
 		ComponentArray<VelocityComponent>* pVelocityComponents						= pECS->GetComponentArray<VelocityComponent>();
 		const ComponentArray<PositionComponent>* pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
 
-		NetworkPositionComponent& netPosComponent	= pNetPosComponents->GetData(entityPlayer);
-		const VelocityComponent& velocityComponent	= pVelocityComponents->GetConstData(entityPlayer);
-		const PositionComponent& positionComponent	= pPositionComponents->GetConstData(entityPlayer);
+		const NetworkPositionComponent& netPosComponent	= pNetPosComponents->GetConstData(entityPlayer);
+		const VelocityComponent& velocityComponent		= pVelocityComponents->GetConstData(entityPlayer);
+		const PositionComponent& positionComponent		= pPositionComponents->GetConstData(entityPlayer);
 
-		netPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
-		netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
+		NetworkPositionComponent& mutableNetPosComponent = const_cast<NetworkPositionComponent&>(netPosComponent);
+		mutableNetPosComponent.PositionLast		= positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
+		mutableNetPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
 
 		m_PlayerActionSystem.DoAction(deltaTime, entityPlayer, pGameState);
 
@@ -121,19 +122,19 @@ namespace LambdaEngine
 		ECSCore* pECS = ECSCore::GetInstance();
 		float32 dt = (float32)deltaTime.AsSeconds();
 
-		ComponentArray<NetworkPositionComponent>* pNetPosComponents		= pECS->GetComponentArray<NetworkPositionComponent>();
-		ComponentArray<VelocityComponent>* pVelocityComponents			= pECS->GetComponentArray<VelocityComponent>();
-		const ComponentArray<PositionComponent>* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<RotationComponent>* pRotationComponents			= pECS->GetComponentArray<RotationComponent>();
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents	= pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents				= pECS->GetComponentArray<VelocityComponent>();
+		const ComponentArray<PositionComponent>* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>* pRotationComponents				= pECS->GetComponentArray<RotationComponent>();
 
 		for (auto& pair : m_EntityOtherStates)
 		{
 			GameStateOther& gameState = pair.second;
 			Entity entity = pair.first;
 
-			NetworkPositionComponent& netPosComponent		= pNetPosComponents->GetData(entity);
-			const PositionComponent& positionComponent		= pPositionComponents->GetConstData(entity);
-			VelocityComponent& velocityComponent			= pVelocityComponents->GetData(entity);
+			const NetworkPositionComponent& constNetPosComponent	= pNetPosComponents->GetConstData(entity);
+			const PositionComponent& positionComponent				= pPositionComponents->GetConstData(entity);
+			VelocityComponent& velocityComponent					= pVelocityComponents->GetData(entity);
 
 			if (gameState.HasNewData) //Data exist for the current frame :)
 			{
@@ -148,25 +149,37 @@ namespace LambdaEngine
 
 				gameState.HasNewData = false;
 
-				netPosComponent.PositionLast	= positionComponent.Position;
-				netPosComponent.Position		= gameState.Position;
-				netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+				if (glm::any(glm::notEqual(constNetPosComponent.Position, gameState.Position)))
+				{
+					NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
+					netPosComponent.PositionLast	= positionComponent.Position;
+					netPosComponent.Position		= gameState.Position;
+					netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+					netPosComponent.Dirty			= true;
+				}
 
 				velocityComponent.Velocity		= gameState.Velocity;
 
 				LOG_INFO("Tick: %d", gameState.SimulationTick);
-				LOG_INFO("Position Last	: %f %f %f", netPosComponent.PositionLast.x, netPosComponent.PositionLast.y, netPosComponent.PositionLast.z);
-				LOG_INFO("Position		: %f %f %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
+				LOG_INFO("Velocity		: %f %f %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
+				LOG_INFO("Position Last	: %f %f %f", constNetPosComponent.PositionLast.x, constNetPosComponent.PositionLast.y, constNetPosComponent.PositionLast.z);
+				LOG_INFO("Position		: %f %f %f", constNetPosComponent.Position.x, constNetPosComponent.Position.y, constNetPosComponent.Position.z);
 			}
-			//else  //Data does not exist for the current frame :(
-			//{
-			//	netPosComponent.PositionLast	= positionComponent.Position;
-			//	netPosComponent.Position		+= velocityComponent.Velocity * dt;
-			//	netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
-			//	LOG_INFO("Tick: %d", gameState.SimulationTick);
-			//	LOG_ERROR("Position Last	: %f %f %f", netPosComponent.PositionLast.x, netPosComponent.PositionLast.y, netPosComponent.PositionLast.z);
-			//	LOG_ERROR("Position			: %f %f %f", netPosComponent.Position.x, netPosComponent.Position.y, netPosComponent.Position.z);
-			//}
+			else  //Data does not exist for the current frame :(
+			{
+				if (glm::length2(velocityComponent.Velocity) > 0)
+				{
+					NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
+					netPosComponent.PositionLast	= positionComponent.Position;
+					netPosComponent.Position		+= velocityComponent.Velocity * dt;
+					netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+					netPosComponent.Dirty			= true;
+				}
+				LOG_ERROR("Tick: %d", gameState.SimulationTick);
+				LOG_ERROR("Velocity		: %f %f %f", velocityComponent.Velocity.x, velocityComponent.Velocity.y, velocityComponent.Velocity.z);
+				LOG_ERROR("Position Last	: %f %f %f", constNetPosComponent.PositionLast.x, constNetPosComponent.PositionLast.y, constNetPosComponent.PositionLast.z);
+				LOG_ERROR("Position		: %f %f %f", constNetPosComponent.Position.x, constNetPosComponent.Position.y, constNetPosComponent.Position.z);
+			}
 		}
 	}
 

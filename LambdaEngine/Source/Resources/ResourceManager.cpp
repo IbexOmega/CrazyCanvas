@@ -1253,7 +1253,7 @@ namespace LambdaEngine
 
 	bool ResourceManager::GetAnimationGUIDsFromMeshName(const String& name, TArray<GUID_Lambda>& guids)
 	{
-		if (auto it = s_MeshNamesToAnimationGUIDs.find(name); it != s_MeshNamesToAnimationGUIDs.end())
+		if (auto it = s_FileNamesToAnimationGUIDs.find(name); it != s_FileNamesToAnimationGUIDs.end())
 		{
 			guids = it->second;
 			return true;

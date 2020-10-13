@@ -57,7 +57,7 @@ namespace LambdaEngine
 
 					const NetworkPositionComponent& netPosComponent		= pNetPosComponents->GetConstData(entityPlayer);
 					const PositionComponent& constPositionComponent		= pPositionComponents->GetConstData(entityPlayer);
-					VelocityComponent&			velocityComponent		= pVelocityComponents->GetData(entityPlayer);
+					VelocityComponent& velocityComponent				= pVelocityComponents->GetData(entityPlayer);
 					const RotationComponent& constRotationComponent		= pRotationComponents->GetConstData(entityPlayer);
 
 					for (const GameState& gameState : m_Buffer)

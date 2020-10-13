@@ -68,17 +68,17 @@ namespace LambdaEngine
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		auto* pCharacterColliders		= pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
+		auto* pPositionComponents		= pECS->GetComponentArray<NetworkPositionComponent>();
 		auto* pVelocityComponents		= pECS->GetComponentArray<VelocityComponent>();
 
 		for (Entity entity : m_ForeignPlayerEntities)
 		{
 			CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
-			const PositionComponent& positionComp			= pPositionComponents->GetConstData(entity);
+			const NetworkPositionComponent& positionComp	= pPositionComponents->GetConstData(entity);
 			VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
 			glm::vec3& velocity			= velocityComp.Velocity;
-			const glm::vec3& position	= positionComp.Position;
+			const glm::vec3& position	= positionComp.PositionLast;
 
 			velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
 
@@ -95,14 +95,18 @@ namespace LambdaEngine
 				const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
 				pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
 			}
+			else
+			{
+				LOG_WARNING("I did not run blyat");
+			}
 
 			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 			const PxExtendedVec3& newPositionPX = pController->getPosition();
 			velocity = {
-				(float)newPositionPX.x - position.x,
-				(float)newPositionPX.y - position.y,
-				(float)newPositionPX.z - position.z
+				(float)newPositionPX.x - oldPositionPX.x,
+				(float)newPositionPX.y - oldPositionPX.y,
+				(float)newPositionPX.z - oldPositionPX.z
 			};
 			velocity /= dt;
 
@@ -154,13 +158,13 @@ namespace LambdaEngine
 		const PxExtendedVec3 oldPositionPX = pController->getPosition();
 		//LOG_ERROR("Old Position: %f %f %f", oldPositionPX.x, oldPositionPX.y, oldPositionPX.z);
 
-		//if (positionComp.Dirty)
-		//{
-		//	LOG_ERROR("IsDirty");
-		//	// Distance between the capsule's feet to its center position. Includes contact offset.
-		//	const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-		//	pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
-		//}
+
+		// Distance between the capsule's feet to its center position. Includes contact offset.
+		if (positionComp.Dirty)
+		{
+			const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
+			pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
+		}
 
 		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 

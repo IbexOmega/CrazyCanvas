@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 
 namespace LambdaEngine
 {
@@ -112,6 +113,9 @@ namespace LambdaEngine
 
 		if constexpr (Comp::HasDirtyFlag())
 		{
+			if (Comp::Type() == NetworkPositionComponent::Type())
+				int grandiosa = 0;
+
 			if (Comp::Type() == PositionComponent::Type())
 				int extra = 0;
 
