@@ -345,10 +345,10 @@ namespace LambdaEngine
 		TArray<Mesh*>						meshes;
 		TArray<Animation*>					animations;
 		TArray<MeshComponent>				meshComponent;
-		const TArray<SpecialObjectDesc>		specialObjectDescriptions;
-		TArray<LoadedDirectionalLight>		directionalLightComponents;
-		TArray<LoadedPointLight>			pointLightComponents;
-		TArray<SpecialObject>				specialObjects;
+		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		TArray<LoadedDirectionalLight>			directionalLightComponents;
+		TArray<LoadedPointLight>				pointLightComponents;
+		TArray<SpecialObjectOnLoad>				specialObjects;
 
 		SceneLoadRequest loadRequest =
 		{

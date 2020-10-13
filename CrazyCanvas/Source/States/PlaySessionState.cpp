@@ -254,8 +254,8 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		robotAnimationComp.AnimationGUID = animations[0];
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		robotAnimationComp.Graph			= AnimationGraph(AnimationState("dancing", animations[0]));
 
 		/*Entity weaponEntity = pECS->CreateEntity();
 		pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });*/

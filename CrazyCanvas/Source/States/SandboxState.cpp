@@ -144,9 +144,6 @@ void SandboxState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID	= animations[0];
-		robotAnimationComp.PlaybackSpeed	= 1.0f;
-		robotAnimationComp.IsLooping		= false;
 		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
