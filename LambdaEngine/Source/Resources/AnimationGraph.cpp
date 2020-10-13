@@ -109,11 +109,12 @@ namespace LambdaEngine
 		: m_pOwnerGraph(nullptr)
 		, m_IsLooping(true)
 		, m_NumLoops(INFINITE_LOOPS)
-		, m_StartTime(0.0f)
-		, m_PlaybackSpeed(1.0f)
-		, m_NormalizedTime(0.0f)
-		, m_LocalTimeInSeconds(0.0f)
-		, m_DurationInSeconds(0.0f)
+		, m_StartTime(0.0)
+		, m_RunningTime(0.0)
+		, m_PlaybackSpeed(1.0)
+		, m_NormalizedTime(0.0)
+		, m_LocalTimeInSeconds(0.0)
+		, m_DurationInSeconds(0.0)
 		, m_Name()
 		, m_AnimationGUID(GUID_NONE)
 	{
@@ -123,11 +124,12 @@ namespace LambdaEngine
 		: m_pOwnerGraph(nullptr)
 		, m_IsLooping(isLooping)
 		, m_NumLoops(1)
-		, m_StartTime(0.0f)
-		, m_PlaybackSpeed(1.0f)
-		, m_NormalizedTime(0.0f)
-		, m_LocalTimeInSeconds(0.0f)
-		, m_DurationInSeconds(0.0f)
+		, m_StartTime(0.0)
+		, m_RunningTime(0.0)
+		, m_PlaybackSpeed(1.0)
+		, m_NormalizedTime(0.0)
+		, m_LocalTimeInSeconds(0.0)
+		, m_DurationInSeconds(0.0)
 		, m_Name(name)
 		, m_AnimationGUID(animationGUID)
 	{
@@ -393,8 +395,10 @@ namespace LambdaEngine
 				currentState.StartUp(globalTimeInSeconds);
 			}
 
-			currentState.Tick(globalTimeInSeconds);
+			currentState.Tick(deltaTimeInSeconds);
 			currentState.Interpolate(skeleton);
+
+			LOG_INFO("LocalTime=%.4f RunningTime=%.4f", currentState.GetNormlizedTime(), currentState.m_RunningTime);
 		}
 	}
 
