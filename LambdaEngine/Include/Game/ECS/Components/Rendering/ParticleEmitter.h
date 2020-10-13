@@ -28,8 +28,8 @@ namespace LambdaEngine
 		GUID_Lambda		MeshID			= 0;
 		EEmitterShape	EmitterShape	= EEmitterShape::CONE;
 		float			Angle			= 90.f;
-		glm::vec3		Velocity		= glm::vec3(0.0f);
-		glm::vec3		Acceleration	= glm::vec3(0.0f);
+		float			Velocity		= 0.0f;
+		float			Acceleration	= 0.0f;
 		float			LifeTime		= 1.0f;
 		float			ParticleRadius	= 1.0f;
 	};

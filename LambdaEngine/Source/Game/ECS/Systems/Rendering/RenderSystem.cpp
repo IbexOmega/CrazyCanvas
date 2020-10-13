@@ -204,6 +204,13 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
 			renderGraphDesc.CustomRenderers				= { };
 
+			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
+			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
+			{
+				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
+				return false;
+			}
+
 			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 			{
 				m_pLineRenderer = DBG_NEW LineRenderer();
@@ -230,25 +237,18 @@ namespace LambdaEngine
 
 			// Particle Renderer & Manager
 			{
-				m_ParticleManager.Init();
+				constexpr uint32 MAX_PARTICLE_COUNT = 10000U;
+				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
 				m_pParticleRenderer = DBG_NEW ParticleRenderer();
 				m_pParticleRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
 
-
 			//GUI Renderer
 			{
 				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
 				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
-			}
-
-			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
-			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
-			{
-				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
-				return false;
 			}
 		}
 
@@ -550,9 +550,11 @@ namespace LambdaEngine
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
+
 		StagingBufferCache::Tick();
 		CleanBuffers();
 
+		m_ParticleManager.Tick(delta, m_ModFrameIndex);
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -1444,6 +1446,11 @@ namespace LambdaEngine
 			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
 		}
 
+		// Update particles
+		{
+			m_ParticleManager.UpdateBuffers(pGraphicsCommandList);
+		}
+
 		// Perform mesh skinning
 		{
 			PerformMeshSkinning(pComputeCommandList);
@@ -2126,6 +2133,11 @@ namespace LambdaEngine
 			}
 
 			m_LightsResourceDirty = false;
+		}
+
+		// Update Particle Resources
+		{
+			m_ParticleManager.UpdateResources(m_pRenderGraph);
 		}
 
 		if (m_MaterialsResourceDirty)

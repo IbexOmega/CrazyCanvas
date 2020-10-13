@@ -68,8 +68,8 @@ namespace LambdaEngine
 
 		uint32							m_BackBufferCount = 0;
 
-		CommandAllocator** m_ppGraphicCommandAllocators = nullptr;
-		CommandList** m_ppGraphicCommandLists = nullptr;
+		CommandAllocator**				m_ppGraphicCommandAllocators = nullptr;
+		CommandList**					m_ppGraphicCommandLists = nullptr;
 
 	private:
 		static ParticleRenderer* s_pInstance;
