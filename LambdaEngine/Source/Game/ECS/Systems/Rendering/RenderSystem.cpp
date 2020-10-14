@@ -28,6 +28,7 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -1054,9 +1055,17 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			// uint32 test = 1;
+			// test = test << 8;
+			// test |= extensionIndex;
+
+			uint32 index = materialIndex;
+			index = index << 8;
+			index |= extensionIndex;
+
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= materialIndex;
+			asInstance.CustomIndex		= index;
 			asInstance.Mask				= 0xFF;
 			asInstance.SBTRecordOffset	= 0;
 			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
