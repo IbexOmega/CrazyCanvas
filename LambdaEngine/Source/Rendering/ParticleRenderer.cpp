@@ -378,48 +378,17 @@ namespace LambdaEngine
 		{
 			if (count == 1)
 			{
-				DescriptorBindingData descBindData = {};
-				descBindData.pBuffers = ppBuffers[0];
-				descBindData.Offset = pOffsets[0];
-				descBindData.SizeInByte = pSizesInBytes[0];
-
-				m_DescBindData[0] = descBindData;
-
-				const Buffer*	ppBuffers[2];
-				uint64			pOffsets[2];
-				uint64			pSizeInBytes[2];
-				uint32			count = 0;
-
-				for (uint32 i = 0; i < m_DescBindData.GetSize(); i++)
-				{
-					auto data = m_DescBindData[i];
-
-					if (data.pBuffers != nullptr)
-					{
-						ppBuffers[count] = data.pBuffers;
-						pOffsets[count] = data.Offset;
-						pSizeInBytes[count] = data.SizeInByte;
-						count++;
-					}
-				}
-
 				constexpr uint32 setIndex = 1U;
+				if(m_VertexInstanceDescriptorSet == nullptr)
+					m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 
-				m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
-				if (m_InstanceDescriptorSet != nullptr)
+				if (m_VertexInstanceDescriptorSet != nullptr)
 				{
-					m_InstanceDescriptorSet->WriteBufferDescriptors(
-						ppBuffers,
-						pOffsets,
-						pSizeInBytes,
-						0,
-						count,
-						EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-					);
+					m_VertexInstanceDescriptorSet->WriteBufferDescriptors(ppBuffers, pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 				}
 				else
 				{
-					LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 1);
+					LOG_ERROR("[ParticleUpdater]: Failed to update VertexInstanceDescriptorSet [0]");
 				}
 			}
 		}
@@ -434,53 +403,20 @@ namespace LambdaEngine
 
 		if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
 		{
-			DescriptorBindingData descBindData = {};
-			descBindData.pBuffers = ppBuffers[0];
-			descBindData.Offset = pOffsets[0];
-			descBindData.SizeInByte = pSizesInBytes[0];
-
-			m_DescBindData[1] = descBindData;
-
-			const Buffer* ppBuffers[2];
-			uint64			pOffsets[2];
-			uint64			pSizeInBytes[2];
-			uint32			count = 0;
-			uint32			binding = 0;
-
-			for (uint32 i = 0; i < m_DescBindData.GetSize(); i++)
+			if (count == 1)
 			{
-				auto data = m_DescBindData[i];
+				constexpr uint32 setIndex = 1U;
+				if (m_VertexInstanceDescriptorSet == nullptr)
+					m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 
-				if (data.pBuffers != nullptr)
+				if (m_VertexInstanceDescriptorSet != nullptr)
 				{
-					ppBuffers[count] = data.pBuffers;
-					pOffsets[count] = data.Offset;
-					pSizeInBytes[count] = data.SizeInByte;
-					count++;
+					m_VertexInstanceDescriptorSet->WriteBufferDescriptors(ppBuffers, pOffsets, pSizesInBytes, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 				}
 				else
 				{
-					binding++;
+					LOG_ERROR("[ParticleUpdater]: Failed to update VertexInstanceDescriptorSet [1]");
 				}
-			}
-
-			constexpr uint32 setIndex = 1U;
-
-			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
-			if (m_InstanceDescriptorSet != nullptr)
-			{
-				m_InstanceDescriptorSet->WriteBufferDescriptors(
-					ppBuffers,
-					pOffsets,
-					pSizesInBytes,
-					binding,
-					count,
-					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-				);
-			}
-			else
-			{
-				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
 			}
 		}
 
@@ -553,7 +489,7 @@ namespace LambdaEngine
 		clearColors[1].Stencil = 0U;
 
 		pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
-		pCommandList->BindDescriptorSetGraphics(m_InstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+		pCommandList->BindDescriptorSetGraphics(m_VertexInstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
 		pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
