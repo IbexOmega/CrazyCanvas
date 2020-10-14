@@ -12,7 +12,8 @@ namespace LambdaEngine
 	PacketTransceiverBase::PacketTransceiverBase() :
 		m_BytesReceived(0),
 		m_pSendBuffer(),
-		m_pReceiveBuffer()
+		m_pReceiveBuffer(),
+		m_IgnoreSaltMissmatch(false)
 	{
 
 	}
@@ -61,14 +62,20 @@ namespace LambdaEngine
 		if (!PacketTranscoder::DecodeSegments(m_pReceiveBuffer, (uint16)m_BytesReceived, pSegmentPool, segments, &header))
 			return false;
 
-		if (!ValidateHeaderSalt(&header, pStatistics))
-			return false;
+		if(!m_IgnoreSaltMissmatch)
+			if (!ValidateHeaderSalt(&header, pStatistics))
+				return false;
 
 		OnReceiveEnd(&header, newAcks, pStatistics);
 
 		pStatistics->RegisterPacketReceived((uint32)segments.GetSize(), m_BytesReceived);
 
 		return true;
+	}
+
+	void PacketTransceiverBase::SetIgnoreSaltMissmatch(bool ignore)
+	{
+		m_IgnoreSaltMissmatch = ignore;
 	}
 
 	bool PacketTransceiverBase::ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics)

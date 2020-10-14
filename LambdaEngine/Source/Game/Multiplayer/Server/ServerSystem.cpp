@@ -7,14 +7,20 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
+#include "Engine/EngineConfig.h"
+
+#include "Application/API/Events/EventQueue.h"
+#include "Application/API/Events/NetworkEvents.h"
+
 namespace LambdaEngine
 {
 	ServerSystem* ServerSystem::s_pInstance = nullptr;
 
-	ServerSystem::ServerSystem() : 
+	ServerSystem::ServerSystem(const String& name) :
 		m_NetworkEntities(),
 		m_pServer(nullptr),
-		m_CharacterControllerSystem()
+		m_CharacterControllerSystem(),
+		m_Name(name)
 	{
 		MultiplayerUtils::Init(true);
 
@@ -43,17 +49,15 @@ namespace LambdaEngine
 
 	bool ServerSystem::Start()
 	{
-		return m_pServer->Start(IPEndPoint(IPAddress::ANY, 4444));
+		uint16 port = (uint16)EngineConfig::GetIntProperty("NetworkPort");
+		NetworkDiscovery::EnableServer(m_Name, port, this);
+		return m_pServer->Start(IPEndPoint(IPAddress::ANY, port));
 	}
 
 	void ServerSystem::Stop()
 	{
+		NetworkDiscovery::DisableServer();
 		m_pServer->Stop("ServerSystem->Stop()");
-	}
-
-	void ServerSystem::Tick(Timestamp deltaTime)
-	{
-		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void ServerSystem::FixedTickMainThread(Timestamp deltaTime)
@@ -81,6 +85,12 @@ namespace LambdaEngine
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()
 	{
 		return DBG_NEW ClientRemoteSystem();
+	}
+
+	void ServerSystem::OnNetworkDiscoveryPreTransmit(BinaryEncoder& encoder)
+	{
+		ServerDiscoveryPreTransmitEvent event(&encoder, m_pServer);
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ServerSystem::StaticFixedTickMainThread(Timestamp deltaTime)
