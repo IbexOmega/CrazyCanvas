@@ -71,16 +71,16 @@ namespace LambdaEngine
 	*/
 	#define DECLATE_STATIC_EVENT_TYPE(Type) \
 		public: \
-			FORCEINLINE static EventType GetStaticType() \
+			FORCEINLINE static LambdaEngine::EventType GetStaticType() \
 			{ \
-				constexpr EventType type(HashString(#Type), #Type); \
+				constexpr LambdaEngine::EventType type(LambdaEngine::HashString(#Type), #Type); \
 				return type; \
 			} \
 
 	#define DECLARE_EVENT_TYPE(Type) \
 		DECLATE_STATIC_EVENT_TYPE(Type); \
 		public: \
-			virtual EventType GetType() const override \
+			virtual LambdaEngine::EventType GetType() const override \
 			{ \
 				return GetStaticType(); \
 			} \
@@ -102,6 +102,7 @@ namespace LambdaEngine
 
 		DECLATE_STATIC_EVENT_TYPE(Event);
 
+		// ToString provides debugging info regarding an event
 		virtual String ToString() const = 0;
 		virtual EventType GetType() const = 0;
 		virtual const char* GetName() const = 0;

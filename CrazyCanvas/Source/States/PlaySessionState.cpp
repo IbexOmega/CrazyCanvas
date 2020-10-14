@@ -30,7 +30,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-PlaySessionState::PlaySessionState(bool online) : 
+PlaySessionState::PlaySessionState(bool online) :
 	m_Online(online)
 {
 
@@ -44,6 +44,10 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
+
+	// Initialize event listeners
+	m_MeshPaintHandler.Init();
+
 	m_WeaponSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -61,7 +65,7 @@ void PlaySessionState::Init()
 		ClientSystem::GetInstance().Connect(NetworkUtils::GetLocalAddress());
 	else
 		ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
-	
+
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
@@ -190,7 +194,7 @@ void PlaySessionState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				const CollisionInfo collisionCreateInfo = {
+				const CollisionCreateInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),

@@ -121,7 +121,7 @@ namespace LambdaEngine
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 		Entity entity = pECS->CreateEntity();
-		const CollisionInfo collisionCreateInfo =
+		const CollisionCreateInfo collisionCreateInfo =
 		{
 			.Entity			= entity,
 			.Position		= pECS->AddComponent<PositionComponent>(entity, { true, translation }),
@@ -207,7 +207,7 @@ namespace LambdaEngine
 		pECS->AddComponent<ScaleComponent>(playerEntity,	ScaleComponent{ .Scale = pPlayerDesc->Scale });
 		pECS->AddComponent<VelocityComponent>(playerEntity, VelocityComponent());
 
-		const CharacterColliderInfo colliderInfo =
+		const CharacterColliderCreateInfo colliderInfo =
 		{
 			.Entity			= playerEntity,
 			.Position		= pECS->GetComponent<PositionComponent>(playerEntity),

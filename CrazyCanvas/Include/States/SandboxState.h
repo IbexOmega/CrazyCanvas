@@ -14,6 +14,7 @@
 
 #include "Application/API/Events/KeyEvents.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "EventHandlers/MeshPaintHandler.h"
 
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
@@ -65,5 +66,9 @@ private:
 
 	Level* m_pLevel = nullptr;
 
+	/* Systems */
 	WeaponSystem m_WeaponSystem;
+
+	/* Event handlers */
+	MeshPaintHandler m_MeshPaintHandler;
 };

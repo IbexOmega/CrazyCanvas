@@ -3,6 +3,7 @@
 #include "KeyEvents.h"
 
 #include "Containers/TUniquePtr.h"
+#include "Threading/API/SpinLock.h"
 
 namespace LambdaEngine
 {
@@ -24,12 +25,12 @@ namespace LambdaEngine
 
 		virtual void Push(const Event& event) = 0;
 		virtual void Clear() = 0;
-		
+
 		virtual uint32 Size() const = 0;
 
 		virtual EventContainer* Copy(void* pMemory) = 0;
 		virtual EventContainer* Move(void* pMemory) = 0;
-		
+
 		virtual Event& GetAt(uint32 index) = 0;
 		virtual const Event& GetAt(uint32 index) const = 0;
 
@@ -249,7 +250,7 @@ namespace LambdaEngine
 		}
 
 	private:
-		// No reason to use KeyPressedEvent other than the fact that we need some 
+		// No reason to use KeyPressedEvent other than the fact that we need some
 		byte m_StackBuffer[sizeof(TEventContainer<KeyPressedEvent>)];
 		EventContainer* m_pContainer;
 	};
@@ -325,7 +326,7 @@ namespace LambdaEngine
 
 			s_DeferredEvents[eventType].Push(event);
 		}
-		
+
 		static bool SendEventImmediate(Event& event);
 
 		static void Tick();

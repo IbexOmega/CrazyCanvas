@@ -1,10 +1,12 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 
+#include "Application/API/Events/EventQueue.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/Weapon.h"
 #include "ECS/ECSCore.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Input/API/Input.h"
+#include "Physics/PhysicsEvents.h"
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
@@ -35,8 +37,7 @@ bool WeaponSystem::Init()
 		};
 		systemReg.SubscriberRegistration.AdditionalAccesses =
 		{
-			{NDA, PlayerTag::Type()}, {RW, PositionComponent::Type()}, {RW, ScaleComponent::Type()}, {RW, RotationComponent::Type()},
-			{RW, VelocityComponent::Type()}, {RW, MeshComponent::Type()}
+			{RW, DynamicCollisionComponent::Type()}, {RW, MeshComponent::Type()}
 		};
 		systemReg.Phase = 1;
 
@@ -117,7 +118,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 	const VelocityComponent initialVelocity = {true, playerVelocity + directionVec * projectileInitialSpeed};
 	pECS->AddComponent<VelocityComponent>(projectileEntity, initialVelocity);
 
-	const DynamicCollisionInfo collisionInfo = {
+	const DynamicCollisionCreateInfo collisionInfo = {
 		/* Entity */	 		projectileEntity,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, { 0.3f, 0.3f, 0.3f }}),
@@ -125,7 +126,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {m_ProjectileMeshComponent}),
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
-		/* CollisionCallback */ std::bind(&WeaponSystem::OnProjectileHit, this, projectileEntity),
+		/* CollisionCallback */ std::bind(&WeaponSystem::OnProjectileHit, this, std::placeholders::_1, projectileEntity),
 		/* Velocity */			initialVelocity
 	};
 
@@ -135,11 +136,14 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 	weaponComponent.Projectiles.PushBack(projectileEntity);
 }
 
-void WeaponSystem::OnProjectileHit(LambdaEngine::Entity entity)
+void WeaponSystem::OnProjectileHit(const LambdaEngine::CollisionInfo& collisionInfo, LambdaEngine::Entity entity)
 {
 	using namespace LambdaEngine;
 
 	LOG_INFO("Projectile hit, entity: %d", entity);
 	ECSCore* pECS = ECSCore::GetInstance();
 	pECS->RemoveEntity(entity);
+
+	ProjectileHitEvent hitEvent(entity, collisionInfo);
+	EventQueue::SendEventImmediate(hitEvent);
 }

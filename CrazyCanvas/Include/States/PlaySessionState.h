@@ -4,6 +4,7 @@
 #include "Game/State.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+#include "EventHandlers/MeshPaintHandler.h"
 
 class Level;
 
@@ -25,5 +26,10 @@ public:
 private:
 	Level* m_pLevel = nullptr;
 	bool m_Online;
+
+	/* Systems */
 	WeaponSystem m_WeaponSystem;
+
+	/* Event handlers */
+	MeshPaintHandler m_MeshPaintHandler;
 };

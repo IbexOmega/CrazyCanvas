@@ -72,7 +72,10 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
-	// Create Systems
+	// Initialize event handlers
+	m_MeshPaintHandler.Init();
+
+	// Initialize Systems
 	m_WeaponSystem.Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
@@ -157,7 +160,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-	
+
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
 
@@ -250,7 +253,7 @@ void SandboxState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				m_Entities.PushBack(entity);
-				const CollisionInfo collisionCreateInfo = {
+				const CollisionCreateInfo collisionCreateInfo = {
 					.Entity = entity,
 					.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
