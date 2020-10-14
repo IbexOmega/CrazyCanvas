@@ -44,6 +44,16 @@ namespace LambdaEngine
 		return m_Hash;
 	}
 
+	bool IPAddress::operator==(const IPAddress& other) const
+	{
+		return m_Hash == other.m_Hash/*other.GetAddress()->GetHash() == GetAddress()->GetHash() && other.GetPort() == GetPort()*/;
+	}
+
+	bool IPAddress::operator!=(const IPAddress& other) const
+	{
+		return m_Hash != other.m_Hash;
+	}
+
 	IPAddress* IPAddress::Get(const std::string& address)
 	{
 		uint64 hash = std::hash<std::string>{}(address);

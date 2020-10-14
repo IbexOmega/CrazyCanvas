@@ -30,8 +30,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-PlaySessionState::PlaySessionState(bool online) : 
-	m_Online(online)
+PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
+	m_pIPAddress(pIPAddress)
 {
 
 }
@@ -57,8 +57,8 @@ void PlaySessionState::Init()
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
 
-	if (m_Online)
-		ClientSystem::GetInstance().Connect(NetworkUtils::GetLocalAddress());
+	if (m_pIPAddress != NetworkUtils::GetLocalAddress())
+		ClientSystem::GetInstance().Connect(m_pIPAddress);
 	else
 		ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
 	

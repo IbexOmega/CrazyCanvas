@@ -4,6 +4,8 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Networking/API/NetworkUtils.h"
+
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
@@ -69,18 +71,18 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 	IPAddress* pIP = IPAddress::Get(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
 
-	if (!ClientSystem::GetInstance().Connect(pIP))
+	/*if (!ClientSystem::GetInstance().Connect(pIP))
 	{
 		LOG_MESSAGE("Client already in use");
 		return;
-	}
+	}*/
 	// Start Connecting animation
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesActive();
 
-	State* pPlayState = DBG_NEW PlaySessionState(true);
+	State* pPlayState = DBG_NEW PlaySessionState(pIP);
 	StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
@@ -128,8 +130,8 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 
 		SetRenderStagesActive();
 
-		State* pServerState = DBG_NEW ServerState();
-		StateManager::GetInstance()->EnqueueStateTransition(pServerState, STATE_TRANSITION::POP_AND_PUSH);
+		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
+		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
 
 
