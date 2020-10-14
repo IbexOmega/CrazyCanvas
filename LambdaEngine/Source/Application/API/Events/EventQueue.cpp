@@ -3,12 +3,14 @@
 
 namespace LambdaEngine
 {
-	SpinLock				EventQueue::s_EventLock;
-	EventQueue::EventTable	EventQueue::s_DeferredEvents;
+	/*
+	* Global data for this compilation unit
+	*/
 
-	static std::unordered_map<EventType, TArray<EventHandler>, EventTypeHasher> g_EventHandlers;
+	static THashTable<EventType, TArray<EventHandler>, EventTypeHasher> g_EventHandlers;
 	static SpinLock g_EventHandlersSpinlock;
 
+	// This function returns a copy to avoid having to lock
 	static TArray<EventHandler> GetEventHandlerOfType(EventType type)
 	{
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
@@ -27,6 +29,10 @@ namespace LambdaEngine
 	/*
 	* EventQueue
 	*/
+
+	SpinLock		EventQueue::s_EventLock;
+	EventContainer	EventQueue::s_DeferredEvents;
+	
 	bool EventQueue::RegisterEventHandler(EventType eventType, const EventHandler& eventHandler)
 	{
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
@@ -104,29 +110,18 @@ namespace LambdaEngine
 	
 	void EventQueue::Tick()
 	{
-		// Copy eventcontainers
-		EventTable containersToProcess;
-		{
-			std::scoped_lock<SpinLock> lock(s_EventLock);
-			containersToProcess = s_DeferredEvents;
-			for (auto& containerPair : s_DeferredEvents)
-			{
-				EventContainerProxy& container = containerPair.second;
-				container.Clear();
-			}
-		}
+		std::scoped_lock<SpinLock> lock(s_EventLock);
 
 		// Process events
-		for (auto& containerPair : containersToProcess)
+		for (uint32 i = 0; i < s_DeferredEvents.Size(); i++)
 		{
-			EventContainerProxy& container = containerPair.second;
-			TArray<EventHandler> handlers = GetEventHandlerOfType(containerPair.first);
-			for (uint32 i = 0; i < container.Size(); i++)
-			{
-				InternalSendEventToHandlers(container[i], handlers);
-			}
-			container.Clear();
+			Event& event = s_DeferredEvents[i];
+
+			TArray<EventHandler> handlers = GetEventHandlerOfType(event.GetType());
+			InternalSendEventToHandlers(event, handlers);
 		}
+
+		s_DeferredEvents.Clear();
 	}
 	
 	void EventQueue::InternalSendEventToHandlers(Event& event, const TArray<EventHandler>& handlers)
