@@ -72,20 +72,40 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	BinaryDecoder* pDecoder = event.pDecoder;
 	const IPEndPoint* pEndPoint = event.pEndPoint;
 
-	uint8 players = 0;
-	std::string serverName;
-	std::string mapName;
-	pDecoder->ReadUInt8(players);
-	pDecoder->ReadString(serverName);
-	pDecoder->ReadString(mapName);
+	ServerInfo newInfo;
+	newInfo.Ping = 0;
+	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
+
+	pDecoder->ReadUInt8(newInfo.Players);
+	pDecoder->ReadString(newInfo.Name);
+	pDecoder->ReadString(newInfo.MapName);
+
+	const auto& pair = m_Servers.find(event.ServerUID);
+
+	ServerInfo& currentInfo = m_Servers[event.ServerUID];
+
+
+	if (currentInfo != newInfo)
+	{
+		currentInfo = newInfo;
+		if (currentInfo.ServerGrid) // update current list
+		{
+
+		}
+		else // add new item to list
+		{
+			Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+
+			newInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, newInfo.Name.c_str(), newInfo.MapName.c_str(), std::to_string(newInfo.Players).c_str(), true);
+		}
+	}
+
 
 	//m_ServerList.AddServerItem()
-	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-
-	m_ServerList.AddLocalServerItem(pServerGrid, serverName.c_str(), mapName.c_str(), std::to_string(players).c_str(), true);
 
 
-	LOG_INFO("Found server with name %s with %u players", serverName.c_str(), players);
+
+	//LOG_INFO("Found server with name %s with %u players", serverName.c_str(), players);
 	return false;
 }
 

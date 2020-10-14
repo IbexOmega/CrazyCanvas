@@ -26,20 +26,26 @@ SavedServerGUI::~SavedServerGUI()
 {
 }
 
-void SavedServerGUI::AddSavedServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+Ptr<Grid> SavedServerGUI::AddSavedServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
 {
+	Ptr<Grid> grid = AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning);
 	if (m_SavedServerList->GetItems()->Add(AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning)) == -1)
 	{
 		LOG_ERROR("Refreshing Saved List");
 	}
+
+	return grid;
 }
 
-void SavedServerGUI::AddLocalServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+Ptr<Grid> SavedServerGUI::AddLocalServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
 {
-	if (m_LocalServerList->GetItems()->Add(AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning)) == -1)
+	Ptr<Grid> grid = AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning);
+	if (m_LocalServerList->GetItems()->Add(grid) == -1)
 	{
 		LOG_ERROR("Refreshing Local List");
 	}
+
+	return grid;
 }
 
 Ptr<Grid> SavedServerGUI::AddServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)

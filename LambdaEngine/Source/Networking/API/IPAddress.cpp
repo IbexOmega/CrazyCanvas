@@ -46,7 +46,7 @@ namespace LambdaEngine
 
 	bool IPAddress::operator==(const IPAddress& other) const
 	{
-		return m_Hash == other.m_Hash/*other.GetAddress()->GetHash() == GetAddress()->GetHash() && other.GetPort() == GetPort()*/;
+		return m_Hash == other.m_Hash;
 	}
 
 	bool IPAddress::operator!=(const IPAddress& other) const

@@ -24,6 +24,7 @@ public:
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 
+
 private:
 	Level* m_pLevel = nullptr;
 

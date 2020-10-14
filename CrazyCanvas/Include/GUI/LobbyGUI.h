@@ -23,6 +23,29 @@ struct ServerInfo
 	uint8 Players;
 	uint16 Ping;
 	LambdaEngine::Timestamp LastUpdate;
+
+	bool operator==(const ServerInfo& other) const
+	{
+		return Name == other.Name && MapName == other.MapName && Players == other.Players && Ping == other.Ping;
+	}
+
+	bool operator!=(const ServerInfo& other) const
+	{
+		return Name != other.Name || MapName != other.MapName || Players != other.Players || Ping != other.Ping;
+	}
+
+	ServerInfo& operator=(const ServerInfo& other)
+	{
+		if (this != &other)
+		{
+			Name		= other.Name;
+			MapName		= other.MapName;
+			Players		= other.Players;
+			Ping		= other.Ping;
+			LastUpdate	= other.LastUpdate;
+		}
+		return *this;
+	}
 };
 
 enum ErrorCode
@@ -53,6 +76,8 @@ public:
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
+
+
 
 private:
 	void SetRenderStagesActive();
