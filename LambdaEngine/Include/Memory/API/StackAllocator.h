@@ -16,8 +16,10 @@ namespace LambdaEngine
 			, m_SizeInBytes(sizeInBytes)
 		{
 			m_pMemory = Malloc::AllocateType<byte>(m_SizeInBytes);
-			ZERO_MEMORY(m_pMemory, m_SizeInBytes);
 
+#if LAMBDA_DEVELOPMENT
+			ZERO_MEMORY(m_pMemory, m_SizeInBytes);
+#endif
 			Reset();
 		}
 

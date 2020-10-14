@@ -32,19 +32,18 @@ namespace LambdaEngine
 				m_pCurrentArena = &m_Arenas[m_ArenaIndex];
 				m_pCurrentArena->Reset();
 			}
+
+			VALIDATE(m_pCurrentArena != nullptr);
+
+			// In case we still cannot allocate
+			if (!m_pCurrentArena->CanAllocate(size))
+			{
+				return nullptr;
+			}
 		}
 
-		VALIDATE(m_pCurrentArena != nullptr);
-		
 		// Allocate
-		if (m_pCurrentArena->CanAllocate(size))
-		{
-			return m_pCurrentArena->Allocate(size);
-		}
-		else
-		{
-			return nullptr;
-		}
+		return m_pCurrentArena->Allocate(size);
 	}
 
 	void StackAllocator::Pop(uint32 size)
