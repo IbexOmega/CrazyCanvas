@@ -26,7 +26,23 @@ SavedServerGUI::~SavedServerGUI()
 {
 }
 
-void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal)
+void SavedServerGUI::AddSavedServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+{
+	if (m_SavedServerList->GetItems()->Add(AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning)) == -1)
+	{
+		LOG_ERROR("Refreshing Saved List");
+	}
+}
+
+void SavedServerGUI::AddLocalServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+{
+	if (m_LocalServerList->GetItems()->Add(AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning)) == -1)
+	{
+		LOG_ERROR("Refreshing Local List");
+	}
+}
+
+Ptr<Grid> SavedServerGUI::AddServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
 {
 	Ptr<Grid> grid = *new Grid();
 
@@ -45,11 +61,11 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	pParentGrid->SetColumnSpan(grid, 2);
 	pParentGrid->SetRow(grid, 4);
 
-	Ptr<TextBlock> serverName	= *new TextBlock();
-	Ptr<TextBlock> mapName		= *new TextBlock();
-	Ptr<TextBlock> ping			= *new TextBlock();
-	Ptr<Rectangle> isRun		= *new Rectangle();
-	Ptr<SolidColorBrush> brush	= *new SolidColorBrush();
+	Ptr<TextBlock> serverName = *new TextBlock();
+	Ptr<TextBlock> mapName = *new TextBlock();
+	Ptr<TextBlock> ping = *new TextBlock();
+	Ptr<Rectangle> isRun = *new Rectangle();
+	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
 
 
 	serverName->SetText(pServerN);
@@ -76,22 +92,9 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	grid->SetColumn(isRun, 3);
 	//grid->SetRow(pServerName, m_ItemCount++);
 
-	if (!isLocal)
-	{
-		if (m_SavedServerList->GetItems()->Add(grid) == -1)
-		{
-			LOG_ERROR("Refreshing Saved List");
-		}
-	}
-	else
-	{
-		if (m_LocalServerList->GetItems()->Add(grid) == -1)
-		{
-			LOG_ERROR("Refreshing Local List");
-		}
-	}
-
+	return grid;
 }
+
 
 void SavedServerGUI::UpdateServerItems(const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal)
 {

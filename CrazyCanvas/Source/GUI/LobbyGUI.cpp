@@ -72,9 +72,19 @@ bool LobbyGUI::OnServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
 	const IPEndPoint* pEndPoint = event.pEndPoint;
 
 	uint8 players = 0;
+	std::string serverName;
+	std::string mapName;
 	pDecoder->ReadUInt8(players);
+	pDecoder->ReadString(serverName);
+	pDecoder->ReadString(mapName);
 
-	LOG_INFO("Found server at %s with %u players", pEndPoint->ToString().c_str(), players);
+	//m_ServerList.AddServerItem()
+	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+
+	m_ServerList.AddLocalServerItem(pServerGrid, serverName.c_str(), mapName.c_str(), std::to_string(players).c_str(), true);
+
+
+	LOG_INFO("Found server with name %s with %u players", serverName.c_str(), players);
 	return false;
 }
 
@@ -111,7 +121,7 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
-	m_ServerList.AddServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69", true, pLocalServers->GetIsSelected());
+	m_ServerList.AddSavedServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69", true);
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)

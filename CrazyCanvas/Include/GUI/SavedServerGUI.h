@@ -84,8 +84,12 @@ public:
 	SavedServerGUI(const LambdaEngine::String& xamlFile);
 	~SavedServerGUI();
 
-	void AddServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal);
-	void UpdateServerItems(const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal);
+	void AddSavedServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning);
+	void AddLocalServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning);
+	
+    Noesis::Ptr<Noesis::Grid> AddServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning);
+	
+    void UpdateServerItems(const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal);
 
     void Init(Noesis::ListBox* pListView, Noesis::ListBox* pLocalListView);
 

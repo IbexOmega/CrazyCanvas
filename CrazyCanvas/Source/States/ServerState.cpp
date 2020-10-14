@@ -30,6 +30,9 @@ using namespace LambdaEngine;
 ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
+
+	m_ServerName = "Crazy Canvas Server";
+
 	SAFEDELETE(m_pLevel);
 }
 
@@ -65,6 +68,8 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	ServerBase* pServer = event.pServer;
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
+	pEncoder->WriteString(m_ServerName);
+	pEncoder->WriteString("Bajskorv");
 
 	return true;
 }
