@@ -334,6 +334,9 @@ workspace "LambdaEngine"
 			"imnodes",
 		}
 
+		-- Link warning suppression
+		linkoptions { "-IGNORE:4006" }
+		
 		-- Win32
 		filter { "system:windows" }
 			links
