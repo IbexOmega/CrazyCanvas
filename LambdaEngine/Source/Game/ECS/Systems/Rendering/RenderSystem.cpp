@@ -1055,10 +1055,6 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			// uint32 test = 1;
-			// test = test << 8;
-			// test |= extensionIndex;
-
 			uint32 index = materialIndex;
 			index = index << 8;
 			index |= extensionIndex;

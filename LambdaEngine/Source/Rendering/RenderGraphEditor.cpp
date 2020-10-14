@@ -859,6 +859,17 @@ namespace LambdaEngine
 			ImGui::PopStyleVar();
 		}
 
+		if (pResource->External)
+		{
+			ImGui::Text("Enable Synchronization: ");
+			ImGui::SameLine();
+			ImGui::Checkbox("##Enable Synchronization", &pResource->ShouldSynchronize);
+		}
+		else
+		{
+			pResource->ShouldSynchronize = true;
+		}
+
 		if (pResource->Type != ERenderGraphResourceType::TEXTURE || !pResource->TextureParams.UnboundedArray)
 		{
 			ImGui::Text("Back Buffer Bound: ");

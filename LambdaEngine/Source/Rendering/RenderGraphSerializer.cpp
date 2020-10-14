@@ -44,6 +44,9 @@ namespace LambdaEngine
 						writer.String("back_buffer_bound");
 						writer.Bool(resource.BackBufferBound);
 
+						writer.String("should_synchronize");
+						writer.Bool(resource.ShouldSynchronize);
+
 						writer.String("sub_resource_count");
 						writer.Uint(resource.SubResourceCount);
 
@@ -546,6 +549,7 @@ namespace LambdaEngine
 					resource.Name							= resourceObject["name"].GetString();
 					resource.Type							= RenderGraphResourceTypeFromString(resourceObject["type"].GetString());
 					resource.BackBufferBound				= resourceObject.HasMember("back_buffer_bound") ? resourceObject["back_buffer_bound"].GetBool() : false;
+					resource.ShouldSynchronize				= resourceObject.HasMember("should_synchronize") ? resourceObject["should_synchronize"].GetBool() : true;
 					resource.SubResourceCount				= resourceObject["sub_resource_count"].GetUint();
 					
 					resource.Editable						= resourceObject["editable"].GetBool();
