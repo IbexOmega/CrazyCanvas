@@ -1391,10 +1391,10 @@ namespace LambdaEngine
 				ImGui::InputInt(" ##Render Stage Frame Delay", &pRenderStage->FrameDelay);
 				pRenderStage->FrameDelay = glm::clamp<uint32>(pRenderStage->FrameDelay, 0, 360);
 
-				ImGui::Text("Frame Offset: ");
+				ImGui::Text("Frame m_Offset: ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(ImGui::CalcTextSize("         ").x + ImGui::GetFrameHeight() * 2 + 4.0f);
-				ImGui::InputInt("##Render Stage Frame Offset", &pRenderStage->FrameOffset);
+				ImGui::InputInt("##Render Stage Frame m_Offset", &pRenderStage->FrameOffset);
 				pRenderStage->FrameOffset = glm::clamp<uint32>(pRenderStage->FrameOffset, 0, pRenderStage->FrameDelay);
 			}
 

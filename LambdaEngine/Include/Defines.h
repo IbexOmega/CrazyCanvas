@@ -92,7 +92,7 @@
 * Helper Macros
 */ 
 
-#define ZERO_MEMORY(memory, size)	memset((void*)memory, 0, size)
+#define ZERO_MEMORY(memory, size)	memset(reinterpret_cast<void*>(memory), 0, size)
 #define ARR_SIZE(arr)				sizeof(arr) / sizeof(arr[0])
 
 /*
