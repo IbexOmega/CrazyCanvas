@@ -74,10 +74,11 @@ namespace LambdaEngine
 		}
 
 		IndirectData indirectData;
-		indirectData.firstInstance = instance.ParticleOffset;
-		indirectData.instanceCount = instance.ParticleCount;
-		indirectData.firstIndex = 0;
-		indirectData.indexCount = 6;
+		indirectData.FirstInstance = instance.ParticleOffset;
+		indirectData.InstanceCount = instance.ParticleCount;
+		indirectData.FirstIndex = 0;
+		indirectData.IndexCount = 6;
+		indirectData.VertexOffset = 0;
 		m_IndirectData.PushBack(indirectData);
 
 		m_DirtyIndirectBuffer = true;
