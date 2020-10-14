@@ -119,7 +119,8 @@ namespace LambdaEngine
 		{
 		}
 
-		inline BlendInfo(GUID_Lambda animationGUID, float32 weight, float32 playbackSpeed)
+		// Empty string equals 
+		inline BlendInfo(GUID_Lambda animationGUID, float32 weight, float32 playbackSpeed, PrehashedString jointName = "")
 			: AnimationGUID(animationGUID)
 			, Weight(weight)
 			, PlaybackSpeed(playbackSpeed)
@@ -129,6 +130,7 @@ namespace LambdaEngine
 		GUID_Lambda	AnimationGUID;
 		float32		Weight;
 		float32		PlaybackSpeed;
+		PrehashedString JointName;
 	};
 
 	/*
