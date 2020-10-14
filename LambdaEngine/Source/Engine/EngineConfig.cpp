@@ -2,9 +2,11 @@
 
 #include "Log/Log.h"
 
+#pragma warning( push, 0 )
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
+#pragma warning( pop )
 
 #include <fstream>
 

@@ -31,7 +31,9 @@
 #include "Debug/Profiler.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#pragma warning( push, 0 )
 #include <imgui.h>
+#pragma warning( pop )
 #include <imnodes.h>
 
 #include <d3d12.h>
