@@ -103,7 +103,8 @@ namespace LambdaEngine
 		cmdHitTest.Init("add_hit_point", true);
 		cmdHitTest.AddFlag("p", Arg::EType::FLOAT, 3);
 		cmdHitTest.AddFlag("d", Arg::EType::FLOAT, 3);
-		cmdHitTest.AddDescription("Add a hitpoint for the paint mask renderer\n [-p] position of point in world\n [-d] direction of point in world\n\t'add_hit_point <-p x y z> [-d x y z]'");
+		cmdHitTest.AddFlag("paint", Arg::EType::INT);
+		cmdHitTest.AddDescription("Add a hitpoint for the paint mask renderer\n\t[-p] position of point in world\n\t[-d] direction of point in world\n\t[-paint] true to paint, false to remove paint\n\t'add_hit_point <-p x y z> [-d x y z] [-paint true/false]'");
 		GameConsole::Get().BindCommand(cmdHitTest, [&, this](GameConsole::CallbackInput& input)->void {
 			if (!input.Flags.contains("p"))
 			{
@@ -128,7 +129,14 @@ namespace LambdaEngine
 				GameConsole::Get().PushMsg("Direction not given or too few positions for flag", {0.8f, 0.8f, 0.0f, 1.0f});
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir);
+			EPaintMode paintMode = EPaintMode::PAINT;
+			if (input.Flags.contains("paint") && input.Flags["paint"].Arg.Value.Int32 >= 0)
+			{
+				int32 mode = input.Flags["paint"].Arg.Value.Int32;
+				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
+			}
+
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode);
 			});
 		
 		return false;
@@ -204,14 +212,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				if (m_BrushMaskDescriptorSet.Get())
-				{
-					m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-				}
-				else
-				{
-					LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
-				}
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 			}
 		}
 	}
@@ -353,7 +354,7 @@ namespace LambdaEngine
 			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
 
 			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
-			const UnwrapData& data			= s_Collisions.front();
+			const UnwrapData& data	= s_Collisions.front();
 
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
 			s_Collisions.pop_front();
@@ -433,11 +434,12 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction)
+	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
 		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
+		data.PaintMode			= paintMode;
 		
 		s_Collisions.push_back(data);
 	}
