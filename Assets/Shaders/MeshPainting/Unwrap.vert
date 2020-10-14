@@ -5,10 +5,13 @@
 
 #include "../Defines.glsl"
 
+#define UNWRAP_DRAW_SET_INDEX 3
+
 struct SUnwrapData
 {
 	vec4 TargetPosition;
 	vec4 TargetDirection;
+	uint PaintMode;
 };
 
 layout(push_constant) uniform TransformBuffer
@@ -21,13 +24,15 @@ layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFram
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices		{ SVertex val[]; }			b_Vertices;
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances	{ SInstance val[]; }		b_Instances;
 
-layout(binding = 0, set = 3) uniform UnwrapData									{ SUnwrapData val; }		u_UnwrapData;
+layout(binding = 0, set = UNWRAP_DRAW_SET_INDEX) uniform UnwrapData				{ SUnwrapData val; }		u_UnwrapData;
 
 layout(location = 0) out vec3 out_WorldPosition;
 layout(location = 1) out vec3 out_Normal;
 
 layout(location = 2) out vec3 out_TargetPosition;
 layout(location = 3) out vec3 out_TargetDirection;
+
+layout(location = 4) out uint out_PaintMode;
 
 /*
 	Three parameters are needed to make this work. These are:
@@ -51,9 +56,11 @@ void main()
 	out_TargetDirection				= u_UnwrapData.val.TargetDirection.xyz;
 	out_TargetPosition				= u_UnwrapData.val.TargetPosition.xyz;
 
-    // This is not removed because of debug purposes.
-    //out_TargetDirection             = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
-    //out_TargetPosition              = perFrameBuffer.CameraPosition.xyz;  
+	out_PaintMode					= u_UnwrapData.val.PaintMode;
+
+	// This is not removed because of debug purposes.
+	//out_TargetDirection             = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
+	//out_TargetPosition              = perFrameBuffer.CameraPosition.xyz;  
 
 	vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);
 	texCoord.y = 1.f - texCoord.y;

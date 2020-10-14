@@ -22,6 +22,8 @@ enum ErrorCode
 
 };
 
+#include "Application/API/Events/NetworkEvents.h"
+
 class LobbyGUI : public Noesis::Grid
 {
 	//ObservableCollection<HostGameDescription> Servers;
@@ -39,6 +41,8 @@ public:
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	bool OnServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
 
 private:
 	void SetRenderStagesActive();

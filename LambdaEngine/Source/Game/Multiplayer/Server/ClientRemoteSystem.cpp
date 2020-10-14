@@ -89,39 +89,35 @@ namespace LambdaEngine
 	void ClientRemoteSystem::OnConnecting(IClient* pClient)
 	{
 		m_pClient = (ClientRemoteBase*)pClient;
+
+		ClientConnectingEvent event(pClient);
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientRemoteSystem::OnConnected(IClient* pClient)
 	{
-		ClientConnectedEvent event = {};
-		event.pClient = pClient;
-
+		ClientConnectedEvent event(pClient);
 		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientRemoteSystem::OnDisconnecting(IClient* pClient)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		ClientDisconnectingEvent event(pClient);
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientRemoteSystem::OnDisconnected(IClient* pClient)
 	{
-		ClientDisconnectedEvent event = {};
-		event.pClient = pClient;
-
+		ClientDisconnectedEvent event(pClient);
 		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientRemoteSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-		PacketReceivedEvent event = {};
-		event.pClient = pClient;
-		event.pPacket = pPacket;
-		event.Type = pPacket->GetType();
-
+		PacketReceivedEvent event(pClient, pPacket);
 		EventQueue::SendEventImmediate(event);
 
-		if (event.Type == NetworkSegment::TYPE_PLAYER_ACTION)
+		if (pPacket->GetType() == NetworkSegment::TYPE_PLAYER_ACTION)
 		{
 			GameState gameState = {};
 
