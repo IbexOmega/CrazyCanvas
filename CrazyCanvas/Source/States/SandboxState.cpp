@@ -101,7 +101,7 @@ void SandboxState::Init()
 			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
 			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
-		Entity playerEntity = CreateFPSCameraEntity(cameraDesc);
+		Entity playerEntity = CreateFreeCameraEntity(cameraDesc);
 		pECS->AddComponent<PlayerTag>(playerEntity, {});
 
 		Entity weaponEntity = pECS->CreateEntity();
@@ -157,7 +157,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-	
+
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
 

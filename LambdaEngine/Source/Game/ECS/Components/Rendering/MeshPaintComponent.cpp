@@ -11,7 +11,7 @@ MeshPaintComponent MeshPaint::CreateComponent(Entity entity, const std::string& 
 	MeshPaintComponent meshPaintComponent;
 	char* data = DBG_NEW char[width * height * 4];
 	memset(data, 0, width * height * 4);
-	meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory(textureName, data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
+	meshPaintComponent.UnwrappedTexture = ResourceManager::LoadTextureFromMemory(textureName, data, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, true);
 	SAFEDELETE_ARRAY(data);
 
 	DrawArgExtensionData drawArgExtensionData = {};
