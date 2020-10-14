@@ -158,6 +158,7 @@ struct SShapeSample
 struct SParticleVertex
 {
 	vec3 Position;
+	float padding0;
 };
 
 struct SParticle
@@ -165,8 +166,8 @@ struct SParticle
 	mat4 Transform;
 	vec4 Color;
 	vec3 Velocity;
-	vec3 Acceleration;
 	float LifeTime;
+	vec3 Acceleration;
 	float Radius;
 };
 

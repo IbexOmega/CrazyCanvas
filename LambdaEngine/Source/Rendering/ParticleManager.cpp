@@ -18,6 +18,8 @@ namespace LambdaEngine
 	void ParticleManager::Init(uint32 maxParticles)
 	{
 		m_Particles.Reserve(maxParticles);
+		m_DirtyIndexBuffer = true;
+		m_DirtyVertexBuffer = true;
 	}
 
 	void ParticleManager::Release()
@@ -80,7 +82,7 @@ namespace LambdaEngine
 
 		m_DirtyIndirectBuffer = true;
 		m_DirtyParticleBuffer = true;
-		m_DirtyIndexBuffer = true;
+
 	}
 
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
@@ -176,7 +178,15 @@ namespace LambdaEngine
 		// Update Vertex Buffer
 		if (m_DirtyVertexBuffer)
 		{
-			uint32 requiredBufferSize = 0;
+			const glm::vec3 vertices[4] =
+			{
+				glm::vec4(-1.0, -1.0, 0.0, 1.0f),
+				glm::vec4(-1.0, 1.0, 0.0, 1.0f),
+				glm::vec4(1.0, -1.0, 0.0, 1.0f),
+				glm::vec4(1.0, 1.0, 0.0, 1.0f),
+			};
+
+			uint32 requiredBufferSize = 4 * sizeof(glm::vec4);
 
 			Buffer* pStagingBuffer = m_ppVertexStagingBuffer[m_ModFrameIndex];
 
@@ -195,7 +205,7 @@ namespace LambdaEngine
 			}
 
 			void* pMapped = pStagingBuffer->Map();
-			memcpy(pMapped, m_Particles.GetData(), requiredBufferSize);
+			memcpy(pMapped, vertices, requiredBufferSize);
 			pStagingBuffer->Unmap();
 
 			if (m_pVertexBuffer == nullptr || m_pVertexBuffer->GetDesc().SizeInBytes < requiredBufferSize)

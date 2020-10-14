@@ -31,8 +31,8 @@ namespace LambdaEngine
 		glm::mat4 Transform;
 		glm::vec4 Color;
 		glm::vec3 Velocity;
-		glm::vec3 Acceleration;
 		float LifeTime;
+		glm::vec3 Acceleration;
 		float Radius;
 	};
 

@@ -209,7 +209,7 @@ namespace LambdaEngine
 
 		pipelineStateDesc.RasterizerState.LineWidth = 1.f;
 		pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
-		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_BACK;
+		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
 
 		pipelineStateDesc.DepthStencilState = {};
 		pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
@@ -287,6 +287,9 @@ namespace LambdaEngine
 				return false;
 			}
 
+			// Stores Descriptor bindings for Descriptor set 1
+			m_DescBindData.Resize(2);
+
 			m_Initilized = true;
 		}
 
@@ -315,7 +318,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
-		if (resourceName == "G_BUFFER_ALBEDO")
+		if (resourceName == "PARTICLE_IMAGE")
 		{
 			if (imageCount == 1)
 			{
@@ -371,8 +374,96 @@ namespace LambdaEngine
 			}
 		}
 
+		if (resourceName == SCENE_PARTICLE_VERTEX_BUFFER)
+		{
+			if (count == 1)
+			{
+				DescriptorBindingData descBindData = {};
+				descBindData.pBuffers = ppBuffers[0];
+				descBindData.Offset = pOffsets[0];
+				descBindData.SizeInByte = pSizesInBytes[0];
+
+				m_DescBindData[0] = descBindData;
+
+				const Buffer*	ppBuffers[2];
+				uint64			pOffsets[2];
+				uint64			pSizeInBytes[2];
+				uint32			count = 0;
+
+				for (uint32 i = 0; i < m_DescBindData.GetSize(); i++)
+				{
+					auto data = m_DescBindData[i];
+
+					if (data.pBuffers != nullptr)
+					{
+						ppBuffers[count] = data.pBuffers;
+						pOffsets[count] = data.Offset;
+						pSizeInBytes[count] = data.SizeInByte;
+						count++;
+					}
+				}
+
+				constexpr uint32 setIndex = 1U;
+
+				m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+				if (m_InstanceDescriptorSet != nullptr)
+				{
+					m_InstanceDescriptorSet->WriteBufferDescriptors(
+						ppBuffers,
+						pOffsets,
+						pSizeInBytes,
+						0,
+						count,
+						EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+					);
+				}
+				else
+				{
+					LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 1);
+				}
+			}
+		}
+
+		if (resourceName == SCENE_PARTICLE_INDEX_BUFFER)
+		{
+			if (count == 1)
+			{
+				m_pIndexBuffer = ppBuffers[0];
+			}
+		}
+
 		if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
 		{
+			DescriptorBindingData descBindData = {};
+			descBindData.pBuffers = ppBuffers[0];
+			descBindData.Offset = pOffsets[0];
+			descBindData.SizeInByte = pSizesInBytes[0];
+
+			m_DescBindData[1] = descBindData;
+
+			const Buffer* ppBuffers[2];
+			uint64			pOffsets[2];
+			uint64			pSizeInBytes[2];
+			uint32			count = 0;
+			uint32			binding = 0;
+
+			for (uint32 i = 0; i < m_DescBindData.GetSize(); i++)
+			{
+				auto data = m_DescBindData[i];
+
+				if (data.pBuffers != nullptr)
+				{
+					ppBuffers[count] = data.pBuffers;
+					pOffsets[count] = data.Offset;
+					pSizeInBytes[count] = data.SizeInByte;
+					count++;
+				}
+				else
+				{
+					binding++;
+				}
+			}
+
 			constexpr uint32 setIndex = 1U;
 
 			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
@@ -382,7 +473,7 @@ namespace LambdaEngine
 					ppBuffers,
 					pOffsets,
 					pSizesInBytes,
-					1,
+					binding,
 					count,
 					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 				);
@@ -390,14 +481,6 @@ namespace LambdaEngine
 			else
 			{
 				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
-			}
-		}
-
-		if (resourceName == SCENE_PARTICLE_INDEX_BUFFER)
-		{
-			if (count == 1)
-			{
-				m_pIndexBuffer = ppBuffers[0];
 			}
 		}
 
@@ -462,12 +545,16 @@ namespace LambdaEngine
 		ClearColorDesc clearColors[2] = {};
 
 		clearColors[0].Color[0] = 0.f;
-		clearColors[0].Color[1] = 0.f;
+		clearColors[0].Color[1] = 1.f;
 		clearColors[0].Color[2] = 0.f;
 		clearColors[0].Color[3] = 0.f;
 
 		clearColors[1].Depth = 1.0f;
 		clearColors[1].Stencil = 0U;
+
+		pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
+		pCommandList->BindDescriptorSetGraphics(m_InstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+		pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
@@ -483,16 +570,6 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.y = 0;
 
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
-		// Loop through all Emitter types (Mesh types) and call DrawIndexInstanced once per group.
-
-		//	//pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-		//	//pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
-		//	pCommandList->DrawInstanced(6U, )
-
-		pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0); 
-		pCommandList->BindDescriptorSetGraphics(m_InstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 1); 
-		pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
 

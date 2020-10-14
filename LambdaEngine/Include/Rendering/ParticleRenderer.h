@@ -8,6 +8,13 @@
 namespace LambdaEngine
 {
 
+	struct DescriptorBindingData
+	{
+		const Buffer* pBuffers	= nullptr;
+		uint64 Offset			= 0;
+		uint64 SizeInByte		= 0;
+	};
+
 	class ParticleRenderer : public ICustomRenderer
 	{
 	public:
@@ -65,6 +72,8 @@ namespace LambdaEngine
 		TSharedRef<const TextureView>			m_RenderTarget = nullptr;
 		TSharedRef<const TextureView>			m_DepthStencil = nullptr;
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
+
+		TArray<DescriptorBindingData>			m_DescBindData;
 
 		uint64									m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;

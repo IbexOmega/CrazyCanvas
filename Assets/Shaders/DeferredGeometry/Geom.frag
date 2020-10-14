@@ -22,6 +22,7 @@ layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_ParticleImage;
 
 layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
@@ -44,6 +45,7 @@ void main()
 	vec3 sampledNormal 	            = texture(u_NormalMaps[in_MaterialSlot],            texCoord).rgb;
 	vec3 sampledCombinedMaterial    = texture(u_CombinedMaterialMaps[in_MaterialSlot],  texCoord).rgb;
 	
+
 	vec3 shadingNormal 	   	= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal 			= normalize(TBN * normalize(shadingNormal));
 
@@ -58,6 +60,8 @@ void main()
 	//1
 	vec3 storedAlbedo         	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 	out_Albedo 				  	= storedAlbedo;
+	// Apply particles to albedo
+	out_Albedo					+= texture(u_ParticleImage,            texCoord).rgb;
 
 	//2
 	vec3 storedMaterial         = vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
