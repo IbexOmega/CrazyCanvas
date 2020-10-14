@@ -311,8 +311,9 @@ namespace LambdaEngine
 						uint32 mask = extensionGroup->pExtensionMasks[e];
 						bool inverted;
 						uint32 meshPaintBit = EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type(), inverted);
+						uint32 invertedUInt = uint32(inverted);
 
-						if ((mask & meshPaintBit) == inverted)
+						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
 							TextureView* textureView = extension.ppMipZeroTextureViews[0];
@@ -347,6 +348,10 @@ namespace LambdaEngine
 		{
 			return;
 		}
+		else
+		{
+			int dwadwa = 0;
+		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
@@ -356,7 +361,7 @@ namespace LambdaEngine
 			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
 
 			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
-			const UnwrapData& data			= s_Collisions.front();
+			const UnwrapData& data = s_Collisions.front();
 
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
 			s_Collisions.pop_front();

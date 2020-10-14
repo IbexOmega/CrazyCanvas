@@ -1099,11 +1099,11 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		for (uint32 requiredMask : m_RequiredDrawArgs)
+		for (const DrawArgMaskDesc& maskDesc : m_RequiredDrawArgs)
 		{
-			if ((meshAndInstancesIt->second.DrawArgsMask & requiredMask) == requiredMask)
+			if ((meshAndInstancesIt->second.DrawArgsMask & maskDesc.IncludeMask) == maskDesc.IncludeMask && (meshAndInstancesIt->second.DrawArgsMask & maskDesc.ExcludeMask) == 0)
 			{
-				m_DirtyDrawArgs.insert(requiredMask);
+				m_DirtyDrawArgs.insert(maskDesc);
 			}
 		}
 	}
@@ -1420,14 +1420,14 @@ namespace LambdaEngine
 		resourcesToRemove.Clear();
 	}
 
-	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 requestedMask) const
+	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const
 	{
 		for (auto& meshEntryPair : m_MeshAndInstancesMap)
 		{
 			uint32 mask = meshEntryPair.second.DrawArgsMask;
-			if ((mask & requestedMask) == requestedMask)
+			if ((mask & requestedMaskDesc.IncludeMask) == requestedMaskDesc.IncludeMask && (mask & requestedMaskDesc.ExcludeMask) == 0)
 			{
-				LOG_ERROR("Mesh with mask %d added to DrawArg with mask %d", mask, requestedMask);
+				LOG_ERROR("Mesh with mask %x added to DrawArg with mask %x", mask, requestedMaskDesc.FullMask);
 				DrawArg drawArg = { };
 
 				// Assume animated
@@ -2116,19 +2116,19 @@ namespace LambdaEngine
 
 		if (!m_DirtyDrawArgs.empty())
 		{
-			for (uint32 drawArgMask : m_DirtyDrawArgs)
+			for (const DrawArgMaskDesc& maskDesc : m_DirtyDrawArgs)
 			{
-				LOG_ERROR("RenderSystem: CREATING DRAW ARGS %u", drawArgMask);
+				LOG_ERROR("RenderSystem: CREATING DRAW ARGS %x", maskDesc.FullMask);
 
 				TArray<DrawArg> drawArgs;
-				CreateDrawArgs(drawArgs, drawArgMask);
+				CreateDrawArgs(drawArgs, maskDesc);
 
 				//Create Resource Update for RenderGraph
-				ResourceUpdateDesc resourceUpdateDesc					= {};
-				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
-				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
-				resourceUpdateDesc.ExternalDrawArgsUpdate.Count			= drawArgs.GetSize();
+				ResourceUpdateDesc resourceUpdateDesc						= {};
+				resourceUpdateDesc.ResourceName								= SCENE_DRAW_ARGS;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMaskDesc	= maskDesc;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs			= drawArgs.GetData();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.Count				= drawArgs.GetSize();
 
 				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 			}

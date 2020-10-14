@@ -287,7 +287,7 @@ namespace LambdaEngine
 
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
-		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 requestedMask) const;
+		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
@@ -364,7 +364,7 @@ namespace LambdaEngine
 		Buffer* m_pPerFrameBuffer			= nullptr;
 
 		// Draw Args
-		TSet<uint32> m_RequiredDrawArgs;
+		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
 
 		// Ray Tracing
 		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
@@ -385,7 +385,7 @@ namespace LambdaEngine
 		bool						m_MaterialsPropertiesBufferDirty	= false;
 		bool						m_MaterialsResourceDirty			= false;
 		bool						m_PerFrameResourceDirty				= true;
-		TSet<uint32>				m_DirtyDrawArgs;
+		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyBLASs;
