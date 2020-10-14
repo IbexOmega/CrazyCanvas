@@ -80,6 +80,23 @@ namespace LambdaEngine
 		JointIndexType	ParentBoneIndex = INVALID_JOINT_ID;
 	};
 
+	// Scale, Quaterinion Rotation, Translation
+	struct SQT
+	{
+		SQT() = default;
+
+		inline SQT(const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation)
+			: Translation(translation)
+			, Scale(scale)
+			, Rotation(rotation)
+		{
+		}
+
+		glm::vec3 Translation;
+		glm::vec3 Scale;
+		glm::quat Rotation;
+	};
+
 	struct Skeleton
 	{
 		using JointHashTable = THashTable<PrehashedString, JointIndexType, PrehashedStringHasher>;

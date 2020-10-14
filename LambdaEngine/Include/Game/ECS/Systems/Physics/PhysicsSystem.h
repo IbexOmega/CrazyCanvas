@@ -80,9 +80,11 @@ namespace LambdaEngine
 
 		/* Character controllers */
 		// CreateCharacterCapsule creates a character collider capsule. Total height is height + radius * 2 (+ contactOffset * 2)
-		CharacterColliderComponent CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius);
+		void CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius, CharacterColliderComponent& characterColliderComp);
 		// CreateCharacterBox creates a character collider box
-		CharacterColliderComponent CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents);
+		void CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents, CharacterColliderComponent& characterColliderComp);
+
+		PxScene* GetScene() { return m_pScene; }
 
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
@@ -97,17 +99,15 @@ namespace LambdaEngine
 		PxTransform CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const;
 
 		void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent);
+		static glm::vec3 GetCharacterTranslation(float32 dt, const glm::vec3& forward, const glm::vec3& right, const FPSControllerComponent& FPSComp);
 		void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent);
-		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
 		void OnStaticCollisionRemoval(Entity entity);
 		void OnDynamicCollisionRemoval(Entity entity);
-		void OnCharacterColliderRemoval(Entity entity);
-
-		void TickCharacterControllers(float32 dt);
 
 		StaticCollisionComponent FinalizeStaticCollisionActor(const CollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
 		DynamicCollisionComponent FinalizeDynamicCollisionActor(const DynamicCollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
-		CharacterColliderComponent FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
+		void FinalizeCollisionComponent(const CollisionInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation = PxQuat(PxIDENTITY::PxIdentity));
+		void FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc, CharacterColliderComponent& characterColliderComp);
 
 	private:
 		static PhysicsSystem s_Instance;
@@ -115,7 +115,6 @@ namespace LambdaEngine
 	private:
 		IDVector m_StaticCollisionEntities;
 		IDVector m_DynamicCollisionEntities;
-		IDVector m_CharacterColliderEntities;
 
 		PxDefaultAllocator		m_Allocator;
 		PhysXErrorCallback		m_ErrorCallback;

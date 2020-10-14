@@ -96,6 +96,30 @@ namespace LambdaEngine
 		}
 	}
 
+	VkResult SwapChainVK::HandleOutOfDate()
+	{
+		CommandQueueVK* pVkQueue = reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue);
+		pVkQueue->Flush();
+
+		ReleaseInternal();
+		ReleaseSurface();
+
+		VkResult result = InitSurface();
+		if (result != VK_SUCCESS)
+		{
+			return result;
+		}
+
+		result = InitInternal();
+		if (result != VK_SUCCESS)
+		{
+			return result;
+		}
+
+		AquireNextBufferIndex();
+		return AquireNextImage();
+	}
+
 	bool SwapChainVK::Init(const SwapChainDesc* pDesc)
 	{
 		VALIDATE(pDesc			!= nullptr);
@@ -142,12 +166,17 @@ namespace LambdaEngine
 		m_Desc.pWindow->AddRef();
 		m_Desc.pQueue->AddRef();
 
-		if (!InitSurface())
+		if (InitSurface() != VK_SUCCESS)
 		{
 			return false;
 		}
 
-		return InitInternal();
+		if (InitInternal() != VK_SUCCESS)
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool SwapChainVK::OnWindowResized(const WindowResizedEvent& event)
@@ -156,11 +185,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool SwapChainVK::InitInternal()
+	VkResult SwapChainVK::InitInternal()
 	{
 		VkExtent2D newSize = GetSizeFromSurface(m_Desc.Width, m_Desc.Height);
-		m_Desc.Width = newSize.width;
-		m_Desc.Height = newSize.height;
+		m_Desc.Width	= newSize.width;
+		m_Desc.Height	= newSize.height;
 
 		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain size w: %u h: %u", newSize.width, newSize.height);
 
@@ -169,13 +198,13 @@ namespace LambdaEngine
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
-			return false;
+			return result;
 		}
 
 		if (m_Desc.BufferCount < capabilities.minImageCount || m_Desc.BufferCount > capabilities.maxImageCount)
 		{
 			LOG_ERROR("[SwapChainVK]: Number of buffers(=%u) is not supported. MinBuffers=%u MaxBuffers=%u", m_Desc.BufferCount, capabilities.minImageCount, capabilities.maxImageCount);
-			return false;
+			return VK_ERROR_UNKNOWN;
 		}
 
 		D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", m_Desc.BufferCount);
@@ -206,7 +235,7 @@ namespace LambdaEngine
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create SwapChain");
 			
 			m_SwapChain = VK_NULL_HANDLE;
-			return false;
+			return result;
 		}
 		else
 		{
@@ -224,7 +253,7 @@ namespace LambdaEngine
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to retrive SwapChain-Images");
-			return false;
+			return result;
 		}
 
 		m_Buffers.Resize(imageCount);
@@ -270,19 +299,12 @@ namespace LambdaEngine
 			m_BufferViews[i]->Init(&textureViewDesc);
 		}
 
-		result = AquireNextImage();
-		if (result != VK_SUCCESS)
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
+		return AquireNextImage();
 	}
 
-	bool SwapChainVK::InitSurface()
+	VkResult SwapChainVK::InitSurface()
 	{
+		VkResult result = VK_SUCCESS;
 		ReleaseSurface();
 
 		// Create platform specific surface
@@ -294,7 +316,9 @@ namespace LambdaEngine
 			info.pNext = nullptr;
 			info.flags = 0;
 			info.pView = m_Desc.Window->GetView();
-			if (vkCreateMacOSSurfaceMVK(m_pDevice->Instance, &info, nullptr, &m_Surface))
+			
+			result = vkCreateMacOSSurfaceMVK(m_pDevice->Instance, &info, nullptr, &m_Surface);
+			if (result != VK_SUCCESS)
 			{
 				m_Surface = VK_NULL_HANDLE;
 			}
@@ -308,17 +332,19 @@ namespace LambdaEngine
 			info.flags		= 0;
 			info.hwnd		= reinterpret_cast<HWND>(m_Desc.pWindow->GetHandle());
 			info.hinstance	= PlatformApplication::Get().GetInstanceHandle();
-			if (vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface) != VK_SUCCESS)
+			
+			result = vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface);
+			if (result != VK_SUCCESS)
 			{
 				m_Surface = VK_NULL_HANDLE;
 			}
 		}
 #endif
 
-		if (m_Surface == VK_NULL_HANDLE)
+		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("[SwapChainVK]: Failed to create surface for SwapChain");
-			return false;
+			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create surface for SwapChain");
+			return result;
 		}
 		else
 		{
@@ -332,16 +358,16 @@ namespace LambdaEngine
 		if (!presentSupport)
 		{
 			LOG_ERROR("[SwapChainVK]: Queue does not support presentation");
-			return false;
+			return VK_ERROR_UNKNOWN;
 		}
 
 		// Get supported surface formats
 		uint32 formatCount = 0;
-		VkResult result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, nullptr);
+		result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, nullptr);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
-			return false;
+			return result;
 		}
 
 		TArray<VkSurfaceFormatKHR> formats(formatCount);
@@ -371,7 +397,7 @@ namespace LambdaEngine
 				LOG_ERROR("    %s", VkFormatToString(availableFormat.format));
 			}
 
-			return false;
+			return result;
 		}
 
 		// Get presentation modes
@@ -380,7 +406,7 @@ namespace LambdaEngine
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface presentation modes");
-			return false;
+			return result;
 		}
 
 		TArray<VkPresentModeKHR> presentModes(presentModeCount);
@@ -415,7 +441,7 @@ namespace LambdaEngine
 
 		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
 
-		return true;
+		return result;
 	}
 
 	VkExtent2D SwapChainVK::GetSizeFromSurface(uint32 width, uint32 height)
@@ -440,13 +466,13 @@ namespace LambdaEngine
 		}
 		else
 		{
-			newExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, width));
-			newExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, height));
+			newExtent.width		= std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, width));
+			newExtent.height	= std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, height));
 		}
-		newExtent.width = std::max(newExtent.width, 1u);
-		newExtent.height = std::max(newExtent.height, 1u);
-		extent.width = newExtent.width;
-		extent.height = newExtent.height;
+		newExtent.width		= std::max(newExtent.width, 1u);
+		newExtent.height	= std::max(newExtent.height, 1u);
+		extent.width	= newExtent.width;
+		extent.height	= newExtent.height;
 
 		return extent;
 	}
@@ -508,8 +534,12 @@ namespace LambdaEngine
 		result = vkQueuePresentKHR(reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->GetQueue(), &presentInfo);
 		if (result == VK_SUCCESS)
 		{
-			m_SemaphoreIndex = (m_SemaphoreIndex + 1) % m_Desc.BufferCount;
+			AquireNextBufferIndex();
 			result = AquireNextImage();
+		}
+		else if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			result = HandleOutOfDate();
 		}
 
 		if (result != VK_SUCCESS)
@@ -536,16 +566,13 @@ namespace LambdaEngine
 
 		m_Desc.Width	= width;
 		m_Desc.Height	= height;
-
-		RenderAPI::GetGraphicsQueue()->Flush();
-		RenderAPI::GetComputeQueue()->Flush();
-		RenderAPI::GetCopyQueue()->Flush();
+		m_Desc.pQueue->Flush();
 
 		PreSwapChainRecreatedEvent preEvent = {};
 		EventQueue::SendEventImmediate(preEvent);
 		ReleaseInternal();
 
-		if (InitInternal())
+		if (InitInternal() == VK_SUCCESS)
 		{
 			PostSwapChainRecreatedEvent postEvent = {};
 			EventQueue::SendEventImmediate(postEvent);

@@ -24,6 +24,8 @@
 
 #include "Engine/EngineLoop.h"
 
+//#define PRINT_FUNC
+
 namespace LambdaEngine
 {
 	GUIRenderer::GUIRenderer()
@@ -95,8 +97,7 @@ namespace LambdaEngine
 
 		m_AvailableDescriptorSets.Clear();
 
-		SAFERELEASE(m_pMainRenderPassClearDS);
-		SAFERELEASE(m_pMainRenderPassLoadDS);
+		SAFERELEASE(m_pMainRenderPass);
 
 		if (!GUIPipelineStateCache::Release())
 		{
@@ -159,7 +160,6 @@ namespace LambdaEngine
 		renderTargetDesc.SampleCount	= sampleCount;
 
 		GUIRenderTarget* pRenderTarget = new GUIRenderTarget();
-
 		if (!pRenderTarget->Init(&renderTargetDesc))
 		{
 			LOG_ERROR("[GUIRenderer]: Failed to create GUI Render Target");
@@ -177,7 +177,6 @@ namespace LambdaEngine
 		const GUIRenderTarget* pOriginal = reinterpret_cast<const GUIRenderTarget*>(pSurface);
 
 		GUIRenderTarget* pRenderTarget = new GUIRenderTarget();
-
 		if (!pRenderTarget->Init(pOriginal->GetDesc()))
 		{
 			LOG_ERROR("[GUIRenderer]: Failed to create GUI Render Target");
@@ -216,15 +215,40 @@ namespace LambdaEngine
 
 	void GUIRenderer::UpdateTexture(Noesis::Texture* pTexture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* pData)
 	{
-		CommandList* pCommandList = BeginOrGetUtilityCommandList();
+		EndCurrentRenderPass();
 
-		GUITexture* pGUITexture = reinterpret_cast<GUITexture*>(pTexture);
+#ifdef PRINT_FUNC
+		LOG_INFO("UpdateTexture");
+#endif
+
+		CommandList*	pCommandList	= BeginOrGetUtilityCommandList();
+		GUITexture*		pGUITexture		= reinterpret_cast<GUITexture*>(pTexture);
 		pGUITexture->UpdateTexture(pCommandList, level, x, y, width, height, pData, ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 	}
 
 	void GUIRenderer::BeginRender(bool offscreen)
 	{
 		UNREFERENCED_VARIABLE(offscreen);
+
+		if (!m_IsInRenderPass)
+		{
+			CommandList* pCommandList = BeginOrGetRenderCommandList();
+			if (!offscreen)
+			{
+				BeginMainRenderPass(pCommandList);
+#ifdef PRINT_FUNC
+				LOG_INFO("BeginRender");
+#endif
+			}
+			else
+			{
+				BeginTileRenderPass(pCommandList);
+#ifdef PRINT_FUNC
+				LOG_INFO("BeginRender[Offscreen]");
+#endif
+			}
+		}
+
 	}
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)
@@ -232,11 +256,19 @@ namespace LambdaEngine
 		VALIDATE(pSurface != nullptr);
 		
 		m_pCurrentRenderTarget = reinterpret_cast<GUIRenderTarget*>(pSurface);
+		EndCurrentRenderPass();
+
+#ifdef PRINT_FUNC
+		LOG_INFO("SetRenderTarget");
+#endif
 	}
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
 	{
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
+		
+		// Do not set to false here will check in end tile if we were in a renderpass
+		EndCurrentRenderPass();
 
 		Viewport viewport = { };
 		viewport.MinDepth	= 0.0f;
@@ -256,26 +288,26 @@ namespace LambdaEngine
 
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		BeginRenderPassDesc beginRenderPass = {};
-		beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
-		beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
-		beginRenderPass.RenderTargetCount	= 1;
-		beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
-		beginRenderPass.Width				= surfaceWidth;
-		beginRenderPass.Height				= surfaceHeight;
-		beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
-		beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
-		beginRenderPass.Offset.x			= 0;
-		beginRenderPass.Offset.y			= 0;
+		m_CurrentSurfaceWidth	= surfaceWidth;
+		m_CurrentSurfaceHeight	= surfaceHeight;
 
-		pCommandList->BeginRenderPass(&beginRenderPass);
+#ifdef PRINT_FUNC
+		LOG_INFO("BeginTile");
+#endif
 	}
 
 	void GUIRenderer::EndTile()
 	{
-		CommandList* pCommandList = BeginOrGetRenderCommandList();
-		pCommandList->EndRenderPass();
+		EndCurrentRenderPass();
+		m_TileBegun				= false;
+		m_CurrentSurfaceWidth	= 0;
+		m_CurrentSurfaceHeight	= 0;
+
+		ResumeRenderPass();
+
+#ifdef PRINT_FUNC
+		LOG_INFO("EndTile");
+#endif
 	}
 
 	void GUIRenderer::ResolveRenderTarget(Noesis::RenderTarget* pSurface, const Noesis::Tile* pTiles, uint32_t numTiles)
@@ -283,23 +315,30 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pSurface);
 		UNREFERENCED_VARIABLE(pTiles);
 		UNREFERENCED_VARIABLE(pSurface);
+
+#ifdef PRINT_FUNC
+		LOG_INFO("ResolveRenderTarget");
+#endif
 	}
 
 	void GUIRenderer::EndRender()
 	{
+		EndCurrentRenderPass();
+		m_RenderPassBegun = false;
+
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
-
-		EndMainRenderPass(pCommandList);
-
 		pCommandList->End();
+
+#ifdef PRINT_FUNC
+		LOG_INFO("EndRender");
+#endif
 	}
 
 	void* GUIRenderer::MapVertices(uint32_t bytes)
 	{
-		CommandList* pCommandList = BeginOrGetRenderCommandList();
-		
-		EndMainRenderPass(pCommandList);
-
+#ifdef PRINT_FUNC
+		LOG_INFO("MapVertices");
+#endif
 		m_RequiredVertexBufferSize = uint64(bytes);
 		m_pVertexStagingBuffer = StagingBufferCache::RequestBuffer(m_RequiredVertexBufferSize);
 		return m_pVertexStagingBuffer->Map();
@@ -307,9 +346,13 @@ namespace LambdaEngine
 
 	void GUIRenderer::UnmapVertices()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("UnmapVertices");
+#endif
 		m_pVertexStagingBuffer->Unmap();
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
+		EndCurrentRenderPass();
 
 		//Update Vertex Buffer
 		{
@@ -328,10 +371,16 @@ namespace LambdaEngine
 
 			pCommandList->CopyBuffer(m_pVertexStagingBuffer, 0, m_pVertexBuffer, 0, m_RequiredVertexBufferSize);
 		}
+
+		ResumeRenderPass();
 	}
 
 	void* GUIRenderer::MapIndices(uint32_t bytes)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("MapIndices");
+#endif
+
 		m_RequiredIndexBufferSize = uint64(bytes);
 		m_pIndexStagingBuffer = StagingBufferCache::RequestBuffer(m_RequiredIndexBufferSize);
 		return m_pIndexStagingBuffer->Map();
@@ -339,9 +388,13 @@ namespace LambdaEngine
 
 	void GUIRenderer::UnmapIndices()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("UnmapIndices");
+#endif
 		m_pIndexStagingBuffer->Unmap();
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
+		EndCurrentRenderPass();
 
 		//Update Index Buffer
 		{
@@ -362,7 +415,7 @@ namespace LambdaEngine
 			pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT16);
 		}
 
-		BeginMainRenderPass(pCommandList);
+		ResumeRenderPass();
 	}
 
 	void GUIRenderer::DrawBatch(const Noesis::Batch& batch)
@@ -389,8 +442,10 @@ namespace LambdaEngine
 
 			GUITexture* pTextTexture = nullptr;
 
-			if		(batch.glyphs	!= nullptr)	pTextTexture = reinterpret_cast<GUITexture*>(batch.glyphs);
-			else if (batch.image	!= nullptr)	pTextTexture = reinterpret_cast<GUITexture*>(batch.image);
+			if (batch.glyphs != nullptr)	
+				pTextTexture = reinterpret_cast<GUITexture*>(batch.glyphs);
+			else if (batch.image != nullptr)	
+				pTextTexture = reinterpret_cast<GUITexture*>(batch.image);
 
 			if (pTextTexture != nullptr)
 			{
@@ -444,12 +499,36 @@ namespace LambdaEngine
 			uint64 paramsSize		= sizeof(GUIParamsData);
 
 			DescriptorSet* pDescriptorSet = CreateOrGetDescriptorSet();
-			pDescriptorSet->WriteBufferDescriptors(&pParamsBuffer,		&paramsOffset,		&paramsSize,		0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-			if (batch.pattern != 0) pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.pattern)->GetTextureViewToBind(),	&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.ramps != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.ramps)->GetTextureViewToBind(),		&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.image != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.image)->GetTextureViewToBind(),		&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.glyphs != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.glyphs)->GetTextureViewToBind(),	&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 4, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-			if (batch.shadow != 0)	pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.shadow)->GetTextureViewToBind(),	&m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 5, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			pDescriptorSet->WriteBufferDescriptors(&pParamsBuffer, &paramsOffset, &paramsSize, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+			if (batch.pattern != nullptr) 
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.pattern)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			if (batch.ramps != nullptr)	
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.ramps)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 2, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			
+			if (batch.image != nullptr)
+			{
+				// Cannot explain why we need this part, but we get no validation errors now
+				GUITexture* pTexture = reinterpret_cast<GUITexture*>(batch.image);
+				{
+					EndCurrentRenderPass();
+
+					pRenderCommandList->TransitionBarrier(
+						pTexture->GetTexture(),
+						PIPELINE_STAGE_FLAG_TOP,
+						PIPELINE_STAGE_FLAG_PIXEL_SHADER,
+						0,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_SHADER_READ,
+						ETextureState::TEXTURE_STATE_DONT_CARE,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+				}
+
+				pDescriptorSet->WriteTextureDescriptors(pTexture->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 3, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			}
+
+			if (batch.glyphs != nullptr)	
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.glyphs)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 4, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+			if (batch.shadow != nullptr)	
+				pDescriptorSet->WriteTextureDescriptors(reinterpret_cast<GUITexture*>(batch.shadow)->GetTextureViewToBind(), &m_pGUISampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 5, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 
 			pRenderCommandList->BindDescriptorSetGraphics(pDescriptorSet, GUIPipelineStateCache::GetPipelineLayout(), 0);
 		}
@@ -464,6 +543,7 @@ namespace LambdaEngine
 				batch.renderState.f.stencilMode,
 				batch.renderState.f.colorEnable != 0,
 				batch.renderState.f.blendMode	!= 0,
+				m_TileBegun,
 				shaderData);
 
 			Viewport viewport = { };
@@ -493,6 +573,11 @@ namespace LambdaEngine
 
 			pRenderCommandList->BindVertexBuffers(&m_pVertexBuffer, 0, &vertexByteOffset, 1);
 
+			ResumeRenderPass();
+
+#ifdef PRINT_FUNC
+			LOG_INFO("Draw");
+#endif
 			pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
 		}
 	}
@@ -602,6 +687,9 @@ namespace LambdaEngine
 		CommandList** ppSecondaryExecutionStage,
 		bool sleeping)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("Render");
+#endif
 		m_ModFrameIndex		= modFrameIndex;
 		m_BackBufferIndex	= backBufferIndex;
 
@@ -656,7 +744,6 @@ namespace LambdaEngine
 
 		if (!sleeping)
 		{
-			m_RenderPassClearBegun = false;
 			m_View->GetRenderer()->RenderOffscreen();
 			m_View->GetRenderer()->Render();
 
@@ -724,7 +811,7 @@ namespace LambdaEngine
 			const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
 
 			BeginRenderPassDesc beginRenderPassDesc = {};
-			beginRenderPassDesc.pRenderPass			= m_RenderPassClearBegun ? m_pMainRenderPassLoadDS : m_pMainRenderPassClearDS;
+			beginRenderPassDesc.pRenderPass			= m_pMainRenderPass;
 			beginRenderPassDesc.ppRenderTargets		= &pBackBuffer;
 			beginRenderPassDesc.RenderTargetCount	= 1;
 			beginRenderPassDesc.pDepthStencil		= m_DepthStencilTextureView.Get();
@@ -737,17 +824,36 @@ namespace LambdaEngine
 			beginRenderPassDesc.Offset.y			= 0;
 
 			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-			m_RenderPassBegun		= true;
-			m_RenderPassClearBegun	= true;
+			m_RenderPassBegun	= true;
+			m_IsInRenderPass	= true;
 		}
 	}
 
-	void GUIRenderer::EndMainRenderPass(CommandList* pCommandList)
+	void GUIRenderer::BeginTileRenderPass(CommandList* pCommandList)
 	{
-		if (m_RenderPassBegun)
+		//Begin RenderPass
+		if (!m_TileBegun)
 		{
-			pCommandList->EndRenderPass();
-			m_RenderPassBegun = false;
+			if (m_pCurrentRenderTarget)
+			{
+				BeginRenderPassDesc beginRenderPass = {};
+				beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
+				beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
+				beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
+				beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
+				beginRenderPass.Width				= m_CurrentSurfaceWidth;
+				beginRenderPass.Height				= m_CurrentSurfaceHeight;
+				beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+				beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
+				beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
+				beginRenderPass.Offset.x			= 0;
+				beginRenderPass.Offset.y			= 0;
+
+				pCommandList->BeginRenderPass(&beginRenderPass);
+				m_IsInRenderPass = true;
+			}
+			
+			m_TileBegun = true;
 		}
 	}
 
@@ -794,6 +900,47 @@ namespace LambdaEngine
 		}
 
 		return pDescriptorSet;
+	}
+
+	void GUIRenderer::ResumeRenderPass()
+	{
+		if (!m_IsInRenderPass)
+		{
+			CommandList* pCommandList = BeginOrGetRenderCommandList();
+			if (m_RenderPassBegun)
+			{
+				m_RenderPassBegun = false;
+				BeginMainRenderPass(pCommandList);
+#ifdef PRINT_FUNC
+				LOG_INFO("Resuming Main");
+#endif
+			}
+
+			if (m_TileBegun)
+			{
+				m_TileBegun = false;
+				BeginTileRenderPass(pCommandList);
+
+#ifdef PRINT_FUNC
+				LOG_INFO("Resuming Tile");
+#endif
+			}
+		}
+	}
+
+	void GUIRenderer::EndCurrentRenderPass()
+	{
+		// If we are currently rendering we exit the current renderpass
+		if (m_IsInRenderPass)
+		{
+			CommandList* pCommandList = BeginOrGetRenderCommandList();
+			pCommandList->EndRenderPass();
+
+			m_IsInRenderPass = false;
+#ifdef PRINT_FUNC
+			LOG_INFO("Ending RenderPass");
+#endif
+		}
 	}
 
 	bool GUIRenderer::CreateCommandLists()
@@ -920,7 +1067,7 @@ namespace LambdaEngine
 		depthStencilAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_DONT_CARE;
 		depthStencilAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_STORE;
-		depthStencilAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+		depthStencilAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
@@ -935,29 +1082,16 @@ namespace LambdaEngine
 		subpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		{
-			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DONT_CARE;
-			depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_CLEAR;
-
-			RenderPassDesc renderPassDesc = {};
-			renderPassDesc.DebugName			= "GUI Render Pass Clear DS";
-			renderPassDesc.Attachments			= { colorAttachmentDesc, depthStencilAttachmentDesc };
-			renderPassDesc.Subpasses			= { subpassDesc };
-			renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
-
-			m_pMainRenderPassClearDS = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
-		}
-
-		{
-			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+			depthStencilAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 			depthStencilAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_LOAD;
 
 			RenderPassDesc renderPassDesc = {};
-			renderPassDesc.DebugName			= "GUI Render Pass Load DS";
+			renderPassDesc.DebugName			= "GUI Render Pass";
 			renderPassDesc.Attachments			= { colorAttachmentDesc, depthStencilAttachmentDesc };
 			renderPassDesc.Subpasses			= { subpassDesc };
 			renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 
-			m_pMainRenderPassLoadDS = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
+			m_pMainRenderPass = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
 		}
 
 		m_pMainRenderPassClearColors[0].Color[0]	= 0.0f;

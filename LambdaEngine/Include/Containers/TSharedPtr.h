@@ -1,11 +1,14 @@
 #pragma once
 #include "TUniquePtr.h"
 
+#include <atomic>
+
 namespace LambdaEngine
 {
 	/*
 	* Struct Counting references in TWeak- and TSharedPtr
 	*/
+
 	struct PtrControlBlock
 	{
 	public:
@@ -19,8 +22,8 @@ namespace LambdaEngine
 
 		inline ~PtrControlBlock()
 		{
-			m_WeakReferences = 0;
-			m_StrongReferences = 0;
+			m_WeakReferences	= 0;
+			m_StrongReferences	= 0;
 		}
 
 		FORCEINLINE RefType AddWeakRef() noexcept
@@ -54,13 +57,14 @@ namespace LambdaEngine
 		}
 
 	private:
-		RefType m_WeakReferences;
-		RefType m_StrongReferences;
+		std::atomic<RefType> m_WeakReferences;
+		std::atomic<RefType> m_StrongReferences;
 	};
 
 	/*
 	* TDelete
 	*/
+
 	template<typename T>
 	struct TDelete
 	{
@@ -86,6 +90,7 @@ namespace LambdaEngine
 	/*
 	* Base class for TWeak- and TSharedPtr
 	*/
+
 	template<typename T, typename D>
 	class TPtrBase
 	{

@@ -194,11 +194,11 @@ namespace LambdaEngine
 
 	bool ResourceLoader::LoadSceneFromFile(
 		const String& filepath,
-		const TArray<SpecialObjectDesc>& specialObjectDescriptions,
+		const TArray<SpecialObjectOnLoadDesc>& specialObjectDescriptions,
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObject>& specialObjects,
+		TArray<SpecialObjectOnLoad>& specialObjects,
 		TArray<Mesh*>& meshes,
 		TArray<Animation*>& animations,
 		TArray<LoadedMaterial*>& materials,
@@ -223,13 +223,6 @@ namespace LambdaEngine
 			aiProcess_PreTransformVertices		|
 			aiProcess_FindInvalidData;
 
-		// Prevent crashes in assimp when using this flag
-		String path = ConvertSlashes(filepath);
-		if (path.find(".obj") == String::npos)
-		{
-			//assimpFlags |= aiProcess_PopulateArmatureData;
-		}
-
 		SceneLoadRequest loadRequest = 
 		{
 			.Filepath					= ConvertSlashes(filepath),
@@ -242,7 +235,8 @@ namespace LambdaEngine
 			.Animations					= animations,
 			.MeshComponents				= meshComponents,
 			.pMaterials					= &materials,
-			.pTextures					= &textures
+			.pTextures					= &textures,
+			.AnimationsOnly 			= false
 		};
 
 		return LoadSceneWithAssimp(loadRequest);
@@ -277,10 +271,10 @@ namespace LambdaEngine
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 
-		const TArray<SpecialObjectDesc>		specialObjectDescriptions;
-		TArray<LoadedDirectionalLight>		directionalLightComponents;
-		TArray<LoadedPointLight>			pointLightComponents;
-		TArray<SpecialObject>				specialObjects;
+		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		TArray<LoadedDirectionalLight>			directionalLightComponents;
+		TArray<LoadedPointLight>				pointLightComponents;
+		TArray<SpecialObjectOnLoad>				specialObjects;
 
 		SceneLoadRequest loadRequest =
 		{
@@ -295,6 +289,7 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponent,
 			.pMaterials					= nullptr,
 			.pTextures					= nullptr,
+			.AnimationsOnly 			= false
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -325,6 +320,70 @@ namespace LambdaEngine
 		}
 
 		return meshes[biggest];
+	}
+
+	TArray<Animation*> ResourceLoader::LoadAnimationsFromFile(const String& filepath)
+	{
+		int32 assimpFlags =
+			aiProcess_FindInstances			|
+			aiProcess_JoinIdenticalVertices	|
+			aiProcess_ImproveCacheLocality	|
+			aiProcess_LimitBoneWeights		|
+			aiProcess_Triangulate			|
+			aiProcess_FindDegenerates		|
+			aiProcess_OptimizeMeshes		|
+			aiProcess_OptimizeGraph			|
+			aiProcess_FindInvalidData;
+
+		// Prevent crashes in assimp when using this flag
+		String path = ConvertSlashes(filepath);
+		if (path.find(".obj") == String::npos)
+		{
+			assimpFlags |= aiProcess_PopulateArmatureData;
+		}
+
+		TArray<Mesh*>						meshes;
+		TArray<Animation*>					animations;
+		TArray<MeshComponent>				meshComponent;
+		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		TArray<LoadedDirectionalLight>			directionalLightComponents;
+		TArray<LoadedPointLight>				pointLightComponents;
+		TArray<SpecialObjectOnLoad>				specialObjects;
+
+		SceneLoadRequest loadRequest =
+		{
+			.Filepath					= ConvertSlashes(filepath),
+			.AssimpFlags				= assimpFlags,
+			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.DirectionalLights			= directionalLightComponents,
+			.PointLights				= pointLightComponents,
+			.SpecialObjects				= specialObjects,
+			.Meshes						= meshes,
+			.Animations					= animations,
+			.MeshComponents				= meshComponent,
+			.pMaterials					= nullptr,
+			.pTextures					= nullptr,
+			.AnimationsOnly				= true
+		};
+
+		if (!LoadSceneWithAssimp(loadRequest))
+		{
+			return animations;
+		}
+
+		// In case there are meshes -> delete them
+		if (!meshes.IsEmpty())
+		{
+			for (Mesh* pMesh : meshes)
+			{
+				SAFEDELETE(pMesh);
+			}
+
+			meshes.Clear();
+		}
+
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Animations \"%s\"", filepath.c_str());
+		return animations;
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
@@ -837,6 +896,8 @@ namespace LambdaEngine
 			//Moving Average
 			centroid += (vertexPosition - centroid) / float32(vertexIdx + 1);
 		}
+
+		LOG_INFO("Bounding Box: %f %f %f", halfExtent.x, halfExtent.y, halfExtent.z);
 	}
 
 	void ResourceLoader::LoadVertices(Mesh* pMesh, glm::vec3& centroid, const aiMesh* pMeshAI)
@@ -883,6 +944,8 @@ namespace LambdaEngine
 
 			pMesh->Vertices[vertexIdx] = vertex;
 		}
+
+		LOG_INFO("Bounding Box: %f %f %f", halfExtent.x, halfExtent.y, halfExtent.z);
 	}
 
 	void ResourceLoader::LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI)
@@ -1321,7 +1384,10 @@ namespace LambdaEngine
 		}
 
 		// Load all meshes
-		ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		if (!sceneLoadRequest.AnimationsOnly)
+		{
+			ProcessAssimpNode(context, pScene->mRootNode, pScene);
+		}
 
 		// Load all animations
 		if (pScene->mNumAnimations > 0)
@@ -1379,10 +1445,10 @@ namespace LambdaEngine
 		String nodeName = pNode->mName.C_Str();
 		bool loadNormally	= false;
 		bool isSpecial		= false;
-		TArray<SpecialObject*> specialObjectToBeSet;
+		TArray<SpecialObjectOnLoad*> specialObjectToBeSet;
 
 		//Check if there are any special object descriptions referencing this object
-		for (const SpecialObjectDesc& specialObjectDesc : context.SpecialObjectDescriptions)
+		for (const SpecialObjectOnLoadDesc& specialObjectDesc : context.SpecialObjectDescriptions)
 		{
 			size_t prefixIndex = nodeName.find(specialObjectDesc.Prefix);
 
@@ -1397,7 +1463,7 @@ namespace LambdaEngine
 					loadNormally = true;
 				}
 
-				SpecialObject specialObject =
+				SpecialObjectOnLoad specialObject =
 				{
 					.Prefix		= specialObjectDesc.Prefix,
 					.Name		= nodeName.substr(specialObjectDesc.Prefix.length() + 1)
@@ -1446,7 +1512,7 @@ namespace LambdaEngine
 				newMeshComponent.MaterialGUID = context.MaterialIndices[pMeshAI->mMaterialIndex];
 				context.MeshComponents.PushBack(newMeshComponent);
 
-				for (SpecialObject* pSpecialObject : specialObjectToBeSet)
+				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
 				{
 					pSpecialObject->Centroids.PushBack(centroid);
 					pSpecialObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
@@ -1463,7 +1529,7 @@ namespace LambdaEngine
 				glm::vec3 centroid;
 				LoadBoundingBox(boundingBox, centroid, pMeshAI);
 
-				for (SpecialObject* pSpecialObject : specialObjectToBeSet)
+				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
 				{
 					pSpecialObject->Centroids.PushBack(centroid);
 					pSpecialObject->BoundingBoxes.PushBack(boundingBox);

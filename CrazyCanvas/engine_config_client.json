@@ -4,7 +4,7 @@
     600
   ],
   "FixedTimestep": 60,
-  "RayTracingEnabled": false,
+  "RayTracingEnabled": true,
   "MeshShadersEnabled": true,
   "ShowRenderGraph": false,
   "EnableLineRenderer": false,

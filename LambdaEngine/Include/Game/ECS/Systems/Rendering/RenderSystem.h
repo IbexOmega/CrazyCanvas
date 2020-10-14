@@ -281,6 +281,7 @@ namespace LambdaEngine
 		void UpdateTransform(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
 
+		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
 
