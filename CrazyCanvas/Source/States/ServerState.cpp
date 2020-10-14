@@ -31,8 +31,6 @@ ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 
-	m_ServerName = "Crazy Canvas Server";
-
 	SAFEDELETE(m_pLevel);
 }
 
@@ -45,7 +43,7 @@ void ServerState::Init()
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	//NetworkDiscovery::EnableServer("Crazy Canvas", 4444, this);
+	m_ServerName = "Crazy Canvas Server";
 
 	// Load scene
 	{

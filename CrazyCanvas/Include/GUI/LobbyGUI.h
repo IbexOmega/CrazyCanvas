@@ -19,7 +19,6 @@ enum ErrorCode
 	CONNECT_ERROR,
 	HOST_ERROR,
 	OTHER_ERROR
-
 };
 
 #include "Application/API/Events/NetworkEvents.h"
@@ -42,7 +41,7 @@ public:
 	
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	bool OnServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
+	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
 
 private:
 	void SetRenderStagesActive();

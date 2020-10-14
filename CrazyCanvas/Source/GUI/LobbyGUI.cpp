@@ -33,7 +33,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
-	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerFound);
+	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
 	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
 
 	const char* pIP = "192.168.1.65";
@@ -46,7 +46,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 
 LobbyGUI::~LobbyGUI()
 {
-	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerFound);
+	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
 }
 
 bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
@@ -66,7 +66,7 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-bool LobbyGUI::OnServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
+bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
 {
 	BinaryDecoder* pDecoder = event.pDecoder;
 	const IPEndPoint* pEndPoint = event.pEndPoint;

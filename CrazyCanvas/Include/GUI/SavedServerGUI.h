@@ -99,4 +99,6 @@ private:
 
     Noesis::Ptr<Noesis::ListBox> m_SavedServerList;
     Noesis::Ptr<Noesis::ListBox> m_LocalServerList;
+
+    std::unordered_map<>
 };
