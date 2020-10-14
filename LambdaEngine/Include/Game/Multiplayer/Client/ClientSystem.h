@@ -65,6 +65,7 @@ namespace LambdaEngine
 		NetworkPositionSystem m_NetworkPositionSystem;
 		PlayerSystem m_PlayerSystem;
 		String m_Name;
+		bool m_DebuggingWindow;
 
 	private:
 		static ClientSystem* s_pInstance;

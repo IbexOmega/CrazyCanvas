@@ -26,6 +26,8 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Game/GameConsole.h"
+
 namespace LambdaEngine
 {
 	ClientSystem* ClientSystem::s_pInstance = nullptr;
@@ -35,7 +37,8 @@ namespace LambdaEngine
 		m_CharacterControllerSystem(),
 		m_NetworkPositionSystem(),
 		m_PlayerSystem(),
-		m_Name(name)
+		m_Name(name),
+		m_DebuggingWindow(false)
 	{
 		MultiplayerUtils::Init(false);
 
@@ -56,6 +59,14 @@ namespace LambdaEngine
 		m_PlayerSystem.Init();
 
 		NetworkDiscovery::EnableClient(m_Name, this);
+
+		ConsoleCommand netStatsCmd;
+		netStatsCmd.Init("show_net_stats", m_DebuggingWindow);
+		netStatsCmd.AddArg(Arg::EType::BOOL);
+		netStatsCmd.AddDescription("Activate/Deactivate Network debugging window.\n\t'show_net_stats true'");
+		GameConsole::Get().BindCommand(netStatsCmd, [&, this](GameConsole::CallbackInput& input)->void {
+			m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
+		});
 	}
 
 	ClientSystem::~ClientSystem()
@@ -101,7 +112,9 @@ namespace LambdaEngine
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
-		NetworkDebugger::RenderStatistics(m_pClient);
+		if(m_DebuggingWindow)
+			NetworkDebugger::RenderStatistics(m_pClient);
+
 		m_PlayerSystem.TickMainThread(deltaTime, m_pClient);
 	}
 
