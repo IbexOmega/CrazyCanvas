@@ -24,26 +24,18 @@
 #include "Application/API/Events/EventQueue.h"
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "Engine/EngineConfig.h"
+
 namespace LambdaEngine
 {
 	ClientSystem* ClientSystem::s_pInstance = nullptr;
 
-	ClientSystem::ClientSystem() :
+	ClientSystem::ClientSystem(const String& name) :
 		m_pClient(nullptr),
 		m_CharacterControllerSystem(),
 		m_NetworkPositionSystem(),
-		m_PlayerSystem()
-	{
-
-	}
-
-	ClientSystem::~ClientSystem()
-	{
-		m_pClient->Release();
-		MultiplayerUtils::Release();
-	}
-
-	void ClientSystem::Init()
+		m_PlayerSystem(),
+		m_Name(name)
 	{
 		MultiplayerUtils::Init(false);
 
@@ -62,10 +54,20 @@ namespace LambdaEngine
 		m_CharacterControllerSystem.Init();
 		m_NetworkPositionSystem.Init();
 		m_PlayerSystem.Init();
+
+		NetworkDiscovery::EnableClient(m_Name, this);
+	}
+
+	ClientSystem::~ClientSystem()
+	{
+		m_pClient->Release();
+		MultiplayerUtils::Release();
 	}
 
 	bool ClientSystem::Connect(IPAddress* pAddress)
 	{
+		NetworkDiscovery::DisableClient();
+
 		if (pAddress == IPAddress::LOOPBACK)
 		{
 			MultiplayerUtils::s_IsSinglePlayer = true;
@@ -83,7 +85,7 @@ namespace LambdaEngine
 
 		MultiplayerUtils::s_IsSinglePlayer = false;
 
-		if (!m_pClient->Connect(IPEndPoint(pAddress, 4444)))
+		if (!m_pClient->Connect(IPEndPoint(pAddress, EngineConfig::GetIntProperty("NetworkPort"))))
 		{
 			LOG_ERROR("Failed to connect!");
 			return false;
@@ -105,40 +107,36 @@ namespace LambdaEngine
 
 	void ClientSystem::OnConnecting(IClient* pClient)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		ClientConnectingEvent event(pClient);
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientSystem::OnConnected(IClient* pClient)
 	{
-		ClientConnectedEvent event = {};
-		event.pClient = pClient;
-
+		ClientConnectedEvent event(pClient);
 		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientSystem::OnDisconnecting(IClient* pClient)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		ClientDisconnectingEvent event(pClient);
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientSystem::OnDisconnected(IClient* pClient)
 	{
-		ClientDisconnectedEvent event = {};
-		event.pClient = pClient;
-
+		ClientDisconnectedEvent event(pClient);
 		EventQueue::SendEventImmediate(event);
+
+		NetworkDiscovery::EnableClient(m_Name, this);
 	}
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-		PacketReceivedEvent event = {};
-		event.pClient = pClient;
-		event.pPacket = pPacket;
-		event.Type = pPacket->GetType();
-
+		PacketReceivedEvent event(pClient, pPacket);
 		EventQueue::SendEventImmediate(event);
 
-		if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
+		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
 		{
 			BinaryDecoder decoder(pPacket);
 			bool isMySelf = decoder.ReadBool();
@@ -156,7 +154,14 @@ namespace LambdaEngine
 
 	void ClientSystem::OnServerFull(IClient* pClient)
 	{
-		UNREFERENCED_VARIABLE(pClient);
+		ServerFullEvent event(pClient);
+		EventQueue::SendEventImmediate(event);
+	}
+
+	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint)
+	{
+		ServerDiscoveredEvent event(&decoder, &endPoint);
+		EventQueue::SendEventImmediate(event);
 	}
 
 	void ClientSystem::StaticFixedTickMainThread(Timestamp deltaTime)
