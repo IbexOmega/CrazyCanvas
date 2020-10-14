@@ -192,9 +192,14 @@ namespace LambdaEngine
 
 	void ECSCore::PerformComponentRegistrations()
 	{
+		// Register all components first, then publish them
 		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
 		{
 			m_EntityRegistry.RegisterComponentType(component.first, component.second);
+		}
+
+		for (const std::pair<Entity, const ComponentType*>& component : m_ComponentsToRegister)
+		{
 			m_EntityPublisher.PublishComponent(component.first, component.second);
 		}
 

@@ -37,7 +37,7 @@ namespace LambdaEngine
 		accelerationStructureCreateInfo.compactedSize		= 0;
 		accelerationStructureCreateInfo.maxGeometryCount	= 1;
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
-		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 		if (pDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 		{
 			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;

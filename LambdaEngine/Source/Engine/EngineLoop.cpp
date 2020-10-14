@@ -44,11 +44,11 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
-#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+#include "Game/World/LevelObjectCreator.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -114,11 +114,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!PlayerMovementSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
 		TransformApplierSystem::GetInstance()->Init();
 		return true;
 	}
@@ -163,7 +158,7 @@ namespace LambdaEngine
 		// Rendering
 #ifdef LAMBDA_DEVELOPMENT
 		// TODO: Move to somewere else, does someone have a suggestion?
-		ImGuiRenderer::Get().DrawUI([]
+		ImGuiRenderer::Get().DrawUI([delta]
 		{
 			const ImGuiWindowFlags flags =
 				ImGuiWindowFlags_NoBackground	|
@@ -186,6 +181,9 @@ namespace LambdaEngine
 			if (ImGui::Begin("BuildInfo", (bool*)(0), flags))
 			{
 				const GraphicsDeviceDesc& desc = RenderAPI::GetDevice()->GetDesc();
+				ImGui::Text("RunInfo:");
+				ImGui::Text("FPS: %.2f", 1.0f / delta.AsSeconds());
+				ImGui::Spacing();
 				ImGui::Text("BuildInfo:");
 				ImGui::Text("CrazyCanvas [%s Build]", LAMBDA_CONFIG_NAME);
 				ImGui::Text("API: %s", desc.RenderApi.c_str());
@@ -220,8 +218,6 @@ namespace LambdaEngine
 		// Game
 		Game::Get().FixedTick(delta);
 
-		// States / ECS-systems
-		PlayerMovementSystem::GetInstance().FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
@@ -319,6 +315,11 @@ namespace LambdaEngine
 		{
 			return false;
 		}
+
+		/*if (!LevelObjectCreator::Init())
+		{
+			return false;
+		}*/
 
 		if (!InitSystems())
 		{

@@ -53,7 +53,6 @@ namespace LambdaEngine
 		{
 			auto onStaticCollisionRemoval = std::bind(&PhysicsSystem::OnStaticCollisionRemoval, this, std::placeholders::_1);
 			auto onDynamicCollisionRemoval = std::bind(&PhysicsSystem::OnDynamicCollisionRemoval, this, std::placeholders::_1);
-			auto onCharacterColliderRemoval = std::bind(&PhysicsSystem::OnCharacterColliderRemoval, this, std::placeholders::_1);
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -73,14 +72,6 @@ namespace LambdaEngine
 						{NDA, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}, {RW, VelocityComponent::Type()}
 					},
 					.OnEntityRemoval = onDynamicCollisionRemoval
-				},
-				{
-					.pSubscriber = &m_CharacterColliderEntities,
-					.ComponentAccesses =
-					{
-						{RW, CharacterColliderComponent::Type()}, {RW, PositionComponent::Type()}, {RW, VelocityComponent::Type()}
-					},
-					.OnEntityRemoval = onCharacterColliderRemoval
 				}
 			};
 			systemReg.Phase = 1;
@@ -89,7 +80,6 @@ namespace LambdaEngine
 
 			SetComponentOwner<StaticCollisionComponent>({ std::bind(&PhysicsSystem::StaticCollisionDestructor, this, std::placeholders::_1) });
 			SetComponentOwner<DynamicCollisionComponent>({ std::bind(&PhysicsSystem::DynamicCollisionDestructor, this, std::placeholders::_1) });
-			SetComponentOwner<CharacterColliderComponent>({ std::bind(&PhysicsSystem::CharacterColliderDestructor, this, std::placeholders::_1) });
 		}
 
 		// PhysX setup
@@ -175,8 +165,6 @@ namespace LambdaEngine
 	void PhysicsSystem::Tick(Timestamp deltaTime)
 	{
 		const float32 dt = (float32)deltaTime.AsSeconds();
-
-		TickCharacterControllers(dt);
 
 		m_pScene->simulate(dt);
 		m_pScene->fetchResults(true);
@@ -462,84 +450,6 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsSystem::OnCharacterColliderRemoval(Entity entity)
-	{
-		CharacterColliderComponent& characterCollider = ECSCore::GetInstance()->GetComponent<CharacterColliderComponent>(entity);
-		PxActor* pActor = characterCollider.pController->getActor();
-		if (pActor)
-		{
-			m_pScene->removeActor(*pActor);
-		}
-	}
-
-	void PhysicsSystem::TickCharacterControllers(float32 dt)
-	{
-		// TODO: Temporary solution until there's a separate camera entity with an offset
-		constexpr const float characterHeight = 1.8f;
-
-		ECSCore* pECS = ECSCore::GetInstance();
-		ComponentArray<CharacterColliderComponent>* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-		for (Entity entity : m_CharacterColliderEntities)
-		{
-			const PositionComponent& positionComp = pPositionComponents->GetData(entity);
-			const glm::vec3& position = positionComp.Position;
-
-			VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
-			glm::vec3& velocity = velocityComp.Velocity;
-
-			PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
-			translationPX *= dt;
-
-			CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
-			PxController* pController = characterCollider.pController;
-
-			const PxExtendedVec3 oldPositionPX = pController->getPosition();
-
-			if (positionComp.Dirty)
-			{
-				// Distance between the capsule's feet to its center position. Includes contact offset.
-				const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-				pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
-			}
-
-			pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
-
-			const PxExtendedVec3& newPositionPX = pController->getPosition();
-			velocity = {
-				newPositionPX.x - oldPositionPX.x,
-				newPositionPX.y - oldPositionPX.y,
-				newPositionPX.z - oldPositionPX.z
-			};
-
-			velocity /= dt;
-
-			if (glm::length2(velocity) > glm::epsilon<float>())
-			{
-				// Disable vertical movement if the character is on the ground
-				PxControllerState controllerState;
-				pController->getState(controllerState);
-				if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
-				{
-					velocity.y = 0.0f;
-				}
-
-				// Update entity's position
-				PositionComponent& positionCompMutable = const_cast<PositionComponent&>(positionComp);
-				positionCompMutable.Dirty = true;
-				glm::vec3& positionMutable = const_cast<glm::vec3&>(position);
-
-				positionMutable = {
-					newPositionPX.x,
-					pController->getFootPosition().y + characterHeight,
-					newPositionPX.z
-				};
-			}
-		}
-	}
-
 	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
@@ -622,9 +532,7 @@ namespace LambdaEngine
 		);
 
 		PxControllerFilters controllerFilters(pFilterData);
-		return {
-			.pController	= pController,
-			.Filters		= controllerFilters
-		};
+
+		return { pController, controllerFilters };
 	}
 }

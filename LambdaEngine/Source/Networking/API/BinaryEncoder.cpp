@@ -96,4 +96,9 @@ namespace LambdaEngine
 	{
 		WriteBuffer((const uint8*)&value.data, sizeof(glm::vec4));
 	}
+
+	void BinaryEncoder::WriteQuat(const glm::quat& value)
+	{
+		WriteBuffer((const uint8*)&value.data, sizeof(glm::quat));
+	}
 }

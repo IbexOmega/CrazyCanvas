@@ -6,6 +6,8 @@
 
 #include "ECS/ECSCore.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 namespace LambdaEngine
 {
 	AnimationSystem::AnimationSystem()
@@ -19,152 +21,50 @@ namespace LambdaEngine
 
 	void AnimationSystem::Animate(AnimationComponent& animation)
 	{
-		Animation* pAnimation = ResourceManager::GetAnimation(animation.AnimationGUID);
-		VALIDATE(pAnimation);
-
-		Skeleton* pSkeleton = animation.Pose.pSkeleton;
-		VALIDATE(pSkeleton);
-
 		// Make sure we have enough matrices
-		if (animation.Pose.LocalTransforms.GetSize() < pSkeleton->Joints.GetSize())
+		Skeleton& skeleton = *animation.Pose.pSkeleton;
+		if (animation.Pose.LocalTransforms.GetSize() < skeleton.Joints.GetSize())
 		{
-			animation.Pose.LocalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
+			animation.Pose.LocalTransforms.Resize(skeleton.Joints.GetSize(), glm::mat4(1.0f));
 		}
 
-		if (animation.Pose.GlobalTransforms.GetSize() < pSkeleton->Joints.GetSize())
+		if (animation.Pose.GlobalTransforms.GetSize() < skeleton.Joints.GetSize())
 		{
-			animation.Pose.GlobalTransforms.Resize(pSkeleton->Joints.GetSize(), glm::mat4(1.0f));
+			animation.Pose.GlobalTransforms.Resize(skeleton.Joints.GetSize(), glm::mat4(1.0f));
 		}
 
-		// Get localtime for the clip
-		float64 localTime = (GetTotalTimeInSeconds() - animation.StartTime);
-		if (animation.IsLooping)
+		// Call the graphs tick
+		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
+
+		if (m_ChangeState)
 		{
-			if (animation.NumLoops != INFINITE_LOOPS)
+			if (animation.Graph.GetCurrentState().GetName() == "running")
 			{
-				float64 totalDuration = animation.NumLoops * pAnimation->DurationInSeconds();
-				localTime = glm::clamp(localTime, 0.0, totalDuration);
+				animation.Graph.TransitionToState("walking");
 			}
-
-			localTime = fmod(localTime, pAnimation->DurationInSeconds());
-		}
-		else
-		{
-			localTime = glm::clamp(localTime, 0.0, pAnimation->DurationInSeconds());
+			else
+			{
+				animation.Graph.TransitionToState("running");
+			}
 		}
 
-		const float64 normalizedLocalTime = localTime / pAnimation->DurationInSeconds();
-
-		// Convert into ticks
-		const float64 ticksPerSeconds = fabs(animation.PlaybackSpeed) * pAnimation->TicksPerSecond;
-		float64 time = localTime * ticksPerSeconds;
-		if (animation.PlaybackSpeed < 0.0)
+		// Create localtransforms
+		const TArray<SQT>& currentFrame = animation.Graph.GetCurrentFrame();
+		for (uint32 i = 0; i < currentFrame.GetSize(); i++)
 		{
-			time = pAnimation->DurationInTicks - time;
+			const SQT& sqt = currentFrame[i];
+
+			glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
+			transform			= transform * glm::toMat4(sqt.Rotation);
+			transform			= glm::scale(transform, sqt.Scale);
+			animation.Pose.LocalTransforms[i] = transform;
 		}
-
-		// Find keyframes
-		for (Animation::Channel& channel : pAnimation->Channels)
+		
+		// Create global transforms
+		for (uint32 i = 0; i < skeleton.Joints.GetSize(); i++)
 		{
-			// Retrive the bone ID
-			auto it = pSkeleton->JointMap.find(channel.Name);
-			if (it == pSkeleton->JointMap.end())
-			{
-				continue;
-			}
-
-			const uint32 boneID = it->second;
-
-			// Interpolate position
-			glm::vec3 position;
-			{
-				// If the clip is looping the last frame is redundant
-				const uint32 numPositions = animation.IsLooping ? channel.Positions.GetSize() - 1 : channel.Positions.GetSize();
-
-				Animation::Channel::KeyFrame pos0 = channel.Positions[0];
-				Animation::Channel::KeyFrame pos1 = channel.Positions[0];
-				if (numPositions > 1)
-				{
-					for (uint32 i = 0; i < (numPositions - 1); i++)
-					{
-						if (time < channel.Positions[i + 1].Time)
-						{
-							pos0 = channel.Positions[i];
-							pos1 = channel.Positions[i + 1];
-							break;
-						}
-					}
-				}
-
-				const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
-				position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
-			}
-
-			// Interpolate rotation
-			glm::quat rotation;
-			{
-				// If the clip is looping the last frame is redundant
-				const uint32 numRotations = animation.IsLooping ? channel.Rotations.GetSize() - 1 : channel.Rotations.GetSize();
-
-				Animation::Channel::RotationKeyFrame rot0 = channel.Rotations[0];
-				Animation::Channel::RotationKeyFrame rot1 = channel.Rotations[0];
-				if (numRotations > 1)
-				{
-					for (uint32 i = 0; i < (numRotations - 1); i++)
-					{
-						if (time < channel.Rotations[i + 1].Time)
-						{
-							rot0 = channel.Rotations[i];
-							rot1 = channel.Rotations[i + 1];
-							break;
-						}
-					}
-				}
-
-				const float64 factor = (rot1.Time != rot0.Time) ? (time - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
-				rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
-				rotation = glm::normalize(rotation);
-			}
-
-			// Interpolate scale
-			glm::vec3 scale;
-			{
-				// If the clip is looping the last frame is redundant
-				const uint32 numScales = animation.IsLooping ? channel.Scales.GetSize() - 1 : channel.Scales.GetSize();
-
-				Animation::Channel::KeyFrame scale0 = channel.Scales[0];
-				Animation::Channel::KeyFrame scale1 = channel.Scales[0];
-				if (numScales > 1)
-				{
-					for (uint32 i = 0; i < (numScales - 1); i++)
-					{
-						if (time < channel.Scales[i + 1].Time)
-						{
-							scale0 = channel.Scales[i];
-							scale1 = channel.Scales[i + 1];
-							break;
-						}
-					}
-				}
-
-				const float64 factor = (scale1.Time != scale0.Time) ? (time - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
-				scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
-			}
-
-			// Calculate transform
-			glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
-			transform			= transform * glm::toMat4(rotation);
-			transform			= glm::scale(transform, scale);
-
-			// Increase boneID
-			animation.Pose.LocalTransforms[boneID] = transform;
-		}
-
-		// Calculate global transforms
-		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
-		{
-			const Joint& joint = pSkeleton->Joints[i];
-			animation.Pose.GlobalTransforms[i] = pSkeleton->InverseGlobalTransform * ApplyParent(joint, *pSkeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
+			const Joint& joint = skeleton.Joints[i];
+			animation.Pose.GlobalTransforms[i] = skeleton.InverseGlobalTransform * ApplyParent(joint, skeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
 		}
 	}
 
@@ -180,14 +80,14 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
-	void AnimationSystem::OnEntityAdded(Entity entity)
+	bool AnimationSystem::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
 	{
-		if (m_HasInitClock)
+		if (keyPressedEvent.Key == EKey::KEY_Q)
 		{
-			ECSCore* pECSCore = ECSCore::GetInstance();
-			AnimationComponent& animationComp = pECSCore->GetComponent<AnimationComponent>(entity);
-			animationComp.StartTime = GetTotalTimeInSeconds();
+			m_ChangeState = true;
 		}
+
+		return false;
 	}
 
 	bool AnimationSystem::Init()
@@ -196,17 +96,18 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
-				.pSubscriber = &m_AnimationEntities,
-				.ComponentAccesses =
+				.pSubscriber		= &m_AnimationEntities,
+				.ComponentAccesses	=
 				{
 					{ RW, AnimationComponent::Type() }
 				},
-				.OnEntityAdded = std::bind(&AnimationSystem::OnEntityAdded, this, std::placeholders::_1)
-			}
+			},
 		};
+
 		systemReg.Phase = 0;
 		RegisterSystem(systemReg);
 
+		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
 		return true;
 	}
 
@@ -219,24 +120,12 @@ namespace LambdaEngine
 		if (!m_HasInitClock)
 		{
 			m_Clock.Reset();
-
-			// If we are initializing the clock we now need to init all the animations since they were not initialized in OnEntityAdded
-			for (Entity entity : m_AnimationEntities.GetIDs())
-			{
-				AnimationComponent& animation = pAnimationComponents->GetData(entity);
-				if (animation.StartTime != 0.0)
-				{
-					animation.StartTime = GetTotalTimeInSeconds();
-				}
-			}
-
 			m_HasInitClock = true;
 		}
 
 		// Animation system has its own clock to keep track of time
 		m_Clock.Tick();
 
-		Timestamp deltatime = m_Clock.GetDeltaTime();
 		for (Entity entity : m_AnimationEntities.GetIDs())
 		{
 			AnimationComponent& animation = pAnimationComponents->GetData(entity);
@@ -245,6 +134,8 @@ namespace LambdaEngine
 				Animate(animation);
 			}
 		}
+
+		m_ChangeState = false;
 	}
 
 	AnimationSystem& AnimationSystem::GetInstance()

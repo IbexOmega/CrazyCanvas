@@ -31,6 +31,7 @@ namespace LambdaEngine
 
 	constexpr const char* SCENE_DIR			= "../Assets/Scenes/";
 	constexpr const char* MESH_DIR			= "../Assets/Meshes/";
+	constexpr const char* ANIMATIONS_DIR	= MESH_DIR; // Equal to mesh dir for now
 	constexpr const char* TEXTURE_DIR		= "../Assets/Textures/";
 	constexpr const char* SHADER_DIR		= "../Assets/Shaders/";
 	constexpr const char* SOUND_DIR			= "../Assets/Sounds/";
@@ -38,7 +39,7 @@ namespace LambdaEngine
 	struct SceneLoadDesc
 	{
 		String	Filename = "";
-		TArray<SpecialObjectDesc> SpecialObjectDescriptions = {};
+		TArray<SpecialObjectOnLoadDesc> SpecialObjectDescriptions = {};
 	};
 
 	class LAMBDA_API ResourceManager
@@ -81,23 +82,30 @@ namespace LambdaEngine
 			TArray<MeshComponent>& meshComponents,
 			TArray<LoadedDirectionalLight>& directionalLights,
 			TArray<LoadedPointLight>& pointLights,
-			TArray<SpecialObject>& specialObjects,
+			TArray<SpecialObjectOnLoad>& specialObjects,
 			const String& directory = SCENE_DIR);
 
 		/*
 		* Load a mesh from file
-		*	filename - The name of the .obj file
+		*	filename - The name of the file
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadMeshFromFile(const String& filename);
 
 		/*
 		* Load a mesh from file
-		*	filename	- The name of the .obj file
-		*	animations	- GUIDs for all the animations
+		*	filename	- The name of the file
+		*	animations	- TArray with valid GUIDs for all the animations
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadMeshFromFile(const String& filename, TArray<GUID_Lambda>& animations);
+
+		/*
+		* Load a mesh from file
+		*	filename	- The name of the file
+		* return - a TArray with valid GUIDs if the animations was loaded, otherwise returns an empty TArray
+		*/
+		static TArray<GUID_Lambda> LoadAnimationsFromFile(const String& filename);
 
 		/*
 		* Load a mesh from memory
@@ -265,7 +273,7 @@ namespace LambdaEngine
 		static std::unordered_map<String, GUID_Lambda>			s_MeshNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_MaterialNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_AnimationNamesToGUIDs;
-		static std::unordered_map<String, TArray<GUID_Lambda>>	s_MeshNamesToAnimationGUIDs;
+		static std::unordered_map<String, TArray<GUID_Lambda>>	s_FileNamesToAnimationGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_TextureNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_ShaderNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>			s_SoundEffectNamesToGUIDs;

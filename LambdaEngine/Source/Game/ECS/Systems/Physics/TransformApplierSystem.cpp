@@ -6,6 +6,7 @@
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Physics/Collision.h"
 
 namespace LambdaEngine
 {
@@ -46,7 +47,7 @@ namespace LambdaEngine
 		const float32 dt = (float32)deltaTime.AsSeconds();
 
 		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		auto* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
 		const auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 		const auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		auto* pCameraComponents			= pECS->GetComponentArray<CameraComponent>();

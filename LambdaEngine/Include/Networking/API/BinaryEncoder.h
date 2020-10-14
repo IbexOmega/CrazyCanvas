@@ -33,6 +33,8 @@ namespace LambdaEngine
 		void WriteVec3(const glm::vec3& value);
 		void WriteVec4(const glm::vec4& value);
 
+		void WriteQuat(const glm::quat& value);
+
 	private:
 		NetworkSegment* m_pNetworkPacket;
 	};
