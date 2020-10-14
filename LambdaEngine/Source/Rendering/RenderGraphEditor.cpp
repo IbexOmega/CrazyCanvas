@@ -1540,15 +1540,30 @@ namespace LambdaEngine
 
 				if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 				{
-					char drawBufferMask[9];
-					sprintf(drawBufferMask, "%08x", pResourceState->DrawArgsMask);
+					if ((pResourceState->DrawArgsIncludeMask & pResourceState->DrawArgsExcludeMask) > 0)
+					{
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "It's not valid to have Include mask and Exclude mask overlap");
+					}
 
-					ImGui::Text("\tDraw Buffer Mask (Hex)");
+					char drawBufferMask[9];
+					sprintf(drawBufferMask, "%08x", pResourceState->DrawArgsIncludeMask);
+
+					ImGui::Text("\tDraw Buffer Include Mask (Hex)");
 					ImGui::SameLine();
 					ImGui::SetNextItemWidth(ImGui::CalcTextSize("FFFFFFFF").x + ImGui::GetFrameHeight());
-					if (ImGui::InputText("##Draw Buffer Mask", drawBufferMask, ARR_SIZE(drawBufferMask), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll))
+					if (ImGui::InputText("##Draw Buffer Include Mask", drawBufferMask, ARR_SIZE(drawBufferMask), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll))
 					{
-						sscanf(drawBufferMask, "%08x", &pResourceState->DrawArgsMask);
+						sscanf(drawBufferMask, "%08x", &pResourceState->DrawArgsIncludeMask);
+					}
+
+					sprintf(drawBufferMask, "%08x", pResourceState->DrawArgsExcludeMask);
+
+					ImGui::Text("\tDraw Buffer Exclude Mask (Hex)");
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(ImGui::CalcTextSize("FFFFFFFF").x + ImGui::GetFrameHeight());
+					if (ImGui::InputText("##Draw Buffer Exclude Mask", drawBufferMask, ARR_SIZE(drawBufferMask), ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll))
+					{
+						sscanf(drawBufferMask, "%08x", &pResourceState->DrawArgsExcludeMask);
 					}
 				}
 

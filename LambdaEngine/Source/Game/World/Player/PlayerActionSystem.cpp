@@ -14,17 +14,18 @@
 #include "Input/API/InputActionSystem.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 namespace LambdaEngine
 {
 	PlayerActionSystem::PlayerActionSystem()
 	{
-
+		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
 	}
 
 	PlayerActionSystem::~PlayerActionSystem()
 	{
-
+		EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
 	}
 
 	void PlayerActionSystem::Init()
@@ -41,6 +42,27 @@ namespace LambdaEngine
 		float addedPitch = dt * float(InputActionSystem::IsActive("CAM_ROT_UP") - InputActionSystem::IsActive("CAM_ROT_DOWN"));
 		float addedYaw = dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
 
+		if (m_MouseEnabled)
+		{
+			const MouseState& mouseState = Input::GetMouseState();
+
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+			const int32 halfWidth		= int32(0.5f * float32(window->GetWidth()));
+			const int32 halfHeight	= int32(0.5f * float32(window->GetHeight()));
+
+			const glm::vec2 mouseDelta(mouseState.Position.x - halfWidth, mouseState.Position.y - halfHeight);
+
+			if (glm::length(mouseDelta) > glm::epsilon<float>())
+			{
+				//Todo: Move this into some settings file
+				constexpr const float MOUSE_SPEED_FACTOR = 0.35f;
+				addedYaw -= MOUSE_SPEED_FACTOR * (float)mouseDelta.x * dt;
+				addedPitch -= MOUSE_SPEED_FACTOR * (float)mouseDelta.y * dt;
+			}
+
+			CommonApplication::Get()->SetMousePosition(halfWidth, halfHeight);
+		}
+
 		if (glm::abs(addedPitch) > 0.0f || glm::abs(addedYaw) > 0.0f)
 		{
 			ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
@@ -56,6 +78,17 @@ namespace LambdaEngine
 				glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw
 				glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
 		}
+	}
+
+	bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
+	{
+		if (event.Key == EKey::KEY_KEYPAD_0)
+		{
+			m_MouseEnabled = !m_MouseEnabled;
+			CommonApplication::Get()->SetMouseVisibility(!m_MouseEnabled);
+		}
+
+		return false;
 	}
 
 	void PlayerActionSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState)

@@ -203,7 +203,8 @@ namespace LambdaEngine
 	{
 		String							ResourceName		= "";
 		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
-		uint32							DrawArgsMask		= 0x0;
+		uint32							DrawArgsIncludeMask	= 0x0;
+		uint32							DrawArgsExcludeMask	= 0x0;
 
 		struct
 		{
@@ -274,7 +275,8 @@ namespace LambdaEngine
 		ERenderGraphResourceBindingType	PrevBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceBindingType	NextBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
-		uint32							DrawArgsMask		= 0x0;
+		uint32							DrawArgsIncludeMask	= 0x0;
+		uint32							DrawArgsExcludeMask	= 0x0;
 	};
 
 	struct SynchronizationStageDesc
@@ -301,6 +303,30 @@ namespace LambdaEngine
 		uint32					pExtensionMasks[MAX_EXTENSIONS_PER_MESH_TYPE];
 		DrawArgExtensionData	pExtensions[MAX_EXTENSIONS_PER_MESH_TYPE];
 		uint32					ExtensionCount = 0;
+	};
+
+	struct DrawArgMaskDesc
+	{
+		union
+		{
+			uint64 FullMask;
+
+			struct
+			{
+				uint32 IncludeMask;
+				uint32 ExcludeMask;
+			};
+		};
+
+		inline bool operator<(const DrawArgMaskDesc& other) const noexcept
+		{
+			return FullMask < other.FullMask;
+		}
+
+		inline bool operator==(const DrawArgMaskDesc& other) const noexcept
+		{
+			return FullMask == other.FullMask;
+		}
 	};
 
 	struct DrawArg
@@ -354,13 +380,14 @@ namespace LambdaEngine
 
 	struct EditorRenderGraphResourceState
 	{
-		String							ResourceName		= "";
-		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
-		String							RenderStageName		= "";
-		bool							Removable			= true;
-		uint32							DrawArgsMask		= 1;
-		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
-		int32							InputLinkIndex		= -1;
+		String							ResourceName			= "";
+		ERenderGraphResourceType		ResourceType			= ERenderGraphResourceType::NONE;
+		String							RenderStageName			= "";
+		bool							Removable				= true;
+		uint32							DrawArgsIncludeMask		= 1;
+		uint32							DrawArgsExcludeMask		= 0;
+		ERenderGraphResourceBindingType BindingType				= ERenderGraphResourceBindingType::NONE;
+		int32							InputLinkIndex			= -1;
 		TSet<int32>						OutputLinkIndices;
 	};
 
