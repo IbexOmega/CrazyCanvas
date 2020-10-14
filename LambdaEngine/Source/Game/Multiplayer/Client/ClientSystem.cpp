@@ -121,13 +121,13 @@ namespace LambdaEngine
 	void ClientSystem::OnConnecting(IClient* pClient)
 	{
 		ClientConnectingEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientSystem::OnConnected(IClient* pClient)
 	{
 		ClientConnectedEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientSystem::OnDisconnecting(IClient* pClient)
@@ -139,7 +139,7 @@ namespace LambdaEngine
 	void ClientSystem::OnDisconnected(IClient* pClient)
 	{
 		ClientDisconnectedEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 
 		NetworkDiscovery::EnableClient(m_Name, this);
 	}
@@ -168,7 +168,7 @@ namespace LambdaEngine
 	void ClientSystem::OnServerFull(IClient* pClient)
 	{
 		ServerFullEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID)

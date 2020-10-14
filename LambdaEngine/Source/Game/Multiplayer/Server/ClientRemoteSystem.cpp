@@ -91,25 +91,25 @@ namespace LambdaEngine
 		m_pClient = (ClientRemoteBase*)pClient;
 
 		ClientConnectingEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientRemoteSystem::OnConnected(IClient* pClient)
 	{
 		ClientConnectedEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientRemoteSystem::OnDisconnecting(IClient* pClient)
 	{
 		ClientDisconnectingEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientRemoteSystem::OnDisconnected(IClient* pClient)
 	{
 		ClientDisconnectedEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientRemoteSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
