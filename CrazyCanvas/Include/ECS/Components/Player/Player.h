@@ -5,13 +5,10 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 
+#include "Game/ECS/Components/Player/PlayerComponent.h"
+
 namespace LambdaEngine
 {
-	struct PlayerTag
-	{
-		DECL_COMPONENT(PlayerTag);
-	};
-
 	class PlayerGroup : public IComponentGroup
 	{
 	public:
@@ -19,12 +16,12 @@ namespace LambdaEngine
 		{
 			return
 			{
-				PlayerTag, Position, Scale, Rotation, Velocity, CharacterCollider
+				PlayerBaseComponent, Position, Scale, Rotation, Velocity, CharacterCollider
 			};
 		}
 
 	public:
-		GroupedComponent<PlayerTag> PlayerTag;
+		GroupedComponent<PlayerBaseComponent> PlayerBaseComponent;
 
 		// Transform
 		GroupedComponent<PositionComponent>	Position;

@@ -12,12 +12,12 @@ namespace LambdaEngine
 		float SprintSpeedFactor = 1.6f;
 	};
 
-	struct PlayerLocalComponent : PlayerBaseComponent
+	struct PlayerLocalComponent
 	{
 		DECL_COMPONENT(PlayerLocalComponent);
 	};
 
-	struct PlayerForeignComponent : PlayerBaseComponent
+	struct PlayerForeignComponent
 	{
 		DECL_COMPONENT(PlayerForeignComponent);
 	};

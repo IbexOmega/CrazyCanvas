@@ -102,7 +102,6 @@ void SandboxState::Init()
 			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
 		Entity playerEntity = CreateFPSCameraEntity(cameraDesc);
-		pECS->AddComponent<PlayerTag>(playerEntity, {});
 
 		Entity weaponEntity = pECS->CreateEntity();
 		pECS->AddComponent<WeaponComponent>(weaponEntity, {
