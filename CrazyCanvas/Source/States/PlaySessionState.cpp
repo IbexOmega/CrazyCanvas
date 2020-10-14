@@ -46,6 +46,7 @@ void PlaySessionState::Init()
 	using namespace LambdaEngine;
 
 	// Initialize event listeners
+	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
 	m_WeaponSystem.Init();

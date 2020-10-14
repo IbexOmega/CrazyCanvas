@@ -73,6 +73,7 @@ SandboxState::~SandboxState()
 void SandboxState::Init()
 {
 	// Initialize event handlers
+	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
 	// Initialize Systems

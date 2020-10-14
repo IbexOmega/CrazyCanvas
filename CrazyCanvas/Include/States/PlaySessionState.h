@@ -4,6 +4,7 @@
 #include "Game/State.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+#include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
 class Level;
@@ -31,5 +32,6 @@ private:
 	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */
+	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
 };

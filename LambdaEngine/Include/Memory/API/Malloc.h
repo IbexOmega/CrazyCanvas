@@ -6,8 +6,7 @@
 * Delete and Release
 */
 
-#define DELETE_OBJECT(object)	delete(object); (object) = nullptr
-#define SAFEDELETE(object)		if ((object))	{ DELETE_OBJECT(object); }
+#define SAFEDELETE(object)		delete(object); (object) = nullptr
 
 #define DELETE_ARRAY(array)		delete[](array); (array) = nullptr
 #define SAFEDELETE_ARRAY(array)	if ((array))	{ DELETE_ARRAY(array); }
@@ -36,15 +35,15 @@ namespace LambdaEngine
 	{
 	public:
 		DECL_STATIC_CLASS(Malloc);
-		
+
 		static void* Allocate(uint64 sizeInBytes);
 		static void* Allocate(uint64 sizeInBytes, uint64 alignment);
 
 		static void* AllocateDbg(uint64 sizeInBytes, const char* pFileName, int32 lineNumber);
 		static void* AllocateDbg(uint64 sizeInBytes, uint64 alignment, const char* pFileName, int32 lineNumber);
-		
+
 		static void Free(void* pPtr);
-		
+
 		static void SetDebugFlags(uint16 debugFlags);
 
 	private:
