@@ -57,7 +57,7 @@ void PlaySessionState::Init()
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
 
-	if (m_pIPAddress != NetworkUtils::GetLocalAddress())
+	if (m_pIPAddress == NetworkUtils::GetLocalAddress())
 		ClientSystem::GetInstance().Connect(m_pIPAddress);
 	else
 		ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);

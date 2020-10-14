@@ -16,24 +16,18 @@ SavedServerGUI::SavedServerGUI(const LambdaEngine::String& xamlFile) :
 
 }
 
-void SavedServerGUI::Init(ListBox* pListView)
+void SavedServerGUI::Init(ListBox* pSavedListView, ListBox* pLocalListView)
 {
-	/*textBlock = *new ObservableCollection<TextBlock>();
-	tBlock = *new TextBlock("ChrilleBoi");
-	textBlock->Add(tBlock);
-	m_pSavedServerList->SetItemsSource(textBlock);*/
-	
-	m_SavedServerList = *pListView;
-
+	m_SavedServerList = *pSavedListView;
+	m_LocalServerList = *pLocalListView;
 }
 
 SavedServerGUI::~SavedServerGUI()
 {
 }
 
-void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal)
 {
-	
 	Ptr<Grid> grid = *new Grid();
 
 	for (int i = 0; i < 4; i++)
@@ -53,14 +47,14 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 
 	Ptr<TextBlock> serverName	= *new TextBlock();
 	Ptr<TextBlock> mapName		= *new TextBlock();
-	Ptr<TextBlock> ping		= *new TextBlock();
-	Ptr<Rectangle> isRun	= *new Rectangle();
+	Ptr<TextBlock> ping			= *new TextBlock();
+	Ptr<Rectangle> isRun		= *new Rectangle();
+	Ptr<SolidColorBrush> brush	= *new SolidColorBrush();
 
 	serverName->SetText(pServerN);
 	mapName->SetText(pMapN);
 	ping->SetText(pPing);
 
-	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
 	Color color = Color();
 
 	if (isRun)
@@ -81,13 +75,23 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	grid->SetColumn(isRun, 3);
 	//grid->SetRow(pServerName, m_ItemCount++);
 
-
 	LOG_MESSAGE(pParentGrid->GetName());
 	LOG_MESSAGE(m_SavedServerList->GetName());
 
-	if (m_SavedServerList->GetItems()->Add(grid) == -1)
+	if (!isLocal)
 	{
-		LOG_ERROR("SKIT ON ME");
+		if (m_SavedServerList->GetItems()->Add(grid) == -1)
+		{
+			LOG_ERROR("Refreshing Saved List");
+		}
 	}
+	else
+	{
+		if (m_LocalServerList->GetItems()->Add(grid) == -1)
+		{
+			LOG_ERROR("Refreshing Local List");
+		}
+	}
+
 }
 

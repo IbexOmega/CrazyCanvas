@@ -36,7 +36,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
-	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"));
+	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"), FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST"));
 	ErrorPopUpClose();
 }
 
@@ -93,7 +93,10 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-	m_ServerList.AddServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69",true);
+
+	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+
+	m_ServerList.AddServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69", true, pLocalServers->GetIsSelected());
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)

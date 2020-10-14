@@ -93,15 +93,13 @@
                             <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Ping</TextBlock>
                             <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Status</TextBlock>
                         </Grid>
-                        <TabControl x:Name="Servers" Margin="0,20" Grid.Column="2" Grid.ColumnSpan="6" Background="#FF181919" Grid.Row="4" Grid.RowSpan="22">
-                            <TabItem Header="All Servers">
-                                <ListBox x:Name="SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="4" Grid.RowSpan="20" Margin="5,0,10,0" Background="#FF171717">
-                                    <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #1</ListBoxItem>
-                                    <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #2</ListBoxItem>
-                                    <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #3</ListBoxItem>
+                        <TabControl x:Name="SERVERS" Margin="0,20" Grid.Column="2" Grid.ColumnSpan="6" Background="#FF181919" Grid.Row="4" Grid.RowSpan="22">
+                            <TabItem x:Name="LOCAL" Header="Local Servers">
+                                <ListBox x:Name="LOCAL_SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="4" Grid.RowSpan="20" Margin="5,0,10,0" Background="#FF171717">
+
                                 </ListBox>
                             </TabItem>
-                            <TabItem Header="Your Servers">
+                            <TabItem x:Name="SAVED" Header="Saved Servers">
                                 <ListBox x:Name="SAVED_SERVER_LIST" Margin="5,0,10,0" Background="#FF171717">
 
                                 </ListBox>
