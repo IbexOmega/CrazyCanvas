@@ -80,12 +80,12 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	pDecoder->ReadString(mapName);
 
 	//m_ServerList.AddServerItem()
-	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+	/*Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-	m_ServerList.AddLocalServerItem(pServerGrid, serverName.c_str(), mapName.c_str(), std::to_string(players).c_str(), true);
+	m_ServerList.AddLocalServerItem(pServerGrid, serverName.c_str(), mapName.c_str(), std::to_string(players).c_str(), true);*/
 
 
-	LOG_INFO("Found server with name %s with %u players", serverName.c_str(), players);
+	LOG_INFO("Found server with name UID %llu", event.ServerUID);
 	return false;
 }
 

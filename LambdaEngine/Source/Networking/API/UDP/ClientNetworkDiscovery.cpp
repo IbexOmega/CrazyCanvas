@@ -154,7 +154,7 @@ namespace LambdaEngine
 			BinaryDecoder decoder(pPacket);
 			if (decoder.ReadString() == m_NameOfGame)
 			{
-				m_pHandler->OnServerFound(decoder, IPEndPoint(sender.GetAddress(), decoder.ReadUInt16()));
+				m_pHandler->OnServerFound(decoder, IPEndPoint(sender.GetAddress(), decoder.ReadUInt16()), m_Statistics.GetRemoteSalt());
 			}
 		}
 	}
