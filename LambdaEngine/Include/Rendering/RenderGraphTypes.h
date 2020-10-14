@@ -31,7 +31,7 @@ namespace LambdaEngine
 	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS			= "SCENE_COMBINED_MATERIAL_MAPS";
 
 	constexpr const char* PAINT_MASK_TEXTURES 					= "PAINT_MASK_TEXTURES";
-	
+
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4;
 
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0;
@@ -289,11 +289,12 @@ namespace LambdaEngine
 
 	struct DrawArgExtensionData
 	{
-		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]		= {nullptr};
-		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
-		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]		= { nullptr };
-		uint32			TextureCount								= 0;
-		uint32			ExtensionID									= 0; // Zero is an invalid id.
+		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]				= {nullptr};
+		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]			= { nullptr };
+		TextureView*	ppMipZeroTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
+		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
+		uint32			TextureCount										= 0;
+		uint32			ExtensionID											= 0; // Zero is an invalid id.
 	};
 
 	struct DrawArgExtensionGroup
@@ -317,7 +318,7 @@ namespace LambdaEngine
 
 		// Extensions
 		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount!
-		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used. 
+		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used.
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

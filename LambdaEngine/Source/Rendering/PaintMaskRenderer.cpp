@@ -312,7 +312,7 @@ namespace LambdaEngine
 						if (mask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* textureView = extension.ppTextureViews[0];
+							TextureView* textureView = extension.ppMipZeroTextureViews[0];
 							m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
@@ -429,7 +429,6 @@ namespace LambdaEngine
 			pCommandList->EndRenderPass();
 
 			pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-
 		}
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
