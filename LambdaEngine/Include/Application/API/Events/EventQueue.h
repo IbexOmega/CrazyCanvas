@@ -32,16 +32,6 @@ namespace LambdaEngine
 			m_Events.EmplaceBack(reinterpret_cast<TEvent*>(pMemory));
 		}
 
-		FORCEINLINE void Pop()
-		{
-			// Call destructor
-			m_Events.GetBack()->~Event();
-
-			// Then remove
-			m_Allocator.Pop();
-			m_Events.PopBack();
-		}
-
 		FORCEINLINE Event& At(uint32 index)
 		{
 			return *m_Events[index];
@@ -146,9 +136,7 @@ namespace LambdaEngine
 		{
 			std::scoped_lock<SpinLock> lock(s_EventLock);
 
-			EventType eventType = event.GetType();
-			VALIDATE(eventType == TEvent::GetStaticType());
-
+			VALIDATE(event.GetType() == TEvent::GetStaticType());
 			s_DeferredEvents.Push(event);
 		}
 		

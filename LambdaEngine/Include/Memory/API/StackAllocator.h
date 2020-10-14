@@ -81,10 +81,16 @@ namespace LambdaEngine
 		void* Push(uint32 size);
 
 		// Removes the last element
-		void Pop();
+		void Pop(uint32 size);
 
 		// Resets the whole stack
 		void Reset();
+
+		FORCEINLINE bool CanPop(uint32 size) const
+		{
+			VALIDATE(m_pCurrentArena != nullptr);
+			return m_pCurrentArena->CanPop(size);
+		}
 
 		template<typename T>
 		FORCEINLINE void* Allocate()
@@ -93,7 +99,6 @@ namespace LambdaEngine
 		}
 
 	private:
-		uint32 m_LastSize;
 		uint32 m_ArenaIndex;
 		uint32 m_SizePerArena;
 

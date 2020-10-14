@@ -8,7 +8,6 @@ namespace LambdaEngine
 
 	StackAllocator::StackAllocator(uint32 sizePerArena)
 		: m_ArenaIndex(0)
-		, m_LastSize(0)
 		, m_SizePerArena(sizePerArena)
 		, m_pCurrentArena(nullptr)
 		, m_Arenas()
@@ -40,7 +39,6 @@ namespace LambdaEngine
 		// Allocate
 		if (m_pCurrentArena->CanAllocate(size))
 		{
-			m_LastSize = size;
 			return m_pCurrentArena->Allocate(size);
 		}
 		else
@@ -49,11 +47,11 @@ namespace LambdaEngine
 		}
 	}
 
-	void StackAllocator::Pop()
+	void StackAllocator::Pop(uint32 size)
 	{
 		VALIDATE(m_pCurrentArena != nullptr);
 
-		if (!m_pCurrentArena->CanPop(m_LastSize))
+		if (!m_pCurrentArena->CanPop(size))
 		{
 			if (m_ArenaIndex > 0)
 			{
@@ -64,11 +62,11 @@ namespace LambdaEngine
 			}
 			else
 			{
-				m_pCurrentArena->Reset();
+				return;
 			}
 		}
 		
-		m_pCurrentArena->Pop(m_LastSize);
+		m_pCurrentArena->Pop(size);
 	}
 
 	void StackAllocator::Reset()
