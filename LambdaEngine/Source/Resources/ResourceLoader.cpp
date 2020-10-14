@@ -1509,10 +1509,10 @@ namespace LambdaEngine
 						//Assume Mixamo has replaced our rotation
 						glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
 						meshTransform				= meshTransform * AssimpToGLMMat4(pNode->mTransformation);
-					    glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
-					    pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
+						glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
+						pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
 
-                        LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+						LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
 					}
 				}
 

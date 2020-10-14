@@ -366,6 +366,8 @@ namespace LambdaEngine
 
 	bool EngineLoop::Release()
 	{
+		EventQueue::Release();
+
 		Input::Release();
 
 		if (!GameConsole::Get().Release())
