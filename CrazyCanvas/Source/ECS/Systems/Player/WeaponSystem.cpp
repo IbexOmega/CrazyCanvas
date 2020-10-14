@@ -90,7 +90,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		const int onCooldown = weaponComponent.CurrentCooldown > 0.0f;
 		weaponComponent.CurrentCooldown -= onCooldown * dt;
 
-		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT) && !onCooldown)
+		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD) && !onCooldown)
 		{
 			const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 			const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
