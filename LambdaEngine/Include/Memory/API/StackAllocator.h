@@ -58,7 +58,7 @@ namespace LambdaEngine
 
 		FORCEINLINE bool CanPop(uint32 size) const
 		{
-			return (int32(m_Offset) - int32(size)) >= 0;
+			return m_Offset >= size;
 		}
 
 	private:
