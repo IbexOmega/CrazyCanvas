@@ -26,30 +26,36 @@ SavedServerGUI::~SavedServerGUI()
 {
 }
 
-void SavedServerGUI::AddSavedServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+Ptr<Grid> SavedServerGUI::AddSavedServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
 {
-	if (m_SavedServerList->GetItems()->Add(AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning)) == -1)
+	Ptr<Grid> grid = AddServerItem(pParentGrid, serverInfo, isRunning);
+	if (m_SavedServerList->GetItems()->Add(grid) == -1)
 	{
 		LOG_ERROR("Refreshing Saved List");
 	}
+
+	return grid;
 }
 
-void SavedServerGUI::AddLocalServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+Ptr<Grid> SavedServerGUI::AddLocalServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
 {
-	if (m_LocalServerList->GetItems()->Add(AddServerItem(pParentGrid, pServerN, pMapN, pPing, isRunning)) == -1)
+	Ptr<Grid> grid = AddServerItem(pParentGrid, serverInfo, isRunning);
+	if (m_LocalServerList->GetItems()->Add(grid) == -1)
 	{
 		LOG_ERROR("Refreshing Local List");
 	}
+
+	return grid;
 }
 
-Ptr<Grid> SavedServerGUI::AddServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
 {
 	Ptr<Grid> grid = *new Grid();
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		Ptr<ColumnDefinition> columnDef = *new ColumnDefinition();
-		GridLength gridLength = GridLength(25, GridUnitType_Star);
+		GridLength gridLength = GridLength(20, GridUnitType_Star);
 		columnDef->SetWidth(gridLength);
 		grid->GetColumnDefinitions()->Add(columnDef);
 	}
@@ -63,14 +69,16 @@ Ptr<Grid> SavedServerGUI::AddServerItem(Noesis::Grid* pParentGrid, const char* p
 
 	Ptr<TextBlock> serverName = *new TextBlock();
 	Ptr<TextBlock> mapName = *new TextBlock();
+	Ptr<TextBlock> players = *new TextBlock();
 	Ptr<TextBlock> ping = *new TextBlock();
 	Ptr<Rectangle> isRun = *new Rectangle();
 	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
 
 
-	serverName->SetText(pServerN);
-	mapName->SetText(pMapN);
-	ping->SetText(pPing);
+	serverName->SetText(serverInfo.Name.c_str());
+	mapName->SetText(serverInfo.MapName.c_str());
+	players->SetText(std::to_string(serverInfo.Players).c_str());
+	ping->SetText(std::to_string(serverInfo.Ping).c_str());
 
 	Color color = Color();
 
@@ -83,22 +91,36 @@ Ptr<Grid> SavedServerGUI::AddServerItem(Noesis::Grid* pParentGrid, const char* p
 
 	grid->GetChildren()->Add(serverName);
 	grid->GetChildren()->Add(mapName);
+	grid->GetChildren()->Add(players);
 	grid->GetChildren()->Add(ping);
 	grid->GetChildren()->Add(isRun);
 
 	grid->SetColumn(serverName, 0);
 	grid->SetColumn(mapName, 1);
-	grid->SetColumn(ping, 2);
-	grid->SetColumn(isRun, 3);
+	grid->SetColumn(players, 2);
+	grid->SetColumn(ping, 3);
+	grid->SetColumn(isRun, 4);
 	//grid->SetRow(pServerName, m_ItemCount++);
 
 	return grid;
 }
 
 
-void SavedServerGUI::UpdateServerItems(const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal)
+void SavedServerGUI::UpdateServerItems(const ServerInfo& serverInfo)
 {
+	TextBlock* serverName	= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(0);
+	TextBlock* mapName		= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(1);
+	TextBlock* playerCount	= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(2);
+	TextBlock* ping			= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(3);
 
+	serverName->SetText(serverInfo.Name.c_str());
+	mapName->SetText(serverInfo.MapName.c_str());
+	ping->SetText(std::to_string(serverInfo.Ping).c_str());
+	playerCount->SetText(std::to_string(serverInfo.Players).c_str());
+
+
+
+	/*
 	if (!isLocal) 
 	{
 		ItemCollection* pItems = m_SavedServerList->GetItems();
@@ -147,6 +169,6 @@ void SavedServerGUI::UpdateServerItems(const char* pServerN, const char* pMapN, 
 		{
 			LOG_MESSAGE(grid->GetChildren()->Get(0)->ToString().Str());
 		}
-	}
+	}*/
 }
 

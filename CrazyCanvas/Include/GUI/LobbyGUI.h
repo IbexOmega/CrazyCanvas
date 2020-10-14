@@ -7,22 +7,12 @@
 #include "NsGui/Slider.h"*/
 
 #include "GUI/SavedServerGUI.h"
+#include "GUI/ServerInfo.h"
 
 struct HostGameDescription
 {
 	int8 PlayersNumber = -1;
 	int8 MapNumber = -1;
-};
-
-struct ServerInfo
-{
-	Noesis::Ptr<Noesis::Grid> ServerGrid;
-
-	std::string Name;
-	std::string MapName;
-	uint8 Players;
-	uint16 Ping;
-	LambdaEngine::Timestamp LastUpdate;
 };
 
 enum ErrorCode
@@ -53,6 +43,8 @@ public:
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
+
+
 
 private:
 	void SetRenderStagesActive();
