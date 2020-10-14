@@ -3552,10 +3552,13 @@ namespace LambdaEngine
 					TArray<PipelineBufferBarrierDesc>& drawBufferBarriers = pSynchronizationStage->DrawBufferBarriers[pBarrierInfo->SynchronizationTypeIndex];
 					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
 
+					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
+					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
+
 					if (pDesc->ExternalDrawArgsUpdate.Count != 0)
 					{
-						drawTextureBarriers.Clear();
 						drawBufferBarriers.Clear();
+						drawTextureBarriers.Clear();
 					}
 					else
 					{
@@ -3563,9 +3566,6 @@ namespace LambdaEngine
 						drawTextureBarriers.GetFront().pTexture = nullptr;
 						continue;
 					}
-
-					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
-					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
 
 					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
 					{
