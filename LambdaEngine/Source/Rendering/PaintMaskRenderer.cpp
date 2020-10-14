@@ -58,6 +58,11 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
 			m_pDeviceResourcesToDestroy.Clear();
 		}
+
+		for (auto& renderTarget : m_RenderTargets)
+		{
+			renderTarget.TextureView->Release();
+		}
 	}
 
 	bool PaintMaskRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
@@ -436,7 +441,8 @@ namespace LambdaEngine
 
 			pCommandList->EndRenderPass();
 
-			pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+			if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
+				pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 		}
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
