@@ -107,6 +107,28 @@ namespace LambdaEngine
 	};
 
 	/*
+	* BlendInfo -> Stores blending animation (Animation state can blend two animations)
+	*/
+
+	struct BlendInfo
+	{
+		inline BlendInfo()
+			: AnimationGUID(GUID_NONE)
+			, Weight(0.0f)
+		{
+		}
+
+		inline BlendInfo(GUID_Lambda animationGUID, float32 weight)
+			: AnimationGUID(animationGUID)
+			, Weight(weight)
+		{
+		}
+
+		GUID_Lambda	AnimationGUID;
+		float32		Weight;
+	};
+
+	/*
 	* AnimationState -> Stores the state of one animation
 	*/
 
@@ -122,7 +144,13 @@ namespace LambdaEngine
 		void Tick(const float64 deltaTime);
 		void Interpolate(const Skeleton& skeleton);
 
+		FORCEINLINE void SetBlendInfo(const BlendInfo& blendInfo)
+		{
+			m_BlendInfo = blendInfo;
+		}
+
 		Animation& GetAnimation() const;
+		Animation& GetBlendAnimation() const;
 
 		FORCEINLINE void StartUp(float64 startTime, float64 startAt = 0.0)
 		{
@@ -195,13 +223,15 @@ namespace LambdaEngine
 
 		FORCEINLINE const TArray<SQT>& GetCurrentFrame() const
 		{
-			return m_CurrentFrame;
+			return m_CurrentFrame0;
 		}
 
 	private:
 		glm::vec3 SamplePosition(Animation::Channel& channel, float64 time);
 		glm::vec3 SampleScale(Animation::Channel& channel, float64 time);
 		glm::quat SampleRotation(Animation::Channel& channel, float64 time);
+
+		void InternalInterpolate(Animation& animation, const Skeleton& skeleton, TArray<SQT>& currentFrame, float64 timestamp);
 
 		FORCEINLINE void SetAnimationGraph(AnimationGraph* pGraph)
 		{
@@ -211,6 +241,7 @@ namespace LambdaEngine
 
 	private:
 		AnimationGraph* m_pOwnerGraph;
+		BlendInfo m_BlendInfo;
 
 		bool m_IsLooping;
 		bool m_IsPlaying;
@@ -225,7 +256,8 @@ namespace LambdaEngine
 		
 		String		m_Name;
 		GUID_Lambda	m_AnimationGUID;
-		TArray<SQT> m_CurrentFrame;
+		TArray<SQT> m_CurrentFrame0; // Used for main animation
+		TArray<SQT> m_CurrentFrame1; // Used for blend animation
 	};
 
 	/*

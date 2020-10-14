@@ -176,36 +176,45 @@ namespace LambdaEngine
 
 	void AnimationState::Interpolate(const Skeleton& skeleton)
 	{
-		Animation& animation = GetAnimation();
-		const float64 time = GetNormlizedTime() * animation.DurationInTicks;
+		Animation& animation	= GetAnimation();
+		const float64 timestamp = GetNormlizedTime() * animation.DurationInTicks;
 
-		if (m_CurrentFrame.GetSize() < skeleton.Joints.GetSize())
+		// Make sure we have enough matrices
+		if (m_CurrentFrame0.GetSize() < skeleton.Joints.GetSize())
 		{
-			m_CurrentFrame.Resize(skeleton.Joints.GetSize());
+			m_CurrentFrame0.Resize(skeleton.Joints.GetSize());
 		}
 
-		for (Animation::Channel& channel : animation.Channels)
+		InternalInterpolate(animation, skeleton, m_CurrentFrame0, timestamp);
+
+		// Do we want to blend?
+		if (m_BlendInfo.AnimationGUID != GUID_NONE)
 		{
-			// Retrive the bone ID
-			auto it = skeleton.JointMap.find(channel.Name);
-			if (it == skeleton.JointMap.end())
+			Animation& blendAnimation = GetBlendAnimation();
+			if (m_CurrentFrame1.GetSize() < skeleton.Joints.GetSize())
 			{
-				continue;
+				m_CurrentFrame1.Resize(skeleton.Joints.GetSize());
 			}
 
-			// Sample SQT for this animation
-			glm::vec3 position	= SamplePosition(channel, time);
-			glm::quat rotation	= SampleRotation(channel, time);
-			glm::vec3 scale		= SampleScale(channel, time);
+			InternalInterpolate(blendAnimation, skeleton, m_CurrentFrame1, timestamp);
 
-			const uint32 jointID = it->second;
-			m_CurrentFrame[jointID] = SQT(position, scale, rotation);
+			// Blend between the two results
+			BinaryInterpolator interpolator(m_CurrentFrame0, m_CurrentFrame1, m_CurrentFrame0);
+			interpolator.Interpolate(m_BlendInfo.Weight);
 		}
 	}
 
 	Animation& AnimationState::GetAnimation() const
 	{
 		Animation* pAnimation = ResourceManager::GetAnimation(m_AnimationGUID);
+		VALIDATE(pAnimation != nullptr);
+		return *pAnimation;
+	}
+
+	Animation& AnimationState::GetBlendAnimation() const
+	{
+		VALIDATE(m_BlendInfo.AnimationGUID != GUID_NONE);
+		Animation* pAnimation = ResourceManager::GetAnimation(m_BlendInfo.AnimationGUID);
 		VALIDATE(pAnimation != nullptr);
 		return *pAnimation;
 	}
@@ -284,6 +293,27 @@ namespace LambdaEngine
 		glm::quat rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
 		rotation = glm::normalize(rotation);
 		return rotation;
+	}
+
+	void AnimationState::InternalInterpolate(Animation& animation, const Skeleton& skeleton, TArray<SQT>& currentFrame, float64 timestamp)
+	{
+		for (Animation::Channel& channel : animation.Channels)
+		{
+			// Retrive the bone ID
+			auto it = skeleton.JointMap.find(channel.Name);
+			if (it == skeleton.JointMap.end())
+			{
+				continue;
+			}
+
+			// Sample SQT for this animation
+			glm::vec3 position	= SamplePosition(channel, timestamp);
+			glm::quat rotation	= SampleRotation(channel, timestamp);
+			glm::vec3 scale		= SampleScale(channel, timestamp);
+
+			const uint32 jointID = it->second;
+			currentFrame[jointID] = SQT(position, scale, rotation);
+		}
 	}
 
 	/*

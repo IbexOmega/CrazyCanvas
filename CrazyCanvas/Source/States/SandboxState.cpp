@@ -124,6 +124,7 @@ void SandboxState::Init()
 
 		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
 		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
+		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Robot/Reload.fbx");
 
 		MaterialProperties materialProperties;
 		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -185,7 +186,9 @@ void SandboxState::Init()
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
 		AnimationGraph animationGraph;
-		animationGraph.AddState(AnimationState("running", running[0]));
+		AnimationState runningState("running", running[0]);
+		runningState.SetBlendInfo(BlendInfo(reload[0], 0.5f));
+		animationGraph.AddState(runningState);
 		animationGraph.AddState(AnimationState("walking", animations[0]));
 		animationGraph.AddTransition(Transition("running", "walking", 0.2));
 		animationGraph.AddTransition(Transition("walking", "running", 0.5));
