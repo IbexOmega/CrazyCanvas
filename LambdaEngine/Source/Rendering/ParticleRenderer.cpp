@@ -168,7 +168,7 @@ namespace LambdaEngine
 		RenderPassAttachmentDesc depthAttachmentDesc = {};
 		depthAttachmentDesc.Format = EFormat::FORMAT_D24_UNORM_S8_UINT;
 		depthAttachmentDesc.SampleCount = 1;
-		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_CLEAR;
+		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
 		depthAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
 		depthAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		depthAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
@@ -478,15 +478,12 @@ namespace LambdaEngine
 		scissorRect.Height = height;
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		ClearColorDesc clearColors[2] = {};
+		ClearColorDesc clearColors[1] = {};
 
 		clearColors[0].Color[0] = 0.f;
-		clearColors[0].Color[1] = 1.f;
+		clearColors[0].Color[1] = 0.f;
 		clearColors[0].Color[2] = 0.f;
-		clearColors[0].Color[3] = 0.f;
-
-		clearColors[1].Depth = 1.0f;
-		clearColors[1].Stencil = 0U;
+		clearColors[0].Color[3] = 1.f;
 
 		pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 		pCommandList->BindDescriptorSetGraphics(m_VertexInstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
@@ -501,7 +498,7 @@ namespace LambdaEngine
 		beginRenderPassDesc.Height = height;
 		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 		beginRenderPassDesc.pClearColors = clearColors;
-		beginRenderPassDesc.ClearColorCount = 2;
+		beginRenderPassDesc.ClearColorCount = 1;
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
 		

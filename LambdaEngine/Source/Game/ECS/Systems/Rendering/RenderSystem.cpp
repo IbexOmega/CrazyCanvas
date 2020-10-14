@@ -592,6 +592,11 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 		}
 
+		{
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+		}
+
 		//GUI Renderer
 		{
 			ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
