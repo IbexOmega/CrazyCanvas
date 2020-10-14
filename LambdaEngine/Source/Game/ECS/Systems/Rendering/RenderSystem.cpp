@@ -646,7 +646,6 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
-		LOG_ERROR("Add Static Mesh Entity %d", entity);
 	}
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
@@ -656,7 +655,6 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
-		LOG_ERROR("Add Animated Entity %d", entity);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
@@ -666,7 +664,6 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
-		LOG_ERROR("Add Player Entity %d", entity);
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
@@ -788,7 +785,6 @@ namespace LambdaEngine
 		meshKey.IsAnimated	= isAnimated;
 		meshKey.EntityID	= entity;
 		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
-		LOG_INFO("New Entity has Mask: %u", meshKey.EntityMask);
 
 		//Get meshAndInstancesIterator
 		{
@@ -1427,7 +1423,6 @@ namespace LambdaEngine
 			uint32 mask = meshEntryPair.second.DrawArgsMask;
 			if ((mask & requestedMaskDesc.IncludeMask) == requestedMaskDesc.IncludeMask && (mask & requestedMaskDesc.ExcludeMask) == 0)
 			{
-				LOG_ERROR("Mesh with mask %x added to DrawArg with mask %x", mask, requestedMaskDesc.FullMask);
 				DrawArg drawArg = { };
 
 				// Assume animated
@@ -2118,8 +2113,6 @@ namespace LambdaEngine
 		{
 			for (const DrawArgMaskDesc& maskDesc : m_DirtyDrawArgs)
 			{
-				LOG_ERROR("RenderSystem: CREATING DRAW ARGS %x", maskDesc.FullMask);
-
 				TArray<DrawArg> drawArgs;
 				CreateDrawArgs(drawArgs, maskDesc);
 
