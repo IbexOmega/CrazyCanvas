@@ -51,6 +51,7 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	Ptr<Rectangle> isRun		= *new Rectangle();
 	Ptr<SolidColorBrush> brush	= *new SolidColorBrush();
 
+
 	serverName->SetText(pServerN);
 	mapName->SetText(pMapN);
 	ping->SetText(pPing);
@@ -75,9 +76,6 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 	grid->SetColumn(isRun, 3);
 	//grid->SetRow(pServerName, m_ItemCount++);
 
-	LOG_MESSAGE(pParentGrid->GetName());
-	LOG_MESSAGE(m_SavedServerList->GetName());
-
 	if (!isLocal)
 	{
 		if (m_SavedServerList->GetItems()->Add(grid) == -1)
@@ -93,5 +91,59 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 		}
 	}
 
+}
+
+void SavedServerGUI::UpdateServerItems(const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal)
+{
+
+	if (!isLocal) 
+	{
+		ItemCollection* pItems = m_SavedServerList->GetItems();
+
+		Ptr<Grid> grid;
+
+		if (pItems->Count())
+		{
+			for (int i = 0; i < pItems->Count(); i++)
+			{
+				grid = *((Grid*)pItems->GetItemAt(i).GetPtr());
+
+				TextBlock* element = (TextBlock*)grid->GetChildren()->Get(0);
+				element->SetText(pServerN);
+				element = (TextBlock*)grid->GetChildren()->Get(1);
+				element->SetText(pMapN);
+				element = (TextBlock*)grid->GetChildren()->Get(2);
+				element->SetText(pPing);
+
+				Rectangle* rect = (Rectangle*)grid->GetChildren()->Get(3);
+				Ptr<SolidColorBrush> brush = *new SolidColorBrush();
+				Color color = Color();
+
+				if (isRunning)
+				{
+					brush->SetColor(color.Green());
+					rect->SetFill(brush);
+				}
+				else
+				{
+					brush->SetColor(color.Red());
+					rect->SetFill(brush);
+				}
+
+			}
+			LOG_MESSAGE(grid->GetChildren()->Get(1)->ToString().Str());
+		}
+	}
+	else
+	{
+		ItemCollection* pItems = m_LocalServerList->GetItems();
+
+		Ptr<Grid> grid = *((Grid*)pItems->GetItemAt(0).GetPtr());
+
+		if (pItems->Count())
+		{
+			LOG_MESSAGE(grid->GetChildren()->Get(0)->ToString().Str());
+		}
+	}
 }
 

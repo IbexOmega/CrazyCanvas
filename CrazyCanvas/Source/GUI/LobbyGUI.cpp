@@ -93,7 +93,6 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
 	m_ServerList.AddServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69", true, pLocalServers->GetIsSelected());
@@ -103,6 +102,10 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+
+	m_ServerList.UpdateServerItems("Bajs", "Bajs", "67", false, pLocalServers->GetIsSelected());
 
 	ErrorPopUp(OTHER_ERROR);
 }

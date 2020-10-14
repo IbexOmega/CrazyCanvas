@@ -85,6 +85,7 @@ public:
 	~SavedServerGUI();
 
 	void AddServerItem(Noesis::Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal);
+	void UpdateServerItems(const char* pServerN, const char* pMapN, const char* pPing, bool isRunning, bool isLocal);
 
     void Init(Noesis::ListBox* pListView, Noesis::ListBox* pLocalListView);
 
