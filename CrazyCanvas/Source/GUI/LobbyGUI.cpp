@@ -103,7 +103,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 	//m_ServerList.AddServerItem()
 
-	m_ServerList.AddLocalServerItem(pServerGrid, serverName.c_str(), mapName.c_str(), std::to_string(players).c_str(), true);
+	//m_ServerList.AddLocalServerItem(pServerGrid, serverName.c_str(), mapName.c_str(), std::to_string(players).c_str(), true);
 
 	//LOG_INFO("Found server with name %s with %u players", serverName.c_str(), players);
 	return false;

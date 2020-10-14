@@ -54,6 +54,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 	else if (stateStr == "sandbox")
 	{
+		ServerSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
 	}
 	else if (stateStr == "client")
