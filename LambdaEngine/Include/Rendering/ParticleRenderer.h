@@ -80,8 +80,7 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
 
 		// Descriptor sets
-		TSharedRef<DescriptorSet>				m_VertexDescriptorSet;
-		TSharedRef<DescriptorSet>				m_InstanceDescriptorSet;
+		TSharedRef<DescriptorSet>				m_VertexInstanceDescriptorSet = nullptr;
 		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
 		DescriptorCache							m_DescriptorCache;
 
