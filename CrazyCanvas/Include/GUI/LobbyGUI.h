@@ -7,45 +7,12 @@
 #include "NsGui/Slider.h"*/
 
 #include "GUI/SavedServerGUI.h"
+#include "GUI/ServerInfo.h"
 
 struct HostGameDescription
 {
 	int8 PlayersNumber = -1;
 	int8 MapNumber = -1;
-};
-
-struct ServerInfo
-{
-	Noesis::Ptr<Noesis::Grid> ServerGrid;
-
-	std::string Name;
-	std::string MapName;
-	uint8 Players;
-	uint16 Ping;
-	LambdaEngine::Timestamp LastUpdate;
-
-	bool operator==(const ServerInfo& other) const
-	{
-		return Name == other.Name && MapName == other.MapName && Players == other.Players && Ping == other.Ping;
-	}
-
-	bool operator!=(const ServerInfo& other) const
-	{
-		return Name != other.Name || MapName != other.MapName || Players != other.Players || Ping != other.Ping;
-	}
-
-	ServerInfo& operator=(const ServerInfo& other)
-	{
-		if (this != &other)
-		{
-			Name		= other.Name;
-			MapName		= other.MapName;
-			Players		= other.Players;
-			Ping		= other.Ping;
-			LastUpdate	= other.LastUpdate;
-		}
-		return *this;
-	}
 };
 
 enum ErrorCode

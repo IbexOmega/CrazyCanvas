@@ -90,13 +90,13 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 		currentInfo = newInfo;
 		if (currentInfo.ServerGrid) // update current list
 		{
-
+			m_ServerList.UpdateServerItems(currentInfo);
 		}
 		else // add new item to list
 		{
 			Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-			newInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, newInfo.Name.c_str(), newInfo.MapName.c_str(), std::to_string(newInfo.Players).c_str(), true);
+			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
 		}
 	}
 
@@ -142,7 +142,7 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
-	m_ServerList.AddSavedServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69", true);
+	//m_ServerList.AddSavedServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69", true);
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -152,7 +152,7 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
-	m_ServerList.UpdateServerItems("Bajs", "Bajs", "67", false, pLocalServers->GetIsSelected());
+	//m_ServerList.UpdateServerItems("Bajs", "Bajs", "67", false, pLocalServers->GetIsSelected());
 
 	ErrorPopUp(OTHER_ERROR);
 }
