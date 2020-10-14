@@ -16,6 +16,9 @@
 
 #include "World/LevelManager.h"
 
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -38,6 +41,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	LoadRendererResources();
 
+	constexpr const char* pGameName = "Crazy Canvas";
 	constexpr const char* pDefaultStateStr = "crazycanvas";
 	State* pStartingState = nullptr;
 	String stateStr;
@@ -45,6 +49,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	if (stateStr == "crazycanvas")
 	{
+		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW MainMenuState();
 	}
 	else if (stateStr == "sandbox")
@@ -53,10 +58,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 	else if (stateStr == "client")
 	{
+		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 	}
 	else if (stateStr == "server")
 	{
+		ServerSystem::Init(pGameName);
 		pStartingState = DBG_NEW ServerState();
 	}
 	else if (stateStr == "benchmark")

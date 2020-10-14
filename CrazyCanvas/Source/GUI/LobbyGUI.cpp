@@ -22,6 +22,8 @@
 
 //#include <string>
 
+#include "Application/API/Events/EventQueue.h"
+
 using namespace LambdaEngine;
 using namespace Noesis;
 
@@ -30,6 +32,8 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	m_ServerList(xamlFile)
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+
+	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerFound);
 	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
 
 	const char* pIP = "192.168.1.65";
@@ -42,7 +46,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 
 LobbyGUI::~LobbyGUI()
 {
-
+	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerFound);
 }
 
 bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
@@ -60,6 +64,18 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 {
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+}
+
+bool LobbyGUI::OnServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
+{
+	BinaryDecoder* pDecoder = event.pDecoder;
+	const IPEndPoint* pEndPoint = event.pEndPoint;
+
+	uint8 players = 0;
+	pDecoder->ReadUInt8(players);
+
+	LOG_INFO("Found server at %s with %u players", pEndPoint->ToString().c_str(), players);
+	return false;
 }
 
 void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
