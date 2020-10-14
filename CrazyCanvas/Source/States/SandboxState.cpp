@@ -160,7 +160,6 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
-		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{});
 
 		position = glm::vec3(-5.0f, 1.25f, 0.0f);
 		robotAnimationComp.NumLoops = INFINITE_LOOPS;
@@ -199,6 +198,14 @@ void SandboxState::Init()
 
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
+	}
+
+	// Emitter
+	{
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 4.0f, 0.0f } });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{});
 	}
 
 	//Sphere Grid

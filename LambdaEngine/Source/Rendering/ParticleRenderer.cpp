@@ -571,7 +571,8 @@ namespace LambdaEngine
 
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
+		//pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
+		pCommandList->DrawIndexInstanced(6, 1, 0, 0, 0);
 
 		pCommandList->EndRenderPass();
 		pCommandList->End();

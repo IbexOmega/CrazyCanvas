@@ -178,7 +178,7 @@ namespace LambdaEngine
 		// Update Vertex Buffer
 		if (m_DirtyVertexBuffer)
 		{
-			const glm::vec3 vertices[4] =
+			const glm::vec4 vertices[4] =
 			{
 				glm::vec4(-1.0, -1.0, 0.0, 1.0f),
 				glm::vec4(-1.0, 1.0, 0.0, 1.0f),

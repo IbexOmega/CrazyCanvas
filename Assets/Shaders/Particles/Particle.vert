@@ -27,5 +27,5 @@ void main()
 	SParticleVertex vertex = b_Vertices.Val[gl_VertexIndex];
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
 
-	gl_Position = vec4(vertex.Position, 1.0);
+	gl_Position = frameBuffer.Projection * frameBuffer.View * particle.Transform * vec4(vertex.Position, 1.0);
 }

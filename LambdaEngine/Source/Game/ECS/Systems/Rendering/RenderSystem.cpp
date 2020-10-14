@@ -128,11 +128,9 @@ namespace LambdaEngine
 					.pSubscriber = &m_ParticleEmitters,
 					.ComponentAccesses =
 					{
-						{ NDA, ParticleEmitterComponent::Type() }
-					},
-					.ComponentGroups =
-					{
-						&transformComponents
+						{ NDA, ParticleEmitterComponent::Type() },
+						{ NDA, PositionComponent::Type() },
+						{ NDA, RotationComponent::Type() }
 					},
 					.OnEntityAdded = std::bind(&RenderSystem::OnEmitterEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::OnEmitterEntityRemoved, this, std::placeholders::_1)
