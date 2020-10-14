@@ -2487,7 +2487,7 @@ namespace LambdaEngine
 						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
 						{
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
-							descriptorSetLayout.DescriptorBindings = drawArgExtensionDescriptorSetDescriptions;
+							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetDescriptions;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
 						}
 					}
