@@ -49,7 +49,7 @@ namespace LambdaEngine
 
 	bool ServerSystem::Start()
 	{
-		int32 port = EngineConfig::GetIntProperty("NetworkPort");
+		uint16 port = (uint16)EngineConfig::GetIntProperty("NetworkPort");
 		NetworkDiscovery::EnableServer(m_Name, port, this);
 		return m_pServer->Start(IPEndPoint(IPAddress::ANY, port));
 	}

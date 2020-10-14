@@ -85,7 +85,7 @@ namespace LambdaEngine
 
 		MultiplayerUtils::s_IsSinglePlayer = false;
 
-		if (!m_pClient->Connect(IPEndPoint(pAddress, EngineConfig::GetIntProperty("NetworkPort"))))
+		if (!m_pClient->Connect(IPEndPoint(pAddress, (uint16)EngineConfig::GetIntProperty("NetworkPort"))))
 		{
 			LOG_ERROR("Failed to connect!");
 			return false;
