@@ -149,25 +149,8 @@ namespace LambdaEngine
 	{
 		// Get localtime for the animation-clip
 		m_RunningTime += deltaTime;
-		
-		float64 localTime = m_RunningTime * fabs(m_PlaybackSpeed);
-		if (m_IsLooping)
-		{
-			if (m_NumLoops != INFINITE_LOOPS)
-			{
-				const float64 totalDuration = m_NumLoops * GetDurationInSeconds();
-				localTime = glm::clamp(localTime, 0.0, totalDuration);
-			}
-
-			localTime = fmod(localTime, GetDurationInSeconds());
-		}
-		else
-		{
-			localTime = glm::clamp(localTime, 0.0, GetDurationInSeconds());
-		}
-
-		m_LocalTimeInSeconds	= localTime;
-		m_NormalizedTime		= m_LocalTimeInSeconds / m_DurationInSeconds;
+		m_LocalTimeInSeconds	= InternalCalculateLocalTime(m_PlaybackSpeed, GetDurationInSeconds());
+		m_NormalizedTime		= m_LocalTimeInSeconds / GetDurationInSeconds();
 		if (m_PlaybackSpeed < 0.0)
 		{
 			m_NormalizedTime = 1.0 - m_NormalizedTime;
@@ -176,8 +159,7 @@ namespace LambdaEngine
 
 	void AnimationState::Interpolate(const Skeleton& skeleton)
 	{
-		Animation& animation	= GetAnimation();
-		const float64 timestamp = GetNormlizedTime() * animation.DurationInTicks;
+		Animation& animation = GetAnimation();
 
 		// Make sure we have enough matrices
 		if (m_CurrentFrame0.GetSize() < skeleton.Joints.GetSize())
@@ -185,7 +167,10 @@ namespace LambdaEngine
 			m_CurrentFrame0.Resize(skeleton.Joints.GetSize());
 		}
 
-		InternalInterpolate(animation, skeleton, m_CurrentFrame0, timestamp);
+		{
+			const float64 timestamp = GetNormlizedTime() * animation.DurationInTicks;
+			InternalInterpolate(animation, skeleton, m_CurrentFrame0, timestamp);
+		}
 
 		// Do we want to blend?
 		if (m_BlendInfo.AnimationGUID != GUID_NONE)
@@ -196,7 +181,18 @@ namespace LambdaEngine
 				m_CurrentFrame1.Resize(skeleton.Joints.GetSize());
 			}
 
-			InternalInterpolate(blendAnimation, skeleton, m_CurrentFrame1, timestamp);
+			{
+				// Get localtime for the animation-clip
+				const float64 local	= InternalCalculateLocalTime(m_BlendInfo.PlaybackSpeed, blendAnimation.DurationInSeconds());
+				float64 normalized	= local / blendAnimation.DurationInSeconds();
+				if (m_BlendInfo.PlaybackSpeed < 0.0)
+				{
+					normalized = 1.0 - normalized;
+				}
+
+				const float64 timestamp = normalized * blendAnimation.DurationInTicks;
+				InternalInterpolate(blendAnimation, skeleton, m_CurrentFrame1, timestamp);
+			}
 
 			// Blend between the two results
 			BinaryInterpolator interpolator(m_CurrentFrame0, m_CurrentFrame1, m_CurrentFrame0);
@@ -314,6 +310,27 @@ namespace LambdaEngine
 			const uint32 jointID = it->second;
 			currentFrame[jointID] = SQT(position, scale, rotation);
 		}
+	}
+
+	float64 AnimationState::InternalCalculateLocalTime(float64 playbackSpeed, float64 durationInSeconds)
+	{
+		float64 localTime = m_RunningTime * fabs(playbackSpeed);
+		if (m_IsLooping)
+		{
+			if (m_NumLoops != INFINITE_LOOPS)
+			{
+				const float64 totalDuration = m_NumLoops * durationInSeconds;
+				localTime = glm::clamp(localTime, 0.0, totalDuration);
+			}
+
+			localTime = fmod(localTime, durationInSeconds);
+		}
+		else
+		{
+			localTime = glm::clamp(localTime, 0.0, durationInSeconds);
+		}
+
+		return localTime;
 	}
 
 	/*

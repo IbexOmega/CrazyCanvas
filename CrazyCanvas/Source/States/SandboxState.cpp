@@ -187,7 +187,7 @@ void SandboxState::Init()
 
 		AnimationGraph animationGraph;
 		AnimationState runningState("running", running[0]);
-		runningState.SetBlendInfo(BlendInfo(reload[0], 0.5f));
+		runningState.SetBlendInfo(BlendInfo(reload[0], 0.5f, 1.0f));
 		animationGraph.AddState(runningState);
 		animationGraph.AddState(AnimationState("walking", animations[0]));
 		animationGraph.AddTransition(Transition("running", "walking", 0.2));

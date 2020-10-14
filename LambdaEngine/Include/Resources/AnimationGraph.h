@@ -115,17 +115,20 @@ namespace LambdaEngine
 		inline BlendInfo()
 			: AnimationGUID(GUID_NONE)
 			, Weight(0.0f)
+			, PlaybackSpeed(1.0f)
 		{
 		}
 
-		inline BlendInfo(GUID_Lambda animationGUID, float32 weight)
+		inline BlendInfo(GUID_Lambda animationGUID, float32 weight, float32 playbackSpeed)
 			: AnimationGUID(animationGUID)
 			, Weight(weight)
+			, PlaybackSpeed(playbackSpeed)
 		{
 		}
 
 		GUID_Lambda	AnimationGUID;
 		float32		Weight;
+		float32		PlaybackSpeed;
 	};
 
 	/*
@@ -232,6 +235,7 @@ namespace LambdaEngine
 		glm::quat SampleRotation(Animation::Channel& channel, float64 time);
 
 		void InternalInterpolate(Animation& animation, const Skeleton& skeleton, TArray<SQT>& currentFrame, float64 timestamp);
+		float64 InternalCalculateLocalTime(float64 playbackSpeed, float64 durationInSeconds);
 
 		FORCEINLINE void SetAnimationGraph(AnimationGraph* pGraph)
 		{
