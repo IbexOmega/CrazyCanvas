@@ -4,6 +4,7 @@
     600
   ],
   "FixedTimestep": 60,
+  "NetworkPort": 4444,
   "RayTracingEnabled": true,
   "MeshShadersEnabled": true,
   "ShowRenderGraph": false,

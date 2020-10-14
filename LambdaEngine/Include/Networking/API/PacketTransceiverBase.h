@@ -28,6 +28,8 @@ namespace LambdaEngine
 
 		virtual void SetSocket(ISocket* pSocket) = 0;
 
+		void SetIgnoreSaltMissmatch(bool ignore);
+
 	protected:
 		virtual bool TransmitData(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) = 0;
 		virtual bool ReceiveData(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) = 0;
@@ -40,5 +42,6 @@ namespace LambdaEngine
 		int32 m_BytesReceived;
 		uint8 m_pSendBuffer[MAXIMUM_SEGMENT_SIZE];
 		uint8 m_pReceiveBuffer[UINT16_MAX];
+		bool m_IgnoreSaltMissmatch;
 	};
 }

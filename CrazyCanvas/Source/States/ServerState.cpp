@@ -36,6 +36,7 @@ ServerState::~ServerState()
 void ServerState::Init()
 {
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &ServerState::OnClientConnected);
+	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
@@ -56,6 +57,16 @@ bool ServerState::OnKeyPressed(const KeyPressedEvent& event)
 {
 	UNREFERENCED_VARIABLE(event);
 	return false;
+}
+
+bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event)
+{
+	BinaryEncoder* pEncoder = event.pEncoder;
+	ServerBase* pServer = event.pServer;
+
+	pEncoder->WriteUInt8(pServer->GetClientCount());
+
+	return true;
 }
 
 bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
@@ -98,9 +109,4 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 void ServerState::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-}
-
-void ServerState::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
-{
-	UNREFERENCED_VARIABLE(encoder);
 }

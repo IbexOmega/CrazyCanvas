@@ -8,13 +8,14 @@
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
+#include "Networking/API/UDP/INetworkDiscoveryClient.h"
 
 #include "Containers/CCBuffer.h"
 #include "Containers/TArray.h"
 
 namespace LambdaEngine
 {
-	class ClientSystem : protected IClientHandler
+	class ClientSystem : protected IClientHandler, protected INetworkDiscoveryClient
 	{
 		friend class EngineLoop;
 
@@ -36,25 +37,21 @@ namespace LambdaEngine
 		virtual void OnClientReleased(IClient* pClient) override;
 		virtual void OnServerFull(IClient* pClient) override;
 
-	private:
-		ClientSystem();
+		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint) override;
 
-		void Init();
+	private:
+		ClientSystem(const String& name);
 
 	public:
 		static ClientSystem& GetInstance()
 		{
-			if (!s_pInstance)
-			{
-				s_pInstance = DBG_NEW ClientSystem();
-				s_pInstance->Init();
-			}
 			return *s_pInstance;
 		}
 
-		static bool HasInstance()
+		static void Init(const String& name)
 		{
-			return s_pInstance;
+			if (!s_pInstance)
+				s_pInstance = DBG_NEW ClientSystem(name);
 		}
 
 	private:
@@ -67,6 +64,8 @@ namespace LambdaEngine
 		CharacterControllerSystem m_CharacterControllerSystem;
 		NetworkPositionSystem m_NetworkPositionSystem;
 		PlayerSystem m_PlayerSystem;
+		String m_Name;
+		bool m_DebuggingWindow;
 
 	private:
 		static ClientSystem* s_pInstance;

@@ -5,10 +5,11 @@
 #include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 
 #include "Networking/API/PlatformNetworkUtils.h"
+#include "Networking/API/UDP/INetworkDiscoveryServer.h"
 
 namespace LambdaEngine
 {
-	class ServerSystem : public System, public IServerHandler
+	class ServerSystem : public IServerHandler, public INetworkDiscoveryServer
 	{
 		friend class EngineLoop;
 
@@ -19,8 +20,6 @@ namespace LambdaEngine
 		bool Start();
 		void Stop();
 
-		void Tick(Timestamp deltaTime) override;
-
 		void FixedTickMainThread(Timestamp deltaTime);
 		void TickMainThread(Timestamp deltaTime);
 
@@ -29,16 +28,22 @@ namespace LambdaEngine
 	protected:
 		virtual IClientRemoteHandler* CreateClientHandler() override;
 
+		virtual void OnNetworkDiscoveryPreTransmit(BinaryEncoder& encoder) override;
+
 	public:
 		static ServerSystem& GetInstance()
 		{
-			if (!s_pInstance)
-				s_pInstance = DBG_NEW ServerSystem();
 			return *s_pInstance;
 		}
 
+		static void Init(const String& name)
+		{
+			if (!s_pInstance)
+				s_pInstance = DBG_NEW ServerSystem(name);
+		}
+
 	private:
-		ServerSystem();
+		ServerSystem(const String& name);
 
 	private:
 		static void StaticFixedTickMainThread(Timestamp deltaTime);
@@ -49,6 +54,7 @@ namespace LambdaEngine
 		IDVector					m_NetworkEntities;
 		ServerBase*					m_pServer;
 		CharacterControllerSystem	m_CharacterControllerSystem;
+		String						m_Name;
 
 	private:
 		static ServerSystem* s_pInstance;
