@@ -48,7 +48,7 @@
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
-#include "Game/World/LevelObjectCreator.h"
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -83,13 +83,32 @@ namespace LambdaEngine
 
 			// Fixed update
 			accumulator += delta;
+			uint32 fixedTickCounter = 0;
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
 				FixedTick(g_FixedTimestep);
 				accumulator -= g_FixedTimestep;
+
+				//Bailout so we don't get stuck in Fixed Tick
+				fixedTickCounter++;
+				if (fixedTickCounter > 2)
+				{
+					accumulator = 0;
+					break;
+				}
 			}
 		}
+	}
+
+	bool EngineLoop::InitComponentOwners()
+	{
+		if (!MeshPaintComponentOwner::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool EngineLoop::InitSystems()
@@ -316,10 +335,10 @@ namespace LambdaEngine
 			return false;
 		}
 
-		/*if (!LevelObjectCreator::Init())
+		if (!InitComponentOwners())
 		{
 			return false;
-		}*/
+		}
 
 		if (!InitSystems())
 		{
@@ -384,11 +403,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderAPI::Release())
-		{
-			return false;
-		}
-
 		if (!AudioAPI::Release())
 		{
 			return false;
@@ -411,6 +425,11 @@ namespace LambdaEngine
 		ServerSystem::StaticRelease();
 		Thread::Release();
 		PlatformNetworkUtils::PostRelease();
+
+		if (!RenderAPI::Release())
+		{
+			return false;
+		}
 
 		if (!CommonApplication::PostRelease())
 		{

@@ -38,7 +38,6 @@ namespace LambdaEngine
 	{
 		String		Prefix		= "";
 		String		Name		= "";
-		TArray<glm::vec3>	Centroids;
 		TArray<BoundingBox>	BoundingBoxes;
 	};
 
@@ -215,8 +214,8 @@ namespace LambdaEngine
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
 	private:
-		static void LoadBoundingBox(BoundingBox& boundingBox, glm::vec3& centroid, const aiMesh* pMeshAI);
-		static void LoadVertices(Mesh* pMesh, glm::vec3& centroid, const aiMesh* pMeshAI);
+		static void LoadBoundingBox(BoundingBox& boundingBox, const aiMesh* pMeshAI);
+		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);

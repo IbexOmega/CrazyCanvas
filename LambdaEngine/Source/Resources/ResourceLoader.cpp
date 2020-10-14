@@ -877,10 +877,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ResourceLoader::LoadBoundingBox(BoundingBox& boundingBox, glm::vec3& centroid, const aiMesh* pMeshAI)
+	void ResourceLoader::LoadBoundingBox(BoundingBox& boundingBox,const aiMesh* pMeshAI)
 	{
-		glm::vec3& halfExtent = boundingBox.HalfExtent;
-		halfExtent = glm::vec3(0.0f);
+		boundingBox.Centroid = glm::vec3(0.0f);
+		glm::vec3 maxExtent = glm::vec3(0.0f);
+		glm::vec3 minExtent = glm::vec3(0.0f);
 
 		glm::vec3 vertexPosition;
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
@@ -889,24 +890,29 @@ namespace LambdaEngine
 			vertexPosition.y = pMeshAI->mVertices[vertexIdx].y;
 			vertexPosition.z = pMeshAI->mVertices[vertexIdx].z;
 
-			halfExtent.x = std::max(halfExtent.x, std::abs(vertexPosition.x));
-			halfExtent.y = std::max(halfExtent.y, std::abs(vertexPosition.y));
-			halfExtent.z = std::max(halfExtent.z, std::abs(vertexPosition.z));
+			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertexPosition.x));
+			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertexPosition.y));
+			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertexPosition.z));
+
+			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertexPosition.x));
+			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertexPosition.y));
+			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertexPosition.z));
 
 			//Moving Average
-			centroid += (vertexPosition - centroid) / float32(vertexIdx + 1);
+			boundingBox.Centroid += (vertexPosition - boundingBox.Centroid) / float32(vertexIdx + 1);
 		}
 
-		LOG_INFO("Bounding Box: %f %f %f", halfExtent.x, halfExtent.y, halfExtent.z);
+		boundingBox.Dimensions = maxExtent - minExtent;
+		LOG_INFO("Bounding Box: %f %f %f", boundingBox.Dimensions.x, boundingBox.Dimensions.y, boundingBox.Dimensions.z);
 	}
 
-	void ResourceLoader::LoadVertices(Mesh* pMesh, glm::vec3& centroid, const aiMesh* pMeshAI)
+	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
 
-		glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
-		halfExtent = glm::vec3(0.0f);
-		centroid = glm::vec3(0.0f);
+		pMesh->BoundingBox.Centroid = glm::vec3(0.0f);
+		glm::vec3 maxExtent = glm::vec3(0.0f);
+		glm::vec3 minExtent = glm::vec3(0.0f);
 
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
@@ -915,12 +921,16 @@ namespace LambdaEngine
 			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
 
-			halfExtent.x = std::max(halfExtent.x, std::abs(vertex.Position.x));
-			halfExtent.y = std::max(halfExtent.y, std::abs(vertex.Position.y));
-			halfExtent.z = std::max(halfExtent.z, std::abs(vertex.Position.z));
+			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.Position.x));
+			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.Position.y));
+			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertex.Position.z));
+
+			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertex.Position.x));
+			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertex.Position.y));
+			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertex.Position.z));
 
 			//Moving Average
-			centroid += (vertex.Position - centroid) / float32(vertexIdx + 1);
+			pMesh->BoundingBox.Centroid += (vertex.Position - pMesh->BoundingBox.Centroid) / float32(vertexIdx + 1);
 
 			if (pMeshAI->HasNormals())
 			{
@@ -945,7 +955,8 @@ namespace LambdaEngine
 			pMesh->Vertices[vertexIdx] = vertex;
 		}
 
-		LOG_INFO("Bounding Box: %f %f %f", halfExtent.x, halfExtent.y, halfExtent.z);
+		pMesh->BoundingBox.Dimensions = (maxExtent - minExtent);
+		LOG_INFO("Bounding Box: %f %f %f", pMesh->BoundingBox.Dimensions.x, pMesh->BoundingBox.Dimensions.y, pMesh->BoundingBox.Dimensions.z);
 	}
 
 	void ResourceLoader::LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI)
@@ -1482,7 +1493,7 @@ namespace LambdaEngine
 				Mesh* pMesh = DBG_NEW Mesh;
 
 				glm::vec3 centroid;
-				LoadVertices(pMesh, centroid, pMeshAI);
+				LoadVertices(pMesh, pMeshAI);
 				LoadIndices(pMesh, pMeshAI);
 
 				if (context.pMaterials)
@@ -1495,7 +1506,9 @@ namespace LambdaEngine
 					LoadSkeleton(pMesh, pMeshAI);
 					if (pMesh->pSkeleton)
 					{
-						glm::mat4 meshTransform		= AssimpToGLMMat4(pNode->mTransformation);
+						//Assume Mixamo has replaced our rotation
+						glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+						meshTransform				= meshTransform * AssimpToGLMMat4(pNode->mTransformation);
 					    glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
 					    pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
 
@@ -1514,7 +1527,6 @@ namespace LambdaEngine
 
 				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
 				{
-					pSpecialObject->Centroids.PushBack(centroid);
 					pSpecialObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
 				}
 			}
@@ -1527,11 +1539,10 @@ namespace LambdaEngine
 
 				BoundingBox boundingBox;
 				glm::vec3 centroid;
-				LoadBoundingBox(boundingBox, centroid, pMeshAI);
+				LoadBoundingBox(boundingBox, pMeshAI);
 
 				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
 				{
-					pSpecialObject->Centroids.PushBack(centroid);
 					pSpecialObject->BoundingBoxes.PushBack(boundingBox);
 				}
 			}

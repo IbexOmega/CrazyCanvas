@@ -309,7 +309,10 @@ namespace LambdaEngine
 					for (uint32 e = 0; e < numExtensions; e++)
 					{
 						uint32 mask = extensionGroup->pExtensionMasks[e];
-						if (mask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
+						bool inverted;
+						uint32 meshPaintBit = EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type(), inverted);
+
+						if ((mask & meshPaintBit) == inverted)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
 							TextureView* textureView = extension.ppMipZeroTextureViews[0];

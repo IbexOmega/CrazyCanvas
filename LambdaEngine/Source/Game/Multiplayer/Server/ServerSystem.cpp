@@ -23,11 +23,11 @@ namespace LambdaEngine
 		desc.MaxRetries				= 10;
 		desc.ResendRTTMultiplier	= 5.0f;
 		desc.MaxClients				= 10;
-		desc.PoolSize				= 1024;
+		desc.PoolSize				= 10240;
 		desc.Protocol				= EProtocol::UDP;
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(10);
-		desc.UsePingSystem			= true;
+		desc.UsePingSystem			= false;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);

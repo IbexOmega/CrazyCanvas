@@ -48,14 +48,14 @@ namespace LambdaEngine
 		MultiplayerUtils::Init(false);
 
 		ClientDesc clientDesc			= {};
-		clientDesc.PoolSize				= 1024;
+		clientDesc.PoolSize				= 10240;
 		clientDesc.MaxRetries			= 10;
-		clientDesc.ResendRTTMultiplier	= 5.0F;
+		clientDesc.ResendRTTMultiplier	= 5.0f;
 		clientDesc.Handler				= this;
 		clientDesc.Protocol				= EProtocol::UDP;
 		clientDesc.PingInterval			= Timestamp::Seconds(1);
 		clientDesc.PingTimeout			= Timestamp::Seconds(10);
-		clientDesc.UsePingSystem		= true;
+		clientDesc.UsePingSystem		= false;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
@@ -94,7 +94,6 @@ namespace LambdaEngine
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
 		m_PlayerSystem.FixedTickMainThread(deltaTime, m_pClient);
-		m_CharacterControllerSystem.FixedTickMainThread(deltaTime);
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
