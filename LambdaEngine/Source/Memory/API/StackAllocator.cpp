@@ -34,12 +34,6 @@ namespace LambdaEngine
 			}
 
 			VALIDATE(m_pCurrentArena != nullptr);
-
-			// In case we still cannot allocate
-			if (!m_pCurrentArena->CanAllocate(size))
-			{
-				return nullptr;
-			}
 		}
 
 		// Allocate
@@ -50,19 +44,12 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_pCurrentArena != nullptr);
 
-		if (!m_pCurrentArena->CanPop(size))
+		if (!m_pCurrentArena->CanPop(size) && (m_ArenaIndex > 0))
 		{
-			if (m_ArenaIndex > 0)
-			{
-				m_ArenaIndex--;
-				m_pCurrentArena = &m_Arenas[m_ArenaIndex];
+			m_ArenaIndex--;
+			m_pCurrentArena = &m_Arenas[m_ArenaIndex];
 				
-				VALIDATE(m_pCurrentArena != nullptr);
-			}
-			else
-			{
-				return;
-			}
+			VALIDATE(m_pCurrentArena != nullptr);
 		}
 		
 		m_pCurrentArena->Pop(size);
