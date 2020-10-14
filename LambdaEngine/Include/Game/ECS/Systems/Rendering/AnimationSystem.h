@@ -39,15 +39,18 @@ namespace LambdaEngine
 		void Animate(AnimationComponent& animation);
 		glm::mat4 ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
+		// TODO: Remove this since it is only for testing
 		bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
 
 	public:
 		static AnimationSystem& GetInstance();
 
 	private:
-		bool		m_ChangeState = false;
-		bool		m_HasInitClock = false;
-		Clock		m_Clock;
-		IDVector	m_AnimationEntities;
+		bool	m_ChangeState = false; // TODO: Remove this since it is only for testing
+		bool	m_HasInitClock = false;
+		Clock	m_Clock;
+		
+		IDVector		m_AnimationEntities;
+		TArray<uint32>	m_JobIndices;
 	};
 }

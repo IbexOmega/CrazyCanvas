@@ -26,8 +26,7 @@ namespace LambdaEngine
 
 	void ClientUtilsImpl::RegisterEntity(Entity entity, int32 networkUID)
 	{
-		auto pair = m_NetworkUIDToEntityMapper.find(networkUID);
-		ASSERT(pair == m_NetworkUIDToEntityMapper.end());
+		ASSERT(m_NetworkUIDToEntityMapper.find(networkUID) == m_NetworkUIDToEntityMapper.end());
 		m_NetworkUIDToEntityMapper.insert({ networkUID, entity });
 	}
 

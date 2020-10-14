@@ -399,7 +399,7 @@ namespace LambdaEngine
 			key.ColorAttachmentsViews[i] = pRenderTargetVk->GetImageView();
 		}
 
-		key.ColorAttachmentViewCount	= renderTargetCount;
+		key.ColorAttachmentViewCount = renderTargetCount;
 
 		if (pDepthStencil)
 		{
