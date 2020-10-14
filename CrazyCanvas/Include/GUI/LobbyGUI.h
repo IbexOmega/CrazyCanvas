@@ -14,6 +14,17 @@ struct HostGameDescription
 	int8 MapNumber = -1;
 };
 
+struct ServerInfo
+{
+	Noesis::Ptr<Noesis::Grid> ServerGrid;
+
+	std::string Name;
+	std::string MapName;
+	uint8 Players;
+	uint16 Ping;
+	LambdaEngine::Timestamp LastUpdate;
+};
+
 enum ErrorCode
 {
 	CONNECT_ERROR,
@@ -60,4 +71,6 @@ private:
 	bool m_RayTracingEnabled = false;
 	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
+
+	std::unordered_map<uint64, ServerInfo> m_Servers;
 };
