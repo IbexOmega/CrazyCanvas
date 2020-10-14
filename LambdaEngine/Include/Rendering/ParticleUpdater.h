@@ -63,6 +63,8 @@ namespace LambdaEngine
 
 		GUID_Lambda							m_ComputeShaderGUID = 0;
 
+		PushConstantData					m_PushConstant;
+
 		uint64								m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>			m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>			m_DescriptorHeap = nullptr;

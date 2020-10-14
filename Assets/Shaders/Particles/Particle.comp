@@ -33,8 +33,7 @@ void main()
 
     // Update particle data 
 	SParticle particle = b_ParticleInstances.Val[gl_GlobalInvocationID.x];
-    particle.Acceleration = particle.Acceleration*dt;
-	particle.Velocity = particle.Velocity + particle.Acceleration*dt;
+	particle.Velocity += particle.Acceleration*dt;
     particle.Transform[3].xyz += particle.Velocity*dt;
     particle.LifeTime -= dt;
 

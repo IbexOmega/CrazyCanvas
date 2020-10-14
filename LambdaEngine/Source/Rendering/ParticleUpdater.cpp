@@ -16,6 +16,8 @@ namespace LambdaEngine
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
+
+		m_PushConstant.particleCount = 32;
 	}
 
 	ParticleUpdater::~ParticleUpdater()
@@ -194,6 +196,8 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(delta);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
+		m_PushConstant.delta = delta.AsSeconds();
+
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
 	}
 	void ParticleUpdater::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
@@ -258,12 +262,7 @@ namespace LambdaEngine
 		pCommandList->Begin(nullptr);
 		pCommandList->BindComputePipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
-
-		PushConstantData pushConstant = {};
-		pushConstant.delta = 0.0f;
-		pushConstant.particleCount = 32U;
-
-		pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &pushConstant, sizeof(PushConstantData), 0U);
+		pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &m_PushConstant, sizeof(PushConstantData), 0U);
 		pCommandList->BindDescriptorSetCompute(m_InstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// Particle Instance Buffer
 		
 		pCommandList->Dispatch(32U, 1U, 1U);

@@ -19,13 +19,13 @@ layout(binding = 1, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer P
 	SParticle Val[]; 
 } b_ParticleInstances;
 
-layout (location = 0) out vec4 fragColor;
-
 void main()
 {
 	SParticle particle = b_ParticleInstances.Val[gl_InstanceIndex];
 	SParticleVertex vertex = b_Vertices.Val[gl_VertexIndex];
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
 
-	gl_Position = frameBuffer.Projection * frameBuffer.View * particle.Transform * vec4(vertex.Position, 1.0);
+	vec3 vPosition = vertex.Position * particle.Radius;
+
+	gl_Position = frameBuffer.Projection * frameBuffer.View * particle.Transform * vec4(vPosition, 1.0);
 }

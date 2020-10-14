@@ -330,7 +330,7 @@ namespace LambdaEngine
 			}
 		}
 
-		if (resourceName == "PARTICLE_DEPTH_STENCIL")
+		if (resourceName == "G_BUFFER_DEPTH_STENCIL")
 		{
 			if (imageCount == 1)
 			{
@@ -508,7 +508,7 @@ namespace LambdaEngine
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		//pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
-		pCommandList->DrawIndexInstanced(6, 1, 0, 0, 0);
+		pCommandList->DrawIndexInstanced(6, 32, 0, 0, 0);
 
 		pCommandList->EndRenderPass();
 		pCommandList->End();

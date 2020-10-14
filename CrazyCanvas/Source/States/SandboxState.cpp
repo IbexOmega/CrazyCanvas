@@ -204,8 +204,8 @@ void SandboxState::Init()
 	{
 		Entity entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 4.0f, 0.0f } });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{});
+		pECS->AddComponent<RotationComponent>(entity, { true,glm::identity<glm::quat>() });
+		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{ .Velocity = 1.0f, .Acceleration = 0.0f, .ParticleRadius = 0.1f});
 	}
 
 	//Sphere Grid
