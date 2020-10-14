@@ -25,8 +25,8 @@ namespace LambdaEngine
 
 	enum class EPaintMode
 	{
-		REMOVE = 0,
-		PAINT
+		REMOVE	= 0,
+		PAINT	= 1
 	};
 
 	class PaintMaskRenderer : public ICustomRenderer
