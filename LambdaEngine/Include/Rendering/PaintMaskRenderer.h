@@ -23,6 +23,12 @@ namespace LambdaEngine
 	class Buffer;
 	class Window;
 
+	enum class EPaintMode
+	{
+		REMOVE	= 0,
+		PAINT	= 1
+	};
+
 	class PaintMaskRenderer : public ICustomRenderer
 	{
 	public:
@@ -60,8 +66,9 @@ namespace LambdaEngine
 		* Note: Currently only one hitpoint will be handled at each frame
 		*	position - vec3 of the hit point position
 		*	direction - vec3 of the direction the hit position had during collision
+		*	paintMode - painting mode to be used for the target
 		*/
-		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction);
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode);
 
 	private:
 		bool CreateCopyCommandList();
@@ -85,8 +92,9 @@ namespace LambdaEngine
 
 		struct UnwrapData
 		{
-			glm::vec4 TargetPosition;
-			glm::vec4 TargetDirection;
+			glm::vec4	TargetPosition;
+			glm::vec4	TargetDirection;
+			EPaintMode	PaintMode = EPaintMode::PAINT;
 		};
 
 	private:
@@ -115,7 +123,7 @@ namespace LambdaEngine
 		TArray<TSharedRef<Buffer>>	m_UnwrapDataCopyBuffers;
 		TSharedRef<Buffer>			m_UnwrapDataBuffer = nullptr;
 
-		const DrawArg*												m_pDrawArgs;
+		const DrawArg*												m_pDrawArgs = nullptr;
 		TArray<TArray<TSharedRef<DescriptorSet>>>					m_VerticesInstanceDescriptorSets;
 
 		TSharedRef<DescriptorSet>									m_UnwrapDataDescriptorSet;
