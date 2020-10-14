@@ -96,7 +96,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 
-			Fire(weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
+			Fire(weaponComponent, positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f), rotationComp.Quaternion, velocityComp.Velocity);
 		}
 	}
 }

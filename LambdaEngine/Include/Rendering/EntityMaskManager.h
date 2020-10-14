@@ -36,6 +36,7 @@ namespace LambdaEngine
 		static DrawArgExtensionGroup& GetExtensionGroup(Entity entity);
 
 		static uint32 FetchEntityMask(Entity entity);
+		static uint32 FetchDefaultEntityMask();
 
 		static TArray<uint32> ExtractComponentMasksFromEntityMask(uint32 mask);
 
@@ -52,5 +53,7 @@ namespace LambdaEngine
 		inline static THashTable<const ComponentType*, ComponentBit>	s_ComponentTypeToMaskMap;
 		inline static THashTable<Entity, DrawArgExtensionGroupEntry>	s_EntityToExtensionGroupEntryMap;
 		inline static THashTable<uint32, DrawArgExtensionDesc>			s_ExtensionMaskToExtensionDescMap;
+		inline static uint32 s_DefaultMask = 1;
+		inline static uint32 s_Initialized = false;
 	};
 }

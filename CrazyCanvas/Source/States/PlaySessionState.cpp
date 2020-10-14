@@ -22,7 +22,6 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
-
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
@@ -163,22 +162,26 @@ void PlaySessionState::Init()
 	//		}
 	//	}
 	//}
-	TArray<GUID_Lambda> animations;
-	ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 
-	MaterialProperties materialProperties;
-	materialProperties.Albedo = glm::vec4(1.0f);
-	materialProperties.Roughness = 1.0f;
-	materialProperties.Metallic = 1.0f;
+	//Preload some resources
+	{
+		TArray<GUID_Lambda> animations;
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 
-	const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-		"Robot Material",
-		ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
-		ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
-		GUID_TEXTURE_DEFAULT_COLOR_MAP,
-		GUID_TEXTURE_DEFAULT_COLOR_MAP,
-		GUID_TEXTURE_DEFAULT_COLOR_MAP,
-		materialProperties);
+		MaterialProperties materialProperties;
+		materialProperties.Albedo = glm::vec4(1.0f);
+		materialProperties.Roughness = 1.0f;
+		materialProperties.Metallic = 1.0f;
+
+		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Robot Material",
+			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
+			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+	}
 
 	if (m_Online)
 		ClientSystem::GetInstance().Connect(NetworkUtils::GetLocalAddress());

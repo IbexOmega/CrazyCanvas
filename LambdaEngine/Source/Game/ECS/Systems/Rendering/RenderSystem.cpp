@@ -788,6 +788,7 @@ namespace LambdaEngine
 		meshKey.IsAnimated	= isAnimated;
 		meshKey.EntityID	= entity;
 		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
+		LOG_INFO("New Entity has Mask: %u", meshKey.EntityMask);
 
 		//Get meshAndInstancesIterator
 		{
@@ -982,7 +983,7 @@ namespace LambdaEngine
 				// Add Draw Arg Extensions.
 				{
 					meshEntry.DrawArgsMask = meshKey.EntityMask;
-					if (meshEntry.DrawArgsMask > 1) // If the entity has extensions add them to the entry.
+					if (meshEntry.DrawArgsMask & ~EntityMaskManager::FetchDefaultEntityMask()) // If the entity has extensions, it will differ from the default mask, and then add them to the entry.
 					{
 						DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 						meshEntry.ExtensionGroups.PushBack(&extensionGroup);

@@ -10,16 +10,20 @@ namespace LambdaEngine
 {
 	bool EntityMaskManager::Init()
 	{
-		BindTypeToExtensionDesc(MeshPaintComponent::Type(), { 1 }, false);	// Mask = 0x2
-		BindTypeToExtensionDesc(PlayerLocalComponent::Type(), { 0 }, true);	// Mask = 0x4
+		if (!s_Initialized)
+		{
+			BindTypeToExtensionDesc(MeshPaintComponent::Type(), { 1 }, false);	// Mask = 0x2
+			BindTypeToExtensionDesc(PlayerLocalComponent::Type(), { 0 }, true);	// Mask = 0x4
 
+			s_Initialized = true;
+		}
 		return true;
 	}
 
-    void LambdaEngine::EntityMaskManager::RemoveAllExtensionsFromEntity(Entity entity)
-    {
-	    s_EntityToExtensionGroupEntryMap.erase(entity);
-    }
+	void LambdaEngine::EntityMaskManager::RemoveAllExtensionsFromEntity(Entity entity)
+	{
+		s_EntityToExtensionGroupEntryMap.erase(entity);
+	}
 
 	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension)
 	{
@@ -65,18 +69,9 @@ namespace LambdaEngine
 		}
 
 		extensionGroup.pExtensions[0].ExtensionID = extensionMask;
-		groupEntry.Mask = 0x1;
+		groupEntry.Mask = s_DefaultMask;
 
 		if (!inverted) groupEntry.Mask |= extensionMask;
-
-		//Loop through all ExtensionMasks and set those which are inverted
-		for (const std::pair<const ComponentType*, ComponentBit>& componentBitPair : s_ComponentTypeToMaskMap)
-		{
-			if (componentBitPair.second.Inverted && componentBitPair.first != type)
-			{
-				groupEntry.Mask |= componentBitPair.second.Bit;
-			}
-		}
 	}
 
 	DrawArgExtensionGroup& EntityMaskManager::GetExtensionGroup(Entity entity)
@@ -90,7 +85,12 @@ namespace LambdaEngine
 		auto it = s_EntityToExtensionGroupEntryMap.find(entity);
 		if (it != s_EntityToExtensionGroupEntryMap.end())
 			return it->second.Mask;
-		return 1; // No extra extension is used.
+		return FetchDefaultEntityMask(); // No extra extension is used.
+	}
+
+	uint32 EntityMaskManager::FetchDefaultEntityMask()
+	{
+		return s_DefaultMask;
 	}
 
 	TArray<uint32> EntityMaskManager::ExtractComponentMasksFromEntityMask(uint32 mask)
@@ -114,14 +114,27 @@ namespace LambdaEngine
 			return it->second.Bit;
 		}
 
-		// Generate a mask for this component type. Mask 0 is used as an error code.
-		static uint32 s_MaskCounter = 0;
-		uint32 bit = BIT(++s_MaskCounter);
+		if (!s_Initialized)
+		{
+			// Generate a mask for this component type. Mask 0 is used as an error code.
+			static uint32 s_MaskCounter = 0;
+			uint32 bit = BIT(++s_MaskCounter);
 
-		//Set bit on other ComponentTypes
-		s_ComponentTypeToMaskMap[type] = { .Bit = bit, .Inverted = inverted };
+			//Set bit on other ComponentTypes
+			s_ComponentTypeToMaskMap[type] = { .Bit = bit, .Inverted = inverted };
 
-		return bit;
+			if (inverted)
+			{
+				s_DefaultMask |= bit;
+			}
+
+			return bit;
+		}
+		else
+		{
+			LOG_WARNING("[EntityMaskManager]: New bit required for Component type %s but EntityMaskManager is already intialized, returning default mask %x", type->GetName(), s_DefaultMask);
+			return s_DefaultMask;
+		}
 	}
 
 	const DrawArgExtensionDesc& EntityMaskManager::GetExtensionDescFromExtensionMask(uint32 mask)
