@@ -330,7 +330,7 @@ namespace LambdaEngine
 			}
 		}
 
-		if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+		if (resourceName == "PARTICLE_DEPTH_STENCIL")
 		{
 			if (imageCount == 1)
 			{
