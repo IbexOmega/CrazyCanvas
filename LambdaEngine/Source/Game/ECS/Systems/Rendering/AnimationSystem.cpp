@@ -8,6 +8,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Threading/API/ThreadPool.h"
+
 namespace LambdaEngine
 {
 	AnimationSystem::AnimationSystem()
@@ -36,6 +38,7 @@ namespace LambdaEngine
 		// Call the graphs tick
 		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
 
+		// TODO: Remove this since it is only for testing
 		if (m_ChangeState)
 		{
 			if (animation.Graph.GetCurrentState().GetName() == "running")
@@ -80,6 +83,7 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
+	// TODO: Remove this since it is only for testing
 	bool AnimationSystem::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
 	{
 		if (keyPressedEvent.Key == EKey::KEY_Q)
@@ -131,9 +135,21 @@ namespace LambdaEngine
 			AnimationComponent& animation = pAnimationComponents->GetData(entity);
 			if (!animation.IsPaused)
 			{
-				Animate(animation);
+				std::function<void()> func = [this, &animation]
+				{
+					Animate(animation);
+				};
+
+				m_JobIndices.EmplaceBack(ThreadPool::Execute(func));
 			}
 		}
+
+		// Wait for all jobs to finish
+		for (uint32 index : m_JobIndices)
+		{
+			ThreadPool::Join(index);
+		}
+		m_JobIndices.Clear();
 
 		m_ChangeState = false;
 	}
