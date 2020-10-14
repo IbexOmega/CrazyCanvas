@@ -117,58 +117,5 @@ void SavedServerGUI::UpdateServerItems(const ServerInfo& serverInfo)
 	mapName->SetText(serverInfo.MapName.c_str());
 	ping->SetText(std::to_string(serverInfo.Ping).c_str());
 	playerCount->SetText(std::to_string(serverInfo.Players).c_str());
-
-
-
-	/*
-	if (!isLocal) 
-	{
-		ItemCollection* pItems = m_SavedServerList->GetItems();
-
-		Ptr<Grid> grid;
-
-		if (pItems->Count())
-		{
-			for (int i = 0; i < pItems->Count(); i++)
-			{
-				grid = *((Grid*)pItems->GetItemAt(i).GetPtr());
-
-				TextBlock* element = (TextBlock*)grid->GetChildren()->Get(0);
-				element->SetText(pServerN);
-				element = (TextBlock*)grid->GetChildren()->Get(1);
-				element->SetText(pMapN);
-				element = (TextBlock*)grid->GetChildren()->Get(2);
-				element->SetText(pPing);
-
-				Rectangle* rect = (Rectangle*)grid->GetChildren()->Get(3);
-				Ptr<SolidColorBrush> brush = *new SolidColorBrush();
-				Color color = Color();
-
-				if (isRunning)
-				{
-					brush->SetColor(color.Green());
-					rect->SetFill(brush);
-				}
-				else
-				{
-					brush->SetColor(color.Red());
-					rect->SetFill(brush);
-				}
-
-			}
-			LOG_MESSAGE(grid->GetChildren()->Get(1)->ToString().Str());
-		}
-	}
-	else
-	{
-		ItemCollection* pItems = m_LocalServerList->GetItems();
-
-		Ptr<Grid> grid = *((Grid*)pItems->GetItemAt(0).GetPtr());
-
-		if (pItems->Count())
-		{
-			LOG_MESSAGE(grid->GetChildren()->Get(0)->ToString().Str());
-		}
-	}*/
 }
 

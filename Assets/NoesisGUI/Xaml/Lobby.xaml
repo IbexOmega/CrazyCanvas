@@ -81,23 +81,39 @@
 
                         <Rectangle  x:Name="ServerBrowse" Grid.ColumnSpan="6" Grid.Column="2" Fill="#FF25252B" Stroke="Black" Margin="0,0,5,0" Grid.RowSpan="28"/>
                         <TextBlock Grid.Column="3" Grid.Row="1" FontSize="20" Margin="0,0,-100,0"  Foreground="White" Text="List Of Servers" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                        <Grid x:Name="GRID_ITEM" Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="0">Name</TextBlock>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="1">Map</TextBlock>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Ping</TextBlock>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Status</TextBlock>
-                        </Grid>
                         <TabControl x:Name="SERVERS" Margin="0,20" Grid.Column="2" Grid.ColumnSpan="6" Background="#FF181919" Grid.Row="4" Grid.RowSpan="22">
                             <TabItem x:Name="LOCAL" Header="Local Servers">
-                                <ListBox x:Name="LOCAL_SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="4" Grid.RowSpan="20" Margin="5,0,10,0" Background="#FF171717">
-
-                                </ListBox>
+                                <Grid Grid.Column="1" Grid.ColumnSpan="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                        <Grid x:Name="SERVER_CONTENT"  Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="0">Name</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="1">Map</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Players</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Ping</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="4">Status</TextBlock>
+                                    </Grid>
+                                    <ListBox x:Name="LOCAL_SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="10" Margin="5,0,10,0" Background="#FF171717">
+                                    </ListBox>
+                                </Grid>
                             </TabItem>
                             <TabItem x:Name="SAVED" Header="Saved Servers">
                                 <ListBox x:Name="SAVED_SERVER_LIST" Margin="5,0,10,0" Background="#FF171717">
