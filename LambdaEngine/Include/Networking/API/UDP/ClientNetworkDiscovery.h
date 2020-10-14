@@ -7,6 +7,7 @@
 #include "Networking/API/NetWorker.h"
 #include "Networking/API/NetworkStatistics.h"
 #include "Networking/API/SegmentPool.h"
+#include "Networking/API/BinaryDecoder.h"
 
 #include "Networking/API/UDP/PacketTransceiverUDP.h"
 
@@ -19,6 +20,12 @@ namespace LambdaEngine
 		public NetWorker
 	{
 		friend class NetworkDiscovery;
+
+		struct Packet
+		{
+			BinaryDecoder Decoder;
+			IPEndPoint Sender;
+		};
 
 	public:
 		DECL_UNIQUE_CLASS(ClientNetworkDiscovery);
@@ -38,8 +45,9 @@ namespace LambdaEngine
 	private:
 		ClientNetworkDiscovery();
 
-		void HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket);
-		void Tick(Timestamp delta);
+		bool HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket);
+		void FixedTick(Timestamp delta);
+		void HandleReceivedPacketsMainThread();
 
 	private:
 		ISocketUDP* m_pSocket;
@@ -52,5 +60,8 @@ namespace LambdaEngine
 		INetworkDiscoveryClient* m_pHandler;
 		Timestamp m_TimeOfLastSearch;
 		Timestamp m_SearchInterval;
+		SpinLock m_LockReceivedPackets;
+		std::atomic_int8_t m_BufferIndex;
+		TArray<Packet> m_ReceivedPackets[2];
 	};
 }
