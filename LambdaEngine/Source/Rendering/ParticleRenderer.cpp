@@ -43,6 +43,12 @@ namespace LambdaEngine
 		perFrameBufferBindingDesc.Binding = 0;
 		perFrameBufferBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
+		DescriptorBindingDesc textureBindingDesc = {};
+		textureBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		textureBindingDesc.DescriptorCount = 1;
+		textureBindingDesc.Binding = 0;
+		textureBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		verticesBindingDesc.DescriptorCount = 1;
@@ -55,15 +61,27 @@ namespace LambdaEngine
 		instanceBindingDesc.Binding = 1;
 		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
+		DescriptorBindingDesc atlasDataBindingDesc = {};
+		atlasDataBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		atlasDataBindingDesc.DescriptorCount = 1;
+		atlasDataBindingDesc.Binding = 0;
+		atlasDataBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
 		descriptorSetLayoutDesc1.DescriptorBindings = { perFrameBufferBindingDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
+		descriptorSetLayoutDesc2.DescriptorBindings = { textureBindingDesc };
+
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
+		descriptorSetLayoutDesc3.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
+
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc4 = {};
+		descriptorSetLayoutDesc4.DescriptorBindings = { atlasDataBindingDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Particle Renderer Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc1, descriptorSetLayoutDesc2, descriptorSetLayoutDesc3, descriptorSetLayoutDesc4 };
 
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 

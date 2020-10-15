@@ -37,7 +37,19 @@ namespace LambdaEngine
 		glm::vec3 StartVelocity;
 		float Radius;
 		glm::vec3 Acceleration;
-		float padding0;
+		uint32 AtlasIndex;
+		uint32 TileIndex;
+		uint32 AnimationCount;
+		float Padding0;
+		float Padding1;
+	};
+
+	struct AtlasInfo
+	{
+		float	TileFactorX = 0.f;
+		float	TileFactorY = 0.f;
+		uint32	RowCount	= 0;
+		uint32	ColCount	= 0;
 	};
 
 	struct IndirectData

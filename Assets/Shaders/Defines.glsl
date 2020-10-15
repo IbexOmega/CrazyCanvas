@@ -172,7 +172,19 @@ struct SParticle
 	vec3 StartVelocity;
 	float Radius;
 	vec3 Acceleration;
-	float padding0;
+	uint AtlasIndex;
+	uint TileIndex;
+	uint AnimationCount;
+	float Padding0;
+	float Padding1;
+};
+
+struct SAtlasData
+{
+	float	TileFactorX;
+	float	TileFactorY;
+	uint	RowCount;
+	uint	ColCount;
 };
 
 #endif
