@@ -29,8 +29,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-PlaySessionState::PlaySessionState(bool online) : 
-	m_Online(online)
+PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
+	m_pIPAddress(pIPAddress)
 {
 
 }
@@ -182,10 +182,7 @@ void PlaySessionState::Init()
 			materialProperties);
 	}
 
-	if (m_Online)
-		ClientSystem::GetInstance().Connect(NetworkUtils::GetLocalAddress());
-	else
-		ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
+	ClientSystem::GetInstance().Connect(m_pIPAddress);
 }
 
 bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
