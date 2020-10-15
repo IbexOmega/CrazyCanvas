@@ -463,9 +463,12 @@ namespace LambdaEngine
 
 	void RenderGraph::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
+
 		for (auto& customRenderer : m_CustomRenderers)
 		{
-			customRenderer->Update(delta, m_ModFrameIndex, m_BackBufferIndex);
+			customRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
 		}
 
 		UpdateResourceBindings();
@@ -3559,7 +3562,7 @@ namespace LambdaEngine
 
 					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
 					{
-						uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
+						//uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
 						DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
 						// Vertex Buffer
@@ -3636,7 +3639,7 @@ namespace LambdaEngine
 										uint32 numTextures = extension.TextureCount;
 										for (uint32 t = 0; t < numTextures; t++)
 										{
-											uint32 masks = extensionGroup->pExtensionMasks[e];
+											//uint32 masks = extensionGroup->pExtensionMasks[e];
 											const TextureViewDesc& textureViewDesc = extension.ppTextureViews[t]->GetDesc();
 											textureBarrierTemplate.StateBefore = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
 											textureBarrierTemplate.StateAfter = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
@@ -3662,7 +3665,7 @@ namespace LambdaEngine
 			//Create Initial Barriers
 			for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
 			{
-				uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
+				//uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
 				DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
 				// Vertex Buffer
@@ -4091,11 +4094,13 @@ namespace LambdaEngine
 
 			for (const TArray<PipelineTextureBarrierDesc>& sameQueueUnboundedTextureBarriers : sameQueueUnboundedTextureBarrierArrays)
 			{
+				UNREFERENCED_VARIABLE(sameQueueUnboundedTextureBarriers);
 				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueTextureBarriers.GetData(), sameQueueTextureBarriers.GetSize());
 			}
 
 			for (const TArray<PipelineTextureBarrierDesc>& otherQueueUnboundedTextureBarriers : otherQueueUnboundedTextureBarrierArrays)
 			{
+				UNREFERENCED_VARIABLE(otherQueueUnboundedTextureBarriers);
 				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
 				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;

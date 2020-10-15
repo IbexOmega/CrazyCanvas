@@ -530,7 +530,7 @@ namespace LambdaEngine
 		UpdateBuffers();
 		UpdateRenderGraph();
 
-		m_pRenderGraph->Update(delta, m_ModFrameIndex, m_BackBufferIndex);
+		m_pRenderGraph->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
 
 		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 

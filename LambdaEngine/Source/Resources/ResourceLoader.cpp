@@ -1037,7 +1037,7 @@ namespace LambdaEngine
 				auto childIt = pSkeleton->JointMap.find(childName);
 				if (childIt != pSkeleton->JointMap.end())
 				{
-					pSkeleton->Joints[childIt->second].ParentBoneIndex = myID;
+					pSkeleton->Joints[childIt->second].ParentBoneIndex = (JointIndexType)myID;
 				}
 
 				FindSkeletalParent(pNode->mChildren[child], pSkeleton);
@@ -1067,7 +1067,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pSkeleton->JointMap[joint.Name] = boneIndex;
+				pSkeleton->JointMap[joint.Name] = (unsigned char)boneIndex;
 			}
 			
 			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
@@ -1137,22 +1137,22 @@ namespace LambdaEngine
 				VertexJointData& vertex = pMesh->VertexJointData[vertexID];
 				if (vertex.JointID0 == INVALID_JOINT_ID)
 				{
-					vertex.JointID0 = boneID;
+					vertex.JointID0 = (JointIndexType)boneID;
 					vertex.Weight0	= weight;
 				}
 				else if (vertex.JointID1 == INVALID_JOINT_ID)
 				{
-					vertex.JointID1 = boneID;
+					vertex.JointID1 = (JointIndexType)boneID;
 					vertex.Weight1	= weight;
 				}
 				else if (vertex.JointID2 == INVALID_JOINT_ID)
 				{
-					vertex.JointID2 = boneID;
+					vertex.JointID2 = (JointIndexType)boneID;
 					vertex.Weight2	= weight;
 				}
 				else if (vertex.JointID3 == INVALID_JOINT_ID)
 				{
-					vertex.JointID3 = boneID;
+					vertex.JointID3 = (JointIndexType)boneID;
 					// This weight will be calculated in the shader
 				}
 				else

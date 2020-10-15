@@ -73,6 +73,14 @@ workspace "LambdaEngine"
 	architecture "x64"
 	warnings "extra"
 
+	-- Disable C4201 nonstandard extension used: nameless struct/union
+	disablewarnings { "4201" }
+
+	-- Link warning suppression
+	-- LNK4099: Debugging Database file (pdb) missing for given obj
+	-- LNK4006: Sympbol already defined in another library will pick first definition
+	linkoptions { "-IGNORE:4006,4099" }
+
 	-- Set output dir
 	outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}-%{cfg.platform}"
 
@@ -110,6 +118,8 @@ workspace "LambdaEngine"
 			"NDEBUG",
 			"LAMBDA_CONFIG_RELEASE",
 		}
+		-- Disable C100 Unused parameter
+		disablewarnings { "4100" }
 	filter "configurations:Production"
 		symbols "off"
 		runtime "Release"
@@ -119,6 +129,8 @@ workspace "LambdaEngine"
 			"NDEBUG",
 			"LAMBDA_CONFIG_PRODUCTION",
 		}
+		-- Disable C100 Unused parameter
+		disablewarnings { "4100" }
 	filter {}
 
 	-- Compiler option
@@ -331,9 +343,6 @@ workspace "LambdaEngine"
 			"imnodes",
 		}
 
-		-- Link warning suppression
-		linkoptions { "-IGNORE:4006" }
-		
 		-- Win32
 		filter { "system:windows" }
 			links

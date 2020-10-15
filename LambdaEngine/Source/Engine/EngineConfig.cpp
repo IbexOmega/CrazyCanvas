@@ -139,7 +139,7 @@ namespace LambdaEngine
 	{
 		if (s_ConfigDocument.HasMember(propertyName.c_str()))
 		{
-			s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+			s_ConfigDocument[propertyName.c_str()].SetInt(value);
 
 			return true;
 		}

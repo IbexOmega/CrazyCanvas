@@ -173,7 +173,7 @@ namespace LambdaEngine
 			const uint32 windowWidth	= mainWindow->GetWidth();
 			const uint32 size			= 250;
 
-			ImGui::SetNextWindowPos(ImVec2(windowWidth - size, 0));
+			ImGui::SetNextWindowPos(ImVec2((float)(windowWidth - size), 0.0f));
 			ImGui::SetNextWindowSize(ImVec2((float32)size, (float32)size));
 
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
