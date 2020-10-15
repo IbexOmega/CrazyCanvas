@@ -25,7 +25,13 @@ void main()
 	SParticleVertex vertex = b_Vertices.Val[gl_VertexIndex];
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
 
-	vec3 vPosition = vertex.Position * particle.Radius;
+	vec3 vCenterPos = particle.Transform[3].xyz;
+
+	vec3 camRightWorldSpace = vec3(frameBuffer.View[0][0], frameBuffer.View[1][0], frameBuffer.View[2][0]);
+	vec3 camUpWorldSpace 	= vec3(frameBuffer.View[0][1], frameBuffer.View[1][1], frameBuffer.View[2][1]);
+
+	vec3 vPosition = camUpWorldSpace * vertex.Position.y + camRightWorldSpace * vertex.Position.x;
+	vPosition *= particle.Radius;
 
 	gl_Position = frameBuffer.Projection * frameBuffer.View * particle.Transform * vec4(vPosition, 1.0);
 }
