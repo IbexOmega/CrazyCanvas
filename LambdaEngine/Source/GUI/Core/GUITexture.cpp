@@ -98,8 +98,11 @@ namespace LambdaEngine
 		VALIDATE(pTexture != nullptr);
 		VALIDATE(pTextureView != nullptr);
 
-		m_pTexture		= pTexture;
-		m_pTextureView	= pTextureView;
+		m_pTexture = pTexture;
+		m_pTexture->AddRef();
+
+		m_pTextureView = pTextureView;
+		m_pTextureView->AddRef();
 
 		return true;
 	}

@@ -100,6 +100,8 @@ namespace LambdaEngine
 		{
 		}
 
+		virtual ~Event() = default;
+
 		DECLATE_STATIC_EVENT_TYPE(Event);
 
 		// ToString provides debugging info regarding an event

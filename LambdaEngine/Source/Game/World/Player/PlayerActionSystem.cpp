@@ -14,17 +14,18 @@
 #include "Input/API/InputActionSystem.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 namespace LambdaEngine
 {
 	PlayerActionSystem::PlayerActionSystem()
 	{
-
+		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
 	}
 
 	PlayerActionSystem::~PlayerActionSystem()
 	{
-
+		EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
 	}
 
 	void PlayerActionSystem::Init()
@@ -37,33 +38,64 @@ namespace LambdaEngine
 		ECSCore* pECS = ECSCore::GetInstance();
 		float32 dt = (float32)deltaTime.AsSeconds();
 
-		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-		RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
-
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
 		float addedPitch = dt * float(InputActionSystem::IsActive("CAM_ROT_UP") - InputActionSystem::IsActive("CAM_ROT_DOWN"));
 		float addedYaw = dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
 
-		const float MAX_PITCH = glm::half_pi<float>() - 0.01f;
+		if (m_MouseEnabled)
+		{
+			const MouseState& mouseState = Input::GetMouseState();
 
-		glm::vec3 forward = GetForward(rotationComponent.Quaternion);
-		float currentPitch = glm::clamp(GetPitch(forward) + addedPitch, -MAX_PITCH, MAX_PITCH);
-		float currentYaw = GetYaw(forward) + addedYaw;
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+			const int32 halfWidth		= int32(0.5f * float32(window->GetWidth()));
+			const int32 halfHeight	= int32(0.5f * float32(window->GetHeight()));
 
-		rotationComponent.Quaternion =
-			glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw
-			glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
+			const glm::vec2 mouseDelta(mouseState.Position.x - halfWidth, mouseState.Position.y - halfHeight);
+
+			if (glm::length(mouseDelta) > glm::epsilon<float>())
+			{
+				//Todo: Move this into some settings file
+				constexpr const float MOUSE_SPEED_FACTOR = 0.35f;
+				addedYaw -= MOUSE_SPEED_FACTOR * (float)mouseDelta.x * dt;
+				addedPitch -= MOUSE_SPEED_FACTOR * (float)mouseDelta.y * dt;
+			}
+
+			CommonApplication::Get()->SetMousePosition(halfWidth, halfHeight);
+		}
+
+		if (glm::abs(addedPitch) > 0.0f || glm::abs(addedYaw) > 0.0f)
+		{
+			ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+			RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
+
+			const float MAX_PITCH = glm::half_pi<float>() - 0.01f;
+
+			glm::vec3 forward = GetForward(rotationComponent.Quaternion);
+			float currentPitch = glm::clamp(GetPitch(forward) + addedPitch, -MAX_PITCH, MAX_PITCH);
+			float currentYaw = GetYaw(forward) + addedYaw;
+
+			rotationComponent.Quaternion =
+				glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw
+				glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
+		}
+	}
+
+	bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
+	{
+		if (event.Key == EKey::KEY_KEYPAD_0)
+		{
+			m_MouseEnabled = !m_MouseEnabled;
+			CommonApplication::Get()->SetMouseVisibility(!m_MouseEnabled);
+		}
+
+		return false;
 	}
 
 	void PlayerActionSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECS = ECSCore::GetInstance();
-
-		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-		RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
-		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
 		glm::i8vec2 deltaVelocity =
 		{
@@ -71,25 +103,36 @@ namespace LambdaEngine
 			int8(InputActionSystem::IsActive("CAM_BACKWARD") - InputActionSystem::IsActive("CAM_FORWARD"))	// Y: Forward
 		};
 
+		const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+
+		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(entityPlayer);
+		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+
 		ComputeVelocity(rotationComponent.Quaternion, deltaVelocity.x, deltaVelocity.y, velocityComponent.Velocity);
 
-		pGameState->DeltaForward = deltaVelocity.x;
-		pGameState->DeltaLeft = deltaVelocity.y;
-		pGameState->Rotation = rotationComponent.Quaternion;
+		pGameState->DeltaForward	= deltaVelocity.x;
+		pGameState->DeltaLeft		= deltaVelocity.y;
+		pGameState->Rotation		= rotationComponent.Quaternion;
 	}
 
 	void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
 	{
 		if (deltaForward == 0 && deltaLeft == 0)
 		{
-			result = glm::vec3(0.0f);
+			result.x = 0.0f;
+			result.z = 0.0f;
 			return;
 		}
 
 		float32 movespeed = 2.0f;
-		result = rotation * glm::vec3(deltaForward, 0.0f, deltaLeft);
-		result.y = 0.0f;
-		result = glm::normalize(result);
-		result *= movespeed;
+		glm::vec3 currentVelocity;
+		currentVelocity		= rotation * glm::vec3(deltaForward, 0.0f, deltaLeft);
+		currentVelocity.y	= 0.0f;
+		currentVelocity		= glm::normalize(currentVelocity);
+		currentVelocity		*= movespeed;
+
+		result.x = currentVelocity.x;
+		result.z = currentVelocity.z;
 	}
 }

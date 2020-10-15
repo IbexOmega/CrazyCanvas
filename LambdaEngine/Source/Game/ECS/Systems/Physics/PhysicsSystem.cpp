@@ -177,7 +177,7 @@ namespace LambdaEngine
 
 		for (Entity entity : m_DynamicCollisionEntities)
 		{
-			const DynamicCollisionComponent& collisionComp = pDynamicCollisionComponents->GetData(entity);
+			const DynamicCollisionComponent& collisionComp = pDynamicCollisionComponents->GetConstData(entity);
 			PxRigidDynamic* pActor = collisionComp.pActor;
 			if (!pActor->isSleeping())
 			{
@@ -325,7 +325,7 @@ namespace LambdaEngine
 	PxShape* PhysicsSystem::CreateCollisionBox(const CollisionCreateInfo& staticCollisionInfo) const
 	{
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
-		const glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent * staticCollisionInfo.Scale.Scale;
+		const glm::vec3 halfExtent = pMesh->BoundingBox.Dimensions * staticCollisionInfo.Scale.Scale / 2.0f;
 		const PxVec3 halfExtentPX(halfExtent.x, halfExtent.y, halfExtent.z);
 
 		PxShape* pBoxShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentPX), *m_pMaterial);
@@ -533,6 +533,7 @@ namespace LambdaEngine
 		controllerDesc.nonWalkableMode	= PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
 
 		PxController* pController = m_pControllerManager->createController(controllerDesc);
+		pController->setFootPosition(controllerDesc.position);
 		PxFilterData* pFilterData = DBG_NEW PxFilterData(
 			(PxU32)characterColliderInfo.CollisionGroup,
 			(PxU32)characterColliderInfo.CollisionMask,

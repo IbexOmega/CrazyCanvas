@@ -5,10 +5,11 @@
 
 #include "../Defines.glsl"
 
-layout(location = 0) in vec3	in_WorldPosition;
-layout(location = 1) in vec3	in_Normal;
-layout(location = 2) in vec3	in_TargetPosition;
-layout(location = 3) in vec3	in_TargetDirection;
+layout(location = 0) in vec3		in_WorldPosition;
+layout(location = 1) in vec3		in_Normal;
+layout(location = 2) in vec3		in_TargetPosition;
+layout(location = 3) in vec3		in_TargetDirection;
+layout(location = 4) flat in uint	in_PaintMode;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
@@ -46,7 +47,13 @@ void main()
 	vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
 
 	if(brushMask.a > 0.01f && length(worldPosition-projectedPosition) <= BRUSH_SIZE && valid > 0.5f)
-		out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
+	{
+		// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
+		if (in_PaintMode == 1)
+			out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
+		else
+			out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
+	}
 	else
 		discard;
 		// out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);

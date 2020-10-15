@@ -11,6 +11,6 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(INetworkDiscoveryServer);
 
-		virtual void OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder) = 0;
+		virtual void OnNetworkDiscoveryPreTransmit(BinaryEncoder& encoder) = 0;
 	};
 }

@@ -131,7 +131,7 @@ namespace LambdaEngine
 		m_DebugRenderers.Clear();
 	}
 
-	bool RenderGraph::Init(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs)
+	bool RenderGraph::Init(const RenderGraphDesc* pDesc, TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		m_BackBufferCount				= pDesc->BackBufferCount;
 		m_pDeviceResourcesToDestroy		= DBG_NEW TArray<DeviceChild*>[m_BackBufferCount];
@@ -166,13 +166,13 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgs))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
 		}
 
-		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgs))
+		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
 			return false;
@@ -184,10 +184,14 @@ namespace LambdaEngine
 			return false;
 		}
 
+		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
+		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
+		UpdateRelativeParameters();
+
 		return true;
 	}
 
-	bool RenderGraph::Recreate(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs)
+	bool RenderGraph::Recreate(const RenderGraphDesc* pDesc, TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		RenderAPI::GetGraphicsQueue()->Flush();
 		RenderAPI::GetComputeQueue()->Flush();
@@ -243,13 +247,13 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgs))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
 		}
 
-		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgs))
+		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
 			return false;
@@ -269,6 +273,10 @@ namespace LambdaEngine
 		}
 
 		UpdateResourceBindings();
+
+		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
+		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
+		UpdateRelativeParameters();
 
 		return true;
 	}
@@ -685,7 +693,7 @@ namespace LambdaEngine
 					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
 					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
-					auto drawArgsMaskToArgsIt = pResource->DrawArgs.MaskToArgs.find(pRenderStage->DrawArgsMask);
+					auto drawArgsMaskToArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pRenderStage->DrawArgsMaskDesc.FullMask);
 					pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
 
 					if (pRenderStage->UsesCustomRenderer)
@@ -1817,7 +1825,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<uint32>& requiredDrawArgs)
+	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
 		m_RenderStageMap.reserve(m_RenderStageCount);
@@ -1967,7 +1975,7 @@ namespace LambdaEngine
 							pResource->Texture.InitialTransitionBarrier.TextureFlags			= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : 0;
 						}
 					}
-					else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS && pResourceStateDesc->DrawArgsMask != 0x0)
+					else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS && pResourceStateDesc->DrawArgsIncludeMask != 0x0 && pResourceStateDesc->DrawArgsExcludeMask != UINT32_MAX)
 					{
 						if (pRenderStage->pDrawArgsResource != nullptr)
 						{
@@ -1981,13 +1989,17 @@ namespace LambdaEngine
 							return false;
 						}
 
-						requiredDrawArgs.insert(pResourceStateDesc->DrawArgsMask);
-						pRenderStage->pDrawArgsResource = pResource;
-						pRenderStage->DrawArgsMask		= pResourceStateDesc->DrawArgsMask;
+						DrawArgMaskDesc maskDesc = {};
+						maskDesc.IncludeMask = pResourceStateDesc->DrawArgsIncludeMask;
+						maskDesc.ExcludeMask = pResourceStateDesc->DrawArgsExcludeMask;
+
+						requiredDrawArgMasks.insert(maskDesc);
+						pRenderStage->pDrawArgsResource	= pResource;
+						pRenderStage->DrawArgsMaskDesc	= maskDesc;
 
 						//Set Initial Template only if Mask has not been found before
-						auto maskToBuffersIt = pResource->DrawArgs.MaskToArgs.find(pResourceStateDesc->DrawArgsMask);
-						if (maskToBuffersIt == pResource->DrawArgs.MaskToArgs.end())
+						auto maskToBuffersIt = pResource->DrawArgs.FullMaskToArgs.find(maskDesc.FullMask);
+						if (maskToBuffersIt == pResource->DrawArgs.FullMaskToArgs.end())
 						{
 							pResource->LastPipelineStageOfFirstRenderStage = lastPipelineStageFlags;
 							DrawArgsData drawArgsData = {};
@@ -2004,7 +2016,7 @@ namespace LambdaEngine
 							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN;
 							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
-							pResource->DrawArgs.MaskToArgs[pResourceStateDesc->DrawArgsMask] = drawArgsData;
+							pResource->DrawArgs.FullMaskToArgs[maskDesc.FullMask] = drawArgsData;
 						}
 					}
 					else if (pResource->Type == ERenderGraphResourceType::BUFFER)
@@ -2107,7 +2119,7 @@ namespace LambdaEngine
 						*	The Instance buffer has an ExtensionIndex to point to the right element in the array.
 						*	The first element is used for instances which does not have an extension.
 						*/
-						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMask);
+						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMaskDesc.IncludeMask & ~pRenderStage->DrawArgsMaskDesc.ExcludeMask);
 						uint32 binding = 0;
 						for (uint32 mask : extensionMasks)
 						{
@@ -2471,9 +2483,21 @@ namespace LambdaEngine
 
 					if (pRenderStage->pDrawArgsResource != nullptr)
 					{
-						if (pRenderStage->DrawArgsMask == 0x0)
+						if (pRenderStage->DrawArgsMaskDesc.IncludeMask == 0x0)
 						{
-							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a non-zero DrawArgsMask set to that binding");
+							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a non-zero DrawArgsIncludeMask set to that binding");
+							return false;
+						}
+
+						if (pRenderStage->DrawArgsMaskDesc.ExcludeMask == UINT32_MAX)
+						{
+							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a DrawArgsExcludeMask not set to 0xFFFFFFFF set to that binding");
+							return false;
+						}
+
+						if ((pRenderStage->DrawArgsMaskDesc.IncludeMask& pRenderStage->DrawArgsMaskDesc.ExcludeMask) > 0)
+						{
+							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a DrawArgsIncludeMask and a DrawArgsExcludeMask that do not overlap set to that binding");
 							return false;
 						}
 
@@ -2793,7 +2817,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<uint32>& requiredDrawArgs)
+	bool RenderGraph::CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		m_pSynchronizationStages = DBG_NEW SynchronizationStage[synchronizationStageDescriptions.GetSize()];
 
@@ -2998,12 +3022,17 @@ namespace LambdaEngine
 
 						//We ignore SubResourceCount since DRAW_BUFFERS don't have predetermined SubResourceCount, instead it is determined at runtime
 
+						DrawArgMaskDesc maskDesc = {};
+						maskDesc.IncludeMask = synchronizationIt->DrawArgsIncludeMask;
+						maskDesc.ExcludeMask = synchronizationIt->DrawArgsExcludeMask;
+
 						ResourceBarrierInfo barrierInfo = {};
-						barrierInfo.SynchronizationStageIndex = s;
-						barrierInfo.SynchronizationTypeIndex = targetSynchronizationIndex;
-						barrierInfo.BarrierIndex = barrierIndex;
-						barrierInfo.DrawArgsMask = synchronizationIt->DrawArgsMask;
-						requiredDrawArgs.insert(synchronizationIt->DrawArgsMask);
+						barrierInfo.SynchronizationStageIndex	= s;
+						barrierInfo.SynchronizationTypeIndex	= targetSynchronizationIndex;
+						barrierInfo.BarrierIndex				= barrierIndex;
+						barrierInfo.DrawArgsMaskDesc			= maskDesc;
+
+						requiredDrawArgMasks.insert(maskDesc);
 
 						pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
 					}
@@ -3530,9 +3559,9 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResourceDrawArgs(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
-		auto drawArgsArgsIt = pResource->DrawArgs.MaskToArgs.find(pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
+		auto drawArgsArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.FullMask);
 
-		if (drawArgsArgsIt != pResource->DrawArgs.MaskToArgs.end())
+		if (drawArgsArgsIt != pResource->DrawArgs.FullMaskToArgs.end())
 		{
 			drawArgsArgsIt->second.Args.Clear();
 
@@ -3544,7 +3573,7 @@ namespace LambdaEngine
 			{
 				const ResourceBarrierInfo* pBarrierInfo = &pResource->BarriersPerSynchronizationStage[b];
 
-				if (pDesc->ExternalDrawArgsUpdate.DrawArgsMask == pBarrierInfo->DrawArgsMask)
+				if (pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc == pBarrierInfo->DrawArgsMaskDesc)
 				{
 					SynchronizationStage* pSynchronizationStage = &m_pSynchronizationStages[pBarrierInfo->SynchronizationStageIndex];
 
@@ -3552,10 +3581,13 @@ namespace LambdaEngine
 					TArray<PipelineBufferBarrierDesc>& drawBufferBarriers = pSynchronizationStage->DrawBufferBarriers[pBarrierInfo->SynchronizationTypeIndex];
 					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
 
+					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
+					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
+
 					if (pDesc->ExternalDrawArgsUpdate.Count != 0)
 					{
-						drawTextureBarriers.Clear();
 						drawBufferBarriers.Clear();
+						drawTextureBarriers.Clear();
 					}
 					else
 					{
@@ -3564,12 +3596,8 @@ namespace LambdaEngine
 						continue;
 					}
 
-					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
-					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
-
 					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
 					{
-						uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
 						DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
 						// Vertex Buffer
@@ -3672,7 +3700,6 @@ namespace LambdaEngine
 			//Create Initial Barriers
 			for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
 			{
-				uint32	drawArgMask = pDesc->ExternalDrawArgsUpdate.DrawArgsMask;
 				DrawArg* pDrawArg = &pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
 
 				// Vertex Buffer
@@ -3853,7 +3880,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: Update DrawArgs called for unused DrawArgsMask %08x", pDesc->ExternalDrawArgsUpdate.DrawArgsMask);
+			LOG_WARNING("[RenderGraph]: Update DrawArgs called for unused IncludeDrawArgsMask %08x & ExcludeDrawArgsMask %08x", pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.IncludeMask, pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.ExcludeMask);
 		}
 	}
 
