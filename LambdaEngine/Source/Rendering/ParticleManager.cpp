@@ -15,9 +15,10 @@
 
 namespace LambdaEngine
 {
-	void ParticleManager::Init(uint32 maxParticles)
+	void ParticleManager::Init(uint32 maxParticleCapacity)
 	{
-		m_Particles.Reserve(maxParticles);
+		m_MaxParticleCount = maxParticleCapacity;
+		m_Particles.Reserve(m_MaxParticleCount);
 
 		constexpr uint32 chunkReservationSize = 10;
 		m_FreeParticleChunks.Reserve(chunkReservationSize);
@@ -25,7 +26,7 @@ namespace LambdaEngine
 		// Create one particle chunk spanning the whole particle array
 		ParticleChunk chunk = {};
 		chunk.Offset = 0;
-		chunk.Size = maxParticles;
+		chunk.Size = m_MaxParticleCount;
 
 		m_FreeParticleChunks.PushBack(chunk);
 

@@ -18,6 +18,8 @@ namespace LambdaEngine
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
+
+		m_ParticleCount = 0;
 	}
 
 	ParticleRenderer::~ParticleRenderer()
@@ -239,6 +241,7 @@ namespace LambdaEngine
 	bool LambdaEngine::ParticleRenderer::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
+		m_ParticleCount = 0;
 
 		if (!CreatePipelineLayout())
 		{
