@@ -30,8 +30,10 @@ namespace LambdaEngine
 	* EventQueue
 	*/
 
-	SpinLock		EventQueue::s_EventLock;
-	EventContainer	EventQueue::s_DeferredEvents;
+	SpinLock		EventQueue::s_WriteLock;
+	EventContainer	EventQueue::s_DeferredEvents[2];
+	uint32			EventQueue::s_ReadIndex		= 0;
+	uint32			EventQueue::s_WriteIndex	= 1;
 	
 	bool EventQueue::RegisterEventHandler(EventType eventType, const EventHandler& eventHandler)
 	{
@@ -110,18 +112,28 @@ namespace LambdaEngine
 	
 	void EventQueue::Tick()
 	{
-		std::scoped_lock<SpinLock> lock(s_EventLock);
-
 		// Process events
-		for (uint32 i = 0; i < s_DeferredEvents.Size(); i++)
+		EventContainer& container = s_DeferredEvents[s_ReadIndex];
+		for (uint32 i = 0; i < container.Size(); i++)
 		{
-			Event& event = s_DeferredEvents[i];
+			Event& event = container[i];
 
 			TArray<EventHandler> handlers = GetEventHandlerOfType(event.GetType());
 			InternalSendEventToHandlers(event, handlers);
 		}
 
-		s_DeferredEvents.Clear();
+		container.Clear();
+
+		{
+			std::scoped_lock<SpinLock> lock(s_WriteLock);
+			std::swap(s_WriteIndex, s_ReadIndex);
+		}
+	}
+
+	void EventQueue::Release()
+	{
+		s_DeferredEvents[0].Clear();
+		s_DeferredEvents[1].Clear();
 	}
 	
 	void EventQueue::InternalSendEventToHandlers(Event& event, const TArray<EventHandler>& handlers)

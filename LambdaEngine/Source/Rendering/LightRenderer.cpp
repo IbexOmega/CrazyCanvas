@@ -29,14 +29,17 @@ namespace LambdaEngine
 
 		SAFEDELETE(m_PushConstant.pData);
 
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		if (m_ppGraphicCommandAllocators != nullptr && m_ppGraphicCommandLists != nullptr)
 		{
-			SAFERELEASE(m_ppGraphicCommandLists[b]);
-			SAFERELEASE(m_ppGraphicCommandAllocators[b]);
-		}
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppGraphicCommandLists[b]);
+				SAFERELEASE(m_ppGraphicCommandAllocators[b]);
+			}
 
-		SAFEDELETE_ARRAY(m_ppGraphicCommandLists);
-		SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
+			SAFEDELETE_ARRAY(m_ppGraphicCommandLists);
+			SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
+		}
 	}
 
 	bool LightRenderer::Init()

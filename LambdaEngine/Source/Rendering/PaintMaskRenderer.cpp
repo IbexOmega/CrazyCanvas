@@ -264,7 +264,7 @@ namespace LambdaEngine
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
 		m_pDrawArgs = pDrawArgs;
-		
+
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
@@ -310,7 +310,11 @@ namespace LambdaEngine
 					for (uint32 e = 0; e < numExtensions; e++)
 					{
 						uint32 mask = extensionGroup->pExtensionMasks[e];
-						if (mask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
+						bool inverted;
+						uint32 meshPaintBit = EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type(), inverted);
+						uint32 invertedUInt = uint32(inverted);
+
+						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
 							TextureView* textureView = extension.ppTextureViews[0];
@@ -344,6 +348,10 @@ namespace LambdaEngine
 		if (m_RenderTargets.IsEmpty() || s_Collisions.empty())
 		{
 			return;
+		}
+		else
+		{
+			int dwadwa = 0;
 		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
