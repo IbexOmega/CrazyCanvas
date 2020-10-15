@@ -246,9 +246,12 @@ namespace LambdaEngine
 			direction = glm::normalize(direction);
 
 			particle.Transform = glm::translate(emitterInstance.Position);
+			particle.StartPosition = emitterInstance.Position;
 			particle.Color = glm::vec4(1.0f);
 			particle.Velocity = direction * emitterInstance.Velocity;
+			particle.StartVelocity = particle.Velocity;
 			particle.Acceleration = direction * emitterInstance.Acceleration;
+			particle.CurrentLife = emitterInstance.LifeTime;
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.Radius = emitterInstance.ParticleRadius;
 

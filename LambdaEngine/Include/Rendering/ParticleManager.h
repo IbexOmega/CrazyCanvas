@@ -38,10 +38,14 @@ namespace LambdaEngine
 	{
 		glm::mat4 Transform;
 		glm::vec4 Color;
+		glm::vec3 StartPosition;
+		float CurrentLife;
 		glm::vec3 Velocity;
 		float LifeTime;
-		glm::vec3 Acceleration;
+		glm::vec3 StartVelocity;
 		float Radius;
+		glm::vec3 Acceleration;
+		float padding0;
 	};
 
 	struct IndirectData
