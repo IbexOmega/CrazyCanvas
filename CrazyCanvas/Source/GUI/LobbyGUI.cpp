@@ -22,6 +22,11 @@
 
 //#include <string>
 
+#include <processthreadsapi.h>
+
+STARTUPINFO lpStartupInfo;
+PROCESS_INFORMATION lpProcessInfo;
+
 #include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
@@ -133,6 +138,18 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+
+	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
+	lpStartupInfo.cb = sizeof(lpStartupInfo);
+	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
+
+	CreateProcessA(L"Server.exe",
+		L"--state server", NULL, NULL,
+		NULL, NULL, NULL, NULL,
+		&lpStartupInfo,
+		&lpProcessInfo
+	);
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
