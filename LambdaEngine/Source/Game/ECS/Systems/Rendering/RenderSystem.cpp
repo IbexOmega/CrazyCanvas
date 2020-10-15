@@ -143,15 +143,16 @@ namespace LambdaEngine
 			RegisterSystem(systemReg);
 		}
 
+		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
 			swapChainDesc.DebugName		= "Renderer Swap Chain";
-			swapChainDesc.pWindow		= CommonApplication::Get()->GetActiveWindow().Get();
+			swapChainDesc.pWindow		= pActiveWindow;
 			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
 			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width			= 0;
-			swapChainDesc.Height		= 0;
+			swapChainDesc.Width			= pActiveWindow->GetWidth();
+			swapChainDesc.Height		= pActiveWindow->GetHeight();
 			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
 			swapChainDesc.SampleCount	= 1;
 			swapChainDesc.VerticalSync	= false;
@@ -204,6 +205,8 @@ namespace LambdaEngine
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
 			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
@@ -542,10 +545,14 @@ namespace LambdaEngine
 
 	void RenderSystem::SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc)
 	{
+		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
+
 		RenderGraphDesc renderGraphDesc = {};
 		renderGraphDesc.Name						= name;
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+		renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+		renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 
 		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 		{

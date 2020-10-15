@@ -184,6 +184,10 @@ namespace LambdaEngine
 			return false;
 		}
 
+		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
+		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
+		UpdateRelativeParameters();
+
 		return true;
 	}
 
@@ -269,6 +273,10 @@ namespace LambdaEngine
 		}
 
 		UpdateResourceBindings();
+
+		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
+		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
+		UpdateRelativeParameters();
 
 		return true;
 	}

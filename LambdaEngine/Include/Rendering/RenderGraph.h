@@ -52,6 +52,8 @@ namespace LambdaEngine
 		String Name											= "Render Graph";
 		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
 		uint32 BackBufferCount								= 3;
+		uint16 BackBufferWidth								= 0;
+		uint16 BackBufferHeight								= 0;
 		TArray<ICustomRenderer*>	CustomRenderers;
 	};
 
