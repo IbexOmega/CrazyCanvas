@@ -40,6 +40,18 @@ namespace LambdaEngine
 		static void* Allocate(uint64 sizeInBytes);
 		static void* Allocate(uint64 sizeInBytes, uint64 alignment);
 
+		template<typename T>
+		static T* AllocateType(uint64 sizeInBytes)
+		{
+			return reinterpret_cast<T*>(Allocate(sizeInBytes));
+		}
+
+		template<typename T>
+		static T* AllocateType()
+		{
+			return reinterpret_cast<T*>(Allocate(sizeof(T)));
+		}
+
 		static void* AllocateDbg(uint64 sizeInBytes, const char* pFileName, int32 lineNumber);
 		static void* AllocateDbg(uint64 sizeInBytes, uint64 alignment, const char* pFileName, int32 lineNumber);
 		
