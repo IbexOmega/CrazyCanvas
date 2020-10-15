@@ -18,6 +18,17 @@ namespace LambdaEngine
 	void ParticleManager::Init(uint32 maxParticles)
 	{
 		m_Particles.Reserve(maxParticles);
+
+		constexpr uint32 chunkReservationSize = 10;
+		m_FreeParticleChunks.Reserve(chunkReservationSize);
+
+		// Create one particle chunk spanning the whole particle array
+		ParticleChunk chunk = {};
+		chunk.Offset = 0;
+		chunk.Size = maxParticles;
+
+		m_FreeParticleChunks.PushBack(chunk);
+
 		m_DirtyIndexBuffer = true;
 		m_DirtyVertexBuffer = true;
 	}
@@ -49,6 +60,21 @@ namespace LambdaEngine
 	void ParticleManager::Tick(Timestamp deltaTime, uint32 modFrameIndex)
 	{
 		m_ModFrameIndex = modFrameIndex;
+
+		for (auto& activeEmitterIt = m_ActiveEmitters.begin();  activeEmitterIt != m_ActiveEmitters.end();)
+		{
+			float& elapTime = activeEmitterIt->second.ElapTime;
+			elapTime += deltaTime.AsSeconds();
+
+			if (elapTime >= activeEmitterIt->second.LifeTime)
+			{
+				activeEmitterIt = m_ActiveEmitters.erase(activeEmitterIt);
+			}
+			else
+			{
+				activeEmitterIt++;
+			}
+		}
 	}
 
 	void ParticleManager::OnEmitterEntityAdded(Entity entity)
@@ -59,9 +85,9 @@ namespace LambdaEngine
 		ParticleEmitterComponent emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
 
 		ParticleEmitterInstance instance = {};
-		instance.position = positionComp.Position;
-		instance.rotation = rotationComp.Quaternion;
-		instance.ParticleCount = emitterComp.ParticleCount;
+		instance.Position = positionComp.Position;
+		instance.Rotation = rotationComp.Quaternion;
+		instance.ParticleChunk.Size = emitterComp.ParticleCount;
 		instance.Angle = emitterComp.Angle;
 		instance.Velocity = emitterComp.Velocity;
 		instance.Acceleration = emitterComp.Acceleration;
@@ -70,35 +96,144 @@ namespace LambdaEngine
 
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
-			CreateConeParticleEmitter(instance);
+			if (!CreateConeParticleEmitter(instance))
+			{
+				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				return;
+			}
 		}
+	
+		if (emitterComp.Active)
+		{
+			instance.IndirectDataIndex = m_IndirectData.GetSize();
 
-		IndirectData indirectData;
-		indirectData.firstInstance = instance.ParticleOffset;
-		indirectData.instanceCount = instance.ParticleCount;
-		indirectData.firstIndex = 0;
-		indirectData.indexCount = 6;
-		m_IndirectData.PushBack(indirectData);
+			IndirectData indirectData;
+			indirectData.firstInstance = instance.ParticleChunk.Offset;
+			indirectData.instanceCount = instance.ParticleChunk.Size;
+			indirectData.firstIndex = 0;
+			indirectData.indexCount = 6;
+			m_IndirectData.PushBack(indirectData);
 
-		m_DirtyIndirectBuffer = true;
-		m_DirtyParticleBuffer = true;
+			m_ActiveEmitters[entity] = instance;
 
+			m_DirtyIndirectBuffer = true;
+			m_DirtyParticleBuffer = true;
+		}
+		else
+		{
+			m_SleepingEmitters[entity] = instance;
+		}
 	}
 
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
 	{
+		ParticleChunk newFreeChunk;
+		if (m_ActiveEmitters.find(entity) != m_ActiveEmitters.end())
+		{
+			// Remove emitter
+			auto& emitter = m_ActiveEmitters[entity];
+
+			// Remove indirect draw call
+			uint32 indirectIndex = emitter.IndirectDataIndex;
+			if (indirectIndex < m_IndirectData.GetSize())
+			{
+				m_IndirectData[indirectIndex] = m_IndirectData.GetBack();
+				m_IndirectData.PopBack();
+				m_DirtyIndirectBuffer = true;
+			}
+			else
+			{
+				LOG_WARNING("[ParticleManager]: Trying to remove non-exsisting indirectDrawData");
+			}
+
+			m_ActiveEmitters.erase(entity);
+
+			newFreeChunk = emitter.ParticleChunk;
+		}
+		else
+		{
+			LOG_ERROR("[ParticleManager]: Trying to remove non-exsisting emitter");
+			return;
+		}
+
+		if (m_SleepingEmitters.find(entity) != m_SleepingEmitters.end())
+		{
+			newFreeChunk = m_SleepingEmitters[entity].ParticleChunk;
+			m_SleepingEmitters.erase(entity);
+
+
+		}
+		else
+		{
+			LOG_ERROR("[ParticleManager]: Trying to remove non-exsisting emitter");
+			return;
+		}
+
+		// Update particle buffer with new inactive particles
+		m_DirtyParticleBuffer = true;
+
+		// Free particles for new emitters
+		for (auto chunkIt = m_FreeParticleChunks.begin(); chunkIt != m_FreeParticleChunks.end();)
+		{
+			if (newFreeChunk.Offset > chunkIt->Offset)
+			{
+				if (chunkIt->Offset + chunkIt->Size == newFreeChunk.Offset)
+				{
+					chunkIt->Size += newFreeChunk.Size;
+				}
+				else
+				{
+					m_FreeParticleChunks.Insert(chunkIt, newFreeChunk);
+				}
+			}
+		}
+
 	}
 
-	void ParticleManager::CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance)
+	bool ParticleManager::CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance)
 	{
-		emitterInstance.ParticleOffset = m_Particles.GetSize();
+		// TODO: Handle override max capacity particle request
+		if (m_FreeParticleChunks.IsEmpty())
+			return false;
 
-		const glm::vec3 forward = GetForward(emitterInstance.rotation);
-		const glm::vec3 up = GetUp(emitterInstance.rotation);
-		const glm::vec3 right = GetRight(emitterInstance.rotation);
+		// Assign fitting chunk to emitter
+		bool foundChunk = false;
+		for (uint32 i = 0; i < m_FreeParticleChunks.GetSize(); i++)
+		{
+			ParticleChunk& freeChunk = m_FreeParticleChunks[i];
+			ParticleChunk& emitterChunk = emitterInstance.ParticleChunk;
+
+			if (emitterInstance.ParticleChunk.Size <= freeChunk.Size)
+			{
+				emitterChunk.Offset = freeChunk.Offset;
+
+				uint32 diff = freeChunk.Size - emitterChunk.Size;
+				if (diff == 0)
+				{
+					m_FreeParticleChunks.Erase(m_FreeParticleChunks.Begin() + i);
+				}
+				else
+				{
+					freeChunk.Offset += emitterChunk.Size;
+					freeChunk.Size -= emitterChunk.Size;
+				}
+
+				foundChunk = true;
+			}
+		}
+
+		// TODO: Handle override max capacity particle request
+		if (!foundChunk)
+			return false;
+
+		emitterInstance.ParticleChunk.Offset = m_Particles.GetSize();
+
+		const glm::vec3 forward = GetForward(emitterInstance.Rotation);
+		const glm::vec3 up = GetUp(emitterInstance.Rotation);
+		const glm::vec3 right = GetRight(emitterInstance.Rotation);
 		const float		halfAngle = emitterInstance.Angle * 0.5f;
 
-		for (uint32 i = 0; i < emitterInstance.ParticleCount; i++)
+		for (uint32 i = 0; i < emitterInstance.ParticleChunk.Size; i++)
 		{
 			SParticle particle;
 
@@ -109,7 +244,7 @@ namespace LambdaEngine
 
 			direction = glm::normalize(direction);
 
-			particle.Transform = glm::translate(emitterInstance.position);
+			particle.Transform = glm::translate(emitterInstance.Position);
 			particle.Color = glm::vec4(1.0f);
 			particle.Velocity = direction * emitterInstance.Velocity;
 			particle.Acceleration = direction * emitterInstance.Acceleration;
@@ -118,6 +253,8 @@ namespace LambdaEngine
 
 			m_Particles.PushBack(particle);
 		}
+
+		return true;
 	}
 
 	void ParticleManager::CleanBuffers()
@@ -326,7 +463,7 @@ namespace LambdaEngine
 
 		}
 
-		return false;
+		return true;
 	}
 	bool ParticleManager::UpdateResources(RenderGraph* pRendergraph)
 	{

@@ -21,6 +21,7 @@ namespace LambdaEngine
 	struct ParticleEmitterComponent
 	{
 		DECL_COMPONENT(ParticleEmitterComponent);
+		bool			Active			= true;
 		bool			OneTime			= false;
 		bool			Burst			= false;
 		uint32			ParticleCount	= 32U;
