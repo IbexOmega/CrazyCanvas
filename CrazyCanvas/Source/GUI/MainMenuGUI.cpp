@@ -75,12 +75,11 @@ void MainMenuGUI::OnButtonSingleplayerClick(BaseComponent* pSender, const Routed
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesSleeping();
 
-	State* pStartingState = DBG_NEW PlaySessionState();
+	State* pStartingState = DBG_NEW PlaySessionState(false);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
@@ -176,14 +175,15 @@ void MainMenuGUI::OnVolumeSliderChanged(BaseComponent* pSender, const RoutedProp
 
 void MainMenuGUI::SetRenderStagesSleeping()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",	false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",			false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",	true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
 
 	if (m_RayTracingEnabled)
 		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);

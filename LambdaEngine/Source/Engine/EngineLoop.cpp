@@ -44,11 +44,11 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Systems/CameraSystem.h"
-#include "Game/ECS/Systems/Player/PlayerMovementSystem.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
-#include "Game/ECS/Systems/Networking/ClientSystem.h"
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -83,13 +83,32 @@ namespace LambdaEngine
 
 			// Fixed update
 			accumulator += delta;
+			uint32 fixedTickCounter = 0;
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
 				FixedTick(g_FixedTimestep);
 				accumulator -= g_FixedTimestep;
+
+				//Bailout so we don't get stuck in Fixed Tick
+				fixedTickCounter++;
+				if (fixedTickCounter > 2)
+				{
+					accumulator = 0;
+					break;
+				}
 			}
 		}
+	}
+
+	bool EngineLoop::InitComponentOwners()
+	{
+		if (!MeshPaintComponentOwner::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool EngineLoop::InitSystems()
@@ -110,11 +129,6 @@ namespace LambdaEngine
 		}
 
 		if (!CameraSystem::GetInstance().Init())
-		{
-			return false;
-		}
-
-		if (!PlayerMovementSystem::GetInstance().Init())
 		{
 			return false;
 		}
@@ -163,7 +177,7 @@ namespace LambdaEngine
 		// Rendering
 #ifdef LAMBDA_DEVELOPMENT
 		// TODO: Move to somewere else, does someone have a suggestion?
-		ImGuiRenderer::Get().DrawUI([]
+		ImGuiRenderer::Get().DrawUI([delta]
 		{
 			const ImGuiWindowFlags flags =
 				ImGuiWindowFlags_NoBackground	|
@@ -186,6 +200,9 @@ namespace LambdaEngine
 			if (ImGui::Begin("BuildInfo", (bool*)(0), flags))
 			{
 				const GraphicsDeviceDesc& desc = RenderAPI::GetDevice()->GetDesc();
+				ImGui::Text("RunInfo:");
+				ImGui::Text("FPS: %.2f", 1.0f / delta.AsSeconds());
+				ImGui::Spacing();
 				ImGui::Text("BuildInfo:");
 				ImGui::Text("CrazyCanvas [%s Build]", LAMBDA_CONFIG_NAME);
 				ImGui::Text("API: %s", desc.RenderApi.c_str());
@@ -220,8 +237,6 @@ namespace LambdaEngine
 		// Game
 		Game::Get().FixedTick(delta);
 
-		// States / ECS-systems
-		PlayerMovementSystem::GetInstance().FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
@@ -320,6 +335,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!InitComponentOwners())
+		{
+			return false;
+		}
+
 		if (!InitSystems())
 		{
 			return false;
@@ -346,6 +366,8 @@ namespace LambdaEngine
 
 	bool EngineLoop::Release()
 	{
+		EventQueue::Release();
+
 		Input::Release();
 
 		if (!GameConsole::Get().Release())
@@ -383,11 +405,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderAPI::Release())
-		{
-			return false;
-		}
-
 		if (!AudioAPI::Release())
 		{
 			return false;
@@ -410,6 +427,11 @@ namespace LambdaEngine
 		ServerSystem::StaticRelease();
 		Thread::Release();
 		PlatformNetworkUtils::PostRelease();
+
+		if (!RenderAPI::Release())
+		{
+			return false;
+		}
 
 		if (!CommonApplication::PostRelease())
 		{

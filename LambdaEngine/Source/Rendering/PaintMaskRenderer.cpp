@@ -33,6 +33,8 @@
 
 namespace LambdaEngine
 {
+	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_Collisions;
+
 	PaintMaskRenderer::PaintMaskRenderer()
 	{
 	}
@@ -55,6 +57,11 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
 			m_pDeviceResourcesToDestroy.Clear();
+		}
+
+		for (auto& renderTarget : m_RenderTargets)
+		{
+			renderTarget.TextureView->Release();
 		}
 	}
 
@@ -96,7 +103,47 @@ namespace LambdaEngine
 			LOG_ERROR("[PaintMaskRenderer]: Failed to create Shaders");
 			return false;
 		}
-		
+
+		ConsoleCommand cmdHitTest;
+		cmdHitTest.Init("add_hit_point", true);
+		cmdHitTest.AddFlag("p", Arg::EType::FLOAT, 3);
+		cmdHitTest.AddFlag("d", Arg::EType::FLOAT, 3);
+		cmdHitTest.AddFlag("paint", Arg::EType::INT);
+		cmdHitTest.AddDescription("Add a hitpoint for the paint mask renderer\n\t[-p] position of point in world\n\t[-d] direction of point in world\n\t[-paint] true to paint, false to remove paint\n\t'add_hit_point <-p x y z> [-d x y z] [-paint true/false]'");
+		GameConsole::Get().BindCommand(cmdHitTest, [&, this](GameConsole::CallbackInput& input)->void {
+			if (!input.Flags.contains("p"))
+			{
+				GameConsole::Get().PushError("-p (position) is required");
+				return;
+			}
+			else if (input.Flags["p"].NumUsedArgs != 3)
+			{
+				GameConsole::Get().PushError("-p (position) requires three coordinates, but only " + std::to_string(input.Flags["p"].NumUsedArgs) + " were given");
+				return;
+			}
+
+			glm::vec3 pos = {input.Flags["p"].Args[0].Value.Float32, input.Flags["p"].Args[1].Value.Float32, input.Flags["p"].Args[2].Value.Float32};
+			glm::vec3 dir = {1.0f, 0.0f, 0.0f};
+
+			if (input.Flags.contains("d") && input.Flags["d"].NumUsedArgs == 3)
+			{
+				dir = {input.Flags["d"].Args[0].Value.Float32, input.Flags["d"].Args[1].Value.Float32, input.Flags["d"].Args[2].Value.Float32};
+			}
+			else
+			{
+				GameConsole::Get().PushMsg("Direction not given or too few positions for flag", {0.8f, 0.8f, 0.0f, 1.0f});
+			}
+
+			EPaintMode paintMode = EPaintMode::PAINT;
+			if (input.Flags.contains("paint") && input.Flags["paint"].Arg.Value.Int32 >= 0)
+			{
+				int32 mode = input.Flags["paint"].Arg.Value.Int32;
+				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
+			}
+
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode);
+			});
+
 		return false;
 	}
 
@@ -123,12 +170,18 @@ namespace LambdaEngine
 			LOG_ERROR("[PaintMaskRenderer]: Failed to create PipelineState");
 			return false;
 		}
-		
+
+		uint64 offset = 0;
+		uint64 size = sizeof(UnwrapData);
+		Buffer* buffer = m_UnwrapDataBuffer.Get();
+		UpdateBufferResource("UNWRAP_DATA_BUFFER", &buffer, &offset, &size, 1, false);
+
 		return true;
 	}
 
 	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
+
 	}
 
 
@@ -157,21 +210,14 @@ namespace LambdaEngine
 
 			// This should not be necessary, because we already know that the brush mask texture is not back buffer bound.
 			Sampler* sampler = Sampler::GetLinearSampler();
-			if (!m_BrushMaskDescriptorSet.has_value())
+			if (!m_BrushMaskDescriptorSet.Get())
 			{
 				m_BrushMaskDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
-				m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 			}
 			else
 			{
-				if (m_BrushMaskDescriptorSet.has_value())
-				{
-					m_BrushMaskDescriptorSet.value()->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
-				}
-				else
-				{
-					LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
-				}
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
 			}
 		}
 	}
@@ -182,21 +228,33 @@ namespace LambdaEngine
 		{
 			if (resourceName == PER_FRAME_BUFFER)
 			{
-				if (!m_PerFrameBufferDescriptorSets.has_value())
+				if (!m_PerFrameBufferDescriptorSet.Get())
 				{
-					m_PerFrameBufferDescriptorSets = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom PerFrameBuffer Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-					m_PerFrameBufferDescriptorSets.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+					m_PerFrameBufferDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom PerFrameBuffer Buffer Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+					m_PerFrameBufferDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 				}
 				else
 				{
-					if (m_BrushMaskDescriptorSet.has_value())
+					if (m_BrushMaskDescriptorSet.Get())
 					{
-						m_BrushMaskDescriptorSet.value()->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+						m_BrushMaskDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 					}
 					else
 					{
 						LOG_ERROR("[Paint Mask Renderer]: Buffer count changed between calls to UpdateBufferResource for resource \"%s\"", resourceName.c_str());
 					}
+				}
+			}
+			else if (resourceName == "UNWRAP_DATA_BUFFER")
+			{
+				if (!m_UnwrapDataDescriptorSet.Get())
+				{
+					m_UnwrapDataDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Unwrap Data Buffer Descriptor Set", m_PipelineLayout.Get(), 3, m_DescriptorHeap.Get());
+					m_UnwrapDataDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+				}
+				else
+				{
+					m_UnwrapDataDescriptorSet->WriteBufferDescriptors(&ppBuffers[0], pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 				}
 			}
 		}
@@ -207,11 +265,11 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
-	
+
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
 		m_pDrawArgs = pDrawArgs;
-		
+
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
@@ -257,10 +315,14 @@ namespace LambdaEngine
 					for (uint32 e = 0; e < numExtensions; e++)
 					{
 						uint32 mask = extensionGroup->pExtensionMasks[e];
-						if (mask & EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type()))
+						bool inverted;
+						uint32 meshPaintBit = EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type(), inverted);
+						uint32 invertedUInt = uint32(inverted);
+
+						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* textureView = extension.ppTextureViews[0];
+							TextureView* textureView = extension.ppMipZeroTextureViews[0];
 							m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
@@ -288,13 +350,32 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
-		if (m_RenderTargets.IsEmpty())
+		if (m_RenderTargets.IsEmpty() || s_Collisions.empty())
 		{
 			return;
+		}
+		else
+		{
+			int dwadwa = 0;
 		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
+
+		// Transfer current collision data
+		{
+			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
+
+			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
+			const UnwrapData& data	= s_Collisions.front();
+
+			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
+			s_Collisions.pop_front();
+
+			unwrapDataCopyBuffer->Unmap();
+			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
+		}
+
 		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 		{
 			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
@@ -333,19 +414,24 @@ namespace LambdaEngine
 			scissorRect.Width = width;
 			scissorRect.Height = height;
 			pCommandList->SetScissorRects(&scissorRect, 0, 1);
-			
+
 			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
 			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-			if (m_PerFrameBufferDescriptorSets.has_value())
+			if (m_PerFrameBufferDescriptorSet.Get())
 			{
-				pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSets.value().Get(), m_PipelineLayout.Get(), 0);
+				pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 			}
 
-			if (m_BrushMaskDescriptorSet.has_value())
+			if (m_BrushMaskDescriptorSet.Get())
 			{
-				pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.value().Get(), m_PipelineLayout.Get(), 1);
+				pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+			}
+
+			if (m_UnwrapDataDescriptorSet.Get())
+			{
+				pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.Get(), m_PipelineLayout.Get(), 3);
 			}
 
 			pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
@@ -356,9 +442,21 @@ namespace LambdaEngine
 
 			pCommandList->EndRenderPass();
 
+			if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
+				pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 		}
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
+	}
+
+	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode)
+	{
+		UnwrapData data = {};
+		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
+		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
+		data.PaintMode			= paintMode;
+
+		s_Collisions.push_back(data);
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()
@@ -381,20 +479,20 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreateBuffers()
 	{
-		BufferDesc uniformCopyBufferDesc = {};
-		uniformCopyBufferDesc.DebugName = "Paint Mask Renderer Transform Copy Buffer";
-		uniformCopyBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		uniformCopyBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		uniformCopyBufferDesc.SizeInBytes = sizeof(glm::mat4);
+		BufferDesc uniformCopyBufferDesc	= {};
+		uniformCopyBufferDesc.DebugName		= "Paint Mask Renderer Unwrap Data Copy Buffer";
+		uniformCopyBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		uniformCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+		uniformCopyBufferDesc.SizeInBytes	= sizeof(glm::mat4);
 
 		uint32 backBufferCount = m_BackBuffers.GetSize();
-		m_TransformCopyBuffers.Resize(backBufferCount);
+		m_UnwrapDataCopyBuffers.Resize(backBufferCount);
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
 			TSharedRef<Buffer> uniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformCopyBufferDesc);
 			if (uniformBuffer != nullptr)
 			{
-				m_TransformCopyBuffers[b] = uniformBuffer;
+				m_UnwrapDataCopyBuffers[b] = uniformBuffer;
 			}
 			else
 			{
@@ -402,68 +500,68 @@ namespace LambdaEngine
 			}
 		}
 
-		BufferDesc uniformBufferDesc = {};
-		uniformBufferDesc.DebugName = "Paint Mask Renderer Transform Buffer";
-		uniformBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		uniformBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-		uniformBufferDesc.SizeInBytes = uniformCopyBufferDesc.SizeInBytes;
+		BufferDesc uniformBufferDesc	= {};
+		uniformBufferDesc.DebugName		= "Paint Mask Renderer Unwrap Data Buffer";
+		uniformBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+		uniformBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+		uniformBufferDesc.SizeInBytes	= uniformCopyBufferDesc.SizeInBytes;
 
-		m_TransformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformBufferDesc);
-		return m_TransformBuffer != nullptr;
+		m_UnwrapDataBuffer = m_pGraphicsDevice->CreateBuffer(&uniformBufferDesc);
+		return m_UnwrapDataBuffer != nullptr;
 	}
 
 	bool PaintMaskRenderer::CreatePipelineLayout()
 	{
-		ConstantRangeDesc constantRangeVertexDesc = { };
-		constantRangeVertexDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		constantRangeVertexDesc.SizeInBytes = sizeof(uint32);
-		constantRangeVertexDesc.OffsetInBytes = 0;
+		ConstantRangeDesc constantRangeVertexDesc		= { };
+		constantRangeVertexDesc.ShaderStageFlags		= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeVertexDesc.SizeInBytes				= sizeof(uint32);
+		constantRangeVertexDesc.OffsetInBytes			= 0;
 
 		// PerFrameBuffer
-		DescriptorBindingDesc perFrameBufferDesc = {};
-		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		perFrameBufferDesc.DescriptorCount = 1;
-		perFrameBufferDesc.Binding = 0;
-		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		DescriptorBindingDesc perFrameBufferDesc		= {};
+		perFrameBufferDesc.DescriptorType				= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		perFrameBufferDesc.DescriptorCount				= 1;
+		perFrameBufferDesc.Binding						= 0;
+		perFrameBufferDesc.ShaderStageMask				= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		// Brush mask texture
-		DescriptorBindingDesc brushMaskDesc = {};
-		brushMaskDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		brushMaskDesc.DescriptorCount = 1;
-		brushMaskDesc.Binding = 0;
-		brushMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		DescriptorBindingDesc brushMaskDesc				= {};
+		brushMaskDesc.DescriptorType					= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		brushMaskDesc.DescriptorCount					= 1;
+		brushMaskDesc.Binding							= 0;
+		brushMaskDesc.ShaderStageMask					= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		// Draw Args (No Extension, only Vertices and Instances)
-		DescriptorBindingDesc ssboVerticesBindingDesc = {};
-		ssboVerticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		ssboVerticesBindingDesc.DescriptorCount = 1;
-		ssboVerticesBindingDesc.Binding = 0;
-		ssboVerticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		DescriptorBindingDesc ssboVerticesBindingDesc	= {};
+		ssboVerticesBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		ssboVerticesBindingDesc.DescriptorCount			= 1;
+		ssboVerticesBindingDesc.Binding					= 0;
+		ssboVerticesBindingDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
-		DescriptorBindingDesc ssboInstancesBindingDesc = {};
-		ssboInstancesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		ssboInstancesBindingDesc.DescriptorCount = 1;
-		ssboInstancesBindingDesc.Binding = 1;
-		ssboInstancesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		DescriptorBindingDesc ssboInstancesBindingDesc	= {};
+		ssboInstancesBindingDesc.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		ssboInstancesBindingDesc.DescriptorCount		= 1;
+		ssboInstancesBindingDesc.Binding				= 1;
+		ssboInstancesBindingDesc.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
-		// Transform
-		DescriptorBindingDesc transformBufferDesc = {};
-		transformBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		transformBufferDesc.DescriptorCount = 1;
-		transformBufferDesc.Binding = 0;
-		transformBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		// Unwrap shaders data
+		DescriptorBindingDesc unwrapDataBufferDesc		= {};
+		unwrapDataBufferDesc.DescriptorType				= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		unwrapDataBufferDesc.DescriptorCount			= 1;
+		unwrapDataBufferDesc.Binding					= 0;
+		unwrapDataBufferDesc.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc };
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc0	= {};
+		descriptorSetLayoutDesc0.DescriptorBindings			= { perFrameBufferDesc };
 
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { brushMaskDesc };
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc1	= {};
+		descriptorSetLayoutDesc1.DescriptorBindings			= { brushMaskDesc };
 
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { ssboVerticesBindingDesc, ssboInstancesBindingDesc };
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc2	= {};
+		descriptorSetLayoutDesc2.DescriptorBindings			= { ssboVerticesBindingDesc, ssboInstancesBindingDesc };
 
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
-		descriptorSetLayoutDesc3.DescriptorBindings = { transformBufferDesc };
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc3	= {};
+		descriptorSetLayoutDesc3.DescriptorBindings			= { unwrapDataBufferDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Paint Mask Renderer Pipeline Layout";
@@ -548,7 +646,7 @@ namespace LambdaEngine
 		colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
 		colorAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 		colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-		
+
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 

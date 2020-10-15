@@ -29,6 +29,17 @@ namespace LambdaEngine
 			}
 		}
 
+		// Copy Descriptor set in use into Descriptor if it exists
+		uint32 inUseIndex = m_NewDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
+		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty() && inUseIndex < m_NewDescriptorSets[descriptorLayoutIndex].GetSize())
+		{
+			RenderAPI::GetDevice()->CopyDescriptorSet(m_NewDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+		}
+		else if (!m_InUseDescriptorSets[descriptorLayoutIndex].IsEmpty() && inUseIndex < m_InUseDescriptorSets[descriptorLayoutIndex].GetSize())
+		{
+			RenderAPI::GetDevice()->CopyDescriptorSet(m_InUseDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+		}
+
 		// Track Descriptor sets in use
 		m_NewDescriptorSets[descriptorLayoutIndex].PushBack(ds);
 		m_DirtySetIndices.insert(descriptorLayoutIndex);

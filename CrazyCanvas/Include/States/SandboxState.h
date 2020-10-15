@@ -13,6 +13,9 @@
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/NetworkEvents.h"
+
+#include "ECS/Systems/Player/WeaponSystem.h"
 
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
@@ -44,6 +47,7 @@ public:
 
 private:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
+	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
 
 private:
 	LambdaEngine::Entity m_DirLight;
@@ -64,4 +68,6 @@ private:
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
 	Level* m_pLevel = nullptr;
+
+	WeaponSystem m_WeaponSystem;
 };

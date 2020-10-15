@@ -436,7 +436,7 @@ namespace LambdaEngine
 		if (m_DirtyIndirectBuffer)
 		{
 			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = "INDIRECT_PARTICLES";
+			resourceUpdateDesc.ResourceName = SCENE_PARTICLE_INDIRECT_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pIndirectBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);

@@ -411,12 +411,13 @@ namespace LambdaEngine
 			if (count == 1)
 			{
 				constexpr uint32 setIndex = 2U;
-				if(m_VertexInstanceDescriptorSet == nullptr)
-					m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+				constexpr uint32 setBinding = 0U;
+				
+				m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 
 				if (m_VertexInstanceDescriptorSet != nullptr)
 				{
-					m_VertexInstanceDescriptorSet->WriteBufferDescriptors(ppBuffers, pOffsets, pSizesInBytes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+					m_VertexInstanceDescriptorSet->WriteBufferDescriptors(ppBuffers, pOffsets, pSizesInBytes, setBinding, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 				}
 				else
 				{
@@ -438,12 +439,13 @@ namespace LambdaEngine
 			if (count == 1)
 			{
 				constexpr uint32 setIndex = 2U;
-				if (m_VertexInstanceDescriptorSet == nullptr)
-					m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+				constexpr uint32 setBinding = 1U;
+				
+				m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 
 				if (m_VertexInstanceDescriptorSet != nullptr)
 				{
-					m_VertexInstanceDescriptorSet->WriteBufferDescriptors(ppBuffers, pOffsets, pSizesInBytes, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+					m_VertexInstanceDescriptorSet->WriteBufferDescriptors(ppBuffers, pOffsets, pSizesInBytes, setBinding, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 				}
 				else
 				{
@@ -452,7 +454,7 @@ namespace LambdaEngine
 			}
 		}
 
-		if (resourceName == "INDIRECT_PARTICLES")
+		if (resourceName == SCENE_PARTICLE_INDIRECT_BUFFER)
 		{
 			if (count == 1)
 			{

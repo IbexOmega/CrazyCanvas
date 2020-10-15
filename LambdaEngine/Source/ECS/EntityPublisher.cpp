@@ -147,9 +147,10 @@ namespace LambdaEngine
             EntitySubscription& sysSub = m_SubscriptionStorage.IndexID(subBucketItr->second.SystemID)[subBucketItr->second.SubIdx];
 
             const bool entityHasExcludedTypes = m_pEntityRegistry->EntityHasAnyOfTypes(entity, sysSub.ExcludedComponentTypes);
+            const bool subscriberHasEntity = sysSub.pSubscriber->HasElement(entity);
 
             // Check if an excluded type was added. If so, remove the entity
-            if (sysSub.pSubscriber->HasElement(entity) && entityHasExcludedTypes)
+            if (subscriberHasEntity && entityHasExcludedTypes)
             {
                 if (sysSub.OnEntityRemoval)
                 {
@@ -159,7 +160,7 @@ namespace LambdaEngine
                 sysSub.pSubscriber->Pop(entity);
             }
             // Check if the entity should be added to the subscription
-            else if (!entityHasExcludedTypes && m_pEntityRegistry->EntityHasAllTypes(entity, sysSub.ComponentTypes))
+            else if (!subscriberHasEntity && !entityHasExcludedTypes && m_pEntityRegistry->EntityHasAllTypes(entity, sysSub.ComponentTypes))
             {
                 sysSub.pSubscriber->PushBack(entity);
 

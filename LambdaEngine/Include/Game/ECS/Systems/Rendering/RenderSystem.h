@@ -30,6 +30,10 @@
 
 #include "Rendering/ParticleManager.h"
 
+#include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
+#include "Game/ECS/Components/Rendering/MeshComponent.h"
+
 namespace LambdaEngine
 {
 	class Window;
@@ -252,7 +256,7 @@ namespace LambdaEngine
 		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
-		uint64			GetFrameIndex() const	 	{ return m_FrameIndex; }
+		uint64			GetFrameIndex() const	 	{ return m_FrameIndex;		}
 		uint64			GetModFrameIndex() const	{ return m_ModFrameIndex;	}
 		uint32			GetBufferIndex() const	 	{ return m_BackBufferIndex; }
 
@@ -262,15 +266,12 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
-		glm::mat4 CreateEntityTransform(Entity entity);
+		glm::mat4 CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes);
+		glm::mat4 CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
 		
-		void OnEntityAdded(Entity entity);
-		void OnEntityRemoved(Entity entity);
-
+		void OnStaticMeshEntityAdded(Entity entity);
 		void OnAnimatedEntityAdded(Entity entity);
-		void OnAnimatedEntityRemoved(Entity entity);
-
-		void AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
+		void OnPlayerEntityAdded(Entity entity);
 
 		void OnDirectionalEntityAdded(Entity entity);
 		void OnDirectionalEntityRemoved(Entity entity);
@@ -278,17 +279,21 @@ namespace LambdaEngine
 		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
 
+		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
+		void RemoveRenderableEntity(Entity entity);
+
 		void OnEmitterEntityAdded(Entity entity);
 		void OnEmitterEntityRemoved(Entity entity);
 
-		void RemoveEntityInstance(Entity entity);
 		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
-		void UpdateTransform(Entity entity, const glm::mat4& transform);
+		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);
+		void UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
 		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
 
+		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
-		void CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const;
+		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
@@ -307,11 +312,12 @@ namespace LambdaEngine
 		void UpdateRenderGraph();
 
 	private:
+		IDVector m_StaticMeshEntities;
+		IDVector m_AnimatedEntities;
+		IDVector m_PlayerEntities;
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;
-		IDVector m_RenderableEntities;
 		IDVector m_CameraEntities;
-		IDVector m_AnimatedEntities;
 		IDVector m_ParticleEmitters;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
@@ -365,7 +371,7 @@ namespace LambdaEngine
 		Buffer* m_pPerFrameBuffer			= nullptr;
 
 		// Draw Args
-		TSet<uint32> m_RequiredDrawArgs;
+		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
 
 		// Ray Tracing
 		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
@@ -386,7 +392,7 @@ namespace LambdaEngine
 		bool						m_MaterialsPropertiesBufferDirty	= false;
 		bool						m_MaterialsResourceDirty			= false;
 		bool						m_PerFrameResourceDirty				= true;
-		TSet<uint32>				m_DirtyDrawArgs;
+		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyBLASs;

@@ -11,12 +11,24 @@ Level::~Level()
 	using namespace LambdaEngine;
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	for (LambdaEngine::Entity entity : m_Entities)
+	for (LevelEntitiesOfType& levelEntities : m_Entities)
 	{
-		pECS->RemoveEntity(entity);
+		for (Entity entity : levelEntities.Entities)
+		{
+			pECS->RemoveEntity(entity);
+		}
+
+		for (TArray<Entity>& childEntities : levelEntities.ChildEntities)
+		{
+			for (Entity entity : childEntities)
+			{
+				pECS->RemoveEntity(entity);
+			}
+		}
 	}
 
 	m_Entities.Clear();
+	m_EntityTypeMap.clear();
 }
 
 bool Level::Init(const LevelCreateDesc* pDesc)
@@ -34,70 +46,116 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 		const TArray<MeshComponent>& meshComponents				= pModule->GetMeshComponents();
 		const TArray<LoadedDirectionalLight>& directionalLights = pModule->GetDirectionalLights();
 		const TArray<LoadedPointLight>& pointLights				= pModule->GetPointLights();
-		const TArray<SpecialObject>& specialObjects				= pModule->GetSpecialObjects();
+		const TArray<SpecialObjectOnLoad>& specialObjects		= pModule->GetSpecialObjects();
 
+		LevelEntitiesOfType staticGeometryEntities;
 		for (const MeshComponent& meshComponent : meshComponents)
 		{
 			Entity entity = LevelObjectCreator::CreateStaticGeometry(meshComponent, translation);
-			if (entity != UINT32_MAX) m_Entities.PushBack(entity);
+			if (entity != UINT32_MAX) staticGeometryEntities.Entities.PushBack(entity);
 		}
+		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_STATIC_GEOMTRY] = m_Entities.GetSize();
+		m_Entities.PushBack(staticGeometryEntities);
 
+		LevelEntitiesOfType dirLightEntities;
 		if (!directionalLights.IsEmpty())
 		{
 			Entity entity = LevelObjectCreator::CreateDirectionalLight(directionalLights[0], translation);
-			if (entity != UINT32_MAX) m_Entities.PushBack(entity);
+			if (entity != UINT32_MAX) dirLightEntities.Entities.PushBack(entity);
 		}
+		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_DIR_LIGHT] = m_Entities.GetSize();
+		m_Entities.PushBack(dirLightEntities);
 
+		LevelEntitiesOfType pointLightEntities;
 		for (const LoadedPointLight& loadedPointLight : pointLights)
 		{
 			Entity entity = LevelObjectCreator::CreatePointLight(loadedPointLight, translation);
-			if (entity != UINT32_MAX) m_Entities.PushBack(entity);
+			if (entity != UINT32_MAX) pointLightEntities.Entities.PushBack(entity);
 		}
+		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_POINT_LIGHT] = m_Entities.GetSize();
+		m_Entities.PushBack(pointLightEntities);
 
-		TArray<Entity> newlyCreatedEntities;
-
-		for (const SpecialObject& specialObject : specialObjects)
+		for (const SpecialObjectOnLoad& specialObject : specialObjects)
 		{
-			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObject(specialObject, newlyCreatedEntities, translation);
+			LevelEntitiesOfType levelEntities;
+			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObjectFromPrefix(specialObject, levelEntities.Entities, translation);
 
 			if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
 			{
-				for (Entity entity : newlyCreatedEntities)
-				{
-					if (entity != UINT32_MAX)
-					{
-						m_EntityTypeMap[specialObjectType].PushBack(m_Entities.GetSize());
-						m_Entities.PushBack(entity);
-					}
-				}
+				
+				m_EntityTypeMap[specialObjectType] = m_Entities.GetSize();
+				m_Entities.PushBack(levelEntities);
 			}
-
-			newlyCreatedEntities.Clear();
 		}
 	}
 
 	return true;
 }
 
-void Level::CreateSpecialObject(ESpecialObjectType specialObjectType, void* pData, const glm::vec3& translation, bool fromServer)
+bool Level::CreateObject(ESpecialObjectType specialObjectType, void* pData)
 {
-	UNREFERENCED_VARIABLE(specialObjectType);
-	UNREFERENCED_VARIABLE(pData);
-	UNREFERENCED_VARIABLE(translation);
-	UNREFERENCED_VARIABLE(fromServer);
-	LOG_ERROR("[Level]: CreateSpecialObject not implemented");
-	//Should call LevelObjectCreator::CreateSpecialObject or something
-}
+	using namespace LambdaEngine;
 
-uint32 Level::GetEntityCount(ESpecialObjectType specialObjectType) const
-{
-	uint32 count = 0;
-
-	auto entityIndicesIt = m_EntityTypeMap.find(specialObjectType);
-	if (entityIndicesIt != m_EntityTypeMap.end())
+	if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
 	{
-		count = entityIndicesIt->second.GetSize();
+		LevelEntitiesOfType* pLevelEntities = nullptr;
+
+		auto specialObjectTypeIt = m_EntityTypeMap.find(specialObjectType);
+		if (specialObjectTypeIt != m_EntityTypeMap.end())
+		{
+			pLevelEntities = &m_Entities[specialObjectTypeIt->second];
+		}
+		else
+		{
+			m_EntityTypeMap[specialObjectType] = m_Entities.GetSize();
+			pLevelEntities = &m_Entities.PushBack({});
+		}
+
+		if (LevelObjectCreator::CreateSpecialObjectOfType(specialObjectType, pData, pLevelEntities->Entities, pLevelEntities->ChildEntities, pLevelEntities->SaltUIDs))
+		{
+			return true;
+		}
 	}
 
-	return count;
+	return false;
+}
+
+void Level::SpawnPlayer(
+	const LambdaEngine::MeshComponent& meshComponent, 
+	const LambdaEngine::AnimationComponent& animationComponent, 
+	const LambdaEngine::CameraDesc* pCameraDesc)
+{
+}
+
+LambdaEngine::Entity* Level::GetEntities(ESpecialObjectType specialObjectType, uint32& countOut)
+{
+	auto specialObjectTypeIt = m_EntityTypeMap.find(specialObjectType);
+	if (specialObjectTypeIt != m_EntityTypeMap.end())
+	{
+		LevelEntitiesOfType& levelEntities = m_Entities[specialObjectTypeIt->second];
+		countOut = levelEntities.Entities.GetSize();
+		return levelEntities.Entities.GetData();
+	}
+
+	return nullptr;
+}
+
+LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
+{
+	using namespace LambdaEngine;
+
+	auto specialObjectTypeIt = m_EntityTypeMap.find(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER);
+	if (specialObjectTypeIt != m_EntityTypeMap.end())
+	{
+		LevelEntitiesOfType& levelEntities = m_Entities[specialObjectTypeIt->second];
+		for (uint32 i = 0; i < levelEntities.SaltUIDs.GetSize(); i++)
+		{
+			if (levelEntities.SaltUIDs[i] == saltUID)
+			{
+				return levelEntities.Entities[i];
+			}
+		}
+	}
+
+	return UINT32_MAX;
 }
