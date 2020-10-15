@@ -165,10 +165,14 @@ struct SParticle
 {
 	mat4 Transform;
 	vec4 Color;
+	vec3 StartPosition;
+	float CurrentLife;
 	vec3 Velocity;
 	float LifeTime;
-	vec3 Acceleration;
+	vec3 StartVelocity;
 	float Radius;
+	vec3 Acceleration;
+	float padding0;
 };
 
 #endif

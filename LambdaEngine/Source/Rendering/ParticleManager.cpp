@@ -58,15 +58,15 @@ namespace LambdaEngine
 		RotationComponent rotationComp = ecsCore->GetComponent<RotationComponent>(entity);
 		ParticleEmitterComponent emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
 
-		ParticleEmitterInstance instance = {};
-		instance.position = positionComp.Position;
-		instance.rotation = rotationComp.Quaternion;
-		instance.ParticleCount = emitterComp.ParticleCount;
-		instance.Angle = emitterComp.Angle;
-		instance.Velocity = emitterComp.Velocity;
-		instance.Acceleration = emitterComp.Acceleration;
-		instance.LifeTime = emitterComp.LifeTime;
-		instance.ParticleRadius = emitterComp.ParticleRadius;
+		ParticleEmitterInstance instance	= {};
+		instance.position					= positionComp.Position;
+		instance.rotation					= rotationComp.Quaternion;
+		instance.ParticleCount				= emitterComp.ParticleCount;
+		instance.Angle						= emitterComp.Angle;
+		instance.Velocity					= emitterComp.Velocity;
+		instance.Acceleration				= emitterComp.Acceleration;
+		instance.LifeTime					= emitterComp.LifeTime;
+		instance.ParticleRadius				= emitterComp.ParticleRadius;
 
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
@@ -111,9 +111,12 @@ namespace LambdaEngine
 			direction = glm::normalize(direction);
 
 			particle.Transform = glm::translate(emitterInstance.position);
+			particle.StartPosition = emitterInstance.position;
 			particle.Color = glm::vec4(1.0f);
 			particle.Velocity = direction * emitterInstance.Velocity;
+			particle.StartVelocity = particle.Velocity;
 			particle.Acceleration = direction * emitterInstance.Acceleration;
+			particle.CurrentLife = emitterInstance.LifeTime;
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.Radius = emitterInstance.ParticleRadius;
 

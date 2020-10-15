@@ -35,7 +35,15 @@ void main()
 	SParticle particle = b_ParticleInstances.Val[gl_GlobalInvocationID.x];
 	particle.Velocity += particle.Acceleration*dt;
     particle.Transform[3].xyz += particle.Velocity*dt;
-    particle.LifeTime -= dt;
+    particle.CurrentLife -= dt;
+
+	// Should only happen if it is an emitter that repeats.
+	if(particle.CurrentLife < 0.f)
+	{
+		particle.CurrentLife = particle.LifeTime;
+		particle.Transform[3].xyz = particle.StartPosition;
+		particle.Velocity = particle.StartVelocity;
+	}
 
     b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
 }
