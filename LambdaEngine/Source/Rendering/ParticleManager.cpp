@@ -61,7 +61,7 @@ namespace LambdaEngine
 	{
 		m_ModFrameIndex = modFrameIndex;
 
-		for (auto& activeEmitterIt = m_ActiveEmitters.begin();  activeEmitterIt != m_ActiveEmitters.end();)
+		for (auto activeEmitterIt = m_ActiveEmitters.begin();  activeEmitterIt != m_ActiveEmitters.end();)
 		{
 			float& elapTime = activeEmitterIt->second.ElapTime;
 			elapTime += deltaTime.AsSeconds();
@@ -108,10 +108,11 @@ namespace LambdaEngine
 			instance.IndirectDataIndex = m_IndirectData.GetSize();
 
 			IndirectData indirectData;
-			indirectData.firstInstance = instance.ParticleChunk.Offset;
-			indirectData.instanceCount = instance.ParticleChunk.Size;
-			indirectData.firstIndex = 0;
-			indirectData.indexCount = 6;
+			indirectData.FirstInstance	= instance.ParticleChunk.Offset;
+			indirectData.InstanceCount	= instance.ParticleChunk.Size;
+			indirectData.FirstIndex		= 0;
+			indirectData.VertexOffset	= 0;
+			indirectData.IndexCount		= 6;
 			m_IndirectData.PushBack(indirectData);
 
 			m_ActiveEmitters[entity] = instance;
