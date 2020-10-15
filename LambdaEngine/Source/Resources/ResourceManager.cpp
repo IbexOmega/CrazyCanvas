@@ -143,9 +143,9 @@ namespace LambdaEngine
 			directionalLights,
 			pointLights,
 			specialObjects,
-			meshes, 
-			animations, 
-			materials, 
+			meshes,
+			animations,
+			materials,
 			textures))
 		{
 			return false;
@@ -387,7 +387,7 @@ namespace LambdaEngine
 		for (Animation* pAnimation : rawAnimations)
 		{
 			VALIDATE(pAnimation);
-			
+
 			GUID_Lambda animationsGuid = RegisterLoadedAnimation(pAnimation->Name, pAnimation);
 			animations.EmplaceBack(animationsGuid);
 		}
@@ -721,12 +721,12 @@ namespace LambdaEngine
 	}
 
 	GUID_Lambda ResourceManager::CombineMaterialTextures(
-		Material* pMaterial, 
-		Texture* pAOMap, 
-		Texture* pMetallicMap, 
-		Texture* pRoughnessMap, 
-		TextureView* pAOMapView, 
-		TextureView* pMetallicMapView, 
+		Material* pMaterial,
+		Texture* pAOMap,
+		Texture* pMetallicMap,
+		Texture* pRoughnessMap,
+		TextureView* pAOMapView,
+		TextureView* pMetallicMapView,
 		TextureView* pRoughnessMapView)
 	{
 		// Find largest texture size
@@ -850,14 +850,14 @@ namespace LambdaEngine
 			s_pMaterialComputeCommandList->Dispatch(largestWidth, largestHeight, 1);
 
 			s_pMaterialComputeCommandList->QueueTransferBarrier(
-				pCombinedMaterialTexture, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, 
+				pCombinedMaterialTexture,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, 
-				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, 
-				ETextureState::TEXTURE_STATE_GENERAL, 
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
+				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 			s_pMaterialComputeCommandList->End();
@@ -873,12 +873,12 @@ namespace LambdaEngine
 			s_pMaterialGraphicsCommandList->Begin(nullptr);
 
 			s_pMaterialGraphicsCommandList->QueueTransferBarrier(
-				pCombinedMaterialTexture, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
+				pCombinedMaterialTexture,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, 
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE,
 				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
 				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);

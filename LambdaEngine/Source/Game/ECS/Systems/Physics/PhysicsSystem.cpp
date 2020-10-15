@@ -429,7 +429,7 @@ namespace LambdaEngine
 
 		FinalizeCharacterController(characterColliderInfo, controllerDesc, characterColliderComp);
 	}
-	
+
 	void PhysicsSystem::OnDynamicCollisionRemoval(Entity entity)
 	{
 		// Remove the actor from the scene
