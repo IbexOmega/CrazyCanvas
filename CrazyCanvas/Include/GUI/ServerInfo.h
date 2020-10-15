@@ -13,8 +13,10 @@ struct ServerInfo
 
 	std::string Name;
 	std::string MapName;
+
 	uint8 Players;
 	uint16 Ping;
+
 	LambdaEngine::IPEndPoint EndPoint;
 	LambdaEngine::Timestamp LastUpdate;
 

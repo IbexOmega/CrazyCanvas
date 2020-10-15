@@ -63,6 +63,9 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, co
 
 void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -110,13 +113,6 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 	IPAddress* pIP = IPAddress::Get(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
 
-	/*if (!ClientSystem::GetInstance().Connect(pIP))
-	{
-		LOG_MESSAGE("Client already in use");
-		return;
-	}*/
-	// Start Connecting animation
-
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesActive();
@@ -133,8 +129,6 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
-
-	//m_ServerList.AddSavedServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69", true);
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -143,8 +137,6 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	UNREFERENCED_VARIABLE(args);
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
-
-	//m_ServerList.UpdateServerItems("Bajs", "Bajs", "67", false, pLocalServers->GetIsSelected());
 
 	ErrorPopUp(OTHER_ERROR);
 }
@@ -289,5 +281,4 @@ void LobbyGUI::PopulateServerInfo()
 
 	LOG_MESSAGE("Player count %d", playersNumber);
 	LOG_MESSAGE(pMap);
-
 }
