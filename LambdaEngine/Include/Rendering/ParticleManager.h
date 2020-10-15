@@ -46,10 +46,11 @@ namespace LambdaEngine
 
 	struct IndirectData
 	{
-		uint32 instanceCount;
-		uint32 firstInstance;
-		uint32 firstIndex;
-		uint32 indexCount;
+		uint32	IndexCount		= 0;
+		uint32	InstanceCount	= 0;
+		uint32	FirstIndex		= 0;
+		int32	VertexOffset	= 0;
+		uint32	FirstInstance	= 0;
 	};
 
 	class ParticleManager

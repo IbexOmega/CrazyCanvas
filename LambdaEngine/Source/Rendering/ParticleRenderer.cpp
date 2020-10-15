@@ -501,11 +501,10 @@ namespace LambdaEngine
 		beginRenderPassDesc.ClearColorCount = 1;
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
-
+		
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-		//pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
-		pCommandList->DrawIndexInstanced(6, 32, 0, 0, 0);
+		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
 
 		pCommandList->EndRenderPass();
 		pCommandList->End();
