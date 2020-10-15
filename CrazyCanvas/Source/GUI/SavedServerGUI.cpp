@@ -51,7 +51,7 @@ Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, const ServerInfo& ser
 {
 	Ptr<Grid> grid = *new Grid();
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < SERVER_ITEM_COLUMNS; i++)
 	{
 		Ptr<ColumnDefinition> columnDef = *new ColumnDefinition();
 		GridLength gridLength = GridLength(20, GridUnitType_Star);

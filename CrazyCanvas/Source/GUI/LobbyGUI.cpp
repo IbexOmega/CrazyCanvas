@@ -83,8 +83,6 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	pDecoder->ReadString(newInfo.Name);
 	pDecoder->ReadString(newInfo.MapName);
 
-	const auto& pair = m_Servers.find(event.ServerUID);
-
 	ServerInfo& currentInfo = m_Servers[event.ServerUID];
 
 	if (currentInfo != newInfo)

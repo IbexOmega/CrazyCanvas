@@ -32,9 +32,6 @@ namespace LambdaEngine
 		bool operator==(const IPEndPoint& other) const;
 		bool operator!=(const IPEndPoint& other) const;
 
-
-
-
 	private:
 		void UpdateHash();
 

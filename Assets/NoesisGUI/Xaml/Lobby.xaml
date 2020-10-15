@@ -97,7 +97,7 @@
                                         <RowDefinition/>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
-                                        <Grid x:Name="SERVER_CONTENT"  Grid.Row="0">
+                                        <Grid x:Name="LOCAL_SERVER_LIST_CONTENT"  Grid.Row="0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition/>
                                             <ColumnDefinition/>
@@ -126,7 +126,7 @@
                                         <RowDefinition/>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
-                                    <Grid x:Name="SERVER_CONTENT_2"  Grid.Row="0">
+                                    <Grid x:Name="SAVED_SERVER_LIST_CONTENT"  Grid.Row="0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition/>
                                             <ColumnDefinition/>

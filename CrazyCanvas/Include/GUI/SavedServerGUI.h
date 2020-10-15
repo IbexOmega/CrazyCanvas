@@ -18,6 +18,9 @@
 
 #include "GUI/ServerInfo.h"
 
+
+#define SERVER_ITEM_COLUMNS 5
+
 class SavedServerGUI
 {
 public:

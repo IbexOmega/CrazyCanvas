@@ -67,7 +67,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
 	pEncoder->WriteString(m_ServerName);
-	pEncoder->WriteString("Bajskorv");
+	pEncoder->WriteString("This Is The Map Name");
 
 	return true;
 }
