@@ -44,7 +44,7 @@ void main()
 			particle.Velocity = particle.StartVelocity;
 		}
 
-		b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
+		b_ParticleInstances.Val[indexOffset] = particle;
 		indexOffset += totalInvocations;
 	}
 

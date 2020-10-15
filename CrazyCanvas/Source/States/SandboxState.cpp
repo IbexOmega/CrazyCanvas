@@ -497,7 +497,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	static bool removeEmitters = true;
 	if (event.Key == EKey::KEY_8)
 	{
-		uint32 modIndex = indexEmitters % 10U;
+		uint32 modIndex = indexEmitters % 3U;
 		if (modIndex == 0U)
 			removeEmitters = !removeEmitters;
 
@@ -506,13 +506,13 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			Entity e = ecsCore->CreateEntity();
 			m_Emitters[modIndex] = e;
 
-			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 4.0f, -5.f + float(modIndex) } });
+			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f, -5.f + float(modIndex) } });
 			ecsCore->AddComponent<RotationComponent>(e, { true,glm::identity<glm::quat>() });
-			ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{ .Velocity = float(modIndex), .Acceleration = 0.0f, .ParticleRadius = 0.05f * float(modIndex) });
+			ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{ .Velocity = 1.0f, .Acceleration = 0.0f, .ParticleRadius = 0.1f });
 		}
 		else
 		{
-			ecsCore->RemoveEntity(m_PointLights[modIndex]);
+			ecsCore->RemoveEntity(m_Emitters[modIndex]);
 		}
 
 		indexEmitters++;

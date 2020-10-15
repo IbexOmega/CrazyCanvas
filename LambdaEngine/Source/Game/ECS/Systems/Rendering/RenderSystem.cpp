@@ -554,8 +554,9 @@ namespace LambdaEngine
 
 		// Particle Updates
 		uint32 particleCount = m_ParticleManager.GetParticleCount();
-		m_pParticleRenderer->SetCurrentParticleCount(particleCount);
-		m_pParticleUpdater->SetCurrentParticleCount(particleCount);
+		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
+		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
 	}
 
 	bool RenderSystem::Render(Timestamp delta)

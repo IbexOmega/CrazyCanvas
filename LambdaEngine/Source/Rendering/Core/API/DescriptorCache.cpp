@@ -30,14 +30,23 @@ namespace LambdaEngine
 		}
 
 		// Copy Descriptor set in use into Descriptor if it exists
-		uint32 inUseIndex = m_NewDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
-		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty() && inUseIndex < m_NewDescriptorSets[descriptorLayoutIndex].GetSize())
+		uint32 inUseIndex = 0;
+		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty())
 		{
-			RenderAPI::GetDevice()->CopyDescriptorSet(m_NewDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+			inUseIndex = m_NewDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
+			if (inUseIndex < m_NewDescriptorSets[descriptorLayoutIndex].GetSize())
+			{
+				RenderAPI::GetDevice()->CopyDescriptorSet(m_NewDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+			}
 		}
-		else if (!m_InUseDescriptorSets[descriptorLayoutIndex].IsEmpty() && inUseIndex < m_InUseDescriptorSets[descriptorLayoutIndex].GetSize())
+		
+		if (!m_InUseDescriptorSets[descriptorLayoutIndex].IsEmpty())
 		{
-			RenderAPI::GetDevice()->CopyDescriptorSet(m_InUseDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+			inUseIndex = m_InUseDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
+			if (inUseIndex < m_InUseDescriptorSets[descriptorLayoutIndex].GetSize())
+			{
+				RenderAPI::GetDevice()->CopyDescriptorSet(m_InUseDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+			}
 		}
 
 		// Track Descriptor sets in use
