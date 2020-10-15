@@ -67,6 +67,8 @@ namespace LambdaEngine
 		GameConsole::Get().BindCommand(netStatsCmd, [&, this](GameConsole::CallbackInput& input)->void {
 			m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
 		});
+
+		EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &ClientSystem::OnDisconnectedEvent);
 	}
 
 	ClientSystem::~ClientSystem()
@@ -140,8 +142,12 @@ namespace LambdaEngine
 	{
 		ClientDisconnectedEvent event(pClient);
 		EventQueue::SendEvent(event);
+	}
 
+	bool ClientSystem::OnDisconnectedEvent(const ClientDisconnectedEvent& event)
+	{
 		NetworkDiscovery::EnableClient(m_Name, this);
+		return false;
 	}
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)

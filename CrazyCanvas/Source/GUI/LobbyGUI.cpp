@@ -101,8 +101,6 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
 		}
 	}
-
-	//LOG_INFO("Found server with name %s with %u players", serverName.c_str(), players);
 	return false;
 }
 

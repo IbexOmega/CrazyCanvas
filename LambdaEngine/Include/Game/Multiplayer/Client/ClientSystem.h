@@ -39,6 +39,8 @@ namespace LambdaEngine
 
 		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID) override;
 
+		bool OnDisconnectedEvent(const ClientDisconnectedEvent& event);
+
 	private:
 		ClientSystem(const String& name);
 
