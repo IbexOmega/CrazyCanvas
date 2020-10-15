@@ -1079,11 +1079,15 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			AccelerationStructureInstance asInstance = {};
-			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= materialIndex;
-			asInstance.Mask				= 0xFF;
-			asInstance.SBTRecordOffset	= 0;
-			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Transform						= glm::transpose(transform);
+			asInstance.CustomIndex						= materialIndex;
+			asInstance.Mask								= 0xFF;
+			asInstance.SBTRecordOffset					= 0;
+			asInstance.Flags							= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+
+			//If the BLAS is already built, set it here
+			if (meshAndInstancesIt->second.pBLAS != nullptr)
+				asInstance.AccelerationStructureAddress	= meshAndInstancesIt->second.pBLAS->GetDeviceAdress();
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
@@ -1113,8 +1117,6 @@ namespace LambdaEngine
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
-		LOG_ERROR("Remove Entity %d", entity);
-
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{

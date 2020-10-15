@@ -712,14 +712,13 @@ namespace LambdaEngine
 							DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
 							DescriptorSet** ppNewDrawArgsPerFrame = nullptr;
 
-							DescriptorSet** pTemp[3];
-							memcpy(pTemp, pRenderStage->pppDrawArgDescriptorSets, sizeof(pTemp));
-
 							DescriptorSet** ppPrevDrawArgsExtensionsPerFrame = pRenderStage->pppDrawArgExtensionsDescriptorSets ? pRenderStage->pppDrawArgExtensionsDescriptorSets[b] : nullptr;
 							DescriptorSet** ppNewDrawArgsExtensionsPerFrame = nullptr;
 
 							// Check if it need to expand the list of descriptor sets
-							if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
+							bool resizeArr = pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize();
+
+							if (resizeArr)
 							{
 								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
 
@@ -866,12 +865,13 @@ namespace LambdaEngine
 								}
 							}
 
-							SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets[b]);
+							if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets[b]);
+
 							pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
 
 							if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
 							{
-								SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets[b]);
+								if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets[b]);
 								pRenderStage->pppDrawArgExtensionsDescriptorSets[b] = ppNewDrawArgsExtensionsPerFrame;
 							}
 						}
