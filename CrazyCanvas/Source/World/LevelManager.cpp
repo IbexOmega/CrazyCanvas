@@ -7,10 +7,12 @@
 
 #include "Log/Log.h"
 
+#pragma warning( push, 0 )
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/filereadstream.h>
+#pragma warning( pop )
 
 bool LevelManager::Init()
 {
@@ -78,7 +80,7 @@ bool LevelManager::Init()
 							//Load module and store byte representation
 							auto moduleByteRepresentationIt = moduleByteRepresentations.find(moduleDesc.Filename);
 
-							uint32 currentByteRepresentationSize = byteRepresentation.size();
+							uint32 currentByteRepresentationSize = (uint32)byteRepresentation.size();
 							if (moduleByteRepresentationIt == moduleByteRepresentations.end())
 							{
 								byte* pData;
@@ -110,7 +112,7 @@ bool LevelManager::Init()
 							moduleDesc.Translation.y = translation.HasMember("y") ? translation["y"].GetFloat() : 0.0f;
 							moduleDesc.Translation.z = translation.HasMember("z") ? translation["z"].GetFloat() : 0.0f;
 
-							uint32 currentByteRepresentationSize = byteRepresentation.size();
+							uint32 currentByteRepresentationSize = (uint32)byteRepresentation.size();
 							byteRepresentation.resize(currentByteRepresentationSize + sizeof(moduleDesc.Translation));
 							memcpy(byteRepresentation.data() + currentByteRepresentationSize, glm::value_ptr(moduleDesc.Translation), sizeof(moduleDesc.Translation));
 						}

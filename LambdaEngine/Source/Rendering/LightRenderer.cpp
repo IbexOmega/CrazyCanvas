@@ -123,12 +123,17 @@ namespace LambdaEngine
 
 	void LightRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(backBufferIndex);
+
 		HandleUnavailableDescriptors(modFrameIndex);
 	}
 
 	void LightRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
+		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
+		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (resourceName == SCENE_POINT_SHADOWMAPS)
@@ -235,6 +240,7 @@ namespace LambdaEngine
 
 	void LightRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
+		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
 		if (Sleeping || m_TextureUpdateQueue.IsEmpty())

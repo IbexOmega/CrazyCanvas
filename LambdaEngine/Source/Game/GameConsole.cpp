@@ -831,7 +831,7 @@ namespace LambdaEngine
 		if (m_UpdatePositionCursor)
 		{
 			m_UpdatePositionCursor = false;
-			data->CursorPos = m_PopupSelectedText.length();
+			data->CursorPos = (int)m_PopupSelectedText.length();
 			data->InsertChars(data->CursorPos, " ");
 			m_PopupSelectedText = "";
 		}
