@@ -72,16 +72,16 @@ namespace LambdaEngine
 
 		for (Entity entity : m_AttachedCameraEntities)
 		{
-			const ParentComponent&		parentComp			= pParentComponents->GetData(entity);
+			const ParentComponent&		parentComp			= pParentComponents->GetConstData(entity);
 
 			if (parentComp.Attached)
 			{
-				const PositionComponent&	parentPositionComp	= pPositionComponents->GetData(parentComp.Parent);
-				const RotationComponent&	parentRotationComp	= pRotationComponents->GetData(parentComp.Parent);
-				const OffsetComponent&		cameraOffsetComp	= pOffsetComponents->GetData(entity);
+				const PositionComponent&	parentPositionComp	= pPositionComponents->GetConstData(parentComp.Parent);
+				const RotationComponent&	parentRotationComp	= pRotationComponents->GetConstData(parentComp.Parent);
+				const OffsetComponent&		cameraOffsetComp	= pOffsetComponents->GetConstData(entity);
 				PositionComponent&			cameraPositionComp	= pPositionComponents->GetData(entity);
 				RotationComponent&			cameraRotationComp	= pRotationComponents->GetData(entity);
-			
+
 				cameraPositionComp.Position		= parentPositionComp.Position + cameraOffsetComp.Offset;
 				cameraRotationComp.Quaternion	= parentRotationComp.Quaternion;
 			}
@@ -89,7 +89,7 @@ namespace LambdaEngine
 
 		for (Entity entity : m_CameraEntities)
 		{
-			const auto& camComp = pCameraComponents->GetData(entity);
+			const auto& camComp = pCameraComponents->GetConstData(entity);
 			if (camComp.IsActive)
 			{
 				auto& rotationComp	= pRotationComponents->GetData(entity);
@@ -97,11 +97,11 @@ namespace LambdaEngine
 
 				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
 				{
-					MoveFreeCamera(dt, velocityComp, rotationComp, pFreeCameraComponents->GetData(entity));
+					MoveFreeCamera(dt, velocityComp, rotationComp, pFreeCameraComponents->GetConstData(entity));
 				}
 				else if (pFPSCameraComponents && pFPSCameraComponents->HasComponent(entity))
 				{
-					MoveFPSCamera(dt, velocityComp, rotationComp, pFPSCameraComponents->GetData(entity));
+					MoveFPSCamera(dt, velocityComp, rotationComp, pFPSCameraComponents->GetConstData(entity));
 				}
 
 				#ifdef LAMBDA_DEBUG

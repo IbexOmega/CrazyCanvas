@@ -16,13 +16,19 @@ namespace LambdaEngine
 	class EventContainer
 	{
 	public:
+		DECL_REMOVE_COPY(EventContainer);
+		DECL_REMOVE_MOVE(EventContainer);
+
 		inline EventContainer()
 			: m_Allocator()
 			, m_Events()
 		{
 		}
 
-		~EventContainer() = default;
+		inline ~EventContainer()
+		{
+			Clear();
+		}
 
 		template<typename TEvent>
 		FORCEINLINE void Push(const TEvent& event)
@@ -134,21 +140,25 @@ namespace LambdaEngine
 		template<typename TEvent>
 		inline static void SendEvent(const TEvent& event)
 		{
-			std::scoped_lock<SpinLock> lock(s_EventLock);
+			std::scoped_lock<SpinLock> lock(s_WriteLock);
 
 			VALIDATE(event.GetType() == TEvent::GetStaticType());
-			s_DeferredEvents.Push(event);
+			s_DeferredEvents[s_WriteIndex].Push(event);
 		}
 		
 		static bool SendEventImmediate(Event& event);
 
 		static void Tick();
 
+		static void Release();
+
 	private:
 		static void InternalSendEventToHandlers(Event& event, const TArray<EventHandler>& handlers);
 
 	private:
-		static EventContainer s_DeferredEvents;
-		static SpinLock s_EventLock;
+		static EventContainer	s_DeferredEvents[2];
+		static SpinLock			s_WriteLock;
+		static uint32			s_WriteIndex;
+		static uint32			s_ReadIndex;
 	};
 }

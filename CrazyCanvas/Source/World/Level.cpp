@@ -17,6 +17,14 @@ Level::~Level()
 		{
 			pECS->RemoveEntity(entity);
 		}
+
+		for (TArray<Entity>& childEntities : levelEntities.ChildEntities)
+		{
+			for (Entity entity : childEntities)
+			{
+				pECS->RemoveEntity(entity);
+			}
+		}
 	}
 
 	m_Entities.Clear();
@@ -84,7 +92,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	return true;
 }
 
-bool Level::CreateObject(LambdaEngine::ESpecialObjectType specialObjectType, void* pData)
+bool Level::CreateObject(ESpecialObjectType specialObjectType, void* pData)
 {
 	using namespace LambdaEngine;
 
@@ -103,7 +111,7 @@ bool Level::CreateObject(LambdaEngine::ESpecialObjectType specialObjectType, voi
 			pLevelEntities = &m_Entities.PushBack({});
 		}
 
-		if (LevelObjectCreator::CreateSpecialObjectOfType(specialObjectType, pData, pLevelEntities->Entities, pLevelEntities->SaltUIDs))
+		if (LevelObjectCreator::CreateSpecialObjectOfType(specialObjectType, pData, pLevelEntities->Entities, pLevelEntities->ChildEntities, pLevelEntities->SaltUIDs))
 		{
 			return true;
 		}
@@ -119,7 +127,7 @@ void Level::SpawnPlayer(
 {
 }
 
-LambdaEngine::Entity* Level::GetEntities(LambdaEngine::ESpecialObjectType specialObjectType, uint32& countOut)
+LambdaEngine::Entity* Level::GetEntities(ESpecialObjectType specialObjectType, uint32& countOut)
 {
 	auto specialObjectTypeIt = m_EntityTypeMap.find(specialObjectType);
 	if (specialObjectTypeIt != m_EntityTypeMap.end())

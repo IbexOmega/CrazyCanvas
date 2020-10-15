@@ -3,6 +3,7 @@
     800,
     600
   ],
+  "VolumeMasterInital": 1.0,
   "FixedTimestep": 60,
   "NetworkPort": 4444,
   "RayTracingEnabled": true,
@@ -10,7 +11,6 @@
   "ShowRenderGraph": false,
   "EnableLineRenderer": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",
-  "EnablePhysicsRenderer": false,
   "ShowDemo": false,
   "Debugging": false,
   "CameraFOV": 90.0,
