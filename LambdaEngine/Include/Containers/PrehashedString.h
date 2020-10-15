@@ -62,6 +62,11 @@ namespace LambdaEngine
 			return m_Str;
 		}
 
+		inline const char* GetCString() const
+		{
+			return m_Str.c_str();
+		}
+
 		inline bool operator==(const PrehashedString& other) const
 		{
 			if (GetHash() != other.GetHash())
@@ -85,6 +90,16 @@ namespace LambdaEngine
 		inline bool operator!=(const String& str) const
 		{
 			return !(*this == str);
+		}
+
+		inline bool operator==(const char* pStr) const
+		{
+			return (strcmp(m_Str.c_str(), pStr) == 0);
+		}
+
+		inline bool operator!=(const char* pStr) const
+		{
+			return !(*this == pStr);
 		}
 
 		inline PrehashedString& operator=(const char* pNewString)

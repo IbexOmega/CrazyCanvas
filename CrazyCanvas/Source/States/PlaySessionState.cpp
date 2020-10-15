@@ -91,8 +91,8 @@ void PlaySessionState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
-		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.pGraph	= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
+		robotAnimationComp.Pose		= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
 		glm::vec3 scale(0.01f);
@@ -105,9 +105,8 @@ void PlaySessionState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
-		AnimationState walking = AnimationState("walking", animations[0]);
-		walking.SetPlaybackSpeed(2.0f);
-		robotAnimationComp.Graph = AnimationGraph(walking);
+
+		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0], 2.0f));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -117,7 +116,7 @@ void PlaySessionState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
-		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
+		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -128,20 +127,25 @@ void PlaySessionState::Init()
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
-		AnimationState reloadState("reload", running[0]);
-		reloadState.SetBlendInfo(BlendInfo(reload[0], 0.75f, 1.0f));
-		reloadState.SetIsLooping(false);
-		reloadState.SetOnFinished([](AnimationGraph& graph)
-		{
-			graph.TransitionToState("running");
-		});
+		AnimationState* pReloadState = DBG_NEW AnimationState("reload");
+		ClipNode*	pReload		= pReloadState->CreateClipNode(reload[0]);
+		ClipNode*	pRunning	= pReloadState->CreateClipNode(running[0]);
+		ClipNode*	pDancing	= pReloadState->CreateClipNode(animations[0]);
+		BlendNode*	pBlendNode0	= pReloadState->CreateBlendNode(pDancing, pReload,		BlendInfo(1.0f, "mixamorig:Neck"));
+		BlendNode*	pBlendNode1	= pReloadState->CreateBlendNode(pBlendNode0, pRunning,	BlendInfo(1.0f, "mixamorig:Spine"));
+		pReloadState->SetOutputNode(pBlendNode1);
 
-		AnimationGraph animationGraph;
-		animationGraph.AddState(AnimationState("running", running[0]));
-		animationGraph.AddState(reloadState);
-		animationGraph.AddTransition(Transition("running", "reload", 0.2, 0.5));
-		animationGraph.AddTransition(Transition("reload", "running", 0.5, 0.2));
-		robotAnimationComp.Graph = animationGraph;
+		//reloadState.SetOnFinished([](AnimationGraph& graph)
+		//{
+		//	graph.TransitionToState("running");
+		//});
+
+		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+		pAnimationGraph->AddState(pReloadState);
+		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.2, 0.5));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running", 0.5, 0.2));
+		robotAnimationComp.pGraph = pAnimationGraph;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -152,7 +156,7 @@ void PlaySessionState::Init()
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
-		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc =
 		{
 				.pName			= "RobotSoundInstance",
@@ -265,7 +269,7 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		robotAnimationComp.Graph			= AnimationGraph(AnimationState("dancing", animations[0]));
+		robotAnimationComp.pGraph			= new AnimationGraph(new AnimationState("dancing", animations[0]));
 
 		/*Entity weaponEntity = pECS->CreateEntity();
 		pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });*/

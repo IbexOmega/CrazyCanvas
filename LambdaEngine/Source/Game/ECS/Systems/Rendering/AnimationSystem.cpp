@@ -36,23 +36,24 @@ namespace LambdaEngine
 		}
 
 		// Call the graphs tick
-		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
+		VALIDATE(animation.pGraph != nullptr);
+		animation.pGraph->Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
 
 		// TODO: Remove this since it is only for testing
 		if (m_ChangeState)
 		{
-			if (animation.Graph.GetCurrentState().GetName() == "running")
+			if (animation.pGraph->GetCurrentState().GetName() == "running")
 			{
-				animation.Graph.TransitionToState("reload");
+				animation.pGraph->TransitionToState("reload");
 			}
 			else
 			{
-				animation.Graph.TransitionToState("running");
+				animation.pGraph->TransitionToState("running");
 			}
 		}
 
 		// Create localtransforms
-		const TArray<SQT>& currentFrame = animation.Graph.GetCurrentFrame();
+		const TArray<SQT>& currentFrame = animation.pGraph->GetCurrentFrame();
 		for (uint32 i = 0; i < currentFrame.GetSize(); i++)
 		{
 			const SQT& sqt = currentFrame[i];
@@ -83,6 +84,11 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
+	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation)
+	{
+		SAFEDELETE(animation.pGraph)
+	}
+
 	// TODO: Remove this since it is only for testing
 	bool AnimationSystem::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
 	{
@@ -100,8 +106,8 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
-				.pSubscriber		= &m_AnimationEntities,
-				.ComponentAccesses	=
+				.pSubscriber = &m_AnimationEntities,
+				.ComponentAccesses =
 				{
 					{ RW, AnimationComponent::Type() }
 				},
@@ -110,6 +116,7 @@ namespace LambdaEngine
 
 		systemReg.Phase = 0;
 		RegisterSystem(systemReg);
+		SetComponentOwner<AnimationComponent>({ std::bind(&AnimationSystem::OnAnimationComponentDelete, this, std::placeholders::_1) });
 
 		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
 		return true;

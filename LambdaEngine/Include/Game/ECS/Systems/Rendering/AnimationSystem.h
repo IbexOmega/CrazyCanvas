@@ -2,6 +2,7 @@
 #include "LambdaEngine.h"
 
 #include "ECS/System.h"
+#include "ECS/ComponentOwner.h"
 
 #include "Resources/Mesh.h"
 
@@ -18,7 +19,7 @@ namespace LambdaEngine
 	* AnimationSystem
 	*/
 
-	class AnimationSystem : public System
+	class AnimationSystem : public System, public ComponentOwner
 	{
 	public:
 		bool Init();
@@ -42,6 +43,8 @@ namespace LambdaEngine
 
 		void Animate(AnimationComponent& animation);
 		glm::mat4 ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices);
+
+		void OnAnimationComponentDelete(AnimationComponent& animation);
 
 		// TODO: Remove this since it is only for testing
 		bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);

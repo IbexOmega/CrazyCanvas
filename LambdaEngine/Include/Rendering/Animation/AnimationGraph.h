@@ -1,34 +1,13 @@
 #pragma once
 #include "LambdaEngine.h"
-#include "Mesh.h"
+#include "AnimationNode.h"
 
-#define INFINITE_LOOPS		-1
-#define INVALID_TRANSITION	-1
+#include "Memory/API/StackAllocator.h"
 
 namespace LambdaEngine
 {
 	class AnimationGraph;
 	class AnimationState;
-	
-	/*
-	* BinaryInterpolator
-	*/
-
-	struct BinaryInterpolator
-	{
-		inline BinaryInterpolator(const TArray<SQT>& in0, const TArray<SQT>& in1, TArray<SQT>& out)
-			: In0(in0)
-			, In1(in1)
-			, Out(out)
-		{
-		}
-
-		void Interpolate(float32 factor);
-
-		const TArray<SQT>&	In0;
-		const TArray<SQT>&	In1; 
-		TArray<SQT>&		Out;
-	};
 
 	/*
 	* Transition -> Stores the state of one transition
@@ -107,33 +86,6 @@ namespace LambdaEngine
 	};
 
 	/*
-	* BlendInfo -> Stores blending animation (Animation state can blend two animations)
-	*/
-
-	struct BlendInfo
-	{
-		inline BlendInfo()
-			: AnimationGUID(GUID_NONE)
-			, Weight(0.0f)
-			, PlaybackSpeed(1.0f)
-		{
-		}
-
-		// Empty string means full skeleton
-		inline BlendInfo(GUID_Lambda animationGUID, float32 weight, float32 playbackSpeed, PrehashedString jointName = "")
-			: AnimationGUID(animationGUID)
-			, Weight(weight)
-			, PlaybackSpeed(playbackSpeed)
-		{
-		}
-
-		GUID_Lambda	AnimationGUID;
-		float32		Weight;
-		float32		PlaybackSpeed;
-		PrehashedString JointName;
-	};
-
-	/*
 	* AnimationState -> Stores the state of one animation
 	*/
 
@@ -142,29 +94,19 @@ namespace LambdaEngine
 		friend class AnimationGraph;
 
 	public:
+		DECL_REMOVE_COPY(AnimationState);
+		DECL_REMOVE_MOVE(AnimationState);
+
 		AnimationState();
-		AnimationState(const String& name, GUID_Lambda animationGUID, bool isLooping = true);
-		~AnimationState() = default;
+		AnimationState(const String& name);
+		AnimationState(const String& name, GUID_Lambda animationGUID, float64 playbackSpeed = 1.0f, bool isLooping = true);
+		~AnimationState();
 
-		void Tick(const float64 deltaTime);
-		void Interpolate(const Skeleton& skeleton);
+		void Tick(const Skeleton& skeleton, const float64 deltaTimeInSeconds);
+		void Reset();
 
-		Animation& GetAnimation() const;
-		Animation& GetBlendAnimation() const;
-
-		FORCEINLINE void StartUp(float64 startTime, float64 startAt = 0.0)
-		{
-			startAt = glm::clamp(startAt, 0.0, 1.0);
-
-			m_StartTime		= startTime;
-			m_RunningTime	= 0.0;
-			m_IsPlaying		= true;
-		}
-
-		FORCEINLINE void Stop()
-		{
-			m_IsPlaying = false;
-		}
+		ClipNode*	CreateClipNode(GUID_Lambda animationGUID, float64 playbackSpeed = 1.0f, bool isLooping = true);
+		BlendNode*	CreateBlendNode(AnimationNode* pIn0, AnimationNode* pIn1, const BlendInfo& blendInfo);
 
 		FORCEINLINE void OnFinished() const
 		{
@@ -175,64 +117,9 @@ namespace LambdaEngine
 			}
 		}
 
-		FORCEINLINE bool IsLooping() const
-		{
-			return m_IsLooping;
-		}
-
-		FORCEINLINE bool IsFinished() const
-		{
-			return m_NormalizedTime >= 1.0 && !m_IsLooping;
-		}
-
-		FORCEINLINE bool IsPlaying() const
-		{
-			return m_IsPlaying;
-		}
-
-		FORCEINLINE void SetBlendInfo(const BlendInfo& blendInfo)
-		{
-			m_BlendInfo = blendInfo;
-		}
-
-		FORCEINLINE void SetIsLooping(bool isLooping)
-		{
-			m_IsLooping = isLooping;
-		}
-
-		FORCEINLINE void SetNumLoops(uint32 numLoops)
-		{
-			m_NumLoops = numLoops;
-		}
-
-		FORCEINLINE void SetPlaybackSpeed(float64 speed)
-		{
-			m_PlaybackSpeed = speed;
-		}
-
 		FORCEINLINE void SetOnFinished(const std::function<void(AnimationGraph&)>& onFinished)
 		{
 			m_OnFinished = onFinished;
-		}
-
-		FORCEINLINE float64 GetPlaybackSpeed() const
-		{
-			return m_PlaybackSpeed;
-		}
-
-		FORCEINLINE float64 GetNormlizedTime() const
-		{
-			return m_NormalizedTime;
-		}
-
-		FORCEINLINE float64 GetDurationInSeconds() const
-		{
-			return m_DurationInSeconds;
-		}
-
-		FORCEINLINE float64 GetLocalTimeInSeconds() const
-		{
-			return m_LocalTimeInSeconds;
 		}
 
 		FORCEINLINE const String& GetName() const
@@ -240,23 +127,18 @@ namespace LambdaEngine
 			return m_Name;
 		}
 
-		FORCEINLINE GUID_Lambda GetAnimationID() const
-		{
-			return m_AnimationGUID;
-		}
-
 		FORCEINLINE const TArray<SQT>& GetCurrentFrame() const
 		{
-			return m_CurrentFrame0;
+			return m_pFinalNode->GetResult();
+		}
+
+		FORCEINLINE void SetOutputNode(AnimationNode* pOutput)
+		{
+			m_pFinalNode->SetInputNode(pOutput);
 		}
 
 	private:
-		glm::vec3 SamplePosition(Animation::Channel& channel, float64 time);
-		glm::vec3 SampleScale(Animation::Channel& channel, float64 time);
-		glm::quat SampleRotation(Animation::Channel& channel, float64 time);
-
-		void InternalInterpolate(Animation& animation, const Skeleton& skeleton, TArray<SQT>& currentFrame, float64 timestamp);
-		float64 InternalCalculateLocalTime(float64 playbackSpeed, float64 durationInSeconds);
+		OutputNode* CreateOutputNode(AnimationNode* pInput);
 
 		FORCEINLINE void SetAnimationGraph(AnimationGraph* pGraph)
 		{
@@ -265,57 +147,47 @@ namespace LambdaEngine
 		}
 
 	private:
-		AnimationGraph* m_pOwnerGraph;
-		BlendInfo m_BlendInfo;
+		AnimationGraph*	m_pOwnerGraph;
+		OutputNode*		m_pFinalNode;
+		StackAllocator	m_NodeAllocator;
+		TArray<AnimationNode*> m_Nodes;
+		
+		String m_Name;
 
 		std::function<void(AnimationGraph&)> m_OnFinished;
-
-		bool m_IsLooping;
-		bool m_IsPlaying;
-
-		uint64	m_NumLoops;
-		float64	m_StartTime;
-		float64	m_RunningTime;
-		float64	m_PlaybackSpeed;
-		float64	m_NormalizedTime;
-		float64	m_LocalTimeInSeconds;
-		float64	m_DurationInSeconds;
-		
-		String		m_Name;
-		GUID_Lambda	m_AnimationGUID;
-		TArray<SQT> m_CurrentFrame0; // Used for main animation
-		TArray<SQT> m_CurrentFrame1; // Used for blend animation
 	};
 
 	/*
-	* AnimationGraph -> Contains multiple AnimationStates, and control the transitions between these states
+	* AnimationGraph:
+	* Contains multiple AnimationStates, and control the transitions between these states.
+	* Unique for each animationcomponent, and should therefore; not be copied.
 	*/
 
 	class AnimationGraph
 	{
-		using StateIterator			= TArray<AnimationState>::Iterator;
-		using TransitionIterator	= TArray<Transition>::Iterator;
+		using StateIterator			= TArray<AnimationState*>::Iterator;
+		using TransitionIterator	= TArray<Transition*>::Iterator;
 
 	public:
+		DECL_REMOVE_COPY(AnimationGraph);
+		DECL_REMOVE_MOVE(AnimationGraph);
+
 		AnimationGraph();
-		explicit AnimationGraph(const AnimationState& animationState);
-		explicit AnimationGraph(AnimationState&& animationState);
-		AnimationGraph(AnimationGraph&& other);
-		AnimationGraph(const AnimationGraph& other);
-		~AnimationGraph() = default;
+		AnimationGraph(AnimationState* pAnimationState);
+		~AnimationGraph();
 
 		void Tick(float64 deltaTimeInSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton);
 
 		// Adds a new state to the graph if there currently are no state with the same name
-		void AddState(const AnimationState& animationState);
-		void AddState(AnimationState&& animationState);
+		// If AddState returns true the AnimationGraph has ownership if false YOU have to call delete
+		bool AddState(AnimationState* pAnimationState);
 
 		// Removes the state with the specifed name
 		void RemoveState(const String& name);
 
 		// Adds a new transition to the graph, if it is valid (If there exists two states specified in the transition)
-		void AddTransition(const Transition& transition);
-		void AddTransition(Transition&& transition);
+		// If AddTransition returns true the AnimationGraph has ownership if false YOU have to call delete
+		bool AddTransition(Transition* pTransition);
 
 		// Removes the state with the specifed name
 		void RemoveTransition(const String& fromState, const String& toState);
@@ -356,9 +228,6 @@ namespace LambdaEngine
 
 		const TArray<SQT>& GetCurrentFrame() const;
 
-		AnimationGraph& operator=(AnimationGraph&& other);
-		AnimationGraph& operator=(const AnimationGraph& other);
-
 		FORCEINLINE bool IsTransitioning() const
 		{
 			return (m_CurrentTransition > INVALID_TRANSITION);
@@ -366,7 +235,6 @@ namespace LambdaEngine
 
 	private:
 		void FinishTransition();
-		void SetOwnerGraph();
 
 	private:
 		bool m_IsBlending;
@@ -374,8 +242,8 @@ namespace LambdaEngine
 		int32	m_CurrentTransition;
 		uint32	m_CurrentState;
 
-		TArray<AnimationState>	m_States;
+		TArray<AnimationState*>	m_States;
+		TArray<Transition*>		m_Transitions;
 		TArray<SQT>				m_TransitionResult;
-		TArray<Transition>		m_Transitions;
 	};
 }

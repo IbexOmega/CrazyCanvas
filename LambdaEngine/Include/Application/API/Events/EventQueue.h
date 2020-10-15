@@ -28,8 +28,8 @@ namespace LambdaEngine
 		FORCEINLINE void Push(const TEvent& event)
 		{
 			void* pMemory = m_Allocator.Push(sizeof(TEvent));
-			new(pMemory) TEvent(event);
-			m_Events.EmplaceBack(reinterpret_cast<TEvent*>(pMemory));
+			TEvent* pEvent = new(pMemory) TEvent(event);
+			m_Events.EmplaceBack(pEvent);
 		}
 
 		FORCEINLINE Event& At(uint32 index)
