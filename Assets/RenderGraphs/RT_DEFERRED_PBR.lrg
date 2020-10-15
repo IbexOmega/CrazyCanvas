@@ -468,8 +468,8 @@
             "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
-                "mesh_shader": "/Geometry\\Geom.vert",
-                "vertex_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "/Geometry\\Geom.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
@@ -1101,8 +1101,8 @@
             "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
                 "task_shader": "",
-                "mesh_shader": "/Geometry\\Geom.vert",
-                "vertex_shader": "",
+                "mesh_shader": "",
+                "vertex_shader": "/Geometry\\Geom.vert",
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
