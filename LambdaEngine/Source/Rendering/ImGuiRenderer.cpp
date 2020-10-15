@@ -205,6 +205,13 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(dataSize);
 	}*/
 
+	void ImGuiRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
+	}
+
 	void ImGuiRenderer::UpdateTextureResource(
 		const String& resourceName, 
 		const TextureView* const* ppPerImageTextureViews, 

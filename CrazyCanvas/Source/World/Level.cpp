@@ -117,6 +117,9 @@ void Level::SpawnPlayer(
 	const LambdaEngine::AnimationComponent& animationComponent, 
 	const LambdaEngine::CameraDesc* pCameraDesc)
 {
+	UNREFERENCED_VARIABLE(meshComponent);
+	UNREFERENCED_VARIABLE(animationComponent);
+	UNREFERENCED_VARIABLE(pCameraDesc);
 }
 
 LambdaEngine::Entity* Level::GetEntities(LambdaEngine::ESpecialObjectType specialObjectType, uint32& countOut)

@@ -234,6 +234,9 @@ namespace LambdaEngine
 
 	void CameraSystem::RenderFrustum(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp)
 	{
+		UNREFERENCED_VARIABLE(positionComp);
+		UNREFERENCED_VARIABLE(rotationComp);
+
 		LineRenderer* pLineRenderer = LineRenderer::Get();
 
 		if (pLineRenderer != nullptr)
@@ -241,7 +244,7 @@ namespace LambdaEngine
 			// This is a test code - This should probably not be done every tick
 			ECSCore* pECSCore = ECSCore::GetInstance();
 			auto& posComp = pECSCore->GetComponent<PositionComponent>(entity);
-			auto& rotationComp = pECSCore->GetComponent<RotationComponent>(entity);
+			auto& rotComp = pECSCore->GetComponent<RotationComponent>(entity);
 			auto& camComp = pECSCore->GetComponent<CameraComponent>(entity);
 
 			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
@@ -252,9 +255,9 @@ namespace LambdaEngine
 			const float farHeight = camComp.FarPlane * tang;
 			const float farWidth = farHeight * aspect;
 
-			const glm::vec3 forward = GetForward(rotationComp.Quaternion);
-			const glm::vec3 right = GetRight(rotationComp.Quaternion);
-			const glm::vec3 up = GetUp(rotationComp.Quaternion);
+			const glm::vec3 forward = GetForward(rotComp.Quaternion);
+			const glm::vec3 right = GetRight(rotComp.Quaternion);
+			const glm::vec3 up = GetUp(rotComp.Quaternion);
 
 			TArray<glm::vec3> points(10);
 			const glm::vec3 nearPos = posComp.Position + forward * camComp.NearPlane;
