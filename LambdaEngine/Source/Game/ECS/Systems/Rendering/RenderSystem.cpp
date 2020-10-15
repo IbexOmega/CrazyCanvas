@@ -1168,19 +1168,23 @@ namespace LambdaEngine
 			const Instance& currentInstance = rasterInstances[instanceIndex];
 			uint32 extensionIndex = currentInstance.ExtensionIndex;
 
-			// Set the last entity to use the extension group at the previous removed entity position.
-			Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
-			const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
-			Instance& instance = rasterInstances[instanceKey.InstanceIndex];
-			instance.ExtensionIndex = extensionIndex;
+			// extensionIndex == 0 means the mesh instance does not have an extension
+			if (extensionIndex != 0)
+			{
+				// Set the last entity to use the extension group at the previous removed entity position.
+				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
+				const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
+				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
+				instance.ExtensionIndex = extensionIndex;
 
-			// Remove the group in the list and replace it with the last group.
-			TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
-			extensionGroups[instanceIndex] = extensionGroups.GetBack();
-			extensionGroups.PopBack();
+				// Remove the group in the list and replace it with the last group.
+				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
+				extensionGroups[instanceIndex] = extensionGroups.GetBack();
+				extensionGroups.PopBack();
 
-			// Remove data from the storage.
-			EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+				// Remove data from the storage.
+				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+			}
 		}
 
 		rasterInstances[instanceIndex] = rasterInstances.GetBack();
