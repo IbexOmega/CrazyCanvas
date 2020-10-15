@@ -1,7 +1,9 @@
 #pragma once
 #include "Input/API/InputState.h"
 #include "Containers/THashTable.h"
+#pragma warning( push, 0 )
 #include <rapidjson/document.h>
+#pragma warning( pop )
 
 namespace LambdaEngine
 {
