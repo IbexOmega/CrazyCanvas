@@ -1083,8 +1083,6 @@ namespace LambdaEngine
 					m_PaintMaskTextureViews.PushBack(pTextureView);
 					m_PaintMaskSamplers.PushBack(pNearestSampler); // In an ideal world we would only have one sampler instead of a list
 					// TODO: Update rendergraph to support only one sampler for several texture views
-					
-					// TODO: REMOVE: Removing is probably not working
 
 					ResourceUpdateDesc unwrappedTextureUpdate = {};
 					unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
@@ -1181,11 +1179,36 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			// Remove RT ASInstance
 			TArray<AccelerationStructureInstance>& asInstances = meshAndInstancesIt->second.ASInstances;
+			const uint32 textureIndex = asInstances[instanceIndex].CustomIndex & 0xFF;
 			asInstances[instanceIndex] = asInstances.GetBack();
 			asInstances.PopBack();
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
+
+			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<MeshPaintComponent>* meshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (meshPaintComponents->HasComponent(entity))
+			{
+				uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+				m_PaintMaskTextures[textureIndex]		= m_PaintMaskTextures.GetBack();
+				m_PaintMaskTextures.PopBack();
+				m_PaintMaskTextureViews[textureIndex]	= m_PaintMaskTextureViews.GetBack();
+				m_PaintMaskTextureViews.PopBack();
+				m_PaintMaskSamplers[textureIndex]		= m_PaintMaskSamplers.GetBack();
+				m_PaintMaskSamplers.PopBack();
+
+				// Update custom indicies
+				for (auto& instance : asInstances)
+				{
+					if (changedIndex == (instance.CustomIndex & 0xFF0000))
+					{
+						instance.CustomIndex |= textureIndex;
+					}
+				}
+			}
 		}
 
 		// Remove extension
