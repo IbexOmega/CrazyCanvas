@@ -95,14 +95,14 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		pClient->SendReliable(pPacket, nullptr);
 	}
 
-	glm::vec3 position(0.0f, 2.0f, 0.0f);
+	glm::vec3 position(0.0f, 10.0f, 0.0f);
 
 	CreatePlayerDesc createPlayerDesc =
 	{
-		.pClient	= pClient,
-		.Position	= position,
-		.Forward	= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-		.Scale		= glm::vec3(0.01f),
+		.pClient		= pClient,
+		.Position		= position,
+		.Forward		= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+		.Scale			= glm::vec3(1.0f),
 	};
 
 	m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);

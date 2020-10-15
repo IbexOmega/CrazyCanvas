@@ -70,6 +70,7 @@ namespace LambdaEngine
 
 			Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
 			TickLocalPlayerAction(deltaTime, entityPlayer, &gameState);
+
 			TickOtherPlayersAction(deltaTime);
 
 			if (!MultiplayerUtils::IsSingleplayer())
@@ -93,17 +94,18 @@ namespace LambdaEngine
 		ECSCore* pECS = ECSCore::GetInstance();
 		float32 dt = (float32)deltaTime.AsSeconds();
 
-		auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents	= pECS->GetComponentArray<CharacterColliderComponent>();
+		ComponentArray<NetworkPositionComponent>* pNetPosComponents					= pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents						= pECS->GetComponentArray<VelocityComponent>();
+		const ComponentArray<PositionComponent>* pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
 
-		NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
-		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
-		const PositionComponent& positionComponent = pPositionComponents->GetData(entityPlayer);
+		const NetworkPositionComponent& netPosComponent	= pNetPosComponents->GetConstData(entityPlayer);
+		const VelocityComponent& velocityComponent		= pVelocityComponents->GetConstData(entityPlayer);
+		const PositionComponent& positionComponent		= pPositionComponents->GetConstData(entityPlayer);
 
-		netPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
-		netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
+		NetworkPositionComponent& mutableNetPosComponent = const_cast<NetworkPositionComponent&>(netPosComponent);
+		mutableNetPosComponent.PositionLast		= positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
+		mutableNetPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
 
 		m_PlayerActionSystem.DoAction(deltaTime, entityPlayer, pGameState);
 
@@ -120,38 +122,62 @@ namespace LambdaEngine
 		ECSCore* pECS = ECSCore::GetInstance();
 		float32 dt = (float32)deltaTime.AsSeconds();
 
-		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents	= pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<CharacterColliderComponent>* pCharacterColliders		= pECS->GetComponentArray<CharacterColliderComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents				= pECS->GetComponentArray<VelocityComponent>();
+		const ComponentArray<PositionComponent>* pPositionComponents		= pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>* pRotationComponents				= pECS->GetComponentArray<RotationComponent>();
 
 		for (auto& pair : m_EntityOtherStates)
 		{
-			GameStateOther& gameState = pair.second;
 			Entity entity = pair.first;
 
-			NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entity);
-			const PositionComponent& positionComponent = pPositionComponents->GetData(entity);
+			const NetworkPositionComponent& constNetPosComponent = pNetPosComponents->GetConstData(entity);
+			const PositionComponent& positionComponent = pPositionComponents->GetConstData(entity);
 			VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
-			RotationComponent& rotationComponent = pRotationComponents->GetData(entity);
 
-			if (gameState.HasNewData) //Data exist for the current frame :)
+			TArray<GameState>& gameStates = pair.second;
+
+			if (!gameStates.IsEmpty())
 			{
-				gameState.HasNewData = false;
+				for (const GameState& gameState : gameStates)
+				{
+					const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entity);
 
-				netPosComponent.PositionLast = positionComponent.Position;
-				netPosComponent.Position = gameState.Position;
-				netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
+					if (constRotationComponent.Quaternion != gameState.Rotation)
+					{
+						RotationComponent& rotationComponent	= const_cast<RotationComponent&>(constRotationComponent);
+						rotationComponent.Quaternion			= gameState.Rotation;
+						rotationComponent.Dirty					= true;
+					}
 
-				velocityComponent.Velocity = gameState.Velocity;
+					if (glm::any(glm::notEqual(constNetPosComponent.Position, gameState.Position)))
+					{
+						NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
+						netPosComponent.PositionLast	= positionComponent.Position;
+						netPosComponent.Position		= gameState.Position;
+						netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+						netPosComponent.Dirty			= true;
+					}
 
-				rotationComponent.Quaternion = gameState.Rotation;
+					velocityComponent.Velocity = gameState.Velocity;
+
+					CharacterControllerSystem::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
+				}
+
+				gameStates.Clear();
 			}
-			else  //Data does not exist for the current frame :(
+			else //Data does not exist for the current frame :(
 			{
-				netPosComponent.PositionLast = positionComponent.Position;
-				netPosComponent.Position += velocityComponent.Velocity * dt;
-				netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
+				velocityComponent.Velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+
+				NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
+				netPosComponent.PositionLast		= positionComponent.Position;
+				netPosComponent.Position			+= velocityComponent.Velocity * dt;
+				netPosComponent.TimestampStart		= EngineLoop::GetTimeSinceStart();
+				netPosComponent.Dirty				= true;
+
+				CharacterControllerSystem::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
 			}
 		}
 	}
@@ -177,13 +203,7 @@ namespace LambdaEngine
 			else
 			{
 				Entity entity = MultiplayerUtils::GetEntity(networkUID);
-
-				m_EntityOtherStates[entity] = {
-					serverGameState.Position,
-					serverGameState.Velocity,
-					serverGameState.Rotation,
-					true
-				};
+				m_EntityOtherStates[entity].PushBack(serverGameState);
 			}
 			return true;
 		}
@@ -212,9 +232,9 @@ namespace LambdaEngine
 
 		Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
 
-		auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-		auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+		ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
+		ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 		NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
@@ -253,18 +273,19 @@ namespace LambdaEngine
 
 	bool PlayerSystem::CompareGameStates(const GameState& gameStateLocal, const GameState& gameStateServer)
 	{
+		bool result = true;
 		if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
 		{
 			LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z);
-			return false;
+			result = false;
 		}
 
 		if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
 		{
 			LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Velocity.x, gameStateLocal.Velocity.y, gameStateLocal.Velocity.z, gameStateServer.Velocity.x, gameStateServer.Velocity.y, gameStateServer.Velocity.z);
-			return false;
+			result = false;
 		}
 
-		return true;
+		return result;
 	}
 }
