@@ -203,9 +203,9 @@ void SandboxState::Init()
 	// Emitter
 	{
 		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 4.0f, 0.0f } });
+		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
 		pECS->AddComponent<RotationComponent>(entity, { true,glm::identity<glm::quat>() });
-		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{ .Velocity = 1.0f, .Acceleration = 0.0f, .ParticleRadius = 0.1f});
+		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{ .Velocity = 1.0f, .Acceleration = 0.0f, .ParticleRadius = 0.1f });
 	}
 
 	//Sphere Grid
@@ -430,16 +430,16 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 
 	// Debugging Lights
-	static uint32 index = 0;
-	static bool remove = true;
+	static uint32 indexLights = 0;
+	static bool removeLights = true;
 	ECSCore* ecsCore = ECSCore::GetInstance();
 	if (event.Key == EKey::KEY_9)
 	{
-		uint32 modIndex = index % 10U;
+		uint32 modIndex = indexLights % 10U;
 		if (modIndex == 0U)
-			remove = !remove;
+			removeLights = !removeLights;
 
-		if (!remove)
+		if (!removeLights)
 		{
 			Entity e = ecsCore->CreateEntity();
 			m_PointLights[modIndex] = e;
@@ -452,7 +452,33 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			ecsCore->RemoveEntity(m_PointLights[modIndex]);
 		}
 
-		index++;
+		indexLights++;
+	}
+
+	// Debugging Emitters
+	static uint32 indexEmitters = 0;
+	static bool removeEmitters = true;
+	if (event.Key == EKey::KEY_8)
+	{
+		uint32 modIndex = indexEmitters % 10U;
+		if (modIndex == 0U)
+			removeEmitters = !removeEmitters;
+
+		if (!removeEmitters)
+		{
+			Entity e = ecsCore->CreateEntity();
+			m_Emitters[modIndex] = e;
+
+			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 4.0f, -5.f + float(modIndex) } });
+			ecsCore->AddComponent<RotationComponent>(e, { true,glm::identity<glm::quat>() });
+			ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{ .Velocity = float(modIndex), .Acceleration = 0.0f, .ParticleRadius = 0.05f * float(modIndex) });
+		}
+		else
+		{
+			ecsCore->RemoveEntity(m_PointLights[modIndex]);
+		}
+
+		indexEmitters++;
 	}
 
 	return true;

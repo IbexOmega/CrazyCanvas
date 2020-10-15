@@ -63,17 +63,18 @@ namespace LambdaEngine
 
 		for (auto activeEmitterIt = m_ActiveEmitters.begin();  activeEmitterIt != m_ActiveEmitters.end();)
 		{
-			float& elapTime = activeEmitterIt->second.ElapTime;
-			elapTime += deltaTime.AsSeconds();
+			if (activeEmitterIt->second.OneTime)
+			{
+				float& elapTime = activeEmitterIt->second.ElapTime;
+				elapTime += deltaTime.AsSeconds();
 
-			if (elapTime >= activeEmitterIt->second.LifeTime)
-			{
-				activeEmitterIt = m_ActiveEmitters.erase(activeEmitterIt);
+				if (elapTime >= activeEmitterIt->second.LifeTime)
+				{
+					activeEmitterIt = m_ActiveEmitters.erase(activeEmitterIt);
+					continue;
+				}
 			}
-			else
-			{
-				activeEmitterIt++;
-			}
+			activeEmitterIt++;
 		}
 	}
 
