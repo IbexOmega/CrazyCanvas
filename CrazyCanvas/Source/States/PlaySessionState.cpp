@@ -48,7 +48,6 @@ void PlaySessionState::Init()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	ClientSystem& clientSystem = ClientSystem::GetInstance();
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlaySessionState::OnPacketReceived);
 
 	// Scene
@@ -105,7 +104,9 @@ void PlaySessionState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
-		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
+		AnimationState walking = AnimationState("walking", animations[0]);
+		walking.SetPlaybackSpeed(2.0f);
+		robotAnimationComp.Graph = AnimationGraph(walking);
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -129,8 +130,8 @@ void PlaySessionState::Init()
 		AnimationGraph animationGraph;
 		animationGraph.AddState(AnimationState("running", running[0]));
 		animationGraph.AddState(AnimationState("walking", animations[0]));
-		animationGraph.AddTransition(Transition("running", "walking", 0.2));
-		animationGraph.AddTransition(Transition("walking", "running", 0.5));
+		animationGraph.AddTransition(Transition("running", "walking", 0.2, 0.5));
+		animationGraph.AddTransition(Transition("walking", "running", 0.5, 0.2));
 		robotAnimationComp.Graph = animationGraph;
 
 		entity = pECS->CreateEntity();

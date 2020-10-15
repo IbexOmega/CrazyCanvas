@@ -1194,6 +1194,9 @@ namespace LambdaEngine
 				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
 
+				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pStagingMatrixBuffer);
+
 				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
 
