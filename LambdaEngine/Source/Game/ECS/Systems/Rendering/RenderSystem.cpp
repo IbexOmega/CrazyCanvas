@@ -1079,11 +1079,15 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			AccelerationStructureInstance asInstance = {};
-			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= materialIndex;
-			asInstance.Mask				= 0xFF;
-			asInstance.SBTRecordOffset	= 0;
-			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Transform						= glm::transpose(transform);
+			asInstance.CustomIndex						= materialIndex;
+			asInstance.Mask								= 0xFF;
+			asInstance.SBTRecordOffset					= 0;
+			asInstance.Flags							= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+
+			//If the BLAS is already built, set it here
+			if (meshAndInstancesIt->second.pBLAS != nullptr)
+				asInstance.AccelerationStructureAddress	= meshAndInstancesIt->second.pBLAS->GetDeviceAdress();
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
@@ -1113,8 +1117,6 @@ namespace LambdaEngine
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
-		LOG_ERROR("Remove Entity %d", entity);
-
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
@@ -1166,19 +1168,23 @@ namespace LambdaEngine
 			const Instance& currentInstance = rasterInstances[instanceIndex];
 			uint32 extensionIndex = currentInstance.ExtensionIndex;
 
-			// Set the last entity to use the extension group at the previous removed entity position.
-			Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
-			const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
-			Instance& instance = rasterInstances[instanceKey.InstanceIndex];
-			instance.ExtensionIndex = extensionIndex;
+			// extensionIndex == 0 means the mesh instance does not have an extension
+			if (extensionIndex != 0)
+			{
+				// Set the last entity to use the extension group at the previous removed entity position.
+				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
+				const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
+				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
+				instance.ExtensionIndex = extensionIndex;
 
-			// Remove the group in the list and replace it with the last group.
-			TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
-			extensionGroups[instanceIndex] = extensionGroups.GetBack();
-			extensionGroups.PopBack();
+				// Remove the group in the list and replace it with the last group.
+				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
+				extensionGroups[instanceIndex] = extensionGroups.GetBack();
+				extensionGroups.PopBack();
 
-			// Remove data from the storage.
-			EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+				// Remove data from the storage.
+				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+			}
 		}
 
 		rasterInstances[instanceIndex] = rasterInstances.GetBack();

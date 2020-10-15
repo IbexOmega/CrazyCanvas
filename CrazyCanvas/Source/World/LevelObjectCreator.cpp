@@ -125,7 +125,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 
 	Entity entity = pECS->CreateEntity();
 	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
-	const CollisionInfo collisionCreateInfo = 
+	const CollisionInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, translation }),
@@ -221,7 +221,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 
-	const CharacterColliderInfo colliderInfo = 
+	const CharacterColliderInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
@@ -230,8 +230,8 @@ bool LevelObjectCreator::CreatePlayer(
 		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
 	};
 
-	CharacterColliderComponent characterColliderComponent;
-	PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS, characterColliderComponent);
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS);
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 	pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
@@ -275,22 +275,22 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
 
-			const ViewProjectionMatricesComponent viewProjComp = 
+			const ViewProjectionMatricesComponent viewProjComp =
 			{
 				.Projection = glm::perspective(
 					glm::radians(pPlayerDesc->pCameraDesc->FOVDegrees),
 					pPlayerDesc->pCameraDesc->Width / pPlayerDesc->pCameraDesc->Height,
-					pPlayerDesc->pCameraDesc->NearPlane, 
+					pPlayerDesc->pCameraDesc->NearPlane,
 					pPlayerDesc->pCameraDesc->FarPlane),
 
 				.View = glm::lookAt(
-					pPlayerDesc->Position, 
+					pPlayerDesc->Position,
 					pPlayerDesc->Position + pPlayerDesc->Forward,
 					g_DefaultUp)
 			};
 			pECS->AddComponent<ViewProjectionMatricesComponent>(cameraEntity, viewProjComp);
 
-			const CameraComponent cameraComp = 
+			const CameraComponent cameraComp =
 			{
 				.NearPlane	= pPlayerDesc->pCameraDesc->NearPlane,
 				.FarPlane	= pPlayerDesc->pCameraDesc->FarPlane,
