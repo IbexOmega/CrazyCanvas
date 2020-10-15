@@ -22,6 +22,8 @@ namespace LambdaEngine
 		~ParticleRenderer();
 
 		bool Init();
+		
+		void SetCurrentParticleCount(uint32 particleCount) { m_ParticleCount = particleCount; };
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
@@ -61,6 +63,8 @@ namespace LambdaEngine
 	private:
 		bool									m_Initilized = false;
 		bool									m_MeshShaders = false;
+		uint32									m_ParticleCount;
+
 
 		GUID_Lambda								m_MeshShaderGUID	= 0;
 		GUID_Lambda								m_PixelShaderGUID	= 0;

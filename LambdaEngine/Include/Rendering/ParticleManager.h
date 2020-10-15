@@ -75,13 +75,16 @@ namespace LambdaEngine
 		ParticleManager() = default;
 		~ParticleManager() = default;
 
-		void Init(uint32 maxParticles);
+		void Init(uint32 maxParticleCapacity);
 		void Release();
 
 		void Tick(Timestamp deltaTime, uint32 modFrameIndex);
 
 		void OnEmitterEntityAdded(Entity entity);
 		void OnEmitterEntityRemoved(Entity entity);
+
+		uint32 GetParticleCount() const { return m_Particles.GetSize();  }
+		uint32 GetMaxParticleCount() const { return m_MaxParticleCount; }
 
 		bool UpdateBuffers(CommandList* pCommandList);
 		bool UpdateResources(RenderGraph* pRendergraph);
@@ -90,6 +93,7 @@ namespace LambdaEngine
 
 		void CleanBuffers();
 	private:
+		uint32						m_MaxParticleCount;
 		uint32						m_ModFrameIndex;
 
 		bool						m_DirtyParticleBuffer	= false;

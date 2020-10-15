@@ -546,6 +546,11 @@ namespace LambdaEngine
 				UpdateTransform(entity, transform);
 			}
 		}
+
+		// Particle Updates
+		uint32 particleCount = m_ParticleManager.GetParticleCount();
+		m_pParticleRenderer->SetCurrentParticleCount(particleCount);
+		m_pParticleUpdater->SetCurrentParticleCount(particleCount);
 	}
 
 	bool RenderSystem::Render(Timestamp delta)
@@ -554,7 +559,6 @@ namespace LambdaEngine
 
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
-
 
 		StagingBufferCache::Tick();
 		CleanBuffers();

@@ -24,6 +24,8 @@ namespace LambdaEngine
 
 		bool Init();
 
+		void SetCurrentParticleCount(uint32 particleCount) { m_ParticleCount = particleCount; m_PushConstant.particleCount = m_ParticleCount; };
+
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
 		virtual void PreBuffersDescriptorSetWrite()		override final;
@@ -34,6 +36,7 @@ namespace LambdaEngine
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)  override final;
+
 
 		virtual void Render(
 			uint32 modFrameIndex,
@@ -60,6 +63,7 @@ namespace LambdaEngine
 
 	private:
 		bool								m_Initilized = false;
+		uint32								m_ParticleCount;
 
 		GUID_Lambda							m_ComputeShaderGUID = 0;
 

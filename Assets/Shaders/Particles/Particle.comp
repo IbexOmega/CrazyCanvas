@@ -4,8 +4,8 @@
 
 #include "../Defines.glsl"
 
-#define THREAD_COUNT 32
-layout(local_size_x = THREAD_COUNT, local_size_y = 1, local_size_z = 1) in;
+#define WORK_GROUP_INVOCATIONS 32
+layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1) in;
 
 // Pushconstants
 layout(push_constant) uniform PushConstants
@@ -24,26 +24,28 @@ layout(binding = 0, set = BUFFER_SET_INDEX) restrict buffer ParticleInstances
 void main()
 {
 	// Return in case this thread is outside of our ParticleCount
-	if (gl_GlobalInvocationID.x >= u_PC.ParticleCount)
-	{
-		return;
+	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint indexOffset = gl_GlobalInvocationID.x;
+	const float dt = u_PC.DeltaTime;
+
+	while (indexOffset < u_PC.ParticleCount){
+
+		// Update particle data 
+		SParticle particle = b_ParticleInstances.Val[indexOffset];
+		particle.Velocity += particle.Acceleration*dt;
+		particle.Transform[3].xyz += particle.Velocity*dt;
+		particle.CurrentLife -= dt;
+
+		// Should only happen if it is an emitter that repeats.
+		if(particle.CurrentLife < 0.f)
+		{
+			particle.CurrentLife = particle.LifeTime;
+			particle.Transform[3].xyz = particle.StartPosition;
+			particle.Velocity = particle.StartVelocity;
+		}
+
+		b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
+		indexOffset += totalInvocations;
 	}
 
-    const float dt = u_PC.DeltaTime;
-
-    // Update particle data 
-	SParticle particle = b_ParticleInstances.Val[gl_GlobalInvocationID.x];
-	particle.Velocity += particle.Acceleration*dt;
-    particle.Transform[3].xyz += particle.Velocity*dt;
-    particle.CurrentLife -= dt;
-
-	// Should only happen if it is an emitter that repeats.
-	if(particle.CurrentLife < 0.f)
-	{
-		particle.CurrentLife = particle.LifeTime;
-		particle.Transform[3].xyz = particle.StartPosition;
-		particle.Velocity = particle.StartVelocity;
-	}
-
-    b_ParticleInstances.Val[gl_GlobalInvocationID.x] = particle;
 }

@@ -17,7 +17,8 @@ namespace LambdaEngine
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
 
-		m_PushConstant.particleCount = 32;
+		m_ParticleCount = 0;
+		m_PushConstant.particleCount = 0;
 	}
 
 	ParticleUpdater::~ParticleUpdater()
@@ -140,6 +141,7 @@ namespace LambdaEngine
 	bool LambdaEngine::ParticleUpdater::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
+		m_ParticleCount = 0;
 
 		if (!CreatePipelineLayout())
 		{
@@ -265,7 +267,9 @@ namespace LambdaEngine
 		pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &m_PushConstant, sizeof(PushConstantData), 0U);
 		pCommandList->BindDescriptorSetCompute(m_InstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// Particle Instance Buffer
 		
-		pCommandList->Dispatch(32U, 1U, 1U);
+		constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
+		uint32 workGroupX = std::ceilf(float(m_ParticleCount) / float(WORK_GROUP_INVOCATIONS));
+		pCommandList->Dispatch(workGroupX, 1U, 1U);
 
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
