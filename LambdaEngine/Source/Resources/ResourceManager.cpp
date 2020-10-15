@@ -942,11 +942,6 @@ namespace LambdaEngine
 						return false;
 					}
 				}
-				else
-				{
-					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_FileNamesToAnimationGUIDs");
-					return false;
-				}
 			}
 			else
 			{
