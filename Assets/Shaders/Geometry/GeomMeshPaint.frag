@@ -23,7 +23,8 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
-layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures1[];
+layout(binding = 1, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures2[];
 
 layout(location = 0) out vec4 out_Position;
 layout(location = 1) out vec3 out_Albedo;

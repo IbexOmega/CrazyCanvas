@@ -14,6 +14,7 @@ layout(location = 4) flat in uint	in_PaintMode;
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
 layout(location = 0) out vec4   out_UnwrappedTexture;
+layout(location = 1) out vec4   out_UnwrappedTexture;
 
 float random (in vec3 x) {
 	return fract(sin(dot(x, vec3(12.9898,78.233, 37.31633)))* 43758.5453123);

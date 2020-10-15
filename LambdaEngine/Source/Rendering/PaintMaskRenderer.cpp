@@ -322,8 +322,12 @@ namespace LambdaEngine
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* textureView = extension.ppMipZeroTextureViews[0];
-							m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
+
+							TextureView* textureViewServer = extension.ppMipZeroTextureViews[0];
+							TextureView* textureViewClient = extension.ppMipZeroTextureViews[1];
+
+							m_RenderTargets.PushBack({ .TextureView = textureViewServer, .DrawArgIndex = d, .InstanceIndex = i });
+							m_RenderTargets.PushBack({ .TextureView = textureViewClient, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
 				}
@@ -376,7 +380,7 @@ namespace LambdaEngine
 			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
 		}
 
-		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
+		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t+=2)
 		{
 			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
 			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
@@ -388,31 +392,31 @@ namespace LambdaEngine
 			uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
 
 			BeginRenderPassDesc beginRenderPassDesc = {};
-			beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
-			beginRenderPassDesc.ppRenderTargets = &renderTarget;
-			beginRenderPassDesc.RenderTargetCount = 1;
-			beginRenderPassDesc.Width = width;
-			beginRenderPassDesc.Height = height;
-			beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-			beginRenderPassDesc.pClearColors = nullptr;
-			beginRenderPassDesc.ClearColorCount = 0;
-			beginRenderPassDesc.Offset.x = 0;
-			beginRenderPassDesc.Offset.y = 0;
+			beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
+			beginRenderPassDesc.ppRenderTargets		= &renderTarget;
+			beginRenderPassDesc.RenderTargetCount	= 1;
+			beginRenderPassDesc.Width				= width;
+			beginRenderPassDesc.Height				= height;
+			beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+			beginRenderPassDesc.pClearColors		= nullptr;
+			beginRenderPassDesc.ClearColorCount		= 0;
+			beginRenderPassDesc.Offset.x			= 0;
+			beginRenderPassDesc.Offset.y			= 0;
 
 			pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 			Viewport viewport = {};
-			viewport.MinDepth = 0.0f;
-			viewport.MaxDepth = 1.0f;
-			viewport.Width = (float32)width;
-			viewport.Height = -(float32)height;
-			viewport.x = 0.0f;
-			viewport.y = (float32)height;
+			viewport.MinDepth	= 0.0f;
+			viewport.MaxDepth	= 1.0f;
+			viewport.Width		= (float32)width;
+			viewport.Height		= -(float32)height;
+			viewport.x			= 0.0f;
+			viewport.y			= (float32)height;
 			pCommandList->SetViewports(&viewport, 0, 1);
 
 			ScissorRect scissorRect = {};
-			scissorRect.Width = width;
-			scissorRect.Height = height;
+			scissorRect.Width	= width;
+			scissorRect.Height	= height;
 			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
@@ -468,9 +472,9 @@ namespace LambdaEngine
 		}
 
 		CommandListDesc commandListDesc = {};
-		commandListDesc.DebugName = "Paint Mask Renderer Copy Command List";
-		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-		commandListDesc.Flags = FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		commandListDesc.DebugName			= "Paint Mask Renderer Copy Command List";
+		commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+		commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		m_CopyCommandList = m_pGraphicsDevice->CreateCommandList(m_CopyCommandAllocator.Get(), &commandListDesc);
 
@@ -576,18 +580,18 @@ namespace LambdaEngine
 	bool PaintMaskRenderer::CreateDescriptorSet()
 	{
 		DescriptorHeapInfo descriptorCountDesc = { };
-		descriptorCountDesc.SamplerDescriptorCount = 0;
-		descriptorCountDesc.TextureDescriptorCount = 0;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 1;
-		descriptorCountDesc.ConstantBufferDescriptorCount = 2;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 1;
-		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
-		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
+		descriptorCountDesc.SamplerDescriptorCount					= 0;
+		descriptorCountDesc.TextureDescriptorCount					= 0;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 1;
+		descriptorCountDesc.ConstantBufferDescriptorCount			= 2;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount	= 1;
+		descriptorCountDesc.UnorderedAccessTextureDescriptorCount	= 0;
+		descriptorCountDesc.AccelerationStructureDescriptorCount	= 0;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
-		descriptorHeapDesc.DebugName = "Paint Mask Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount = 227;
-		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
+		descriptorHeapDesc.DebugName			= "Paint Mask Renderer Descriptor Heap";
+		descriptorHeapDesc.DescriptorSetCount	= 227;
+		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
 		if (!m_DescriptorHeap)
@@ -600,8 +604,8 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreateShaders()
 	{
-		m_VertexShaderGUID = ResourceManager::LoadShaderFromFile("/MeshPainting/Unwrap.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		m_PixelShaderGUID = ResourceManager::LoadShaderFromFile("/MeshPainting/Unwrap.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_VertexShaderGUID	= ResourceManager::LoadShaderFromFile("/MeshPainting/Unwrap.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_PixelShaderGUID	= ResourceManager::LoadShaderFromFile("/MeshPainting/Unwrap.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
 
@@ -620,9 +624,9 @@ namespace LambdaEngine
 			}
 
 			CommandListDesc commandListDesc = {};
-			commandListDesc.DebugName = "Paint Mask Renderer Render Command List " + std::to_string(b);
-			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-			commandListDesc.Flags = FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+			commandListDesc.DebugName			= "Paint Mask Renderer Render Command List " + std::to_string(b);
+			commandListDesc.CommandListType		= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+			commandListDesc.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 			m_ppRenderCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppRenderCommandAllocators[b], &commandListDesc);
 
@@ -638,31 +642,31 @@ namespace LambdaEngine
 	bool PaintMaskRenderer::CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
-		colorAttachmentDesc.Format = EFormat::FORMAT_R8G8B8A8_UNORM;
-		colorAttachmentDesc.SampleCount = 1;
-		colorAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
-		colorAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
-		colorAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
-		colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
-		colorAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-		colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		colorAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		colorAttachmentDesc.SampleCount		= 1;
+		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
+		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
+		colorAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
+		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+		colorAttachmentDesc.InitialState	= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		colorAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
-		subpassDependencyDesc.SrcSubpass = EXTERNAL_SUBPASS;
-		subpassDependencyDesc.DstSubpass = 0;
-		subpassDependencyDesc.SrcAccessMask = 0;
-		subpassDependencyDesc.DstAccessMask = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		subpassDependencyDesc.SrcStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
-		subpassDependencyDesc.DstStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.SrcSubpass		= EXTERNAL_SUBPASS;
+		subpassDependencyDesc.DstSubpass		= 0;
+		subpassDependencyDesc.SrcAccessMask		= 0;
+		subpassDependencyDesc.DstAccessMask		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		subpassDependencyDesc.SrcStageMask		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.DstStageMask		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.DebugName = "Paint Mask Renderer Render Pass";
-		renderPassDesc.Attachments = { colorAttachmentDesc };
-		renderPassDesc.Subpasses = { subpassDesc };
-		renderPassDesc.SubpassDependencies = { subpassDependencyDesc };
+		renderPassDesc.DebugName			= "Paint Mask Renderer Render Pass";
+		renderPassDesc.Attachments			= { colorAttachmentDesc };
+		renderPassDesc.Subpasses			= { subpassDesc };
+		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 
 		m_RenderPass = m_pGraphicsDevice->CreateRenderPass(&renderPassDesc);
 
@@ -683,19 +687,17 @@ namespace LambdaEngine
 	uint64 PaintMaskRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.DebugName = "Paint Mask Renderer Pipeline State";
-		pipelineStateDesc.RenderPass = m_RenderPass;
-		pipelineStateDesc.PipelineLayout = m_PipelineLayout;
-
-		pipelineStateDesc.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-		pipelineStateDesc.RasterizerState.LineWidth = 1.f;
-		pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
-		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
+		pipelineStateDesc.DebugName							= "Paint Mask Renderer Pipeline State";
+		pipelineStateDesc.RenderPass						= m_RenderPass;
+		pipelineStateDesc.PipelineLayout					= m_PipelineLayout;
+		pipelineStateDesc.InputAssembly.PrimitiveTopology	= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		pipelineStateDesc.RasterizerState.LineWidth			= 1.f;
+		pipelineStateDesc.RasterizerState.PolygonMode		= EPolygonMode::POLYGON_MODE_FILL;
+		pipelineStateDesc.RasterizerState.CullMode			= ECullMode::CULL_MODE_NONE;
 
 		pipelineStateDesc.DepthStencilState = {};
-		pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
-		pipelineStateDesc.DepthStencilState.DepthWriteEnable = false;
+		pipelineStateDesc.DepthStencilState.DepthTestEnable		= false;
+		pipelineStateDesc.DepthStencilState.DepthWriteEnable	= false;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{
@@ -711,8 +713,8 @@ namespace LambdaEngine
 			}
 		};
 
-		pipelineStateDesc.VertexShader.ShaderGUID = vertexShader;
-		pipelineStateDesc.PixelShader.ShaderGUID = pixelShader;
+		pipelineStateDesc.VertexShader.ShaderGUID	= vertexShader;
+		pipelineStateDesc.PixelShader.ShaderGUID	= pixelShader;
 
 		return PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 	}
