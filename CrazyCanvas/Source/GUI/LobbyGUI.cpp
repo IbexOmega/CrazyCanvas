@@ -35,7 +35,6 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
 	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
-	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
 
 	const char* pIP = "192.168.1.65";
 
@@ -71,7 +70,6 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
 {
 	BinaryDecoder* pDecoder = event.pDecoder;
-	//const IPEndPoint* pEndPoint = event.pEndPoint;
 
 	ServerInfo newInfo;
 	newInfo.Ping = 0;
@@ -85,7 +83,6 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	const auto& pair = m_Servers.find(event.ServerUID);
 
 	ServerInfo& currentInfo = m_Servers[event.ServerUID];
-
 
 	if (currentInfo != newInfo)
 	{
@@ -183,74 +180,62 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	}
 }
 
+void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
+{
+	for (auto& server : m_Servers)
+	{
+		if (server.second.ServerGrid == pGrid)
+		{
+			LambdaEngine::GUIApplication::SetView(nullptr);
+
+			SetRenderStagesActive();
+
+			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
+			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+		}
+	}
+}
+
 void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	TabItem* pTab = FrameworkElement::FindName<TabItem>("LOCAL");
 
-	if (pTab->GetIsSelected())
+	if (pTab->GetIsSelected()) // From LAN Server List
 	{
 		ListBox* pBox = FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST");
 		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
 		if (pSelectedItem)
-		{
-			for (auto& server : m_Servers)
-			{
-				if (server.second.ServerGrid == pSelectedItem)
-				{
-					LambdaEngine::GUIApplication::SetView(nullptr);
-
-					SetRenderStagesActive();
-
-					State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
-					StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-				}
-			}
-		}
+			StartSelectedServer(pSelectedItem);
 		else
-		{
 			ErrorPopUp(JOIN_ERROR);
-		}
 	}
-	else
+	else // From Saved Server List
 	{
 		ListBox* pBox = FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
 		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
 		if (pSelectedItem)
-		{
-			for (auto& server : m_Servers)
-			{
-				if (server.second.ServerGrid == pSelectedItem)
-				{
-					LambdaEngine::GUIApplication::SetView(nullptr);
-
-					SetRenderStagesActive();
-
-					State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
-					StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-				}
-			}
-		}
+			StartSelectedServer(pSelectedItem);
 		else
-		{
 			ErrorPopUp(JOIN_ERROR);
-		}
-
 	}
-
 }
 
 void LobbyGUI::SetRenderStagesActive()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",	false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",			false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",	true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
 
 	/*if (m_RayTracingEnabled)
 		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);*/

@@ -42,7 +42,7 @@ public:
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	
-	
+	void StartSelectedServer(Noesis::Grid* pGrid);
 
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
