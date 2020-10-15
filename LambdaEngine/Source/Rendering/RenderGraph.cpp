@@ -712,6 +712,9 @@ namespace LambdaEngine
 							DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
 							DescriptorSet** ppNewDrawArgsPerFrame = nullptr;
 
+							DescriptorSet** pTemp[3];
+							memcpy(pTemp, pRenderStage->pppDrawArgDescriptorSets, sizeof(pTemp));
+
 							DescriptorSet** ppPrevDrawArgsExtensionsPerFrame = pRenderStage->pppDrawArgExtensionsDescriptorSets ? pRenderStage->pppDrawArgExtensionsDescriptorSets[b] : nullptr;
 							DescriptorSet** ppNewDrawArgsExtensionsPerFrame = nullptr;
 
@@ -863,10 +866,12 @@ namespace LambdaEngine
 								}
 							}
 
+							SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets[b]);
 							pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
 
 							if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
 							{
+								SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets[b]);
 								pRenderStage->pppDrawArgExtensionsDescriptorSets[b] = ppNewDrawArgsExtensionsPerFrame;
 							}
 						}
