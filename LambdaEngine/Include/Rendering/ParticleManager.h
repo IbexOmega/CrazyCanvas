@@ -90,6 +90,7 @@ namespace LambdaEngine
 		bool UpdateResources(RenderGraph* pRendergraph);
 	private:
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
+		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
 		void CleanBuffers();
 	private:
@@ -100,6 +101,7 @@ namespace LambdaEngine
 		bool						m_DirtyVertexBuffer		= false;
 		bool						m_DirtyIndexBuffer		= false;
 		bool						m_DirtyIndirectBuffer	= false;
+		bool						m_DirtyAtlasDataBuffer	= false;
 
 		Buffer*						m_ppIndirectStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pIndirectBuffer = nullptr;
@@ -113,11 +115,16 @@ namespace LambdaEngine
 		Buffer*						m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pParticleBuffer = nullptr;
 
+		Buffer*						m_ppAtlasDataStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*						m_pAtlasDataBuffer = nullptr;
+
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 		TArray<SParticle>			m_Particles;
 		TArray<IndirectData>		m_IndirectData;
 		TArray<ParticleChunk>		m_FreeParticleChunks;
+
+		THashTable<GUID_Lambda, AtlasInfo>	m_AtlasResources;
 
 		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;
 		THashTable<Entity, ParticleEmitterInstance>	m_SleepingEmitters;

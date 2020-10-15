@@ -25,6 +25,7 @@ layout(binding = 0, set = 2) restrict readonly buffer Atlases
 } b_Atlases;
 
 layout(location = 0) out vec2 out_TexCoords;
+layout(location = 1) out flat uint out_AtlasIndex;
 
 void main()
 {
@@ -32,6 +33,7 @@ void main()
 	SParticleVertex vertex 		= b_Vertices.Val[gl_VertexIndex];
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
 	SAtlasData 		atlasData 	= b_Atlases.Val[particle.AtlasIndex];
+	out_AtlasIndex = particle.AtlasIndex;
 
 	// Hardcoded for now
 	out_TexCoords = (vertex.Position.xy + 2.f) * 0.5f;

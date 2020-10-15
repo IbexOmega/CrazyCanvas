@@ -47,9 +47,10 @@ namespace LambdaEngine
 
 		DescriptorBindingDesc textureBindingDesc = {};
 		textureBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		textureBindingDesc.DescriptorCount = 1;
+		textureBindingDesc.DescriptorCount = 100;
 		textureBindingDesc.Binding = 0;
 		textureBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		textureBindingDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -311,6 +312,16 @@ namespace LambdaEngine
 			// Stores Descriptor bindings for Descriptor set 1
 			m_DescBindData.Resize(2);
 
+			m_AtlasTexturesDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Atlas texture Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
+			// TODO: Make this!
+			/*m_AtlasTexturesDescriptorSet->WriteTextureDescriptors(
+				textures,
+				samplers,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				0,
+				textureCount,
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);*/
+
 			m_Initilized = true;
 		}
 
@@ -399,7 +410,7 @@ namespace LambdaEngine
 		{
 			if (count == 1)
 			{
-				constexpr uint32 setIndex = 1U;
+				constexpr uint32 setIndex = 2U;
 				if(m_VertexInstanceDescriptorSet == nullptr)
 					m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 
@@ -426,7 +437,7 @@ namespace LambdaEngine
 		{
 			if (count == 1)
 			{
-				constexpr uint32 setIndex = 1U;
+				constexpr uint32 setIndex = 2U;
 				if (m_VertexInstanceDescriptorSet == nullptr)
 					m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Vertex Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 
@@ -507,7 +518,8 @@ namespace LambdaEngine
 		clearColors[0].Color[3] = 1.f;
 
 		pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
-		pCommandList->BindDescriptorSetGraphics(m_VertexInstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+		pCommandList->BindDescriptorSetGraphics(m_AtlasTexturesDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+		pCommandList->BindDescriptorSetGraphics(m_VertexInstanceDescriptorSet.Get(), m_PipelineLayout.Get(), 2);
 		pCommandList->BindIndexBuffer(m_pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 		BeginRenderPassDesc beginRenderPassDesc = {};

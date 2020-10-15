@@ -85,6 +85,7 @@ namespace LambdaEngine
 
 		// Descriptor sets
 		TSharedRef<DescriptorSet>				m_VertexInstanceDescriptorSet = nullptr;
+		TSharedRef<DescriptorSet>				m_AtlasTexturesDescriptorSet = nullptr;
 		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
 		DescriptorCache							m_DescriptorCache;
 
