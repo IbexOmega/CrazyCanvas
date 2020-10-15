@@ -3194,7 +3194,7 @@ namespace LambdaEngine
 					pPipelineStage->ppComputeCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
 					CommandListDesc graphicsCommandListDesc = {};
-					graphicsCommandListDesc.DebugName				= "Render Graph Graphics Command List";
+					graphicsCommandListDesc.DebugName				= pipelineStageName + " Graphics Command List";
 					graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 					graphicsCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
@@ -3204,7 +3204,7 @@ namespace LambdaEngine
 					Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName + " GRAPHICS");
 
 					CommandListDesc computeCommandListDesc = {};
-					computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
+					computeCommandListDesc.DebugName				= pipelineStageName + " Compute Command List";
 					computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 					computeCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 

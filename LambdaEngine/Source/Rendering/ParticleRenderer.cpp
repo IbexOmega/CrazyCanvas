@@ -425,7 +425,7 @@ namespace LambdaEngine
 			}
 		}
 
-		if (resourceName == "INDIRECT_PARTICLES")
+		if (resourceName == SCENE_PARTICLE_INDIRECT_BUFFER)
 		{
 			if (count == 1)
 			{
