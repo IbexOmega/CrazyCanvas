@@ -94,7 +94,6 @@ void main()
 	s_PrimaryPayload.HitPosition		= hitDescription.Position;
 	s_PrimaryPayload.Normal				= hitDescription.Normal;
 	s_PrimaryPayload.Albedo				= mix(albedo, vec3(1.0f, 1.0f, 1.0f), sampledPaintMask.r);
-	// s_PrimaryPayload.Albedo				= albedo;
 	s_PrimaryPayload.AO					= ao;
 	s_PrimaryPayload.Roughness			= roughness;
 	s_PrimaryPayload.Metallic			= metallic;

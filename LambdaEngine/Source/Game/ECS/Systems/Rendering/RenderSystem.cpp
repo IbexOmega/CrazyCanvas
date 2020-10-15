@@ -1053,12 +1053,15 @@ namespace LambdaEngine
 			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
-		// Update resource for the entity mesh paint textures
+		// Update resource for the entity mesh paint textures that is used for ray tracing
+		bool hasPaintMask = false;
+		if (m_RayTracingEnabled)
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 			const ComponentArray<MeshPaintComponent>* meshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
 			if (meshPaintComponents->HasComponent(entity))
 			{
+				hasPaintMask = true;
 				const GUID_Lambda textureID = pECS->GetComponent<MeshPaintComponent>(entity).UnwrappedTexture;
 
 				Texture* pTexture			= ResourceManager::GetTexture(textureID);
@@ -1106,7 +1109,7 @@ namespace LambdaEngine
 		{
 			uint32 index = materialIndex;
 			index = index << 8;
-			index |= ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF;
+			index |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
 
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);
