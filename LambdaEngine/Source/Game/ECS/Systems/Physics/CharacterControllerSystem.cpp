@@ -124,7 +124,8 @@ namespace LambdaEngine
 		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 		translationPX *= dt;
 
-		const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
+		//const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
+		const PxExtendedVec3 oldPositionPX = { positionComp.Position.x,  positionComp.Position.y,  positionComp.Position.z };
 
 		// Distance between the capsule's feet to its center position. Includes contact offset.
 		if (positionComp.Dirty)

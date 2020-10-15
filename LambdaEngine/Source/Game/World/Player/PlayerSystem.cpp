@@ -110,7 +110,7 @@ namespace LambdaEngine
 		m_PlayerActionSystem.DoAction(deltaTime, entityPlayer, pGameState);
 
 		CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
-
+		
 		pGameState->Position = netPosComponent.Position;
 		pGameState->Velocity = velocityComponent.Velocity;
 
