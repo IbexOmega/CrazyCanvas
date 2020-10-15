@@ -34,7 +34,6 @@ void TrackSystem::Tick(Timestamp deltaTime)
 
 	auto* pPosComps		= pECSCore->GetComponentArray<PositionComponent>();
 	auto* pRotComps		= pECSCore->GetComponentArray<RotationComponent>();
-	//auto* pTrackComps	= pECSCore->GetComponentArray<TrackComponent>();
 
 	for (Entity entity : m_CameraEntities)
 	{
