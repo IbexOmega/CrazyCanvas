@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 #include "Game/Multiplayer/Client/NetworkPositionSystem.h"
 #include "Game/World/Player/PlayerSystem.h"
 
@@ -61,7 +60,6 @@ namespace LambdaEngine
 
 	private:
 		ClientBase* m_pClient;
-		CharacterControllerSystem m_CharacterControllerSystem;
 		NetworkPositionSystem m_NetworkPositionSystem;
 		PlayerSystem m_PlayerSystem;
 		String m_Name;

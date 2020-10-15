@@ -53,6 +53,7 @@ namespace LambdaEngine
 		{
 			auto onStaticCollisionRemoval = std::bind(&PhysicsSystem::OnStaticCollisionRemoval, this, std::placeholders::_1);
 			auto onDynamicCollisionRemoval = std::bind(&PhysicsSystem::OnDynamicCollisionRemoval, this, std::placeholders::_1);
+			auto onCharacterCollisionRemoval = std::bind(&PhysicsSystem::OnCharacterColliderRemoval, this, std::placeholders::_1);
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -72,6 +73,14 @@ namespace LambdaEngine
 						{NDA, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}, {RW, VelocityComponent::Type()}
 					},
 					.OnEntityRemoval = onDynamicCollisionRemoval
+				},
+				{
+					.pSubscriber = &m_CharacterCollisionEntities,
+					.ComponentAccesses =
+					{
+						{RW, CharacterColliderComponent::Type()}
+					},
+					.OnEntityRemoval = onCharacterCollisionRemoval
 				}
 			};
 			systemReg.Phase = 1;
@@ -80,6 +89,7 @@ namespace LambdaEngine
 
 			SetComponentOwner<StaticCollisionComponent>({ std::bind(&PhysicsSystem::StaticCollisionDestructor, this, std::placeholders::_1) });
 			SetComponentOwner<DynamicCollisionComponent>({ std::bind(&PhysicsSystem::DynamicCollisionDestructor, this, std::placeholders::_1) });
+			SetComponentOwner<CharacterColliderComponent>({ std::bind(&PhysicsSystem::CharacterColliderDestructor, this, std::placeholders::_1) });
 		}
 
 		// PhysX setup
@@ -444,6 +454,16 @@ namespace LambdaEngine
 		// Remove the actor from the scene
 		DynamicCollisionComponent& collisionComponent = ECSCore::GetInstance()->GetComponent<DynamicCollisionComponent>(entity);
 		PxRigidDynamic* pActor = collisionComponent.pActor;
+		if (pActor)
+		{
+			m_pScene->removeActor(*pActor);
+		}
+	}
+
+	void PhysicsSystem::OnCharacterColliderRemoval(Entity entity)
+	{
+		CharacterColliderComponent& characterCollider = ECSCore::GetInstance()->GetComponent<CharacterColliderComponent>(entity);
+		PxActor* pActor = characterCollider.pController->getActor();
 		if (pActor)
 		{
 			m_pScene->removeActor(*pActor);

@@ -34,7 +34,6 @@ namespace LambdaEngine
 
 	ClientSystem::ClientSystem(const String& name) :
 		m_pClient(nullptr),
-		m_CharacterControllerSystem(),
 		m_NetworkPositionSystem(),
 		m_PlayerSystem(),
 		m_Name(name),
@@ -54,7 +53,6 @@ namespace LambdaEngine
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
-		m_CharacterControllerSystem.Init();
 		m_NetworkPositionSystem.Init();
 		m_PlayerSystem.Init();
 

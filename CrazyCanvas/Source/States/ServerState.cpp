@@ -22,6 +22,8 @@
 
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+#include "ECS/ECSCore.h"
+
 #include "World/Level.h"
 #include "World/LevelManager.h"
 
