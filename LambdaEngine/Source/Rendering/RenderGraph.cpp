@@ -716,7 +716,9 @@ namespace LambdaEngine
 							DescriptorSet** ppNewDrawArgsExtensionsPerFrame = nullptr;
 
 							// Check if it need to expand the list of descriptor sets
-							if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
+							bool resizeArr = pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize();
+
+							if (resizeArr)
 							{
 								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
 
@@ -842,7 +844,7 @@ namespace LambdaEngine
 										1,
 										EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER
 									);
-									
+
 									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
 								}
 							}
@@ -863,10 +865,13 @@ namespace LambdaEngine
 								}
 							}
 
+							if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets[b]);
+
 							pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
 
 							if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
 							{
+								if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets[b]);
 								pRenderStage->pppDrawArgExtensionsDescriptorSets[b] = ppNewDrawArgsExtensionsPerFrame;
 							}
 						}
@@ -2109,14 +2114,14 @@ namespace LambdaEngine
 						/*
 						*	Create a new descriptor set for extensions.
 						*	If the render stage uses two extensions and the first extension has two textures and the second has one, the binding will be like this:
-						*	
+						*
 						*	First extension's first texture has binding 0
 						*	First extension's second texture has binding 1
 						*	Second extension's texture has binding 2
-						* 
+						*
 						*	Each holding a array of textures for each instance which uses an extension.
-						*	
-						*	The Instance buffer has an ExtensionIndex to point to the right element in the array. 
+						*
+						*	The Instance buffer has an ExtensionIndex to point to the right element in the array.
 						*	The first element is used for instances which does not have an extension.
 						*/
 						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMaskDesc.IncludeMask & ~pRenderStage->DrawArgsMaskDesc.ExcludeMask);
@@ -3037,7 +3042,7 @@ namespace LambdaEngine
 						pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
 					}
 
-					// Textures from draw arg extensions. 
+					// Textures from draw arg extensions.
 					// (This is the same code as in the Texture Resource, but uses DrawTextureBarriers instead of TextureBarriers, Might want to make a function for this.)
 					{
 						PipelineTextureBarrierDesc textureBarrier = {};
@@ -3579,12 +3584,22 @@ namespace LambdaEngine
 
 					//Todo: This only works while there is a single Draw Args resource, this is OK for now but should be changed when generalizing
 					TArray<PipelineBufferBarrierDesc>& drawBufferBarriers = pSynchronizationStage->DrawBufferBarriers[pBarrierInfo->SynchronizationTypeIndex];
-					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers[0];
-					drawBufferBarriers.Clear();
-
 					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
-					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers[0];
-					drawTextureBarriers.Clear();
+
+					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
+					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
+
+					if (pDesc->ExternalDrawArgsUpdate.Count != 0)
+					{
+						drawBufferBarriers.Clear();
+						drawTextureBarriers.Clear();
+					}
+					else
+					{
+						drawBufferBarriers.GetFront().pBuffer = nullptr;
+						drawTextureBarriers.GetFront().pTexture = nullptr;
+						continue;
+					}
 
 					for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
 					{
@@ -3646,7 +3661,7 @@ namespace LambdaEngine
 							bufferBarrierTemplate.Offset		= 0;
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
-						
+
 
 						// For draw arg extensions
 						if (pDrawArg->HasExtensions)

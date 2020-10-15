@@ -3,7 +3,7 @@
 #include "ECS/ComponentOwner.h"
 #include "ECS/System.h"
 #include "Game/ECS/Components/Physics/Collision.h"
-#include "Physics/PhysXErrorCallback.h"
+#include "Physics/PhysX/ErrorCallback.h"
 
 #undef realloc
 #undef free
@@ -14,11 +14,10 @@ namespace LambdaEngine
 {
 	using namespace physx;
 
-	struct FPSControllerComponent;
 	struct MeshComponent;
 	struct PositionComponent;
-	struct RotationComponent;
 	struct ScaleComponent;
+	struct RotationComponent;
 	struct VelocityComponent;
 
 	enum FCollisionGroup : uint32
@@ -37,11 +36,12 @@ namespace LambdaEngine
 		const ScaleComponent& Scale;
 		const RotationComponent& Rotation;
 		const MeshComponent& Mesh;
-		FCollisionGroup CollisionGroup;		// The category of the object
-		uint32 CollisionMask;				// Includes the masks of the groups this object collides with
+		FCollisionGroup CollisionGroup;				// The category of the object
+		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
+		std::function<void()> CollisionCallback;	// Optional
 	};
 
-	struct DynamicCollisionInfo : public CollisionInfo
+	struct DynamicCollisionInfo : CollisionInfo
 	{
 		const VelocityComponent& Velocity;	// Initial velocity
 	};
@@ -52,11 +52,11 @@ namespace LambdaEngine
 		Entity Entity;
 		const PositionComponent& Position;
 		const RotationComponent& Rotation;
-		FCollisionGroup CollisionGroup;	// The category of the object
-		uint32 CollisionMask;	// Includes the masks of the groups this object collides with
+		FCollisionGroup CollisionGroup;		// The category of the object
+		uint32 CollisionMask;				// Includes the masks of the groups this object collides with
 	};
 
-	class PhysicsSystem : public System, public ComponentOwner
+	class PhysicsSystem : public System, public ComponentOwner, public PxSimulationEventCallback
 	{
 	public:
 		PhysicsSystem();
@@ -80,11 +80,19 @@ namespace LambdaEngine
 
 		/* Character controllers */
 		// CreateCharacterCapsule creates a character collider capsule. Total height is height + radius * 2 (+ contactOffset * 2)
-		void CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius, CharacterColliderComponent& characterColliderComp);
+		CharacterColliderComponent CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius);
 		// CreateCharacterBox creates a character collider box
-		void CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents, CharacterColliderComponent& characterColliderComp);
+		CharacterColliderComponent CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents);
 
 		PxScene* GetScene() { return m_pScene; }
+
+		/* Implement PxSimulationEventCallback */
+		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override final;
+		void onTrigger(PxTriggerPair*, PxU32) override final {}
+		void onConstraintBreak(PxConstraintInfo*, PxU32) override final {}
+		void onWake(PxActor**, PxU32 ) override final {}
+		void onSleep(PxActor**, PxU32 ) override final {}
+		void onAdvance(const PxRigidBody*const*, const PxTransform*, const PxU32) override final {}
 
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
@@ -95,19 +103,20 @@ namespace LambdaEngine
 		PxShape* CreateCollisionCapsule(const CollisionInfo& collisionInfo) const;
 		PxShape* CreateCollisionTriangleMesh(const CollisionInfo& collisionInfo) const;
 
-		void SetFilterData(PxShape* pShape, const CollisionInfo& collisionInfo) const;
 		PxTransform CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const;
 
 		void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent);
-		static glm::vec3 GetCharacterTranslation(float32 dt, const glm::vec3& forward, const glm::vec3& right, const FPSControllerComponent& FPSComp);
 		void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent);
+		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
+		void ReleaseActor(PxRigidActor* pActor);
+
 		void OnStaticCollisionRemoval(Entity entity);
 		void OnDynamicCollisionRemoval(Entity entity);
 
 		StaticCollisionComponent FinalizeStaticCollisionActor(const CollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
 		DynamicCollisionComponent FinalizeDynamicCollisionActor(const DynamicCollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
-		void FinalizeCollisionComponent(const CollisionInfo& collisionCreateInfo, PxShape* pShape, const PxQuat& additionalRotation = PxQuat(PxIDENTITY::PxIdentity));
-		void FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc, CharacterColliderComponent& characterColliderComp);
+		CharacterColliderComponent FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
+		void FinalizeCollisionActor(const CollisionInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape);
 
 	private:
 		static PhysicsSystem s_Instance;

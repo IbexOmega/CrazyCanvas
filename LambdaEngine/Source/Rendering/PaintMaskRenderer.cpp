@@ -58,6 +58,11 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
 			m_pDeviceResourcesToDestroy.Clear();
 		}
+
+		for (auto& renderTarget : m_RenderTargets)
+		{
+			renderTarget.TextureView->Release();
+		}
 	}
 
 	bool PaintMaskRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
@@ -138,7 +143,7 @@ namespace LambdaEngine
 
 			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode);
 			});
-		
+
 		return false;
 	}
 
@@ -170,13 +175,13 @@ namespace LambdaEngine
 		uint64 size = sizeof(UnwrapData);
 		Buffer* buffer = m_UnwrapDataBuffer.Get();
 		UpdateBufferResource("UNWRAP_DATA_BUFFER", &buffer, &offset, &size, 1, false);
-		
+
 		return true;
 	}
 
 	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
-		
+
 	}
 
 
@@ -260,7 +265,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
-	
+
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
 		m_pDrawArgs = pDrawArgs;
@@ -317,7 +322,7 @@ namespace LambdaEngine
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* textureView = extension.ppTextureViews[0];
+							TextureView* textureView = extension.ppMipZeroTextureViews[0];
 							m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
@@ -409,7 +414,7 @@ namespace LambdaEngine
 			scissorRect.Width = width;
 			scissorRect.Height = height;
 			pCommandList->SetScissorRects(&scissorRect, 0, 1);
-			
+
 			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
 
 			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
@@ -437,6 +442,8 @@ namespace LambdaEngine
 
 			pCommandList->EndRenderPass();
 
+			if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
+				pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 		}
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
@@ -448,7 +455,7 @@ namespace LambdaEngine
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
 		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
 		data.PaintMode			= paintMode;
-		
+
 		s_Collisions.push_back(data);
 	}
 
@@ -639,7 +646,7 @@ namespace LambdaEngine
 		colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
 		colorAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 		colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-		
+
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 
