@@ -716,7 +716,9 @@ namespace LambdaEngine
 							DescriptorSet** ppNewDrawArgsExtensionsPerFrame = nullptr;
 
 							// Check if it need to expand the list of descriptor sets
-							if (pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize())
+							bool resizeArr = pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize();
+
+							if (resizeArr)
 							{
 								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
 
@@ -863,10 +865,13 @@ namespace LambdaEngine
 								}
 							}
 
+							if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets[b]);
+
 							pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
 
 							if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
 							{
+								if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets[b]);
 								pRenderStage->pppDrawArgExtensionsDescriptorSets[b] = ppNewDrawArgsExtensionsPerFrame;
 							}
 						}
