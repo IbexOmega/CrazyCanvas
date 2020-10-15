@@ -13,17 +13,25 @@ namespace LambdaEngine
 	class RenderGraph;
 	class DeviceChild;
 
+	struct ParticleChunk
+	{
+		uint32 Offset;
+		uint32 Size;
+	};
+
 	struct ParticleEmitterInstance
 	{
-		glm::vec3		position;
-		glm::quat		rotation;
+		bool			OneTime = false;
+		glm::vec3		Position;
+		glm::quat		Rotation;
 		float			Angle = 90.f;
 		float			Velocity;
 		float			Acceleration;
+		float			ElapTime = 0.f;
 		float			LifeTime;
 		float			ParticleRadius;
-		uint32			ParticleOffset = 0U;
-		uint32			ParticleCount;
+		uint32			IndirectDataIndex = 0;
+		ParticleChunk	ParticleChunk;
 	};
 
 	struct SParticle
@@ -78,8 +86,8 @@ namespace LambdaEngine
 		bool UpdateBuffers(CommandList* pCommandList);
 		bool UpdateResources(RenderGraph* pRendergraph);
 	private:
-		void CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
-		
+		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
+
 		void CleanBuffers();
 	private:
 		uint32						m_ModFrameIndex;
@@ -105,6 +113,7 @@ namespace LambdaEngine
 
 		TArray<SParticle>			m_Particles;
 		TArray<IndirectData>		m_IndirectData;
+		TArray<ParticleChunk>		m_FreeParticleChunks;
 
 		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;
 		THashTable<Entity, ParticleEmitterInstance>	m_SleepingEmitters;
