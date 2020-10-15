@@ -33,7 +33,7 @@ namespace LambdaEngine
 				},
 				.ExcludedComponentTypes =
 				{
-					CharacterColliderComponent::Type()
+					CharacterColliderComponent::Type(), DynamicCollisionComponent::Type()
 				}
 			}
 		};
