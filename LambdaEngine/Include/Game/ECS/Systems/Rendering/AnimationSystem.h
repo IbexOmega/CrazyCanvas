@@ -14,6 +14,10 @@ namespace LambdaEngine
 	struct MeshComponent;
 	struct AnimationComponent;
 
+	/*
+	* AnimationSystem
+	*/
+
 	class AnimationSystem : public System
 	{
 	public:
@@ -46,8 +50,8 @@ namespace LambdaEngine
 		static AnimationSystem& GetInstance();
 
 	private:
-		bool	m_ChangeState = false; // TODO: Remove this since it is only for testing
-		bool	m_HasInitClock = false;
+		bool	m_ChangeState	= false; // TODO: Remove this since it is only for testing
+		bool	m_HasInitClock	= false;
 		Clock	m_Clock;
 		
 		IDVector		m_AnimationEntities;

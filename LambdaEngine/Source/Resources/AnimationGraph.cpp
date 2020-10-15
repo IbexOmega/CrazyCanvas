@@ -47,7 +47,7 @@ namespace LambdaEngine
 		, m_LocalClock(0.0f)
 		, m_ToState(toState)
 	{
-		Reset();
+		OnFinished();
 	}
 
 	void Transition::Tick(const float64 delta)
@@ -60,13 +60,10 @@ namespace LambdaEngine
 
 		//LOG_INFO("normalizedTime=%.4f, m_FromBeginAt=%.4f", normalizedTime, m_FromBeginAt);
 
-		if (normalizedTime >= m_FromBeginAt)
+		// This makes sure that we loop around one time if we start a transition after the sync-point
+		if (normalizedTime >= m_FromBeginAt && m_IsActive)
 		{
-			// This makes sure that we loop around one time if we start a transition after the sync-point
-			if (m_IsActive)
-			{
-				m_LocalClock = normalizedTime;
-			}
+			m_LocalClock = normalizedTime;
 		}
 		else
 		{
@@ -147,19 +144,25 @@ namespace LambdaEngine
 
 	void AnimationState::Tick(const float64 deltaTime)
 	{
-		// Get localtime for the animation-clip
-		m_RunningTime += deltaTime;
-		m_LocalTimeInSeconds	= InternalCalculateLocalTime(m_PlaybackSpeed, GetDurationInSeconds());
-		m_NormalizedTime		= m_LocalTimeInSeconds / GetDurationInSeconds();
-		if (m_PlaybackSpeed < 0.0)
+		if (m_IsPlaying)
 		{
-			m_NormalizedTime = 1.0 - m_NormalizedTime;
+			// Get localtime for the animation-clip
+			m_RunningTime += deltaTime;
+			m_LocalTimeInSeconds	= InternalCalculateLocalTime(m_PlaybackSpeed, GetDurationInSeconds());
+			m_NormalizedTime		= m_LocalTimeInSeconds / GetDurationInSeconds();
+			if (m_PlaybackSpeed < 0.0)
+			{
+				m_NormalizedTime = 1.0 - m_NormalizedTime;
+			}
 		}
 	}
 
 	void AnimationState::Interpolate(const Skeleton& skeleton)
 	{
-		Animation& animation = GetAnimation();
+		if (!m_IsPlaying)
+		{
+			return;
+		}
 
 		// Make sure we have enough matrices
 		if (m_CurrentFrame0.GetSize() < skeleton.Joints.GetSize())
@@ -167,6 +170,7 @@ namespace LambdaEngine
 			m_CurrentFrame0.Resize(skeleton.Joints.GetSize());
 		}
 
+		Animation& animation = GetAnimation();
 		{
 			const float64 timestamp = GetNormlizedTime() * animation.DurationInTicks;
 			InternalInterpolate(animation, skeleton, m_CurrentFrame0, timestamp);
@@ -444,7 +448,11 @@ namespace LambdaEngine
 
 			currentState.Tick(deltaTimeInSeconds);
 			currentState.Interpolate(skeleton);
-
+			
+			if (currentState.IsFinished())
+			{
+				currentState.OnFinished();
+			}
 			// LOG_INFO("LocalTime=%.4f RunningTime=%.4f", currentState.GetNormlizedTime(), currentState.m_RunningTime);
 		}
 	}
@@ -787,7 +795,7 @@ namespace LambdaEngine
 	
 	void AnimationGraph::FinishTransition()
 	{
-		GetCurrentTransition().Reset();
+		GetCurrentTransition().OnFinished();
 
 		MakeCurrentState(GetCurrentTransition().To());
 		m_CurrentTransition = INVALID_TRANSITION;

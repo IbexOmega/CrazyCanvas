@@ -146,7 +146,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name, specialObject.Prefix);
+			LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name.c_str(), specialObject.Prefix.c_str());
 			return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
 		}
 	}

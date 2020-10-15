@@ -43,7 +43,7 @@ namespace LambdaEngine
 		{
 			if (animation.Graph.GetCurrentState().GetName() == "running")
 			{
-				animation.Graph.TransitionToState("walking");
+				animation.Graph.TransitionToState("reload");
 			}
 			else
 			{

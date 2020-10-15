@@ -15,7 +15,7 @@
 namespace LambdaEngine
 {
 	class IClient;
-	class CameraDesc;
+	struct CameraDesc;
 
 	enum class ESpecialObjectType : uint8
 	{

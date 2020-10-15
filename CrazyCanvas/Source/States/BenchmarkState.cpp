@@ -33,6 +33,7 @@
 #include <rapidjson/writer.h>
 
 #include "World/LevelManager.h"
+#include "World/Level.h"
 
 BenchmarkState::~BenchmarkState()
 {

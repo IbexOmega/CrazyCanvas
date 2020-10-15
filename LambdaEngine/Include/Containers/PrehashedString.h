@@ -16,6 +16,12 @@ namespace LambdaEngine
 		{
 		}
 
+		inline PrehashedString(const char* pString)
+			: m_Str(String(pString))
+			, m_Hash(CalculateHash())
+		{
+		}
+
 		inline PrehashedString(const String& string)
 			: m_Str(string)
 			, m_Hash(CalculateHash())
@@ -79,6 +85,13 @@ namespace LambdaEngine
 		inline bool operator!=(const String& str) const
 		{
 			return !(*this == str);
+		}
+
+		inline PrehashedString& operator=(const char* pNewString)
+		{
+			m_Str	= String(pNewString);
+			m_Hash	= CalculateHash();
+			return *this;
 		}
 
 		inline PrehashedString& operator=(const String& newString)

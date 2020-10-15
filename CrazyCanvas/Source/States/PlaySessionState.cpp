@@ -128,13 +128,19 @@ void PlaySessionState::Init()
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
+		AnimationState reloadState("reload", running[0]);
+		reloadState.SetBlendInfo(BlendInfo(reload[0], 0.75f, 1.0f));
+		reloadState.SetIsLooping(false);
+		reloadState.SetOnFinished([](AnimationGraph& graph)
+		{
+			graph.TransitionToState("running");
+		});
+
 		AnimationGraph animationGraph;
-		AnimationState runningState("running", running[0]);
-		runningState.SetBlendInfo(BlendInfo(reload[0], 0.75f, 1.0f));
-		animationGraph.AddState(runningState);
-		animationGraph.AddState(AnimationState("walking", animations[0]));
-		animationGraph.AddTransition(Transition("running", "walking", 0.2, 0.5));
-		animationGraph.AddTransition(Transition("walking", "running", 0.5, 0.2));
+		animationGraph.AddState(AnimationState("running", running[0]));
+		animationGraph.AddState(reloadState);
+		animationGraph.AddTransition(Transition("running", "reload", 0.2, 0.5));
+		animationGraph.AddTransition(Transition("reload", "running", 0.5, 0.2));
 		robotAnimationComp.Graph = animationGraph;
 
 		entity = pECS->CreateEntity();

@@ -47,7 +47,7 @@ namespace LambdaEngine
 		bool Equals(const String& fromState, const String& toState) const;
 		bool UsesState(const String& state) const;
 
-		FORCEINLINE void Reset()
+		FORCEINLINE void OnFinished()
 		{
 			m_LocalClock	= m_FromBeginAt;
 			m_IsActive		= false;
@@ -119,7 +119,7 @@ namespace LambdaEngine
 		{
 		}
 
-		// Empty string equals 
+		// Empty string means full skeleton
 		inline BlendInfo(GUID_Lambda animationGUID, float32 weight, float32 playbackSpeed, PrehashedString jointName = "")
 			: AnimationGUID(animationGUID)
 			, Weight(weight)
@@ -149,11 +149,6 @@ namespace LambdaEngine
 		void Tick(const float64 deltaTime);
 		void Interpolate(const Skeleton& skeleton);
 
-		FORCEINLINE void SetBlendInfo(const BlendInfo& blendInfo)
-		{
-			m_BlendInfo = blendInfo;
-		}
-
 		Animation& GetAnimation() const;
 		Animation& GetBlendAnimation() const;
 
@@ -171,14 +166,33 @@ namespace LambdaEngine
 			m_IsPlaying = false;
 		}
 
+		FORCEINLINE void OnFinished() const
+		{
+			if (m_OnFinished)
+			{
+				VALIDATE(m_pOwnerGraph != nullptr);
+				m_OnFinished(*m_pOwnerGraph);
+			}
+		}
+
 		FORCEINLINE bool IsLooping() const
 		{
 			return m_IsLooping;
 		}
 
+		FORCEINLINE bool IsFinished() const
+		{
+			return m_NormalizedTime >= 1.0 && !m_IsLooping;
+		}
+
 		FORCEINLINE bool IsPlaying() const
 		{
 			return m_IsPlaying;
+		}
+
+		FORCEINLINE void SetBlendInfo(const BlendInfo& blendInfo)
+		{
+			m_BlendInfo = blendInfo;
 		}
 
 		FORCEINLINE void SetIsLooping(bool isLooping)
@@ -194,6 +208,11 @@ namespace LambdaEngine
 		FORCEINLINE void SetPlaybackSpeed(float64 speed)
 		{
 			m_PlaybackSpeed = speed;
+		}
+
+		FORCEINLINE void SetOnFinished(const std::function<void(AnimationGraph&)>& onFinished)
+		{
+			m_OnFinished = onFinished;
 		}
 
 		FORCEINLINE float64 GetPlaybackSpeed() const
@@ -248,6 +267,8 @@ namespace LambdaEngine
 	private:
 		AnimationGraph* m_pOwnerGraph;
 		BlendInfo m_BlendInfo;
+
+		std::function<void(AnimationGraph&)> m_OnFinished;
 
 		bool m_IsLooping;
 		bool m_IsPlaying;
