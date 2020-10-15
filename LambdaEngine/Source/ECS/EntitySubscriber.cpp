@@ -47,7 +47,7 @@ namespace LambdaEngine
         {
             for (const ComponentAccess& includedComponent : includedTypes)
             {
-                ASSERT_MSG(pExcludedComponent != includedComponent.TID, "The same component type was both included and excluded in an entity subscription");
+                ASSERT_MSG(pExcludedComponent != includedComponent.pTID, "The same component type was both included and excluded in an entity subscription");
             }
         }
     #endif // LAMBDA_DEVELOPMENT

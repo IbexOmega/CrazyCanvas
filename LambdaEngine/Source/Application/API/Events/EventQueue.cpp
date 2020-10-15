@@ -3,12 +3,14 @@
 
 namespace LambdaEngine
 {
-	SpinLock				EventQueue::s_EventLock;
-	EventQueue::EventTable	EventQueue::s_DeferredEvents;
+	/*
+	* Global data for this compilation unit
+	*/
 
-	static std::unordered_map<EventType, TArray<EventHandler>, EventTypeHasher> g_EventHandlers;
+	static THashTable<EventType, TArray<EventHandler>, EventTypeHasher> g_EventHandlers;
 	static SpinLock g_EventHandlersSpinlock;
 
+	// This function returns a copy to avoid having to lock
 	static TArray<EventHandler> GetEventHandlerOfType(EventType type)
 	{
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
@@ -27,6 +29,12 @@ namespace LambdaEngine
 	/*
 	* EventQueue
 	*/
+
+	SpinLock		EventQueue::s_WriteLock;
+	EventContainer	EventQueue::s_DeferredEvents[2];
+	uint32			EventQueue::s_ReadIndex		= 0;
+	uint32			EventQueue::s_WriteIndex	= 1;
+	
 	bool EventQueue::RegisterEventHandler(EventType eventType, const EventHandler& eventHandler)
 	{
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
@@ -104,29 +112,28 @@ namespace LambdaEngine
 	
 	void EventQueue::Tick()
 	{
-		// Copy eventcontainers
-		EventTable containersToProcess;
+		// Process events
+		EventContainer& container = s_DeferredEvents[s_ReadIndex];
+		for (uint32 i = 0; i < container.Size(); i++)
 		{
-			std::scoped_lock<SpinLock> lock(s_EventLock);
-			containersToProcess = s_DeferredEvents;
-			for (auto& containerPair : s_DeferredEvents)
-			{
-				EventContainerProxy& container = containerPair.second;
-				container.Clear();
-			}
+			Event& event = container[i];
+
+			TArray<EventHandler> handlers = GetEventHandlerOfType(event.GetType());
+			InternalSendEventToHandlers(event, handlers);
 		}
 
-		// Process events
-		for (auto& containerPair : containersToProcess)
+		container.Clear();
+
 		{
-			EventContainerProxy& container = containerPair.second;
-			TArray<EventHandler> handlers = GetEventHandlerOfType(containerPair.first);
-			for (uint32 i = 0; i < container.Size(); i++)
-			{
-				InternalSendEventToHandlers(container[i], handlers);
-			}
-			container.Clear();
+			std::scoped_lock<SpinLock> lock(s_WriteLock);
+			std::swap(s_WriteIndex, s_ReadIndex);
 		}
+	}
+
+	void EventQueue::Release()
+	{
+		s_DeferredEvents[0].Clear();
+		s_DeferredEvents[1].Clear();
 	}
 	
 	void EventQueue::InternalSendEventToHandlers(Event& event, const TArray<EventHandler>& handlers)

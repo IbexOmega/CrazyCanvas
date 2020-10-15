@@ -6,9 +6,9 @@
 
 #define DECL_COMPONENT(Component) \
 	private: \
-		inline static constexpr const ComponentType s_Type = ComponentType(#Component); \
+		inline static constexpr const LambdaEngine::ComponentType s_Type = LambdaEngine::ComponentType(#Component); \
 	public: \
-		FORCEINLINE static const ComponentType* Type() \
+		FORCEINLINE static const LambdaEngine::ComponentType* Type() \
 		{ \
 			return &s_Type; \
 		} \
@@ -19,9 +19,9 @@
 
 #define DECL_COMPONENT_WITH_DIRTY_FLAG(Component) \
 	protected: \
-		inline static constexpr const ComponentType s_Type = ComponentType(#Component); \
+		inline static constexpr const LambdaEngine::ComponentType s_Type = LambdaEngine::ComponentType(#Component); \
 	public: \
-		FORCEINLINE static const ComponentType* Type() \
+		FORCEINLINE static const LambdaEngine::ComponentType* Type() \
 		{ \
 			return &s_Type; \
 		} \
@@ -40,10 +40,30 @@ namespace LambdaEngine
 		RW  = 2		// Read & Write
 	};
 
+	template <typename Comp>
+	class GroupedComponent
+	{
+	public:
+		ComponentPermissions Permissions = NDA; // The default permissions for any component type in a component group
+	};
+
 	struct ComponentAccess
 	{
+		template <typename Comp>
+		ComponentAccess(GroupedComponent<Comp> groupedComponent)
+			:
+			Permissions(groupedComponent.Permissions),
+			pTID(Comp::Type())
+		{}
+
+		ComponentAccess(ComponentPermissions permissions, const ComponentType* pType)
+			:
+			Permissions(permissions),
+			pTID(pType)
+		{}
+
 		ComponentPermissions Permissions;
-		const ComponentType* TID;
+		const ComponentType* pTID;
 	};
 
 	class IComponentGroup

@@ -399,7 +399,7 @@ namespace LambdaEngine
 			key.ColorAttachmentsViews[i] = pRenderTargetVk->GetImageView();
 		}
 
-		key.ColorAttachmentViewCount	= renderTargetCount;
+		key.ColorAttachmentViewCount = renderTargetCount;
 
 		if (pDepthStencil)
 		{
@@ -1237,11 +1237,11 @@ namespace LambdaEngine
 		enabledDeviceFeatures12.bufferDeviceAddress				= supportedDeviceFeatures12.bufferDeviceAddress;
 		enabledDeviceFeatures12.timelineSemaphore				= supportedDeviceFeatures12.timelineSemaphore;
 		enabledDeviceFeatures12.descriptorIndexing				= supportedDeviceFeatures12.descriptorIndexing;
-		enabledDeviceFeatures12.descriptorBindingPartiallyBound = supportedDeviceFeatures12.descriptorBindingPartiallyBound;
-		enabledDeviceFeatures12.runtimeDescriptorArray			= supportedDeviceFeatures12.runtimeDescriptorArray;
 		enabledDeviceFeatures12.shaderInt8						= supportedDeviceFeatures12.shaderInt8;
 		enabledDeviceFeatures12.shaderFloat16					= supportedDeviceFeatures12.shaderFloat16;
 		enabledDeviceFeatures12.storageBuffer8BitAccess			= supportedDeviceFeatures12.storageBuffer8BitAccess;
+		enabledDeviceFeatures12.runtimeDescriptorArray			= supportedDeviceFeatures12.runtimeDescriptorArray;
+		enabledDeviceFeatures12.descriptorBindingPartiallyBound	= supportedDeviceFeatures12.descriptorBindingPartiallyBound;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
 		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -1748,8 +1748,13 @@ namespace LambdaEngine
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
-			LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
-			PlatformConsole::Print("\n");
+			// MessageID 0x8928392f corresponds to the vKGetQueryPoolResults with VK_NOT_READY result, which is handled
+			// as the best practice info message says.
+			if (pCallbackData->messageIdNumber != 0x8928392F)
+			{
+				LOG_MESSAGE("[Validation Layer]: %s", pCallbackData->pMessage);
+				PlatformConsole::Print("\n");
+			}
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{

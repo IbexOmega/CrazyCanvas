@@ -1,6 +1,7 @@
 #include "States/SandboxState.h"
 
 #include "Resources/ResourceManager.h"
+#include "Resources/AnimationGraph.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -10,6 +11,8 @@
 
 #include "Debug/Profiler.h"
 
+#include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Player/Weapon.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -32,7 +35,6 @@
 
 #include "Math/Random.h"
 
-
 #include "Rendering/Core/API/GraphicsTypes.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
@@ -46,10 +48,12 @@
 
 #include "NoesisPCH.h"
 
-#include <imgui.h>
-
 #include "World/LevelManager.h"
 #include "World/Level.h"
+
+#include "Game/Multiplayer/Client/ClientSystem.h"
+
+#include <imgui.h>
 
 using namespace LambdaEngine;
 
@@ -70,10 +74,10 @@ SandboxState::~SandboxState()
 void SandboxState::Init()
 {
 	// Create Systems
+	m_WeaponSystem.Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
-	ECSCore* pECS = ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &SandboxState::OnPacketReceived);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
 	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
@@ -83,39 +87,29 @@ void SandboxState::Init()
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
+	ECSCore* pECS = ECSCore::GetInstance();
 
-	// Create Camera
-	{
-		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const CameraDesc cameraDesc =
-		{
-			.Position	= { 0.0f, 2.0f, 5.0f },
-			.FOVDegrees	= EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width		= (float32)window->GetWidth(),
-			.Height		= (float32)window->GetHeight(),
-			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
-		};
-		CreateFPSCameraEntity(cameraDesc);
-	}
 
 	// Scene
 	{
 		m_pLevel = LevelManager::LoadLevel(0);
+		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
 
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
-		const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+
+		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
+		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
 
 		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness = 1.0f;
-		materialProperties.Metallic = 1.0f;
+		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness	= 1.0f;
+		materialProperties.Metallic		= 1.0f;
 
 		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Robot Material",
@@ -127,32 +121,29 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID = robotGUID;
-		robotMeshComp.MaterialGUID = robotMaterialGUID;
+		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.AnimationGUID = animations[0];
-		robotAnimationComp.PlaybackSpeed = 1.0f;
-		robotAnimationComp.IsLooping = false;
-		// TODO: Safer way than getting the raw pointer (GUID for skeletons?)
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
-		glm::vec3 position = glm::vec3(0.0f, 1.25f, -5.0f);
-		glm::vec3 scale(0.01f);
+		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
+		glm::vec3 scale(1.0f);
 
 		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
 
-		position = glm::vec3(0.0f, 1.25f, 0.0f);
-		robotAnimationComp.IsLooping = true;
-		robotAnimationComp.NumLoops = 10;
+		position = glm::vec3(0.0f, 0.8f, 0.0f);
+		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -160,10 +151,11 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
 
-		position = glm::vec3(-5.0f, 1.25f, 0.0f);
-		robotAnimationComp.NumLoops = INFINITE_LOOPS;
+		position = glm::vec3(-3.5f, 0.75f, 0.0f);
+		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -171,11 +163,17 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
 
-		position = glm::vec3(5.0f, 1.25f, 0.0f);
+		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
-		robotAnimationComp.PlaybackSpeed *= -1.0f;
+		AnimationGraph animationGraph;
+		animationGraph.AddState(AnimationState("running", running[0]));
+		animationGraph.AddState(AnimationState("walking", animations[0]));
+		animationGraph.AddTransition(Transition("running", "walking", 0.2));
+		animationGraph.AddTransition(Transition("walking", "running", 0.5));
+		robotAnimationComp.Graph = animationGraph;
 
 		entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
@@ -199,53 +197,75 @@ void SandboxState::Init()
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
-	//Sphere Grid
+	////Sphere Grid
+	//{
+	//	uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+	//	uint32 gridRadius = 5;
+
+	//	for (uint32 y = 0; y < gridRadius; y++)
+	//	{
+	//		float32 roughness = y / float32(gridRadius - 1);
+
+	//		for (uint32 x = 0; x < gridRadius; x++)
+	//		{
+	//			float32 metallic = x / float32(gridRadius - 1);
+
+	//			MaterialProperties materialProperties;
+	//			materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	//			materialProperties.Roughness = roughness;
+	//			materialProperties.Metallic = metallic;
+
+	//			MeshComponent sphereMeshComp = {};
+	//			sphereMeshComp.MeshGUID = sphereMeshGUID;
+	//			sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+	//				"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+	//				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+	//				materialProperties);
+
+	//			const glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
+	//			const glm::vec3 scale(1.0f);
+
+	//			Entity entity = pECS->CreateEntity();
+	//			m_Entities.PushBack(entity);
+	//			const CollisionInfo collisionCreateInfo = {
+	//				.Entity = entity,
+	//				.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
+	//				.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+	//				.Rotation = pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+	//				.Mesh = pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+	//				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
+	//				.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+	//			};
+
+	//			StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+	//			pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
+	//			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + y*gridRadius), 256, 256));
+	//		}
+	//	}
+	//}
+
+	//Preload some resources
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		TArray<GUID_Lambda> animations;
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 
-		uint32 gridRadius = 5;
+		MaterialProperties materialProperties;
+		materialProperties.Albedo = glm::vec4(1.0f);
+		materialProperties.Roughness = 1.0f;
+		materialProperties.Metallic = 1.0f;
 
-		for (uint32 y = 0; y < gridRadius; y++)
-		{
-			float32 roughness = y / float32(gridRadius - 1);
-
-			for (uint32 x = 0; x < gridRadius; x++)
-			{
-				float32 metallic = x / float32(gridRadius - 1);
-
-				MaterialProperties materialProperties;
-				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness = roughness;
-				materialProperties.Metallic = metallic;
-
-				MeshComponent sphereMeshComp = {};
-				sphereMeshComp.MeshGUID = sphereMeshGUID;
-				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					materialProperties);
-
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
-				glm::vec3 scale(1.0f);
-
-				Entity entity = pECS->CreateEntity();
-				const StaticCollisionInfo collisionCreateInfo = {
-					.Entity = entity,
-					.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
-					.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-					.Rotation = pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-					.Mesh = pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
-					.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
-					.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-				};
-
-				pPhysicsSystem->CreateCollisionSphere(collisionCreateInfo);
-			}
-		}
+		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Robot Material",
+			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
+			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
 	}
 
 	if constexpr (IMGUI_ENABLED)
@@ -304,6 +324,8 @@ void SandboxState::Init()
 				}
 			}
 		});
+
+	ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
 }
 
 void SandboxState::Resume()
@@ -420,6 +442,22 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
 
+	if (event.Key == EKey::KEY_DELETE)
+	{
+		if (!m_Entities.IsEmpty())
+		{
+			const uint32 numEntities = m_Entities.GetSize();
+			const uint32 index = Random::UInt32(0, numEntities-1);
+			Entity entity = m_Entities[index];
+			m_Entities.Erase(m_Entities.Begin() + index);
+			ECSCore::GetInstance()->RemoveEntity(entity);
+
+			std::string info = "Removed entity with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
+			GameConsole::Get().PushInfo(info);
+			LOG_INFO(info.c_str());
+		}
+	}
+
 	// Debugging Lights
 	static uint32 index = 0;
 	static bool remove = true;
@@ -447,4 +485,63 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 
 	return true;
+}
+
+bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
+	{
+		BinaryDecoder decoder(event.pPacket);
+		bool isLocal = decoder.ReadBool();
+		int32 networkUID = decoder.ReadInt32();
+		glm::vec3 position = decoder.ReadVec3();
+
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+
+		const CameraDesc cameraDesc =
+		{
+			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+			.Width = (float)window->GetWidth(),
+			.Height = (float)window->GetHeight(),
+			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+		};
+
+		TArray<GUID_Lambda> animations;
+		bool animationsExist = ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Standard Walk.fbx", animations);
+		const uint32 robotGUID = ResourceManager::GetMeshGUID("Robot/Standard Walk.fbx");
+		const uint32 robotMaterialGUID = ResourceManager::GetMaterialGUID("Robot Material");
+
+		MeshComponent robotMeshComp = {};
+		robotMeshComp.MeshGUID = robotGUID;
+		robotMeshComp.MaterialGUID = robotMaterialGUID;
+
+		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		if (animationsExist)
+		{
+			robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
+		}
+
+		CreatePlayerDesc createPlayerDesc =
+		{
+			.IsLocal = isLocal,
+			.NetworkUID = networkUID,
+			.pClient = event.pClient,
+			.Position = position,
+			.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+			.Scale = glm::vec3(1.0f),
+			.pCameraDesc = &cameraDesc,
+			.MeshComponent = robotMeshComp,
+			.AnimationComponent = robotAnimationComp,
+		};
+
+		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
+
+		return true;
+	}
+
+	return false;
 }
