@@ -2821,6 +2821,9 @@ namespace LambdaEngine
 
 				Resource* pResource = &it->second;
 
+				if (!pResource->ShouldSynchronize)
+					continue;
+
 				auto prevRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->PrevRenderStage);
 				auto nextRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->NextRenderStage);
 
