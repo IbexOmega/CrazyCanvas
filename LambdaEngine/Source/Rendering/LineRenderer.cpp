@@ -126,7 +126,7 @@ namespace LambdaEngine
 
 	uint32 LineRenderer::AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color)
 	{
-		uint32 ID = m_LineGroups.size();
+		uint32 ID = (uint32)m_LineGroups.size();
 		TArray<VertexData>& vertexPoints = m_LineGroups[ID];
 		uint32 size = points.GetSize();
 
@@ -215,6 +215,13 @@ namespace LambdaEngine
 		toData.Position		= { to.x, to.y, to.z, 1.0f };
 		toData.Color		= { toColor.x, toColor.y, toColor.z, 1.0f };
 		m_Verticies.PushBack(toData);
+	}
+
+	void LineRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
 	}
 
 	bool LineRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)

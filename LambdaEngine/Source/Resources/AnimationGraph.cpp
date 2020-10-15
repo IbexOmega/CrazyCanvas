@@ -52,6 +52,8 @@ namespace LambdaEngine
 
 	void Transition::Tick(const float64 delta)
 	{
+		UNREFERENCED_VARIABLE(delta);
+
 		VALIDATE(m_From != UINT32_MAX);
 
 		// Only transition if the clip has reached correct timing
