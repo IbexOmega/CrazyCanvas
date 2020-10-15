@@ -89,7 +89,6 @@ void SandboxState::Init()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	ClientSystem& clientSystem = ClientSystem::GetInstance();
 
 	// Scene
 	{
