@@ -16,6 +16,8 @@
 
 #include "World/LevelManager.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
@@ -37,6 +39,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	if (!LevelManager::Init())
 	{
 		LOG_ERROR("Level Manager Init Failed");
+	}
+
+	if (!TeamHelper::Init())
+	{
+		LOG_ERROR("Team Helper Init Failed");
 	}
 
 	LoadRendererResources();
