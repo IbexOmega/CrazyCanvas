@@ -87,7 +87,9 @@ namespace LambdaEngine
 			BinaryEncoder encoder3(pPacket);
 			encoder3.WriteBool(true);
 			encoder3.WriteInt32(0);
-			encoder3.WriteVec3(glm::vec3(0, 2, 0));
+			encoder3.WriteVec3(glm::vec3(0.0f, 2.0f, 0.0f));
+			encoder3.WriteVec3(glm::vec3(1.0f, 0.0f, 0.0f));
+			encoder3.WriteUInt32(0);
 			OnPacketReceived(m_pClient, pPacket);
 			m_pClient->ReturnPacket(pPacket);
 
