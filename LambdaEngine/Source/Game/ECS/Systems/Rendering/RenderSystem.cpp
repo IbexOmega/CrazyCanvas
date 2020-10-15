@@ -123,6 +123,11 @@ namespace LambdaEngine
 				}
 			};
 
+			systemReg.SubscriberRegistration.AdditionalAccesses =
+			{
+				{ R, MeshPaintComponent::Type() }
+			};
+
 			RegisterSystem(systemReg);
 		}
 
@@ -1048,6 +1053,50 @@ namespace LambdaEngine
 			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
+		// Update resource for the entity mesh paint textures
+		{
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<MeshPaintComponent>* meshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (meshPaintComponents->HasComponent(entity))
+			{
+				const GUID_Lambda textureID = pECS->GetComponent<MeshPaintComponent>(entity).UnwrappedTexture;
+
+				Texture* pTexture			= ResourceManager::GetTexture(textureID);
+				TextureView* pTextureView	= ResourceManager::GetTextureView(textureID);
+				Sampler* pNearestSampler	= Sampler::GetNearestSampler();
+
+				// If the texture has not been added before, update resource
+				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
+				if (paintMaskTexturesIt == m_PaintMaskTextures.end())
+				{
+					if (m_PaintMaskTextures.IsEmpty())
+					{
+						m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
+						m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
+						m_PaintMaskSamplers.PushBack(Sampler::GetNearestSampler());
+					}
+
+					m_PaintMaskTextures.PushBack(pTexture);
+					m_PaintMaskTextureViews.PushBack(pTextureView);
+					m_PaintMaskSamplers.PushBack(pNearestSampler); // In an ideal world we would only have one sampler instead of a list
+					// TODO: Update rendergraph to support only one sampler for several texture views
+					
+					// TODO: REMOVE: Removing is probably not working
+
+					ResourceUpdateDesc unwrappedTextureUpdate = {};
+					unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
+					unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= m_PaintMaskSamplers.GetData();
+					unwrappedTextureUpdate.ExternalTextureUpdate.Count								= m_PaintMaskTextures.GetSize();
+
+					RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+				}
+			}
+		}
+
 		InstanceKey instanceKey = {};
 		instanceKey.MeshKey			= meshKey;
 		instanceKey.InstanceIndex	= meshAndInstancesIt->second.RasterInstances.GetSize();
@@ -1057,7 +1106,7 @@ namespace LambdaEngine
 		{
 			uint32 index = materialIndex;
 			index = index << 8;
-			index |= extensionIndex;
+			index |= ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF;
 
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform		= glm::transpose(transform);

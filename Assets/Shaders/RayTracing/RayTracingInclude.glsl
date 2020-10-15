@@ -35,8 +35,8 @@ layout(binding = 5,		set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_
 layout(binding = 6,		set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_GBufferAORoughMetalValid;
 layout(binding = 7,		set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_GBufferCompactNormal;
 layout(binding = 8,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_GBufferDepthStencil;
+layout(binding = 9,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_PaintMaskTextures[];
 
-layout(binding = 0,		set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D			u_PaintMaskTextures[];
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)
 {

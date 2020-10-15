@@ -61,7 +61,6 @@ SRayHitDescription CalculateHitData()
 	uint materialIndex		= gl_InstanceCustomIndexEXT & 0xFF00;
 	materialIndex			= materialIndex >> 8;
 	uint paintMaskIndex		= gl_InstanceCustomIndexEXT & 0xFF;
-	paintMaskIndex			= paintMaskIndex >> 8;
 
 	vec3 shadingNormal		= texture(u_NormalMaps[materialIndex], texCoord).xyz;
 	shadingNormal			= normalize(shadingNormal * 2.0f - 1.0f);
@@ -85,18 +84,18 @@ void main()
 
 	vec3 sampledAlbedo 		= texture(u_AlbedoMaps[hitDescription.MaterialIndex],			hitDescription.TexCoord).rgb;
 	vec3 sampledMaterial	= texture(u_CombinedMaterialMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).rgb;
-	// vec3 sampledPaintMask	= texture(u_PaintMaskTextures[hitDescription.PaintMaskIndex],	hitDescription.TexCoord).rgb;
+	vec3 sampledPaintMask	= texture(u_PaintMaskTextures[hitDescription.PaintMaskIndex],	hitDescription.TexCoord).rgb;
 
-	vec3 albedo       		= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	float ao   		        = 		materialParameters.AO * sampledMaterial.b;
-	float roughness   		= 		materialParameters.Roughness * sampledMaterial.r;
-	float metallic    		= 		materialParameters.Metallic * sampledMaterial.g;
+	vec3 albedo				= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+	float ao				= 		materialParameters.AO * sampledMaterial.b;
+	float roughness			= 		materialParameters.Roughness * sampledMaterial.r;
+	float metallic			= 		materialParameters.Metallic * sampledMaterial.g;
 
 	s_PrimaryPayload.HitPosition		= hitDescription.Position;
-	s_PrimaryPayload.Normal		        = hitDescription.Normal;
-	// s_PrimaryPayload.Albedo			    = mix(albedo, vec3(1.0f, 1.0f, 1.0f), sampledPaintMask.r);;
-	s_PrimaryPayload.Albedo				= albedo;
-	s_PrimaryPayload.AO			        = ao;
+	s_PrimaryPayload.Normal				= hitDescription.Normal;
+	s_PrimaryPayload.Albedo				= mix(albedo, vec3(1.0f, 1.0f, 1.0f), sampledPaintMask.r);
+	// s_PrimaryPayload.Albedo				= albedo;
+	s_PrimaryPayload.AO					= ao;
 	s_PrimaryPayload.Roughness			= roughness;
 	s_PrimaryPayload.Metallic			= metallic;
 	s_PrimaryPayload.Distance			= gl_HitTEXT;

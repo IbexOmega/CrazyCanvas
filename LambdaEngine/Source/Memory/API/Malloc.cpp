@@ -15,7 +15,7 @@
 	#define DISABLE_MEM_DEBUG
 #endif
 
-#define DISABLE_MEM_DEBUG
+// #define DISABLE_MEM_DEBUG
 #ifdef DISABLE_MEM_DEBUG
 	#define MEM_DEBUG_ENABLED 0
 #else

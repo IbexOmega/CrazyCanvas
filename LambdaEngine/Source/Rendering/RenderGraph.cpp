@@ -1484,6 +1484,7 @@ namespace LambdaEngine
 			newResource.Name				= pResourceDesc->Name;
 			newResource.IsBackBuffer		= pResourceDesc->Name == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 			newResource.BackBufferBound		= newResource.IsBackBuffer || newResource.BackBufferBound;
+			newResource.ShouldSynchronize	= pResourceDesc->ShouldSynchronize;
 
 			if (newResource.BackBufferBound)
 			{
@@ -3477,7 +3478,7 @@ namespace LambdaEngine
 			}
 
 			//Transfer to Initial State
-			if (pResource->Texture.InitialTransitionBarrier.QueueBefore != ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN)
+			if (pResource->Texture.InitialTransitionBarrier.QueueBefore != ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN && pResource->ShouldSynchronize)
 			{
 				PipelineTextureBarrierDesc& initialBarrier = pResource->Texture.InitialTransitionBarrier;
 
