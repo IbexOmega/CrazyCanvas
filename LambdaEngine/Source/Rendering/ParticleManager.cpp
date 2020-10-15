@@ -50,12 +50,14 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppParticleStagingBuffer[b]);
 			SAFERELEASE(m_ppIndexStagingBuffer[b]);
 			SAFERELEASE(m_ppIndirectStagingBuffer[b]);
+			SAFERELEASE(m_ppAtlasDataStagingBuffer[b]);
 		}
 
 		SAFERELEASE(m_pIndirectBuffer);
 		SAFERELEASE(m_pVertexBuffer);
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pParticleBuffer);
+		SAFERELEASE(m_pAtlasDataBuffer);
 	}
 
 	void ParticleManager::Tick(Timestamp deltaTime, uint32 modFrameIndex)
@@ -98,17 +100,24 @@ namespace LambdaEngine
 
 		if (!m_AtlasResources.contains(emitterComp.AtlasGUID))
 		{
+			// Add atlas texture
 			Texture* texture = ResourceManager::GetTexture(emitterComp.AtlasGUID);
+			m_AtlasTextures.PushBack(texture);
+			m_AtlasSamplers.PushBack(Sampler::GetLinearSampler());
+			
 			uint32 width = texture->GetDesc().Width;
 			uint32 height = texture->GetDesc().Height;
 			uint32 tileSize = emitterComp.AtlasTileSize;
 
-			AtlasInfo atlasInfo = {};
+			// Add atlas information
+			SAtlasInfo atlasInfo = {};
 			atlasInfo.ColCount = height / tileSize;
 			atlasInfo.RowCount = width / tileSize;
-			atlasInfo.TileFactorX = tileSize / width;
-			atlasInfo.TileFactorY = tileSize / width;
+			atlasInfo.TileFactorX = (float)tileSize / (float)width;
+			atlasInfo.TileFactorY = (float)tileSize / (float)width;
 			m_AtlasResources[emitterComp.AtlasGUID] = atlasInfo;
+			m_AtlasInfoData.PushBack(atlasInfo);
+			m_DirtyAtlasDataBuffer = true;
 		}
 
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
@@ -415,18 +424,18 @@ namespace LambdaEngine
 		}
 
 		// Update Atlas data Buffer
-		/*if (m_DirtyAtlasDataBuffer)
+		if (m_DirtyAtlasDataBuffer)
 		{
-			uint32 requiredBufferSize = m_Particles.GetSize() * sizeof(SParticle);
+			uint32 requiredBufferSize = m_AtlasInfoData.GetSize() * sizeof(SAtlasInfo);
 			m_DirtyAtlasDataBuffer = CopyDataToBuffer(
 				pCommandList,
-				m_Particles.GetData(),
+				m_AtlasInfoData.GetData(),
 				requiredBufferSize,
 				m_ppAtlasDataStagingBuffer,
 				&m_pAtlasDataBuffer,
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
 				"Atlas data");
-		}*/
+		}
 
 		return true;
 	}
@@ -477,6 +486,16 @@ namespace LambdaEngine
 			m_DirtyParticleBuffer = false;
 		}
 
+		if (m_DirtyAtlasDataBuffer)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = SCENE_PARTICLE_ATLAS_INFO_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pAtlasDataBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
+			pRendergraph->UpdateResource(&resourceUpdateDesc);
+
+			m_DirtyAtlasDataBuffer = false;
+		}
 
 		return false;
 	}

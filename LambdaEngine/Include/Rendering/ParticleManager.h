@@ -8,6 +8,8 @@
 
 namespace LambdaEngine 
 {
+	class Sampler;
+	class Texture;
 	class Buffer;
 	class CommandList;
 	class RenderGraph;
@@ -52,7 +54,7 @@ namespace LambdaEngine
 		float Padding1;
 	};
 
-	struct AtlasInfo
+	struct SAtlasInfo
 	{
 		float	TileFactorX = 0.f;
 		float	TileFactorY = 0.f;
@@ -85,6 +87,9 @@ namespace LambdaEngine
 
 		uint32 GetParticleCount() const { return m_Particles.GetSize();  }
 		uint32 GetMaxParticleCount() const { return m_MaxParticleCount; }
+
+		TArray<Texture*>& GetAtlasTextures() { return m_AtlasTextures; }
+		TArray<Sampler*>& GetAtlasSamplers() { return m_AtlasSamplers; }
 
 		bool UpdateBuffers(CommandList* pCommandList);
 		bool UpdateResources(RenderGraph* pRendergraph);
@@ -123,8 +128,11 @@ namespace LambdaEngine
 		TArray<SParticle>			m_Particles;
 		TArray<IndirectData>		m_IndirectData;
 		TArray<ParticleChunk>		m_FreeParticleChunks;
+		TArray<SAtlasInfo>			m_AtlasInfoData;
 
-		THashTable<GUID_Lambda, AtlasInfo>	m_AtlasResources;
+		THashTable<GUID_Lambda, SAtlasInfo>	m_AtlasResources;
+		TArray<Texture*>			m_AtlasTextures;
+		TArray<Sampler*>			m_AtlasSamplers;
 
 		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;
 		THashTable<Entity, ParticleEmitterInstance>	m_SleepingEmitters;

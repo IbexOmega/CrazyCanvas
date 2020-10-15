@@ -283,6 +283,15 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void ParticleRenderer::SetAtlasTexturs(TArray<Texture*>& textures, TArray<Sampler*>& samplers)
+	{
+		VALIDATE(textures.GetSize() == samplers.GetSize());
+
+		m_AtlasCount = textures.GetSize();
+		m_ppAtlasTextures = textures.GetData();
+		m_ppAtlasSamplers = samplers.GetData();
+	}
+
 	bool LambdaEngine::ParticleRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
@@ -461,6 +470,8 @@ namespace LambdaEngine
 				m_pIndirectBuffer = ppBuffers[0];
 			}
 		}
+
+		// TODO: Fetch SCENE_PARTICLE_ATLAS_INFO_BUFFER !!!
 	}
 
 	void ParticleRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
