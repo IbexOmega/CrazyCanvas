@@ -18,6 +18,7 @@ struct HostGameDescription
 enum ErrorCode
 {
 	CONNECT_ERROR,
+	JOIN_ERROR,
 	HOST_ERROR,
 	OTHER_ERROR
 };
@@ -36,14 +37,15 @@ public:
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	
+	void OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	
+	
+
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
-
 
 
 private:
