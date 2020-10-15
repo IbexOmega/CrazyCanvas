@@ -4,7 +4,7 @@
 
 #include "ECS/ECSCore.h"
 
-#include <PxPhysicsAPI.h>
+#include "Physics/PhysX/PhysX.h"
 
 namespace LambdaEngine
 {

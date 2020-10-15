@@ -4,11 +4,7 @@
 #include "ECS/System.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Physics/PhysX/ErrorCallback.h"
-
-#undef realloc
-#undef free
-#include <PxPhysicsAPI.h>
-#include <foundation/PxErrorCallback.h>
+#include "Physics/PhysX/PhysX.h"
 
 namespace LambdaEngine
 {
