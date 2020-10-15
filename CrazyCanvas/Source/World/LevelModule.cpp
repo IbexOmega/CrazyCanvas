@@ -1,5 +1,5 @@
 #include "World/LevelModule.h"
-#include "Game/World/LevelObjectCreator.h"
+#include "World/LevelObjectCreator.h"
 
 #include "Resources/ResourceManager.h"
 

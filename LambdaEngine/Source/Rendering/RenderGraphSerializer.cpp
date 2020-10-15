@@ -421,8 +421,11 @@ namespace LambdaEngine
 									writer.String("removable");
 									writer.Bool(resourceStateIt->second.Removable);
 
-									writer.String("draw_args_mask");
-									writer.Uint(resourceStateIt->second.DrawArgsMask);
+									writer.String("draw_args_include_mask");
+									writer.Uint(resourceStateIt->second.DrawArgsIncludeMask);
+
+									writer.String("draw_args_exclude_mask");
+									writer.Uint(resourceStateIt->second.DrawArgsExcludeMask);
 
 									writer.String("binding_type");
 									writer.String(BindingTypeToString(resourceStateIt->second.BindingType));
@@ -862,7 +865,8 @@ namespace LambdaEngine
 						pResourceState->ResourceName		= resourceName;
 						pResourceState->RenderStageName		= renderStage.Name;
 						pResourceState->Removable			= resourceStateObject["removable"].GetBool();
-						if (resourceStateObject.HasMember("draw_args_mask"))	pResourceState->DrawArgsMask = resourceStateObject["draw_args_mask"].GetUint();
+						if (resourceStateObject.HasMember("draw_args_include_mask"))	pResourceState->DrawArgsIncludeMask = resourceStateObject["draw_args_include_mask"].GetUint();
+						if (resourceStateObject.HasMember("draw_args_exclude_mask"))	pResourceState->DrawArgsExcludeMask = resourceStateObject["draw_args_exclude_mask"].GetUint();
 						pResourceState->BindingType			= ResourceStateBindingTypeFromString(resourceStateObject["binding_type"].GetString());
 
 						auto resourceIt = std::find_if(resources.Begin(), resources.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; });

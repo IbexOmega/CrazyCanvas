@@ -25,22 +25,27 @@ namespace LambdaEngine
 
 		bool Init();
 		void Tick(Timestamp deltaTime) override final;
-		void FixedTickMainThread(Timestamp deltaTime);
 
-		void TickCharacterControllers(float32 dt);
 		void OnCharacterColliderRemoval(Entity entity);
 		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
 
 	public:
 		static CharacterControllerSystem* GetInstance() { return s_pInstance; }
+
+		static void TickForeignCharacterController(float32 dt,
+			Entity entity,
+			ComponentArray<CharacterColliderComponent>* pCharacterColliders,
+			const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
+			ComponentArray<VelocityComponent>* pVelocityComponents);
+
 		static void TickCharacterController(float32 dt,
 			Entity entity,
 			ComponentArray<CharacterColliderComponent>* pCharacterColliders,
-			ComponentArray<NetworkPositionComponent>* pNetPosComponents,
+			const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
 			ComponentArray<VelocityComponent>* pVelocityComponents);
 
 	private:
-		IDVector m_CharacterColliderEntities;
+		IDVector m_ForeignPlayerEntities;
 
 	private:
 		static CharacterControllerSystem* s_pInstance;

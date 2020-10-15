@@ -13,6 +13,8 @@
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/NetworkEvents.h"
+
 #include "ECS/Systems/Player/WeaponSystem.h"
 
 #include <NsCore/Ptr.h>
@@ -45,6 +47,7 @@ public:
 
 private:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
+	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
 
 private:
 	LambdaEngine::Entity m_DirLight;
