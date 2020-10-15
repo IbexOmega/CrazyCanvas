@@ -51,7 +51,10 @@ namespace LambdaEngine
 	{
 		// Register system
 		{
+			auto onStaticCollisionAdded = std::bind(&PhysicsSystem::OnStaticCollisionAdded, this, std::placeholders::_1);
 			auto onStaticCollisionRemoval = std::bind(&PhysicsSystem::OnStaticCollisionRemoval, this, std::placeholders::_1);
+
+			auto onDynamicCollisionAdded = std::bind(&PhysicsSystem::OnDynamicCollisionAdded, this, std::placeholders::_1);
 			auto onDynamicCollisionRemoval = std::bind(&PhysicsSystem::OnDynamicCollisionRemoval, this, std::placeholders::_1);
 
 			SystemRegistration systemReg = {};
@@ -63,6 +66,7 @@ namespace LambdaEngine
 					{
 						{NDA, StaticCollisionComponent::Type()}, {NDA, PositionComponent::Type()}, {NDA, RotationComponent::Type()}
 					},
+					.OnEntityAdded = onStaticCollisionAdded,
 					.OnEntityRemoval = onStaticCollisionRemoval
 				},
 				{
@@ -71,6 +75,7 @@ namespace LambdaEngine
 					{
 						{NDA, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}, {RW, VelocityComponent::Type()}
 					},
+					.OnEntityAdded = onDynamicCollisionAdded,
 					.OnEntityRemoval = onDynamicCollisionRemoval
 				}
 			};
@@ -437,6 +442,18 @@ namespace LambdaEngine
 		}
 	}
 
+	void PhysicsSystem::OnStaticCollisionAdded(Entity entity)
+	{
+		StaticCollisionComponent& collisionComp = ECSCore::GetInstance()->GetComponent<StaticCollisionComponent>(entity);
+		m_pScene->addActor(*collisionComp.pActor);
+	}
+
+	void PhysicsSystem::OnDynamicCollisionAdded(Entity entity)
+	{
+		DynamicCollisionComponent& collisionComp = ECSCore::GetInstance()->GetComponent<DynamicCollisionComponent>(entity);
+		m_pScene->addActor(*collisionComp.pActor);
+	}
+
 	void PhysicsSystem::OnStaticCollisionRemoval(Entity entity)
 	{
 		// Remove the actor from the scene
@@ -498,6 +515,9 @@ namespace LambdaEngine
 
 		pActor->attachShape(*pShape);
 
+		// Decreases the ref count to 1, which will drop to 0 when the actor is deleted
+		pShape->release();
+
 		// Set collision callback
 		if (collisionInfo.CollisionCallback)
 		{
@@ -505,12 +525,6 @@ namespace LambdaEngine
 			auto pUserData = reinterpret_cast<std::function<void(const CollisionInfo& collisionInfo)>*>(pActor->userData);
 			*pUserData = collisionInfo.CollisionCallback;
 		}
-
-		m_pScene->addActor(*pActor);
-
-		/*	Decreases the ref count to 1, which will drop to 0 either when explicitly removed, or when the scene
-			is released */
-		pShape->release();
 	}
 
 	CharacterColliderComponent PhysicsSystem::FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc)

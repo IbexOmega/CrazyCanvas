@@ -118,6 +118,8 @@ namespace LambdaEngine
 		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
 		void ReleaseActor(PxRigidActor* pActor);
 
+		void OnStaticCollisionAdded(Entity entity);
+		void OnDynamicCollisionAdded(Entity entity);
 		void OnStaticCollisionRemoval(Entity entity);
 		void OnDynamicCollisionRemoval(Entity entity);
 

@@ -1,5 +1,9 @@
 #include "World/LevelObjectCreator.h"
 
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
+#include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
@@ -136,7 +140,8 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	};
 
-	pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	return entity;
 }
 
@@ -274,6 +279,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
+			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->CreateAudioListener() });
 
 			const ViewProjectionMatricesComponent viewProjComp =
 			{

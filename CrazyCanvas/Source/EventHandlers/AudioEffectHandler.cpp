@@ -13,7 +13,7 @@ AudioEffectHandler::~AudioEffectHandler()
 void AudioEffectHandler::Init()
 {
 	using namespace LambdaEngine;
-	GUID_Lambda projectileHitID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+	GUID_Lambda projectileHitID = ResourceManager::LoadSoundEffectFromFile("Fart.wav");
 	m_pProjectileHitSound = ResourceManager::GetSoundEffect(projectileHitID);
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent, AudioEffectHandler>(this, &AudioEffectHandler::OnProjectileHit);
