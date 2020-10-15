@@ -93,6 +93,8 @@ namespace LambdaEngine
 
 	void PlayerActionSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		glm::i8vec2 deltaVelocity =

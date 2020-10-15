@@ -137,15 +137,20 @@ namespace LambdaEngine
 				if (currentResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 				{
 					resourceNamesActuallyUsed.insert(resourceStateIdent.Name);
-					if (FindAndCreateSynchronization(resources, resourceStatesByHalfAttributeIndex, orderedRenderStageIt, orderedMappedRenderStages, currentResourceStateIt, &synchronizationStage, generateImGuiStage))
-					{
-						finalStateOfResources[currentResourceStateIt->second.ResourceName] = &currentResourceStateIt->second;
-					}
 
-					if (currentResourceStateIt->second.ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT && pFirstStateOfBackBuffer == nullptr)
+					//Draw Args needs to have their synchronizations created back to front so we do this later
+					if (currentResourceStateIt->second.ResourceType != ERenderGraphResourceType::SCENE_DRAW_ARGS)
 					{
-						pFirstRenderStageWithBackBufferBinding = pCurrentRenderStage;
-						pFirstStateOfBackBuffer = &currentResourceStateIt->second;
+						if (FindAndCreateSynchronization(resources, resourceStatesByHalfAttributeIndex, orderedRenderStageIt, orderedMappedRenderStages, currentResourceStateIt, &synchronizationStage, generateImGuiStage))
+						{
+							finalStateOfResources[currentResourceStateIt->second.ResourceName] = &currentResourceStateIt->second;
+						}
+
+						if (currentResourceStateIt->second.ResourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT && pFirstStateOfBackBuffer == nullptr)
+						{
+							pFirstRenderStageWithBackBufferBinding = pCurrentRenderStage;
+							pFirstStateOfBackBuffer = &currentResourceStateIt->second;
+						}
 					}
 				}
 				else
@@ -182,11 +187,8 @@ namespace LambdaEngine
 			orderedRenderStages.PushBack(parsedRenderStage);
 			orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::RENDER, uint32(orderedRenderStages.GetSize()) - 1 });
 
-			if (synchronizationStage.Synchronizations.GetSize() > 0)
-			{
-				orderedSynchronizationStages.PushBack(synchronizationStage);
-				orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::SYNCHRONIZATION, uint32(orderedSynchronizationStages.GetSize()) - 1 });
-			}
+			orderedSynchronizationStages.PushBack(synchronizationStage);
+			orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::SYNCHRONIZATION, uint32(orderedSynchronizationStages.GetSize()) - 1 });
 		}
 
 		if (generateImGuiStage)
@@ -286,6 +288,136 @@ namespace LambdaEngine
 			orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::SYNCHRONIZATION, uint32(orderedSynchronizationStages.GetSize()) - 1 });
 		}
 
+		//Loop through Render Stages Back to Front to find Draw Arg synchronization
+		for (int32 p = orderedPipelineStages.GetSize() - 1; p >= 0; p--)
+		{
+			const PipelineStageDesc* pPipelineStageDesc = &orderedPipelineStages[p];
+
+			if (pPipelineStageDesc->Type == ERenderGraphPipelineStageType::RENDER)
+			{
+				const RenderStageDesc* pRenderStageDesc = &orderedRenderStages[pPipelineStageDesc->StageIndex];
+
+				for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
+				{
+					const RenderGraphResourceState* pResourceState = &pRenderStageDesc->ResourceStates[rs];
+
+					if (auto resourceIt = std::find_if(resources.Begin(), resources.End(), [pResourceState](const RenderGraphResourceDesc& resourceDesc) { return pResourceState->ResourceName == resourceDesc.Name; }); resourceIt != resources.End())
+					{
+						if (resourceIt->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
+						{
+							//This should be the same as just pResourceState->DrawArgsIncludeMask since they shouldn't overlap, but we & it for safety
+							uint32 currentMask = pResourceState->DrawArgsIncludeMask & ~pResourceState->DrawArgsExcludeMask;
+							int32 pp = p;
+
+							for (uint32 n = 0; n < orderedPipelineStages.GetSize() - 1 && currentMask > 0x0; n++)
+							{
+								pp--;
+								if (pp < 0) pp = orderedPipelineStages.GetSize() - 1;
+
+								const PipelineStageDesc* pPrevPipelineStageDesc = &orderedPipelineStages[pp];
+
+								if (pPrevPipelineStageDesc->Type == ERenderGraphPipelineStageType::RENDER)
+								{
+									const RenderStageDesc* pPrevRenderStageDesc = &orderedRenderStages[pPrevPipelineStageDesc->StageIndex];
+
+									for (uint32 prs = 0; prs < pPrevRenderStageDesc->ResourceStates.GetSize() && currentMask > 0x0; prs++)
+									{
+										const RenderGraphResourceState* pPrevResourceState = &pPrevRenderStageDesc->ResourceStates[prs];
+
+										if (pResourceState->ResourceName == pPrevResourceState->ResourceName)
+										{
+											uint32 overlappingMask = (currentMask & pPrevResourceState->DrawArgsIncludeMask);
+
+											if (overlappingMask > 0)
+											{
+												currentMask &= ~overlappingMask;
+
+												ECommandQueueType prevQueue = ConvertPipelineStateTypeToQueue(pPrevRenderStageDesc->Type);
+												ECommandQueueType nextQueue = ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
+
+												if (ResourceStatesSynchronizationallyEqual(
+													ERenderGraphResourceType::SCENE_DRAW_ARGS,
+													prevQueue,
+													nextQueue,
+													pPrevResourceState->BindingType,
+													pResourceState->BindingType))
+												{
+													continue;
+												}
+
+												uint32 nps = pp + 1;
+												if (nps > orderedPipelineStages.GetSize() - 1) nps = 0;
+
+												const PipelineStageDesc* pNextPipelineStageAfterPreviousDesc = &orderedPipelineStages[nps];
+
+												if (pNextPipelineStageAfterPreviousDesc->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
+												{
+													SynchronizationStageDesc* pNextSynchronizationStageAfterPrevious = &orderedSynchronizationStages[pNextPipelineStageAfterPreviousDesc->StageIndex];
+
+													//Check if this synchronization stage already has a similar draw arg synchronization
+													for (uint32 s = 0; s < pNextSynchronizationStageAfterPrevious->Synchronizations.GetSize(); s++)
+													{
+														RenderGraphResourceSynchronizationDesc* pSynchronizationDesc = &pNextSynchronizationStageAfterPrevious->Synchronizations[s];
+
+														if (pResourceState->ResourceName	== pSynchronizationDesc->ResourceName &&
+															pResourceState->BindingType		== pSynchronizationDesc->NextBindingType &&
+															nextQueue						== pSynchronizationDesc->NextQueue)
+														{
+															pSynchronizationDesc->DrawArgsIncludeMask |= overlappingMask;
+															pSynchronizationDesc->DrawArgsExcludeMask &= ~overlappingMask;
+
+															overlappingMask &= ~pSynchronizationDesc->DrawArgsIncludeMask;
+														}
+													}
+
+													//If there still are some bits that need synchronization, push a new synchronization
+													if (overlappingMask > 0x0)
+													{
+														RenderGraphResourceSynchronizationDesc resourceSynchronizationDesc = {};
+														resourceSynchronizationDesc.PrevRenderStage		= pPrevRenderStageDesc->Name;
+														resourceSynchronizationDesc.NextRenderStage		= pRenderStageDesc->Name;
+														resourceSynchronizationDesc.ResourceName		= pResourceState->ResourceName;
+														resourceSynchronizationDesc.PrevQueue			= prevQueue;
+														resourceSynchronizationDesc.NextQueue			= nextQueue;
+														resourceSynchronizationDesc.PrevBindingType		= pPrevResourceState->BindingType;
+														resourceSynchronizationDesc.NextBindingType		= pResourceState->BindingType;
+														resourceSynchronizationDesc.ResourceType		= ERenderGraphResourceType::SCENE_DRAW_ARGS;
+														resourceSynchronizationDesc.DrawArgsIncludeMask = overlappingMask;
+														resourceSynchronizationDesc.DrawArgsExcludeMask = pResourceState->DrawArgsExcludeMask & pPrevResourceState->DrawArgsExcludeMask;
+														pNextSynchronizationStageAfterPrevious->Synchronizations.PushBack(resourceSynchronizationDesc);
+													}
+												}
+												else
+												{
+													LOG_ERROR("[RenderGraphParser]: DrawArgs resource %s needs a synchronization stage at %d, but there is none available", pResourceState->ResourceName.c_str(), nps);
+													return false;
+												}
+											}
+										}
+									}
+								}
+								else if (pPrevPipelineStageDesc->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
+								{
+									const SynchronizationStageDesc* pPrevSynchronizationStageDesc = &orderedSynchronizationStages[pPrevPipelineStageDesc->StageIndex];
+
+									for (uint32 s = 0; s < pPrevSynchronizationStageDesc->Synchronizations.GetSize() && currentMask > 0x0; s++)
+									{
+										const RenderGraphResourceSynchronizationDesc* pSynchronizationDesc = &pPrevSynchronizationStageDesc->Synchronizations[s];
+
+										if (pResourceState->ResourceName == pSynchronizationDesc->ResourceName)
+										{
+											currentMask = (currentMask & pSynchronizationDesc->DrawArgsIncludeMask);
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		//Do an extra pass to remove unnecessary synchronizations
 		for (auto pipelineStageIt = orderedPipelineStages.begin(); pipelineStageIt != orderedPipelineStages.end();)
 		{
@@ -354,10 +486,12 @@ namespace LambdaEngine
 						if (pResourceState->BindingType == ERenderGraphResourceBindingType::ATTACHMENT)
 						{
 							RenderGraphResourceState* pPreviousResourceStateDesc = nullptr;
+							int32														previousRenderPipelineStageDescIndex = -1;
 							int32														previousSynchronizationPipelineStageDescIndex = -1;
 							TArray<RenderGraphResourceSynchronizationDesc>::Iterator	previousSynchronizationDescIt;
 
 							RenderGraphResourceState* pNextResourceStateDesc = nullptr;
+							int32														nextRenderPipelineStageDescIndex = -1;
 							int32														nextSynchronizationPipelineStageDescIndex = -1;
 							TArray<RenderGraphResourceSynchronizationDesc>::Iterator	nextSynchronizationDescIt;
 
@@ -409,13 +543,14 @@ namespace LambdaEngine
 
 										if (pPotentialPreviousResourceState->ResourceName == pResourceState->ResourceName)
 										{
+											previousRenderPipelineStageDescIndex = pp;
 											pPreviousResourceStateDesc = pPotentialPreviousResourceState;
 											break;
 										}
 									}
 								}
 
-								if (previousSynchronizationPipelineStageDescIndex != -1 && pPreviousResourceStateDesc != nullptr)
+								if ((previousSynchronizationPipelineStageDescIndex != -1 || previousRenderPipelineStageDescIndex != -1) && pPreviousResourceStateDesc != nullptr)
 									break;
 							}
 
@@ -467,13 +602,15 @@ namespace LambdaEngine
 
 										if (pPotentialNextResourceState->ResourceName == pResourceState->ResourceName)
 										{
+											nextRenderPipelineStageDescIndex = np;
 											pNextResourceStateDesc = pPotentialNextResourceState;
+
 											break;
 										}
 									}
 								}
 
-								if (nextSynchronizationPipelineStageDescIndex != -1 && pNextResourceStateDesc != nullptr)
+								if ((nextSynchronizationPipelineStageDescIndex != -1 || nextRenderPipelineStageDescIndex != -1) && pNextResourceStateDesc != nullptr)
 									break;
 							}
 
@@ -831,15 +968,9 @@ namespace LambdaEngine
 
 				if (nextResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 				{
-					bool drawArgsOverlap =	(currentResourceStateIt->second.DrawArgsIncludeMask & nextResourceStateIt->second.DrawArgsIncludeMask) > 0 &&
-											(currentResourceStateIt->second.DrawArgsExcludeMask & nextResourceStateIt->second.DrawArgsExcludeMask) == 0;
-
-					if (currentResourceStateIt->second.ResourceType != ERenderGraphResourceType::SCENE_DRAW_ARGS || drawArgsOverlap)
-					{
-						pNextResourceState = &nextResourceStateIt->second;
-						pNextRenderStage = pPotentialNextRenderStage;
-						break;
-					}
+					pNextResourceState = &nextResourceStateIt->second;
+					pNextRenderStage = pPotentialNextRenderStage;
+					break;
 				}
 			}
 		}
@@ -871,8 +1002,13 @@ namespace LambdaEngine
 						resourceSynchronization.NextRenderStage		= pNextRenderStage->Name;
 						resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 						resourceSynchronization.NextBindingType		= pNextResourceState->BindingType;
-						resourceSynchronization.DrawArgsIncludeMask	= currentResourceStateIt->second.DrawArgsIncludeMask & pNextResourceState->DrawArgsIncludeMask;
-						resourceSynchronization.DrawArgsExcludeMask	= currentResourceStateIt->second.DrawArgsExcludeMask | pNextResourceState->DrawArgsExcludeMask;
+
+						if (resourceSynchronization.ResourceName == "G_BUFFER_ALBEDO" &&
+							resourceSynchronization.NextQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS &&
+							resourceSynchronization.NextBindingType == ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE)
+						{
+							int awdwa = 0;
+						}
 
 						pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 					}
@@ -922,15 +1058,9 @@ namespace LambdaEngine
 
 						if (nextResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 						{
-							bool drawArgsOverlap =	(currentResourceStateIt->second.DrawArgsIncludeMask & nextResourceStateIt->second.DrawArgsIncludeMask) > 0 &&
-													(currentResourceStateIt->second.DrawArgsExcludeMask & nextResourceStateIt->second.DrawArgsExcludeMask) == 0;
-
-							if (currentResourceStateIt->second.ResourceType != ERenderGraphResourceType::SCENE_DRAW_ARGS || drawArgsOverlap)
-							{
-								pNextResourceState = &nextResourceStateIt->second;
-								pNextRenderStage = pPotentialNextRenderStage;
-								break;
-							}
+							pNextResourceState = &nextResourceStateIt->second;
+							pNextRenderStage = pPotentialNextRenderStage;
+							break;
 						}
 					}
 				}
@@ -947,8 +1077,13 @@ namespace LambdaEngine
 							resourceSynchronization.NextRenderStage		= pNextRenderStage->Name;
 							resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 							resourceSynchronization.NextBindingType		= pNextResourceState->BindingType;
-							resourceSynchronization.DrawArgsIncludeMask	= currentResourceStateIt->second.DrawArgsIncludeMask & pNextResourceState->DrawArgsIncludeMask;
-							resourceSynchronization.DrawArgsExcludeMask	= currentResourceStateIt->second.DrawArgsExcludeMask | pNextResourceState->DrawArgsExcludeMask;
+
+							if (resourceSynchronization.ResourceName == "G_BUFFER_ALBEDO" &&
+								resourceSynchronization.NextQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS &&
+								resourceSynchronization.NextBindingType == ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE)
+							{
+								int awdwa = 0;
+							}
 
 							pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 						}

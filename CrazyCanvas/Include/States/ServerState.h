@@ -11,8 +11,7 @@
 class Level;
 
 class ServerState :
-	public LambdaEngine::State,
-	public LambdaEngine::INetworkDiscoveryServer
+	public LambdaEngine::State
 {
 public:
 	ServerState() = default;
@@ -27,9 +26,9 @@ public:
 
 	virtual void Tick(LambdaEngine::Timestamp delta) override;
 
-	virtual void OnNetworkDiscoveryPreTransmit(const LambdaEngine::BinaryEncoder& encoder) override;
-
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
+
+	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
 
 private:
 	Level* m_pLevel = nullptr;

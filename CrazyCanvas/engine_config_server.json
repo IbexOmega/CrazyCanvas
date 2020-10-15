@@ -5,6 +5,7 @@
   ],
   "VolumeMasterInital": 1.0,
   "FixedTimestep": 60,
+  "NetworkPort": 4444,
   "RayTracingEnabled": false,
   "MeshShadersEnabled": false,
   "ShowRenderGraph": false,

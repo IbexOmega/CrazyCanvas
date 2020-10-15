@@ -184,6 +184,10 @@ namespace LambdaEngine
 			return false;
 		}
 
+		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
+		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
+		UpdateRelativeParameters();
+
 		return true;
 	}
 
@@ -269,6 +273,10 @@ namespace LambdaEngine
 		}
 
 		UpdateResourceBindings();
+
+		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
+		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
+		UpdateRelativeParameters();
 
 		return true;
 	}
@@ -3016,7 +3024,7 @@ namespace LambdaEngine
 
 						DrawArgMaskDesc maskDesc = {};
 						maskDesc.IncludeMask = synchronizationIt->DrawArgsIncludeMask;
-						maskDesc.IncludeMask = synchronizationIt->DrawArgsExcludeMask;
+						maskDesc.ExcludeMask = synchronizationIt->DrawArgsExcludeMask;
 
 						ResourceBarrierInfo barrierInfo = {};
 						barrierInfo.SynchronizationStageIndex	= s;
@@ -3551,12 +3559,10 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResourceDrawArgs(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
-		LOG_ERROR("RenderGraph: UPDATING DRAW ARG: %x", pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.FullMask);
 		auto drawArgsArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.FullMask);
 
 		if (drawArgsArgsIt != pResource->DrawArgs.FullMaskToArgs.end())
 		{
-			LOG_ERROR("RenderGraph: FOUND");
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);

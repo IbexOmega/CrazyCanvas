@@ -1391,10 +1391,10 @@ namespace LambdaEngine
 				ImGui::InputInt(" ##Render Stage Frame Delay", &pRenderStage->FrameDelay);
 				pRenderStage->FrameDelay = glm::clamp<uint32>(pRenderStage->FrameDelay, 0, 360);
 
-				ImGui::Text("Frame Offset: ");
+				ImGui::Text("Frame offset: ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(ImGui::CalcTextSize("         ").x + ImGui::GetFrameHeight() * 2 + 4.0f);
-				ImGui::InputInt("##Render Stage Frame Offset", &pRenderStage->FrameOffset);
+				ImGui::InputInt("##Render Stage Frame offset", &pRenderStage->FrameOffset);
 				pRenderStage->FrameOffset = glm::clamp<uint32>(pRenderStage->FrameOffset, 0, pRenderStage->FrameDelay);
 			}
 
@@ -2137,9 +2137,14 @@ namespace LambdaEngine
 							{
 								int32 textureFormatIndex = TextureFormatToFormatIndex(resourceIt->TextureParams.TextureFormat);
 
-								textBuffer1 += "\n";
-								textBuffer1 += "Texture Format: " + String(textureFormatIndex >= 0 ? TEXTURE_FORMAT_NAMES[textureFormatIndex] : "INVALID");
+								textBuffer1 += "\nTexture Format: " + String(textureFormatIndex >= 0 ? TEXTURE_FORMAT_NAMES[textureFormatIndex] : "INVALID");
 							}
+							else if (resourceIt->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
+							{
+								textBuffer1 += "\nInclude Mask: " + std::to_string(pResourceState->DrawArgsIncludeMask);
+								textBuffer1 += "\nExclude Mask: " + std::to_string(pResourceState->DrawArgsExcludeMask);
+							}
+
 							ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n\n").c_str());
 
 							if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + resourceIt->Name + " Child").c_str(), ImVec2(0.0f, textSize.y)))
@@ -2216,6 +2221,7 @@ namespace LambdaEngine
 					for (auto synchronizationIt = pSynchronizationStage->Synchronizations.begin(); synchronizationIt != pSynchronizationStage->Synchronizations.end(); synchronizationIt++)
 					{
 						const RenderGraphResourceSynchronizationDesc* pSynchronization = &(*synchronizationIt);
+						uint32 synchronizationIndex = std::distance(pSynchronizationStage->Synchronizations.begin(), synchronizationIt);
 						auto resourceIt = FindResource(pSynchronization->ResourceName);
 
 						if (resourceIt != m_Resources.end())
@@ -2228,9 +2234,16 @@ namespace LambdaEngine
 							textBuffer1 += String(CommandQueueToString(pSynchronization->PrevQueue)) + " -> " + CommandQueueToString(pSynchronization->NextQueue);
 							textBuffer1 += "\n";
 							textBuffer1 += String(BindingTypeToShortString(pSynchronization->PrevBindingType)) + " -> " + BindingTypeToShortString(pSynchronization->NextBindingType);
+							
+							if (resourceIt->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
+							{
+								textBuffer1 += "\nInclude Mask: " + std::to_string(pSynchronization->DrawArgsIncludeMask);
+								textBuffer1 += "\nExclude Mask: " + std::to_string(pSynchronization->DrawArgsExcludeMask);
+							}
+
 							ImVec2 textSize = ImGui::CalcTextSize((textBuffer0 + textBuffer1 + "\n\n\n\n").c_str());
 
-							if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + resourceIt->Name + " Child").c_str(), ImVec2(0.0f, textSize.y)))
+							if (ImGui::BeginChild(("##" + std::to_string(pPipelineStage->StageIndex) + std::to_string(synchronizationIndex) + " Child").c_str(), ImVec2(0.0f, textSize.y)))
 							{
 								ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), textBuffer0.c_str());
 								ImGui::TextWrapped(textBuffer1.c_str());

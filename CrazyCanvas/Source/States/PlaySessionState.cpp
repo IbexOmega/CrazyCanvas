@@ -47,7 +47,6 @@ void PlaySessionState::Init()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	ClientSystem& clientSystem = ClientSystem::GetInstance();
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlaySessionState::OnPacketReceived);
 
 	// Scene

@@ -143,15 +143,16 @@ namespace LambdaEngine
 			RegisterSystem(systemReg);
 		}
 
+		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
 			swapChainDesc.DebugName		= "Renderer Swap Chain";
-			swapChainDesc.pWindow		= CommonApplication::Get()->GetActiveWindow().Get();
+			swapChainDesc.pWindow		= pActiveWindow;
 			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
 			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width			= 0;
-			swapChainDesc.Height		= 0;
+			swapChainDesc.Width			= pActiveWindow->GetWidth();
+			swapChainDesc.Height		= pActiveWindow->GetHeight();
 			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
 			swapChainDesc.SampleCount	= 1;
 			swapChainDesc.VerticalSync	= false;
@@ -204,6 +205,8 @@ namespace LambdaEngine
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
 			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
@@ -542,10 +545,14 @@ namespace LambdaEngine
 
 	void RenderSystem::SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc)
 	{
+		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
+
 		RenderGraphDesc renderGraphDesc = {};
 		renderGraphDesc.Name						= name;
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+		renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+		renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 
 		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 		{
@@ -646,7 +653,6 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
-		LOG_ERROR("Add Static Mesh Entity %d", entity);
 	}
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
@@ -656,7 +662,6 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
-		LOG_ERROR("Add Animated Entity %d", entity);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
@@ -666,7 +671,6 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
-		LOG_ERROR("Add Player Entity %d", entity);
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
@@ -788,7 +792,6 @@ namespace LambdaEngine
 		meshKey.IsAnimated	= isAnimated;
 		meshKey.EntityID	= entity;
 		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
-		LOG_INFO("New Entity has Mask: %u", meshKey.EntityMask);
 
 		//Get meshAndInstancesIterator
 		{
@@ -1427,7 +1430,6 @@ namespace LambdaEngine
 			uint32 mask = meshEntryPair.second.DrawArgsMask;
 			if ((mask & requestedMaskDesc.IncludeMask) == requestedMaskDesc.IncludeMask && (mask & requestedMaskDesc.ExcludeMask) == 0)
 			{
-				LOG_ERROR("Mesh with mask %x added to DrawArg with mask %x", mask, requestedMaskDesc.FullMask);
 				DrawArg drawArg = { };
 
 				// Assume animated
@@ -2118,8 +2120,6 @@ namespace LambdaEngine
 		{
 			for (const DrawArgMaskDesc& maskDesc : m_DirtyDrawArgs)
 			{
-				LOG_ERROR("RenderSystem: CREATING DRAW ARGS %x", maskDesc.FullMask);
-
 				TArray<DrawArg> drawArgs;
 				CreateDrawArgs(drawArgs, maskDesc);
 

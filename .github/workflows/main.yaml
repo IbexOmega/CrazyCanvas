@@ -32,7 +32,7 @@ jobs:
         run: msbuild LambdaEngine.sln -p:Configuration=Release -p:Platform=x64
 
   Lint:
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: [self-hosted, benchmarker, Windows, X64]
 
     steps:
       - uses: actions/checkout@v2
