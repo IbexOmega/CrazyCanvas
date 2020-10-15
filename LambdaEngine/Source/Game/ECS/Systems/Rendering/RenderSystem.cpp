@@ -22,13 +22,11 @@
 
 #include "ECS/ECSCore.h"
 
-#include "Game/ECS/Components/Physics/Transform.h"
-#include "Game/ECS/Components/Rendering/AnimationComponent.h"
-#include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "Game/ECS/Components/Player/PlayerComponent.h"
 
 #include "Rendering/ParticleRenderer.h"
 #include "Rendering/ParticleUpdater.h"
@@ -51,37 +49,71 @@ namespace LambdaEngine
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{
-			TransformComponents transformComponents;
-			transformComponents.Position.Permissions	= R;
-			transformComponents.Scale.Permissions		= R;
-			transformComponents.Rotation.Permissions	= R;
+			TransformGroup transformGroup;
+			transformGroup.Position.Permissions	= R;
+			transformGroup.Scale.Permissions	= R;
+			transformGroup.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
 			systemReg.Phase = g_LastPhase;
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
-					.pSubscriber = &m_RenderableEntities,
+					.pSubscriber = &m_StaticMeshEntities,
 					.ComponentAccesses =
 					{
-						{ NDA, MeshComponent::Type() }
+						{ R, MeshComponent::Type() }
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					},
 					.ExcludedComponentTypes =
 					{
 						AnimationComponent::Type(),
+						PlayerBaseComponent::Type(),
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnEntityRemoved, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind(&RenderSystem::OnStaticMeshEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+				},
+				{
+					.pSubscriber = &m_AnimatedEntities,
+					.ComponentAccesses =
+					{
+						{ R, AnimationComponent::Type() },
+						{ R, MeshComponent::Type() }
+					},
+					.ComponentGroups =
+					{
+						&transformGroup
+					},
+					.ExcludedComponentTypes =
+					{
+						PlayerBaseComponent::Type(),
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+				},
+				{
+					.pSubscriber = &m_PlayerEntities,
+					.ComponentAccesses =
+					{
+						{ NDA, PlayerBaseComponent::Type() },
+						{ R, AnimationComponent::Type() },
+						{ R, MeshComponent::Type() }
+					},
+					.ComponentGroups =
+					{
+						&transformGroup
+					},
+					.OnEntityAdded = std::bind(&RenderSystem::OnPlayerEntityAdded, this, std::placeholders::_1),
+					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
 				},
 				{
 					.pSubscriber = &m_DirectionalLightEntities,
 					.ComponentAccesses =
 					{
-						{ R, DirectionalLightComponent::Type() }, 
+						{ R, DirectionalLightComponent::Type() },
 						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					},
@@ -107,22 +139,8 @@ namespace LambdaEngine
 					},
 					.ComponentGroups =
 					{
-						&transformComponents
+						&transformGroup
 					}
-				},
-				{
-					.pSubscriber = &m_AnimatedEntities,
-					.ComponentAccesses =
-					{
-						{ R, AnimationComponent::Type() },
-						{ R, MeshComponent::Type() }
-					},
-					.ComponentGroups =
-					{
-						&transformComponents
-					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnAnimatedEntityRemoved, this, std::placeholders::_1)
 				},
 				{
 					.pSubscriber = &m_ParticleEmitters,
@@ -140,15 +158,16 @@ namespace LambdaEngine
 			RegisterSystem(systemReg);
 		}
 
+		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
 			swapChainDesc.DebugName		= "Renderer Swap Chain";
-			swapChainDesc.pWindow		= CommonApplication::Get()->GetActiveWindow().Get();
+			swapChainDesc.pWindow		= pActiveWindow;
 			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
 			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width			= 0;
-			swapChainDesc.Height		= 0;
+			swapChainDesc.Width			= pActiveWindow->GetWidth();
+			swapChainDesc.Height		= pActiveWindow->GetHeight();
 			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
 			swapChainDesc.SampleCount	= 1;
 			swapChainDesc.VerticalSync	= false;
@@ -201,6 +220,8 @@ namespace LambdaEngine
 			renderGraphDesc.Name						= "Default Rendergraph";
 			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
 			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
 			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
@@ -218,7 +239,7 @@ namespace LambdaEngine
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
 			}
-			
+
 			// Light Renderer
 			{
 				m_pLightRenderer = DBG_NEW LightRenderer();
@@ -345,7 +366,6 @@ namespace LambdaEngine
 			}
 		}
 
-		
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -453,8 +473,8 @@ namespace LambdaEngine
 		const ComponentArray<PointLightComponent>* pPointLightComponents = pECSCore->GetComponentArray<PointLightComponent>();
 		for (Entity entity : m_PointLightEntities.GetIDs())
 		{
-			const auto& pointLight 	= pPointLightComponents->GetData(entity);
-			const auto& position 	= pPositionComponents->GetData(entity);
+			const auto& pointLight 	= pPointLightComponents->GetConstData(entity);
+			const auto& position 	= pPositionComponents->GetConstData(entity);
 			if (pointLight.Dirty || position.Dirty)
 			{
 				UpdatePointLight(entity, position.Position, pointLight.ColorIntensity, pointLight.NearPlane, pointLight.FarPlane);
@@ -464,9 +484,9 @@ namespace LambdaEngine
 		ComponentArray<DirectionalLightComponent>* pDirLightComponents = pECSCore->GetComponentArray<DirectionalLightComponent>();
 		for (Entity entity : m_DirectionalLightEntities.GetIDs())
 		{
-			const auto& dirLight = pDirLightComponents->GetData(entity);
-			const auto& position = pPositionComponents->GetData(entity);
-			const auto& rotation = pRotationComponents->GetData(entity);
+			const auto& dirLight = pDirLightComponents->GetConstData(entity);
+			const auto& position = pPositionComponents->GetConstData(entity);
+			const auto& rotation = pRotationComponents->GetConstData(entity);
 			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
 			{
 				UpdateDirectionalLight(
@@ -485,66 +505,51 @@ namespace LambdaEngine
 		const ComponentArray<ViewProjectionMatricesComponent>* 	pViewProjComponents	= pECSCore->GetComponentArray<ViewProjectionMatricesComponent>();
 		for (Entity entity : m_CameraEntities.GetIDs())
 		{
-			const auto& cameraComp = pCameraComponents->GetData(entity);
+			const auto& cameraComp = pCameraComponents->GetConstData(entity);
 			if (cameraComp.IsActive)
 			{
-				const auto& positionComp = pPositionComponents->GetData(entity);
-				const auto& rotationComp = pRotationComponents->GetData(entity);
-				const auto& viewProjComp = pViewProjComponents->GetData(entity);
+				const auto& positionComp = pPositionComponents->GetConstData(entity);
+				const auto& rotationComp = pRotationComponents->GetConstData(entity);
+				const auto& viewProjComp = pViewProjComponents->GetConstData(entity);
 				UpdateCamera(positionComp.Position, rotationComp.Quaternion, cameraComp, viewProjComp);
 			}
 		}
 
 		ComponentArray<MeshComponent>*		pMeshComponents			= pECSCore->GetComponentArray<MeshComponent>();
 		ComponentArray<AnimationComponent>*	pAnimationComponents	= pECSCore->GetComponentArray<AnimationComponent>();
-		for (Entity entity : m_AnimatedEntities)
 		{
-			MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
-			AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
-			const auto&			positionComp	= pPositionComponents->GetData(entity);
-			const auto&			rotationComp	= pRotationComponents->GetData(entity);
-			const auto&			scaleComp		= pScaleComponents->GetData(entity);
-
-			if (!animationComp.IsPaused)
+			for (Entity entity : m_PlayerEntities)
 			{
-				MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
-				
-				auto meshEntryIt = m_MeshAndInstancesMap.find(key);
-				if (meshEntryIt != m_MeshAndInstancesMap.end())
-				{
-					UpdateAnimationBuffers(animationComp, meshEntryIt->second);
+				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
+				AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
+				const auto&			positionComp	= pPositionComponents->GetConstData(entity);
+				const auto&			rotationComp	= pRotationComponents->GetConstData(entity);
+				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
 
-					MeshEntry* pMeshEntry = &meshEntryIt->second;
-					m_AnimationsToUpdate.insert(pMeshEntry);
-					m_DirtyBLASs.insert(pMeshEntry);
-					m_TLASDirty = true;
-				}
+				UpdateAnimation(entity, meshComp, animationComp);
+				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(false, true, false));
 			}
 
-			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
+			for (Entity entity : m_AnimatedEntities)
 			{
-				glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
-				transform			*= glm::toMat4(rotationComp.Quaternion);
-				transform			= glm::scale(transform, scaleComp.Scale);
+				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
+				AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
+				const auto&			positionComp	= pPositionComponents->GetConstData(entity);
+				const auto&			rotationComp	= pRotationComponents->GetConstData(entity);
+				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
 
-				UpdateTransform(entity, transform);
+				UpdateAnimation(entity, meshComp, animationComp);
+				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 			}
 		}
 
-		for (Entity entity : m_RenderableEntities)
+		for (Entity entity : m_StaticMeshEntities)
 		{
-			const auto& positionComp	= pPositionComponents->GetData(entity);
-			const auto& rotationComp	= pRotationComponents->GetData(entity);
-			const auto& scaleComp		= pScaleComponents->GetData(entity);
+			const auto& positionComp	= pPositionComponents->GetConstData(entity);
+			const auto& rotationComp	= pRotationComponents->GetConstData(entity);
+			const auto& scaleComp		= pScaleComponents->GetConstData(entity);
 
-			if (positionComp.Dirty || rotationComp.Dirty || scaleComp.Dirty)
-			{
-				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
-				transform *= glm::toMat4(rotationComp.Quaternion);
-				transform = glm::scale(transform, scaleComp.Scale);
-
-				UpdateTransform(entity, transform);
-			}
+			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
 
 		// Particle Updates
@@ -578,10 +583,14 @@ namespace LambdaEngine
 
 	void RenderSystem::SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc)
 	{
+		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
+
 		RenderGraphDesc renderGraphDesc = {};
 		renderGraphDesc.Name						= name;
 		renderGraphDesc.pRenderGraphStructureDesc	= pRenderGraphStructureDesc;
 		renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+		renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+		renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 
 		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 		{
@@ -648,31 +657,45 @@ namespace LambdaEngine
 
 	}
 
-	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity)
+	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)
 	{
-		ECSCore* pECSCore	= ECSCore::GetInstance();
-		auto& positionComp	= pECSCore->GetComponent<PositionComponent>(entity);
-		auto& rotationComp	= pECSCore->GetComponent<RotationComponent>(entity);
-		auto& scaleComp		= pECSCore->GetComponent<ScaleComponent>(entity);
+		const ECSCore* pECSCore	= ECSCore::GetInstance();
+		const PositionComponent& positionComp	= pECSCore->GetConstComponent<PositionComponent>(entity);
+		const RotationComponent& rotationComp	= pECSCore->GetConstComponent<RotationComponent>(entity);
+		const ScaleComponent& scaleComp			= pECSCore->GetConstComponent<ScaleComponent>(entity);
 
+		return CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+	}
+
+	glm::mat4 RenderSystem::CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
 		glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
-		transform			= transform * glm::toMat4(rotationComp.Quaternion);
+
+		if (rotationalAxes.x && rotationalAxes.y && rotationalAxes.z)
+		{
+			transform = transform * glm::toMat4(rotationComp.Quaternion);
+		}
+		else if (rotationalAxes.x || rotationalAxes.y || rotationalAxes.z)
+		{
+			glm::quat rotation	= rotationComp.Quaternion;
+			rotation.x			*= rotationalAxes.x;
+			rotation.y			*= rotationalAxes.y;
+			rotation.z			*= rotationalAxes.z;
+			rotation			= glm::normalize(rotation);
+			transform			= transform * glm::toMat4(rotation);
+		}
+
 		transform			= glm::scale(transform, scaleComp.Scale);
 		return transform;
 	}
 
-	void RenderSystem::OnEntityAdded(Entity entity)
+	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
-		glm::mat4 transform = CreateEntityTransform(entity);
-		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
-	}
-
-	void RenderSystem::OnEntityRemoved(Entity entity)
-	{
-		RemoveEntityInstance(entity);
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
 	}
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
@@ -680,13 +703,17 @@ namespace LambdaEngine
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
-		glm::mat4 transform = CreateEntityTransform(entity);
-		AddEntityInstance(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
 	}
 
-	void RenderSystem::OnAnimatedEntityRemoved(Entity entity)
+	void RenderSystem::OnPlayerEntityAdded(Entity entity)
 	{
-		RemoveEntityInstance(entity);
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
@@ -695,9 +722,9 @@ namespace LambdaEngine
 		{
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
-			const auto& dirLight = pECSCore->GetComponent<DirectionalLightComponent>(entity);
-			const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
-			const auto& rotation = pECSCore->GetComponent<RotationComponent>(entity);
+			const auto& dirLight = pECSCore->GetConstComponent<DirectionalLightComponent>(entity);
+			const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
+			const auto& rotation = pECSCore->GetConstComponent<RotationComponent>(entity);
 
 			UpdateDirectionalLight(
 				dirLight.ColorIntensity,
@@ -722,15 +749,15 @@ namespace LambdaEngine
 	{
 		const ECSCore* pECSCore = ECSCore::GetInstance();
 
-		const auto& pointLight = pECSCore->GetComponent<PointLightComponent>(entity);
-		const auto& position = pECSCore->GetComponent<PositionComponent>(entity);
+		const auto& pointLight = pECSCore->GetConstComponent<PointLightComponent>(entity);
+		const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
 
 		uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
 
 		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
-		
+
 		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
 		{
 			m_PointLights.GetBack().TextureIndex = pointLightIndex;
@@ -804,8 +831,8 @@ namespace LambdaEngine
 	{
 		m_ParticleManager.OnEmitterEntityRemoved(entity);
 	}
-
-	void RenderSystem::AddEntityInstance(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
+	
+	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
@@ -883,11 +910,11 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pVertexWeightsBuffer != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pVertexWeightStagingBuffer, 0, meshEntry.pVertexWeightsBuffer, 0, vertexWeightBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexWeightStagingBuffer);
+						DeleteDeviceResource(pVertexWeightStagingBuffer);
 					}
 
 					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes });
-					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pVertexStagingBuffer);
+					DeleteDeviceResource(pVertexStagingBuffer);
 				}
 
 				// Indices
@@ -916,7 +943,7 @@ namespace LambdaEngine
 					VALIDATE(meshEntry.pIndexBuffer != nullptr);
 
 					m_PendingBufferUpdates.PushBack({ pIndexStagingBuffer, 0, meshEntry.pIndexBuffer, 0, indexBufferDesc.SizeInBytes });
-					m_ResourcesToRemove[m_ModFrameIndex].PushBack(pIndexStagingBuffer);
+					DeleteDeviceResource(pIndexStagingBuffer);
 				}
 
 				if (m_MeshShadersEnabled)
@@ -947,7 +974,7 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pMeshlets != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pMeshletStagingBuffer);
+						DeleteDeviceResource(pMeshletStagingBuffer);
 					}
 
 					// Unique Indices
@@ -976,7 +1003,7 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pUniqueIndices != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pUniqueIndicesStagingBuffer);
+						DeleteDeviceResource(pUniqueIndicesStagingBuffer);
 					}
 
 					// Primitive indicies
@@ -1005,7 +1032,24 @@ namespace LambdaEngine
 						VALIDATE(meshEntry.pPrimitiveIndices != nullptr);
 
 						m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pPrimitiveIndicesStagingBuffer);
+						DeleteDeviceResource(pPrimitiveIndicesStagingBuffer);
+					}
+				}
+
+				// Add Draw Arg Extensions.
+				{
+					meshEntry.DrawArgsMask = meshKey.EntityMask;
+					if (meshEntry.DrawArgsMask & ~EntityMaskManager::FetchDefaultEntityMask()) // If the entity has extensions, it will differ from the default mask, and then add them to the entry.
+					{
+						DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+						meshEntry.ExtensionGroups.PushBack(&extensionGroup);
+						extensionIndex = meshEntry.ExtensionGroups.GetSize();
+						meshEntry.HasExtensions = true;
+					}
+					else
+					{
+						meshEntry.ExtensionGroups.PushBack(nullptr);
+						extensionIndex = 0;
 					}
 				}
 
@@ -1018,28 +1062,6 @@ namespace LambdaEngine
 					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 					m_SBTRecordsDirty = true;
 				}
-
-			}
-
-			// Add Draw Arg Extensions.
-			{
-				bool hasExtensions = false;
-				MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
-				uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
-				if (entityMask > 1) // If the entity has extensions add them to the entry.
-				{
-					DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
-					meshEntry.ExtensionGroups.PushBack(&extensionGroup);
-					extensionIndex = meshEntry.ExtensionGroups.GetSize();
-					hasExtensions = true;
-				}
-				else
-				{
-					meshEntry.ExtensionGroups.PushBack(nullptr);
-					extensionIndex = 0;
-				}
-
-				meshEntry.HasExtensions = hasExtensions;
 			}
 		}
 
@@ -1052,7 +1074,7 @@ namespace LambdaEngine
 			{
 				const Material* pMaterial = ResourceManager::GetMaterial(materialGUID);
 				VALIDATE(pMaterial != nullptr);
-				
+
 				if (!m_ReleasedMaterialIndices.IsEmpty())
 				{
 					materialIndex = m_ReleasedMaterialIndices.GetBack();
@@ -1110,11 +1132,15 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			AccelerationStructureInstance asInstance = {};
-			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= materialIndex;
-			asInstance.Mask				= 0xFF;
-			asInstance.SBTRecordOffset	= 0;
-			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Transform						= glm::transpose(transform);
+			asInstance.CustomIndex						= materialIndex;
+			asInstance.Mask								= 0xFF;
+			asInstance.SBTRecordOffset					= 0;
+			asInstance.Flags							= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+
+			//If the BLAS is already built, set it here
+			if (meshAndInstancesIt->second.pBLAS != nullptr)
+				asInstance.AccelerationStructureAddress	= meshAndInstancesIt->second.pBLAS->GetDeviceAdress();
 
 			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
@@ -1133,19 +1159,16 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		uint32 drawArgMask = EntityMaskManager::FetchEntityMask(entity);
-		MeshEntry& meshEntry = m_MeshAndInstancesMap[meshKey];
-		meshEntry.DrawArgsMask = drawArgMask;
-		for (uint32 mask : m_RequiredDrawArgs)
+		for (const DrawArgMaskDesc& maskDesc : m_RequiredDrawArgs)
 		{
-			if ((mask & drawArgMask) > 0)
+			if ((meshAndInstancesIt->second.DrawArgsMask & maskDesc.IncludeMask) == maskDesc.IncludeMask && (meshAndInstancesIt->second.DrawArgsMask & maskDesc.ExcludeMask) == 0)
 			{
-				m_DirtyDrawArgs.insert(mask);
+				m_DirtyDrawArgs.insert(maskDesc);
 			}
 		}
 	}
 
-	void RenderSystem::RemoveEntityInstance(Entity entity)
+	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
@@ -1169,11 +1192,17 @@ namespace LambdaEngine
 		{
 			uint32& materialInstanceCount = m_MaterialInstanceCounts[rasterInstance.MaterialIndex];
 			materialInstanceCount--;
-			
+
 			if (materialInstanceCount == 0)
 			{
 				//Mark material as empty
 				m_ReleasedMaterialIndices.PushBack(rasterInstance.MaterialIndex);
+				auto materialToRemoveIt = std::find_if(m_MaterialMap.begin(), m_MaterialMap.end(), [rasterInstance](const std::pair<GUID_Lambda, uint32>& pair) {return rasterInstance.MaterialIndex == pair.second; });
+
+				if (materialToRemoveIt != m_MaterialMap.end())
+				{
+					m_MaterialMap.erase(materialToRemoveIt);
+				}
 			}
 		}
 
@@ -1184,6 +1213,31 @@ namespace LambdaEngine
 			asInstances.PopBack();
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
+		}
+
+		// Remove extension
+		{
+			// Fetch the current instance and its extension index.
+			const Instance& currentInstance = rasterInstances[instanceIndex];
+			uint32 extensionIndex = currentInstance.ExtensionIndex;
+
+			// extensionIndex == 0 means the mesh instance does not have an extension
+			if (extensionIndex != 0)
+			{
+				// Set the last entity to use the extension group at the previous removed entity position.
+				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
+				const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
+				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
+				instance.ExtensionIndex = extensionIndex;
+
+				// Remove the group in the list and replace it with the last group.
+				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
+				extensionGroups[instanceIndex] = extensionGroups.GetBack();
+				extensionGroups.PopBack();
+
+				// Remove data from the storage.
+				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+			}
 		}
 
 		rasterInstances[instanceIndex] = rasterInstances.GetBack();
@@ -1203,30 +1257,39 @@ namespace LambdaEngine
 		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBLAS);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pIndexBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pRasterInstanceBuffer);
-			m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pASInstanceBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pBLAS);
+			DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
+			DeleteDeviceResource(meshAndInstancesIt->second.pPrimitiveIndices);
+			DeleteDeviceResource(meshAndInstancesIt->second.pMeshlets);
+			DeleteDeviceResource(meshAndInstancesIt->second.pRasterInstanceBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pASInstanceBuffer);
 
 			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
 			{
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimatedVertexBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pAnimationDescriptorSet);
+				DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
 
 				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pBoneMatrixBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
+
+				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
+				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pStagingMatrixBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pVertexWeightsBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
+
+				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
+				DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
 			}
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
+				DeleteDeviceResource(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
+				DeleteDeviceResource(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 
 			m_SBTRecordsDirty = true;
@@ -1323,13 +1386,43 @@ namespace LambdaEngine
 			lightTextureUpdate.PointLightIndex = index;
 			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
 			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
-		
+
 			m_PointLightDirty = true;
 		}
 	}
 
-	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& transform)
+	void RenderSystem::UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp)
 	{
+		if (animationComp.IsPaused)
+			return;
+
+		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
+
+		auto meshEntryIt = m_MeshAndInstancesMap.find(key);
+		if (meshEntryIt != m_MeshAndInstancesMap.end())
+		{
+			UpdateAnimationBuffers(animationComp, meshEntryIt->second);
+
+			MeshEntry* pMeshEntry = &meshEntryIt->second;
+			m_AnimationsToUpdate.insert(pMeshEntry);
+			m_DirtyBLASs.insert(pMeshEntry);
+			m_TLASDirty = true;
+		}
+	}
+
+	void RenderSystem::UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
+		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+			return;
+
+		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+
+		//LOG_ERROR("Position: %f, %f, %f", positionComp.Position.x, positionComp.Position.y, positionComp.Position.z);
+		//LOG_ERROR("Rotation: %f, %f, %f, %f", rotationComp.Quaternion.x, rotationComp.Quaternion.y, rotationComp.Quaternion.z, rotationComp.Quaternion.w);
+		//LOG_ERROR("Scale: %f, %f, %f", scaleComp.Scale.x, scaleComp.Scale.y, scaleComp.Scale.z);
+		//LOG_ERROR("Transform: %s\n", glm::to_string(transform).c_str());
+
+
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
@@ -1371,23 +1464,30 @@ namespace LambdaEngine
 		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 	}
 
+	void RenderSystem::DeleteDeviceResource(DeviceChild* pDeviceResource)
+	{
+		m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDeviceResource);
+	}
+
 	void RenderSystem::CleanBuffers()
 	{
 		// Todo: Better solution for this, save some Staging Buffers maybe so they don't get recreated all the time?
 		TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
-		for (DeviceChild* pResource : resourcesToRemove)
+		for (uint32 i = 0; i < resourcesToRemove.GetSize(); i++)
 		{
+			DeviceChild* pResource = resourcesToRemove[i];
 			SAFERELEASE(pResource);
 		}
 
 		resourcesToRemove.Clear();
 	}
 
-	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, uint32 mask) const
+	void RenderSystem::CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const
 	{
 		for (auto& meshEntryPair : m_MeshAndInstancesMap)
 		{
-			if ((meshEntryPair.second.DrawArgsMask & mask) > 0)
+			uint32 mask = meshEntryPair.second.DrawArgsMask;
+			if ((mask & requestedMaskDesc.IncludeMask) == requestedMaskDesc.IncludeMask && (mask & requestedMaskDesc.ExcludeMask) == 0)
 			{
 				DrawArg drawArg = { };
 
@@ -1488,9 +1588,9 @@ namespace LambdaEngine
 		{
 			if (meshEntry.pBoneMatrixBuffer)
 			{
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pStagingMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pBoneMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshEntry.pAnimationDescriptorSet);
+				DeleteDeviceResource(meshEntry.pStagingMatrixBuffer);
+				DeleteDeviceResource(meshEntry.pBoneMatrixBuffer);
+				DeleteDeviceResource(meshEntry.pAnimationDescriptorSet);
 			}
 
 			BufferDesc matrixBufferDesc;
@@ -1576,7 +1676,7 @@ namespace LambdaEngine
 				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
 					if (pStagingBuffer != nullptr)
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+						DeleteDeviceResource(pStagingBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName	= "Raster Instance Staging Buffer";
@@ -1595,7 +1695,7 @@ namespace LambdaEngine
 				if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pRasterInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
 					if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer != nullptr)
-						m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pRasterInstanceBuffer);
+						DeleteDeviceResource(pDirtyInstanceBufferEntry->pRasterInstanceBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName		= "Raster Instance Buffer";
@@ -1634,7 +1734,7 @@ namespace LambdaEngine
 
 			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+				if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Material Properties Staging Buffer";
@@ -1652,7 +1752,7 @@ namespace LambdaEngine
 
 			if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
-				if (m_pMaterialParametersBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pMaterialParametersBuffer);
+				if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Material Properties Buffer";
@@ -1774,7 +1874,7 @@ namespace LambdaEngine
 
 				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+					if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName = "AS Instance Staging Buffer";
@@ -1792,7 +1892,7 @@ namespace LambdaEngine
 
 				if (pDirtyInstanceBufferEntry->pASInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pASInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
-					if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pDirtyInstanceBufferEntry->pASInstanceBuffer);
+					if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) DeleteDeviceResource(pDirtyInstanceBufferEntry->pASInstanceBuffer);
 
 					BufferDesc bufferDesc = {};
 					bufferDesc.DebugName = "AS Instance Buffer";
@@ -1845,7 +1945,7 @@ namespace LambdaEngine
 
 			if (m_pCompleteInstanceBuffer == nullptr || m_pCompleteInstanceBuffer->GetDesc().SizeInBytes < requiredCompleteInstancesBufferSize)
 			{
-				if (m_pCompleteInstanceBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pCompleteInstanceBuffer);
+				if (m_pCompleteInstanceBuffer != nullptr) DeleteDeviceResource(m_pCompleteInstanceBuffer);
 
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName	= "Complete Instance Buffer";
@@ -1869,7 +1969,7 @@ namespace LambdaEngine
 			//Recreate TLAS completely if oldInstanceCount != newInstanceCount
 			if (m_MaxInstances < newInstanceCount)
 			{
-				if (m_pTLAS != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pTLAS);
+				if (m_pTLAS != nullptr) DeleteDeviceResource(m_pTLAS);
 
 				m_MaxInstances = newInstanceCount;
 
@@ -1915,7 +2015,7 @@ namespace LambdaEngine
 			uint32 diff = pointLightCount - m_CubeTextures.GetSize();
 
 			// TODO: Create inteface for changing resolution
-			const uint32 width = 512; 
+			const uint32 width = 512;
 			const uint32 height = 512;
 
 			uint32 prevSubImageCount = m_CubeSubImageTextureViews.GetSize();
@@ -1983,20 +2083,18 @@ namespace LambdaEngine
 			{
 				uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
 
-				TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_ModFrameIndex];
-
 				// Remove Cube Texture Context for removed pointlights
 				for (uint32 r = 0; r < diff; r++)
 				{
-					resourcesToRemove.PushBack(m_CubeTextures.GetBack());
+					DeleteDeviceResource(m_CubeTextures.GetBack());
 					m_CubeTextures.PopBack();
 
-					resourcesToRemove.PushBack(m_CubeTextureViews.GetBack());
+					DeleteDeviceResource(m_CubeTextureViews.GetBack());
 					m_CubeTextureViews.PopBack();
 
 					for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
 					{
-						resourcesToRemove.PushBack(m_CubeSubImageTextureViews.GetBack());
+						DeleteDeviceResource(m_CubeSubImageTextureViews.GetBack());
 						m_CubeSubImageTextureViews.PopBack();
 					}
 				}
@@ -2042,7 +2140,7 @@ namespace LambdaEngine
 
 			if (pCurrentStagingBuffer == nullptr || pCurrentStagingBuffer->GetDesc().SizeInBytes < lightBufferSize)
 			{
-				if (pCurrentStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pCurrentStagingBuffer);
+				if (pCurrentStagingBuffer != nullptr) DeleteDeviceResource(pCurrentStagingBuffer);
 
 				BufferDesc lightCopyBufferDesc = {};
 				lightCopyBufferDesc.DebugName		= "Lights Copy Buffer";
@@ -2061,7 +2159,7 @@ namespace LambdaEngine
 
 			if (m_pLightsBuffer == nullptr || m_pLightsBuffer->GetDesc().SizeInBytes < lightBufferSize)
 			{
-				if (m_pLightsBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(m_pLightsBuffer);
+				if (m_pLightsBuffer != nullptr) DeleteDeviceResource(m_pLightsBuffer);
 
 				BufferDesc lightBufferDesc = {};
 				lightBufferDesc.DebugName		= "Lights Buffer";
@@ -2084,17 +2182,17 @@ namespace LambdaEngine
 
 		if (!m_DirtyDrawArgs.empty())
 		{
-			for (uint32 drawArgMask : m_DirtyDrawArgs)
+			for (const DrawArgMaskDesc& maskDesc : m_DirtyDrawArgs)
 			{
 				TArray<DrawArg> drawArgs;
-				CreateDrawArgs(drawArgs, drawArgMask);
+				CreateDrawArgs(drawArgs, maskDesc);
 
 				//Create Resource Update for RenderGraph
-				ResourceUpdateDesc resourceUpdateDesc					= {};
-				resourceUpdateDesc.ResourceName							= SCENE_DRAW_ARGS;
-				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMask	= drawArgMask;
-				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs		= drawArgs.GetData();
-				resourceUpdateDesc.ExternalDrawArgsUpdate.Count			= drawArgs.GetSize();
+				ResourceUpdateDesc resourceUpdateDesc						= {};
+				resourceUpdateDesc.ResourceName								= SCENE_DRAW_ARGS;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.DrawArgsMaskDesc	= maskDesc;
+				resourceUpdateDesc.ExternalDrawArgsUpdate.pDrawArgs			= drawArgs.GetData();
+				resourceUpdateDesc.ExternalDrawArgsUpdate.Count				= drawArgs.GetSize();
 
 				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 			}

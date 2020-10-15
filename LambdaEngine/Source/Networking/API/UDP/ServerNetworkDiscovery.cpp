@@ -17,7 +17,7 @@ namespace LambdaEngine
 		m_Lock(),
 		m_NameOfGame()
 	{
-
+		m_Transceiver.SetIgnoreSaltMissmatch(true);
 	}
 
 	ServerNetworkDiscovery::~ServerNetworkDiscovery()

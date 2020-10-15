@@ -164,7 +164,6 @@ workspace "LambdaEngine"
 
 	-- Dependencies
 	group "Dependencies"
-		include "Dependencies/WavLib"
 		include "Dependencies/imgui"
 
 		-- imnodes Project
@@ -322,14 +321,12 @@ workspace "LambdaEngine"
 			"Dependencies/PhysX/include",
 			"Dependencies/rapidjson/include",
 			"Dependencies/stb",
-			"Dependencies/WavLib",
 			"Dependencies/NoesisGUI/Include",
 			"Dependencies/NoesisGUI/Providers/Include",
 		}
 
 		links
 		{
-			"WavLib",
 			"ImGui",
 			"imnodes",
 		}

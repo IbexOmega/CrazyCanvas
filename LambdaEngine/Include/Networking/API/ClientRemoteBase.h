@@ -85,6 +85,7 @@ namespace LambdaEngine
 		std::atomic_bool m_TerminationRequested;
 		std::atomic_bool m_TerminationApproved;
 		bool m_UsePingSystem;
+		SpinLock m_LockReceivedPackets;
 		std::atomic_int8_t m_BufferIndex;
 		TArray<NetworkSegment*> m_ReceivedPackets[2];
 	};

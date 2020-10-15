@@ -239,7 +239,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -316,7 +316,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -331,6 +331,19 @@ namespace LambdaEngine
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 			}
+		}
+
+		if (pBuildDesc->Update)
+		{
+			accelerationStructureBuildInfo.update					= VK_TRUE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		else
+		{
+			accelerationStructureBuildInfo.update					= VK_FALSE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= VK_NULL_HANDLE;
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
 		}
 
 		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
@@ -430,12 +443,28 @@ namespace LambdaEngine
 		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
 	}
 
-	void CommandListVK::TransitionBarrier(Texture* pTexture, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState)
+	void CommandListVK::TransitionBarrier(
+		Texture* pTexture, 
+		FPipelineStageFlags srcStage, 
+		FPipelineStageFlags dstStage, 
+		uint32 srcAccessMask, 
+		uint32 destAccessMask,
+		ETextureState beforeState, 
+		ETextureState afterState)
 	{
 		TransitionBarrier(pTexture, srcStage, dstStage, srcAccessMask, destAccessMask, 0, pTexture->GetDesc().ArrayCount, beforeState, afterState);
 	}
 
-	void CommandListVK::TransitionBarrier(Texture* pTexture, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState)
+	void CommandListVK::TransitionBarrier(
+		Texture* pTexture, 
+		FPipelineStageFlags srcStage, 
+		FPipelineStageFlags dstStage, 
+		uint32 srcAccessMask, 
+		uint32 destAccessMask,
+		uint32 arrayIndex, 
+		uint32 arrayCount, 
+		ETextureState beforeState, 
+		ETextureState afterState)
 	{
 		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(pTexture);
 		const TextureDesc& desc = pTextureVk->GetDesc();
@@ -453,6 +482,7 @@ namespace LambdaEngine
 		imageBarrier.subresourceRange.levelCount		= desc.Miplevels;
 		imageBarrier.subresourceRange.baseArrayLayer	= arrayIndex;
 		imageBarrier.subresourceRange.layerCount		= arrayCount;
+		imageBarrier.subresourceRange.aspectMask		= pTextureVk->GetAspectFlags();
 		imageBarrier.srcAccessMask						= ConvertMemoryAccessFlags(srcAccessMask);
 		imageBarrier.dstAccessMask						= ConvertMemoryAccessFlags(destAccessMask);
 

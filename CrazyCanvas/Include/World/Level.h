@@ -11,14 +11,23 @@
 
 #include "ECS/Entity.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 struct LevelCreateDesc
 {
 	LambdaEngine::String Name	=	"";
 	LambdaEngine::TArray<LevelModule*>		LevelModules;
 };
 
-class Level
+class Level : public LambdaEngine::IClientEntityAccessor
 {
+	struct LevelEntitiesOfType
+	{
+		LambdaEngine::TArray<uint64> SaltUIDs;
+		LambdaEngine::TArray<LambdaEngine::Entity> Entities;
+		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>> ChildEntities;
+	};
+
 public:
 	DECL_UNIQUE_CLASS(Level);
 
@@ -31,12 +40,23 @@ public:
 	// Server & Client Loads Level, Client only loads clientside level objects,
 	// Server then sends packages about server side entities that need to be created in the client, those should use this method
 	// This method should delegate to LevelObjectCreator
-	void CreateSpecialObject(ESpecialObjectType specialObjectType, void* pData, const glm::vec3& translation, bool fromServer);
+	bool CreateObject(ESpecialObjectType specialObjectType, void* pData);
 
-	uint32 GetEntityCount(ESpecialObjectType specialObjectType) const;
+	/*
+	*	Spawns a player at a random Spawnpoint, the player is forced to be local
+	*/
+	void SpawnPlayer(
+		const LambdaEngine::MeshComponent& meshComponent,
+		const LambdaEngine::AnimationComponent& animationComponent,
+		const LambdaEngine::CameraDesc* pCameraDesc);
+
+	LambdaEngine::Entity* GetEntities(ESpecialObjectType specialObjectType, uint32& countOut);
+
+private:
+	virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
 
 private:
 	LambdaEngine::String m_Name = "";
-	LambdaEngine::THashTable<ESpecialObjectType, LambdaEngine::TArray<uint32>> m_EntityTypeMap;
-	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
+	LambdaEngine::THashTable<ESpecialObjectType, uint32> m_EntityTypeMap;
+	LambdaEngine::TArray<LevelEntitiesOfType> m_Entities;
 };

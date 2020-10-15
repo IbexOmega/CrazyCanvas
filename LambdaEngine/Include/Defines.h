@@ -75,6 +75,12 @@
 	DECL_REMOVE_COPY(Typename); \
 	DECL_REMOVE_MOVE(Typename); \
 
+#define DECL_SINGLETON_CLASS(Typename) \
+		DECL_REMOVE_COPY(Typename); \
+		DECL_REMOVE_MOVE(Typename); \
+		Typename() = default; \
+		~Typename() = default
+
 /*
 * Difference between this and the other DECL_INTERFACE is that this does not have a virtual destructor.
 * This is desired since we want Release to be used.
@@ -92,7 +98,7 @@
 * Helper Macros
 */ 
 
-#define ZERO_MEMORY(memory, size)	memset((void*)memory, 0, size)
+#define ZERO_MEMORY(memory, size)	memset(reinterpret_cast<void*>(memory), 0, size)
 #define ARR_SIZE(arr)				sizeof(arr) / sizeof(arr[0])
 
 /*

@@ -20,23 +20,35 @@
 
 #include <argh/argh.h>
 
-#include "Game/ECS/Systems/Networking/ServerSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+
+#include "World/Level.h"
+#include "World/LevelManager.h"
 
 using namespace LambdaEngine;
 
 ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
+	SAFEDELETE(m_pLevel);
 }
 
 void ServerState::Init()
 {
+	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &ServerState::OnClientConnected);
+	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
 	//NetworkDiscovery::EnableServer("Crazy Canvas", 4444, this);
+
+	// Load scene
+	{
+		m_pLevel = LevelManager::LoadLevel(0);
+		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+	}
 
 	ServerSystem::GetInstance().Start();
 }
@@ -47,12 +59,54 @@ bool ServerState::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
+bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event)
+{
+	BinaryEncoder* pEncoder = event.pEncoder;
+	ServerBase* pServer = event.pServer;
+
+	pEncoder->WriteUInt8(pServer->GetClientCount());
+
+	return true;
+}
+
+bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
+{
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	IClient* pClient = event.pClient;
+
+	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	uint32 otherPlayerCount = 0;
+	Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, otherPlayerCount);
+
+	for (uint32 i = 0; i < otherPlayerCount; i++)
+	{
+		Entity otherPlayerEntity = pOtherPlayerEntities[i];
+		const PositionComponent& positionComponent = pPositionComponents->GetData(otherPlayerEntity);
+
+		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+		BinaryEncoder encoder3(pPacket);
+		encoder3.WriteBool(false);
+		encoder3.WriteInt32((int32)otherPlayerEntity);
+		encoder3.WriteVec3(positionComponent.Position);
+		pClient->SendReliable(pPacket, nullptr);
+	}
+
+	glm::vec3 position(0.0f, 10.0f, 0.0f);
+
+	CreatePlayerDesc createPlayerDesc =
+	{
+		.pClient		= pClient,
+		.Position		= position,
+		.Forward		= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+		.Scale			= glm::vec3(1.0f),
+	};
+
+	m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
+	return true;
+}
+
 void ServerState::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
-}
-
-void ServerState::OnNetworkDiscoveryPreTransmit(const BinaryEncoder& encoder)
-{
-	UNREFERENCED_VARIABLE(encoder);
 }

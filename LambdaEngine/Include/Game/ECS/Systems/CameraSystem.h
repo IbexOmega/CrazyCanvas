@@ -5,6 +5,7 @@
 
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
 
 namespace LambdaEngine
 {
@@ -28,13 +29,14 @@ namespace LambdaEngine
 		CameraSystem() = default;
 
 		// MoveFreeCamera translates and rotates a free camera
-		void MoveFreeCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp);
+		void MoveFreeCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotationComp, const FreeCameraComponent& freeCamComp);
 		// MoveFPSCamera translates and rotates an FPS camera
-		void MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FPSControllerComponent& FPSComp);
+		void MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotationComp, const FPSControllerComponent& FPSComp);
 		void RotateCamera(float32 dt, float32 mouseSpeedFactor, const glm::vec3& forward, glm::quat& rotation);
-		void RenderFrustum(Entity entity);
+		void RenderFrustum(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp);
 
 	private:
+		IDVector	m_AttachedCameraEntities;
 		IDVector	m_CameraEntities;
 		bool		m_CIsPressed	= false;
 		bool		m_MouseEnabled	= false;
