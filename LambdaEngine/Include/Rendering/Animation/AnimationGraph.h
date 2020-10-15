@@ -122,9 +122,16 @@ namespace LambdaEngine
 			m_OnFinished = onFinished;
 		}
 
-		FORCEINLINE const String& GetName() const
+		FORCEINLINE void SetOutputNode(AnimationNode* pOutput)
 		{
-			return m_Name;
+			m_pFinalNode->SetInputNode(pOutput);
+		}
+
+		FORCEINLINE float64 GetNormalizedTime() const
+		{
+			const float64 duration	= m_pFinalNode->GetDurationInSeconds();
+			const float64 local		= m_pFinalNode->GetLocalTimeInSeconds();
+			return local / duration;
 		}
 
 		FORCEINLINE const TArray<SQT>& GetCurrentFrame() const
@@ -132,9 +139,14 @@ namespace LambdaEngine
 			return m_pFinalNode->GetResult();
 		}
 
-		FORCEINLINE void SetOutputNode(AnimationNode* pOutput)
+		FORCEINLINE const String& GetName() const
 		{
-			m_pFinalNode->SetInputNode(pOutput);
+			return m_Name;
+		}
+
+		FORCEINLINE AnimationGraph* GetOwner() const
+		{
+			return m_pOwnerGraph;
 		}
 
 	private:

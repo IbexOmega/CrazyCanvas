@@ -26,18 +26,14 @@ namespace LambdaEngine
 
 		// Only transition if the clip has reached correct timing
 		AnimationState& fromState = m_pOwnerGraph->GetState(m_From);
-		const float64 normalizedTime = 0.5f;// fromState.GetNormlizedTime();
+		const float64 normalizedTime = fromState.GetNormalizedTime();
 
-		LOG_INFO("normalizedTime=%.4f, m_FromBeginAt=%.4f", normalizedTime, m_FromBeginAt);
+		//LOG_INFO("normalizedTime=%.4f, m_FromBeginAt=%.4f", normalizedTime, m_FromBeginAt);
 
 		// This makes sure that we loop around one time if we start a transition after the sync-point
-		if (normalizedTime >= m_FromBeginAt && m_IsActive)
+		if (normalizedTime >= m_FromBeginAt)
 		{
 			m_LocalClock = normalizedTime;
-		}
-		else
-		{
-			m_IsActive = true;
 		}
 
 		// Calculate deltatime, used for determine if we should finish transition
@@ -124,7 +120,7 @@ namespace LambdaEngine
 	ClipNode* AnimationState::CreateClipNode(GUID_Lambda animationGUID, float64 playbackSpeed, bool isLooping)
 	{
 		void* pMemory = m_NodeAllocator.Allocate<ClipNode>();
-		ClipNode* pClipNode = new(pMemory) ClipNode(animationGUID, playbackSpeed);
+		ClipNode* pClipNode = new(pMemory) ClipNode(this, animationGUID, playbackSpeed, isLooping);
 		m_Nodes.EmplaceBack(pClipNode);
 		return pClipNode;
 	}
@@ -132,7 +128,7 @@ namespace LambdaEngine
 	BlendNode* AnimationState::CreateBlendNode(AnimationNode* pIn0, AnimationNode* pIn1, const BlendInfo& blendInfo)
 	{
 		void* pMemory = m_NodeAllocator.Allocate<BlendNode>();
-		BlendNode* pBlendNote = new(pMemory) BlendNode(pIn0, pIn1, blendInfo);
+		BlendNode* pBlendNote = new(pMemory) BlendNode(this, pIn0, pIn1, blendInfo);
 		m_Nodes.EmplaceBack(pBlendNote);
 		return pBlendNote;
 	}
@@ -140,7 +136,7 @@ namespace LambdaEngine
 	OutputNode* AnimationState::CreateOutputNode(AnimationNode* pInput)
 	{
 		void* pMemory = m_NodeAllocator.Allocate<OutputNode>();
-		OutputNode* pOutput = new(pMemory) OutputNode(pInput);
+		OutputNode* pOutput = new(pMemory) OutputNode(this, pInput);
 		m_Nodes.EmplaceBack(pOutput);
 		return pOutput;
 	}
@@ -185,28 +181,25 @@ namespace LambdaEngine
 
 	void AnimationGraph::Tick(float64 deltaTimeInSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton)
 	{
+		AnimationState& currentState = GetCurrentState();
+		currentState.Tick(skeleton, deltaTimeInSeconds);
+
+		// Handle transition
 		if (IsTransitioning())
 		{
-			AnimationState& fromState = GetCurrentState();
-			fromState.Tick(skeleton, deltaTimeInSeconds);
-
 			Transition& currentTransition = GetCurrentTransition();
 			currentTransition.Tick(deltaTimeInSeconds);
 
-			LOG_INFO("Weight=%.4f, LocalTime=%.4f", currentTransition.GetWeight(), fromState.GetNormlizedTime());
+			LOG_INFO("Weight=%.4f, LocalTime=%.4f", currentTransition.GetWeight(), currentState.GetNormalizedTime());
 
 			VALIDATE(HasState(currentTransition.To()));
+
 			AnimationState& toState = GetState(currentTransition.To());
 			if (currentTransition.GetWeight() > 0.0f)
 			{
-				//if (!toState.IsPlaying())
-				//{
-				//	toState.StartUp(globalTimeInSeconds, currentTransition.m_ToBeginAt);
-				//}
-
 				toState.Tick(skeleton, deltaTimeInSeconds);
 
-				BinaryInterpolator interpolator(fromState.GetCurrentFrame(), toState.GetCurrentFrame(), m_TransitionResult);
+				BinaryInterpolator interpolator(currentState.GetCurrentFrame(), toState.GetCurrentFrame(), m_TransitionResult);
 				interpolator.Interpolate(currentTransition.GetWeight());
 				if (!m_IsBlending)
 				{
@@ -215,28 +208,11 @@ namespace LambdaEngine
 
 				if (currentTransition.IsFinished())
 				{
+					LOG_INFO("FINISHED TRANSITION", currentTransition.GetWeight(), currentState.GetNormalizedTime());
+					
 					FinishTransition();
 				}
 			}
-		}
-		else
-		{
-			AnimationState& currentState = GetCurrentState();
-			// If the currentState is current but not playing we must start it
-			//if (!currentState.IsPlaying())
-			//{
-			//	currentState.StartUp(globalTimeInSeconds);
-			//}
-
-			currentState.Tick(skeleton, deltaTimeInSeconds);
-			
-			//if (currentState.IsFinished())
-			//{
-			//	currentState.OnFinished();
-			//}
-			//
-
-			//LOG_INFO("LocalTime=%.4f RunningTime=%.4f", currentState.GetNormlizedTime(), currentState.m_RunningTime);
 		}
 	}
 
@@ -348,7 +324,7 @@ namespace LambdaEngine
 	void AnimationGraph::MakeCurrentState(const String& name)
 	{
 		// Do nothing if we already are in correct state
-		if (GetCurrentState().GetName() != name)
+		if (GetCurrentState().GetName() == name)
 		{
 			return;
 		}

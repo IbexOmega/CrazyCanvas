@@ -32,18 +32,59 @@ namespace LambdaEngine
 	* AnimationNode
 	*/
 
+	class AnimationState;
+
 	class AnimationNode
 	{
 	public:
-		AnimationNode() = default;
+		inline AnimationNode(AnimationState* pParent)
+			: m_pParent(pParent)
+		{
+			VALIDATE(m_pParent != nullptr);
+		}
+
 		virtual ~AnimationNode() = default;
 
 		virtual void Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds) = 0;
 		virtual void Reset() = 0;
 
-		virtual float64 GetDurationInSeconds() const = 0;
+		virtual float64 GetDurationInSeconds() const	= 0;
+		virtual float64 GetLocalTimeInSeconds() const	= 0;
 
 		virtual const TArray<SQT>& GetResult() const = 0;
+
+	protected:
+		AnimationState* m_pParent;
+	};
+
+	/*
+	* ClipTrigger
+	*/
+
+	class ClipNode;
+	class AnimationGraph;
+
+	struct ClipTrigger
+	{
+		using TriggerFunc = std::function<void(const ClipNode&, AnimationGraph&)>;
+
+		inline ClipTrigger()
+			: TriggerAt(0.0)
+			, Func()
+			, IsTriggered(false)
+		{
+		}
+
+		inline ClipTrigger(float64 triggerAt, TriggerFunc func)
+			: TriggerAt(triggerAt)
+			, Func(func)
+			, IsTriggered(false)
+		{
+		}
+
+		float64		TriggerAt;
+		TriggerFunc Func;
+		bool		IsTriggered;
 	};
 
 	/*
@@ -53,17 +94,19 @@ namespace LambdaEngine
 	class ClipNode : public AnimationNode
 	{
 	public:
-		ClipNode(GUID_Lambda animationGUID, float64 playbackSpeed, bool isLooping = true);
+		ClipNode(AnimationState* pParent, GUID_Lambda animationGUID, float64 playbackSpeed, bool isLooping = true);
 		~ClipNode() = default;
 
 		virtual void Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds) override;
 
 		virtual void Reset() override
 		{
-			m_IsPlaying		 = false;
-			m_RunningTime	 = 0.0;
-			m_NormalizedTime = 0.0;
-			m_LocalTimeInSeconds = 0.0;
+			m_RunningTime			= 0.0;
+			m_NormalizedTime		= 0.0;
+			m_LocalTimeInSeconds	= 0.0;
+			m_IsPlaying				= false;
+
+			ResetTriggers();
 		}
 
 		virtual const TArray<SQT>& GetResult() const override
@@ -76,6 +119,16 @@ namespace LambdaEngine
 			return m_DurationInSeconds;
 		}
 
+		virtual float64 GetLocalTimeInSeconds() const override
+		{
+			return m_LocalTimeInSeconds;
+		}
+
+		FORCEINLINE void AddTrigger(const ClipTrigger& trigger)
+		{
+			m_Triggers.EmplaceBack(trigger);
+		}
+
 		FORCEINLINE void SetIsLooping(bool isLooping)
 		{
 			m_IsLooping = isLooping;
@@ -86,10 +139,55 @@ namespace LambdaEngine
 			m_NumLoops = numLoops;
 		}
 
+		FORCEINLINE float64 GetRunningTime() const
+		{
+			return m_RunningTime;
+		}
+
+		FORCEINLINE Animation* GetAnimation() const
+		{
+			return m_pAnimation;
+		}
+
+		FORCEINLINE float64 GetPlaybackSpeed() const
+		{
+			return m_PlaybackSpeed;
+		}
+
+		FORCEINLINE float64 GetNormalizedTime() const
+		{
+			return m_NormalizedTime;
+		}
+
+		FORCEINLINE bool IsPlaying() const
+		{
+			return m_IsPlaying;
+		}
+
+		FORCEINLINE bool IsLooping() const
+		{
+			return m_IsLooping;
+		}
+
 	private:
 		glm::vec3 SamplePosition(Animation::Channel& channel, float64 time);
 		glm::vec3 SampleScale(Animation::Channel& channel, float64 time);
 		glm::quat SampleRotation(Animation::Channel& channel, float64 time);
+
+		void OnLoopFinish();
+		
+		FORCEINLINE bool IsLoopFinished()
+		{
+			return m_LoopFinished;
+		}
+
+		FORCEINLINE void ResetTriggers()
+		{
+			for (ClipTrigger& trigger : m_Triggers)
+			{
+				trigger.IsTriggered = false;
+			}
+		}
 
 	private:
 		GUID_Lambda	m_AnimationGUID;
@@ -97,6 +195,7 @@ namespace LambdaEngine
 
 		bool m_IsLooping;
 		bool m_IsPlaying;
+		bool m_LoopFinished;
 
 		uint32	m_NumLoops;
 		float32	m_PlaybackSpeed;
@@ -105,6 +204,7 @@ namespace LambdaEngine
 		float64	m_LocalTimeInSeconds;
 		float64	m_DurationInSeconds;
 
+		TArray<ClipTrigger> m_Triggers;
 		TArray<SQT> m_FrameData;
 	};
 
@@ -116,8 +216,8 @@ namespace LambdaEngine
 	{
 	public:
 		// The only node that can have a nullptr input
-		inline OutputNode(AnimationNode* pIn)
-			: AnimationNode()
+		inline OutputNode(AnimationState* pParent, AnimationNode* pIn)
+			: AnimationNode(pParent)
 			, m_pIn(pIn)
 		{
 		}
@@ -146,6 +246,12 @@ namespace LambdaEngine
 		{
 			VALIDATE(m_pIn != nullptr);
 			return m_pIn->GetDurationInSeconds();
+		}
+
+		virtual float64 GetLocalTimeInSeconds() const override
+		{
+			VALIDATE(m_pIn != nullptr);
+			return m_pIn->GetLocalTimeInSeconds();
 		}
 
 		FORCEINLINE AnimationNode* GetInputNode() const
@@ -191,7 +297,7 @@ namespace LambdaEngine
 	class BlendNode : public AnimationNode
 	{
 	public:
-		BlendNode(AnimationNode* pIn0, AnimationNode* pIn1, const BlendInfo& blendInfo);
+		BlendNode(AnimationState* pParent, AnimationNode* pIn0, AnimationNode* pIn1, const BlendInfo& blendInfo);
 		~BlendNode() = default;
 
 		virtual void Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds) override final;
@@ -211,6 +317,13 @@ namespace LambdaEngine
 		{
 			const float64 in0 = m_pIn0->GetDurationInSeconds();
 			const float64 in1 = m_pIn1->GetDurationInSeconds();
+			return std::max<float64>(in0, in1);
+		}
+
+		virtual float64 GetLocalTimeInSeconds() const override
+		{
+			const float64 in0 = m_pIn0->GetLocalTimeInSeconds();
+			const float64 in1 = m_pIn1->GetLocalTimeInSeconds();
 			return std::max<float64>(in0, in1);
 		}
 

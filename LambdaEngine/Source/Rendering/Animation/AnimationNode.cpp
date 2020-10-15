@@ -1,4 +1,5 @@
 #include "Rendering/Animation/AnimationNode.h"
+#include "Rendering/Animation/AnimationGraph.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -37,8 +38,8 @@ namespace LambdaEngine
 	* ClipNode
 	*/
 
-	ClipNode::ClipNode(GUID_Lambda animationGUID, float64 playbackSpeed, bool isLooping)
-		: AnimationNode()
+	ClipNode::ClipNode(AnimationState* pParent, GUID_Lambda animationGUID, float64 playbackSpeed, bool isLooping)
+		: AnimationNode(pParent)
 		, m_AnimationGUID(animationGUID)
 		, m_pAnimation(nullptr)
 		, m_IsLooping(isLooping)
@@ -78,14 +79,30 @@ namespace LambdaEngine
 			}
 
 			localTime = fmod(localTime, m_DurationInSeconds);
+
+			// If we are equal to the duration or if localtime got flipped back to the beginning the loop finished
+			if (localTime >= m_DurationInSeconds || localTime < m_LocalTimeInSeconds)
+			{
+				m_LoopFinished = true;
+			}
 		}
 		else
 		{
 			localTime = glm::clamp(localTime, 0.0, m_DurationInSeconds);
+			if (localTime >= m_DurationInSeconds)
+			{
+				m_LoopFinished = true;
+			}
 		}
 
-		m_LocalTimeInSeconds = localTime;
-		m_NormalizedTime = m_LocalTimeInSeconds / m_DurationInSeconds;
+		// Reset loop
+		if (IsLoopFinished())
+		{
+			OnLoopFinish();
+		}
+
+		m_LocalTimeInSeconds	= localTime;
+		m_NormalizedTime		= m_LocalTimeInSeconds / m_DurationInSeconds;
 		if (m_PlaybackSpeed < 0.0)
 		{
 			m_NormalizedTime = 1.0 - m_NormalizedTime;
@@ -109,12 +126,31 @@ namespace LambdaEngine
 			}
 
 			// Sample SQT for this animation
-			glm::vec3 position = SamplePosition(channel, timestamp);
-			glm::quat rotation = SampleRotation(channel, timestamp);
-			glm::vec3 scale = SampleScale(channel, timestamp);
+			glm::vec3 position	= SamplePosition(channel, timestamp);
+			glm::quat rotation	= SampleRotation(channel, timestamp);
+			glm::vec3 scale		= SampleScale(channel, timestamp);
 
 			const uint32 jointID = it->second;
 			m_FrameData[jointID] = SQT(position, scale, rotation);
+		}
+
+		// Handle triggers
+		if (m_Triggers.GetSize() > 0)
+		{
+			for (ClipTrigger& trigger : m_Triggers)
+			{
+				if (!trigger.IsTriggered)
+				{
+					constexpr float64 EPSILON = 0.025;
+					if (trigger.TriggerAt >= (m_NormalizedTime - EPSILON) && trigger.TriggerAt <= (m_NormalizedTime + EPSILON))
+					{
+						AnimationGraph& graph = *m_pParent->GetOwner();
+						trigger.Func(*this, graph);
+						trigger.IsTriggered = true;
+						break;
+					}
+				}
+			}
 		}
 	}
 
@@ -129,7 +165,7 @@ namespace LambdaEngine
 		{
 			for (uint32 i = 0; i < (numPositions - 1); i++)
 			{
-				if (time < channel.Positions[i + 1].Time)
+				if (time <= channel.Positions[i + 1].Time)
 				{
 					pos0 = channel.Positions[i];
 					pos1 = channel.Positions[i + 1];
@@ -154,7 +190,7 @@ namespace LambdaEngine
 		{
 			for (uint32 i = 0; i < (numScales - 1); i++)
 			{
-				if (time < channel.Scales[i + 1].Time)
+				if (time <= channel.Scales[i + 1].Time)
 				{
 					scale0 = channel.Scales[i];
 					scale1 = channel.Scales[i + 1];
@@ -179,7 +215,7 @@ namespace LambdaEngine
 		{
 			for (uint32 i = 0; i < (numRotations - 1); i++)
 			{
-				if (time < channel.Rotations[i + 1].Time)
+				if (time <= channel.Rotations[i + 1].Time)
 				{
 					rot0 = channel.Rotations[i];
 					rot1 = channel.Rotations[i + 1];
@@ -189,17 +225,23 @@ namespace LambdaEngine
 		}
 
 		const float64 factor = (rot1.Time != rot0.Time) ? (time - rot0.Time) / (rot1.Time - rot0.Time) : 0.0;
-		glm::quat rotation = glm::slerp(rot0.Value, rot1.Value, float32(factor));
-		rotation = glm::normalize(rotation);
+		glm::quat rotation	= glm::slerp(rot0.Value, rot1.Value, float32(factor));
+		rotation			= glm::normalize(rotation);
 		return rotation;
+	}
+
+	void ClipNode::OnLoopFinish()
+	{
+		ResetTriggers();
+		m_LoopFinished = false;
 	}
 
 	/*
 	* BlendNode
 	*/
 
-	BlendNode::BlendNode(AnimationNode* pIn0, AnimationNode* pIn1, const BlendInfo& blendInfo)
-		: AnimationNode()
+	BlendNode::BlendNode(AnimationState* pParent, AnimationNode* pIn0, AnimationNode* pIn1, const BlendInfo& blendInfo)
+		: AnimationNode(pParent)
 		, m_pIn0(pIn0)
 		, m_pIn1(pIn1)
 		, m_BlendInfo(blendInfo)

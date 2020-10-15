@@ -128,7 +128,21 @@ void PlaySessionState::Init()
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
 		AnimationState* pReloadState = DBG_NEW AnimationState("reload");
-		ClipNode*	pReload		= pReloadState->CreateClipNode(reload[0]);
+		ClipNode* pReload = pReloadState->CreateClipNode(reload[0], 2.0, true);
+		pReload->AddTrigger(ClipTrigger(0.0, [](const ClipNode& clip, AnimationGraph& graph)
+		{
+			LOG_INFO("Trigger at 0.0 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+		}));
+		pReload->AddTrigger(ClipTrigger(0.5, [](const ClipNode& clip, AnimationGraph& graph)
+		{
+			LOG_INFO("Trigger at 0.5 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+		}));
+		pReload->AddTrigger(ClipTrigger(1.0, [](const ClipNode& clip, AnimationGraph& graph)
+		{
+			graph.TransitionToState("running");
+			LOG_INFO("Trigger at 1.0 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+		}));
+
 		ClipNode*	pRunning	= pReloadState->CreateClipNode(running[0]);
 		ClipNode*	pDancing	= pReloadState->CreateClipNode(animations[0]);
 		BlendNode*	pBlendNode0	= pReloadState->CreateBlendNode(pDancing, pReload,		BlendInfo(1.0f, "mixamorig:Neck"));
