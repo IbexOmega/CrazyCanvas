@@ -44,7 +44,18 @@ MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 	FrameworkElement::FindName<TextBox>("CAM_JUMP")	->SetText(KeyToString(InputActionSystem::GetKey("CAM_JUMP")));
 	FrameworkElement::FindName<TextBox>("CAM_SPEED_MODIFIER")->SetText(KeyToString(InputActionSystem::GetKey("CAM_SPEED_MODIFIER")));
 	
+	// Toggles	
 	m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
+	ToggleButton* toggleMeshShader = FrameworkElement::FindName<ToggleButton>("RayTracingToggleButton");
+	NS_ASSERT(toggleMeshShader != 0);
+	toggleMeshShader->SetIsChecked(m_RayTracingEnabled);
+	m_RayTracingSleeping = !m_RayTracingEnabled;
+
+	m_MeshShadersEnabled = EngineConfig::GetBoolProperty("MeshShadersEnabled");
+	ToggleButton* toggleRayTracing = FrameworkElement::FindName<ToggleButton>("MeshShadersToggleButton");
+	NS_ASSERT(toggleRayTracing != 0);
+	toggleRayTracing->SetIsChecked(m_MeshShadersEnabled);
+	m_MeshShadersSleeping = !m_MeshShadersEnabled;
 }
 
 MainMenuGUI::~MainMenuGUI()
@@ -157,7 +168,8 @@ void MainMenuGUI::OnRayTracingChecked(BaseComponent* pSender, const RoutedEventA
 	UNREFERENCED_VARIABLE(pSender);
 
 	ToggleButton* pFE = (ToggleButton*)args.source;
-	m_RayTracingSleeping = pFE->GetIsChecked().GetValue();
+	// Sleep if inactive
+	m_RayTracingSleeping = !pFE->GetIsChecked().GetValue();
 }
 
 void MainMenuGUI::OnMeshShadersChecked(BaseComponent* pSender, const RoutedEventArgs& args)
@@ -165,7 +177,8 @@ void MainMenuGUI::OnMeshShadersChecked(BaseComponent* pSender, const RoutedEvent
 	UNREFERENCED_VARIABLE(pSender);
 
 	ToggleButton* pFE = (ToggleButton*)args.source;
-	m_MeshShadersSleeping = pFE->GetIsChecked().GetValue();
+	// Sleep if inactive
+	m_MeshShadersSleeping = !pFE->GetIsChecked().GetValue();
 }
 
 void MainMenuGUI::OnVolumeSliderChanged(BaseComponent* pSender, const RoutedPropertyChangedEventArgs<float>& args)
