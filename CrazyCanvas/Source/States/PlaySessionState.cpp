@@ -195,7 +195,7 @@ void PlaySessionState::Init()
 		robotAnimationComp.pGraph	= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose		= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
-		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
+		glm::vec3 position = glm::vec3(0.0f, 5.75f, -2.5f);
 		glm::vec3 scale(0.01f);
 
 		Entity entity = pECS->CreateEntity();
@@ -205,7 +205,7 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(0.0f, 0.8f, 0.0f);
+		position = glm::vec3(0.0f, 5.8f, 0.0f);
 
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0], 2.0f));
 
@@ -216,7 +216,7 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(-3.5f, 0.75f, 0.0f);
+		position = glm::vec3(-3.5f, 5.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
@@ -226,7 +226,7 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(3.5f, 0.75f, 0.0f);
+		position = glm::vec3(3.5f, 5.75f, 0.0f);
 
 		AnimationState* pReloadState = DBG_NEW AnimationState("reload");
 		ClipNode* pReload = pReloadState->CreateClipNode(reload[0], 2.0, true);
@@ -308,14 +308,14 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		};
 
 		TArray<GUID_Lambda> animations;
-		bool animationsExist			= ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Standard Walk.fbx", animations);
-		const uint32 robotGUID			= ResourceManager::GetMeshGUID("Robot/Standard Walk.fbx");
+		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		bool animationsExist			= !animations.IsEmpty();
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		if (animationsExist)
 		{
-			robotAnimationComp.pGraph = new AnimationGraph(new AnimationState("dancing", animations[0]));
+			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
 		}
 
 		CreatePlayerDesc createPlayerDesc =

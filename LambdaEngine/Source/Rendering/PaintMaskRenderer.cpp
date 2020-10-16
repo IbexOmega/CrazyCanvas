@@ -364,10 +364,6 @@ namespace LambdaEngine
 		{
 			return;
 		}
-		else
-		{
-			int dwadwa = 0;
-		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);

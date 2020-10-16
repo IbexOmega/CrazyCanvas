@@ -105,7 +105,7 @@ void SandboxState::Init()
 
 		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
 		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
-		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Robot/Reload.fbx");
+		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Robot/Reloading.fbx");
 
 		MaterialProperties materialProperties;
 		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -499,7 +499,7 @@ bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& eve
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		if (animationsExist)
 		{
-			robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
+			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 		}
 
 		CreatePlayerDesc createPlayerDesc =
