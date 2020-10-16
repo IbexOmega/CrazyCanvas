@@ -56,7 +56,7 @@ namespace LambdaEngine
 			{
 				deltaTime = currentTime - netPosComponent.TimestampStart;
 				percentage = deltaTime.AsSeconds() / netPosComponent.Duration.AsSeconds();
-				percentage = glm::clamp<float>(percentage, 0.0f, 1.0f);
+				percentage = glm::clamp<float64>(percentage, 0.0, 1.0);
 
 				PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
 				Interpolate(netPosComponent.PositionLast, netPosComponent.Position, positionComponent.Position, (float32)percentage);
