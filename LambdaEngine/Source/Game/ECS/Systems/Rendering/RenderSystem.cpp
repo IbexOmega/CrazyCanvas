@@ -1207,7 +1207,18 @@ namespace LambdaEngine
 					{
 						instance.CustomIndex |= textureIndex;
 					}
-				}
+				}	
+
+				ResourceUpdateDesc unwrappedTextureUpdate = {};
+				unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
+				unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= m_PaintMaskSamplers.GetData();
+				unwrappedTextureUpdate.ExternalTextureUpdate.Count								= m_PaintMaskTextures.GetSize();
+
+				RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
 			}
 		}
 
