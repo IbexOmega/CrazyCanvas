@@ -45,6 +45,7 @@ namespace LambdaEngine
 		else
 		{
 			m_pTo->Tick(skeleton, deltaTimeInSeconds);
+			m_CurrentFrame = m_pTo->GetCurrentFrame();
 		}
 	}
 
@@ -91,14 +92,7 @@ namespace LambdaEngine
 	
 	const TArray<SQT>& Transition::GetCurrentFrame() const
 	{
-		if (m_Duration > 0.0)
-		{
-			return m_CurrentFrame;
-		}
-		else
-		{
-			return m_pTo->GetCurrentFrame();
-		}
+		return m_CurrentFrame;
 	}
 
 	/*
@@ -146,6 +140,7 @@ namespace LambdaEngine
 
 	void AnimationState::Tick(const Skeleton& skeleton, const float64 deltaTime)
 	{
+		LOG_INFO("Tick '%s'", m_Name.c_str());
 		m_pFinalNode->Tick(skeleton, deltaTime);
 	}
 
@@ -217,7 +212,6 @@ namespace LambdaEngine
 
 	void AnimationGraph::Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds)
 	{
-
 		// Handle transition
 		if (IsTransitioning())
 		{
@@ -229,13 +223,12 @@ namespace LambdaEngine
 			else
 			{
 				pCurrentTransition->Tick(skeleton, deltaTimeInSeconds);
+				return;
 			}
 		}
-		else
-		{
-			AnimationState* pCurrentState = GetCurrentState();
-			pCurrentState->Tick(skeleton, deltaTimeInSeconds);
-		}
+
+		AnimationState* pCurrentState = GetCurrentState();
+		pCurrentState->Tick(skeleton, deltaTimeInSeconds);
 	}
 
 	bool AnimationGraph::AddState(AnimationState* pAnimationState)

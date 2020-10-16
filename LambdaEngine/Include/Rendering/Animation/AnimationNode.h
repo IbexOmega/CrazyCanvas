@@ -114,7 +114,7 @@ namespace LambdaEngine
 
 		virtual void MatchDuration(float64 durationInSeconds)
 		{
-			const float32 newSpeed = (m_DurationInSeconds / m_OrignalPlaybackSpeed) / fabs(durationInSeconds);
+			const float64 newSpeed = (m_DurationInSeconds / m_OrignalPlaybackSpeed) / fabs(durationInSeconds);
 			m_PlaybackSpeed = newSpeed;
 		}
 
@@ -201,8 +201,8 @@ namespace LambdaEngine
 		bool m_LoopFinished;
 
 		uint32	m_NumLoops;
-		float32	m_OrignalPlaybackSpeed;
-		float32	m_PlaybackSpeed;
+		float64	m_OrignalPlaybackSpeed;
+		float64	m_PlaybackSpeed;
 		float64	m_RunningTime;
 		float64	m_NormalizedTime;
 		float64	m_LocalTimeInSeconds;

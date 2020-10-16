@@ -101,20 +101,6 @@ namespace LambdaEngine
 		ClipNode*	CreateClipNode(GUID_Lambda animationGUID, float64 playbackSpeed = 1.0f, bool isLooping = true);
 		BlendNode*	CreateBlendNode(AnimationNode* pIn0, AnimationNode* pIn1, const BlendInfo& blendInfo);
 
-		FORCEINLINE void OnFinished() const
-		{
-			if (m_OnFinished)
-			{
-				VALIDATE(m_pOwnerGraph != nullptr);
-				m_OnFinished(*m_pOwnerGraph);
-			}
-		}
-
-		FORCEINLINE void SetOnFinished(const std::function<void(AnimationGraph&)>& onFinished)
-		{
-			m_OnFinished = onFinished;
-		}
-
 		FORCEINLINE void SetOutputNode(AnimationNode* pOutput)
 		{
 			m_pFinalNode->SetInputNode(pOutput);
@@ -156,10 +142,7 @@ namespace LambdaEngine
 		OutputNode*		m_pFinalNode;
 		StackAllocator	m_NodeAllocator;
 		TArray<AnimationNode*> m_Nodes;
-		
 		String m_Name;
-
-		std::function<void(AnimationGraph&)> m_OnFinished;
 	};
 
 	/*
