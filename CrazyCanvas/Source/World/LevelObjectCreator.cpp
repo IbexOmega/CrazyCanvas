@@ -9,6 +9,7 @@
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 
 #include "ECS/Components/Player/Weapon.h"
 
@@ -216,10 +217,23 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
-	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	NetworkPositionComponent{ .Position = pPlayerDesc->Position, .PositionLast = pPlayerDesc->Position, .TimestampStart = EngineLoop::GetTimeSinceStart(), .Duration = EngineLoop::GetFixedTimestep() });
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
+	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	NetworkPositionComponent{ .Position = pPlayerDesc->Position, .PositionLast = pPlayerDesc->Position, .TimestampStart = EngineLoop::GetTimeSinceStart(), .Duration = EngineLoop::GetFixedTimestep() });
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
+	pECS->AddComponent<ParticleEmitterComponent>(playerEntity, ParticleEmitterComponent{
+	.Active = false,
+	.OneTime = true,
+	.Burst = true,
+	.ParticleCount = 64,
+	.EmitterShape = EEmitterShape::CONE,
+	.Angle = 25.f,
+	.Velocity = 2.0,
+	.Acceleration = -1.0,
+	.LifeTime = 3.0f,
+	.ParticleRadius = 0.05f,
+		}
+	);
 
 	const CharacterColliderInfo colliderInfo =
 	{

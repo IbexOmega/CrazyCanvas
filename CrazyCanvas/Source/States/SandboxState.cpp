@@ -508,7 +508,13 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 
 			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -1.f + float(modIndex) } });
 			ecsCore->AddComponent<RotationComponent>(e, { true,glm::identity<glm::quat>() });
-			ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{ .Velocity = 1.0f + Random::Float32(-0.5f, 0.5f), .Acceleration = Random::Float32(-1.0f, 1.0f), .ParticleRadius = 0.1f + Random::Float32(-0.05f, 0.1f) });
+			ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
+				.OneTime = true,
+				.Velocity = 1.0f + Random::Float32(-0.5f, 0.5f),
+				.Acceleration = Random::Float32(-1.0f, 1.0f),
+				.LifeTime = Random::Float32(0.5f, 2.0f),
+				.ParticleRadius = 0.1f + Random::Float32(-0.05f, 0.1f),
+				});
 		}
 		else
 		{
