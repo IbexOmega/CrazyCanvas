@@ -165,6 +165,7 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 
 		SetRenderStagesActive();
 
+
 		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
@@ -226,6 +227,9 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
+
+
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", false);
 
 	/*if (m_RayTracingEnabled)
 		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);*/
