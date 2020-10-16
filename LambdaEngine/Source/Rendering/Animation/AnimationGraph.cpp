@@ -37,7 +37,7 @@ namespace LambdaEngine
 		}
 
 		// Calculate deltatime, used for determine if we should finish transition
-		if (m_LastTime > 0.0f)
+		if (m_LastTime > 0.0)
 		{
 			m_DeltaTime = normalizedTime - m_LastTime;
 		}
