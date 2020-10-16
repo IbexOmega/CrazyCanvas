@@ -7,7 +7,7 @@
   "FixedTimestep": 60,
   "NetworkPort": 4444,
   "RayTracingEnabled": true,
-  "MeshShadersEnabled": false,
+  "MeshShadersEnabled": true,
   "ShowRenderGraph": false,
   "EnableLineRenderer": false,
   "RenderGraphName": "DEFERRED_PBR.lrg",
