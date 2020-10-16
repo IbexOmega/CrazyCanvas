@@ -173,22 +173,14 @@ namespace LambdaEngine
 				LOG_WARNING("[ParticleManager]: Trying to remove non-exsisting indirectDrawData");
 			}
 
+			newFreeChunk = emitter.ParticleChunk;
 			m_ActiveEmitters.erase(entity);
 
-			newFreeChunk = emitter.ParticleChunk;
 		}
-		else
-		{
-			LOG_ERROR("[ParticleManager]: Trying to remove non-exsisting emitter");
-			return;
-		}
-
-		if (m_SleepingEmitters.find(entity) != m_SleepingEmitters.end())
+		else if (m_SleepingEmitters.find(entity) != m_SleepingEmitters.end())
 		{
 			newFreeChunk = m_SleepingEmitters[entity].ParticleChunk;
 			m_SleepingEmitters.erase(entity);
-
-
 		}
 		else
 		{
@@ -196,11 +188,8 @@ namespace LambdaEngine
 			return;
 		}
 
-		// Update particle buffer with new inactive particles
-		m_DirtyParticleBuffer = true;
-
 		// Free particles for new emitters
-		for (auto chunkIt = m_FreeParticleChunks.begin(); chunkIt != m_FreeParticleChunks.end();)
+		for (auto chunkIt = m_FreeParticleChunks.begin(); chunkIt != m_FreeParticleChunks.end(); chunkIt++)
 		{
 			if (newFreeChunk.Offset > chunkIt->Offset)
 			{
@@ -212,6 +201,7 @@ namespace LambdaEngine
 				{
 					m_FreeParticleChunks.Insert(chunkIt, newFreeChunk);
 				}
+				break;
 			}
 		}
 
@@ -347,7 +337,7 @@ namespace LambdaEngine
 		if (m_DirtyIndirectBuffer)
 		{
 			uint32 requiredBufferSize = m_IndirectData.GetSize() * sizeof(IndirectData);
-			CopyDataToBuffer(
+			m_DirtyIndirectBuffer = CopyDataToBuffer(
 				pCommandList, 
 				m_IndirectData.GetData(), 
 				requiredBufferSize, 
@@ -370,7 +360,7 @@ namespace LambdaEngine
 			};
 
 			uint32 requiredBufferSize = 4 * sizeof(glm::vec4);
-			CopyDataToBuffer(
+			m_DirtyVertexBuffer = CopyDataToBuffer(
 				pCommandList,
 				(void*)vertices,
 				requiredBufferSize,
@@ -379,15 +369,11 @@ namespace LambdaEngine
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
 				"Particle Vertex");
 		}
-		else
-		{
-			m_DirtyVertexBuffer = false; // Only update resource when buffer is recreated
-		}
+	
 
 		// Update Index Buffer
 		if (m_DirtyIndexBuffer)
 		{
-
 			const uint32 indices[6] =
 			{
 				2,1,0,
@@ -395,7 +381,7 @@ namespace LambdaEngine
 			};
 
 			uint32 requiredBufferSize = sizeof(uint32) * 6;
-			CopyDataToBuffer(
+			m_DirtyIndexBuffer = CopyDataToBuffer(
 				pCommandList,
 				(void*)indices,
 				requiredBufferSize,
@@ -404,11 +390,7 @@ namespace LambdaEngine
 				FBufferFlag::BUFFER_FLAG_INDEX_BUFFER,
 				"Particle Index");
 		}
-		else
-		{
-			m_DirtyIndexBuffer = false; // Only update resource when buffer is recreated
-		}
-
+		
 		// Update Particle Instance Buffer
 		if (m_DirtyParticleBuffer)
 		{

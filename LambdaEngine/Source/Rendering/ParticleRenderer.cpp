@@ -20,6 +20,7 @@ namespace LambdaEngine
 		s_pInstance = this;
 
 		m_ParticleCount = 0;
+		m_EmitterCount = 1;
 	}
 
 	ParticleRenderer::~ParticleRenderer()
@@ -550,7 +551,7 @@ namespace LambdaEngine
 		
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, 1, sizeof(IndirectData));
+		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, m_EmitterCount, sizeof(IndirectData));
 
 		pCommandList->EndRenderPass();
 		pCommandList->End();

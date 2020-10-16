@@ -86,6 +86,7 @@ namespace LambdaEngine
 		void OnEmitterEntityRemoved(Entity entity);
 
 		uint32 GetParticleCount() const { return m_Particles.GetSize();  }
+		uint32 GetActiveEmitterCount() const { return m_IndirectData.GetSize();  }
 		uint32 GetMaxParticleCount() const { return m_MaxParticleCount; }
 
 		TArray<Texture*>& GetAtlasTextures() { return m_AtlasTextures; }
