@@ -241,6 +241,7 @@ void SandboxState::Init()
 	//				.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 	//				.Rotation = pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 	//				.Mesh = pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+	//				.ShapeType		= EShapeType::SIMULATION,
 	//				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
 	//				.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	//			};
