@@ -16,5 +16,5 @@
   "CameraNearPlane": 0.001,
   "CameraFarPlane": 1000.0,
   "StreamPhysx": false,
-  "EnableValidationLayersInDebug": false
+  "EnableValidationLayersInDebug": true
 }
