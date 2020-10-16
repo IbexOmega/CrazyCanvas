@@ -29,6 +29,8 @@ void main()
 	vec3 targetPosition		= in_TargetPosition;
 	vec3 direction			= normalize(in_TargetDirection);
 	
+	//targetPosition = targetPosition - direction;
+
 	vec3 targetPosToWorldPos = worldPosition-targetPosition;
 
 	float valid = step(0.f, dot(normal, direction)); // Checks if looking from infront, else 0
