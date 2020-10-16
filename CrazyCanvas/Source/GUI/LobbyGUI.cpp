@@ -20,7 +20,8 @@
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
 
-//#include <string>
+#include <string>
+#include <sstream>
 
 #include <processthreadsapi.h>
 
@@ -83,6 +84,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	newInfo.Ping = 0;
 	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
 	newInfo.EndPoint = *event.pEndPoint;
+	newInfo.ServerUID = event.ServerUID;
 
 	pDecoder->ReadUInt8(newInfo.Players);
 	pDecoder->ReadString(newInfo.Name);
@@ -104,7 +106,17 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
 		}
 	}
+	else
+	{
+		currentInfo = newInfo;
+	}
 	return false;
+}
+
+void LobbyGUI::FixedTick(LambdaEngine::Timestamp delta)
+{
+	UNREFERENCED_VARIABLE(delta);
+	CheckServerStatus();
 }
 
 void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -144,7 +156,7 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	lpStartupInfo.cb = sizeof(lpStartupInfo);
 	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
 
-	CreateProcessA(L"Server.exe",
+	CreateProcess(L"Server.exe",
 		L"--state server", NULL, NULL,
 		NULL, NULL, NULL, NULL,
 		&lpStartupInfo,
@@ -187,22 +199,6 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	}
 }
 
-void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
-{
-	for (auto& server : m_Servers)
-	{
-		if (server.second.ServerGrid == pGrid)
-		{
-			LambdaEngine::GUIApplication::SetView(nullptr);
-
-			SetRenderStagesActive();
-
-			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
-			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-		}
-	}
-}
-
 void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
@@ -230,6 +226,50 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 		else
 			ErrorPopUp(JOIN_ERROR);
 	}
+}
+
+void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
+{
+	if (!m_Servers.empty())
+	{
+		for (auto& server : m_Servers)
+		{
+			if (server.second.ServerGrid == pGrid)
+			{
+				LambdaEngine::GUIApplication::SetView(nullptr);
+
+				SetRenderStagesActive();
+
+				State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
+				StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+			}
+		}
+	}
+}
+
+bool LobbyGUI::CheckServerStatus()
+{
+	TArray<uint64> serversToRemove;
+
+	for (auto& server : m_Servers)
+	{
+		Timestamp deltaTime = EngineLoop::GetTimeSinceStart() - server.second.LastUpdate;
+
+		if (deltaTime.AsSeconds() > 5)
+		{
+			ListBox* pParentBox = (ListBox*)server.second.ServerGrid->GetParent();
+			pParentBox->GetItems()->Remove(server.second.ServerGrid);
+
+			serversToRemove.PushBack(server.second.ServerUID);
+		}
+	}
+
+	for (uint64 id : serversToRemove)
+	{
+		m_Servers.erase(id);
+	}
+
+	return false;
 }
 
 void LobbyGUI::SetRenderStagesActive()

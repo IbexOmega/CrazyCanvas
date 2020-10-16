@@ -19,7 +19,7 @@ public:
 	void Pause() override final {};
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
-
+	void FixedTick(LambdaEngine::Timestamp delta) override;
 
 private:
 	Noesis::Ptr<LobbyGUI> m_LobbyGUI;

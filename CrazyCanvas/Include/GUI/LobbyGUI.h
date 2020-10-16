@@ -44,9 +44,11 @@ public:
 	
 	void StartSelectedServer(Noesis::Grid* pGrid);
 
+	bool CheckServerStatus();
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
 
+	void FixedTick(LambdaEngine::Timestamp delta);
 
 private:
 	void SetRenderStagesActive();
