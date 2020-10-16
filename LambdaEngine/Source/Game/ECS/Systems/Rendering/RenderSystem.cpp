@@ -1082,8 +1082,8 @@ namespace LambdaEngine
 		if (m_RayTracingEnabled)
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
-			const ComponentArray<MeshPaintComponent>* meshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-			if (meshPaintComponents->HasComponent(entity))
+			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (pMeshPaintComponents->HasComponent(entity))
 			{
 				hasPaintMask = true;
 				const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
@@ -1220,8 +1220,8 @@ namespace LambdaEngine
 
 			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
 			ECSCore* pECS = ECSCore::GetInstance();
-			const ComponentArray<MeshPaintComponent>* meshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-			if (meshPaintComponents->HasComponent(entity))
+			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (pMeshPaintComponents->HasComponent(entity))
 			{
 				uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
 				m_PaintMaskTextures[textureIndex]		= m_PaintMaskTextures.GetBack();
