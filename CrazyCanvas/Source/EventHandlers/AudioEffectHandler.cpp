@@ -22,6 +22,6 @@ void AudioEffectHandler::Init()
 bool AudioEffectHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 {
 	using namespace LambdaEngine;
-	m_pProjectileHitSound->PlayOnceAt(projectileHitEvent.CollisionInfo.Position);
+	m_pProjectileHitSound->PlayOnceAt(projectileHitEvent.CollisionInfo0.Position);
 	return true;
 }

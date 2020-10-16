@@ -25,11 +25,19 @@ namespace LambdaEngine
 		COLLISION_GROUP_PLAYER	= (1 << 2),
 	};
 
-	// CollisionInfo is passed to collision callbacks
-	struct CollisionInfo
+	// EntityCollisionInfo contains information on a colliding entity.
+	struct EntityCollisionInfo
 	{
+		Entity Entity;
 		glm::vec3 Position;
 		glm::vec3 Direction;
+	};
+
+	// ActorUserData is stored in each PxActor::userData. It is used eg. when colliding.
+	struct ActorUserData
+	{
+		Entity Entity;
+		std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
 	};
 
 	// CollisionCreateInfo contains information required to create a collision component
@@ -42,7 +50,8 @@ namespace LambdaEngine
 		const MeshComponent& Mesh;
 		FCollisionGroup CollisionGroup;				// The category of the object
 		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
-		std::function<void(const CollisionInfo& collisionInfo)> CollisionCallback;	// Optional
+		// Optional. The first collision info is on the entity whose callback is called.
+		std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
 	};
 
 	struct DynamicCollisionCreateInfo : CollisionCreateInfo

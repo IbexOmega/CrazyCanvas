@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	struct CollisionInfo;
+	struct EntityCollisionInfo;
 }
 
 struct WeaponComponent;
@@ -23,7 +23,7 @@ public:
 
 private:
 	void Fire(WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity);
-	void OnProjectileHit(const LambdaEngine::CollisionInfo& collisionInfo, LambdaEngine::Entity entity);
+	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
 private:
 	LambdaEngine::IDVector m_WeaponEntities;

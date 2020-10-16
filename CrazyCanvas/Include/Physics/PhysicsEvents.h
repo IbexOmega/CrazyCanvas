@@ -9,12 +9,11 @@ struct ProjectileHitEvent : LambdaEngine::Event
 public:
 	DECLARE_EVENT_TYPE(ProjectileHitEvent);
 
-	inline ProjectileHitEvent(LambdaEngine::Entity entity, const LambdaEngine::CollisionInfo& collisionInfo)
+	inline ProjectileHitEvent(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1)
 		: Event()
-		, Entity(entity)
-		, CollisionInfo(collisionInfo)
-	{
-	}
+		, CollisionInfo0(collisionInfo0)
+		, CollisionInfo1(collisionInfo1)
+	{}
 
 	LambdaEngine::String ToString() const override final
 	{
@@ -23,5 +22,5 @@ public:
 
 public:
 	LambdaEngine::Entity Entity;
-	const LambdaEngine::CollisionInfo& CollisionInfo;
+	const LambdaEngine::EntityCollisionInfo& CollisionInfo0, &CollisionInfo1;
 };
