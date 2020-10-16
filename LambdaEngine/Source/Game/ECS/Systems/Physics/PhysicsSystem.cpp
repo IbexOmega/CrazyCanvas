@@ -287,33 +287,32 @@ namespace LambdaEngine
 		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
 	}
 
-	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
 	{
 		for (PxU32 pairIdx = 0; pairIdx < nbPairs; pairIdx++)
 		{
-			const PxContactPair& contactPair = pairs[pairIdx];
+			const PxContactPair& contactPair = pPairs[pairIdx];
 
 			if (contactPair.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)
 			{
-				// Check if the collided actors have collision callback functions
-				for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
-				{
-					PxRigidActor* pActor = pairHeader.actors[actorIdx];
-					auto pCollisionCallback = reinterpret_cast<const std::function<void(const CollisionInfo& collisionInfo)>*>(pActor->userData);
-					if (pCollisionCallback)
-					{
-						// Create and pass collision info to the callback function
-						const PxTransform transformPX = pActor->getGlobalPose();
-						const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
-
-						CollisionInfo collisionInfo;
-						collisionInfo.Position	= { transformPX.p.x, transformPX.p.y, transformPX.p.z };
-						collisionInfo.Direction	= GetForward(rotation);
-
-						(*pCollisionCallback)(collisionInfo);
-					}
-				}
+				TriggerCallbacks({ pairHeader.actors[0], pairHeader.actors[1] });
 			}
+		}
+	}
+
+	void PhysicsSystem::onTrigger(PxTriggerPair* pTriggerPairs, PxU32 nbPairs)
+	{
+		for (PxU32 pairIdx = 0; pairIdx < nbPairs; pairIdx++)
+		{
+			const PxTriggerPair& triggerPair = pTriggerPairs[pairIdx];
+
+			// Ignore pairs when shapes have been deleted
+			if (triggerPair.flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))
+			{
+				continue;
+			}
+
+			TriggerCallbacks({ triggerPair.triggerActor, triggerPair.otherActor });
 		}
 	}
 
@@ -524,29 +523,6 @@ namespace LambdaEngine
 		return { pActor };
 	}
 
-	void PhysicsSystem::FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape)
-	{
-		// Set shape's filter data
-		PxFilterData filterData;
-		filterData.word0 = (PxU32)collisionInfo.CollisionGroup;
-		filterData.word1 = (PxU32)collisionInfo.CollisionMask;
-		pShape->setSimulationFilterData(filterData);
-		pShape->setQueryFilterData(filterData);
-
-		pActor->attachShape(*pShape);
-
-		// Decreases the ref count to 1, which will drop to 0 when the actor is deleted
-		pShape->release();
-
-		// Set collision callback
-		if (collisionInfo.CollisionCallback)
-		{
-			pActor->userData = DBG_NEW std::function<void()>;
-			auto pUserData = reinterpret_cast<std::function<void(const CollisionInfo& collisionInfo)>*>(pActor->userData);
-			*pUserData = collisionInfo.CollisionCallback;
-		}
-	}
-
 	CharacterColliderComponent PhysicsSystem::FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc)
 	{
 		/*	For information about PhysX character controllers in general:
@@ -578,5 +554,73 @@ namespace LambdaEngine
 		PxControllerFilters controllerFilters(pFilterData);
 
 		return { pController, controllerFilters };
+	}
+
+	void PhysicsSystem::FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape)
+	{
+		// Set shape's filter data
+		PxFilterData filterData;
+		filterData.word0 = (PxU32)collisionInfo.CollisionGroup;
+		filterData.word1 = (PxU32)collisionInfo.CollisionMask;
+		pShape->setSimulationFilterData(filterData);
+		pShape->setQueryFilterData(filterData);
+
+		if (collisionInfo.ShapeType == EShapeType::TRIGGER)
+		{
+			pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+			pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+		}
+
+		pActor->attachShape(*pShape);
+
+		// Decreases the ref count to 1, which will drop to 0 when the actor is deleted
+		pShape->release();
+
+		// Set collision callback
+		pActor->userData = DBG_NEW ActorUserData;
+		ActorUserData* pUserData = reinterpret_cast<ActorUserData*>(pActor->userData);
+		pUserData->Entity = collisionInfo.Entity;
+		pUserData->CollisionCallback = collisionInfo.CollisionCallback;
+	}
+
+	void PhysicsSystem::TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors)
+	{
+		ActorUserData* pActorUserDatas[2] =
+		{
+			reinterpret_cast<ActorUserData*>(actors[0]->userData),
+			reinterpret_cast<ActorUserData*>(actors[1]->userData)
+		};
+
+		if (!pActorUserDatas[0]->CollisionCallback && !pActorUserDatas[1]->CollisionCallback)
+		{
+			return;
+		}
+
+		// At least one of the entities has a callback function. Create collision info for both entities.
+		EntityCollisionInfo collisionInfos[2];
+		for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
+		{
+			const PxRigidActor* pActor = actors[actorIdx];
+
+			const PxTransform transformPX = pActor->getGlobalPose();
+			const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
+
+			collisionInfos[actorIdx] =
+			{
+				.Entity = pActorUserDatas[actorIdx]->Entity,
+				.Position	= { transformPX.p.x, transformPX.p.y, transformPX.p.z },
+				.Direction	= GetForward(rotation)
+			};
+		}
+
+		if (pActorUserDatas[0]->CollisionCallback)
+		{
+			pActorUserDatas[0]->CollisionCallback(collisionInfos[0], collisionInfos[1]);
+		}
+
+		if (pActorUserDatas[1]->CollisionCallback)
+		{
+			pActorUserDatas[1]->CollisionCallback(collisionInfos[1], collisionInfos[0]);
+		}
 	}
 }

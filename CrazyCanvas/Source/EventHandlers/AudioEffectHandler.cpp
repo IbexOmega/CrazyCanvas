@@ -13,7 +13,7 @@ AudioEffectHandler::~AudioEffectHandler()
 void AudioEffectHandler::Init()
 {
 	using namespace LambdaEngine;
-	GUID_Lambda projectileHitID = ResourceManager::LoadSoundEffectFromFile("Fart.wav");
+	GUID_Lambda projectileHitID = ResourceManager::LoadSoundEffectFromFile("9_mm_gunshot-mike-koenig-123.wav");
 	m_pProjectileHitSound = ResourceManager::GetSoundEffect(projectileHitID);
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent, AudioEffectHandler>(this, &AudioEffectHandler::OnProjectileHit);
@@ -22,6 +22,6 @@ void AudioEffectHandler::Init()
 bool AudioEffectHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 {
 	using namespace LambdaEngine;
-	m_pProjectileHitSound->PlayOnceAt(projectileHitEvent.CollisionInfo.Position);
+	m_pProjectileHitSound->PlayOnceAt(projectileHitEvent.CollisionInfo0.Position);
 	return true;
 }

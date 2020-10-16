@@ -26,12 +26,12 @@ public:
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 
-
 private:
 	Level* m_pLevel = nullptr;
 
 	LambdaEngine::IPAddress* m_pIPAddress;
 
+	/* Systems */
 	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */

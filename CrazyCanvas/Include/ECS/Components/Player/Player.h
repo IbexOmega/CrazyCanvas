@@ -2,9 +2,9 @@
 
 #include "ECS/Component.h"
 
+#include "ECS/Components/Team/TeamComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
-
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
 namespace LambdaEngine
