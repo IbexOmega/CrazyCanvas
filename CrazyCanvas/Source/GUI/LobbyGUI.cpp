@@ -1,6 +1,5 @@
 #pragma once
 #include "Game/State.h"
-#include "Game/StateManager.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -20,7 +19,7 @@
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
 
-//#include <string>
+#include "Engine/EngineLoop.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -226,9 +225,7 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
-
-	/*if (m_RayTracingEnabled)
-		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);*/
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
 
 }
 

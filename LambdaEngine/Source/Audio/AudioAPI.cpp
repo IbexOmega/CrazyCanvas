@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 	bool AudioAPI::Release()
 	{
-		SAFEDELETE(s_pAudioDevice)
+		SAFEDELETE(s_pAudioDevice);
 		return true;
 	}
 

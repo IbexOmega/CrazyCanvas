@@ -16,6 +16,8 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "EventHandlers/AudioEffectHandler.h"
+#include "EventHandlers/MeshPaintHandler.h"
 
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
@@ -68,5 +70,10 @@ private:
 
 	Level* m_pLevel = nullptr;
 
+	/* Systems */
 	WeaponSystem m_WeaponSystem;
+
+	/* Event handlers */
+	AudioEffectHandler m_AudioEffectHandler;
+	MeshPaintHandler m_MeshPaintHandler;
 };

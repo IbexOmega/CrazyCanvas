@@ -73,7 +73,11 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
-	// Create Systems
+	// Initialize event handlers
+	m_AudioEffectHandler.Init();
+	m_MeshPaintHandler.Init();
+
+	// Initialize Systems
 	m_WeaponSystem.Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);

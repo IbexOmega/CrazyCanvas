@@ -342,6 +342,10 @@ namespace LambdaEngine
 		MaterialMap						m_MaterialMap;
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
+		// PAINT_MASK_TEXTURES
+		TArray<Texture*>			m_PaintMaskTextures;
+		TArray<TextureView*>		m_PaintMaskTextureViews;
+
 		// Materials
 		TArray<Texture*>			m_AlbedoMaps;
 		TArray<Texture*>			m_NormalMaps;

@@ -3,6 +3,7 @@
 #include "KeyEvents.h"
 
 #include "Containers/TUniquePtr.h"
+#include "Threading/API/SpinLock.h"
 
 #include "Memory/API/Malloc.h"
 #include "Memory/API/StackAllocator.h"
@@ -60,7 +61,7 @@ namespace LambdaEngine
 			{
 				pEvent->~Event();
 			}
-			
+
 			// Clear containers
 			m_Events.Clear();
 			m_Allocator.Reset();
@@ -145,7 +146,7 @@ namespace LambdaEngine
 			VALIDATE(event.GetType() == TEvent::GetStaticType());
 			s_DeferredEvents[s_WriteIndex].Push(event);
 		}
-		
+
 		static bool SendEventImmediate(Event& event);
 
 		static void Tick();

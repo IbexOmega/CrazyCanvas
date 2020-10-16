@@ -4,8 +4,9 @@ namespace LambdaEngine
 {
 	ComponentStorage::~ComponentStorage()
 	{
-		for (IComponentArray* compArr : m_ComponentArrays)
-			SAFEDELETE(compArr);
+		for (IComponentArray* pCompArr : m_ComponentArrays)
+			delete pCompArr;
+
 		m_ComponentArrays.Clear();
 		m_ComponentArraysWithDirtyFlags.Clear();
 	}
