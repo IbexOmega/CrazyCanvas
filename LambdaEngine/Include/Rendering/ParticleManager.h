@@ -68,6 +68,8 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime, uint32 modFrameIndex);
 
+		void UpdateParticleEmitter(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
+
 		void OnEmitterEntityAdded(Entity entity);
 		void OnEmitterEntityRemoved(Entity entity);
 
@@ -79,6 +81,8 @@ namespace LambdaEngine
 		bool UpdateResources(RenderGraph* pRendergraph);
 	private:
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
+
+		bool DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance);
 
 		bool FreeParticleChunk(ParticleChunk chunk);
 		bool MergeParticleChunk(const ParticleChunk& chunk);

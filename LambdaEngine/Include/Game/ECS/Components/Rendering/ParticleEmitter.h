@@ -20,7 +20,7 @@ namespace LambdaEngine
 
 	struct ParticleEmitterComponent
 	{
-		DECL_COMPONENT(ParticleEmitterComponent);
+		DECL_COMPONENT_WITH_DIRTY_FLAG(ParticleEmitterComponent);
 		bool			Active			= true;
 		bool			OneTime			= false;
 		bool			Burst			= false;

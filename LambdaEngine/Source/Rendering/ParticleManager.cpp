@@ -62,6 +62,7 @@ namespace LambdaEngine
 	{
 		m_ModFrameIndex = modFrameIndex;
 
+		constexpr float EPSILON = 0.1f;
 		for (auto activeEmitterIt = m_ActiveEmitters.begin();  activeEmitterIt != m_ActiveEmitters.end();)
 		{
 			if (activeEmitterIt->second.OneTime)
@@ -69,8 +70,10 @@ namespace LambdaEngine
 				float& elapTime = activeEmitterIt->second.ElapTime;
 				elapTime += deltaTime.AsSeconds();
 
-				if (elapTime >= activeEmitterIt->second.LifeTime)
+				if (elapTime >= activeEmitterIt->second.LifeTime - EPSILON)
 				{
+					DeactivateEmitterEntity(activeEmitterIt->second);
+					m_SleepingEmitters[activeEmitterIt->first] = activeEmitterIt->second;
 					activeEmitterIt = m_ActiveEmitters.erase(activeEmitterIt);
 					continue;
 				}
@@ -79,22 +82,28 @@ namespace LambdaEngine
 		}
 	}
 
+	void ParticleManager::UpdateParticleEmitter(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	{
+
+	}
+
 	void ParticleManager::OnEmitterEntityAdded(Entity entity)
 	{
 		ECSCore* ecsCore = ECSCore::GetInstance();
-		PositionComponent positionComp = ecsCore->GetComponent<PositionComponent>(entity);
-		RotationComponent rotationComp = ecsCore->GetComponent<RotationComponent>(entity);
-		ParticleEmitterComponent emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
+		const PositionComponent& positionComp = ecsCore->GetComponent<PositionComponent>(entity);
+		const RotationComponent& rotationComp = ecsCore->GetComponent<RotationComponent>(entity);
+		const ParticleEmitterComponent& emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
 
 		ParticleEmitterInstance instance = {};
 		instance.Position = positionComp.Position;
 		instance.Rotation = rotationComp.Quaternion;
 		instance.ParticleChunk.Size = emitterComp.ParticleCount;
+		instance.OneTime = emitterComp.OneTime;
 		instance.Angle = emitterComp.Angle;
 		instance.Velocity = emitterComp.Velocity;
 		instance.Acceleration = emitterComp.Acceleration;
 		instance.LifeTime = emitterComp.LifeTime;
-		instance.ParticleRadius = emitterComp.ParticleRadius;
+		instance.ParticleRadius = emitterComp.ParticleRadius * 0.5f;
 
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
@@ -137,25 +146,7 @@ namespace LambdaEngine
 			// Remove emitter
 			auto& emitter = m_ActiveEmitters[entity];
 
-			// Remove indirect draw call
-			uint32 removeIndex = emitter.IndirectDataIndex;
-			if (removeIndex < m_IndirectData.GetSize())
-			{
-				uint32 lastIndex = m_IndirectData.GetSize() - 1U;
-				Entity lastEmitter = m_IndirectDataToEntity[lastIndex];
-
-				m_IndirectData[removeIndex] = m_IndirectData[lastIndex];
-				m_ActiveEmitters[lastEmitter].IndirectDataIndex = removeIndex;
-				m_IndirectDataToEntity[removeIndex] = lastEmitter;
-
-				m_IndirectDataToEntity.erase(lastIndex);
-				m_IndirectData.PopBack();
-				m_DirtyIndirectBuffer = true;
-			}
-			else
-			{
-				LOG_WARNING("[ParticleManager]: Trying to remove non-exsisting indirectDrawData");
-			}
+			DeactivateEmitterEntity(emitter);
 
 			newFreeChunk = emitter.ParticleChunk;
 			m_ActiveEmitters.erase(entity);
@@ -253,6 +244,32 @@ namespace LambdaEngine
 			{
 				m_Particles[particleOffset + i] = particle;
 			}
+		}
+
+		return true;
+	}
+
+	bool ParticleManager::DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance)
+	{
+		// Remove indirect draw call
+		uint32 removeIndex = emitterInstance.IndirectDataIndex;
+		if (removeIndex < m_IndirectData.GetSize())
+		{
+			uint32 lastIndex = m_IndirectData.GetSize() - 1U;
+			Entity lastEmitter = m_IndirectDataToEntity[lastIndex];
+
+			m_IndirectData[removeIndex] = m_IndirectData[lastIndex];
+			m_ActiveEmitters[lastEmitter].IndirectDataIndex = removeIndex;
+			m_IndirectDataToEntity[removeIndex] = lastEmitter;
+
+			m_IndirectDataToEntity.erase(lastIndex);
+			m_IndirectData.PopBack();
+			m_DirtyIndirectBuffer = true;
+		}
+		else
+		{
+			LOG_WARNING("[ParticleManager]: Trying to remove non-exsisting indirectDrawData");
+			return false;
 		}
 
 		return true;

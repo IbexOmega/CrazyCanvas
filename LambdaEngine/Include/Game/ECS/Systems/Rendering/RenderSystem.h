@@ -285,6 +285,7 @@ namespace LambdaEngine
 		void OnEmitterEntityAdded(Entity entity);
 		void OnEmitterEntityRemoved(Entity entity);
 
+		void UpdateParticleEmitter(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);

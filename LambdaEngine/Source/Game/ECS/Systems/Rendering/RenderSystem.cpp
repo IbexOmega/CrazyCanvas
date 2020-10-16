@@ -552,6 +552,16 @@ namespace LambdaEngine
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
 
+		const ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
+		for (Entity entity : m_ParticleEmitters)
+		{
+			const auto& positionComp = pPositionComponents->GetConstData(entity);
+			const auto& rotationComp = pRotationComponents->GetConstData(entity);
+			const auto& emitterComp = pEmitterComponents->GetConstData(entity);
+
+			if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
+				UpdateParticleEmitter(positionComp, rotationComp, emitterComp);
+		}
 		// Particle Updates
 		uint32 particleCount = m_ParticleManager.GetParticleCount();
 		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
@@ -1317,6 +1327,11 @@ namespace LambdaEngine
 
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
 		}
+	}
+
+	void RenderSystem::UpdateParticleEmitter(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	{
+		m_ParticleManager.UpdateParticleEmitter(positionComp, rotationComp, emitterComp);
 	}
 
 	void RenderSystem::UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
