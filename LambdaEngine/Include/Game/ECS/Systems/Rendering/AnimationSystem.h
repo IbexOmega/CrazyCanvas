@@ -53,7 +53,8 @@ namespace LambdaEngine
 		static AnimationSystem& GetInstance();
 
 	private:
-		bool	m_ChangeState	= false; // TODO: Remove this since it is only for testing
+		bool	m_Walking		= false; // TODO: Remove this since it is only for testing
+		bool	m_Reload		= false; // TODO: Remove this since it is only for testing
 		bool	m_HasInitClock	= false;
 		Clock	m_Clock;
 		

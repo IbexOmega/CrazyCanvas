@@ -1,4 +1,5 @@
 #include "Rendering/Animation/AnimationGraph.h"
+#include <sstream>
 
 namespace LambdaEngine
 {
@@ -6,43 +7,42 @@ namespace LambdaEngine
 	* Transition
 	*/
 
-	Transition::Transition(const String& fromState, const String& toState, float64 fromBeginAt, float64 toBeginAt)
+	Transition::Transition(const String& fromState, const String& toState, float64 duration)
 		: m_pOwnerGraph(nullptr)
-		, m_From(UINT32_MAX)
-		, m_To(UINT32_MAX)
+		, m_pFrom(nullptr)
+		, m_pTo(nullptr)
 		, m_IsActive(false)
 		, m_FromState(fromState)
-		, m_FromBeginAt(fromBeginAt)
-		, m_ToBeginAt(toBeginAt)
 		, m_LocalClock(0.0f)
 		, m_ToState(toState)
 	{
 		OnFinished();
 	}
 
-	void Transition::Tick(const float64 delta)
+	void Transition::Tick(const Skeleton& skeleton, const float64 deltaTimeInSeconds)
 	{
-		VALIDATE(m_From != UINT32_MAX);
+		VALIDATE(m_pFrom	!= nullptr);
+		VALIDATE(m_pTo		!= nullptr);
 
-		// Only transition if the clip has reached correct timing
-		AnimationState& fromState = m_pOwnerGraph->GetState(m_From);
-		const float64 normalizedTime = fromState.GetNormalizedTime();
-
-		//LOG_INFO("normalizedTime=%.4f, m_FromBeginAt=%.4f", normalizedTime, m_FromBeginAt);
-
-		// This makes sure that we loop around one time if we start a transition after the sync-point
-		if (normalizedTime >= m_FromBeginAt)
+		if (m_Duration > 0.0)
 		{
-			m_LocalClock = normalizedTime;
-		}
+			// Tick the states
+			m_pFrom->Tick(skeleton, deltaTimeInSeconds);
+			m_pTo->Tick(skeleton, deltaTimeInSeconds);
 
-		// Calculate deltatime, used for determine if we should finish transition
-		if (m_LastTime > 0.0)
+			// Move clock
+			m_LocalClock += deltaTimeInSeconds;
+			const float64 weight = m_LocalClock / m_Duration;
+
+			const TArray<SQT>& in0 = m_pFrom->GetCurrentFrame();
+			const TArray<SQT>& in1 = m_pFrom->GetCurrentFrame();
+			BinaryInterpolator interpolator(in0, in1, m_CurrentFrame);
+			interpolator.Interpolate(weight);
+		}
+		else
 		{
-			m_DeltaTime = normalizedTime - m_LastTime;
+			m_pTo->Tick(skeleton, deltaTimeInSeconds);
 		}
-
-		m_LastTime = normalizedTime;
 	}
 
 	bool Transition::Equals(const String& fromState, const String& toState) const
@@ -50,18 +50,40 @@ namespace LambdaEngine
 		return m_FromState == fromState && m_ToState == toState;
 	}
 
+	bool Transition::Equals(AnimationState* pFromState, AnimationState* pToState) const
+	{
+		VALIDATE(pFromState != nullptr);
+		VALIDATE(pFromState->GetOwner() == m_pOwnerGraph);
+		VALIDATE(pToState != nullptr);
+		VALIDATE(pToState->GetOwner() == m_pOwnerGraph);
+		return m_pFrom == pFromState || m_pTo == pToState;
+	}
+
 	bool Transition::UsesState(const String& state) const
 	{
 		return m_FromState == state || m_ToState == state;
+	}
+
+	bool Transition::UsesState(AnimationState* pState) const
+	{
+		VALIDATE(pState != nullptr);
+		VALIDATE(pState->GetOwner() == m_pOwnerGraph);
+		return m_pFrom == pState || m_pTo == pState;
 	}
 
 	void Transition::SetAnimationGraph(AnimationGraph* pGraph)
 	{
 		VALIDATE(pGraph != nullptr);
 
-		m_pOwnerGraph = pGraph;
-		m_From	= m_pOwnerGraph->GetStateIndex(m_FromState);
-		m_To	= m_pOwnerGraph->GetStateIndex(m_ToState);
+		m_pOwnerGraph	= pGraph;
+		
+		m_pFrom = m_pOwnerGraph->GetState(m_FromState);
+		VALIDATE(m_pFrom != nullptr);
+		VALIDATE(m_pFrom->GetOwner() == m_pOwnerGraph);
+		
+		m_pTo = m_pOwnerGraph->GetState(m_ToState);
+		VALIDATE(m_pTo != nullptr);
+		VALIDATE(m_pTo->GetOwner() == m_pOwnerGraph);
 	}
 
 	/*
@@ -147,21 +169,19 @@ namespace LambdaEngine
 
 	AnimationGraph::AnimationGraph()
 		: m_IsBlending(false)
-		, m_CurrentTransition(INVALID_TRANSITION)
-		, m_CurrentState(0)
+		, m_pCurrentTransition(nullptr)
+		, m_pCurrentState(nullptr)
 		, m_States()
 		, m_Transitions()
-		, m_TransitionResult()
 	{
 	}
 
 	AnimationGraph::AnimationGraph(AnimationState* pAnimationState)
 		: m_IsBlending(false)
-		, m_CurrentTransition(INVALID_TRANSITION)
-		, m_CurrentState(0)
+		, m_pCurrentTransition(nullptr)
+		, m_pCurrentState(nullptr)
 		, m_States()
 		, m_Transitions()
-		, m_TransitionResult()
 	{
 		AddState(pAnimationState);
 	}
@@ -179,40 +199,23 @@ namespace LambdaEngine
 		}
 	}
 
-	void AnimationGraph::Tick(float64 deltaTimeInSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton)
+	void AnimationGraph::Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds)
 	{
-		AnimationState& currentState = GetCurrentState();
-		currentState.Tick(skeleton, deltaTimeInSeconds);
-
 		// Handle transition
 		if (IsTransitioning())
 		{
-			Transition& currentTransition = GetCurrentTransition();
-			currentTransition.Tick(deltaTimeInSeconds);
+			Transition* pCurrentTransition = GetCurrentTransition();
+			pCurrentTransition->Tick(skeleton, deltaTimeInSeconds);
 
-			LOG_INFO("Weight=%.4f, LocalTime=%.4f", currentTransition.GetWeight(), currentState.GetNormalizedTime());
-
-			VALIDATE(HasState(currentTransition.To()));
-
-			AnimationState& toState = GetState(currentTransition.To());
-			if (currentTransition.GetWeight() > 0.0f)
+			if (pCurrentTransition->IsFinished())
 			{
-				toState.Tick(skeleton, deltaTimeInSeconds);
-
-				BinaryInterpolator interpolator(currentState.GetCurrentFrame(), toState.GetCurrentFrame(), m_TransitionResult);
-				interpolator.Interpolate(currentTransition.GetWeight());
-				if (!m_IsBlending)
-				{
-					m_IsBlending = true;
-				}
-
-				if (currentTransition.IsFinished())
-				{
-					LOG_INFO("FINISHED TRANSITION", currentTransition.GetWeight(), currentState.GetNormalizedTime());
-					
-					FinishTransition();
-				}
+				FinishTransition();
 			}
+		}
+		else
+		{
+			AnimationState* pCurrentState = GetCurrentState();
+			pCurrentState->Tick(skeleton, deltaTimeInSeconds);
 		}
 	}
 
@@ -220,7 +223,15 @@ namespace LambdaEngine
 	{
 		if (!HasState(pAnimationState->GetName()))
 		{
-			m_States.EmplaceBack(pAnimationState)->SetAnimationGraph(this);
+			AnimationState* pNewState = m_States.EmplaceBack(pAnimationState);
+			pNewState->SetAnimationGraph(this);
+			
+			// If this is the first state we add, set it to current
+			if (m_pCurrentState == nullptr)
+			{
+				m_pCurrentState = pNewState;
+			}
+
 			return true;
 		}
 		else
@@ -262,7 +273,7 @@ namespace LambdaEngine
 
 	bool AnimationGraph::AddTransition(Transition* pTransition)
 	{
-		if (!HasTransition(pTransition->From(), pTransition->To()))
+		if (!HasTransition(pTransition->GetFromStateName(), pTransition->GetToStateName()))
 		{
 			m_Transitions.EmplaceBack(pTransition)->SetAnimationGraph(this);
 			return true;
@@ -285,6 +296,8 @@ namespace LambdaEngine
 				return;
 			}
 		}
+
+		LOG_WARNING("[AnimationGraph::RemoveTransition] No transition from '%s' to '%s' exists", fromState.c_str(), toState.c_str());
 	}
 
 	void AnimationGraph::TransitionToState(const String& name)
@@ -295,10 +308,10 @@ namespace LambdaEngine
 			return;
 		}
 
-		AnimationState& currentState = GetCurrentState();
-		if (!HasTransition(currentState.GetName(), name))
+		AnimationState* pCurrentState = GetCurrentState();
+		if (!HasTransition(pCurrentState->GetName(), name))
 		{
-			LOG_WARNING("[AnimationGraph::TransitionToState] No transition defined from '%s' to '%s'", currentState.GetName().c_str(), name.c_str());
+			LOG_WARNING("[AnimationGraph::TransitionToState] No transition defined from '%s' to '%s'", pCurrentState->GetName().c_str(), name.c_str());
 			return;
 		}
 
@@ -311,20 +324,20 @@ namespace LambdaEngine
 		// Find correct transition
 		for (uint32 i = 0; i < m_Transitions.GetSize(); i++)
 		{
-			if (m_Transitions[i]->Equals(currentState.GetName(), name))
+			if (m_Transitions[i]->Equals(pCurrentState->GetName(), name))
 			{
-				m_CurrentTransition = static_cast<int32>(i);
+				m_pCurrentTransition = m_Transitions[i];
 				break;
 			}
 		}
 
-		LOG_INFO("Transition from '%s' to '%s'", currentState.GetName().c_str(), name.c_str());
+		LOG_INFO("Transition from '%s' to '%s'", pCurrentState->GetName().c_str(), name.c_str());
 	}
 
 	void AnimationGraph::MakeCurrentState(const String& name)
 	{
 		// Do nothing if we already are in correct state
-		if (GetCurrentState().GetName() == name)
+		if (GetCurrentState()->GetName() == name)
 		{
 			return;
 		}
@@ -334,14 +347,28 @@ namespace LambdaEngine
 		{
 			if (m_States[i]->GetName() == name)
 			{
-				GetCurrentState().Reset();
-
-				m_CurrentState = i;
+				GetCurrentState()->Reset();
+				m_pCurrentState = m_States[i];
 				return;
 			}
 		}
 
 		LOG_WARNING("[AnimationGraph::MakeCurrentState] No state with name '%s'", name.c_str());
+	}
+
+	void AnimationGraph::MakeCurrentState(AnimationState* pState)
+	{
+		if (pState->GetOwner() != this)
+		{
+			LOG_ERROR("[AnimationGraph::MakeCurrentState] This graph is not owner of specified state");
+			return;
+		}
+
+		if (m_pCurrentState != pState)
+		{
+			m_pCurrentState->Reset();
+			m_pCurrentState = pState;
+		}
 	}
 
 	bool AnimationGraph::HasState(const String& name)
@@ -370,99 +397,22 @@ namespace LambdaEngine
 		return false;
 	}
 
-	uint32 AnimationGraph::GetStateIndex(const String& name) const
+	AnimationState* AnimationGraph::GetState(const String& name) const
 	{
-		VALIDATE(m_States.IsEmpty() == false);
-
-		for (uint32 i = 0; i < m_States.GetSize(); i++)
-		{
-			if (m_States[i]->GetName() == name)
-			{
-				return i;
-			}
-		}
-
-		return UINT32_MAX;
-	}
-
-	AnimationState& AnimationGraph::GetState(uint32 index)
-	{
-		return *m_States[index];
-	}
-
-	const AnimationState& AnimationGraph::GetState(uint32 index) const
-	{
-		return *m_States[index];
-	}
-
-	AnimationState& AnimationGraph::GetState(const String& name)
-	{
-		VALIDATE(m_States.IsEmpty() == false);
+		VALIDATE(!m_States.IsEmpty());
 
 		for (AnimationState* pState : m_States)
 		{
 			if (pState->GetName() == name)
 			{
-				return *pState;
+				return pState;
 			}
 		}
 
-		VALIDATE(false);
-		return *m_States[0];
+		return nullptr;
 	}
 
-	const AnimationState& AnimationGraph::GetState(const String& name) const
-	{
-		VALIDATE(m_States.IsEmpty() == false);
-
-		for (AnimationState* pState : m_States)
-		{
-			if (pState->GetName() == name)
-			{
-				return *pState;
-			}
-		}
-
-		VALIDATE(false);
-		return *m_States[0];
-	}
-
-	AnimationState& AnimationGraph::GetCurrentState()
-	{
-		return *m_States[m_CurrentState];
-	}
-
-	const AnimationState& AnimationGraph::GetCurrentState() const
-	{
-		return *m_States[m_CurrentState];
-	}
-
-	uint32 AnimationGraph::GetTransitionIndex(const String& fromState, const String& toState)
-	{
-		VALIDATE(m_Transitions.IsEmpty() == false);
-
-		for (uint32 i = 0; i < m_Transitions.GetSize(); i++)
-		{
-			if (m_Transitions[i]->Equals(fromState, toState))
-			{
-				return i;
-			}
-		}
-
-		return UINT32_MAX;
-	}
-
-	Transition& AnimationGraph::GetTransition(uint32 index)
-	{
-		return *m_Transitions[index];
-	}
-
-	const Transition& AnimationGraph::GetTransition(uint32 index) const
-	{
-		return *m_Transitions[index];
-	}
-
-	Transition& AnimationGraph::GetTransition(const String& fromState, const String& toState)
+	Transition* AnimationGraph::GetTransition(const String& fromState, const String& toState) const
 	{
 		VALIDATE(m_Transitions.IsEmpty() == false);
 
@@ -470,62 +420,46 @@ namespace LambdaEngine
 		{
 			if (pTransition->Equals(fromState, toState))
 			{
-				return *pTransition;
+				return pTransition;
 			}
 		}
 
-		VALIDATE(false);
-		return *m_Transitions[0];
+		return nullptr;
 	}
 
-	const Transition& AnimationGraph::GetTransition(const String& fromState, const String& toState) const
+	Transition* AnimationGraph::GetTransition(AnimationState* pFromState, AnimationState* pToState) const
 	{
 		VALIDATE(m_Transitions.IsEmpty() == false);
 
-		for (const Transition* pTransition : m_Transitions)
+		for (Transition* pTransition : m_Transitions)
 		{
-			if (pTransition->Equals(fromState, toState))
+			if (pTransition->Equals(pFromState, pToState))
 			{
-				return *pTransition;
+				return pTransition;
 			}
 		}
 
-		VALIDATE(false);
-		return *m_Transitions[0];
-	}
-
-	Transition& AnimationGraph::GetCurrentTransition()
-	{
-		VALIDATE(m_Transitions.IsEmpty() == false);
-		VALIDATE(m_CurrentTransition > INVALID_TRANSITION);
-		return *m_Transitions[m_CurrentTransition];
-	}
-
-	const Transition& AnimationGraph::GetCurrentTransition() const
-	{
-		VALIDATE(m_Transitions.IsEmpty() == false);
-		VALIDATE(m_CurrentTransition > INVALID_TRANSITION);
-		return *m_Transitions[m_CurrentTransition];
+		return nullptr;
 	}
 	
 	const TArray<SQT>& AnimationGraph::GetCurrentFrame() const
 	{
-		if (m_IsBlending)
+		if (IsTransitioning())
 		{
-			return m_TransitionResult;
+			return GetCurrentTransition()->GetCurrentFrame();
 		}
 		else
 		{
-			return GetCurrentState().GetCurrentFrame();
+			return GetCurrentState()->GetCurrentFrame();
 		}
 	}
 		
 	void AnimationGraph::FinishTransition()
 	{
-		GetCurrentTransition().OnFinished();
+		GetCurrentTransition()->OnFinished();
 
-		MakeCurrentState(GetCurrentTransition().To());
-		m_CurrentTransition = INVALID_TRANSITION;
-		m_IsBlending = false;
+		MakeCurrentState(GetCurrentTransition()->GetToState());
+		m_pCurrentTransition	= nullptr;
+		m_IsBlending			= false;
 	}
 }

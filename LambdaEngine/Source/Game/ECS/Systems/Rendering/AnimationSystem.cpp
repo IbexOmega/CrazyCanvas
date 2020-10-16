@@ -37,12 +37,24 @@ namespace LambdaEngine
 
 		// Call the graphs tick
 		VALIDATE(animation.pGraph != nullptr);
-		animation.pGraph->Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
+		animation.pGraph->Tick(skeleton, GetDeltaTimeInSeconds());
 
 		// TODO: Remove this since it is only for testing
-		if (m_ChangeState)
+		if (m_Walking)
 		{
-			if (animation.pGraph->GetCurrentState().GetName() == "running")
+			if (animation.pGraph->GetCurrentState()->GetName() == "running")
+			{
+				animation.pGraph->TransitionToState("walking");
+			}
+			else
+			{
+				animation.pGraph->TransitionToState("running");
+			}
+		}
+
+		if (m_Reload)
+		{
+			if (animation.pGraph->GetCurrentState()->GetName() == "running")
 			{
 				animation.pGraph->TransitionToState("reload");
 			}
@@ -94,7 +106,11 @@ namespace LambdaEngine
 	{
 		if (keyPressedEvent.Key == EKey::KEY_Q)
 		{
-			m_ChangeState = true;
+			m_Walking = true;
+		}
+		else if (keyPressedEvent.Key == EKey::KEY_1)
+		{
+			m_Reload = true;
 		}
 
 		return false;
@@ -160,7 +176,8 @@ namespace LambdaEngine
 		}
 		m_JobIndices.Clear();
 
-		m_ChangeState = false;
+		m_Walking	= false;
+		m_Reload	= false;
 	}
 
 	AnimationSystem& AnimationSystem::GetInstance()

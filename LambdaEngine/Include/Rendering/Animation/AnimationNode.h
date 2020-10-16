@@ -48,7 +48,9 @@ namespace LambdaEngine
 		virtual void Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds) = 0;
 		virtual void Reset() = 0;
 
-		virtual float64 GetDurationInSeconds() const	= 0;
+		virtual void MatchDuration(float64 durationInSeconds) = 0;
+
+		virtual float64 GetDurationInSeconds()  const	= 0;
 		virtual float64 GetLocalTimeInSeconds() const	= 0;
 
 		virtual const TArray<SQT>& GetResult() const = 0;
@@ -109,6 +111,12 @@ namespace LambdaEngine
 			ResetTriggers();
 		}
 
+		virtual void MatchDuration(float64 durationInSeconds)
+		{
+			const float32 newSpeed = (m_DurationInSeconds / m_OrignalPlaybackSpeed) / fabs(durationInSeconds);
+			m_PlaybackSpeed = newSpeed;
+		}
+
 		virtual const TArray<SQT>& GetResult() const override
 		{
 			return m_FrameData;
@@ -116,7 +124,7 @@ namespace LambdaEngine
 
 		virtual float64 GetDurationInSeconds() const override
 		{
-			return m_DurationInSeconds;
+			return m_DurationInSeconds / m_PlaybackSpeed;
 		}
 
 		virtual float64 GetLocalTimeInSeconds() const override
@@ -198,6 +206,7 @@ namespace LambdaEngine
 		bool m_LoopFinished;
 
 		uint32	m_NumLoops;
+		float32	m_OrignalPlaybackSpeed;
 		float32	m_PlaybackSpeed;
 		float64	m_RunningTime;
 		float64	m_NormalizedTime;
@@ -236,6 +245,12 @@ namespace LambdaEngine
 			m_pIn->Reset();
 		}
 
+		virtual void MatchDuration(float64 durationInSeconds)
+		{
+			VALIDATE(m_pIn != nullptr);
+			m_pIn->MatchDuration(durationInSeconds);
+		}
+
 		virtual const TArray<SQT>& GetResult() const override
 		{
 			VALIDATE(m_pIn != nullptr);
@@ -269,25 +284,30 @@ namespace LambdaEngine
 	};
 
 	/*
-	* BlendInfo
+	* BlendInfo - Clip0 is the leader clip, this means that it is the mainclip and is the clip that clip1 
+	* will sync to if this is enabled. This also means that clip0 always will be used, so when using the cliplimit, 
+	* the joints that are specified to not be used in clip1 will fallback to the same joints in clip0.
 	*/
 
 	struct BlendInfo
 	{
 		inline BlendInfo()
-			: WeightIn0(0.5f)
-			, ClipLimit0("")
+			: WeightIn1(0.5f)
+			, ClipLimit1("")
+			, ShouldSync(false)
 		{
 		}
 
-		inline explicit BlendInfo(float32 weightIn0, PrehashedString clipLimit0 = "")
-			: WeightIn0(weightIn0)
-			, ClipLimit0(clipLimit0)
+		inline explicit BlendInfo(float32 weightIn1, PrehashedString clipLimit1 = "", bool shouldSync = false)
+			: WeightIn1(weightIn1)
+			, ClipLimit1(clipLimit1)
+			, ShouldSync(shouldSync)
 		{
 		}
 
-		float32 WeightIn0;
-		PrehashedString ClipLimit0; // Limit animation from this joint for clip0
+		bool ShouldSync;
+		float32 WeightIn1;
+		PrehashedString ClipLimit1; // Limit animation from this joint for clip1
 	};
 
 	/*
@@ -306,6 +326,12 @@ namespace LambdaEngine
 		{
 			m_pIn0->Reset();
 			m_pIn1->Reset();
+		}
+
+		virtual void MatchDuration(float64 durationInSeconds)
+		{
+			m_pIn0->MatchDuration(durationInSeconds);
+			m_pIn1->MatchDuration(durationInSeconds);
 		}
 
 		virtual const TArray<SQT>& GetResult() const override

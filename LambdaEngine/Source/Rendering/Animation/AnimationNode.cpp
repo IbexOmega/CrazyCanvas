@@ -45,6 +45,7 @@ namespace LambdaEngine
 		, m_IsLooping(isLooping)
 		, m_IsPlaying(false)
 		, m_NumLoops(1)
+		, m_OrignalPlaybackSpeed(playbackSpeed)
 		, m_PlaybackSpeed(playbackSpeed)
 		, m_RunningTime(0.0)
 		, m_NormalizedTime(0.0)
@@ -253,6 +254,12 @@ namespace LambdaEngine
 	void BlendNode::Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds)
 	{
 		// Tick both
+		if (m_BlendInfo.ShouldSync)
+		{
+			const float64 duration0 = m_pIn0->GetDurationInSeconds();
+			m_pIn1->MatchDuration(duration0);
+		}
+
 		m_pIn0->Tick(skeleton, deltaTimeInSeconds);
 		m_pIn1->Tick(skeleton, deltaTimeInSeconds);
 
@@ -264,26 +271,25 @@ namespace LambdaEngine
 		VALIDATE(m_In0.GetSize() == skeleton.Joints.GetSize());
 
 		// Make sure we do not use unwanted joints
-		if (m_BlendInfo.ClipLimit0 != "")
+		if (m_BlendInfo.ClipLimit1 != "")
 		{
-			auto joint = skeleton.JointMap.find(m_BlendInfo.ClipLimit0);
+			auto joint = skeleton.JointMap.find(m_BlendInfo.ClipLimit1);
 			if (joint != skeleton.JointMap.end())
 			{
 				JointIndexType clipLimit = joint->second;
-				for (uint32 i = 0; i < m_In0.GetSize(); i++)
+				for (uint32 i = 0; i < m_In1.GetSize(); i++)
 				{
 					JointIndexType myID = static_cast<JointIndexType>(i);
 					if (!FindLimit(skeleton, myID, clipLimit))
 					{
-						m_In0[i] = m_In1[i];
+						m_In1[i] = m_In0[i];
 					}
 				}
 			}
 		}
 
-		// The inputs are swapped so that weight corresponds to correct node
-		BinaryInterpolator interpolator(m_In1, m_In0, m_FrameData);
-		interpolator.Interpolate(m_BlendInfo.WeightIn0);
+		BinaryInterpolator interpolator(m_In0, m_In1, m_FrameData);
+		interpolator.Interpolate(m_BlendInfo.WeightIn1);
 	}
 	
 	bool BlendNode::FindLimit(const Skeleton& skeleton, JointIndexType parentID, JointIndexType clipLimit)

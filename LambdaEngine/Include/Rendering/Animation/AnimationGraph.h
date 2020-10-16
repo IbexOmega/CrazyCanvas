@@ -18,53 +18,50 @@ namespace LambdaEngine
 		friend class AnimationGraph;
 
 	public:
-		Transition(const String& fromState, const String& toState, float64 fromBeginAt = 0.8, float64 toBeginAt = 0.0);
+		Transition(const String& fromState, const String& toState, float64 duration = 0.0);
 		~Transition() = default;
 
-		void Tick(const float64 delta);
+		void Tick(const Skeleton& skeleton, const float64 deltaTimeInSeconds);
 
 		bool Equals(const String& fromState, const String& toState) const;
+		bool Equals(AnimationState* pFromState, AnimationState* pToState) const;
 		bool UsesState(const String& state) const;
+		bool UsesState(AnimationState* pState) const;
 
 		FORCEINLINE void OnFinished()
 		{
-			m_LocalClock	= m_FromBeginAt;
+			m_LocalClock	= 0.0;
 			m_IsActive		= false;
-			m_LastTime		= 0.0;
-			m_DeltaTime		= 0.0;
 		}
 
 		FORCEINLINE bool IsFinished() const
 		{
-			// Use deltatime to predict if we are finished (This prevents the animation to replay due to large DT)
-			return (m_LocalClock + m_DeltaTime) >= 1.0;
+			return m_LocalClock >= m_Duration;
 		}
 
-		FORCEINLINE const String& From() const
+		FORCEINLINE const String& GetFromStateName() const
 		{
 			return m_FromState;
 		}
 
-		FORCEINLINE const String& To() const
+		FORCEINLINE const String& GetToStateName() const
 		{
 			return m_ToState;
 		}
 
-		FORCEINLINE float64 GetWeight() const
+		FORCEINLINE AnimationState* GetFromState() const
 		{
-			const float64 distance = 1.0 - m_FromBeginAt;
-			const float64 traveled = m_LocalClock - m_FromBeginAt;
-			return traveled / distance;
+			return m_pFrom;
 		}
 
-		FORCEINLINE float64 GetFromBeginAt() const
+		FORCEINLINE AnimationState* GetToState() const
 		{
-			return m_FromBeginAt;
+			return m_pTo;
 		}
 
-		FORCEINLINE float64 GetToBeginAt() const
+		FORCEINLINE const TArray<SQT>& GetCurrentFrame() const
 		{
-			return m_ToBeginAt;
+			return m_CurrentFrame;
 		}
 
 	private:
@@ -72,17 +69,16 @@ namespace LambdaEngine
 
 	private:
 		AnimationGraph* m_pOwnerGraph;
-		uint32 m_From;
-		uint32 m_To;
+		AnimationState* m_pFrom;
+		AnimationState* m_pTo;
 
 		bool	m_IsActive;
-		float64	m_DeltaTime;
-		float64	m_LastTime;
+		float64	m_Duration;
 		float64	m_LocalClock;
-		float64 m_FromBeginAt;
-		float64 m_ToBeginAt;
 		String	m_FromState;
 		String	m_ToState;
+
+		TArray<SQT> m_CurrentFrame;
 	};
 
 	/*
@@ -188,7 +184,7 @@ namespace LambdaEngine
 		AnimationGraph(AnimationState* pAnimationState);
 		~AnimationGraph();
 
-		void Tick(float64 deltaTimeInSeconds, float64 globalTimeInSeconds, const Skeleton& skeleton);
+		void Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds);
 
 		// Adds a new state to the graph if there currently are no state with the same name
 		// If AddState returns true the AnimationGraph has ownership if false YOU have to call delete
@@ -209,6 +205,7 @@ namespace LambdaEngine
 
 		// Forces current state to be the specified state (This does not require a transition)
 		void MakeCurrentState(const String& name);
+		void MakeCurrentState(AnimationState* pState);
 
 		// Returns true if the graph contains a state with the specified name
 		bool HasState(const String& name);
@@ -216,33 +213,28 @@ namespace LambdaEngine
 		// Returns true if the graph contains a transition with the specified from and to
 		bool HasTransition(const String& fromState, const String& toState);
 
-		// Returns UINT32_MAX if not found
-		uint32 GetStateIndex(const String& name) const;
-
-		AnimationState& GetState(uint32 index);
-		const AnimationState& GetState(uint32 index) const;
-		AnimationState& GetState(const String& name);
-		const AnimationState& GetState(const String& name) const;
-
-		AnimationState& GetCurrentState();
-		const AnimationState& GetCurrentState() const;
-
-		// Returns UINT32_MAX if not found
-		uint32 GetTransitionIndex(const String& fromState, const String& toState);
-
-		Transition& GetTransition(uint32 index);
-		const Transition& GetTransition(uint32 index) const;
-		Transition& GetTransition(const String& fromState, const String& toState);
-		const Transition& GetTransition(const String& fromState, const String& toState) const;
-
-		Transition& GetCurrentTransition();
-		const Transition& GetCurrentTransition() const;
-
 		const TArray<SQT>& GetCurrentFrame() const;
+
+		// Returns nullptr if the state does not exist
+		AnimationState* GetState(const String& name) const;
+
+		// Returns nullptr if the transition does not exist
+		Transition* GetTransition(AnimationState* pFromState, AnimationState* pToState) const;
+		Transition* GetTransition(const String& fromState, const String& toState) const;
+
+		FORCEINLINE Transition* GetCurrentTransition() const
+		{
+			return m_pCurrentTransition;
+		}
+		
+		FORCEINLINE AnimationState* GetCurrentState() const
+		{
+			return m_pCurrentState;
+		}
 
 		FORCEINLINE bool IsTransitioning() const
 		{
-			return (m_CurrentTransition > INVALID_TRANSITION);
+			return m_pCurrentTransition != nullptr;
 		}
 
 	private:
@@ -251,11 +243,10 @@ namespace LambdaEngine
 	private:
 		bool m_IsBlending;
 
-		int32	m_CurrentTransition;
-		uint32	m_CurrentState;
+		Transition*		m_pCurrentTransition;
+		AnimationState* m_pCurrentState;
 
 		TArray<AnimationState*>	m_States;
 		TArray<Transition*>		m_Transitions;
-		TArray<SQT>				m_TransitionResult;
 	};
 }

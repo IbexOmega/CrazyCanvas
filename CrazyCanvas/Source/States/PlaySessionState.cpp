@@ -196,7 +196,7 @@ void PlaySessionState::Init()
 		robotAnimationComp.Pose		= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 5.75f, -2.5f);
-		glm::vec3 scale(0.01f);
+		glm::vec3 scale(1.0f);
 
 		Entity entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -205,7 +205,7 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(0.0f, 5.8f, 0.0f);
+		position = glm::vec3(0.0f, 0.8f, 0.0f);
 
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0], 2.0f));
 
@@ -216,7 +216,7 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(-3.5f, 5.75f, 0.0f);
+		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
@@ -226,7 +226,7 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
-		position = glm::vec3(3.5f, 5.75f, 0.0f);
+		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
 		AnimationState* pReloadState = DBG_NEW AnimationState("reload");
 		ClipNode* pReload = pReloadState->CreateClipNode(reload[0], 2.0, true);
@@ -240,8 +240,8 @@ void PlaySessionState::Init()
 		}));
 		pReload->AddTrigger(ClipTrigger(0.8, [](const ClipNode& clip, AnimationGraph& graph)
 		{
-			graph.TransitionToState("running");
 			LOG_INFO("Trigger at 0.1 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+			graph.TransitionToState("running");
 		}));
 
 		ClipNode*	pRunning	= pReloadState->CreateClipNode(running[0]);
@@ -253,8 +253,8 @@ void PlaySessionState::Init()
 		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
 		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
 		pAnimationGraph->AddState(pReloadState);
-		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.2, 0.5));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running", 0.5, 0.2));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.2));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running"));
 		robotAnimationComp.pGraph = pAnimationGraph;
 
 		entity = pECS->CreateEntity();

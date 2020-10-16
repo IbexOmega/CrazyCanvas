@@ -104,6 +104,7 @@ void SandboxState::Init()
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
+		TArray<GUID_Lambda> walking		= ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
 		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
 		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Robot/Reloading.fbx");
 
@@ -167,31 +168,35 @@ void SandboxState::Init()
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
 		AnimationState* pReloadState = DBG_NEW AnimationState("reload");
-		ClipNode* pReload = pReloadState->CreateClipNode(reload[0], 1.0, false);
-		pReload->AddTrigger(ClipTrigger(0.0, [](const ClipNode& clip, const AnimationGraph& graph)
-		{
-			LOG_INFO("Trigger at 0.0 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
-		}));
-		pReload->AddTrigger(ClipTrigger(0.5, [](const ClipNode& clip, const AnimationGraph& graph)
-		{
-			LOG_INFO("Trigger at 0.5 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
-		}));
-		pReload->AddTrigger(ClipTrigger(1.0, [](const ClipNode& clip, const AnimationGraph& graph)
-		{
-			LOG_INFO("Trigger at 1.0 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
-		}));
+		ClipNode* pReload = pReloadState->CreateClipNode(reload[0], 1.0, true);
+		pReload->AddTrigger(ClipTrigger(0.0, [](const ClipNode& clip, AnimationGraph& graph)
+			{
+				LOG_INFO("Trigger at 0.0 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+			}));
+		pReload->AddTrigger(ClipTrigger(0.5, [](const ClipNode& clip, AnimationGraph& graph)
+			{
+				LOG_INFO("Trigger at 0.5 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+			}));
+		pReload->AddTrigger(ClipTrigger(0.8, [](const ClipNode& clip, AnimationGraph& graph)
+			{
+				graph.TransitionToState("running");
+				LOG_INFO("Trigger at 0.8 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+			}));
 
-		ClipNode*	pRunning	= pReloadState->CreateClipNode(running[0]);
-		ClipNode*	pDancing	= pReloadState->CreateClipNode(animations[0]);
-		BlendNode*	pBlendNode0 = pReloadState->CreateBlendNode(pDancing, pReload, BlendInfo(1.0f, "mixamorig:Neck"));
-		BlendNode*	pBlendNode1 = pReloadState->CreateBlendNode(pBlendNode0, pRunning, BlendInfo(1.0f, "mixamorig:Spine"));
+		ClipNode*	pRunning = pReloadState->CreateClipNode(running[0]);
+		ClipNode*	pDancing = pReloadState->CreateClipNode(animations[0]);
+		BlendNode*	pBlendNode0 = pReloadState->CreateBlendNode(pReload, pDancing, BlendInfo(1.0f, "mixamorig:Neck", true));
+		BlendNode*	pBlendNode1 = pReloadState->CreateBlendNode(pRunning, pBlendNode0, BlendInfo(1.0f, "mixamorig:Spine"));
 		pReloadState->SetOutputNode(pBlendNode1);
 
 		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
 		pAnimationGraph->AddState(pReloadState);
+		pAnimationGraph->AddState(DBG_NEW AnimationState("walking", walking[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.2, 0.5));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running", 0.5, 0.2));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running"));
 		robotAnimationComp.pGraph = pAnimationGraph;
 
 		entity = pECS->CreateEntity();
