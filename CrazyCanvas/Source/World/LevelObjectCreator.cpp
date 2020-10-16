@@ -130,7 +130,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 2028, 2028));
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
