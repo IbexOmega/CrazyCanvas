@@ -51,7 +51,10 @@ namespace LambdaEngine
 	{
 		// Register system
 		{
+			auto onStaticCollisionAdded = std::bind(&PhysicsSystem::OnStaticCollisionAdded, this, std::placeholders::_1);
 			auto onStaticCollisionRemoval = std::bind(&PhysicsSystem::OnStaticCollisionRemoval, this, std::placeholders::_1);
+
+			auto onDynamicCollisionAdded = std::bind(&PhysicsSystem::OnDynamicCollisionAdded, this, std::placeholders::_1);
 			auto onDynamicCollisionRemoval = std::bind(&PhysicsSystem::OnDynamicCollisionRemoval, this, std::placeholders::_1);
 			auto onCharacterCollisionRemoval = std::bind(&PhysicsSystem::OnCharacterColliderRemoval, this, std::placeholders::_1);
 
@@ -64,6 +67,7 @@ namespace LambdaEngine
 					{
 						{NDA, StaticCollisionComponent::Type()}, {NDA, PositionComponent::Type()}, {NDA, RotationComponent::Type()}
 					},
+					.OnEntityAdded = onStaticCollisionAdded,
 					.OnEntityRemoval = onStaticCollisionRemoval
 				},
 				{
@@ -72,6 +76,7 @@ namespace LambdaEngine
 					{
 						{NDA, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}, {RW, VelocityComponent::Type()}
 					},
+					.OnEntityAdded = onDynamicCollisionAdded,
 					.OnEntityRemoval = onDynamicCollisionRemoval
 				},
 				{
@@ -208,19 +213,19 @@ namespace LambdaEngine
 		}
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionSphere(const CollisionInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionSphere(const CollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionSphere(collisionInfo);
 		return FinalizeStaticCollisionActor(collisionInfo, pShape);
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionBox(const CollisionInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionBox(const CollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionBox(collisionInfo);
 		return FinalizeStaticCollisionActor(collisionInfo, pShape);
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionCapsule(const CollisionInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionCapsule(const CollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionCapsule(collisionInfo);
 
@@ -229,25 +234,25 @@ namespace LambdaEngine
 		return FinalizeStaticCollisionActor(collisionInfo, pShape, uprightRotation);
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionMesh(const CollisionInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionMesh(const CollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo);
 		return FinalizeStaticCollisionActor(collisionInfo, pShape);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionSphere(const DynamicCollisionInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionSphere(const DynamicCollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionSphere(collisionInfo);
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionBox(const DynamicCollisionInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionBox(const DynamicCollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionBox(collisionInfo);
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionCapsule(const DynamicCollisionInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionCapsule(const DynamicCollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionCapsule(collisionInfo);
 
@@ -256,13 +261,13 @@ namespace LambdaEngine
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape, uprightRotation);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionMesh(const DynamicCollisionInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionMesh(const DynamicCollisionCreateInfo& collisionInfo)
 	{
 		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo);
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
 	}
 
-	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderInfo& characterColliderInfo, float height, float radius)
+	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderCreateInfo& characterColliderInfo, float height, float radius)
 	{
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
@@ -272,7 +277,7 @@ namespace LambdaEngine
 		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
 	}
 
-	CharacterColliderComponent PhysicsSystem::CreateCharacterBox(const CharacterColliderInfo& characterColliderInfo, const glm::vec3& halfExtents)
+	CharacterColliderComponent PhysicsSystem::CreateCharacterBox(const CharacterColliderCreateInfo& characterColliderInfo, const glm::vec3& halfExtents)
 	{
 		PxBoxControllerDesc controllerDesc = {};
 		controllerDesc.halfHeight			= halfExtents.y;
@@ -293,17 +298,26 @@ namespace LambdaEngine
 				// Check if the collided actors have collision callback functions
 				for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
 				{
-					const std::function<void()>* pCollisionCallback = reinterpret_cast<const std::function<void()>*>(pairHeader.actors[actorIdx]->userData);
+					PxRigidActor* pActor = pairHeader.actors[actorIdx];
+					auto pCollisionCallback = reinterpret_cast<const std::function<void(const CollisionInfo& collisionInfo)>*>(pActor->userData);
 					if (pCollisionCallback)
 					{
-						(*pCollisionCallback)();
+						// Create and pass collision info to the callback function
+						const PxTransform transformPX = pActor->getGlobalPose();
+						const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
+
+						CollisionInfo collisionInfo;
+						collisionInfo.Position	= { transformPX.p.x, transformPX.p.y, transformPX.p.z };
+						collisionInfo.Direction	= GetForward(rotation);
+
+						(*pCollisionCallback)(collisionInfo);
 					}
 				}
 			}
 		}
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionSphere(const CollisionInfo& staticCollisionInfo) const
+	PxShape* PhysicsSystem::CreateCollisionSphere(const CollisionCreateInfo& staticCollisionInfo) const
 	{
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
 		const TArray<Vertex>& vertices = pMesh->Vertices;
@@ -323,7 +337,7 @@ namespace LambdaEngine
 		return pSphereShape;
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionBox(const CollisionInfo& staticCollisionInfo) const
+	PxShape* PhysicsSystem::CreateCollisionBox(const CollisionCreateInfo& staticCollisionInfo) const
 	{
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
 		const glm::vec3 halfExtent = pMesh->BoundingBox.Dimensions * staticCollisionInfo.Scale.Scale / 2.0f;
@@ -333,7 +347,7 @@ namespace LambdaEngine
 		return pBoxShape;
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionCapsule(const CollisionInfo& staticCollisionInfo) const
+	PxShape* PhysicsSystem::CreateCollisionCapsule(const CollisionCreateInfo& staticCollisionInfo) const
 	{
 		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
 			it is rotated around the z-axis. */
@@ -367,7 +381,7 @@ namespace LambdaEngine
 		return pShape;
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const CollisionInfo& staticCollisionInfo) const
+	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const CollisionCreateInfo& staticCollisionInfo) const
 	{
 		/* PhysX is capable of 'cooking' meshes; generating an optimized collision mesh from triangle data */
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
@@ -438,6 +452,18 @@ namespace LambdaEngine
 		}
 	}
 
+	void PhysicsSystem::OnStaticCollisionAdded(Entity entity)
+	{
+		StaticCollisionComponent& collisionComp = ECSCore::GetInstance()->GetComponent<StaticCollisionComponent>(entity);
+		m_pScene->addActor(*collisionComp.pActor);
+	}
+
+	void PhysicsSystem::OnDynamicCollisionAdded(Entity entity)
+	{
+		DynamicCollisionComponent& collisionComp = ECSCore::GetInstance()->GetComponent<DynamicCollisionComponent>(entity);
+		m_pScene->addActor(*collisionComp.pActor);
+	}
+
 	void PhysicsSystem::OnStaticCollisionRemoval(Entity entity)
 	{
 		// Remove the actor from the scene
@@ -470,7 +496,7 @@ namespace LambdaEngine
 		}
 	}
 
-	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
+	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
@@ -482,7 +508,7 @@ namespace LambdaEngine
 		return { pActor };
 	}
 
-	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(const DynamicCollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
+	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
@@ -498,7 +524,7 @@ namespace LambdaEngine
 		return { pActor };
 	}
 
-	void PhysicsSystem::FinalizeCollisionActor(const CollisionInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape)
+	void PhysicsSystem::FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape)
 	{
 		// Set shape's filter data
 		PxFilterData filterData;
@@ -509,22 +535,19 @@ namespace LambdaEngine
 
 		pActor->attachShape(*pShape);
 
+		// Decreases the ref count to 1, which will drop to 0 when the actor is deleted
+		pShape->release();
+
 		// Set collision callback
 		if (collisionInfo.CollisionCallback)
 		{
 			pActor->userData = DBG_NEW std::function<void()>;
-			std::function<void()>* pUserData = reinterpret_cast<std::function<void()>*>(pActor->userData);
+			auto pUserData = reinterpret_cast<std::function<void(const CollisionInfo& collisionInfo)>*>(pActor->userData);
 			*pUserData = collisionInfo.CollisionCallback;
 		}
-
-		m_pScene->addActor(*pActor);
-
-		/*	Decreases the ref count to 1, which will drop to 0 either when explicitly removed, or when the scene
-			is released */
-		pShape->release();
 	}
 
-	CharacterColliderComponent PhysicsSystem::FinalizeCharacterController(const CharacterColliderInfo& characterColliderInfo, PxControllerDesc& controllerDesc)
+	CharacterColliderComponent PhysicsSystem::FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc)
 	{
 		/*	For information about PhysX character controllers in general:
 			https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/guide/Manual/CharacterControllers.html */

@@ -4,6 +4,8 @@
 #include "Game/State.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+#include "EventHandlers/AudioEffectHandler.h"
+#include "EventHandlers/MeshPaintHandler.h"
 
 #include "Networking/API/IPAddress.h"
 
@@ -31,4 +33,8 @@ private:
 	LambdaEngine::IPAddress* m_pIPAddress;
 
 	WeaponSystem m_WeaponSystem;
+
+	/* Event handlers */
+	AudioEffectHandler m_AudioEffectHandler;
+	MeshPaintHandler m_MeshPaintHandler;
 };

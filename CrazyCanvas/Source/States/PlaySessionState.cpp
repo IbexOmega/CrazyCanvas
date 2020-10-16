@@ -43,6 +43,11 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
+
+	// Initialize event listeners
+	m_AudioEffectHandler.Init();
+	m_MeshPaintHandler.Init();
+
 	m_WeaponSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -54,7 +59,7 @@ void PlaySessionState::Init()
 		m_pLevel = LevelManager::LoadLevel(0);
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
-	
+
 	//// Robot
 	//{
 	//	TArray<GUID_Lambda> animations;
