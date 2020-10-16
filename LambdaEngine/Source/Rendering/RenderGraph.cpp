@@ -1500,6 +1500,7 @@ namespace LambdaEngine
 			newResource.Name				= pResourceDesc->Name;
 			newResource.IsBackBuffer		= pResourceDesc->Name == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 			newResource.BackBufferBound		= newResource.IsBackBuffer || newResource.BackBufferBound;
+			newResource.ShouldSynchronize	= pResourceDesc->ShouldSynchronize;
 
 			if (newResource.BackBufferBound)
 			{
@@ -2519,7 +2520,7 @@ namespace LambdaEngine
 						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
 						{
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
-							descriptorSetLayout.DescriptorBindings = drawArgExtensionDescriptorSetDescriptions;
+							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetDescriptions;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
 						}
 					}
@@ -2851,6 +2852,9 @@ namespace LambdaEngine
 				}
 
 				Resource* pResource = &it->second;
+
+				if (!pResource->ShouldSynchronize)
+					continue;
 
 				auto prevRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->PrevRenderStage);
 				auto nextRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->NextRenderStage);
@@ -3514,7 +3518,7 @@ namespace LambdaEngine
 			}
 
 			//Transfer to Initial State
-			if (pResource->Texture.InitialTransitionBarrier.QueueBefore != ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN)
+			if (pResource->Texture.InitialTransitionBarrier.QueueBefore != ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN && pResource->ShouldSynchronize)
 			{
 				PipelineTextureBarrierDesc& initialBarrier = pResource->Texture.InitialTransitionBarrier;
 
