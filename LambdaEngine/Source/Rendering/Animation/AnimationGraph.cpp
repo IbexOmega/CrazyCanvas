@@ -33,9 +33,9 @@ namespace LambdaEngine
 
 			// Move clock
 			m_LocalClock += deltaTimeInSeconds;
-			const float64 weight = (m_LocalClock / m_Duration) / 0.95;
+			const float64 weight = (m_LocalClock / (m_Duration));
 
-			LOG_INFO("Weight=%.4f", weight);
+			LOG_INFO("From='%s', To='%s' Weight=%.4f", m_pFrom->GetName().c_str(), m_pTo->GetName().c_str(), weight);
 
 			const TArray<SQT>& in0 = m_pFrom->GetCurrentFrame();
 			const TArray<SQT>& in1 = m_pTo->GetCurrentFrame();
@@ -151,6 +151,7 @@ namespace LambdaEngine
 
 	void AnimationState::Reset()
 	{
+		LOG_INFO("Reset %s", m_Name.c_str());
 		m_pFinalNode->Reset();
 	}
 

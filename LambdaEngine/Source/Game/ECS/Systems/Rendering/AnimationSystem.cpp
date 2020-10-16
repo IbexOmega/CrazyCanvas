@@ -98,7 +98,7 @@ namespace LambdaEngine
 
 	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation)
 	{
-		SAFEDELETE(animation.pGraph)
+		SAFEDELETE(animation.pGraph);
 	}
 
 	// TODO: Remove this since it is only for testing
