@@ -89,7 +89,7 @@ namespace LambdaEngine
 				TextureView**	ppPerSubImageTextureViews;
 				Sampler**		ppSamplers;
 				uint32			TextureCount;
-				uint16			SamplerCount;
+				uint32			SamplerCount;
 				uint32			PerImageSubImageTextureViewCount;
 			} ExternalTextureUpdate;
 
