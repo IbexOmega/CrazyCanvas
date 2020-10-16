@@ -1,6 +1,6 @@
 #include "Game/Multiplayer/Server/ClientRemoteSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
-#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
+#include "Game/Multiplayer/CharacterControllerHelper.h"
 #include "Game/World/Player/PlayerActionSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -74,7 +74,7 @@ namespace LambdaEngine
 						}
 
 						PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
-						CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+						CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 						NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
 						BinaryEncoder encoder(pPacket);
