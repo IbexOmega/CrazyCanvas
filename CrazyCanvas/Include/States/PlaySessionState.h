@@ -31,6 +31,7 @@ private:
 
 	LambdaEngine::IPAddress* m_pIPAddress;
 
+	/* Systems */
 	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */

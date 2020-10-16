@@ -2,8 +2,6 @@
 
 #include "ECS/System.h"
 
-#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
-
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/UDP/INetworkDiscoveryServer.h"
 
@@ -53,7 +51,6 @@ namespace LambdaEngine
 	private:
 		IDVector					m_NetworkEntities;
 		ServerBase*					m_pServer;
-		CharacterControllerSystem	m_CharacterControllerSystem;
 		String						m_Name;
 
 	private:
