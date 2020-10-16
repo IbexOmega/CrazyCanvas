@@ -17,6 +17,12 @@ namespace LambdaEngine
 	struct RotationComponent;
 	struct VelocityComponent;
 
+	enum class EShapeType
+	{
+		SIMULATION,	// A simulation shape is a regular physics object with collision detection and handling
+		TRIGGER		// A trigger shape does not take part in the simulation, it only generates overlap reports
+	};
+
 	enum FCollisionGroup : uint32
 	{
 		COLLISION_GROUP_NONE	= 0,
@@ -25,11 +31,19 @@ namespace LambdaEngine
 		COLLISION_GROUP_PLAYER	= (1 << 2),
 	};
 
-	// CollisionInfo is passed to collision callbacks
-	struct CollisionInfo
+	// EntityCollisionInfo contains information on a colliding entity.
+	struct EntityCollisionInfo
 	{
+		Entity Entity;
 		glm::vec3 Position;
 		glm::vec3 Direction;
+	};
+
+	// ActorUserData is stored in each PxActor::userData. It is used eg. when colliding.
+	struct ActorUserData
+	{
+		Entity Entity;
+		std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
 	};
 
 	// CollisionCreateInfo contains information required to create a collision component
@@ -40,9 +54,11 @@ namespace LambdaEngine
 		const ScaleComponent& Scale;
 		const RotationComponent& Rotation;
 		const MeshComponent& Mesh;
+		EShapeType ShapeType;
 		FCollisionGroup CollisionGroup;				// The category of the object
 		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
-		std::function<void(const CollisionInfo& collisionInfo)> CollisionCallback;	// Optional
+		// Optional. The first collision info is on the entity whose callback is called.
+		std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
 	};
 
 	struct DynamicCollisionCreateInfo : CollisionCreateInfo
@@ -91,8 +107,8 @@ namespace LambdaEngine
 		PxScene* GetScene() { return m_pScene; }
 
 		/* Implement PxSimulationEventCallback */
-		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override final;
-		void onTrigger(PxTriggerPair*, PxU32) override final {}
+		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs) override final;
+		void onTrigger(PxTriggerPair* pTriggerPairs, PxU32 nbPairs) override final;
 		void onConstraintBreak(PxConstraintInfo*, PxU32) override final {}
 		void onWake(PxActor**, PxU32 ) override final {}
 		void onSleep(PxActor**, PxU32 ) override final {}
@@ -124,6 +140,8 @@ namespace LambdaEngine
 		DynamicCollisionComponent FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
 		CharacterColliderComponent FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
 		void FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape);
+
+		void TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors);
 
 	private:
 		static PhysicsSystem s_Instance;
