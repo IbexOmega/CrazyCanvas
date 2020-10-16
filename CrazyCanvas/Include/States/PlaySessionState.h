@@ -7,12 +7,14 @@
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
+#include "Networking/API/IPAddress.h"
+
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState(bool online);
+	PlaySessionState(LambdaEngine::IPAddress* pIPAddress);
 	~PlaySessionState();
 
 	void Init() override final;
@@ -26,9 +28,9 @@ public:
 
 private:
 	Level* m_pLevel = nullptr;
-	bool m_Online;
 
-	/* Systems */
+	LambdaEngine::IPAddress* m_pIPAddress;
+
 	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */

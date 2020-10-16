@@ -18,7 +18,7 @@ void MeshPaintHandler::Init()
 bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 {
 	using namespace LambdaEngine;
-	const CollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo;
+	const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
 	PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, EPaintMode::PAINT);
 	return true;
 }

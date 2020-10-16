@@ -59,7 +59,7 @@ namespace LambdaEngine
 		const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
 		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
-		
+
 		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
 		const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
 		VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
@@ -104,10 +104,10 @@ namespace LambdaEngine
 	* Sets the new position of the PositionComponent
 	*/
 	void CharacterControllerSystem::TickCharacterController(
-		float32 dt, 
-		Entity entity, 
-		ComponentArray<CharacterColliderComponent>* pCharacterColliders, 
-		const ComponentArray<NetworkPositionComponent>* pNetPosComponents, 
+		float32 dt,
+		Entity entity,
+		ComponentArray<CharacterColliderComponent>* pCharacterColliders,
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
 		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
 		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
@@ -135,7 +135,7 @@ namespace LambdaEngine
 		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 		const PxExtendedVec3& newPositionPX = pController->getFootPosition();
-		velocity = 
+		velocity =
 		{
 			(float)newPositionPX.x - oldPositionPX.x,
 			(float)newPositionPX.y - oldPositionPX.y,
@@ -157,7 +157,7 @@ namespace LambdaEngine
 			NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
 			positionCompMutable.Dirty = true;
 
-			positionCompMutable.Position = 
+			positionCompMutable.Position =
 			{
 				newPositionPX.x,
 				newPositionPX.y,

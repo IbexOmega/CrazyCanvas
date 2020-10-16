@@ -2,6 +2,7 @@
 
 #include "Game/State.h"
 #include "ECS/Entity.h"
+#include "World/Level.h"
 
 class Level;
 

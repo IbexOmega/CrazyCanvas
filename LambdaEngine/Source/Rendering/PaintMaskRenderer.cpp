@@ -181,7 +181,9 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
-
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
 	}
 
 
@@ -195,6 +197,10 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
+		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
+		UNREFERENCED_VARIABLE(subImageCount);
+
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
 			for (uint32 i = 0; i < imageCount; i++)
@@ -268,6 +274,8 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
+		UNREFERENCED_VARIABLE(resourceName);
+
 		m_pDrawArgs = pDrawArgs;
 
 		uint32 backBufferCount = m_BackBuffers.GetSize();
@@ -333,7 +341,9 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool sleeping)
 	{
+		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+		UNREFERENCED_VARIABLE(sleeping);
 
 		// Delete old resources.
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
@@ -637,6 +647,8 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
+		UNREFERENCED_VARIABLE(pPreInitDesc);
+		
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format = EFormat::FORMAT_R8G8B8A8_UNORM;
 		colorAttachmentDesc.SampleCount = 1;
