@@ -29,8 +29,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-PlaySessionState::PlaySessionState(bool online) : 
-	m_Online(online)
+PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
+	m_pIPAddress(pIPAddress)
 {
 
 }
@@ -166,26 +166,9 @@ void PlaySessionState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-
-		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f);
-		materialProperties.Roughness = 1.0f;
-		materialProperties.Metallic = 1.0f;
-
-		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Robot Material",
-			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
-			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
 	}
 
-	if (m_Online)
-		ClientSystem::GetInstance().Connect(NetworkUtils::GetLocalAddress());
-	else
-		ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
+	ClientSystem::GetInstance().Connect(m_pIPAddress);
 }
 
 bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
@@ -198,6 +181,8 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		bool isLocal = decoder.ReadBool();
 		int32 networkUID = decoder.ReadInt32();
 		glm::vec3 position = decoder.ReadVec3();
+		glm::vec3 forward = decoder.ReadVec3();
+		uint32 teamIndex = decoder.ReadUInt32();
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
@@ -213,11 +198,6 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		TArray<GUID_Lambda> animations;
 		bool animationsExist			= ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Standard Walk.fbx", animations);
 		const uint32 robotGUID			= ResourceManager::GetMeshGUID("Robot/Standard Walk.fbx");
-		const uint32 robotMaterialGUID	= ResourceManager::GetMaterialGUID("Robot Material");
-
-		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
-		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
@@ -232,10 +212,11 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 			.NetworkUID			= networkUID,
 			.pClient			= event.pClient,
 			.Position			= position,
-			.Forward			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+			.Forward			= forward,
 			.Scale				= glm::vec3(1.0f),
+			.TeamIndex			= teamIndex,
 			.pCameraDesc		= &cameraDesc,
-			.MeshComponent		= robotMeshComp,
+			.MeshGUID			= robotGUID,
 			.AnimationComponent = robotAnimationComp,
 		};
 

@@ -38,8 +38,9 @@ struct CreatePlayerDesc
 	glm::vec3							Position			= glm::vec3(0.0f);
 	glm::vec3							Forward				= glm::vec3(1.0f, 0.0f, 0.0f);
 	glm::vec3							Scale				= glm::vec3(1.0f);
+	uint32								TeamIndex			= 0;
 	const LambdaEngine::CameraDesc*		pCameraDesc			= nullptr;
-	LambdaEngine::MeshComponent			MeshComponent;
+	GUID_Lambda							MeshGUID			= GUID_NONE;
 	LambdaEngine::AnimationComponent	AnimationComponent;
 };
 

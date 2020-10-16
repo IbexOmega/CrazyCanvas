@@ -21,6 +21,9 @@ namespace LambdaEngine
 
 		uint64 GetHash() const;
 
+		bool operator==(const IPAddress& other) const;
+		bool operator!=(const IPAddress& other) const;
+
 	protected:
 		IPAddress(const std::string& address, uint64 hash);
 

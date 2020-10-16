@@ -16,7 +16,10 @@ namespace LambdaEngine
 		m_Lock(),
 		m_pHandler(),
 		m_TimeOfLastSearch(),
-		m_SearchInterval()
+		m_SearchInterval(),
+		m_BufferIndex(0),
+		m_ReceivedPackets(),
+		m_LockReceivedPackets()
 	{
 
 	}
@@ -113,9 +116,16 @@ namespace LambdaEngine
 			TArray<uint32> acks;
 
 			if (m_Transceiver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
-				HandleReceivedPacket(sender, packets[0]);
-
-			m_SegmentPool.FreeSegments(packets);
+			{
+				if (!HandleReceivedPacket(sender, packets[0]))
+				{
+					m_SegmentPool.FreeSegment(packets[0]);
+				}
+			}
+			else
+			{
+				m_SegmentPool.FreeSegments(packets);
+			}
 		}
 	}
 
@@ -147,19 +157,22 @@ namespace LambdaEngine
 			m_pSocket->Close();
 	}
 
-	void ClientNetworkDiscovery::HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket)
+	bool ClientNetworkDiscovery::HandleReceivedPacket(const IPEndPoint& sender, NetworkSegment* pPacket)
 	{
 		if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_DISCOVERY)
 		{
 			BinaryDecoder decoder(pPacket);
 			if (decoder.ReadString() == m_NameOfGame)
 			{
-				m_pHandler->OnServerFound(decoder, IPEndPoint(sender.GetAddress(), decoder.ReadUInt16()));
+				std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
+				m_ReceivedPackets[m_BufferIndex].PushBack({ decoder, sender });
+				return true;
 			}
 		}
+		return false;
 	}
 
-	void ClientNetworkDiscovery::Tick(Timestamp delta)
+	void ClientNetworkDiscovery::FixedTick(Timestamp delta)
 	{
 		UNREFERENCED_VARIABLE(delta);
 
@@ -168,5 +181,25 @@ namespace LambdaEngine
 			m_TimeOfLastSearch = EngineLoop::GetTimeSinceStart();
 			Flush();
 		}
+
+		HandleReceivedPacketsMainThread();
+	}
+
+	void ClientNetworkDiscovery::HandleReceivedPacketsMainThread()
+	{
+		TArray<Packet>& packets = m_ReceivedPackets[m_BufferIndex];
+
+		{
+			std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
+			m_BufferIndex = (m_BufferIndex + 1) % 2;
+		}
+
+		for (Packet& packet : packets)
+		{
+			BinaryDecoder& decoder = packet.Decoder;
+			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), m_Statistics.GetRemoteSalt());
+			m_SegmentPool.FreeSegment(const_cast<NetworkSegment*>(decoder.GetPacket()));
+		}
+		packets.Clear();
 	}
 }

@@ -32,4 +32,5 @@ public:
 
 private:
 	Level* m_pLevel = nullptr;
+	std::string m_ServerName;
 };
