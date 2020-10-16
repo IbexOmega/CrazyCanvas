@@ -664,7 +664,8 @@ namespace LambdaEngine
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
 									1,
-									pResourceBinding->DescriptorType);
+									pResourceBinding->DescriptorType,
+									true);
 							}
 						}
 						else
@@ -677,7 +678,8 @@ namespace LambdaEngine
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
 									pResource->Texture.PerImageTextureViews.GetSize(),
-									pResourceBinding->DescriptorType);
+									pResourceBinding->DescriptorType,
+									pResource->Texture.Samplers.GetSize() == pResource->Texture.PerImageTextureViews.GetSize());
 							}
 						}
 					}
@@ -828,7 +830,8 @@ namespace LambdaEngine
 											ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 											binding++,
 											textureCount,
-											EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+											EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+											true);
 									}
 
 									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
@@ -845,7 +848,8 @@ namespace LambdaEngine
 										ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 										0,
 										1,
-										EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER
+										EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+										true
 									);
 
 									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
@@ -1234,7 +1238,8 @@ namespace LambdaEngine
 							binding.TextureState,
 							binding.Binding,
 							1,
-							binding.DescriptorType);
+							binding.DescriptorType,
+							true);
 					}
 				}
 			}
@@ -3311,15 +3316,25 @@ namespace LambdaEngine
 	void RenderGraph::UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
 		uint32 actualSubResourceCount = 0;
+		// If true, every texture has a unique sampler (or atleast a sampler array the same size of the texture array)
+		bool uniqueSamplers = true;
 
 		//Unbounded arrays are handled differently compared to normal textures
 		if (pResource->Texture.UnboundedArray)
 		{
+			uniqueSamplers = pDesc->ExternalTextureUpdate.TextureCount == pDesc->ExternalTextureUpdate.SamplerCount;
+
+			if (!uniqueSamplers && pDesc->ExternalTextureUpdate.SamplerCount > 1)
+			{
+				LOG_WARNING("[RenderGraph, UpdateResourceTexture]: SamplerCount does not match TextureCount and is not equal to 1. Only the first sampler will be used. TextureCount = %d, SamplerCount = %d",
+				pDesc->ExternalTextureUpdate.TextureCount, pDesc->ExternalTextureUpdate.SamplerCount);
+			}
+
 			//We don't know the subresource count until now so we must update all container arrays
-			actualSubResourceCount = pDesc->ExternalTextureUpdate.Count;
+			actualSubResourceCount = pDesc->ExternalTextureUpdate.TextureCount;
 			pResource->Texture.Textures.Resize(actualSubResourceCount);
 			pResource->Texture.PerImageTextureViews.Resize(actualSubResourceCount);
-			pResource->Texture.Samplers.Resize(actualSubResourceCount);
+			pResource->Texture.Samplers.Resize(uniqueSamplers ? pDesc->ExternalTextureUpdate.TextureCount : 1);
 			pResource->Texture.PerSubImageTextureViews.Resize(actualSubResourceCount * (pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews != nullptr ? pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount : 1));
 
 			//We must clear all non-template barriers
@@ -3353,7 +3368,7 @@ namespace LambdaEngine
 		{
 			Texture** ppTexture			= &pResource->Texture.Textures[sr];
 			TextureView** ppTextureView = &pResource->Texture.PerImageTextureViews[sr];
-			Sampler** ppSampler			= &pResource->Texture.Samplers[sr];
+			Sampler** ppSampler			= &pResource->Texture.Samplers[uniqueSamplers ? sr : 0];
 
 			Texture* pTexture						= nullptr;
 			TextureView* pTextureView				= nullptr;
@@ -3432,7 +3447,7 @@ namespace LambdaEngine
 				//Update Sampler
 				if (pDesc->ExternalTextureUpdate.ppSamplers != nullptr)
 				{
-					pSampler = pDesc->ExternalTextureUpdate.ppSamplers[sr];
+					pSampler = pDesc->ExternalTextureUpdate.ppSamplers[uniqueSamplers ? sr : 0];
 				}
 			}
 			else

@@ -2,7 +2,7 @@
 
 #include "Log/Log.h"
 
-#include <foundation/PxErrorCallback.h>
+#include "Physics/PhysX/PhysX.h"
 
 namespace LambdaEngine
 {

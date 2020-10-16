@@ -56,6 +56,7 @@ namespace LambdaEngine
 
 			auto onDynamicCollisionAdded = std::bind(&PhysicsSystem::OnDynamicCollisionAdded, this, std::placeholders::_1);
 			auto onDynamicCollisionRemoval = std::bind(&PhysicsSystem::OnDynamicCollisionRemoval, this, std::placeholders::_1);
+			auto onCharacterCollisionRemoval = std::bind(&PhysicsSystem::OnCharacterColliderRemoval, this, std::placeholders::_1);
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -77,6 +78,14 @@ namespace LambdaEngine
 					},
 					.OnEntityAdded = onDynamicCollisionAdded,
 					.OnEntityRemoval = onDynamicCollisionRemoval
+				},
+				{
+					.pSubscriber = &m_CharacterCollisionEntities,
+					.ComponentAccesses =
+					{
+						{RW, CharacterColliderComponent::Type()}
+					},
+					.OnEntityRemoval = onCharacterCollisionRemoval
 				}
 			};
 			systemReg.Phase = 1;
@@ -85,6 +94,7 @@ namespace LambdaEngine
 
 			SetComponentOwner<StaticCollisionComponent>({ std::bind(&PhysicsSystem::StaticCollisionDestructor, this, std::placeholders::_1) });
 			SetComponentOwner<DynamicCollisionComponent>({ std::bind(&PhysicsSystem::DynamicCollisionDestructor, this, std::placeholders::_1) });
+			SetComponentOwner<CharacterColliderComponent>({ std::bind(&PhysicsSystem::CharacterColliderDestructor, this, std::placeholders::_1) });
 		}
 
 		// PhysX setup
@@ -474,9 +484,8 @@ namespace LambdaEngine
 		{
 			m_pScene->removeActor(*pActor);
 		}
-	}
 
-	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
+	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
