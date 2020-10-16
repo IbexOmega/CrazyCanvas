@@ -345,7 +345,6 @@ namespace LambdaEngine
 		// PAINT_MASK_TEXTURES
 		TArray<Texture*>			m_PaintMaskTextures;
 		TArray<TextureView*>		m_PaintMaskTextureViews;
-		TArray<Sampler*>			m_PaintMaskSamplers;
 
 		// Materials
 		TArray<Texture*>			m_AlbedoMaps;
