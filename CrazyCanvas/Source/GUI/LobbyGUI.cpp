@@ -1,6 +1,5 @@
 #pragma once
 #include "Game/State.h"
-#include "Game/StateManager.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -17,8 +16,6 @@
 
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
-
-//#include <string>
 
 #include "Application/API/Events/EventQueue.h"
 
