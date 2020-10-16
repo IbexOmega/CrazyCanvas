@@ -23,7 +23,6 @@ namespace LambdaEngine
 	public:
 		GroupedComponent<PlayerBaseComponent> PlayerBaseComponent;
 
-
 		// Transform
 		GroupedComponent<PositionComponent>	Position;
 		GroupedComponent<ScaleComponent>	Scale;
