@@ -185,6 +185,7 @@ struct SAtlasData
 	float	TileFactorY;
 	uint	RowCount;
 	uint	ColCount;
+	uint	AtlasIndex;
 };
 
 #endif

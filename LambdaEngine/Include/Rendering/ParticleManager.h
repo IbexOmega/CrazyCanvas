@@ -9,7 +9,8 @@
 namespace LambdaEngine 
 {
 	class Sampler;
-	class Texture;
+	class TextureView;
+	class Sampler;
 	class Buffer;
 	class CommandList;
 	class RenderGraph;
@@ -34,6 +35,9 @@ namespace LambdaEngine
 		float			ParticleRadius;
 		uint32			IndirectDataIndex = 0;
 		ParticleChunk	ParticleChunk;
+		uint32			AtlasIndex = 0;
+		uint32			TileIndex = 0;
+		uint32			AnimationCount = 0;
 	};
 
 	struct SParticle
@@ -60,6 +64,7 @@ namespace LambdaEngine
 		float	TileFactorY = 0.f;
 		uint32	RowCount	= 0;
 		uint32	ColCount	= 0;
+		uint32	AtlasIndex	= 0;
 	};
 
 	struct IndirectData
@@ -89,16 +94,18 @@ namespace LambdaEngine
 		uint32 GetActiveEmitterCount() const { return m_IndirectData.GetSize();  }
 		uint32 GetMaxParticleCount() const { return m_MaxParticleCount; }
 
-		TArray<Texture*>& GetAtlasTextures() { return m_AtlasTextures; }
+		TArray<TextureView*>& GetAtlasTextureViews() { return m_AtlasTextureViews; }
 		TArray<Sampler*>& GetAtlasSamplers() { return m_AtlasSamplers; }
 
 		bool UpdateBuffers(CommandList* pCommandList);
 		bool UpdateResources(RenderGraph* pRendergraph);
+
 	private:
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
 		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
 		void CleanBuffers();
+
 	private:
 		uint32						m_MaxParticleCount;
 		uint32						m_ModFrameIndex;
@@ -131,9 +138,10 @@ namespace LambdaEngine
 		TArray<ParticleChunk>		m_FreeParticleChunks;
 		TArray<SAtlasInfo>			m_AtlasInfoData;
 
+		TSharedRef<Sampler>					m_Sampler = nullptr;
 		THashTable<GUID_Lambda, SAtlasInfo>	m_AtlasResources;
-		TArray<Texture*>			m_AtlasTextures;
-		TArray<Sampler*>			m_AtlasSamplers;
+		TArray<TextureView*>				m_AtlasTextureViews;
+		TArray<Sampler*>					m_AtlasSamplers;
 
 		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;
 		THashTable<Entity, ParticleEmitterInstance>	m_SleepingEmitters;

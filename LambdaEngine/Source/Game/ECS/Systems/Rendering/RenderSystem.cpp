@@ -553,14 +553,15 @@ namespace LambdaEngine
 		}
 
 		// Particle Updates
+		uint32 particleCount = m_ParticleManager.GetParticleCount();
 		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
 		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
 		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
 
 		// Update particle textures
-		TArray<Texture*>& atlasTextures = m_ParticleManager.GetAtlasTextures();
+		TArray<TextureView*>& atlasTextureViews = m_ParticleManager.GetAtlasTextureViews();
 		TArray<Sampler*>& atlasSamplers = m_ParticleManager.GetAtlasSamplers();
-		m_pParticleRenderer->SetAtlasTexturs(atlasTextures, atlasSamplers);
+		m_pParticleRenderer->SetAtlasTexturs(atlasTextureViews, atlasSamplers);
 	}
 
 	bool RenderSystem::Render(Timestamp delta)

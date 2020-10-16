@@ -255,6 +255,7 @@ namespace LambdaEngine
 			String					IndexBufferName			= "";
 			String					IndirectArgsBufferName	= "";
 			bool					DepthTestEnabled		= true;
+			bool					AlphaBlendingEnabled	= false;
 			ECullMode				CullMode				= ECullMode::CULL_MODE_BACK;
 			EPolygonMode			PolygonMode				= EPolygonMode::POLYGON_MODE_FILL;
 			EPrimitiveTopology		PrimitiveTopology		= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -425,6 +426,7 @@ namespace LambdaEngine
 			GraphicsShaderNames		Shaders;
 			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
 			bool					DepthTestEnabled					= true;
+			bool					AlphaBlendingEnabled				= false;
 			ECullMode				CullMode							= ECullMode::CULL_MODE_BACK;
 			EPolygonMode			PolygonMode							= EPolygonMode::POLYGON_MODE_FILL;
 			EPrimitiveTopology		PrimitiveTopology					= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

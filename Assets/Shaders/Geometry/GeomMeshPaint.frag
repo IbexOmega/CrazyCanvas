@@ -40,7 +40,7 @@ void main()
 
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
+	vec4 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord);
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 	
@@ -56,8 +56,8 @@ void main()
 	out_Position				= vec4(in_WorldPosition, 0.0f);
 
 	//1
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo					= storedAlbedo;
+	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
+	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//2
 	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);

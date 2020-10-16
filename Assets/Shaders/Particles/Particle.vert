@@ -19,7 +19,7 @@ layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer ParticleInsta
 	SParticle Val[]; 
 } b_ParticleInstances;
 
-layout(binding = 0, set = 2) restrict readonly buffer Atlases
+layout(binding = 0, set = 3) restrict readonly buffer Atlases
 { 
 	SAtlasData Val[]; 
 } b_Atlases;
@@ -36,7 +36,11 @@ void main()
 	out_AtlasIndex = particle.AtlasIndex;
 
 	// Hardcoded for now
-	out_TexCoords = (vertex.Position.xy + 2.f) * 0.5f;
+	vec2 uv = (vertex.Position.xy + 1.f) * 0.5f;
+	uint tx = particle.AtlasIndex % atlasData.ColCount;
+	uint ty = particle.AtlasIndex / atlasData.RowCount;
+	vec2 factor = vec2(atlasData.TileFactorX, atlasData.TileFactorY);
+	out_TexCoords = uv * factor + factor*vec2(float(tx), float(ty));
 
 	vec3 camRightWorldSpace = vec3(frameBuffer.View[0][0], frameBuffer.View[1][0], frameBuffer.View[2][0]);
 	vec3 camUpWorldSpace 	= vec3(frameBuffer.View[0][1], frameBuffer.View[1][1], frameBuffer.View[2][1]);

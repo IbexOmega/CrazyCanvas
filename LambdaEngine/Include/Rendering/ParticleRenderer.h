@@ -25,7 +25,7 @@ namespace LambdaEngine
 		
 		void SetCurrentParticleCount(uint32 particleCount, uint32 emitterCount) { m_ParticleCount = particleCount; m_EmitterCount = emitterCount; };
 
-		void SetAtlasTexturs(TArray<Texture*>& textures, TArray<Sampler*>& samplers);
+		void SetAtlasTexturs(TArray<TextureView*>& textureViews, TArray<Sampler*>& samplers);
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
@@ -69,31 +69,30 @@ namespace LambdaEngine
 		uint32									m_EmitterCount;
 
 
-		GUID_Lambda								m_MeshShaderGUID	= 0;
-		GUID_Lambda								m_PixelShaderGUID	= 0;
-		GUID_Lambda								m_VertexShaderGUID	= 0;
+		GUID_Lambda								m_MeshShaderGUID		= 0;
+		GUID_Lambda								m_PixelShaderGUID		= 0;
+		GUID_Lambda								m_VertexShaderGUID		= 0;
 
-		const Buffer*							m_pIndirectBuffer	= nullptr;
-		const Buffer*							m_pIndexBuffer		= nullptr;
+		const Buffer*							m_pIndirectBuffer		= nullptr;
+		const Buffer*							m_pIndexBuffer			= nullptr;
 
-		TSharedRef<const TextureView>			m_RenderTarget		= nullptr;
-		TSharedRef<const TextureView>			m_DepthStencil		= nullptr;
-		TSharedRef<RenderPass>					m_RenderPass		= nullptr;
+		TSharedRef<const TextureView>			m_RenderTarget			= nullptr;
+		TSharedRef<const TextureView>			m_DepthStencil			= nullptr;
+		TSharedRef<RenderPass>					m_RenderPass			= nullptr;
 
-		TArray<DescriptorBindingData>			m_DescBindData;
+		uint64									m_PipelineStateID		= 0;
+		TSharedRef<PipelineLayout>				m_PipelineLayout		= nullptr;
+		TSharedRef<DescriptorHeap>				m_DescriptorHeap		= nullptr;
 
-		uint64									m_PipelineStateID	= 0;
-		TSharedRef<PipelineLayout>				m_PipelineLayout	= nullptr;
-		TSharedRef<DescriptorHeap>				m_DescriptorHeap	= nullptr;
-
-		uint32									m_AtlasCount		= 0;
-		Texture**								m_ppAtlasTextures	= nullptr;
-		Sampler**								m_ppAtlasSamplers	= nullptr;
+		uint32									m_PreAtlasCount			= 0;
+		uint32									m_AtlasCount			= 0;
+		const TextureView* const*				m_ppAtlasTextureViews	= nullptr;
+		const Sampler* const*					m_ppAtlasSamplers		= nullptr;
 
 		// Descriptor sets
-		TSharedRef<DescriptorSet>				m_VertexInstanceDescriptorSet = nullptr;
-		TSharedRef<DescriptorSet>				m_AtlasTexturesDescriptorSet = nullptr;
-		TSharedRef<DescriptorSet>				m_AtlasInfoBufferDescriptorSet = nullptr;
+		TSharedRef<DescriptorSet>				m_VertexInstanceDescriptorSet	= nullptr;
+		TSharedRef<DescriptorSet>				m_AtlasTexturesDescriptorSet	= nullptr;
+		TSharedRef<DescriptorSet>				m_AtlasInfoBufferDescriptorSet	= nullptr;
 		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
 		DescriptorCache							m_DescriptorCache;
 

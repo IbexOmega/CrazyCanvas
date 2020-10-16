@@ -1619,6 +1619,10 @@ namespace LambdaEngine
 					pRenderStage->Graphics.DepthTestEnabled = false;
 				}
 
+				ImGui::Text("Alpha Blending Enabled:");
+				ImGui::SameLine();
+				ImGui::Checkbox("##Alpha Blending Enabled", &pRenderStage->Graphics.AlphaBlendingEnabled);
+
 				int32 selectedCullMode = CullModeToCullModeIndex(pRenderStage->Graphics.CullMode);
 				ImGui::Text("Cull Mode:");
 				ImGui::SetNextItemWidth(ImGui::CalcTextSize(CULL_MODE_NAMES[2]).x + ImGui::GetFrameHeight() + 4.0f); //Max Length String to be displayed + Arrow Size + Some extra
