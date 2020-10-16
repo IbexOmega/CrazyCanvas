@@ -13,6 +13,7 @@ namespace LambdaEngine
 		, m_pTo(nullptr)
 		, m_IsActive(false)
 		, m_FromState(fromState)
+		, m_Duration(duration)
 		, m_LocalClock(0.0f)
 		, m_ToState(toState)
 	{
@@ -33,6 +34,8 @@ namespace LambdaEngine
 			// Move clock
 			m_LocalClock += deltaTimeInSeconds;
 			const float64 weight = m_LocalClock / m_Duration;
+
+			LOG_INFO("Weight=%.4f", weight);
 
 			const TArray<SQT>& in0 = m_pFrom->GetCurrentFrame();
 			const TArray<SQT>& in1 = m_pFrom->GetCurrentFrame();

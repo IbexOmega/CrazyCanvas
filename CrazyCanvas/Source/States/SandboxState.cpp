@@ -193,10 +193,10 @@ void SandboxState::Init()
 		pAnimationGraph->AddState(pReloadState);
 		pAnimationGraph->AddState(DBG_NEW AnimationState("walking", walking[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running"));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking"));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload"));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running", 0.2));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking", 0.2));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.4));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running", 0.4));
 		robotAnimationComp.pGraph = pAnimationGraph;
 
 		entity = pECS->CreateEntity();
