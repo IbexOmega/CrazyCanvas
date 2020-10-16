@@ -17,6 +17,12 @@ namespace LambdaEngine
 	struct RotationComponent;
 	struct VelocityComponent;
 
+	enum class EShapeType
+	{
+		SIMULATION,	// A simulation shape is a regular physics object with collision detection and handling
+		TRIGGER		// A trigger shape does not take part in the simulation, it only generates overlap reports
+	};
+
 	enum FCollisionGroup : uint32
 	{
 		COLLISION_GROUP_NONE	= 0,
@@ -48,6 +54,7 @@ namespace LambdaEngine
 		const ScaleComponent& Scale;
 		const RotationComponent& Rotation;
 		const MeshComponent& Mesh;
+		EShapeType ShapeType;
 		FCollisionGroup CollisionGroup;				// The category of the object
 		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
 		// Optional. The first collision info is on the entity whose callback is called.
@@ -100,8 +107,8 @@ namespace LambdaEngine
 		PxScene* GetScene() { return m_pScene; }
 
 		/* Implement PxSimulationEventCallback */
-		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override final;
-		void onTrigger(PxTriggerPair*, PxU32) override final {}
+		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs) override final;
+		void onTrigger(PxTriggerPair* pTriggerPairs, PxU32 nbPairs) override final;
 		void onConstraintBreak(PxConstraintInfo*, PxU32) override final {}
 		void onWake(PxActor**, PxU32 ) override final {}
 		void onSleep(PxActor**, PxU32 ) override final {}
@@ -133,6 +140,8 @@ namespace LambdaEngine
 		DynamicCollisionComponent FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
 		CharacterColliderComponent FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
 		void FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape);
+
+		void TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors);
 
 	private:
 		static PhysicsSystem s_Instance;
