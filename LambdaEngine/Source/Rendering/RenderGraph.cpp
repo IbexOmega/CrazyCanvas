@@ -3324,6 +3324,12 @@ namespace LambdaEngine
 		{
 			uniqueSamplers = pDesc->ExternalTextureUpdate.TextureCount == pDesc->ExternalTextureUpdate.SamplerCount;
 
+			if (!uniqueSamplers && pDesc->ExternalTextureUpdate.SamplerCount > 1)
+			{
+				LOG_WARNING("[RenderGraph, UpdateResourceTexture]: SamplerCount does not match TextureCount and is not equal to 1. Only the first sampler will be used. TextureCount = %d, SamplerCount = %d",
+				pDesc->ExternalTextureUpdate.TextureCount, pDesc->ExternalTextureUpdate.SamplerCount);
+			}
+
 			//We don't know the subresource count until now so we must update all container arrays
 			actualSubResourceCount = pDesc->ExternalTextureUpdate.TextureCount;
 			pResource->Texture.Textures.Resize(actualSubResourceCount);
