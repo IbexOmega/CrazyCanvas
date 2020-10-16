@@ -28,6 +28,8 @@ namespace LambdaEngine
 		bool UsesState(const String& state) const;
 		bool UsesState(AnimationState* pState) const;
 
+		const TArray<SQT>& GetCurrentFrame() const;
+
 		FORCEINLINE void OnFinished()
 		{
 			m_LocalClock	= 0.0;
@@ -57,11 +59,6 @@ namespace LambdaEngine
 		FORCEINLINE AnimationState* GetToState() const
 		{
 			return m_pTo;
-		}
-
-		FORCEINLINE const TArray<SQT>& GetCurrentFrame() const
-		{
-			return m_CurrentFrame;
 		}
 
 	private:

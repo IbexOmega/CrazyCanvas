@@ -43,7 +43,6 @@ namespace LambdaEngine
 		, m_AnimationGUID(animationGUID)
 		, m_pAnimation(nullptr)
 		, m_IsLooping(isLooping)
-		, m_IsPlaying(false)
 		, m_NumLoops(1)
 		, m_OrignalPlaybackSpeed(playbackSpeed)
 		, m_PlaybackSpeed(playbackSpeed)

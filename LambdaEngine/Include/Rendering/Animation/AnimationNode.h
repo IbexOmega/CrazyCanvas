@@ -103,10 +103,11 @@ namespace LambdaEngine
 
 		virtual void Reset() override
 		{
+			m_PlaybackSpeed			= m_OrignalPlaybackSpeed;
 			m_RunningTime			= 0.0;
 			m_NormalizedTime		= 0.0;
 			m_LocalTimeInSeconds	= 0.0;
-			m_IsPlaying				= false;
+			m_LoopFinished			= false;
 
 			ResetTriggers();
 		}
@@ -167,11 +168,6 @@ namespace LambdaEngine
 			return m_NormalizedTime;
 		}
 
-		FORCEINLINE bool IsPlaying() const
-		{
-			return m_IsPlaying;
-		}
-
 		FORCEINLINE bool IsLooping() const
 		{
 			return m_IsLooping;
@@ -202,7 +198,6 @@ namespace LambdaEngine
 		Animation*	m_pAnimation;
 
 		bool m_IsLooping;
-		bool m_IsPlaying;
 		bool m_LoopFinished;
 
 		uint32	m_NumLoops;

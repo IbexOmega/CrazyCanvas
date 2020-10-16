@@ -177,10 +177,10 @@ void SandboxState::Init()
 			{
 				LOG_INFO("Trigger at 0.5 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
 			}));
-		pReload->AddTrigger(ClipTrigger(0.8, [](const ClipNode& clip, AnimationGraph& graph)
+		pReload->AddTrigger(ClipTrigger(1.0, [](const ClipNode& clip, AnimationGraph& graph)
 			{
 				graph.TransitionToState("running");
-				LOG_INFO("Trigger at 0.8 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
+				LOG_INFO("Trigger at 1.0 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
 			}));
 
 		ClipNode*	pRunning = pReloadState->CreateClipNode(running[0]);
@@ -193,10 +193,10 @@ void SandboxState::Init()
 		pAnimationGraph->AddState(pReloadState);
 		pAnimationGraph->AddState(DBG_NEW AnimationState("walking", walking[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running", 0.2));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking", 0.2));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.4));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running", 0.4));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running", 0.4));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking", 0.4));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.5));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running", 0.3));
 		robotAnimationComp.pGraph = pAnimationGraph;
 
 		entity = pECS->CreateEntity();

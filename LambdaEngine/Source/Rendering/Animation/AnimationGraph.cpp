@@ -33,12 +33,12 @@ namespace LambdaEngine
 
 			// Move clock
 			m_LocalClock += deltaTimeInSeconds;
-			const float64 weight = m_LocalClock / m_Duration;
+			const float64 weight = (m_LocalClock / m_Duration) / 0.95;
 
 			LOG_INFO("Weight=%.4f", weight);
 
 			const TArray<SQT>& in0 = m_pFrom->GetCurrentFrame();
-			const TArray<SQT>& in1 = m_pFrom->GetCurrentFrame();
+			const TArray<SQT>& in1 = m_pTo->GetCurrentFrame();
 			BinaryInterpolator interpolator(in0, in1, m_CurrentFrame);
 			interpolator.Interpolate(weight);
 		}
@@ -87,6 +87,18 @@ namespace LambdaEngine
 		m_pTo = m_pOwnerGraph->GetState(m_ToState);
 		VALIDATE(m_pTo != nullptr);
 		VALIDATE(m_pTo->GetOwner() == m_pOwnerGraph);
+	}
+	
+	const TArray<SQT>& Transition::GetCurrentFrame() const
+	{
+		if (m_Duration > 0.0)
+		{
+			return m_CurrentFrame;
+		}
+		else
+		{
+			return m_pTo->GetCurrentFrame();
+		}
 	}
 
 	/*
@@ -204,15 +216,18 @@ namespace LambdaEngine
 
 	void AnimationGraph::Tick(const Skeleton& skeleton, float64 deltaTimeInSeconds)
 	{
+
 		// Handle transition
 		if (IsTransitioning())
 		{
 			Transition* pCurrentTransition = GetCurrentTransition();
-			pCurrentTransition->Tick(skeleton, deltaTimeInSeconds);
-
 			if (pCurrentTransition->IsFinished())
 			{
 				FinishTransition();
+			}
+			else
+			{
+				pCurrentTransition->Tick(skeleton, deltaTimeInSeconds);
 			}
 		}
 		else
