@@ -226,9 +226,7 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
-
-	/*if (m_RayTracingEnabled)
-		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);*/
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
 
 }
 
