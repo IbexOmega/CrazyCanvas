@@ -5,12 +5,14 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "Networking/API/IPAddress.h"
+
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState(bool online);
+	PlaySessionState(LambdaEngine::IPAddress* pIPAddress);
 	~PlaySessionState();
 
 	void Init() override final;
@@ -22,8 +24,11 @@ public:
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 
+
 private:
 	Level* m_pLevel = nullptr;
-	bool m_Online;
+
+	LambdaEngine::IPAddress* m_pIPAddress;
+
 	WeaponSystem m_WeaponSystem;
 };

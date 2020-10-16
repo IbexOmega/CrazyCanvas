@@ -65,6 +65,8 @@ namespace LambdaEngine
 		GameConsole::Get().BindCommand(netStatsCmd, [&, this](GameConsole::CallbackInput& input)->void {
 			m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
 		});
+
+		EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &ClientSystem::OnDisconnectedEvent);
 	}
 
 	ClientSystem::~ClientSystem()
@@ -85,7 +87,9 @@ namespace LambdaEngine
 			BinaryEncoder encoder3(pPacket);
 			encoder3.WriteBool(true);
 			encoder3.WriteInt32(0);
-			encoder3.WriteVec3(glm::vec3(0, 2, 0));
+			encoder3.WriteVec3(glm::vec3(0.0f, 2.0f, 0.0f));
+			encoder3.WriteVec3(glm::vec3(1.0f, 0.0f, 0.0f));
+			encoder3.WriteUInt32(0);
 			OnPacketReceived(m_pClient, pPacket);
 			m_pClient->ReturnPacket(pPacket);
 
@@ -118,13 +122,13 @@ namespace LambdaEngine
 	void ClientSystem::OnConnecting(IClient* pClient)
 	{
 		ClientConnectingEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientSystem::OnConnected(IClient* pClient)
 	{
 		ClientConnectedEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
 	void ClientSystem::OnDisconnecting(IClient* pClient)
@@ -136,9 +140,13 @@ namespace LambdaEngine
 	void ClientSystem::OnDisconnected(IClient* pClient)
 	{
 		ClientDisconnectedEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
+	}
 
+	bool ClientSystem::OnDisconnectedEvent(const ClientDisconnectedEvent& event)
+	{
 		NetworkDiscovery::EnableClient(m_Name, this);
+		return false;
 	}
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
@@ -165,12 +173,12 @@ namespace LambdaEngine
 	void ClientSystem::OnServerFull(IClient* pClient)
 	{
 		ServerFullEvent event(pClient);
-		EventQueue::SendEventImmediate(event);
+		EventQueue::SendEvent(event);
 	}
 
-	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint)
+	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID)
 	{
-		ServerDiscoveredEvent event(&decoder, &endPoint);
+		ServerDiscoveredEvent event(&decoder, &endPoint, serverUID);
 		EventQueue::SendEventImmediate(event);
 	}
 

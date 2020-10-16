@@ -79,7 +79,7 @@ void MainMenuGUI::OnButtonSingleplayerClick(BaseComponent* pSender, const Routed
 
 	SetRenderStagesSleeping();
 
-	State* pStartingState = DBG_NEW PlaySessionState(false);
+	State* pStartingState = DBG_NEW PlaySessionState(IPAddress::LOOPBACK);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 

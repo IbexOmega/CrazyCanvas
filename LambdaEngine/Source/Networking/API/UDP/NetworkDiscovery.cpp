@@ -66,16 +66,12 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::FixedTickStatic(Timestamp delta)
 	{
-		if (s_pClient || s_pServer)
+		if (s_pClient)
 		{
 			std::scoped_lock<SpinLock> lock(s_Lock);
 			if (s_pClient)
 			{
-				s_pClient->Tick(delta);
-			}
-			else if (s_pClient)
-			{
-				s_pClient->Tick(delta);
+				s_pClient->FixedTick(delta);
 			}
 		}
 	}
