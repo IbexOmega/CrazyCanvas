@@ -48,7 +48,7 @@
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
-#include "Game/World/LevelObjectCreator.h"
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -83,13 +83,32 @@ namespace LambdaEngine
 
 			// Fixed update
 			accumulator += delta;
+			uint32 fixedTickCounter = 0;
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
 				FixedTick(g_FixedTimestep);
 				accumulator -= g_FixedTimestep;
+
+				//Bailout so we don't get stuck in Fixed Tick
+				fixedTickCounter++;
+				if (fixedTickCounter > 2)
+				{
+					accumulator = 0;
+					break;
+				}
 			}
 		}
+	}
+
+	bool EngineLoop::InitComponentOwners()
+	{
+		if (!MeshPaintComponentOwner::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	bool EngineLoop::InitSystems()
@@ -173,7 +192,7 @@ namespace LambdaEngine
 			const uint32 windowWidth	= mainWindow->GetWidth();
 			const uint32 size			= 250;
 
-			ImGui::SetNextWindowPos(ImVec2(windowWidth - size, 0));
+			ImGui::SetNextWindowPos(ImVec2((float)(windowWidth - size), 0.0f));
 			ImGui::SetNextWindowSize(ImVec2((float32)size, (float32)size));
 
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -316,10 +335,10 @@ namespace LambdaEngine
 			return false;
 		}
 
-		/*if (!LevelObjectCreator::Init())
+		if (!InitComponentOwners())
 		{
 			return false;
-		}*/
+		}
 
 		if (!InitSystems())
 		{
@@ -347,6 +366,8 @@ namespace LambdaEngine
 
 	bool EngineLoop::Release()
 	{
+		EventQueue::Release();
+
 		Input::Release();
 
 		if (!GameConsole::Get().Release())
@@ -384,11 +405,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!RenderAPI::Release())
-		{
-			return false;
-		}
-
 		if (!AudioAPI::Release())
 		{
 			return false;
@@ -411,6 +427,11 @@ namespace LambdaEngine
 		ServerSystem::StaticRelease();
 		Thread::Release();
 		PlatformNetworkUtils::PostRelease();
+
+		if (!RenderAPI::Release())
+		{
+			return false;
+		}
 
 		if (!CommonApplication::PostRelease())
 		{

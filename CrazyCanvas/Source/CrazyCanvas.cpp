@@ -12,7 +12,11 @@
 #include "States/SandboxState.h"
 #include "States/ServerState.h"
 
+#include "Networking/API/NetworkUtils.h"
+
 #include "World/LevelManager.h"
+
+#include "Teams/TeamHelper.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
@@ -37,6 +41,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Level Manager Init Failed");
 	}
 
+	if (!TeamHelper::Init())
+	{
+		LOG_ERROR("Team Helper Init Failed");
+	}
+
 	LoadRendererResources();
 
 	constexpr const char* pGameName = "Crazy Canvas";
@@ -52,12 +61,13 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 	else if (stateStr == "sandbox")
 	{
+		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
 	}
 	else if (stateStr == "client")
 	{
 		ClientSystem::Init(pGameName);
-		pStartingState = DBG_NEW PlaySessionState(true);
+		pStartingState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 	}
 	else if (stateStr == "server")
 	{

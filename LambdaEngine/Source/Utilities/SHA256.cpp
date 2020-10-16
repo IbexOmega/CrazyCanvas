@@ -123,7 +123,7 @@ namespace LambdaEngine
 
 		SHA256 ctx = SHA256();
 		ctx.Init();
-		ctx.Update((byte*)input.c_str(), input.length());
+		ctx.Update((byte*)input.c_str(), (uint32)input.length());
 		ctx.Final(hash.Data);
 
 		return hash;

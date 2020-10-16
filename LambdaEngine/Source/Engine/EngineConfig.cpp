@@ -2,9 +2,11 @@
 
 #include "Log/Log.h"
 
+#pragma warning( push, 0 )
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
+#pragma warning( pop )
 
 #include <fstream>
 
@@ -137,7 +139,7 @@ namespace LambdaEngine
 	{
 		if (s_ConfigDocument.HasMember(propertyName.c_str()))
 		{
-			s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+			s_ConfigDocument[propertyName.c_str()].SetInt(value);
 
 			return true;
 		}

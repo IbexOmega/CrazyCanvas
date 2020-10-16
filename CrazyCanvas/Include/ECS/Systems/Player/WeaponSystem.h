@@ -18,6 +18,7 @@ public:
 
 private:
 	void Fire(WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity);
+	void OnProjectileHit(LambdaEngine::Entity entity);
 
 private:
 	LambdaEngine::IDVector m_WeaponEntities;

@@ -52,6 +52,8 @@ namespace LambdaEngine
 		String Name											= "Render Graph";
 		RenderGraphStructureDesc* pRenderGraphStructureDesc	= nullptr;
 		uint32 BackBufferCount								= 3;
+		uint16 BackBufferWidth								= 0;
+		uint16 BackBufferHeight								= 0;
 		TArray<ICustomRenderer*>	CustomRenderers;
 	};
 
@@ -92,9 +94,9 @@ namespace LambdaEngine
 
 			struct
 			{
-				uint32		DrawArgsMask;
-				DrawArg*	pDrawArgs;
-				uint32		Count;
+				DrawArgMaskDesc	DrawArgsMaskDesc;
+				DrawArg*		pDrawArgs;
+				uint32			Count;
 			} ExternalDrawArgsUpdate;
 
 			struct
@@ -137,10 +139,10 @@ namespace LambdaEngine
 
 		struct ResourceBarrierInfo
 		{
-			uint32	SynchronizationStageIndex	= 0;
-			uint32	SynchronizationTypeIndex	= 0;
-			uint32	BarrierIndex				= 0;
-			uint32	DrawArgsMask				= 0x0;
+			uint32				SynchronizationStageIndex	= 0;
+			uint32				SynchronizationTypeIndex	= 0;
+			uint32				BarrierIndex				= 0;
+			DrawArgMaskDesc		DrawArgsMaskDesc;
 		};
 
 		struct InternalResourceUpdateDesc
@@ -214,7 +216,7 @@ namespace LambdaEngine
 
 			struct
 			{
-				THashTable<uint32, DrawArgsData> MaskToArgs;
+				THashTable<uint64, DrawArgsData> FullMaskToArgs;
 			} DrawArgs;
 
 			struct
@@ -278,7 +280,7 @@ namespace LambdaEngine
 			uint32					DrawSetIndex						= 0;
 			uint32					DrawExtensionSetIndex				= 0;
 			Resource*				pDrawArgsResource					= nullptr;
-			uint32					DrawArgsMask						= 0x0;
+			DrawArgMaskDesc			DrawArgsMaskDesc;
 			RenderPass*				pRenderPass							= nullptr;
 			RenderPass*				pDisabledRenderPass					= nullptr;
 
@@ -321,13 +323,13 @@ namespace LambdaEngine
 		RenderGraph(const GraphicsDevice* pGraphicsDevice);
 		~RenderGraph();
 
-		bool Init(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs);
+		bool Init(const RenderGraphDesc* pDesc, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 
 		/*
 		* Recreates the Render Graph according to pDesc.
 		* Discoveres overlapping resources from the current Render Graph and the new Render Graph and reuses them.
 		*/
-		bool Recreate(const RenderGraphDesc* pDesc, TSet<uint32>& requiredDrawArgs);
+		bool Recreate(const RenderGraphDesc* pDesc, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 
 		/*
 		* Adds a Create Handler to this Render Graph, all IRenderGraphCreateHandler::OnRenderGraphRecreate
@@ -417,8 +419,8 @@ namespace LambdaEngine
 		bool CreateCopyCommandLists();
 		bool CreateProfiler(uint32 pipelineStageCount);
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<uint32>& requiredDrawArgs);
-		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<uint32>& requiredDrawArgs);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
+		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 
 		void UpdateRelativeParameters();

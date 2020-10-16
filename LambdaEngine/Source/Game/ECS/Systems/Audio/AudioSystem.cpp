@@ -60,16 +60,16 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(deltaTime);
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		auto* pAudibleComponents = pECS->GetComponentArray<AudibleComponent>();
-		auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-		auto* pCameraComponents = pECS->GetComponentArray<CameraComponent>();
-		auto* pListenerComponents = pECS->GetComponentArray<ListenerComponent>();
+		ComponentArray<AudibleComponent>* pAudibleComponents		= pECS->GetComponentArray<AudibleComponent>();
+		const ComponentArray<PositionComponent>* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+		const ComponentArray<RotationComponent>* pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
+		const ComponentArray<CameraComponent>* pCameraComponents		= pECS->GetComponentArray<CameraComponent>();
+		ComponentArray<ListenerComponent>* pListenerComponents			= pECS->GetComponentArray<ListenerComponent>();
 
 		for (Entity entity : m_AudibleEntities)
 		{
 			auto& audibleComponent = pAudibleComponents->GetData(entity);
-			auto& positionComponent = pPositionComponents->GetData(entity);
+			auto& positionComponent = pPositionComponents->GetConstData(entity);
 
 			auto* pSoundInstance = audibleComponent.pSoundInstance;
 			pSoundInstance->SetPosition(positionComponent.Position);
@@ -81,8 +81,8 @@ namespace LambdaEngine
 		for (Entity entity : m_ListenerEntities)
 		{
 			auto& pListenerComponent = pListenerComponents->GetData(entity);
-			auto& pPositionComponent = pPositionComponents->GetData(entity);
-			auto& pRotationComponent = pRotationComponents->GetData(entity);
+			auto& pPositionComponent = pPositionComponents->GetConstData(entity);
+			auto& pRotationComponent = pRotationComponents->GetConstData(entity);
 
 			pListenerComponent.Desc.Position = pPositionComponent.Position;
 			pListenerComponent.Desc.Forward = GetForward(pRotationComponent.Quaternion);
@@ -93,8 +93,8 @@ namespace LambdaEngine
 		for (Entity entity : m_CameraEntities)
 		{
 			auto& audibleComponent = pAudibleComponents->GetData(entity);
-			auto& positionComponent = pPositionComponents->GetData(entity);
-			auto& cameraComponent = pCameraComponents->GetData(entity);
+			auto& positionComponent = pPositionComponents->GetConstData(entity);
+			auto& cameraComponent = pCameraComponents->GetConstData(entity);
 
 			auto* pSoundInstance = audibleComponent.pSoundInstance;
 			pSoundInstance->SetPosition(positionComponent.Position);

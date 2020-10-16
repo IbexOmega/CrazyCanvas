@@ -9,9 +9,6 @@
 
 namespace LambdaEngine
 {
-	// TODO: Temporary solution until there's a separate camera entity with an offset
-	constexpr const float characterHeight = 1.8f;
-
 	CharacterControllerSystem::CharacterControllerSystem()
 	{
 
@@ -30,13 +27,13 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
-				.pSubscriber = &m_CharacterColliderEntities,
+				.pSubscriber = &m_ForeignPlayerEntities,
 				.ComponentAccesses =
 				{
 					{RW, CharacterColliderComponent::Type()},
 					{RW, NetworkPositionComponent::Type()},
 					{RW, VelocityComponent::Type()},
-					{RW, PlayerComponent::Type()}
+					{NDA, PlayerForeignComponent::Type()}
 				},
 				.OnEntityRemoval = onCharacterColliderRemoval
 			}
@@ -55,76 +52,49 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	/*
-	* Only called on the client side
-	*/
-	void CharacterControllerSystem::FixedTickMainThread(Timestamp deltaTime)
+	void CharacterControllerSystem::TickForeignCharacterController(
+		float32 dt,
+		Entity entity,
+		ComponentArray<CharacterColliderComponent>* pCharacterColliders,
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
+		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
-		const float32 dt = (float32)deltaTime.AsSeconds();
-		TickCharacterControllers(dt);
-	}
+		
+		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
+		const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
+		VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
-	void CharacterControllerSystem::TickCharacterControllers(float32 dt)
-	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		auto* pCharacterColliders	= pECS->GetComponentArray<CharacterColliderComponent>();
-		auto* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-		auto* pVelocityComponents	= pECS->GetComponentArray<VelocityComponent>();
-		auto* pPlayerComponents		= pECS->GetComponentArray<PlayerComponent>();
+		PxController* pController = characterCollider.pController;
 
-		for (Entity entity : m_CharacterColliderEntities)
+		const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
+		PxVec3 translationPX =
 		{
-			const PlayerComponent& playerComp = pPlayerComponents->GetData(entity);
+			positionComp.Position.x - (float)oldPositionPX.x,
+			positionComp.Position.y - (float)oldPositionPX.y,
+			positionComp.Position.z - (float)oldPositionPX.z
+		};
 
-			if (!playerComp.IsLocal)
+		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
+
+		const PxExtendedVec3& newPositionPX = pController->getFootPosition();
+		velocityComp.Velocity = {
+			(float)newPositionPX.x - oldPositionPX.x,
+			(float)newPositionPX.y - oldPositionPX.y,
+			(float)newPositionPX.z - oldPositionPX.z
+		};
+		velocityComp.Velocity /= dt;
+
+		if (glm::length2(velocityComp.Velocity) > glm::epsilon<float>())
+		{
+			// Disable vertical movement if the character is on the ground
+			PxControllerState controllerState;
+			pController->getState(controllerState);
+			if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
 			{
-				CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
-				const PositionComponent& positionComp			= pPositionComponents->GetData(entity);
-				VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
-
-				glm::vec3& velocity			= velocityComp.Velocity;
-				const glm::vec3& position	= positionComp.Position;
-
-				velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
-
-				PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
-				translationPX *= dt;
-
-				PxController* pController = characterCollider.pController;
-
-				const PxExtendedVec3 oldPositionPX = pController->getPosition();
-
-				if (positionComp.Dirty)
-				{
-					// Distance between the capsule's feet to its center position. Includes contact offset.
-					const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-					pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
-				}
-
-				pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
-
-				const PxExtendedVec3& newPositionPX = pController->getPosition();
-				velocity = {
-					(float)newPositionPX.x - position.x,
-					(float)newPositionPX.y - position.y,
-					(float)newPositionPX.z - position.z
-				};
-				velocity /= dt;
-
-				if (glm::length2(velocity) > glm::epsilon<float>())
-				{
-					// Disable vertical movement if the character is on the ground
-					PxControllerState controllerState;
-					pController->getState(controllerState);
-					if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
-					{
-						velocity.y = 0.0f;
-					}
-				}
-
-				//Maybe add something to change the rendered PositionComponent here in case we collide
+				velocityComp.Velocity.y = 0.0f;
 			}
 		}
+		//Maybe add something to change the rendered PositionComponent here in case we collide
 	}
 
 	/*
@@ -133,34 +103,40 @@ namespace LambdaEngine
 	* Calculates a new Velocity based on the difference of the last position and the new one.
 	* Sets the new position of the PositionComponent
 	*/
-	void CharacterControllerSystem::TickCharacterController(float32 dt, Entity entity, ComponentArray<CharacterColliderComponent>* pCharacterColliders, ComponentArray<NetworkPositionComponent>* pNetPosComponents, ComponentArray<VelocityComponent>* pVelocityComponents)
+	void CharacterControllerSystem::TickCharacterController(
+		float32 dt, 
+		Entity entity, 
+		ComponentArray<CharacterColliderComponent>* pCharacterColliders, 
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents, 
+		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
-		CharacterColliderComponent& characterCollider = pCharacterColliders->GetData(entity);
-		const NetworkPositionComponent& positionComp = pNetPosComponents->GetData(entity);
-
-		glm::vec3& velocity = pVelocityComponents->GetData(entity).Velocity;
-		const glm::vec3& position = positionComp.Position;
-
-		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
-
-		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
-		translationPX *= dt;
+		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
+		const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
+		VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
 
 		PxController* pController = characterCollider.pController;
 
-		const PxExtendedVec3 oldPositionPX = pController->getPosition();
+		//Update velocity
+		glm::vec3& velocity = velocityComp.Velocity;
+		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
 
+		//Calculate Tick Translation
+		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
+		translationPX *= dt;
+
+		const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
+
+		// Distance between the capsule's feet to its center position. Includes contact offset.
 		if (positionComp.Dirty)
 		{
-			// Distance between the capsule's feet to its center position. Includes contact offset.
-			const float32 capsuleHalfHeight = float32(oldPositionPX.y - pController->getFootPosition().y);
-			pController->setPosition({ position.x, position.y - characterHeight + capsuleHalfHeight, position.z });
+			pController->setFootPosition({ positionComp.Position.x,  positionComp.Position.y,  positionComp.Position.z });
 		}
 
 		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
-		const PxExtendedVec3& newPositionPX = pController->getPosition();
-		velocity = {
+		const PxExtendedVec3& newPositionPX = pController->getFootPosition();
+		velocity = 
+		{
 			(float)newPositionPX.x - oldPositionPX.x,
 			(float)newPositionPX.y - oldPositionPX.y,
 			(float)newPositionPX.z - oldPositionPX.z
@@ -181,9 +157,10 @@ namespace LambdaEngine
 			NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
 			positionCompMutable.Dirty = true;
 
-			positionCompMutable.Position = {
+			positionCompMutable.Position = 
+			{
 				newPositionPX.x,
-				pController->getFootPosition().y + characterHeight,
+				newPositionPX.y,
 				newPositionPX.z
 			};
 		}

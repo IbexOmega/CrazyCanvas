@@ -124,6 +124,8 @@ namespace LambdaEngine
 
 	void AnimationSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		ComponentArray<AnimationComponent>* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 

@@ -40,7 +40,7 @@ namespace LambdaEngine
 
 	struct VelocityComponent
 	{
-		DECL_COMPONENT_WITH_DIRTY_FLAG(VelocityComponent);
+		DECL_COMPONENT(VelocityComponent);
 		glm::vec3 Velocity = glm::vec3(0.0f);
 	};
 
