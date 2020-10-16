@@ -39,7 +39,7 @@ namespace LambdaEngine
 	struct SceneLoadDesc
 	{
 		String	Filename = "";
-		TArray<SpecialObjectDesc> SpecialObjectDescriptions = {};
+		TArray<SpecialObjectOnLoadDesc> SpecialObjectDescriptions = {};
 	};
 
 	class LAMBDA_API ResourceManager
@@ -82,7 +82,7 @@ namespace LambdaEngine
 			TArray<MeshComponent>& meshComponents,
 			TArray<LoadedDirectionalLight>& directionalLights,
 			TArray<LoadedPointLight>& pointLights,
-			TArray<SpecialObject>& specialObjects,
+			TArray<SpecialObjectOnLoad>& specialObjects,
 			const String& directory = SCENE_DIR);
 
 		/*
@@ -218,6 +218,7 @@ namespace LambdaEngine
 		static GUID_Lambda GetMeshGUID(const String& name);
 		static GUID_Lambda GetMaterialGUID(const String& name);
 		static GUID_Lambda GetAnimationGUID(const String& name);
+		static bool GetAnimationGUIDsFromMeshName(const String& name, TArray<GUID_Lambda>& guids);
 		static GUID_Lambda GetTextureGUID(const String& name);
 		static GUID_Lambda GetShaderGUID(const String& name);
 		static GUID_Lambda GetSoundEffectGUID(const String& name);

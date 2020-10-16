@@ -125,7 +125,7 @@ namespace LambdaEngine
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObject>& specialObjects,
+		TArray<SpecialObjectOnLoad>& specialObjects,
 		const String& directory)
 	{
 		VALIDATE(pSceneLoadDesc != nullptr);
@@ -942,11 +942,6 @@ namespace LambdaEngine
 						return false;
 					}
 				}
-				else
-				{
-					LOG_ERROR("[ResourceManager]: UnloadMesh Failed at s_FileNamesToAnimationGUIDs");
-					return false;
-				}
 			}
 			else
 			{
@@ -1249,6 +1244,17 @@ namespace LambdaEngine
 	GUID_Lambda ResourceManager::GetAnimationGUID(const String& name)
 	{
 		return GetGUID(s_AnimationNamesToGUIDs, name);
+	}
+
+	bool ResourceManager::GetAnimationGUIDsFromMeshName(const String& name, TArray<GUID_Lambda>& guids)
+	{
+		if (auto it = s_FileNamesToAnimationGUIDs.find(name); it != s_FileNamesToAnimationGUIDs.end())
+		{
+			guids = it->second;
+			return true;
+		}
+
+		return false;
 	}
 
 	GUID_Lambda ResourceManager::GetTextureGUID(const String& name)

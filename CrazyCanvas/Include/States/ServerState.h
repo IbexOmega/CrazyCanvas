@@ -6,9 +6,12 @@
 
 #include "Networking/API/UDP/INetworkDiscoveryServer.h"
 
+#include "Application/API/Events/NetworkEvents.h"
+
+class Level;
+
 class ServerState :
-	public LambdaEngine::State,
-	public LambdaEngine::INetworkDiscoveryServer
+	public LambdaEngine::State
 {
 public:
 	ServerState() = default;
@@ -19,9 +22,15 @@ public:
 	void Resume() override final {};
 	void Pause() override final {};
 
+	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
+
 	virtual void Tick(LambdaEngine::Timestamp delta) override;
 
-	virtual void OnNetworkDiscoveryPreTransmit(const LambdaEngine::BinaryEncoder& encoder) override;
-
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
+
+	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
+
+private:
+	Level* m_pLevel = nullptr;
+	std::string m_ServerName;
 };

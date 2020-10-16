@@ -27,9 +27,24 @@ namespace LambdaEngine
 					.pSubscriber = &m_CameraEntities,
 					.ComponentAccesses =
 					{
-						{R, CameraComponent::Type()}, {NDA, ViewProjectionMatricesComponent::Type()}, {RW, VelocityComponent::Type()},
-						{NDA, PositionComponent::Type()}, {RW, RotationComponent::Type()}
-					}
+						{R, CameraComponent::Type()}, 
+						{NDA, ViewProjectionMatricesComponent::Type()}, 
+						{RW, VelocityComponent::Type()},
+						{NDA, PositionComponent::Type()}, 
+						{RW, RotationComponent::Type()},
+					},
+				},
+				{
+					.pSubscriber = &m_AttachedCameraEntities,
+					.ComponentAccesses =
+					{
+						{R, CameraComponent::Type()}, 
+						{NDA, ViewProjectionMatricesComponent::Type()}, 
+						{R, ParentComponent::Type()},
+						{R, OffsetComponent::Type()},
+						{RW, PositionComponent::Type()}, 
+						{RW, RotationComponent::Type()},
+					},
 				}
 			};
 			systemReg.SubscriberRegistration.AdditionalAccesses = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
@@ -46,31 +61,53 @@ namespace LambdaEngine
 		const float32 dt = (float32)deltaTime.AsSeconds();
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
-		const ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
-		const ComponentArray<FreeCameraComponent>* pFreeCameraComponents = pECSCore->GetComponentArray<FreeCameraComponent>();
-		const ComponentArray<FPSControllerComponent>* pFPSCameraComponents = pECSCore->GetComponentArray<FPSControllerComponent>();
+		const ComponentArray<CameraComponent>*			pCameraComponents		= pECSCore->GetComponentArray<CameraComponent>();
+		const ComponentArray<FreeCameraComponent>*		pFreeCameraComponents	= pECSCore->GetComponentArray<FreeCameraComponent>();
+		const ComponentArray<FPSControllerComponent>*	pFPSCameraComponents	= pECSCore->GetComponentArray<FPSControllerComponent>();
+		const ComponentArray<ParentComponent>*			pParentComponents		= pECSCore->GetComponentArray<ParentComponent>();
+		const ComponentArray<OffsetComponent>*			pOffsetComponents		= pECSCore->GetComponentArray<OffsetComponent>();
+		ComponentArray<PositionComponent>*				pPositionComponents		= pECSCore->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>*				pRotationComponents		= pECSCore->GetComponentArray<RotationComponent>();
+		ComponentArray<VelocityComponent>*				pVelocityComponents		= pECSCore->GetComponentArray<VelocityComponent>();
+
+		for (Entity entity : m_AttachedCameraEntities)
+		{
+			const ParentComponent&		parentComp			= pParentComponents->GetConstData(entity);
+
+			if (parentComp.Attached)
+			{
+				const PositionComponent&	parentPositionComp	= pPositionComponents->GetConstData(parentComp.Parent);
+				const RotationComponent&	parentRotationComp	= pRotationComponents->GetConstData(parentComp.Parent);
+				const OffsetComponent&		cameraOffsetComp	= pOffsetComponents->GetConstData(entity);
+				PositionComponent&			cameraPositionComp	= pPositionComponents->GetData(entity);
+				RotationComponent&			cameraRotationComp	= pRotationComponents->GetData(entity);
+
+				cameraPositionComp.Position		= parentPositionComp.Position + cameraOffsetComp.Offset;
+				cameraRotationComp.Quaternion	= parentRotationComp.Quaternion;
+			}
+		}
 
 		for (Entity entity : m_CameraEntities)
 		{
-			const auto& camComp = pCameraComponents->GetData(entity);
+			const auto& camComp = pCameraComponents->GetConstData(entity);
 			if (camComp.IsActive)
 			{
-				auto& rotComp		= pECSCore->GetComponent<RotationComponent>(entity);
-				auto& velocityComp	= pECSCore->GetComponent<VelocityComponent>(entity);
+				auto& rotationComp	= pRotationComponents->GetData(entity);
+				auto& velocityComp	= pVelocityComponents->GetData(entity);
 
 				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
 				{
-					MoveFreeCamera(dt, velocityComp, rotComp, pFreeCameraComponents->GetData(entity));
+					MoveFreeCamera(dt, velocityComp, rotationComp, pFreeCameraComponents->GetConstData(entity));
 				}
 				else if (pFPSCameraComponents && pFPSCameraComponents->HasComponent(entity))
 				{
-					MoveFPSCamera(dt, velocityComp, rotComp, pFPSCameraComponents->GetData(entity));
+					MoveFPSCamera(dt, velocityComp, rotationComp, pFPSCameraComponents->GetConstData(entity));
 				}
 
 				#ifdef LAMBDA_DEBUG
 					if (Input::IsKeyDown(EKey::KEY_T))
 					{
-						RenderFrustum(entity);
+						RenderFrustum(entity, pPositionComponents->GetData(entity), rotationComp);
 					}
 				#endif // LAMBDA_DEBUG
 			}
@@ -91,7 +128,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void CameraSystem::MoveFreeCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FreeCameraComponent& freeCamComp)
+	void CameraSystem::MoveFreeCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotationComp, const FreeCameraComponent& freeCamComp)
 	{
 		glm::vec3& velocity = velocityComp.Velocity;
 		velocity = {
@@ -100,21 +137,21 @@ namespace LambdaEngine
 			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
 		};
 
-		const glm::vec3 forward = GetForward(rotComp.Quaternion);
+		const glm::vec3 forward = GetForward(rotationComp.Quaternion);
 
 		if (glm::length2(velocity) > glm::epsilon<float>())
 		{
-			const glm::vec3 right = GetRight(rotComp.Quaternion);
+			const glm::vec3 right = GetRight(rotationComp.Quaternion);
 			const float shiftSpeedFactor = InputActionSystem::IsActive("CAM_SPEED_MODIFIER") ? 2.0f : 1.0f;
 			velocity = glm::normalize(velocity) * freeCamComp.SpeedFactor * shiftSpeedFactor;
 
-			velocity = velocity.x * right + velocity.y * GetUp(rotComp.Quaternion) + velocity.z * forward;
+			velocity = velocity.x * right + velocity.y * GetUp(rotationComp.Quaternion) + velocity.z * forward;
 		}
 
-		RotateCamera(dt, freeCamComp.MouseSpeedFactor, forward, rotComp.Quaternion);
+		RotateCamera(dt, freeCamComp.MouseSpeedFactor, forward, rotationComp.Quaternion);
 	}
 
-	void CameraSystem::MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotComp, const FPSControllerComponent& FPSComp)
+	void CameraSystem::MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotationComp, const FPSControllerComponent& FPSComp)
 	{
 		// First calculate translation relative to the character's rotation (i.e. right, up, forward).
 		// Then convert the translation be relative to the world axes.
@@ -136,15 +173,15 @@ namespace LambdaEngine
 		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
 		velocity.z = horizontalVelocity.y;
 
-		const glm::vec3 forward	= GetForward(rotComp.Quaternion);
-		const glm::vec3 right	= GetRight(rotComp.Quaternion);
+		const glm::vec3 forward	= GetForward(rotationComp.Quaternion);
+		const glm::vec3 right	= GetRight(rotationComp.Quaternion);
 
 		const glm::vec3 forwardHorizontal	= glm::normalize(glm::vec3(forward.x, 0.0f, forward.z));
 		const glm::vec3 rightHorizontal		= glm::normalize(glm::vec3(right.x, 0.0f, right.z));
 
 		velocity = velocity.x * rightHorizontal + velocity.y * g_DefaultUp + velocity.z * forwardHorizontal;
 
-		RotateCamera(dt, FPSComp.MouseSpeedFactor, forward, rotComp.Quaternion);
+		RotateCamera(dt, FPSComp.MouseSpeedFactor, forward, rotationComp.Quaternion);
 	}
 
 	void CameraSystem::RotateCamera(float32 dt, float32 mouseSpeedFactor, const glm::vec3& forward, glm::quat& rotation)
@@ -195,9 +232,14 @@ namespace LambdaEngine
 			glm::angleAxis(currentPitch, g_DefaultRight);	// Pitch
 	}
 
-	void CameraSystem::RenderFrustum(Entity entity)
+	void CameraSystem::RenderFrustum(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp)
 	{
-		if (LineRenderer::Get())
+		UNREFERENCED_VARIABLE(positionComp);
+		UNREFERENCED_VARIABLE(rotationComp);
+
+		LineRenderer* pLineRenderer = LineRenderer::Get();
+
+		if (pLineRenderer != nullptr)
 		{
 			// This is a test code - This should probably not be done every tick
 			ECSCore* pECSCore = ECSCore::GetInstance();
@@ -242,11 +284,11 @@ namespace LambdaEngine
 
 			if (m_LineGroupEntityIDs.contains(entity))
 			{
-				m_LineGroupEntityIDs[entity] = LineRenderer::Get()->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
+				m_LineGroupEntityIDs[entity] = pLineRenderer->UpdateLineGroup(m_LineGroupEntityIDs[entity], points, { 0.0f, 1.0f, 0.0f });
 			}
 			else
 			{
-				m_LineGroupEntityIDs[entity] = LineRenderer::Get()->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
+				m_LineGroupEntityIDs[entity] = pLineRenderer->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
 			}
 		}
 	}

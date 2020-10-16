@@ -8,12 +8,18 @@
 #include "Rendering/RenderGraph.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
-#include "States/NetworkingState.h"
 #include "States/PlaySessionState.h"
 #include "States/SandboxState.h"
 #include "States/ServerState.h"
 
+#include "Networking/API/NetworkUtils.h"
+
 #include "World/LevelManager.h"
+
+#include "Teams/TeamHelper.h"
+
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -30,14 +36,19 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
-	bool clientSide = true;
-	if (!LevelManager::Init(clientSide))
+	if (!LevelManager::Init())
 	{
 		LOG_ERROR("Level Manager Init Failed");
 	}
 
+	if (!TeamHelper::Init())
+	{
+		LOG_ERROR("Team Helper Init Failed");
+	}
+
 	LoadRendererResources();
 
+	constexpr const char* pGameName = "Crazy Canvas";
 	constexpr const char* pDefaultStateStr = "crazycanvas";
 	State* pStartingState = nullptr;
 	String stateStr;
@@ -45,18 +56,22 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	if (stateStr == "crazycanvas")
 	{
+		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW MainMenuState();
 	}
 	else if (stateStr == "sandbox")
 	{
+		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
 	}
 	else if (stateStr == "client")
 	{
-		pStartingState = DBG_NEW NetworkingState();
+		ClientSystem::Init(pGameName);
+		pStartingState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 	}
 	else if (stateStr == "server")
 	{
+		ServerSystem::Init(pGameName);
 		pStartingState = DBG_NEW ServerState();
 	}
 	else if (stateStr == "benchmark")

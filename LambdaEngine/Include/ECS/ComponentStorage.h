@@ -30,7 +30,7 @@ namespace LambdaEngine
 		Comp& GetComponent(Entity entity);
 
 		template<typename Comp>
-		const Comp& GetComponent(Entity entity) const;
+		const Comp& GetConstComponent(Entity entity) const;
 
 		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
@@ -126,12 +126,12 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline const Comp& ComponentStorage::GetComponent(Entity entity) const
+	inline const Comp& ComponentStorage::GetConstComponent(Entity entity) const
 	{
 		const ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
 		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
-		return pCompArray->GetData(entity);
+		return pCompArray->GetConstData(entity);
 	}
 
 	template<typename Comp>

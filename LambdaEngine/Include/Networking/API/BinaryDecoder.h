@@ -34,6 +34,8 @@ namespace LambdaEngine
 		void ReadVec3(glm::vec3& value);
 		void ReadVec4(glm::vec4& value);
 
+		void ReadQuat(glm::quat& value);
+
 
 		int8		ReadInt8();
 		uint8		ReadUInt8();
@@ -51,6 +53,11 @@ namespace LambdaEngine
 		glm::vec2 ReadVec2();
 		glm::vec3 ReadVec3();
 		glm::vec4 ReadVec4();
+
+		glm::quat ReadQuat();
+
+
+		const NetworkSegment* GetPacket() const;
 
 	private:
 		const NetworkSegment* m_pNetworkPacket;

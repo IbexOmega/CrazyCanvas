@@ -194,11 +194,11 @@ namespace LambdaEngine
 
 	bool ResourceLoader::LoadSceneFromFile(
 		const String& filepath,
-		const TArray<SpecialObjectDesc>& specialObjectDescriptions,
+		const TArray<SpecialObjectOnLoadDesc>& specialObjectDescriptions,
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObject>& specialObjects,
+		TArray<SpecialObjectOnLoad>& specialObjects,
 		TArray<Mesh*>& meshes,
 		TArray<Animation*>& animations,
 		TArray<LoadedMaterial*>& materials,
@@ -271,10 +271,10 @@ namespace LambdaEngine
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 
-		const TArray<SpecialObjectDesc>		specialObjectDescriptions;
-		TArray<LoadedDirectionalLight>		directionalLightComponents;
-		TArray<LoadedPointLight>			pointLightComponents;
-		TArray<SpecialObject>				specialObjects;
+		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		TArray<LoadedDirectionalLight>			directionalLightComponents;
+		TArray<LoadedPointLight>				pointLightComponents;
+		TArray<SpecialObjectOnLoad>				specialObjects;
 
 		SceneLoadRequest loadRequest =
 		{
@@ -345,10 +345,10 @@ namespace LambdaEngine
 		TArray<Mesh*>						meshes;
 		TArray<Animation*>					animations;
 		TArray<MeshComponent>				meshComponent;
-		const TArray<SpecialObjectDesc>		specialObjectDescriptions;
-		TArray<LoadedDirectionalLight>		directionalLightComponents;
-		TArray<LoadedPointLight>			pointLightComponents;
-		TArray<SpecialObject>				specialObjects;
+		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		TArray<LoadedDirectionalLight>			directionalLightComponents;
+		TArray<LoadedPointLight>				pointLightComponents;
+		TArray<SpecialObjectOnLoad>				specialObjects;
 
 		SceneLoadRequest loadRequest =
 		{
@@ -877,10 +877,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ResourceLoader::LoadBoundingBox(BoundingBox& boundingBox, glm::vec3& centroid, const aiMesh* pMeshAI)
+	void ResourceLoader::LoadBoundingBox(BoundingBox& boundingBox,const aiMesh* pMeshAI)
 	{
-		glm::vec3& halfExtent = boundingBox.HalfExtent;
-		halfExtent = glm::vec3(0.0f);
+		boundingBox.Centroid = glm::vec3(0.0f);
+		glm::vec3 maxExtent = glm::vec3(0.0f);
+		glm::vec3 minExtent = glm::vec3(0.0f);
 
 		glm::vec3 vertexPosition;
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
@@ -889,22 +890,29 @@ namespace LambdaEngine
 			vertexPosition.y = pMeshAI->mVertices[vertexIdx].y;
 			vertexPosition.z = pMeshAI->mVertices[vertexIdx].z;
 
-			halfExtent.x = std::max(halfExtent.x, std::abs(vertexPosition.x));
-			halfExtent.y = std::max(halfExtent.y, std::abs(vertexPosition.y));
-			halfExtent.z = std::max(halfExtent.z, std::abs(vertexPosition.z));
+			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertexPosition.x));
+			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertexPosition.y));
+			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertexPosition.z));
+
+			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertexPosition.x));
+			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertexPosition.y));
+			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertexPosition.z));
 
 			//Moving Average
-			centroid += (vertexPosition - centroid) / float32(vertexIdx + 1);
+			boundingBox.Centroid += (vertexPosition - boundingBox.Centroid) / float32(vertexIdx + 1);
 		}
+
+		boundingBox.Dimensions = maxExtent - minExtent;
+		LOG_INFO("Bounding Box: %f %f %f", boundingBox.Dimensions.x, boundingBox.Dimensions.y, boundingBox.Dimensions.z);
 	}
 
-	void ResourceLoader::LoadVertices(Mesh* pMesh, glm::vec3& centroid, const aiMesh* pMeshAI)
+	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
 	{
 		pMesh->Vertices.Resize(pMeshAI->mNumVertices);
 
-		glm::vec3& halfExtent = pMesh->BoundingBox.HalfExtent;
-		halfExtent = glm::vec3(0.0f);
-		centroid = glm::vec3(0.0f);
+		pMesh->BoundingBox.Centroid = glm::vec3(0.0f);
+		glm::vec3 maxExtent = glm::vec3(0.0f);
+		glm::vec3 minExtent = glm::vec3(0.0f);
 
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
@@ -913,12 +921,16 @@ namespace LambdaEngine
 			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
 
-			halfExtent.x = std::max(halfExtent.x, std::abs(vertex.Position.x));
-			halfExtent.y = std::max(halfExtent.y, std::abs(vertex.Position.y));
-			halfExtent.z = std::max(halfExtent.z, std::abs(vertex.Position.z));
+			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.Position.x));
+			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.Position.y));
+			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertex.Position.z));
+
+			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertex.Position.x));
+			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertex.Position.y));
+			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertex.Position.z));
 
 			//Moving Average
-			centroid += (vertex.Position - centroid) / float32(vertexIdx + 1);
+			pMesh->BoundingBox.Centroid += (vertex.Position - pMesh->BoundingBox.Centroid) / float32(vertexIdx + 1);
 
 			if (pMeshAI->HasNormals())
 			{
@@ -942,6 +954,9 @@ namespace LambdaEngine
 
 			pMesh->Vertices[vertexIdx] = vertex;
 		}
+
+		pMesh->BoundingBox.Dimensions = (maxExtent - minExtent);
+		LOG_INFO("Bounding Box: %f %f %f", pMesh->BoundingBox.Dimensions.x, pMesh->BoundingBox.Dimensions.y, pMesh->BoundingBox.Dimensions.z);
 	}
 
 	void ResourceLoader::LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI)
@@ -1033,7 +1048,7 @@ namespace LambdaEngine
 				auto childIt = pSkeleton->JointMap.find(childName);
 				if (childIt != pSkeleton->JointMap.end())
 				{
-					pSkeleton->Joints[childIt->second].ParentBoneIndex = myID;
+					pSkeleton->Joints[childIt->second].ParentBoneIndex = (JointIndexType)myID;
 				}
 
 				FindSkeletalParent(pNode->mChildren[child], pSkeleton);
@@ -1063,7 +1078,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pSkeleton->JointMap[joint.Name] = boneIndex;
+				pSkeleton->JointMap[joint.Name] = (unsigned char)boneIndex;
 			}
 			
 			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
@@ -1133,22 +1148,22 @@ namespace LambdaEngine
 				VertexJointData& vertex = pMesh->VertexJointData[vertexID];
 				if (vertex.JointID0 == INVALID_JOINT_ID)
 				{
-					vertex.JointID0 = boneID;
+					vertex.JointID0 = (JointIndexType)boneID;
 					vertex.Weight0	= weight;
 				}
 				else if (vertex.JointID1 == INVALID_JOINT_ID)
 				{
-					vertex.JointID1 = boneID;
+					vertex.JointID1 = (JointIndexType)boneID;
 					vertex.Weight1	= weight;
 				}
 				else if (vertex.JointID2 == INVALID_JOINT_ID)
 				{
-					vertex.JointID2 = boneID;
+					vertex.JointID2 = (JointIndexType)boneID;
 					vertex.Weight2	= weight;
 				}
 				else if (vertex.JointID3 == INVALID_JOINT_ID)
 				{
-					vertex.JointID3 = boneID;
+					vertex.JointID3 = (JointIndexType)boneID;
 					// This weight will be calculated in the shader
 				}
 				else
@@ -1441,10 +1456,10 @@ namespace LambdaEngine
 		String nodeName = pNode->mName.C_Str();
 		bool loadNormally	= false;
 		bool isSpecial		= false;
-		TArray<SpecialObject*> specialObjectToBeSet;
+		TArray<SpecialObjectOnLoad*> specialObjectToBeSet;
 
 		//Check if there are any special object descriptions referencing this object
-		for (const SpecialObjectDesc& specialObjectDesc : context.SpecialObjectDescriptions)
+		for (const SpecialObjectOnLoadDesc& specialObjectDesc : context.SpecialObjectDescriptions)
 		{
 			size_t prefixIndex = nodeName.find(specialObjectDesc.Prefix);
 
@@ -1459,7 +1474,7 @@ namespace LambdaEngine
 					loadNormally = true;
 				}
 
-				SpecialObject specialObject =
+				SpecialObjectOnLoad specialObject =
 				{
 					.Prefix		= specialObjectDesc.Prefix,
 					.Name		= nodeName.substr(specialObjectDesc.Prefix.length() + 1)
@@ -1478,7 +1493,7 @@ namespace LambdaEngine
 				Mesh* pMesh = DBG_NEW Mesh;
 
 				glm::vec3 centroid;
-				LoadVertices(pMesh, centroid, pMeshAI);
+				LoadVertices(pMesh, pMeshAI);
 				LoadIndices(pMesh, pMeshAI);
 
 				if (context.pMaterials)
@@ -1491,11 +1506,13 @@ namespace LambdaEngine
 					LoadSkeleton(pMesh, pMeshAI);
 					if (pMesh->pSkeleton)
 					{
-						glm::mat4 meshTransform		= AssimpToGLMMat4(pNode->mTransformation);
-					    glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
-					    pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
+						//Assume Mixamo has replaced our rotation
+						glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+						meshTransform				= meshTransform * AssimpToGLMMat4(pNode->mTransformation);
+						glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
+						pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
 
-                        LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+						LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
 					}
 				}
 
@@ -1508,9 +1525,8 @@ namespace LambdaEngine
 				newMeshComponent.MaterialGUID = context.MaterialIndices[pMeshAI->mMaterialIndex];
 				context.MeshComponents.PushBack(newMeshComponent);
 
-				for (SpecialObject* pSpecialObject : specialObjectToBeSet)
+				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
 				{
-					pSpecialObject->Centroids.PushBack(centroid);
 					pSpecialObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
 				}
 			}
@@ -1523,11 +1539,10 @@ namespace LambdaEngine
 
 				BoundingBox boundingBox;
 				glm::vec3 centroid;
-				LoadBoundingBox(boundingBox, centroid, pMeshAI);
+				LoadBoundingBox(boundingBox, pMeshAI);
 
-				for (SpecialObject* pSpecialObject : specialObjectToBeSet)
+				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
 				{
-					pSpecialObject->Centroids.PushBack(centroid);
 					pSpecialObject->BoundingBoxes.PushBack(boundingBox);
 				}
 			}

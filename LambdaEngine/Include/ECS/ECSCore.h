@@ -48,7 +48,7 @@ namespace LambdaEngine
 
 		// Fetch a const reference to a component for a specific entity.
 		template<typename Comp>
-		const Comp& GetComponent(Entity entity) const;
+		const Comp& GetConstComponent(Entity entity) const;
 
 		// Fetch a pointer to an array containing all components of a specific type.
 		template<typename Comp>
@@ -126,7 +126,7 @@ namespace LambdaEngine
 		JobScheduler m_JobScheduler;
 		ComponentStorage m_ComponentStorage;
 
-		TArray<Entity> m_EntitiesToDelete;
+		std::unordered_set<Entity> m_EntitiesToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToRegister;
 
@@ -159,9 +159,9 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline const Comp& ECSCore::GetComponent(Entity entity) const
+	inline const Comp& ECSCore::GetConstComponent(Entity entity) const
 	{
-		return m_ComponentStorage.GetComponent<Comp>(entity);
+		return m_ComponentStorage.GetConstComponent<Comp>(entity);
 	}
 
 	template<typename Comp>

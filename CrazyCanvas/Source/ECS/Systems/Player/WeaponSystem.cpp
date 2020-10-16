@@ -35,7 +35,7 @@ bool WeaponSystem::Init()
 		};
 		systemReg.SubscriberRegistration.AdditionalAccesses =
 		{
-			{NDA, PlayerTag::Type()}, {RW, PositionComponent::Type()}, {RW, ScaleComponent::Type()}, {RW, RotationComponent::Type()},
+			{NDA, PlayerBaseComponent::Type()}, {RW, PositionComponent::Type()}, {RW, ScaleComponent::Type()}, {RW, RotationComponent::Type()},
 			{RW, VelocityComponent::Type()}, {RW, MeshComponent::Type()}
 		};
 		systemReg.Phase = 1;
@@ -90,13 +90,13 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		const int onCooldown = weaponComponent.CurrentCooldown > 0.0f;
 		weaponComponent.CurrentCooldown -= onCooldown * dt;
 
-		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT) && !onCooldown)
+		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD) && !onCooldown)
 		{
-			const PositionComponent& positionComp = pPositionComponents->GetData(playerEntity);
-			const RotationComponent& rotationComp = pRotationComponents->GetData(playerEntity);
-			const VelocityComponent& velocityComp = pVelocityComponents->GetData(playerEntity);
+			const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
+			const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
+			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 
-			Fire(weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
+			Fire(weaponComponent, positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f), rotationComp.Quaternion, velocityComp.Velocity);
 		}
 	}
 }
@@ -114,7 +114,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 	ECSCore* pECS = ECSCore::GetInstance();
 	const Entity projectileEntity = pECS->CreateEntity();
 
-	const VelocityComponent initialVelocity = {true, playerVelocity + directionVec * projectileInitialSpeed};
+	const VelocityComponent initialVelocity = {playerVelocity + directionVec * projectileInitialSpeed};
 	pECS->AddComponent<VelocityComponent>(projectileEntity, initialVelocity);
 
 	const DynamicCollisionInfo collisionInfo = {
@@ -125,6 +125,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {m_ProjectileMeshComponent}),
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionCallback */ std::bind(&WeaponSystem::OnProjectileHit, this, projectileEntity),
 		/* Velocity */			initialVelocity
 	};
 
@@ -132,4 +133,13 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 
 	weaponComponent.Projectiles.PushBack(projectileEntity);
+}
+
+void WeaponSystem::OnProjectileHit(LambdaEngine::Entity entity)
+{
+	using namespace LambdaEngine;
+
+	LOG_INFO("Projectile hit, entity: %d", entity);
+	ECSCore* pECS = ECSCore::GetInstance();
+	pECS->RemoveEntity(entity);
 }

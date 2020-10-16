@@ -31,13 +31,13 @@ namespace LambdaEngine
 	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS			= "SCENE_COMBINED_MATERIAL_MAPS";
 
 	constexpr const char* PAINT_MASK_TEXTURES 					= "PAINT_MASK_TEXTURES";
-	
+
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4;
 
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0;
 	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
-	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 1;
+	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 8;
 	constexpr const uint32 MAX_TEXTURES_PER_EXTENSION			= 16;
 	constexpr const uint32 MAX_EXTENSION_GROUPS_PER_MESH_TYPE	= 64; // Number of extension groups per mesh instance
 
@@ -204,7 +204,8 @@ namespace LambdaEngine
 	{
 		String							ResourceName		= "";
 		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
-		uint32							DrawArgsMask		= 0x0;
+		uint32							DrawArgsIncludeMask	= 0x0;
+		uint32							DrawArgsExcludeMask	= 0x0;
 
 		struct
 		{
@@ -275,7 +276,8 @@ namespace LambdaEngine
 		ERenderGraphResourceBindingType	PrevBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceBindingType	NextBindingType		= ERenderGraphResourceBindingType::NONE;
 		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
-		uint32							DrawArgsMask		= 0x0;
+		uint32							DrawArgsIncludeMask	= 0x0;
+		uint32							DrawArgsExcludeMask	= 0x0;
 	};
 
 	struct SynchronizationStageDesc
@@ -290,11 +292,12 @@ namespace LambdaEngine
 
 	struct DrawArgExtensionData
 	{
-		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]		= {nullptr};
-		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
-		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]		= { nullptr };
-		uint32			TextureCount								= 0;
-		uint32			ExtensionID									= 0; // Zero is an invalid id.
+		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]				= {nullptr};
+		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]			= { nullptr };
+		TextureView*	ppMipZeroTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
+		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
+		uint32			TextureCount										= 0;
+		uint32			ExtensionID											= 0; // Zero is an invalid id.
 	};
 
 	struct DrawArgExtensionGroup
@@ -302,6 +305,30 @@ namespace LambdaEngine
 		uint32					pExtensionMasks[MAX_EXTENSIONS_PER_MESH_TYPE];
 		DrawArgExtensionData	pExtensions[MAX_EXTENSIONS_PER_MESH_TYPE];
 		uint32					ExtensionCount = 0;
+	};
+
+	struct DrawArgMaskDesc
+	{
+		union
+		{
+			uint64 FullMask;
+
+			struct
+			{
+				uint32 IncludeMask;
+				uint32 ExcludeMask;
+			};
+		};
+
+		inline bool operator<(const DrawArgMaskDesc& other) const noexcept
+		{
+			return FullMask < other.FullMask;
+		}
+
+		inline bool operator==(const DrawArgMaskDesc& other) const noexcept
+		{
+			return FullMask == other.FullMask;
+		}
 	};
 
 	struct DrawArg
@@ -318,7 +345,7 @@ namespace LambdaEngine
 
 		// Extensions
 		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount!
-		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used. 
+		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used.
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/
@@ -355,13 +382,14 @@ namespace LambdaEngine
 
 	struct EditorRenderGraphResourceState
 	{
-		String							ResourceName		= "";
-		ERenderGraphResourceType		ResourceType		= ERenderGraphResourceType::NONE;
-		String							RenderStageName		= "";
-		bool							Removable			= true;
-		uint32							DrawArgsMask		= 1;
-		ERenderGraphResourceBindingType BindingType			= ERenderGraphResourceBindingType::NONE;
-		int32							InputLinkIndex		= -1;
+		String							ResourceName			= "";
+		ERenderGraphResourceType		ResourceType			= ERenderGraphResourceType::NONE;
+		String							RenderStageName			= "";
+		bool							Removable				= true;
+		uint32							DrawArgsIncludeMask		= 1;
+		uint32							DrawArgsExcludeMask		= 0;
+		ERenderGraphResourceBindingType BindingType				= ERenderGraphResourceBindingType::NONE;
+		int32							InputLinkIndex			= -1;
 		TSet<int32>						OutputLinkIndices;
 	};
 

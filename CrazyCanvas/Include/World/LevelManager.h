@@ -32,7 +32,7 @@ class LevelManager
 public:
 	DECL_STATIC_CLASS(LevelManager);
 
-	static bool Init(bool clientSide);
+	static bool Init();
 	static bool Release();
 	
 	/*

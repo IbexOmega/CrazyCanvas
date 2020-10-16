@@ -31,8 +31,12 @@
 #include "Debug/Profiler.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#pragma warning( push, 0 )
 #include <imgui.h>
+#pragma warning( pop )
 #include <imnodes.h>
+
+#include <d3d12.h>
 
 namespace LambdaEngine
 {
@@ -200,6 +204,13 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pData);
 		UNREFERENCED_VARIABLE(dataSize);
 	}*/
+
+	void ImGuiRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
+	}
 
 	void ImGuiRenderer::UpdateTextureResource(
 		const String& resourceName, 
