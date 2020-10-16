@@ -80,6 +80,9 @@ namespace LambdaEngine
 	private:
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
 
+		bool FreeParticleChunk(ParticleChunk chunk);
+		bool MergeParticleChunk(const ParticleChunk& chunk);
+
 		void CleanBuffers();
 	private:
 		uint32						m_MaxParticleCount;
@@ -106,6 +109,7 @@ namespace LambdaEngine
 
 		TArray<SParticle>			m_Particles;
 		TArray<IndirectData>		m_IndirectData;
+		THashTable<uint32, Entity>	m_IndirectDataToEntity;
 		TArray<ParticleChunk>		m_FreeParticleChunks;
 
 		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;

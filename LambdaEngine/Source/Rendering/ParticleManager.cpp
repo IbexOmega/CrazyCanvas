@@ -108,6 +108,7 @@ namespace LambdaEngine
 		if (emitterComp.Active)
 		{
 			instance.IndirectDataIndex = m_IndirectData.GetSize();
+			m_IndirectDataToEntity[instance.IndirectDataIndex] = entity;
 
 			IndirectData indirectData;
 			indirectData.FirstInstance	= instance.ParticleChunk.Offset;
@@ -137,10 +138,17 @@ namespace LambdaEngine
 			auto& emitter = m_ActiveEmitters[entity];
 
 			// Remove indirect draw call
-			uint32 indirectIndex = emitter.IndirectDataIndex;
-			if (indirectIndex < m_IndirectData.GetSize())
+			uint32 removeIndex = emitter.IndirectDataIndex;
+			if (removeIndex < m_IndirectData.GetSize())
 			{
-				m_IndirectData[indirectIndex] = m_IndirectData.GetBack();
+				uint32 lastIndex = m_IndirectData.GetSize() - 1U;
+				Entity lastEmitter = m_IndirectDataToEntity[lastIndex];
+
+				m_IndirectData[removeIndex] = m_IndirectData[lastIndex];
+				m_ActiveEmitters[lastEmitter].IndirectDataIndex = removeIndex;
+				m_IndirectDataToEntity[removeIndex] = lastEmitter;
+
+				m_IndirectDataToEntity.erase(lastIndex);
 				m_IndirectData.PopBack();
 				m_DirtyIndirectBuffer = true;
 			}
@@ -164,23 +172,7 @@ namespace LambdaEngine
 			return;
 		}
 
-		// Free particles for new emitters
-		for (auto chunkIt = m_FreeParticleChunks.begin(); chunkIt != m_FreeParticleChunks.end(); chunkIt++)
-		{
-			if (newFreeChunk.Offset > chunkIt->Offset)
-			{
-				if (chunkIt->Offset + chunkIt->Size == newFreeChunk.Offset)
-				{
-					chunkIt->Size += newFreeChunk.Size;
-				}
-				else
-				{
-					m_FreeParticleChunks.Insert(chunkIt, newFreeChunk);
-				}
-				break;
-			}
-		}
-
+		FreeParticleChunk(newFreeChunk);
 	}
 
 	bool ParticleManager::CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance)
@@ -219,14 +211,20 @@ namespace LambdaEngine
 		if (!foundChunk)
 			return false;
 
-		emitterInstance.ParticleChunk.Offset = m_Particles.GetSize();
+		bool allocateParticles = false;
+		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
+		{
+			allocateParticles = true;
+		}
 
 		const glm::vec3 forward = GetForward(emitterInstance.Rotation);
 		const glm::vec3 up = GetUp(emitterInstance.Rotation);
 		const glm::vec3 right = GetRight(emitterInstance.Rotation);
 		const float		halfAngle = emitterInstance.Angle * 0.5f;
 
-		for (uint32 i = 0; i < emitterInstance.ParticleChunk.Size; i++)
+		uint32 particlesToAdd = emitterInstance.ParticleChunk.Size;
+		const uint32 particleOffset = emitterInstance.ParticleChunk.Offset;
+		for (uint32 i = 0; i < particlesToAdd; i++)
 		{
 			SParticle particle;
 
@@ -247,10 +245,74 @@ namespace LambdaEngine
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.Radius = emitterInstance.ParticleRadius;
 
-			m_Particles.PushBack(particle);
+			if (allocateParticles)
+			{
+				m_Particles.PushBack(particle);
+			}
+			else
+			{
+				m_Particles[particleOffset + i] = particle;
+			}
 		}
 
 		return true;
+	}
+
+	bool ParticleManager::FreeParticleChunk(ParticleChunk chunk)
+	{
+		// Find if freed particle chunk can be merged with existing one
+		bool inserted = false;
+	
+		inserted = MergeParticleChunk(chunk);
+
+		// If merge was not possible insert at proper offset location
+		for (auto chunkIt = m_FreeParticleChunks.begin(); chunkIt != m_FreeParticleChunks.end() && !inserted; chunkIt++)
+		{
+			if (chunk.Offset > chunkIt->Offset)
+			{
+				m_FreeParticleChunks.Insert(chunkIt, chunk);
+				inserted = true;
+			}
+		}
+
+		// If free chunk has not been inserted yet beginning should be the proper insertion
+		if (!inserted) {
+			m_FreeParticleChunks.Insert(m_FreeParticleChunks.begin(), chunk);
+			inserted = true;
+		}
+
+		return inserted;
+	}
+
+	bool ParticleManager::MergeParticleChunk(const ParticleChunk& chunk)
+	{
+		bool inserted = false;
+		for (auto chunkIt = m_FreeParticleChunks.begin(); chunkIt != m_FreeParticleChunks.end() && !inserted; chunkIt++)
+		{
+			if (chunk.Offset + chunk.Size == chunkIt->Offset)
+			{
+				chunkIt->Offset -= chunk.Size;
+				chunkIt->Size += chunk.Size;
+				// If merge successful remove from chunk
+				if (MergeParticleChunk(*chunkIt))
+				{
+					m_FreeParticleChunks.Erase(chunkIt);
+				}
+				inserted = true;
+			}
+			else if (chunkIt->Offset + chunkIt->Size == chunk.Offset)
+			{
+				chunkIt->Size += chunk.Size;
+				// If merge successful remove from chunk
+				if (MergeParticleChunk(*chunkIt))
+				{
+					m_FreeParticleChunks.Erase(chunkIt);
+				}
+				inserted = true;
+			}
+		}
+
+		return inserted;
 	}
 
 	void ParticleManager::CleanBuffers()
