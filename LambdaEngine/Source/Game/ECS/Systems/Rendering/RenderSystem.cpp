@@ -1100,13 +1100,10 @@ namespace LambdaEngine
 					{
 						m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
 						m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
-						m_PaintMaskSamplers.PushBack(Sampler::GetNearestSampler());
 					}
 
 					m_PaintMaskTextures.PushBack(pTexture);
 					m_PaintMaskTextureViews.PushBack(pTextureView);
-					m_PaintMaskSamplers.PushBack(pNearestSampler); // In an ideal world we would only have one sampler instead of a list
-					// TODO: Update rendergraph to support only one sampler for several texture views
 
 					ResourceUpdateDesc unwrappedTextureUpdate = {};
 					unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
@@ -1114,8 +1111,9 @@ namespace LambdaEngine
 					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
 					unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
 					unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
-					unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= m_PaintMaskSamplers.GetData();
-					unwrappedTextureUpdate.ExternalTextureUpdate.Count								= m_PaintMaskTextures.GetSize();
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+					unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
+					unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
 
 					RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
 				}
@@ -1228,8 +1226,6 @@ namespace LambdaEngine
 				m_PaintMaskTextures.PopBack();
 				m_PaintMaskTextureViews[textureIndex]	= m_PaintMaskTextureViews.GetBack();
 				m_PaintMaskTextureViews.PopBack();
-				m_PaintMaskSamplers[textureIndex]		= m_PaintMaskSamplers.GetBack();
-				m_PaintMaskSamplers.PopBack();
 
 				// Update custom indicies
 				for (auto& instance : asInstances)
@@ -1240,14 +1236,16 @@ namespace LambdaEngine
 					}
 				}	
 
+				Sampler* pNearestSampler = Sampler::GetNearestSampler();
 				ResourceUpdateDesc unwrappedTextureUpdate = {};
 				unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
 				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
 				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
 				unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
 				unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
-				unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= m_PaintMaskSamplers.GetData();
-				unwrappedTextureUpdate.ExternalTextureUpdate.Count								= m_PaintMaskTextures.GetSize();
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+				unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
+				unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
 
 				RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
 			}
@@ -2140,15 +2138,16 @@ namespace LambdaEngine
 		if (needUpdate)
 		{
 			uint32 texturesExisting = m_CubeTextures.GetSize();
-			TArray<Sampler*> nearestSamplers(texturesExisting, Sampler::GetNearestSampler());
+			Sampler* pNearestSampler = Sampler::GetNearestSampler();
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
-			resourceUpdateDesc.ExternalTextureUpdate.Count								= texturesExisting;
+			resourceUpdateDesc.ExternalTextureUpdate.TextureCount								= texturesExisting;
 			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
 			resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount						= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 	}
@@ -2289,28 +2288,31 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			TArray<Sampler*> linearSamplers(m_AlbedoMaps.GetSize(), Sampler::GetLinearSampler());
+			Sampler* pLinearSamplers = Sampler::GetLinearSampler();
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
 			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.Count			= m_AlbedoMaps.GetSize();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
 			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.Count			= m_NormalMapViews.GetSize();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+			normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
+			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
 			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_CombinedMaterialMaps.GetData();
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.Count				= m_CombinedMaterialMaps.GetSize();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pLinearSamplers;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_CombinedMaterialMaps.GetSize();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);

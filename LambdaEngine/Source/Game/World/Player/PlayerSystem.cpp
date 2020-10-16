@@ -1,7 +1,7 @@
 #include "Game/World/Player/PlayerSystem.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
+#include "Game/Multiplayer/CharacterControllerHelper.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
@@ -109,8 +109,8 @@ namespace LambdaEngine
 
 		m_PlayerActionSystem.DoAction(deltaTime, entityPlayer, pGameState);
 
-		CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
-
+		CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+		
 		pGameState->Position = netPosComponent.Position;
 		pGameState->Velocity = velocityComponent.Velocity;
 
@@ -162,7 +162,7 @@ namespace LambdaEngine
 
 					velocityComponent.Velocity = gameState.Velocity;
 
-					CharacterControllerSystem::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
+					CharacterControllerHelper::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
 				}
 
 				gameStates.Clear();
@@ -177,7 +177,7 @@ namespace LambdaEngine
 				netPosComponent.TimestampStart		= EngineLoop::GetTimeSinceStart();
 				netPosComponent.Dirty				= true;
 
-				CharacterControllerSystem::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
+				CharacterControllerHelper::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
 			}
 		}
 	}
@@ -264,7 +264,7 @@ namespace LambdaEngine
 			* Calculates a new Velocity based on the difference of the last position and the new one.
 			* Sets the new position of the PositionComponent
 			*/
-			CharacterControllerSystem::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+			CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 			gameState.Position = netPosComponent.Position;
 			gameState.Velocity = velocityComponent.Velocity;
