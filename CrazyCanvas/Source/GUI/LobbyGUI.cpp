@@ -19,6 +19,8 @@
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
 
+#include "Engine/EngineLoop.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
