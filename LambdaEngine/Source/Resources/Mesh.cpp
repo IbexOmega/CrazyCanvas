@@ -303,9 +303,9 @@ namespace LambdaEngine
 		}
 
 		PackedTriangle prim = { };
-		prim.i0 = indices[0];
-		prim.i1 = indices[1];
-		prim.i2 = indices[2];
+		prim.i0 = (uint8)indices[0];
+		prim.i1 = (uint8)indices[1];
+		prim.i2 = (uint8)indices[2];
 		meshlet.PrimitiveIndices.PushBack(prim);
 
 		return true;

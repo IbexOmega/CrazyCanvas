@@ -81,33 +81,84 @@
 
                         <Rectangle  x:Name="ServerBrowse" Grid.ColumnSpan="6" Grid.Column="2" Fill="#FF25252B" Stroke="Black" Margin="0,0,5,0" Grid.RowSpan="28"/>
                         <TextBlock Grid.Column="3" Grid.Row="1" FontSize="20" Margin="0,0,-100,0"  Foreground="White" Text="List Of Servers" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                        <Grid x:Name="GRID_ITEM" Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="0">Name</TextBlock>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="1">Map</TextBlock>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Ping</TextBlock>
-                            <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Status</TextBlock>
-                        </Grid>
-                        <TabControl x:Name="Servers" Margin="0,20" Grid.Column="2" Grid.ColumnSpan="6" Background="#FF181919" Grid.Row="4" Grid.RowSpan="22">
-                            <TabItem Header="All Servers">
-                                <ListBox x:Name="SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="4" Grid.RowSpan="20" Margin="5,0,10,0" Background="#FF171717">
-                                    <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #1</ListBoxItem>
-                                    <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #2</ListBoxItem>
-                                    <ListBoxItem Foreground="#FFB2B2B2">ListBox Item #3</ListBoxItem>
-                                </ListBox>
+                        <TabControl x:Name="SERVERS" Margin="0,20" Grid.Column="2" Grid.ColumnSpan="6" Background="#FF181919" Grid.Row="4" Grid.RowSpan="22">
+                            <TabItem x:Name="LOCAL" Header="Local Servers">
+                                <Grid Grid.Column="1" Grid.ColumnSpan="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                        <Grid x:Name="LOCAL_SERVER_LIST_CONTENT"  Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="0">Name</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="1">Map</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Players</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Ping</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="4">Status</TextBlock>
+                                    </Grid>
+                                    <ListBox x:Name="LOCAL_SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="10" Margin="5,0,10,0" Background="#FF171717">
+                                    </ListBox>
+                                </Grid>
                             </TabItem>
-                            <TabItem Header="Your Servers">
-                                <ListBox x:Name="SAVED_SERVER_LIST" Margin="5,0,10,0" Background="#FF171717">
+                            <TabItem x:Name="SAVED" Header="Saved Servers">
+                                <Grid Grid.Column="1" Grid.ColumnSpan="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid x:Name="SAVED_SERVER_LIST_CONTENT"  Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="0">Name</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="1">Map</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Players</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Ping</TextBlock>
+                                        <TextBlock Foreground="#FFB2B2B2"  Grid.Column="4">Status</TextBlock>
+                                    </Grid>
+                                    <ListBox x:Name="SAVED_SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="6" Margin="5,0,10,0" Background="#FF171717">
 
-                                </ListBox>
+                                    </ListBox>
+                                </Grid>
                             </TabItem>
                         </TabControl>
                         <Button Click="OnButtonRefreshClick" Content="Refresh" Grid.Column="6" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+                        <Button  Content="Join" Click="OnButtonJoinClick" Grid.Column="2" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+                        <Button.Triggers>
+                                <EventTrigger RoutedEvent="Button.Click">
+                                    <BeginStoryboard>
+                                        <!-- Storyboard property is the content property of BeginStoryboard -->
+                                        <!-- class, so we don't need to make it explicit in the code -->
+                                        <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
+                                            <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Button.Triggers>
                         <Button Click="OnButtonErrorClick" Content="Error" Grid.Column="1" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
                             <Button.Triggers>
                                 <EventTrigger RoutedEvent="Button.Click">
