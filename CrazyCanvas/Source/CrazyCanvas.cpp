@@ -12,6 +12,8 @@
 #include "States/SandboxState.h"
 #include "States/ServerState.h"
 
+#include "Networking/API/NetworkUtils.h"
+
 #include "World/LevelManager.h"
 
 #include "Teams/TeamHelper.h"
@@ -65,7 +67,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else if (stateStr == "client")
 	{
 		ClientSystem::Init(pGameName);
-		pStartingState = DBG_NEW PlaySessionState(true);
+		pStartingState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 	}
 	else if (stateStr == "server")
 	{

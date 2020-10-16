@@ -7,6 +7,7 @@
 #include "NsGui/Slider.h"*/
 
 #include "GUI/SavedServerGUI.h"
+#include "GUI/ServerInfo.h"
 
 struct HostGameDescription
 {
@@ -17,9 +18,9 @@ struct HostGameDescription
 enum ErrorCode
 {
 	CONNECT_ERROR,
+	JOIN_ERROR,
 	HOST_ERROR,
 	OTHER_ERROR
-
 };
 
 #include "Application/API/Events/NetworkEvents.h"
@@ -36,13 +37,16 @@ public:
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	
+	void OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	
+	void StartSelectedServer(Noesis::Grid* pGrid);
 
-	bool OnServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
+
+	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
+
 
 private:
 	void SetRenderStagesActive();
@@ -61,4 +65,6 @@ private:
 	bool m_RayTracingEnabled = false;
 	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
+
+	std::unordered_map<uint64, ServerInfo> m_Servers;
 };

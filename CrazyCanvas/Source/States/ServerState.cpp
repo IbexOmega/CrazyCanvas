@@ -33,6 +33,7 @@ using namespace LambdaEngine;
 ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
+
 	SAFEDELETE(m_pLevel);
 }
 
@@ -45,7 +46,7 @@ void ServerState::Init()
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	//NetworkDiscovery::EnableServer("Crazy Canvas", 4444, this);
+	m_ServerName = "Crazy Canvas Server";
 
 	// Load scene
 	{
@@ -68,6 +69,8 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	ServerBase* pServer = event.pServer;
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
+	pEncoder->WriteString(m_ServerName);
+	pEncoder->WriteString("This Is The Map Name");
 
 	return true;
 }
