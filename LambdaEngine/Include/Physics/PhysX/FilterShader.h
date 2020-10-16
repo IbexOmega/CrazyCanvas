@@ -1,8 +1,6 @@
 #pragma once
 
-#undef realloc
-#undef free
-#include <PxPhysicsAPI.h>
+#include "Physics/PhysX/PhysX.h"
 
 /*	This filter shader controls which collisions are registered by PhysX. It is a copy-paste from the PhysX SDK's
 	sample called "SampleSubmarine". A thorough explanation can be found here:

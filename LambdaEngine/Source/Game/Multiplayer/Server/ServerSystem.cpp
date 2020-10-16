@@ -19,7 +19,6 @@ namespace LambdaEngine
 	ServerSystem::ServerSystem(const String& name) :
 		m_NetworkEntities(),
 		m_pServer(nullptr),
-		m_CharacterControllerSystem(),
 		m_Name(name)
 	{
 		MultiplayerUtils::Init(true);
@@ -37,8 +36,6 @@ namespace LambdaEngine
 
 		m_pServer = NetworkUtils::CreateServer(desc);
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
-
-		m_CharacterControllerSystem.Init();
 	}
 
 	ServerSystem::~ServerSystem()

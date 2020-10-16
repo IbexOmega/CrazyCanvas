@@ -449,6 +449,32 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		}
 	}
 
+	// Debugging Lights
+	static uint32 index = 0;
+	static bool remove = true;
+	ECSCore* ecsCore = ECSCore::GetInstance();
+	if (event.Key == EKey::KEY_9)
+	{
+		uint32 modIndex = index % 10U;
+		if (modIndex == 0U)
+			remove = !remove;
+
+		if (!remove)
+		{
+			Entity e = ecsCore->CreateEntity();
+			m_PointLights[modIndex] = e;
+
+			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f, -5.0f + modIndex} });
+			ecsCore->AddComponent<PointLightComponent>(e, PointLightComponent{ .ColorIntensity = {modIndex % 2U, modIndex % 3U, modIndex % 5U, 25.0f} });
+		}
+		else
+		{
+			ecsCore->RemoveEntity(m_PointLights[modIndex]);
+		}
+
+		index++;
+	}
+
 	return true;
 }
 

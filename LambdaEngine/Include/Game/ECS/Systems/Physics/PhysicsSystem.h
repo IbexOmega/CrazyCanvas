@@ -5,11 +5,7 @@
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Math/Math.h"
 #include "Physics/PhysX/ErrorCallback.h"
-
-#undef realloc
-#undef free
-#include <PxPhysicsAPI.h>
-#include <foundation/PxErrorCallback.h>
+#include "Physics/PhysX/PhysX.h"
 
 namespace LambdaEngine
 {
@@ -138,6 +134,7 @@ namespace LambdaEngine
 		void OnDynamicCollisionAdded(Entity entity);
 		void OnStaticCollisionRemoval(Entity entity);
 		void OnDynamicCollisionRemoval(Entity entity);
+		void OnCharacterColliderRemoval(Entity entity);
 
 		StaticCollisionComponent FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
 		DynamicCollisionComponent FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
@@ -152,6 +149,7 @@ namespace LambdaEngine
 	private:
 		IDVector m_StaticCollisionEntities;
 		IDVector m_DynamicCollisionEntities;
+		IDVector m_CharacterCollisionEntities;
 
 		PxDefaultAllocator		m_Allocator;
 		PhysXErrorCallback		m_ErrorCallback;
