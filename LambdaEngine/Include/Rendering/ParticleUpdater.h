@@ -7,9 +7,6 @@
 
 namespace LambdaEngine
 {
-
-	
-
 	class ParticleUpdater : public ICustomRenderer
 	{
 		struct PushConstantData
