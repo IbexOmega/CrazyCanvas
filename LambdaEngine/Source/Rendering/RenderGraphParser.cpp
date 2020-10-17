@@ -987,7 +987,8 @@ namespace LambdaEngine
 
 		auto resourceIt = std::find_if(resources.Begin(), resources.End(), [currentResourceStateIt](const RenderGraphResourceDesc& resourceDesc) { return currentResourceStateIt->second.ResourceName == resourceDesc.Name; });
 
-		if (resourceIt != resources.end())
+		// Only continue if the found resource should synchronize
+		if (resourceIt != resources.end() && resourceIt->ShouldSynchronize)
 		{
 			resourceSynchronization.ResourceType = resourceIt->Type;
 
@@ -1084,7 +1085,7 @@ namespace LambdaEngine
 				}
 			}
 		}
-		else
+		else if (resourceIt == resources.end())
 		{ 
 			LOG_ERROR("[RenderGraphEditor]: Resource State with name \"%s\" could not be found among resources when creating Synchronization", currentResourceStateIt->second.ResourceName.c_str());
 			return false;
@@ -1136,6 +1137,7 @@ namespace LambdaEngine
 			pDstRenderStage->Graphics.Shaders					= pSrcRenderStage->Graphics.Shaders;
 			pDstRenderStage->Graphics.DrawType					= pSrcRenderStage->Graphics.DrawType;
 			pDstRenderStage->Graphics.DepthTestEnabled			= pSrcRenderStage->Graphics.DepthTestEnabled;
+			pDstRenderStage->Graphics.AlphaBlendingEnabled		= pSrcRenderStage->Graphics.AlphaBlendingEnabled;
 			pDstRenderStage->Graphics.CullMode					= pSrcRenderStage->Graphics.CullMode;
 			pDstRenderStage->Graphics.PolygonMode				= pSrcRenderStage->Graphics.PolygonMode;
 			pDstRenderStage->Graphics.PrimitiveTopology			= pSrcRenderStage->Graphics.PrimitiveTopology;

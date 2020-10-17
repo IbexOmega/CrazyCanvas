@@ -74,7 +74,11 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
-	// Create Systems
+	// Initialize event handlers
+	m_AudioEffectHandler.Init();
+	m_MeshPaintHandler.Init();
+
+	// Initialize Systems
 	m_WeaponSystem.Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
@@ -203,7 +207,13 @@ void SandboxState::Init()
 		Entity entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
 		pECS->AddComponent<RotationComponent>(entity, { true,glm::identity<glm::quat>() });
-		pECS->AddComponent<ParticleEmitterComponent>(entity, ParticleEmitterComponent{ .Velocity = 1.0f, .Acceleration = 0.0f, .ParticleRadius = 0.1f });
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.ParticleRadius = 0.1f,
+			}
+		);
 	}
 
 	//Sphere Grid
@@ -245,6 +255,7 @@ void SandboxState::Init()
 	//				.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 	//				.Rotation = pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 	//				.Mesh = pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+	//				.ShapeType		= EShapeType::SIMULATION,
 	//				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
 	//				.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	//			};
@@ -260,20 +271,6 @@ void SandboxState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-
-		MaterialProperties materialProperties;
-		materialProperties.Albedo = glm::vec4(1.0f);
-		materialProperties.Roughness = 1.0f;
-		materialProperties.Metallic = 1.0f;
-
-		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Robot Material",
-			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
-			ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
 	}
 
 	if constexpr (IMGUI_ENABLED)
@@ -552,11 +549,6 @@ bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& eve
 		TArray<GUID_Lambda> animations;
 		bool animationsExist = ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Standard Walk.fbx", animations);
 		const uint32 robotGUID = ResourceManager::GetMeshGUID("Robot/Standard Walk.fbx");
-		const uint32 robotMaterialGUID = ResourceManager::GetMaterialGUID("Robot Material");
-
-		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID = robotGUID;
-		robotMeshComp.MaterialGUID = robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
@@ -573,8 +565,9 @@ bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& eve
 			.Position = position,
 			.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
 			.Scale = glm::vec3(1.0f),
+			.TeamIndex = 0,
 			.pCameraDesc = &cameraDesc,
-			.MeshComponent = robotMeshComp,
+			.MeshGUID = robotGUID,
 			.AnimationComponent = robotAnimationComp,
 		};
 

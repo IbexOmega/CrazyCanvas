@@ -790,7 +790,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				0,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
 
 			s_pMaterialDescriptorSet->WriteTextureDescriptors(
 				&pMetallicMapView,
@@ -798,7 +799,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				1,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
 
 			s_pMaterialDescriptorSet->WriteTextureDescriptors(
 				&pRoughnessMapView,
@@ -806,7 +808,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				2,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
 
 			s_pMaterialDescriptorSet->WriteTextureDescriptors(
 				&pCombinedMaterialTextureView,
@@ -814,7 +817,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_GENERAL,
 				3,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE);
+				EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
+				true);
 		}
 
 		PipelineTextureBarrierDesc transitionToCopyDstBarrier = { };

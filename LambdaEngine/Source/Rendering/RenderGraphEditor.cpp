@@ -859,6 +859,17 @@ namespace LambdaEngine
 			ImGui::PopStyleVar();
 		}
 
+		if (pResource->External)
+		{
+			ImGui::Text("Enable Synchronization: ");
+			ImGui::SameLine();
+			ImGui::Checkbox("##Enable Synchronization", &pResource->ShouldSynchronize);
+		}
+		else
+		{
+			pResource->ShouldSynchronize = true;
+		}
+
 		if (pResource->Type != ERenderGraphResourceType::TEXTURE || !pResource->TextureParams.UnboundedArray)
 		{
 			ImGui::Text("Back Buffer Bound: ");
@@ -1618,6 +1629,10 @@ namespace LambdaEngine
 				{
 					pRenderStage->Graphics.DepthTestEnabled = false;
 				}
+
+				ImGui::Text("Alpha Blending Enabled:");
+				ImGui::SameLine();
+				ImGui::Checkbox("##Alpha Blending Enabled", &pRenderStage->Graphics.AlphaBlendingEnabled);
 
 				int32 selectedCullMode = CullModeToCullModeIndex(pRenderStage->Graphics.CullMode);
 				ImGui::Text("Cull Mode:");

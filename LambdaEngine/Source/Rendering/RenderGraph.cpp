@@ -471,9 +471,12 @@ namespace LambdaEngine
 
 	void RenderGraph::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
+
 		for (auto& customRenderer : m_CustomRenderers)
 		{
-			customRenderer->Update(delta, m_ModFrameIndex, m_BackBufferIndex);
+			customRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
 		}
 
 		UpdateResourceBindings();
@@ -661,7 +664,8 @@ namespace LambdaEngine
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
 									1,
-									pResourceBinding->DescriptorType);
+									pResourceBinding->DescriptorType,
+									true);
 							}
 						}
 						else
@@ -674,7 +678,8 @@ namespace LambdaEngine
 									pResourceBinding->TextureState,
 									pResourceBinding->Binding,
 									pResource->Texture.PerImageTextureViews.GetSize(),
-									pResourceBinding->DescriptorType);
+									pResourceBinding->DescriptorType,
+									pResource->Texture.Samplers.GetSize() == pResource->Texture.PerImageTextureViews.GetSize());
 							}
 						}
 					}
@@ -825,7 +830,8 @@ namespace LambdaEngine
 											ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 											binding++,
 											textureCount,
-											EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+											EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+											true);
 									}
 
 									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
@@ -842,7 +848,8 @@ namespace LambdaEngine
 										ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 										0,
 										1,
-										EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER
+										EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+										true
 									);
 
 									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
@@ -1231,7 +1238,8 @@ namespace LambdaEngine
 							binding.TextureState,
 							binding.Binding,
 							1,
-							binding.DescriptorType);
+							binding.DescriptorType,
+							true);
 					}
 				}
 			}
@@ -1497,6 +1505,7 @@ namespace LambdaEngine
 			newResource.Name				= pResourceDesc->Name;
 			newResource.IsBackBuffer		= pResourceDesc->Name == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
 			newResource.BackBufferBound		= newResource.IsBackBuffer || newResource.BackBufferBound;
+			newResource.ShouldSynchronize	= pResourceDesc->ShouldSynchronize;
 
 			if (newResource.BackBufferBound)
 			{
@@ -2296,8 +2305,22 @@ namespace LambdaEngine
 						renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
 
 						BlendAttachmentStateDesc blendAttachmentState = {};
-						blendAttachmentState.BlendEnabled			= false;
-						blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+						if (pRenderStageDesc->Graphics.AlphaBlendingEnabled)
+						{
+							blendAttachmentState.BlendOp					= EBlendOp::BLEND_OP_ADD;
+							blendAttachmentState.SrcBlend					= EBlendFactor::BLEND_FACTOR_SRC_ALPHA;
+							blendAttachmentState.DstBlend					= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA;
+							blendAttachmentState.BlendOpAlpha				= EBlendOp::BLEND_OP_ADD;
+							blendAttachmentState.SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_SRC_ALPHA;
+							blendAttachmentState.DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA;
+							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+							blendAttachmentState.BlendEnabled				= true;
+						}
+						else
+						{
+							blendAttachmentState.BlendEnabled				= false;
+							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+						}
 
 						renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
 						renderStageRenderTargets.PushBack(std::make_pair(pResource, finalState));
@@ -2516,7 +2539,7 @@ namespace LambdaEngine
 						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
 						{
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
-							descriptorSetLayout.DescriptorBindings = drawArgExtensionDescriptorSetDescriptions;
+							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetDescriptions;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
 						}
 					}
@@ -2848,6 +2871,9 @@ namespace LambdaEngine
 				}
 
 				Resource* pResource = &it->second;
+
+				if (!pResource->ShouldSynchronize)
+					continue;
 
 				auto prevRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->PrevRenderStage);
 				auto nextRenderStageIt = m_RenderStageMap.find(pResourceSynchronizationDesc->NextRenderStage);
@@ -3304,15 +3330,25 @@ namespace LambdaEngine
 	void RenderGraph::UpdateResourceTexture(Resource* pResource, const ResourceUpdateDesc* pDesc)
 	{
 		uint32 actualSubResourceCount = 0;
+		// If true, every texture has a unique sampler (or atleast a sampler array the same size of the texture array)
+		bool uniqueSamplers = true;
 
 		//Unbounded arrays are handled differently compared to normal textures
 		if (pResource->Texture.UnboundedArray)
 		{
+			uniqueSamplers = pDesc->ExternalTextureUpdate.TextureCount == pDesc->ExternalTextureUpdate.SamplerCount;
+
+			if (!uniqueSamplers && pDesc->ExternalTextureUpdate.SamplerCount > 1)
+			{
+				LOG_WARNING("[RenderGraph, UpdateResourceTexture]: SamplerCount does not match TextureCount and is not equal to 1. Only the first sampler will be used. TextureCount = %d, SamplerCount = %d",
+				pDesc->ExternalTextureUpdate.TextureCount, pDesc->ExternalTextureUpdate.SamplerCount);
+			}
+
 			//We don't know the subresource count until now so we must update all container arrays
-			actualSubResourceCount = pDesc->ExternalTextureUpdate.Count;
+			actualSubResourceCount = pDesc->ExternalTextureUpdate.TextureCount;
 			pResource->Texture.Textures.Resize(actualSubResourceCount);
 			pResource->Texture.PerImageTextureViews.Resize(actualSubResourceCount);
-			pResource->Texture.Samplers.Resize(actualSubResourceCount);
+			pResource->Texture.Samplers.Resize(uniqueSamplers ? pDesc->ExternalTextureUpdate.TextureCount : 1);
 			pResource->Texture.PerSubImageTextureViews.Resize(actualSubResourceCount * (pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews != nullptr ? pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount : 1));
 
 			//We must clear all non-template barriers
@@ -3346,7 +3382,7 @@ namespace LambdaEngine
 		{
 			Texture** ppTexture			= &pResource->Texture.Textures[sr];
 			TextureView** ppTextureView = &pResource->Texture.PerImageTextureViews[sr];
-			Sampler** ppSampler			= &pResource->Texture.Samplers[sr];
+			Sampler** ppSampler			= &pResource->Texture.Samplers[uniqueSamplers ? sr : 0];
 
 			Texture* pTexture						= nullptr;
 			TextureView* pTextureView				= nullptr;
@@ -3425,7 +3461,7 @@ namespace LambdaEngine
 				//Update Sampler
 				if (pDesc->ExternalTextureUpdate.ppSamplers != nullptr)
 				{
-					pSampler = pDesc->ExternalTextureUpdate.ppSamplers[sr];
+					pSampler = pDesc->ExternalTextureUpdate.ppSamplers[uniqueSamplers ? sr : 0];
 				}
 			}
 			else
@@ -3511,7 +3547,7 @@ namespace LambdaEngine
 			}
 
 			//Transfer to Initial State
-			if (pResource->Texture.InitialTransitionBarrier.QueueBefore != ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN)
+			if (pResource->Texture.InitialTransitionBarrier.QueueBefore != ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN && pResource->ShouldSynchronize)
 			{
 				PipelineTextureBarrierDesc& initialBarrier = pResource->Texture.InitialTransitionBarrier;
 
@@ -3679,7 +3715,7 @@ namespace LambdaEngine
 										uint32 numTextures = extension.TextureCount;
 										for (uint32 t = 0; t < numTextures; t++)
 										{
-											uint32 masks = extensionGroup->pExtensionMasks[e];
+											//uint32 masks = extensionGroup->pExtensionMasks[e];
 											const TextureViewDesc& textureViewDesc = extension.ppTextureViews[t]->GetDesc();
 											textureBarrierTemplate.StateBefore = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
 											textureBarrierTemplate.StateAfter = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
@@ -4133,11 +4169,13 @@ namespace LambdaEngine
 
 			for (const TArray<PipelineTextureBarrierDesc>& sameQueueUnboundedTextureBarriers : sameQueueUnboundedTextureBarrierArrays)
 			{
+				UNREFERENCED_VARIABLE(sameQueueUnboundedTextureBarriers);
 				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueTextureBarriers.GetData(), sameQueueTextureBarriers.GetSize());
 			}
 
 			for (const TArray<PipelineTextureBarrierDesc>& otherQueueUnboundedTextureBarriers : otherQueueUnboundedTextureBarrierArrays)
 			{
+				UNREFERENCED_VARIABLE(otherQueueUnboundedTextureBarriers);
 				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
 				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
