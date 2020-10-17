@@ -133,10 +133,10 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, { 0.3f, 0.3f, 0.3f }}),
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {m_ProjectileMeshComponent}),
-		/* Shape Type */		EShapeType::TRIGGER,
+		/* Shape Type */		EShapeType::SIMULATION,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
-		/* CollisionCallback */ std::bind(&WeaponSystem::OnProjectileHit, this, std::placeholders::_1, std::placeholders::_2),
+		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_OTHERS | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionCallback */ std::bind_front(&WeaponSystem::OnProjectileHit, this),
 		/* Velocity */			initialVelocity
 	};
 
