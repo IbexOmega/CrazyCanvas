@@ -208,12 +208,13 @@ void BenchmarkState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				const CollisionInfo collisionCreateInfo = {
+				const CollisionCreateInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
+					.ShapeType		= EShapeType::SIMULATION,
 					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};

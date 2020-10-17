@@ -139,6 +139,7 @@ namespace LambdaEngine
 		int32						SubResourceCount		= 1;
 		bool						External				= false;
 		EMemoryType					MemoryType				= EMemoryType::MEMORY_TYPE_GPU;
+		bool						ShouldSynchronize		= true;
 
 		//Editor Specific
 		bool						Editable				= false;

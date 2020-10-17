@@ -64,7 +64,7 @@ namespace LambdaEngine
 		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_DescriptorSet), VK_OBJECT_TYPE_DESCRIPTOR_SET);
 	}
 
-	void DescriptorSetVK::WriteTextureDescriptors(const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType)
+	void DescriptorSetVK::WriteTextureDescriptors(const TextureView* const* ppTextures, const Sampler* const* ppSamplers, ETextureState textureState, uint32 firstBinding, uint32 descriptorCount, EDescriptorType descriptorType, bool uniqueSamplers)
 	{
 		VALIDATE(ppTextures != nullptr);
 		VALIDATE(firstBinding < m_Bindings.GetSize());
@@ -92,8 +92,8 @@ namespace LambdaEngine
 					{
 						if (ppVkSamplers != nullptr)
 						{
-							VALIDATE(ppVkSamplers[i] != nullptr);
-							imageInfo.sampler = ppVkSamplers[i]->GetSampler();
+							VALIDATE(ppVkSamplers[uniqueSamplers ? i : 0] != nullptr);
+							imageInfo.sampler = ppVkSamplers[uniqueSamplers ? i : 0]->GetSampler();
 						}
 						else
 						{

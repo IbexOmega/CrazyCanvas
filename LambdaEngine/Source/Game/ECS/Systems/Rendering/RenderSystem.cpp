@@ -26,6 +26,7 @@
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
 #include "Rendering/ParticleRenderer.h"
@@ -153,6 +154,11 @@ namespace LambdaEngine
 					.OnEntityAdded = std::bind(&RenderSystem::OnEmitterEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::OnEmitterEntityRemoved, this, std::placeholders::_1)
 				}
+			};
+
+			systemReg.SubscriberRegistration.AdditionalAccesses =
+			{
+				{ R, MeshPaintComponent::Type() }
 			};
 
 			RegisterSystem(systemReg);
@@ -573,7 +579,7 @@ namespace LambdaEngine
 		UpdateBuffers();
 		UpdateRenderGraph();
 
-		m_pRenderGraph->Update(delta, m_ModFrameIndex, m_BackBufferIndex);
+		m_pRenderGraph->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
 
 		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
 
@@ -1125,6 +1131,49 @@ namespace LambdaEngine
 			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
+		// Update resource for the entity mesh paint textures that is used for ray tracing
+		bool hasPaintMask = false;
+		if (m_RayTracingEnabled)
+		{
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (pMeshPaintComponents->HasComponent(entity))
+			{
+				hasPaintMask = true;
+				const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
+
+				Texture* pTexture			= comp.pTexture;
+				TextureView* pTextureView	= comp.pTextureView;
+				Sampler* pNearestSampler	= Sampler::GetNearestSampler();
+
+				// If the texture has not been added before, update resource
+				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
+				if (paintMaskTexturesIt == m_PaintMaskTextures.end())
+				{
+					if (m_PaintMaskTextures.IsEmpty())
+					{
+						m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
+						m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
+					}
+
+					m_PaintMaskTextures.PushBack(pTexture);
+					m_PaintMaskTextureViews.PushBack(pTextureView);
+
+					ResourceUpdateDesc unwrappedTextureUpdate = {};
+					unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
+					unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+					unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
+					unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
+
+					RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+				}
+			}
+		}
+
 		InstanceKey instanceKey = {};
 		instanceKey.MeshKey			= meshKey;
 		instanceKey.InstanceIndex	= meshAndInstancesIt->second.RasterInstances.GetSize();
@@ -1132,9 +1181,13 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			uint32 index = materialIndex;
+			index = index << 8;
+			index |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
+
 			AccelerationStructureInstance asInstance = {};
 			asInstance.Transform						= glm::transpose(transform);
-			asInstance.CustomIndex						= materialIndex;
+			asInstance.CustomIndex						= index;
 			asInstance.Mask								= 0xFF;
 			asInstance.SBTRecordOffset					= 0;
 			asInstance.Flags							= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
@@ -1209,11 +1262,47 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			// Remove RT ASInstance
 			TArray<AccelerationStructureInstance>& asInstances = meshAndInstancesIt->second.ASInstances;
+			const uint32 textureIndex = asInstances[instanceIndex].CustomIndex & 0xFF;
 			asInstances[instanceIndex] = asInstances.GetBack();
 			asInstances.PopBack();
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
+
+			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (pMeshPaintComponents->HasComponent(entity))
+			{
+				uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+				m_PaintMaskTextures[textureIndex]		= m_PaintMaskTextures.GetBack();
+				m_PaintMaskTextures.PopBack();
+				m_PaintMaskTextureViews[textureIndex]	= m_PaintMaskTextureViews.GetBack();
+				m_PaintMaskTextureViews.PopBack();
+
+				// Update custom indicies
+				for (auto& instance : asInstances)
+				{
+					if (changedIndex == (instance.CustomIndex & 0xFF0000))
+					{
+						instance.CustomIndex |= textureIndex;
+					}
+				}	
+
+				Sampler* pNearestSampler = Sampler::GetNearestSampler();
+				ResourceUpdateDesc unwrappedTextureUpdate = {};
+				unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
+				unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+				unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
+				unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
+
+				RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+			}
 		}
 
 		// Remove extension
@@ -2108,15 +2197,16 @@ namespace LambdaEngine
 		if (needUpdate)
 		{
 			uint32 texturesExisting = m_CubeTextures.GetSize();
-			TArray<Sampler*> nearestSamplers(texturesExisting, Sampler::GetNearestSampler());
+			Sampler* pNearestSampler = Sampler::GetNearestSampler();
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
-			resourceUpdateDesc.ExternalTextureUpdate.Count								= texturesExisting;
+			resourceUpdateDesc.ExternalTextureUpdate.TextureCount								= texturesExisting;
 			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
 			resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount						= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 	}
@@ -2262,28 +2352,31 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			TArray<Sampler*> linearSamplers(m_AlbedoMaps.GetSize(), Sampler::GetLinearSampler());
+			Sampler* pLinearSamplers = Sampler::GetLinearSampler();
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
 			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.Count			= m_AlbedoMaps.GetSize();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
 			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.Count			= m_NormalMapViews.GetSize();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+			normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
+			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
 			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_CombinedMaterialMaps.GetData();
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.Count				= m_CombinedMaterialMaps.GetSize();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pLinearSamplers;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_CombinedMaterialMaps.GetSize();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);

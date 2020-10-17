@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
 #include "Game/Multiplayer/Client/NetworkPositionSystem.h"
 #include "Game/World/Player/PlayerSystem.h"
 
@@ -37,7 +36,9 @@ namespace LambdaEngine
 		virtual void OnClientReleased(IClient* pClient) override;
 		virtual void OnServerFull(IClient* pClient) override;
 
-		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint) override;
+		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID) override;
+
+		bool OnDisconnectedEvent(const ClientDisconnectedEvent& event);
 
 	private:
 		ClientSystem(const String& name);
@@ -61,7 +62,6 @@ namespace LambdaEngine
 
 	private:
 		ClientBase* m_pClient;
-		CharacterControllerSystem m_CharacterControllerSystem;
 		NetworkPositionSystem m_NetworkPositionSystem;
 		PlayerSystem m_PlayerSystem;
 		String m_Name;

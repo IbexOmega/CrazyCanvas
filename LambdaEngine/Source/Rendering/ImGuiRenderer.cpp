@@ -31,7 +31,9 @@
 #include "Debug/Profiler.h"
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#pragma warning( push, 0 )
 #include <imgui.h>
+#pragma warning( pop )
 #include <imnodes.h>
 
 #include <d3d12.h>
@@ -135,7 +137,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_DescriptorSet->WriteTextureDescriptors(&m_FontTextureView, &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+		m_DescriptorSet->WriteTextureDescriptors(&m_FontTextureView, &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 
 		EventHandler eventHandler(this, &ImGuiRenderer::OnEvent);
 
@@ -203,6 +205,13 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(dataSize);
 	}*/
 
+	void ImGuiRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	{
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
+	}
+
 	void ImGuiRenderer::UpdateTextureResource(
 		const String& resourceName, 
 		const TextureView* const* ppPerImageTextureViews, 
@@ -232,12 +241,12 @@ namespace LambdaEngine
 						descriptorSets.Resize(1);
 						TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 						descriptorSets[0] = descriptorSet;
-						descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[imageIndex], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+						descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[imageIndex], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 					}
 					else
 					{
 						TArray<TSharedRef<DescriptorSet>>& descriptorSets = m_TextureResourceNameDescriptorSetsMap[currentResourceName];
-						descriptorSets[0]->WriteTextureDescriptors(&ppPerImageTextureViews[imageIndex], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+						descriptorSets[0]->WriteTextureDescriptors(&ppPerImageTextureViews[imageIndex], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 					}
 				}
 			}
@@ -256,7 +265,7 @@ namespace LambdaEngine
 							TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 							descriptorSets[b] = descriptorSet;
 
-							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 						}
 					}
 					else
@@ -267,7 +276,7 @@ namespace LambdaEngine
 							TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("ImGui Custom Texture Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
 							descriptorSets[b] = descriptorSet;
 
-							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+							descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 						}
 					}
 				}
@@ -282,7 +291,7 @@ namespace LambdaEngine
 							for (uint32 b = 0; b < backBufferCount; b++)
 							{
 								TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 							}
 						}
 					}
@@ -293,7 +302,7 @@ namespace LambdaEngine
 							for (uint32 b = 0; b < imageCount; b++)
 							{
 								TSharedRef<DescriptorSet> descriptorSet = descriptorSets[b];
-								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+								descriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[b], &m_Sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 							}
 						}
 						else

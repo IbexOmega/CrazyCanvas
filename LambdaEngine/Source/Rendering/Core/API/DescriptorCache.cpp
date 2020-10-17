@@ -49,6 +49,7 @@ namespace LambdaEngine
 			}
 		}
 
+
 		// Track Descriptor sets in use
 		m_NewDescriptorSets[descriptorLayoutIndex].PushBack(ds);
 		m_DirtySetIndices.insert(descriptorLayoutIndex);
