@@ -1137,6 +1137,7 @@ namespace LambdaEngine
 			pDstRenderStage->Graphics.Shaders					= pSrcRenderStage->Graphics.Shaders;
 			pDstRenderStage->Graphics.DrawType					= pSrcRenderStage->Graphics.DrawType;
 			pDstRenderStage->Graphics.DepthTestEnabled			= pSrcRenderStage->Graphics.DepthTestEnabled;
+			pDstRenderStage->Graphics.AlphaBlendingEnabled		= pSrcRenderStage->Graphics.AlphaBlendingEnabled;
 			pDstRenderStage->Graphics.CullMode					= pSrcRenderStage->Graphics.CullMode;
 			pDstRenderStage->Graphics.PolygonMode				= pSrcRenderStage->Graphics.PolygonMode;
 			pDstRenderStage->Graphics.PrimitiveTopology			= pSrcRenderStage->Graphics.PrimitiveTopology;

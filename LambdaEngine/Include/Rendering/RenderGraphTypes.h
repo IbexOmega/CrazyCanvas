@@ -28,6 +28,7 @@ namespace LambdaEngine
 	constexpr const char* SCENE_PARTICLE_INDEX_BUFFER					= "SCENE_PARTICLE_INDEX_BUFFER";
 	constexpr const char* SCENE_PARTICLE_INSTANCE_BUFFER				= "SCENE_PARTICLE_INSTANCE_BUFFER";
 	constexpr const char* SCENE_PARTICLE_INDIRECT_BUFFER				= "SCENE_PARTICLE_INDIRECT_BUFFER";
+	constexpr const char* SCENE_PARTICLE_ATLAS_INFO_BUFFER				= "SCENE_PARTICLE_ATLAS_INFO_BUFFER";
 
 	constexpr const char* SCENE_MAT_PARAM_BUFFER						= "SCENE_MAT_PARAM_BUFFER";
 	constexpr const char* SCENE_DRAW_ARGS								= "SCENE_DRAW_ARGS";
@@ -255,6 +256,7 @@ namespace LambdaEngine
 			String					IndexBufferName			= "";
 			String					IndirectArgsBufferName	= "";
 			bool					DepthTestEnabled		= true;
+			bool					AlphaBlendingEnabled	= false;
 			ECullMode				CullMode				= ECullMode::CULL_MODE_BACK;
 			EPolygonMode			PolygonMode				= EPolygonMode::POLYGON_MODE_FILL;
 			EPrimitiveTopology		PrimitiveTopology		= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -425,6 +427,7 @@ namespace LambdaEngine
 			GraphicsShaderNames		Shaders;
 			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
 			bool					DepthTestEnabled					= true;
+			bool					AlphaBlendingEnabled				= false;
 			ECullMode				CullMode							= ECullMode::CULL_MODE_BACK;
 			EPolygonMode			PolygonMode							= EPolygonMode::POLYGON_MODE_FILL;
 			EPrimitiveTopology		PrimitiveTopology					= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

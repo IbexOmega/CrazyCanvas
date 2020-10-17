@@ -8,6 +8,9 @@
 
 namespace LambdaEngine 
 {
+	class Sampler;
+	class TextureView;
+	class Sampler;
 	class Buffer;
 	class CommandList;
 	class RenderGraph;
@@ -32,6 +35,9 @@ namespace LambdaEngine
 		float			ParticleRadius;
 		uint32			IndirectDataIndex = 0;
 		ParticleChunk	ParticleChunk;
+		uint32			AtlasIndex = 0;
+		uint32			TileIndex = 0;
+		uint32			AnimationCount = 0;
 	};
 
 	struct SParticle
@@ -45,7 +51,20 @@ namespace LambdaEngine
 		glm::vec3 StartVelocity;
 		float Radius;
 		glm::vec3 Acceleration;
-		float padding0;
+		uint32 AtlasIndex;
+		uint32 TileIndex;
+		uint32 AnimationCount;
+		float Padding0;
+		float Padding1;
+	};
+
+	struct SAtlasInfo
+	{
+		float	TileFactorX = 0.f;
+		float	TileFactorY = 0.f;
+		uint32	RowCount	= 0;
+		uint32	ColCount	= 0;
+		uint32	AtlasIndex	= 0;
 	};
 
 	struct IndirectData
@@ -75,15 +94,21 @@ namespace LambdaEngine
 		uint32 GetActiveEmitterCount() const { return m_IndirectData.GetSize();  }
 		uint32 GetMaxParticleCount() const { return m_MaxParticleCount; }
 
+		TArray<TextureView*>& GetAtlasTextureViews() { return m_AtlasTextureViews; }
+		TArray<Sampler*>& GetAtlasSamplers() { return m_AtlasSamplers; }
+
 		bool UpdateBuffers(CommandList* pCommandList);
 		bool UpdateResources(RenderGraph* pRendergraph);
+
 	private:
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
+		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
 		bool FreeParticleChunk(ParticleChunk chunk);
 		bool MergeParticleChunk(const ParticleChunk& chunk);
 
 		void CleanBuffers();
+
 	private:
 		uint32						m_MaxParticleCount;
 		uint32						m_ModFrameIndex;
@@ -92,6 +117,7 @@ namespace LambdaEngine
 		bool						m_DirtyVertexBuffer		= false;
 		bool						m_DirtyIndexBuffer		= false;
 		bool						m_DirtyIndirectBuffer	= false;
+		bool						m_DirtyAtlasDataBuffer	= false;
 
 		Buffer*						m_ppIndirectStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pIndirectBuffer = nullptr;
@@ -105,12 +131,21 @@ namespace LambdaEngine
 		Buffer*						m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pParticleBuffer = nullptr;
 
+		Buffer*						m_ppAtlasDataStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*						m_pAtlasDataBuffer = nullptr;
+
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 		TArray<SParticle>			m_Particles;
 		TArray<IndirectData>		m_IndirectData;
 		THashTable<uint32, Entity>	m_IndirectDataToEntity;
 		TArray<ParticleChunk>		m_FreeParticleChunks;
+		TArray<SAtlasInfo>			m_AtlasInfoData;
+
+		TSharedRef<Sampler>					m_Sampler = nullptr;
+		THashTable<GUID_Lambda, SAtlasInfo>	m_AtlasResources;
+		TArray<TextureView*>				m_AtlasTextureViews;
+		TArray<Sampler*>					m_AtlasSamplers;
 
 		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;
 		THashTable<Entity, ParticleEmitterInstance>	m_SleepingEmitters;
