@@ -244,8 +244,8 @@ namespace LambdaEngine
 				.SrcBlend					= EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
 				.DstBlend					= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
 				.BlendOpAlpha				= EBlendOp::BLEND_OP_ADD,
-				.SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-				.DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				.SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				.DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
 				.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
 				.BlendEnabled				= true
 			}
@@ -331,7 +331,8 @@ namespace LambdaEngine
 					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 					0,
 					1,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					true
 				);
 			}
 			else
@@ -377,7 +378,8 @@ namespace LambdaEngine
 					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 					setBinding,
 					m_AtlasCount,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					true
 				);
 			}
 			else

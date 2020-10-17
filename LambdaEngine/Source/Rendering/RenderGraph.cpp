@@ -2311,8 +2311,8 @@ namespace LambdaEngine
 							blendAttachmentState.SrcBlend					= EBlendFactor::BLEND_FACTOR_SRC_ALPHA;
 							blendAttachmentState.DstBlend					= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA;
 							blendAttachmentState.BlendOpAlpha				= EBlendOp::BLEND_OP_ADD;
-							blendAttachmentState.SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA;
-							blendAttachmentState.DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_SRC_ALPHA;
+							blendAttachmentState.SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_SRC_ALPHA;
+							blendAttachmentState.DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA;
 							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
 							blendAttachmentState.BlendEnabled				= true;
 						}

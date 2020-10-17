@@ -212,10 +212,6 @@ void SandboxState::Init()
 				.Velocity = 1.0f,
 				.Acceleration = 0.0f,
 				.ParticleRadius = 0.1f,
-				.AtlasGUID = ResourceManager::LoadTextureFromFile("Particles/ParticleAtlas.png", EFormat::FORMAT_R8G8B8A8_UNORM, true),
-				.AtlasTileSize = 64,
-				.TextureIndex = 0,
-				.AnimationCount = 4
 			}
 		);
 	}

@@ -101,6 +101,8 @@ namespace LambdaEngine
 		bool UpdateResources(RenderGraph* pRendergraph);
 
 	private:
+		bool CreateAtlasTextureInstance(GUID_Lambda atlasGUID, uint32 tileSize);
+
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
 		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
@@ -143,6 +145,7 @@ namespace LambdaEngine
 		TArray<SAtlasInfo>			m_AtlasInfoData;
 
 		TSharedRef<Sampler>					m_Sampler = nullptr;
+		GUID_Lambda							m_DefaultAtlasTextureGUID;
 		THashTable<GUID_Lambda, SAtlasInfo>	m_AtlasResources;
 		TArray<TextureView*>				m_AtlasTextureViews;
 		TArray<Sampler*>					m_AtlasSamplers;

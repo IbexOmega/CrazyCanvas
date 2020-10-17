@@ -23,6 +23,11 @@ namespace LambdaEngine
 		constexpr uint32 chunkReservationSize = 10;
 		m_FreeParticleChunks.Reserve(chunkReservationSize);
 
+		// Initilize Default Particle Texture
+		m_DefaultAtlasTextureGUID = ResourceManager::LoadTextureFromFile("Particles/ParticleAtlas.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		constexpr uint32 DEFAULT_ATLAS_TILE_SIZE = 64U;
+		CreateAtlasTextureInstance(m_DefaultAtlasTextureGUID, DEFAULT_ATLAS_TILE_SIZE);
+
 		// Create one particle chunk spanning the whole particle array
 		ParticleChunk chunk = {};
 		chunk.Offset = 0;
@@ -101,40 +106,12 @@ namespace LambdaEngine
 		instance.LifeTime			= emitterComp.LifeTime;
 		instance.ParticleRadius		= emitterComp.ParticleRadius;
 
-		if (!m_AtlasResources.contains(emitterComp.AtlasGUID))
+		GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
+		if (atlasGUID == GUID_NONE)
+			atlasGUID = m_DefaultAtlasTextureGUID;
+		if (!m_AtlasResources.contains(atlasGUID))
 		{
-			// Add atlas texture
-			TextureView* textureView = ResourceManager::GetTextureView(emitterComp.AtlasGUID);
-			m_AtlasTextureViews.PushBack(textureView);
-			
-			if (!m_Sampler)
-			{
-				SamplerDesc samplerDesc = {};
-				samplerDesc.DebugName = "Atlas Sampler";
-				samplerDesc.MinFilter = EFilterType::FILTER_TYPE_LINEAR;
-				samplerDesc.MagFilter = EFilterType::FILTER_TYPE_LINEAR;
-				samplerDesc.MipmapMode = EMipmapMode::MIPMAP_MODE_NEAREST;
-				samplerDesc.AddressModeU = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				samplerDesc.AddressModeV = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				samplerDesc.AddressModeW = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-				m_Sampler = MakeSharedRef<Sampler>(RenderAPI::GetDevice()->CreateSampler(&samplerDesc));
-			}
-			m_AtlasSamplers.PushBack(m_Sampler.Get());
-			
-			uint32 width = textureView->GetDesc().pTexture->GetDesc().Width;
-			uint32 height = textureView->GetDesc().pTexture->GetDesc().Height;
-			uint32 tileSize = emitterComp.AtlasTileSize;
-
-			// Add atlas information
-			SAtlasInfo atlasInfo = {};
-			atlasInfo.ColCount		= height / tileSize;
-			atlasInfo.RowCount		= width / tileSize;
-			atlasInfo.TileFactorX	= (float)tileSize / (float)width;
-			atlasInfo.TileFactorY	= (float)tileSize / (float)width;
-			atlasInfo.AtlasIndex	= m_AtlasInfoData.GetSize();
-			m_AtlasResources[emitterComp.AtlasGUID] = atlasInfo;
-			m_AtlasInfoData.PushBack(atlasInfo);
-			m_DirtyAtlasDataBuffer = true;
+			CreateAtlasTextureInstance(atlasGUID, emitterComp.AtlasTileSize);
 		}
 
 		instance.AnimationCount = emitterComp.AnimationCount;
@@ -218,6 +195,43 @@ namespace LambdaEngine
 		}
 
 		FreeParticleChunk(newFreeChunk);
+	}
+
+	bool ParticleManager::CreateAtlasTextureInstance(GUID_Lambda atlasGUID, uint32 tileSize)
+	{
+		// Add atlas texture
+		TextureView* textureView = ResourceManager::GetTextureView(atlasGUID);
+		m_AtlasTextureViews.PushBack(textureView);
+
+		if (!m_Sampler)
+		{
+			SamplerDesc samplerDesc = {};
+			samplerDesc.DebugName = "Atlas Sampler";
+			samplerDesc.MinFilter = EFilterType::FILTER_TYPE_LINEAR;
+			samplerDesc.MagFilter = EFilterType::FILTER_TYPE_LINEAR;
+			samplerDesc.MipmapMode = EMipmapMode::MIPMAP_MODE_NEAREST;
+			samplerDesc.AddressModeU = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerDesc.AddressModeV = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerDesc.AddressModeW = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			m_Sampler = MakeSharedRef<Sampler>(RenderAPI::GetDevice()->CreateSampler(&samplerDesc));
+		}
+		m_AtlasSamplers.PushBack(m_Sampler.Get());
+
+		uint32 width = textureView->GetDesc().pTexture->GetDesc().Width;
+		uint32 height = textureView->GetDesc().pTexture->GetDesc().Height;
+
+		// Add atlas information
+		SAtlasInfo atlasInfo = {};
+		atlasInfo.ColCount = height / tileSize;
+		atlasInfo.RowCount = width / tileSize;
+		atlasInfo.TileFactorX = (float)tileSize / (float)width;
+		atlasInfo.TileFactorY = (float)tileSize / (float)width;
+		atlasInfo.AtlasIndex = m_AtlasInfoData.GetSize();
+		m_AtlasResources[atlasGUID] = atlasInfo;
+		m_AtlasInfoData.PushBack(atlasInfo);
+		m_DirtyAtlasDataBuffer = true;
+
+		return true;
 	}
 
 	bool ParticleManager::CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance)
