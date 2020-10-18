@@ -41,7 +41,7 @@ namespace LambdaEngine
 			const TArray<SQT>& in0 = m_pFrom->GetCurrentFrame();
 			const TArray<SQT>& in1 = m_pTo->GetCurrentFrame();
 			BinaryInterpolator interpolator(in0, in1, m_CurrentFrame);
-			interpolator.Interpolate(weight);
+			interpolator.Interpolate(float32(weight));
 		}
 		else
 		{

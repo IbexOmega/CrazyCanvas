@@ -3,8 +3,7 @@
 
 #include "Resources/Mesh.h"
 
-#define INFINITE_LOOPS		-1
-#define INVALID_TRANSITION	-1
+#define INFINITE_LOOPS uint32(-1)
 
 namespace LambdaEngine
 {

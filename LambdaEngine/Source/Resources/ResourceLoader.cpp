@@ -1118,7 +1118,7 @@ namespace LambdaEngine
 					if (it != pSkeleton->JointMap.end())
 					{
 						joint.ParentBoneIndex = it->second;
-						children[joint.ParentBoneIndex].EmplaceBack(boneIndex);
+						children[joint.ParentBoneIndex].EmplaceBack(JointIndexType(boneIndex));
 					}
 				}
 			}
@@ -1139,7 +1139,7 @@ namespace LambdaEngine
 					if (it != pSkeleton->JointMap.end())
 					{
 						joint.ParentBoneIndex = it->second;
-						children[joint.ParentBoneIndex].EmplaceBack(boneIndex);
+						children[joint.ParentBoneIndex].EmplaceBack(JointIndexType(boneIndex));
 					}
 				}
 			}
@@ -1154,7 +1154,7 @@ namespace LambdaEngine
 				Joint& joint = pSkeleton->Joints[jointID];
 				if (joint.ParentBoneIndex == INVALID_JOINT_ID)
 				{
-					rootNode = jointID;
+					rootNode = JointIndexType(jointID);
 					break;
 				}
 			}
@@ -1537,7 +1537,6 @@ namespace LambdaEngine
 				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 				Mesh* pMesh = DBG_NEW Mesh;
 
-				glm::vec3 centroid;
 				LoadVertices(pMesh, pMeshAI);
 				LoadIndices(pMesh, pMeshAI);
 
@@ -1583,7 +1582,6 @@ namespace LambdaEngine
 				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
 				BoundingBox boundingBox;
-				glm::vec3 centroid;
 				LoadBoundingBox(boundingBox, pMeshAI);
 
 				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)

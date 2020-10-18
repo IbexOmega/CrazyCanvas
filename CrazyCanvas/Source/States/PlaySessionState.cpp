@@ -236,14 +236,6 @@ void PlaySessionState::Init()
 
 		AnimationState* pReloadState = DBG_NEW AnimationState("reload");
 		ClipNode* pReload = pReloadState->CreateClipNode(reload[0], 2.0, true);
-		pReload->AddTrigger(ClipTrigger(0.0, [](const ClipNode& clip, AnimationGraph& graph)
-		{
-			LOG_INFO("Trigger at 0.0 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
-		}));
-		pReload->AddTrigger(ClipTrigger(0.5, [](const ClipNode& clip, AnimationGraph& graph)
-		{
-			LOG_INFO("Trigger at 0.5 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());
-		}));
 		pReload->AddTrigger(ClipTrigger(0.8, [](const ClipNode& clip, AnimationGraph& graph)
 		{
 			LOG_INFO("Trigger at 0.1 | RunningTime=%.4f | NormalizedTime=%.4f", clip.GetRunningTime(), clip.GetNormalizedTime());

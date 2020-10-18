@@ -175,7 +175,7 @@ namespace LambdaEngine
 		}
 
 		const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
-		glm::vec3 position = glm::mix(pos0.Value, pos1.Value, glm::vec3(factor));
+		glm::vec3 position = glm::mix(pos0.Value, pos1.Value, glm::vec3(float32(factor)));
 		return position;
 	}
 
@@ -200,7 +200,7 @@ namespace LambdaEngine
 		}
 
 		const float64 factor = (scale1.Time != scale0.Time) ? (time - scale0.Time) / (scale1.Time - scale0.Time) : 0.0f;
-		glm::vec3 scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(factor));
+		glm::vec3 scale = glm::mix(scale0.Value, scale1.Value, glm::vec3(float32(factor)));
 		return scale;
 	}
 
