@@ -25,7 +25,7 @@ namespace LambdaEngine
 		VALIDATE(m_pFrom	!= nullptr);
 		VALIDATE(m_pTo		!= nullptr);
 
-		if (m_Duration > 0.0)
+		if (fabs(m_Duration) > 0.0)
 		{
 			// Tick the states
 			m_pFrom->Tick(skeleton, deltaTimeInSeconds);
@@ -35,8 +35,9 @@ namespace LambdaEngine
 			m_LocalClock += deltaTimeInSeconds;
 			const float64 weight = (m_LocalClock / (m_Duration));
 
+#if 0
 			LOG_INFO("From='%s', To='%s' Weight=%.4f", m_pFrom->GetName().c_str(), m_pTo->GetName().c_str(), weight);
-
+#endif
 			const TArray<SQT>& in0 = m_pFrom->GetCurrentFrame();
 			const TArray<SQT>& in1 = m_pTo->GetCurrentFrame();
 			BinaryInterpolator interpolator(in0, in1, m_CurrentFrame);
@@ -140,13 +141,17 @@ namespace LambdaEngine
 
 	void AnimationState::Tick(const Skeleton& skeleton, const float64 deltaTime)
 	{
+#if 0
 		LOG_INFO("Tick '%s'", m_Name.c_str());
+#endif
 		m_pFinalNode->Tick(skeleton, deltaTime);
 	}
 
 	void AnimationState::Reset()
 	{
+#if 0
 		LOG_INFO("Reset %s", m_Name.c_str());
+#endif
 		m_pFinalNode->Reset();
 	}
 
