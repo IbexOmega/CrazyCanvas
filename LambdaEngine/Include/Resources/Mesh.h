@@ -110,12 +110,14 @@ namespace LambdaEngine
 	{
 		inline SkeletonPose()
 			: pSkeleton(nullptr)
+			, LocalTransforms()
 			, GlobalTransforms()
 		{
 		}
 
 		inline SkeletonPose(Skeleton* pSkeleton)
 			: pSkeleton(pSkeleton)
+			, LocalTransforms()
 			, GlobalTransforms()
 		{
 		}
