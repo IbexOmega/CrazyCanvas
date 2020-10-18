@@ -47,6 +47,8 @@ namespace LambdaEngine
 	template<typename Comp>
 	class LAMBDA_API ComponentArray : public IComponentArray
 	{
+		friend class ECSCore;
+
 	public:
 		ComponentArray() = default;
 		~ComponentArray() override final;
@@ -56,7 +58,7 @@ namespace LambdaEngine
 
 		Comp& Insert(Entity entity, const Comp& comp);
 
-		Comp& GetData(Entity entity);
+		Comp& GetData(Entity entity, bool& wasDirty = s_DummyFlag);
 		const Comp& GetConstData(Entity entity) const;
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
@@ -76,7 +78,13 @@ namespace LambdaEngine
 		THashTable<Entity, uint32> m_EntityToIndex;
 
 		ComponentOwnership<Comp> m_ComponentOwnership;
+
+	private:
+		static bool s_DummyFlag;
 	};
+
+	template <typename Comp>
+	bool ComponentArray<Comp>::s_DummyFlag = false;
 
 	template<typename Comp>
 	inline ComponentArray<Comp>::~ComponentArray()
@@ -104,7 +112,7 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline Comp& ComponentArray<Comp>::GetData(Entity entity)
+	inline Comp& ComponentArray<Comp>::GetData(Entity entity, bool& wasDirty)
 	{
 		auto indexItr = m_EntityToIndex.find(entity);
 		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
@@ -113,6 +121,7 @@ namespace LambdaEngine
 
 		if constexpr (Comp::HasDirtyFlag())
 		{
+			wasDirty = component.Dirty;
 			component.Dirty = true;
 		}
 

@@ -3,8 +3,6 @@
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 
-#include "Game/Multiplayer/GameState.h"
-
 #include "ECS/ECSCore.h"
 
 #include "Input/API/Input.h"
@@ -89,31 +87,6 @@ namespace LambdaEngine
 		}
 
 		return false;
-	}
-
-	void PlayerActionSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState)
-	{
-		UNREFERENCED_VARIABLE(deltaTime);
-
-		ECSCore* pECS = ECSCore::GetInstance();
-
-		glm::i8vec2 deltaVelocity =
-		{
-			int8(InputActionSystem::IsActive("CAM_RIGHT") - InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-			int8(InputActionSystem::IsActive("CAM_BACKWARD") - InputActionSystem::IsActive("CAM_FORWARD"))	// Y: Forward
-		};
-
-		const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(entityPlayer);
-		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
-
-		ComputeVelocity(rotationComponent.Quaternion, deltaVelocity.x, deltaVelocity.y, velocityComponent.Velocity);
-
-		pGameState->DeltaForward	= deltaVelocity.x;
-		pGameState->DeltaLeft		= deltaVelocity.y;
-		pGameState->Rotation		= rotationComponent.Quaternion;
 	}
 
 	void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result)

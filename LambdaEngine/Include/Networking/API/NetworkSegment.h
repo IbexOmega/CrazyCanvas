@@ -41,6 +41,7 @@ namespace LambdaEngine
 
 			TYPE_ENTITY_CREATE			= UINT16_MAX - 10,
 			TYPE_PLAYER_ACTION			= UINT16_MAX - 11,
+			TYPE_PLAYER_ACTION_RESPONSE = UINT16_MAX - 12,
 		};
 
 	public:
@@ -49,16 +50,28 @@ namespace LambdaEngine
 		NetworkSegment* SetType(uint16 type);
 		uint16 GetType() const;
 
-		uint8* GetBuffer();
-		const uint8* GetBufferReadOnly() const;
+		const uint8* GetBuffer() const;
 		uint16 GetBufferSize() const;
 
 		Header& GetHeader();
-		uint8 GetHeaderSize() const;
 
 		uint16 GetTotalSize() const;
 
-		NetworkSegment* AppendBytes(uint16 bytes);
+		NetworkSegment* Write(const void* pBuffer, uint16 bytes);
+
+		template<typename T>
+		NetworkSegment* Write(const T* pStruct)
+		{
+			return Write(pStruct, sizeof(T));
+		}
+
+		NetworkSegment* Read(void* pBuffer, uint16 bytes);
+
+		template<typename T>
+		NetworkSegment* Read(T* pStruct)
+		{
+			return Read(pStruct, sizeof(T));
+		}
 
 		uint64 GetRemoteSalt() const;
 
@@ -69,8 +82,13 @@ namespace LambdaEngine
 
 		void CopyTo(NetworkSegment* pSegment) const;
 
+		void ResetReadHead();
+
 	private:
 		NetworkSegment();
+
+	public:
+		static constexpr uint8 HeaderSize = sizeof(Header);
 
 	private:
 		static void PacketTypeToString(uint16 type, std::string& str);
@@ -79,12 +97,13 @@ namespace LambdaEngine
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		std::string m_Borrower;
 		std::string m_Type;
+		bool m_IsBorrowed;
 #endif
 
 		Header m_Header;
 		uint64 m_Salt;
 		uint16 m_SizeOfBuffer;
-		bool m_IsBorrowed;
+		uint16 m_ReadHead;
 		uint8 m_pBuffer[MAXIMUM_SEGMENT_SIZE];
 	};
 

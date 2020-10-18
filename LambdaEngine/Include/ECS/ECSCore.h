@@ -44,7 +44,7 @@ namespace LambdaEngine
 
 		// Fetch a reference to a component for a specific entity.
 		template<typename Comp>
-		Comp& GetComponent(Entity entity);
+		Comp& GetComponent(Entity entity, bool& wasDirty = ComponentArray<Comp>::s_DummyFlag);
 
 		// Fetch a const reference to a component for a specific entity.
 		template<typename Comp>
@@ -153,9 +153,9 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline Comp& ECSCore::GetComponent(Entity entity)
+	inline Comp& ECSCore::GetComponent(Entity entity, bool& wasDirty)
 	{
-		return m_ComponentStorage.GetComponent<Comp>(entity);
+		return m_ComponentStorage.GetComponent<Comp>(entity, wasDirty);
 	}
 
 	template<typename Comp>

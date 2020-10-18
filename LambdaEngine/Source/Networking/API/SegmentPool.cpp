@@ -115,6 +115,7 @@ namespace LambdaEngine
 #endif
 
 		pSegment->m_SizeOfBuffer = 0;
+		pSegment->m_ReadHead = 0;
 		m_SegmentsFree.PushBack(pSegment);
 
 #ifdef LAMBDA_CONFIG_DEBUG
@@ -134,6 +135,7 @@ namespace LambdaEngine
 			pSegment->m_IsBorrowed = false;
 #endif
 			pSegment->m_SizeOfBuffer = 0;
+			pSegment->m_ReadHead = 0;
 			m_SegmentsFree.PushBack(pSegment);
 		}
 	}

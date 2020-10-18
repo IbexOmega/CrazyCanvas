@@ -30,7 +30,8 @@
 #include "Application/API/Events/EventQueue.h"
 
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
-	m_pIPAddress(pIPAddress)
+	m_pIPAddress(pIPAddress),
+	m_MultiplayerClient()
 {
 
 }
@@ -44,6 +45,7 @@ void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
 	m_WeaponSystem.Init();
+	m_MultiplayerClient.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -228,6 +230,12 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 	return false;
 }
 
-void PlaySessionState::Tick(LambdaEngine::Timestamp)
+void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
+	m_MultiplayerClient.TickMainThread(delta);
+}
+
+void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	m_MultiplayerClient.FixedTickMainThread(delta);
 }

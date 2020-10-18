@@ -129,6 +129,11 @@ namespace LambdaEngine
 		return true;
 	}
 
+	uint64 ClientBase::GetUID() const
+	{
+		return GetStatistics()->GetRemoteSalt();
+	}
+
 	void ClientBase::SendConnect()
 	{
 		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_CONNNECT), this);

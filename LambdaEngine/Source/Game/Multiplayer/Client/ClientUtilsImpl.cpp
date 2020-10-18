@@ -29,9 +29,4 @@ namespace LambdaEngine
 		ASSERT(m_NetworkUIDToEntityMapper.find(networkUID) == m_NetworkUIDToEntityMapper.end());
 		m_NetworkUIDToEntityMapper.insert({ networkUID, entity });
 	}
-
-	uint64 ClientUtilsImpl::GetSaltAsUID(IClient* pClient)
-	{
-		return pClient->GetStatistics()->GetRemoteSalt();
-	}
 }

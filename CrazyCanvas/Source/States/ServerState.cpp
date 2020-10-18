@@ -32,6 +32,12 @@
 
 using namespace LambdaEngine;
 
+ServerState::ServerState() : 
+	m_MultiplayerServer()
+{
+
+}
+
 ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
@@ -47,6 +53,8 @@ void ServerState::Init()
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
+
+	m_MultiplayerServer.Init();
 
 	m_ServerName = "Crazy Canvas Server";
 
@@ -127,5 +135,11 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 void ServerState::Tick(Timestamp delta)
 {
-	UNREFERENCED_VARIABLE(delta);
+	m_MultiplayerServer.TickMainThread(delta);
 }
+
+void ServerState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	m_MultiplayerServer.FixedTickMainThread(delta);
+}
+

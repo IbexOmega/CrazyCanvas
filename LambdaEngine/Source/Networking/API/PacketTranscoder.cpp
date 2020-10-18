@@ -48,13 +48,13 @@ namespace LambdaEngine
 
 	uint16 PacketTranscoder::WriteSegment(uint8* buffer, NetworkSegment* pSegment)
 	{
-		uint16 headerSize = pSegment->GetHeaderSize();
+		static constexpr uint8 headerSize = NetworkSegment::HeaderSize;
 		uint16 bufferSize = pSegment->GetBufferSize();
 
 		pSegment->GetHeader().Size = pSegment->GetTotalSize();
 
 		memcpy(buffer, &pSegment->GetHeader(), headerSize);
-		memcpy(buffer + headerSize, pSegment->GetBufferReadOnly(), bufferSize);
+		memcpy(buffer + headerSize, pSegment->GetBuffer(), bufferSize);
 
 		return headerSize + bufferSize;
 	}
@@ -91,14 +91,16 @@ namespace LambdaEngine
 		return true;
 	}
 
-	uint16 PacketTranscoder::ReadSegment(const uint8* buffer, NetworkSegment* pSegment)
+	uint16 PacketTranscoder::ReadSegment(const uint8* pBuffer, NetworkSegment* pSegment)
 	{
 		NetworkSegment::Header& messageHeader = pSegment->GetHeader();
-		uint8 messageHeaderSize = pSegment->GetHeaderSize();
+		static constexpr uint8 segmentHeaderSize = NetworkSegment::HeaderSize;
 
-		memcpy(&messageHeader, buffer, messageHeaderSize);
-		memcpy(pSegment->GetBuffer(), buffer + messageHeaderSize, messageHeader.Size - messageHeaderSize);
-		pSegment->m_SizeOfBuffer = messageHeader.Size - sizeof(NetworkSegment::Header);
+		uint8* pSegmentBuffer = const_cast<uint8*>(pSegment->GetBuffer());
+
+		memcpy(&messageHeader, pBuffer, segmentHeaderSize);
+		memcpy(pSegmentBuffer, pBuffer + segmentHeaderSize, messageHeader.Size - segmentHeaderSize);
+		pSegment->m_SizeOfBuffer = messageHeader.Size - segmentHeaderSize;
 
 #ifndef LAMBDA_CONFIG_PRODUCTION
 		pSegment->SetType(messageHeader.Type); //Only for debugging, to create a string with the type name

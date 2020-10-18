@@ -20,6 +20,5 @@ namespace LambdaEngine
 
 		virtual Entity GetEntity(int32 networkUID) const = 0;
 		virtual void RegisterEntity(Entity entity, int32 networkUID) = 0;
-		virtual uint64 GetSaltAsUID(IClient* pClient) = 0;
 	};
 }

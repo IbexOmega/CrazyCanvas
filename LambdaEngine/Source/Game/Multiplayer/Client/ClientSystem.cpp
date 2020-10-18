@@ -22,7 +22,6 @@
 #include "Game/Multiplayer/Client/ClientUtilsImpl.h"
 
 #include "Application/API/Events/EventQueue.h"
-#include "Application/API/Events/NetworkEvents.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -35,7 +34,6 @@ namespace LambdaEngine
 	ClientSystem::ClientSystem(const String& name) :
 		m_pClient(nullptr),
 		m_NetworkPositionSystem(),
-		m_PlayerSystem(),
 		m_Name(name),
 		m_DebuggingWindow(false)
 	{
@@ -54,7 +52,6 @@ namespace LambdaEngine
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
 		m_NetworkPositionSystem.Init();
-		m_PlayerSystem.Init();
 
 		NetworkDiscovery::EnableClient(m_Name, this);
 
@@ -108,15 +105,13 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		m_PlayerSystem.FixedTickMainThread(deltaTime, m_pClient);
+		
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
 		if(m_DebuggingWindow)
 			NetworkDebugger::RenderStatistics(m_pClient);
-
-		m_PlayerSystem.TickMainThread(deltaTime, m_pClient);
 	}
 
 	void ClientSystem::OnConnecting(IClient* pClient)
@@ -153,16 +148,6 @@ namespace LambdaEngine
 	{
 		PacketReceivedEvent event(pClient, pPacket);
 		EventQueue::SendEventImmediate(event);
-
-		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
-		{
-			BinaryDecoder decoder(pPacket);
-			bool isMySelf = decoder.ReadBool();
-			int32 networkUID = decoder.ReadInt32();
-
-			if (isMySelf)
-				m_PlayerSystem.m_NetworkUID = networkUID;
-		}
 	}
 
 	void ClientSystem::OnClientReleased(IClient* pClient)

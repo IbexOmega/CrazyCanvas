@@ -208,6 +208,11 @@ namespace LambdaEngine
 		return m_pHandler;
 	}
 
+	uint64 ClientRemoteBase::GetUID() const
+	{
+		return GetStatistics()->GetSalt();
+	}
+
 	void ClientRemoteBase::TransmitPackets()
 	{
 		GetPacketManager()->Flush(GetTransceiver());

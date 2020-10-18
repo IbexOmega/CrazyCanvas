@@ -16,6 +16,7 @@ namespace LambdaEngine
 
 	public:
 		DECL_UNIQUE_CLASS(PlayerActionSystem);
+		PlayerActionSystem();
 		virtual ~PlayerActionSystem();
 
 		void Init();
@@ -23,10 +24,8 @@ namespace LambdaEngine
 		void TickMainThread(Timestamp deltaTime, Entity entityPlayer);
 
 	private:
-		PlayerActionSystem();
 
 		bool OnKeyPressed(const KeyPressedEvent& event);
-		void DoAction(Timestamp deltaTime, Entity entityPlayer, GameState* pGameState);
 
 	public:
 		static void ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result);

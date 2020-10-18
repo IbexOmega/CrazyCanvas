@@ -31,7 +31,7 @@ namespace LambdaEngine
 
 	Entity MultiplayerUtils::GetEntityPlayer(IClient* pClient)
 	{
-		return s_pClientEntityAccessor->GetEntityPlayer(s_pMultiplayerUtility->GetSaltAsUID(pClient));
+		return s_pClientEntityAccessor->GetEntityPlayer(pClient->GetUID());
 	}
 
 	void MultiplayerUtils::RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor)

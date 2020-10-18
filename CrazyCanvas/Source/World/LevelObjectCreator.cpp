@@ -13,6 +13,8 @@
 #include "Teams/TeamHelper.h"
 
 #include "ECS/Components/Player/Weapon.h"
+#include "ECS/Components/Multiplayer/PacketPlayerActionComponent.h"
+#include "ECS/Components/Multiplayer/PacketPlayerActionResponseComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/ClientRemoteBase.h"
@@ -247,6 +249,7 @@ bool LevelObjectCreator::CreatePlayer(
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
+		pECS->AddComponent<PacketPlayerActionResponseComponent>(playerEntity, PacketPlayerActionResponseComponent{ });
 
 		if (!pPlayerDesc->IsLocal)
 		{
@@ -309,6 +312,8 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
+		pECS->AddComponent<PacketPlayerActionComponent>(playerEntity, PacketPlayerActionComponent{ });
+
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 
 		ClientRemoteBase* pClient = reinterpret_cast<ClientRemoteBase*>(pPlayerDesc->pClient);

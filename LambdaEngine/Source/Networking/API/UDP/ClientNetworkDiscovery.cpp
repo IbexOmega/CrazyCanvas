@@ -198,7 +198,7 @@ namespace LambdaEngine
 		{
 			BinaryDecoder& decoder = packet.Decoder;
 			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), m_Statistics.GetRemoteSalt());
-			m_SegmentPool.FreeSegment(const_cast<NetworkSegment*>(decoder.GetPacket()));
+			m_SegmentPool.FreeSegment(decoder.GetPacket());
 		}
 		packets.Clear();
 	}
