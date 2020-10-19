@@ -58,8 +58,7 @@ SRayHitDescription CalculateHitData()
 
 	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
 
-	uint materialIndex		= gl_InstanceCustomIndexEXT & 0xFF00;
-	materialIndex			= materialIndex >> 8;
+	uint materialIndex		= (gl_InstanceCustomIndexEXT & 0xFF00) >> 8;
 	uint paintMaskIndex		= gl_InstanceCustomIndexEXT & 0xFF;
 
 	vec3 shadingNormal		= texture(u_NormalMaps[materialIndex], texCoord).xyz;

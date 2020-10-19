@@ -1090,7 +1090,7 @@ namespace LambdaEngine
 
 				Texture* pTexture			= comp.pTexture;
 				TextureView* pTextureView	= comp.pTextureView;
-				Sampler* pNearestSampler	= Sampler::GetNearestSampler();
+				Sampler* pNearestSampler	= Sampler::GetLinearSampler();
 
 				// If the texture has not been added before, update resource
 				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
@@ -1127,16 +1127,18 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			uint32 index = materialIndex;
-			index = index << 8;
-			index |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
+			uint32 customIndex = (materialIndex & 0xFF) << 8;
+			customIndex |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
 
 			AccelerationStructureInstance asInstance = {};
-			asInstance.Transform						= glm::transpose(transform);
-			asInstance.CustomIndex						= index;
-			asInstance.Mask								= 0xFF;
-			asInstance.SBTRecordOffset					= 0;
-			asInstance.Flags							= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Transform		= glm::transpose(transform);
+			asInstance.CustomIndex		= customIndex;
+			asInstance.Mask				= 0xFF;
+			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
+
+			//If the SBT Record is already created in another instance, set it here
+			if (!meshAndInstancesIt->second.ASInstances.IsEmpty())
+				asInstance.SBTRecordOffset = meshAndInstancesIt->second.ASInstances[0].SBTRecordOffset;
 
 			//If the BLAS is already built, set it here
 			if (meshAndInstancesIt->second.pBLAS != nullptr)
@@ -1997,24 +1999,30 @@ namespace LambdaEngine
 
 			bool update = true;
 
-			//Recreate TLAS completely if oldInstanceCount != newInstanceCount
-			if (m_MaxInstances < newInstanceCount)
+			//Recreate TLAS completely if m_MaxSupportedTLASInstances < newInstanceCount
+			if (m_MaxSupportedTLASInstances < newInstanceCount)
 			{
 				if (m_pTLAS != nullptr) DeleteDeviceResource(m_pTLAS);
 
-				m_MaxInstances = newInstanceCount;
+				m_MaxSupportedTLASInstances = newInstanceCount;
+				m_BuiltTLASInstanceCount = newInstanceCount;
 
 				AccelerationStructureDesc createTLASDesc = {};
-				createTLASDesc.DebugName		= "TLAS";
-				createTLASDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-				createTLASDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				createTLASDesc.InstanceCount	= m_MaxInstances;
+				createTLASDesc.DebugName = "TLAS";
+				createTLASDesc.Type = EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
+				createTLASDesc.Flags = FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				createTLASDesc.InstanceCount = m_MaxSupportedTLASInstances;
 
 				m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
 
 				update = false;
 
 				m_TLASResourceDirty = true;
+			}
+			else if (m_BuiltTLASInstanceCount != newInstanceCount)
+			{
+				m_BuiltTLASInstanceCount = newInstanceCount;
+				update = false;
 			}
 
 			if (m_pTLAS != nullptr)
