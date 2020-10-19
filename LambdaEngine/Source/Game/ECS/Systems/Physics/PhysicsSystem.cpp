@@ -606,44 +606,7 @@ namespace LambdaEngine
 
 	void PhysicsSystem::TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors)
 	{
-		ActorUserData* pActorUserDatas[2] =
-		{
-			reinterpret_cast<ActorUserData*>(actors[0]->userData),
-			reinterpret_cast<ActorUserData*>(actors[1]->userData)
-		};
-
-		if (!pActorUserDatas[0]->CollisionCallback && !pActorUserDatas[1]->CollisionCallback)
-		{
-			return;
-		}
-
-		// At least one of the entities has a callback function. Create collision info for both entities.
-		EntityCollisionInfo collisionInfos[2];
-		for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
-		{
-			const PxRigidActor* pActor = actors[actorIdx];
-
-			const PxTransform transformPX = pActor->getGlobalPose();
-			const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
-
-			// This is Wrong! To get the correct data, set the shape type to SIMULATION and it will call onContact insead.
-			collisionInfos[actorIdx] =
-			{
-				.Entity = pActorUserDatas[actorIdx]->Entity,
-				.Position	= { transformPX.p.x, transformPX.p.y, transformPX.p.z },
-				.Direction	= GetForward(rotation)
-			};
-		}
-
-		if (pActorUserDatas[0]->CollisionCallback)
-		{
-			pActorUserDatas[0]->CollisionCallback(collisionInfos[0], collisionInfos[1]);
-		}
-
-		if (pActorUserDatas[1]->CollisionCallback)
-		{
-			pActorUserDatas[1]->CollisionCallback(collisionInfos[1], collisionInfos[0]);
-		}
+		
 	}
 
 	void PhysicsSystem::ContactCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints, glm::vec3* pLinearVelocities)

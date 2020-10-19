@@ -12,10 +12,11 @@ physx::PxFilterFlags FilterShader(
 {
 	using namespace physx;
 
+	pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+
 	// Trigger the contact callback for pairs (A,B) where the filtermask of A contains the ID of B and vice versa
 	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
 	{
-		pairFlags = PxPairFlag::eCONTACT_DEFAULT;
 
 		if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
 		{
