@@ -17,9 +17,12 @@ bool WeaponSystem::Init()
 
 	// Register system
 	{
+		// The write permissions are used when creating projectile entities
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = R;
-		playerGroup.Rotation.Permissions = R;
+		playerGroup.Position.Permissions = RW;
+		playerGroup.Scale.Permissions = RW;
+		playerGroup.Rotation.Permissions = RW;
+		playerGroup.Velocity.Permissions = RW;
 
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -102,12 +105,12 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 
-			Fire(weaponComponent, positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f), rotationComp.Quaternion, velocityComp.Velocity);
+			Fire(weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
 		}
 	}
 }
 
-void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity)
+void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity)
 {
 	using namespace LambdaEngine;
 
@@ -115,6 +118,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 
 	constexpr const float projectileInitialSpeed = 13.0f;
 	const glm::vec3 directionVec = GetForward(direction);
+	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec * 0.3f;
 
 	// Create a projectile entity
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -133,7 +137,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, { 0.3f, 0.3f, 0.3f }}),
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {m_ProjectileMeshComponent}),
-		/* Shape Type */		EShapeType::TRIGGER,
+		/* Shape Type */		EShapeType::SIMULATION,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
 		/* CollisionCallback */ std::bind(&WeaponSystem::OnProjectileHit, this, std::placeholders::_1, std::placeholders::_2),
@@ -153,6 +157,8 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 
 	const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 
+	pECS->RemoveEntity(collisionInfo0.Entity);
+
 	// Disable friendly fire
 	if (pTeamComponents->HasComponent(collisionInfo1.Entity))
 	{
@@ -161,12 +167,9 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 
 		if (projectileTeam == otherEntityTeam)
 		{
-			LOG_INFO("Friendly fire!");
 			return;
 		}
 	}
-
-	pECS->RemoveEntity(collisionInfo0.Entity);
 
 	ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1);
 	EventQueue::SendEventImmediate(hitEvent);
