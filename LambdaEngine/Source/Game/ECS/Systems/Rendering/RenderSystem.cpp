@@ -70,8 +70,8 @@ namespace LambdaEngine
 						AnimationComponent::Type(),
 						PlayerBaseComponent::Type(),
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnStaticMeshEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnStaticMeshEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_AnimatedEntities,
@@ -88,8 +88,8 @@ namespace LambdaEngine
 					{
 						PlayerBaseComponent::Type(),
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnAnimatedEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_PlayerEntities,
@@ -103,8 +103,8 @@ namespace LambdaEngine
 					{
 						&transformGroup
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnPlayerEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnPlayerEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_DirectionalLightEntities,
@@ -114,8 +114,8 @@ namespace LambdaEngine
 						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnDirectionalEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::OnDirectionalEntityRemoved, this)
 				},
 				{
 					.pSubscriber = &m_PointLightEntities,
@@ -124,8 +124,8 @@ namespace LambdaEngine
 						{ R, PointLightComponent::Type() },
 						{ R, PositionComponent::Type() }
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnPointLightEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::OnPointLightEntityRemoved, this)
 				},
 				{
 					.pSubscriber = &m_CameraEntities,

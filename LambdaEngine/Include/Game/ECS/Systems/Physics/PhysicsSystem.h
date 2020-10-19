@@ -29,6 +29,7 @@ namespace LambdaEngine
 		COLLISION_GROUP_STATIC	= (1 << 0),
 		COLLISION_GROUP_DYNAMIC	= (1 << 1),
 		COLLISION_GROUP_PLAYER	= (1 << 2),
+		COLLISION_GROUP_OTHERS	= (1 << 3), // Other players, not including oneself
 	};
 
 	// EntityCollisionInfo contains information on a colliding entity.
@@ -142,6 +143,7 @@ namespace LambdaEngine
 		void FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape);
 
 		void TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors);
+		void ContactCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints, glm::vec3* pLinearVelocities);
 
 	private:
 		static PhysicsSystem s_Instance;
