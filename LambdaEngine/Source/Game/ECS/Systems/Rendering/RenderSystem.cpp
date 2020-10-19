@@ -1423,9 +1423,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::UpdateParticleEmitter(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	void RenderSystem::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
 	{
-		m_ParticleManager.UpdateParticleEmitter(positionComp, rotationComp, emitterComp);
+		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
 	void RenderSystem::UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)

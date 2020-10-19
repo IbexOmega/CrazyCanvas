@@ -87,7 +87,7 @@ namespace LambdaEngine
 
 		void Tick(Timestamp deltaTime, uint32 modFrameIndex);
 
-		void UpdateParticleEmitter(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
+		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 
 		void OnEmitterEntityAdded(Entity entity);
 		void OnEmitterEntityRemoved(Entity entity);
@@ -116,37 +116,37 @@ namespace LambdaEngine
 		void CleanBuffers();
 
 	private:
-		uint32						m_MaxParticleCount;
-		uint32						m_ModFrameIndex;
+		uint32								m_MaxParticleCount;
+		uint32								m_ModFrameIndex;
 
-		bool						m_DirtyParticleBuffer	= false;
-		bool						m_DirtyVertexBuffer		= false;
-		bool						m_DirtyIndexBuffer		= false;
-		bool						m_DirtyIndirectBuffer	= false;
-		bool						m_DirtyAtlasDataBuffer	= false;
+		bool								m_DirtyParticleBuffer	= false;
+		bool								m_DirtyVertexBuffer		= false;
+		bool								m_DirtyIndexBuffer		= false;
+		bool								m_DirtyIndirectBuffer	= false;
+		bool								m_DirtyAtlasDataBuffer	= false;
 
-		Buffer*						m_ppIndirectStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
-		Buffer*						m_pIndirectBuffer = nullptr;
+		Buffer*								m_ppIndirectStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pIndirectBuffer = nullptr;
 
-		Buffer*						m_ppVertexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
-		Buffer*						m_pVertexBuffer = nullptr;
+		Buffer*								m_ppVertexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pVertexBuffer = nullptr;
 
-		Buffer*						m_ppIndexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
-		Buffer*						m_pIndexBuffer = nullptr;
+		Buffer*								m_ppIndexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pIndexBuffer = nullptr;
 
-		Buffer*						m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
-		Buffer*						m_pParticleBuffer = nullptr;
+		Buffer*								m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pParticleBuffer = nullptr;
 
-		Buffer*						m_ppAtlasDataStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
-		Buffer*						m_pAtlasDataBuffer = nullptr;
+		Buffer*								m_ppAtlasDataStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pAtlasDataBuffer = nullptr;
 
-		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
+		TArray<DeviceChild*>				m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
-		TArray<SParticle>			m_Particles;
-		TArray<IndirectData>		m_IndirectData;
-		THashTable<uint32, Entity>	m_IndirectDataToEntity;
-		TArray<ParticleChunk>		m_FreeParticleChunks;
-		TArray<SAtlasInfo>			m_AtlasInfoData;
+		TArray<SParticle>					m_Particles;
+		TArray<IndirectData>				m_IndirectData;
+		THashTable<uint32, Entity>			m_IndirectDataToEntity;
+		TArray<ParticleChunk>				m_FreeParticleChunks;
+		TArray<SAtlasInfo>					m_AtlasInfoData;
 
 		TSharedRef<Sampler>					m_Sampler = nullptr;
 		GUID_Lambda							m_DefaultAtlasTextureGUID;

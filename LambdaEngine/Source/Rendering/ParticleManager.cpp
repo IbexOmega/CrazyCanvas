@@ -92,9 +92,13 @@ namespace LambdaEngine
 		}
 	}
 
-	void ParticleManager::UpdateParticleEmitter(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	void ParticleManager::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
 	{
+		auto emitterElem = m_ActiveEmitters.find(entity);
+		if(emitterElem == m_ActiveEmitters.end())
+		{
 
+		}
 	}
 
 	void ParticleManager::OnEmitterEntityAdded(Entity entity)
@@ -463,7 +467,6 @@ namespace LambdaEngine
 				FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER, 
 				"Particle Indirect");
 		}
-
 
 		// Update Vertex Buffer
 		if (m_DirtyVertexBuffer)
