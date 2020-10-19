@@ -44,7 +44,6 @@ public:
 	
 	void StartSelectedServer(Noesis::Grid* pGrid);
 
-	bool CheckServerStatus();
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
 
@@ -56,8 +55,10 @@ private:
 	void ErrorPopUp(ErrorCode errorCode);
 	void ErrorPopUpClose();
 
+	bool CheckServerStatus();
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
+	void HostServer();
 	void PopulateServerInfo();
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)

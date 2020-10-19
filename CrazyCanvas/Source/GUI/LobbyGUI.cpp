@@ -110,7 +110,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	{
 		currentInfo = newInfo;
 	}
-	return false;
+	return true;
 }
 
 void LobbyGUI::FixedTick(LambdaEngine::Timestamp delta)
@@ -270,6 +270,18 @@ bool LobbyGUI::CheckServerStatus()
 	}
 
 	return false;
+}
+
+void LobbyGUI::HostServer()
+{
+	/*
+	NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+	BinaryEncoder encoder3(pPacket);
+	encoder3.WriteBool(true);
+	encoder3.WriteInt32(0);
+	encoder3.WriteVec3(glm::vec3(0, 2, 0));
+	OnPacketReceived(m_pClient, pPacket);
+	m_pClient->ReturnPacket(pPacket);*/
 }
 
 void LobbyGUI::SetRenderStagesActive()
