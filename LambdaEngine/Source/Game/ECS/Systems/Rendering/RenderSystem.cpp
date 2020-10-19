@@ -1090,7 +1090,7 @@ namespace LambdaEngine
 
 				Texture* pTexture			= comp.pTexture;
 				TextureView* pTextureView	= comp.pTextureView;
-				Sampler* pNearestSampler	= Sampler::GetLinearSampler();
+				Sampler* pNearestSampler	= Sampler::GetNearestSampler();
 
 				// If the texture has not been added before, update resource
 				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
