@@ -51,12 +51,12 @@ namespace LambdaEngine
 	{
 		// Register system
 		{
-			auto onStaticCollisionAdded = std::bind(&PhysicsSystem::OnStaticCollisionAdded, this, std::placeholders::_1);
-			auto onStaticCollisionRemoval = std::bind(&PhysicsSystem::OnStaticCollisionRemoval, this, std::placeholders::_1);
+			auto onStaticCollisionAdded = std::bind_front(&PhysicsSystem::OnStaticCollisionAdded, this);
+			auto onStaticCollisionRemoval = std::bind_front(&PhysicsSystem::OnStaticCollisionRemoval, this);
 
-			auto onDynamicCollisionAdded = std::bind(&PhysicsSystem::OnDynamicCollisionAdded, this, std::placeholders::_1);
-			auto onDynamicCollisionRemoval = std::bind(&PhysicsSystem::OnDynamicCollisionRemoval, this, std::placeholders::_1);
-			auto onCharacterCollisionRemoval = std::bind(&PhysicsSystem::OnCharacterColliderRemoval, this, std::placeholders::_1);
+			auto onDynamicCollisionAdded = std::bind_front(&PhysicsSystem::OnDynamicCollisionAdded, this);
+			auto onDynamicCollisionRemoval = std::bind_front(&PhysicsSystem::OnDynamicCollisionRemoval, this);
+			auto onCharacterCollisionRemoval = std::bind_front(&PhysicsSystem::OnCharacterColliderRemoval, this);
 
 			SystemRegistration systemReg = {};
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -92,9 +92,9 @@ namespace LambdaEngine
 
 			RegisterSystem(systemReg);
 
-			SetComponentOwner<StaticCollisionComponent>({ std::bind(&PhysicsSystem::StaticCollisionDestructor, this, std::placeholders::_1) });
-			SetComponentOwner<DynamicCollisionComponent>({ std::bind(&PhysicsSystem::DynamicCollisionDestructor, this, std::placeholders::_1) });
-			SetComponentOwner<CharacterColliderComponent>({ std::bind(&PhysicsSystem::CharacterColliderDestructor, this, std::placeholders::_1) });
+			SetComponentOwner<StaticCollisionComponent>({ std::bind_front(&PhysicsSystem::StaticCollisionDestructor, this) });
+			SetComponentOwner<DynamicCollisionComponent>({ std::bind_front(&PhysicsSystem::DynamicCollisionDestructor, this) });
+			SetComponentOwner<CharacterColliderComponent>({ std::bind_front(&PhysicsSystem::CharacterColliderDestructor, this) });
 		}
 
 		// PhysX setup
@@ -289,13 +289,29 @@ namespace LambdaEngine
 
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
 	{
+		PxContactPairExtraDataIterator iter(pairHeader.extraDataStream,
+			pairHeader.extraDataStreamSize);
+		glm::vec3 linearVelocities[2];
+		while (iter.nextItemSet())
+		{
+			if (iter.preSolverVelocity)
+			{
+				PxVec3 linearVelocityActor0 = iter.preSolverVelocity->linearVelocity[0];
+				linearVelocities[0] = { linearVelocityActor0.x, linearVelocityActor0.y, linearVelocityActor0.z };
+				PxVec3 linearVelocityActor1 = iter.preSolverVelocity->linearVelocity[1];
+				linearVelocities[1] = { linearVelocityActor1.x, linearVelocityActor1.y, linearVelocityActor1.z };
+			}
+		}
+
 		for (PxU32 pairIdx = 0; pairIdx < nbPairs; pairIdx++)
 		{
 			const PxContactPair& contactPair = pPairs[pairIdx];
 
-			if (contactPair.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)
+			TArray<PxContactPairPoint> contactPoints(contactPair.contactCount);
+			if (contactPair.events & (PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_CONTACT_POINTS))
 			{
-				TriggerCallbacks({ pairHeader.actors[0], pairHeader.actors[1] });
+				contactPair.extractContacts(contactPoints.GetData(), contactPair.contactCount);
+				ContactCallbacks({ pairHeader.actors[0], pairHeader.actors[1] }, contactPoints, linearVelocities);
 			}
 		}
 	}
@@ -570,6 +586,11 @@ namespace LambdaEngine
 			pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
 			pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
 		}
+		else if (collisionInfo.ShapeType == EShapeType::SIMULATION)
+		{
+			pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
+			pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
+		}
 
 		pActor->attachShape(*pShape);
 
@@ -585,6 +606,11 @@ namespace LambdaEngine
 
 	void PhysicsSystem::TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors)
 	{
+		
+	}
+
+	void PhysicsSystem::ContactCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints, glm::vec3* pLinearVelocities)
+	{
 		ActorUserData* pActorUserDatas[2] =
 		{
 			reinterpret_cast<ActorUserData*>(actors[0]->userData),
@@ -596,20 +622,20 @@ namespace LambdaEngine
 			return;
 		}
 
+		// Take the first contact pont. (We might want to change this to work for multiple contact points)
+		const PxContactPairPoint& contactPoint = contactPoints[0];
+
 		// At least one of the entities has a callback function. Create collision info for both entities.
 		EntityCollisionInfo collisionInfos[2];
 		for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
 		{
 			const PxRigidActor* pActor = actors[actorIdx];
 
-			const PxTransform transformPX = pActor->getGlobalPose();
-			const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
-
 			collisionInfos[actorIdx] =
 			{
 				.Entity = pActorUserDatas[actorIdx]->Entity,
-				.Position	= { transformPX.p.x, transformPX.p.y, transformPX.p.z },
-				.Direction	= GetForward(rotation)
+				.Position = { contactPoint.position.x, contactPoint.position.y, contactPoint.position.z },
+				.Direction = glm::normalize(-pLinearVelocities[actorIdx])
 			};
 		}
 

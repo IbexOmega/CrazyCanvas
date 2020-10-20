@@ -26,7 +26,7 @@ namespace LambdaEngine
 
 		m_DisconnectedByRemote = true;
 
-		m_pThreadReceiver = Thread::Create(std::bind(&ClientRemoteTCP::RunReceiver, this), nullptr);
+		m_pThreadReceiver = Thread::Create(std::bind_front(&ClientRemoteTCP::RunReceiver, this), nullptr);
 	}
 
 	ClientRemoteTCP::~ClientRemoteTCP()

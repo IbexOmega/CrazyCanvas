@@ -9,7 +9,7 @@ namespace LambdaEngine
 
 	bool MeshPaintComponentOwner::Init()
 	{
-		SetComponentOwner<MeshPaintComponent>({ std::bind(&MeshPaintComponentOwner::MeshPaintDestructor, this, std::placeholders::_1) });
+		SetComponentOwner<MeshPaintComponent>({ std::bind_front(&MeshPaintComponentOwner::MeshPaintDestructor, this) });
 		return true;
 	}
 
