@@ -68,23 +68,34 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, cons
 bool HUDGUI::ApplyDamage(float damage)
 {
 	//Returns false if player is dead
-	float percent = (damage / m_GUIState.LifeMaxHeight) * 100;
 
 	m_GUIState.DamageTaken += damage;
-	m_GUIState.Health -= percent;
+	std::string life;
 
-	FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
-	LOG_MESSAGE("Height: %f", FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->GetHeight());
+	if (m_GUIState.DamageTaken < m_GUIState.LifeMaxHeight)
+	{
+		float percent = (damage / m_GUIState.LifeMaxHeight) * 100;
+		m_GUIState.Health -= percent;
 
-	std::string life = std::to_string((int)m_GUIState.Health) + " %";
+		life = std::to_string((int)m_GUIState.Health) + " %";
 
-	if (m_GUIState.DamageTaken > m_GUIState.LifeMaxHeight)
+		FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
+		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
+	}
+	else
 	{
 		life = "0 %";
 		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
+
+		{//Resets
+			m_GUIState.DamageTaken = 0.0;
+			m_GUIState.Health = 100.0;
+			FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
+		}
+
 		return false;
 	}
-	FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
+
 
 	return true;
 }
