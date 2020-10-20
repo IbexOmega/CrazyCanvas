@@ -5,7 +5,8 @@
 #include "Math/Math.h"
 
 #include "Resources/Mesh.h"
-#include "Resources/AnimationGraph.h"
+
+#include "Rendering/Animation/AnimationGraph.h"
 
 namespace LambdaEngine
 {
@@ -18,7 +19,7 @@ namespace LambdaEngine
 		DECL_COMPONENT(AnimationComponent);
 
 		bool			IsPaused = false;
-		AnimationGraph	Graph;
+		AnimationGraph*	pGraph = nullptr;
 		SkeletonPose	Pose;
 	};
 }

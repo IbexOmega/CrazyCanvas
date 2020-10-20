@@ -108,6 +108,20 @@ namespace LambdaEngine
 
 	struct SkeletonPose
 	{
+		inline SkeletonPose()
+			: pSkeleton(nullptr)
+			, LocalTransforms()
+			, GlobalTransforms()
+		{
+		}
+
+		inline SkeletonPose(Skeleton* pSkeleton)
+			: pSkeleton(pSkeleton)
+			, LocalTransforms()
+			, GlobalTransforms()
+		{
+		}
+
 		Skeleton*			pSkeleton;
 		TArray<glm::mat4>	LocalTransforms;
 		TArray<glm::mat4>	GlobalTransforms;

@@ -74,8 +74,8 @@ namespace LambdaEngine
 						AnimationComponent::Type(),
 						PlayerBaseComponent::Type(),
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnStaticMeshEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnStaticMeshEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_AnimatedEntities,
@@ -92,8 +92,8 @@ namespace LambdaEngine
 					{
 						PlayerBaseComponent::Type(),
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnAnimatedEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_PlayerEntities,
@@ -107,8 +107,8 @@ namespace LambdaEngine
 					{
 						&transformGroup
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnPlayerEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnPlayerEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_DirectionalLightEntities,
@@ -118,8 +118,8 @@ namespace LambdaEngine
 						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnDirectionalEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::OnDirectionalEntityRemoved, this)
 				},
 				{
 					.pSubscriber = &m_PointLightEntities,
@@ -128,8 +128,8 @@ namespace LambdaEngine
 						{ R, PointLightComponent::Type() },
 						{ R, PositionComponent::Type() }
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnPointLightEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::OnPointLightEntityRemoved, this)
 				},
 				{
 					.pSubscriber = &m_CameraEntities,
@@ -1196,16 +1196,18 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			uint32 index = materialIndex;
-			index = index << 8;
-			index |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
+			uint32 customIndex = (materialIndex & 0xFF) << 8;
+			customIndex |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
 
 			AccelerationStructureInstance asInstance = {};
-			asInstance.Transform						= glm::transpose(transform);
-			asInstance.CustomIndex						= index;
-			asInstance.Mask								= 0xFF;
-			asInstance.SBTRecordOffset					= 0;
-			asInstance.Flags							= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Transform		= glm::transpose(transform);
+			asInstance.CustomIndex		= customIndex;
+			asInstance.Mask				= 0xFF;
+			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
+
+			//If the SBT Record is already created in another instance, set it here
+			if (!meshAndInstancesIt->second.ASInstances.IsEmpty())
+				asInstance.SBTRecordOffset = meshAndInstancesIt->second.ASInstances[0].SBTRecordOffset;
 
 			//If the BLAS is already built, set it here
 			if (meshAndInstancesIt->second.pBLAS != nullptr)
@@ -2076,24 +2078,30 @@ namespace LambdaEngine
 
 			bool update = true;
 
-			//Recreate TLAS completely if oldInstanceCount != newInstanceCount
-			if (m_MaxInstances < newInstanceCount)
+			//Recreate TLAS completely if m_MaxSupportedTLASInstances < newInstanceCount
+			if (m_MaxSupportedTLASInstances < newInstanceCount)
 			{
 				if (m_pTLAS != nullptr) DeleteDeviceResource(m_pTLAS);
 
-				m_MaxInstances = newInstanceCount;
+				m_MaxSupportedTLASInstances = newInstanceCount;
+				m_BuiltTLASInstanceCount = newInstanceCount;
 
 				AccelerationStructureDesc createTLASDesc = {};
-				createTLASDesc.DebugName		= "TLAS";
-				createTLASDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-				createTLASDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				createTLASDesc.InstanceCount	= m_MaxInstances;
+				createTLASDesc.DebugName = "TLAS";
+				createTLASDesc.Type = EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
+				createTLASDesc.Flags = FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				createTLASDesc.InstanceCount = m_MaxSupportedTLASInstances;
 
 				m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
 
 				update = false;
 
 				m_TLASResourceDirty = true;
+			}
+			else if (m_BuiltTLASInstanceCount != newInstanceCount)
+			{
+				m_BuiltTLASInstanceCount = newInstanceCount;
+				update = false;
 			}
 
 			if (m_pTLAS != nullptr)

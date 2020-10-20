@@ -131,7 +131,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
@@ -159,7 +159,7 @@ ESpecialObjectType LevelObjectCreator::CreateSpecialObjectFromPrefix(const Lambd
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name, specialObject.Prefix);
+		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name.c_str(), specialObject.Prefix.c_str());
 		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
 	}
 }

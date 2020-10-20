@@ -2,6 +2,7 @@
 #include "LambdaEngine.h"
 
 #include "ECS/System.h"
+#include "ECS/ComponentOwner.h"
 
 #include "Resources/Mesh.h"
 
@@ -14,7 +15,11 @@ namespace LambdaEngine
 	struct MeshComponent;
 	struct AnimationComponent;
 
-	class AnimationSystem : public System
+	/*
+	* AnimationSystem
+	*/
+
+	class AnimationSystem : public System, public ComponentOwner
 	{
 	public:
 		bool Init();
@@ -39,6 +44,8 @@ namespace LambdaEngine
 		void Animate(AnimationComponent& animation);
 		glm::mat4 ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices);
 
+		void OnAnimationComponentDelete(AnimationComponent& animation);
+
 		// TODO: Remove this since it is only for testing
 		bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
 
@@ -46,8 +53,9 @@ namespace LambdaEngine
 		static AnimationSystem& GetInstance();
 
 	private:
-		bool	m_ChangeState = false; // TODO: Remove this since it is only for testing
-		bool	m_HasInitClock = false;
+		bool	m_Walking		= false; // TODO: Remove this since it is only for testing
+		bool	m_Reload		= false; // TODO: Remove this since it is only for testing
+		bool	m_HasInitClock	= false;
 		Clock	m_Clock;
 		
 		IDVector		m_AnimationEntities;

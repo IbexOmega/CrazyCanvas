@@ -52,6 +52,8 @@ void main()
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
+	vec3 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
+
 	//0
 	out_Position				= vec4(in_WorldPosition, 0.0f);
 
@@ -60,7 +62,10 @@ void main()
 	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//2
-	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
+	vec3 storedMaterial			= vec3(
+									materialParameters.AO * sampledCombinedMaterial.b, 
+									mix(materialParameters.Roughness * sampledCombinedMaterial.r, 1.0f, paintMask.r), 
+									materialParameters.Metallic * sampledCombinedMaterial.g);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//3
