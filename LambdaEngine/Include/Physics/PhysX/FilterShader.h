@@ -12,12 +12,12 @@ physx::PxFilterFlags FilterShader(
 {
 	using namespace physx;
 
-	pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+	UNREFERENCED_VARIABLE(pConstantBlock);
+	UNREFERENCED_VARIABLE(constantBlockSize);
 
 	// Trigger the contact callback for pairs (A,B) where the filtermask of A contains the ID of B and vice versa
 	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
 	{
-
 		if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
 		{
 			// Call onTrigger when PxScene::fetchResults is called
@@ -26,11 +26,12 @@ physx::PxFilterFlags FilterShader(
 		else
 		{
 			// Call onContact when PxScene::fetchResults is called
-			pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
-			pairFlags |= PxPairFlag::eNOTIFY_CONTACT_POINTS;
-			pairFlags |= PxPairFlag::ePRE_SOLVER_VELOCITY;
+			pairFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::eNOTIFY_TOUCH_FOUND |
+						PxPairFlag::eNOTIFY_CONTACT_POINTS;
 		}
+
+		return PxFilterFlag::eDEFAULT;
 	}
 
-	return PxFilterFlag::eDEFAULT;
+	return PxFilterFlag::eSUPPRESS;
 }

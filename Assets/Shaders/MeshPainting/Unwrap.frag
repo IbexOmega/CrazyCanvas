@@ -29,12 +29,12 @@ void main()
 	vec3 normal 			= normalize(in_Normal);
 	vec3 targetPosition		= in_TargetPosition;
 	vec3 direction			= normalize(in_TargetDirection);
-	
+
 	//targetPosition = targetPosition - direction;
 
 	vec3 targetPosToWorldPos = worldPosition-targetPosition;
 
-	float valid = step(0.f, dot(normal, direction)); // Checks if looking from infront, else 0
+	float valid = step(0.f, dot(normal, -direction)); // Checks if looking from infront, else 0
 	float len = abs(dot(targetPosToWorldPos, direction));
 	valid *= 1.0f - step(PAINT_DEPTH, len);
 	vec3 projectedPosition = targetPosition + len * direction;
@@ -56,7 +56,7 @@ void main()
 	if(brushMask.a > EPSILON && maskUV.x > 0.f && maskUV.x < 1.f && maskUV.y > 0.f && maskUV.y < 1.f && valid > 0.5f)
 	{
 		// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
-		if (in_PaintMode == 1)	
+		if (in_PaintMode == 1)
 			out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
 		else
 			out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
