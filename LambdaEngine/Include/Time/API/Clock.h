@@ -7,12 +7,7 @@ namespace LambdaEngine
 	{
 	public:
 		Clock();
-		Clock(Clock&& other)		noexcept;
-		Clock(const Clock& other)	noexcept;
 		~Clock() = default;
-
-		Clock& operator=(Clock&& other)			noexcept;
-		Clock& operator=(const Clock& other)	noexcept;
 
 		/*
 		* Measures the deltatime between this and the latest call to Clock::Tick. It also updates the totalTime that the clock
@@ -32,9 +27,8 @@ namespace LambdaEngine
 		}
 
 	private:
-		uint64 m_LastTime = 0;
-
-		Timestamp m_TotalTime	= Timestamp(0);
-		Timestamp m_DeltaTime	= Timestamp(0);
+		uint64 m_LastTime;
+		Timestamp m_TotalTime;
+		Timestamp m_DeltaTime;
 	};
 }
