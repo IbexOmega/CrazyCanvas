@@ -38,20 +38,26 @@ namespace LambdaEngine
 	{
 		String		Prefix		= "";
 		String		Name		= "";
-		TArray<BoundingBox>	BoundingBoxes;
+		TArray<BoundingBox>		BoundingBoxes;
+		TArray<MeshComponent>	MeshComponents;
+		glm::vec3				DefaultPosition;
+		glm::quat				DefaultRotation;
+		glm::vec3				DefaultScale;
 	};
 
 	struct LoadedDirectionalLight
 	{
-		glm::vec4 ColorIntensity	= glm::vec4(0.0f);
-		glm::vec3 Direction			= glm::vec3(0.0f);
+		String		Name;
+		glm::vec4	ColorIntensity	= glm::vec4(0.0f);
+		glm::vec3	Direction		= glm::vec3(0.0f);
 	};
 
 	struct LoadedPointLight
 	{
-		glm::vec4 ColorIntensity	= glm::vec4(0.0f);
-		glm::vec3 Position			= glm::vec3(0.0f);
-		glm::vec3 Attenuation		= glm::vec3(1.0f, 0.09f, 0.032f);
+		String		Name;
+		glm::vec4	ColorIntensity	= glm::vec4(0.0f);
+		glm::vec3	Position		= glm::vec3(0.0f);
+		glm::vec3	Attenuation		= glm::vec3(1.0f, 0.09f, 0.032f);
 	};
 
 	/*	SceneLoadRequest contains information needed to begin loading a scene. It is also used to specify whether to
@@ -221,7 +227,7 @@ namespace LambdaEngine
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
 		static void LoadAnimation(SceneLoadingContext& context, const aiAnimation* pAnimationAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
-		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene);
+		static void ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene, const void* pParentTransform);
 
 		static bool CompileGLSLToSPIRV(const String& filepath, const char* pSource, FShaderStageFlags stage, TArray<uint32>* pSourceSPIRV, ShaderReflection* pReflection);
 		static bool CreateShaderReflection(glslang::TIntermediate* pIntermediate, FShaderStageFlags stage, ShaderReflection* pReflection);

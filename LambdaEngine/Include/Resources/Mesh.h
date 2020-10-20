@@ -161,6 +161,9 @@ namespace LambdaEngine
 		TArray<Meshlet>			Meshlets;
 		Skeleton*				pSkeleton = nullptr;
 		BoundingBox 			BoundingBox;
+		glm::vec3				DefaultPosition;
+		glm::quat				DefaultRotation;
+		glm::vec3				DefaultScale;
 	};
 
 	class MeshFactory

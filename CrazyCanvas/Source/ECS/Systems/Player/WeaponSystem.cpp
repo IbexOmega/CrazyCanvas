@@ -10,6 +10,7 @@
 #include "Physics/PhysicsEvents.h"
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
+#include "Physics/PhysicsGroups.h"
 
 bool WeaponSystem::Init()
 {
@@ -135,7 +136,7 @@ void WeaponSystem::Fire(WeaponComponent& weaponComponent, const glm::vec3& start
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {m_ProjectileMeshComponent}),
 		/* Shape Type */		EShapeType::SIMULATION,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_OTHERS | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_OTHERS | FCollisionGroup::COLLISION_GROUP_STATIC,
 		/* CollisionCallback */ std::bind_front(&WeaponSystem::OnProjectileHit, this),
 		/* Velocity */			initialVelocity
 	};

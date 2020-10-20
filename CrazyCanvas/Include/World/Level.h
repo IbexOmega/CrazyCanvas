@@ -52,6 +52,11 @@ public:
 
 	LambdaEngine::Entity* GetEntities(ESpecialObjectType specialObjectType, uint32& countOut);
 
+public:
+	//Static Wrappers for Collision Callbacks
+	static void OnFlagPickedUp();
+	static void OnFlagDropped();
+
 private:
 	virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
 

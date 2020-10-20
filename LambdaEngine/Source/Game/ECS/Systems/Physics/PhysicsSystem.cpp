@@ -355,7 +355,7 @@ namespace LambdaEngine
 	PxShape* PhysicsSystem::CreateCollisionBox(const CollisionCreateInfo& staticCollisionInfo) const
 	{
 		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
-		const glm::vec3 halfExtent = pMesh->BoundingBox.Dimensions * staticCollisionInfo.Scale.Scale / 2.0f;
+		const glm::vec3 halfExtent = pMesh->BoundingBox.Dimensions * staticCollisionInfo.Scale.Scale;
 		const PxVec3 halfExtentPX(halfExtent.x, halfExtent.y, halfExtent.z);
 
 		PxShape* pBoxShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentPX), *m_pMaterial);

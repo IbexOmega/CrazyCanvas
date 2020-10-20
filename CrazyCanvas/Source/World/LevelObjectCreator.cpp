@@ -1,4 +1,5 @@
 #include "World/LevelObjectCreator.h"
+#include "World/Level.h"
 
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/AudioDeviceFMOD.h"
@@ -33,6 +34,8 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Rendering/EntityMaskManager.h"
+
+#include "Physics/PhysicsGroups.h"
 
 bool LevelObjectCreator::Init()
 {
@@ -126,18 +129,24 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 {
 	using namespace LambdaEngine;
 
+	const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
+
+	LOG_WARNING("Static Mesh Pos: %f %f %f", pMesh->DefaultPosition.x, pMesh->DefaultPosition.y, pMesh->DefaultPosition.z);
+	LOG_WARNING("Static Mesh Rot: %f %f %f %f", pMesh->DefaultRotation.x, pMesh->DefaultRotation.y, pMesh->DefaultRotation.z, pMesh->DefaultRotation.w);
+	LOG_WARNING("Static Mesh Scl: %f %f %f", pMesh->DefaultScale.x, pMesh->DefaultScale.y, pMesh->DefaultScale.z);
 
 	Entity entity = pECS->CreateEntity();
 	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
-		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, translation }),
-		.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.0f) }),
-		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-		.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
+		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
+		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
+		.Mesh			= pECS->AddComponent<MeshComponent>(entity,		meshComponent),
 		.ShapeType		= EShapeType::SIMULATION,
 		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
 		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
@@ -195,11 +204,74 @@ ESpecialObjectType LevelObjectCreator::CreateSpawnpoint(const LambdaEngine::Spec
 
 ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
-	UNREFERENCED_VARIABLE(specialObject);
-	UNREFERENCED_VARIABLE(createdEntities);
-	UNREFERENCED_VARIABLE(translation);
+	using namespace LambdaEngine;
 
-	LOG_WARNING("[LevelObjectCreator]: Create Flag not implemented!");
+	if (specialObject.MeshComponents.GetSize() > 1)
+	{
+		LOG_WARNING("[LevelObjectCreator]: Special Object \"Flag\" has more than one Mesh Component, this is not currently supported");
+	}
+
+	const MeshComponent& meshComponent = specialObject.MeshComponents[0];
+
+	ECSCore* pECS					= ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	pECS->AddComponent<OffsetComponent>(entity, OffsetComponent{ .Offset = glm::vec3(0.0f)});
+	pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Attached = false });
+	const CollisionCreateInfo collisionCreateInfo =
+	{
+		.Entity				= entity,
+		.Position			= pECS->AddComponent<PositionComponent>(entity,		{ true, specialObject.DefaultPosition/* + translation + glm::vec3(0.0f, specialObject.DefaultScale.y * specialObject.BoundingBoxes[0].HalfExtent.y, 0.0f)*/}),
+		.Scale				= pECS->AddComponent<ScaleComponent>(entity,		{ true, specialObject.DefaultScale }),
+		.Rotation			= pECS->AddComponent<RotationComponent>(entity,		{ true, specialObject.DefaultRotation }),
+		.Mesh				= pECS->AddComponent<MeshComponent>(entity,			meshComponent),
+		.ShapeType			= EShapeType::TRIGGER,
+		.CollisionGroup		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+		.CollisionMask		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER, // Collide with any non-static object
+		.CollisionCallback	= [](const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)
+		{
+			ECSCore* pECS = ECSCore::GetInstance();
+
+			LOG_WARNING("FLAG COLLISION");
+
+			Entity flagEntity	= collisionInfo0.Entity;
+			Entity playerEntity	= collisionInfo1.Entity;
+
+			const MeshComponent& playerMeshComponent			= pECS->GetConstComponent<MeshComponent>(playerEntity);
+
+			StaticCollisionComponent& flagCollisionComponent	= pECS->GetComponent<StaticCollisionComponent>(flagEntity);
+			ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
+			OffsetComponent& flagOffsetComponent				= pECS->GetComponent<OffsetComponent>(flagEntity);
+
+			PxShape* pFlagShape;
+			flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
+			
+			//Update Collision Group
+			PxFilterData filterData;
+			filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
+			filterData.word1 = (PxU32)FCollisionGroup::COLLISION_GROUP_NONE;
+			pFlagShape->setSimulationFilterData(filterData);
+			pFlagShape->setQueryFilterData(filterData);
+
+			//Set Flag Carrier (Parent)
+			flagParentComponent.Attached	= true;
+			flagParentComponent.Parent		= playerEntity;
+
+			//Set Flag Offset
+			const Mesh* pMesh = ResourceManager::GetMesh(playerMeshComponent.MeshGUID);
+			flagOffsetComponent.Offset		= glm::vec3(0.0f, pMesh->BoundingBox.Dimensions.y / 2.0f, 0.0f);
+
+			Level::OnFlagPickedUp();
+		}
+	};
+
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+
+	createdEntities.PushBack(entity);
+
 	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG;
 }
 
@@ -235,8 +307,8 @@ bool LevelObjectCreator::CreatePlayer(
 		.Entity			= playerEntity,
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
-		.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+		.CollisionGroup	= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
@@ -276,7 +348,6 @@ bool LevelObjectCreator::CreatePlayer(
 
 			//Todo: Better implementation for this somehow maybe?
 			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshGUID);
-
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);

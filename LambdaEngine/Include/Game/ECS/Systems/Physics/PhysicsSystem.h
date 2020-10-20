@@ -23,13 +23,14 @@ namespace LambdaEngine
 		TRIGGER		// A trigger shape does not take part in the simulation, it only generates overlap reports
 	};
 
-	enum FCollisionGroup : uint32
+	typedef uint32 CollisionGroup;
+	enum FCollisionGroup : CollisionGroup
 	{
 		COLLISION_GROUP_NONE	= 0,
 		COLLISION_GROUP_STATIC	= (1 << 0),
 		COLLISION_GROUP_DYNAMIC	= (1 << 1),
-		COLLISION_GROUP_PLAYER	= (1 << 2),
-		COLLISION_GROUP_OTHERS	= (1 << 3), // Other players, not including oneself
+
+		COLLISION_GROUP_LAST	= COLLISION_GROUP_DYNAMIC,
 	};
 
 	// EntityCollisionInfo contains information on a colliding entity.
@@ -56,7 +57,7 @@ namespace LambdaEngine
 		const RotationComponent& Rotation;
 		const MeshComponent& Mesh;
 		EShapeType ShapeType;
-		FCollisionGroup CollisionGroup;				// The category of the object
+		CollisionGroup CollisionGroup;				// The category of the object
 		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
 		// Optional. The first collision info is on the entity whose callback is called.
 		std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
@@ -73,7 +74,7 @@ namespace LambdaEngine
 		Entity Entity;
 		const PositionComponent& Position;
 		const RotationComponent& Rotation;
-		FCollisionGroup CollisionGroup;		// The category of the object
+		CollisionGroup CollisionGroup;		// The category of the object
 		uint32 CollisionMask;				// Includes the masks of the groups this object collides with
 	};
 
