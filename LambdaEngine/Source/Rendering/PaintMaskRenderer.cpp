@@ -58,11 +58,6 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
 			m_pDeviceResourcesToDestroy.Clear();
 		}
-
-		for (auto& renderTarget : m_RenderTargets)
-		{
-			renderTarget.TextureView->Release();
-		}
 	}
 
 	bool PaintMaskRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
@@ -330,8 +325,8 @@ namespace LambdaEngine
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* textureView = extension.ppMipZeroTextureViews[0];
-							m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
+							TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+							m_RenderTargets.PushBack({ .pTextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
 				}
@@ -388,7 +383,7 @@ namespace LambdaEngine
 			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
 			uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
 			const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-			TextureView*	renderTarget		= renderTargetDesc.TextureView;
+			TextureView*	renderTarget		= renderTargetDesc.pTextureView;
 
 			uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
 			uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
