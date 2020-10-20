@@ -16,20 +16,11 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile)
+HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) : 
+	m_GUIState()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
-
-	Rectangle* pHpRect = FrameworkElement::FindName<Rectangle>("HEALTH_RECT");
-
-
-	m_Damage		= 0.0;
-	m_LifeMaxHeight = pHpRect->GetHeight();
-	m_Health		= 100.0;
-
-
-	pHpRect->SetHeight(0.0);
-	//hpRect->SetMaxHeight((float)m_LifeMaxHeight);
+	InitGUI();
 }
 
 
@@ -74,16 +65,16 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, cons
 bool HUDGUI::ApplyDamage(float damage)
 {
 	//Returns false if player is dead
-	float percent = (damage / m_LifeMaxHeight) * 100;
+	float percent = (damage / m_GUIState.LifeMaxHeight) * 100;
 
-	m_Damage += damage;
-	m_Health -= percent;
+	m_GUIState.Damage += damage;
+	m_GUIState.Health -= percent;
 
-	FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_Damage);
+	FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.Damage);
 
-	std::string life = std::to_string((int)m_Health) + " %";
+	std::string life = std::to_string((int)m_GUIState.Health) + " %";
 
-	if (m_Damage > m_LifeMaxHeight)
+	if (m_GUIState.Damage > m_GUIState.LifeMaxHeight)
 	{
 		life = "0 %";
 		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
@@ -92,4 +83,26 @@ bool HUDGUI::ApplyDamage(float damage)
 	FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
 
 	return true;
+}
+
+void HUDGUI::InitGUI()
+{
+	Rectangle* pHpRect = FrameworkElement::FindName<Rectangle>("HEALTH_RECT");
+
+	m_GUIState.Damage = 0.0;
+	m_GUIState.LifeMaxHeight = pHpRect->GetHeight();
+	m_GUIState.Health = 100.0;
+	m_GUIState.Ammo = 0.0;
+	m_GUIState.CurrentScore = 0;
+
+	pHpRect->SetHeight(0.0);
+
+	std::string scoreString;
+	std::string ammoString;
+
+	ammoString = std::to_string(m_GUIState.Ammo) + "/100";
+	scoreString = std::to_string(m_GUIState.CurrentScore) + "/5";
+
+	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(ammoString.c_str());
 }

@@ -19,6 +19,16 @@
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
+struct GameGUIState
+{
+	float LifeMaxHeight;
+	float Damage;
+	float Health;
+	float Ammo;
+
+	int8 CurrentScore;
+};
+
 class HUDGUI : public Noesis::Grid
 {
 
@@ -36,10 +46,10 @@ public:
 
 private:
 
+	void InitGUI();
+
 	NS_IMPLEMENT_INLINE_REFLECTION_(HUDGUI, Noesis::Grid)
 
 private:
-	float m_LifeMaxHeight;
-	float m_Damage;
-	float m_Health;
+	GameGUIState m_GUIState;
 };
