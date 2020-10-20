@@ -97,14 +97,14 @@ namespace LambdaEngine
 		ParticleEmitterComponent emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
 
 		ParticleEmitterInstance instance = {};
-		instance.Position			= positionComp.Position;
-		instance.Rotation			= rotationComp.Quaternion;
-		instance.ParticleChunk.Size = emitterComp.ParticleCount;
-		instance.Angle				= emitterComp.Angle;
-		instance.Velocity			= emitterComp.Velocity;
-		instance.Acceleration		= emitterComp.Acceleration;
-		instance.LifeTime			= emitterComp.LifeTime;
-		instance.ParticleRadius		= emitterComp.ParticleRadius;
+		instance.Position				= positionComp.Position;
+		instance.Rotation				= rotationComp.Quaternion;
+		instance.ParticleChunk.Size		= emitterComp.ParticleCount;
+		instance.Angle					= emitterComp.Angle;
+		instance.Velocity				= emitterComp.Velocity;
+		instance.Acceleration			= emitterComp.Acceleration;
+		instance.LifeTime				= emitterComp.LifeTime;
+		instance.ParticleRadius			= emitterComp.ParticleRadius;
 
 		GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
 		if (atlasGUID == GUID_NONE)
@@ -114,9 +114,11 @@ namespace LambdaEngine
 			CreateAtlasTextureInstance(atlasGUID, emitterComp.AtlasTileSize);
 		}
 
-		instance.AnimationCount = emitterComp.AnimationCount;
-		instance.AtlasIndex		= m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
-		instance.TileIndex		= emitterComp.TextureIndex;
+		instance.AnimationCount			= emitterComp.AnimationCount;
+		instance.AtlasIndex				= m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
+		instance.TileIndex				= emitterComp.TileIndex;
+		instance.AnimationCount			= emitterComp.AnimationCount;
+		instance.FirstAnimationIndex	= emitterComp.FirstAnimationIndex;
 
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
@@ -126,7 +128,7 @@ namespace LambdaEngine
 				return;
 			}
 		}
-	
+
 		if (emitterComp.Active)
 		{
 			instance.IndirectDataIndex = m_IndirectData.GetSize();
@@ -304,8 +306,9 @@ namespace LambdaEngine
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.Radius = emitterInstance.ParticleRadius;
 			particle.AtlasIndex = emitterInstance.AtlasIndex;
-			particle.TileIndex	= emitterInstance.TileIndex;
+			particle.TileIndex = emitterInstance.TileIndex;
 			particle.AnimationCount = emitterInstance.AnimationCount;
+			particle.FirstAnimationIndex = emitterInstance.FirstAnimationIndex;
 
 			if (allocateParticles)
 			{

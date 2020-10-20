@@ -7,7 +7,6 @@
 
 namespace LambdaEngine
 {
-
 	struct DescriptorBindingData
 	{
 		const Buffer* pBuffers	= nullptr;
