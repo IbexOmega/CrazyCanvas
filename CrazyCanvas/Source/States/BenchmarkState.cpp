@@ -33,6 +33,7 @@
 #include <rapidjson/writer.h>
 
 #include "World/LevelManager.h"
+#include "World/Level.h"
 
 BenchmarkState::~BenchmarkState()
 {
@@ -109,7 +110,7 @@ void BenchmarkState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
+		robotAnimationComp.pGraph			= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
@@ -123,7 +124,7 @@ void BenchmarkState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
-		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
+		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -133,7 +134,7 @@ void BenchmarkState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
-		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
+		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -144,12 +145,12 @@ void BenchmarkState::Init()
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
-		AnimationGraph animationGraph;
-		animationGraph.AddState(AnimationState("running", running[0]));
-		animationGraph.AddState(AnimationState("walking", animations[0]));
-		animationGraph.AddTransition(Transition("running", "walking", 0.2));
-		animationGraph.AddTransition(Transition("walking", "running", 0.5));
-		robotAnimationComp.Graph = animationGraph;
+		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("walking", animations[0]));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking", 0.2));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running", 0.5));
+		robotAnimationComp.pGraph = pAnimationGraph;
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, position });
@@ -160,7 +161,7 @@ void BenchmarkState::Init()
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
-		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc =
 		{
 				.pName = "RobotSoundInstance",
