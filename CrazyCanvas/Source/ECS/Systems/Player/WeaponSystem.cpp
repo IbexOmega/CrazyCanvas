@@ -42,7 +42,7 @@ bool WeaponSystem::Init()
 		};
 		systemReg.SubscriberRegistration.AdditionalAccesses =
 		{
-			{RW, DynamicCollisionComponent::Type()}, {RW, MeshComponent::Type()}, {RW, TeamComponent::Type()}
+			{RW, DynamicCollisionComponent::Type()}, {RW, MeshComponent::Type()}, {RW, TeamComponent::Type()}, { RW, ParticleEmitterComponent::Type() }
 		};
 		systemReg.Phase = 1;
 
@@ -80,6 +80,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+	ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECS->GetComponentArray<ParticleEmitterComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
@@ -103,6 +104,18 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 
 			Fire(weaponComponent, positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f), rotationComp.Quaternion, velocityComp.Velocity);
+		}
+
+		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK) && !onCooldown)
+		{
+			if (pEmitterComponents->HasComponent(playerEntity))
+			{
+				ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(playerEntity);
+
+				emitterComp.Active = true;
+
+				weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
+			}
 		}
 	}
 }

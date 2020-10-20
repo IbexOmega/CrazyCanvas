@@ -19,6 +19,11 @@ layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer ParticleInsta
 	SParticle Val[]; 
 } b_ParticleInstances;
 
+layout(binding = 2, set = DRAW_SET_INDEX) restrict readonly buffer EmitterInstances
+{ 
+	SEmitter Val[]; 
+} b_EmitterInstances;
+
 layout(binding = 0, set = 3) restrict readonly buffer Atlases
 { 
 	SAtlasData Val[]; 
@@ -30,10 +35,11 @@ layout(location = 1) out flat uint out_AtlasIndex;
 void main()
 {
 	SParticle 		particle 	= b_ParticleInstances.Val[gl_InstanceIndex];
+	SEmitter 		emitter 	= b_EmitterInstances.Val[particle.EmitterIndex];
 	SParticleVertex vertex 		= b_Vertices.Val[gl_VertexIndex];
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
-	SAtlasData 		atlasData 	= b_Atlases.Val[particle.AtlasIndex];
-	out_AtlasIndex = particle.AtlasIndex;
+	SAtlasData 		atlasData 	= b_Atlases.Val[emitter.AtlasIndex];
+	out_AtlasIndex = emitter.AtlasIndex;
 
 	// Hardcoded for now
 	vec2 uv = (vertex.Position.xy + 1.f) * 0.5f;
@@ -46,7 +52,7 @@ void main()
 	vec3 camUpWorldSpace 	= vec3(frameBuffer.View[0][1], frameBuffer.View[1][1], frameBuffer.View[2][1]);
 
 	vec3 vPosition = camUpWorldSpace * vertex.Position.y + camRightWorldSpace * vertex.Position.x;
-	vPosition *= particle.Radius;
+	vPosition *= emitter.Radius;
 
 	gl_Position = frameBuffer.Projection * frameBuffer.View * particle.Transform * vec4(vPosition, 1.0);
 }
