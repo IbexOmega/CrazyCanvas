@@ -45,7 +45,7 @@ void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
 	m_WeaponSystem.Init();
-	m_MultiplayerClient.Init();
+	m_MultiplayerClient.InitInternal();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -232,10 +232,10 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
-	m_MultiplayerClient.TickMainThread(delta);
+	m_MultiplayerClient.TickMainThreadInternal(delta);
 }
 
 void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
 {
-	m_MultiplayerClient.FixedTickMainThread(delta);
+	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }

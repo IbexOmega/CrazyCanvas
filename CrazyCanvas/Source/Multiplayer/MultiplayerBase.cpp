@@ -6,17 +6,19 @@ MultiplayerBase::MultiplayerBase() :
 
 }
 
-void MultiplayerBase::Init()
+void MultiplayerBase::InitInternal()
 {
 	m_PacketDecoderSystem.Init();
+	Init();
 }
 
-void MultiplayerBase::TickMainThread(LambdaEngine::Timestamp deltaTime)
+void MultiplayerBase::TickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
-
+	TickMainThread(deltaTime);
 }
 
-void MultiplayerBase::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
+void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
-
+	FixedTickMainThread(deltaTime);
+	m_PacketDecoderSystem.FixedTickMainThread(deltaTime);
 }

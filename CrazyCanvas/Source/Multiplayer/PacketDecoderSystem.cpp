@@ -4,12 +4,14 @@
 
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
-#include "ECS/ECSCore.h"
 
-#include "ECS/Components/Multiplayer/PacketPlayerActionComponent.h"
+#include "ECS/ECSCore.h"
+#include "ECS/ComponentArray.h"
+
 #include "ECS/Components/Multiplayer/PacketPlayerActionResponseComponent.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
+
 
 using namespace LambdaEngine;
 
@@ -28,18 +30,27 @@ void PacketDecoderSystem::Init()
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
-		{
-			.pSubscriber = &m_PlayerEntities,
-			.ComponentAccesses =
-			{
-				{NDA, NetworkComponent::Type()},
-				{RW, PacketPlayerActionComponent::Type()},
-			}
-		}
+		RegisterPacketType<PlayerAction>()
 	};
 	systemReg.Phase = 0;
 
 	RegisterSystem(systemReg);
+}
+
+void PacketDecoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
+{
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	for (auto& pair : m_Entities)
+	{
+		IComponentArray* pComponents = pECS->GetComponentArray(pair.first);
+		for (Entity entity : pair.second)
+		{
+			void* pComponent = pComponents->GetRawData(entity);
+			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
+			pPacketComponent->ClearPacketsReceived();
+		}
+	}
 }
 
 bool PacketDecoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
@@ -60,9 +71,6 @@ bool PacketDecoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEve
 			bool isFirstPacketOfTick = false;
 			PacketPlayerActionComponent& pPacketComponents = pECS->GetComponent<PacketPlayerActionComponent>(entity, isFirstPacketOfTick);
 
-			if (isFirstPacketOfTick)
-				pPacketComponents.Packets.Clear();
-
 			pPacketComponents.Packets.PushBack(packet);
 		}
 	}
@@ -79,13 +87,6 @@ bool PacketDecoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEve
 			bool isFirstPacketOfTick = false;
 			PacketPlayerActionResponseComponent& pPacketComponents = pECS->GetComponent<PacketPlayerActionResponseComponent>(entity, isFirstPacketOfTick);
 
-			if (isFirstPacketOfTick)
-			{
-				LOG_WARNING("Clear");
-				pPacketComponents.Packets.Clear();
-			}
-
-			LOG_WARNING("Adding %d", packet.SimulationTick);
 			pPacketComponents.Packets.PushBack(packet);
 		}
 	}

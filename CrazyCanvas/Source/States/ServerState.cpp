@@ -54,7 +54,7 @@ void ServerState::Init()
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	m_MultiplayerServer.Init();
+	m_MultiplayerServer.InitInternal();
 
 	m_ServerName = "Crazy Canvas Server";
 
@@ -135,11 +135,11 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 void ServerState::Tick(Timestamp delta)
 {
-	m_MultiplayerServer.TickMainThread(delta);
+	m_MultiplayerServer.TickMainThreadInternal(delta);
 }
 
 void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 {
-	m_MultiplayerServer.FixedTickMainThread(delta);
+	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 

@@ -44,7 +44,7 @@ namespace LambdaEngine
 
 		// Fetch a reference to a component for a specific entity.
 		template<typename Comp>
-		Comp& GetComponent(Entity entity, bool& wasDirty = ComponentArray<Comp>::s_DummyFlag);
+		Comp& GetComponent(Entity entity);
 
 		// Fetch a const reference to a component for a specific entity.
 		template<typename Comp>
@@ -57,6 +57,12 @@ namespace LambdaEngine
 		// Fetch a const pointer to an array containing all components of a specific type.
 		template<typename Comp>
 		const ComponentArray<Comp>* GetComponentArray() const;
+
+		// Fetch a pointer to an array containing all components of a specific type.
+		IComponentArray* GetComponentArray(const ComponentType* pComponentType);
+
+		// Fetch a const pointer to an array containing all components of a specific type.
+		const IComponentArray* GetComponentArray(const ComponentType* pComponentType) const;
 
 		// RemoveComponent enqueues the removal of a component, which is performed at the end of the current/next frame.
 		template<typename Comp>
@@ -153,9 +159,9 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
-	inline Comp& ECSCore::GetComponent(Entity entity, bool& wasDirty)
+	inline Comp& ECSCore::GetComponent(Entity entity)
 	{
-		return m_ComponentStorage.GetComponent<Comp>(entity, wasDirty);
+		return m_ComponentStorage.GetComponent<Comp>(entity);
 	}
 
 	template<typename Comp>

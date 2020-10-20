@@ -197,7 +197,6 @@ void PlayerLocal::Reconcile()
 
 	for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
 	{
-		LOG_WARNING("Reconcile %d", m_FramesProcessedByServer[i].SimulationTick);
 		ASSERT(m_FramesProcessedByServer[i].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 
 		if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[i]))
@@ -207,26 +206,13 @@ void PlayerLocal::Reconcile()
 
 		m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
 	}
-
-	/*while (!m_FramesProcessedByServer.IsEmpty())
-	{
-		ASSERT(m_FramesProcessedByServer[0].SimulationTick == m_FramesToReconcile[0].SimulationTick);
-
-		if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[0]))
-		{
-			ReplayGameStatesBasedOnServerGameState(m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[0]);
-		}
-
-		m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
-		m_FramesProcessedByServer.Erase(m_FramesProcessedByServer.Begin());
-	}*/
 }
 
 void PlayerLocal::ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PacketPlayerActionResponseComponent::Packet& gameStateServer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
+	Entity entityPlayer = MultiplayerUtils::GetEntityPlayer(m_pClient);
 
 	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
 	ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();

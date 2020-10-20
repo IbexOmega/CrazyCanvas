@@ -234,13 +234,11 @@ namespace LambdaEngine
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		LOG_WARNING("BEGIN OF FRAME");
 		Game::Get().FixedTick(delta);
 		NetworkUtils::FixedTick(delta);
 		StateManager::GetInstance()->FixedTick(delta);
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
-		LOG_WARNING("END OF FRAME");
 	}
 
 	bool EngineLoop::PreInit(const argh::parser& flagParser)

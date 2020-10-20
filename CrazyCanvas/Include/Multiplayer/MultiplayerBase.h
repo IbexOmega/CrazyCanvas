@@ -10,9 +10,14 @@ class MultiplayerBase
 public:
 	DECL_ABSTRACT_CLASS_NO_DEFAULT(MultiplayerBase);
 
-	virtual void Init();
-	virtual void TickMainThread(LambdaEngine::Timestamp deltaTime);
-	virtual void FixedTickMainThread(LambdaEngine::Timestamp deltaTime);
+	void InitInternal();
+	void TickMainThreadInternal(LambdaEngine::Timestamp deltaTime);
+	void FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime);
+
+protected:
+	virtual void Init() = 0;
+	virtual void TickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
+	virtual void FixedTickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
 
 private:
 	PacketDecoderSystem m_PacketDecoderSystem;

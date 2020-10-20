@@ -6,9 +6,11 @@ namespace LambdaEngine
 		m_SizeOfBuffer(0),
 		m_pBuffer(),
 		m_Header(),
-		m_IsBorrowed(false),
 		m_Salt(0),
 		m_ReadHead(0)
+#ifndef LAMBDA_CONFIG_PRODUCTION
+		, m_IsBorrowed(false)
+#endif
 	{
 
 	}
