@@ -131,7 +131,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
@@ -159,7 +159,7 @@ ESpecialObjectType LevelObjectCreator::CreateSpecialObjectFromPrefix(const Lambd
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name, specialObject.Prefix);
+		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name.c_str(), specialObject.Prefix.c_str());
 		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
 	}
 }
@@ -230,19 +230,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	//pECS->AddComponent<ParticleEmitterComponent>(playerEntity, ParticleEmitterComponent{
-	//.Active = false,
-	//.OneTime = true,
-	//.Burst = true,
-	//.ParticleCount = 64,
-	//.EmitterShape = EEmitterShape::CONE,
-	//.Angle = 25.f,
-	//.Velocity = 2.0,
-	//.Acceleration = -1.0,
-	//.LifeTime = 3.0f,
-	//.ParticleRadius = 0.05f,
-	//	}
-	//);
 
 	const CharacterColliderCreateInfo colliderInfo =
 	{
@@ -259,7 +246,23 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
 	Entity weaponEntity = pECS->CreateEntity();
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0, 1.8f, 0.0) });
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
+	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
+	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
+	pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
+		.Active = true,
+		.OneTime = false,
+		.Burst = true,
+		.ParticleCount = 32,
+		.EmitterShape = EEmitterShape::CONE,
+		.Angle = 25.f,
+		.Velocity = 2.0,
+		.Acceleration = -1.0,
+		.LifeTime = 3.0f,
+		.ParticleRadius = 0.1f,
+		}
+	);
 
 	if (!MultiplayerUtils::IsServer())
 	{

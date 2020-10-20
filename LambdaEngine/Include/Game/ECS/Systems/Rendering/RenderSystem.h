@@ -381,7 +381,8 @@ namespace LambdaEngine
 		// Ray Tracing
 		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
 		Buffer*						m_pCompleteInstanceBuffer		= nullptr;
-		uint32						m_MaxInstances					= 0;
+		uint32						m_MaxSupportedTLASInstances		= 0;
+		uint32						m_BuiltTLASInstanceCount		= 0;
 		AccelerationStructure*		m_pTLAS							= nullptr;
 		TArray<PendingBufferUpdate>	m_CompleteInstanceBufferPendingCopies;
 		TArray<SBTRecord>			m_SBTRecords;

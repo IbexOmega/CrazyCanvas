@@ -26,7 +26,7 @@ namespace LambdaEngine
                 if (pJob)
                 {
                     RegisterJobExecution(*pJob);
-                    m_ThreadHandles.PushBack(ThreadPool::Execute(std::bind(&JobScheduler::ExecuteJob, this, *pJob)));
+                    m_ThreadHandles.PushBack(ThreadPool::Execute(std::bind_front(&JobScheduler::ExecuteJob, this, *pJob)));
                 }
             } while(pJob);
 

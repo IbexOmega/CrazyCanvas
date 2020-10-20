@@ -38,7 +38,7 @@ namespace LambdaEngine
 		drawArgExtensionData.TextureCount = 1;
 		drawArgExtensionData.ppTextures[0]		= meshPaintComponent.pTexture;
 		drawArgExtensionData.ppTextureViews[0]	= meshPaintComponent.pTextureView;
-		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
+		drawArgExtensionData.ppSamplers[0]		= Sampler::GetNearestSampler();
 
 		TextureViewDesc mipZeroTextureViewDesc = {};
 		mipZeroTextureViewDesc.DebugName		= textureName + " Mip Zero Texture View";

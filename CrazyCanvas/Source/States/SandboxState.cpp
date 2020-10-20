@@ -1,7 +1,6 @@
 #include "States/SandboxState.h"
 
 #include "Resources/ResourceManager.h"
-#include "Resources/AnimationGraph.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -40,6 +39,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphEditor.h"
+#include "Rendering/Animation/AnimationGraph.h"
 
 #include "Math/Random.h"
 
@@ -109,7 +109,9 @@ void SandboxState::Init()
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
 
 		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
+		TArray<GUID_Lambda> walking		= ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
 		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
+		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Robot/Reloading.fbx");
 
 		MaterialProperties materialProperties;
 		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -130,7 +132,7 @@ void SandboxState::Init()
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Graph			= AnimationGraph(AnimationState("thriller", thriller[0]));
+		robotAnimationComp.pGraph			= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
@@ -143,9 +145,10 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
-		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
+		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 
 		entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -157,7 +160,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
-		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
+		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
 
 		entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -170,12 +173,26 @@ void SandboxState::Init()
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
-		AnimationGraph animationGraph;
-		animationGraph.AddState(AnimationState("running", running[0]));
-		animationGraph.AddState(AnimationState("walking", animations[0]));
-		animationGraph.AddTransition(Transition("running", "walking", 0.2));
-		animationGraph.AddTransition(Transition("walking", "running", 0.5));
-		robotAnimationComp.Graph = animationGraph;
+		AnimationState* pReloadState = DBG_NEW AnimationState("reload");
+		ClipNode* pReload = pReloadState->CreateClipNode(reload[0], 1.25, true);
+		pReload->AddTrigger(ClipTrigger(0.9, [](const ClipNode& clip, AnimationGraph& graph)
+			{
+				graph.TransitionToState("running");
+			}));
+
+		ClipNode*	pRunning = pReloadState->CreateClipNode(running[0]);
+		BlendNode*	pBlendNode = pReloadState->CreateBlendNode(pRunning, pReload, BlendInfo(0.8f, "mixamorig:Spine"));
+		pReloadState->SetOutputNode(pBlendNode);
+
+		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+		pAnimationGraph->AddState(pReloadState);
+		pAnimationGraph->AddState(DBG_NEW AnimationState("walking", walking[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running", 0.1));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking", 0.1));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "reload", 0.1));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("reload", "running", 0.0));
+		robotAnimationComp.pGraph = pAnimationGraph;
 
 		entity = pECS->CreateEntity();
 		m_Entities.PushBack(entity);
@@ -188,7 +205,7 @@ void SandboxState::Init()
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
-		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
+		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc =
 		{
 			.pName = "RobotSoundInstance",
@@ -276,7 +293,9 @@ void SandboxState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		ResourceManager::LoadMeshFromFile("Gun/Gun.glb");
 	}
+
 
 	if constexpr (IMGUI_ENABLED)
 	{
@@ -559,7 +578,7 @@ bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& eve
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		if (animationsExist)
 		{
-			robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
+			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 		}
 
 		CreatePlayerDesc createPlayerDesc =
