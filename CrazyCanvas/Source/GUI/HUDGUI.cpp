@@ -10,6 +10,9 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
+
 #include <string>
 
 
@@ -42,6 +45,7 @@ void HUDGUI::OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	UpdateAmmo();
 }
 
 void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -49,9 +53,8 @@ void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	UpdateScore();
 }
-
-
 
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
@@ -67,14 +70,15 @@ bool HUDGUI::ApplyDamage(float damage)
 	//Returns false if player is dead
 	float percent = (damage / m_GUIState.LifeMaxHeight) * 100;
 
-	m_GUIState.Damage += damage;
+	m_GUIState.DamageTaken += damage;
 	m_GUIState.Health -= percent;
 
-	FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.Damage);
+	FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
+	LOG_MESSAGE("Height: %f", FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->GetHeight());
 
 	std::string life = std::to_string((int)m_GUIState.Health) + " %";
 
-	if (m_GUIState.Damage > m_GUIState.LifeMaxHeight)
+	if (m_GUIState.DamageTaken > m_GUIState.LifeMaxHeight)
 	{
 		life = "0 %";
 		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
@@ -85,14 +89,52 @@ bool HUDGUI::ApplyDamage(float damage)
 	return true;
 }
 
+bool HUDGUI::UpdateScore()
+{
+	//Returns false if game Over
+	std::string scoreString;
+
+	m_GUIState.CurrentScore++;
+
+	scoreString = std::to_string(m_GUIState.CurrentScore) + "/" + std::to_string(MAX_SCORE);
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+
+	if (m_GUIState.CurrentScore == MAX_SCORE)
+	{
+		m_GUIState.CurrentScore = 0;
+		return false;
+	}
+
+	return true;
+}
+
+bool HUDGUI::UpdateAmmo()
+{
+	//Returns false if Out Of Ammo
+	std::string ammoString;
+
+	m_GUIState.Ammo--;
+
+	ammoString = std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)MAX_AMMO);
+	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
+
+	if (m_GUIState.Ammo <= 0.0)
+	{
+		m_GUIState.Ammo = 100.0;
+		return false;
+	}
+
+	return true;
+}
+
 void HUDGUI::InitGUI()
 {
 	Rectangle* pHpRect = FrameworkElement::FindName<Rectangle>("HEALTH_RECT");
 
-	m_GUIState.Damage = 0.0;
+	m_GUIState.DamageTaken = 0.0;
 	m_GUIState.LifeMaxHeight = pHpRect->GetHeight();
 	m_GUIState.Health = 100.0;
-	m_GUIState.Ammo = 0.0;
+	m_GUIState.Ammo = MAX_AMMO;
 	m_GUIState.CurrentScore = 0;
 
 	pHpRect->SetHeight(0.0);
@@ -100,9 +142,9 @@ void HUDGUI::InitGUI()
 	std::string scoreString;
 	std::string ammoString;
 
-	ammoString = std::to_string(m_GUIState.Ammo) + "/100";
-	scoreString = std::to_string(m_GUIState.CurrentScore) + "/5";
+	ammoString = std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)MAX_AMMO);
+	scoreString = std::to_string(m_GUIState.CurrentScore) + "/" + std::to_string(MAX_SCORE);
 
 	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(ammoString.c_str());
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
 }

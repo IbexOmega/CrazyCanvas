@@ -19,10 +19,13 @@
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
+#define MAX_SCORE 5
+#define MAX_AMMO 100.0
+
 struct GameGUIState
 {
 	float LifeMaxHeight;
-	float Damage;
+	float DamageTaken;
 	float Health;
 	float Ammo;
 
@@ -43,6 +46,8 @@ public:
 	bool ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler) override;
 
 	bool ApplyDamage(float damage);
+	bool UpdateScore();
+	bool UpdateAmmo();
 
 private:
 

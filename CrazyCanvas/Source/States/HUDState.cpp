@@ -3,6 +3,9 @@
 #include "Engine/EngineConfig.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
+
 
 HUDState::~HUDState()
 {
@@ -34,5 +37,6 @@ void HUDState::Init()
 
 void HUDState::Tick(LambdaEngine::Timestamp delta)
 {
-
+	if (LambdaEngine::Input::GetMouseState().IsButtonPressed(LambdaEngine::EMouseButton::MOUSE_BUTTON_FORWARD))
+		m_HUDGUI->UpdateAmmo();
 }

@@ -41,7 +41,7 @@
 
     <TextBlock x:Name="SCORE_DISPLAY"  Grid.Column="5" Grid.Row="0" HorizontalAlignment="Center"  TextWrapping="Wrap" Text="100%" VerticalAlignment="Center" Foreground="White" FontSize="48" Margin="0"/>
 
-    <Rectangle x:Name="HEALTH_RECT" Grid.Column="5" Grid.Row="1" Grid.RowSpan="1" Fill="#FFF03F0C" Margin="150,0,150,10" VerticalAlignment="Bottom" Height="88"/>
+    <Rectangle x:Name="HEALTH_RECT" Grid.Column="5" Grid.Row="1" Fill="#FFF03F0C" Margin="52,0,52,18" VerticalAlignment="Bottom" Height="72"/>
     <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="6" Grid.Row="1" Grid.RowSpan="1" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="100%" VerticalAlignment="Top" Foreground="White" FontSize="16" Margin="0,0,75,0"/>
 
     <Image Source="Health.png" Grid.Column="5" Grid.Row="1" Grid.RowSpan="1" Margin="42,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
