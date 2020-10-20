@@ -38,14 +38,26 @@ namespace LambdaEngine
 
 	bool LambdaEngine::ParticleUpdater::CreatePipelineLayout()
 	{
-		DescriptorBindingDesc instanceBindingDesc = {};
-		instanceBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		instanceBindingDesc.DescriptorCount = 1;
-		instanceBindingDesc.Binding = 0;
-		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		DescriptorBindingDesc instanceBindingDesc0 = {};
+		instanceBindingDesc0.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		instanceBindingDesc0.DescriptorCount = 1;
+		instanceBindingDesc0.Binding = 0;
+		instanceBindingDesc0.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		DescriptorBindingDesc instanceBindingDesc1 = {};
+		instanceBindingDesc1.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		instanceBindingDesc1.DescriptorCount = 1;
+		instanceBindingDesc1.Binding = 1;
+		instanceBindingDesc1.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		DescriptorBindingDesc instanceBindingDesc2 = {};
+		instanceBindingDesc2.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		instanceBindingDesc2.DescriptorCount = 1;
+		instanceBindingDesc2.Binding = 2;
+		instanceBindingDesc2.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { instanceBindingDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { instanceBindingDesc0, instanceBindingDesc1, instanceBindingDesc2 };
 
 		ConstantRangeDesc constantRange = {};
 		constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
@@ -69,7 +81,7 @@ namespace LambdaEngine
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 0;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 1;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 3;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
@@ -223,8 +235,9 @@ namespace LambdaEngine
 		if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
 		{
 			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 0U;
 
-			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_InstanceDescriptorSet != nullptr)
 			{
 				m_InstanceDescriptorSet->WriteBufferDescriptors(
@@ -232,6 +245,50 @@ namespace LambdaEngine
 					pOffsets,
 					pSizesInBytes,
 					0,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
+		else if (resourceName == SCENE_EMITTER_INSTANCE_BUFFER)
+		{
+			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 1U;
+
+			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Emitter Instance Buffer Descriptor Set 0 Binding 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_InstanceDescriptorSet != nullptr)
+			{
+				m_InstanceDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					setBinding,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
+		else if (resourceName == SCENE_EMITTER_TRANSFORM_BUFFER)
+		{
+			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 2U;
+
+			m_InstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Emitter Transform Buffer Descriptor Set 0 Binding 2", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_InstanceDescriptorSet != nullptr)
+			{
+				m_InstanceDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					setBinding,
 					count,
 					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 				);

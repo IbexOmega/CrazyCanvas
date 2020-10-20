@@ -3,6 +3,8 @@
 #include "ECS/Component.h"
 #include "ECS/Entity.h"
 
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+
 struct WeaponComponent
 {
 	DECL_COMPONENT(WeaponComponent);
