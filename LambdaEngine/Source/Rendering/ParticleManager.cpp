@@ -99,9 +99,13 @@ namespace LambdaEngine
 	void ParticleManager::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
 	{
 		auto emitterElem = m_ActiveEmitters.find(entity);
-		if(emitterElem == m_ActiveEmitters.end())
+		if(emitterElem != m_ActiveEmitters.end())
 		{
+			ParticleEmitterInstance& emitter = emitterElem->second;
+			uint32 dataIndex = emitter.DataIndex;
 
+			m_EmitterTransformData[dataIndex] = glm::translate(positionComp.Position) * glm::toMat4(rotationComp.Quaternion);
+			m_DirtyTransformBuffer = true;
 		}
 	}
 
@@ -132,6 +136,27 @@ namespace LambdaEngine
 			CreateAtlasTextureInstance(atlasGUID, emitterComp.AtlasTileSize);
 		}
 
+		// Set data index before creation of particles so each particle now which emitter they belong to
+		instance.DataIndex = m_IndirectData.GetSize();
+
+		if (emitterComp.EmitterShape == EEmitterShape::CONE)
+		{
+			if (!CreateConeParticleEmitter(instance))
+			{
+				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				return;
+			}
+		}
+
+		if (emitterComp.EmitterShape == EEmitterShape::TUBE)
+		{
+			if (!CreateTubeParticleEmitter(instance))
+			{
+				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				return;
+			}
+		}
+
 		instance.AnimationCount			= emitterComp.AnimationCount;
 		instance.AtlasIndex				= m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
 		instance.TileIndex				= emitterComp.TileIndex;
@@ -140,7 +165,6 @@ namespace LambdaEngine
 
 		if (emitterComp.Active)
 		{
-			instance.DataIndex = m_IndirectData.GetSize();
 			m_DataToEntity[instance.DataIndex] = entity;
 
 			// Create IndirectDrawData
@@ -163,7 +187,7 @@ namespace LambdaEngine
 			m_EmitterData.PushBack(emitterData);
 
 			// Create Transform
-			glm::mat4	emitterTransform = glm::toMat4(instance.Rotation) * glm::translate(instance.Position);
+			glm::mat4 emitterTransform = glm::translate(instance.Position) * glm::toMat4(instance.Rotation);
 			m_EmitterTransformData.PushBack(emitterTransform);
 
 			m_ActiveEmitters[entity] = instance;
@@ -179,23 +203,6 @@ namespace LambdaEngine
 		}
 
 
-		if (emitterComp.EmitterShape == EEmitterShape::CONE)
-		{
-			if (!CreateConeParticleEmitter(instance))
-			{
-				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
-				return;
-			}
-		}
-
-		if (emitterComp.EmitterShape == EEmitterShape::TUBE)
-		{
-			if (!CreateTubeParticleEmitter(instance))
-			{
-				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
-				return;
-			}
-		}
 	}
 
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
@@ -422,7 +429,7 @@ namespace LambdaEngine
 	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
 	{
 		Buffer* pStagingBuffer = pStagingBuffers[m_ModFrameIndex];
-		bool shouldUpdate = true;
+		bool needUpdate = true;
 
 		if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < size)
 		{
@@ -456,11 +463,11 @@ namespace LambdaEngine
 		}
 		else
 		{
-			shouldUpdate = false; // Only update resource when buffer is recreated
+			needUpdate = false; // Only update resource when buffer is recreated
 		}
 
 		pCommandList->CopyBuffer(pStagingBuffer, 0, (*pBuffer), 0, size);
-		return shouldUpdate;
+		return needUpdate;
 	}
 
 	bool ParticleManager::DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance)
