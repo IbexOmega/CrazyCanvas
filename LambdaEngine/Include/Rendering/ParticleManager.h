@@ -50,10 +50,8 @@ namespace LambdaEngine
 		float Radius;
 		glm::vec3 Acceleration;
 		uint32 TileIndex;
+		glm::vec3 StartPosition;
 		uint32 EmitterIndex;
-		uint32 padding0			= 0;
-		uint32 padding1			= 0;
-		uint32 padding2			= 0;
 	};
 
 	struct SEmitter
@@ -117,6 +115,7 @@ namespace LambdaEngine
 		bool CreateAtlasTextureInstance(GUID_Lambda atlasGUID, uint32 tileSize);
 
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
+		bool CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance);
 		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
 		bool DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance);

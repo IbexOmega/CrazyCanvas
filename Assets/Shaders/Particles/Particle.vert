@@ -31,6 +31,7 @@ layout(binding = 0, set = 3) restrict readonly buffer Atlases
 
 layout(location = 0) out vec2 out_TexCoords;
 layout(location = 1) out flat uint out_AtlasIndex;
+layout(location = 2) out vec4 in_EmitterColor;
 
 void main()
 {
@@ -40,6 +41,7 @@ void main()
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
 	SAtlasData 		atlasData 	= b_Atlases.Val[emitter.AtlasIndex];
 	out_AtlasIndex = emitter.AtlasIndex;
+	in_EmitterColor = emitter.Color;
 
 	// Hardcoded for now
 	vec2 uv = (vertex.Position.xy + 1.f) * 0.5f;

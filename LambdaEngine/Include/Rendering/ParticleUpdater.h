@@ -64,13 +64,14 @@ namespace LambdaEngine
 		uint32								m_EmitterCount;
 
 
-		GUID_Lambda							m_ComputeShaderGUID = 0;
+		GUID_Lambda							m_ComputeShaderGUID			= 0;
+		GUID_Lambda							m_SortPassComputeShaderGUID = 0;
 
 		PushConstantData					m_PushConstant;
 
-		uint64								m_PipelineStateID = 0;
-		TSharedRef<PipelineLayout>			m_PipelineLayout = nullptr;
-		TSharedRef<DescriptorHeap>			m_DescriptorHeap = nullptr;
+		uint64								m_PipelineStateID			= 0;
+		TSharedRef<PipelineLayout>			m_PipelineLayout			= nullptr;
+		TSharedRef<DescriptorHeap>			m_DescriptorHeap			= nullptr;
 
 		// Descriptor sets
 		TSharedRef<DescriptorSet>			m_InstanceDescriptorSet;

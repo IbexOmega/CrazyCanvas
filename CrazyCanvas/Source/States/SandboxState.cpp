@@ -209,12 +209,14 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
 		pECS->AddComponent<ParticleEmitterComponent>(entity,
 			ParticleEmitterComponent{
+				.EmitterShape = EEmitterShape::TUBE,
 				.Velocity = 1.0f,
 				.Acceleration = 0.0f,
-				.ParticleRadius = 0.1f,
-				.TileIndex = 10,
+				.ParticleRadius = 0.5f,
+				.TileIndex = 16,
 				.AnimationCount = 4,
-				.FirstAnimationIndex = 10
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
 			}
 		);
 	}

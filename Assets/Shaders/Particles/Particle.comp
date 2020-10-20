@@ -56,12 +56,13 @@ void main()
 		if(particle.CurrentLife < 0.f)
 		{
 			particle.CurrentLife = emitter.LifeTime;
-			particle.Transform[3].xyz = emitterTransform[3].xyz;
+			particle.Transform[3].xyz = particle.StartPosition + emitterTransform[3].xyz;
 			particle.Velocity = particle.StartVelocity;
 			particle.TileIndex = emitter.FirstAnimationIndex;
 		}
 
-		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount - uint((particle.CurrentLife/emitter.LifeTime)*emitter.AnimationCount);
+		float t = particle.CurrentLife/emitter.LifeTime;
+		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
 
 		b_ParticleInstances.Val[indexOffset] = particle;
 		indexOffset += totalInvocations;
