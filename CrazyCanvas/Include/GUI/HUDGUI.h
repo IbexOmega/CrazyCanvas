@@ -27,6 +27,8 @@ public:
 	~HUDGUI();
 
 	void OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 	bool ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler) override;
 

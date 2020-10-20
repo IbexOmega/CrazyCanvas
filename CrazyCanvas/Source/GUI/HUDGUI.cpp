@@ -46,10 +46,28 @@ void HUDGUI::OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::Rou
 	ApplyDamage(10);
 }
 
+void HUDGUI::OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+}
+
+void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+}
+
+
+
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
 {
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonGrowClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonScoreClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonShootClick);
 	return false;
 }
 
