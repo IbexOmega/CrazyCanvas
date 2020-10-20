@@ -206,7 +206,7 @@ void SandboxState::Init()
 	{
 		Entity entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		pECS->AddComponent<RotationComponent>(entity, { true,glm::identity<glm::quat>() });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
 		pECS->AddComponent<ParticleEmitterComponent>(entity,
 			ParticleEmitterComponent{
 				.Velocity = 1.0f,

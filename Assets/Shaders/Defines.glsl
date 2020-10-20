@@ -164,19 +164,30 @@ struct SParticleVertex
 struct SParticle
 {
 	mat4 Transform;
-	vec4 Color;
-	vec3 StartPosition;
-	float CurrentLife;
 	vec3 Velocity;
-	float LifeTime;
+	float CurrentLife;
 	vec3 StartVelocity;
 	float Radius;
 	vec3 Acceleration;
-	uint AtlasIndex;
 	uint TileIndex;
+	uint EmitterIndex;
+	uint padding0;
+	uint padding1;
+	uint padding2;
+};
+
+
+struct SEmitter
+{
+	vec4 Color;
+	float LifeTime;
+	float Radius;
+	uint AtlasIndex;
 	uint AnimationCount;
 	uint FirstAnimationIndex;
-	float padding0;
+	uint padding0;
+	uint padding1;
+	uint padding2;
 };
 
 struct SAtlasData

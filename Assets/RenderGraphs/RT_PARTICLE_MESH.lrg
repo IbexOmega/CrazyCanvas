@@ -469,6 +469,26 @@
                 "unbounded_array": false,
                 "texture_type": "TEXTURE_2D"
             }
+        },
+        {
+            "name": "SCENE_EMITTER_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "SCENE_EMITTER_TRANSFORM_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {}
         }
     ],
     "resource_state_groups": [
@@ -575,6 +595,18 @@
                     "name": "PAINT_MASK_TEXTURES",
                     "removable": false,
                     "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_EMITTER_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_EMITTER_TRANSFORM_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
                     "src_stage": ""
                 }
             ]
@@ -1363,6 +1395,14 @@
                     "src_stage": "RENDER_STAGE_PARTICLE_UPDATE"
                 },
                 {
+                    "name": "SCENE_EMITTER_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "RENDER_STAGE_PARTICLE_UPDATE"
+                },
+                {
                     "name": "SCENE_PARTICLE_ATLAS_INFO_BUFFER",
                     "removable": true,
                     "draw_args_include_mask": 1,
@@ -1540,6 +1580,22 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "UNORDERED_ACCESS_RW",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_EMITTER_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_EMITTER_TRANSFORM_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]

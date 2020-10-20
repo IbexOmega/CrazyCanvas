@@ -33,7 +33,7 @@ namespace LambdaEngine
 		float			ElapTime = 0.f;
 		float			LifeTime;
 		float			ParticleRadius;
-		uint32			IndirectDataIndex = 0;
+		uint32			DataIndex = 0;
 		ParticleChunk	ParticleChunk;
 		uint32			AtlasIndex = 0;
 		uint32			TileIndex = 0;
@@ -44,19 +44,29 @@ namespace LambdaEngine
 	struct SParticle
 	{
 		glm::mat4 Transform;
-		glm::vec4 Color;
-		glm::vec3 StartPosition;
-		float CurrentLife;
 		glm::vec3 Velocity;
-		float LifeTime;
+		float CurrentLife;
 		glm::vec3 StartVelocity;
 		float Radius;
 		glm::vec3 Acceleration;
-		uint32 AtlasIndex;
 		uint32 TileIndex;
+		uint32 EmitterIndex;
+		uint32 padding0			= 0;
+		uint32 padding1			= 0;
+		uint32 padding2			= 0;
+	};
+
+	struct SEmitter
+	{
+		glm::vec4 Color;
+		float LifeTime;
+		float Radius;
+		uint32 AtlasIndex;
 		uint32 AnimationCount;
 		uint32 FirstAnimationIndex;
-		float padding0;
+		uint32 padding0			= 0;
+		uint32 padding1			= 0;
+		uint32 padding2			= 0;
 	};
 
 	struct SAtlasInfo
@@ -123,6 +133,8 @@ namespace LambdaEngine
 		bool								m_DirtyParticleBuffer	= false;
 		bool								m_DirtyVertexBuffer		= false;
 		bool								m_DirtyIndexBuffer		= false;
+		bool								m_DirtyTransformBuffer	= false;
+		bool								m_DirtyEmitterBuffer	= false;
 		bool								m_DirtyIndirectBuffer	= false;
 		bool								m_DirtyAtlasDataBuffer	= false;
 
@@ -135,6 +147,12 @@ namespace LambdaEngine
 		Buffer*								m_ppIndexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pIndexBuffer = nullptr;
 
+		Buffer*								m_ppTransformStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pTransformBuffer = nullptr;
+
+		Buffer*								m_ppEmitterStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pEmitterBuffer = nullptr;
+
 		Buffer*								m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pParticleBuffer = nullptr;
 
@@ -144,8 +162,12 @@ namespace LambdaEngine
 		TArray<DeviceChild*>				m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 		TArray<SParticle>					m_Particles;
+		// Emitter specfic data
 		TArray<IndirectData>				m_IndirectData;
-		THashTable<uint32, Entity>			m_IndirectDataToEntity;
+		TArray<SEmitter>					m_EmitterData;
+		TArray<glm::mat4>					m_EmitterTransformData;
+		THashTable<uint32, Entity>			m_DataToEntity;
+
 		TArray<ParticleChunk>				m_FreeParticleChunks;
 		TArray<SAtlasInfo>					m_AtlasInfoData;
 
