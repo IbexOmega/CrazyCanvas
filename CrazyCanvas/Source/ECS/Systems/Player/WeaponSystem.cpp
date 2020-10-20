@@ -84,8 +84,9 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 	ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECS->GetComponentArray<ParticleEmitterComponent>();
-	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	const ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 	for (Entity weaponEntity : m_WeaponEntities)
@@ -100,13 +101,21 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		const int onCooldown = weaponComponent.CurrentCooldown > 0.0f;
 		weaponComponent.CurrentCooldown -= onCooldown * dt;
 
+		// Update position and orientation
+		const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(playerEntity);
+		const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(playerEntity);
+		PositionComponent& weaponPositionComp = pPositionComponents->GetData(weaponEntity);
+		RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
+		const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
+
+		weaponPositionComp.Position = playerPositionComp.Position + weaponOffsetComp.Offset;
+		weaponRotationComp.Quaternion = playerRotationComp.Quaternion;
+
 		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD) && !onCooldown)
 		{
-			const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
-			const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
-			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
+			const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(playerEntity);
 
-			Fire(weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
+			Fire(weaponComponent, weaponPositionComp.Position, weaponRotationComp.Quaternion, playerVelocityComp.Velocity);
 		}
 
 		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK) && !onCooldown)
