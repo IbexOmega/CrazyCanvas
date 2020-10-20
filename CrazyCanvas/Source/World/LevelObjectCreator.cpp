@@ -35,7 +35,7 @@
 
 #include "Rendering/EntityMaskManager.h"
 
-#include "Physics/PhysicsGroups.h"
+#include "Physics/CollisionGroups.h"
 
 bool LevelObjectCreator::Init()
 {
@@ -219,7 +219,7 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity				= entity,
-		.Position			= pECS->AddComponent<PositionComponent>(entity,		{ true, specialObject.DefaultPosition/* + translation + glm::vec3(0.0f, specialObject.DefaultScale.y * specialObject.BoundingBoxes[0].HalfExtent.y, 0.0f)*/}),
+		.Position			= pECS->AddComponent<PositionComponent>(entity,		{ true, specialObject.DefaultPosition + translation}),
 		.Scale				= pECS->AddComponent<ScaleComponent>(entity,		{ true, specialObject.DefaultScale }),
 		.Rotation			= pECS->AddComponent<RotationComponent>(entity,		{ true, specialObject.DefaultRotation }),
 		.Mesh				= pECS->AddComponent<MeshComponent>(entity,			meshComponent),
