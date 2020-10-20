@@ -158,7 +158,7 @@ namespace LambdaEngine
 
 			// Create EmitterData
 			SEmitter emitterData = {};
-			emitterData.Color					= glm::vec4(1.0f);
+			emitterData.Color					= emitterComp.Color;
 			emitterData.LifeTime				= instance.LifeTime;
 			emitterData.Radius					= instance.ParticleRadius;
 			emitterData.AtlasIndex				= instance.AtlasIndex;
@@ -186,6 +186,15 @@ namespace LambdaEngine
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
 			if (!CreateConeParticleEmitter(instance))
+			{
+				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				return;
+			}
+		}
+
+		if (emitterComp.EmitterShape == EEmitterShape::TUBE)
+		{
+			if (!CreateTubeParticleEmitter(instance))
 			{
 				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
 				return;
@@ -231,8 +240,8 @@ namespace LambdaEngine
 		{
 			SamplerDesc samplerDesc = {};
 			samplerDesc.DebugName = "Atlas Sampler";
-			samplerDesc.MinFilter = EFilterType::FILTER_TYPE_LINEAR;
-			samplerDesc.MagFilter = EFilterType::FILTER_TYPE_LINEAR;
+			samplerDesc.MinFilter = EFilterType::FILTER_TYPE_NEAREST;
+			samplerDesc.MagFilter = EFilterType::FILTER_TYPE_NEAREST;
 			samplerDesc.MipmapMode = EMipmapMode::MIPMAP_MODE_NEAREST;
 			samplerDesc.AddressModeU = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			samplerDesc.AddressModeV = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -318,12 +327,86 @@ namespace LambdaEngine
 
 			direction = glm::normalize(direction);
 
+			particle.StartPosition = glm::vec3(0.f);
 			particle.Transform = glm::identity<glm::mat4>();
 			particle.Velocity = direction * emitterInstance.Velocity;
 			particle.CurrentLife = emitterInstance.LifeTime;
 			particle.StartVelocity = particle.Velocity;
 			particle.Radius = emitterInstance.ParticleRadius;
 			particle.Acceleration = direction * emitterInstance.Acceleration;
+			particle.TileIndex = emitterInstance.TileIndex;
+			particle.EmitterIndex = emitterInstance.DataIndex;
+
+			if (allocateParticles)
+			{
+				m_Particles.PushBack(particle);
+			}
+			else
+			{
+				m_Particles[particleOffset + i] = particle;
+			}
+		}
+
+		return true;
+	}
+
+	bool ParticleManager::CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance)
+	{
+		// TODO: Handle override max capacity particle request
+		if (m_FreeParticleChunks.IsEmpty())
+			return false;
+
+		// Assign fitting chunk to emitter
+		bool foundChunk = false;
+		for (uint32 i = 0; i < m_FreeParticleChunks.GetSize(); i++)
+		{
+			ParticleChunk& freeChunk = m_FreeParticleChunks[i];
+			ParticleChunk& emitterChunk = emitterInstance.ParticleChunk;
+
+			if (emitterInstance.ParticleChunk.Size <= freeChunk.Size)
+			{
+				emitterChunk.Offset = freeChunk.Offset;
+
+				uint32 diff = freeChunk.Size - emitterChunk.Size;
+				if (diff == 0)
+				{
+					m_FreeParticleChunks.Erase(m_FreeParticleChunks.Begin() + i);
+				}
+				else
+				{
+					freeChunk.Offset += emitterChunk.Size;
+					freeChunk.Size -= emitterChunk.Size;
+				}
+
+				foundChunk = true;
+			}
+		}
+
+		// TODO: Handle override max capacity particle request
+		if (!foundChunk)
+			return false;
+
+		bool allocateParticles = false;
+		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
+		{
+			allocateParticles = true;
+		}
+
+		const glm::vec3 direction = g_DefaultForward;
+
+		uint32 particlesToAdd = emitterInstance.ParticleChunk.Size;
+		const uint32 particleOffset = emitterInstance.ParticleChunk.Offset;
+		for (uint32 i = 0; i < particlesToAdd; i++)
+		{
+			SParticle particle;
+ 
+			particle.StartPosition = direction * (i * emitterInstance.ParticleRadius);
+			particle.Transform = glm::translate(particle.StartPosition);
+			particle.Velocity = glm::vec3(0.f);
+			particle.CurrentLife = emitterInstance.LifeTime;
+			particle.StartVelocity = particle.Velocity;
+			particle.Radius = emitterInstance.ParticleRadius;
+			particle.Acceleration = glm::vec3(0.f);
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
 

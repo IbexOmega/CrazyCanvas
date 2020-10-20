@@ -16,6 +16,7 @@ namespace LambdaEngine
 	{
 		CONE = 0,
 		SPHERE = 1,
+		TUBE = 2,
 	};
 
 	struct ParticleEmitterComponent
@@ -39,5 +40,6 @@ namespace LambdaEngine
 		uint32			AnimationCount		= 1;
 		uint32			FirstAnimationIndex = 0;
 		uint32			LastAnimationIndex	= 0;
+		glm::vec4		Color				= {1.f, 1.f, 1.f, 1.f};
 	};
 }

@@ -60,15 +60,15 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc0.DescriptorBindings = { instanceBindingDesc0, instanceBindingDesc1, instanceBindingDesc2 };
 
 		ConstantRangeDesc constantRange = {};
-		constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		constantRange.SizeInBytes		= sizeof(float) * 2.0f;
-		constantRange.OffsetInBytes		= 0;
+		constantRange.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		constantRange.SizeInBytes = sizeof(float) * 2.0f;
+		constantRange.OffsetInBytes = 0;
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
-		pipelineLayoutDesc.DebugName			= "Particle Updater Pipeline Layout";
+		pipelineLayoutDesc.DebugName = "Particle Updater Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0 };
-		pipelineLayoutDesc.ConstantRanges		= { constantRange };
-		
+		pipelineLayoutDesc.ConstantRanges = { constantRange };
+
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
 		return m_PipelineLayout != nullptr;
@@ -143,10 +143,11 @@ namespace LambdaEngine
 	{
 		ManagedComputePipelineStateDesc pipelineDesc = { };
 		pipelineDesc.Shader.ShaderGUID = m_ComputeShaderGUID;
-		pipelineDesc.DebugName = "Particle Update Compute Sipeline State";
+		pipelineDesc.DebugName = "Particle Update Compute Pipeline State";
 		pipelineDesc.PipelineLayout = m_PipelineLayout;
 
 		m_PipelineStateID = PipelineStateManager::CreateComputePipelineState(&pipelineDesc);
+
 		return true;
 	}
 

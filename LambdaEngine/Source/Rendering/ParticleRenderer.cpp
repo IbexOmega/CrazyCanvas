@@ -241,7 +241,7 @@ namespace LambdaEngine
 
 		pipelineStateDesc.DepthStencilState = {};
 		pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
-		pipelineStateDesc.DepthStencilState.DepthWriteEnable = false;
+		pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{

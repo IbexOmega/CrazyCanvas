@@ -170,10 +170,8 @@ struct SParticle
 	float Radius;
 	vec3 Acceleration;
 	uint TileIndex;
+	vec3 StartPosition;
 	uint EmitterIndex;
-	uint padding0;
-	uint padding1;
-	uint padding2;
 };
 
 
