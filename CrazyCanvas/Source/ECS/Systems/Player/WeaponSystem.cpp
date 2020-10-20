@@ -10,7 +10,7 @@
 #include "Physics/PhysicsEvents.h"
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
-#include "Physics/PhysicsGroups.h"
+#include "Physics/CollisionGroups.h"
 
 bool WeaponSystem::Init()
 {

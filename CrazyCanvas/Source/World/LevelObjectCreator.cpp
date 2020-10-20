@@ -230,34 +230,48 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 
-			LOG_WARNING("FLAG COLLISION");
+			Job job;
+			job.Components =
+			{
+				{ ComponentPermissions::R,	MeshComponent::Type() },
+				{ ComponentPermissions::RW,	StaticCollisionComponent::Type() },
+				{ ComponentPermissions::RW,	ParentComponent::Type() },
+				{ ComponentPermissions::RW,	OffsetComponent::Type() }
+			};
 
-			Entity flagEntity	= collisionInfo0.Entity;
-			Entity playerEntity	= collisionInfo1.Entity;
+			job.Function = [collisionInfo0, collisionInfo1]()
+			{
+				ECSCore* pECS = ECSCore::GetInstance();
 
-			const MeshComponent& playerMeshComponent			= pECS->GetConstComponent<MeshComponent>(playerEntity);
+				Entity flagEntity	= collisionInfo0.Entity;
+				Entity playerEntity	= collisionInfo1.Entity;
 
-			StaticCollisionComponent& flagCollisionComponent	= pECS->GetComponent<StaticCollisionComponent>(flagEntity);
-			ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
-			OffsetComponent& flagOffsetComponent				= pECS->GetComponent<OffsetComponent>(flagEntity);
+				const MeshComponent& playerMeshComponent			= pECS->GetConstComponent<MeshComponent>(playerEntity);
 
-			PxShape* pFlagShape;
-			flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
+				StaticCollisionComponent& flagCollisionComponent	= pECS->GetComponent<StaticCollisionComponent>(flagEntity);
+				ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
+				OffsetComponent& flagOffsetComponent				= pECS->GetComponent<OffsetComponent>(flagEntity);
+
+				PxShape* pFlagShape;
+				flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
 			
-			//Update Collision Group
-			PxFilterData filterData;
-			filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
-			filterData.word1 = (PxU32)FCollisionGroup::COLLISION_GROUP_NONE;
-			pFlagShape->setSimulationFilterData(filterData);
-			pFlagShape->setQueryFilterData(filterData);
+				//Update Collision Group
+				PxFilterData filterData;
+				filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
+				filterData.word1 = (PxU32)FCollisionGroup::COLLISION_GROUP_NONE;
+				pFlagShape->setSimulationFilterData(filterData);
+				pFlagShape->setQueryFilterData(filterData);
 
-			//Set Flag Carrier (Parent)
-			flagParentComponent.Attached	= true;
-			flagParentComponent.Parent		= playerEntity;
+				//Set Flag Carrier (Parent)
+				flagParentComponent.Attached	= true;
+				flagParentComponent.Parent		= playerEntity;
 
-			//Set Flag Offset
-			const Mesh* pMesh = ResourceManager::GetMesh(playerMeshComponent.MeshGUID);
-			flagOffsetComponent.Offset		= glm::vec3(0.0f, pMesh->BoundingBox.Dimensions.y / 2.0f, 0.0f);
+				//Set Flag Offset
+				const Mesh* pMesh = ResourceManager::GetMesh(playerMeshComponent.MeshGUID);
+				flagOffsetComponent.Offset		= glm::vec3(0.0f, pMesh->BoundingBox.Dimensions.y / 2.0f, 0.0f);
+			};
+
+			pECS->ScheduleJobASAP(job);
 
 			Level::OnFlagPickedUp();
 		}
