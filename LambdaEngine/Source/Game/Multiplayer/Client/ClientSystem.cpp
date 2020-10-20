@@ -145,6 +145,8 @@ namespace LambdaEngine
 
 	bool ClientSystem::OnDisconnectedEvent(const ClientDisconnectedEvent& event)
 	{
+		UNREFERENCED_VARIABLE(event);
+
 		NetworkDiscovery::EnableClient(m_Name, this);
 		return false;
 	}
