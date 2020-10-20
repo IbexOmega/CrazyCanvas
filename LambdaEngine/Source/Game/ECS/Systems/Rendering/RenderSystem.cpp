@@ -566,7 +566,7 @@ namespace LambdaEngine
 			const auto& emitterComp = pEmitterComponents->GetConstData(entity);
 
 			if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
-				UpdateParticleEmitter(positionComp, rotationComp, emitterComp);
+				UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 		}
 		// Particle Updates
 		uint32 particleCount = m_ParticleManager.GetParticleCount();
