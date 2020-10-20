@@ -42,7 +42,10 @@ void main()
 			particle.CurrentLife = particle.LifeTime;
 			particle.Transform[3].xyz = particle.StartPosition;
 			particle.Velocity = particle.StartVelocity;
+			particle.TileIndex = particle.FirstAnimationIndex;
 		}
+
+		particle.TileIndex = particle.FirstAnimationIndex + particle.AnimationCount - uint((particle.CurrentLife/particle.LifeTime)*particle.AnimationCount);
 
 		b_ParticleInstances.Val[indexOffset] = particle;
 		indexOffset += totalInvocations;

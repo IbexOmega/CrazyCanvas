@@ -212,6 +212,9 @@ void SandboxState::Init()
 				.Velocity = 1.0f,
 				.Acceleration = 0.0f,
 				.ParticleRadius = 0.1f,
+				.TileIndex = 10,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 10
 			}
 		);
 	}

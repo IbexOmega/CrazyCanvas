@@ -37,8 +37,8 @@ void main()
 
 	// Hardcoded for now
 	vec2 uv = (vertex.Position.xy + 1.f) * 0.5f;
-	uint tx = particle.AtlasIndex % atlasData.ColCount;
-	uint ty = particle.AtlasIndex / atlasData.RowCount;
+	uint tx = particle.TileIndex % atlasData.ColCount;
+	uint ty = particle.TileIndex / atlasData.RowCount;
 	vec2 factor = vec2(atlasData.TileFactorX, atlasData.TileFactorY);
 	out_TexCoords = uv * factor + factor*vec2(float(tx), float(ty));
 

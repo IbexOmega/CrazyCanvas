@@ -38,6 +38,7 @@ namespace LambdaEngine
 		uint32			AtlasIndex = 0;
 		uint32			TileIndex = 0;
 		uint32			AnimationCount = 0;
+		uint32			FirstAnimationIndex = 0;
 	};
 
 	struct SParticle
@@ -54,8 +55,8 @@ namespace LambdaEngine
 		uint32 AtlasIndex;
 		uint32 TileIndex;
 		uint32 AnimationCount;
-		float Padding0;
-		float Padding1;
+		uint32 FirstAnimationIndex;
+		float padding0;
 	};
 
 	struct SAtlasInfo

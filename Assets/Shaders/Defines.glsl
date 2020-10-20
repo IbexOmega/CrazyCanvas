@@ -175,8 +175,8 @@ struct SParticle
 	uint AtlasIndex;
 	uint TileIndex;
 	uint AnimationCount;
-	float Padding0;
-	float Padding1;
+	uint FirstAnimationIndex;
+	float padding0;
 };
 
 struct SAtlasData

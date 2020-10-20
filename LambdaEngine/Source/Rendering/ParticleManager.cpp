@@ -127,9 +127,11 @@ namespace LambdaEngine
 			CreateAtlasTextureInstance(atlasGUID, emitterComp.AtlasTileSize);
 		}
 
-		instance.AnimationCount = emitterComp.AnimationCount;
-		instance.AtlasIndex		= m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
-		instance.TileIndex		= emitterComp.TextureIndex;
+		instance.AnimationCount			= emitterComp.AnimationCount;
+		instance.AtlasIndex				= m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
+		instance.TileIndex				= emitterComp.TileIndex;
+		instance.AnimationCount			= emitterComp.AnimationCount;
+		instance.FirstAnimationIndex	= emitterComp.FirstAnimationIndex;
 
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
@@ -139,7 +141,7 @@ namespace LambdaEngine
 				return;
 			}
 		}
-	
+
 		if (emitterComp.Active)
 		{
 			instance.IndirectDataIndex = m_IndirectData.GetSize();
@@ -299,8 +301,9 @@ namespace LambdaEngine
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.Radius = emitterInstance.ParticleRadius;
 			particle.AtlasIndex = emitterInstance.AtlasIndex;
-			particle.TileIndex	= emitterInstance.TileIndex;
+			particle.TileIndex = emitterInstance.TileIndex;
 			particle.AnimationCount = emitterInstance.AnimationCount;
+			particle.FirstAnimationIndex = emitterInstance.FirstAnimationIndex;
 
 			if (allocateParticles)
 			{

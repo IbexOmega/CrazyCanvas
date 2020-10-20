@@ -20,22 +20,24 @@ namespace LambdaEngine
 
 	struct ParticleEmitterComponent
 	{
-		DECL_COMPONENT_WITH_DIRTY_FLAG(ParticleEmitterComponent);
-		bool			Active			= true;
-		bool			OneTime			= false;
-		bool			Burst			= false;
-		uint32			ParticleCount	= 32U;
-		EParticleShape  ParticleShape	= EParticleShape::BILLBOARD;
-		GUID_Lambda		MeshID			= 0;
-		EEmitterShape	EmitterShape	= EEmitterShape::CONE;
-		float			Angle			= 90.f;
-		float			Velocity		= 1.0f;
-		float			Acceleration	= 0.0f;
-		float			LifeTime		= 1.0f;
-		float			ParticleRadius	= 1.0f;
-		GUID_Lambda		AtlasGUID		= GUID_NONE;
-		uint32			AtlasTileSize	= 64;
-		uint32			TextureIndex	= 0;
-		uint32			AnimationCount	= 1;
+		DECL_COMPONENT(ParticleEmitterComponent);
+		bool			Active				= true;
+		bool			OneTime				= false;
+		bool			Burst				= false;
+		uint32			ParticleCount		= 32U;
+		EParticleShape  ParticleShape		= EParticleShape::BILLBOARD;
+		GUID_Lambda		MeshID				= 0;
+		EEmitterShape	EmitterShape		= EEmitterShape::CONE;
+		float			Angle				= 90.f;
+		float			Velocity			= 1.0f;
+		float			Acceleration		= 0.0f;
+		float			LifeTime			= 1.0f;
+		float			ParticleRadius		= 1.0f;
+		GUID_Lambda		AtlasGUID			= GUID_NONE;
+		uint32			AtlasTileSize		= 64;
+		uint32			TileIndex			= 0;
+		uint32			AnimationCount		= 1;
+		uint32			FirstAnimationIndex = 0;
+		uint32			LastAnimationIndex	= 0;
 	};
 }
