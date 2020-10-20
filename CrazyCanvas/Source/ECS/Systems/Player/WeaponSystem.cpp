@@ -21,9 +21,12 @@ bool WeaponSystem::Init()
 
 	// Register system
 	{
+		// The write permissions are used when creating projectile entities
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = R;
-		playerGroup.Rotation.Permissions = R;
+		playerGroup.Position.Permissions = RW;
+		playerGroup.Scale.Permissions = RW;
+		playerGroup.Rotation.Permissions = RW;
+		playerGroup.Velocity.Permissions = RW;
 
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -169,7 +172,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	}
 }
 
-void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity)
+void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity)
 {
 	using namespace LambdaEngine;
 
@@ -178,6 +181,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 
 	constexpr const float projectileInitialSpeed = 13.0f;
 	const glm::vec3 directionVec = GetForward(direction);
+	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec * 0.3f;
 
 	// Create a projectile entity
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -226,6 +230,8 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	// Is this safe? Concurrency issues?
 	const ComponentArray<TeamComponent>*		pTeamComponents			= pECS->GetComponentArray<TeamComponent>();
 	const ComponentArray<ProjectileComponent>*	pProjectileComponents	= pECS->GetComponentArray<ProjectileComponent>();
+
+	pECS->RemoveEntity(collisionInfo0.Entity);
 
 	// Disable friendly fire
 	bool friendly = false;

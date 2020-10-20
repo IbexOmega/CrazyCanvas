@@ -12,6 +12,9 @@ physx::PxFilterFlags FilterShader(
 {
 	using namespace physx;
 
+	UNREFERENCED_VARIABLE(constantBlockSize);
+	UNREFERENCED_VARIABLE(pConstantBlock);
+
 	pairFlags = PxPairFlag::eCONTACT_DEFAULT;
 
 	// Trigger the contact callback for pairs (A,B) where the filtermask of A contains the ID of B and vice versa

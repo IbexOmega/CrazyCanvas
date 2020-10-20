@@ -39,7 +39,7 @@ public:
 	void Tick(LambdaEngine::Timestamp deltaTime) override final;
 
 private:
-	void Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity);
+	void Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity);
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
 	void StartReload(WeaponComponent& weaponComponent);
