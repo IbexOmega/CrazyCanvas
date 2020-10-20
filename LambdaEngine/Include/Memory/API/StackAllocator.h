@@ -112,7 +112,7 @@ namespace LambdaEngine
 		template<typename T>
 		FORCEINLINE void* Allocate()
 		{
-			return Allocate(sizeof(T));
+			return Push(sizeof(T));
 		}
 
 	private:
