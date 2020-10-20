@@ -33,10 +33,11 @@ private:
 
 	LambdaEngine::IPAddress* m_pIPAddress;
 
+	HUDState m_HUDSecondaryState;
+
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
 
-	HUDState m_HUDSecondaryState;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

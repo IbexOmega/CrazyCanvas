@@ -92,11 +92,8 @@ bool HUDGUI::ApplyDamage(float damage)
 			m_GUIState.Health = 100.0;
 			FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
 		}
-
 		return false;
 	}
-
-
 	return true;
 }
 
@@ -115,7 +112,6 @@ bool HUDGUI::UpdateScore()
 		m_GUIState.CurrentScore = 0;
 		return false;
 	}
-
 	return true;
 }
 
@@ -134,7 +130,6 @@ bool HUDGUI::UpdateAmmo()
 		m_GUIState.Ammo = 100.0;
 		return false;
 	}
-
 	return true;
 }
 
