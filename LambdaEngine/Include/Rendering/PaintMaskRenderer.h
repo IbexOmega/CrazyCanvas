@@ -29,6 +29,12 @@ namespace LambdaEngine
 		PAINT	= 1
 	};
 
+	enum class ERemoteMode
+	{
+		CLIENT	= 0,
+		SERVER	= 1
+	};
+
 	class PaintMaskRenderer : public ICustomRenderer
 	{
 	public:
@@ -68,7 +74,8 @@ namespace LambdaEngine
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintMode - painting mode to be used for the target
 		*/
-		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode);
+		static void AddHitPointServer(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode);
+		static void AddHitPointClient(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode);
 
 	private:
 		bool CreateCopyCommandList();
@@ -92,9 +99,10 @@ namespace LambdaEngine
 
 		struct UnwrapData
 		{
-			glm::vec4	TargetPosition;
-			glm::vec4	TargetDirection;
-			EPaintMode	PaintMode = EPaintMode::PAINT;
+			glm::vec4		TargetPosition;
+			glm::vec4		TargetDirection;
+			EPaintMode		PaintMode			= EPaintMode::PAINT;
+			ERemoteMode		RemoteMode			= ERemoteMode::CLIENT;
 		};
 
 	private:
@@ -134,8 +142,8 @@ namespace LambdaEngine
 		TArray<TArray<TSharedRef<DeviceChild>>>						m_pDeviceResourcesToDestroy;
 
 		TArray<RenderTarget>										m_RenderTargets;
-
 	private:
-		static std::list<UnwrapData>	s_Collisions;
+		static std::list<UnwrapData>	s_ServerCollisions;
+		static std::list<UnwrapData>	s_ClientCollisions;
 	};
 }

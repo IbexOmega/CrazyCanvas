@@ -10,11 +10,11 @@ layout(location = 1) in vec3		in_Normal;
 layout(location = 2) in vec3		in_TargetPosition;
 layout(location = 3) in vec3		in_TargetDirection;
 layout(location = 4) flat in uint	in_PaintMode;
+layout(location = 5) flat in uint	in_RemoteMode;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
 layout(location = 0) out vec4   out_UnwrappedTexture;
-layout(location = 1) out vec4   out_UnwrappedTexture1;
 
 float random (in vec3 x) {
 	return fract(sin(dot(x, vec3(12.9898,78.233, 37.31633)))* 43758.5453123);
@@ -51,9 +51,20 @@ void main()
 	{
 		// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
 		if (in_PaintMode == 1)
-			out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
+		{
+			// r = server, g = client
+			//out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
+
+			if (in_RemoteMode == 0)
+				out_UnwrappedTexture = vec4(0.f, 1.f, 0.f, 1.f); 
+			else
+				out_UnwrappedTexture = vec4(1.f, 0.f, 0.f, 1.f);
+		}
 		else
+		{
 			out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
+		}
+
 	}
 	else
 		discard;

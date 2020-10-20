@@ -46,18 +46,18 @@ namespace LambdaEngine
 		mipZeroTextureViewDesc.ArrayIndex		= 0;
 
 		DrawArgExtensionData drawArgExtensionData = {};
-		drawArgExtensionData.TextureCount = 2;
+		drawArgExtensionData.TextureCount = 1;
 		drawArgExtensionData.ppTextures[0]		= meshPaintComponent.pTexture;
 		drawArgExtensionData.ppTextureViews[0]	= meshPaintComponent.pTextureView;
 		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
 
 		drawArgExtensionData.ppMipZeroTextureViews[0] = RenderAPI::GetDevice()->CreateTextureView(&mipZeroTextureViewDesc);
 
-		drawArgExtensionData.ppTextures[1]		= meshPaintComponent.pTexture;
-		drawArgExtensionData.ppTextureViews[1]	= meshPaintComponent.pTextureView;
-		drawArgExtensionData.ppSamplers[1]		= Sampler::GetLinearSampler();
-
-		drawArgExtensionData.ppMipZeroTextureViews[1] = RenderAPI::GetDevice()->CreateTextureView(&mipZeroTextureViewDesc);
+		//drawArgExtensionData.ppTextures[1]		= meshPaintComponent.pTexture;
+		//drawArgExtensionData.ppTextureViews[1]	= meshPaintComponent.pTextureView;
+		//drawArgExtensionData.ppSamplers[1]		= Sampler::GetLinearSampler();
+		//
+		//drawArgExtensionData.ppMipZeroTextureViews[1] = RenderAPI::GetDevice()->CreateTextureView(&mipZeroTextureViewDesc);
 
 		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), &drawArgExtensionData);
 

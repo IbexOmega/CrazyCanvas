@@ -33,7 +33,8 @@
 
 namespace LambdaEngine
 {
-	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_Collisions;
+	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
+	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
 
 	PaintMaskRenderer::PaintMaskRenderer()
 	{
@@ -141,7 +142,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode);
+			PaintMaskRenderer::AddHitPointServer(pos, dir, paintMode, ERemoteMode::SERVER);
 			});
 
 		return false;
@@ -181,7 +182,11 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
-
+		//for (UnwrapData& data : s_ClientCollisions)
+		//{
+		//	s_ServerCollisions.push_back(data);
+		//	s_ClientCollisions.pop_front();
+		//}
 	}
 
 
@@ -323,11 +328,11 @@ namespace LambdaEngine
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
 
-							TextureView* textureViewServer = extension.ppMipZeroTextureViews[0];
-							TextureView* textureViewClient = extension.ppMipZeroTextureViews[1];
+							TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+							//TextureView* pTextureViewClient = extension.ppMipZeroTextureViews[1];
 
-							m_RenderTargets.PushBack({ .TextureView = textureViewServer, .DrawArgIndex = d, .InstanceIndex = i });
-							m_RenderTargets.PushBack({ .TextureView = textureViewClient, .DrawArgIndex = d, .InstanceIndex = i });
+							m_RenderTargets.PushBack({ .TextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
+							//m_RenderTargets.PushBack({ .TextureView = textureViewClient, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
 				}
@@ -354,13 +359,10 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
-		if (m_RenderTargets.IsEmpty() || s_Collisions.empty())
+
+		if (m_RenderTargets.IsEmpty() || s_ServerCollisions.empty())
 		{
 			return;
-		}
-		else
-		{
-			int dwadwa = 0;
 		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
@@ -371,16 +373,20 @@ namespace LambdaEngine
 			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
 
 			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
-			const UnwrapData& data	= s_Collisions.front();
 
+			const UnwrapData& data	= s_ServerCollisions.front();
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
-			s_Collisions.pop_front();
+
+			if (data.RemoteMode == ERemoteMode::SERVER)
+				s_ServerCollisions.pop_front();
+			else
+				s_ClientCollisions.pop_front();
 
 			unwrapDataCopyBuffer->Unmap();
 			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
 		}
 
-		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t+=2)
+		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 		{
 			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
 			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
@@ -453,14 +459,26 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode)
+	void PaintMaskRenderer::AddHitPointServer(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
 		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
 		data.PaintMode			= paintMode;
+		data.RemoteMode			= remoteMode;
 
-		s_Collisions.push_back(data);
+		s_ServerCollisions.push_back(data);
+	}
+
+	void PaintMaskRenderer::AddHitPointClient(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode)
+	{
+		UnwrapData data = {};
+		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
+		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
+		data.PaintMode			= paintMode;
+		data.RemoteMode			= remoteMode;
+
+		s_ClientCollisions.push_back(data);
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()

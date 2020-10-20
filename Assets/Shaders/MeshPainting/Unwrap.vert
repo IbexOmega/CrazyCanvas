@@ -12,6 +12,7 @@ struct SUnwrapData
 	vec4 TargetPosition;
 	vec4 TargetDirection;
 	uint PaintMode;
+	uint RemoteMode;
 };
 
 layout(push_constant) uniform TransformBuffer
@@ -33,6 +34,7 @@ layout(location = 2) out vec3 out_TargetPosition;
 layout(location = 3) out vec3 out_TargetDirection;
 
 layout(location = 4) out uint out_PaintMode;
+layout(location = 5) out uint out_RemoteMode;
 
 /*
 	Three parameters are needed to make this work. These are:
@@ -57,6 +59,7 @@ void main()
 	out_TargetPosition				= u_UnwrapData.val.TargetPosition.xyz;
 
 	out_PaintMode					= u_UnwrapData.val.PaintMode;
+	out_RemoteMode					= u_UnwrapData.val.RemoteMode;
 
 	// This is not removed because of debug purposes.
 	//out_TargetDirection             = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
