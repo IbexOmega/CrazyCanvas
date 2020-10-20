@@ -245,7 +245,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
 	Entity weaponEntity = pECS->CreateEntity();
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.75f, 1.5f, -0.5f) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0, 1.8f, 0.0) });
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
