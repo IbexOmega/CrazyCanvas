@@ -134,10 +134,6 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
-	LOG_WARNING("Static Mesh Pos: %f %f %f", pMesh->DefaultPosition.x, pMesh->DefaultPosition.y, pMesh->DefaultPosition.z);
-	LOG_WARNING("Static Mesh Rot: %f %f %f %f", pMesh->DefaultRotation.x, pMesh->DefaultRotation.y, pMesh->DefaultRotation.z, pMesh->DefaultRotation.w);
-	LOG_WARNING("Static Mesh Scl: %f %f %f", pMesh->DefaultScale.x, pMesh->DefaultScale.y, pMesh->DefaultScale.z);
-
 	Entity entity = pECS->CreateEntity();
 	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
 	const CollisionCreateInfo collisionCreateInfo =

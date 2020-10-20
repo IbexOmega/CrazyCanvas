@@ -222,7 +222,6 @@ namespace LambdaEngine
 			aiProcess_GenUVCoords				|
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
-			//aiProcess_PreTransformVertices		|
 			aiProcess_FindInvalidData;
 
 		SceneLoadRequest loadRequest = 

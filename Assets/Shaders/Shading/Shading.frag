@@ -129,5 +129,5 @@ void main()
 	float luminance = CalculateLuminance(color);
 	color = color / (color + vec3(1.0f));
 	color = pow(color, vec3(1.0f / GAMMA));
-	out_Color = vec4(color, luminance);
+	out_Color = vec4(N, luminance);
 }
