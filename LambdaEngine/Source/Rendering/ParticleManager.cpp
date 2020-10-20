@@ -136,6 +136,27 @@ namespace LambdaEngine
 			CreateAtlasTextureInstance(atlasGUID, emitterComp.AtlasTileSize);
 		}
 
+		// Set data index before creation of particles so each particle now which emitter they belong to
+		instance.DataIndex = m_IndirectData.GetSize();
+
+		if (emitterComp.EmitterShape == EEmitterShape::CONE)
+		{
+			if (!CreateConeParticleEmitter(instance))
+			{
+				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				return;
+			}
+		}
+
+		if (emitterComp.EmitterShape == EEmitterShape::TUBE)
+		{
+			if (!CreateTubeParticleEmitter(instance))
+			{
+				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				return;
+			}
+		}
+
 		instance.AnimationCount			= emitterComp.AnimationCount;
 		instance.AtlasIndex				= m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
 		instance.TileIndex				= emitterComp.TileIndex;
@@ -144,7 +165,6 @@ namespace LambdaEngine
 
 		if (emitterComp.Active)
 		{
-			instance.DataIndex = m_IndirectData.GetSize();
 			m_DataToEntity[instance.DataIndex] = entity;
 
 			// Create IndirectDrawData
@@ -183,23 +203,6 @@ namespace LambdaEngine
 		}
 
 
-		if (emitterComp.EmitterShape == EEmitterShape::CONE)
-		{
-			if (!CreateConeParticleEmitter(instance))
-			{
-				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
-				return;
-			}
-		}
-
-		if (emitterComp.EmitterShape == EEmitterShape::TUBE)
-		{
-			if (!CreateTubeParticleEmitter(instance))
-			{
-				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
-				return;
-			}
-		}
 	}
 
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
