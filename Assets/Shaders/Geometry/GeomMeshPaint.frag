@@ -77,6 +77,5 @@ void main()
 	out_Velocity				= vec2(screenVelocity);
 
 	// 5
-	vec3 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
 	out_Albedo 					= mix(out_Albedo, vec4(1.0f, 1.0f, 1.0f, 1.f), paintMask.r);
 }
