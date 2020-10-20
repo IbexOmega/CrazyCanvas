@@ -44,18 +44,27 @@ namespace LambdaEngine
 	{
 		glm::mat4 Transform;
 		glm::vec4 Color;
-		glm::vec3 StartPosition;
-		float CurrentLife;
 		glm::vec3 Velocity;
-		float LifeTime;
+		float CurrentLife;
 		glm::vec3 StartVelocity;
-		float Radius;
+		float LifeTime;
 		glm::vec3 Acceleration;
+		float Radius;
 		uint32 AtlasIndex;
 		uint32 TileIndex;
 		uint32 AnimationCount;
 		float Padding0;
-		float Padding1;
+	};
+
+	struct SEmitter
+	{
+		glm::vec4 Color;
+		glm::vec3 StartPosition;
+		float Padding0;
+		float LifeTime;
+		float Radius;
+		uint32 AtlasIndex;
+		uint32 AnimationCount;
 	};
 
 	struct SAtlasInfo
@@ -130,8 +139,14 @@ namespace LambdaEngine
 		Buffer*						m_ppIndexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pIndexBuffer = nullptr;
 
-		Buffer*						m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
-		Buffer*						m_pParticleBuffer = nullptr;
+		Buffer*								m_ppTransformStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pTransformBuffer = nullptr;
+
+		Buffer*								m_ppEmitterStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pEmitterBuffer = nullptr;
+
+		Buffer*								m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pParticleBuffer = nullptr;
 
 		Buffer*						m_ppAtlasDataStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*						m_pAtlasDataBuffer = nullptr;
