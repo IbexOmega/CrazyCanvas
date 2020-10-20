@@ -1,12 +1,14 @@
-#pragma once
 #include "Game/State.h"
 
 #include "Engine/EngineConfig.h"
+#include "Engine/EngineLoop.h"
 
 #include "Networking/API/NetworkUtils.h"
 
+
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
+
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "States/PlaySessionState.h"
@@ -18,8 +20,6 @@
 
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
-
-#include "Engine/EngineLoop.h"
 
 #include "Application/API/Events/EventQueue.h"
 
