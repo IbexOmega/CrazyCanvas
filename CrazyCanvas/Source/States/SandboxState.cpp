@@ -258,7 +258,9 @@ void SandboxState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		ResourceManager::LoadMeshFromFile("Gun/Gun.glb");
 	}
+
 
 	if constexpr (IMGUI_ENABLED)
 	{
