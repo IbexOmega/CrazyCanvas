@@ -65,7 +65,6 @@ namespace LambdaEngine
 
 
 		GUID_Lambda							m_ComputeShaderGUID			= 0;
-		GUID_Lambda							m_SortPassComputeShaderGUID = 0;
 
 		PushConstantData					m_PushConstant;
 

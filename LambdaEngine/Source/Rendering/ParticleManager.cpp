@@ -238,7 +238,7 @@ namespace LambdaEngine
 			samplerDesc.DebugName = "Atlas Sampler";
 			samplerDesc.MinFilter = EFilterType::FILTER_TYPE_NEAREST;
 			samplerDesc.MagFilter = EFilterType::FILTER_TYPE_NEAREST;
-			samplerDesc.MipmapMode = EMipmapMode::MIPMAP_MODE_LINEAR;
+			samplerDesc.MipmapMode = EMipmapMode::MIPMAP_MODE_NEAREST;
 			samplerDesc.AddressModeU = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			samplerDesc.AddressModeV = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			samplerDesc.AddressModeW = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;

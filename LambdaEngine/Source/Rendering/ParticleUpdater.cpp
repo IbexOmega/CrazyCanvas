@@ -106,9 +106,6 @@ namespace LambdaEngine
 		m_ComputeShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		success &= m_ComputeShaderGUID != GUID_NONE;
 
-		m_SortPassComputeShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/ParticleSort.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		success &= m_SortPassComputeShaderGUID != GUID_NONE;
-
 		return success;
 	}
 

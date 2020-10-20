@@ -16,6 +16,7 @@ layout(location = 0) out vec4 out_ParticleImage;
 void main()
 {
 	vec4 color = texture(u_TextureAtlases[in_AtlasIndex], in_TexCoords);
-	if(color.a < 0.5f) discard;
-	out_ParticleImage = color*in_EmitterColor;
+	color *= in_EmitterColor;
+	if(color.a < 0.9f) discard;
+	out_ParticleImage = color;
 }
