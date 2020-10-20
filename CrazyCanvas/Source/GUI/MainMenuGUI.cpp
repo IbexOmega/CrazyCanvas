@@ -46,14 +46,14 @@ MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 	
 	// Toggles	
 	m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
-	ToggleButton* toggleMeshShader = FrameworkElement::FindName<ToggleButton>("RayTracingToggleButton");
-	NS_ASSERT(toggleMeshShader != 0);
+	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<ToggleButton>("RayTracingToggleButton");
+	NS_ASSERT(pToggleMeshShader != 0);
 	toggleMeshShader->SetIsChecked(m_RayTracingEnabled);
 	m_RayTracingSleeping = !m_RayTracingEnabled;
 
 	m_MeshShadersEnabled = EngineConfig::GetBoolProperty("MeshShadersEnabled");
-	ToggleButton* toggleRayTracing = FrameworkElement::FindName<ToggleButton>("MeshShadersToggleButton");
-	NS_ASSERT(toggleRayTracing != 0);
+	ToggleButton* pToggleRayTracing = FrameworkElement::FindName<ToggleButton>("MeshShadersToggleButton");
+	NS_ASSERT(pToggleRayTracing != 0);
 	toggleRayTracing->SetIsChecked(m_MeshShadersEnabled);
 	m_MeshShadersSleeping = !m_MeshShadersEnabled;
 }
