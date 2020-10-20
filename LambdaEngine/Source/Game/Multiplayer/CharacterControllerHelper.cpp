@@ -74,7 +74,7 @@ namespace LambdaEngine
 
 		//Update velocity
 		glm::vec3& velocity = velocityComp.Velocity;
-		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+		velocity.y -= GRAVITATIONAL_ACCELERATION;
 
 		//Calculate Tick Translation
 		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
@@ -113,12 +113,7 @@ namespace LambdaEngine
 			NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
 			positionCompMutable.Dirty = true;
 
-			positionCompMutable.Position =
-			{
-				newPositionPX.x,
-				newPositionPX.y,
-				newPositionPX.z
-			};
+			positionCompMutable.Position = { newPositionPX.x, newPositionPX.y, newPositionPX.z };
 		}
 	}
 }
