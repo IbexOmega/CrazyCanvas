@@ -220,21 +220,21 @@ void SandboxState::Init()
 	}
 
 	// Emitter
-	{
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		pECS->AddComponent<ParticleEmitterComponent>(entity,
-			ParticleEmitterComponent{
-				.Velocity = 1.0f,
-				.Acceleration = 0.0f,
-				.ParticleRadius = 0.1f,
-				.TileIndex = 10,
-				.AnimationCount = 4,
-				.FirstAnimationIndex = 10
-			}
-		);
-	}
+	//{
+	//	Entity entity = pECS->CreateEntity();
+	//	pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
+	//	pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+	//	pECS->AddComponent<ParticleEmitterComponent>(entity,
+	//		ParticleEmitterComponent{
+	//			.Velocity = 1.0f,
+	//			.Acceleration = 0.0f,
+	//			.ParticleRadius = 0.1f,
+	//			.TileIndex = 10,
+	//			.AnimationCount = 4,
+	//			.FirstAnimationIndex = 10
+	//		}
+	//	);
+	//}
 
 	//Sphere Grid
 	//{

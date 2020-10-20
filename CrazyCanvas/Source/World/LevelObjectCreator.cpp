@@ -230,19 +230,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	//pECS->AddComponent<ParticleEmitterComponent>(playerEntity, ParticleEmitterComponent{
-	//.Active = false,
-	//.OneTime = true,
-	//.Burst = true,
-	//.ParticleCount = 64,
-	//.EmitterShape = EEmitterShape::CONE,
-	//.Angle = 25.f,
-	//.Velocity = 2.0,
-	//.Acceleration = -1.0,
-	//.LifeTime = 3.0f,
-	//.ParticleRadius = 0.05f,
-	//	}
-	//);
 
 	const CharacterColliderCreateInfo colliderInfo =
 	{
@@ -260,6 +247,19 @@ bool LevelObjectCreator::CreatePlayer(
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
+	pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
+		.Active = true,
+		.OneTime = false,
+		.Burst = true,
+		.ParticleCount = 32,
+		.EmitterShape = EEmitterShape::CONE,
+		.Angle = 25.f,
+		.Velocity = 2.0,
+		.Acceleration = -1.0,
+		.LifeTime = 3.0f,
+		.ParticleRadius = 0.1f,
+		}
+	);
 
 	if (!MultiplayerUtils::IsServer())
 	{

@@ -99,9 +99,13 @@ namespace LambdaEngine
 	void ParticleManager::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
 	{
 		auto emitterElem = m_ActiveEmitters.find(entity);
-		if(emitterElem == m_ActiveEmitters.end())
+		if(emitterElem != m_ActiveEmitters.end())
 		{
+			ParticleEmitterInstance& emitter = emitterElem->second;
+			uint32 dataIndex = emitter.DataIndex;
 
+			m_EmitterTransformData[dataIndex] = glm::translate(positionComp.Position) * glm::toMat4(rotationComp.Quaternion);
+			m_DirtyTransformBuffer = true;
 		}
 	}
 
@@ -163,7 +167,7 @@ namespace LambdaEngine
 			m_EmitterData.PushBack(emitterData);
 
 			// Create Transform
-			glm::mat4	emitterTransform = glm::toMat4(instance.Rotation) * glm::translate(instance.Position);
+			glm::mat4 emitterTransform = glm::translate(instance.Position) * glm::toMat4(instance.Rotation);
 			m_EmitterTransformData.PushBack(emitterTransform);
 
 			m_ActiveEmitters[entity] = instance;
@@ -339,6 +343,7 @@ namespace LambdaEngine
 	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
 	{
 		Buffer* pStagingBuffer = pStagingBuffers[m_ModFrameIndex];
+		bool needUpdate = true;
 
 		if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < size)
 		{
@@ -372,11 +377,11 @@ namespace LambdaEngine
 		}
 		else
 		{
-			return false; // Only update resource when buffer is recreated
+			needUpdate = false; // Only update resource when buffer is recreated
 		}
 
 		pCommandList->CopyBuffer(pStagingBuffer, 0, (*pBuffer), 0, size);
-		return true;
+		return needUpdate;
 	}
 
 	bool ParticleManager::DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance)
