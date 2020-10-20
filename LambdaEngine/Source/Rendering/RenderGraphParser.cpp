@@ -1004,13 +1004,6 @@ namespace LambdaEngine
 						resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 						resourceSynchronization.NextBindingType		= pNextResourceState->BindingType;
 
-						if (resourceSynchronization.ResourceName == "G_BUFFER_ALBEDO" &&
-							resourceSynchronization.NextQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS &&
-							resourceSynchronization.NextBindingType == ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE)
-						{
-							int awdwa = 0;
-						}
-
 						pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 					}
 				}
@@ -1078,13 +1071,6 @@ namespace LambdaEngine
 							resourceSynchronization.NextRenderStage		= pNextRenderStage->Name;
 							resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 							resourceSynchronization.NextBindingType		= pNextResourceState->BindingType;
-
-							if (resourceSynchronization.ResourceName == "G_BUFFER_ALBEDO" &&
-								resourceSynchronization.NextQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS &&
-								resourceSynchronization.NextBindingType == ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE)
-							{
-								int awdwa = 0;
-							}
 
 							pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 						}
