@@ -12,8 +12,9 @@ namespace LambdaEngine
 	{
 		if (!s_Initialized)
 		{
-			BindTypeToExtensionDesc(MeshPaintComponent::Type(), { 1 }, false);	// Mask = 0x2
+			BindTypeToExtensionDesc(MeshPaintComponent::Type(),	{ 1 }, false);	// Mask = 0x2
 			BindTypeToExtensionDesc(PlayerLocalComponent::Type(), { 0 }, true);	// Mask = 0x4
+			BindTypeToExtensionDesc(PlayerBaseComponent::Type(), { 0 }, false);	// Mask = 0x8
 
 			s_Initialized = true;
 		}

@@ -32,10 +32,10 @@ namespace LambdaEngine
 	class PaintMaskRenderer : public ICustomRenderer
 	{
 	public:
-		PaintMaskRenderer();
+		PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
 		~PaintMaskRenderer();
 
-		bool init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
+		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;

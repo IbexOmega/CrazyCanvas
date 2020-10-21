@@ -2341,14 +2341,14 @@ namespace LambdaEngine
 
 					if (imGuiRenderStageIt == m_DebugRenderers.End())
 					{
-						ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice);
 
 						ImGuiRendererDesc imguiRendererDesc = {};
 						imguiRendererDesc.BackBufferCount	= m_BackBufferCount;
 						imguiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);
 						imguiRendererDesc.IndexBufferSize	= MEGA_BYTE(8);
 
-						if (!pImGuiRenderer->Init(&imguiRendererDesc))
+						ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice, &imguiRendererDesc);
+						if (!pImGuiRenderer->Init())
 						{
 							LOG_ERROR("[RenderGraph] Could not initialize ImGui Custom Renderer");
 							return false;
