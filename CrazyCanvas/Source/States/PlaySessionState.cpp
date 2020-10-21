@@ -50,6 +50,8 @@ void PlaySessionState::Init()
 
 	m_WeaponSystem.Init();
 
+	m_HUDSecondaryState.Init();
+
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlaySessionState::OnPacketReceived);
@@ -338,6 +340,7 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 	return false;
 }
 
-void PlaySessionState::Tick(LambdaEngine::Timestamp)
+void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
+	m_HUDSecondaryState.Tick(delta);
 }
