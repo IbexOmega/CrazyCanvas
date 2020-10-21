@@ -32,7 +32,7 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		}
 
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
-		PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode);
+		PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, ERemoteMode::SERVER, ETeam::RED);
 	}
 
 	return true;
