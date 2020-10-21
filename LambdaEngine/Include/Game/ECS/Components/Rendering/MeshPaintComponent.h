@@ -11,8 +11,9 @@ namespace LambdaEngine
 	struct MeshPaintComponent
 	{
 		DECL_COMPONENT(MeshPaintComponent);
-		Texture*		pTexture		= nullptr;
-		TextureView*	pTextureView	= nullptr;
+		Texture*		pTexture			= nullptr;
+		TextureView*	pTextureView		= nullptr;
+		TextureView*	pMipZeroTextureView	= nullptr;
 	};
 
 	namespace MeshPaint

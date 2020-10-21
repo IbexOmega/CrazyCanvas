@@ -301,7 +301,7 @@ namespace LambdaEngine
 		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
 		void UpdateLightsBuffer(CommandList* pCommandList);
-		void UpdatePointLightTextureResource();
+		void UpdatePointLightTextureResource(CommandList* pCommandList);
 
 		void UpdateRenderGraph();
 
@@ -323,8 +323,8 @@ namespace LambdaEngine
 		bool					m_RayTracingEnabled	= false;
 		bool					m_MeshShadersEnabled = false;
 		// Mesh/Instance/Entity
-		bool						m_LightsResourceDirty		= true;
-		bool						m_PointLightDirty			= true;
+		bool						m_LightsBufferDirty			= true;
+		bool						m_PointLightsDirty			= true;
 		bool						m_DirectionalExist			= false;
 		bool						m_RemoveTexturesOnDeletion	= false;
 		TArray<LightUpdateData>		m_PointLightTextureUpdateQueue;
@@ -389,6 +389,7 @@ namespace LambdaEngine
 		bool						m_RenderGraphSBTRecordsDirty		= true;
 		bool						m_MaterialsPropertiesBufferDirty	= false;
 		bool						m_MaterialsResourceDirty			= false;
+		bool						m_LightsResourceDirty				= false;
 		bool						m_PerFrameResourceDirty				= true;
 		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
