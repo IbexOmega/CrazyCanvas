@@ -247,3 +247,7 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 void PlaySessionState::Tick(LambdaEngine::Timestamp)
 {
 }
+
+void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
+{
+}

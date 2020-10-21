@@ -23,7 +23,7 @@ public:
 	void Pause() override final {};
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
-
+	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 private:
 	Level* m_pLevel = nullptr;
