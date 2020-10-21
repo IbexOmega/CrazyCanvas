@@ -4,6 +4,8 @@
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "Game/State.h"
 
+#include "States/HUDState.h"
+
 #include "Application/API/Events/NetworkEvents.h"
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
@@ -32,9 +34,12 @@ private:
 
 	LambdaEngine::IPAddress* m_pIPAddress;
 
+	HUDState m_HUDSecondaryState;
+
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
 	FlagSystemBase* m_pFlagSystem = nullptr;
+
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

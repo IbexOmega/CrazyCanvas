@@ -3,7 +3,7 @@
 #include "Application/API/CommonApplication.h"
 
 #include "ECS/Components/Player/Player.h"
-#include "ECS/Components/Player/Weapon.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -52,6 +52,8 @@ void PlaySessionState::Init()
 	m_MeshPaintHandler.Init();
 
 	m_WeaponSystem.Init();
+
+	m_HUDSecondaryState.Init();
 
 	m_pFlagSystem = DBG_NEW ClientFlagSystem();
 	m_pFlagSystem->Init();
@@ -344,6 +346,7 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 	return false;
 }
 
-void PlaySessionState::Tick(LambdaEngine::Timestamp)
+void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
+	m_HUDSecondaryState.Tick(delta);
 }
