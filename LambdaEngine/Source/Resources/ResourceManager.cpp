@@ -874,18 +874,34 @@ namespace LambdaEngine
 		s_pMaterialGraphicsCommandAllocator->Reset();
 		s_pMaterialGraphicsCommandList->Begin(nullptr);
 
-		s_pMaterialGraphicsCommandList->QueueTransferBarrier(
-			pCombinedMaterialTexture, 
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
-			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 
-			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-			ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, 
-			ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
-			ETextureState::TEXTURE_STATE_GENERAL,
-			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		if (miplevels > 1)
+		{
+			s_pMaterialGraphicsCommandList->QueueTransferBarrier(
+				pCombinedMaterialTexture,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
+				ETextureState::TEXTURE_STATE_GENERAL,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
-		s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		}
+		else
+		{
+			s_pMaterialGraphicsCommandList->QueueTransferBarrier(
+				pCombinedMaterialTexture,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
+				ETextureState::TEXTURE_STATE_GENERAL,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		}
 
 		s_pMaterialGraphicsCommandList->End();
 
