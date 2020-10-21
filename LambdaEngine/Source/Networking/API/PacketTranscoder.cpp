@@ -38,7 +38,11 @@ namespace LambdaEngine
 			}
 		}
 
+#ifdef LAMBDA_CONFIG_DEBUG
 		pSegmentPool->FreeSegments(segmentsToFree, "PacketTranscoder::EncodeSegments");
+#else
+		pSegmentPool->FreeSegments(segmentsToFree);
+#endif
 
 		memcpy(buffer, pHeader, sizeof(Header));
 

@@ -54,7 +54,11 @@ namespace LambdaEngine
 
 	void ClientBase::ReturnPacket(NetworkSegment* pPacket)
 	{
+#ifdef LAMBDA_CONFIG_DEBUG
 		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientBase::ReturnPacket");
+#else
+		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+#endif	
 	}
 
 	void ClientBase::Disconnect(const std::string& reason)
@@ -225,7 +229,11 @@ namespace LambdaEngine
 		{
 			if (!HandleReceivedPacket(pPacket))
 			{
+#ifdef LAMBDA_CONFIG_DEBUG
 				GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientBase::DecodeReceivedPackets");
+#else
+				GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+#endif	
 			}
 		}
 	}

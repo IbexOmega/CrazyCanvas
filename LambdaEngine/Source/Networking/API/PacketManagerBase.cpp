@@ -73,7 +73,11 @@ namespace LambdaEngine
 
 	void PacketManagerBase::QueryEnd(TArray<NetworkSegment*>& segmentsReceived)
 	{
+#ifdef LAMBDA_CONFIG_DEBUG
 		m_SegmentPool.FreeSegments(segmentsReceived, "PacketManagerBase::QueryEnd");
+#else
+		m_SegmentPool.FreeSegments(segmentsReceived);
+#endif	
 	}
 
 	void PacketManagerBase::DeleteOldBundles()
@@ -184,7 +188,11 @@ namespace LambdaEngine
 			packetsToFree.PushBack(segmentInfo.Segment);
 		}
 
+#ifdef LAMBDA_CONFIG_DEBUG
 		m_SegmentPool.FreeSegments(packetsToFree, "PacketManagerBase::HandleAcks");
+#else
+		m_SegmentPool.FreeSegments(packetsToFree);
+#endif
 	}
 
 	/*

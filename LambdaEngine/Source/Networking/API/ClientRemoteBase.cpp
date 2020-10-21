@@ -138,7 +138,11 @@ namespace LambdaEngine
 		if (!IsConnected())
 		{
 			LOG_WARNING("[ClientRemoteBase]: Can not send packet before a connection has been established");
+#ifdef LAMBDA_CONFIG_DEBUG
 			GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientRemoteBase::SendUnreliable");
+#else
+			GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+#endif			
 			return false;
 		}
 
@@ -151,7 +155,11 @@ namespace LambdaEngine
 		if (!IsConnected())
 		{
 			LOG_WARNING("[ClientRemoteBase]: Can not send packet before a connection has been established");
+#ifdef LAMBDA_CONFIG_DEBUG
 			GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientRemoteBase::SendReliable");
+#else
+			GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+#endif	
 			return false;
 		}
 
@@ -252,7 +260,11 @@ namespace LambdaEngine
 			{
 				if (!HandleReceivedPacket(pPacket))
 				{
+#ifdef LAMBDA_CONFIG_DEBUG
 					pPacketManager->GetSegmentPool()->FreeSegment(pPacket, "ClientRemoteBase::DecodeReceivedPackets");
+#else
+					pPacketManager->GetSegmentPool()->FreeSegment(pPacket);
+#endif
 				}
 			}
 		}
