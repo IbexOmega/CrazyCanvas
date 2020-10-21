@@ -38,7 +38,7 @@ class HUDGUI : public Noesis::Grid
 {
 
 public:
-	HUDGUI(const LambdaEngine::String& xamlFile, int32 ammoCap);
+	HUDGUI(const LambdaEngine::String& xamlFile);
 	~HUDGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -49,7 +49,7 @@ public:
 
 	bool ApplyDamage(float damage);
 	bool UpdateScore();
-	bool UpdateAmmo(const int32 currentAmmo);
+	bool UpdateAmmo(const int32 currentAmmo, const int32 ammoCap);
 
 private:
 

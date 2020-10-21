@@ -19,10 +19,9 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile, int32 ammoCap) : 
+HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) : 
 	m_GUIState()
 {
-	m_GUIState.AmmoCapacity = ammoCap;
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 	InitGUI();
 }
@@ -116,13 +115,14 @@ bool HUDGUI::UpdateScore()
 	return true;
 }
 
-bool HUDGUI::UpdateAmmo(const int32 currentAmmo)
+bool HUDGUI::UpdateAmmo(const int32 currentAmmo, const int32 ammoCap)
 {
 	//Returns false if Out Of Ammo
 	std::string ammoString;
 
 	m_GUIState.Ammo = currentAmmo;
-
+	m_GUIState.AmmoCapacity = ammoCap;
+	
 	ammoString = std::to_string(m_GUIState.Ammo) + "/" + std::to_string(m_GUIState.AmmoCapacity);
 	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
 

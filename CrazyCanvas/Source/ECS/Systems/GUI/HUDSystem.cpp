@@ -43,7 +43,7 @@ void HUDSystem::Init()
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
-	m_HUDGUI = *new HUDGUI("HUD.xaml", 50);
+	m_HUDGUI = *new HUDGUI("HUD.xaml");
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
 	GUIApplication::SetView(m_View);
@@ -69,7 +69,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 		if (pPlayerLocalComponents->HasComponent(playerEntity) && m_HUDGUI)
 		{
-			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition);
+			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition, weaponComponent.AmmoCapacity);
 		}
 	}
 }
