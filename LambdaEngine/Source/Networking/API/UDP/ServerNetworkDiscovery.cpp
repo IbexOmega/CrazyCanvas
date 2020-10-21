@@ -123,7 +123,7 @@ namespace LambdaEngine
 			if (m_Transceiver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
 				HandleReceivedPacket(sender, packets[0]);
 
-			m_SegmentPool.FreeSegments(packets);
+			m_SegmentPool.FreeSegments(packets, "ServerNetworkDiscovery::RunReceiver");
 		}
 	}
 

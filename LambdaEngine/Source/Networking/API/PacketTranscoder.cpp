@@ -53,7 +53,7 @@ namespace LambdaEngine
 			}
 		}
 
-		pSegmentPool->FreeSegments(segmentsToFree);
+		pSegmentPool->FreeSegments(segmentsToFree, "PacketTranscoder::EncodeSegments");
 
 		memcpy(buffer, pHeader, sizeof(Header));
 

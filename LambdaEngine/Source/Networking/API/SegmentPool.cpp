@@ -48,6 +48,43 @@ namespace LambdaEngine
 		}
 		return false;
 	}
+
+	void SegmentPool::FreeSegment(NetworkSegment* pSegment, const std::string& returner)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
+		Free(pSegment);
+	}
+
+	void SegmentPool::FreeSegments(TArray<NetworkSegment*>& segments, const std::string& returner)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		for (NetworkSegment* pSegment : segments)
+		{
+			LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
+			Free(pSegment);
+		}
+		segments.Clear();
+	}
+
+#else
+
+	void SegmentPool::FreeSegment(NetworkSegment* pSegment)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		Free(pSegment);
+	}
+
+	void SegmentPool::FreeSegments(TArray<NetworkSegment*>& segments)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		for (NetworkSegment* pSegment : segments)
+		{
+			Free(pSegment);
+		}
+		segments.Clear();
+	}
+
 #endif
 
 	NetworkSegment* SegmentPool::RequestFreeSegment()
@@ -82,22 +119,6 @@ namespace LambdaEngine
 		m_SegmentsFree = TArray<NetworkSegment*>(m_SegmentsFree.begin(), m_SegmentsFree.begin() + delta);
 
 		return true;
-	}
-
-	void SegmentPool::FreeSegment(NetworkSegment* pSegment)
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		Free(pSegment);
-	}
-
-	void SegmentPool::FreeSegments(TArray<NetworkSegment*>& segments)
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		for (NetworkSegment* pSegment : segments)
-		{
-			Free(pSegment);
-		}
-		segments.Clear();
 	}
 
 	void SegmentPool::Free(NetworkSegment* pSegment)

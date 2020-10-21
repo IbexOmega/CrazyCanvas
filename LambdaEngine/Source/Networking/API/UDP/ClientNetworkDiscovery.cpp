@@ -119,12 +119,12 @@ namespace LambdaEngine
 			{
 				if (!HandleReceivedPacket(sender, packets[0]))
 				{
-					m_SegmentPool.FreeSegment(packets[0]);
+					m_SegmentPool.FreeSegment(packets[0], "ClientNetworkDiscovery::RunReceiver");
 				}
 			}
 			else
 			{
-				m_SegmentPool.FreeSegments(packets);
+				m_SegmentPool.FreeSegments(packets, "ClientNetworkDiscovery::RunReceiver2");
 			}
 		}
 	}
@@ -198,7 +198,7 @@ namespace LambdaEngine
 		{
 			BinaryDecoder& decoder = packet.Decoder;
 			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), m_Statistics.GetRemoteSalt());
-			m_SegmentPool.FreeSegment(decoder.GetPacket());
+			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
 		}
 		packets.Clear();
 	}

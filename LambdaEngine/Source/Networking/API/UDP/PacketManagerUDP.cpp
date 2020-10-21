@@ -74,7 +74,7 @@ namespace LambdaEngine
 			}
 		}
 		
-		m_SegmentPool.FreeSegments(packetsToFree);
+		m_SegmentPool.FreeSegments(packetsToFree, "PacketManagerUDP::FindSegmentsToReturn");
 
 		if (runUntangler)
 			UntangleReliableSegments(segmentsReturned);
@@ -156,7 +156,7 @@ namespace LambdaEngine
 			if (messageInfo.Listener)
 				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Segment, messageInfo.Retries);
 
-			m_SegmentPool.FreeSegment(messageInfo.Segment);
+			m_SegmentPool.FreeSegment(messageInfo.Segment, "PacketManagerUDP::ResendOrDeleteSegments");
 		}
 	}
 }
