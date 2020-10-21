@@ -66,7 +66,7 @@ namespace LambdaEngine
 		}
 
 		// Allocate pushConstant data
-		constexpr uint32 PushConstantSize = sizeof(uint32) * 2U;
+		constexpr uint32 PushConstantSize = sizeof(uint32);
 		m_PushConstant.pData = DBG_NEW byte[PushConstantSize];
 		m_PushConstant.DataSize = PushConstantSize;
 		m_PushConstant.Offset = 0U;
@@ -106,7 +106,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PlayerRenderer::PrepareTextureUpdates(const TArray<LightUpdateData>& textureIndices)
+	void PlayerRenderer::PrepareTextureUpdates(const TArray<UpdateData>& textureIndices)
 	{
 		if (!textureIndices.IsEmpty())
 			m_TextureUpdateQueue.Insert(std::end(m_TextureUpdateQueue), std::begin(textureIndices), std::end(textureIndices));
@@ -132,8 +132,10 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
+		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
+		UNREFERENCED_VARIABLE(imageCount);
 
 	/*	if (resourceName == SCENE_POINT_SHADOWMAPS)
 		{
@@ -144,31 +146,35 @@ namespace LambdaEngine
 	void PlayerRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(backBufferBound);
+		UNREFERENCED_VARIABLE(count);
+		UNREFERENCED_VARIABLE(pOffsets);
+		UNREFERENCED_VARIABLE(ppBuffers);
+		UNREFERENCED_VARIABLE(resourceName);
 
-		//if (resourceName == SCENE_LIGHTS_BUFFER)
-		//{
-		//	constexpr DescriptorSetIndex setIndex = 0U;
+		if (resourceName == SCENE_LIGHTS_BUFFER)
+		{
+			constexpr DescriptorSetIndex setIndex = 0U;
 
-		//	// Prepare Descriptors for later reusage
-		//	m_UnavailableDescriptorSets[setIndex].PushBack(std::make_pair(m_LightDescriptorSet, m_CurrModFrameIndex));
+			// Prepare Descriptors for later reusage
+			m_UnavailableDescriptorSets[setIndex].PushBack(std::make_pair(m_PlayerDescriptorSet, m_CurrModFrameIndex));
 
-		//	m_LightDescriptorSet = GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", setIndex);
-		//	if (m_LightDescriptorSet != nullptr)
-		//	{
-		//		m_LightDescriptorSet->WriteBufferDescriptors(
-		//			ppBuffers,
-		//			pOffsets,
-		//			pSizesInBytes,
-		//			0,
-		//			count,
-		//			EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-		//		);
-		//	}
-		//	else
-		//	{
-		//		LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", 0);
-		//	}
-		//}
+			m_PlayerDescriptorSet = GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", setIndex);
+			if (m_PlayerDescriptorSet != nullptr)
+			{
+				m_PlayerDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					0,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
 	}
 
 	void PlayerRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
@@ -201,7 +207,7 @@ namespace LambdaEngine
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					// Create a new descriptor or use an old descriptor
-					m_DrawArgsDescriptorSets[d] = GetDescriptorSet("Light Renderer Descriptor Set " + std::to_string(d), setIndex);
+					m_DrawArgsDescriptorSets[d] = GetDescriptorSet("Player Renderer Descriptor Set " + std::to_string(d), setIndex);
 
 					if (m_DrawArgsDescriptorSets[d] != nullptr)
 					{
@@ -241,74 +247,13 @@ namespace LambdaEngine
 		pCommandList->Begin(nullptr);
 
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
-		pCommandList->BindDescriptorSetGraphics(m_LightDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// LightsBuffer
+		pCommandList->BindDescriptorSetGraphics(m_PlayerDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// LightsBuffer
 
 		constexpr uint32 CUBE_FACE_COUNT = 6U;
-		PushConstantData psData = {};
+		TeamsPushConstantData psData = {};
 
 		// Render to queued texture indices
-		for (auto lightUpdateData : m_TextureUpdateQueue)
-		{
-			psData.PointLightIndex = lightUpdateData.PointLightIndex;
-			for (uint32 f = 0; f < CUBE_FACE_COUNT; f++)
-			{
-				auto pFaceView = m_PointLFaceViews[lightUpdateData.TextureIndex * CUBE_FACE_COUNT + f];
-
-				uint32 width = pFaceView->GetDesc().pTexture->GetDesc().Width;
-				uint32 height = pFaceView->GetDesc().pTexture->GetDesc().Height;
-
-				Viewport viewport = {};
-				viewport.MinDepth = 0.0f;
-				viewport.MaxDepth = 1.0f;
-				viewport.Width = (float32)width;
-				viewport.Height = -(float32)height;
-				viewport.x = 0.0f;
-				viewport.y = (float32)height;
-				pCommandList->SetViewports(&viewport, 0, 1);
-
-				ScissorRect scissorRect = {};
-				scissorRect.Width = width;
-				scissorRect.Height = height;
-				pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
-
-				ClearColorDesc clearColorDesc = {};
-				clearColorDesc.Depth = 1.0;
-				clearColorDesc.Stencil = 0U;
-
-				BeginRenderPassDesc beginRenderPassDesc = {};
-				beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
-				beginRenderPassDesc.ppRenderTargets = nullptr;
-				beginRenderPassDesc.RenderTargetCount = 0;
-				beginRenderPassDesc.pDepthStencil = pFaceView.Get();
-				beginRenderPassDesc.Width = width;
-				beginRenderPassDesc.Height = height;
-				beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-				beginRenderPassDesc.pClearColors = &clearColorDesc;
-				beginRenderPassDesc.ClearColorCount = 1;
-				beginRenderPassDesc.Offset.x = 0;
-				beginRenderPassDesc.Offset.y = 0;
-
-				psData.Iteration = f;
-				memcpy(m_PushConstant.pData, &psData, sizeof(uint32) * 2U);
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, m_PushConstant.pData, m_PushConstant.DataSize, m_PushConstant.Offset);
-				pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
-				for (uint32 d = 0; d < m_DrawCount; d++)
-				{
-					const DrawArg& drawArg = m_pDrawArgs[d];
-					pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-
-					auto* descriptorSet = m_DrawArgsDescriptorSets[d].Get();
-
-					pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 1);
-
-					pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
-				}
-
-				pCommandList->EndRenderPass();
-			}
-		}
+		
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
@@ -352,28 +297,18 @@ namespace LambdaEngine
 		instanceBindingDesc.Binding = 1;
 		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
-		DescriptorBindingDesc lightsBindingDesc = {};
-		lightsBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		lightsBindingDesc.DescriptorCount = 1;
-		lightsBindingDesc.Binding = 0;
-		lightsBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		ConstantRangeDesc teamIdconstantRangeDesc = {};
+		teamIdconstantRangeDesc.OffsetInBytes = 0U;
+		teamIdconstantRangeDesc.SizeInBytes = sizeof(uint32);
+		teamIdconstantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { lightsBindingDesc };
-
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
-
-		ConstantRangeDesc constantRangeDesc = {};
-		constantRangeDesc.OffsetInBytes = 0U;
-		constantRangeDesc.SizeInBytes = sizeof(uint32) * 2U;
-		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc = {};
+		descriptorSetLayoutDesc.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
-		pipelineLayoutDesc.DebugName = "Light Renderer Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
-		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
-
+		pipelineLayoutDesc.DebugName = "Player Renderer Pipeline Layout";
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc };
+		pipelineLayoutDesc.ConstantRanges = { teamIdconstantRangeDesc };
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
 		return m_PipelineLayout != nullptr;
@@ -385,8 +320,8 @@ namespace LambdaEngine
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
-		descriptorCountDesc.ConstantBufferDescriptorCount = 0;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 3;
+		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 2;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
@@ -401,8 +336,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_LightDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Light Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
-		if (m_LightDescriptorSet == nullptr)
+		m_PlayerDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+		if (m_PlayerDescriptorSet == nullptr)
 		{
 			LOG_ERROR("[PlayerRenderer]: Failed to create DescriptorSet[%d]", 0);
 			return false;
@@ -413,9 +348,9 @@ namespace LambdaEngine
 
 	bool PlayerRenderer::CreateShaders()
 	{
-		//m_VertexShaderPointGUID = ResourceManager::LoadShaderFromFile("/ShadowMap/PointLShadowMap.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		//m_PixelShaderPointGUID = ResourceManager::LoadShaderFromFile("/ShadowMap/PointLShadowMap.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		//return m_VertexShaderPointGUID != GUID_NONE && m_PixelShaderPointGUID != GUID_NONE;
+		m_VertexShaderPointGUID = ResourceManager::LoadShaderFromFile("/Geometry/Geom.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_PixelShaderPointGUID = ResourceManager::LoadShaderFromFile("/Geometry/Geom.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		return m_VertexShaderPointGUID != GUID_NONE && m_PixelShaderPointGUID != GUID_NONE;
 	}
 
 	bool PlayerRenderer::CreateCommandLists()
@@ -473,7 +408,7 @@ namespace LambdaEngine
 		subpassDependencyDesc.DstStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		RenderPassDesc renderPassDesc = {};
-		renderPassDesc.DebugName = "Light Renderer Render Pass";
+		renderPassDesc.DebugName = "Player Renderer Render Pass";
 		renderPassDesc.Attachments = { depthAttachmentDesc };
 		renderPassDesc.Subpasses = { subpassDesc };
 		renderPassDesc.SubpassDependencies = { subpassDependencyDesc };
@@ -486,7 +421,7 @@ namespace LambdaEngine
 	bool PlayerRenderer::CreatePipelineState()
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.DebugName = "Point Light Renderer Pipeline State";
+		pipelineStateDesc.DebugName = "Player Renderer Pipeline State";
 		pipelineStateDesc.RenderPass = m_RenderPass;
 		pipelineStateDesc.PipelineLayout = m_PipelineLayout;
 

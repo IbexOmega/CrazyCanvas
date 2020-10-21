@@ -4,7 +4,7 @@
 
 namespace LambdaEngine
 {
-	struct PushConstant
+	struct TeamsPushConstant
 	{
 		byte* pData = nullptr;
 		uint32	DataSize = 0;
@@ -12,16 +12,16 @@ namespace LambdaEngine
 		uint32	MaxDataSize = 0;
 	};
 
-	struct PushConstantData
-	{
-		uint32 Iteration;
-		uint32 PointLightIndex;
-	};
-
-	struct LightUpdateData
+	struct TeamsPushConstantData
 	{
 		uint32 viewerTeamId;
-		uint32 other;
+		TArray<uint32> othersTeamId;
+	};
+
+	struct UpdateData
+	{
+		uint32 viewerTeamId;
+		TArray<uint32> othersTeamId;
 	};
 
 	using ReleaseFrame = uint32;
@@ -40,7 +40,7 @@ namespace LambdaEngine
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
-		void PrepareTextureUpdates(const TArray<LightUpdateData>& textureIndices);
+		void PrepareTextureUpdates(const TArray<UpdateData>& textureIndices);
 
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
@@ -102,17 +102,17 @@ namespace LambdaEngine
 		uint64									m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
-		TSharedRef<DescriptorSet>				m_LightDescriptorSet;
+		TSharedRef<DescriptorSet>				m_PlayerDescriptorSet;
 		TArray<TSharedRef<DescriptorSet>>		m_DrawArgsDescriptorSets;
 
 		THashTable<DescriptorSetIndex, TArray<std::pair<TSharedRef<DescriptorSet>, ReleaseFrame>>>	m_UnavailableDescriptorSets;
 		THashTable<DescriptorSetIndex, TArray<TSharedRef<DescriptorSet>>>							m_AvailableDescriptorSets;
 
 		uint32									m_BackBufferCount = 0;
-		TArray<LightUpdateData>					m_TextureUpdateQueue;
+		TArray<UpdateData>						m_TextureUpdateQueue;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
 
-		PushConstant							m_PushConstant;
+		TeamsPushConstant						m_PushConstant;
 	private:
 		static PlayerRenderer* s_pInstance;
 
