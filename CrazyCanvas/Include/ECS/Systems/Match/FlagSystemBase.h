@@ -14,13 +14,19 @@ public:
 
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 
+	virtual void OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaEngine::Entity flagEntity) = 0;
+	virtual void OnFlagDropped() = 0;
+
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 
 protected:
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
 public:
-	FORCEINLINE static FlagSystemBase* GetInstance() { return s_Instance; }
+	FORCEINLINE static FlagSystemBase* GetInstance() 
+	{ 
+		return s_Instance; 
+	}
 
 protected:
 	LambdaEngine::IDVector m_Flags;

@@ -21,12 +21,9 @@ ServerFlagSystem::~ServerFlagSystem()
 
 }
 
-void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaEngine::Entity flagEntity)
 {
 	using namespace LambdaEngine;
-
-	//Handle Flag Collision
-	LOG_WARNING("FLAG COLLIDED");
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -39,12 +36,9 @@ void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, Lambd
 		{ ComponentPermissions::RW,	OffsetComponent::Type() }
 	};
 
-	job.Function = [entity0, entity1]()
+	job.Function = [flagEntity, playerEntity]()
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-
-		Entity flagEntity	= entity0;
-		Entity playerEntity	= entity1;
 
 		const MeshComponent& playerMeshComponent			= pECS->GetConstComponent<MeshComponent>(playerEntity);
 
@@ -72,6 +66,18 @@ void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, Lambd
 	};
 
 	pECS->ScheduleJobASAP(job);
+}
+
+void ServerFlagSystem::OnFlagDropped()
+{
+}
+
+void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+{
+	//Handle Flag Collision
+	LOG_WARNING("FLAG COLLIDED Server");
+
+	OnFlagPickedUp(entity1, entity0);
 }
 
 void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)

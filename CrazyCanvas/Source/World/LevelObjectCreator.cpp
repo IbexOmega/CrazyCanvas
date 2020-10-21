@@ -229,7 +229,7 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 		.Mesh				= pECS->AddComponent<MeshComponent>(entity,			meshComponent),
 		.ShapeType			= EShapeType::TRIGGER,
 		.CollisionGroup		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-		.CollisionMask		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER, // Collide with any non-static object
+		.CollisionMask		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
 		.CallbackFunction	= std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance())
 	};
 
@@ -274,7 +274,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER
+		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();

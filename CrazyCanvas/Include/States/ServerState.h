@@ -9,6 +9,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 class Level;
+class FlagSystemBase;
 
 class ServerState :
 	public LambdaEngine::State

@@ -13,6 +13,8 @@
 * All rights reserved.
 */
 
+#include "Containers/String.h"
+
 namespace LambdaEngine
 {
 #define SHA2_SHFR(x, n)		(x >> n)
