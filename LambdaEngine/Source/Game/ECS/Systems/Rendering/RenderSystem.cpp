@@ -52,7 +52,7 @@ namespace LambdaEngine
 			transformGroup.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
-			systemReg.Phase = g_LastPhase;
+			systemReg.Phase = LAST_PHASE;
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
@@ -1236,7 +1236,7 @@ namespace LambdaEngine
 					{
 						instance.CustomIndex |= textureIndex;
 					}
-				}	
+				}
 
 				Sampler* pNearestSampler = Sampler::GetNearestSampler();
 				ResourceUpdateDesc unwrappedTextureUpdate = {};
