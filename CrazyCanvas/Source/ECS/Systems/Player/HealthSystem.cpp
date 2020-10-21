@@ -2,6 +2,8 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include <mutex>
 
 HealthSystem::HealthSystem()
@@ -11,6 +13,8 @@ HealthSystem::HealthSystem()
 
 HealthSystem::~HealthSystem()
 {
+	using namespace LambdaEngine;
+	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HealthSystem::OnProjectileHit);
 }
 
 bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
@@ -18,12 +22,18 @@ bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 	using namespace LambdaEngine;
 
 	std::scoped_lock<SpinLock> lock(m_DefferedEventsLock);
+	LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
+	
 	for (Entity entity : m_HealthEntities)
 	{
+		LOG_INFO("....Entity: %d", entity);
+
 		// CollisionInfo0 is the projectile
-		if (projectileHitEvent.CollisionInfo1.Entity == entity)
+		if (projectileHitEvent.CollisionInfo0.Entity == entity)
 		{
 			m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
+			LOG_INFO("Player got hit");
+			break;
 		}
 	}
 
@@ -53,6 +63,9 @@ bool HealthSystem::Init()
 
 		RegisterSystem(systemReg);
 	}
+
+	// Register eventhandler
+	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HealthSystem::OnProjectileHit);
 
 	return true;
 }
@@ -90,10 +103,4 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			LOG_INFO("Player got splashed");
 		}
 	}
-}
-
-HealthSystem& HealthSystem::GetInstance()
-{
-	static HealthSystem instance;
-	return instance;
 }

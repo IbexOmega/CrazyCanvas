@@ -4,5 +4,5 @@
 struct HealthComponent
 {
 	DECL_COMPONENT(HealthComponent);
-	int32 CurrentHealth;
+	int32 CurrentHealth = 100;
 };

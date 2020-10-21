@@ -142,7 +142,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			if (weaponComponent.ReloadClock < 0.0f)
 			{
 				weaponComponent.ReloadClock			= 0.0f;
-				weaponComponent.CurrentAmmunition	= 5;
+				weaponComponent.CurrentAmmunition	= AMMO_CAPACITY;
 
 				LOG_INFO("Reload Finish");
 			}
@@ -227,7 +227,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit, entity: %d", collisionInfo0.Entity);
+	LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Is this safe? Concurrency issues?
@@ -242,7 +242,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		const uint32 otherEntityTeam	= pTeamComponents->GetConstData(collisionInfo1.Entity).TeamIndex;
 		const uint32 projectileTeam		= pTeamComponents->GetConstData(collisionInfo0.Entity).TeamIndex;
-
 
 		if (projectileTeam == otherEntityTeam)
 		{

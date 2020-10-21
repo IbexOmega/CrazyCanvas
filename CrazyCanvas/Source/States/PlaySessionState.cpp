@@ -34,7 +34,6 @@
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 	m_pIPAddress(pIPAddress)
 {
-
 }
 
 PlaySessionState::~PlaySessionState()
@@ -51,7 +50,7 @@ void PlaySessionState::Init()
 	m_MeshPaintHandler.Init();
 
 	m_WeaponSystem.Init();
-	HealthSystem::GetInstance().Init();
+	m_HealthSystem.Init();
 
 	m_HUDSecondaryState.Init();
 
@@ -64,114 +63,6 @@ void PlaySessionState::Init()
 		m_pLevel = LevelManager::LoadLevel(0);
 		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 	}
-
-	//// Robot
-	//{
-	//	TArray<GUID_Lambda> animations;
-	//	const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
-	//	const uint32 robotAlbedoGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-	//	const uint32 robotNormalGUID = ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-
-	//	MaterialProperties materialProperties;
-	//	materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	//	materialProperties.Roughness = 1.0f;
-	//	materialProperties.Metallic = 1.0f;
-
-	//	const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-	//		"Robot Material",
-	//		robotAlbedoGUID,
-	//		robotNormalGUID,
-	//		GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//		GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//		GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//		materialProperties);
-
-	//	MeshComponent robotMeshComp = {};
-	//	robotMeshComp.MeshGUID = robotGUID;
-	//	robotMeshComp.MaterialGUID = robotMaterialGUID;
-
-	//	AnimationComponent robotAnimationComp = {};
-	//	robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-	//	robotAnimationComp.AnimationGUID = animations[0];
-	//	robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-
-	//	glm::vec3 position(0.0f, 1.25f, 0.0f);
-	//	glm::vec3 scale(0.01f);
-
-	//	Entity entity = pECS->CreateEntity();
-	//	pECS->AddComponent<PositionComponent>(entity, { true, position });
-	//	pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-	//	pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-	//	pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
-	//	pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-
-	//	// Audio
-	//	GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
-	//	ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-	//	const SoundInstance3DDesc desc =
-	//	{
-	//			.pName = "RobotSoundInstance",
-	//			.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
-	//			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-	//			.Position = position,
-	//			.Volume = 0.03f
-	//	};
-
-	//	pSoundInstance->Init(&desc);
-	//	pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
-	//}
-
-	////Sphere Grid
-	//{
-	//	uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-
-	//	uint32 gridRadius = 5;
-
-	//	for (uint32 y = 0; y < gridRadius; y++)
-	//	{
-	//		float32 roughness = y / float32(gridRadius - 1);
-
-	//		for (uint32 x = 0; x < gridRadius; x++)
-	//		{
-	//			float32 metallic = x / float32(gridRadius - 1);
-
-	//			MaterialProperties materialProperties;
-	//			materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-	//			materialProperties.Roughness = roughness;
-	//			materialProperties.Metallic = metallic;
-
-	//			MeshComponent sphereMeshComp = {};
-	//			sphereMeshComp.MeshGUID = sphereMeshGUID;
-	//			sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-	//				"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				materialProperties);
-
-	//			glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
-	//			glm::vec3 scale(1.0f);
-
-	//			Entity entity = pECS->CreateEntity();
-	//			const CollisionInfo collisionCreateInfo = {
-	//				.Entity			= entity,
-	//				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
-	//				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-	//				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-	//				.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
-	//				.ShapeType		= EShapeType::SIMULATION,
-	//				.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-	//				.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-	//			};
-
-	//			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-	//			StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
-	//			pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
-	//		}
-	//	}
-	//}
 
 	//Preload some resources
 	{
@@ -293,11 +184,11 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
 	{
 		BinaryDecoder decoder(event.pPacket);
-		bool isLocal = decoder.ReadBool();
-		int32 networkUID = decoder.ReadInt32();
-		glm::vec3 position = decoder.ReadVec3();
-		glm::vec3 forward = decoder.ReadVec3();
-		uint32 teamIndex = decoder.ReadUInt32();
+		bool isLocal		= decoder.ReadBool();
+		int32 networkUID	= decoder.ReadInt32();
+		glm::vec3 position	= decoder.ReadVec3();
+		glm::vec3 forward	= decoder.ReadVec3();
+		uint32 teamIndex	= decoder.ReadUInt32();
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
@@ -311,14 +202,14 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 		};
 
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-		bool animationsExist			= !animations.IsEmpty();
+		const uint32 robotGUID	= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		bool animationsExist	= !animations.IsEmpty();
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 		if (animationsExist)
 		{
-			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
+			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 		}
 
 		CreatePlayerDesc createPlayerDesc =
@@ -337,6 +228,23 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
 
+#if 1
+		// Create a player to shoot at
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		if (animationsExist)
+		{
+			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
+		}
+
+		createPlayerDesc.IsLocal	= false;
+		createPlayerDesc.TeamIndex	= 2;
+		createPlayerDesc.Position.x = -3.0f;
+		createPlayerDesc.Position.y = 0.75f;
+		createPlayerDesc.Position.z = -3.0f;
+		createPlayerDesc.NetworkUID += (int32)1;
+		createPlayerDesc.AnimationComponent = robotAnimationComp;
+		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
+#endif
 		return true;
 	}
 

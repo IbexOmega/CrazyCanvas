@@ -1,11 +1,13 @@
 #pragma once
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystem.h"
 
 #include "Game/State.h"
 
 #include "States/HUDState.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
@@ -37,7 +39,7 @@ private:
 
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
-
+	HealthSystem m_HealthSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

@@ -12,15 +12,14 @@
 class HealthSystem : public LambdaEngine::System
 {
 public:
+	HealthSystem();
+	~HealthSystem();
+
 	bool Init();
 
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final;
 
-	static HealthSystem& GetInstance();
-
 private:
-	HealthSystem();
-	~HealthSystem();
 
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
 
