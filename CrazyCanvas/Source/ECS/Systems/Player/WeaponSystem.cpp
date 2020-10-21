@@ -104,25 +104,44 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		// Update position and orientation
 		const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(playerEntity);
 		const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(playerEntity);
-		PositionComponent& weaponPositionComp = pPositionComponents->GetData(weaponEntity);
-		RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
 		const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
 
-		weaponPositionComp.Position = playerPositionComp.Position + weaponOffsetComp.Offset;
-		weaponRotationComp.Quaternion = playerRotationComp.Quaternion;
+		glm::vec3 position;
+		glm::quat quaternion;
+		if (playerPositionComp.Dirty)
+		{
+			PositionComponent& posComp = pPositionComponents->GetData(weaponEntity);
+			posComp.Position = playerPositionComp.Position + weaponOffsetComp.Offset;
+			position = posComp.Position;
+		}
+		else
+		{
+			position = pPositionComponents->GetConstData(weaponEntity).Position;
+		}
+
+		if (playerRotationComp.Dirty)
+		{
+			RotationComponent& rotComp = pRotationComponents->GetData(weaponEntity);
+			rotComp.Quaternion = playerRotationComp.Quaternion;
+			quaternion = rotComp.Quaternion;
+		}
+		else
+		{
+			quaternion = pRotationComponents->GetConstData(weaponEntity).Quaternion;
+		}
 
 		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD) && !onCooldown)
 		{
 			const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(playerEntity);
 
-			Fire(weaponComponent, weaponPositionComp.Position, weaponRotationComp.Quaternion, playerVelocityComp.Velocity);
+			Fire(weaponComponent, position, quaternion, playerVelocityComp.Velocity);
 		}
 
 		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK) && !onCooldown)
 		{
-			if (pEmitterComponents->HasComponent(playerEntity))
+			if (pEmitterComponents->HasComponent(weaponEntity))
 			{
-				ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(playerEntity);
+				ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
 
 				emitterComp.Active = true;
 
