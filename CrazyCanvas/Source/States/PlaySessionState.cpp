@@ -50,7 +50,7 @@ void PlaySessionState::Init()
 
 	m_WeaponSystem.Init();
 
-	m_HUDSecondaryState.Init();
+	m_HUDSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
