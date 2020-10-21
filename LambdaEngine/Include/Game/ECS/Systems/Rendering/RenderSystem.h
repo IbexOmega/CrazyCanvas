@@ -235,6 +235,7 @@ namespace LambdaEngine
 		~RenderSystem() = default;
 
 		bool Init();
+		bool InitRenderGraphs();
 		bool Release();
 
 		virtual void Tick(Timestamp deltaTime) override final;
@@ -245,6 +246,12 @@ namespace LambdaEngine
 		* Set new rendergraph to be executed
 		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
+
+
+		/*
+		* Adds new Game specific Custom Renderer 
+		*/
+		void AddCustomRenderer(ICustomRenderer* pCustomRenderer);
 
 		/*
 		* Puts given render stage to sleep, this will prevent execution of renderstage
@@ -399,6 +406,7 @@ namespace LambdaEngine
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
+		TArray<ICustomRenderer*>	m_GameSpecificCustomRenderers;
 
 	private:
 		static RenderSystem		s_Instance;
