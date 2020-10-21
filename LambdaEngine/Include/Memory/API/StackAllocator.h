@@ -10,6 +10,8 @@ namespace LambdaEngine
 	class MemoryArena
 	{
 	public:
+		DECL_REMOVE_COPY(MemoryArena);
+
 		inline MemoryArena(uint32 sizeInBytes = 4096)
 			: m_pMemory(nullptr)
 			, m_Offset(0)
@@ -21,6 +23,16 @@ namespace LambdaEngine
 			ZERO_MEMORY(m_pMemory, m_SizeInBytes);
 #endif
 			Reset();
+		}
+
+		inline MemoryArena(MemoryArena&& other)
+			: m_pMemory(other.m_pMemory)
+			, m_Offset(other.m_Offset)
+			, m_SizeInBytes(other.m_SizeInBytes)
+		{
+			other.m_pMemory		= nullptr;
+			other.m_Offset		= 0;
+			other.m_SizeInBytes	= 0;
 		}
 
 		inline ~MemoryArena()
@@ -76,6 +88,9 @@ namespace LambdaEngine
 	class StackAllocator
 	{
 	public:
+		DECL_REMOVE_COPY(StackAllocator);
+		DECL_REMOVE_MOVE(StackAllocator);
+
 		StackAllocator(uint32 sizePerArena = 4096);
 		~StackAllocator() = default;
 
@@ -97,7 +112,7 @@ namespace LambdaEngine
 		template<typename T>
 		FORCEINLINE void* Allocate()
 		{
-			return Allocate(sizeof(T));
+			return Push(sizeof(T));
 		}
 
 	private:

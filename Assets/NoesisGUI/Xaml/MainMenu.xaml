@@ -32,8 +32,8 @@
 
         <GroupBox x:Name="SettingsGroupBox" Visibility="Hidden" FontSize="56" Header="Settings" Grid.Column="1" VerticalAlignment="Center" Margin="30">
             <StackPanel>
-                <ToggleButton  Click="OnMeshShadersChecked" Content="Mesh Shading" HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Top" Width="180"     FontSize="22" />
-                <ToggleButton  Click="OnRayTracingChecked"  Content="Ray Tracing"  HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Bottom" Width="180"  FontSize="22"/>
+                <ToggleButton x:Name="MeshShadersToggleButton" Click="OnMeshShadersChecked" Content="Mesh Shading" HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Top" Width="180"     FontSize="22" />
+                <ToggleButton x:Name="RayTracingToggleButton" Click="OnRayTracingChecked"  Content="Ray Tracing"  HorizontalAlignment="Center" Margin="10" Padding="10" VerticalAlignment="Bottom" Width="180"  FontSize="22"/>
                 <Label                                      Content="Volume"       HorizontalAlignment="Center" Margin="10" FontSize="22"/>
                 <Slider        ValueChanged="OnVolumeSliderChanged" x:Name="VolumeSlider"  HorizontalAlignment="Center" Margin="10" Height="50" Minimum="0.0" SmallChange="0.02" LargeChange="0.1" Maximum="1.0" VerticalAlignment="Stretch" Width="220.0"/>
                 <Button        Click="OnButtonKeybindingsClick"    Content="Keybindings"  HorizontalAlignment="Center" Margin="10" VerticalAlignment="Top"  Padding="20"  MinWidth="220" FontSize="22"/>

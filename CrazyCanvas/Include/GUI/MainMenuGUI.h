@@ -32,6 +32,7 @@ private:
 
 private:
 	bool	m_RayTracingEnabled		= false;
+	bool	m_MeshShadersEnabled	= false;
 	bool	m_RayTracingSleeping	= false;
 	bool	m_MeshShadersSleeping	= false;
 

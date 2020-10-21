@@ -3,7 +3,11 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/State.h"
 
+#include "States/HUDState.h"
+
 #include "Application/API/Events/NetworkEvents.h"
+#include "EventHandlers/AudioEffectHandler.h"
+#include "EventHandlers/MeshPaintHandler.h"
 
 #include "Networking/API/IPAddress.h"
 
@@ -30,6 +34,16 @@ public:
 private:
 	Level* m_pLevel = nullptr;
 	LambdaEngine::IPAddress* m_pIPAddress;
-	WeaponSystem m_WeaponSystem;
+
 	MultiplayerClient m_MultiplayerClient;
+
+	HUDState m_HUDSecondaryState;
+
+	/* Systems */
+	WeaponSystem m_WeaponSystem;
+
+
+	/* Event handlers */
+	AudioEffectHandler m_AudioEffectHandler;
+	MeshPaintHandler m_MeshPaintHandler;
 };

@@ -10,7 +10,7 @@ namespace LambdaEngine
 
 	void ECSCore::Release()
 	{
-		DELETE_OBJECT(ECSCore::s_pInstance);
+		SAFEDELETE(ECSCore::s_pInstance);
 	}
 
 	void ECSCore::Tick(Timestamp deltaTime)

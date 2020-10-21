@@ -1,5 +1,9 @@
 #include "World/LevelObjectCreator.h"
 
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
+#include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
@@ -14,6 +18,7 @@
 
 #include "ECS/Components/Player/Weapon.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/ClientRemoteBase.h"
@@ -129,19 +134,21 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
-	const CollisionInfo collisionCreateInfo =
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
+	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, translation }),
 		.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.0f) }),
 		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 		.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+		.ShapeType		= EShapeType::SIMULATION,
 		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
 		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	};
 
-	pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	return entity;
 }
 
@@ -155,7 +162,7 @@ ESpecialObjectType LevelObjectCreator::CreateSpecialObjectFromPrefix(const Lambd
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name, specialObject.Prefix);
+		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name.c_str(), specialObject.Prefix.c_str());
 		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
 	}
 }
@@ -230,7 +237,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
 
-	const CharacterColliderInfo colliderInfo =
+	const CharacterColliderCreateInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
@@ -283,6 +290,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
+			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->CreateAudioListener() });
 
 			const ViewProjectionMatricesComponent viewProjComp =
 			{

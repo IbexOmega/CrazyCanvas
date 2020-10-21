@@ -95,13 +95,13 @@ namespace LambdaEngine
 			m_ThreadsTerminated = false;
 
 			m_pThreadTransmitter = Thread::Create(
-				std::bind(&NetWorker::ThreadTransmitter, this),
-				std::bind(&NetWorker::ThreadTransmitterDeleted, this)
+				std::bind_front(&NetWorker::ThreadTransmitter, this),
+				std::bind_front(&NetWorker::ThreadTransmitterDeleted, this)
 			);
 
 			m_pThreadReceiver = Thread::Create(
-				std::bind(&NetWorker::ThreadReceiver, this),
-				std::bind(&NetWorker::ThreadReceiverDeleted, this)
+				std::bind_front(&NetWorker::ThreadReceiver, this),
+				std::bind_front(&NetWorker::ThreadReceiverDeleted, this)
 			);
 			m_ThreadsStarted = true;
 			return true;
