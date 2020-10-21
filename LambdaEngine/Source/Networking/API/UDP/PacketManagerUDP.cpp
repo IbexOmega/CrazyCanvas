@@ -133,7 +133,7 @@ namespace LambdaEngine
 
 					if (messageInfo.Retries < m_MaxRetries)
 					{
-						m_SegmentsToSend[m_QueueIndex].push(messageInfo.Segment);
+						InsertSegment(messageInfo.Segment);
 						messageInfo.LastSent = currentTime;
 						if (messageInfo.Listener)
 							messageInfo.Listener->OnPacketResent(messageInfo.Segment, messageInfo.Retries);
@@ -149,17 +149,14 @@ namespace LambdaEngine
 				m_SegmentsWaitingForAck.erase(pair.first);
 		}
 		
-		TArray<NetworkSegment*> packetsToFree;
-		packetsToFree.Reserve(messagesToDelete.GetSize());
-
 		for (auto& pair : messagesToDelete)
 		{
 			SegmentInfo& messageInfo = pair.second;
-			packetsToFree.PushBack(messageInfo.Segment);
+
 			if (messageInfo.Listener)
 				messageInfo.Listener->OnPacketMaxTriesReached(messageInfo.Segment, messageInfo.Retries);
-		}
 
-		m_SegmentPool.FreeSegments(packetsToFree);
+			m_SegmentPool.FreeSegment(messageInfo.Segment);
+		}
 	}
 }

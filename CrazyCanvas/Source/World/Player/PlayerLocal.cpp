@@ -24,6 +24,8 @@
 
 #include "Input/API/InputActionSystem.h"
 
+#include "Multiplayer/PacketType.h"
+
 #define EPSILON 0.01f
 
 using namespace LambdaEngine;
@@ -59,7 +61,7 @@ void PlayerLocal::Init()
 				{R , PositionComponent::Type()},
 				{RW, VelocityComponent::Type()},
 				{RW, RotationComponent::Type()},
-				{R, PacketPlayerActionResponseComponent::Type()},
+				{R, PacketComponent<PlayerActionResponse>::Type()},
 			}
 		}
 	};
@@ -92,33 +94,21 @@ void PlayerLocal::FixedTickMainThread(Timestamp deltaTime)
 		if (!MultiplayerUtils::IsSingleplayer())
 			SendGameState(gameState);
 	}
-	else
-	{
-		LOG_WARNING("Else");
-	}
 }
 
 void PlayerLocal::SendGameState(const PlayerGameState& gameState)
 {
 	if (m_pClient)
 	{
-		PacketPlayerActionComponent::Packet packet;
+		PlayerAction packet		= {};
 		packet.SimulationTick	= gameState.SimulationTick;
 		packet.Rotation			= gameState.Rotation;
 		packet.DeltaForward		= gameState.DeltaForward;
 		packet.DeltaLeft		= gameState.DeltaLeft;
 
-		NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION);
+		NetworkSegment* pPacket = m_pClient->GetFreePacket(PacketType::PLAYER_ACTION);
 		pPacket->Write(&packet);
 		m_pClient->SendReliable(pPacket);
-
-		/*pPacket->
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteInt32(gameState.SimulationTick);
-		encoder.WriteQuat(gameState.Rotation);
-		encoder.WriteInt8(gameState.DeltaForward);
-		encoder.WriteInt8(gameState.DeltaLeft);
-		m_pClient->SendReliable(pPacket);*/
 	}
 }
 
@@ -192,8 +182,8 @@ bool PlayerLocal::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEve
 void PlayerLocal::Reconcile()
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	const PacketPlayerActionResponseComponent& pPacketComponents = pECS->GetComponent<PacketPlayerActionResponseComponent>(m_Entities[0]);
-	const TArray<PacketPlayerActionResponseComponent::Packet>& m_FramesProcessedByServer = pPacketComponents.Packets;
+	const PacketComponent<PlayerActionResponse>& pPacketComponents = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(m_Entities[0]);
+	const TArray<PlayerActionResponse>& m_FramesProcessedByServer = pPacketComponents.PacketsReceived;
 
 	for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
 	{
@@ -208,7 +198,7 @@ void PlayerLocal::Reconcile()
 	}
 }
 
-void PlayerLocal::ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PacketPlayerActionResponseComponent::Packet& gameStateServer)
+void PlayerLocal::ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -253,7 +243,7 @@ void PlayerLocal::ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameS
 	}
 }
 
-bool PlayerLocal::CompareGameStates(const PlayerGameState& gameStateLocal, const PacketPlayerActionResponseComponent::Packet& gameStateServer)
+bool PlayerLocal::CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer)
 {
 	bool result = true;
 	if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)

@@ -1,12 +1,11 @@
 #include "Networking/API/PacketTranscoder.h"
-#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/SegmentPool.h"
 
 #include "Log/Log.h"
 
 namespace LambdaEngine
 {
-	void PacketTranscoder::EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
+	void PacketTranscoder::EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
 	{
 		pHeader->Size = sizeof(Header);
 		pHeader->Segments = 0;
@@ -15,27 +14,42 @@ namespace LambdaEngine
 
 		TArray<NetworkSegment*> segmentsToFree;
 
-		while (!segmentsToEncode.empty())
-		{
-			NetworkSegment* segment = segmentsToEncode.front();
-			//LOG_MESSAGE("PacketTranscoder::EncodeSegments(%s)", segment->ToString().c_str());
-			//Make sure the packet is not bigger than the max size
-			ASSERT(segment->GetTotalSize() + sizeof(Header) <= bufferSize);
+		TArray<NetworkSegment*> packats;
 
-			if (segment->GetTotalSize() + pHeader->Size <= bufferSize)
+		for (auto it = segmentsToEncode.begin(); it != segmentsToEncode.end();)
+		{
+			NetworkSegment* pSegment = *it;
+
+			packats.PushBack(pSegment);
+			//LOG_ERROR("PacketTranscoder::EncodeSegments(%s)", pSegment->ToString().c_str());
+
+			ASSERT(pSegment->GetTotalSize() + sizeof(Header) <= bufferSize);
+
+			if (pSegment->GetTotalSize() + pHeader->Size <= bufferSize)
 			{
-				segmentsToEncode.pop();
-				pHeader->Size += WriteSegment(buffer + pHeader->Size, segment);
+				it = segmentsToEncode.erase(it);
+				pHeader->Size += WriteSegment(buffer + pHeader->Size, pSegment);
 				pHeader->Segments++;
 
-				if (segment->IsReliable())
-					reliableUIDsSent.insert(segment->GetReliableUID());
+				if (pSegment->IsReliable())
+					reliableUIDsSent.insert(pSegment->GetReliableUID());
 				else
-					segmentsToFree.PushBack(segment);
+					segmentsToFree.PushBack(pSegment);
 			}
 			else
 			{
 				break;
+			}
+		}
+
+		for (int i = 0; i < packats.GetSize(); i++)
+		{
+			for (int j = 0; j < packats.GetSize(); j++)
+			{
+				if (i == j)
+					continue;
+
+				ASSERT(packats[i] != packats[j]);
 			}
 		}
 
@@ -85,7 +99,7 @@ namespace LambdaEngine
 			offset += ReadSegment(buffer + offset, pSegment);
 			pSegment->m_Salt = pHeader->Salt;
 
-			//LOG_MESSAGE("PacketTranscoder::DecodeSegments(%s)", pSegment->ToString().c_str());
+			//LOG_ERROR("PacketTranscoder::DecodeSegments(%s)", pSegment->ToString().c_str());
 		}
 
 		return true;

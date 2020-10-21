@@ -6,12 +6,10 @@
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
 #include "ECS/ECSCore.h"
-#include "ECS/ComponentArray.h"
-
-#include "ECS/Components/Multiplayer/PacketPlayerActionResponseComponent.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
+#include "Multiplayer/PacketType.h"
 
 using namespace LambdaEngine;
 
@@ -27,11 +25,22 @@ PacketDecoderSystem::~PacketDecoderSystem()
 
 void PacketDecoderSystem::Init()
 {
-	SystemRegistration systemReg = {};
-	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+	SystemRegistration systemReg;
+
+	const PacketTypeMap& packetTypeMap = PacketType::GetPacketTypeMap();
+
+	for (auto pair : packetTypeMap)
 	{
-		RegisterPacketType<PlayerAction>()
-	};
+		EntitySubscriptionRegistration subscription;
+		subscription.pSubscriber = &m_ComponentTypeToEntities[pair.second];
+		subscription.ComponentAccesses =
+		{
+			{NDA, NetworkComponent::Type()},
+			{RW, pair.second},
+		};
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(subscription);
+	}
+
 	systemReg.Phase = 0;
 
 	RegisterSystem(systemReg);
@@ -41,7 +50,7 @@ void PacketDecoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	for (auto& pair : m_Entities)
+	for (auto& pair : m_ComponentTypeToEntities)
 	{
 		IComponentArray* pComponents = pECS->GetComponentArray(pair.first);
 		for (Entity entity : pair.second)
@@ -59,35 +68,44 @@ bool PacketDecoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEve
 
 	event.pPacket->ResetReadHead();
 
-	if (event.Type == NetworkSegment::TYPE_PLAYER_ACTION)
+	if (event.Type == PacketType::PLAYER_ACTION)
 	{
 		Entity entity = MultiplayerUtils::GetEntityPlayer(event.pClient);
 
 		if (entity != UINT32_MAX)
 		{
-			PacketPlayerActionComponent::Packet packet = {};
+			/*PlayerAction packet = {};
 			event.pPacket->Read(&packet);
+			PacketComponent<PlayerAction>& pPacketComponents = pECS->GetComponent<PacketComponent<PlayerAction>>(entity);
+			pPacketComponents.PacketsReceived.PushBack(packet);*/
 
-			bool isFirstPacketOfTick = false;
-			PacketPlayerActionComponent& pPacketComponents = pECS->GetComponent<PacketPlayerActionComponent>(entity, isFirstPacketOfTick);
 
-			pPacketComponents.Packets.PushBack(packet);
+			const ComponentType* pType = PacketType::GetComponentType(event.Type);
+			IComponentArray* pComponents = pECS->GetComponentArray(pType);
+			void* pComponent = pComponents->GetRawData(entity);
+			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
+			void* packetData = pPacketComponent->AddPacketReceived();
+			event.pPacket->Read(packetData, pPacketComponent->GetSize());
 		}
 	}
-	else if (event.Type == NetworkSegment::TYPE_PLAYER_ACTION_RESPONSE)
+	else if (event.Type == PacketType::PLAYER_ACTION_RESPONSE)
 	{
 		BinaryDecoder decoder(event.pPacket);
 		Entity entity = MultiplayerUtils::GetEntity(decoder.ReadInt32());
 
 		if (entity != UINT32_MAX)
 		{
-			PacketPlayerActionResponseComponent::Packet packet = {};
+			/*PlayerActionResponse packet = {};
 			event.pPacket->Read(&packet);
+			PacketComponent<PlayerActionResponse>& pPacketComponents = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(entity);
+			pPacketComponents.PacketsReceived.PushBack(packet);*/
 
-			bool isFirstPacketOfTick = false;
-			PacketPlayerActionResponseComponent& pPacketComponents = pECS->GetComponent<PacketPlayerActionResponseComponent>(entity, isFirstPacketOfTick);
-
-			pPacketComponents.Packets.PushBack(packet);
+			const ComponentType* pType = PacketType::GetComponentType(event.Type);
+			IComponentArray* pComponents = pECS->GetComponentArray(pType);
+			void* pComponent = pComponents->GetRawData(entity);
+			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
+			void* packetData = pPacketComponent->AddPacketReceived();
+			event.pPacket->Read(packetData, pPacketComponent->GetSize());
 		}
 	}
 

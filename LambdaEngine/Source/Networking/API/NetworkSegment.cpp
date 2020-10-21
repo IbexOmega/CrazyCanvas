@@ -8,7 +8,7 @@ namespace LambdaEngine
 		m_Header(),
 		m_Salt(0),
 		m_ReadHead(0)
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#ifdef LAMBDA_CONFIG_DEBUG
 		, m_IsBorrowed(false)
 #endif
 	{
@@ -24,7 +24,7 @@ namespace LambdaEngine
 	{
 		m_Header.Type = type;
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#ifdef LAMBDA_CONFIG_DEBUG
 		PacketTypeToString(m_Header.Type, m_Type);
 #endif
 
@@ -58,6 +58,7 @@ namespace LambdaEngine
 
 	NetworkSegment* NetworkSegment::Write(const void* pBuffer, uint16 bytes)
 	{
+		ASSERT(bytes > 0);
 		ASSERT(m_SizeOfBuffer + bytes <= MAXIMUM_SEGMENT_SIZE);
 		memcpy(m_pBuffer + m_SizeOfBuffer, pBuffer, bytes);
 		m_SizeOfBuffer += bytes;
@@ -66,6 +67,7 @@ namespace LambdaEngine
 
 	NetworkSegment* NetworkSegment::Read(void* pBuffer, uint16 bytes)
 	{
+		ASSERT(bytes > 0);
 		ASSERT(m_ReadHead + bytes <= m_SizeOfBuffer);
 		memcpy(pBuffer, m_pBuffer + m_ReadHead, bytes);
 		m_ReadHead += bytes;

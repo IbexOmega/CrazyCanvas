@@ -126,7 +126,6 @@ namespace LambdaEngine
 
 		if constexpr (Comp::HasDirtyFlag())
 		{
-			wasDirty = component.Dirty;
 			component.Dirty = true;
 		}
 

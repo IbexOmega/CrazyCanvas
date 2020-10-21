@@ -3,8 +3,7 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
-#include "ECS/Components/Multiplayer/PacketPlayerActionComponent.h"
-#include "ECS/Components/Multiplayer/PacketPlayerActionResponseComponent.h"
+#include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "PlayerGameState.h"
 
@@ -32,8 +31,8 @@ private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	void Reconcile();
-	void ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PacketPlayerActionResponseComponent::Packet& gameStateServer);
-	bool CompareGameStates(const PlayerGameState& gameStateLocal, const PacketPlayerActionResponseComponent::Packet& gameStateServer);
+	void ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer);
+	bool CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer);
 
 private:
 	LambdaEngine::IDVector m_Entities;

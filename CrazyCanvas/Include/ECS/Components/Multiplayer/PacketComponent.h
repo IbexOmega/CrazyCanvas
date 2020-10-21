@@ -11,7 +11,9 @@ struct IPacketComponent
 	friend class PacketDecoderSystem;
 
 private:
+	virtual void* AddPacketReceived() = 0;
 	virtual void ClearPacketsReceived() = 0;
+	virtual uint16 GetSize() = 0;
 };
 
 template<typename PacketType>
@@ -22,9 +24,19 @@ struct PacketComponent : public IPacketComponent
 	LambdaEngine::TArray<PacketType> PacketsToSend;
 
 private:
+	virtual void* AddPacketReceived() override final
+	{
+		return &PacketsReceived.PushBack({});
+	}
+
 	virtual void ClearPacketsReceived() override final
 	{
 		PacketsReceived.Clear();
+	}
+
+	virtual uint16 GetSize() override final
+	{
+		return sizeof(PacketType);
 	}
 };
 
@@ -39,7 +51,7 @@ struct PlayerAction
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct Packet
+struct PlayerActionResponse
 {
 	int32 SimulationTick = -1;
 	glm::vec3 Position;

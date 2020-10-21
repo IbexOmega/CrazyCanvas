@@ -76,7 +76,7 @@ namespace LambdaEngine
 						PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
 						CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
-						NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_PLAYER_ACTION_RESPONSE);
+						NetworkSegment* pPacket = m_pClient->GetFreePacket(3); //PacketType::PLAYER_ACTION_RESPONSE
 						BinaryEncoder encoder(pPacket);
 						encoder.WriteInt32(entityPlayer);
 						encoder.WriteInt32(m_CurrentGameState.SimulationTick);
@@ -131,7 +131,7 @@ namespace LambdaEngine
 		PacketReceivedEvent event(pClient, pPacket);
 		EventQueue::SendEventImmediate(event);
 
-		if (pPacket->GetType() == NetworkSegment::TYPE_PLAYER_ACTION)
+		if (pPacket->GetType() == 2)//PacketType::PLAYER_ACTION
 		{
 			GameState gameState = {};
 

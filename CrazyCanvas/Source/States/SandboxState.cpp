@@ -53,6 +53,8 @@
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
+#include "Multiplayer/PacketType.h"
+
 #include <imgui.h>
 
 using namespace LambdaEngine;
@@ -451,7 +453,7 @@ bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& eve
 {
 	using namespace LambdaEngine;
 
-	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
+	if (event.Type == PacketType::CREATE_ENTITY)
 	{
 		BinaryDecoder decoder(event.pPacket);
 		bool isLocal = decoder.ReadBool();

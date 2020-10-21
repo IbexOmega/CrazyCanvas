@@ -80,7 +80,7 @@ namespace LambdaEngine
 		{
 			MultiplayerUtils::s_IsSinglePlayer = true;
 
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(1); //PacketType::CREATE_ENTITY
 			BinaryEncoder encoder3(pPacket);
 			encoder3.WriteBool(true);
 			encoder3.WriteInt32(0);

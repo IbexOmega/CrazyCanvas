@@ -1,5 +1,7 @@
 #include "Multiplayer/MultiplayerBase.h"
 
+#include "Multiplayer/PacketType.h"
+
 MultiplayerBase::MultiplayerBase() : 
 	m_PacketDecoderSystem()
 {
@@ -8,6 +10,7 @@ MultiplayerBase::MultiplayerBase() :
 
 void MultiplayerBase::InitInternal()
 {
+	PacketType::Init();
 	m_PacketDecoderSystem.Init();
 	Init();
 }

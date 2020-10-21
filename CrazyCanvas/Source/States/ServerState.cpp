@@ -29,6 +29,7 @@
 #include "World/Level.h"
 #include "World/LevelManager.h"
 
+#include "Multiplayer/PacketType.h"
 
 using namespace LambdaEngine;
 
@@ -105,7 +106,7 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
 
-		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_ENTITY);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteBool(false);
 		encoder.WriteInt32((int32)otherPlayerEntity);

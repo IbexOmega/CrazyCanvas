@@ -202,6 +202,7 @@ namespace LambdaEngine
 		
 		for (NetworkSegment* pPacket : packets)
 		{
+			ASSERT(pPacket->GetBufferSize() > 0);
 			m_pHandler->OnPacketReceived(this, pPacket);
 		}
 		GetPacketManager()->QueryEnd(packets);
@@ -276,6 +277,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			ASSERT(pPacket->GetBufferSize() > 0);
 			m_ReceivedPackets[m_BufferIndex].PushBack(pPacket);
 			return true;
 		}

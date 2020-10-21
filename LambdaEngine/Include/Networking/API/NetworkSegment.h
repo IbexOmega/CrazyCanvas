@@ -13,6 +13,7 @@ namespace LambdaEngine
 		friend class SegmentPool;
 		friend class PacketManager;
 		friend class PacketManager2;
+		friend struct NetworkSegmentUIDOrder;
 
 	public:
 #pragma pack(push, 1)
@@ -36,12 +37,7 @@ namespace LambdaEngine
 			TYPE_CHALLENGE				= UINT16_MAX - 6,
 			TYPE_ACCEPTED				= UINT16_MAX - 7,
 			TYPE_NETWORK_ACK			= UINT16_MAX - 8,
-			TYPE_NETWORK_DISCOVERY		= UINT16_MAX - 9,
-
-
-			TYPE_ENTITY_CREATE			= UINT16_MAX - 10,
-			TYPE_PLAYER_ACTION			= UINT16_MAX - 11,
-			TYPE_PLAYER_ACTION_RESPONSE = UINT16_MAX - 12,
+			TYPE_NETWORK_DISCOVERY		= UINT16_MAX - 9
 		};
 
 	public:
@@ -94,7 +90,7 @@ namespace LambdaEngine
 		static void PacketTypeToString(uint16 type, std::string& str);
 
 	private:
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#ifdef LAMBDA_CONFIG_DEBUG
 		std::string m_Borrower;
 		std::string m_Type;
 		bool m_IsBorrowed;
@@ -109,14 +105,17 @@ namespace LambdaEngine
 
 	struct NetworkSegmentReliableUIDOrder
 	{
-		bool operator()(const NetworkSegment& lhs, const NetworkSegment& rhs) const
-		{
-			return lhs.GetReliableUID() < rhs.GetReliableUID();
-		}
-
 		bool operator()(const NetworkSegment* lhs, const NetworkSegment* rhs) const
 		{
 			return lhs->GetReliableUID() < rhs->GetReliableUID();
+		}
+	};
+
+	struct NetworkSegmentUIDOrder
+	{
+		bool operator()(const NetworkSegment* lhs, const NetworkSegment* rhs) const
+		{
+			return lhs->m_Header.UID < rhs->m_Header.UID;
 		}
 	};
 }

@@ -29,6 +29,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Multiplayer/PacketType.h"
+
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 	m_pIPAddress(pIPAddress),
 	m_MultiplayerClient()
@@ -177,7 +179,7 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 {
 	using namespace LambdaEngine;
 
-	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
+	if (event.Type == PacketType::CREATE_ENTITY)
 	{
 		BinaryDecoder decoder(event.pPacket);
 		bool isLocal = decoder.ReadBool();
