@@ -33,9 +33,10 @@ namespace LambdaEngine
 		float			ElapTime = 0.f;
 		float			LifeTime;
 		float			ParticleRadius;
-		uint32			DataIndex = 0;
+		glm::vec4		Color;
+		uint32			DataIndex = UINT32_MAX;
 		ParticleChunk	ParticleChunk;
-		uint32			AtlasIndex = 0;
+		uint32			AtlasGUID = 0;
 		uint32			TileIndex = 0;
 		uint32			AnimationCount = 0;
 		uint32			FirstAnimationIndex = 0;
@@ -59,7 +60,7 @@ namespace LambdaEngine
 		glm::vec4 Color;
 		float LifeTime;
 		float Radius;
-		uint32 AtlasIndex;
+		uint32 AtlasGUID;
 		uint32 AnimationCount;
 		uint32 FirstAnimationIndex;
 		uint32 padding0			= 0;
@@ -118,6 +119,7 @@ namespace LambdaEngine
 		bool CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance);
 		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
+		bool ActivateEmitterEntity(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		bool DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance);
 
 		bool FreeParticleChunk(ParticleChunk chunk);
