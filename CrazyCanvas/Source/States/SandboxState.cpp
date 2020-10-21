@@ -138,6 +138,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.Graph = AnimationGraph(AnimationState("walking", animations[0]));
@@ -150,6 +151,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.Graph = AnimationGraph(AnimationState("running", running[0]));
@@ -162,6 +164,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
@@ -180,6 +183,7 @@ void SandboxState::Init()
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512));
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
