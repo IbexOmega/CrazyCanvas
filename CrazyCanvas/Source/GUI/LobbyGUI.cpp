@@ -1,11 +1,14 @@
-#pragma once
 #include "Game/State.h"
-#include "Game/StateManager.h"
 
 #include "Engine/EngineConfig.h"
+#include "Engine/EngineLoop.h"
+
+#include "Networking/API/NetworkUtils.h"
+
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
+
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "States/PlaySessionState.h"
@@ -18,8 +21,6 @@
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
 
-//#include <string>
-
 #include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
@@ -27,52 +28,78 @@ using namespace Noesis;
 
 LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	m_HostGameDesc(),
-	m_ServerList(xamlFile)
+	m_ServerList(xamlFile),
+	m_Servers()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
-	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerFound);
-	//m_pRoot = Noesis::GUI::LoadXaml<Grid>(xamlFile.c_str());
+	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
 
 	const char* pIP = "192.168.1.65";
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
-	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"));
+	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"), FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST"));
 	ErrorPopUpClose();
 }
 
 LobbyGUI::~LobbyGUI()
 {
-	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerFound);
+	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
 }
 
-bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
+bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
+	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
+
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonBackClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonConnectClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonRefreshClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonErrorOKClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonErrorClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonHostGameClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonJoinClick);
 	return false;
 }
 
 void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-bool LobbyGUI::OnServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
+bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
 {
 	BinaryDecoder* pDecoder = event.pDecoder;
-	const IPEndPoint* pEndPoint = event.pEndPoint;
 
-	uint8 players = 0;
-	pDecoder->ReadUInt8(players);
+	ServerInfo newInfo;
+	newInfo.Ping = 0;
+	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
+	newInfo.EndPoint = *event.pEndPoint;
 
-	LOG_INFO("Found server at %s with %u players", pEndPoint->ToString().c_str(), players);
+	pDecoder->ReadUInt8(newInfo.Players);
+	pDecoder->ReadString(newInfo.Name);
+	pDecoder->ReadString(newInfo.MapName);
+
+	ServerInfo& currentInfo = m_Servers[event.ServerUID];
+
+	if (currentInfo != newInfo)
+	{
+		currentInfo = newInfo;
+		if (currentInfo.ServerGrid) // update current list
+		{
+			m_ServerList.UpdateServerItems(currentInfo);
+		}
+		else // add new item to list
+		{
+			Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+
+			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
+		}
+	}
 	return false;
 }
 
@@ -85,18 +112,11 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 	IPAddress* pIP = IPAddress::Get(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
 
-	if (!ClientSystem::GetInstance().Connect(pIP))
-	{
-		LOG_MESSAGE("Client already in use");
-		return;
-	}
-	// Start Connecting animation
-
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesActive();
 
-	State* pPlayState = DBG_NEW PlaySessionState(true);
+	State* pPlayState = DBG_NEW PlaySessionState(pIP);
 	StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
@@ -107,13 +127,15 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 
 	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-	m_ServerList.AddServerItem(pServerGrid,  "BajsKorv", "BajsApa", "69",true);
+	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
 	ErrorPopUp(OTHER_ERROR);
 }
@@ -144,26 +166,68 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 
 		SetRenderStagesActive();
 
-		State* pServerState = DBG_NEW ServerState();
-		StateManager::GetInstance()->EnqueueStateTransition(pServerState, STATE_TRANSITION::POP_AND_PUSH);
+		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
+		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
+}
 
+void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
+{
+	for (auto& server : m_Servers)
+	{
+		if (server.second.ServerGrid == pGrid)
+		{
+			LambdaEngine::GUIApplication::SetView(nullptr);
 
+			SetRenderStagesActive();
+
+			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
+			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+		}
+	}
+}
+
+void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	TabItem* pTab = FrameworkElement::FindName<TabItem>("LOCAL");
+
+	if (pTab->GetIsSelected()) // From LAN Server List
+	{
+		ListBox* pBox = FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST");
+		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
+
+		if (pSelectedItem)
+			StartSelectedServer(pSelectedItem);
+		else
+			ErrorPopUp(JOIN_ERROR);
+	}
+	else // From Saved Server List
+	{
+		ListBox* pBox = FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
+		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
+
+		if (pSelectedItem)
+			StartSelectedServer(pSelectedItem);
+		else
+			ErrorPopUp(JOIN_ERROR);
+	}
 }
 
 void LobbyGUI::SetRenderStagesActive()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",	false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",			false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",				false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",	true);
-
-	/*if (m_RayTracingEnabled)
-		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);*/
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
 
 }
 
@@ -173,9 +237,10 @@ void LobbyGUI::ErrorPopUp(ErrorCode errorCode)
 	
 	switch (errorCode)
 	{
-	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To server"); break;
-	case HOST_ERROR:		pTextBox->SetText("Couldn't Host Server");		break;
-	case OTHER_ERROR:		pTextBox->SetText("Something Went Wrong");		break;
+	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To Server!");	break;
+	case JOIN_ERROR:		pTextBox->SetText("No Server Selected!");			break;
+	case HOST_ERROR:		pTextBox->SetText("Couldn't Host Server!");			break;
+	case OTHER_ERROR:		pTextBox->SetText("Something Went Wrong!");			break;
 	}
 
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
@@ -213,5 +278,4 @@ void LobbyGUI::PopulateServerInfo()
 
 	LOG_MESSAGE("Player count %d", playersNumber);
 	LOG_MESSAGE(pMap);
-
 }

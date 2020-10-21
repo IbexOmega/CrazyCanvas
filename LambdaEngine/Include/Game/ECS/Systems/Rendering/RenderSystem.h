@@ -301,7 +301,7 @@ namespace LambdaEngine
 		void UpdateASInstanceBuffers(CommandList* pCommandList);
 		void BuildTLAS(CommandList* pCommandList);
 		void UpdateLightsBuffer(CommandList* pCommandList);
-		void UpdatePointLightTextureResource();
+		void UpdatePointLightTextureResource(CommandList* pCommandList);
 
 		void UpdateRenderGraph();
 
@@ -323,8 +323,8 @@ namespace LambdaEngine
 		bool					m_RayTracingEnabled	= false;
 		bool					m_MeshShadersEnabled = false;
 		// Mesh/Instance/Entity
-		bool						m_LightsResourceDirty		= true;
-		bool						m_PointLightDirty			= true;
+		bool						m_LightsBufferDirty			= true;
+		bool						m_PointLightsDirty			= true;
 		bool						m_DirectionalExist			= false;
 		bool						m_RemoveTexturesOnDeletion	= false;
 		TArray<LightUpdateData>		m_PointLightTextureUpdateQueue;
@@ -341,6 +341,10 @@ namespace LambdaEngine
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
 		MaterialMap						m_MaterialMap;
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
+
+		// PAINT_MASK_TEXTURES
+		TArray<Texture*>			m_PaintMaskTextures;
+		TArray<TextureView*>		m_PaintMaskTextureViews;
 
 		// Materials
 		TArray<Texture*>			m_AlbedoMaps;
@@ -369,7 +373,8 @@ namespace LambdaEngine
 		// Ray Tracing
 		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
 		Buffer*						m_pCompleteInstanceBuffer		= nullptr;
-		uint32						m_MaxInstances					= 0;
+		uint32						m_MaxSupportedTLASInstances		= 0;
+		uint32						m_BuiltTLASInstanceCount		= 0;
 		AccelerationStructure*		m_pTLAS							= nullptr;
 		TArray<PendingBufferUpdate>	m_CompleteInstanceBufferPendingCopies;
 		TArray<SBTRecord>			m_SBTRecords;
@@ -384,6 +389,7 @@ namespace LambdaEngine
 		bool						m_RenderGraphSBTRecordsDirty		= true;
 		bool						m_MaterialsPropertiesBufferDirty	= false;
 		bool						m_MaterialsResourceDirty			= false;
+		bool						m_LightsResourceDirty				= false;
 		bool						m_PerFrameResourceDirty				= true;
 		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;

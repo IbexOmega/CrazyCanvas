@@ -10,57 +10,71 @@ using namespace LambdaEngine;
 using namespace Noesis;
 
 
-SavedServerGUI::SavedServerGUI(const LambdaEngine::String& xamlFile) :
-	m_ItemCount(0)
+SavedServerGUI::SavedServerGUI(const LambdaEngine::String& xamlFile)
 {
 
 }
 
-void SavedServerGUI::Init(ListBox* pListView)
+void SavedServerGUI::Init(ListBox* pSavedListView, ListBox* pLocalListView)
 {
-	/*textBlock = *new ObservableCollection<TextBlock>();
-	tBlock = *new TextBlock("ChrilleBoi");
-	textBlock->Add(tBlock);
-	m_pSavedServerList->SetItemsSource(textBlock);*/
-	
-	m_SavedServerList = *pListView;
-
+	m_SavedServerList = *pSavedListView;
+	m_LocalServerList = *pLocalListView;
 }
 
 SavedServerGUI::~SavedServerGUI()
 {
 }
 
-void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, const char* pMapN, const char* pPing, bool isRunning)
+Ptr<Grid> SavedServerGUI::AddSavedServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
 {
-	
+	Ptr<Grid> grid = AddServerItem(pParentGrid, serverInfo, isRunning);
+	if (m_SavedServerList->GetItems()->Add(grid) == -1)
+	{
+		LOG_ERROR("Refreshing Saved List");
+	}
+
+	return grid;
+}
+
+Ptr<Grid> SavedServerGUI::AddLocalServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
+{
+	Ptr<Grid> grid = AddServerItem(pParentGrid, serverInfo, isRunning);
+	if (m_LocalServerList->GetItems()->Add(grid) == -1)
+	{
+		LOG_ERROR("Refreshing Local List");
+	}
+
+	return grid;
+}
+
+Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
+{
 	Ptr<Grid> grid = *new Grid();
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < SERVER_ITEM_COLUMNS; i++)
 	{
 		Ptr<ColumnDefinition> columnDef = *new ColumnDefinition();
-		GridLength gridLength = GridLength(25, GridUnitType_Star);
+		GridLength gridLength = GridLength(20, GridUnitType_Star);
 		columnDef->SetWidth(gridLength);
 		grid->GetColumnDefinitions()->Add(columnDef);
 	}
 
-	//m_pSavedServerList->SetItemsSource(Servers);
-	//m_pSavedServerList->GetChildren()->Add(m_pSavedServerList);
-	//glöm inte sätta row också när du löst detta bajsproblemet. 
 	pParentGrid->SetColumn(grid, 1);
 	pParentGrid->SetColumnSpan(grid, 2);
 	pParentGrid->SetRow(grid, 4);
 
 	Ptr<TextBlock> serverName	= *new TextBlock();
 	Ptr<TextBlock> mapName		= *new TextBlock();
-	Ptr<TextBlock> ping		= *new TextBlock();
-	Ptr<Rectangle> isRun	= *new Rectangle();
+	Ptr<TextBlock> players		= *new TextBlock();
+	Ptr<TextBlock> ping			= *new TextBlock();
+	Ptr<Rectangle> isRun		= *new Rectangle();
+	Ptr<SolidColorBrush> brush	= *new SolidColorBrush();
 
-	serverName->SetText(pServerN);
-	mapName->SetText(pMapN);
-	ping->SetText(pPing);
+	serverName->SetText(serverInfo.Name.c_str());
+	mapName->SetText(serverInfo.MapName.c_str());
+	players->SetText(std::to_string(serverInfo.Players).c_str());
+	ping->SetText(std::to_string(serverInfo.Ping).c_str());
 
-	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
 	Color color = Color();
 
 	if (isRun)
@@ -72,22 +86,31 @@ void SavedServerGUI::AddServerItem(Grid* pParentGrid, const char* pServerN, cons
 
 	grid->GetChildren()->Add(serverName);
 	grid->GetChildren()->Add(mapName);
+	grid->GetChildren()->Add(players);
 	grid->GetChildren()->Add(ping);
 	grid->GetChildren()->Add(isRun);
 
-	grid->SetColumn(serverName, 0);
-	grid->SetColumn(mapName, 1);
-	grid->SetColumn(ping, 2);
-	grid->SetColumn(isRun, 3);
+	grid->SetColumn(serverName,	0);
+	grid->SetColumn(mapName,	1);
+	grid->SetColumn(players,	2);
+	grid->SetColumn(ping,		3);
+	grid->SetColumn(isRun,		4);
 	//grid->SetRow(pServerName, m_ItemCount++);
 
+	return grid;
+}
 
-	LOG_MESSAGE(pParentGrid->GetName());
-	LOG_MESSAGE(m_SavedServerList->GetName());
 
-	if (m_SavedServerList->GetItems()->Add(grid) == -1)
-	{
-		LOG_ERROR("SKIT ON ME");
-	}
+void SavedServerGUI::UpdateServerItems(const ServerInfo& serverInfo)
+{
+	TextBlock* serverName	= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(0);
+	TextBlock* mapName		= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(1);
+	TextBlock* playerCount	= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(2);
+	TextBlock* ping			= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(3);
+
+	serverName->SetText(serverInfo.Name.c_str());
+	mapName->SetText(serverInfo.MapName.c_str());
+	ping->SetText(std::to_string(serverInfo.Ping).c_str());
+	playerCount->SetText(std::to_string(serverInfo.Players).c_str());
 }
 

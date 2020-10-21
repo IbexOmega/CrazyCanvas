@@ -31,8 +31,7 @@ namespace LambdaEngine
 		textureViewDesc.ArrayCount		= textureViewDesc.pTexture->GetDesc().ArrayCount;
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
-
-		meshPaintComponent.pTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);;
+		meshPaintComponent.pTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
 		TextureViewDesc mipZeroTextureViewDesc = {};
 		mipZeroTextureViewDesc.DebugName		= textureName + " Mip Zero Texture View";
@@ -44,20 +43,14 @@ namespace LambdaEngine
 		mipZeroTextureViewDesc.ArrayCount		= textureViewDesc.pTexture->GetDesc().ArrayCount;
 		mipZeroTextureViewDesc.Miplevel			= 0;
 		mipZeroTextureViewDesc.ArrayIndex		= 0;
+		meshPaintComponent.pMipZeroTextureView	= RenderAPI::GetDevice()->CreateTextureView(&mipZeroTextureViewDesc);
 
 		DrawArgExtensionData drawArgExtensionData = {};
 		drawArgExtensionData.TextureCount = 1;
-		drawArgExtensionData.ppTextures[0]		= meshPaintComponent.pTexture;
-		drawArgExtensionData.ppTextureViews[0]	= meshPaintComponent.pTextureView;
-		drawArgExtensionData.ppSamplers[0]		= Sampler::GetLinearSampler();
-
-		drawArgExtensionData.ppMipZeroTextureViews[0] = RenderAPI::GetDevice()->CreateTextureView(&mipZeroTextureViewDesc);
-
-		//drawArgExtensionData.ppTextures[1]		= meshPaintComponent.pTexture;
-		//drawArgExtensionData.ppTextureViews[1]	= meshPaintComponent.pTextureView;
-		//drawArgExtensionData.ppSamplers[1]		= Sampler::GetLinearSampler();
-		//
-		//drawArgExtensionData.ppMipZeroTextureViews[1] = RenderAPI::GetDevice()->CreateTextureView(&mipZeroTextureViewDesc);
+		drawArgExtensionData.ppTextures[0]				= meshPaintComponent.pTexture;
+		drawArgExtensionData.ppTextureViews[0]			= meshPaintComponent.pTextureView;
+		drawArgExtensionData.ppMipZeroTextureViews[0]	= meshPaintComponent.pMipZeroTextureView;
+		drawArgExtensionData.ppSamplers[0]				= Sampler::GetNearestSampler();
 
 		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), &drawArgExtensionData);
 

@@ -4,7 +4,9 @@
 #include "Containers/String.h"
 
 #include <argh/argh.h>
+#pragma warning( push, 0 )
 #include <rapidjson/document.h>
+#pragma warning( pop )
 
 namespace LambdaEngine
 {

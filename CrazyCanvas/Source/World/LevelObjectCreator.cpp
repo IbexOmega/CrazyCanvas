@@ -1,5 +1,9 @@
 #include "World/LevelObjectCreator.h"
 
+#include "Audio/AudioAPI.h"
+#include "Audio/FMOD/AudioDeviceFMOD.h"
+#include "Audio/FMOD/SoundInstance3DFMOD.h"
+#include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
@@ -10,7 +14,9 @@
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
-#include "ECS/Components/Player/Weapon.h"
+#include "Teams/TeamHelper.h"
+
+#include "ECS/Components/Player/WeaponComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/ClientRemoteBase.h"
@@ -124,19 +130,21 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
-	const CollisionInfo collisionCreateInfo = 
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
+	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, translation }),
 		.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.0f) }),
 		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
 		.Mesh			= pECS->AddComponent<MeshComponent>(entity, meshComponent),
+		.ShapeType		= EShapeType::SIMULATION,
 		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
 		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	};
 
-	pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	return entity;
 }
 
@@ -150,7 +158,7 @@ ESpecialObjectType LevelObjectCreator::CreateSpecialObjectFromPrefix(const Lambd
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name, specialObject.Prefix);
+		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name.c_str(), specialObject.Prefix.c_str());
 		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
 	}
 }
@@ -220,8 +228,9 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
+	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
 
-	const CharacterColliderInfo colliderInfo = 
+	const CharacterColliderCreateInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
@@ -230,8 +239,8 @@ bool LevelObjectCreator::CreatePlayer(
 		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
 	};
 
-	CharacterColliderComponent characterColliderComponent;
-	PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS, characterColliderComponent);
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS);
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 	pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
@@ -241,7 +250,7 @@ bool LevelObjectCreator::CreatePlayer(
 	if (!MultiplayerUtils::IsServer())
 	{
 		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
-		pECS->AddComponent<MeshComponent>(playerEntity, pPlayerDesc->MeshComponent);
+		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
 
@@ -266,7 +275,7 @@ bool LevelObjectCreator::CreatePlayer(
 			childEntities.PushBack(cameraEntity);
 
 			//Todo: Better implementation for this somehow maybe?
-			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshComponent.MeshGUID);
+			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshGUID);
 
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
@@ -274,23 +283,24 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
+			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->CreateAudioListener() });
 
-			const ViewProjectionMatricesComponent viewProjComp = 
+			const ViewProjectionMatricesComponent viewProjComp =
 			{
 				.Projection = glm::perspective(
 					glm::radians(pPlayerDesc->pCameraDesc->FOVDegrees),
 					pPlayerDesc->pCameraDesc->Width / pPlayerDesc->pCameraDesc->Height,
-					pPlayerDesc->pCameraDesc->NearPlane, 
+					pPlayerDesc->pCameraDesc->NearPlane,
 					pPlayerDesc->pCameraDesc->FarPlane),
 
 				.View = glm::lookAt(
-					pPlayerDesc->Position, 
+					pPlayerDesc->Position,
 					pPlayerDesc->Position + pPlayerDesc->Forward,
 					g_DefaultUp)
 			};
 			pECS->AddComponent<ViewProjectionMatricesComponent>(cameraEntity, viewProjComp);
 
-			const CameraComponent cameraComp = 
+			const CameraComponent cameraComp =
 			{
 				.NearPlane	= pPlayerDesc->pCameraDesc->NearPlane,
 				.FarPlane	= pPlayerDesc->pCameraDesc->FarPlane,
@@ -310,16 +320,19 @@ bool LevelObjectCreator::CreatePlayer(
 
 		ClientRemoteBase* pClient = reinterpret_cast<ClientRemoteBase*>(pPlayerDesc->pClient);
 
-		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
-		BinaryEncoder encoder = BinaryEncoder(pPacket);
-		encoder.WriteBool(true);
-		encoder.WriteInt32((int32)playerEntity);
-		encoder.WriteVec3(pPlayerDesc->Position);
+		{
+			NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+			BinaryEncoder encoder = BinaryEncoder(pPacket);
+			encoder.WriteBool(true);
+			encoder.WriteInt32((int32)playerEntity);
+			encoder.WriteVec3(pPlayerDesc->Position);
+			encoder.WriteVec3(pPlayerDesc->Forward);
+			encoder.WriteUInt32(pPlayerDesc->TeamIndex);
 
-		//Todo: 2nd argument should not be nullptr if we want a little info
-		pClient->SendReliable(pPacket, nullptr);
+			//Todo: 2nd argument should not be nullptr if we want a little info
+			pClient->SendReliable(pPacket, nullptr);
+		}
 
-		const auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		const ClientMap& clients = pClient->GetClients();
 
 		for (auto& clientPair : clients)
@@ -327,12 +340,14 @@ bool LevelObjectCreator::CreatePlayer(
 			if (clientPair.second != pClient)
 			{
 				//Send to everyone already connected
-				NetworkSegment* pPacket2 = clientPair.second->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
-				BinaryEncoder encoder2(pPacket2);
-				encoder2.WriteBool(false);
-				encoder2.WriteInt32((int32)playerEntity);
-				encoder2.WriteVec3(pPlayerDesc->Position);
-				clientPair.second->SendReliable(pPacket2, nullptr);
+				NetworkSegment* pPacket = clientPair.second->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+				BinaryEncoder encoder(pPacket);
+				encoder.WriteBool(false);
+				encoder.WriteInt32((int32)playerEntity);
+				encoder.WriteVec3(pPlayerDesc->Position);
+				encoder.WriteVec3(pPlayerDesc->Forward);
+				encoder.WriteUInt32(pPlayerDesc->TeamIndex);
+				clientPair.second->SendReliable(pPacket, nullptr);
 			}
 		}
 	}

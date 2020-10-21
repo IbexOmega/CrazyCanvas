@@ -1048,11 +1048,28 @@ namespace LambdaEngine
 				auto childIt = pSkeleton->JointMap.find(childName);
 				if (childIt != pSkeleton->JointMap.end())
 				{
-					pSkeleton->Joints[childIt->second].ParentBoneIndex = myID;
+					pSkeleton->Joints[childIt->second].ParentBoneIndex = (JointIndexType)myID;
 				}
 
 				FindSkeletalParent(pNode->mChildren[child], pSkeleton);
 			}
+		}
+	}
+
+	static void PrintChildren(const TArray<JointIndexType>& children, const TArray<TArray<JointIndexType>>& childrenArr, Skeleton* pSkeleton, uint32 depth)
+	{
+		String postfix;
+		for (uint32 i = 0; i < depth; i++)
+		{
+			postfix += "  ";
+		}
+
+		for (JointIndexType child : children)
+		{
+			Joint& joint = pSkeleton->Joints[child];
+			LOG_INFO("%s%s | Index=%u NumChildren=%u", postfix.c_str(), joint.Name.GetCString(), child, childrenArr[child].GetSize());
+
+			PrintChildren(childrenArr[child], childrenArr, pSkeleton, depth + 1);
 		}
 	}
 
@@ -1078,13 +1095,14 @@ namespace LambdaEngine
 			}
 			else
 			{
-				pSkeleton->JointMap[joint.Name] = boneIndex;
+				pSkeleton->JointMap[joint.Name] = (unsigned char)boneIndex;
 			}
 			
 			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
 		// We find the parent
+		TArray<TArray<JointIndexType>> children(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
 			Joint& joint = pSkeleton->Joints[boneIndex];
@@ -1100,6 +1118,7 @@ namespace LambdaEngine
 					if (it != pSkeleton->JointMap.end())
 					{
 						joint.ParentBoneIndex = it->second;
+						children[joint.ParentBoneIndex].EmplaceBack(JointIndexType(boneIndex));
 					}
 				}
 			}
@@ -1120,19 +1139,45 @@ namespace LambdaEngine
 					if (it != pSkeleton->JointMap.end())
 					{
 						joint.ParentBoneIndex = it->second;
+						children[joint.ParentBoneIndex].EmplaceBack(JointIndexType(boneIndex));
 					}
 				}
 			}
 		}
 
+#if 1
+		LOG_INFO("-----------------------------------");
+		{
+			JointIndexType rootNode = INVALID_JOINT_ID;
+			for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
+			{
+				Joint& joint = pSkeleton->Joints[jointID];
+				if (joint.ParentBoneIndex == INVALID_JOINT_ID)
+				{
+					rootNode = JointIndexType(jointID);
+					break;
+				}
+			}
+
+			if (rootNode != INVALID_JOINT_ID)
+			{
+				Joint& root = pSkeleton->Joints[rootNode];
+				TArray<JointIndexType> rootChildren = children[rootNode];
+				LOG_INFO("RootNode=%s Index=%u, NumChildren=%u", root.Name.GetCString(), rootNode, rootChildren.GetSize());
+				PrintChildren(rootChildren, children, pSkeleton, 1);
+			}
+		}
+		LOG_INFO("-----------------------------------");
+#endif
+
 #if 0
 		LOG_INFO("-----------------------------------");
-
 		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
 		{
 			Joint& joint = pSkeleton->Joints[jointID];
-			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", joint.Name.GetString().c_str(), jointID, joint.ParentBoneIndex);
+			LOG_INFO("Name=%s, MyID=%d, ParentID=%d", joint.Name.GetCString(), jointID, joint.ParentBoneIndex);
 		}
+		LOG_INFO("-----------------------------------");
 #endif
 
 		// Set weights
@@ -1148,22 +1193,22 @@ namespace LambdaEngine
 				VertexJointData& vertex = pMesh->VertexJointData[vertexID];
 				if (vertex.JointID0 == INVALID_JOINT_ID)
 				{
-					vertex.JointID0 = boneID;
+					vertex.JointID0 = (JointIndexType)boneID;
 					vertex.Weight0	= weight;
 				}
 				else if (vertex.JointID1 == INVALID_JOINT_ID)
 				{
-					vertex.JointID1 = boneID;
+					vertex.JointID1 = (JointIndexType)boneID;
 					vertex.Weight1	= weight;
 				}
 				else if (vertex.JointID2 == INVALID_JOINT_ID)
 				{
-					vertex.JointID2 = boneID;
+					vertex.JointID2 = (JointIndexType)boneID;
 					vertex.Weight2	= weight;
 				}
 				else if (vertex.JointID3 == INVALID_JOINT_ID)
 				{
-					vertex.JointID3 = boneID;
+					vertex.JointID3 = (JointIndexType)boneID;
 					// This weight will be calculated in the shader
 				}
 				else
@@ -1492,7 +1537,6 @@ namespace LambdaEngine
 				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 				Mesh* pMesh = DBG_NEW Mesh;
 
-				glm::vec3 centroid;
 				LoadVertices(pMesh, pMeshAI);
 				LoadIndices(pMesh, pMeshAI);
 
@@ -1538,7 +1582,6 @@ namespace LambdaEngine
 				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
 				BoundingBox boundingBox;
-				glm::vec3 centroid;
 				LoadBoundingBox(boundingBox, pMeshAI);
 
 				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)

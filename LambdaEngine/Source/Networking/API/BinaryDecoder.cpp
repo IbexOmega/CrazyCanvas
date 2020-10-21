@@ -219,4 +219,9 @@ namespace LambdaEngine
 		ReadQuat(value);
 		return value;
 	}
+
+	const NetworkSegment* BinaryDecoder::GetPacket() const
+	{
+		return m_pNetworkPacket;
+	}
 }

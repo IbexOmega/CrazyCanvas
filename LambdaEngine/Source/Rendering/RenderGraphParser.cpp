@@ -987,7 +987,8 @@ namespace LambdaEngine
 
 		auto resourceIt = std::find_if(resources.Begin(), resources.End(), [currentResourceStateIt](const RenderGraphResourceDesc& resourceDesc) { return currentResourceStateIt->second.ResourceName == resourceDesc.Name; });
 
-		if (resourceIt != resources.end())
+		// Only continue if the found resource should synchronize
+		if (resourceIt != resources.end() && resourceIt->ShouldSynchronize)
 		{
 			resourceSynchronization.ResourceType = resourceIt->Type;
 
@@ -1002,13 +1003,6 @@ namespace LambdaEngine
 						resourceSynchronization.NextRenderStage		= pNextRenderStage->Name;
 						resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 						resourceSynchronization.NextBindingType		= pNextResourceState->BindingType;
-
-						if (resourceSynchronization.ResourceName == "G_BUFFER_ALBEDO" &&
-							resourceSynchronization.NextQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS &&
-							resourceSynchronization.NextBindingType == ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE)
-						{
-							int awdwa = 0;
-						}
 
 						pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 					}
@@ -1078,20 +1072,13 @@ namespace LambdaEngine
 							resourceSynchronization.NextQueue			= ConvertPipelineStateTypeToQueue(pNextRenderStage->Type);
 							resourceSynchronization.NextBindingType		= pNextResourceState->BindingType;
 
-							if (resourceSynchronization.ResourceName == "G_BUFFER_ALBEDO" &&
-								resourceSynchronization.NextQueue == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS &&
-								resourceSynchronization.NextBindingType == ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE)
-							{
-								int awdwa = 0;
-							}
-
 							pSynchronizationStage->Synchronizations.PushBack(resourceSynchronization);
 						}
 					}
 				}
 			}
 		}
-		else
+		else if (resourceIt == resources.end())
 		{ 
 			LOG_ERROR("[RenderGraphEditor]: Resource State with name \"%s\" could not be found among resources when creating Synchronization", currentResourceStateIt->second.ResourceName.c_str());
 			return false;

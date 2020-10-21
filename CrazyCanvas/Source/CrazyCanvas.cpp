@@ -12,7 +12,11 @@
 #include "States/SandboxState.h"
 #include "States/ServerState.h"
 
+#include "Networking/API/NetworkUtils.h"
+
 #include "World/LevelManager.h"
+
+#include "Teams/TeamHelper.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
@@ -37,6 +41,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Level Manager Init Failed");
 	}
 
+	if (!TeamHelper::Init())
+	{
+		LOG_ERROR("Team Helper Init Failed");
+	}
+
 	LoadRendererResources();
 
 	constexpr const char* pGameName = "Crazy Canvas";
@@ -58,7 +67,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else if (stateStr == "client")
 	{
 		ClientSystem::Init(pGameName);
-		pStartingState = DBG_NEW PlaySessionState(true);
+		pStartingState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 	}
 	else if (stateStr == "server")
 	{
@@ -134,12 +143,12 @@ bool CrazyCanvas::LoadRendererResources()
 	{
 		String skybox[]
 		{
-			"Skybox/right.png",
-			"Skybox/left.png",
-			"Skybox/top.png",
-			"Skybox/bottom.png",
-			"Skybox/front.png",
-			"Skybox/back.png"
+			"Skybox/px.png",
+			"Skybox/nx.png",
+			"Skybox/py.png",
+			"Skybox/ny.png",
+			"Skybox/pz.png",
+			"Skybox/nz.png"
 		};
 
 		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);

@@ -599,7 +599,7 @@ namespace LambdaEngine
 			m_ImageBarriers[i].srcAccessMask					= ConvertMemoryAccessFlags(barrier.SrcMemoryAccessFlags);
 			m_ImageBarriers[i].dstAccessMask					= ConvertMemoryAccessFlags(barrier.DstMemoryAccessFlags);
 
-			if (barrier.TextureFlags == FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL)
+			if ((barrier.TextureFlags & FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL) > 0)
 			{
 				m_ImageBarriers[i].subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 			}

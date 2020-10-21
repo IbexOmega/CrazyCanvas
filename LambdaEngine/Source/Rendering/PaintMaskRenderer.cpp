@@ -58,11 +58,6 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
 			m_pDeviceResourcesToDestroy.Clear();
 		}
-
-		for (auto& renderTarget : m_RenderTargets)
-		{
-			renderTarget.TextureView->Release();
-		}
 	}
 
 	bool PaintMaskRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
@@ -181,11 +176,9 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
-		//for (UnwrapData& data : s_ClientCollisions)
-		//{
-		//	s_ServerCollisions.push_back(data);
-		//	s_ClientCollisions.pop_front();
-		//}
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(modFrameIndex);
+		UNREFERENCED_VARIABLE(backBufferIndex);
 	}
 
 
@@ -199,6 +192,10 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
+		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
+		UNREFERENCED_VARIABLE(subImageCount);
+
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
 		{
 			for (uint32 i = 0; i < imageCount; i++)
@@ -217,11 +214,11 @@ namespace LambdaEngine
 			if (!m_BrushMaskDescriptorSet.Get())
 			{
 				m_BrushMaskDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
-				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 			}
 			else
 			{
-				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 			}
 		}
 	}
@@ -272,6 +269,8 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
+		UNREFERENCED_VARIABLE(resourceName);
+
 		m_pDrawArgs = pDrawArgs;
 
 		uint32 backBufferCount = m_BackBuffers.GetSize();
@@ -326,12 +325,8 @@ namespace LambdaEngine
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-
 							TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
-							//TextureView* pTextureViewClient = extension.ppMipZeroTextureViews[1];
-
-							m_RenderTargets.PushBack({ .TextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
-							//m_RenderTargets.PushBack({ .TextureView = textureViewClient, .DrawArgIndex = d, .InstanceIndex = i });
+							m_RenderTargets.PushBack({ .pTextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
 				}
@@ -341,7 +336,9 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool sleeping)
 	{
+		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+		UNREFERENCED_VARIABLE(sleeping);
 
 		// Delete old resources.
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
@@ -386,7 +383,7 @@ namespace LambdaEngine
 			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
 			uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
 			const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-			TextureView*	renderTarget		= renderTargetDesc.TextureView;
+			TextureView*	renderTarget		= renderTargetDesc.pTextureView;
 
 			uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
 			uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
@@ -643,6 +640,8 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
+		UNREFERENCED_VARIABLE(pPreInitDesc);
+
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 		colorAttachmentDesc.SampleCount		= 1;

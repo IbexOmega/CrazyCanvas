@@ -51,6 +51,10 @@ void main()
 
 	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
+	
+	vec4 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgba;
+	uint data 					= floatBitsToUint(paintMask.a);
+	float shouldPaint 			= float((data & 0x1) | ((data >> 8) & 0x1));
 
 	//0
 	out_Position				= vec4(in_WorldPosition, 0.0f);
@@ -60,7 +64,10 @@ void main()
 	out_Albedo					= storedAlbedo;
 
 	//2
-	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
+	vec3 storedMaterial			= vec3(
+									materialParameters.AO * sampledCombinedMaterial.b, 
+									mix(materialParameters.Roughness * sampledCombinedMaterial.r, 1.0f, shouldPaint), 
+									materialParameters.Metallic * sampledCombinedMaterial.g);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//3
@@ -72,9 +79,5 @@ void main()
 	out_Velocity				= vec2(screenVelocity);
 
 	// 5
-	vec4 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgba;
-	uint data 					= floatBitsToUint(paintMask.a);
-	float shouldPaint 			= float((data & 0x1) | ((data >> 8) & 0x1));
-
 	out_Albedo 					= mix(out_Albedo, paintMask.rgb, shouldPaint);
 }

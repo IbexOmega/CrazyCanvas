@@ -36,23 +36,36 @@ namespace LambdaEngine
 		}
 
 		// Call the graphs tick
-		animation.Graph.Tick(GetDeltaTimeInSeconds(), GetTotalTimeInSeconds(), skeleton);
+		VALIDATE(animation.pGraph != nullptr);
+		animation.pGraph->Tick(skeleton, GetDeltaTimeInSeconds());
 
 		// TODO: Remove this since it is only for testing
-		if (m_ChangeState)
+		if (m_Walking)
 		{
-			if (animation.Graph.GetCurrentState().GetName() == "running")
+			if (animation.pGraph->GetCurrentState()->GetName() == "running")
 			{
-				animation.Graph.TransitionToState("walking");
+				animation.pGraph->TransitionToState("walking");
 			}
 			else
 			{
-				animation.Graph.TransitionToState("running");
+				animation.pGraph->TransitionToState("running");
+			}
+		}
+
+		if (m_Reload)
+		{
+			if (animation.pGraph->GetCurrentState()->GetName() == "running")
+			{
+				animation.pGraph->TransitionToState("reload");
+			}
+			else
+			{
+				animation.pGraph->TransitionToState("running");
 			}
 		}
 
 		// Create localtransforms
-		const TArray<SQT>& currentFrame = animation.Graph.GetCurrentFrame();
+		const TArray<SQT>& currentFrame = animation.pGraph->GetCurrentFrame();
 		for (uint32 i = 0; i < currentFrame.GetSize(); i++)
 		{
 			const SQT& sqt = currentFrame[i];
@@ -83,12 +96,21 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
+	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation)
+	{
+		SAFEDELETE(animation.pGraph);
+	}
+
 	// TODO: Remove this since it is only for testing
 	bool AnimationSystem::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
 	{
 		if (keyPressedEvent.Key == EKey::KEY_Q)
 		{
-			m_ChangeState = true;
+			m_Walking = true;
+		}
+		else if (keyPressedEvent.Key == EKey::KEY_1)
+		{
+			m_Reload = true;
 		}
 
 		return false;
@@ -100,8 +122,8 @@ namespace LambdaEngine
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
-				.pSubscriber		= &m_AnimationEntities,
-				.ComponentAccesses	=
+				.pSubscriber = &m_AnimationEntities,
+				.ComponentAccesses =
 				{
 					{ RW, AnimationComponent::Type() }
 				},
@@ -110,6 +132,7 @@ namespace LambdaEngine
 
 		systemReg.Phase = 0;
 		RegisterSystem(systemReg);
+		SetComponentOwner<AnimationComponent>({ std::bind(&AnimationSystem::OnAnimationComponentDelete, this, std::placeholders::_1) });
 
 		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
 		return true;
@@ -117,6 +140,8 @@ namespace LambdaEngine
 
 	void AnimationSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		ComponentArray<AnimationComponent>* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 
@@ -151,7 +176,8 @@ namespace LambdaEngine
 		}
 		m_JobIndices.Clear();
 
-		m_ChangeState = false;
+		m_Walking	= false;
+		m_Reload	= false;
 	}
 
 	AnimationSystem& AnimationSystem::GetInstance()

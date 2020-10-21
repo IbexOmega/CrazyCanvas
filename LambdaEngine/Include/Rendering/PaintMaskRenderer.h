@@ -97,7 +97,7 @@ namespace LambdaEngine
 	private:
 		struct RenderTarget
 		{
-			TextureView*	TextureView		= nullptr;
+			TextureView*	pTextureView	= nullptr;
 			uint32			DrawArgIndex	= 0;
 			uint32			InstanceIndex	= 0;
 		};

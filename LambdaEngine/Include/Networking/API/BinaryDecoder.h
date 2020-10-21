@@ -56,6 +56,9 @@ namespace LambdaEngine
 
 		glm::quat ReadQuat();
 
+
+		const NetworkSegment* GetPacket() const;
+
 	private:
 		const NetworkSegment* m_pNetworkPacket;
 		uint16 m_ReadHead;

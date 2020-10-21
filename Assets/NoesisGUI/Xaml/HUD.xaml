@@ -1,0 +1,55 @@
+<Grid
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  mc:Ignorable="d"
+  d:DesignWidth="443.419" d:DesignHeight="235.461"
+  x:Name ="ROOT_CONTAINER">
+
+    <Grid.Background>
+        <SolidColorBrush Color= "#00151717">
+
+        </SolidColorBrush>
+    </Grid.Background>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+
+    <TextBlock x:Name="SCORE_DISPLAY"  Grid.Column="5" Grid.Row="0" HorizontalAlignment="Center"  TextWrapping="Wrap" Text="100%" VerticalAlignment="Center" Foreground="White" FontSize="48" Margin="0"/>
+
+    <Rectangle x:Name="HEALTH_RECT" Grid.Column="5" Grid.Row="1" Fill="#FFF03F0C" Margin="52,0,52,18" VerticalAlignment="Bottom" Height="72"/>
+    <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="6" Grid.Row="1" Grid.RowSpan="1" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="100%" VerticalAlignment="Top" Foreground="White" FontSize="16" Margin="0,0,75,0"/>
+
+    <Image Source="Health.png" Grid.Column="5" Grid.Row="1" Grid.RowSpan="1" Margin="42,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <!-- Removed, just uncomment to test functionality
+    <Button  Content="FIll"  Click="OnButtonGrowClick" Grid.Column="2" Grid.Row="4" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+    <Button  Content="Shoot" Click="OnButtonShootClick" Grid.Column="2" Grid.Row="5" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+    <Button  Content="Score" Click="OnButtonScoreClick" Grid.Column="2" Grid.Row="6" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+    -->
+    <TextBlock x:Name="AMMUNITION_DISPLAY" Grid.Column="9" Grid.Row="9" TextWrapping="Wrap" Text="TextBlock" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+</Grid>

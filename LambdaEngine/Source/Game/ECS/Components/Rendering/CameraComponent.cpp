@@ -35,18 +35,17 @@ namespace LambdaEngine
 		FPSCamComp.SpeedFactor = 2.4f;
 		pECS->AddComponent<FPSControllerComponent>(entity, FPSCamComp);
 
-		const CharacterColliderInfo colliderInfo = {
+		const CharacterColliderCreateInfo colliderInfo = {
 			.Entity = entity,
 			.Position = pECS->GetComponent<PositionComponent>(entity),
 			.Rotation = pECS->GetComponent<RotationComponent>(entity),
 			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
-			.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+			.CollisionMask	= UINT32_MAX								// The player collides with everything
 		};
 
 		constexpr const float capsuleHeight = 1.8f;
 		constexpr const float capsuleRadius = 0.2f;
-		CharacterColliderComponent characterColliderComponent;
-		PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius, characterColliderComponent);
+		CharacterColliderComponent characterColliderComponent = PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius);
 		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 
 		// Audio Footsteps
