@@ -70,8 +70,6 @@ void main()
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
 			particle.TileIndex = emitter.FirstAnimationIndex;
 		}
-		
-		particle.FinalTransform = particle.Transform;
 
 		float t = particle.CurrentLife/emitter.LifeTime;
 		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
