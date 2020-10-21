@@ -440,6 +440,8 @@ namespace LambdaEngine
 
 	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent)
 	{
+		PxActor* pActor = characterColliderComponent.pController->getActor();
+		SAFEDELETE(pActor->userData);
 		PX_RELEASE(characterColliderComponent.pController);
 		SAFEDELETE(characterColliderComponent.Filters.mFilterData);
 	}
@@ -546,6 +548,8 @@ namespace LambdaEngine
 
 		PxController* pController = m_pControllerManager->createController(controllerDesc);
 		pController->setFootPosition(controllerDesc.position);
+
+		// Set filter data to be used when calling controller::move()
 		PxFilterData* pFilterData = DBG_NEW PxFilterData(
 			(PxU32)characterColliderInfo.CollisionGroup,
 			(PxU32)characterColliderInfo.CollisionMask,
@@ -554,6 +558,21 @@ namespace LambdaEngine
 		);
 
 		PxControllerFilters controllerFilters(pFilterData);
+
+		// Set filter data to be used when simulating the physics world
+		PxRigidDynamic* pActor = pController->getActor();
+		PxShape* pShape = nullptr;
+		pActor->getShapes(&pShape, 1, 0);
+
+		PxFilterData filterData;
+		filterData.word0 = (PxU32)characterColliderInfo.CollisionGroup;
+		filterData.word1 = (PxU32)characterColliderInfo.CollisionMask;
+		pShape->setSimulationFilterData(filterData);
+
+		// Set actor's user data
+		ActorUserData* pActorUserData = DBG_NEW ActorUserData;
+		pActorUserData->Entity = characterColliderInfo.Entity;
+		pActor->userData = pActorUserData;
 
 		return { pController, controllerFilters };
 	}
