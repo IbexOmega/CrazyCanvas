@@ -9,10 +9,10 @@ layout(location = 0) in vec3		in_WorldPosition;
 layout(location = 1) in vec3		in_Normal;
 layout(location = 2) in vec3		in_TargetPosition;
 layout(location = 3) in vec3		in_TargetDirection;
-layout(location = 4) flat in uint	in_PaintMode;
-layout(location = 5) flat in uint	in_RemoteMode;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
+
+layout(binding = 0, set = UNWRAP_DRAW_SET_INDEX) uniform UnwrapData				{ SUnwrapData val; }		u_UnwrapData;
 
 layout(location = 0) out vec4   out_UnwrappedTexture;
 
@@ -20,8 +20,34 @@ float random (in vec3 x) {
 	return fract(sin(dot(x, vec3(12.9898,78.233, 37.31633)))* 43758.5453123);
 }
 
+void reset()
+{
+	float alpha 	= out_UnwrappedTexture.a;
+	uint data 		= floatBitsToUint(alpha);
+	data = data >> 8;
+
+	uint paintMode 	= data & 0x1;
+	uint teamMode 	= (data >> 1) & 0x7F;
+
+	data = data << 8;
+	if (u_UnwrapData.val.PaintMode == 1)
+	{
+		if (u_UnwrapData.val.TeamMode == 0)
+			out_UnwrappedTexture = vec4(1.f, 0.f, 0.f, uintBitsToFloat(data));
+		else
+			out_UnwrappedTexture = vec4(0.f, 0.f, 1.f, uintBitsToFloat(data));
+	}
+	else
+	{
+		out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, uintBitsToFloat(data));
+	}
+}
+
 void main()
 {
+	if (u_UnwrapData.val.Reset > 0)
+		reset();
+
 	const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
 	float BRUSH_SIZE		= 0.2f;
 
@@ -50,19 +76,33 @@ void main()
 	if(brushMask.a > 0.01f && length(worldPosition-projectedPosition) <= BRUSH_SIZE && valid > 0.5f)
 	{
 		// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
-		if (in_PaintMode == 1)
-		{
-			// r = server, g = client
-			//out_UnwrappedTexture = vec4(1.f, 1.f, 1.f, 1.f);
+		uint client;
+		uint server;
 
-			if (in_RemoteMode == 0)
-				out_UnwrappedTexture = vec4(0.f, 1.f, 0.f, 1.f); 
-			else
-				out_UnwrappedTexture = vec4(1.f, 0.f, 0.f, 1.f);
+		if (u_UnwrapData.val.RemoteMode == 0)
+		{
+			client = u_UnwrapData.val.TeamMode << 1;
+			client |= u_UnwrapData.val.PaintMode;
 		}
 		else
 		{
-			out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, 1.f);
+			server = u_UnwrapData.val.TeamMode << 1;
+			server |= u_UnwrapData.val.PaintMode;
+		}
+
+		uint data = server << 8;
+		data |= client;
+
+		if (u_UnwrapData.val.PaintMode == 1)
+		{
+			if (u_UnwrapData.val.TeamMode == 0)
+				out_UnwrappedTexture = vec4(1.f, 0.f, 0.f, uintBitsToFloat(data));
+			else
+				out_UnwrappedTexture = vec4(0.f, 0.f, 1.f, uintBitsToFloat(data));
+		}
+		else
+		{
+			out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, uintBitsToFloat(data));
 		}
 
 	}

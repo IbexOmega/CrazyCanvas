@@ -35,6 +35,12 @@ namespace LambdaEngine
 		SERVER	= 1
 	};
 
+	enum class ETeam
+	{
+		RED		= 0,
+		BLUE	= 1
+	};
+
 	class PaintMaskRenderer : public ICustomRenderer
 	{
 	public:
@@ -74,8 +80,7 @@ namespace LambdaEngine
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintMode - painting mode to be used for the target
 		*/
-		static void AddHitPointServer(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode);
-		static void AddHitPointClient(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode);
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode);
 
 	private:
 		bool CreateCopyCommandList();
@@ -103,6 +108,8 @@ namespace LambdaEngine
 			glm::vec4		TargetDirection;
 			EPaintMode		PaintMode			= EPaintMode::PAINT;
 			ERemoteMode		RemoteMode			= ERemoteMode::CLIENT;
+			ETeam			Team				= ETeam::RED;
+			uint32			Reset				= 0;
 		};
 
 	private:
@@ -143,7 +150,6 @@ namespace LambdaEngine
 
 		TArray<RenderTarget>										m_RenderTargets;
 	private:
-		static std::list<UnwrapData>	s_ServerCollisions;
-		static std::list<UnwrapData>	s_ClientCollisions;
+		static std::list<UnwrapData>	s_Collisions;
 	};
 }

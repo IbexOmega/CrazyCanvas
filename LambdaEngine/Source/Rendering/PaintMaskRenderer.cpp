@@ -33,8 +33,7 @@
 
 namespace LambdaEngine
 {
-	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
-	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
+	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_Collisions;
 
 	PaintMaskRenderer::PaintMaskRenderer()
 	{
@@ -142,7 +141,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPointServer(pos, dir, paintMode, ERemoteMode::SERVER);
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED);
 			});
 
 		return false;
@@ -360,7 +359,7 @@ namespace LambdaEngine
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
 
-		if (m_RenderTargets.IsEmpty() || s_ServerCollisions.empty())
+		if (m_RenderTargets.IsEmpty() || s_Collisions.empty())
 		{
 			return;
 		}
@@ -374,14 +373,9 @@ namespace LambdaEngine
 
 			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
 
-			const UnwrapData& data	= s_ServerCollisions.front();
+			const UnwrapData& data	= s_Collisions.front();
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
-
-			if (data.RemoteMode == ERemoteMode::SERVER)
-				s_ServerCollisions.pop_front();
-			else
-				s_ClientCollisions.pop_front();
-
+			s_Collisions.pop_front();
 			unwrapDataCopyBuffer->Unmap();
 			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
 		}
@@ -459,26 +453,16 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPointServer(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode)
+	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam team)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
 		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
+		data.Team				= team;
 
-		s_ServerCollisions.push_back(data);
-	}
-
-	void PaintMaskRenderer::AddHitPointClient(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode)
-	{
-		UnwrapData data = {};
-		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
-		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
-		data.PaintMode			= paintMode;
-		data.RemoteMode			= remoteMode;
-
-		s_ClientCollisions.push_back(data);
+		s_Collisions.push_back(data);
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()

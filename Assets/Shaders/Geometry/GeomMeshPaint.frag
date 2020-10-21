@@ -44,13 +44,13 @@ void main()
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 	
-	vec3 shadingNormal		= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal			= normalize(TBN * normalize(shadingNormal));
+	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal				= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
-	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
+	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
+	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
 	//0
 	out_Position				= vec4(in_WorldPosition, 0.0f);
@@ -72,6 +72,9 @@ void main()
 	out_Velocity				= vec2(screenVelocity);
 
 	// 5
-	vec3 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
-	out_Albedo 					= mix(out_Albedo, vec3(1.0f, 0.0f, 0.0f), paintMask.r);
+	vec4 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgba;
+	uint data 					= floatBitsToUint(paintMask.a);
+	float shouldPaint 			= float((data & 0x1) | ((data >> 8) & 0x1));
+
+	out_Albedo 					= mix(out_Albedo, paintMask.rgb, shouldPaint);
 }
