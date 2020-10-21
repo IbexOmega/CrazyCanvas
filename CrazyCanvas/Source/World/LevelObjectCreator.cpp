@@ -16,7 +16,7 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "ECS/Components/Player/Weapon.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/ClientRemoteBase.h"

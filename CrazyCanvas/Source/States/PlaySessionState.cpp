@@ -3,7 +3,7 @@
 #include "Application/API/CommonApplication.h"
 
 #include "ECS/Components/Player/Player.h"
-#include "ECS/Components/Player/Weapon.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
