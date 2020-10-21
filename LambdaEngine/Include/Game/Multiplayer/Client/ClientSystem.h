@@ -25,6 +25,8 @@ namespace LambdaEngine
 
 		bool Connect(IPAddress* pAddress);
 
+		ClientBase* GetClient();
+
 	protected:
 		void TickMainThread(Timestamp deltaTime);
 		void FixedTickMainThread(Timestamp deltaTime);

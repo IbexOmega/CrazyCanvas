@@ -8,6 +8,8 @@
 #include "ECS/ECSCore.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
 
 #include "Multiplayer/PacketType.h"
 
@@ -50,14 +52,42 @@ void PacketDecoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 
+	ComponentArray<NetworkComponent>* pNetworkComponents = pECS->GetComponentArray<NetworkComponent>();
+
 	for (auto& pair : m_ComponentTypeToEntities)
 	{
 		IComponentArray* pComponents = pECS->GetComponentArray(pair.first);
 		for (Entity entity : pair.second)
 		{
+			const NetworkComponent& networkComponent = pNetworkComponents->GetData(entity);
+
 			void* pComponent = pComponents->GetRawData(entity);
 			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
 			pPacketComponent->ClearPacketsReceived();
+
+			//TODO: Make a better implemention between Server and Client
+			while (pPacketComponent->GetPacketsToSendCount() > 0)
+			{
+				if (MultiplayerUtils::IsServer())
+				{
+					ServerBase* pServer = ServerSystem::GetInstance().GetServer();
+					const ClientMap& clients = pServer->GetClients();
+					if (!clients.empty())
+					{
+						ClientRemoteBase* pClient = clients.begin()->second;
+						NetworkSegment* pSegment = pClient->GetFreePacket(pPacketComponent->GetPacketType());
+						pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
+						pClient->SendReliableBroadcast(pSegment);
+					}
+				}
+				else
+				{
+					ClientBase* pClient = ClientSystem::GetInstance().GetClient();
+					NetworkSegment* pSegment = pClient->GetFreePacket(pPacketComponent->GetPacketType());
+					pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
+					pClient->SendReliable(pSegment);
+				}
+			}
 		}
 	}
 }
@@ -67,36 +97,25 @@ bool PacketDecoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEve
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	event.pPacket->ResetReadHead();
+	const ComponentType* pComponentType = PacketType::GetComponentType(event.Type);
+	
+	if (!pComponentType)
+		return false;
 
-	if (event.Type == PacketType::PLAYER_ACTION)
-	{
-		Entity entity = MultiplayerUtils::GetEntityPlayer(event.pClient);
+	const Packet* pPacket = (const Packet*)event.pPacket->GetBuffer();
+	Entity entity = MultiplayerUtils::GetEntity(pPacket->NetworkUID);
 
-		if (entity != UINT32_MAX)
-		{
-			const ComponentType* pType = PacketType::GetComponentType(event.Type);
-			IComponentArray* pComponents = pECS->GetComponentArray(pType);
-			void* pComponent = pComponents->GetRawData(entity);
-			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
-			void* packetData = pPacketComponent->AddPacketReceived();
-			event.pPacket->Read(packetData, pPacketComponent->GetSize());
-		}
-	}
-	else if (event.Type == PacketType::PLAYER_ACTION_RESPONSE)
-	{
-		BinaryDecoder decoder(event.pPacket);
-		Entity entity = MultiplayerUtils::GetEntity(decoder.ReadInt32());
+	if (entity == UINT32_MAX)
+		return true;
 
-		if (entity != UINT32_MAX)
-		{
-			const ComponentType* pType = PacketType::GetComponentType(event.Type);
-			IComponentArray* pComponents = pECS->GetComponentArray(pType);
-			void* pComponent = pComponents->GetRawData(entity);
-			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
-			void* packetData = pPacketComponent->AddPacketReceived();
-			event.pPacket->Read(packetData, pPacketComponent->GetSize());
-		}
-	}
+	if (!MultiplayerUtils::HasWriteAccessToEntity(entity))
+		return true;
 
-	return false;
+	IComponentArray* pComponents = pECS->GetComponentArray(pComponentType);
+	void* pComponent = pComponents->GetRawData(entity);
+	IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
+	void* packetData = pPacketComponent->AddPacketReceived();
+	event.pPacket->Read(packetData, pPacketComponent->GetSize());
+
+	return true;
 }

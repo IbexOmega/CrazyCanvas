@@ -21,7 +21,7 @@ namespace LambdaEngine
 		void FixedTickMainThread(Timestamp deltaTime);
 		void TickMainThread(Timestamp deltaTime);
 
-		int32 GetSimulationTick() const;
+		ServerBase* GetServer();
 
 	protected:
 		virtual IClientRemoteHandler* CreateClientHandler() override;

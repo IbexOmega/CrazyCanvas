@@ -20,8 +20,7 @@ namespace LambdaEngine
 	Entity ClientUtilsImpl::GetEntity(int32 networkUID) const
 	{
 		auto pair = m_NetworkUIDToEntityMapper.find(networkUID);
-		ASSERT(pair != m_NetworkUIDToEntityMapper.end());
-		return pair->second;
+		return pair == m_NetworkUIDToEntityMapper.end() ? UINT32_MAX : pair->second;
 	}
 
 	void ClientUtilsImpl::RegisterEntity(Entity entity, int32 networkUID)

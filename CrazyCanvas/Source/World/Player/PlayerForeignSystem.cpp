@@ -68,7 +68,7 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
 		const PacketComponent<PlayerActionResponse>& packetComponent = pPacketComponents->GetConstData(entity);
 
-		const TArray<PlayerActionResponse>& gameStates = packetComponent.PacketsReceived;
+		const TArray<PlayerActionResponse>& gameStates = packetComponent.GetPacketsReceived();
 
 		if (!gameStates.IsEmpty())
 		{

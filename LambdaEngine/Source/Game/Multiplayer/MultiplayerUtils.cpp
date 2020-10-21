@@ -44,6 +44,12 @@ namespace LambdaEngine
 		return s_IsSinglePlayer;
 	}
 
+	bool MultiplayerUtils::HasWriteAccessToEntity(Entity entity)
+	{
+		//TODO: Add code checks depending on server or client and ownership of entity
+		return true;
+	}
+
 	void MultiplayerUtils::Init(bool server)
 	{
 		Release();

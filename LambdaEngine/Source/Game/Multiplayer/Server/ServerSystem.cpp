@@ -79,6 +79,11 @@ namespace LambdaEngine
 		}
 	}
 
+	ServerBase* ServerSystem::GetServer()
+	{
+		return m_pServer;
+	}
+
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()
 	{
 		return DBG_NEW ClientRemoteSystem();

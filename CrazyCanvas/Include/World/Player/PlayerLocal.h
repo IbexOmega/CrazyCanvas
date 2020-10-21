@@ -27,7 +27,7 @@ public:
 private:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final {};
 
-	void SendGameState(const PlayerGameState& gameState);
+	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	void Reconcile();

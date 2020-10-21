@@ -78,8 +78,8 @@ namespace LambdaEngine
 
 						NetworkSegment* pPacket = m_pClient->GetFreePacket(3); //PacketType::PLAYER_ACTION_RESPONSE
 						BinaryEncoder encoder(pPacket);
-						encoder.WriteInt32(entityPlayer);
 						encoder.WriteInt32(m_CurrentGameState.SimulationTick);
+						encoder.WriteInt32(entityPlayer);
 						encoder.WriteVec3(netPosComponent.Position);
 						encoder.WriteVec3(velocityComponent.Velocity);
 						encoder.WriteQuat(constRotationComponent.Quaternion);
@@ -139,6 +139,7 @@ namespace LambdaEngine
 
 			BinaryDecoder decoder(pPacket);
 			decoder.ReadInt32(gameState.SimulationTick);
+			decoder.ReadInt32();
 			decoder.ReadQuat(gameState.Rotation);
 			decoder.ReadInt8(gameState.DeltaForward);
 			decoder.ReadInt8(gameState.DeltaLeft);

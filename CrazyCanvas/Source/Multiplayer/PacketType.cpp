@@ -29,6 +29,5 @@ const PacketTypeMap& PacketType::GetPacketTypeMap()
 const LambdaEngine::ComponentType* PacketType::GetComponentType(uint16 packetType)
 {
 	auto pair = s_PacketTypeToComponentType.find(packetType);
-	ASSERT(pair != s_PacketTypeToComponentType.end());
-	return pair->second;
+	return pair == s_PacketTypeToComponentType.end() ? nullptr : pair->second;
 }

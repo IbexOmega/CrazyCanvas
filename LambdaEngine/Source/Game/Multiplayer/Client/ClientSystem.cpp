@@ -103,6 +103,11 @@ namespace LambdaEngine
 		return true;
 	}
 
+	ClientBase* ClientSystem::GetClient()
+	{
+		return m_pClient;
+	}
+
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
 		

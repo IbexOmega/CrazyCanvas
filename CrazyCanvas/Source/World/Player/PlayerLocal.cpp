@@ -6,6 +6,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
+#include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
@@ -61,6 +62,7 @@ void PlayerLocal::Init()
 				{R , PositionComponent::Type()},
 				{RW, VelocityComponent::Type()},
 				{RW, RotationComponent::Type()},
+				{RW, PacketComponent<PlayerAction>::Type()},
 				{R, PacketComponent<PlayerActionResponse>::Type()},
 			}
 		}
@@ -92,24 +94,22 @@ void PlayerLocal::FixedTickMainThread(Timestamp deltaTime)
 		TickLocalPlayerAction(deltaTime, m_Entities[0], &gameState);
 
 		if (!MultiplayerUtils::IsSingleplayer())
-			SendGameState(gameState);
+			SendGameState(gameState, m_Entities[0]);
 	}
 }
 
-void PlayerLocal::SendGameState(const PlayerGameState& gameState)
+void PlayerLocal::SendGameState(const PlayerGameState& gameState, Entity entityPlayer)
 {
-	if (m_pClient)
-	{
-		PlayerAction packet		= {};
-		packet.SimulationTick	= gameState.SimulationTick;
-		packet.Rotation			= gameState.Rotation;
-		packet.DeltaForward		= gameState.DeltaForward;
-		packet.DeltaLeft		= gameState.DeltaLeft;
+	ECSCore* pECS = ECSCore::GetInstance();
+	PacketComponent<PlayerAction>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerAction>>(entityPlayer);
 
-		NetworkSegment* pPacket = m_pClient->GetFreePacket(PacketType::PLAYER_ACTION);
-		pPacket->Write(&packet);
-		m_pClient->SendReliable(pPacket);
-	}
+	PlayerAction packet		= {};
+	packet.SimulationTick	= gameState.SimulationTick;
+	packet.Rotation			= gameState.Rotation;
+	packet.DeltaForward		= gameState.DeltaForward;
+	packet.DeltaLeft		= gameState.DeltaLeft;
+
+	pPacketComponent.SendPacket(packet);
 }
 
 void PlayerLocal::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
@@ -182,8 +182,8 @@ bool PlayerLocal::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEve
 void PlayerLocal::Reconcile()
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	const PacketComponent<PlayerActionResponse>& pPacketComponents = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(m_Entities[0]);
-	const TArray<PlayerActionResponse>& m_FramesProcessedByServer = pPacketComponents.PacketsReceived;
+	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(m_Entities[0]);
+	const TArray<PlayerActionResponse>& m_FramesProcessedByServer = pPacketComponent.GetPacketsReceived();
 
 	for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
 	{

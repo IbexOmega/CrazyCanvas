@@ -1,10 +1,16 @@
 #pragma once
 
+#include <type_traits>
+
 #include "ECS/Component.h"
 
 #include "Containers/TArray.h"
+#include "Containers/TQueue.h"
 
 #include "Math/Math.h"
+
+#include "Multiplayer/Packet.h"
+#include "Networking/API/NetworkSegment.h"
 
 struct IPacketComponent
 {
@@ -13,37 +19,75 @@ struct IPacketComponent
 private:
 	virtual void* AddPacketReceived() = 0;
 	virtual void ClearPacketsReceived() = 0;
+	virtual void WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) = 0;
 	virtual uint16 GetSize() = 0;
+	virtual uint16 GetPacketsToSendCount() = 0;
+	virtual uint16 GetPacketType() = 0;
 };
 
-template<typename PacketType>
+template<class T>
 struct PacketComponent : public IPacketComponent
 {
-	DECL_COMPONENT(PacketComponent<PacketType>);
-	LambdaEngine::TArray<PacketType> PacketsReceived;
-	LambdaEngine::TArray<PacketType> PacketsToSend;
+	friend class PacketType;
+	static_assert(std::is_base_of<Packet, T>::value, "T must inherit from Packet!");
+	DECL_COMPONENT(PacketComponent<T>);
+
+public:
+	const LambdaEngine::TArray<T>& GetPacketsReceived() const
+	{
+		return m_PacketsReceived;
+	}
+
+	void SendPacket(const T& packet)
+	{
+		m_PacketsToSend.push(packet);
+	}
 
 private:
 	virtual void* AddPacketReceived() override final
 	{
-		return &PacketsReceived.PushBack({});
+		return &m_PacketsReceived.PushBack({});
 	}
 
 	virtual void ClearPacketsReceived() override final
 	{
-		PacketsReceived.Clear();
+		m_PacketsReceived.Clear();
+	}
+
+	virtual void WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) override final
+	{
+		T& packet = m_PacketsToSend.front();
+		packet.NetworkUID = networkUID;
+		pSegment->Write<T>(&packet);
+		m_PacketsToSend.pop();
 	}
 
 	virtual uint16 GetSize() override final
 	{
-		return sizeof(PacketType);
+		return (uint16)sizeof(T);
 	}
+
+	virtual uint16 GetPacketsToSendCount() override final
+	{
+		return (uint16)m_PacketsToSend.size();
+	}
+
+	virtual uint16 GetPacketType() override final
+	{
+		return s_PacketType;
+	}
+
+private:
+	LambdaEngine::TArray<T> m_PacketsReceived;
+	LambdaEngine::TQueue<T> m_PacketsToSend;
+	inline static uint16 s_PacketType = 0;
 };
 
+
+
 #pragma pack(push, 1)
-struct PlayerAction
+struct PlayerAction : Packet
 {
-	int32 SimulationTick = -1;
 	glm::quat Rotation;
 	int8 DeltaForward = 0;
 	int8 DeltaLeft = 0;
@@ -51,9 +95,8 @@ struct PlayerAction
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct PlayerActionResponse
+struct PlayerActionResponse : Packet
 {
-	int32 SimulationTick = -1;
 	glm::vec3 Position;
 	glm::vec3 Velocity;
 	glm::quat Rotation;

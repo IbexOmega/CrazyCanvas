@@ -227,6 +227,9 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
 
+	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
+	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
+
 	const CharacterColliderInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
@@ -239,7 +242,6 @@ bool LevelObjectCreator::CreatePlayer(
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS);
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
-	pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
@@ -250,7 +252,7 @@ bool LevelObjectCreator::CreatePlayer(
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
-		pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
+		pECS->AddComponent<NetworkComponent>(playerEntity, { pPlayerDesc->NetworkUID });
 
 		if (!pPlayerDesc->IsLocal)
 		{
@@ -313,7 +315,7 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
-		pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
+		pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 
@@ -352,6 +354,6 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 
-	D_LOG_INFO("Created Player");
+	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, pECS->GetComponent<NetworkComponent>(playerEntity).NetworkUID);
 	return true;
 }

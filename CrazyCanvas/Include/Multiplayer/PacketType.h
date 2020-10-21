@@ -6,6 +6,8 @@
 
 #include "ECS/ComponentType.h"
 
+#include "ECS/Components/Multiplayer/PacketComponent.h"
+
 typedef LambdaEngine::THashTable<uint16, const LambdaEngine::ComponentType*> PacketTypeMap;
 
 class PacketType
@@ -40,6 +42,7 @@ uint16 PacketType::RegisterPacketTypeWithComponent()
 {
 	const LambdaEngine::ComponentType* type = PacketComponent<Type>::Type();
 	uint16 packetType = RegisterPacketType();
+	PacketComponent<Type>::s_PacketType = packetType;
 	s_PacketTypeToComponentType[packetType] = type;
 	return packetType;
 }
