@@ -31,7 +31,7 @@ namespace LambdaEngine
 
 	Entity MultiplayerUtils::GetEntityPlayer(IClient* pClient)
 	{
-		return s_pClientEntityAccessor->GetEntityPlayer(s_pMultiplayerUtility->GetSaltAsUID(pClient));
+		return s_pClientEntityAccessor->GetEntityPlayer(pClient->GetUID());
 	}
 
 	void MultiplayerUtils::RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor)
@@ -42,6 +42,12 @@ namespace LambdaEngine
 	bool MultiplayerUtils::IsSingleplayer()
 	{
 		return s_IsSinglePlayer;
+	}
+
+	bool MultiplayerUtils::HasWriteAccessToEntity(Entity entity)
+	{
+		//TODO: Add code checks depending on server or client and ownership of entity
+		return true;
 	}
 
 	void MultiplayerUtils::Init(bool server)

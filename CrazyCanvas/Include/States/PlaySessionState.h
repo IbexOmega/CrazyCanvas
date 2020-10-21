@@ -12,6 +12,8 @@
 
 #include "Networking/API/IPAddress.h"
 
+#include "Multiplayer/MultiplayerClient.h"
+
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
@@ -28,11 +30,13 @@ public:
 	void Pause() override final {};
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
+	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 private:
 	Level* m_pLevel = nullptr;
-
 	LambdaEngine::IPAddress* m_pIPAddress;
+
+	MultiplayerClient m_MultiplayerClient;
 
 	HUDState m_HUDSecondaryState;
 

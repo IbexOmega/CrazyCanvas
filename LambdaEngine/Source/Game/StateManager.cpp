@@ -58,6 +58,14 @@ namespace LambdaEngine
 		}
 	}
 
+	void StateManager::FixedTick(Timestamp delta)
+	{
+		if (!m_States.empty())
+		{
+			m_States.top()->FixedTick(delta);
+		}
+	}
+
 	void StateManager::TransitionState()
 	{
 		switch (m_EnqueuedTransitionAction)

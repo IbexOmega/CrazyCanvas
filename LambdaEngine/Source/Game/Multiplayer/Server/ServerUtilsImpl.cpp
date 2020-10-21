@@ -24,9 +24,4 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(entity);
 		UNREFERENCED_VARIABLE(networkUID);
 	}
-
-	uint64 ServerUtilsImpl::GetSaltAsUID(IClient* pClient)
-	{
-		return pClient->GetStatistics()->GetSalt();
-	}
 }

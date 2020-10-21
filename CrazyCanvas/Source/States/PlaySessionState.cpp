@@ -29,11 +29,12 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "ECS/Systems/Match/ClientFlagSystem.h"
-#include "ECS/Systems/Match/ServerFlagSystem.h"
+#include "Multiplayer/PacketType.h"
 
+#include "ECS/Systems/Match/ClientFlagSystem.h"
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
-	m_pIPAddress(pIPAddress)
+	m_pIPAddress(pIPAddress),
+	m_MultiplayerClient()
 {
 
 }
@@ -53,6 +54,7 @@ void PlaySessionState::Init()
 	m_MeshPaintHandler.Init();
 
 	m_WeaponSystem.Init();
+	m_MultiplayerClient.InitInternal();
 
 	m_HUDSecondaryState.Init();
 
@@ -294,7 +296,7 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 {
 	using namespace LambdaEngine;
 
-	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
+	if (event.Type == PacketType::CREATE_ENTITY)
 	{
 		BinaryDecoder decoder(event.pPacket);
 		bool isLocal = decoder.ReadBool();
@@ -349,5 +351,11 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
+	m_MultiplayerClient.TickMainThreadInternal(delta);
 	m_HUDSecondaryState.Tick(delta);
+}
+
+void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }

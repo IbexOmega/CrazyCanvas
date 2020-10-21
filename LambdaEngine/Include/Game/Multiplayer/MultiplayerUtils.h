@@ -34,6 +34,7 @@ namespace LambdaEngine
 		static Entity GetEntityPlayer(IClient* pClient);
 		static void RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor);
 		static bool IsSingleplayer();
+		static bool HasWriteAccessToEntity(Entity entity);
 
 	private:
 		static void Init(bool server);

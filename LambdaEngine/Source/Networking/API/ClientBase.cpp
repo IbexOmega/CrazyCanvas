@@ -54,7 +54,7 @@ namespace LambdaEngine
 
 	void ClientBase::ReturnPacket(NetworkSegment* pPacket)
 	{
-		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientBase::ReturnPacket");
 	}
 
 	void ClientBase::Disconnect(const std::string& reason)
@@ -129,6 +129,11 @@ namespace LambdaEngine
 		return true;
 	}
 
+	uint64 ClientBase::GetUID() const
+	{
+		return GetStatistics()->GetRemoteSalt();
+	}
+
 	void ClientBase::SendConnect()
 	{
 		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_CONNNECT), this);
@@ -197,6 +202,7 @@ namespace LambdaEngine
 		
 		for (NetworkSegment* pPacket : packets)
 		{
+			ASSERT(pPacket->GetBufferSize() > 0);
 			m_pHandler->OnPacketReceived(this, pPacket);
 		}
 		GetPacketManager()->QueryEnd(packets);
@@ -219,7 +225,7 @@ namespace LambdaEngine
 		{
 			if (!HandleReceivedPacket(pPacket))
 			{
-				GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+				GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientBase::DecodeReceivedPackets");
 			}
 		}
 	}
@@ -271,6 +277,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			ASSERT(pPacket->GetBufferSize() > 0);
 			m_ReceivedPackets[m_BufferIndex].PushBack(pPacket);
 			return true;
 		}

@@ -18,7 +18,7 @@ namespace LambdaEngine
 
 	}
 
-	int32 PacketTransceiverBase::Transmit(SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segments, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
+	int32 PacketTransceiverBase::Transmit(SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& segments, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
 	{
 		if (segments.empty())
 			return 0;

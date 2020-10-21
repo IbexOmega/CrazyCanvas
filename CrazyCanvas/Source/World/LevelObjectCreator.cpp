@@ -19,6 +19,7 @@
 #include "ECS/Components/Match/FlagComponent.h"
 #include "Teams/TeamHelper.h"
 
+#include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
@@ -37,9 +38,9 @@
 
 #include "Rendering/EntityMaskManager.h"
 
+#include "Multiplayer/PacketType.h"
+
 #include "Physics/CollisionGroups.h"
-
-
 bool LevelObjectCreator::Init()
 {
 	using namespace LambdaEngine;
@@ -277,6 +278,9 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
 
+	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
+	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
+
 	const CharacterColliderCreateInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
@@ -363,12 +367,13 @@ bool LevelObjectCreator::CreatePlayer(
 	else
 	{
 		pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
+
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 
 		ClientRemoteBase* pClient = reinterpret_cast<ClientRemoteBase*>(pPlayerDesc->pClient);
 
 		{
-			NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+			NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_ENTITY);
 			BinaryEncoder encoder = BinaryEncoder(pPacket);
 			encoder.WriteBool(true);
 			encoder.WriteInt32((int32)playerEntity);
@@ -387,7 +392,7 @@ bool LevelObjectCreator::CreatePlayer(
 			if (clientPair.second != pClient)
 			{
 				//Send to everyone already connected
-				NetworkSegment* pPacket = clientPair.second->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+				NetworkSegment* pPacket = clientPair.second->GetFreePacket(PacketType::CREATE_ENTITY);
 				BinaryEncoder encoder(pPacket);
 				encoder.WriteBool(false);
 				encoder.WriteInt32((int32)playerEntity);
@@ -400,6 +405,6 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 
-	D_LOG_INFO("Created Player");
+	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, pECS->GetComponent<NetworkComponent>(playerEntity).NetworkUID);
 	return true;
 }

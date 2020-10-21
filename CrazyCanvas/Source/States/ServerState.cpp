@@ -29,9 +29,16 @@
 #include "World/Level.h"
 #include "World/LevelManager.h"
 
+#include "Multiplayer/PacketType.h"
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 
 using namespace LambdaEngine;
+
+ServerState::ServerState() : 
+	m_MultiplayerServer()
+{
+
+}
 
 ServerState::~ServerState()
 {
@@ -49,6 +56,8 @@ void ServerState::Init()
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
+
+	m_MultiplayerServer.InitInternal();
 
 	m_ServerName = "Crazy Canvas Server";
 
@@ -102,7 +111,7 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
 
-		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_ENTITY);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteBool(false);
 		encoder.WriteInt32((int32)otherPlayerEntity);
@@ -132,5 +141,11 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 void ServerState::Tick(Timestamp delta)
 {
-	UNREFERENCED_VARIABLE(delta);
+	m_MultiplayerServer.TickMainThreadInternal(delta);
 }
+
+void ServerState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
+}
+

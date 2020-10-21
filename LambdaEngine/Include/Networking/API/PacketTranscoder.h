@@ -5,9 +5,10 @@
 #include "Containers/TArray.h"
 #include "Containers/TSet.h"
 
+#include "Networking/API/NetworkSegment.h"
+
 namespace LambdaEngine
 {
-	class NetworkSegment;
 	class SegmentPool;
 
 	class LAMBDA_API PacketTranscoder
@@ -28,7 +29,7 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(PacketTranscoder);
 
-		static void EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader);
+		static void EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader);
 		static bool DecodeSegments(const uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segmentsDecoded, Header* pHeader);
 
 	private:

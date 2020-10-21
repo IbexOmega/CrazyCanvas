@@ -13,7 +13,7 @@ namespace LambdaEngine
 	class LAMBDA_API BinaryDecoder
 	{
 	public:
-		BinaryDecoder(const NetworkSegment* packet);
+		BinaryDecoder(NetworkSegment* packet);
 		~BinaryDecoder();
 
 		void ReadInt8(int8& value);
@@ -57,10 +57,9 @@ namespace LambdaEngine
 		glm::quat ReadQuat();
 
 
-		const NetworkSegment* GetPacket() const;
+		NetworkSegment* GetPacket();
 
 	private:
-		const NetworkSegment* m_pNetworkPacket;
-		uint16 m_ReadHead;
+		NetworkSegment* m_pNetworkPacket;
 	};
 }
