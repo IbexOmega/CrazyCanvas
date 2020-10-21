@@ -14,13 +14,9 @@ namespace LambdaEngine
 
 		TArray<NetworkSegment*> segmentsToFree;
 
-		TArray<NetworkSegment*> packats;
-
 		for (auto it = segmentsToEncode.begin(); it != segmentsToEncode.end();)
 		{
 			NetworkSegment* pSegment = *it;
-
-			packats.PushBack(pSegment);
 			//LOG_ERROR("PacketTranscoder::EncodeSegments(%s)", pSegment->ToString().c_str());
 
 			ASSERT(pSegment->GetTotalSize() + sizeof(Header) <= bufferSize);
@@ -39,17 +35,6 @@ namespace LambdaEngine
 			else
 			{
 				break;
-			}
-		}
-
-		for (int i = 0; i < packats.GetSize(); i++)
-		{
-			for (int j = 0; j < packats.GetSize(); j++)
-			{
-				if (i == j)
-					continue;
-
-				ASSERT(packats[i] != packats[j]);
 			}
 		}
 

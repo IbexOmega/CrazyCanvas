@@ -54,7 +54,7 @@ namespace LambdaEngine
 	void SegmentPool::FreeSegment(NetworkSegment* pSegment, const std::string& returner)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
-		LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
+		//LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
 		Free(pSegment);
 	}
 
@@ -63,7 +63,7 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		for (NetworkSegment* pSegment : segments)
 		{
-			LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
+			//LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
 			Free(pSegment);
 		}
 		segments.Clear();
@@ -130,7 +130,7 @@ namespace LambdaEngine
 		{
 			pSegment->m_IsBorrowed = false;
 		}
-		else
+		else if(pSegment->GetType() != NetworkSegment::TYPE_NETWORK_ACK)
 		{
 			LOG_ERROR("[SegmentPool]: Packet was returned multiple times!");
 			DEBUGBREAK();

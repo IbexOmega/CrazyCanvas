@@ -35,7 +35,7 @@ namespace LambdaEngine
 		desc.UsePingSystem			= true;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
-		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
+		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.5f);
 	}
 
 	ServerSystem::~ServerSystem()

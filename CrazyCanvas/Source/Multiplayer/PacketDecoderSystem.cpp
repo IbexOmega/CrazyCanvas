@@ -74,12 +74,6 @@ bool PacketDecoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEve
 
 		if (entity != UINT32_MAX)
 		{
-			/*PlayerAction packet = {};
-			event.pPacket->Read(&packet);
-			PacketComponent<PlayerAction>& pPacketComponents = pECS->GetComponent<PacketComponent<PlayerAction>>(entity);
-			pPacketComponents.PacketsReceived.PushBack(packet);*/
-
-
 			const ComponentType* pType = PacketType::GetComponentType(event.Type);
 			IComponentArray* pComponents = pECS->GetComponentArray(pType);
 			void* pComponent = pComponents->GetRawData(entity);
@@ -95,11 +89,6 @@ bool PacketDecoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEve
 
 		if (entity != UINT32_MAX)
 		{
-			/*PlayerActionResponse packet = {};
-			event.pPacket->Read(&packet);
-			PacketComponent<PlayerActionResponse>& pPacketComponents = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(entity);
-			pPacketComponents.PacketsReceived.PushBack(packet);*/
-
 			const ComponentType* pType = PacketType::GetComponentType(event.Type);
 			IComponentArray* pComponents = pECS->GetComponentArray(pType);
 			void* pComponent = pComponents->GetRawData(entity);
