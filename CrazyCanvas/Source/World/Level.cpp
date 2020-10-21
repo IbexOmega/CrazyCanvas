@@ -143,16 +143,6 @@ LambdaEngine::Entity* Level::GetEntities(ESpecialObjectType specialObjectType, u
 	return nullptr;
 }
 
-void Level::OnFlagPickedUp()
-{
-	LOG_WARNING("[Level]: OnFlagPickedUp");
-}
-
-void Level::OnFlagDropped()
-{
-	LOG_WARNING("[Level]: OnFlagDropped");
-}
-
 LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
 {
 	using namespace LambdaEngine;

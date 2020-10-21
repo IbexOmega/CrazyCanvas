@@ -15,6 +15,8 @@
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 
+#include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Components/Match/FlagComponent.h"
 #include "Teams/TeamHelper.h"
 
 #include "ECS/Components/Player/Weapon.h"
@@ -36,6 +38,7 @@
 #include "Rendering/EntityMaskManager.h"
 
 #include "Physics/CollisionGroups.h"
+
 
 bool LevelObjectCreator::Init()
 {
@@ -214,8 +217,9 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 
 	Entity entity = pECS->CreateEntity();
 
-	pECS->AddComponent<OffsetComponent>(entity, OffsetComponent{ .Offset = glm::vec3(0.0f)});
-	pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Attached = false });
+	pECS->AddComponent<FlagComponent>(entity,	FlagComponent());
+	pECS->AddComponent<OffsetComponent>(entity,	OffsetComponent{ .Offset = glm::vec3(0.0f)});
+	pECS->AddComponent<ParentComponent>(entity,	ParentComponent{ .Attached = false });
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity				= entity,
@@ -226,55 +230,7 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 		.ShapeType			= EShapeType::TRIGGER,
 		.CollisionGroup		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 		.CollisionMask		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER, // Collide with any non-static object
-		.CollisionCallback	= [](const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-
-			Job job;
-			job.Components =
-			{
-				{ ComponentPermissions::R,	MeshComponent::Type() },
-				{ ComponentPermissions::RW,	StaticCollisionComponent::Type() },
-				{ ComponentPermissions::RW,	ParentComponent::Type() },
-				{ ComponentPermissions::RW,	OffsetComponent::Type() }
-			};
-
-			job.Function = [collisionInfo0, collisionInfo1]()
-			{
-				ECSCore* pECS = ECSCore::GetInstance();
-
-				Entity flagEntity	= collisionInfo0.Entity;
-				Entity playerEntity	= collisionInfo1.Entity;
-
-				const MeshComponent& playerMeshComponent			= pECS->GetConstComponent<MeshComponent>(playerEntity);
-
-				StaticCollisionComponent& flagCollisionComponent	= pECS->GetComponent<StaticCollisionComponent>(flagEntity);
-				ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
-				OffsetComponent& flagOffsetComponent				= pECS->GetComponent<OffsetComponent>(flagEntity);
-
-				PxShape* pFlagShape;
-				flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
-			
-				//Update Collision Group
-				PxFilterData filterData;
-				filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
-				filterData.word1 = (PxU32)FCollisionGroup::COLLISION_GROUP_NONE;
-				pFlagShape->setSimulationFilterData(filterData);
-				pFlagShape->setQueryFilterData(filterData);
-
-				//Set Flag Carrier (Parent)
-				flagParentComponent.Attached	= true;
-				flagParentComponent.Parent		= playerEntity;
-
-				//Set Flag Offset
-				const Mesh* pMesh = ResourceManager::GetMesh(playerMeshComponent.MeshGUID);
-				flagOffsetComponent.Offset		= glm::vec3(0.0f, pMesh->BoundingBox.Dimensions.y / 2.0f, 0.0f);
-			};
-
-			pECS->ScheduleJobASAP(job);
-
-			Level::OnFlagPickedUp();
-		}
+		.CallbackFunction	= std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance())
 	};
 
 	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo);

@@ -29,6 +29,7 @@
 #include "World/Level.h"
 #include "World/LevelManager.h"
 
+#include "ECS/Systems/Match/ServerFlagSystem.h"
 
 using namespace LambdaEngine;
 
@@ -37,6 +38,7 @@ ServerState::~ServerState()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 
 	SAFEDELETE(m_pLevel);
+	SAFEDELETE(m_pFlagSystem);
 }
 
 void ServerState::Init()
@@ -49,6 +51,9 @@ void ServerState::Init()
 	PlatformConsole::SetTitle("Server Console");
 
 	m_ServerName = "Crazy Canvas Server";
+
+	m_pFlagSystem = DBG_NEW ServerFlagSystem();
+	m_pFlagSystem->Init();
 
 	// Load scene
 	{

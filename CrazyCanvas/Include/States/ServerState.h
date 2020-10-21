@@ -33,4 +33,6 @@ public:
 private:
 	Level* m_pLevel = nullptr;
 	std::string m_ServerName;
+
+	FlagSystemBase* m_pFlagSystem = nullptr;
 };

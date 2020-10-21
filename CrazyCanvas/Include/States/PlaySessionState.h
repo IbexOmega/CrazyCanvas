@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Match/FlagSystemBase.h"
 #include "Game/State.h"
 
 #include "Application/API/Events/NetworkEvents.h"
@@ -33,6 +34,7 @@ private:
 
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
+	FlagSystemBase* m_pFlagSystem = nullptr;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
