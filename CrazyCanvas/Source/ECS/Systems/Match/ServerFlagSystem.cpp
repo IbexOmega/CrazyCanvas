@@ -85,7 +85,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 	Job job;
 	job.Components =
 	{
-		{ ComponentPermissions::RW,	StaticCollisionComponent::Type() },
+		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
 		{ ComponentPermissions::RW,	ParentComponent::Type() },
 		{ ComponentPermissions::RW,	PositionComponent::Type() }
 	};
@@ -94,7 +94,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		StaticCollisionComponent& flagCollisionComponent	= pECS->GetComponent<StaticCollisionComponent>(flagEntity);
+		DynamicCollisionComponent& flagCollisionComponent	= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 		ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
 		PositionComponent& flagPositionComponent			= pECS->GetComponent<PositionComponent>(flagEntity);
 
@@ -135,7 +135,7 @@ void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, Lambd
 void ServerFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
 {
 	using namespace LambdaEngine;
-	componentAccesses.PushBack({ R, StaticCollisionComponent::Type() });
+	componentAccesses.PushBack({ RW, DynamicCollisionComponent::Type() });
 }
 
 void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
@@ -151,7 +151,9 @@ void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 		const PositionComponent& flagPositionComponent		= pECS->GetConstComponent<PositionComponent>(flagEntity);
 		const RotationComponent& flagRotationComponent		= pECS->GetConstComponent<RotationComponent>(flagEntity);
 
-		StaticCollisionComponent& flagCollisionComponent	= pECS->GetComponent<StaticCollisionComponent>(flagEntity);
+		DynamicCollisionComponent& flagCollisionComponent	= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
+
+		LOG_ERROR("Flag Pos: %f, %f, %f", flagCollisionComponent.pActor->getGlobalPose().p.x, flagCollisionComponent.pActor->getGlobalPose().p.y, flagCollisionComponent.pActor->getGlobalPose().p.z);
 
 		PxTransform transform;
 		transform.p.x = flagPositionComponent.Position.x;
@@ -163,6 +165,6 @@ void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 		transform.q.z = flagRotationComponent.Quaternion.z;
 		transform.q.w = flagRotationComponent.Quaternion.w;
 
-		flagCollisionComponent.pActor->setGlobalPose(transform);
+		//flagCollisionComponent.pActor->setGlobalPose(transform);
 	}
 }

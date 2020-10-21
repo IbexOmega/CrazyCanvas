@@ -224,7 +224,9 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 	//Only the server checks collision with the flag
 	if (MultiplayerUtils::IsServer())
 	{
-		const CollisionCreateInfo collisionCreateInfo =
+		VelocityComponent dummyVelocityComponent = { .Velocity = glm::vec3(0.0f) };
+
+		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		entity,
 			/* Position */	 		pECS->AddComponent<PositionComponent>(entity,		{ true, specialObject.DefaultPosition + translation}),
@@ -234,11 +236,13 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 			/* Shape Type */		EShapeType::TRIGGER,
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
-			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance())
+			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
+			/* Velocity */			dummyVelocityComponent
 		};
 
-		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo);
-		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo);
+		collisionComponent.pActor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
 	}
 
 	createdEntities.PushBack(entity);
