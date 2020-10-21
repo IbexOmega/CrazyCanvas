@@ -16,7 +16,6 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "ECS/Components/Player/Weapon.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 
