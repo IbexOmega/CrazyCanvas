@@ -50,7 +50,11 @@ void HUDSystem::Init()
 
 }
 
-void HUDSystem::Tick(Timestamp delta)
+void HUDSystem::Tick(LambdaEngine::Timestamp deltaTime)
+{
+}
+
+void HUDSystem::FixedTick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 

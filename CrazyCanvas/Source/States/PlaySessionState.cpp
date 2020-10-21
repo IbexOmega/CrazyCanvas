@@ -341,9 +341,10 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
-	m_HUDSystem.Tick(delta);
+	
 }
 
 void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
 {
+	m_HUDSystem.FixedTick(delta);
 }
