@@ -4,6 +4,7 @@
 
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -21,6 +22,7 @@
 
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
+
 
 #include "World/LevelManager.h"
 #include "World/Level.h"
@@ -49,6 +51,7 @@ void PlaySessionState::Init()
 	m_MeshPaintHandler.Init();
 
 	m_WeaponSystem.Init();
+	HealthSystem::GetInstance().Init();
 
 	m_HUDSecondaryState.Init();
 

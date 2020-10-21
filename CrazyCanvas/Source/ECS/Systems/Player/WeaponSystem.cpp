@@ -23,10 +23,11 @@ bool WeaponSystem::Init()
 	{
 		// The write permissions are used when creating projectile entities
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = RW;
-		playerGroup.Scale.Permissions = RW;
-		playerGroup.Rotation.Permissions = RW;
-		playerGroup.Velocity.Permissions = RW;
+		playerGroup.Position.Permissions	= RW;
+		playerGroup.Scale.Permissions		= RW;
+		playerGroup.Rotation.Permissions	= RW;
+		playerGroup.Velocity.Permissions	= RW;
+		playerGroup.Health.Permissions		= NDA;
 
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -35,21 +36,23 @@ bool WeaponSystem::Init()
 				.pSubscriber = &m_WeaponEntities,
 				.ComponentAccesses =
 				{
-					{RW, WeaponComponent::Type()}
+					{ RW, WeaponComponent::Type() }
 				}
 			},
 			{
 				.pSubscriber = &m_PlayerEntities,
 				.ComponentAccesses =
 				{
-					{NDA, PlayerLocalComponent::Type()}
+					{ NDA, PlayerLocalComponent::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
 			}
 		};
 		systemReg.SubscriberRegistration.AdditionalAccesses =
 		{
-			{RW, DynamicCollisionComponent::Type()}, {RW, MeshComponent::Type()}, {RW, TeamComponent::Type()}
+			{ RW, DynamicCollisionComponent::Type() }, 
+			{ RW, MeshComponent::Type() }, 
+			{ RW, TeamComponent::Type() }
 		};
 		systemReg.Phase = 1;
 
