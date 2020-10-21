@@ -7,6 +7,8 @@
 #include "Physics/PhysX/ErrorCallback.h"
 #include "Physics/PhysX/PhysX.h"
 
+#include <variant>
+
 namespace LambdaEngine
 {
 	using namespace physx;
@@ -29,7 +31,6 @@ namespace LambdaEngine
 		COLLISION_GROUP_STATIC	= (1 << 0),
 		COLLISION_GROUP_DYNAMIC	= (1 << 1),
 		COLLISION_GROUP_PLAYER	= (1 << 2),
-		COLLISION_GROUP_OTHERS	= (1 << 3), // Other players, not including oneself
 	};
 
 	// EntityCollisionInfo contains information on a colliding entity.
@@ -40,11 +41,14 @@ namespace LambdaEngine
 		glm::vec3 Direction;
 	};
 
+	typedef std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
+	typedef std::function<void(Entity entity0, Entity entity1)> TriggerCallback;
+
 	// ActorUserData is stored in each PxActor::userData. It is used eg. when colliding.
 	struct ActorUserData
 	{
 		Entity Entity;
-		std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
+		std::variant<CollisionCallback, TriggerCallback> CallbackFunction;
 	};
 
 	// CollisionCreateInfo contains information required to create a collision component
@@ -56,10 +60,9 @@ namespace LambdaEngine
 		const RotationComponent& Rotation;
 		const MeshComponent& Mesh;
 		EShapeType ShapeType;
-		FCollisionGroup CollisionGroup;				// The category of the object
-		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
-		// Optional. The first collision info is on the entity whose callback is called.
-		std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;
+		FCollisionGroup CollisionGroup;		// The category of the object
+		uint32 CollisionMask;				// Includes the masks of the groups this object collides with
+		std::variant<CollisionCallback, TriggerCallback> CallbackFunction;	// Optional
 	};
 
 	struct DynamicCollisionCreateInfo : CollisionCreateInfo
@@ -142,8 +145,8 @@ namespace LambdaEngine
 		CharacterColliderComponent FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
 		void FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape);
 
-		void TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors);
-		void ContactCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints, glm::vec3* pLinearVelocities);
+		void TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors) const;
+		void CollisionCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints) const;
 
 	private:
 		static PhysicsSystem s_Instance;
