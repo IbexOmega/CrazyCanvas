@@ -50,6 +50,7 @@
 #include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
+
 #include "GUI/Core/GUIApplication.h"
 
 #include <imgui/imgui.h>
@@ -240,6 +241,7 @@ namespace LambdaEngine
 		ClientSystem::StaticFixedTickMainThread(delta);
 		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
+
 	}
 
 	bool EngineLoop::PreInit(const argh::parser& flagParser)

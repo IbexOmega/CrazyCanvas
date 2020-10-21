@@ -49,7 +49,6 @@ void PlaySessionState::Init()
 	m_MeshPaintHandler.Init();
 
 	m_WeaponSystem.Init();
-
 	m_HUDSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -342,5 +341,5 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
-	m_HUDSecondaryState.Tick(delta);
+	m_HUDSystem.Tick(delta);
 }

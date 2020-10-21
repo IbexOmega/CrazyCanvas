@@ -19,9 +19,10 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) : 
+HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile, int32 ammoCap) : 
 	m_GUIState()
 {
+	m_GUIState.AmmoCapacity = ammoCap;
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 	InitGUI();
 }
@@ -44,8 +45,6 @@ void HUDGUI::OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
-
-	UpdateAmmo();
 }
 
 void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -117,19 +116,18 @@ bool HUDGUI::UpdateScore()
 	return true;
 }
 
-bool HUDGUI::UpdateAmmo()
+bool HUDGUI::UpdateAmmo(const int32 currentAmmo)
 {
 	//Returns false if Out Of Ammo
 	std::string ammoString;
 
-	m_GUIState.Ammo--;
+	m_GUIState.Ammo = currentAmmo;
 
-	ammoString = std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)MAX_AMMO);
+	ammoString = std::to_string(m_GUIState.Ammo) + "/" + std::to_string(m_GUIState.AmmoCapacity);
 	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
 
-	if (m_GUIState.Ammo <= 0.0)
+	if (currentAmmo <= 0)
 	{
-		m_GUIState.Ammo = 100.0;
 		return false;
 	}
 	return true;
@@ -142,7 +140,7 @@ void HUDGUI::InitGUI()
 	m_GUIState.DamageTaken = 0.0;
 	m_GUIState.LifeMaxHeight = pHpRect->GetHeight();
 	m_GUIState.Health = 100.0;
-	m_GUIState.Ammo = MAX_AMMO;
+	m_GUIState.Ammo = m_GUIState.AmmoCapacity;
 	m_GUIState.CurrentScore = 0;
 
 	pHpRect->SetHeight(0.0);
@@ -150,7 +148,7 @@ void HUDGUI::InitGUI()
 	std::string scoreString;
 	std::string ammoString;
 
-	ammoString = std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)MAX_AMMO);
+	ammoString = std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
 	scoreString = std::to_string(m_GUIState.CurrentScore) + "/" + std::to_string(MAX_SCORE);
 
 	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());

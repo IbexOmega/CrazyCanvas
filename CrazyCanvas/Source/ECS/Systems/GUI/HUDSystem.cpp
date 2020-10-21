@@ -3,7 +3,7 @@
 #include "Engine/EngineConfig.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-#include "ECS/Components/Player/Weapon.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/Player.h"
 
 #include "ECS/ECSCore.h"
@@ -43,12 +43,12 @@ void HUDSystem::Init()
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
-	m_HUDGUI = *new HUDGUI("HUD.xaml");
+	m_HUDGUI = *new HUDGUI("HUD.xaml", 50);
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
 	GUIApplication::SetView(m_View);
-}
 
+}
 
 void HUDSystem::Tick(Timestamp delta)
 {
@@ -63,11 +63,9 @@ void HUDSystem::Tick(Timestamp delta)
 		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weaponEntity);
 		Entity playerEntity = weaponComponent.WeaponOwner;
 
-		if (pPlayerLocalComponents->HasComponent(playerEntity))
+		if (pPlayerLocalComponents->HasComponent(playerEntity) && m_HUDGUI)
 		{
+			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition);
 		}
 	}
-
-	if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
-		m_HUDGUI->UpdateAmmo();
 }
