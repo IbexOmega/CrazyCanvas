@@ -142,6 +142,7 @@ void HUDGUI::InitGUI()
 	m_GUIState.DamageTaken		= 0.0;
 	m_GUIState.LifeMaxHeight	= pHpRect->GetHeight();
 	m_GUIState.Health			= 100.0;
+	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
 	m_GUIState.CurrentScore		= 0;
 

@@ -154,7 +154,7 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-
+	/*
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
 	lpStartupInfo.cb = sizeof(lpStartupInfo);
 	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
@@ -164,7 +164,7 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 		NULL, NULL, NULL, NULL,
 		&lpStartupInfo,
 		&lpProcessInfo
-	);
+	);*/
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
