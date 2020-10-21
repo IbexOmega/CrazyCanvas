@@ -33,7 +33,7 @@ namespace LambdaEngine
 		FPSCamComp.SpeedFactor = 2.4f;
 		pECS->AddComponent<FPSControllerComponent>(entity, FPSCamComp);
 
-		const CharacterColliderInfo colliderInfo = {
+		const CharacterColliderCreateInfo colliderInfo = {
 			.Entity = entity,
 			.Position = pECS->GetComponent<PositionComponent>(entity),
 			.Rotation = pECS->GetComponent<RotationComponent>(entity),

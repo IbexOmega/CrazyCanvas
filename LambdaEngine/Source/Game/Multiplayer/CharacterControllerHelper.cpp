@@ -1,65 +1,21 @@
-#include "Game/ECS/Systems/Physics/CharacterControllerSystem.h"
+#include "Game/Multiplayer/CharacterControllerHelper.h"
 
 #include "Game/ECS/Components/Player/PlayerComponent.h"
-#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "ECS/ECSCore.h"
 
-#include <PxPhysicsAPI.h>
+#include "Physics/PhysX/PhysX.h"
 
 namespace LambdaEngine
 {
-	CharacterControllerSystem::CharacterControllerSystem()
-	{
-
-	}
-
-	CharacterControllerSystem::~CharacterControllerSystem()
-	{
-
-	}
-
-	bool CharacterControllerSystem::Init()
-	{
-		auto onCharacterColliderRemoval = std::bind(&CharacterControllerSystem::OnCharacterColliderRemoval, this, std::placeholders::_1);
-
-		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
-		{
-			{
-				.pSubscriber = &m_ForeignPlayerEntities,
-				.ComponentAccesses =
-				{
-					{RW, CharacterColliderComponent::Type()},
-					{RW, NetworkPositionComponent::Type()},
-					{RW, VelocityComponent::Type()},
-					{NDA, PlayerForeignComponent::Type()}
-				},
-				.OnEntityRemoval = onCharacterColliderRemoval
-			}
-		};
-		systemReg.Phase = 1;
-
-		RegisterSystem(systemReg);
-
-		SetComponentOwner<CharacterColliderComponent>({ std::bind(&CharacterControllerSystem::CharacterColliderDestructor, this, std::placeholders::_1) });
-
-		return false;
-	}
-
-	void CharacterControllerSystem::Tick(Timestamp deltaTime)
-	{
-		UNREFERENCED_VARIABLE(deltaTime);
-	}
-
-	void CharacterControllerSystem::TickForeignCharacterController(
+	void CharacterControllerHelper::TickForeignCharacterController(
 		float32 dt,
 		Entity entity,
 		ComponentArray<CharacterColliderComponent>* pCharacterColliders,
 		const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
 		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
-		
+
 		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
 		const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
 		VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
@@ -103,11 +59,11 @@ namespace LambdaEngine
 	* Calculates a new Velocity based on the difference of the last position and the new one.
 	* Sets the new position of the PositionComponent
 	*/
-	void CharacterControllerSystem::TickCharacterController(
-		float32 dt, 
-		Entity entity, 
-		ComponentArray<CharacterColliderComponent>* pCharacterColliders, 
-		const ComponentArray<NetworkPositionComponent>* pNetPosComponents, 
+	void CharacterControllerHelper::TickCharacterController(
+		float32 dt,
+		Entity entity,
+		ComponentArray<CharacterColliderComponent>* pCharacterColliders,
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
 		ComponentArray<VelocityComponent>* pVelocityComponents)
 	{
 		CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
@@ -118,28 +74,28 @@ namespace LambdaEngine
 
 		//Update velocity
 		glm::vec3& velocity = velocityComp.Velocity;
-		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+		velocity.y -= GRAVITATIONAL_ACCELERATION;
 
 		//Calculate Tick Translation
 		PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 		translationPX *= dt;
 
-		const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
+		const glm::vec3& position = positionComp.Position;
 
 		// Distance between the capsule's feet to its center position. Includes contact offset.
 		if (positionComp.Dirty)
 		{
-			pController->setFootPosition({ positionComp.Position.x,  positionComp.Position.y,  positionComp.Position.z });
+			pController->setFootPosition({ position.x,  position.y,  position.z });
 		}
 
 		pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
 		const PxExtendedVec3& newPositionPX = pController->getFootPosition();
-		velocity = 
+		velocity =
 		{
-			(float)newPositionPX.x - oldPositionPX.x,
-			(float)newPositionPX.y - oldPositionPX.y,
-			(float)newPositionPX.z - oldPositionPX.z
+			(float)newPositionPX.x - position.x,
+			(float)newPositionPX.y - position.y,
+			(float)newPositionPX.z - position.z
 		};
 		velocity /= dt;
 
@@ -157,33 +113,7 @@ namespace LambdaEngine
 			NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
 			positionCompMutable.Dirty = true;
 
-			positionCompMutable.Position = 
-			{
-				newPositionPX.x,
-				newPositionPX.y,
-				newPositionPX.z
-			};
+			positionCompMutable.Position = { newPositionPX.x, newPositionPX.y, newPositionPX.z };
 		}
-	}
-
-	void CharacterControllerSystem::OnCharacterColliderRemoval(Entity entity)
-	{
-		CharacterColliderComponent& characterCollider = ECSCore::GetInstance()->GetComponent<CharacterColliderComponent>(entity);
-		PxActor* pActor = characterCollider.pController->getActor();
-		if (pActor)
-		{
-			PhysicsSystem::GetInstance()->GetScene()->removeActor(*pActor);
-		}
-	}
-
-	void CharacterControllerSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent)
-	{
-		PhysicsSystem::GetInstance()->GetScene()->removeActor(*characterColliderComponent.pController->getActor());
-		if (characterColliderComponent.pController)
-		{
-			characterColliderComponent.pController->release();
-			characterColliderComponent.pController = nullptr;
-		}
-		SAFEDELETE(characterColliderComponent.Filters.mFilterData);
 	}
 }

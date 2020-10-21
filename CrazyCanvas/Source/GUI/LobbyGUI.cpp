@@ -1,13 +1,14 @@
-#pragma once
 #include "Game/State.h"
-#include "Game/StateManager.h"
 
 #include "Engine/EngineConfig.h"
+#include "Engine/EngineLoop.h"
 
 #include "Networking/API/NetworkUtils.h"
 
+
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
+
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "States/PlaySessionState.h"
@@ -19,8 +20,6 @@
 
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
-
-//#include <string>
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -49,8 +48,10 @@ LobbyGUI::~LobbyGUI()
 	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
 }
 
-bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
+bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
+	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
+
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonBackClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonConnectClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonRefreshClick);
@@ -227,12 +228,7 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
-
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", false);
-
-	/*if (m_RayTracingEnabled)
-		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);*/
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
 
 }
 

@@ -88,7 +88,8 @@ namespace LambdaEngine
 				TextureView**	ppTextureViews;
 				TextureView**	ppPerSubImageTextureViews;
 				Sampler**		ppSamplers;
-				uint32			Count;
+				uint32			TextureCount;
+				uint32			SamplerCount;
 				uint32			PerImageSubImageTextureViewCount;
 			} ExternalTextureUpdate;
 
@@ -193,6 +194,7 @@ namespace LambdaEngine
 			EResourceOwnershipType		OwnershipType		= EResourceOwnershipType::NONE;
 			bool						BackBufferBound		= false;
 			uint32						SubResourceCount	= 0;
+			bool						ShouldSynchronize	= true;
 
 			TArray<ResourceBinding>		ResourceBindings;
 			TArray<ResourceBarrierInfo>	BarriersPerSynchronizationStage; //Divided into #SubResourceCount Barriers per Synchronization Stage

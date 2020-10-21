@@ -147,12 +147,12 @@ bool CrazyCanvas::LoadRendererResources()
 	{
 		String skybox[]
 		{
-			"Skybox/right.png",
-			"Skybox/left.png",
-			"Skybox/top.png",
-			"Skybox/bottom.png",
-			"Skybox/front.png",
-			"Skybox/back.png"
+			"Skybox/px.png",
+			"Skybox/nx.png",
+			"Skybox/py.png",
+			"Skybox/ny.png",
+			"Skybox/pz.png",
+			"Skybox/nz.png"
 		};
 
 		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);

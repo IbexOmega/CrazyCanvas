@@ -790,7 +790,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				0,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
 
 			s_pMaterialDescriptorSet->WriteTextureDescriptors(
 				&pMetallicMapView,
@@ -798,7 +799,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				1,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
 
 			s_pMaterialDescriptorSet->WriteTextureDescriptors(
 				&pRoughnessMapView,
@@ -806,7 +808,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				2,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
 
 			s_pMaterialDescriptorSet->WriteTextureDescriptors(
 				&pCombinedMaterialTextureView,
@@ -814,7 +817,8 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_GENERAL,
 				3,
 				1,
-				EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE);
+				EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
+				true);
 		}
 
 		PipelineTextureBarrierDesc transitionToCopyDstBarrier = { };
@@ -867,29 +871,42 @@ namespace LambdaEngine
 		}
 
 		//Execute Mipmap Pass
+		s_pMaterialGraphicsCommandAllocator->Reset();
+		s_pMaterialGraphicsCommandList->Begin(nullptr);
+
 		if (miplevels > 1)
 		{
-			s_pMaterialGraphicsCommandAllocator->Reset();
-			s_pMaterialGraphicsCommandList->Begin(nullptr);
-
 			s_pMaterialGraphicsCommandList->QueueTransferBarrier(
-				pCombinedMaterialTexture, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
+				pCombinedMaterialTexture,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, 
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE,
 				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
 				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-
-			s_pMaterialGraphicsCommandList->End();
-
-			signalValue++;
-			RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&s_pMaterialGraphicsCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, signalValue - 1, s_pMaterialFence, signalValue);
 		}
+		else
+		{
+			s_pMaterialGraphicsCommandList->QueueTransferBarrier(
+				pCombinedMaterialTexture,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
+				ETextureState::TEXTURE_STATE_GENERAL,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+		}
+
+		s_pMaterialGraphicsCommandList->End();
+
+		signalValue++;
+		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&s_pMaterialGraphicsCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, signalValue - 1, s_pMaterialFence, signalValue);
 
 		s_pMaterialFence->Wait(signalValue, UINT64_MAX);
 

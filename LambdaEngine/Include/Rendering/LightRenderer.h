@@ -2,6 +2,7 @@
 
 #include "RenderGraphTypes.h"
 #include "ICustomRenderer.h"
+#include "Core/API/DescriptorCache.h"
 
 namespace LambdaEngine
 {
@@ -69,8 +70,6 @@ namespace LambdaEngine
 		}
 	
 	private:
-		void HandleUnavailableDescriptors(uint32 modFrameIndex);
-
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
 		bool CreateShaders();
@@ -78,12 +77,8 @@ namespace LambdaEngine
 		bool CreateRenderPass(RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 
-		TSharedRef<DescriptorSet> GetDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
-
 	private:
 		bool									m_Initilized = false;
-
-		uint32									m_CurrModFrameIndex = 0;
 
 		const DrawArg*							m_pDrawArgs = nullptr;
 		uint32									m_DrawCount	= 0;
@@ -106,8 +101,7 @@ namespace LambdaEngine
 		TSharedRef<DescriptorSet>				m_LightDescriptorSet;
 		TArray<TSharedRef<DescriptorSet>>		m_DrawArgsDescriptorSets;
 
-		THashTable<DescriptorSetIndex, TArray<std::pair<TSharedRef<DescriptorSet>, ReleaseFrame>>>	m_UnavailableDescriptorSets;
-		THashTable<DescriptorSetIndex, TArray<TSharedRef<DescriptorSet>>>							m_AvailableDescriptorSets;
+		DescriptorCache							m_DescriptorCache;
 
 		uint32									m_BackBufferCount = 0;
 		TArray<LightUpdateData>					m_TextureUpdateQueue;

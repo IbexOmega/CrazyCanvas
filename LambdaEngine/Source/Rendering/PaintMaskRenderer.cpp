@@ -64,11 +64,6 @@ namespace LambdaEngine
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
 			m_pDeviceResourcesToDestroy.Clear();
 		}
-
-		for (auto& renderTarget : m_RenderTargets)
-		{
-			renderTarget.TextureView->Release();
-		}
 	}
 
 	bool PaintMaskRenderer::Init()
@@ -224,11 +219,11 @@ namespace LambdaEngine
 			if (!m_BrushMaskDescriptorSet.Get())
 			{
 				m_BrushMaskDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Buffer Descriptor Set", m_PipelineLayout.Get(), 1, m_DescriptorHeap.Get());
-				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 			}
 			else
 			{
-				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER);
+				m_BrushMaskDescriptorSet->WriteTextureDescriptors(&ppPerImageTextureViews[0], &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, true);
 			}
 		}
 	}
@@ -335,8 +330,8 @@ namespace LambdaEngine
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* textureView = extension.ppMipZeroTextureViews[0];
-							m_RenderTargets.PushBack({ .TextureView = textureView, .DrawArgIndex = d, .InstanceIndex = i });
+							TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+							m_RenderTargets.PushBack({ .pTextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
 				}
@@ -369,10 +364,6 @@ namespace LambdaEngine
 		{
 			return;
 		}
-		else
-		{
-			int dwadwa = 0;
-		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
@@ -397,7 +388,7 @@ namespace LambdaEngine
 			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
 			uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
 			const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-			TextureView*	renderTarget		= renderTargetDesc.TextureView;
+			TextureView*	renderTarget		= renderTargetDesc.pTextureView;
 
 			uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
 			uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;

@@ -25,6 +25,7 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -69,8 +70,8 @@ namespace LambdaEngine
 						AnimationComponent::Type(),
 						PlayerBaseComponent::Type(),
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnStaticMeshEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnStaticMeshEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_AnimatedEntities,
@@ -87,8 +88,8 @@ namespace LambdaEngine
 					{
 						PlayerBaseComponent::Type(),
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnAnimatedEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnAnimatedEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_PlayerEntities,
@@ -102,8 +103,8 @@ namespace LambdaEngine
 					{
 						&transformGroup
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnPlayerEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::RemoveRenderableEntity, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnPlayerEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
 					.pSubscriber = &m_DirectionalLightEntities,
@@ -113,8 +114,8 @@ namespace LambdaEngine
 						{ R, PositionComponent::Type() },
 						{ R, RotationComponent::Type() }
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnDirectionalEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnDirectionalEntityRemoved, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnDirectionalEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::OnDirectionalEntityRemoved, this)
 				},
 				{
 					.pSubscriber = &m_PointLightEntities,
@@ -123,8 +124,8 @@ namespace LambdaEngine
 						{ R, PointLightComponent::Type() },
 						{ R, PositionComponent::Type() }
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnPointLightEntityAdded, this, std::placeholders::_1),
-					.OnEntityRemoval = std::bind(&RenderSystem::OnPointLightEntityRemoved, this, std::placeholders::_1)
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnPointLightEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::OnPointLightEntityRemoved, this)
 				},
 				{
 					.pSubscriber = &m_CameraEntities,
@@ -138,6 +139,11 @@ namespace LambdaEngine
 						&transformGroup
 					}
 				}
+			};
+
+			systemReg.SubscriberRegistration.AdditionalAccesses =
+			{
+				{ R, MeshPaintComponent::Type() }
 			};
 
 			RegisterSystem(systemReg);
@@ -611,7 +617,8 @@ namespace LambdaEngine
 		m_MaterialsResourceDirty			= true;
 		m_MaterialsPropertiesBufferDirty	= true;
 		m_RenderGraphSBTRecordsDirty		= true;
-		m_LightsResourceDirty				= true;
+		m_LightsBufferDirty					= true;
+		m_PointLightsDirty					= true;
 
 		if (m_RayTracingEnabled)
 		{
@@ -724,7 +731,7 @@ namespace LambdaEngine
 			);
 
 			m_DirectionalExist = true;
-			m_LightsResourceDirty = true;
+			m_LightsBufferDirty = true;
 		}
 		else
 		{
@@ -803,10 +810,10 @@ namespace LambdaEngine
 					m_PointLightTextureUpdateQueue.PushBack(lightUpdateData);
 			}
 
-			m_PointLightDirty = true;
+			m_PointLightsDirty = true;
 		}
 
-		m_LightsResourceDirty = true;
+		m_LightsBufferDirty = true;
 	}
 
 	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
@@ -1101,6 +1108,49 @@ namespace LambdaEngine
 			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
+		// Update resource for the entity mesh paint textures that is used for ray tracing
+		bool hasPaintMask = false;
+		if (m_RayTracingEnabled)
+		{
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (pMeshPaintComponents->HasComponent(entity))
+			{
+				hasPaintMask = true;
+				const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
+
+				Texture* pTexture			= comp.pTexture;
+				TextureView* pTextureView	= comp.pTextureView;
+				Sampler* pNearestSampler	= Sampler::GetNearestSampler();
+
+				// If the texture has not been added before, update resource
+				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
+				if (paintMaskTexturesIt == m_PaintMaskTextures.end())
+				{
+					if (m_PaintMaskTextures.IsEmpty())
+					{
+						m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
+						m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
+					}
+
+					m_PaintMaskTextures.PushBack(pTexture);
+					m_PaintMaskTextureViews.PushBack(pTextureView);
+
+					ResourceUpdateDesc unwrappedTextureUpdate = {};
+					unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
+					unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
+					unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+					unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
+					unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
+
+					RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+				}
+			}
+		}
+
 		InstanceKey instanceKey = {};
 		instanceKey.MeshKey			= meshKey;
 		instanceKey.InstanceIndex	= meshAndInstancesIt->second.RasterInstances.GetSize();
@@ -1108,12 +1158,18 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			uint32 customIndex = (materialIndex & 0xFF) << 8;
+			customIndex |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
+
 			AccelerationStructureInstance asInstance = {};
-			asInstance.Transform						= glm::transpose(transform);
-			asInstance.CustomIndex						= materialIndex;
-			asInstance.Mask								= 0xFF;
-			asInstance.SBTRecordOffset					= 0;
-			asInstance.Flags							= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE;
+			asInstance.Transform		= glm::transpose(transform);
+			asInstance.CustomIndex		= customIndex;
+			asInstance.Mask				= 0xFF;
+			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
+
+			//If the SBT Record is already created in another instance, set it here
+			if (!meshAndInstancesIt->second.ASInstances.IsEmpty())
+				asInstance.SBTRecordOffset = meshAndInstancesIt->second.ASInstances[0].SBTRecordOffset;
 
 			//If the BLAS is already built, set it here
 			if (meshAndInstancesIt->second.pBLAS != nullptr)
@@ -1185,11 +1241,47 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			// Remove RT ASInstance
 			TArray<AccelerationStructureInstance>& asInstances = meshAndInstancesIt->second.ASInstances;
+			const uint32 textureIndex = asInstances[instanceIndex].CustomIndex & 0xFF;
 			asInstances[instanceIndex] = asInstances.GetBack();
 			asInstances.PopBack();
 			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
 			m_TLASDirty = true;
+
+			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+			if (pMeshPaintComponents->HasComponent(entity))
+			{
+				uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+				m_PaintMaskTextures[textureIndex]		= m_PaintMaskTextures.GetBack();
+				m_PaintMaskTextures.PopBack();
+				m_PaintMaskTextureViews[textureIndex]	= m_PaintMaskTextureViews.GetBack();
+				m_PaintMaskTextureViews.PopBack();
+
+				// Update custom indicies
+				for (auto& instance : asInstances)
+				{
+					if (changedIndex == (instance.CustomIndex & 0xFF0000))
+					{
+						instance.CustomIndex |= textureIndex;
+					}
+				}	
+
+				Sampler* pNearestSampler = Sampler::GetNearestSampler();
+				ResourceUpdateDesc unwrappedTextureUpdate = {};
+				unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
+				unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
+				unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+				unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
+				unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
+
+				RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+			}
 		}
 
 		// Remove extension
@@ -1304,7 +1396,7 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
-		m_LightsResourceDirty = true;
+		m_LightsBufferDirty = true;
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
@@ -1318,7 +1410,8 @@ namespace LambdaEngine
 		PointLight& pointLight = m_PointLights[index];
 		pointLight.ColorIntensity = colorIntensity;
 
-		m_LightsResourceDirty = true;
+		m_LightsBufferDirty = true;
+		m_PointLightsDirty = true;
 
 		if (pointLight.Position != position
 			|| pointLight.FarPlane != farPlane
@@ -1364,7 +1457,7 @@ namespace LambdaEngine
 			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
 			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
 
-			m_PointLightDirty = true;
+			m_PointLightsDirty = true;
 		}
 	}
 
@@ -1530,6 +1623,7 @@ namespace LambdaEngine
 		// Update Light Data
 		{
 			UpdateLightsBuffer(pGraphicsCommandList);
+			UpdatePointLightTextureResource(pGraphicsCommandList);
 		}
 
 		//Update Empty MaterialData
@@ -1938,24 +2032,30 @@ namespace LambdaEngine
 
 			bool update = true;
 
-			//Recreate TLAS completely if oldInstanceCount != newInstanceCount
-			if (m_MaxInstances < newInstanceCount)
+			//Recreate TLAS completely if m_MaxSupportedTLASInstances < newInstanceCount
+			if (m_MaxSupportedTLASInstances < newInstanceCount)
 			{
 				if (m_pTLAS != nullptr) DeleteDeviceResource(m_pTLAS);
 
-				m_MaxInstances = newInstanceCount;
+				m_MaxSupportedTLASInstances = newInstanceCount;
+				m_BuiltTLASInstanceCount = newInstanceCount;
 
 				AccelerationStructureDesc createTLASDesc = {};
-				createTLASDesc.DebugName		= "TLAS";
-				createTLASDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-				createTLASDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				createTLASDesc.InstanceCount	= m_MaxInstances;
+				createTLASDesc.DebugName = "TLAS";
+				createTLASDesc.Type = EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
+				createTLASDesc.Flags = FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				createTLASDesc.InstanceCount = m_MaxSupportedTLASInstances;
 
 				m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
 
 				update = false;
 
 				m_TLASResourceDirty = true;
+			}
+			else if (m_BuiltTLASInstanceCount != newInstanceCount)
+			{
+				m_BuiltTLASInstanceCount = newInstanceCount;
+				update = false;
 			}
 
 			if (m_pTLAS != nullptr)
@@ -1972,133 +2072,155 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::UpdatePointLightTextureResource()
+	void RenderSystem::UpdatePointLightTextureResource(CommandList* pCommandList)
 	{
-		uint32 pointLightCount = m_PointLights.GetSize();
-		if (pointLightCount == m_CubeTextures.GetSize())
-			return;
-
-		bool needUpdate = m_RemoveTexturesOnDeletion;
-
-		constexpr uint32 CUBE_FACE_COUNT = 6;
-		if (pointLightCount > m_CubeTextures.GetSize())
+		if (m_PointLightsDirty)
 		{
-			GraphicsDevice* pGraphicsDevice = RenderAPI::GetDevice();
-			uint32 diff = pointLightCount - m_CubeTextures.GetSize();
+			m_PointLightsDirty = false;
+			m_LightsResourceDirty = true;
 
-			// TODO: Create inteface for changing resolution
-			const uint32 width = 512;
-			const uint32 height = 512;
+			uint32 pointLightCount = m_PointLights.GetSize();
+			if (pointLightCount == m_CubeTextures.GetSize())
+				return;
 
-			uint32 prevSubImageCount = m_CubeSubImageTextureViews.GetSize();
-			m_CubeSubImageTextureViews.Resize(prevSubImageCount + CUBE_FACE_COUNT * diff);
+			bool needUpdate = m_RemoveTexturesOnDeletion;
 
-			for (uint32 c = 0; c < diff; c++)
+			constexpr uint32 CUBE_FACE_COUNT = 6;
+			if (pointLightCount > m_CubeTextures.GetSize())
 			{
-				// Create cube texture
-				TextureDesc cubeTexDesc = {};
-				cubeTexDesc.DebugName = "PointLight Texture Cube " + std::to_string(c);
-				cubeTexDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-				cubeTexDesc.Format = EFormat::FORMAT_D24_UNORM_S8_UINT;
-				cubeTexDesc.Type = ETextureType::TEXTURE_TYPE_2D;
-				cubeTexDesc.Flags = FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE;
-				cubeTexDesc.Width = width;
-				cubeTexDesc.Height = height;
-				cubeTexDesc.Depth = 1U;
-				cubeTexDesc.ArrayCount = 6;
-				cubeTexDesc.Miplevels = 1;
-				cubeTexDesc.SampleCount = 1;
+				GraphicsDevice* pGraphicsDevice = RenderAPI::GetDevice();
+				uint32 diff = pointLightCount - m_CubeTextures.GetSize();
 
-				Texture* pCubeTexture = pGraphicsDevice->CreateTexture(&cubeTexDesc);
-				m_CubeTextures.PushBack(pCubeTexture);
+				// TODO: Create inteface for changing resolution
+				const uint32 width = 512;
+				const uint32 height = 512;
 
-				// Create cube texture view
-				TextureViewDesc cubeTexViewDesc = {};
-				cubeTexViewDesc.DebugName = "PointLight Texture Cube View " + std::to_string(c);
-				cubeTexViewDesc.pTexture = pCubeTexture;
-				cubeTexViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL | FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-				cubeTexViewDesc.Format = cubeTexDesc.Format;
-				cubeTexViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
-				cubeTexViewDesc.MiplevelCount = 1;
-				cubeTexViewDesc.ArrayCount = 6;
-				cubeTexViewDesc.Miplevel = 0U;
-				cubeTexViewDesc.ArrayIndex = 0U;
+				uint32 prevSubImageCount = m_CubeSubImageTextureViews.GetSize();
+				m_CubeSubImageTextureViews.Resize(prevSubImageCount + CUBE_FACE_COUNT * diff);
 
-				m_CubeTextureViews.PushBack(pGraphicsDevice->CreateTextureView(&cubeTexViewDesc)); // Used for reading from CubeTexture
-
-				// Create per face texture views
-				TextureViewDesc subImageTextureViewDesc = {};
-				subImageTextureViewDesc.pTexture = pCubeTexture;
-				subImageTextureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
-				subImageTextureViewDesc.Format = cubeTexDesc.Format;
-				subImageTextureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-				subImageTextureViewDesc.Miplevel = cubeTexViewDesc.Miplevel;
-				subImageTextureViewDesc.MiplevelCount = cubeTexViewDesc.MiplevelCount;
-				subImageTextureViewDesc.ArrayCount = 1;
-
-				TextureView** ppSubImageView = &m_CubeSubImageTextureViews[prevSubImageCount + (CUBE_FACE_COUNT) * c];
-				for (uint32 si = 0; si < CUBE_FACE_COUNT; si++)
+				for (uint32 c = 0; c < diff; c++)
 				{
-					subImageTextureViewDesc.DebugName = "PointLight Sub Image Texture View " + std::to_string(si);
-					subImageTextureViewDesc.ArrayIndex = si;
+					// Create cube texture
+					TextureDesc cubeTexDesc = {};
+					cubeTexDesc.DebugName = "PointLight Texture Cube " + std::to_string(c);
+					cubeTexDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					cubeTexDesc.Format = EFormat::FORMAT_D24_UNORM_S8_UINT;
+					cubeTexDesc.Type = ETextureType::TEXTURE_TYPE_2D;
+					cubeTexDesc.Flags = FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE;
+					cubeTexDesc.Width = width;
+					cubeTexDesc.Height = height;
+					cubeTexDesc.Depth = 1U;
+					cubeTexDesc.ArrayCount = 6;
+					cubeTexDesc.Miplevels = 1;
+					cubeTexDesc.SampleCount = 1;
 
-					(*ppSubImageView) = pGraphicsDevice->CreateTextureView(&subImageTextureViewDesc); // Used for writing to CubeTexture
-					ppSubImageView++;
-				}
+					Texture* pCubeTexture = pGraphicsDevice->CreateTexture(&cubeTexDesc);
+					m_CubeTextures.PushBack(pCubeTexture);
 
-				needUpdate = true;
-			}
-		}
-		else if (pointLightCount < m_CubeTextures.GetSize())
-		{
-			if (m_RemoveTexturesOnDeletion)
-			{
-				uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
+					// Create cube texture view
+					TextureViewDesc cubeTexViewDesc = {};
+					cubeTexViewDesc.DebugName = "PointLight Texture Cube View " + std::to_string(c);
+					cubeTexViewDesc.pTexture = pCubeTexture;
+					cubeTexViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL | FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+					cubeTexViewDesc.Format = cubeTexDesc.Format;
+					cubeTexViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+					cubeTexViewDesc.MiplevelCount = 1;
+					cubeTexViewDesc.ArrayCount = 6;
+					cubeTexViewDesc.Miplevel = 0U;
+					cubeTexViewDesc.ArrayIndex = 0U;
 
-				// Remove Cube Texture Context for removed pointlights
-				for (uint32 r = 0; r < diff; r++)
-				{
-					DeleteDeviceResource(m_CubeTextures.GetBack());
-					m_CubeTextures.PopBack();
+					m_CubeTextureViews.PushBack(pGraphicsDevice->CreateTextureView(&cubeTexViewDesc)); // Used for reading from CubeTexture
 
-					DeleteDeviceResource(m_CubeTextureViews.GetBack());
-					m_CubeTextureViews.PopBack();
+					// Create per face texture views
+					TextureViewDesc subImageTextureViewDesc = {};
+					subImageTextureViewDesc.pTexture = pCubeTexture;
+					subImageTextureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
+					subImageTextureViewDesc.Format = cubeTexDesc.Format;
+					subImageTextureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+					subImageTextureViewDesc.Miplevel = cubeTexViewDesc.Miplevel;
+					subImageTextureViewDesc.MiplevelCount = cubeTexViewDesc.MiplevelCount;
+					subImageTextureViewDesc.ArrayCount = 1;
 
-					for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
+					TextureView** ppSubImageView = &m_CubeSubImageTextureViews[prevSubImageCount + (CUBE_FACE_COUNT) * c];
+					for (uint32 si = 0; si < CUBE_FACE_COUNT; si++)
 					{
-						DeleteDeviceResource(m_CubeSubImageTextureViews.GetBack());
-						m_CubeSubImageTextureViews.PopBack();
+						subImageTextureViewDesc.DebugName = "PointLight Sub Image Texture View " + std::to_string(si);
+						subImageTextureViewDesc.ArrayIndex = si;
+
+						(*ppSubImageView) = pGraphicsDevice->CreateTextureView(&subImageTextureViewDesc); // Used for writing to CubeTexture
+						ppSubImageView++;
+					}
+
+					PipelineTextureBarrierDesc transitionToReadOnlyBarrier = { };
+					transitionToReadOnlyBarrier.pTexture				= pCubeTexture;
+					transitionToReadOnlyBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+					transitionToReadOnlyBarrier.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+					transitionToReadOnlyBarrier.QueueBefore				= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+					transitionToReadOnlyBarrier.QueueAfter				= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+					transitionToReadOnlyBarrier.SrcMemoryAccessFlags	= 0;
+					transitionToReadOnlyBarrier.DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+					transitionToReadOnlyBarrier.TextureFlags			= cubeTexDesc.Flags;
+					transitionToReadOnlyBarrier.Miplevel				= 0;
+					transitionToReadOnlyBarrier.MiplevelCount			= cubeTexDesc.Miplevels;
+					transitionToReadOnlyBarrier.ArrayIndex				= 0;
+					transitionToReadOnlyBarrier.ArrayCount				= cubeTexDesc.ArrayCount;
+
+					pCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, &transitionToReadOnlyBarrier, 1);
+
+					needUpdate = true;
+				}
+			}
+			else if (pointLightCount < m_CubeTextures.GetSize())
+			{
+				if (m_RemoveTexturesOnDeletion)
+				{
+					uint32 diff =  m_CubeTextures.GetSize() - pointLightCount;
+
+					// Remove Cube Texture Context for removed pointlights
+					for (uint32 r = 0; r < diff; r++)
+					{
+						DeleteDeviceResource(m_CubeTextures.GetBack());
+						m_CubeTextures.PopBack();
+
+						DeleteDeviceResource(m_CubeTextureViews.GetBack());
+						m_CubeTextureViews.PopBack();
+
+						for (uint32 f = 0; f < CUBE_FACE_COUNT && !m_CubeSubImageTextureViews.IsEmpty(); f++)
+						{
+							DeleteDeviceResource(m_CubeSubImageTextureViews.GetBack());
+							m_CubeSubImageTextureViews.PopBack();
+						}
 					}
 				}
 			}
-		}
 
-		/*
-			If textures are not removed on pointlight deletion(m_RemoveTexturesOnDeletion == false), updates are only needed when new point light textures are added
-		*/
-		if (needUpdate)
-		{
-			uint32 texturesExisting = m_CubeTextures.GetSize();
-			TArray<Sampler*> nearestSamplers(texturesExisting, Sampler::GetNearestSampler());
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
-			resourceUpdateDesc.ExternalTextureUpdate.Count								= texturesExisting;
-			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
-			resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= nearestSamplers.GetData();
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+			/*
+				If textures are not removed on pointlight deletion(m_RemoveTexturesOnDeletion == false), updates are only needed when new point light textures are added
+			*/
+			if (needUpdate)
+			{
+				uint32 texturesExisting = m_CubeTextures.GetSize();
+				Sampler* pNearestSampler = Sampler::GetNearestSampler();
+				ResourceUpdateDesc resourceUpdateDesc = {};
+				resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
+				resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
+				resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
+				resourceUpdateDesc.ExternalTextureUpdate.TextureCount								= texturesExisting;
+				resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
+				resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
+				resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
+				resourceUpdateDesc.ExternalTextureUpdate.SamplerCount						= 1;
+				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+			}
 		}
 	}
 
 	void RenderSystem::UpdateLightsBuffer(CommandList* pCommandList)
 	{
 		// Light Buffer Initilization
-		if (m_LightsResourceDirty)
+		if (m_LightsBufferDirty)
 		{
-			// Resource only needs to be updated if new buffers are allocated
-			m_LightsResourceDirty = false;
+			m_LightsBufferDirty = false;
 
 			size_t pointLightCount			= m_PointLights.GetSize();
 			size_t dirLightBufferSize		= sizeof(LightBuffer);
@@ -2141,7 +2263,6 @@ namespace LambdaEngine
 
 				m_pLightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&lightBufferDesc);
 				m_LightsResourceDirty = true;
-
 			}
 
 			pCommandList->CopyBuffer(pCurrentStagingBuffer, 0, m_pLightsBuffer, 0, lightBufferSize);
@@ -2202,19 +2323,13 @@ namespace LambdaEngine
 			m_pRenderGraph->TriggerRenderStage("RENDER_STAGE_LIGHT");
 		}
 
-		if (m_LightsResourceDirty || m_PointLightDirty)
+		if (m_LightsResourceDirty)
 		{
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName						= SCENE_LIGHTS_BUFFER;
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pLightsBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-
-			if (m_PointLightDirty)
-			{
-				UpdatePointLightTextureResource();
-				m_PointLightDirty = false;
-			}
 
 			m_LightsResourceDirty = false;
 		}
@@ -2228,28 +2343,31 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			TArray<Sampler*> linearSamplers(m_AlbedoMaps.GetSize(), Sampler::GetLinearSampler());
+			Sampler* pLinearSamplers = Sampler::GetLinearSampler();
 
 			ResourceUpdateDesc albedoMapsUpdateDesc = {};
 			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
 			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.Count			= m_AlbedoMaps.GetSize();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+			albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
+			albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			ResourceUpdateDesc normalMapsUpdateDesc = {};
 			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
 			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= linearSamplers.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.Count			= m_NormalMapViews.GetSize();
+			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+			normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
+			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
 			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_CombinedMaterialMaps.GetData();
 			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= linearSamplers.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.Count				= m_CombinedMaterialMaps.GetSize();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pLinearSamplers;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_CombinedMaterialMaps.GetSize();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
