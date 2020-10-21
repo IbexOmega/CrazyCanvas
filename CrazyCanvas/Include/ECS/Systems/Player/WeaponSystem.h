@@ -1,7 +1,8 @@
 #pragma once
-
 #include "ECS/System.h"
+
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+
 #include "Math/Math.h"
 
 namespace LambdaEngine
