@@ -57,8 +57,10 @@ void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 }
 
 
-bool HUDGUI::ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler)
+bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
+	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
+
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonGrowClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonScoreClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonShootClick);

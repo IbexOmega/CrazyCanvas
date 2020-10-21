@@ -43,7 +43,7 @@ public:
 	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	bool ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler) override;
+	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	bool ApplyDamage(float damage);
 	bool UpdateScore();
