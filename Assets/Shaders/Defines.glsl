@@ -172,6 +172,8 @@ struct SParticle
 	uint TileIndex;
 	vec3 StartPosition;
 	uint EmitterIndex;
+	vec3 StartAcceleration;
+	bool WasCreated;
 };
 
 

@@ -337,8 +337,10 @@ namespace LambdaEngine
 			particle.StartVelocity = particle.Velocity;
 			particle.Radius = emitterInstance.ParticleRadius;
 			particle.Acceleration = direction * emitterInstance.Acceleration;
+			particle.StartAcceleration = particle.Acceleration;
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
+			particle.WasCreated = true;
 
 			if (allocateParticles)
 			{
@@ -410,8 +412,10 @@ namespace LambdaEngine
 			particle.StartVelocity = particle.Velocity;
 			particle.Radius = emitterInstance.ParticleRadius;
 			particle.Acceleration = glm::vec3(0.f);
+			particle.StartAcceleration = particle.Acceleration;
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
+			particle.WasCreated = true;
 
 			if (allocateParticles)
 			{
