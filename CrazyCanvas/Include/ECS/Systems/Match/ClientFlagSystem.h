@@ -9,7 +9,7 @@ public:
 	~ClientFlagSystem();
 
 	virtual void OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaEngine::Entity flagEntity) override final;
-	virtual void OnFlagDropped() override final;
+	virtual void OnFlagDropped(LambdaEngine::Entity flagEntity, const glm::vec3& dropPosition) override final;
 
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) override final;
 

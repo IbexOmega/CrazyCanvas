@@ -15,11 +15,12 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 
 	virtual void OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaEngine::Entity flagEntity) = 0;
-	virtual void OnFlagDropped() = 0;
+	virtual void OnFlagDropped(LambdaEngine::Entity flagEntity, const glm::vec3& dropPosition) = 0;
 
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 
 protected:
+	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) {};
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
 public:

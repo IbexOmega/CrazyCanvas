@@ -218,23 +218,28 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 	Entity entity = pECS->CreateEntity();
 
 	pECS->AddComponent<FlagComponent>(entity,	FlagComponent());
-	pECS->AddComponent<OffsetComponent>(entity,	OffsetComponent{ .Offset = glm::vec3(0.0f)});
+	pECS->AddComponent<OffsetComponent>(entity,	OffsetComponent{ .Offset = glm::vec3(1.0f)});
 	pECS->AddComponent<ParentComponent>(entity,	ParentComponent{ .Attached = false });
-	const CollisionCreateInfo collisionCreateInfo =
-	{
-		.Entity				= entity,
-		.Position			= pECS->AddComponent<PositionComponent>(entity,		{ true, specialObject.DefaultPosition + translation}),
-		.Scale				= pECS->AddComponent<ScaleComponent>(entity,		{ true, specialObject.DefaultScale }),
-		.Rotation			= pECS->AddComponent<RotationComponent>(entity,		{ true, specialObject.DefaultRotation }),
-		.Mesh				= pECS->AddComponent<MeshComponent>(entity,			meshComponent),
-		.ShapeType			= EShapeType::TRIGGER,
-		.CollisionGroup		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-		.CollisionMask		= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CallbackFunction	= std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance())
-	};
 
-	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo);
-	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+	//Only the server checks collision with the flag
+	if (MultiplayerUtils::IsServer())
+	{
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			/* Entity */	 		entity,
+			/* Position */	 		pECS->AddComponent<PositionComponent>(entity,		{ true, specialObject.DefaultPosition + translation}),
+			/* Scale */				pECS->AddComponent<ScaleComponent>(entity,			{ true, specialObject.DefaultScale }),
+			/* Rotation */			pECS->AddComponent<RotationComponent>(entity,		{ true, specialObject.DefaultRotation }),
+			/* Mesh */				pECS->AddComponent<MeshComponent>(entity,			meshComponent),
+			/* Shape Type */		EShapeType::TRIGGER,
+			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
+			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance())
+		};
+
+		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+	}
 
 	createdEntities.PushBack(entity);
 

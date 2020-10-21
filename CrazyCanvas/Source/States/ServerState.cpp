@@ -112,7 +112,7 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		pClient->SendReliable(pPacket, nullptr);
 	}
 
-	static glm::vec3 position(0.0f, 10.0f, 0.0f);
+	static glm::vec3 position(2.0f, 10.0f, 0.0f);
 	static uint32 teamIndex = 0;
 
 	CreatePlayerDesc createPlayerDesc =

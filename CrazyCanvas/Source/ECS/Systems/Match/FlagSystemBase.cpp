@@ -46,6 +46,8 @@ bool FlagSystemBase::Init()
 		};
 		systemReg.Phase = 1;
 
+		InternalAddAdditionalRequiredFlagComponents(systemReg.SubscriberRegistration.EntitySubscriptionRegistrations[0].ComponentAccesses);
+
 		RegisterSystem(systemReg);
 	}
 
@@ -66,21 +68,24 @@ void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	Entity flagEntity = m_Flags[0];
-
-	const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
-
-	if (parentComponent.Attached)
+	if (!m_Flags.Empty())
 	{
-		const PositionComponent& parentPositionComponent = pECS->GetComponent<PositionComponent>(parentComponent.Parent);
-		const RotationComponent& parentRotationComponent = pECS->GetComponent<RotationComponent>(parentComponent.Parent);
+		Entity flagEntity = m_Flags[0];
 
-		const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
-		PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
-		RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
+		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
 
-		flagPositionComponent.Position		= parentPositionComponent.Position;
-		flagRotationComponent.Quaternion	= flagRotationComponent.Quaternion;
+		if (parentComponent.Attached)
+		{
+			const PositionComponent& parentPositionComponent = pECS->GetComponent<PositionComponent>(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent = pECS->GetComponent<RotationComponent>(parentComponent.Parent);
+
+			const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
+			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
+			RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
+
+			flagPositionComponent.Position		= parentPositionComponent.Position;
+			flagRotationComponent.Quaternion	= flagRotationComponent.Quaternion;
+		}
 	}
 
 	TickInternal(deltaTime);

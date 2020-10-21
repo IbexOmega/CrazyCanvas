@@ -49,7 +49,7 @@ namespace LambdaEngine
 		clientDesc.Protocol				= EProtocol::UDP;
 		clientDesc.PingInterval			= Timestamp::Seconds(1);
 		clientDesc.PingTimeout			= Timestamp::Seconds(10);
-		clientDesc.UsePingSystem		= true;
+		clientDesc.UsePingSystem		= false;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 

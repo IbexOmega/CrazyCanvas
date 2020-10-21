@@ -30,6 +30,7 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "ECS/Systems/Match/ClientFlagSystem.h"
+#include "ECS/Systems/Match/ServerFlagSystem.h"
 
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 	m_pIPAddress(pIPAddress)
