@@ -24,6 +24,9 @@ public:
 
 
 private:
+
+	LambdaEngine::IDVector m_WeaponEntities;
+
 	Noesis::Ptr<HUDGUI> m_HUDGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
 };
