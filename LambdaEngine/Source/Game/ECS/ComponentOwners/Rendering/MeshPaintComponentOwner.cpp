@@ -17,5 +17,6 @@ namespace LambdaEngine
 	{
 		SAFERELEASE(meshPaintComponent.pTexture);
 		SAFERELEASE(meshPaintComponent.pTextureView);
+		SAFERELEASE(meshPaintComponent.pMipZeroTextureView);
 	}
 }

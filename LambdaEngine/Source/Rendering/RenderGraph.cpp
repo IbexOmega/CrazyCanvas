@@ -1980,11 +1980,11 @@ namespace LambdaEngine
 							pResource->LastPipelineStageOfFirstRenderStage = lastPipelineStageFlags;
 
 							pResource->Texture.InitialTransitionBarrier.pTexture				= nullptr;
-							pResource->Texture.InitialTransitionBarrier.StateBefore				= ETextureState::TEXTURE_STATE_UNKNOWN;
+							pResource->Texture.InitialTransitionBarrier.StateBefore				= pResource->OwnershipType == EResourceOwnershipType::INTERNAL ? ETextureState::TEXTURE_STATE_UNKNOWN : ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 							pResource->Texture.InitialTransitionBarrier.StateAfter				= CalculateResourceTextureState(pResource->Type, pResourceStateDesc->BindingType == ERenderGraphResourceBindingType::ATTACHMENT ? pResourceStateDesc->AttachmentSynchronizations.PrevBindingType : pResourceStateDesc->BindingType, pResource->Texture.Format);
 							pResource->Texture.InitialTransitionBarrier.QueueBefore				= ConvertPipelineStateTypeToQueue(pRenderStageDesc->Type);
 							pResource->Texture.InitialTransitionBarrier.QueueAfter				= pResource->Texture.InitialTransitionBarrier.QueueBefore;
-							pResource->Texture.InitialTransitionBarrier.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
+							pResource->Texture.InitialTransitionBarrier.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
 							pResource->Texture.InitialTransitionBarrier.DstMemoryAccessFlags	= CalculateResourceAccessFlags(pResourceStateDesc->BindingType);
 							pResource->Texture.InitialTransitionBarrier.TextureFlags			= pResource->Texture.Format == EFormat::FORMAT_D24_UNORM_S8_UINT ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : 0;
 						}
@@ -2027,7 +2027,7 @@ namespace LambdaEngine
 							drawArgsData.InitialTextureTransitionBarrierTemplate.QueueAfter				= drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore;
 							drawArgsData.InitialTextureTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 							drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
-							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_UNKNOWN;
+							drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 							drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
 							pResource->DrawArgs.FullMaskToArgs[maskDesc.FullMask] = drawArgsData;

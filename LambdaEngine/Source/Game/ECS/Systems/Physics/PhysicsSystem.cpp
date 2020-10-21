@@ -289,20 +289,6 @@ namespace LambdaEngine
 
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
 	{
-		PxContactPairExtraDataIterator iter(pairHeader.extraDataStream,
-			pairHeader.extraDataStreamSize);
-		glm::vec3 linearVelocities[2];
-		while (iter.nextItemSet())
-		{
-			if (iter.preSolverVelocity)
-			{
-				PxVec3 linearVelocityActor0 = iter.preSolverVelocity->linearVelocity[0];
-				linearVelocities[0] = { linearVelocityActor0.x, linearVelocityActor0.y, linearVelocityActor0.z };
-				PxVec3 linearVelocityActor1 = iter.preSolverVelocity->linearVelocity[1];
-				linearVelocities[1] = { linearVelocityActor1.x, linearVelocityActor1.y, linearVelocityActor1.z };
-			}
-		}
-
 		for (PxU32 pairIdx = 0; pairIdx < nbPairs; pairIdx++)
 		{
 			const PxContactPair& contactPair = pPairs[pairIdx];
@@ -311,7 +297,7 @@ namespace LambdaEngine
 			if (contactPair.events & (PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_CONTACT_POINTS))
 			{
 				contactPair.extractContacts(contactPoints.GetData(), contactPair.contactCount);
-				ContactCallbacks({ pairHeader.actors[0], pairHeader.actors[1] }, contactPoints, linearVelocities);
+				CollisionCallbacks({ pairHeader.actors[0], pairHeader.actors[1] }, contactPoints);
 			}
 		}
 	}
@@ -601,15 +587,10 @@ namespace LambdaEngine
 		pActor->userData = DBG_NEW ActorUserData;
 		ActorUserData* pUserData = reinterpret_cast<ActorUserData*>(pActor->userData);
 		pUserData->Entity = collisionInfo.Entity;
-		pUserData->CollisionCallback = collisionInfo.CollisionCallback;
+		pUserData->CallbackFunction = collisionInfo.CallbackFunction;
 	}
 
-	void PhysicsSystem::TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors)
-	{
-		
-	}
-
-	void PhysicsSystem::ContactCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints, glm::vec3* pLinearVelocities)
+	void PhysicsSystem::TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors) const
 	{
 		ActorUserData* pActorUserDatas[2] =
 		{
@@ -617,12 +598,36 @@ namespace LambdaEngine
 			reinterpret_cast<ActorUserData*>(actors[1]->userData)
 		};
 
-		if (!pActorUserDatas[0]->CollisionCallback && !pActorUserDatas[1]->CollisionCallback)
+		const TriggerCallback* pTriggerCallback0 = std::get_if<TriggerCallback>(&pActorUserDatas[0]->CallbackFunction);
+		const TriggerCallback* pTriggerCallback1 = std::get_if<TriggerCallback>(&pActorUserDatas[1]->CallbackFunction);
+
+		if (pTriggerCallback0 && *pTriggerCallback0)
+		{
+			(*pTriggerCallback0)(pActorUserDatas[0]->Entity, pActorUserDatas[1]->Entity);
+		}
+
+		if (pTriggerCallback1 && *pTriggerCallback1)
+		{
+			(*pTriggerCallback1)(pActorUserDatas[1]->Entity, pActorUserDatas[0]->Entity);
+		}
+	}
+
+	void PhysicsSystem::CollisionCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints) const
+	{
+		ActorUserData* pActorUserDatas[2] =
+		{
+			reinterpret_cast<ActorUserData*>(actors[0]->userData),
+			reinterpret_cast<ActorUserData*>(actors[1]->userData)
+		};
+
+		const CollisionCallback* pCollisionCallback0 = std::get_if<CollisionCallback>(&pActorUserDatas[0]->CallbackFunction);
+		const CollisionCallback* pCollisionCallback1 = std::get_if<CollisionCallback>(&pActorUserDatas[1]->CallbackFunction);
+		if (!pCollisionCallback0 && !*pCollisionCallback0 && !pCollisionCallback1 && !*pCollisionCallback1)
 		{
 			return;
 		}
 
-		// Take the first contact pont. (We might want to change this to work for multiple contact points)
+		// Take the first contact point. (We might want to change this to work for multiple contact points)
 		const PxContactPairPoint& contactPoint = contactPoints[0];
 
 		// At least one of the entities has a callback function. Create collision info for both entities.
@@ -630,23 +635,36 @@ namespace LambdaEngine
 		for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
 		{
 			const PxRigidActor* pActor = actors[actorIdx];
+			glm::vec3 direction;
+			if (pActor->is<PxRigidDynamic>())
+			{
+				const PxRigidDynamic* pDynamicActor = reinterpret_cast<const PxRigidDynamic*>(pActor);
+				const PxVec3 velocityPX = pDynamicActor->getLinearVelocity();
+				direction = glm::normalize(glm::vec3(velocityPX.x, velocityPX.y, velocityPX.z));
+			}
+			else
+			{
+				const PxTransform transformPX = pActor->getGlobalPose();
+				const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
+				direction = GetForward(rotation);
+			}
 
 			collisionInfos[actorIdx] =
 			{
 				.Entity = pActorUserDatas[actorIdx]->Entity,
 				.Position = { contactPoint.position.x, contactPoint.position.y, contactPoint.position.z },
-				.Direction = glm::normalize(-pLinearVelocities[actorIdx])
+				.Direction = direction
 			};
 		}
 
-		if (pActorUserDatas[0]->CollisionCallback)
+		if (pCollisionCallback0 && *pCollisionCallback0)
 		{
-			pActorUserDatas[0]->CollisionCallback(collisionInfos[0], collisionInfos[1]);
+			(*pCollisionCallback0)(collisionInfos[0], collisionInfos[1]);
 		}
 
-		if (pActorUserDatas[1]->CollisionCallback)
+		if (pCollisionCallback1 && *pCollisionCallback1)
 		{
-			pActorUserDatas[1]->CollisionCallback(collisionInfos[1], collisionInfos[0]);
+			(*pCollisionCallback1)(collisionInfos[1], collisionInfos[0]);
 		}
 	}
 }
