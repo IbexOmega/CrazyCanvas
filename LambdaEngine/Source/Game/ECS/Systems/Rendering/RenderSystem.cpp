@@ -336,6 +336,7 @@ namespace LambdaEngine
 					if (pCustomRenderer)
 					{
 						pCustomRenderer->Init();
+						renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
 					}
 				}
 			}
@@ -398,6 +399,13 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
+
+		// Delete Custom Renderers
+		for (uint32 c = 0; c < m_GameSpecificCustomRenderers.GetSize(); c++)
+		{
+			SAFEDELETE(m_GameSpecificCustomRenderers[c]);
+
+		}
 
 		// Remove Pointlight Texture and Texture Views
 		for (uint32 c = 0; c < m_CubeTextures.GetSize(); c++)
@@ -1560,6 +1568,9 @@ namespace LambdaEngine
 			if ((mask & requestedMaskDesc.IncludeMask) == requestedMaskDesc.IncludeMask && (mask & requestedMaskDesc.ExcludeMask) == 0)
 			{
 				DrawArg drawArg = { };
+
+				// Get all entites that are using this mesh
+				drawArg.EntityIDs = meshEntryPair.second.EntityIDs;
 
 				// Assume animated
 				if (meshEntryPair.second.pAnimatedVertexBuffer)
