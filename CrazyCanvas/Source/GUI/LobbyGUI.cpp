@@ -251,11 +251,11 @@ bool LobbyGUI::CheckServerStatus()
 {
 	TArray<uint64> serversToRemove;
 
-	Timestamp deltaTime;
+	Timestamp deltaTime = EngineLoop::GetTimeSinceStart();
 
 	for (auto& server : m_Servers)
 	{
-		deltaTime = EngineLoop::GetTimeSinceStart() - server.second.LastUpdate;
+		deltaTime -= server.second.LastUpdate;
 
 		if (deltaTime.AsSeconds() > 5)
 		{
