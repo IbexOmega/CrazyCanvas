@@ -76,7 +76,7 @@ namespace LambdaEngine
 	{
 		m_ModFrameIndex = modFrameIndex;
 
-		constexpr float EPSILON = 0.1f;
+		constexpr float EPSILON = 0.01f;
 
 		// Set active false if timer has elapsed
 		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = ECSCore::GetInstance()->GetComponentArray<ParticleEmitterComponent>();
@@ -96,11 +96,11 @@ namespace LambdaEngine
 						// Set emitter component to inactive so this dose not trigger again and again
 						auto& Emitter = pEmitterComponents->GetData(activeEmitterIt->first);
 						Emitter.Active = false;
+						elapTime = 0.f;
 
 						DeactivateEmitterEntity(activeEmitterIt->second);
 						m_SleepingEmitters[activeEmitterIt->first] = activeEmitterIt->second;
 						activeEmitterIt = m_ActiveEmitters.erase(activeEmitterIt);
-						elapTime = 0.f;
 						continue;
 					}
 				}
@@ -171,32 +171,30 @@ namespace LambdaEngine
 			CreateAtlasTextureInstance(atlasGUID, emitterComp.AtlasTileSize);
 		}
 
+		instance.AnimationCount = emitterComp.AnimationCount;
+		instance.AtlasIndex = m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
+		instance.TileIndex = emitterComp.TileIndex;
+		instance.AnimationCount = emitterComp.AnimationCount;
+		instance.FirstAnimationIndex = emitterComp.FirstAnimationIndex;
+
 		// Set data index before creation of particles so each particle now which emitter they belong to
 		instance.DataIndex = m_IndirectData.GetSize();
 
+		if (!AllocateParticleChunk(instance.ParticleChunk))
+		{
+			LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+			return;
+		}
+
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
 		{
-			if (!CreateConeParticleEmitter(instance))
-			{
-				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
-				return;
-			}
+			CreateConeParticleEmitter(instance);
 		}
-
-		if (emitterComp.EmitterShape == EEmitterShape::TUBE)
+		else if (emitterComp.EmitterShape == EEmitterShape::TUBE)
 		{
-			if (!CreateTubeParticleEmitter(instance))
-			{
-				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
-				return;
-			}
+			CreateTubeParticleEmitter(instance);
 		}
 
-		instance.AnimationCount			= emitterComp.AnimationCount;
-		instance.AtlasGUID				= m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
-		instance.TileIndex				= emitterComp.TileIndex;
-		instance.AnimationCount			= emitterComp.AnimationCount;
-		instance.FirstAnimationIndex	= emitterComp.FirstAnimationIndex;
 
 		if (emitterComp.Active)
 		{
@@ -216,7 +214,7 @@ namespace LambdaEngine
 			emitterData.Color					= emitterComp.Color;
 			emitterData.LifeTime				= instance.LifeTime;
 			emitterData.Radius					= instance.ParticleRadius;
-			emitterData.AtlasGUID				= instance.AtlasGUID;
+			emitterData.AtlasIndex				= instance.AtlasIndex;
 			emitterData.AnimationCount			= instance.AnimationCount;
 			emitterData.FirstAnimationIndex		= instance.FirstAnimationIndex;
 			m_EmitterData.PushBack(emitterData);
@@ -228,9 +226,9 @@ namespace LambdaEngine
 			m_ActiveEmitters[entity] = instance;
 
 			m_DirtyIndirectBuffer = true;
-			m_DirtyParticleBuffer = true;
 			m_DirtyEmitterBuffer = true;
 			m_DirtyTransformBuffer = true;
+			m_DirtyParticleBuffer = true;
 		}
 		else
 		{
@@ -305,40 +303,6 @@ namespace LambdaEngine
 
 	bool ParticleManager::CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance)
 	{
-		// TODO: Handle override max capacity particle request
-		if (m_FreeParticleChunks.IsEmpty())
-			return false;
-
-		// Assign fitting chunk to emitter
-		bool foundChunk = false;
-		for (uint32 i = 0; i < m_FreeParticleChunks.GetSize(); i++)
-		{
-			ParticleChunk& freeChunk = m_FreeParticleChunks[i];
-			ParticleChunk& emitterChunk = emitterInstance.ParticleChunk;
-
-			if (emitterInstance.ParticleChunk.Size <= freeChunk.Size)
-			{
-				emitterChunk.Offset = freeChunk.Offset;
-
-				uint32 diff = freeChunk.Size - emitterChunk.Size;
-				if (diff == 0)
-				{
-					m_FreeParticleChunks.Erase(m_FreeParticleChunks.Begin() + i);
-				}
-				else
-				{
-					freeChunk.Offset += emitterChunk.Size;
-					freeChunk.Size -= emitterChunk.Size;
-				}
-
-				foundChunk = true;
-			}
-		}
-
-		// TODO: Handle override max capacity particle request
-		if (!foundChunk)
-			return false;
-
 		bool allocateParticles = false;
 		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
 		{
@@ -389,40 +353,6 @@ namespace LambdaEngine
 
 	bool ParticleManager::CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance)
 	{
-		// TODO: Handle override max capacity particle request
-		if (m_FreeParticleChunks.IsEmpty())
-			return false;
-
-		// Assign fitting chunk to emitter
-		bool foundChunk = false;
-		for (uint32 i = 0; i < m_FreeParticleChunks.GetSize(); i++)
-		{
-			ParticleChunk& freeChunk = m_FreeParticleChunks[i];
-			ParticleChunk& emitterChunk = emitterInstance.ParticleChunk;
-
-			if (emitterInstance.ParticleChunk.Size <= freeChunk.Size)
-			{
-				emitterChunk.Offset = freeChunk.Offset;
-
-				uint32 diff = freeChunk.Size - emitterChunk.Size;
-				if (diff == 0)
-				{
-					m_FreeParticleChunks.Erase(m_FreeParticleChunks.Begin() + i);
-				}
-				else
-				{
-					freeChunk.Offset += emitterChunk.Size;
-					freeChunk.Size -= emitterChunk.Size;
-				}
-
-				foundChunk = true;
-			}
-		}
-
-		// TODO: Handle override max capacity particle request
-		if (!foundChunk)
-			return false;
-
 		bool allocateParticles = false;
 		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
 		{
@@ -459,7 +389,7 @@ namespace LambdaEngine
 			}
 		}
 
-		return true;
+		return allocateParticles;
 	}
 	
 	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
@@ -525,23 +455,23 @@ namespace LambdaEngine
 			instance.Acceleration = emitterComp.Acceleration;
 			instance.LifeTime = emitterComp.LifeTime;
 			instance.ParticleRadius = emitterComp.ParticleRadius * 0.5f;
+			instance.AtlasIndex = emitterComp.AtlasGUID;
+			instance.AnimationCount = emitterComp.AnimationCount;
+			instance.TileIndex = emitterComp.TileIndex;
+			instance.FirstAnimationIndex = emitterComp.FirstAnimationIndex;
 			instance.DataIndex = m_IndirectData.GetSize();
 			instance.Color = emitterComp.Color;
 			emitterInstance = instance;
 
-			for (uint32 i = offset; i < chunk.Size; i++)
+			if (emitterComp.EmitterShape == EEmitterShape::CONE)
 			{
-				SParticle particle;
-
-				particle.StartPosition = glm::vec3(0.f);
-				particle.Transform = glm::identity<glm::mat4>();
-				particle.CurrentLife = emitterInstance.LifeTime;
-				particle.Radius = emitterInstance.ParticleRadius;
-				particle.TileIndex = emitterInstance.TileIndex;
-				particle.EmitterIndex = emitterInstance.DataIndex;
-
-				m_Particles[i] = particle;
+				CreateConeParticleEmitter(instance);
 			}
+			else if (emitterComp.EmitterShape == EEmitterShape::TUBE)
+			{
+				CreateTubeParticleEmitter(instance);
+			}
+			m_DirtyParticleBuffer = true;
 
 			// Create IndirectDrawData
 			IndirectData indirectData;
@@ -557,16 +487,20 @@ namespace LambdaEngine
 			emitterData.Color = emitterInstance.Color;
 			emitterData.LifeTime = emitterInstance.LifeTime;
 			emitterData.Radius = emitterInstance.ParticleRadius;
-			emitterData.AtlasGUID = emitterInstance.AtlasGUID;
 			emitterData.AnimationCount = emitterInstance.AnimationCount;
 			emitterData.FirstAnimationIndex = emitterInstance.FirstAnimationIndex;
+			// Fetch default texture if none is set
+			GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
+			if (atlasGUID == GUID_NONE)
+				atlasGUID = m_DefaultAtlasTextureGUID;
+			emitterData.AtlasIndex = m_AtlasResources[emitterComp.AtlasGUID].AtlasIndex;
+
 			m_EmitterData.PushBack(emitterData);
 
 			// Create Transform
 			glm::mat4 emitterTransform = glm::translate(positionComp.Position) * glm::toMat4(rotationComp.Quaternion);
 			m_EmitterTransformData.PushBack(emitterTransform);
 
-			m_DirtyParticleBuffer = true;
 			m_DirtyTransformBuffer = true;
 			m_DirtyEmitterBuffer = true;
 			m_DirtyIndirectBuffer = true;
@@ -625,6 +559,45 @@ namespace LambdaEngine
 			LOG_WARNING("[ParticleManager]: Trying to remove non-exsisting indirectDrawData");
 			return false;
 		}
+
+		return true;
+	}
+
+	bool ParticleManager::AllocateParticleChunk(ParticleChunk& chunk)
+	{
+		// TODO: Handle override max capacity particle request
+		if (m_FreeParticleChunks.IsEmpty())
+			return false;
+
+		// Assign fitting chunk to emitter
+		bool foundChunk = false;
+		for (uint32 i = 0; i < m_FreeParticleChunks.GetSize(); i++)
+		{
+			ParticleChunk& freeChunk = m_FreeParticleChunks[i];
+			ParticleChunk& emitterChunk = chunk;
+
+			if (emitterChunk.Size <= freeChunk.Size)
+			{
+				emitterChunk.Offset = freeChunk.Offset;
+
+				uint32 diff = freeChunk.Size - emitterChunk.Size;
+				if (diff == 0)
+				{
+					m_FreeParticleChunks.Erase(m_FreeParticleChunks.Begin() + i);
+				}
+				else
+				{
+					freeChunk.Offset += emitterChunk.Size;
+					freeChunk.Size -= emitterChunk.Size;
+				}
+
+				foundChunk = true;
+			}
+		}
+
+		// TODO: Handle override max capacity particle request
+		if (!foundChunk)
+			return false;
 
 		return true;
 	}
@@ -699,6 +672,8 @@ namespace LambdaEngine
 
 	bool ParticleManager::UpdateBuffers(CommandList* pCommandList)
 	{
+		CleanBuffers();
+
 		// Update Instance Buffer
 		if (m_DirtyIndirectBuffer)
 		{
@@ -824,9 +799,8 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pIndirectBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-
-			m_DirtyIndirectBuffer = false;
 		}
+		m_DirtyIndirectBuffer = false;
 
 		if (m_DirtyVertexBuffer)
 		{
@@ -835,9 +809,8 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pVertexBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-
-			m_DirtyVertexBuffer = false;
 		}
+		m_DirtyVertexBuffer = false;
 
 		if (m_DirtyIndexBuffer)
 		{
@@ -846,9 +819,8 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pIndexBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-
-			m_DirtyIndexBuffer = false;
 		}
+		m_DirtyIndexBuffer = false;
 
 		if (m_DirtyParticleBuffer)
 		{
@@ -857,9 +829,8 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pParticleBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-
-			m_DirtyParticleBuffer = false;
 		}
+		m_DirtyParticleBuffer = false;
 
 		if (m_DirtyEmitterBuffer)
 		{
@@ -868,9 +839,8 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pEmitterBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-
-			m_DirtyEmitterBuffer = false;
 		}
+		m_DirtyEmitterBuffer = false;
 
 		if (m_DirtyTransformBuffer)
 		{
@@ -879,9 +849,8 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pTransformBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-
-			m_DirtyTransformBuffer = false;
 		}
+		m_DirtyTransformBuffer = false;
 
 		if (m_DirtyAtlasDataBuffer)
 		{
@@ -890,9 +859,8 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pAtlasDataBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
-
-			m_DirtyAtlasDataBuffer = false;
 		}
+		m_DirtyAtlasDataBuffer = false;
 
 		return false;
 	}

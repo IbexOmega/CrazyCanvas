@@ -36,7 +36,7 @@ namespace LambdaEngine
 		glm::vec4		Color;
 		uint32			DataIndex = UINT32_MAX;
 		ParticleChunk	ParticleChunk;
-		uint32			AtlasGUID = 0;
+		uint32			AtlasIndex = 0;
 		uint32			TileIndex = 0;
 		uint32			AnimationCount = 0;
 		uint32			FirstAnimationIndex = 0;
@@ -62,7 +62,7 @@ namespace LambdaEngine
 		glm::vec4 Color;
 		float LifeTime;
 		float Radius;
-		uint32 AtlasGUID;
+		uint32 AtlasIndex;
 		uint32 AnimationCount;
 		uint32 FirstAnimationIndex;
 		uint32 padding0			= 0;
@@ -124,6 +124,7 @@ namespace LambdaEngine
 		bool ActivateEmitterEntity(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		bool DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance);
 
+		bool AllocateParticleChunk(ParticleChunk& chunk);
 		bool FreeParticleChunk(ParticleChunk chunk);
 		bool MergeParticleChunk(const ParticleChunk& chunk);
 

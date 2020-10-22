@@ -254,13 +254,16 @@ bool LevelObjectCreator::CreatePlayer(
 		.Active = false,
 		.OneTime = true,
 		.Burst = true,
-		.ParticleCount = 128,
+		.ParticleCount = 32,
 		.EmitterShape = EEmitterShape::CONE,
 		.Angle = 15.f,
 		.Velocity = 2.0,
 		.Acceleration = 1.0,
 		.LifeTime = 3.0f,
 		.ParticleRadius = 0.1f,
+		.TileIndex = 16,
+		.AnimationCount = 4,
+		.FirstAnimationIndex = 16,
 		.Color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
 		}
 	);

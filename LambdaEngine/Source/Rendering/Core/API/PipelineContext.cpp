@@ -86,8 +86,7 @@ void LambdaEngine::PipelineContext::CreateConstantRange(const ConstantRangeDesc&
 
 void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorUpdateDesc& descriptorUpdateDesc)
 {
-	auto& descriptorSet = m_DescriptorSets[setIndex];
-	descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap);
+	auto descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap);
 	if (descriptorSet != nullptr)
 	{
 		descriptorSet->WriteBufferDescriptors(
@@ -98,9 +97,12 @@ void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname,
 			descriptorUpdateDesc.descriptorCount,
 			EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 		);
+
+		m_DescriptorSets[setIndex] = descriptorSet;
 	}
 	else
 	{
 		LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
 	}
+
 }
