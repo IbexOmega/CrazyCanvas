@@ -74,7 +74,7 @@ namespace LambdaEngine
 					.pSubscriber = &m_DynamicCollisionEntities,
 					.ComponentAccesses =
 					{
-						{R, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}, {RW, VelocityComponent::Type()}
+						{R, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}
 					},
 					.OnEntityAdded = onDynamicCollisionAdded,
 					.OnEntityRemoval = onDynamicCollisionRemoval
@@ -87,6 +87,10 @@ namespace LambdaEngine
 					},
 					.OnEntityRemoval = onCharacterCollisionRemoval
 				}
+			};
+			systemReg.SubscriberRegistration.AdditionalAccesses =
+			{
+				{RW, VelocityComponent::Type()}
 			};
 			systemReg.Phase = 1;
 
@@ -198,7 +202,6 @@ namespace LambdaEngine
 			{
 				PositionComponent& positionComp = pPositionComponents->GetData(entity);
 				RotationComponent& rotationComp = pRotationComponents->GetData(entity);
-				VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
 
 				const PxTransform transformPX = pActor->getGlobalPose();
 				const PxVec3& positionPX = transformPX.p;
@@ -207,8 +210,12 @@ namespace LambdaEngine
 				const PxQuat& quatPX = transformPX.q;
 				rotationComp.Quaternion = { quatPX.x, quatPX.y, quatPX.z, quatPX.w };
 
-				const PxVec3 velocityPX = pActor->getLinearVelocity();
-				velocityComp.Velocity = { velocityPX.x, velocityPX.y, velocityPX.z };
+				VelocityComponent velocityComp;
+				if (pVelocityComponents->GetIf(entity, velocityComp))
+				{
+					const PxVec3 velocityPX = pActor->getLinearVelocity();
+					velocityComp.Velocity = { velocityPX.x, velocityPX.y, velocityPX.z };
+				}
 			}
 		}
 	}
