@@ -12,6 +12,7 @@ public:
 
 	virtual bool Init();
 
+	void FixedTick(LambdaEngine::Timestamp deltaTime);
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 
 	virtual void OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaEngine::Entity flagEntity) = 0;

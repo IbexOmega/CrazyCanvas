@@ -17,10 +17,9 @@ void MultiplayerServer::Init()
 
 void MultiplayerServer::TickMainThread(LambdaEngine::Timestamp deltaTime)
 {
-
 }
 
 void MultiplayerServer::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
-
+	m_pFlagSystem->FixedTick(deltaTime);
 }

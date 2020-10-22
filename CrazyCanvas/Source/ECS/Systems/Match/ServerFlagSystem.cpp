@@ -76,8 +76,8 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 
 		//Send Packet
 		FlagEditedPacket packet	= {};
-		packet.FlagPacketType	= EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP;
-		packet.NetworkUID		= MultiplayerUtils::GetNetworkUID(playerEntity);
+		packet.FlagPacketType		= EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP;
+		packet.PickedUpNetworkUID	= MultiplayerUtils::GetNetworkUID(playerEntity);
 		flagPacketComponent.SendPacket(packet);
 	};
 

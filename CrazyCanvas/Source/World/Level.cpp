@@ -115,9 +115,11 @@ bool Level::CreateObject(ELevelObjectType levelObjectType, const void* pData, La
 			pLevelEntities = &m_Entities.PushBack({});
 		}
 
-		if (LevelObjectCreator::CreateLevelObjectOfType(levelObjectType, pData, pLevelEntities->Entities, pLevelEntities->ChildEntities, pLevelEntities->SaltUIDs))
+		TArray<Entity> newEntities;
+		if (LevelObjectCreator::CreateLevelObjectOfType(levelObjectType, pData, newEntities, pLevelEntities->ChildEntities, pLevelEntities->SaltUIDs))
 		{
-			createdEntities = pLevelEntities->Entities;
+			pLevelEntities->Entities.Insert(pLevelEntities->Entities.End(), newEntities.Begin(), newEntities.End());
+			createdEntities = newEntities;
 			return true;
 		}
 	}

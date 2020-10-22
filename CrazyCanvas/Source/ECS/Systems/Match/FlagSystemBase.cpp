@@ -56,11 +56,9 @@ bool FlagSystemBase::Init()
 	return true;
 }
 
-void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
+void FlagSystemBase::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
-
-	using namespace LambdaEngine;
 
 	if (m_Flags.Size() > 1)
 	{
@@ -68,6 +66,18 @@ void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
 	}
 
 	TickInternal(deltaTime);
+}
+
+void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
+{
+	UNREFERENCED_VARIABLE(deltaTime);
+
+	//if (m_Flags.Size() > 1)
+	//{
+	//	LOG_WARNING("[FlagSystemBase]: More than one flag entity exists");
+	//}
+
+	//TickInternal(deltaTime);
 }
 
 void FlagSystemBase::CalculateAttachedFlagPosition(glm::vec3& flagPosition, glm::quat& flagRotation, const glm::vec3& flagOffset, const glm::vec3& parentPosition, const glm::quat parentRotation)

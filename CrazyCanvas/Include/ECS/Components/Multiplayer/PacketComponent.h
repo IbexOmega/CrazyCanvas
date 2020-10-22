@@ -83,8 +83,6 @@ private:
 	inline static uint16 s_PacketType = 0;
 };
 
-
-
 #pragma pack(push, 1)
 struct PlayerAction : Packet
 {
