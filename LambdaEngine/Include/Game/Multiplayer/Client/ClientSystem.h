@@ -25,7 +25,7 @@ namespace LambdaEngine
 		bool Connect(IPAddress* pAddress);
 
 		void SetIsHost(bool isHost);
-		bool GetIsHost(bool isHost);
+		bool GetIsHost();
 
 	protected:
 		void TickMainThread(Timestamp deltaTime);

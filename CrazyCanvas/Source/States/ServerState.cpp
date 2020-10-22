@@ -44,6 +44,7 @@ void ServerState::Init()
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &ServerState::OnClientConnected);
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &ServerState::OnPacketReceived);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -128,4 +129,20 @@ bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 void ServerState::Tick(Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
+}
+
+bool ServerState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+{
+	NetworkSegment* pPacket = event.pPacket;
+
+	if (pPacket->GetType() == NetworkSegment::TYPE_HOST_SERVER)
+	{
+		BinaryDecoder decoder(pPacket);
+		int8 nrOfPlayers = decoder.ReadInt8();
+		int8 mapNr = decoder.ReadInt8();
+
+		LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
+		LOG_ERROR("MAP NR %d", mapNr);
+	}
+	return false;
 }

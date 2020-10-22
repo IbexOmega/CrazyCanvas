@@ -143,10 +143,6 @@ namespace LambdaEngine
 
 			m_Buffer.insert(gameState);
 		}
-		else if (pPacket->GetType() == NetworkSegment::TYPE_HOST_SERVER)
-		{
-
-		}
 	}
 
 	void ClientRemoteSystem::OnClientReleased(IClient* pClient)

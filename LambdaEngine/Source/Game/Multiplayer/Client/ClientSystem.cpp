@@ -112,7 +112,7 @@ namespace LambdaEngine
 		m_IsHost = isHost;
 	}
 
-	bool ClientSystem::GetIsHost(bool isHost)
+	bool ClientSystem::GetIsHost()
 	{
 		return m_IsHost;
 	}

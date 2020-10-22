@@ -26,6 +26,8 @@ public:
 
 	virtual void Tick(LambdaEngine::Timestamp delta) override;
 
+	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
+
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);

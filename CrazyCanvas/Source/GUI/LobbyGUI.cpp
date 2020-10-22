@@ -38,6 +38,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
 	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
+	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
 
 	const char* pIP = "192.168.1.65";
 
@@ -114,6 +115,17 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
+	IClient* pClient = event.pClient;
+
+	if (ClientSystem::GetInstance().GetIsHost())
+	{
+		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_HOST_SERVER);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteInt8(m_HostGameDesc.PlayersNumber);
+		encoder.WriteInt8(m_HostGameDesc.MapNumber);
+		pClient->SendReliable(pPacket, nullptr);
+	}
+
 	return false;
 }
 
@@ -157,7 +169,6 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
-	StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
 
 	ErrorPopUp(OTHER_ERROR);
 }
@@ -178,14 +189,18 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 
 	PopulateServerInfo();
 
+
+	
+
+
 	if (!CheckServerSettings(m_HostGameDesc))
 		ErrorPopUp(HOST_ERROR);
 	else
 	{
 		//start Server with populated struct
 		LambdaEngine::ClientSystem::GetInstance().SetIsHost(true);
-
-		LambdaEngine::GUIApplication::SetView(nullptr);
+		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
+		//LambdaEngine::GUIApplication::SetView(nullptr);
 
 		SetRenderStagesActive();
 
@@ -329,7 +344,7 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
 
 }
