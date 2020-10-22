@@ -9,6 +9,10 @@
 #include "Rendering/RenderAPI.h"
 
 #include "Engine/EngineConfig.h"
+#include "ECS/ECSCore.h"
+#include "ECS/Components/Team/TeamComponent.h"
+#include "ECS/Components/Player/Player.h"
+
 
 namespace LambdaEngine
 {
@@ -44,6 +48,7 @@ namespace LambdaEngine
 	bool PlayerRenderer::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
+		m_BackBuffers.Resize(m_BackBufferCount);
 
 		m_UsingMeshShader = EngineConfig::GetBoolProperty("MeshShadersEnabled");
 
@@ -108,8 +113,6 @@ namespace LambdaEngine
 
 	void PlayerRenderer::PrepareTextureUpdates(const TArray<UpdateData>& textureIndices)
 	{
-		if (!textureIndices.IsEmpty())
-			m_TextureUpdateQueue.Insert(std::end(m_TextureUpdateQueue), std::begin(textureIndices), std::end(textureIndices));
 	}
 
 	void PlayerRenderer::PreBuffersDescriptorSetWrite()
@@ -141,6 +144,18 @@ namespace LambdaEngine
 		{
 
 		}*/
+
+		// ---------------- START: Not sure what it is used for? -------------------
+		// Here I attempt to get a referes to the backbuffers to know about its height and width for render()
+		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
+		{
+			for (uint32 i = 0; i < imageCount; i++)
+			{
+				// Not sure if this the correct textureView
+				m_BackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
+			}
+		}
+		// END ---------------------------------------
 	}
 
 	void PlayerRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
@@ -151,30 +166,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppBuffers);
 		UNREFERENCED_VARIABLE(resourceName);
 
-		if (resourceName == SCENE_LIGHTS_BUFFER)
-		{
-			constexpr DescriptorSetIndex setIndex = 0U;
-
-			// Prepare Descriptors for later reusage
-			m_UnavailableDescriptorSets[setIndex].PushBack(std::make_pair(m_PlayerDescriptorSet, m_CurrModFrameIndex));
-
-			m_PlayerDescriptorSet = GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", setIndex);
-			if (m_PlayerDescriptorSet != nullptr)
-			{
-				m_PlayerDescriptorSet->WriteBufferDescriptors(
-					ppBuffers,
-					pOffsets,
-					pSizesInBytes,
-					0,
-					count,
-					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-				);
-			}
-			else
-			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", 0);
-			}
-		}
 	}
 
 	void PlayerRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
@@ -192,7 +183,7 @@ namespace LambdaEngine
 				m_pDrawArgs = pDrawArgs;
 				m_DrawCount = count;
 
-				constexpr DescriptorSetIndex setIndex = 1U;
+				constexpr DescriptorSetIndex setIndex = 0U;
 
 				// Prepare Descriptors for later reusage
 				for (auto descriptorSet : m_DrawArgsDescriptorSets)
@@ -201,9 +192,13 @@ namespace LambdaEngine
 				}
 				m_DrawArgsDescriptorSets.Clear();
 				m_DrawArgsDescriptorSets.Resize(m_DrawCount);
+				
+				// ---------------- START: Not sure what it is used for? -------------------
+				// m_DrawCount is telling us how many times to draw per drawcall?
+				// Not sure why it would be more than 1 ever
+				// Because: DrawCount is telling us how many meshes to draw
 
-				// Create DrawArgs Descriptors
-				// TODO: Get descriptors instead of reacreating them
+				m_ViewerId = MAXUINT32;
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					// Create a new descriptor or use an old descriptor
@@ -211,10 +206,42 @@ namespace LambdaEngine
 
 					if (m_DrawArgsDescriptorSets[d] != nullptr)
 					{
+						ECSCore* pECSCore = ECSCore::GetInstance();
+						ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+						ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
+
+						// Since entityids is vector one could think one pDrawArg[d] has several
+						// But pDrawArg[d] is refering to one instance of a player
+						// and player is one entity with one id.
+
+						// Not clear yet? correct.
+						for (Entity entity : m_pDrawArgs[d].EntityIDs)
+						{
+							if (m_ViewerId != MAXUINT32 && pPlayerLocalComponents->HasComponent(entity))
+							{
+								m_ViewerId = entity;
+							}
+
+							TeamComponent teamComp = pTeamComponents->GetConstData(entity);
+							m_TeamIds.PushBack(teamComp.TeamIndex);
+						}
+
+						// ---------------- START: Not sure what it is used for? -------------------
+						// Hunch: data is packeted and saved here for the draw call in render().
+						// another hunch: is packeted because gpu/vulkan stuff want things thight and specified with offsets.
+						// This might be where I will put the m_TeamsId and m_ViewerId data. But not just keep it in the member variables?
+
+						// only allies
+
+						// So here I bind nessecary data for rendering my allies? OK
+						// what is the differnece? 
+						// vertexB(per meshtype) 
+						// and InstanceB=For each entity that has a certain mesh like a transform.how many instances of this mesh? 
 						Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
 						uint64 pOffsets[2] = { 0, 0 };
 						uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
 
+						// Sent it to GPU
 						m_DrawArgsDescriptorSets[d]->WriteBufferDescriptors(
 							ppBuffers,
 							pOffsets,
@@ -223,6 +250,7 @@ namespace LambdaEngine
 							2,
 							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 						);
+						// ---------------- END 
 					}
 				}
 			}
@@ -238,7 +266,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (Sleeping || m_TextureUpdateQueue.IsEmpty())
+		if (Sleeping)
 			return;
 
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
@@ -247,19 +275,79 @@ namespace LambdaEngine
 		pCommandList->Begin(nullptr);
 
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
-		pCommandList->BindDescriptorSetGraphics(m_PlayerDescriptorSet.Get(), m_PipelineLayout.Get(), 0);	// LightsBuffer
+		pCommandList->BindDescriptorSetGraphics(m_PlayerDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 
-		constexpr uint32 CUBE_FACE_COUNT = 6U;
-		TeamsPushConstantData psData = {};
+		TSharedRef<const TextureView> backBuffer = m_BackBuffers[backBufferIndex];
+		uint32 width = backBuffer->GetDesc().pTexture->GetDesc().Width;
+		uint32 height = backBuffer->GetDesc().pTexture->GetDesc().Height;
 
-		// Render to queued texture indices
-		
+		BeginRenderPassDesc beginRenderPassDesc = {};
+		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
+		beginRenderPassDesc.ppRenderTargets = &backBuffer;
+		beginRenderPassDesc.RenderTargetCount = 1;
+		beginRenderPassDesc.Width = width;
+		beginRenderPassDesc.Height = height;
+		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+		beginRenderPassDesc.pClearColors = nullptr;
+		beginRenderPassDesc.ClearColorCount = 0;
+		beginRenderPassDesc.Offset.x = 0;
+		beginRenderPassDesc.Offset.y = 0;
+
+		Viewport viewport = {};
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.Width = (float32)width;
+		viewport.Height = -(float32)height;
+		viewport.x = 0.0f;
+		viewport.y = (float32)height;
+		pCommandList->SetViewports(&viewport, 0, 1);
+
+		ScissorRect scissorRect = {};
+		scissorRect.Width = width;
+		scissorRect.Height = height;
+		pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+		pCommandList->BeginRenderPass(&beginRenderPassDesc);
+
+		// ---------------- START: Not sure what it is used for? -------------------
+		// Looking at other CustomRenderStages they are looping on m_DrawCount
+		// m_DrawCount -> how many meshes to draw in total
+		// one draw arg is all instances of a mesh
+
+
+		// Question: all meshes = all characters?
+		// Yes, den har vi satt. Jag includar alla PlayerBaseComponents.
+
+		if (m_DrawCount != m_TeamIds.GetSize())
+		{
+			LOG_MESSAGE("Interesting, explain why this is printing.");
+		}
+
+		for (uint32 d = 0; d < m_DrawCount; d++)
+		{
+			if (m_ViewerId != m_TeamIds[d])
+			{
+				continue;
+			}
+
+			const DrawArg& drawArg = m_pDrawArgs[d];
+
+			auto* descriptorSet = m_DrawArgsDescriptorSets[d].Get();
+
+			pCommandList->BindDescriptorSetGraphics(descriptorSet, m_PipelineLayout.Get(), 0U);
+
+			pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+
+		}
+
+		// END ---------------------------------------
+
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
 
-		// Clear Texture Queue
-		m_TextureUpdateQueue.Clear();
+		// Clear TeamIds
+		m_TeamIds.Clear();
 	}
 
 	void PlayerRenderer::HandleUnavailableDescriptors(uint32 modFrameIndex)
@@ -320,7 +408,7 @@ namespace LambdaEngine
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
-		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
+		descriptorCountDesc.ConstantBufferDescriptorCount = 0;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 2;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;

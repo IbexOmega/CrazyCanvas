@@ -15,13 +15,13 @@ namespace LambdaEngine
 	struct TeamsPushConstantData
 	{
 		uint32 viewerTeamId;
-		TArray<uint32> othersTeamId;
+		uint32 ToBeDrawnTeamId;
 	};
 
 	struct UpdateData
 	{
 		uint32 viewerTeamId;
-		TArray<uint32> othersTeamId;
+		uint32 ToBeDrawnTeamId;
 	};
 
 	using ReleaseFrame = uint32;
@@ -63,7 +63,7 @@ namespace LambdaEngine
 
 		virtual const String& GetName() const override final
 		{
-			static String name = "RENDER_STAGE_PLAYERS";
+			static String name = "PLAYER_PASS";
 			return name;
 		}
 
@@ -109,7 +109,9 @@ namespace LambdaEngine
 		THashTable<DescriptorSetIndex, TArray<TSharedRef<DescriptorSet>>>							m_AvailableDescriptorSets;
 
 		uint32									m_BackBufferCount = 0;
-		TArray<UpdateData>						m_TextureUpdateQueue;
+		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		uint32									m_ViewerId;
+		TArray<uint32>							m_TeamIds;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
 
 		TeamsPushConstant						m_PushConstant;
