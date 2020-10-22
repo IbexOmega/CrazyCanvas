@@ -105,7 +105,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(playerEntity);
 		const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(playerEntity);
 		const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
-
+		
 		glm::vec3 position;
 		glm::quat quaternion;
 		if (playerPositionComp.Dirty)
