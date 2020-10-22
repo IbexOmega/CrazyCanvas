@@ -48,6 +48,7 @@ namespace LambdaEngine
 		case EFormat::FORMAT_R32G32B32A32_UINT:		return VK_FORMAT_R32G32B32A32_UINT;
 		case EFormat::FORMAT_D24_UNORM_S8_UINT:		return VK_FORMAT_D24_UNORM_S8_UINT;
 		case EFormat::FORMAT_R8_UINT:				return VK_FORMAT_R8_UINT;
+		case EFormat::FORMAT_R8G8_UINT:				return VK_FORMAT_R8G8_UINT;
 		default:									return VK_FORMAT_UNDEFINED;
 		}
 	}

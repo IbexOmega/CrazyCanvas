@@ -136,7 +136,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED);
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, false);
 			});
 
 		return false;
@@ -450,7 +450,7 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam team)
+	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam team, bool reset)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
@@ -458,6 +458,7 @@ namespace LambdaEngine
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
+		data.Reset				= (uint32)reset;
 
 		s_Collisions.push_back(data);
 	}
@@ -643,7 +644,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pPreInitDesc);
 
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
-		colorAttachmentDesc.Format			= EFormat::FORMAT_R8_UINT;
+		colorAttachmentDesc.Format			= EFormat::FORMAT_R8G8_UINT;
 		colorAttachmentDesc.SampleCount		= 1;
 		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
 		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
@@ -703,14 +704,14 @@ namespace LambdaEngine
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{
 			{
-				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
-				true
+				EBlendOp::BLEND_OP_NONE,
+				EBlendFactor::BLEND_FACTOR_NONE,
+				EBlendFactor::BLEND_FACTOR_NONE,
+				EBlendOp::BLEND_OP_NONE,
+				EBlendFactor::BLEND_FACTOR_NONE,
+				EBlendFactor::BLEND_FACTOR_NONE,
+				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G,
+				false
 			}
 		};
 
