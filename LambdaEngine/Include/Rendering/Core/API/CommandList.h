@@ -17,12 +17,20 @@ namespace LambdaEngine
 	class CommandAllocator;
 	class AccelerationStructure;
 
+	/*
+	* FCommandListFlag
+	*/
+
 	typedef uint32 FCommandListFlags;
 	enum FCommandListFlag : FCommandListFlags
 	{
 		COMMAND_LIST_FLAG_NONE				= 0,
 		COMMAND_LIST_FLAG_ONE_TIME_SUBMIT	= FLAG(0),
 	};
+
+	/*
+	* FRenderPassBeginFlag
+	*/
 
 	typedef uint32 FRenderPassBeginFlags;
 	enum FRenderPassBeginFlag : FRenderPassBeginFlags
@@ -31,6 +39,10 @@ namespace LambdaEngine
 		RENDER_PASS_BEGIN_FLAG_INLINE				= FLAG(0),
 		RENDER_PASS_BEGIN_FLAG_EXECUTE_SECONDARY	= FLAG(1),
 	};
+
+	/*
+	* SecondaryCommandListBeginDesc
+	*/
 
 	struct SecondaryCommandListBeginDesc
 	{
@@ -43,10 +55,10 @@ namespace LambdaEngine
 		uint32						Height				= 0;
 	};
 
-#ifdef LAMBDA_VISUAL_STUDIO
-	#pragma warning(push)
-	#pragma warning(disable : 4201) //Disable Warning - nonstandard extension used: nameless struct/union
-#endif
+	/*
+	* ClearColorDesc
+	*/
+
 	struct ClearColorDesc
 	{
 		union
@@ -59,9 +71,10 @@ namespace LambdaEngine
 			};
 		};
 	};
-#ifdef LAMBDA_VISUAL_STUDIO
-	#pragma warning(pop)
-#endif
+
+	/*
+	* BeginRenderPassDesc
+	*/
 
 	struct BeginRenderPassDesc
 	{
@@ -81,7 +94,11 @@ namespace LambdaEngine
 		} Offset;
 	};
 
-	struct CopyTextureFromBufferDesc
+	/*
+	* CopyTextureBufferDesc
+	*/
+
+	struct CopyTextureBufferDesc
 	{
 		uint64 SrcOffset		= 0;
 		uint64 SrcRowPitch		= 0;
@@ -97,6 +114,10 @@ namespace LambdaEngine
 		uint32 ArrayIndex		= 0;
 		uint32 ArrayCount		= 0;
 	};
+
+	/*
+	* PipelineTextureBarrierDesc
+	*/
 
 	struct PipelineTextureBarrierDesc
 	{
@@ -114,6 +135,10 @@ namespace LambdaEngine
 		uint32				ArrayCount				= 0;
 	};
 
+	/*
+	* PipelineBufferBarrierDesc
+	*/
+
 	struct PipelineBufferBarrierDesc
 	{
 		Buffer*				pBuffer					= nullptr;
@@ -125,11 +150,19 @@ namespace LambdaEngine
 		uint64				SizeInBytes				= 0;
 	};
 
+	/*
+	* PipelineMemoryBarrierDesc
+	*/
+
 	struct PipelineMemoryBarrierDesc
 	{
 		FMemoryAccessFlags SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
 		FMemoryAccessFlags DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_UNKNOWN;
 	};
+
+	/*
+	* BuildTopLevelAccelerationStructureDesc
+	*/
 
 	struct BuildTopLevelAccelerationStructureDesc
 	{
@@ -139,6 +172,10 @@ namespace LambdaEngine
 		uint32						InstanceCount			= 0;
 		bool						Update					= false;
 	};
+
+	/*
+	* BuildBottomLevelAccelerationStructureDesc
+	*/
 
 	struct BuildBottomLevelAccelerationStructureDesc
 	{
@@ -155,6 +192,10 @@ namespace LambdaEngine
 		bool						Update					= false;
 	};
 
+	/*
+	* CommandListDesc
+	*/
+
 	struct CommandListDesc
 	{
 		String				DebugName		= "";
@@ -162,6 +203,9 @@ namespace LambdaEngine
 		FCommandListFlags	Flags			= FCommandListFlag::COMMAND_LIST_FLAG_NONE;
 	};
 
+	/*
+	* CommandList
+	*/
 
 	class CommandList : public DeviceChild
 	{
@@ -169,7 +213,7 @@ namespace LambdaEngine
 		DECL_DEVICE_INTERFACE(CommandList);
 
 		virtual bool Begin(const SecondaryCommandListBeginDesc* pBeginDesc) = 0;
-		virtual bool End()													= 0;
+		virtual bool End() = 0;
 
 		virtual void BeginRenderPass(const BeginRenderPassDesc* pBeginDesc) = 0;
 		virtual void EndRenderPass() = 0;
@@ -177,18 +221,78 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		= 0;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	= 0;
 
-		virtual void CopyBuffer(const Buffer* pSrc, uint64 srcOffset, Buffer* pDst, uint64 dstOffset, uint64 sizeInBytes)					= 0;
-		virtual void CopyTextureFromBuffer(const Buffer* pSrc, Texture* pDst, const CopyTextureFromBufferDesc& desc)						= 0;
-		virtual void BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)	= 0;
+		virtual void CopyBuffer(
+			const Buffer* pSrc, 
+			uint64 srcOffset, 
+			Buffer* pDst, 
+			uint64 dstOffset, 
+			uint64 sizeInBytes) = 0;
 
-		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ETextureState beforeState, ETextureState afterState) = 0;
-		virtual void TransitionBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, uint32 arrayIndex, uint32 arrayCount, ETextureState beforeState, ETextureState afterState) = 0;
+		virtual void CopyTextureFromBuffer(
+			const Buffer* pSrc, 
+			Texture* pDst, 
+			const CopyTextureBufferDesc& desc) = 0;
 
-		virtual void QueueTransferBarrier(Texture* resource, FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, uint32 srcAccessMask, uint32 destAccessMask, ECommandQueueType srcQueue, ECommandQueueType dstQueue, ETextureState beforeState, ETextureState afterState) = 0;
+		virtual void CopyTextureToBuffer(
+			const Texture* pSrc,
+			Buffer* pDst, 
+			const CopyTextureBufferDesc& desc) = 0;
 
-		virtual void PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)	= 0;
-		virtual void PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)		= 0;
-		virtual void PipelineMemoryBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineMemoryBarrierDesc* pMemoryBarriers, uint32 bufferMemoryCount)			= 0;
+		virtual void BlitTexture(
+			const Texture* pSrc, 
+			ETextureState srcState, 
+			Texture* pDst, 
+			ETextureState dstState, 
+			EFilterType filter)	= 0;
+
+		virtual void TransitionBarrier(
+			Texture* resource, 
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			uint32 srcAccessMask, 
+			uint32 destAccessMask, 
+			ETextureState beforeState, 
+			ETextureState afterState) = 0;
+
+		virtual void TransitionBarrier(
+			Texture* resource, 
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			uint32 srcAccessMask, 
+			uint32 destAccessMask, 
+			uint32 arrayIndex, 
+			uint32 arrayCount, 
+			ETextureState beforeState, 
+			ETextureState afterState) = 0;
+
+		virtual void QueueTransferBarrier(
+			Texture* resource, 
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			uint32 srcAccessMask, 
+			uint32 destAccessMask, 
+			ECommandQueueType srcQueue, 
+			ECommandQueueType dstQueue, 
+			ETextureState beforeState, 
+			ETextureState afterState) = 0;
+
+		virtual void PipelineTextureBarriers(
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			const PipelineTextureBarrierDesc* pTextureBarriers, 
+			uint32 textureBarrierCount)	= 0;
+
+		virtual void PipelineBufferBarriers(
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			const PipelineBufferBarrierDesc* pBufferBarriers, 
+			uint32 bufferBarrierCount) = 0;
+
+		virtual void PipelineMemoryBarriers(
+			FPipelineStageFlags srcStage, 
+			FPipelineStageFlags dstStage, 
+			const PipelineMemoryBarrierDesc* pMemoryBarriers, 
+			uint32 bufferMemoryCount) = 0;
 
 		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter) = 0;
 
@@ -196,14 +300,34 @@ namespace LambdaEngine
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	= 0;
 		virtual void SetStencilTestReference(EStencilFace face, uint32 reference) = 0;
 		
-		virtual void SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset) = 0;
+		virtual void SetConstantRange(
+			const PipelineLayout* pPipelineLayout, 
+			uint32 shaderStageMask, 
+			const void* pConstants, 
+			uint32 size, 
+			uint32 offset) = 0;
 
 		virtual void BindIndexBuffer(const Buffer* pIndexBuffer, uint64 offset, EIndexType indexType) = 0;
-		virtual void BindVertexBuffers(const Buffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount) = 0;
+		virtual void BindVertexBuffers(
+			const Buffer* const* ppVertexBuffers, 
+			uint32 firstBuffer, 
+			const uint64* pOffsets, 
+			uint32 vertexBufferCount) = 0;
 
-		virtual void BindDescriptorSetGraphics(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
-		virtual void BindDescriptorSetCompute(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)		= 0;
-		virtual void BindDescriptorSetRayTracing(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)	= 0;
+		virtual void BindDescriptorSetGraphics(
+			const DescriptorSet* pDescriptorSet, 
+			const PipelineLayout* pPipelineLayout, 
+			uint32 setIndex) = 0;
+
+		virtual void BindDescriptorSetCompute(
+			const DescriptorSet* pDescriptorSet, 
+			const PipelineLayout* pPipelineLayout, 
+			uint32 setIndex) = 0;
+
+		virtual void BindDescriptorSetRayTracing(
+			const DescriptorSet* pDescriptorSet, 
+			const PipelineLayout* pPipelineLayout, 
+			uint32 setIndex) = 0;
 
 		virtual void BindGraphicsPipeline(const PipelineState* pPipeline)	= 0;
 		virtual void BindComputePipeline(const PipelineState* pPipeline)	= 0;
@@ -213,16 +337,40 @@ namespace LambdaEngine
 
 		virtual void Dispatch(uint32 workGroupCountX, uint32 workGroupCountY, uint32 workGroupCountZ) = 0;
 
-		virtual void DispatchMesh(uint32 taskCount, uint32 firstTask)													= 0;
-		virtual void DispatchMeshIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)	= 0;
+		virtual void DispatchMesh(uint32 taskCount, uint32 firstTask) = 0;
+		virtual void DispatchMeshIndirect(
+			const Buffer* pDrawBuffer, 
+			uint32 offset, 
+			uint32 drawCount, 
+			uint32 stride) = 0;
 
-		virtual void DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)							= 0;
-		virtual void DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)	= 0;
-		virtual void DrawIndexedIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)								= 0;
+		virtual void DrawInstanced(
+			uint32 vertexCount, 
+			uint32 instanceCount, 
+			uint32 firstVertex, 
+			uint32 firstInstance) = 0;
 
-		virtual void BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)										= 0;
-		virtual void Timestamp(QueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)	= 0;
-		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex)											= 0;
+		virtual void DrawIndexInstanced(
+			uint32 indexCount, 
+			uint32 instanceCount, 
+			uint32 firstIndex, 
+			uint32 vertexOffset, 
+			uint32 firstInstance) = 0;
+
+		virtual void DrawIndexedIndirect(
+			const Buffer* pDrawBuffer, 
+			uint32 offset, 
+			uint32 drawCount, 
+			uint32 stride) = 0;
+
+		virtual void BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex) = 0;
+		
+		virtual void Timestamp(
+			QueryHeap* pQueryHeap, 
+			uint32 queryIndex, 
+			FPipelineStageFlags pipelineStageFlag) = 0;
+
+		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex) = 0;
 		virtual void ResetQuery(QueryHeap* pQueryHeap, uint32 firstQuery, uint32 queryCount) = 0;
 
 		virtual void DeferDestruction(DeviceChild* pResource) = 0;
@@ -244,7 +392,10 @@ namespace LambdaEngine
 			return m_QueueType;
 		}
 
-		FORCEINLINE bool IsBegin() const { return m_IsBegin; }
+		FORCEINLINE bool IsBegin() const 
+		{ 
+			return m_IsBegin;
+		}
 
 		/*
 		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on

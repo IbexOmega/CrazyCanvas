@@ -52,9 +52,9 @@ namespace LambdaEngine
 	{
 		// There has to be an allocator for the commandlist to be valid
 		VALIDATE(m_Allocator != nullptr);
-		m_Allocator->FreeCommandBuffer(m_CommandList);
+		m_Allocator->FreeCommandBuffer(m_CmdBuffer);
 
-		m_CommandList = VK_NULL_HANDLE;
+		m_CmdBuffer = VK_NULL_HANDLE;
 	}
 
 	bool CommandListVK::Init(CommandAllocator* pAllocator, const CommandListDesc* pDesc)
@@ -70,8 +70,8 @@ namespace LambdaEngine
 		}
 
 		CommandAllocatorVK*	pVkCommandAllocator = reinterpret_cast<CommandAllocatorVK*>(pAllocator);
-		m_CommandList = pVkCommandAllocator->AllocateCommandBuffer(level);
-		if (m_CommandList != VK_NULL_HANDLE)
+		m_CmdBuffer = pVkCommandAllocator->AllocateCommandBuffer(level);
+		if (m_CmdBuffer != VK_NULL_HANDLE)
 		{
 			m_Desc		= *pDesc;
 			m_QueueType = pAllocator->GetType();
@@ -89,7 +89,7 @@ namespace LambdaEngine
 
 	void CommandListVK::SetName(const String& debugname)
 	{
-			m_pDevice->SetVulkanObjectName(debugname, reinterpret_cast<uint64>(m_CommandList), VK_OBJECT_TYPE_COMMAND_BUFFER);
+			m_pDevice->SetVulkanObjectName(debugname, reinterpret_cast<uint64>(m_CmdBuffer), VK_OBJECT_TYPE_COMMAND_BUFFER);
 			m_Desc.DebugName = debugname;
 	}
 
@@ -140,7 +140,7 @@ namespace LambdaEngine
 			beginInfo.pInheritanceInfo	= nullptr;
 		}
 
-		VkResult result = vkBeginCommandBuffer(m_CommandList, &beginInfo);
+		VkResult result = vkBeginCommandBuffer(m_CmdBuffer, &beginInfo);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[CommandListVK]: Begin CommandBuffer Failed");
@@ -159,7 +159,7 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		// End CommandBuffer
-		VkResult result = vkEndCommandBuffer(m_CommandList);
+		VkResult result = vkEndCommandBuffer(m_CmdBuffer);
 		if (result != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(result, "[CommandListVK]: End CommandBuffer Failed");
@@ -208,12 +208,12 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdBeginRenderPass(m_CommandList, &renderPassInfo, subpassContent);
+		vkCmdBeginRenderPass(m_CmdBuffer, &renderPassInfo, subpassContent);
 	}
 
 	void CommandListVK::EndRenderPass()
 	{
-		vkCmdEndRenderPass(m_CommandList);
+		vkCmdEndRenderPass(m_CmdBuffer);
 	}
 
 	void CommandListVK::BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)
@@ -278,7 +278,7 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
-		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CmdBuffer, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
 	void CommandListVK::BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)
@@ -358,7 +358,7 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
-		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CommandList, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CmdBuffer, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
 	void CommandListVK::CopyBuffer(const Buffer* pSrc, uint64 srcOffset, Buffer* pDst, uint64 dstOffset, uint64 sizeInBytes)
@@ -377,10 +377,10 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdCopyBuffer(m_CommandList, pVkSrc->GetBuffer(), pVkDst->GetBuffer(), 1, &bufferCopy);
+		vkCmdCopyBuffer(m_CmdBuffer, pVkSrc->GetBuffer(), pVkDst->GetBuffer(), 1, &bufferCopy);
 	}
 
-	void CommandListVK::CopyTextureFromBuffer(const Buffer* pSrc, Texture* pDst, const CopyTextureFromBufferDesc& desc)
+	void CommandListVK::CopyTextureFromBuffer(const Buffer* pSrc, Texture* pDst, const CopyTextureBufferDesc& desc)
 	{
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
@@ -406,7 +406,36 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdCopyBufferToImage(m_CommandList, pVkSrc->GetBuffer(), pVkDst->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+		vkCmdCopyBufferToImage(m_CmdBuffer, pVkSrc->GetBuffer(), pVkDst->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+	}
+
+	void CommandListVK::CopyTextureToBuffer(const Texture* pSrc, Buffer* pDst, const CopyTextureBufferDesc& desc)
+	{
+		VALIDATE(pSrc != nullptr);
+		VALIDATE(pDst != nullptr);
+
+		BufferVK*			pVkDst = reinterpret_cast<BufferVK*>(pDst);
+		const TextureVK*	pVkSrc = reinterpret_cast<const TextureVK*>(pSrc);
+
+		VkBufferImageCopy copyRegion = {};
+		copyRegion.bufferImageHeight				= desc.SrcHeight;
+		copyRegion.bufferOffset						= desc.SrcOffset;
+		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
+		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
+		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
+		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;
+		copyRegion.imageSubresource.mipLevel		= desc.Miplevel;
+		copyRegion.imageOffset.x					= desc.OffsetX;
+		copyRegion.imageOffset.y					= desc.OffsetY;
+		copyRegion.imageOffset.z					= desc.OffsetZ;
+		copyRegion.imageExtent.depth				= desc.Depth;
+		copyRegion.imageExtent.height				= desc.Height;
+		copyRegion.imageExtent.width				= desc.Width;
+
+		// Start by flushing barriers
+		FlushDeferredBarriers();
+
+		vkCmdCopyImageToBuffer(m_CmdBuffer, pVkSrc->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, pVkDst->GetBuffer(), 1, &copyRegion);
 	}
 
 	void CommandListVK::BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)
@@ -440,7 +469,7 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdBlitImage(m_CommandList, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
+		vkCmdBlitImage(m_CmdBuffer, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
 	}
 
 	void CommandListVK::TransitionBarrier(
@@ -611,7 +640,7 @@ namespace LambdaEngine
 
 		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
 		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
-		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, textureBarrierCount, m_ImageBarriers);
+		vkCmdPipelineBarrier(m_CmdBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, textureBarrierCount, m_ImageBarriers);
 	}
 
 	void CommandListVK::PipelineBufferBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineBufferBarrierDesc* pBufferBarriers, uint32 bufferBarrierCount)
@@ -638,7 +667,7 @@ namespace LambdaEngine
 
 		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
 		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
-		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, 0, nullptr, bufferBarrierCount, m_BufferBarriers, 0, nullptr);
+		vkCmdPipelineBarrier(m_CmdBuffer, sourceStage, destinationStage, 0, 0, nullptr, bufferBarrierCount, m_BufferBarriers, 0, nullptr);
 	}
 
 	void CommandListVK::PipelineMemoryBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineMemoryBarrierDesc* pMemoryBarriers, uint32 bufferMemoryCount)
@@ -658,7 +687,7 @@ namespace LambdaEngine
 
 		VkPipelineStageFlags sourceStage		= ConvertPipelineStageMask(srcStage);
 		VkPipelineStageFlags destinationStage	= ConvertPipelineStageMask(dstStage);
-		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, bufferMemoryCount, m_MemoryBarriers, 0, nullptr, 0, nullptr);
+		vkCmdPipelineBarrier(m_CmdBuffer, sourceStage, destinationStage, 0, bufferMemoryCount, m_MemoryBarriers, 0, nullptr, 0, nullptr);
 	}
 
 	void CommandListVK::GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
@@ -745,7 +774,7 @@ namespace LambdaEngine
 			blit.dstSubresource.baseArrayLayer	= 0;
 			blit.dstSubresource.layerCount		= 1;
 
-			vkCmdBlitImage(m_CommandList, imageVk, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageVk, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+			vkCmdBlitImage(m_CmdBuffer, imageVk, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageVk, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
 			sourceExtent = destinationExtent;
 		}
@@ -779,7 +808,7 @@ namespace LambdaEngine
 			viewportVk.y        = viewport.y;
 		}
 
-		vkCmdSetViewport(m_CommandList, firstViewport, viewportCount, m_Viewports);
+		vkCmdSetViewport(m_CmdBuffer, firstViewport, viewportCount, m_Viewports);
 	}
 
 	void CommandListVK::SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)
@@ -793,14 +822,14 @@ namespace LambdaEngine
 			scissorRectVk.offset   = { scissorRect.x, scissorRect.y };
 		}
 
-		vkCmdSetScissor(m_CommandList, firstScissor, scissorCount, m_ScissorRects);
+		vkCmdSetScissor(m_CmdBuffer, firstScissor, scissorCount, m_ScissorRects);
 	}
 
 	void CommandListVK::SetStencilTestReference(EStencilFace face, uint32 reference)
 	{
 		VkStencilFaceFlags	faceFlagsVK = ConvertStencilFace(face);
 
-		vkCmdSetStencilReference(m_CommandList, faceFlagsVK, reference);
+		vkCmdSetStencilReference(m_CmdBuffer, faceFlagsVK, reference);
 	}
 
 	void CommandListVK::SetConstantRange(const PipelineLayout* pPipelineLayout, uint32 shaderStageMask, const void* pConstants, uint32 size, uint32 offset)
@@ -808,13 +837,13 @@ namespace LambdaEngine
 		const PipelineLayoutVK* pVkPipelineLayout = reinterpret_cast<const PipelineLayoutVK*>(pPipelineLayout);
 		uint32 shaderStageMaskVk = ConvertShaderStageMask(shaderStageMask);
 
-		vkCmdPushConstants(m_CommandList, pVkPipelineLayout->GetPipelineLayout(), shaderStageMaskVk, offset, size, pConstants);
+		vkCmdPushConstants(m_CmdBuffer, pVkPipelineLayout->GetPipelineLayout(), shaderStageMaskVk, offset, size, pConstants);
 	}
 
 	void CommandListVK::BindIndexBuffer(const Buffer* pIndexBuffer, uint64 offset, EIndexType indexType)
 	{
 		const BufferVK* pIndexBufferVK = reinterpret_cast<const BufferVK*>(pIndexBuffer);
-		vkCmdBindIndexBuffer(m_CommandList, pIndexBufferVK->GetBuffer(), offset, ConvertIndexType(indexType));
+		vkCmdBindIndexBuffer(m_CmdBuffer, pIndexBufferVK->GetBuffer(), offset, ConvertIndexType(indexType));
 	}
 
 	void CommandListVK::BindVertexBuffers(const Buffer* const* ppVertexBuffers, uint32 firstBuffer, const uint64* pOffsets, uint32 vertexBufferCount)
@@ -827,7 +856,7 @@ namespace LambdaEngine
 			m_VertexBufferOffsets[i]    = VkDeviceSize(pOffsets[i]);
 		}
 
-		vkCmdBindVertexBuffers(m_CommandList, firstBuffer, vertexBufferCount, m_VertexBuffers, m_VertexBufferOffsets);
+		vkCmdBindVertexBuffers(m_CmdBuffer, firstBuffer, vertexBufferCount, m_VertexBuffers, m_VertexBufferOffsets);
 	}
 
 	void CommandListVK::BindDescriptorSetGraphics(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex)
@@ -854,7 +883,7 @@ namespace LambdaEngine
 		VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS);
 
 		const GraphicsPipelineStateVK* pPipelineVk = reinterpret_cast<const GraphicsPipelineStateVK*>(pPipeline);
-		vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
+		vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipelineVk->GetPipeline());
 	}
 
 	void CommandListVK::BindComputePipeline(const PipelineState* pPipeline)
@@ -863,7 +892,7 @@ namespace LambdaEngine
 		VALIDATE(pPipeline->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE);
 
 		const ComputePipelineStateVK* pPipelineVk = reinterpret_cast<const ComputePipelineStateVK*>(pPipeline);
-		vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
+		vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pPipelineVk->GetPipeline());
 	}
 
 	void CommandListVK::BindRayTracingPipeline(PipelineState* pPipeline)
@@ -874,7 +903,7 @@ namespace LambdaEngine
 		m_CurrentRayTracingPipeline = reinterpret_cast<RayTracingPipelineStateVK*>(pPipeline);
 		m_CurrentRayTracingPipeline->AddRef();
 
-		vkCmdBindPipeline(m_CommandList, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_CurrentRayTracingPipeline->GetPipeline());
+		vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, m_CurrentRayTracingPipeline->GetPipeline());
 	}
 
 	void CommandListVK::TraceRays(const SBT* pSBT, uint32 width, uint32 height, uint32 depth)
@@ -892,7 +921,7 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		m_pDevice->vkCmdTraceRaysKHR(m_CommandList, pRaygen, pMiss, pHit, pCallable, width, height, depth);
+		m_pDevice->vkCmdTraceRaysKHR(m_CmdBuffer, pRaygen, pMiss, pHit, pCallable, width, height, depth);
 		m_CurrentRayTracingPipeline.Reset();
 	}
 
@@ -903,7 +932,7 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdDispatch(m_CommandList, workGroupCountX, workGroupCountY, workGroupCountZ);
+		vkCmdDispatch(m_CmdBuffer, workGroupCountX, workGroupCountY, workGroupCountZ);
 	}
 
 	void CommandListVK::DispatchMesh(uint32 taskCount, uint32 firstTask)
@@ -914,7 +943,7 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		VALIDATE(m_pDevice->vkCmdDrawMeshTasksNV != nullptr);
-		m_pDevice->vkCmdDrawMeshTasksNV(m_CommandList, taskCount, firstTask);
+		m_pDevice->vkCmdDrawMeshTasksNV(m_CmdBuffer, taskCount, firstTask);
 	}
 
 	void CommandListVK::DispatchMeshIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
@@ -927,7 +956,7 @@ namespace LambdaEngine
 		VALIDATE(m_pDevice->vkCmdDrawMeshTasksIndirectNV != nullptr);
 
 		const BufferVK* pDrawBufferVk = reinterpret_cast<const BufferVK*>(pDrawBuffer);
-		m_pDevice->vkCmdDrawMeshTasksIndirectNV(m_CommandList, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
+		m_pDevice->vkCmdDrawMeshTasksIndirectNV(m_CmdBuffer, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
 	}
 
 	void CommandListVK::DrawInstanced(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance)
@@ -937,7 +966,7 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdDraw(m_CommandList, vertexCount, instanceCount, firstVertex, firstInstance);
+		vkCmdDraw(m_CmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
 	void CommandListVK::DrawIndexInstanced(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, uint32 vertexOffset, uint32 firstInstance)
@@ -947,7 +976,7 @@ namespace LambdaEngine
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdDrawIndexed(m_CommandList, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+		vkCmdDrawIndexed(m_CmdBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
 	void CommandListVK::DrawIndexedIndirect(const Buffer* pDrawBuffer, uint32 offset, uint32 drawCount, uint32 stride)
@@ -958,33 +987,33 @@ namespace LambdaEngine
 		FlushDeferredBarriers();
 
 		const BufferVK* pDrawBufferVk = reinterpret_cast<const BufferVK*>(pDrawBuffer);
-		vkCmdDrawIndexedIndirect(m_CommandList, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
+		vkCmdDrawIndexedIndirect(m_CmdBuffer, pDrawBufferVk->GetBuffer(), offset, drawCount, stride);
 	}
 
 	void CommandListVK::BeginQuery(QueryHeap* pQueryHeap, uint32 queryIndex)
 	{
 		QueryHeapVK*		pQueryHeapVk	= reinterpret_cast<QueryHeapVK*>(pQueryHeap);
 		VkQueryControlFlags controlFlagsVk	= 0; //VK_QUERY_CONTROL_PRECISE_BIT;
-		vkCmdBeginQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex, controlFlagsVk);
+		vkCmdBeginQuery(m_CmdBuffer, pQueryHeapVk->GetQueryPool(), queryIndex, controlFlagsVk);
 	}
 
 	void CommandListVK::Timestamp(QueryHeap* pQueryHeap, uint32 queryIndex, FPipelineStageFlags pipelineStageFlag)
 	{
 		QueryHeapVK*			pQueryHeapVk		= reinterpret_cast<QueryHeapVK*>(pQueryHeap);
 		VkPipelineStageFlagBits	pipelineStageFlagVk	= ConvertPipelineStage(pipelineStageFlag);
-		vkCmdWriteTimestamp(m_CommandList, pipelineStageFlagVk, pQueryHeapVk->GetQueryPool(), queryIndex);
+		vkCmdWriteTimestamp(m_CmdBuffer, pipelineStageFlagVk, pQueryHeapVk->GetQueryPool(), queryIndex);
 	}
 
 	void CommandListVK::EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex)
 	{
 		QueryHeapVK* pQueryHeapVk = reinterpret_cast<QueryHeapVK*>(pQueryHeap);
-		vkCmdEndQuery(m_CommandList, pQueryHeapVk->GetQueryPool(), queryIndex);
+		vkCmdEndQuery(m_CmdBuffer, pQueryHeapVk->GetQueryPool(), queryIndex);
 	}
 
 	void CommandListVK::ResetQuery(QueryHeap* pQueryHeap, uint32 firstQuery, uint32 queryCount)
 	{
 		QueryHeapVK* pQueryHeapVk = reinterpret_cast<QueryHeapVK*>(pQueryHeap);
-		vkCmdResetQueryPool(m_CommandList, pQueryHeapVk->GetQueryPool(), firstQuery, queryCount);
+		vkCmdResetQueryPool(m_CmdBuffer, pQueryHeapVk->GetQueryPool(), firstQuery, queryCount);
 	}
 
 	void CommandListVK::ExecuteSecondary(const CommandList* pSecondary)
@@ -997,7 +1026,7 @@ namespace LambdaEngine
 		VALIDATE(desc.CommandListType == ECommandListType::COMMAND_LIST_TYPE_SECONDARY);
 #endif
 
-		vkCmdExecuteCommands(m_CommandList, 1, &pVkSecondary->m_CommandList);
+		vkCmdExecuteCommands(m_CmdBuffer, 1, &pVkSecondary->m_CmdBuffer);
 	}
 
 	void CommandListVK::DeferDestruction(DeviceChild* pResource)
@@ -1012,7 +1041,7 @@ namespace LambdaEngine
 		{
 			for (DeferredImageBarrier& barrier : m_DeferredBarriers)
 			{
-				vkCmdPipelineBarrier(m_CommandList, barrier.SrcStages, barrier.DestStages, 0, 0, nullptr, 0, nullptr, barrier.Barriers.GetSize(), barrier.Barriers.GetData());
+				vkCmdPipelineBarrier(m_CmdBuffer, barrier.SrcStages, barrier.DestStages, 0, 0, nullptr, 0, nullptr, barrier.Barriers.GetSize(), barrier.Barriers.GetData());
 			}
 
 			m_DeferredBarriers.Clear();
@@ -1035,6 +1064,6 @@ namespace LambdaEngine
 		const DescriptorSetVK* pVkDescriptorSet		= reinterpret_cast<const DescriptorSetVK*>(pDescriptorSet);
 
 		VkDescriptorSet descriptorSet = pVkDescriptorSet->GetDescriptorSet();
-		vkCmdBindDescriptorSets(m_CommandList, bindPoint, pVkPipelineLayout->GetPipelineLayout(), setIndex, 1, &descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(m_CmdBuffer, bindPoint, pVkPipelineLayout->GetPipelineLayout(), setIndex, 1, &descriptorSet, 0, nullptr);
 	}
 }
