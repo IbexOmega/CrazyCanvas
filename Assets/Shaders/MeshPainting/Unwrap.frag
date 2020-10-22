@@ -14,39 +14,21 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTextur
 
 layout(binding = 0, set = UNWRAP_DRAW_SET_INDEX) uniform UnwrapData				{ SUnwrapData val; }		u_UnwrapData;
 
-layout(location = 0) out vec4   out_UnwrappedTexture;
+layout(location = 0) out uint   out_Bits;
 
 float random (in vec3 x) {
 	return fract(sin(dot(x, vec3(12.9898,78.233, 37.31633)))* 43758.5453123);
 }
 
-void reset()
-{
-	float alpha 	= out_UnwrappedTexture.a;
-	uint data 		= floatBitsToUint(alpha);
-	data = data >> 8;
-
-	uint paintMode 	= data & 0x1;
-	uint teamMode 	= (data >> 1) & 0x7F;
-
-	data = data << 8;
-	if (u_UnwrapData.val.PaintMode == 1)
-	{
-		if (u_UnwrapData.val.TeamMode == 0)
-			out_UnwrappedTexture = vec4(1.f, 0.f, 0.f, uintBitsToFloat(data));
-		else
-			out_UnwrappedTexture = vec4(0.f, 0.f, 1.f, uintBitsToFloat(data));
-	}
-	else
-	{
-		out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, uintBitsToFloat(data));
-	}
-}
+// void reset()
+// {
+// 	out_UnwrappedTexture.a;
+// }
 
 void main()
 {
-	if (u_UnwrapData.val.Reset > 0)
-		reset();
+	// if (u_UnwrapData.val.Reset > 0)
+	// 	reset();
 
 	const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
 	const float BRUSH_SIZE	= 0.2f;
@@ -83,8 +65,8 @@ void main()
 	if(brushMask.a > EPSILON && maskUV.x > 0.f && maskUV.x < 1.f && maskUV.y > 0.f && maskUV.y < 1.f && valid > 0.5f)
 	{
 		// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
-		uint client;
-		uint server;
+		uint client = 0;
+		uint server = 0;
 
 		if (u_UnwrapData.val.RemoteMode == 0)
 		{
@@ -94,23 +76,25 @@ void main()
 		else
 		{
 			server = u_UnwrapData.val.TeamMode << 1;
-			server |= u_UnwrapData.val.PaintMode;
+			server |= u_UnwrapData.val.PaintMode & 0x1;
 		}
 
-		uint data = server << 8;
-		data |= client;
+		uint data = server << 4;
+		data |= client & 0xF;
 
-		if (u_UnwrapData.val.PaintMode == 1)
-		{
-			if (u_UnwrapData.val.TeamMode == 0)
-				out_UnwrappedTexture = vec4(1.f, 0.f, 0.f, uintBitsToFloat(data));
-			else
-				out_UnwrappedTexture = vec4(0.f, 0.f, 1.f, uintBitsToFloat(data));
-		}
-		else
-		{
-			out_UnwrappedTexture = vec4(0.f, 0.f, 0.f, uintBitsToFloat(data));
-		}
+		// if (u_UnwrapData.val.PaintMode == 1)
+		// {
+		// 	if (u_UnwrapData.val.TeamMode == 0)
+		// 		out_Color = vec3(1.f, 0.f, 0.f);
+		// 	else
+		// 		out_Color = vec3(0.f, 0.f, 1.f);
+		// }
+		// else
+		// {
+		// 	out_Color = vec3(0.f, 0.f, 0.f);
+		// }
+
+		out_Bits = data;
 
 	}
 	else

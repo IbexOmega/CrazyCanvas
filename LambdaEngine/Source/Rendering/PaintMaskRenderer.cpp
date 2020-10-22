@@ -643,7 +643,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pPreInitDesc);
 
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
-		colorAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		colorAttachmentDesc.Format			= EFormat::FORMAT_R8_UINT;
 		colorAttachmentDesc.SampleCount		= 1;
 		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
 		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;

@@ -122,6 +122,7 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
+		case EFormat::FORMAT_R8_UINT:
 		case EFormat::FORMAT_R8_UNORM:				return 1;
         case EFormat::FORMAT_R16_SFLOAT:				
         case EFormat::FORMAT_R16_UNORM:				return 2;

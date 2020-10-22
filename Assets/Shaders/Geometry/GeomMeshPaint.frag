@@ -52,9 +52,8 @@ void main()
 	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 	
-	vec4 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgba;
-	uint data 					= floatBitsToUint(paintMask.a);
-	float shouldPaint 			= float((data & 0x1) | ((data >> 8) & 0x1));
+	uint data					= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
+	float shouldPaint 			= float((data & 0x1) | ((data >> 4) & 0x1));
 
 	//0
 	out_Position				= vec4(in_WorldPosition, 0.0f);
@@ -79,5 +78,12 @@ void main()
 	out_Velocity				= vec2(screenVelocity);
 
 	// 5
-	out_Albedo 					= mix(out_Albedo, paintMask.rgb, shouldPaint);
+	uint clientTeam				= ((data >> 1) & 0x7);
+	uint serverTeam				= ((data >> 5) & 0x7);
+	uint team = serverTeam;
+	if (clientTeam != serverTeam)
+		team = clientTeam;
+
+	vec3 test = mix(vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), float(team));
+	out_Albedo 					= mix(out_Albedo, test, shouldPaint);
 }
