@@ -174,8 +174,11 @@ struct SParticle
 	uint EmitterIndex;
 	vec3 StartAcceleration;
 	bool WasCreated;
+	float LifeTime;
+	float LifeTimeOffset;
+	uint Padding1;
+	uint Padding2;
 };
-
 
 struct SEmitter
 {
@@ -185,9 +188,9 @@ struct SEmitter
 	uint AtlasIndex;
 	uint AnimationCount;
 	uint FirstAnimationIndex;
-	uint padding0;
-	uint padding1;
-	uint padding2;
+	float Gravity;
+	uint Padding1;
+	uint Padding2;
 };
 
 struct SAtlasData

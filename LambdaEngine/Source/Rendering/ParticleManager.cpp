@@ -126,6 +126,8 @@ namespace LambdaEngine
 		instance.Acceleration		= emitterComp.Acceleration;
 		instance.LifeTime			= emitterComp.LifeTime;
 		instance.ParticleRadius		= emitterComp.ParticleRadius * 0.5f;
+		instance.Explosiveness		= emitterComp.Explosiveness;
+		instance.SpawnSpeed			= emitterComp.SpawnSpeed;
 
 		GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
 		if (atlasGUID == GUID_NONE)
@@ -136,7 +138,7 @@ namespace LambdaEngine
 			CreateAtlasTextureInstance(atlasGUID, emitterComp.AtlasTileSize);
 		}
 
-		// Set data index before creation of particles so each particle now which emitter they belong to
+		// Set data index before creation of particles so each particle know which emitter they belong to
 		instance.DataIndex = m_IndirectData.GetSize();
 
 		if (emitterComp.EmitterShape == EEmitterShape::CONE)
@@ -179,11 +181,12 @@ namespace LambdaEngine
 			// Create EmitterData
 			SEmitter emitterData = {};
 			emitterData.Color					= emitterComp.Color;
-			emitterData.LifeTime				= instance.LifeTime;
+			emitterData.LifeTime				= emitterComp.LifeTime;
 			emitterData.Radius					= instance.ParticleRadius;
 			emitterData.AtlasIndex				= instance.AtlasIndex;
 			emitterData.AnimationCount			= instance.AnimationCount;
 			emitterData.FirstAnimationIndex		= instance.FirstAnimationIndex;
+			emitterData.Gravity					= emitterComp.Gravity;
 			m_EmitterData.PushBack(emitterData);
 
 			// Create Transform
@@ -333,7 +336,6 @@ namespace LambdaEngine
 			particle.StartPosition = glm::vec3(0.f);
 			particle.Transform = glm::identity<glm::mat4>();
 			particle.Velocity = direction * emitterInstance.Velocity;
-			particle.CurrentLife = emitterInstance.LifeTime;
 			particle.StartVelocity = particle.Velocity;
 			particle.Radius = emitterInstance.ParticleRadius;
 			particle.Acceleration = direction * emitterInstance.Acceleration;
@@ -341,6 +343,13 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
 			particle.WasCreated = true;
+
+			particle.LifeTime = emitterInstance.LifeTime;
+			particle.CurrentLife = particle.LifeTime;
+			if (emitterInstance.Explosiveness)
+				particle.LifeTimeOffset = 0.f;
+			else
+				particle.LifeTimeOffset = i * emitterInstance.SpawnSpeed;
 
 			if (allocateParticles)
 			{
@@ -408,7 +417,6 @@ namespace LambdaEngine
 			particle.StartPosition = direction * (i * emitterInstance.ParticleRadius);
 			particle.Transform = glm::translate(particle.StartPosition);
 			particle.Velocity = glm::vec3(0.f);
-			particle.CurrentLife = emitterInstance.LifeTime;
 			particle.StartVelocity = particle.Velocity;
 			particle.Radius = emitterInstance.ParticleRadius;
 			particle.Acceleration = glm::vec3(0.f);
@@ -416,6 +424,13 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
 			particle.WasCreated = true;
+
+			particle.LifeTime = emitterInstance.LifeTime;
+			particle.CurrentLife = particle.LifeTime;
+			if (emitterInstance.Explosiveness)
+				particle.LifeTimeOffset = 0.f;
+			else
+				particle.LifeTimeOffset = i * emitterInstance.SpawnSpeed;
 
 			if (allocateParticles)
 			{
