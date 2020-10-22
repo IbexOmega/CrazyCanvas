@@ -89,27 +89,33 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 	if (!m_EventsToProcess.IsEmpty())
 	{
-		//for (ProjectileHitEvent& event : m_EventsToProcess)
-		//{
-		//	// CollisionInfo1 is the entity that got hit
-		//	Entity entity = event.CollisionInfo1.Entity;
-		//	EAmmoType ammoType = event.AmmoType;
+		for (ProjectileHitEvent& event : m_EventsToProcess)
+		{
+			// CollisionInfo1 is the entity that got hit
+			Entity entity = event.CollisionInfo1.Entity;
+			EAmmoType ammoType = event.AmmoType;
 
-		//	LOG_INFO("Retriving health from entity=%d", entity);
+			LOG_INFO("Retriving health from entity=%d", entity);
 
-		//	HealthComponent& healthComponent = healthComponents->GetData(entity);
-		//	// Hmm... better solution.. maybe?? 
-		//	if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
-		//	{
-		//		healthComponent.CurrentHealth -= 10;
-		//		LOG_INFO("Player damaged");
-		//	}
-		//	else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
-		//	{
-		//		healthComponent.CurrentHealth += 10;
-		//		LOG_INFO("Player got splashed");
-		//	}
-		//}
+			HealthComponent& healthComponent = healthComponents->GetData(entity);
+			// Hmm... better solution.. maybe?? 
+			if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+			{
+				healthComponent.CurrentHealth -= 10;
+				LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
+			}
+			else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+			{
+				healthComponent.CurrentHealth += 10;
+				LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
+			}
+
+			if (healthComponent.CurrentHealth <= 0)
+			{
+				LOG_INFO("PLAYER DIED");
+				healthComponent.CurrentHealth = 0;
+			}
+		}
 		m_EventsToProcess.Clear();
 	}
 }

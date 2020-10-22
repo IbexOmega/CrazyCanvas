@@ -25,8 +25,7 @@ public:
 	}
 
 public:
-	//LambdaEngine::Entity Entity; // Is this used?
-	const LambdaEngine::EntityCollisionInfo& CollisionInfo0;
-	const LambdaEngine::EntityCollisionInfo& CollisionInfo1;
+	const LambdaEngine::EntityCollisionInfo CollisionInfo0;
+	const LambdaEngine::EntityCollisionInfo CollisionInfo1;
 	const EAmmoType AmmoType;
 };
