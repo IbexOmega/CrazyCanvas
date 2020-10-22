@@ -141,7 +141,7 @@ namespace LambdaEngine
 	{
 		// Stats
 		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
-		
+
 		// Input
 		Input::Tick();
 
@@ -170,7 +170,7 @@ namespace LambdaEngine
 		StateManager::GetInstance()->Tick(delta);
 		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
-		
+
 		// Game
 		Game::Get().Tick(delta);
 
@@ -209,7 +209,7 @@ namespace LambdaEngine
 				ImGui::Text("Version: %s", desc.ApiVersion.c_str());
 				ImGui::Text("Adaper: %s", desc.AdapterName.c_str());
 				ImGui::Text("Driver: %s", desc.DriverVersion.c_str());
-				
+
 				// Tells the developer if validation layers are on
 				if (!desc.Debug)
 				{

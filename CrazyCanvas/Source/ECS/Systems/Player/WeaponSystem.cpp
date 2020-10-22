@@ -224,7 +224,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit, entity: %d", collisionInfo0.Entity);
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Is this safe? Concurrency issues?
