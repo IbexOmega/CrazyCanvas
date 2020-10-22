@@ -29,7 +29,7 @@ bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 		LOG_INFO("....Entity: %d", entity);
 
 		// CollisionInfo0 is the projectile
-		if (projectileHitEvent.CollisionInfo0.Entity == entity)
+		if (projectileHitEvent.CollisionInfo1.Entity == entity)
 		{
 			m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
 			LOG_INFO("Player got hit");
@@ -80,27 +80,36 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	// Since the events are not sent threadsafe
 	{
 		std::scoped_lock<SpinLock> lock(m_DefferedEventsLock);
-		m_EventsToProcess = m_DeferredHitEvents;
-		m_DeferredHitEvents.Clear();
+		if (!m_DeferredHitEvents.IsEmpty())
+		{
+			m_EventsToProcess = m_DeferredHitEvents;
+			m_DeferredHitEvents.Clear();
+		}
 	}
 
-	for (ProjectileHitEvent& event : m_EventsToProcess)
+	if (!m_EventsToProcess.IsEmpty())
 	{
-		// CollisionInfo1 is the entity that got hit
-		Entity entity		= event.CollisionInfo1.Entity;
-		EAmmoType ammoType	= event.AmmoType;
-		
-		HealthComponent& healthComponent = healthComponents->GetData(entity);
-		// Hmm... better solution.. maybe?? 
-		if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
-		{
-			healthComponent.CurrentHealth -= 10;
-			LOG_INFO("Player damaged");
-		}
-		else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
-		{
-			healthComponent.CurrentHealth += 10;
-			LOG_INFO("Player got splashed");
-		}
+		//for (ProjectileHitEvent& event : m_EventsToProcess)
+		//{
+		//	// CollisionInfo1 is the entity that got hit
+		//	Entity entity = event.CollisionInfo1.Entity;
+		//	EAmmoType ammoType = event.AmmoType;
+
+		//	LOG_INFO("Retriving health from entity=%d", entity);
+
+		//	HealthComponent& healthComponent = healthComponents->GetData(entity);
+		//	// Hmm... better solution.. maybe?? 
+		//	if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+		//	{
+		//		healthComponent.CurrentHealth -= 10;
+		//		LOG_INFO("Player damaged");
+		//	}
+		//	else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+		//	{
+		//		healthComponent.CurrentHealth += 10;
+		//		LOG_INFO("Player got splashed");
+		//	}
+		//}
+		m_EventsToProcess.Clear();
 	}
 }

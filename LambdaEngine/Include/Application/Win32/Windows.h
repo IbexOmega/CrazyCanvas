@@ -1,4 +1,5 @@
 #pragma once
+#include "Containers/String.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	#ifndef WIN32_LEAN_AND_MEAN
@@ -16,6 +17,10 @@
 
 		#ifdef CreateWindow
 			#undef CreateWindow
+		#endif
+
+		#ifdef CreateProcess
+			#undef CreateProcess
 		#endif
 
 		#ifdef ERROR
@@ -38,4 +43,25 @@
 			#undef RELATIVE
 		#endif
 	#endif
+
+	namespace LambdaEngine
+	{
+		inline String GetLastErrorAsString()
+		{
+			DWORD dwError = ::GetLastError();
+			if (dwError == 0)
+			{
+				return String();
+			}
+
+			LPSTR messageBuffer = nullptr;
+			size_t size = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+				NULL, dwError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&messageBuffer), 0, NULL);
+
+			String message(messageBuffer, size);
+			// Free the buffer 
+			LocalFree(messageBuffer);
+			return message;
+		}
+	}
 #endif
