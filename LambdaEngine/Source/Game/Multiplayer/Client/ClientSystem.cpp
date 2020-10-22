@@ -37,7 +37,8 @@ namespace LambdaEngine
 		m_NetworkPositionSystem(),
 		m_PlayerSystem(),
 		m_Name(name),
-		m_DebuggingWindow(false)
+		m_DebuggingWindow(false),
+		m_IsHost(false)
 	{
 		MultiplayerUtils::Init(false);
 
@@ -104,6 +105,16 @@ namespace LambdaEngine
 			return false;
 		}
 		return true;
+	}
+
+	void ClientSystem::SetIsHost(bool isHost)
+	{
+		m_IsHost = isHost;
+	}
+
+	bool ClientSystem::GetIsHost(bool isHost)
+	{
+		return m_IsHost;
 	}
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)

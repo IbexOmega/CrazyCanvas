@@ -112,6 +112,11 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	return true;
 }
 
+bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
+{
+	return false;
+}
+
 void LobbyGUI::FixedTick(LambdaEngine::Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
@@ -152,6 +157,8 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
+	StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
+
 	ErrorPopUp(OTHER_ERROR);
 }
 
@@ -159,6 +166,7 @@ void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
 
 	ErrorPopUpClose();
 }
@@ -175,15 +183,14 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	else
 	{
 		//start Server with populated struct
-	
+		LambdaEngine::ClientSystem::GetInstance().SetIsHost(true);
+
 		LambdaEngine::GUIApplication::SetView(nullptr);
 
 		SetRenderStagesActive();
 
 		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-
-		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
 	}
 }
 
@@ -200,7 +207,7 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
 		if (pSelectedItem)
-			StartSelectedServer(pSelectedItem);
+			JoinSelectedServer(pSelectedItem);
 		else
 			ErrorPopUp(JOIN_ERROR);
 	}
@@ -210,27 +217,24 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
 		if (pSelectedItem)
-			StartSelectedServer(pSelectedItem);
+			JoinSelectedServer(pSelectedItem);
 		else
 			ErrorPopUp(JOIN_ERROR);
 	}
 }
 
-void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
+void LobbyGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 {
-	if (!m_Servers.empty())
+	for (auto& server : m_Servers)
 	{
-		for (auto& server : m_Servers)
+		if (server.second.ServerGrid == pGrid)
 		{
-			if (server.second.ServerGrid == pGrid)
-			{
-				LambdaEngine::GUIApplication::SetView(nullptr);
+			LambdaEngine::GUIApplication::SetView(nullptr);
 
-				SetRenderStagesActive();
+			SetRenderStagesActive();
 
-				State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
-				StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-			}
+			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
+			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 		}
 	}
 }

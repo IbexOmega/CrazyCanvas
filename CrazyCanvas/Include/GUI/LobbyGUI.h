@@ -9,6 +9,8 @@
 #include "GUI/SavedServerGUI.h"
 #include "GUI/ServerInfo.h"
 
+#include "Application/API/Events/NetworkEvents.h"
+
 struct HostGameDescription
 {
 	int8 PlayersNumber = -1;
@@ -22,8 +24,6 @@ enum ErrorCode
 	HOST_ERROR,
 	OTHER_ERROR
 };
-
-#include "Application/API/Events/NetworkEvents.h"
 
 class LobbyGUI : public Noesis::Grid
 {
@@ -43,10 +43,11 @@ public:
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	
-	void StartSelectedServer(Noesis::Grid* pGrid);
+	void JoinSelectedServer(Noesis::Grid* pGrid);
 
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
+	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
 
 	void FixedTick(LambdaEngine::Timestamp delta);
 
