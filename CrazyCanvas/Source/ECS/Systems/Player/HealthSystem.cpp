@@ -17,29 +17,6 @@ HealthSystem::~HealthSystem()
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HealthSystem::OnProjectileHit);
 }
 
-bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
-{
-	using namespace LambdaEngine;
-
-	std::scoped_lock<SpinLock> lock(m_DefferedEventsLock);
-	LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
-	
-	for (Entity entity : m_HealthEntities)
-	{
-		LOG_INFO("....Entity: %d", entity);
-
-		// CollisionInfo0 is the projectile
-		if (projectileHitEvent.CollisionInfo1.Entity == entity)
-		{
-			m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
-			LOG_INFO("Player got hit");
-			break;
-		}
-	}
-
-	return true;
-}
-
 bool HealthSystem::Init()
 {
 	using namespace LambdaEngine;
@@ -74,12 +51,12 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 
-	ECSCore* pEcs = ECSCore::GetInstance();
-	ComponentArray<HealthComponent>* healthComponents = pEcs->GetComponentArray<HealthComponent>();
+	ECSCore* pECS = ECSCore::GetInstance();
+	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
 
 	// Since the events are not sent threadsafe
 	{
-		std::scoped_lock<SpinLock> lock(m_DefferedEventsLock);
+		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
 		if (!m_DeferredHitEvents.IsEmpty())
 		{
 			m_EventsToProcess = m_DeferredHitEvents;
@@ -97,7 +74,7 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 			LOG_INFO("Retriving health from entity=%d", entity);
 
-			HealthComponent& healthComponent = healthComponents->GetData(entity);
+			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
 			// Hmm... better solution.. maybe?? 
 			if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 			{
@@ -118,4 +95,27 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		}
 		m_EventsToProcess.Clear();
 	}
+}
+
+bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
+{
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
+	LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
+
+	for (Entity entity : m_HealthEntities)
+	{
+		LOG_INFO("....Entity: %d", entity);
+
+		// CollisionInfo0 is the projectile
+		if (projectileHitEvent.CollisionInfo1.Entity == entity)
+		{
+			m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
+			LOG_INFO("Player got hit");
+			break;
+		}
+	}
+
+	return true;
 }
