@@ -8,14 +8,25 @@
 
 namespace LambdaEngine
 {
-	struct SDescriptorUpdateDesc
+	struct SDescriptorBufferUpdateDesc
 	{
 		const Buffer* const* ppBuffers;
 		const uint64* pOffsets; 
 		const uint64* pSizes; 
-		uint32 firstBinding;
-		uint32 descriptorCount;
-		EDescriptorType descriptorType;
+		uint32 FirstBinding;
+		uint32 DescriptorCount;
+		EDescriptorType DescriptorType;
+	};
+
+	struct SDescriptorTextureUpdateDesc
+	{
+		const TextureView* const* ppTextures;
+		const Sampler* const* ppSamplers;
+		ETextureState TextureState;
+		uint32 FirstBinding;
+		uint32 DescriptorCount;
+		EDescriptorType DescriptorType;
+		bool UniqueSamplers;
 	};
 
 	using SetIndex = uint32;
@@ -44,7 +55,8 @@ namespace LambdaEngine
 
 		void CreateConstantRange(const ConstantRangeDesc& constantRangeDesc);
 
-		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorUpdateDesc& descriptorUpdateDesc);
+		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorBufferUpdateDesc& descriptorUpdateDesc);
+		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTextureUpdateDesc& descriptorUpdateDesc);
 
 		void SetVertexShader(GUID_Lambda vertexShader) { m_VertexShaderGUID = vertexShader; };
 		void SetFragmentShader(GUID_Lambda fragmentShader) { m_FragmentShaderGUID = fragmentShader; };

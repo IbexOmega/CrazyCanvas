@@ -57,6 +57,7 @@ namespace LambdaEngine
 		instanceBindingDesc2.Binding = 2;
 		instanceBindingDesc2.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
+		// Set 0
 		m_UpdatePipeline.CreateDescriptorSetLayout({ instanceBindingDesc0, instanceBindingDesc1, instanceBindingDesc2 });
 
 		ConstantRangeDesc constantRange = {};
@@ -185,12 +186,15 @@ namespace LambdaEngine
 
 		return true;
 	}
+
 	void ParticleUpdater::PreBuffersDescriptorSetWrite()
 	{
 	}
+
 	void ParticleUpdater::PreTexturesDescriptorSetWrite()
 	{
 	}
+
 	void ParticleUpdater::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
@@ -200,15 +204,15 @@ namespace LambdaEngine
 
 		m_UpdatePipeline.Update(delta, modFrameIndex, backBufferIndex);
 	}
+
 	void ParticleUpdater::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(imageCount);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
 	}
+
 	void ParticleUpdater::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
@@ -223,13 +227,13 @@ namespace LambdaEngine
 			constexpr uint32 setIndex = 0U;
 			constexpr uint32 setBinding = 0U;
 
-			SDescriptorUpdateDesc descriptorUpdateDesc = {};
+			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
 			descriptorUpdateDesc.ppBuffers = ppBuffers;
 			descriptorUpdateDesc.pOffsets = pOffsets;
 			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.firstBinding = setBinding;
-			descriptorUpdateDesc.descriptorCount = count;
-			descriptorUpdateDesc.descriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = count;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
 			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
@@ -238,13 +242,13 @@ namespace LambdaEngine
 			constexpr uint32 setIndex = 0U;
 			constexpr uint32 setBinding = 1U;
 
-			SDescriptorUpdateDesc descriptorUpdateDesc = {};
+			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
 			descriptorUpdateDesc.ppBuffers = ppBuffers;
 			descriptorUpdateDesc.pOffsets = pOffsets;
 			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.firstBinding = setBinding;
-			descriptorUpdateDesc.descriptorCount = count;
-			descriptorUpdateDesc.descriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = count;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
 			m_UpdatePipeline.UpdateDescriptorSet("Emitter Instance Buffer Descriptor Set 0 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
@@ -253,13 +257,13 @@ namespace LambdaEngine
 			constexpr uint32 setIndex = 0U;
 			constexpr uint32 setBinding = 2U;
 
-			SDescriptorUpdateDesc descriptorUpdateDesc = {};
+			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
 			descriptorUpdateDesc.ppBuffers = ppBuffers;
 			descriptorUpdateDesc.pOffsets = pOffsets;
 			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.firstBinding = setBinding;
-			descriptorUpdateDesc.descriptorCount = count;
-			descriptorUpdateDesc.descriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = count;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
 			m_UpdatePipeline.UpdateDescriptorSet("Emitter Transform Buffer Descriptor Set 0 Binding 2", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
@@ -270,12 +274,14 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
+
 	void ParticleUpdater::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(pDrawArgs);
 		UNREFERENCED_VARIABLE(count);
 	}
+
 	void ParticleUpdater::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
