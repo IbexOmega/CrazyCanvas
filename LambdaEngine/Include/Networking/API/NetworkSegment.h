@@ -41,6 +41,7 @@ namespace LambdaEngine
 
 			TYPE_ENTITY_CREATE			= UINT16_MAX - 10,
 			TYPE_PLAYER_ACTION			= UINT16_MAX - 11,
+			TYPE_HOST_SERVER			= UINT16_MAX - 12,
 		};
 
 	public:

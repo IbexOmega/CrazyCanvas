@@ -19,5 +19,6 @@ namespace LambdaEngine
 		virtual void Pause() = 0;
 
 		virtual void Tick(Timestamp delta) = 0;
+		virtual void FixedTick(Timestamp delta);
 	};
 }
