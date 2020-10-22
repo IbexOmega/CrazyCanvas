@@ -7,6 +7,7 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
+#include "Game/Multiplayer/CharacterControllerHelper.h"
 
 #include "Input/API/Input.h"
 
@@ -23,10 +24,7 @@ void BenchmarkSystem::Init()
 	{
 		// The write permissions are used when creating projectile entities
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = RW;
-		playerGroup.Scale.Permissions = RW;
 		playerGroup.Rotation.Permissions = RW;
-		playerGroup.Velocity.Permissions = RW;
 
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -42,7 +40,8 @@ void BenchmarkSystem::Init()
 				.pSubscriber = &m_PlayerEntities,
 				.ComponentAccesses =
 				{
-					{NDA, PlayerForeignComponent::Type()}
+					{RW, CharacterColliderComponent::Type()}, {R, NetworkPositionComponent::Type()},
+					{RW, VelocityComponent::Type()}
 				},
 				.ComponentGroups = { &playerGroup }
 			}
@@ -59,8 +58,13 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	const float32 dt = (float32)deltaTime.AsSeconds();
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<WeaponComponent>* pWeaponComponents		= pECS->GetComponentArray<WeaponComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
+
+	/* Component arrays for moving character colliders */
+	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents	= pECS->GetComponentArray<CharacterColliderComponent>();
+	const ComponentArray<NetworkPositionComponent>* pNetworkPositionComponents	= pECS->GetComponentArray<NetworkPositionComponent>();
+	ComponentArray<VelocityComponent>* pVelocityComponents						= pECS->GetComponentArray<VelocityComponent>();
 
 	/*	Create jobs that fire weapons. This is a bit ugly since this requires BenchmarkSystem to know what components
 		are accessed when WeaponSystem fires projectiles. */
@@ -81,6 +85,9 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		RotationComponent& rotationComp = pRotationComponents->GetData(playerEntity);
 		rotationComp.Quaternion = glm::rotate(rotationComp.Quaternion, rotationSpeed * dt, g_DefaultUp);
 
+		// Move character controller to apply gravity and to stress the physics system
+		CharacterControllerHelper::TickCharacterController(dt, playerEntity, pCharacterColliderComponents, pNetworkPositionComponents, pVelocityComponents);
+
 		weaponEntitiesToFire.PushBack(weaponEntity);
 	}
 
@@ -97,15 +104,14 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 			ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 
-			Entity weaponEntity = weaponEntitiesToFire[0];
-			// for (Entity weaponEntity : weaponEntitiesToFire)
-			// {
+			for (Entity weaponEntity : weaponEntitiesToFire)
+			{
 				WeaponComponent& weaponComp = pWeaponComponents->GetData(weaponEntity);
 				const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(weaponComp.WeaponOwner);
 				const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(weaponComp.WeaponOwner);
 				const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(weaponComp.WeaponOwner);
 				pWeaponSystem->TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
-			// }
+			}
 		},
 		.Components = GetFireProjectileComponentAccesses(),
 	};

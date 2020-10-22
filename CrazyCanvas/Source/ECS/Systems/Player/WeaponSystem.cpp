@@ -195,7 +195,7 @@ void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent,
 	{
 		// Play out of ammo
 		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
+		m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
 	}
 }
 
@@ -244,7 +244,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 
 	// Play gun fire
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
-	m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
+	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
 }
 
 void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1)

@@ -16,6 +16,4 @@ public:
 private:
 	LambdaEngine::IDVector m_WeaponEntities;
 	LambdaEngine::IDVector m_PlayerEntities;
-
-	WeaponSystem* m_pWeaponSystem;
 };

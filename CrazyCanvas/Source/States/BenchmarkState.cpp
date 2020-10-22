@@ -274,13 +274,11 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& e
 			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
 		};
 
-		TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
-		bool animationsExist = ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Standard Walk.fbx", animations);
 		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+		TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 
 		CreatePlayerDesc createPlayerDesc =
 		{
@@ -298,6 +296,9 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& e
 
 		for (uint32 playerNr = 0; playerNr < 9; playerNr++)
 		{
+			// Each player needs an animation graph of its own
+			createPlayerDesc.AnimationComponent.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
+
 			// Create a 3x3 grid of players in the XZ plane
 			createPlayerDesc.Position.x = -3.0f + 3.0f * (playerNr % 3);
 			createPlayerDesc.Position.z = -3.0f + 3.0f * (playerNr / 3);
