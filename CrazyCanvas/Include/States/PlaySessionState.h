@@ -35,10 +35,6 @@ private:
 
 	HUDState m_HUDSecondaryState;
 
-	/* Systems */
-	WeaponSystem m_WeaponSystem;
-
-
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
