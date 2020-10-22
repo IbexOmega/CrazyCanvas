@@ -23,7 +23,7 @@
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 #include "World/LevelManager.h"
-#include "World/Level.h"
+#include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
@@ -40,12 +40,13 @@ PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 
 PlaySessionState::~PlaySessionState()
 {
-	SAFEDELETE(m_pLevel);
 }
 
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
+
+	ClientSystem::GetInstance();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -58,12 +59,15 @@ void PlaySessionState::Init()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlaySessionState::OnPacketReceived);
-
-	// Scene
+	// Load Match
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
-		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+		MatchDescription matchDescription =
+		{
+			.LevelHash = levelHashes[0]
+		};
+		Match::CreateMatch(&matchDescription);
 	}
 
 	//// Robot
@@ -285,63 +289,6 @@ void PlaySessionState::Init()
 	}
 
 	ClientSystem::GetInstance().Connect(m_pIPAddress);
-}
-
-bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
-{
-	using namespace LambdaEngine;
-
-	if (event.Type == PacketType::CREATE_ENTITY)
-	{
-		BinaryDecoder decoder(event.pPacket);
-		bool isLocal = decoder.ReadBool();
-		int32 networkUID = decoder.ReadInt32();
-		glm::vec3 position = decoder.ReadVec3();
-		glm::vec3 forward = decoder.ReadVec3();
-		uint32 teamIndex = decoder.ReadUInt32();
-
-		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-		const CameraDesc cameraDesc =
-		{
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width		= (float)window->GetWidth(),
-			.Height		= (float)window->GetHeight(),
-			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
-		};
-
-		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-		bool animationsExist			= !animations.IsEmpty();
-
-		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		if (animationsExist)
-		{
-			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
-		}
-
-		CreatePlayerDesc createPlayerDesc =
-		{
-			.IsLocal			= isLocal,
-			.NetworkUID			= networkUID,
-			.pClient			= event.pClient,
-			.Position			= position,
-			.Forward			= forward,
-			.Scale				= glm::vec3(1.0f),
-			.TeamIndex			= teamIndex,
-			.pCameraDesc		= &cameraDesc,
-			.MeshGUID			= robotGUID,
-			.AnimationComponent = robotAnimationComp,
-		};
-
-		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
-
-		return true;
-	}
-
-	return false;
 }
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)

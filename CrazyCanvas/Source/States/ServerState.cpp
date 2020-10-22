@@ -26,8 +26,9 @@
 
 #include "ECS/ECSCore.h"
 
-#include "World/Level.h"
 #include "World/LevelManager.h"
+
+#include "Match/Match.h"
 
 #include "Multiplayer/PacketType.h"
 #include "ECS/Systems/Match/ServerFlagSystem.h"
@@ -42,14 +43,14 @@ ServerState::ServerState() :
 
 ServerState::~ServerState()
 {
+	EventQueue::UnregisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-
-	SAFEDELETE(m_pLevel);
 }
 
 void ServerState::Init()
 {
-	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &ServerState::OnClientConnected);
+	ServerSystem::GetInstance();
+
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 
@@ -60,10 +61,15 @@ void ServerState::Init()
 
 	m_ServerName = "Crazy Canvas Server";
 
-	// Load scene
+	// Load Match
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
-		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+		MatchDescription matchDescription =
+		{
+			.LevelHash = levelHashes[0]
+		};
+		Match::CreateMatch(&matchDescription);
 	}
 
 	ServerSystem::GetInstance().Start();
@@ -84,54 +90,6 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	pEncoder->WriteString(m_ServerName);
 	pEncoder->WriteString("This Is The Map Name");
 
-	return true;
-}
-
-bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
-{
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	IClient* pClient = event.pClient;
-
-	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-
-	uint32 otherPlayerCount = 0;
-	Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, otherPlayerCount);
-
-	for (uint32 i = 0; i < otherPlayerCount; i++)
-	{
-		Entity otherPlayerEntity = pOtherPlayerEntities[i];
-		const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
-		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
-		const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
-
-		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_ENTITY);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteBool(false);
-		encoder.WriteInt32((int32)otherPlayerEntity);
-		encoder.WriteVec3(positionComponent.Position);
-		encoder.WriteVec3(GetForward(rotationComponent.Quaternion));
-		encoder.WriteUInt32(teamComponent.TeamIndex);
-		pClient->SendReliable(pPacket, nullptr);
-	}
-
-	static glm::vec3 position(2.0f, 10.0f, 0.0f);
-	static uint32 teamIndex = 0;
-
-	CreatePlayerDesc createPlayerDesc =
-	{
-		.pClient		= pClient,
-		.Position		= position,
-		.Forward		= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-		.Scale			= glm::vec3(1.0f),
-		.TeamIndex		= teamIndex,
-	};
-
-	m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
-
-	teamIndex = (teamIndex + 1) % 2;
 	return true;
 }
 

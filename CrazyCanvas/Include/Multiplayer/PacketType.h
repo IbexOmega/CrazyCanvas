@@ -16,7 +16,7 @@ class PacketType
 public:
 	DECL_STATIC_CLASS(PacketType);
 
-	static uint16 CREATE_ENTITY;
+	static uint16 CREATE_LEVEL_OBJECT;
 	static uint16 PLAYER_ACTION;
 	static uint16 PLAYER_ACTION_RESPONSE;
 	static uint16 FLAG_EDITED;

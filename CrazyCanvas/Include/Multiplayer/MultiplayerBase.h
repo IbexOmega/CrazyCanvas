@@ -8,7 +8,10 @@
 class MultiplayerBase
 {
 public:
-	DECL_ABSTRACT_CLASS_NO_DEFAULT(MultiplayerBase);
+	DECL_UNIQUE_CLASS(MultiplayerBase);
+
+	MultiplayerBase();
+	virtual ~MultiplayerBase();
 
 	void InitInternal();
 	void TickMainThreadInternal(LambdaEngine::Timestamp deltaTime);

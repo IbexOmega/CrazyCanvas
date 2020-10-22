@@ -24,8 +24,6 @@ public:
 
 	void Init() override final;
 
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
-
 	void Resume() override final {};
 	void Pause() override final {};
 
@@ -33,7 +31,6 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 private:
-	Level* m_pLevel = nullptr;
 	LambdaEngine::IPAddress* m_pIPAddress;
 
 	MultiplayerClient m_MultiplayerClient;

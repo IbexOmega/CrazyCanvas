@@ -9,6 +9,8 @@ Level::Level()
 Level::~Level()
 {
 	using namespace LambdaEngine;
+	std::scoped_lock<SpinLock> lock(m_SpinLock);
+
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	for (LevelEntitiesOfType& levelEntities : m_Entities)
@@ -39,6 +41,8 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 	using namespace LambdaEngine;
 	
+	std::scoped_lock<SpinLock> lock(m_SpinLock);
+
 	for (LevelModule* pModule : pDesc->LevelModules)
 	{
 		const glm::vec3& translation = pModule->GetTranslation();
@@ -46,7 +50,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 		const TArray<MeshComponent>& meshComponents				= pModule->GetMeshComponents();
 		const TArray<LoadedDirectionalLight>& directionalLights = pModule->GetDirectionalLights();
 		const TArray<LoadedPointLight>& pointLights				= pModule->GetPointLights();
-		const TArray<SpecialObjectOnLoad>& specialObjects		= pModule->GetSpecialObjects();
+		const TArray<LevelObjectOnLoad>& levelObjects		= pModule->GetLevelObjects();
 
 		LevelEntitiesOfType staticGeometryEntities;
 		for (const MeshComponent& meshComponent : meshComponents)
@@ -54,7 +58,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 			Entity entity = LevelObjectCreator::CreateStaticGeometry(meshComponent, translation);
 			if (entity != UINT32_MAX) staticGeometryEntities.Entities.PushBack(entity);
 		}
-		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_STATIC_GEOMTRY] = m_Entities.GetSize();
+		m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMTRY] = m_Entities.GetSize();
 		m_Entities.PushBack(staticGeometryEntities);
 
 		LevelEntitiesOfType dirLightEntities;
@@ -63,7 +67,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 			Entity entity = LevelObjectCreator::CreateDirectionalLight(directionalLights[0], translation);
 			if (entity != UINT32_MAX) dirLightEntities.Entities.PushBack(entity);
 		}
-		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_DIR_LIGHT] = m_Entities.GetSize();
+		m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_DIR_LIGHT] = m_Entities.GetSize();
 		m_Entities.PushBack(dirLightEntities);
 
 		LevelEntitiesOfType pointLightEntities;
@@ -72,17 +76,17 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 			Entity entity = LevelObjectCreator::CreatePointLight(loadedPointLight, translation);
 			if (entity != UINT32_MAX) pointLightEntities.Entities.PushBack(entity);
 		}
-		m_EntityTypeMap[ESpecialObjectType::SPECIAL_OBJECT_TYPE_POINT_LIGHT] = m_Entities.GetSize();
+		m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_POINT_LIGHT] = m_Entities.GetSize();
 		m_Entities.PushBack(pointLightEntities);
 
-		for (const SpecialObjectOnLoad& specialObject : specialObjects)
+		for (const LevelObjectOnLoad& levelObject : levelObjects)
 		{
 			LevelEntitiesOfType levelEntities;
-			ESpecialObjectType specialObjectType = LevelObjectCreator::CreateSpecialObjectFromPrefix(specialObject, levelEntities.Entities, translation);
+			ELevelObjectType levelObjectType = LevelObjectCreator::CreateLevelObjectFromPrefix(levelObject, levelEntities.Entities, translation);
 
-			if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
+			if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
 			{
-				m_EntityTypeMap[specialObjectType] = m_Entities.GetSize();
+				m_EntityTypeMap[levelObjectType] = m_Entities.GetSize();
 				m_Entities.PushBack(levelEntities);
 			}
 		}
@@ -91,27 +95,29 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	return true;
 }
 
-bool Level::CreateObject(ESpecialObjectType specialObjectType, void* pData)
+bool Level::CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities)
 {
 	using namespace LambdaEngine;
+	std::scoped_lock<SpinLock> lock(m_SpinLock);
 
-	if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
+	if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
 	{
 		LevelEntitiesOfType* pLevelEntities = nullptr;
 
-		auto specialObjectTypeIt = m_EntityTypeMap.find(specialObjectType);
-		if (specialObjectTypeIt != m_EntityTypeMap.end())
+		auto levelObjectTypeIt = m_EntityTypeMap.find(levelObjectType);
+		if (levelObjectTypeIt != m_EntityTypeMap.end())
 		{
-			pLevelEntities = &m_Entities[specialObjectTypeIt->second];
+			pLevelEntities = &m_Entities[levelObjectTypeIt->second];
 		}
 		else
 		{
-			m_EntityTypeMap[specialObjectType] = m_Entities.GetSize();
+			m_EntityTypeMap[levelObjectType] = m_Entities.GetSize();
 			pLevelEntities = &m_Entities.PushBack({});
 		}
 
-		if (LevelObjectCreator::CreateSpecialObjectOfType(specialObjectType, pData, pLevelEntities->Entities, pLevelEntities->ChildEntities, pLevelEntities->SaltUIDs))
+		if (LevelObjectCreator::CreateLevelObjectOfType(levelObjectType, pData, pLevelEntities->Entities, pLevelEntities->ChildEntities, pLevelEntities->SaltUIDs))
 		{
+			createdEntities = pLevelEntities->Entities;
 			return true;
 		}
 	}
@@ -119,12 +125,15 @@ bool Level::CreateObject(ESpecialObjectType specialObjectType, void* pData)
 	return false;
 }
 
-LambdaEngine::Entity* Level::GetEntities(ESpecialObjectType specialObjectType, uint32& countOut)
+LambdaEngine::Entity* Level::GetEntities(ELevelObjectType levelObjectType, uint32& countOut)
 {
-	auto specialObjectTypeIt = m_EntityTypeMap.find(specialObjectType);
-	if (specialObjectTypeIt != m_EntityTypeMap.end())
+	using namespace LambdaEngine;
+	std::scoped_lock<SpinLock> lock(m_SpinLock);
+
+	auto levelObjectTypeIt = m_EntityTypeMap.find(levelObjectType);
+	if (levelObjectTypeIt != m_EntityTypeMap.end())
 	{
-		LevelEntitiesOfType& levelEntities = m_Entities[specialObjectTypeIt->second];
+		LevelEntitiesOfType& levelEntities = m_Entities[levelObjectTypeIt->second];
 		countOut = levelEntities.Entities.GetSize();
 		return levelEntities.Entities.GetData();
 	}
@@ -136,10 +145,12 @@ LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
 {
 	using namespace LambdaEngine;
 
-	auto specialObjectTypeIt = m_EntityTypeMap.find(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER);
-	if (specialObjectTypeIt != m_EntityTypeMap.end())
+	std::scoped_lock<SpinLock> lock(m_SpinLock);
+
+	auto levelObjectTypeIt = m_EntityTypeMap.find(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
+	if (levelObjectTypeIt != m_EntityTypeMap.end())
 	{
-		LevelEntitiesOfType& levelEntities = m_Entities[specialObjectTypeIt->second];
+		LevelEntitiesOfType& levelEntities = m_Entities[levelObjectTypeIt->second];
 		for (uint32 i = 0; i < levelEntities.SaltUIDs.GetSize(); i++)
 		{
 			if (levelEntities.SaltUIDs[i] == saltUID)

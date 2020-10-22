@@ -39,7 +39,7 @@ namespace LambdaEngine
 	struct SceneLoadDesc
 	{
 		String	Filename = "";
-		TArray<SpecialObjectOnLoadDesc> SpecialObjectDescriptions = {};
+		TArray<LevelObjectOnLoadDesc> LevelObjectDescriptions = {};
 	};
 
 	class LAMBDA_API ResourceManager
@@ -74,7 +74,7 @@ namespace LambdaEngine
 		*	meshComponents		- A vector where all loaded MeshComponent(s) will be stored
 		*	directionalLights	- A vector where all loaded LoadedDirectionalLight(s) will be stored
 		*	pointLights			- A vector where all loaded LoadedPointLight(s) will be stored
-		*	specialObjects		- A vector where all loaded SpecialObject(s) will be stored according to the definition given in SceneLoadDesc::SpecialObjectDescriptions
+		*	levelObjects		- A vector where all loaded LevelObject(s) will be stored according to the definition given in SceneLoadDesc::LevelObjectDescriptions
 		* return - true if the scene was loaded, false otherwise
 		*/
 		static bool LoadSceneFromFile(
@@ -82,7 +82,7 @@ namespace LambdaEngine
 			TArray<MeshComponent>& meshComponents,
 			TArray<LoadedDirectionalLight>& directionalLights,
 			TArray<LoadedPointLight>& pointLights,
-			TArray<SpecialObjectOnLoad>& specialObjects,
+			TArray<LevelObjectOnLoad>& levelObjects,
 			const String& directory = SCENE_DIR);
 
 		/*

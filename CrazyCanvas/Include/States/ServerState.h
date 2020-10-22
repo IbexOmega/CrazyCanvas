@@ -24,8 +24,6 @@ public:
 	void Resume() override final {};
 	void Pause() override final {};
 
-	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
@@ -34,7 +32,6 @@ public:
 	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
 
 private:
-	Level* m_pLevel = nullptr;
 	std::string m_ServerName;
 	MultiplayerServer m_MultiplayerServer;
 };

@@ -82,8 +82,6 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 	};
 
 	pECS->ScheduleJobASAP(job);
-
-	//Send Packet to el Clients
 }
 
 void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm::vec3& dropPosition)

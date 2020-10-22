@@ -13,6 +13,8 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
+#include "Threading/API/SpinLock.h"
+
 struct LevelCreateDesc
 {
 	LambdaEngine::String Name	=	"";
@@ -36,19 +38,17 @@ public:
 
 	bool Init(const LevelCreateDesc* pDesc);
 
-	// This should be used to create server entities:
-	// Server & Client Loads Level, Client only loads clientside level objects,
-	// Server then sends packages about server side entities that need to be created in the client, those should use this method
-	// This method should delegate to LevelObjectCreator
-	bool CreateObject(ESpecialObjectType specialObjectType, void* pData);
+	bool CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities);
 
-	LambdaEngine::Entity* GetEntities(ESpecialObjectType specialObjectType, uint32& countOut);
+	LambdaEngine::Entity* GetEntities(ELevelObjectType levelObjectType, uint32& countOut);
 
 private:
 	virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
 
 private:
 	LambdaEngine::String m_Name = "";
-	LambdaEngine::THashTable<ESpecialObjectType, uint32> m_EntityTypeMap;
+	LambdaEngine::SpinLock m_SpinLock;
+
+	LambdaEngine::THashTable<ELevelObjectType, uint32> m_EntityTypeMap;
 	LambdaEngine::TArray<LevelEntitiesOfType> m_Entities;
 };

@@ -48,6 +48,7 @@ bool LevelManager::Init()
 		{
 			GenericArray levels = d["levels"].GetArray();
 
+			s_LevelHashes.Resize(levels.Size());
 			s_LevelNames.Resize(levels.Size());
 			s_LevelDescriptions.Resize(levels.Size());
 			
@@ -127,6 +128,7 @@ bool LevelManager::Init()
 
 				levelDesc.Hash			= SHA256::Hash(byteRepresentation);
 
+				s_LevelHashes[l]		= levelDesc.Hash;
 				s_LevelNames[l]			= levelDesc.Name;
 				s_LevelDescriptions[l]	= levelDesc;
 

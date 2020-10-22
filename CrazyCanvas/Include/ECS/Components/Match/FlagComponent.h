@@ -9,6 +9,12 @@
 constexpr LambdaEngine::CollisionGroup FLAG_CARRIED_COLLISION_MASK = FCrazyCanvasCollisionGroup::COLLISION_GROUP_BASE;
 constexpr LambdaEngine::CollisionGroup FLAG_DROPPED_COLLISION_MASK = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER;
 
+struct FlagSpawnComponent
+{
+	DECL_COMPONENT(FlagSpawnComponent);
+	float Radius = 1.0f;
+};
+
 struct FlagComponent
 {
 	DECL_COMPONENT(FlagComponent);

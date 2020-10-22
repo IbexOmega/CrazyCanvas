@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Application/API/Events/NetworkEvents.h"
-
 #include "Match/MatchBase.h"
+
+#include "Time/API/Timestamp.h"
 
 class Match
 {
@@ -12,11 +12,11 @@ public:
 	static bool Init();
 	static bool Release();
 
-	static bool CreateMatch(const MatchDescription* pMatch);
+	static bool CreateMatch(const MatchDescription* pDesc);
 	static bool ResetMatch();
 	static bool ReleaseMatch();
 
-	static bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
+	static void Tick(LambdaEngine::Timestamp deltaTime);
 
 	FORCEINLINE MatchBase* GetInstance() { return s_pMatchInstance; };
 

@@ -23,7 +23,6 @@
 #include "ECS/Components/Player/WeaponComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
-#include "Networking/API/ClientRemoteBase.h"
 #include "Networking/API/BinaryEncoder.h"
 
 #include "ECS/ECSCore.h"
@@ -35,12 +34,14 @@
 #include "Resources/ResourceManager.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "Rendering/EntityMaskManager.h"
 
 #include "Multiplayer/PacketType.h"
 
 #include "Physics/CollisionGroups.h"
+
 bool LevelObjectCreator::Init()
 {
 	using namespace LambdaEngine;
@@ -49,38 +50,38 @@ bool LevelObjectCreator::Init()
 	{
 		//Spawnpoint
 		{
-			SpecialObjectOnLoadDesc specialObjectDesc =
+			LevelObjectOnLoadDesc levelObjectDesc =
 			{
-				.Prefix = "SO_PLAYER_SPAWN"
+				.Prefix = "SO_PLAYER_SPAWN_"
 			};
 
-			s_SpecialObjectOnLoadDescriptions.PushBack(specialObjectDesc);
-			s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerSpawn;
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerSpawn;
 		}
 
 		//Spawnpoint
 		{
-			SpecialObjectOnLoadDesc specialObjectDesc =
+			LevelObjectOnLoadDesc levelObjectDesc =
 			{
-				.Prefix = "SO_FLAG_SPAWN"
+				.Prefix = "SO_FLAG_SPAWN_"
 			};
 
-			s_SpecialObjectOnLoadDescriptions.PushBack(specialObjectDesc);
-			s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagSpawn;
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagSpawn;
 		}
 	}
 
 	//Register Create Special Object by Type Functions
 	{
-		s_SpecialObjectByTypeCreateFunctions[ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG_]		= &LevelObjectCreator::CreateFlag;
-		s_SpecialObjectByTypeCreateFunctions[ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER]	= &LevelObjectCreator::CreatePlayer;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]	= &LevelObjectCreator::CreateFlag;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]	= &LevelObjectCreator::CreatePlayer;
 	}
 
 	//Load Object Meshes & Materials
 	{
 		//Flag
 		{
-			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("bunny.obj");
+			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("gun.obj");
 
 			MaterialProperties materialProperties = {};
 			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -178,31 +179,31 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	return entity;
 }
 
-ESpecialObjectType LevelObjectCreator::CreateSpecialObjectFromPrefix(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
-	auto createFuncIt = s_SpecialObjectByPrefixCreateFunctions.find(specialObject.Prefix);
+	auto createFuncIt = s_LevelObjectByPrefixCreateFunctions.find(levelObject.Prefix);
 
-	if (createFuncIt != s_SpecialObjectByPrefixCreateFunctions.end())
+	if (createFuncIt != s_LevelObjectByPrefixCreateFunctions.end())
 	{
-		return createFuncIt->second(specialObject, createdEntities, translation);
+		return createFuncIt->second(levelObject, createdEntities, translation);
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", specialObject.Name.c_str(), specialObject.Prefix.c_str());
-		return ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE;
+		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", levelObject.Name.c_str(), levelObject.Prefix.c_str());
+		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
 	}
 }
 
-bool LevelObjectCreator::CreateSpecialObjectOfType(
-	ESpecialObjectType specialObjectType,
+bool LevelObjectCreator::CreateLevelObjectOfType(
+	ELevelObjectType levelObjectType,
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
-	auto createFuncIt = s_SpecialObjectByTypeCreateFunctions.find(specialObjectType);
+	auto createFuncIt = s_LevelObjectByTypeCreateFunctions.find(levelObjectType);
 
-	if (createFuncIt != s_SpecialObjectByTypeCreateFunctions.end())
+	if (createFuncIt != s_LevelObjectByTypeCreateFunctions.end())
 	{
 		return createFuncIt->second(pData, createdEntities, createdChildEntities, saltUIDs);
 	}
@@ -213,21 +214,30 @@ bool LevelObjectCreator::CreateSpecialObjectOfType(
 	}
 }
 
-ESpecialObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
-	UNREFERENCED_VARIABLE(specialObject);
+	UNREFERENCED_VARIABLE(levelObject);
 	UNREFERENCED_VARIABLE(createdEntities);
 	UNREFERENCED_VARIABLE(translation);
 
 	LOG_WARNING("[LevelObjectCreator]: Spawnpoint not implemented!");
-	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER_SPAWN;
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
-ESpecialObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 
-	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG_SPAWN;
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	pECS->AddComponent<FlagSpawnComponent>(entity, { 1.0f });
+	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+
+	createdEntities.PushBack(entity);
+
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
 }
 
 bool LevelObjectCreator::CreateFlag(
@@ -247,19 +257,36 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity entity = pECS->CreateEntity();
 
-	pECS->AddComponent<FlagComponent>(entity, FlagComponent());
-	pECS->AddComponent<OffsetComponent>(entity, OffsetComponent{ .Offset = glm::vec3(1.0f) });
-	pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Attached = false });
+	PositionComponent positionComponent{ true, pFlagDesc->Position };
+	ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
+	RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
+	MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+
+	pECS->AddComponent<FlagComponent>(entity,		FlagComponent());
+	pECS->AddComponent<OffsetComponent>(entity,		OffsetComponent{ .Offset = glm::vec3(1.0f) });
+	pECS->AddComponent<PositionComponent>(entity,	positionComponent);
+	pECS->AddComponent<ScaleComponent>(entity,		scaleComponent);
+	pECS->AddComponent<RotationComponent>(entity,	rotationComponent);
+	pECS->AddComponent<MeshComponent>(entity,		meshComponent);
+
+	if (pFlagDesc->ParentEntity != UINT32_MAX)
+	{
+		pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Parent = pFlagDesc->ParentEntity, .Attached = true });
+	}
+	else
+	{
+		pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Attached = false });
+	}
 
 	//Network Stuff
 	{
 		pECS->AddComponent<PacketComponent<FlagEditedPacket>>(entity, {});
 	}
 
+	int32 networkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<NetworkComponent>(entity, { pFlagDesc->NetworkUID });
-		MultiplayerUtils::RegisterEntity(entity, pFlagDesc->NetworkUID);
+		networkUID = pFlagDesc->NetworkUID;
 	}
 	else
 	{
@@ -267,10 +294,10 @@ bool LevelObjectCreator::CreateFlag(
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		entity,
-			/* Position */	 		pECS->AddComponent<PositionComponent>(entity,		{ true, pFlagDesc->Position }),
-			/* Scale */				pECS->AddComponent<ScaleComponent>(entity,			{ true, pFlagDesc->Scale }),
-			/* Rotation */			pECS->AddComponent<RotationComponent>(entity,		{ true, pFlagDesc->Rotation }),
-			/* Mesh */				pECS->AddComponent<MeshComponent>(entity,			{ pFlagDesc->MeshGUID, }),
+			/* Position */	 		positionComponent,
+			/* Scale */				scaleComponent,
+			/* Rotation */			rotationComponent,
+			/* Mesh */				meshComponent,
 			/* Shape Type */		EShapeType::TRIGGER,
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
@@ -281,12 +308,15 @@ bool LevelObjectCreator::CreateFlag(
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
 
-		pECS->AddComponent<NetworkComponent>(entity, { (int32)entity });
-		MultiplayerUtils::RegisterEntity(entity, (int32)entity);
+		networkUID = (int32)entity;
 	}
+
+	pECS->AddComponent<NetworkComponent>(entity, { networkUID });
+	MultiplayerUtils::RegisterEntity(entity, networkUID);
 
 	createdEntities.PushBack(entity);
 
+	D_LOG_INFO("Created Flag with EntityID %d and NetworkID %d", entity, networkUID);
 	return true;
 }
 
@@ -336,13 +366,15 @@ bool LevelObjectCreator::CreatePlayer(
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
 
+	int32 networkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
+		networkUID = pPlayerDesc->NetworkUID;
+
 		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
-		pECS->AddComponent<NetworkComponent>(playerEntity, { pPlayerDesc->NetworkUID });
 
 		if (!pPlayerDesc->IsLocal)
 		{
@@ -400,50 +432,17 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 		}
 
-		MultiplayerUtils::RegisterEntity(playerEntity, pPlayerDesc->NetworkUID);
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
 	}
 	else
 	{
-		pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
-
+		networkUID = (int32)playerEntity;
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
-
-		ClientRemoteBase* pClient = reinterpret_cast<ClientRemoteBase*>(pPlayerDesc->pClient);
-
-		{
-			NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_ENTITY);
-			BinaryEncoder encoder = BinaryEncoder(pPacket);
-			encoder.WriteBool(true);
-			encoder.WriteInt32((int32)playerEntity);
-			encoder.WriteVec3(pPlayerDesc->Position);
-			encoder.WriteVec3(pPlayerDesc->Forward);
-			encoder.WriteUInt32(pPlayerDesc->TeamIndex);
-
-			//Todo: 2nd argument should not be nullptr if we want a little info
-			pClient->SendReliable(pPacket, nullptr);
-		}
-
-		const ClientMap& clients = pClient->GetClients();
-
-		for (auto& clientPair : clients)
-		{
-			if (clientPair.second != pClient)
-			{
-				//Send to everyone already connected
-				NetworkSegment* pPacket = clientPair.second->GetFreePacket(PacketType::CREATE_ENTITY);
-				BinaryEncoder encoder(pPacket);
-				encoder.WriteBool(false);
-				encoder.WriteInt32((int32)playerEntity);
-				encoder.WriteVec3(pPlayerDesc->Position);
-				encoder.WriteVec3(pPlayerDesc->Forward);
-				encoder.WriteUInt32(pPlayerDesc->TeamIndex);
-				clientPair.second->SendReliable(pPacket, nullptr);
-			}
-		}
 	}
 
+	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });
+	MultiplayerUtils::RegisterEntity(playerEntity, networkUID);
 
-	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, pECS->GetComponent<NetworkComponent>(playerEntity).NetworkUID);
+	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, networkUID);
 	return true;
 }

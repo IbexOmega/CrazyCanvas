@@ -196,11 +196,11 @@ namespace LambdaEngine
 
 	bool ResourceLoader::LoadSceneFromFile(
 		const String& filepath,
-		const TArray<SpecialObjectOnLoadDesc>& specialObjectDescriptions,
+		const TArray<LevelObjectOnLoadDesc>& levelObjectDescriptions,
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObjectOnLoad>& specialObjects,
+		TArray<LevelObjectOnLoad>& levelObjects,
 		TArray<Mesh*>& meshes,
 		TArray<Animation*>& animations,
 		TArray<LoadedMaterial*>& materials,
@@ -228,10 +228,10 @@ namespace LambdaEngine
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
-			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.LevelObjectDescriptions	= levelObjectDescriptions,
 			.DirectionalLights			= directionalLights,
 			.PointLights				= pointLights,
-			.SpecialObjects				= specialObjects,
+			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
 			.Animations					= animations,
 			.MeshComponents				= meshComponents,
@@ -272,19 +272,19 @@ namespace LambdaEngine
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 
-		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		const TArray<LevelObjectOnLoadDesc>	levelObjectDescriptions;
 		TArray<LoadedDirectionalLight>			directionalLightComponents;
 		TArray<LoadedPointLight>				pointLightComponents;
-		TArray<SpecialObjectOnLoad>				specialObjects;
+		TArray<LevelObjectOnLoad>				levelObjects;
 
 		SceneLoadRequest loadRequest =
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
-			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.LevelObjectDescriptions	= levelObjectDescriptions,
 			.DirectionalLights			= directionalLightComponents,
 			.PointLights				= pointLightComponents,
-			.SpecialObjects				= specialObjects,
+			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
 			.Animations					= animations,
 			.MeshComponents				= meshComponent,
@@ -346,19 +346,19 @@ namespace LambdaEngine
 		TArray<Mesh*>						meshes;
 		TArray<Animation*>					animations;
 		TArray<MeshComponent>				meshComponent;
-		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		const TArray<LevelObjectOnLoadDesc>	levelObjectDescriptions;
 		TArray<LoadedDirectionalLight>			directionalLightComponents;
 		TArray<LoadedPointLight>				pointLightComponents;
-		TArray<SpecialObjectOnLoad>				specialObjects;
+		TArray<LevelObjectOnLoad>				levelObjects;
 
 		SceneLoadRequest loadRequest =
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
-			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.LevelObjectDescriptions	= levelObjectDescriptions,
 			.DirectionalLights			= directionalLightComponents,
 			.PointLights				= pointLightComponents,
-			.SpecialObjects				= specialObjects,
+			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
 			.Animations					= animations,
 			.MeshComponents				= meshComponent,
@@ -1411,10 +1411,10 @@ namespace LambdaEngine
 		SceneLoadingContext context = 
 		{
 			.DirectoryPath				= filepath.substr(0, lastPathDivisor + 1),
-			.SpecialObjectDescriptions	= sceneLoadRequest.SpecialObjectDescriptions,
+			.LevelObjectDescriptions	= sceneLoadRequest.LevelObjectDescriptions,
 			.DirectionalLights			= sceneLoadRequest.DirectionalLights,
 			.PointLights				= sceneLoadRequest.PointLights,
-			.SpecialObjects				= sceneLoadRequest.SpecialObjects,
+			.LevelObjects				= sceneLoadRequest.LevelObjects,
 			.Meshes						= sceneLoadRequest.Meshes,
 			.MeshComponents				= sceneLoadRequest.MeshComponents,
 			.Animations					= sceneLoadRequest.Animations,
@@ -1506,7 +1506,7 @@ namespace LambdaEngine
 		bool loadNormally	= false;
 		bool isSpecial		= false;
 		bool isLight		= false;
-		TArray<SpecialObjectOnLoad*> specialObjectToBeSet;
+		TArray<LevelObjectOnLoad*> levelObjectToBeSet;
 
 		aiMatrix4x4 nodeTransform = (*reinterpret_cast<const aiMatrix4x4*>(pParentTransform)) * pNode->mTransformation;
 
@@ -1520,9 +1520,9 @@ namespace LambdaEngine
 		glm::vec3 defaultScale		= glm::vec3(aiScale.x, aiScale.y, aiScale.z);
 
 		//Check if there are any special object descriptions referencing this object
-		for (const SpecialObjectOnLoadDesc& specialObjectDesc : context.SpecialObjectDescriptions)
+		for (const LevelObjectOnLoadDesc& levelObjectDesc : context.LevelObjectDescriptions)
 		{
-			size_t prefixIndex = nodeName.find(specialObjectDesc.Prefix);
+			size_t prefixIndex = nodeName.find(levelObjectDesc.Prefix);
 
 			//We only check for prefixes, so index must be 0
 			if (prefixIndex == 0)
@@ -1535,16 +1535,16 @@ namespace LambdaEngine
 					loadNormally = true;
 				}
 
-				SpecialObjectOnLoad specialObject =
+				LevelObjectOnLoad levelObject =
 				{
-					.Prefix				= specialObjectDesc.Prefix,
-					.Name				= nodeName.substr(specialObjectDesc.Prefix.length() + 1),
+					.Prefix				= levelObjectDesc.Prefix,
+					.Name				= nodeName.substr(levelObjectDesc.Prefix.length() + 1),
 					.DefaultPosition	= defaultPosition,
 					.DefaultRotation	= defaultRotation,
 					.DefaultScale		= defaultScale,
 				};
 
-				specialObjectToBeSet.PushBack(&context.SpecialObjects.PushBack(specialObject));
+				levelObjectToBeSet.PushBack(&context.LevelObjects.PushBack(levelObject));
 			}
 		}
 
@@ -1606,16 +1606,16 @@ namespace LambdaEngine
 					newMeshComponent.MeshGUID = context.Meshes.GetSize() - 1;
 					newMeshComponent.MaterialGUID = context.MaterialIndices[pMeshAI->mMaterialIndex];
 
-					if (specialObjectToBeSet.IsEmpty())
+					if (levelObjectToBeSet.IsEmpty())
 					{
 						context.MeshComponents.PushBack(newMeshComponent);
 					}
 					else
 					{
-						for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
+						for (LevelObjectOnLoad* pLevelObject : levelObjectToBeSet)
 						{
-							pSpecialObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
-							pSpecialObject->MeshComponents.PushBack(newMeshComponent);
+							pLevelObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
+							pLevelObject->MeshComponents.PushBack(newMeshComponent);
 						}
 					}
 				}
@@ -1629,9 +1629,9 @@ namespace LambdaEngine
 				BoundingBox boundingBox;
 				LoadBoundingBox(boundingBox, pMeshAI);
 
-					for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
+					for (LevelObjectOnLoad* pLevelObject : levelObjectToBeSet)
 					{
-						pSpecialObject->BoundingBoxes.PushBack(boundingBox);
+						pLevelObject->BoundingBoxes.PushBack(boundingBox);
 					}
 				}
 			}

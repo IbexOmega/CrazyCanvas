@@ -125,7 +125,7 @@ namespace LambdaEngine
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObjectOnLoad>& specialObjects,
+		TArray<LevelObjectOnLoad>& levelObjects,
 		const String& directory)
 	{
 		VALIDATE(pSceneLoadDesc != nullptr);
@@ -138,11 +138,11 @@ namespace LambdaEngine
 
 		if (!ResourceLoader::LoadSceneFromFile(
 			directory + pSceneLoadDesc->Filename,
-			pSceneLoadDesc->SpecialObjectDescriptions,
+			pSceneLoadDesc->LevelObjectDescriptions,
 			sceneLocalMeshComponents,
 			directionalLights,
 			pointLights,
-			specialObjects,
+			levelObjects,
 			meshes, 
 			animations, 
 			materials, 
@@ -233,11 +233,11 @@ namespace LambdaEngine
 			}
 
 			//Loop through special objects and set their mesh component material GUIDs
-			for (uint32 s = 0; s < specialObjects.GetSize(); s++)
+			for (uint32 s = 0; s < levelObjects.GetSize(); s++)
 			{
-				SpecialObjectOnLoad* pSpecialObject = &specialObjects[s];
+				LevelObjectOnLoad* pLevelObject = &levelObjects[s];
 
-				for (MeshComponent& meshComponent : pSpecialObject->MeshComponents)
+				for (MeshComponent& meshComponent : pLevelObject->MeshComponents)
 				{
 					if (meshComponent.MeshGUID == i)
 						meshComponent.MeshGUID = guid;
@@ -296,11 +296,11 @@ namespace LambdaEngine
 			}
 
 			//Loop through special objects and set their mesh component material GUIDs
-			for (uint32 s = 0; s < specialObjects.GetSize(); s++)
+			for (uint32 s = 0; s < levelObjects.GetSize(); s++)
 			{
-				SpecialObjectOnLoad* pSpecialObject = &specialObjects[s];
+				LevelObjectOnLoad* pLevelObject = &levelObjects[s];
 
-				for (MeshComponent& meshComponent : pSpecialObject->MeshComponents)
+				for (MeshComponent& meshComponent : pLevelObject->MeshComponents)
 				{
 					if (meshComponent.MaterialGUID == i)
 						meshComponent.MaterialGUID = guid;

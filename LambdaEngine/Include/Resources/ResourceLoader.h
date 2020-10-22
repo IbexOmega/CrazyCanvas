@@ -29,12 +29,12 @@ namespace LambdaEngine
 {
 	class GLSLShaderSource;
 
-	struct SpecialObjectOnLoadDesc
+	struct LevelObjectOnLoadDesc
 	{
 		String	Prefix		= "";
 	};
 
-	struct SpecialObjectOnLoad
+	struct LevelObjectOnLoad
 	{
 		String		Prefix		= "";
 		String		Name		= "";
@@ -66,10 +66,10 @@ namespace LambdaEngine
 	{
 		String									Filepath;
 		int32									AssimpFlags;
-		const TArray<SpecialObjectOnLoadDesc>&	SpecialObjectDescriptions;
+		const TArray<LevelObjectOnLoadDesc>&	LevelObjectDescriptions;
 		TArray<LoadedDirectionalLight>&			DirectionalLights;
 		TArray<LoadedPointLight>&				PointLights;
-		TArray<SpecialObjectOnLoad>&			SpecialObjects;
+		TArray<LevelObjectOnLoad>&			LevelObjects;
 		TArray<Mesh*>&							Meshes;
 		TArray<Animation*>&						Animations;
 		TArray<MeshComponent>&					MeshComponents;
@@ -83,10 +83,10 @@ namespace LambdaEngine
 	struct SceneLoadingContext
 	{
 		String									DirectoryPath;
-		const TArray<SpecialObjectOnLoadDesc>&	SpecialObjectDescriptions;
+		const TArray<LevelObjectOnLoadDesc>&	LevelObjectDescriptions;
 		TArray<LoadedDirectionalLight>&			DirectionalLights;
 		TArray<LoadedPointLight>&				PointLights;
-		TArray<SpecialObjectOnLoad>&			SpecialObjects;
+		TArray<LevelObjectOnLoad>&			LevelObjects;
 		TArray<Mesh*>&							Meshes;
 		TArray<MeshComponent>&					MeshComponents;
 		TArray<Animation*>&						Animations;
@@ -113,11 +113,11 @@ namespace LambdaEngine
 		*/
 		static bool LoadSceneFromFile(
 			const String& filepath,
-			const TArray<SpecialObjectOnLoadDesc>& specialObjectDescriptions,
+			const TArray<LevelObjectOnLoadDesc>& levelObjectDescriptions,
 			TArray<MeshComponent>& meshComponents,
 			TArray<LoadedDirectionalLight>& directionalLights,
 			TArray<LoadedPointLight>& pointLights,
-			TArray<SpecialObjectOnLoad>& specialObjects,
+			TArray<LevelObjectOnLoad>& levelObjects,
 			TArray<Mesh*>& meshes,
 			TArray<Animation*>& animations,
 			TArray<LoadedMaterial*>& materials,

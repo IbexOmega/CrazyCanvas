@@ -2,31 +2,12 @@
 #include "Match/MatchServer.h"
 #include "Match/MatchClient.h"
 
-#include "Application/API/Events/EventQueue.h"
-
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Multiplayer/PacketType.h"
 
 bool Match::Init()
 {
 	using namespace LambdaEngine;
-
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(&Match::OnPacketReceived);
-	return true;
-}
-
-bool Match::Release()
-{
-	using namespace LambdaEngine;
-
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent>(&Match::OnPacketReceived);
-	return true;
-}
-
-bool Match::CreateMatch(const MatchDescription* pMatch)
-{
-	using namespace LambdaEngine;
-
-	SAFEDELETE(s_pMatchInstance);
 
 	if (MultiplayerUtils::IsServer())
 	{
@@ -36,8 +17,29 @@ bool Match::CreateMatch(const MatchDescription* pMatch)
 	{
 		s_pMatchInstance = DBG_NEW MatchClient();
 	}
+	
+	return true;
+}
 
-	return false;
+bool Match::Release()
+{
+	using namespace LambdaEngine;
+
+	SAFEDELETE(s_pMatchInstance);
+
+	return true;
+}
+
+bool Match::CreateMatch(const MatchDescription* pDesc)
+{
+	using namespace LambdaEngine;
+
+	if (!s_pMatchInstance->Init(pDesc))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 bool Match::ResetMatch()
@@ -50,7 +52,7 @@ bool Match::ReleaseMatch()
 	return false;
 }
 
-bool Match::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+void Match::Tick(LambdaEngine::Timestamp deltaTime)
 {
-	return false;
+	s_pMatchInstance->Tick(deltaTime);
 }
