@@ -42,14 +42,6 @@ public:
 	// This method should delegate to LevelObjectCreator
 	bool CreateObject(ESpecialObjectType specialObjectType, void* pData);
 
-	/*
-	*	Spawns a player at a random Spawnpoint, the player is forced to be local
-	*/
-	void SpawnPlayer(
-		const LambdaEngine::MeshComponent& meshComponent,
-		const LambdaEngine::AnimationComponent& animationComponent,
-		const LambdaEngine::CameraDesc* pCameraDesc);
-
 	LambdaEngine::Entity* GetEntities(ESpecialObjectType specialObjectType, uint32& countOut);
 
 private:

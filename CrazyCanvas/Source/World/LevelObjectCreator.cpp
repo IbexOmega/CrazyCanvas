@@ -51,28 +51,49 @@ bool LevelObjectCreator::Init()
 		{
 			SpecialObjectOnLoadDesc specialObjectDesc =
 			{
-				.Prefix = "SO_SPAWN_"
+				.Prefix = "SO_PLAYER_SPAWN"
 			};
 
 			s_SpecialObjectOnLoadDescriptions.PushBack(specialObjectDesc);
-			s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateSpawnpoint;
+			s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerSpawn;
 		}
 
 		//Spawnpoint
 		{
 			SpecialObjectOnLoadDesc specialObjectDesc =
 			{
-				.Prefix = "SO_FLAG_"
+				.Prefix = "SO_FLAG_SPAWN"
 			};
 
 			s_SpecialObjectOnLoadDescriptions.PushBack(specialObjectDesc);
-			s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateFlag;
+			s_SpecialObjectByPrefixCreateFunctions[specialObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagSpawn;
 		}
 	}
 
 	//Register Create Special Object by Type Functions
 	{
-		s_SpecialObjectByTypeCreateFunctions[ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER] = &LevelObjectCreator::CreatePlayer;
+		s_SpecialObjectByTypeCreateFunctions[ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG_]		= &LevelObjectCreator::CreateFlag;
+		s_SpecialObjectByTypeCreateFunctions[ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER]	= &LevelObjectCreator::CreatePlayer;
+	}
+
+	//Load Object Meshes & Materials
+	{
+		//Flag
+		{
+			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("bunny.obj");
+
+			MaterialProperties materialProperties = {};
+			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+
+			s_FlagMaterialGUID = ResourceManager::LoadMaterialFromMemory(
+				"Flag Material",
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				materialProperties);
+		}
 	}
 
 	return true;
@@ -192,51 +213,64 @@ bool LevelObjectCreator::CreateSpecialObjectOfType(
 	}
 }
 
-ESpecialObjectType LevelObjectCreator::CreateSpawnpoint(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ESpecialObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
 	UNREFERENCED_VARIABLE(specialObject);
 	UNREFERENCED_VARIABLE(createdEntities);
 	UNREFERENCED_VARIABLE(translation);
 
 	LOG_WARNING("[LevelObjectCreator]: Spawnpoint not implemented!");
-	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_SPAWN_POINT;
+	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
-ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ESpecialObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 
-	if (specialObject.MeshComponents.GetSize() > 1)
-	{
-		LOG_WARNING("[LevelObjectCreator]: Special Object \"Flag\" has more than one Mesh Component, this is not currently supported");
-	}
+	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG_SPAWN;
+}
 
-	const MeshComponent& meshComponent = specialObject.MeshComponents[0];
+bool LevelObjectCreator::CreateFlag(
+	const void* pData, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities, 
+	LambdaEngine::TArray<uint64>& saltUIDs)
+{
+	if (pData == nullptr) return false;
 
-	ECSCore* pECS					= ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
+	using namespace LambdaEngine;
+
+	const CreateFlagDesc* pFlagDesc = reinterpret_cast<const CreateFlagDesc*>(pData);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
 
-	pECS->AddComponent<FlagComponent>(entity,		FlagComponent());
-	pECS->AddComponent<OffsetComponent>(entity,		OffsetComponent{ .Offset = glm::vec3(1.0f)});
-	pECS->AddComponent<ParentComponent>(entity,		ParentComponent{ .Attached = false });
+	pECS->AddComponent<FlagComponent>(entity, FlagComponent());
+	pECS->AddComponent<OffsetComponent>(entity, OffsetComponent{ .Offset = glm::vec3(1.0f) });
+	pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Attached = false });
 
 	//Network Stuff
 	{
 		pECS->AddComponent<PacketComponent<FlagEditedPacket>>(entity, {});
 	}
 
-	//Only the server checks collision with the flag
-	if (MultiplayerUtils::IsServer())
+	if (!MultiplayerUtils::IsServer())
 	{
+		pECS->AddComponent<NetworkComponent>(entity, { pFlagDesc->NetworkUID });
+		MultiplayerUtils::RegisterEntity(entity, pFlagDesc->NetworkUID);
+	}
+	else
+	{
+		//Only the server checks collision with the flag
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		entity,
-			/* Position */	 		pECS->AddComponent<PositionComponent>(entity,		{ true, specialObject.DefaultPosition + translation }),
-			/* Scale */				pECS->AddComponent<ScaleComponent>(entity,			{ true, specialObject.DefaultScale }),
-			/* Rotation */			pECS->AddComponent<RotationComponent>(entity,		{ true, specialObject.DefaultRotation }),
-			/* Mesh */				pECS->AddComponent<MeshComponent>(entity,			meshComponent),
+			/* Position */	 		pECS->AddComponent<PositionComponent>(entity,		{ true, pFlagDesc->Position }),
+			/* Scale */				pECS->AddComponent<ScaleComponent>(entity,			{ true, pFlagDesc->Scale }),
+			/* Rotation */			pECS->AddComponent<RotationComponent>(entity,		{ true, pFlagDesc->Rotation }),
+			/* Mesh */				pECS->AddComponent<MeshComponent>(entity,			{ pFlagDesc->MeshGUID, }),
 			/* Shape Type */		EShapeType::TRIGGER,
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
@@ -246,14 +280,14 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
-	}
 
-	//pECS->AddComponent<NetworkComponent>(entity, { pPlayerDesc->NetworkUID });
-	//MultiplayerUtils::RegisterEntity(entity, pPlayerDesc->NetworkUID);
+		pECS->AddComponent<NetworkComponent>(entity, { (int32)entity });
+		MultiplayerUtils::RegisterEntity(entity, (int32)entity);
+	}
 
 	createdEntities.PushBack(entity);
 
-	return ESpecialObjectType::SPECIAL_OBJECT_TYPE_FLAG;
+	return true;
 }
 
 bool LevelObjectCreator::CreatePlayer(

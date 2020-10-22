@@ -21,13 +21,24 @@ namespace LambdaEngine
 
 enum class ESpecialObjectType : uint8
 {
-	SPECIAL_OBJECT_TYPE_NONE			= 0,
-	SPECIAL_OBJECT_TYPE_STATIC_GEOMTRY	= 1,
-	SPECIAL_OBJECT_TYPE_DIR_LIGHT		= 2,
-	SPECIAL_OBJECT_TYPE_POINT_LIGHT		= 3,
-	SPECIAL_OBJECT_TYPE_SPAWN_POINT		= 4,
-	SPECIAL_OBJECT_TYPE_FLAG			= 5,
-	SPECIAL_OBJECT_TYPE_PLAYER			= 6,
+	SPECIAL_OBJECT_TYPE_NONE				= 0,
+	SPECIAL_OBJECT_TYPE_STATIC_GEOMTRY		= 1,
+	SPECIAL_OBJECT_TYPE_DIR_LIGHT			= 2,
+	SPECIAL_OBJECT_TYPE_POINT_LIGHT			= 3,
+	SPECIAL_OBJECT_TYPE_PLAYER_SPAWN		= 4,
+	SPECIAL_OBJECT_TYPE_PLAYER				= 5,
+	SPECIAL_OBJECT_TYPE_FLAG_SPAWN			= 6,
+	SPECIAL_OBJECT_TYPE_FLAG_				= 7,
+};
+
+struct CreateFlagDesc
+{
+	int32								NetworkUID			= -1;
+	LambdaEngine::IClient*				pClient				= nullptr;
+	glm::vec3							Position			= glm::vec3(0.0f);
+	glm::vec3							Scale				= glm::vec3(1.0f);
+	glm::quat							Rotation			= glm::quat();
+	GUID_Lambda							MeshGUID			= GUID_NONE;
 };
 
 struct CreatePlayerDesc
@@ -83,8 +94,14 @@ public:
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::SpecialObjectOnLoadDesc>& GetSpecialObjectOnLoadDescriptions() { return s_SpecialObjectOnLoadDescriptions; }
 
 private:
-	static ESpecialObjectType CreateSpawnpoint(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
-	static ESpecialObjectType CreateFlag(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
+	static ESpecialObjectType CreatePlayerSpawn(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
+	static ESpecialObjectType CreateFlagSpawn(const LambdaEngine::SpecialObjectOnLoad& specialObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
+
+	static bool CreateFlag(
+		const void* pData,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
+		LambdaEngine::TArray<uint64>& saltUIDs);
 
 	static bool CreatePlayer(
 		const void* pData,
@@ -96,4 +113,7 @@ private:
 	inline static LambdaEngine::TArray<LambdaEngine::SpecialObjectOnLoadDesc> s_SpecialObjectOnLoadDescriptions;
 	inline static LambdaEngine::THashTable<LambdaEngine::String, SpecialObjectCreateByPrefixFunc> s_SpecialObjectByPrefixCreateFunctions;
 	inline static LambdaEngine::THashTable<ESpecialObjectType, SpecialObjectCreateByTypeFunc> s_SpecialObjectByTypeCreateFunctions;
+
+	inline static GUID_Lambda s_FlagMeshGUID		= GUID_NONE;
+	inline static GUID_Lambda s_FlagMaterialGUID	= GUID_NONE;
 };

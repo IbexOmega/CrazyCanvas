@@ -82,7 +82,6 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 			if (specialObjectType != ESpecialObjectType::SPECIAL_OBJECT_TYPE_NONE)
 			{
-				
 				m_EntityTypeMap[specialObjectType] = m_Entities.GetSize();
 				m_Entities.PushBack(levelEntities);
 			}
@@ -118,16 +117,6 @@ bool Level::CreateObject(ESpecialObjectType specialObjectType, void* pData)
 	}
 
 	return false;
-}
-
-void Level::SpawnPlayer(
-	const LambdaEngine::MeshComponent& meshComponent, 
-	const LambdaEngine::AnimationComponent& animationComponent, 
-	const LambdaEngine::CameraDesc* pCameraDesc)
-{
-	UNREFERENCED_VARIABLE(meshComponent);
-	UNREFERENCED_VARIABLE(animationComponent);
-	UNREFERENCED_VARIABLE(pCameraDesc);
 }
 
 LambdaEngine::Entity* Level::GetEntities(ESpecialObjectType specialObjectType, uint32& countOut)

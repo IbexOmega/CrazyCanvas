@@ -91,9 +91,6 @@ void ClientFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, Lambd
 {
 	UNREFERENCED_VARIABLE(entity0);
 	UNREFERENCED_VARIABLE(entity1);
-
-	//Handle Flag Collision
-	LOG_WARNING("FLAG COLLIDED Client");
 }
 
 void ClientFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
