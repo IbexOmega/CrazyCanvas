@@ -24,6 +24,11 @@ namespace LambdaEngine
 		return s_pMultiplayerUtility->GetEntity(networkUID);
 	}
 
+	int32 MultiplayerUtils::GetNetworkUID(Entity entity)
+	{
+		return s_pMultiplayerUtility->GetNetworkUID(entity);
+	}
+
 	void MultiplayerUtils::RegisterEntity(Entity entity, int32 networkUID)
 	{
 		s_pMultiplayerUtility->RegisterEntity(entity, networkUID);

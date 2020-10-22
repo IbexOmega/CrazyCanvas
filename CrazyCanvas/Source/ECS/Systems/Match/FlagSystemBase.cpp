@@ -66,27 +66,5 @@ void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
 		LOG_WARNING("[FlagSystemBase]: More than one flag entity exists");
 	}
 
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	if (!m_Flags.Empty())
-	{
-		Entity flagEntity = m_Flags[0];
-
-		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
-
-		if (parentComponent.Attached)
-		{
-			const PositionComponent& parentPositionComponent = pECS->GetComponent<PositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent = pECS->GetComponent<RotationComponent>(parentComponent.Parent);
-
-			const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
-			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
-			RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
-
-			flagPositionComponent.Position		= parentPositionComponent.Position;
-			flagRotationComponent.Quaternion	= flagRotationComponent.Quaternion;
-		}
-	}
-
 	TickInternal(deltaTime);
 }

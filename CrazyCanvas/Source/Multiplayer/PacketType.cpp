@@ -1,6 +1,7 @@
 #include "Multiplayer/PacketType.h"
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
+#include "ECS/Components/Match/FlagComponent.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToComponentType;
@@ -8,12 +9,14 @@ PacketTypeMap PacketType::s_PacketTypeToComponentType;
 uint16 PacketType::CREATE_ENTITY			= 0;
 uint16 PacketType::PLAYER_ACTION			= 0;
 uint16 PacketType::PLAYER_ACTION_RESPONSE	= 0;
+uint16 PacketType::FLAG_EDITED				= 0;
 
 void PacketType::Init()
 {
 	CREATE_ENTITY			= RegisterPacketType();
 	PLAYER_ACTION			= RegisterPacketTypeWithComponent<PlayerAction>();
 	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PlayerActionResponse>();
+	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
 }
 
 uint16 PacketType::RegisterPacketType()

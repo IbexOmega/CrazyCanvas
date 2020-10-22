@@ -30,6 +30,7 @@ namespace LambdaEngine
 
 		static bool IsServer();
 		static Entity GetEntity(int32 networkUID);
+		static int32 GetNetworkUID(Entity entity);
 		static void RegisterEntity(Entity entity, int32 networkUID);
 		static Entity GetEntityPlayer(IClient* pClient);
 		static void RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor);

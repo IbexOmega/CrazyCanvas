@@ -222,6 +222,11 @@ ESpecialObjectType LevelObjectCreator::CreateFlag(const LambdaEngine::SpecialObj
 	pECS->AddComponent<OffsetComponent>(entity,	OffsetComponent{ .Offset = glm::vec3(1.0f)});
 	pECS->AddComponent<ParentComponent>(entity,	ParentComponent{ .Attached = false });
 
+	//Network Stuff
+	{
+		pECS->AddComponent<PacketComponent<FlagEditedPacket>>(entity, {});
+	}
+
 	//Only the server checks collision with the flag
 	if (MultiplayerUtils::IsServer())
 	{

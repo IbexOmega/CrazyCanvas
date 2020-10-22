@@ -13,6 +13,7 @@ namespace LambdaEngine
 		virtual ~ServerUtilsImpl();
 
 		virtual Entity GetEntity(int32 networkUID) const override final;
+		virtual int32 GetNetworkUID(Entity entity) const override final;
 		virtual void RegisterEntity(Entity entity, int32 networkUID) override final;
 
 	private:

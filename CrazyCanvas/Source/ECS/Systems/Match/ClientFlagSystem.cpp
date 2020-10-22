@@ -12,6 +12,8 @@
 
 #include "Resources/ResourceManager.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 ClientFlagSystem::ClientFlagSystem()
 {
 }
@@ -87,10 +89,58 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 void ClientFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
+	UNREFERENCED_VARIABLE(entity0);
+	UNREFERENCED_VARIABLE(entity1);
+
 	//Handle Flag Collision
 	LOG_WARNING("FLAG COLLIDED Client");
 }
 
+void ClientFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
+{
+	using namespace LambdaEngine;
+	componentAccesses.PushBack({ R, PacketComponent<FlagEditedPacket>::Type() });
+}
+
 void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	if (!m_Flags.Empty())
+	{
+		Entity flagEntity = m_Flags[0];
+
+		PacketComponent<FlagEditedPacket>& flagPacketComponent = pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
+		const TArray<FlagEditedPacket>& flagEditedPackets = flagPacketComponent.GetPacketsReceived();
+
+		for (const FlagEditedPacket& editedPacket : flagEditedPackets)
+		{
+			switch (editedPacket.FlagPacketType)
+			{
+			case EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP:
+				OnFlagPickedUp(MultiplayerUtils::GetEntity(editedPacket.PickedUpNetworkUID), flagEntity);
+				break;
+			case EFlagPacketType::FLAG_PACKET_TYPE_DROPPED:
+				OnFlagDropped(flagEntity, editedPacket.DroppedPosition);
+				break;
+			}
+		}
+
+		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+
+		if (parentComponent.Attached)
+		{
+			const PositionComponent& parentPositionComponent = pECS->GetComponent<PositionComponent>(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent = pECS->GetComponent<RotationComponent>(parentComponent.Parent);
+
+			const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
+			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
+			RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
+
+			flagPositionComponent.Position		= parentPositionComponent.Position;
+			flagRotationComponent.Quaternion	= flagRotationComponent.Quaternion;
+		}
+	}
 }
