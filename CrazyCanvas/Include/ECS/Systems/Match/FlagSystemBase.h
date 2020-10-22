@@ -21,6 +21,7 @@ public:
 
 protected:
 	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) {};
+	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) {};
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
 public:
@@ -28,6 +29,9 @@ public:
 	{ 
 		return s_Instance; 
 	}
+
+protected:
+	static void CalculateAttachedFlagPosition(glm::vec3& flagPosition, glm::quat& flagRotation, const glm::vec3& flagOffset, const glm::vec3& parentPosition, const glm::quat parentRotation);
 
 protected:
 	LambdaEngine::IDVector m_Flags;

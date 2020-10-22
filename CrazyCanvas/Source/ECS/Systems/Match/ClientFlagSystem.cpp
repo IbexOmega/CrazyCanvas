@@ -139,8 +139,12 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
 			RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
 
-			flagPositionComponent.Position		= parentPositionComponent.Position;
-			flagRotationComponent.Quaternion	= flagRotationComponent.Quaternion;
+			CalculateAttachedFlagPosition(
+				flagPositionComponent.Position,
+				flagRotationComponent.Quaternion,
+				flagOffsetComponent.Offset,
+				parentPositionComponent.Position,
+				parentRotationComponent.Quaternion);
 		}
 	}
 }
