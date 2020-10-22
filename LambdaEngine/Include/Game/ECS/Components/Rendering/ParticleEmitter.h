@@ -24,7 +24,8 @@ namespace LambdaEngine
 		DECL_COMPONENT_WITH_DIRTY_FLAG(ParticleEmitterComponent);
 		bool			Active				= true;
 		bool			OneTime				= false;
-		bool			Burst				= false;
+		bool			Explosiveness		= false;
+		float			SpawnSpeed			= 0.1f; // Only used if explosive is false.
 		uint32			ParticleCount		= 32U;
 		EParticleShape  ParticleShape		= EParticleShape::BILLBOARD;
 		GUID_Lambda		MeshID				= 0;
@@ -32,6 +33,7 @@ namespace LambdaEngine
 		float			Angle				= 90.f;
 		float			Velocity			= 1.0f;
 		float			Acceleration		= 0.0f;
+		float			Gravity				= -9.81f;
 		float			LifeTime			= 1.0f;
 		float			ParticleRadius		= 1.0f;
 		GUID_Lambda		AtlasGUID			= GUID_NONE;

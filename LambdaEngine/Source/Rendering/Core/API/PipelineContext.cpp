@@ -84,7 +84,7 @@ void LambdaEngine::PipelineContext::CreateConstantRange(const ConstantRangeDesc&
 	}
 }
 
-void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorUpdateDesc& descriptorUpdateDesc)
+void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorBufferUpdateDesc& descriptorUpdateDesc)
 {
 	auto descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap);
 	if (descriptorSet != nullptr)
@@ -93,9 +93,33 @@ void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname,
 			descriptorUpdateDesc.ppBuffers,
 			descriptorUpdateDesc.pOffsets,
 			descriptorUpdateDesc.pSizes,
-			descriptorUpdateDesc.firstBinding,
-			descriptorUpdateDesc.descriptorCount,
-			EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+			descriptorUpdateDesc.FirstBinding,
+			descriptorUpdateDesc.DescriptorCount,
+			descriptorUpdateDesc.DescriptorType
+		);
+
+		m_DescriptorSets[setIndex] = descriptorSet;
+	}
+	else
+	{
+		LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+	}
+}
+
+void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTextureUpdateDesc& descriptorUpdateDesc)
+{
+	auto& descriptorSet = m_DescriptorSets[setIndex];
+	descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap);
+	if (descriptorSet != nullptr)
+	{
+		descriptorSet->WriteTextureDescriptors(
+			descriptorUpdateDesc.ppTextures,
+			descriptorUpdateDesc.ppSamplers,
+			descriptorUpdateDesc.TextureState,
+			descriptorUpdateDesc.FirstBinding,
+			descriptorUpdateDesc.DescriptorCount,
+			descriptorUpdateDesc.DescriptorType,
+			descriptorUpdateDesc.UniqueSamplers
 		);
 
 		m_DescriptorSets[setIndex] = descriptorSet;

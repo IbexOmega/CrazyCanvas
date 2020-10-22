@@ -3,6 +3,7 @@
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
 #include "../Defines.glsl"
+#include "../Helpers.glsl"
 
 #define WORK_GROUP_INVOCATIONS 32
 layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1) in;
@@ -37,6 +38,7 @@ void main()
 	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint indexOffset = gl_GlobalInvocationID.x;
 	const float dt = u_PC.DeltaTime;
+	const vec3 GLOBAL_DOWN = vec3(0.f, 1.f, 0.f);
 
 	while (indexOffset < u_PC.ParticleCount)
 	{
@@ -55,15 +57,24 @@ void main()
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
 		}
 
-		particle.Velocity += particle.Acceleration * dt;
+		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 		particle.Transform[3].xyz += particle.Velocity*dt;
 
 		particle.CurrentLife -= dt;
 
+		// If the particle is not visible, put it outside the view of the players.
+		const float OUT_OF_REACH = 10000.f;
+		if(particle.CurrentLife > particle.LifeTime)
+		{
+			particle.Transform[3].xyz = vec3(OUT_OF_REACH);
+			particle.WasCreated = true;
+		}
+
 		// Should only happen if it is an emitter that repeats.
 		if(particle.CurrentLife < 0.f)
 		{
-			particle.CurrentLife = emitter.LifeTime;
+			float extraLife = mod(abs(particle.CurrentLife), particle.LifeTime);
+			particle.CurrentLife = particle.LifeTime-extraLife;
 			particle.Transform[3].xyz = particle.StartPosition + emitterTransform[3].xyz;
 			particle.Velocity = particle.StartVelocity;
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
@@ -71,7 +82,7 @@ void main()
 			particle.TileIndex = emitter.FirstAnimationIndex;
 		}
 
-		float t = particle.CurrentLife/emitter.LifeTime;
+		float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
 		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
 
 		b_ParticleInstances.Val[indexOffset] = particle;

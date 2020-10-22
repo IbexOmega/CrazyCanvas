@@ -25,6 +25,8 @@ namespace LambdaEngine
 	struct ParticleEmitterInstance
 	{
 		bool			OneTime = false;
+		bool			Explosiveness = false;
+		float			SpawnSpeed; // This will be used if not explosive.
 		glm::vec3		Position;
 		glm::quat		Rotation;
 		float			Angle = 90.f;
@@ -55,6 +57,10 @@ namespace LambdaEngine
 		uint32 EmitterIndex;
 		glm::vec3 StartAcceleration;
 		bool WasCreated = true;
+		float LifeTime;
+		uint32 Padding0 = 0;
+		uint32 Padding1 = 0;
+		uint32 Padding2 = 0;
 	};
 
 	struct SEmitter
@@ -65,9 +71,9 @@ namespace LambdaEngine
 		uint32 AtlasIndex;
 		uint32 AnimationCount;
 		uint32 FirstAnimationIndex;
-		uint32 padding0			= 0;
-		uint32 padding1			= 0;
-		uint32 padding2			= 0;
+		float Gravity;
+		uint32 Padding1 = 0;
+		uint32 Padding2 = 0;
 	};
 
 	struct SAtlasInfo
