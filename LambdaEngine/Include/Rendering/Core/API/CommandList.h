@@ -382,6 +382,13 @@ namespace LambdaEngine
 
 		virtual uint64 GetHandle() const = 0;
 
+		/*
+		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on
+		* the returned pointer
+		*	return - Returns a valid pointer if successful otherwise nullptr
+		*/
+		virtual CommandAllocator* GetAllocator() = 0;
+
 		FORCEINLINE const CommandListDesc& GetDesc() const
 		{
 			return m_Desc;
@@ -396,13 +403,6 @@ namespace LambdaEngine
 		{ 
 			return m_IsBegin;
 		}
-
-		/*
-		* Returns a pointer to the allocator used to allocate this commandlist. Caller should call Release on
-		* the returned pointer
-		*	return - Returns a valid pointer if successful otherwise nullptr
-		*/
-		virtual CommandAllocator* GetAllocator() = 0;
 
 	protected:
 		ECommandQueueType	m_QueueType = ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;

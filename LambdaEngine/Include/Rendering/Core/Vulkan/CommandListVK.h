@@ -72,12 +72,12 @@ namespace LambdaEngine
 		virtual void CopyTextureFromBuffer(
 			const Buffer* pSrc,
 			Texture* pDst,
-			const CopyTextureFromBufferDesc& desc) override final;
+			const CopyTextureBufferDesc& desc) override final;
 
 		virtual void CopyTextureToBuffer(
 			const Texture* pSrc,
 			Buffer* pDst,
-			const CopyTextureFromBufferDesc& desc) override final;
+			const CopyTextureBufferDesc& desc) override final;
 
 		virtual void BlitTexture(
 			const Texture* pSrc,
@@ -220,6 +220,8 @@ namespace LambdaEngine
 
 		virtual void FlushDeferredBarriers() override final;
 		virtual void FlushDeferredResources() override final;
+
+		virtual CommandAllocator* GetAllocator() override final;
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{
