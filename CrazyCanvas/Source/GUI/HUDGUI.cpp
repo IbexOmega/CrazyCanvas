@@ -116,7 +116,7 @@ bool HUDGUI::UpdateScore()
 	return true;
 }
 
-bool HUDGUI::UpdateAmmo(const int32 currentAmmo, const int32 ammoCap)
+bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap)
 {
 	//Returns false if Out Of Ammo
 	std::string ammoString;

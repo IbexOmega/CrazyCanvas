@@ -59,8 +59,8 @@ void HUDSystem::FixedTick(Timestamp delta)
 	UNREFERENCED_VARIABLE(delta);
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 	for (Entity weaponEntity : m_WeaponEntities)
 	{

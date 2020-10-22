@@ -233,19 +233,16 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 
 void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
 {
-	if (!m_Servers.empty())
+	for (auto& server : m_Servers)
 	{
-		for (auto& server : m_Servers)
+		if (server.second.ServerGrid == pGrid)
 		{
-			if (server.second.ServerGrid == pGrid)
-			{
-				LambdaEngine::GUIApplication::SetView(nullptr);
+			LambdaEngine::GUIApplication::SetView(nullptr);
 
-				SetRenderStagesActive();
+			SetRenderStagesActive();
 
-				State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
-				StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-			}
+			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
+			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 		}
 	}
 }
@@ -254,9 +251,11 @@ bool LobbyGUI::CheckServerStatus()
 {
 	TArray<uint64> serversToRemove;
 
+	Timestamp deltaTime;
+
 	for (auto& server : m_Servers)
 	{
-		Timestamp deltaTime = EngineLoop::GetTimeSinceStart() - server.second.LastUpdate;
+		deltaTime = EngineLoop::GetTimeSinceStart() - server.second.LastUpdate;
 
 		if (deltaTime.AsSeconds() > 5)
 		{
