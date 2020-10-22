@@ -11,7 +11,6 @@
 #include "Multiplayer/MultiplayerServer.h"
 
 class Level;
-class FlagSystemBase;
 
 class ServerState :
 	public LambdaEngine::State
@@ -38,6 +37,4 @@ private:
 	Level* m_pLevel = nullptr;
 	std::string m_ServerName;
 	MultiplayerServer m_MultiplayerServer;
-
-	FlagSystemBase* m_pFlagSystem = nullptr;
 };

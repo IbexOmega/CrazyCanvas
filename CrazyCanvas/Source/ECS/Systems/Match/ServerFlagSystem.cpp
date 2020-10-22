@@ -32,7 +32,7 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 	job.Components =
 	{
 		{ ComponentPermissions::R,	CharacterColliderComponent::Type() },
-		{ ComponentPermissions::RW,	StaticCollisionComponent::Type() },
+		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
 		{ ComponentPermissions::RW,	ParentComponent::Type() },
 		{ ComponentPermissions::RW,	OffsetComponent::Type() }
 	};
@@ -43,7 +43,7 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 
 		const CharacterColliderComponent& playerCollisionComponent	= pECS->GetConstComponent<CharacterColliderComponent>(playerEntity);
 
-		StaticCollisionComponent& flagCollisionComponent	= pECS->GetComponent<StaticCollisionComponent>(flagEntity);
+		DynamicCollisionComponent& flagCollisionComponent	= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 		ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
 		OffsetComponent& flagOffsetComponent				= pECS->GetComponent<OffsetComponent>(flagEntity);
 
@@ -129,7 +129,7 @@ void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, Lambd
 	//Handle Flag Collision
 	LOG_WARNING("FLAG COLLIDED Server");
 
-	OnFlagPickedUp(entity1, entity0);
+	//OnFlagPickedUp(entity1, entity0);
 }
 
 void ServerFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)

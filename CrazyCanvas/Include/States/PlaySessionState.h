@@ -42,8 +42,6 @@ private:
 
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
-	FlagSystemBase* m_pFlagSystem = nullptr;
-
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

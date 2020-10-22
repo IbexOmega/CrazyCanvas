@@ -31,7 +31,6 @@
 
 #include "Multiplayer/PacketType.h"
 
-#include "ECS/Systems/Match/ClientFlagSystem.h"
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 	m_pIPAddress(pIPAddress),
 	m_MultiplayerClient()
@@ -42,7 +41,6 @@ PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 PlaySessionState::~PlaySessionState()
 {
 	SAFEDELETE(m_pLevel);
-	SAFEDELETE(m_pFlagSystem);
 }
 
 void PlaySessionState::Init()
@@ -57,9 +55,6 @@ void PlaySessionState::Init()
 	m_MultiplayerClient.InitInternal();
 
 	m_HUDSecondaryState.Init();
-
-	m_pFlagSystem = DBG_NEW ClientFlagSystem();
-	m_pFlagSystem->Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 

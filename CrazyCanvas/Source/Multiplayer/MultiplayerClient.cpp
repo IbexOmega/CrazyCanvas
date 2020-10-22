@@ -9,13 +9,16 @@ MultiplayerClient::MultiplayerClient() :
 
 MultiplayerClient::~MultiplayerClient()
 {
-
+	SAFEDELETE(m_pFlagSystem);
 }
 
 void MultiplayerClient::Init()
 {
 	m_PlayerLocal.Init();
 	m_PlayerForeignSystem.Init();
+
+	m_pFlagSystem = DBG_NEW ClientFlagSystem();
+	m_pFlagSystem->Init();
 }
 
 void MultiplayerClient::TickMainThread(LambdaEngine::Timestamp deltaTime)

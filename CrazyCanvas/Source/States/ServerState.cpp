@@ -45,7 +45,6 @@ ServerState::~ServerState()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 
 	SAFEDELETE(m_pLevel);
-	SAFEDELETE(m_pFlagSystem);
 }
 
 void ServerState::Init()
@@ -60,9 +59,6 @@ void ServerState::Init()
 	m_MultiplayerServer.InitInternal();
 
 	m_ServerName = "Crazy Canvas Server";
-
-	m_pFlagSystem = DBG_NEW ServerFlagSystem();
-	m_pFlagSystem->Init();
 
 	// Load scene
 	{
