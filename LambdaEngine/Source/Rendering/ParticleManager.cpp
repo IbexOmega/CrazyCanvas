@@ -472,6 +472,7 @@ namespace LambdaEngine
 			instance.AnimationCount = emitterComp.AnimationCount;
 			instance.TileIndex = emitterComp.TileIndex;
 			instance.FirstAnimationIndex = emitterComp.FirstAnimationIndex;
+			instance.SpawnSpeed = emitterComp.SpawnSpeed;
 			instance.DataIndex = m_IndirectData.GetSize();
 			instance.Color = emitterComp.Color;
 			emitterInstance = instance;
@@ -502,6 +503,7 @@ namespace LambdaEngine
 			emitterData.Radius = emitterInstance.ParticleRadius;
 			emitterData.AnimationCount = emitterInstance.AnimationCount;
 			emitterData.FirstAnimationIndex = emitterInstance.FirstAnimationIndex;
+			emitterData.Gravity = emitterComp.Gravity;
 			// Fetch default texture if none is set
 			GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
 			if (atlasGUID == GUID_NONE)
