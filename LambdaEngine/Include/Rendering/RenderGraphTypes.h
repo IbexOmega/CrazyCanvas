@@ -7,6 +7,7 @@
 
 #include "Containers/String.h"
 #include "Containers/TSet.h"
+#include "ECS/Entity.h"
 
 namespace LambdaEngine
 {
@@ -333,6 +334,8 @@ namespace LambdaEngine
 
 	struct DrawArg
 	{
+		TArray<Entity> EntityIDs;
+
 		Buffer* pVertexBuffer			= nullptr;
 		Buffer* pIndexBuffer			= nullptr;
 		Buffer* pInstanceBuffer			= nullptr;
