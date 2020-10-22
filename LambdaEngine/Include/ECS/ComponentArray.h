@@ -58,6 +58,10 @@ namespace LambdaEngine
 
 		Comp& Insert(Entity entity, const Comp& comp);
 
+		// Fills comp with component data, sets dirty flag if one exists and returns whether the component exists
+		bool GetIf(Entity entity, Comp& comp);
+		// Fills comp with component data and returns whether the component exists
+		bool GetConstIf(Entity entity, Comp& comp) const;
 		Comp& GetData(Entity entity);
 		const Comp& GetConstData(Entity entity) const;
 
@@ -106,6 +110,39 @@ namespace LambdaEngine
 		m_EntityToIndex[entity] = newIndex;
 		m_IDs.PushBack(entity);
 		return m_Data.PushBack(comp);
+	}
+
+	template<typename Comp>
+	bool ComponentArray<Comp>::GetIf(Entity entity, Comp& comp)
+	{
+		auto indexItr = m_EntityToIndex.find(entity);
+		if (indexItr == m_EntityToIndex.end())
+		{
+			return false;
+		}
+
+		comp = m_Data[indexItr->second];
+
+		if constexpr (Comp::HasDirtyFlag())
+		{
+			comp.Dirty = true;
+		}
+
+		return true;
+	}
+
+	template<typename Comp>
+	bool ComponentArray<Comp>::GetConstIf(Entity entity, Comp& comp) const
+	{
+		auto indexItr = m_EntityToIndex.find(entity);
+		if (indexItr == m_EntityToIndex.end())
+		{
+			return false;
+		}
+
+		comp = m_Data[indexItr->second];
+
+		return true;
 	}
 
 	template<typename Comp>
