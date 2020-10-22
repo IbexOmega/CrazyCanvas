@@ -11,6 +11,8 @@ layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
+	uint	Width;
+	uint	Height;
 	float   DeltaTime;
     uint    ParticleCount; 
 } u_PC;
@@ -31,12 +33,22 @@ layout(binding = 2, set = BUFFER_SET_INDEX) readonly restrict buffer EmitterTran
 	mat4 Val[]; 
 } b_EmitterTransforms;
 
+layout (binding = 3, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+{
+	SPerFrameBuffer perFrameBuffer;
+} u_PerFrameBuffer;
+
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_DepthTexture;
+//layout(binding = 0,		set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_NormalTexture;
+//layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalTexture;
+
 // Main
 void main()
 {
 	// Return in case this thread is outside of our ParticleCount
 	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint indexOffset = gl_GlobalInvocationID.x;
+	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
 	const float dt = u_PC.DeltaTime;
 	const vec3 GLOBAL_DOWN = vec3(0.f, 1.f, 0.f);
 
@@ -58,8 +70,22 @@ void main()
 			particle.CurrentLife = particle.LifeTime + particle.LifeTimeOffset;
 		}
 
+		/*vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
+		vec4 vpPos = frameBuffer.View * vec4(nextPos, 1.f);
+		vec2 uv = vpPos.xy / vpPos.w * 0.5f + 0.5f;
+		ivec2 pixelCoord = ivec2(int(float(u_PC.Width)*uv.x), int(float(u_PC.Height)*uv.y));
+		vec3 normal = UnpackNormal(imageLoad(u_NormalTexture, pixelCoord).xyz);
+		float depth = 0.f;//texture(u_DepthTexture, uv).r;
+		float pDepth = vpPos.z / vpPos.w;
+
+		if(pDepth > depth)
+		{
+			particle.Velocity -= dot(particle.Velocity, normal) * normal;
+		}*/
+
 		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 		particle.Transform[3].xyz += particle.Velocity*dt;
+
 
 		particle.CurrentLife -= dt;
 

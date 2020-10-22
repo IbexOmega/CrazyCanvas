@@ -11,6 +11,8 @@ namespace LambdaEngine
 	{
 		struct PushConstantData
 		{
+			uint32 Width;
+			uint32 Height;
 			float delta;
 			uint32 particleCount;
 		};

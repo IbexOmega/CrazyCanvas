@@ -31,15 +31,6 @@ namespace LambdaEngine
 
 		// Copy Descriptor set in use into Descriptor if it exists
 		uint32 inUseIndex = 0;
-		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty())
-		{
-			inUseIndex = m_NewDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
-			if (inUseIndex < m_NewDescriptorSets[descriptorLayoutIndex].GetSize())
-			{
-				RenderAPI::GetDevice()->CopyDescriptorSet(m_NewDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
-			}
-		}
-		
 		if (!m_InUseDescriptorSets[descriptorLayoutIndex].IsEmpty())
 		{
 			inUseIndex = m_InUseDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
@@ -49,6 +40,14 @@ namespace LambdaEngine
 			}
 		}
 
+		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty())
+		{
+			inUseIndex = m_NewDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
+			if (inUseIndex < m_NewDescriptorSets[descriptorLayoutIndex].GetSize())
+			{
+				RenderAPI::GetDevice()->CopyDescriptorSet(m_NewDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+			}
+		}
 
 		// Track Descriptor sets in use
 		m_NewDescriptorSets[descriptorLayoutIndex].PushBack(ds);

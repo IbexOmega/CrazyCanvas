@@ -20,6 +20,8 @@ namespace LambdaEngine
 
 		m_ParticleCount = 0;
 		m_PushConstant.particleCount = 0;
+		m_PushConstant.Width = 0;
+		m_PushConstant.Height = 0;
 	}
 
 	ParticleUpdater::~ParticleUpdater()
@@ -57,12 +59,27 @@ namespace LambdaEngine
 		instanceBindingDesc2.Binding = 2;
 		instanceBindingDesc2.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
+		DescriptorBindingDesc instanceBindingDesc3 = {};
+		instanceBindingDesc3.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		instanceBindingDesc3.DescriptorCount = 1;
+		instanceBindingDesc3.Binding = 3;
+		instanceBindingDesc3.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
 		// Set 0
-		m_UpdatePipeline.CreateDescriptorSetLayout({ instanceBindingDesc0, instanceBindingDesc1, instanceBindingDesc2 });
+		m_UpdatePipeline.CreateDescriptorSetLayout({ instanceBindingDesc0, instanceBindingDesc1, instanceBindingDesc2, instanceBindingDesc3 });
+
+		DescriptorBindingDesc normalBindingDesc = {};
+		normalBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		normalBindingDesc.DescriptorCount = 1;
+		normalBindingDesc.Binding = 0;
+		normalBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		// Set 1
+		m_UpdatePipeline.CreateDescriptorSetLayout({ normalBindingDesc });
 
 		ConstantRangeDesc constantRange = {};
 		constantRange.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		constantRange.SizeInBytes = sizeof(float) * 2.0f;
+		constantRange.SizeInBytes = sizeof(float) * 4.0f;
 		constantRange.OffsetInBytes = 0;
 
 		m_UpdatePipeline.CreateConstantRange(constantRange);
@@ -74,9 +91,9 @@ namespace LambdaEngine
 	{
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount = 0;
-		descriptorCountDesc.TextureDescriptorCount = 0;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
-		descriptorCountDesc.ConstantBufferDescriptorCount = 0;
+		descriptorCountDesc.TextureDescriptorCount = 1;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 1;
+		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 3;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
@@ -211,6 +228,46 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(imageCount);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
+
+		if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+		{
+			constexpr uint32 setIndex = 1U;
+			constexpr uint32 setBinding = 0U;
+
+			Sampler* sampler = Sampler::GetLinearSampler();
+			SDescriptorTextureUpdateDesc descriptorUpdateDesc = {};
+			descriptorUpdateDesc.ppTextures = &ppPerImageTextureViews[0];
+			descriptorUpdateDesc.ppSamplers = &sampler;
+			descriptorUpdateDesc.TextureState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = 1;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			descriptorUpdateDesc.UniqueSamplers = true;
+
+			m_UpdatePipeline.UpdateDescriptorSet("Particle Depth Texture Descriptor Set 1 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+		}
+		//else 
+			
+		/*if (resourceName == "G_BUFFER_COMPACT_NORMAL")
+		{
+			constexpr uint32 setIndex = 1U;
+			constexpr uint32 setBinding = 0U;
+
+			Sampler* sampler = Sampler::GetLinearSampler();
+			SDescriptorTextureUpdateDesc descriptorUpdateDesc = {};
+			descriptorUpdateDesc.ppTextures = &ppPerImageTextureViews[0];
+			descriptorUpdateDesc.ppSamplers = &sampler;
+			descriptorUpdateDesc.TextureState = ETextureState::TEXTURE_STATE_GENERAL;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = 1;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			descriptorUpdateDesc.UniqueSamplers = true;
+
+			m_PushConstant.Width = ppPerImageTextureViews[0]->GetDesc().pTexture->GetDesc().Width;
+			m_PushConstant.Height = ppPerImageTextureViews[0]->GetDesc().pTexture->GetDesc().Height;
+
+			m_UpdatePipeline.UpdateDescriptorSet("Particle Depth Texture Descriptor Set 1 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+		}*/
 	}
 
 	void ParticleUpdater::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
@@ -222,7 +279,22 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
-		if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
+		if (resourceName == PER_FRAME_BUFFER)
+		{
+			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 3U;
+
+			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+			descriptorUpdateDesc.ppBuffers = ppBuffers;
+			descriptorUpdateDesc.pOffsets = pOffsets;
+			descriptorUpdateDesc.pSizes = pSizesInBytes;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = count;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+
+			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 3", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+		}
+		else if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
 		{
 			constexpr uint32 setIndex = 0U;
 			constexpr uint32 setBinding = 0U;
