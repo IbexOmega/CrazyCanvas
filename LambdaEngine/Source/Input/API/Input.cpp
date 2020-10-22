@@ -3,6 +3,7 @@
 #include "Application/API/Events/EventQueue.h"
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
+#include "Application/API/Events/WindowEvents.h"
 
 namespace LambdaEngine
 {
@@ -17,7 +18,24 @@ namespace LambdaEngine
 	*/
 	bool Input::HandleEvent(const Event& event)
 	{
-		if (s_InputEnabled)
+		// Disable or enable based on if the window is active
+		if (IsEventOfType<WindowFocusChangedEvent>(event))
+		{
+			const WindowFocusChangedEvent& focusEvent = EventCast<WindowFocusChangedEvent>(event);
+			if (focusEvent.HasFocus)
+			{
+				Enable();
+			}
+			else
+			{
+				Disable();
+			}
+
+			return true;
+		}
+
+		// Update input
+		if (IsInputEnabled())
 		{
 			if (IsEventOfType<KeyPressedEvent>(event))
 			{
@@ -39,7 +57,7 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 				const MouseButtonClickedEvent& mouseEvent = EventCast<MouseButtonClickedEvent>(event);
-				s_MouseStates[STATE_WRITE_INDEX].ButtonStates[mouseEvent.Button] = s_InputEnabled;
+				s_MouseStates[STATE_WRITE_INDEX].ButtonStates[mouseEvent.Button] = IsInputEnabled();
 
 				return true;
 			}
@@ -87,6 +105,7 @@ namespace LambdaEngine
 		result = result && EventQueue::RegisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<MouseMovedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<MouseScrolledEvent>(eventHandler);
+		result = result && EventQueue::RegisterEventHandler<WindowFocusChangedEvent>(eventHandler);
 		return result;
 	}
 
@@ -101,6 +120,7 @@ namespace LambdaEngine
 		result = result && EventQueue::UnregisterEventHandler<MouseButtonReleasedEvent>(eventHandler);
 		result = result && EventQueue::UnregisterEventHandler<MouseMovedEvent>(eventHandler);
 		result = result && EventQueue::UnregisterEventHandler<MouseScrolledEvent>(eventHandler);
+		result = result && EventQueue::UnregisterEventHandler<WindowFocusChangedEvent>(eventHandler);
 		return result;
 	}
 
