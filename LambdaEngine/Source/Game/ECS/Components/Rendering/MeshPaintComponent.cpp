@@ -19,7 +19,7 @@ namespace LambdaEngine
 		char* pData = DBG_NEW char[width * height * 4];
 		memset(pData, 0, width * height * 4);
 
-		meshPaintComponent.pTexture = ResourceLoader::LoadTextureArrayFromMemory(textureName, reinterpret_cast<void**>(&pData), 1, width, height, EFormat::FORMAT_R8_UINT, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, false);
+		meshPaintComponent.pTexture = ResourceLoader::LoadTextureArrayFromMemory(textureName, reinterpret_cast<void**>(&pData), 1, width, height, EFormat::FORMAT_R8_UINT, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, true, false);
 
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= textureName + " Texture View";
