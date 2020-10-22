@@ -4,7 +4,7 @@
 
 #include "Game/State.h"
 
-#include "States/HUDState.h"
+#include "ECS/Systems/GUI/HUDSystem.h"
 
 #include "Application/API/Events/NetworkEvents.h"
 
@@ -29,17 +29,17 @@ public:
 	void Pause() override final {};
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
+	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 private:
 	Level* m_pLevel = nullptr;
 
 	LambdaEngine::IPAddress* m_pIPAddress;
 
-	HUDState m_HUDSecondaryState;
-
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
 	HealthSystem m_HealthSystem;
+	HUDSystem m_HUDSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

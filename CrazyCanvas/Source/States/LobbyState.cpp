@@ -37,3 +37,8 @@ void LobbyState::Tick(LambdaEngine::Timestamp delta)
 {
 
 }
+
+void LobbyState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	m_LobbyGUI->FixedTick(delta);
+}

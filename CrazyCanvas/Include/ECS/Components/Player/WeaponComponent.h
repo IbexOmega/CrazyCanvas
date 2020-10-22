@@ -19,4 +19,5 @@ struct WeaponComponent
 	float32	CurrentCooldown		= 0.0f; // Time until the weapon can be fired again
 	float32 ReloadClock			= 0.0f;
 	int32	CurrentAmmunition	= AMMO_CAPACITY;
+	int32   AmmoCapacity		= AMMO_CAPACITY;
 };
