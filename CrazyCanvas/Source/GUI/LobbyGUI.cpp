@@ -23,11 +23,7 @@
 
 #include <string>
 #include <sstream>
-
-#include <processthreadsapi.h>
-
-STARTUPINFO lpStartupInfo;
-PROCESS_INFORMATION lpProcessInfo;
+#include <wchar.h>
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -154,18 +150,6 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	/*
-	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
-	lpStartupInfo.cb = sizeof(lpStartupInfo);
-	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
-
-	CreateProcess(L"Server.exe",
-		L"--state server", NULL, NULL,
-		NULL, NULL, NULL, NULL,
-		&lpStartupInfo,
-		&lpProcessInfo
-	);*/
-
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
 	ErrorPopUp(OTHER_ERROR);
@@ -191,7 +175,6 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	else
 	{
 		//start Server with populated struct
-		ServerSystem::GetInstance().Start();
 	
 		LambdaEngine::GUIApplication::SetView(nullptr);
 
@@ -199,6 +182,8 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 
 		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+
+		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
 	}
 }
 
@@ -285,6 +270,49 @@ void LobbyGUI::HostServer()
 	encoder3.WriteVec3(glm::vec3(0, 2, 0));
 	OnPacketReceived(m_pClient, pPacket);
 	m_pClient->ReturnPacket(pPacket);*/
+}
+
+bool LobbyGUI::StartUpServer(const char* pApplicationName, char* pCommandLine)
+{
+	//additional Info
+	STARTUPINFOA lpStartupInfo;
+	PROCESS_INFORMATION lpProcessInfo;
+
+	// set the size of the structures
+	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
+	lpStartupInfo.cb = sizeof(lpStartupInfo);
+	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
+
+	SetLastError(0);
+
+	if (!CreateProcessA(
+		pApplicationName,
+		pCommandLine,	//Command line
+		NULL,			// Process handle not inheritable
+		NULL,			// Thread handle not inheritable
+		NULL, 
+		NULL,			// No creation flags
+		NULL,			// Use parent's environment block
+		NULL,			// Use parent's starting directory
+		&lpStartupInfo,
+		&lpProcessInfo)
+		)
+	{
+		int dError2 = GetLastError();
+
+		LOG_ERROR("Create Process LastError: %d", dError2);
+		return false;
+	}
+	else
+	{
+		LOG_MESSAGE("Create Process Success");
+
+		// Close process and thread handles. 
+		CloseHandle(lpProcessInfo.hProcess);
+		CloseHandle(lpProcessInfo.hThread);
+
+		return true;
+	}
 }
 
 void LobbyGUI::SetRenderStagesActive()

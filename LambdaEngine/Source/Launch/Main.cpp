@@ -4,6 +4,7 @@
 
 #include <argh/argh.h>
 
+
 namespace LambdaEngine
 {
 	extern Game* CreateGame(const argh::parser& flagParser);
@@ -15,6 +16,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	int argc = __argc;
 	char** argv = __argv;
+
+
 
 #else
 int main(int argc, char** argv)
