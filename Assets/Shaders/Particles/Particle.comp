@@ -38,17 +38,25 @@ void main()
 	uint indexOffset = gl_GlobalInvocationID.x;
 	const float dt = u_PC.DeltaTime;
 
-	while (indexOffset < u_PC.ParticleCount){
-
+	while (indexOffset < u_PC.ParticleCount)
+	{
 		// Update particle data 
 		SParticle particle = b_ParticleInstances.Val[indexOffset];
 		SEmitter emitter = b_EmitterInstances.Val[particle.EmitterIndex];
 		mat4 emitterTransform = b_EmitterTransforms.Val[particle.EmitterIndex];
 
-		mat4 rotationTransform = emitterTransform;
-		rotationTransform[3].xyz = vec3(0.0); // Ignore translation
+		if(particle.WasCreated)
+		{
+			particle.WasCreated = false;
+			particle.Transform[3].xyz += emitterTransform[3].xyz;
+
+			// Rotate the initial acceleration and velocity to match its emitter's.
+			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
+			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
+		}
+
 		particle.Velocity += particle.Acceleration * dt;
-		particle.Transform[3].xyz += (rotationTransform * vec4(particle.Velocity, 1.0)).xyz * dt;
+		particle.Transform[3].xyz += particle.Velocity*dt;
 
 		particle.CurrentLife -= dt;
 
@@ -58,6 +66,8 @@ void main()
 			particle.CurrentLife = emitter.LifeTime;
 			particle.Transform[3].xyz = particle.StartPosition + emitterTransform[3].xyz;
 			particle.Velocity = particle.StartVelocity;
+			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
+			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
 			particle.TileIndex = emitter.FirstAnimationIndex;
 		}
 

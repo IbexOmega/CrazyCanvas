@@ -53,6 +53,8 @@ namespace LambdaEngine
 		uint32 TileIndex;
 		glm::vec3 StartPosition;
 		uint32 EmitterIndex;
+		glm::vec3 StartAcceleration;
+		bool WasCreated = true;
 	};
 
 	struct SEmitter

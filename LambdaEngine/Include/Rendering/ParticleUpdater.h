@@ -3,7 +3,7 @@
 #include "RenderGraphTypes.h"
 #include "ICustomRenderer.h"
 
-#include "Rendering/Core/API/DescriptorCache.h"
+#include "Rendering/Core/API/PipelineContext.h"
 
 namespace LambdaEngine
 {
@@ -56,25 +56,16 @@ namespace LambdaEngine
 		bool CreateDescriptorSets();
 		bool CreateShaders();
 		bool CreateCommandLists();
-		bool CreatePipelineState();
 
 	private:
 		bool								m_Initilized = false;
 		uint32								m_ParticleCount;
 		uint32								m_EmitterCount;
 
-
-		GUID_Lambda							m_ComputeShaderGUID			= 0;
-
 		PushConstantData					m_PushConstant;
 
-		uint64								m_PipelineStateID			= 0;
-		TSharedRef<PipelineLayout>			m_PipelineLayout			= nullptr;
 		TSharedRef<DescriptorHeap>			m_DescriptorHeap			= nullptr;
-
-		// Descriptor sets
-		TSharedRef<DescriptorSet>			m_InstanceDescriptorSet;
-		DescriptorCache						m_DescriptorCache;
+		PipelineContext						m_UpdatePipeline;
 
 		uint32								m_BackBufferCount = 0;
 
