@@ -151,19 +151,22 @@ namespace LambdaEngine
 		const ParticleEmitterComponent& emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
 
 		ParticleEmitterInstance instance = {};
-		instance.Position			= positionComp.Position;
-		instance.Rotation			= rotationComp.Quaternion;
-		instance.ParticleChunk.Size = emitterComp.ParticleCount;
-		instance.OneTime			= emitterComp.OneTime;
-		instance.Angle				= emitterComp.Angle;
-		instance.Velocity			= emitterComp.Velocity;
-		instance.Acceleration		= emitterComp.Acceleration;
-		instance.LifeTime			= emitterComp.LifeTime;
-		instance.BeginRadius		= emitterComp.BeginRadius * 0.5f;
-		instance.EndRadius			= emitterComp.EndRadius * 0.5f;
-		instance.Explosive			= emitterComp.Explosive;
-		instance.SpawnSpeed			= emitterComp.SpawnSpeed;
-		instance.Color				= emitterComp.Color;
+		instance.Position				= positionComp.Position;
+		instance.Rotation				= rotationComp.Quaternion;
+		instance.ParticleChunk.Size		= emitterComp.ParticleCount;
+		instance.OneTime				= emitterComp.OneTime;
+		instance.Angle					= emitterComp.Angle;
+		instance.VelocityRandomness		= emitterComp.VelocityRandomness;
+		instance.Velocity				= emitterComp.Velocity;
+		instance.AccelerationRandomness	= emitterComp.AccelerationRandomness;
+		instance.Acceleration			= emitterComp.Acceleration;
+		instance.LifeTime				= emitterComp.LifeTime;
+		instance.RadiusRandomness		= emitterComp.RadiusRandomness;
+		instance.BeginRadius			= emitterComp.BeginRadius * 0.5f;
+		instance.EndRadius				= emitterComp.EndRadius * 0.5f;
+		instance.Explosive				= emitterComp.Explosive;
+		instance.SpawnSpeed				= emitterComp.SpawnSpeed;
+		instance.Color					= emitterComp.Color;
 
 		GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
 		if (atlasGUID == GUID_NONE)
@@ -335,11 +338,11 @@ namespace LambdaEngine
 
 			particle.StartPosition = glm::vec3(0.f);
 			particle.Transform = glm::identity<glm::mat4>();
-			particle.Velocity = direction * emitterInstance.Velocity;
+			particle.Velocity = direction * (emitterInstance.Velocity * (1.0f - emitterInstance.VelocityRandomness) + emitterInstance.Velocity * Random::Float32(0.f, emitterInstance.VelocityRandomness));
 			particle.StartVelocity = particle.Velocity;
-			particle.BeginRadius = emitterInstance.BeginRadius;
+			particle.BeginRadius = (emitterInstance.BeginRadius * (1.0f - emitterInstance.RadiusRandomness) + emitterInstance.BeginRadius * Random::Float32(0.f, emitterInstance.RadiusRandomness));
 			particle.EndRadius = emitterInstance.EndRadius;
-			particle.Acceleration = direction * emitterInstance.Acceleration;
+			particle.Acceleration = direction * (emitterInstance.Acceleration * (1.0f - emitterInstance.AccelerationRandomness) + emitterInstance.Acceleration * Random::Float32(0.f, emitterInstance.AccelerationRandomness));
 			particle.StartAcceleration = particle.Acceleration;
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
@@ -502,8 +505,11 @@ namespace LambdaEngine
 			instance.OneTime = emitterComp.OneTime;
 			instance.Angle = emitterComp.Angle;
 			instance.Velocity = emitterComp.Velocity;
+			instance.VelocityRandomness = emitterComp.VelocityRandomness;
 			instance.Acceleration = emitterComp.Acceleration;
+			instance.AccelerationRandomness = emitterComp.AccelerationRandomness;
 			instance.LifeTime = emitterComp.LifeTime;
+			instance.RadiusRandomness = emitterComp.RadiusRandomness;
 			instance.BeginRadius = emitterComp.BeginRadius * 0.5f;
 			instance.EndRadius = emitterComp.EndRadius * 0.5f;
 			instance.AtlasIndex = emitterComp.AtlasGUID;
