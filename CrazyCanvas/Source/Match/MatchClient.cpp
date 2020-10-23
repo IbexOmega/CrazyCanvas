@@ -123,3 +123,9 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 
 	return false;
 }
+
+bool MatchClient::OnPlayerDied(const PlayerDiedEvent& event)
+{
+	LOG_INFO("CLIENT: Player=%u DIED", event.KilledEntity);
+	return false;
+}

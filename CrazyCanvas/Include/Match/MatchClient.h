@@ -13,4 +13,5 @@ protected:
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
 	virtual bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event) override final;
+	virtual bool OnPlayerDied(const PlayerDiedEvent& event) override final;
 };

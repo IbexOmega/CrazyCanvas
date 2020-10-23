@@ -305,6 +305,7 @@ bool LevelObjectCreator::CreateFlag(
 			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity,		{ glm::vec3(0.0f) })
 		};
+
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
@@ -343,13 +344,20 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
-	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	NetworkPositionComponent{ .Position = pPlayerDesc->Position, .PositionLast = pPlayerDesc->Position, .TimestampStart = EngineLoop::GetTimeSinceStart(), .Duration = EngineLoop::GetFixedTimestep() });
+	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	
+		NetworkPositionComponent
+		{ 
+		.Position = pPlayerDesc->Position, 
+		.PositionLast = pPlayerDesc->Position, 
+		.TimestampStart = EngineLoop::GetTimeSinceStart(), 
+		.Duration = EngineLoop::GetFixedTimestep() 
+		});
+
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
 	pECS->AddComponent<HealthComponent>(playerEntity,			HealthComponent());
-
 	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
 
@@ -366,7 +374,11 @@ bool LevelObjectCreator::CreatePlayer(
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS);
+	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+		colliderInfo, 
+		std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), 
+		PLAYER_CAPSULE_RADIUS);
+
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();

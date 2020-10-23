@@ -124,6 +124,12 @@ bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 	return false;
 }
 
+bool MatchServer::OnPlayerDied(const PlayerDiedEvent& event)
+{
+	LOG_INFO("SERVER: Player=%u DIED", event.KilledEntity);
+	return false;
+}
+
 bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
 	using namespace LambdaEngine;

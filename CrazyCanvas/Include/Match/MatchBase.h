@@ -1,11 +1,15 @@
 #pragma once
-
 #include "LambdaEngine.h"
+
 #include "Utilities/SHA256.h"
+
 #include "Containers/String.h"
+
 #include "Time/API/Timestamp.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+
+#include "Events/PlayerEvents.h"
 
 class Level;
 
@@ -32,6 +36,7 @@ protected:
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
 	virtual bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event) = 0;
+	virtual bool OnPlayerDied(const PlayerDiedEvent& event) = 0;
 
 protected:
 	Level* m_pLevel = nullptr;
