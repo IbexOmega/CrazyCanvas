@@ -23,10 +23,11 @@ bool WeaponSystem::Init()
 	{
 		// The write permissions are used when creating projectile entities
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = RW;
-		playerGroup.Scale.Permissions = RW;
-		playerGroup.Rotation.Permissions = RW;
-		playerGroup.Velocity.Permissions = RW;
+		playerGroup.Position.Permissions	= RW;
+		playerGroup.Scale.Permissions		= RW;
+		playerGroup.Rotation.Permissions	= RW;
+		playerGroup.Velocity.Permissions	= RW;
+		playerGroup.Health.Permissions		= NDA;
 
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -35,21 +36,23 @@ bool WeaponSystem::Init()
 				.pSubscriber = &m_WeaponEntities,
 				.ComponentAccesses =
 				{
-					{RW, WeaponComponent::Type()}
+					{ RW, WeaponComponent::Type() }
 				}
 			},
 			{
 				.pSubscriber = &m_PlayerEntities,
 				.ComponentAccesses =
 				{
-					{NDA, PlayerLocalComponent::Type()}
+					{ NDA, PlayerLocalComponent::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
 			}
 		};
 		systemReg.SubscriberRegistration.AdditionalAccesses =
 		{
-			{RW, DynamicCollisionComponent::Type()}, {RW, MeshComponent::Type()}, {RW, TeamComponent::Type()}
+			{ RW, DynamicCollisionComponent::Type() }, 
+			{ RW, MeshComponent::Type() }, 
+			{ RW, TeamComponent::Type() }
 		};
 		systemReg.Phase = 1;
 
@@ -139,7 +142,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			if (weaponComponent.ReloadClock < 0.0f)
 			{
 				weaponComponent.ReloadClock			= 0.0f;
-				weaponComponent.CurrentAmmunition	= 5;
+				weaponComponent.CurrentAmmunition	= AMMO_CAPACITY;
 
 				LOG_INFO("Reload Finish");
 			}
@@ -224,7 +227,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit, entity: %d", collisionInfo0.Entity);
+	LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Is this safe? Concurrency issues?
@@ -239,7 +242,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		const uint32 otherEntityTeam	= pTeamComponents->GetConstData(collisionInfo1.Entity).TeamIndex;
 		const uint32 projectileTeam		= pTeamComponents->GetConstData(collisionInfo0.Entity).TeamIndex;
-
 
 		if (projectileTeam == otherEntityTeam)
 		{
