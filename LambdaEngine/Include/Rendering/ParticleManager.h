@@ -6,6 +6,8 @@
 
 #include "Rendering/Core/API/GraphicsTypes.h"
 
+#define DEBUG_PARTICLE true
+
 namespace LambdaEngine 
 {
 	class Sampler;
@@ -125,7 +127,7 @@ namespace LambdaEngine
 
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
 		bool CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance);
-		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
+		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64* pOffsets, uint64* pSize, uint64 regionCount, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
 		bool ActivateEmitterEntity(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		bool DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance);
@@ -178,6 +180,7 @@ namespace LambdaEngine
 		TArray<glm::mat4>					m_EmitterTransformData;
 		THashTable<uint32, Entity>			m_DataToEntity;
 
+		TArray<ParticleChunk>				m_DirtyParticleChunks;
 		TArray<ParticleChunk>				m_FreeParticleChunks;
 		TArray<SAtlasInfo>					m_AtlasInfoData;
 
