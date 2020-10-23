@@ -344,10 +344,7 @@ namespace LambdaEngine
 			particle.WasCreated = true;
 
 			particle.LifeTime = emitterInstance.LifeTime;
-			if (emitterInstance.Explosive)
-				particle.CurrentLife = particle.LifeTime;
-			else
-				particle.CurrentLife = i * emitterInstance.SpawnSpeed + particle.LifeTime;
+			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnSpeed;
 
 			if (allocateParticles)
 			{
@@ -390,10 +387,7 @@ namespace LambdaEngine
 			particle.WasCreated = true;
 
 			particle.LifeTime = emitterInstance.LifeTime;
-			if (emitterInstance.Explosive)
-				particle.CurrentLife = particle.LifeTime;
-			else
-				particle.CurrentLife = i * emitterInstance.SpawnSpeed + particle.LifeTime;
+			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnSpeed;
 
 			if (allocateParticles)
 			{

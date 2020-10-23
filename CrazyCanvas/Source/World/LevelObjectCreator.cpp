@@ -253,7 +253,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
 		.Active = false,
 		.OneTime = true,
-		.Explosive = false,
+		.Explosive = 0.f,
 		.ParticleCount = 32,
 		.EmitterShape = EEmitterShape::CONE,
 		.Angle = 15.f,
