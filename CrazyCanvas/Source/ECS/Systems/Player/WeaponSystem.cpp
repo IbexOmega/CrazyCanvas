@@ -135,17 +135,12 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(playerEntity);
 
 			Fire(weaponComponent, position, quaternion, playerVelocityComp.Velocity);
-		}
-
-		if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK) && !onCooldown)
-		{
 			if (pEmitterComponents->HasComponent(weaponEntity))
 			{
 				ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
 
 				emitterComp.Active = true;
 
-				weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
 			}
 		}
 	}

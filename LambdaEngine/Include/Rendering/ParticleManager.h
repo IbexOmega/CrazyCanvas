@@ -33,9 +33,12 @@ namespace LambdaEngine
 		glm::quat		Rotation;
 		float			Angle = 90.f;
 		float			Velocity;
+		float			VelocityRandomness;
 		float			Acceleration;
+		float			AccelerationRandomness;
 		float			ElapTime = 0.f;
 		float			LifeTime;
+		float			RadiusRandomness;
 		float			BeginRadius;
 		float			EndRadius;
 		glm::vec4		Color;
