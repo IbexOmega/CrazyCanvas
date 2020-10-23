@@ -4,6 +4,7 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/AudioDeviceFMOD.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
+
 #include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
@@ -14,28 +15,27 @@
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+
+#include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Components/Match/FlagComponent.h"
-#include "Teams/TeamHelper.h"
-
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
-
-#include "ECS/ECSCore.h"
-#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "Math/Math.h"
 #include "Math/Random.h"
 
 #include "Resources/ResourceManager.h"
-
-#include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "Rendering/EntityMaskManager.h"
 
@@ -180,7 +180,10 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	return entity;
 }
 
-ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	auto createFuncIt = s_LevelObjectByPrefixCreateFunctions.find(levelObject.Prefix);
 
@@ -215,7 +218,10 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 	}
 }
 
-ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	UNREFERENCED_VARIABLE(levelObject);
 	UNREFERENCED_VARIABLE(createdEntities);
@@ -225,7 +231,10 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
-ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 
@@ -357,7 +366,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	pECS->AddComponent<HealthComponent>(playerEntity,			HealthComponent());
 	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
 
@@ -408,6 +416,8 @@ bool LevelObjectCreator::CreatePlayer(
 			}
 
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
+			pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
+
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			//Create Camera Entity
@@ -456,6 +466,8 @@ bool LevelObjectCreator::CreatePlayer(
 	{
 		networkUID = (int32)playerEntity;
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
+
+		pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });

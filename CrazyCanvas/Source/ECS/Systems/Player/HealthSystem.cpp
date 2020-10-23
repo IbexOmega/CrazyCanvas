@@ -32,7 +32,8 @@ bool HealthSystem::Init()
 				.pSubscriber = &m_HealthEntities,
 				.ComponentAccesses =
 				{
-					{ RW, HealthComponent::Type() }
+					{ RW, HealthComponent::Type() },
+					{ RW, PacketComponent<PlayerHealthChangedPacket>::Type() }
 				}
 			}
 		};

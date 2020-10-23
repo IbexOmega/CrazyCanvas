@@ -38,7 +38,12 @@ public:
 	}
 
 protected:
-	static void CalculateAttachedFlagPosition(glm::vec3& flagPosition, glm::quat& flagRotation, const glm::vec3& flagOffset, const glm::vec3& parentPosition, const glm::quat parentRotation);
+	static void CalculateAttachedFlagPosition(
+		glm::vec3& flagPosition, 
+		glm::quat& flagRotation, 
+		const glm::vec3& flagOffset, 
+		const glm::vec3& parentPosition, 
+		const glm::quat parentRotation);
 
 protected:
 	LambdaEngine::IDVector m_Flags;
