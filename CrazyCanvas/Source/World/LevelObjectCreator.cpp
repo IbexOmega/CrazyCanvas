@@ -264,20 +264,35 @@ bool LevelObjectCreator::CreateFlag(
 	MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
 
 	pECS->AddComponent<FlagComponent>(entity,		FlagComponent());
-	pECS->AddComponent<OffsetComponent>(entity,		OffsetComponent{ .Offset = glm::vec3(1.0f) });
 	pECS->AddComponent<PositionComponent>(entity,	positionComponent);
 	pECS->AddComponent<ScaleComponent>(entity,		scaleComponent);
 	pECS->AddComponent<RotationComponent>(entity,	rotationComponent);
 	pECS->AddComponent<MeshComponent>(entity,		meshComponent);
 
-	if (pFlagDesc->ParentEntity != UINT32_MAX)
+	bool attachedToParent = pFlagDesc->ParentEntity != UINT32_MAX;
+
+	ParentComponent parentComponent =
 	{
-		pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Parent = pFlagDesc->ParentEntity, .Attached = true });
-	}
-	else
+		.Parent		= pFlagDesc->ParentEntity,
+		.Attached	= attachedToParent,
+	};
+
+	OffsetComponent offsetComponent =
 	{
-		pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Attached = false });
+		.Offset		= glm::vec3(0.0f)
+	};
+
+	if (attachedToParent)
+	{
+		const CharacterColliderComponent& parentCollisionComponent = pECS->GetConstComponent<CharacterColliderComponent>(pFlagDesc->ParentEntity);
+
+		//Set Flag Offset
+		const physx::PxBounds3& parentBoundingBox = parentCollisionComponent.pController->getActor()->getWorldBounds();
+		offsetComponent.Offset = glm::vec3(0.0f, parentBoundingBox.getDimensions().y / 2.0f, 0.0f);
 	}
+
+	pECS->AddComponent<ParentComponent>(entity,	parentComponent);
+	pECS->AddComponent<OffsetComponent>(entity,	offsetComponent);
 
 	//Network Stuff
 	{

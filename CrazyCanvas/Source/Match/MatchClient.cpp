@@ -95,14 +95,14 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 			case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
 			{
 				int32 networkUID	= decoder.ReadInt32();
-				Entity parentEntity = Entity(decoder.ReadInt32());
+				Entity parentEntity = MultiplayerUtils::GetEntity(decoder.ReadInt32());
 				glm::vec3 position	= decoder.ReadVec3();
 				glm::quat rotation	= decoder.ReadQuat();
 
 				CreateFlagDesc createFlagDesc =
 				{
 					.NetworkUID		= networkUID,
-					.ParentEntity	= parentEntity != UINT32_MAX ? parentEntity : INT32_MAX,
+					.ParentEntity	= parentEntity,
 					.Position		= position,
 					.Scale			= glm::vec3(1.0f),
 					.Rotation		= rotation,
