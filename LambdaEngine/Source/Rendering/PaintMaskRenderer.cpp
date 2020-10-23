@@ -448,7 +448,7 @@ namespace LambdaEngine
 			pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
 
 			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
-			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &s_ShouldReset, sizeof(bool), sizeof(uint32));
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &s_ShouldReset, sizeof(uint32), sizeof(uint32));
 
 			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
@@ -457,6 +457,8 @@ namespace LambdaEngine
 			if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
 				pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, false);
 		}
+
+		s_ShouldReset = false;
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
 	}
@@ -537,8 +539,8 @@ namespace LambdaEngine
 		constantRangeVertexDesc.OffsetInBytes			= 0;
 
 		ConstantRangeDesc constantRangePixelDesc		= { };
-		constantRangePixelDesc.ShaderStageFlags		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		constantRangePixelDesc.SizeInBytes				= sizeof(bool);
+		constantRangePixelDesc.ShaderStageFlags			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		constantRangePixelDesc.SizeInBytes				= sizeof(uint32);
 		constantRangePixelDesc.OffsetInBytes			= sizeof(uint32);
 
 		// PerFrameBuffer
