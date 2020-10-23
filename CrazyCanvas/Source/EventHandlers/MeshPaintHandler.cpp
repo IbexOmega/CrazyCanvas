@@ -22,11 +22,7 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 	if (projectileHitEvent.AmmoType != EAmmoType::AMMO_TYPE_NONE)
 	{
 		EPaintMode paintMode = EPaintMode::PAINT;
-		if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
-		{
-			paintMode = EPaintMode::PAINT;
-		}
-		else if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_WATER)
+		if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			paintMode = EPaintMode::REMOVE;
 		}
