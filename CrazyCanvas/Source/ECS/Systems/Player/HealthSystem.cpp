@@ -4,6 +4,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Events/PlayerEvents.h"
+
 #include <mutex>
 
 HealthSystem::HealthSystem()
@@ -75,22 +77,27 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			LOG_INFO("Retriving health from entity=%d", entity);
 
 			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-			// Hmm... better solution.. maybe?? 
-			if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+			if (healthComponent.CurrentHealth > 0)
 			{
-				healthComponent.CurrentHealth -= 10;
-				LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
-			}
-			else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
-			{
-				healthComponent.CurrentHealth += 10;
-				LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
-			}
+				if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+				{
+					healthComponent.CurrentHealth -= 10;
+					LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
+				}
+				else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+				{
+					healthComponent.CurrentHealth += 10;
+					LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
+				}
 
-			if (healthComponent.CurrentHealth <= 0)
-			{
-				LOG_INFO("PLAYER DIED");
-				healthComponent.CurrentHealth = 0;
+				if (healthComponent.CurrentHealth <= 0)
+				{
+					LOG_INFO("PLAYER DIED");
+					healthComponent.CurrentHealth = 0;
+
+					PlayerDiedEvent event(entity);
+					EventQueue::SendEvent(event);
+				}
 			}
 		}
 		m_EventsToProcess.Clear();
