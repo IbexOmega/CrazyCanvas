@@ -126,7 +126,7 @@ namespace LambdaEngine
 		instance.Acceleration		= emitterComp.Acceleration;
 		instance.LifeTime			= emitterComp.LifeTime;
 		instance.ParticleRadius		= emitterComp.ParticleRadius * 0.5f;
-		instance.Explosiveness		= emitterComp.Explosiveness;
+		instance.Explosive			= emitterComp.Explosive;
 		instance.SpawnSpeed			= emitterComp.SpawnSpeed;
 
 		GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
@@ -346,7 +346,7 @@ namespace LambdaEngine
 
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.CurrentLife = particle.LifeTime;
-			if (emitterInstance.Explosiveness)
+			if (emitterInstance.Explosive)
 				particle.LifeTimeOffset = 0.f;
 			else
 				particle.LifeTimeOffset = i * emitterInstance.SpawnSpeed;
@@ -427,7 +427,7 @@ namespace LambdaEngine
 
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.CurrentLife = particle.LifeTime;
-			if (emitterInstance.Explosiveness)
+			if (emitterInstance.Explosive)
 				particle.LifeTimeOffset = 0.f;
 			else
 				particle.LifeTimeOffset = i * emitterInstance.SpawnSpeed;

@@ -25,7 +25,7 @@ namespace LambdaEngine
 	struct ParticleEmitterInstance
 	{
 		bool			OneTime = false;
-		bool			Explosiveness = false;
+		float			Explosive = 0.f;
 		float			SpawnSpeed; // This will be used if not explosive.
 		glm::vec3		Position;
 		glm::quat		Rotation;

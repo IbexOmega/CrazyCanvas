@@ -24,7 +24,7 @@ namespace LambdaEngine
 		DECL_COMPONENT_WITH_DIRTY_FLAG(ParticleEmitterComponent);
 		bool			Active				= true;
 		bool			OneTime				= false;
-		bool			Explosiveness		= false;
+		float			Explosive			= 0.f;
 		float			SpawnSpeed			= 0.1f; // Only used if explosive is false.
 		uint32			ParticleCount		= 32U;
 		EParticleShape  ParticleShape		= EParticleShape::BILLBOARD;

@@ -37,7 +37,6 @@ layout (binding = 3, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 } u_PerFrameBuffer;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_DepthTexture;
-//layout(binding = 0,		set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_NormalTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
 
 // Main
@@ -68,8 +67,6 @@ void main()
 			particle.CurrentLife = particle.LifeTime + particle.LifeTimeOffset;
 		}
 
-		vec3 newForce = particle.Acceleration + GLOBAL_DOWN*emitter.Gravity;
-
 		vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
 		vec4 vpPos = frameBuffer.Projection * frameBuffer.View * vec4(nextPos, 1.f);
 		vpPos.xy = vpPos.xy/vpPos.w * 0.5f + 0.5f;
@@ -81,7 +78,7 @@ void main()
 		if(vpPos.w < EPSILON)
 			pDepth = 0.f;
 
-		particle.Velocity += newForce * dt;
+		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
 		{
 			vec3 preV = particle.Velocity;
