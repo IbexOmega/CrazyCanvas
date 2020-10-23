@@ -359,11 +359,10 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	=   FCollisionGroup::COLLISION_GROUP_STATIC | 
-                            FCollisionGroup::COLLISION_GROUP_DYNAMIC | 
-                            FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | 
-                            FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;|
-
+		.CollisionMask	=	FCollisionGroup::COLLISION_GROUP_STATIC				|
+							FCollisionGroup::COLLISION_GROUP_DYNAMIC			|
+							FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER	|
+							FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();

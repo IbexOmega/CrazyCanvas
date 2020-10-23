@@ -171,8 +171,6 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		.TeamIndex		= teamIndex,
 	};
 
-	teamIndex = (teamIndex + 1) % 2;
-
 	TArray<Entity> createdPlayerEntities;
 	if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
 	{
@@ -219,6 +217,8 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		LOG_ERROR("[MatchServer]: Failed to create Player");
 		return false;
 	}
+
+	teamIndex = (teamIndex + 1) % 2;
 
 	uint32 flagCount = 0;
 	Entity* pFlagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, flagCount);

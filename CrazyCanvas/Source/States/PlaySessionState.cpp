@@ -187,7 +187,6 @@ void PlaySessionState::Init()
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
 	m_MultiplayerClient.TickMainThreadInternal(delta);
-	m_HUDSecondaryState.Tick(delta);
 }
 
 void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
