@@ -78,6 +78,8 @@ void main()
 		vec3 normal = UnpackNormal(texture(u_NormalTexture, uv).xyz);
 		float depth = texture(u_DepthTexture, uv).r;
 		float pDepth = vpPos.z/vpPos.w;
+		if(vpPos.w < EPSILON)
+			pDepth = 0.f;
 
 		particle.Velocity += newForce * dt;
 		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
