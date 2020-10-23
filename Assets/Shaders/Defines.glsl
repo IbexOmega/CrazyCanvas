@@ -164,7 +164,6 @@ struct SUnwrapData
 	uint PaintMode;
 	uint RemoteMode;
 	uint TeamMode;
-	uint Reset;
 };
 
 #endif

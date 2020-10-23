@@ -11,6 +11,11 @@ layout(location = 1) in vec3		in_Normal;
 layout(location = 2) in vec3		in_TargetPosition;
 layout(location = 3) in vec3		in_TargetDirection;
 
+layout(push_constant) uniform ResetBuffer
+{
+	bool reset;
+} p_ShouldReset;
+
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
 layout(binding = 0, set = UNWRAP_DRAW_SET_INDEX) uniform UnwrapData				{ SUnwrapData val; }		u_UnwrapData;
@@ -22,16 +27,10 @@ float random (in vec3 x) {
 	return fract(sin(dot(x, vec3(12.9898,78.233, 37.31633)))* 43758.5453123);
 }
 
-void reset()
-{
-	// out_BitsClient = 0;
-	// out_BitsServer = 3;
-}
-
 void main()
 {
-	if (u_UnwrapData.val.Reset > 0)
-		reset();
+	if (p_ShouldReset.reset)
+		out_BitsClient = 0;
 		
 	const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
 	const float BRUSH_SIZE	= 0.2f;
@@ -41,8 +40,6 @@ void main()
 	vec3 normal 			= normalize(in_Normal);
 	vec3 targetPosition		= in_TargetPosition;
 	vec3 direction			= normalize(in_TargetDirection);
-
-	//targetPosition = targetPosition - direction;
 
 	vec3 targetPosToWorldPos = worldPosition-targetPosition;
 
@@ -70,26 +67,17 @@ void main()
 		// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
 		if (u_UnwrapData.val.RemoteMode == 0)
 		{
-			// uint client = u_UnwrapData.val.TeamMode << 1;
-			// client |= u_UnwrapData.val.PaintMode;
-			// out_BitsClient = client & 0xFF;
-			out_BitsClient = 3;
-			// out_BitsServer = 0;
+			uint client = u_UnwrapData.val.TeamMode << 1;
+			client |= u_UnwrapData.val.PaintMode;
+			out_BitsClient = client & 0xFF;
 		}
 		else
 		{
-			// uint server = u_UnwrapData.val.TeamMode << 1;
-			// server |= u_UnwrapData.val.PaintMode & 0x1;
-			// out_BitsServer = server & 0xFF;
-			out_BitsServer = 3;
-			// out_BitsClient = 0;
+			uint server = u_UnwrapData.val.TeamMode << 1;
+			server |= u_UnwrapData.val.PaintMode & 0x1;
+			out_BitsServer = server & 0xFF;
 		}
-
-		// uint data = server << 4;
-		// data |= client & 0xF;
-
-
 	}
-	else
+	else if (!p_ShouldReset.reset)
 		discard;
 }

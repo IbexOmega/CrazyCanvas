@@ -80,7 +80,8 @@ namespace LambdaEngine
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintMode - painting mode to be used for the target
 		*/
-		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode, bool reset);
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode);
+		static void ResetClient();
 
 	private:
 		bool CreateCopyCommandList();
@@ -92,7 +93,7 @@ namespace LambdaEngine
 		bool CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc);
 		bool CreatePipelineState();
 
-		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
+		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags);
 
 	private:
 		struct RenderTarget
@@ -109,7 +110,6 @@ namespace LambdaEngine
 			EPaintMode		PaintMode			= EPaintMode::PAINT;
 			ERemoteMode		RemoteMode			= ERemoteMode::CLIENT;
 			ETeam			Team				= ETeam::RED;
-			uint32			Reset				= 0;
 		};
 
 	private:
@@ -125,9 +125,11 @@ namespace LambdaEngine
 		CommandAllocator**			m_ppRenderCommandAllocators = nullptr;
 		CommandList**				m_ppRenderCommandLists = nullptr;
 
-		uint64						m_PipelineStateID = 0;
-		TSharedRef<PipelineLayout>	m_PipelineLayout = nullptr;
-		TSharedRef<DescriptorHeap>	m_DescriptorHeap = nullptr;
+		uint64						m_PipelineStateBothID	= 0;
+		uint64						m_PipelineStateClientID	= 0;
+		uint64						m_PipelineStateServerID	= 0;
+		TSharedRef<PipelineLayout>	m_PipelineLayout		= nullptr;
+		TSharedRef<DescriptorHeap>	m_DescriptorHeap		= nullptr;
 
 		GUID_Lambda					m_VertexShaderGUID = 0;
 		GUID_Lambda					m_PixelShaderGUID = 0;
@@ -144,12 +146,12 @@ namespace LambdaEngine
 		TSharedRef<DescriptorSet>									m_UnwrapDataDescriptorSet;
 		TSharedRef<DescriptorSet>									m_PerFrameBufferDescriptorSet;
 		TSharedRef<DescriptorSet>									m_BrushMaskDescriptorSet;
-		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 
 		TArray<TArray<TSharedRef<DeviceChild>>>						m_pDeviceResourcesToDestroy;
 
 		TArray<RenderTarget>										m_RenderTargets;
 	private:
 		static std::list<UnwrapData>	s_Collisions;
+		static bool						s_ShouldReset;
 	};
 }

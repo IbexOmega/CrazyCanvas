@@ -34,6 +34,7 @@
 namespace LambdaEngine
 {
 	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_Collisions;
+	bool										PaintMaskRenderer::s_ShouldReset = false;
 
 	PaintMaskRenderer::PaintMaskRenderer()
 	{
@@ -136,7 +137,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, false);
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED);
 			});
 
 		return false;
@@ -356,7 +357,7 @@ namespace LambdaEngine
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
 
-		if (m_RenderTargets.IsEmpty() || s_Collisions.empty())
+		if ((m_RenderTargets.IsEmpty() || s_Collisions.empty()) && !s_ShouldReset)
 		{
 			return;
 		}
@@ -364,13 +365,17 @@ namespace LambdaEngine
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
+		bool isServer		= false;
+
 		// Transfer current collision data
+		if (!s_ShouldReset || !s_Collisions.empty())
 		{
 			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
 
 			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
 
 			const UnwrapData& data	= s_Collisions.front();
+			isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
 			s_Collisions.pop_front();
 			unwrapDataCopyBuffer->Unmap();
@@ -416,7 +421,12 @@ namespace LambdaEngine
 			scissorRect.Height	= height;
 			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
+			if (isServer && s_ShouldReset)
+				pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateBothID));
+			else if (isServer)
+				pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateServerID));
+			else
+				pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateClientID));
 
 			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
@@ -438,6 +448,7 @@ namespace LambdaEngine
 			pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
 
 			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &s_ShouldReset, sizeof(bool), sizeof(uint32));
 
 			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
@@ -450,7 +461,7 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam team, bool reset)
+	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam team)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
@@ -458,9 +469,13 @@ namespace LambdaEngine
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
-		data.Reset				= (uint32)reset;
 
 		s_Collisions.push_back(data);
+	}
+
+	void PaintMaskRenderer::ResetClient()
+	{
+		s_ShouldReset = true;
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()
@@ -521,6 +536,11 @@ namespace LambdaEngine
 		constantRangeVertexDesc.SizeInBytes				= sizeof(uint32);
 		constantRangeVertexDesc.OffsetInBytes			= 0;
 
+		ConstantRangeDesc constantRangePixelDesc		= { };
+		constantRangePixelDesc.ShaderStageFlags		= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		constantRangePixelDesc.SizeInBytes				= sizeof(bool);
+		constantRangePixelDesc.OffsetInBytes			= sizeof(uint32);
+
 		// PerFrameBuffer
 		DescriptorBindingDesc perFrameBufferDesc		= {};
 		perFrameBufferDesc.DescriptorType				= EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
@@ -570,7 +590,7 @@ namespace LambdaEngine
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Paint Mask Renderer Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2, descriptorSetLayoutDesc3 };
-		pipelineLayoutDesc.ConstantRanges = { constantRangeVertexDesc };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeVertexDesc, constantRangePixelDesc };
 
 		m_PipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 
@@ -677,16 +697,14 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreatePipelineState()
 	{
-		m_PipelineStateID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID);
-
-		THashTable<GUID_Lambda, uint64> pixelShaderToPipelineStateMap;
-		pixelShaderToPipelineStateMap.insert({ m_PixelShaderGUID, m_PipelineStateID });
-		m_ShadersIDToPipelineStateIDMap.insert({ m_VertexShaderGUID, pixelShaderToPipelineStateMap });
+		m_PipelineStateBothID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G);
+		m_PipelineStateServerID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_R);
+		m_PipelineStateClientID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_G);
 
 		return true;
 	}
 
-	uint64 PaintMaskRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader)
+	uint64 PaintMaskRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags)
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
 		pipelineStateDesc.DebugName							= "Paint Mask Renderer Pipeline State";
@@ -710,7 +728,7 @@ namespace LambdaEngine
 				EBlendOp::BLEND_OP_NONE,
 				EBlendFactor::BLEND_FACTOR_NONE,
 				EBlendFactor::BLEND_FACTOR_NONE,
-				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G,
+				colorComponentFlags,
 				false
 			}
 		};
