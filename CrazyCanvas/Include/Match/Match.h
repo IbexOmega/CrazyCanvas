@@ -18,7 +18,10 @@ public:
 
 	static void Tick(LambdaEngine::Timestamp deltaTime);
 
-	FORCEINLINE MatchBase* GetInstance() { return s_pMatchInstance; };
+	FORCEINLINE MatchBase* GetInstance() 
+	{ 
+		return s_pMatchInstance; 
+	}
 
 private:
 	inline static MatchBase* s_pMatchInstance = nullptr;

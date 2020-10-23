@@ -20,7 +20,7 @@ public:
 	/*void Resume() override final {};
 	void Pause() override final {};
 	*/
-	void Tick(LambdaEngine::Timestamp deltaTime) override;
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 	void FixedTick(LambdaEngine::Timestamp delta);
 
 

@@ -36,7 +36,7 @@ public:
 
 	bool Init();
 
-	void Tick(LambdaEngine::Timestamp deltaTime) override final;
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final;
 
 private:
 	void Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity);
