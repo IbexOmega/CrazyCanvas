@@ -32,6 +32,12 @@
 
 using namespace LambdaEngine;
 
+ServerState::ServerState(std::string serverHostID, std::string clientHostID)
+{
+	m_ServerHostID = std::stoi(serverHostID);
+	m_ClientHostID = std::stoi(clientHostID);
+}
+
 ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
@@ -73,7 +79,8 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
 	pEncoder->WriteString(m_ServerName);
-	pEncoder->WriteString("This Is The Map Name");
+	pEncoder->WriteString("Map Name");
+	pEncoder->WriteInt32(m_ServerHostID);
 
 	return true;
 }

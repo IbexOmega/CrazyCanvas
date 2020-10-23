@@ -24,8 +24,11 @@ namespace LambdaEngine
 
 		bool Connect(IPAddress* pAddress);
 
-		void SetIsHost(bool isHost);
-		bool GetIsHost();
+		void SetServerHostID(uint32 serverHostID);
+		void SetClientHostID(uint32 clientHostID);
+		
+		int32 GetServerHostID();
+		int32 GetClientHostID();
 
 	protected:
 		void TickMainThread(Timestamp deltaTime);
@@ -69,7 +72,8 @@ namespace LambdaEngine
 		PlayerSystem m_PlayerSystem;
 		String m_Name;
 		bool m_DebuggingWindow;
-		bool m_IsHost;
+		int32 m_ServerHostID;
+		int32 m_ClientHostID;
 
 	private:
 		static ClientSystem* s_pInstance;

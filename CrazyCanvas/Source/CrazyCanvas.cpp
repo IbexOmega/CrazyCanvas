@@ -50,9 +50,21 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	constexpr const char* pGameName = "Crazy Canvas";
 	constexpr const char* pDefaultStateStr = "crazycanvas";
+	constexpr const char* pDefaultIsHostStr = "-1";
 	State* pStartingState = nullptr;
 	String stateStr;
+
+	String clientHostIDStr; // Used on server To Identify Host(Client transmits HostID)
+	String serverHostIDStr; // Used on Client To Identify Host(Server transmits HostID)
+
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
+
+	if (stateStr == "server")
+	{
+		flagParser(1, pDefaultIsHostStr) >> serverHostIDStr;
+
+		flagParser(2, pDefaultIsHostStr) >> clientHostIDStr;
+	}
 
 	if (stateStr == "crazycanvas")
 	{
@@ -72,7 +84,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else if (stateStr == "server")
 	{
 		ServerSystem::Init(pGameName);
-		pStartingState = DBG_NEW ServerState();
+		pStartingState = DBG_NEW ServerState(serverHostIDStr, clientHostIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{

@@ -25,6 +25,8 @@
 #include <sstream>
 #include <wchar.h>
 
+#include "Math\Random.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
@@ -89,8 +91,17 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	pDecoder->ReadUInt8(newInfo.Players);
 	pDecoder->ReadString(newInfo.Name);
 	pDecoder->ReadString(newInfo.MapName);
+	int32 serverHostID = pDecoder->ReadInt32();
 
 	ServerInfo& currentInfo = m_Servers[event.ServerUID];
+
+	if (serverHostID == ClientSystem::GetInstance().GetServerHostID())
+	{
+		SetRenderStagesActive();
+
+		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
+		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+	}
 
 	if (currentInfo != newInfo)
 	{
@@ -110,21 +121,22 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	{
 		currentInfo = newInfo;
 	}
+
 	return true;
 }
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	IClient* pClient = event.pClient;
+	/*IClient* pClient = event.pClient;
 
-	if (ClientSystem::GetInstance().GetIsHost())
+	if (ClientSystem::GetInstance().GetClientHostID() != -1)
 	{
 		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_HOST_SERVER);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteInt8(m_HostGameDesc.PlayersNumber);
 		encoder.WriteInt8(m_HostGameDesc.MapNumber);
 		pClient->SendReliable(pPacket, nullptr);
-	}
+	}*/
 
 	return false;
 }
@@ -169,7 +181,6 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 
 	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
-
 	ErrorPopUp(OTHER_ERROR);
 }
 
@@ -190,22 +201,15 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	PopulateServerInfo();
 
 
-	
-
-
 	if (!CheckServerSettings(m_HostGameDesc))
+	{
 		ErrorPopUp(HOST_ERROR);
+	}
 	else
 	{
 		//start Server with populated struct
-		LambdaEngine::ClientSystem::GetInstance().SetIsHost(true);
 		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
 		//LambdaEngine::GUIApplication::SetView(nullptr);
-
-		SetRenderStagesActive();
-
-		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
-		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
 }
 
@@ -291,11 +295,22 @@ void LobbyGUI::HostServer()
 	m_pClient->ReturnPacket(pPacket);*/
 }
 
-bool LobbyGUI::StartUpServer(const char* pApplicationName, char* pCommandLine)
+bool LobbyGUI::StartUpServer(std::string pApplicationName, std::string pCommandLine)
 {
 	//additional Info
 	STARTUPINFOA lpStartupInfo;
 	PROCESS_INFORMATION lpProcessInfo;
+	
+	uint32 randClientSpecificID = Random::UInt32(0, UINT32_MAX / 2);
+	uint32 randServerSpecificID = Random::UInt32(0, UINT32_MAX / 2);
+
+	ClientSystem::GetInstance().SetServerHostID(randServerSpecificID);
+	ClientSystem::GetInstance().SetClientHostID(randClientSpecificID);
+
+	std::string hostServerSideID = std::to_string(randServerSpecificID);
+	std::string hostClientSideID = std::to_string(randClientSpecificID);
+
+	std::string finalCLine = pApplicationName + " " + pCommandLine + " " + hostServerSideID + " " + hostClientSideID;
 
 	// set the size of the structures
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
@@ -305,8 +320,8 @@ bool LobbyGUI::StartUpServer(const char* pApplicationName, char* pCommandLine)
 	SetLastError(0);
 
 	if (!CreateProcessA(
-		pApplicationName,
-		pCommandLine,	//Command line
+		NULL,
+		finalCLine.data(),	//Command line
 		NULL,			// Process handle not inheritable
 		NULL,			// Thread handle not inheritable
 		NULL, 

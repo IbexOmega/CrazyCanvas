@@ -61,7 +61,7 @@ private:
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
 	void HostServer();
-	bool StartUpServer(const char* pApplicationName, char* pCommandLine);
+	bool StartUpServer(std::string pApplicationName, std::string pCommandLine);
 	void PopulateServerInfo();
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)

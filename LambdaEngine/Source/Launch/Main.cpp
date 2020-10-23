@@ -4,6 +4,7 @@
 
 #include <argh/argh.h>
 
+#include "Application/API/PlatformMisc.h"
 
 namespace LambdaEngine
 {
@@ -16,8 +17,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 	int argc = __argc;
 	char** argv = __argv;
-
-
 
 #else
 int main(int argc, char** argv)
@@ -37,6 +36,7 @@ int main(int argc, char** argv)
 	{
 		return -1;
 	}
+
 	LAMBDA_PROFILER_END_SESSION();
 
 	LAMBDA_PROFILER_BEGIN_SESSION("Runtime", "LambdaProfile-Runtime.json");

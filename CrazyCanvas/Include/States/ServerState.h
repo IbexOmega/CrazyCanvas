@@ -15,6 +15,8 @@ class ServerState :
 {
 public:
 	ServerState() = default;
+	ServerState(std::string serverHostID, std::string clientHostID);
+	
 	~ServerState();
 
 	void Init() override final;
@@ -34,5 +36,7 @@ public:
 
 private:
 	Level* m_pLevel = nullptr;
+	int32 m_ServerHostID = -1;
+	int32 m_ClientHostID = -1;
 	std::string m_ServerName;
 };

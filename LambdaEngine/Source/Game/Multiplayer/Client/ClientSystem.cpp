@@ -38,7 +38,8 @@ namespace LambdaEngine
 		m_PlayerSystem(),
 		m_Name(name),
 		m_DebuggingWindow(false),
-		m_IsHost(false)
+		m_ServerHostID(-1),
+		m_ClientHostID(-1)
 	{
 		MultiplayerUtils::Init(false);
 
@@ -107,14 +108,24 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ClientSystem::SetIsHost(bool isHost)
+	void ClientSystem::SetServerHostID(uint32 serverHostID)
 	{
-		m_IsHost = isHost;
+		m_ServerHostID = (int32)serverHostID;
 	}
 
-	bool ClientSystem::GetIsHost()
+	void ClientSystem::SetClientHostID(uint32 clientHostID)
 	{
-		return m_IsHost;
+		m_ClientHostID = (int32)clientHostID;
+	}
+
+	int32 ClientSystem::GetServerHostID()
+	{
+		return m_ServerHostID;
+	}
+
+	int32 ClientSystem::GetClientHostID()
+	{
+		return m_ClientHostID;
 	}
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
