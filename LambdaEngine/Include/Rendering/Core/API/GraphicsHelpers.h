@@ -136,6 +136,7 @@ namespace LambdaEngine
 		case EFormat::FORMAT_R16G16_SNORM:
 		case EFormat::FORMAT_R10G10B10A2_UNORM:
 		case EFormat::FORMAT_B10G11R11_UFLOAT:		return 4;
+		case EFormat::FORMAT_R32G32_UINT:
 		case EFormat::FORMAT_R32G32_SFLOAT:
 		case EFormat::FORMAT_R16G16B16A16_SNORM:
 		case EFormat::FORMAT_R16G16B16A16_UNORM:

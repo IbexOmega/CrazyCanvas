@@ -75,6 +75,7 @@ namespace LambdaEngine
 
 		FORMAT_R8_UINT					= 19,
 		FORMAT_R8G8_UINT				= 20,
+		FORMAT_R32G32_UINT				= 21,
 	};
 
 	enum class EIndexType

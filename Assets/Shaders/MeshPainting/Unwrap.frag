@@ -24,8 +24,8 @@ float random (in vec3 x) {
 
 void reset()
 {
-	out_BitsClient = 0;
-	// out_BitsServer = 0;
+	// out_BitsClient = 0;
+	// out_BitsServer = 3;
 }
 
 void main()
@@ -74,6 +74,7 @@ void main()
 			// client |= u_UnwrapData.val.PaintMode;
 			// out_BitsClient = client & 0xFF;
 			out_BitsClient = 3;
+			// out_BitsServer = 0;
 		}
 		else
 		{
@@ -81,6 +82,7 @@ void main()
 			// server |= u_UnwrapData.val.PaintMode & 0x1;
 			// out_BitsServer = server & 0xFF;
 			out_BitsServer = 3;
+			// out_BitsClient = 0;
 		}
 
 		// uint data = server << 4;
