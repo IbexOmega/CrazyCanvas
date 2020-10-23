@@ -238,8 +238,6 @@ namespace LambdaEngine
 		Game::Get().FixedTick(delta);
 		NetworkUtils::FixedTick(delta);
 		StateManager::GetInstance()->FixedTick(delta);
-		ClientSystem::StaticFixedTickMainThread(delta);
-		ServerSystem::StaticFixedTickMainThread(delta);
 	}
 
 	bool EngineLoop::PreInit(const argh::parser& flagParser)

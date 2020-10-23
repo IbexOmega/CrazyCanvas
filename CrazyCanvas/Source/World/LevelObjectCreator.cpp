@@ -400,6 +400,8 @@ bool LevelObjectCreator::CreatePlayer(
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
+
+			saltUIDs.PushBack(UINT64_MAX);
 		}
 		else
 		{
@@ -451,9 +453,9 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
-		}
 
-		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
+			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
+		}
 	}
 	else
 	{
@@ -464,6 +466,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });
 	MultiplayerUtils::RegisterEntity(playerEntity, networkUID);
 
-	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, networkUID);
+	D_LOG_INFO("Created Player with EntityID %d, NetworkID %d", playerEntity, networkUID);
 	return true;
 }

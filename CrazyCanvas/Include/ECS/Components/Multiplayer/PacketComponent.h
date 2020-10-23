@@ -16,6 +16,8 @@ struct IPacketComponent
 {
 	friend class PacketDecoderSystem;
 
+	virtual ~IPacketComponent() = default;
+
 private:
 	virtual void* AddPacketReceived() = 0;
 	virtual void ClearPacketsReceived() = 0;

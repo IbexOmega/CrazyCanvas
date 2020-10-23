@@ -1,15 +1,12 @@
-#include "World/Player/PlayerForeignSystem.h"
+#include "World/Player/Client/PlayerForeignSystem.h"
+#include "World/Player/CharacterControllerHelper.h"
 
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
-#include "Game/Multiplayer/CharacterControllerHelper.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "ECS/ECSCore.h"
-
-#include "Application/API/Events/EventQueue.h"
-
-#include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 

@@ -1,7 +1,7 @@
-#include "World/Player/PlayerLocal.h"
+#include "World/Player/Client/PlayerLocal.h"
+#include "World/Player/CharacterControllerHelper.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Game/Multiplayer/CharacterControllerHelper.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
@@ -91,10 +91,12 @@ void PlayerLocal::FixedTickMainThread(Timestamp deltaTime)
 		PlayerGameState gameState = {};
 		gameState.SimulationTick = m_SimulationTick++;
 
-		TickLocalPlayerAction(deltaTime, m_Entities[0], &gameState);
+		Entity localPlayerEntity = m_Entities[0];
+
+		TickLocalPlayerAction(deltaTime, localPlayerEntity, &gameState);
 
 		if (!MultiplayerUtils::IsSingleplayer())
-			SendGameState(gameState, m_Entities[0]);
+			SendGameState(gameState, localPlayerEntity);
 	}
 }
 

@@ -1,22 +1,6 @@
-#include "Engine/EngineLoop.h"
-
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
-#include "Game/ECS/Components/Rendering/AnimationComponent.h"
-#include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
-#include "Game/ECS/Components/Physics/Transform.h"
-#include "Game/ECS/Components/Physics/Collision.h"
-#include "Game/ECS/Components/Player/PlayerComponent.h"
-#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
-
-#include "ECS/ECSCore.h"
-
 #include "Networking/API/NetworkDebugger.h"
-
-#include "Input/API/Input.h"
-
-#include "Resources/Material.h"
-#include "Resources/ResourceManager.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Client/ClientUtilsImpl.h"
@@ -33,7 +17,6 @@ namespace LambdaEngine
 
 	ClientSystem::ClientSystem(const String& name) :
 		m_pClient(nullptr),
-		m_NetworkPositionSystem(),
 		m_Name(name),
 		m_DebuggingWindow(false)
 	{
@@ -50,8 +33,6 @@ namespace LambdaEngine
 		clientDesc.UsePingSystem		= false;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
-
-		m_NetworkPositionSystem.Init();
 
 		NetworkDiscovery::EnableClient(m_Name, this);
 
@@ -107,11 +88,6 @@ namespace LambdaEngine
 	ClientBase* ClientSystem::GetClient()
 	{
 		return m_pClient;
-	}
-
-	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
-	{
-		
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
@@ -173,12 +149,6 @@ namespace LambdaEngine
 	{
 		ServerDiscoveredEvent event(&decoder, &endPoint, serverUID);
 		EventQueue::SendEventImmediate(event);
-	}
-
-	void ClientSystem::StaticFixedTickMainThread(Timestamp deltaTime)
-	{
-		if (s_pInstance)
-			s_pInstance->FixedTickMainThread(deltaTime);
 	}
 
 	void ClientSystem::StaticTickMainThread(Timestamp deltaTime)

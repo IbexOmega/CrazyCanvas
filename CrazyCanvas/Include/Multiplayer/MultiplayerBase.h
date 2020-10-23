@@ -3,7 +3,7 @@
 #include "LambdaEngine.h"
 #include "Time/API/Timestamp.h"
 
-#include "Multiplayer/PacketDecoderSystem.h"
+#include "ECS/Systems/Multiplayer/PacketDecoderSystem.h"
 
 class MultiplayerBase
 {
