@@ -1,4 +1,6 @@
 #include "Threading/API/Thread.h"
+#include "Threading/API/PlatformThread.h"
+
 #include "Log/Log.h"
 
 namespace LambdaEngine
@@ -18,7 +20,6 @@ namespace LambdaEngine
 
 	Thread::~Thread()
 	{
-
 	}
 
 	void Thread::Wait()
@@ -35,6 +36,11 @@ namespace LambdaEngine
 	{
 		m_ShouldYeild = false;
 		m_Condition.notify_one();
+	}
+
+	void Thread::SetName(const String& name)
+	{
+		PlatformThread::SetThreadName(PlatformThread::GetThreadHandle(m_Thread), name);
 	}
 
 	void Thread::Sleep(int32 milliseconds)
