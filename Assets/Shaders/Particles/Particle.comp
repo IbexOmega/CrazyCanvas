@@ -79,12 +79,14 @@ void main()
 		float depth = texture(u_DepthTexture, uv).r;
 		float pDepth = vpPos.z/vpPos.w;
 
+		particle.Velocity += newForce * dt;
 		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
 		{
-			particle.Velocity = vec3(0.f);//dot(particle.Velocity, normal) * normal;
+			vec3 preV = particle.Velocity;
+			particle.Velocity *= 0.9; // Friction
+			particle.Velocity -= dot(preV, normal) * normal * 1.f;
 		}
-		else
-			particle.Velocity += newForce * dt;
+		
 		particle.Transform[3].xyz += particle.Velocity*dt;
 
 

@@ -35,6 +35,9 @@ namespace LambdaEngine
 
 		SAFEDELETE_ARRAY(m_ppComputeCommandLists);
 		SAFEDELETE_ARRAY(m_ppComputeCommandAllocators);
+
+		if (m_Sampler)
+			SAFERELEASE(m_Sampler);
 	}
 
 	bool LambdaEngine::ParticleUpdater::CreatePipelineLayout()
