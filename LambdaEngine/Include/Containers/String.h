@@ -8,5 +8,6 @@
 
 namespace LambdaEngine
 {
-	using String = std::string;
+	using String	= std::string;
+	using WString	= std::wstring;
 }

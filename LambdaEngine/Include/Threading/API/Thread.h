@@ -23,6 +23,8 @@ namespace LambdaEngine
 		void Wait();
 		void Notify();
 
+		void SetName(const String& name);
+
 	private:
 		Thread(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
 
