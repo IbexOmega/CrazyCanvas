@@ -38,7 +38,7 @@ bool HealthSystem::Init()
 		// After weaponsystem -> Do not know if this is correct
 		systemReg.Phase = 2;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
 	}
 
 	// Register eventhandler
@@ -75,7 +75,7 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			LOG_INFO("Retriving health from entity=%d", entity);
 
 			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-			// Hmm... better solution.. maybe?? 
+			// Hmm... better solution.. maybe??
 			if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 			{
 				healthComponent.CurrentHealth -= 10;
