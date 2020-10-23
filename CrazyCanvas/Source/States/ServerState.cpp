@@ -147,9 +147,12 @@ bool ServerState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 		BinaryDecoder decoder(pPacket);
 		int8 nrOfPlayers = decoder.ReadInt8();
 		int8 mapNr = decoder.ReadInt8();
+		int32 clientHostID = decoder.ReadInt32();
 
 		LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
 		LOG_ERROR("MAP NR %d", mapNr);
+		LOG_ERROR("receivedHostID: %d", clientHostID);
+		LOG_ERROR("LocalHostID: %d", m_ClientHostID);
 	}
 	return false;
 }

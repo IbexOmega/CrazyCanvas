@@ -17,12 +17,14 @@ struct HostGameDescription
 	int8 MapNumber = -1;
 };
 
-enum ErrorCode
+enum PopUpCode
 {
 	CONNECT_ERROR,
 	JOIN_ERROR,
 	HOST_ERROR,
-	OTHER_ERROR
+	OTHER_ERROR,
+	HOST_NOTIFICATION,
+	JOIN_NOTIFICATION
 };
 
 class LobbyGUI : public Noesis::Grid
@@ -54,8 +56,11 @@ public:
 private:
 	void SetRenderStagesActive();
 
-	void ErrorPopUp(ErrorCode errorCode);
+	void ErrorPopUp(PopUpCode errorCode);
+	void NotiPopUP(PopUpCode notificationCode);
+
 	void ErrorPopUpClose();
+	void NotiPopUpClose();
 
 	bool CheckServerStatus();
 	bool CheckServerSettings(const HostGameDescription& serverSettings);

@@ -47,7 +47,9 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
 	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"), FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST"));
+	
 	ErrorPopUpClose();
+	NotiPopUpClose();
 }
 
 LobbyGUI::~LobbyGUI()
@@ -127,7 +129,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	/*IClient* pClient = event.pClient;
+	IClient* pClient = event.pClient;
 
 	if (ClientSystem::GetInstance().GetClientHostID() != -1)
 	{
@@ -135,8 +137,9 @@ bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteInt8(m_HostGameDesc.PlayersNumber);
 		encoder.WriteInt8(m_HostGameDesc.MapNumber);
+		encoder.WriteInt32(ClientSystem::GetInstance().GetClientHostID());
 		pClient->SendReliable(pPacket, nullptr);
-	}*/
+	}
 
 	return false;
 }
@@ -208,6 +211,7 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	else
 	{
 		//start Server with populated struct
+		NotiPopUP(HOST_NOTIFICATION);
 		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
 		//LambdaEngine::GUIApplication::SetView(nullptr);
 	}
@@ -219,14 +223,16 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 	UNREFERENCED_VARIABLE(args);
 
 	TabItem* pTab = FrameworkElement::FindName<TabItem>("LOCAL");
-
 	if (pTab->GetIsSelected()) // From LAN Server List
 	{
 		ListBox* pBox = FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST");
 		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
 		if (pSelectedItem)
+		{
+			NotiPopUP(JOIN_NOTIFICATION);
 			JoinSelectedServer(pSelectedItem);
+		}
 		else
 			ErrorPopUp(JOIN_ERROR);
 	}
@@ -236,7 +242,10 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
 		if (pSelectedItem)
+		{
+			NotiPopUP(JOIN_NOTIFICATION);
 			JoinSelectedServer(pSelectedItem);
+		}
 		else
 			ErrorPopUp(JOIN_ERROR);
 	}
@@ -364,25 +373,44 @@ void LobbyGUI::SetRenderStagesActive()
 
 }
 
-void LobbyGUI::ErrorPopUp(ErrorCode errorCode)
+void LobbyGUI::ErrorPopUp(PopUpCode errorCode)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
 	
 	switch (errorCode)
 	{
-	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To Server!");	break;
-	case JOIN_ERROR:		pTextBox->SetText("No Server Selected!");			break;
-	case HOST_ERROR:		pTextBox->SetText("Couldn't Host Server!");			break;
-	case OTHER_ERROR:		pTextBox->SetText("Something Went Wrong!");			break;
+	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To Server!");		break;
+	case JOIN_ERROR:		pTextBox->SetText("No Server Selected!");				break;
+	case HOST_ERROR:		pTextBox->SetText("Couldn't Host Server!");				break;
+	case OTHER_ERROR:		pTextBox->SetText("Something Went Wrong!");				break;
 	}
 
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
+}
+
+void LobbyGUI::NotiPopUP(PopUpCode notificationCode)
+{
+	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("NOTIFICATION_BOX_TEXT");
+
+	switch (notificationCode)
+	{
+	case HOST_NOTIFICATION:	pTextBox->SetText("Server Starting...");	break;
+	case JOIN_NOTIFICATION:	pTextBox->SetText("Joining Server...");		break;
+	}
+
+	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
 void LobbyGUI::ErrorPopUpClose()
 {
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
 }
+
+void LobbyGUI::NotiPopUpClose()
+{
+	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
+}
+
 
 bool LobbyGUI::CheckServerSettings(const HostGameDescription& serverSettings)
 {

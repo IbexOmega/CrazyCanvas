@@ -38,8 +38,8 @@ namespace LambdaEngine
 		m_PlayerSystem(),
 		m_Name(name),
 		m_DebuggingWindow(false),
-		m_ServerHostID(-1),
-		m_ClientHostID(-1)
+		m_ServerHostID(0),
+		m_ClientHostID(0)
 	{
 		MultiplayerUtils::Init(false);
 
