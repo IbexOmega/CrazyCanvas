@@ -33,7 +33,8 @@ void main()
 	{
 		out_BitsClient = 0;
 	}
-	else if (p_FrameSettings.ShouldPaint > 0)
+
+	if (p_FrameSettings.ShouldPaint > 0)
 	{		
 		const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
 		const float BRUSH_SIZE	= 0.2f;

@@ -382,6 +382,12 @@ namespace LambdaEngine
 			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
 		}
 
+		if (!frameSettings.ShouldReset && !frameSettings.ShouldPaint)
+		{
+			LOG_WARNING("[Paint Mask Renderer]: Renderer had data to draw, but some enum was not set!");
+			return;
+		}
+
 		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 		{
 			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
