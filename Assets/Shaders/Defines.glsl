@@ -167,17 +167,17 @@ struct SParticle
 	vec3 Velocity;
 	float CurrentLife;
 	vec3 StartVelocity;
-	float Radius;
+	float LifeTime;
 	vec3 Acceleration;
 	uint TileIndex;
 	vec3 StartPosition;
 	uint EmitterIndex;
 	vec3 StartAcceleration;
 	bool WasCreated;
-	float LifeTime;
+	float BeginRadius;
+	float EndRadius;
 	uint Padding0;
 	uint Padding1;
-	uint Padding2;
 };
 
 struct SEmitter

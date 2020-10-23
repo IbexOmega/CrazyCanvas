@@ -159,7 +159,8 @@ namespace LambdaEngine
 		instance.Velocity			= emitterComp.Velocity;
 		instance.Acceleration		= emitterComp.Acceleration;
 		instance.LifeTime			= emitterComp.LifeTime;
-		instance.ParticleRadius		= emitterComp.ParticleRadius * 0.5f;
+		instance.BeginRadius		= emitterComp.BeginRadius * 0.5f;
+		instance.EndRadius			= emitterComp.EndRadius * 0.5f;
 		instance.Explosive			= emitterComp.Explosive;
 		instance.SpawnSpeed			= emitterComp.SpawnSpeed;
 		instance.Color				= emitterComp.Color;
@@ -215,7 +216,7 @@ namespace LambdaEngine
 			SEmitter emitterData = {};
 			emitterData.Color					= emitterComp.Color;
 			emitterData.LifeTime				= emitterComp.LifeTime;
-			emitterData.Radius					= instance.ParticleRadius;
+			emitterData.Radius					= instance.BeginRadius;
 			emitterData.AtlasIndex				= instance.AtlasIndex;
 			emitterData.AnimationCount			= instance.AnimationCount;
 			emitterData.FirstAnimationIndex		= instance.FirstAnimationIndex;
@@ -336,7 +337,8 @@ namespace LambdaEngine
 			particle.Transform = glm::identity<glm::mat4>();
 			particle.Velocity = direction * emitterInstance.Velocity;
 			particle.StartVelocity = particle.Velocity;
-			particle.Radius = emitterInstance.ParticleRadius;
+			particle.BeginRadius = emitterInstance.BeginRadius;
+			particle.EndRadius = emitterInstance.EndRadius;
 			particle.Acceleration = direction * emitterInstance.Acceleration;
 			particle.StartAcceleration = particle.Acceleration;
 			particle.TileIndex = emitterInstance.TileIndex;
@@ -378,11 +380,12 @@ namespace LambdaEngine
 		{
 			SParticle particle;
  
-			particle.StartPosition = direction * (i * emitterInstance.ParticleRadius);
+			particle.StartPosition = direction * (i * emitterInstance.BeginRadius);
 			particle.Transform = glm::translate(particle.StartPosition);
 			particle.Velocity = glm::vec3(0.f);
 			particle.StartVelocity = particle.Velocity;
-			particle.Radius = emitterInstance.ParticleRadius;
+			particle.BeginRadius = emitterInstance.BeginRadius;
+			particle.EndRadius = emitterInstance.EndRadius;
 			particle.Acceleration = glm::vec3(0.f);
 			particle.StartAcceleration = particle.Acceleration;
 			particle.TileIndex = emitterInstance.TileIndex;
@@ -507,7 +510,8 @@ namespace LambdaEngine
 			instance.Velocity = emitterComp.Velocity;
 			instance.Acceleration = emitterComp.Acceleration;
 			instance.LifeTime = emitterComp.LifeTime;
-			instance.ParticleRadius = emitterComp.ParticleRadius * 0.5f;
+			instance.BeginRadius = emitterComp.BeginRadius * 0.5f;
+			instance.EndRadius = emitterComp.EndRadius * 0.5f;
 			instance.AtlasIndex = emitterComp.AtlasGUID;
 			instance.AnimationCount = emitterComp.AnimationCount;
 			instance.TileIndex = emitterComp.TileIndex;
@@ -543,7 +547,7 @@ namespace LambdaEngine
 			SEmitter emitterData = {};
 			emitterData.Color = emitterInstance.Color;
 			emitterData.LifeTime = emitterInstance.LifeTime;
-			emitterData.Radius = emitterInstance.ParticleRadius;
+			emitterData.Radius = emitterInstance.BeginRadius;
 			emitterData.AnimationCount = emitterInstance.AnimationCount;
 			emitterData.FirstAnimationIndex = emitterInstance.FirstAnimationIndex;
 			emitterData.Gravity = emitterComp.Gravity;

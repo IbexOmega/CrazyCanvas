@@ -230,7 +230,7 @@ void SandboxState::Init()
 				.EmitterShape = EEmitterShape::TUBE,
 				.Velocity = 1.0f,
 				.Acceleration = 0.0f,
-				.ParticleRadius = 0.5f,
+				.BeginRadius = 0.5f,
 				.TileIndex = 16,
 				.AnimationCount = 4,
 				.FirstAnimationIndex = 16,
@@ -537,7 +537,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 				.Acceleration = 0.0f,
 				.Gravity = Random::Float32(-5.0f, 5.0f),
 				.LifeTime = Random::Float32(1.0f, 3.0f),
-				.ParticleRadius = 0.2f + Random::Float32(-0.05f, 0.1f),
+				.BeginRadius = 0.2f + Random::Float32(-0.05f, 0.1f),
 				.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
 				});
 		}

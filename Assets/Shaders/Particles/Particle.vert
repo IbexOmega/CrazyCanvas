@@ -54,7 +54,7 @@ void main()
 	vec3 camUpWorldSpace 	= vec3(frameBuffer.View[0][1], frameBuffer.View[1][1], frameBuffer.View[2][1]);
 
 	vec3 vPosition = camUpWorldSpace * vertex.Position.y + camRightWorldSpace * vertex.Position.x;
-	vPosition *= emitter.Radius;
+	vPosition *= mix(particle.EndRadius, particle.BeginRadius, particle.CurrentLife / emitter.LifeTime);
 
 	gl_Position = frameBuffer.Projection * frameBuffer.View * particle.Transform * vec4(vPosition, 1.0);
 }
