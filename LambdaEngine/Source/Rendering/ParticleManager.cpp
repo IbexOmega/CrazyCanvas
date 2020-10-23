@@ -226,6 +226,9 @@ namespace LambdaEngine
 			glm::mat4 emitterTransform = glm::translate(instance.Position) * glm::toMat4(instance.Rotation);
 			m_EmitterTransformData.PushBack(emitterTransform);
 
+			// Add particle chunk to dirty list
+			m_DirtyParticleChunks.PushBack(instance.ParticleChunk);
+
 			m_ActiveEmitters[entity] = instance;
 
 			m_DirtyIndirectBuffer = true;
@@ -402,50 +405,87 @@ namespace LambdaEngine
 			}
 		}
 
+
 		return allocateParticles;
 	}
 	
-	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint64 size, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
+	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint64* pOffsets, uint64* pSize, uint64 regionCount, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
 	{
 		Buffer* pStagingBuffer = pStagingBuffers[m_ModFrameIndex];
+		Buffer* pPreviousBuffer = nullptr;
 		bool needUpdate = true;
 
-		if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < size)
+		if (regionCount > 0)
 		{
-			if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
+			uint32 neededSize = pOffsets[0] + pSize[0];
+			// Find largest offset + size to determine needed buffer size;
+			if (regionCount > 1)
+			{
+				for (uint64 i = 1; i < regionCount; i++)
+				{
+					uint32 size = pOffsets[i] + pSize[i];
+					if (neededSize < size)
+					{
+						neededSize = size;
+					}
+				}
+			}
 
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName = name + " Staging Buffer";
-			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes = size;
+			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < neededSize)
+			{
+				if (pStagingBuffer != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack(pStagingBuffer);
 
-			pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			pStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
-		}
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName = name + " Staging Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				bufferDesc.SizeInBytes = neededSize;
 
-		void* pMapped = pStagingBuffer->Map();
-		memcpy(pMapped, data, size);
-		pStagingBuffer->Unmap();
+				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				pStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+			}
 
-		if ((*pBuffer) == nullptr || (*pBuffer)->GetDesc().SizeInBytes < size)
-		{
-			if ((*pBuffer) != nullptr) m_ResourcesToRemove[m_ModFrameIndex].PushBack((*pBuffer));
+			void* pMapped = pStagingBuffer->Map();
 
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName = name;
-			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | flags;
-			bufferDesc.SizeInBytes = size;
+			for (uint32 r = 0; r < regionCount; r++)
+			{
+				memcpy((char*)pMapped + pOffsets[r], ((char*)data) + pOffsets[r], pSize[r]);
+			}
 
-			(*pBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			pStagingBuffer->Unmap();
+
+			if ((*pBuffer) == nullptr || (*pBuffer)->GetDesc().SizeInBytes < neededSize)
+			{
+				if ((*pBuffer) != nullptr)
+				{
+					pPreviousBuffer = (*pBuffer);
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack((*pBuffer));
+				}
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName = name;
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC | flags;
+				bufferDesc.SizeInBytes = neededSize;
+
+				(*pBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+			else
+			{
+				needUpdate = false; // Only update resource when buffer is recreated
+			}
+
+			// Copy old data to new buffer
+			if (pPreviousBuffer != nullptr)
+				pCommandList->CopyBuffer(pPreviousBuffer, 0, (*pBuffer), 0, pPreviousBuffer->GetDesc().SizeInBytes);
+
+			for (uint32 r = 0; r < regionCount; r++)
+			{
+				pCommandList->CopyBuffer(pStagingBuffer, pOffsets[r], (*pBuffer), pOffsets[r], pSize[r]);
+			}
 		}
 		else
-		{
-			needUpdate = false; // Only update resource when buffer is recreated
-		}
+			needUpdate = false;
 
-		pCommandList->CopyBuffer(pStagingBuffer, 0, (*pBuffer), 0, size);
 		return needUpdate;
 	}
 
@@ -485,6 +525,9 @@ namespace LambdaEngine
 			{
 				CreateTubeParticleEmitter(instance);
 			}
+			// Add particle chunk to dirty list
+			m_DirtyParticleChunks.PushBack(instance.ParticleChunk);
+
 			m_DirtyParticleBuffer = true;
 
 			// Create IndirectDrawData
@@ -614,6 +657,10 @@ namespace LambdaEngine
 		if (!foundChunk)
 			return false;
 
+#if DEBUG_PARTICLE
+		LOG_INFO("[ParticleManager]: Allocated Chunk[offset: %d, size: %d]", chunk.Offset, chunk.Size);
+#endif
+
 		return true;
 	}
 
@@ -621,7 +668,7 @@ namespace LambdaEngine
 	{
 		// Find if freed particle chunk can be merged with existing one
 		bool inserted = false;
-	
+
 		inserted = MergeParticleChunk(chunk);
 
 		// If merge was not possible insert at proper offset location
@@ -639,6 +686,16 @@ namespace LambdaEngine
 			m_FreeParticleChunks.Insert(m_FreeParticleChunks.begin(), chunk);
 			inserted = true;
 		}
+
+#if DEBUG_PARTICLE
+		LOG_INFO("[ParticleManager]: Freed Chunk: [offset: %d, size : %d]", chunk.Offset, chunk.Size);
+		LOG_INFO("[ParticleManager]: Current Free Chunks:");
+		for (size_t i = 0; i < m_FreeParticleChunks.GetSize(); i++)
+		{
+			LOG_INFO("\tFree chunk%d - [offset: %d, size : %d] ", i, m_FreeParticleChunks[i].Offset, m_FreeParticleChunks[i].Size);
+		}
+#endif
+
 
 		return inserted;
 	}
@@ -692,11 +749,14 @@ namespace LambdaEngine
 		// Update Instance Buffer
 		if (m_DirtyIndirectBuffer)
 		{
-			uint32 requiredBufferSize = m_IndirectData.GetSize() * sizeof(IndirectData);
+			uint64 offset = 0;
+			uint64 requiredBufferSize = m_IndirectData.GetSize() * sizeof(IndirectData);
 			m_DirtyIndirectBuffer = CopyDataToBuffer(
 				pCommandList, 
 				m_IndirectData.GetData(), 
-				requiredBufferSize, 
+				&offset,
+				&requiredBufferSize,
+				1U,
 				m_ppIndirectStagingBuffer, 
 				&m_pIndirectBuffer,
 				FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER, 
@@ -714,17 +774,19 @@ namespace LambdaEngine
 				glm::vec4(1.0, 1.0, 0.0, 1.0f),
 			};
 
-			uint32 requiredBufferSize = 4 * sizeof(glm::vec4);
+			uint64 offset = 0;
+			uint64 requiredBufferSize = 4 * sizeof(glm::vec4);
 			m_DirtyVertexBuffer = CopyDataToBuffer(
 				pCommandList,
 				(void*)vertices,
-				requiredBufferSize,
+				&offset,
+				&requiredBufferSize,
+				1U,
 				m_ppVertexStagingBuffer,
 				&m_pVertexBuffer,
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
 				"Particle Vertex");
 		}
-	
 
 		// Update Index Buffer
 		if (m_DirtyIndexBuffer)
@@ -735,11 +797,14 @@ namespace LambdaEngine
 				2,3,1
 			};
 
-			uint32 requiredBufferSize = sizeof(uint32) * 6;
+			uint64 offset = 0;
+			uint64 requiredBufferSize = sizeof(uint32) * 6;
 			m_DirtyIndexBuffer = CopyDataToBuffer(
 				pCommandList,
 				(void*)indices,
-				requiredBufferSize,
+				&offset,
+				&requiredBufferSize,
+				1U,
 				m_ppIndexStagingBuffer,
 				&m_pIndexBuffer,
 				FBufferFlag::BUFFER_FLAG_INDEX_BUFFER,
@@ -749,11 +814,23 @@ namespace LambdaEngine
 		// Update Particle Instance Buffer
 		if (m_DirtyParticleBuffer)
 		{
-			uint32 requiredBufferSize = m_Particles.GetSize() * sizeof(SParticle);
+			// Only update dirty particle chunks
+			uint64 dirtyChunks = m_DirtyParticleChunks.GetSize();
+			TArray<uint64> offset(dirtyChunks);
+			TArray<uint64> requiredBufferSize(dirtyChunks);
+			for (size_t i = 0; i < m_DirtyParticleChunks.GetSize(); i++)
+			{
+				offset[i] = m_DirtyParticleChunks[i].Offset * sizeof(SParticle);
+				requiredBufferSize[i] = m_DirtyParticleChunks[i].Size * sizeof(SParticle);
+			}
+			m_DirtyParticleChunks.Clear();
+
 			m_DirtyParticleBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_Particles.GetData(),
-				requiredBufferSize,
+				offset.GetData(),
+				requiredBufferSize.GetData(),
+				dirtyChunks,
 				m_ppParticleStagingBuffer,
 				&m_pParticleBuffer,
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
@@ -763,11 +840,14 @@ namespace LambdaEngine
 		// Update Emitter Instance Buffer
 		if (m_DirtyEmitterBuffer)
 		{
-			uint32 requiredBufferSize = m_EmitterData.GetSize() * sizeof(SEmitter);
+			uint64 offset = 0;
+			uint64 requiredBufferSize = m_EmitterData.GetSize() * sizeof(SEmitter);
 			m_DirtyEmitterBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_EmitterData.GetData(),
-				requiredBufferSize,
+				&offset,
+				&requiredBufferSize,
+				1U,
 				m_ppEmitterStagingBuffer,
 				&m_pEmitterBuffer,
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
@@ -777,11 +857,14 @@ namespace LambdaEngine
 		// Update Emitter Transform Buffer
 		if (m_DirtyTransformBuffer)
 		{
-			uint32 requiredBufferSize = m_EmitterTransformData.GetSize() * sizeof(glm::mat4);
+			uint64 offset = 0;
+			uint64 requiredBufferSize = m_EmitterTransformData.GetSize() * sizeof(glm::mat4);
 			m_DirtyTransformBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_EmitterTransformData.GetData(),
-				requiredBufferSize,
+				&offset,
+				&requiredBufferSize,
+				1U,
 				m_ppTransformStagingBuffer,
 				&m_pTransformBuffer,
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
@@ -791,11 +874,14 @@ namespace LambdaEngine
 		// Update Atlas data Buffer
 		if (m_DirtyAtlasDataBuffer)
 		{
-			uint32 requiredBufferSize = m_AtlasInfoData.GetSize() * sizeof(SAtlasInfo);
+			uint64 offset = 0;
+			uint64 requiredBufferSize = m_AtlasInfoData.GetSize() * sizeof(SAtlasInfo);
 			m_DirtyAtlasDataBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_AtlasInfoData.GetData(),
-				requiredBufferSize,
+				&offset,
+				&requiredBufferSize,
+				1U,
 				m_ppAtlasDataStagingBuffer,
 				&m_pAtlasDataBuffer,
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
