@@ -78,8 +78,6 @@ namespace LambdaEngine
 		void DeleteTopRegistryPage();
 		void ReinstateTopRegistryPage();
 
-		void RenderVisualization() { m_ECSVisualizer.Render(); }
-
 		/**
 		 * Serializes the entity into the following format:
 		 * Total Serialization Size			- 4 bytes (includes the size of the header)

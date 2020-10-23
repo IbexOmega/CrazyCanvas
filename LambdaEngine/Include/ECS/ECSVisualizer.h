@@ -14,5 +14,6 @@ namespace LambdaEngine
 
 	private:
 		JobScheduler* m_pJobScheduler;
+		bool m_Enabled = false;
 	};
 }

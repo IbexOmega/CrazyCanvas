@@ -22,6 +22,10 @@ namespace LambdaEngine
 		PerformEntityDeletions();
 		m_JobScheduler.Tick((float32)deltaTime.AsSeconds());
 		m_ComponentStorage.ResetDirtyFlags();
+
+#ifdef LAMBDA_DEVELOPMENT
+		m_ECSVisualizer.Render();
+#endif
 	}
 
 	void ECSCore::RemoveEntity(Entity entity)

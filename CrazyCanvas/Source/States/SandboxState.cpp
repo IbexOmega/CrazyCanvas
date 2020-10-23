@@ -308,14 +308,6 @@ void SandboxState::Init()
 		m_DebuggingWindow = input.Arguments.GetFront().Value.Boolean;
 		});
 
-	ConsoleCommand cmd4;
-	cmd4.Init("show_ecs", false);
-	cmd4.AddArg(Arg::EType::BOOL);
-	cmd4.AddDescription("Activate/Deactivate ECS visualization window.\n\t'show_ecs true'");
-	GameConsole::Get().BindCommand(cmd4, [this](GameConsole::CallbackInput& input)->void {
-		m_ECSVisualization = input.Arguments.GetFront().Value.Boolean;
-		});
-
 	ConsoleCommand showTextureCMD;
 	showTextureCMD.Init("debug_texture", true);
 	showTextureCMD.AddArg(Arg::EType::BOOL);
@@ -418,11 +410,6 @@ void SandboxState::RenderImgui()
 		if (m_DebuggingWindow)
 		{
 			Profiler::Render();
-		}
-
-		if (m_ECSVisualization)
-		{
-			ECSCore::GetInstance()->RenderVisualization();
 		}
 
 		if (m_ShowTextureDebuggingWindow)
