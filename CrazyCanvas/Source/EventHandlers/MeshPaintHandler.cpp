@@ -29,10 +29,12 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		{
 			paintMode = EPaintMode::PAINT;
 			team = ETeam::RED;
+			remoteMode = ERemoteMode::CLIENT;
 		}
 		else if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			paintMode = EPaintMode::REMOVE;
+			remoteMode = ERemoteMode::CLIENT;
 		}
 
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
