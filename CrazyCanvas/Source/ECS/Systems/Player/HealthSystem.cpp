@@ -4,7 +4,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Events/PlayerEvents.h"
+#include "Events/GameplayEvents.h"
 
 #include <mutex>
 

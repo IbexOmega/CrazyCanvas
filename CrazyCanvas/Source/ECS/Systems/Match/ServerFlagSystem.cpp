@@ -113,7 +113,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		pFlagShape->acquireReference();
 		flagCollisionComponent.pActor->detachShape(*pFlagShape);
 
-		//Update Collision Group
+		// Update Collision Group
 		PxFilterData filterData;
 		filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
 		filterData.word1 = (PxU32)FLAG_DROPPED_COLLISION_MASK;
@@ -123,14 +123,14 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		flagCollisionComponent.pActor->attachShape(*pFlagShape);
 		pFlagShape->release();
 
-		//Set Flag Carrier (None)
+		// Set Flag Carrier (None)
 		flagParentComponent.Attached	= false;
 		flagParentComponent.Parent		= UINT32_MAX;
 
-		//Set Position
+		// Set Position
 		flagPositionComponent.Position	= dropPosition;
 
-		//Send Packet
+		// Send Packet
 		FlagEditedPacket packet	= {};
 		packet.FlagPacketType	= EFlagPacketType::FLAG_PACKET_TYPE_DROPPED;
 		packet.DroppedPosition	= dropPosition;

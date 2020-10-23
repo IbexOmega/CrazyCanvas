@@ -22,6 +22,7 @@
 
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
@@ -74,8 +75,9 @@ bool LevelObjectCreator::Init()
 
 	//Register Create Special Object by Type Functions
 	{
-		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]	= &LevelObjectCreator::CreateFlag;
-		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]	= &LevelObjectCreator::CreatePlayer;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]		= &LevelObjectCreator::CreateFlag;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]		= &LevelObjectCreator::CreatePlayer;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
 	}
 
 	//Load Object Meshes & Materials
@@ -356,10 +358,10 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	
 		NetworkPositionComponent
 		{ 
-		.Position = pPlayerDesc->Position, 
-		.PositionLast = pPlayerDesc->Position, 
+		.Position		= pPlayerDesc->Position, 
+		.PositionLast	= pPlayerDesc->Position, 
 		.TimestampStart = EngineLoop::GetTimeSinceStart(), 
-		.Duration = EngineLoop::GetFixedTimestep() 
+		.Duration		= EngineLoop::GetFixedTimestep() 
 		});
 
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
@@ -368,6 +370,9 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
 	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
+	
+	// Preparation for taking damage
+	pECS->AddComponent<PacketComponent<PlayerHealthChangedPacket>>(playerEntity, { });
 
 	const CharacterColliderCreateInfo colliderInfo =
 	{
@@ -391,11 +396,13 @@ bool LevelObjectCreator::CreatePlayer(
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
+	pECS->AddComponent<PacketComponent<WeaponFiredPacket>>(weaponEntity, { });
 
-	int32 networkUID;
+	int32 playerNetworkUID;
+	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		networkUID = pPlayerDesc->NetworkUID;
+		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 
 		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
@@ -456,7 +463,6 @@ bool LevelObjectCreator::CreatePlayer(
 				.FOV		= pPlayerDesc->pCameraDesc->FOVDegrees
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
-
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 		}
 
@@ -464,15 +470,85 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
-		networkUID = (int32)playerEntity;
+		playerNetworkUID = (int32)playerEntity;
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 
+		// Think I am doing this correct // Alex
 		pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	}
 
-	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });
-	MultiplayerUtils::RegisterEntity(playerEntity, networkUID);
+	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
+	MultiplayerUtils::RegisterEntity(playerEntity, playerNetworkUID);
 
-	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, networkUID);
+	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
+	return true;
+}
+
+bool LevelObjectCreator::CreateProjectile(
+	const void* pData,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
+	LambdaEngine::TArray<uint64>& saltUIDs)
+{
+	using namespace LambdaEngine;
+
+	if (pData == nullptr)
+	{
+		return false;
+	}
+
+	const CreateProjectileDesc& desc = *reinterpret_cast<const CreateProjectileDesc*>(pData);
+
+	// Create a projectile entity
+	ECSCore* pECS = ECSCore::GetInstance();
+	const Entity projectileEntity = pECS->CreateEntity();
+	createdEntities.PushBack(projectileEntity);
+
+	int32 networkUID;
+	if (!MultiplayerUtils::IsServer())
+	{
+		networkUID = (uint32)projectileEntity;
+	}
+	else
+	{
+		networkUID = (uint32)projectileEntity;
+	}
+
+	// Get the firing player's team index
+	pECS->AddComponent<TeamComponent>(projectileEntity, { desc.TeamIndex });
+
+	const VelocityComponent velocityComponent = { desc.InitalVelocity };
+	pECS->AddComponent<VelocityComponent>(projectileEntity, velocityComponent);
+	pECS->AddComponent<ProjectileComponent>(projectileEntity, { desc.AmmoType });
+
+	// Material
+	MaterialProperties projectileMaterialProperties;
+	projectileMaterialProperties.Albedo		= glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	projectileMaterialProperties.Metallic	= 0.5f;
+	projectileMaterialProperties.Roughness	= 0.5f;
+
+	const uint32 projectileMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+
+	const DynamicCollisionCreateInfo collisionInfo =
+	{
+		/* Entity */	 		projectileEntity,
+		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
+		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, { 0.3f, 0.3f, 0.3f }}),
+		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, desc.FireDirection }),
+		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, { desc.MeshComponent }),
+		/* Shape Type */		EShapeType::SIMULATION,
+		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+		/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CallbackFunction */	desc.Callback,
+		/* Velocity */			velocityComponent
+	};
+
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo);
+	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
+	pECS->AddComponent<NetworkComponent>(projectileEntity, { networkUID });
+	MultiplayerUtils::RegisterEntity(projectileEntity, networkUID);
+
+	D_LOG_INFO("Created Projectile with EntityID %d and NetworkID %d", projectileEntity, networkUID);
+
 	return true;
 }

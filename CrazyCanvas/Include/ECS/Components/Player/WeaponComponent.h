@@ -1,6 +1,8 @@
 #pragma once
+#include "ProjectileComponent.h"
 
 #include "ECS/Component.h"
+#include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Entity.h"
 
 #define AMMO_CAPACITY 50
@@ -21,3 +23,18 @@ struct WeaponComponent
 	int32	CurrentAmmunition	= AMMO_CAPACITY;
 	int32   AmmoCapacity		= AMMO_CAPACITY;
 };
+
+/*
+* WeaponFiredPacket
+*/
+
+#pragma pack(push, 1)
+struct WeaponFiredPacket : Packet
+{
+	int32		PlayerFiredNetworkUID = -1;
+	glm::vec3	FirePosition;
+	glm::vec3	InitalVelocity;
+	glm::quat	FireDirection;
+	EAmmoType	AmmoType;
+};
+#pragma pack(pop)

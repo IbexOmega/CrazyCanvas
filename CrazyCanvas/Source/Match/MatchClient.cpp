@@ -41,11 +41,11 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 		{
 			case ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER:
 			{
-				bool isLocal		= decoder.ReadBool();
-				int32 networkUID	= decoder.ReadInt32();
-				glm::vec3 position	= decoder.ReadVec3();
-				glm::vec3 forward	= decoder.ReadVec3();
-				uint32 teamIndex	= decoder.ReadUInt32();
+				bool isLocal			= decoder.ReadBool();
+				int32 playerNetworkUID	= decoder.ReadInt32();
+				glm::vec3 position		= decoder.ReadVec3();
+				glm::vec3 forward		= decoder.ReadVec3();
+				uint32 teamIndex		= decoder.ReadUInt32();
 
 				TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
@@ -73,7 +73,7 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 				CreatePlayerDesc createPlayerDesc =
 				{
 					.IsLocal			= isLocal,
-					.NetworkUID			= networkUID,
+					.PlayerNetworkUID	= playerNetworkUID,
 					.pClient			= event.pClient,
 					.Position			= position,
 					.Forward			= forward,
@@ -122,6 +122,29 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 	}
 
 	return false;
+}
+
+bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
+{
+	using namespace LambdaEngine;
+
+	CreateProjectileDesc createProjectileDesc;
+	createProjectileDesc.AmmoType		= event.AmmoType;
+	createProjectileDesc.FireDirection	= event.Direction;
+	createProjectileDesc.FirePosition	= event.Position;
+	createProjectileDesc.InitalVelocity = event.InitialVelocity;
+	createProjectileDesc.TeamIndex		= event.TeamIndex;
+	createProjectileDesc.Callback		= event.Callback;
+	createProjectileDesc.MeshComponent	= event.MeshComponent;
+
+	TArray<Entity> createdFlagEntities;
+	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
+	{
+		LOG_ERROR("[MatchClient]: Failed to create projectile!");
+	}
+
+	LOG_INFO("CLIENT: Weapon fired");
+	return true;
 }
 
 bool MatchClient::OnPlayerDied(const PlayerDiedEvent& event)

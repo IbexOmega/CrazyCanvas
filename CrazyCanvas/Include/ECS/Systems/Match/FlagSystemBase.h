@@ -10,6 +10,7 @@ public:
 	FlagSystemBase() = default;
 	~FlagSystemBase();
 
+	// Remember to call this if overriding FlagSystemBase::Init
 	virtual bool Init();
 
 	void FixedTick(LambdaEngine::Timestamp deltaTime);

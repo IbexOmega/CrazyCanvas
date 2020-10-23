@@ -1,6 +1,7 @@
 #pragma once
 #include "ECS/System.h"
 #include "ECS/Components/Player/ProjectileComponent.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
@@ -10,8 +11,6 @@ namespace LambdaEngine
 {
 	struct EntityCollisionInfo;
 }
-
-struct WeaponComponent;
 
 /*
 * WeaponProperties
@@ -36,16 +35,35 @@ public:
 
 	bool Init();
 
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final;
+	void FixedTick(LambdaEngine::Timestamp deltaTime);
+
+	// Empty tick
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
+	{
+		UNREFERENCED_VARIABLE(deltaTime);
+	}
 
 private:
-	void Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity);
-	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
+	void Fire(
+		EAmmoType ammoType, 
+		WeaponComponent& weaponComponent, 
+		PacketComponent<WeaponFiredPacket>& packets,
+		const glm::vec3& playerPos, 
+		const glm::quat& direction, 
+		const glm::vec3& playerVelocity);
+
+	void TryFire(
+		EAmmoType ammoType,
+		WeaponComponent& weaponComponent,
+		PacketComponent<WeaponFiredPacket>& packets,
+		const glm::vec3& startPos, 
+		const glm::quat& direction, 
+		const glm::vec3& playerVelocity);
 
 	void StartReload(WeaponComponent& weaponComponent);
 	void AbortReload(WeaponComponent& weaponComponent);
 
-	void TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity);
+	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
 private:
 	LambdaEngine::IDVector m_WeaponEntities;

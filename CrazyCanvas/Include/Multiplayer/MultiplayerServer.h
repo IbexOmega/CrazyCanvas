@@ -1,8 +1,8 @@
 #pragma once
-
 #include "Multiplayer/MultiplayerBase.h"
 
 #include "ECS/Systems/Match/ServerFlagSystem.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 
 class MultiplayerServer : public MultiplayerBase
 {
@@ -17,5 +17,5 @@ protected:
 
 private:
 	ServerFlagSystem* m_pFlagSystem = nullptr;
-
+	WeaponSystem m_WeaponSystem;
 };

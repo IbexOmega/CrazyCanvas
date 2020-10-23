@@ -32,11 +32,11 @@ bool FlagSystemBase::Init()
 				.pSubscriber = &m_Flags,
 				.ComponentAccesses =
 				{
-					{NDA, FlagComponent::Type()},
-					{RW, PositionComponent::Type()},
-					{RW, RotationComponent::Type()},
-					{R, OffsetComponent::Type()},
-					{R, ParentComponent::Type()},
+					{ NDA, FlagComponent::Type() },
+					{ RW, PositionComponent::Type() },
+					{ RW, RotationComponent::Type() },
+					{ R, OffsetComponent::Type() },
+					{ R, ParentComponent::Type() },
 				}
 			}
 		};

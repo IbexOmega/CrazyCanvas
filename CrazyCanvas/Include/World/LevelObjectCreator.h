@@ -1,5 +1,4 @@
 #pragma once
-
 #include "LambdaEngine.h"
 
 #include "Containers/TArray.h"
@@ -11,6 +10,9 @@
 
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
+
+#include "ECS/Components/Player/ProjectileComponent.h"
 
 namespace LambdaEngine
 {
@@ -18,6 +20,10 @@ namespace LambdaEngine
 
 	struct CameraDesc;
 };
+
+/*
+* ELevelObjectType
+*/
 
 enum class ELevelObjectType : uint8
 {
@@ -29,21 +35,31 @@ enum class ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_PLAYER			= 5,
 	LEVEL_OBJECT_TYPE_FLAG_SPAWN		= 6,
 	LEVEL_OBJECT_TYPE_FLAG				= 7,
+	LEVEL_OBJECT_TYPE_PROJECTILE		= 8,
 };
+
+/*
+* CreateFlagDesc
+*/
 
 struct CreateFlagDesc
 {
-	int32					NetworkUID			= -1;
-	LambdaEngine::Entity	ParentEntity		= UINT32_MAX;
-	glm::vec3				Position			= glm::vec3(0.0f);
-	glm::vec3				Scale				= glm::vec3(1.0f);
-	glm::quat				Rotation			= glm::quat();
+	int32					NetworkUID		= -1;
+	LambdaEngine::Entity	ParentEntity	= UINT32_MAX;
+	glm::vec3				Position		= glm::vec3(0.0f);
+	glm::vec3				Scale			= glm::vec3(1.0f);
+	glm::quat				Rotation		= glm::quat();
 };
+
+/*
+* CreatePlayerDesc
+*/
 
 struct CreatePlayerDesc
 {
 	bool								IsLocal				= false;
-	int32								NetworkUID			= -1;
+	int32								PlayerNetworkUID	= -1;
+	int32								WeaponNetworkUID	= -1;
 	LambdaEngine::IClient*				pClient				= nullptr;
 	glm::vec3							Position			= glm::vec3(0.0f);
 	glm::vec3							Forward				= glm::vec3(1.0f, 0.0f, 0.0f);
@@ -53,6 +69,26 @@ struct CreatePlayerDesc
 	GUID_Lambda							MeshGUID			= GUID_NONE;
 	LambdaEngine::AnimationComponent	AnimationComponent;
 };
+
+/*
+* CreateProjectileDesc
+*/
+
+struct CreateProjectileDesc
+{
+	EAmmoType	AmmoType;
+	glm::vec3	FirePosition;
+	glm::vec3	InitalVelocity;
+	glm::quat	FireDirection;
+	int32		PlayerFiredNetworkUID = -1;
+	uint32		TeamIndex;
+	LambdaEngine::CollisionCallback	Callback;
+	LambdaEngine::MeshComponent		MeshComponent;
+};
+
+/*
+* LevelObjectCreator
+*/
 
 class LevelObjectCreator
 {
@@ -121,6 +157,12 @@ private:
 		LambdaEngine::TArray<uint64>& saltUIDs);
 
 	static bool CreatePlayer(
+		const void* pData,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
+		LambdaEngine::TArray<uint64>& saltUIDs);
+
+	static bool CreateProjectile(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,

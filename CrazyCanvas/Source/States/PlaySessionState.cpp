@@ -52,7 +52,6 @@ void PlaySessionState::Init()
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
-	m_WeaponSystem.Init();
 	m_HealthSystem.Init();
 	m_HUDSystem.Init();
 	m_MultiplayerClient.InitInternal();

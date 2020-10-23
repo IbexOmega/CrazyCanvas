@@ -124,6 +124,12 @@ bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 	return false;
 }
 
+bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
+{
+	LOG_INFO("SERVER: Weapon fired");
+	return false;
+}
+
 bool MatchServer::OnPlayerDied(const PlayerDiedEvent& event)
 {
 	LOG_INFO("SERVER: Player=%u DIED", event.KilledEntity);
@@ -138,10 +144,10 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 	IClient* pClient = event.pClient;
 
-	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+	ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>*	pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
+	ComponentArray<ParentComponent>*	pParentComponents	= pECS->GetComponentArray<ParentComponent>();
 
 	uint32 otherPlayerCount = 0;
 	Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, otherPlayerCount);
