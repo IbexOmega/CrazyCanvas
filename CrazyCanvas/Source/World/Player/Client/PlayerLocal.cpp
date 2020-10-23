@@ -1,4 +1,4 @@
-#include "World/Player/PlayerLocal.h"
+#include "World/Player/Client/PlayerLocal.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/CharacterControllerHelper.h"

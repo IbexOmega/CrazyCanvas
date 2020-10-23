@@ -5,7 +5,7 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
-#include "PlayerGameState.h"
+#include "World/Player/PlayerGameState.h"
 
 #include "Game/World/Player/PlayerActionSystem.h"
 

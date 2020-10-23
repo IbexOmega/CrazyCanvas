@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Multiplayer/MultiplayerBase.h"
-#include "World/Player/PlayerLocal.h"
-#include "World/Player/PlayerForeignSystem.h"
+#include "World/Player/Client/PlayerLocal.h"
+#include "World/Player/Client/PlayerForeignSystem.h"
 #include "ECS/Systems/Match/ClientFlagSystem.h"
 
 class MultiplayerClient : public MultiplayerBase

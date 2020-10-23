@@ -3,6 +3,7 @@
 #include "Multiplayer/MultiplayerBase.h"
 
 #include "ECS/Systems/Match/ServerFlagSystem.h"
+#include "World/Player/Server/PlayerRemoteSystem.h"
 
 class MultiplayerServer : public MultiplayerBase
 {
@@ -17,5 +18,5 @@ protected:
 
 private:
 	ServerFlagSystem* m_pFlagSystem = nullptr;
-
+	PlayerRemoteSystem m_PlayerRemoteSystem;
 };

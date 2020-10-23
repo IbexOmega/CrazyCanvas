@@ -4,17 +4,13 @@
 
 #include "Time/API/Timestamp.h"
 
-#include "Containers/TArray.h"
+#include "ECS/Components/Multiplayer/PacketComponent.h"
 
-#include "World/Player/PlayerGameState.h"
-
-#include "Application/API/Events/NetworkEvents.h"
-
-class PlayerForeignSystem : public LambdaEngine::System
+class PlayerRemoteSystem : public LambdaEngine::System
 {
 public:
-	PlayerForeignSystem();
-	~PlayerForeignSystem();
+	PlayerRemoteSystem();
+	~PlayerRemoteSystem();
 
 	void Init();
 
@@ -25,4 +21,5 @@ private:
 
 private:
 	LambdaEngine::IDVector m_Entities;
+	LambdaEngine::THashTable<LambdaEngine::Entity, PlayerAction> m_CurrentGameStates;
 };

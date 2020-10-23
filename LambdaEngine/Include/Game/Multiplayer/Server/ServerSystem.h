@@ -18,7 +18,6 @@ namespace LambdaEngine
 		bool Start();
 		void Stop();
 
-		void FixedTickMainThread(Timestamp deltaTime);
 		void TickMainThread(Timestamp deltaTime);
 
 		ServerBase* GetServer();
@@ -44,7 +43,6 @@ namespace LambdaEngine
 		ServerSystem(const String& name);
 
 	private:
-		static void StaticFixedTickMainThread(Timestamp deltaTime);
 		static void StaticTickMainThread(Timestamp deltaTime);
 		static void StaticRelease();
 
