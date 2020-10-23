@@ -91,7 +91,8 @@ namespace LambdaEngine
 					float& elapTime = activeEmitterIt->second.ElapTime;
 					elapTime += deltaTime.AsSeconds();
 
-					if (elapTime >= activeEmitterIt->second.LifeTime - EPSILON)
+					float longestLifeTime = activeEmitterIt->second.LifeTime + (1.f - activeEmitterIt->second.Explosive) * (activeEmitterIt->second.ParticleChunk.Size - 1U) *  activeEmitterIt->second.SpawnDelay;
+					if (elapTime >= longestLifeTime - EPSILON)
 					{
 						// Set emitter component to inactive so this dose not trigger again and again
 						auto& Emitter = pEmitterComponents->GetData(activeEmitterIt->first);
@@ -165,7 +166,7 @@ namespace LambdaEngine
 		instance.BeginRadius			= emitterComp.BeginRadius * 0.5f;
 		instance.EndRadius				= emitterComp.EndRadius * 0.5f;
 		instance.Explosive				= emitterComp.Explosive;
-		instance.SpawnSpeed				= emitterComp.SpawnSpeed;
+		instance.SpawnDelay				= emitterComp.SpawnDelay;
 		instance.Color					= emitterComp.Color;
 		instance.FrictionFactor			= emitterComp.FrictionFactor;
 		instance.Bounciness				= emitterComp.Bounciness;
@@ -226,6 +227,7 @@ namespace LambdaEngine
 			emitterData.AnimationCount			= instance.AnimationCount;
 			emitterData.FirstAnimationIndex		= instance.FirstAnimationIndex;
 			emitterData.Gravity					= emitterComp.Gravity;
+			emitterData.OneTime					= instance.OneTime;
 			m_EmitterData.PushBack(emitterData);
 
 			// Create Transform
@@ -353,7 +355,7 @@ namespace LambdaEngine
 			particle.Bounciness = emitterInstance.Bounciness;
 
 			particle.LifeTime = emitterInstance.LifeTime;
-			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnSpeed;
+			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
 			if (allocateParticles)
 			{
@@ -399,7 +401,7 @@ namespace LambdaEngine
 			particle.Bounciness = emitterInstance.Bounciness;
 
 			particle.LifeTime = emitterInstance.LifeTime;
-			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnSpeed;
+			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
 			if (allocateParticles)
 			{
@@ -522,7 +524,7 @@ namespace LambdaEngine
 			instance.AnimationCount = emitterComp.AnimationCount;
 			instance.TileIndex = emitterComp.TileIndex;
 			instance.FirstAnimationIndex = emitterComp.FirstAnimationIndex;
-			instance.SpawnSpeed = emitterComp.SpawnSpeed;
+			instance.SpawnDelay = emitterComp.SpawnDelay;
 			instance.DataIndex = m_IndirectData.GetSize();
 			instance.Color = emitterComp.Color;
 			instance.Explosive = emitterComp.Explosive;
@@ -560,6 +562,8 @@ namespace LambdaEngine
 			emitterData.AnimationCount = emitterInstance.AnimationCount;
 			emitterData.FirstAnimationIndex = emitterInstance.FirstAnimationIndex;
 			emitterData.Gravity = emitterComp.Gravity;
+			emitterData.OneTime = emitterInstance.OneTime;
+
 			// Fetch default texture if none is set
 			GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
 			if (atlasGUID == GUID_NONE)

@@ -99,7 +99,7 @@ void main()
 		}
 
 		// Should only happen if it is an emitter that repeats.
-		if(particle.CurrentLife < 0.f)
+		if(!emitter.OneTime && particle.CurrentLife < 0.f)
 		{
 			float extraLife = mod(abs(particle.CurrentLife), particle.LifeTime);
 			particle.CurrentLife = particle.LifeTime-extraLife;

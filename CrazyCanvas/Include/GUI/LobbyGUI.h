@@ -33,7 +33,8 @@ public:
 	LobbyGUI(const LambdaEngine::String& xamlFile);
 	~LobbyGUI();
 
-	bool ConnectEvent(Noesis::BaseComponent* source, const char* event, const char* handler) override;
+	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
+
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -47,6 +48,7 @@ public:
 
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
 
+	void FixedTick(LambdaEngine::Timestamp delta);
 
 private:
 	void SetRenderStagesActive();
@@ -54,8 +56,10 @@ private:
 	void ErrorPopUp(ErrorCode errorCode);
 	void ErrorPopUpClose();
 
+	bool CheckServerStatus();
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
+	void HostServer();
 	void PopulateServerInfo();
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)

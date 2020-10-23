@@ -8,6 +8,7 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 
+
 MainMenuState::~MainMenuState()
 {
 	m_MainMenuGUI.Reset();
@@ -46,5 +47,9 @@ void MainMenuState::Init()
 
 void MainMenuState::Tick(LambdaEngine::Timestamp delta)
 {
-	
+
+}
+
+void MainMenuState::FixedTick(LambdaEngine::Timestamp delta)
+{
 }

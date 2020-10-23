@@ -18,7 +18,18 @@ void MeshPaintHandler::Init()
 bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 {
 	using namespace LambdaEngine;
-	const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
-	PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, EPaintMode::PAINT);
+
+	if (projectileHitEvent.AmmoType != EAmmoType::AMMO_TYPE_NONE)
+	{
+		EPaintMode paintMode = EPaintMode::PAINT;
+		if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_WATER)
+		{
+			paintMode = EPaintMode::REMOVE;
+		}
+
+		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
+		PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode);
+	}
+
 	return true;
 }

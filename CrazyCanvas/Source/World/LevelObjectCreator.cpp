@@ -17,7 +17,8 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "ECS/Components/Player/Weapon.h"
+#include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/ClientRemoteBase.h"
@@ -210,7 +211,8 @@ bool LevelObjectCreator::CreatePlayer(
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
-	if (pData == nullptr) return false;
+	if (pData == nullptr) 
+		return false;
 
 	using namespace LambdaEngine;
 
@@ -230,6 +232,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
+	pECS->AddComponent<HealthComponent>(playerEntity,			HealthComponent());
 
 	const CharacterColliderCreateInfo colliderInfo =
 	{
@@ -237,13 +240,14 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+		.CollisionMask	=	FCollisionGroup::COLLISION_GROUP_STATIC |
+							FCollisionGroup::COLLISION_GROUP_PLAYER |
+							FCollisionGroup::COLLISION_GROUP_DYNAMIC
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS);
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
-	pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0, 1.8f, 0.0) });
@@ -254,7 +258,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.Active = false,
 		.OneTime = true,
 		.Explosive = 1.0f,
-		.ParticleCount = 32,
+		.ParticleCount = 128,
 		.EmitterShape = EEmitterShape::CONE,
 		.Angle = 15.f,
 		.VelocityRandomness = 0.5f,
@@ -279,6 +283,7 @@ bool LevelObjectCreator::CreatePlayer(
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
+		pECS->AddComponent<NetworkComponent>(playerEntity, { pPlayerDesc->NetworkUID });
 
 		if (!pPlayerDesc->IsLocal)
 		{
@@ -342,6 +347,7 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
+		pECS->AddComponent<NetworkComponent>(playerEntity, { (int32)playerEntity });
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 
 		ClientRemoteBase* pClient = reinterpret_cast<ClientRemoteBase*>(pPlayerDesc->pClient);

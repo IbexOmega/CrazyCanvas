@@ -37,7 +37,7 @@ namespace LambdaEngine
 		/*
 		*	The rate at which particles will be spawned 
 		*/
-		float			SpawnSpeed				= 0.1f;
+		float			SpawnDelay				= 0.1f;
 		uint32			ParticleCount			= 32U;
 		EParticleShape  ParticleShape			= EParticleShape::BILLBOARD;
 		/*

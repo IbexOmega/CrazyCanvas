@@ -28,7 +28,7 @@ namespace LambdaEngine
 	{
 		bool			OneTime = false;
 		float			Explosive = 0.f;
-		float			SpawnSpeed; // This will be used if not explosive.
+		float			SpawnDelay; // This will be used if not explosive.
 		glm::vec3		Position;
 		glm::quat		Rotation;
 		float			Angle = 90.f;
@@ -80,7 +80,7 @@ namespace LambdaEngine
 		uint32 AnimationCount;
 		uint32 FirstAnimationIndex;
 		float Gravity;
-		uint32 Padding1 = 0;
+		bool OneTime;
 		uint32 Padding2 = 0;
 	};
 

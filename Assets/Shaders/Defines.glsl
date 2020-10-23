@@ -189,7 +189,7 @@ struct SEmitter
 	uint AnimationCount;
 	uint FirstAnimationIndex;
 	float Gravity;
-	uint Padding1;
+	bool OneTime;
 	uint Padding2;
 };
 
