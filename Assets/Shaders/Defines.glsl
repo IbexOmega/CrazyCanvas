@@ -176,8 +176,8 @@ struct SParticle
 	bool WasCreated;
 	float BeginRadius;
 	float EndRadius;
-	uint Padding0;
-	uint Padding1;
+	float FrictionFactor;
+	float Bounciness;
 };
 
 struct SEmitter

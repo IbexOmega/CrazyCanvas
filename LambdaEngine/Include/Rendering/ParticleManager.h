@@ -45,6 +45,8 @@ namespace LambdaEngine
 		uint32			TileIndex = 0;
 		uint32			AnimationCount = 0;
 		uint32			FirstAnimationIndex = 0;
+		float			FrictionFactor;
+		float			Bounciness;
 	};
 
 	struct SParticle
@@ -62,8 +64,8 @@ namespace LambdaEngine
 		bool WasCreated = true;
 		float BeginRadius;
 		float EndRadius;
-		uint32 Padding0 = 0;
-		uint32 Padding1 = 0;
+		float FrictionFactor;
+		float Bounciness;
 	};
 
 	struct SEmitter

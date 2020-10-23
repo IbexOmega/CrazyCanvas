@@ -164,6 +164,8 @@ namespace LambdaEngine
 		instance.Explosive			= emitterComp.Explosive;
 		instance.SpawnSpeed			= emitterComp.SpawnSpeed;
 		instance.Color				= emitterComp.Color;
+		instance.FrictionFactor		= emitterComp.FrictionFactor;
+		instance.Bounciness			= emitterComp.Bounciness;
 
 		GUID_Lambda atlasGUID = emitterComp.AtlasGUID;
 		if (atlasGUID == GUID_NONE)
@@ -344,6 +346,8 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
 			particle.WasCreated = true;
+			particle.FrictionFactor = emitterInstance.FrictionFactor;
+			particle.Bounciness = emitterInstance.Bounciness;
 
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnSpeed;
@@ -388,6 +392,8 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.TileIndex;
 			particle.EmitterIndex = emitterInstance.DataIndex;
 			particle.WasCreated = true;
+			particle.FrictionFactor = emitterInstance.FrictionFactor;
+			particle.Bounciness = emitterInstance.Bounciness;
 
 			particle.LifeTime = emitterInstance.LifeTime;
 			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnSpeed;
@@ -514,6 +520,8 @@ namespace LambdaEngine
 			instance.DataIndex = m_IndirectData.GetSize();
 			instance.Color = emitterComp.Color;
 			instance.Explosive = emitterComp.Explosive;
+			instance.FrictionFactor = emitterComp.FrictionFactor;
+			instance.Bounciness = emitterComp.Bounciness;
 			emitterInstance = instance;
 
 			if (emitterComp.EmitterShape == EEmitterShape::CONE)
