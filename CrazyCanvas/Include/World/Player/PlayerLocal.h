@@ -25,7 +25,9 @@ public:
 	void DoAction(LambdaEngine::Timestamp deltaTime, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
 
 private:
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final {};
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final 
+	{
+	}
 
 	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);

@@ -26,8 +26,6 @@ public:
 
 	void Init() override final;
 
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
-
 	void Resume() override final 
 	{
 	}

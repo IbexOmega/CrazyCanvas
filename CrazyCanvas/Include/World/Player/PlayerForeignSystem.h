@@ -21,7 +21,9 @@ public:
 	void FixedTickMainThread(LambdaEngine::Timestamp deltaTime);
 
 private:
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final {};
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final 
+	{
+	}
 
 private:
 	LambdaEngine::IDVector m_Entities;

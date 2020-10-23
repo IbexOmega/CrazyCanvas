@@ -19,7 +19,7 @@ namespace LambdaEngine
 	struct CameraDesc;
 };
 
-enum ELevelObjectType : uint8
+enum class ELevelObjectType : uint8
 {
 	LEVEL_OBJECT_TYPE_NONE				= 0,
 	LEVEL_OBJECT_TYPE_STATIC_GEOMTRY	= 1,

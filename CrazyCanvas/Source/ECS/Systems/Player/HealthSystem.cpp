@@ -95,8 +95,8 @@ void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 					LOG_INFO("PLAYER DIED");
 					healthComponent.CurrentHealth = 0;
 
-					PlayerDiedEvent event(entity);
-					EventQueue::SendEvent(event);
+					PlayerDiedEvent diedEvent(entity);
+					EventQueue::SendEvent(diedEvent);
 				}
 			}
 		}

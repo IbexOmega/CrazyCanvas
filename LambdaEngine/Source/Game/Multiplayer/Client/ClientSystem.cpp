@@ -111,7 +111,6 @@ namespace LambdaEngine
 
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
