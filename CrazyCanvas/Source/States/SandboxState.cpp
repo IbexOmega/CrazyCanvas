@@ -226,6 +226,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
 		pECS->AddComponent<ParticleEmitterComponent>(entity,
 			ParticleEmitterComponent{
+				.ParticleCount = 1024,
 				.EmitterShape = EEmitterShape::TUBE,
 				.Velocity = 1.0f,
 				.Acceleration = 0.0f,
@@ -517,7 +518,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	static bool removeEmitters = true;
 	if (event.Key == EKey::KEY_8)
 	{
-		uint32 modIndex = indexEmitters % 3U;
+		uint32 modIndex = indexEmitters % 10U;
 		if (modIndex == 0U)
 			removeEmitters = !removeEmitters;
 
@@ -526,15 +527,17 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			Entity e = ecsCore->CreateEntity();
 			m_Emitters[modIndex] = e;
 
-			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -1.f + float(modIndex) } });
+			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -5.f + float(modIndex) } });
 			ecsCore->AddComponent<RotationComponent>(e, { true,glm::identity<glm::quat>() });
 			ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
 				.OneTime = true,
 				.Explosive = 1.f,
-				.Velocity = 1.0f + Random::Float32(-0.5f, 0.5f),
+				.ParticleCount = Random::UInt32(256, 512),
+				.Velocity = 1.0f + Random::Float32(-3.f, 3.f),
 				.Acceleration = Random::Float32(-1.0f, 1.0f),
-				.LifeTime = Random::Float32(0.5f, 2.0f),
-				.ParticleRadius = 0.1f + Random::Float32(-0.05f, 0.1f),
+				.Gravity = Random::Float32(-1.0f, 1.0f),
+				.LifeTime = Random::Float32(1.0f, 3.0f),
+				.ParticleRadius = 0.2f + Random::Float32(-0.05f, 0.1f),
 				});
 		}
 		else

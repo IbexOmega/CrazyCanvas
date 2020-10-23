@@ -251,16 +251,21 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
-		.Active = true,
-		.OneTime = false,
-		.Explosive = 0.f,
+		.Active = false,
+		.OneTime = true,
+		.Explosive = false,
 		.ParticleCount = 32,
 		.EmitterShape = EEmitterShape::CONE,
-		.Angle = 25.f,
-		.Velocity = 2.0,
-		.Acceleration = -1.0,
-		.LifeTime = 3.0f,
+		.Angle = 15.f,
+		.Velocity = 4.0,
+		.Acceleration = 0.0,
+		.Gravity = 0.f,
+		.LifeTime = 2.0f,
 		.ParticleRadius = 0.1f,
+		.TileIndex = 16,
+		.AnimationCount = 4,
+		.FirstAnimationIndex = 16,
+		.Color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
 		}
 	);
 

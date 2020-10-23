@@ -175,7 +175,7 @@ struct SParticle
 	vec3 StartAcceleration;
 	bool WasCreated;
 	float LifeTime;
-	float LifeTimeOffset;
+	uint Padding0;
 	uint Padding1;
 	uint Padding2;
 };

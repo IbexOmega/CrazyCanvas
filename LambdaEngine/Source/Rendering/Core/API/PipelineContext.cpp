@@ -127,4 +127,5 @@ void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname,
 	{
 		LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
 	}
+
 }

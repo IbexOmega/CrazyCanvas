@@ -59,12 +59,11 @@ void main()
 		if(particle.WasCreated)
 		{
 			particle.WasCreated = false;
-			particle.Transform[3].xyz += emitterTransform[3].xyz;
+			particle.Transform[3].xyz = emitterTransform[3].xyz + particle.StartPosition;
 
 			// Rotate the initial acceleration and velocity to match its emitter's.
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
-			particle.CurrentLife = particle.LifeTime + particle.LifeTimeOffset;
 		}
 
 		vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
@@ -94,7 +93,8 @@ void main()
 		// If the particle is not visible, put it outside the view of the players.
 		if(particle.CurrentLife > particle.LifeTime)
 		{
-			particle.Transform[3].xyz += vec3(10000.f, 10000.f, 10000.f);
+			const float OUT_OF_REACH = 10000.f;
+			particle.Transform[3].xyz = vec3(OUT_OF_REACH);
 			particle.WasCreated = true;
 		}
 
