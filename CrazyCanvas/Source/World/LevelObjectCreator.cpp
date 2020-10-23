@@ -264,6 +264,8 @@ bool LevelObjectCreator::CreatePlayer(
 		.LifeTime = 2.0f,
 		.RadiusRandomness = 0.5f,
 		.BeginRadius = 0.1f,
+		.FrictionFactor = 0.f,
+		.Bounciness = 0.f,
 		.TileIndex = 14,
 		.AnimationCount = 1,
 		.FirstAnimationIndex = 16,

@@ -70,6 +70,14 @@ namespace LambdaEngine
 		float			RadiusRandomness		= 0.0f;
 		float			BeginRadius				= 1.0f;
 		float			EndRadius				= 0.0f;
+		/*
+		* This will be multiplied by the velocity, meaning that, if it is 1, no friction is applied, if 0, full friction.
+		*/
+		float			FrictionFactor			= 0.9f;
+		/*
+		* How much of an opposite force the particles should have, 1 is the standard force (no bounciness), if greater than 1, it will bounce, if lower it will fall throuh the ground.
+		*/
+		float			Bounciness				= 1.0f;
 		GUID_Lambda		AtlasGUID				= GUID_NONE;
 		uint32			AtlasTileSize			= 64;
 		uint32			TileIndex				= 0;
