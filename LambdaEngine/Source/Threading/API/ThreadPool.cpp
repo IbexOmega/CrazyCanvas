@@ -1,4 +1,5 @@
 #include "Threading/API/ThreadPool.h"
+#include "Threading/API/PlatformThread.h"
 
 #include "Log/Log.h"
 
@@ -27,7 +28,8 @@ namespace LambdaEngine
 		s_Threads.Reserve(threadCount);
 		for (uint32 threadIdx = 0u; threadIdx < threadCount; threadIdx++)
 		{
-			s_Threads.EmplaceBack(std::thread(&ThreadPool::WaitForJob));
+			std::thread& thread = s_Threads.EmplaceBack(std::thread(&ThreadPool::WaitForJob));
+			PlatformThread::SetThreadName(PlatformThread::GetThreadHandle(thread), "ThreadPool" + std::to_string(threadIdx));
 		}
 
 		s_JoinResources.Resize(s_Threads.GetSize() * 2u);
