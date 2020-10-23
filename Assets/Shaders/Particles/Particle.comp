@@ -84,7 +84,7 @@ void main()
 		{
 			vec3 preV = particle.Velocity;
 			particle.Velocity *= 0.9; // Friction
-			particle.Velocity -= dot(preV, normal) * normal * 1.f;
+			particle.Velocity -= dot(preV, normal) * normal * 1.2f;
 		}
 		
 		particle.Transform[3].xyz += particle.Velocity*dt;
