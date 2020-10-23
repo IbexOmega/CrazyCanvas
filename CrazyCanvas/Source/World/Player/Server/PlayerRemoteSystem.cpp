@@ -1,11 +1,10 @@
 #include "World/Player/Server/PlayerRemoteSystem.h"
+#include "World/Player/CharacterControllerHelper.h"
 
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
-#include "Game/Multiplayer/CharacterControllerHelper.h"
-
-#include "Game/World/Player/PlayerActionSystem.h"
+#include "World/Player/PlayerActionSystem.h"
 
 #include "ECS/ECSCore.h"
 

@@ -2,7 +2,8 @@
 
 MultiplayerClient::MultiplayerClient() : 
 	m_PlayerLocal(),
-	m_PlayerForeignSystem()
+	m_PlayerForeignSystem(),
+	m_NetworkPositionSystem()
 {
 
 }
@@ -16,6 +17,7 @@ void MultiplayerClient::Init()
 {
 	m_PlayerLocal.Init();
 	m_PlayerForeignSystem.Init();
+	m_NetworkPositionSystem.Init();
 
 	m_pFlagSystem = DBG_NEW ClientFlagSystem();
 	m_pFlagSystem->Init();

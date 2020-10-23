@@ -1,7 +1,7 @@
 #include "World/Player/Client/PlayerLocal.h"
+#include "World/Player/CharacterControllerHelper.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Game/Multiplayer/CharacterControllerHelper.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"

@@ -5,9 +5,9 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
-#include "World/Player/PlayerGameState.h"
+#include "World/Player/PlayerActionSystem.h"
 
-#include "Game/World/Player/PlayerActionSystem.h"
+#include "World/Player/PlayerGameState.h"
 
 class PlayerLocal : public LambdaEngine::System
 {
@@ -39,6 +39,6 @@ private:
 	int32 m_NetworkUID;
 	int32 m_SimulationTick;
 	LambdaEngine::IClient* m_pClient;
-	LambdaEngine::PlayerActionSystem m_PlayerActionSystem;
+	PlayerActionSystem m_PlayerActionSystem;
 	LambdaEngine::TArray<PlayerGameState> m_FramesToReconcile;
 };

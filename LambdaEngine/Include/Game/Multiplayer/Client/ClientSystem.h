@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Game/Multiplayer/Client/NetworkPositionSystem.h"
-
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/UDP/INetworkDiscoveryClient.h"
 
@@ -57,7 +55,6 @@ namespace LambdaEngine
 
 	private:
 		ClientBase* m_pClient;
-		NetworkPositionSystem m_NetworkPositionSystem;
 		String m_Name;
 		bool m_DebuggingWindow;
 

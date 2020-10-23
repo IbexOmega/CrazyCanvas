@@ -17,7 +17,6 @@ namespace LambdaEngine
 
 	ClientSystem::ClientSystem(const String& name) :
 		m_pClient(nullptr),
-		m_NetworkPositionSystem(),
 		m_Name(name),
 		m_DebuggingWindow(false)
 	{
@@ -34,8 +33,6 @@ namespace LambdaEngine
 		clientDesc.UsePingSystem		= false;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
-
-		m_NetworkPositionSystem.Init();
 
 		NetworkDiscovery::EnableClient(m_Name, this);
 
