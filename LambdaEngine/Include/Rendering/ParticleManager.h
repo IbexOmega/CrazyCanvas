@@ -36,7 +36,8 @@ namespace LambdaEngine
 		float			Acceleration;
 		float			ElapTime = 0.f;
 		float			LifeTime;
-		float			ParticleRadius;
+		float			BeginRadius;
+		float			EndRadius;
 		glm::vec4		Color;
 		uint32			DataIndex = UINT32_MAX;
 		ParticleChunk	ParticleChunk;
@@ -52,17 +53,17 @@ namespace LambdaEngine
 		glm::vec3 Velocity;
 		float CurrentLife;
 		glm::vec3 StartVelocity;
-		float Radius;
+		float LifeTime;
 		glm::vec3 Acceleration;
 		uint32 TileIndex;
 		glm::vec3 StartPosition;
 		uint32 EmitterIndex;
 		glm::vec3 StartAcceleration;
 		bool WasCreated = true;
-		float LifeTime;
+		float BeginRadius;
+		float EndRadius;
 		uint32 Padding0 = 0;
 		uint32 Padding1 = 0;
-		uint32 Padding2 = 0;
 	};
 
 	struct SEmitter

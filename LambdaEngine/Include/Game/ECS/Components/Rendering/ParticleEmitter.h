@@ -35,7 +35,8 @@ namespace LambdaEngine
 		float			Acceleration		= 0.0f;
 		float			Gravity				= -9.81f;
 		float			LifeTime			= 1.0f;
-		float			ParticleRadius		= 1.0f;
+		float			BeginRadius			= 1.0f;
+		float			EndRadius			= 0.0f;
 		GUID_Lambda		AtlasGUID			= GUID_NONE;
 		uint32			AtlasTileSize		= 64;
 		uint32			TileIndex			= 0;

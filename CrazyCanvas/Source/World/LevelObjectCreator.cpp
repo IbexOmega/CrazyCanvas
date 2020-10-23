@@ -253,19 +253,19 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
 		.Active = false,
 		.OneTime = true,
-		.Explosive = false,
+		.Explosive = true,
 		.ParticleCount = 32,
 		.EmitterShape = EEmitterShape::CONE,
 		.Angle = 15.f,
 		.Velocity = 4.0,
 		.Acceleration = 0.0,
-		.Gravity = 0.f,
+		.Gravity = -4.f,
 		.LifeTime = 2.0f,
-		.ParticleRadius = 0.1f,
-		.TileIndex = 16,
-		.AnimationCount = 4,
+		.BeginRadius = 0.1f,
+		.TileIndex = 14,
+		.AnimationCount = 1,
 		.FirstAnimationIndex = 16,
-		.Color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f),
+		.Color = glm::vec4(0.0f, 0.0f, 0.5f, 1.0f),
 		}
 	);
 
