@@ -146,7 +146,7 @@ namespace LambdaEngine
 				{ R, MeshPaintComponent::Type() }
 			};
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(RenderSystem), systemReg);
 		}
 
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();

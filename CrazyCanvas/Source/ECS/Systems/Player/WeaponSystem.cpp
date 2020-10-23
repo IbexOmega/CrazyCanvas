@@ -53,7 +53,7 @@ bool WeaponSystem::Init()
 		};
 		systemReg.Phase = 1;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(WeaponSystem), systemReg);
 	}
 
 	// Create rendering resources for projectiles
@@ -198,7 +198,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileInfo);
 
 	const MeshComponent& meshComp = ammoType == EAmmoType::AMMO_TYPE_PAINT ? m_PaintProjectileMeshComponent : m_WaterProjectileMeshComponent;
-	const DynamicCollisionCreateInfo collisionInfo = 
+	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
@@ -256,7 +256,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 		{
 			ammoType = pProjectileComponents->GetConstData(collisionInfo0.Entity).AmmoType;
 		}
-		
+
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType);
 		EventQueue::SendEventImmediate(hitEvent);
 	}

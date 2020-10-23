@@ -39,7 +39,7 @@ namespace LambdaEngine
 		};
 		systemReg.Phase = LAST_PHASE - 1;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(TransformApplierSystem), systemReg);
 	}
 
 	void TransformApplierSystem::Tick(Timestamp deltaTime)

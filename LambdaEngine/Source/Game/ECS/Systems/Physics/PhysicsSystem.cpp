@@ -94,7 +94,7 @@ namespace LambdaEngine
 			};
 			systemReg.Phase = 1;
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(PhysicsSystem), systemReg);
 
 			SetComponentOwner<StaticCollisionComponent>({ std::bind_front(&PhysicsSystem::StaticCollisionDestructor, this) });
 			SetComponentOwner<DynamicCollisionComponent>({ std::bind_front(&PhysicsSystem::DynamicCollisionDestructor, this) });

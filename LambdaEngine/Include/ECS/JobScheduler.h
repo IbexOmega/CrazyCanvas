@@ -29,6 +29,8 @@ namespace LambdaEngine
         uint32 ScheduleRegularJob(const RegularJob& job, uint32_t phase);
         void DescheduleRegularJob(uint32 phase, uint32 jobID);
 
+        std::array<IDDVector<RegularJob>, PHASE_COUNT> GetRegularJobs() const { return m_RegularJobs; }
+
     private:
         const Job* FindExecutableJob();
         bool CanExecute(const Job& job) const;

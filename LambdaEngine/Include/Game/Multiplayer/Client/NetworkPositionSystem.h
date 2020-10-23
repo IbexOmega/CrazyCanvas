@@ -13,10 +13,10 @@ namespace LambdaEngine
 
 	public:
 		DECL_UNIQUE_CLASS(NetworkPositionSystem);
-		virtual ~NetworkPositionSystem();
+		virtual ~NetworkPositionSystem() = default;
 
 	private:
-		NetworkPositionSystem();
+		NetworkPositionSystem() = default;
 
 		void Init();
 
