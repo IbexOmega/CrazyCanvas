@@ -79,6 +79,8 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	m_WeaponSystem.Init();
+	m_HealthSystem.Init();
+
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &SandboxState::OnPacketReceived);

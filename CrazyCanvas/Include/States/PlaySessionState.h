@@ -25,8 +25,13 @@ public:
 
 	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
 
-	void Resume() override final {};
-	void Pause() override final {};
+	void Resume() override final 
+	{
+	}
+
+	void Pause() override final 
+	{
+	}
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
