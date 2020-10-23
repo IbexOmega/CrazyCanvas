@@ -513,6 +513,7 @@ namespace LambdaEngine
 			instance.SpawnSpeed = emitterComp.SpawnSpeed;
 			instance.DataIndex = m_IndirectData.GetSize();
 			instance.Color = emitterComp.Color;
+			instance.Explosive = emitterComp.Explosive;
 			emitterInstance = instance;
 
 			if (emitterComp.EmitterShape == EEmitterShape::CONE)
