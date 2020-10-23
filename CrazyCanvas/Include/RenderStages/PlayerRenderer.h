@@ -1,6 +1,7 @@
 #pragma once
 #include "Rendering/RenderGraphTypes.h"
 #include "Rendering/ICustomRenderer.h"
+#include "Rendering/Core/API/DescriptorCache.h"
 
 namespace LambdaEngine
 {
@@ -74,7 +75,7 @@ namespace LambdaEngine
 		bool CreateDescriptorSets();
 		bool CreateShaders();
 		bool CreateCommandLists();
-		bool CreateRenderPass(RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
+		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 
 		TSharedRef<DescriptorSet> GetDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
@@ -102,14 +103,18 @@ namespace LambdaEngine
 		uint64									m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
-		TSharedRef<DescriptorSet>				m_PlayerDescriptorSet;
+		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
+		TSharedRef<DescriptorSet>				m_PlayerMaterialDescriptorSet;
 		TArray<TSharedRef<DescriptorSet>>		m_DrawArgsDescriptorSets;
 
 		THashTable<DescriptorSetIndex, TArray<std::pair<TSharedRef<DescriptorSet>, ReleaseFrame>>>	m_UnavailableDescriptorSets;
 		THashTable<DescriptorSetIndex, TArray<TSharedRef<DescriptorSet>>>							m_AvailableDescriptorSets;
 
+		DescriptorCache							m_DescriptorCache;
+
 		uint32									m_BackBufferCount = 0;
-		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+		TSharedRef<const TextureView>			m_DepthStencil;
+		TSharedRef<const TextureView>			m_IntermediateOutputImage;
 		uint32									m_ViewerId;
 		TArray<uint32>							m_TeamIds;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
