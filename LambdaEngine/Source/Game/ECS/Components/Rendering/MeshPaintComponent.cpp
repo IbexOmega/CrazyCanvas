@@ -16,8 +16,8 @@ namespace LambdaEngine
 	MeshPaintComponent MeshPaint::CreateComponent(Entity entity, const std::string& textureName, uint32 width, uint32 height)
 	{
 		MeshPaintComponent meshPaintComponent = {};
-		char* pData = DBG_NEW char[width * height * 4];
-		memset(pData, 0, width * height * 4); // TODO: Resize if necessary
+		char* pData = DBG_NEW char[width * height * 2];
+		memset(pData, 0, width * height * 2);
 
 		meshPaintComponent.pTexture = ResourceLoader::LoadTextureArrayFromMemory(textureName, reinterpret_cast<void**>(&pData), 1, width, height, EFormat::FORMAT_R8G8_UINT, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, true, false);
 

@@ -11,10 +11,11 @@ layout(location = 1) in vec3		in_Normal;
 layout(location = 2) in vec3		in_TargetPosition;
 layout(location = 3) in vec3		in_TargetDirection;
 
-layout(push_constant) uniform ResetBuffer
+layout(push_constant) uniform FrameSettingBuffer
 {
-	layout(offset = 4) uint reset;
-} p_ShouldReset;
+	layout(offset = 4) uint ShouldReset;
+	layout(offset = 8) uint ShouldPaint;
+} p_FrameSettings;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
@@ -29,9 +30,11 @@ float random (in vec3 x) {
 
 void main()
 {
-	if (p_ShouldReset.reset == 1)
+	if (p_FrameSettings.ShouldReset == 1)
+	{
 		out_BitsClient = 0;
-	else
+	}
+	else if (p_FrameSettings.ShouldPaint > 0)
 	{		
 		const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
 		const float BRUSH_SIZE	= 0.2f;
@@ -72,14 +75,14 @@ void main()
 				client |= u_UnwrapData.val.PaintMode;
 				out_BitsClient = client & 0xFF;
 			}
-			else
+			else if (u_UnwrapData.val.RemoteMode == 1)
 			{
 				uint server = u_UnwrapData.val.TeamMode << 1;
 				server |= u_UnwrapData.val.PaintMode & 0x1;
 				out_BitsServer = server & 0xFF;
 			}
 		}
-		else if (p_ShouldReset.reset == 0)
+		else if (p_FrameSettings.ShouldReset == 0)
 			discard;
 	}
 }

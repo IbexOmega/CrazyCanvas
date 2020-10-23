@@ -17,7 +17,7 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -71,11 +71,10 @@ void main()
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//3
-	// vec2 storedShadingNormal  	= DirToOct(shadingNormal);
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//4
-	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
+	vec2 screenVelocity			= (prevNDC - currentNDC);
 	out_Velocity				= vec2(screenVelocity);
 
 	// 5
@@ -86,6 +85,13 @@ void main()
 	if (clientPainting > 0)
 		team = clientTeam;
 
+	// TODO: Change this to a buffer input which we can index the team color to
+	vec3 color = vec3(0.0);
+	if (team == 1)
+		color = vec3(1.0, 0.0, 0.0);
+	else if (team == 2)
+		color = vec3(0.0, 0.0, 1.0);
+
 	// Mix team color
-	out_Albedo 					= mix(out_Albedo, mix(vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), float(team)), shouldPaint);
+	out_Albedo					= mix(out_Albedo, color, shouldPaint);
 }

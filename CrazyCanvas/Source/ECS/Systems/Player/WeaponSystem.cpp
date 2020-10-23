@@ -148,10 +148,6 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		}
 
 		// Reload if we are not reloading
-		if (Input::IsKeyDown(EKey::KEY_T))
-		{
-			PaintMaskRenderer::ResetClient();
-		}
 		if (Input::IsKeyDown(EKey::KEY_R) && !isReloading)
 		{
 			StartReload(weaponComponent);

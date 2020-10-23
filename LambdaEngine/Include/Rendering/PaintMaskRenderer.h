@@ -37,8 +37,9 @@ namespace LambdaEngine
 
 	enum class ETeam
 	{
-		RED		= 0,
-		BLUE	= 1
+		NONE	= 0,
+		RED		= 1,
+		BLUE	= 2,
 	};
 
 	class PaintMaskRenderer : public ICustomRenderer
@@ -81,6 +82,8 @@ namespace LambdaEngine
 		*	paintMode - painting mode to be used for the target
 		*/
 		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode);
+
+		/* Reset client data from the texture and only use the verifed server data */
 		static void ResetClient();
 
 	private:
@@ -110,6 +113,12 @@ namespace LambdaEngine
 			EPaintMode		PaintMode			= EPaintMode::PAINT;
 			ERemoteMode		RemoteMode			= ERemoteMode::CLIENT;
 			ETeam			Team				= ETeam::RED;
+		};
+
+		struct FrameSettings
+		{
+			uint32 ShouldReset = 0;
+			uint32 ShouldPaint = 0;
 		};
 
 	private:

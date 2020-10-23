@@ -360,6 +360,9 @@ namespace LambdaEngine
 		pCommandList->Begin(nullptr);
 
 		bool isServer		= false;
+		
+		FrameSettings frameSettings = {};
+		frameSettings.ShouldReset = s_ShouldReset;
 
 		// Transfer current collision data
 		if (!s_ShouldReset || !s_Collisions.empty())
@@ -370,7 +373,10 @@ namespace LambdaEngine
 
 			const UnwrapData& data	= s_Collisions.front();
 			isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
+			frameSettings.ShouldPaint = true;
+			
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
+
 			s_Collisions.pop_front();
 			unwrapDataCopyBuffer->Unmap();
 			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
@@ -442,7 +448,7 @@ namespace LambdaEngine
 			pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
 
 			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
-			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &s_ShouldReset, sizeof(uint32), sizeof(uint32));
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &frameSettings, sizeof(FrameSettings), sizeof(uint32));
 
 			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
@@ -534,7 +540,7 @@ namespace LambdaEngine
 
 		ConstantRangeDesc constantRangePixelDesc		= { };
 		constantRangePixelDesc.ShaderStageFlags			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		constantRangePixelDesc.SizeInBytes				= sizeof(uint32);
+		constantRangePixelDesc.SizeInBytes				= sizeof(FrameSettings);
 		constantRangePixelDesc.OffsetInBytes			= sizeof(uint32);
 
 		// PerFrameBuffer
