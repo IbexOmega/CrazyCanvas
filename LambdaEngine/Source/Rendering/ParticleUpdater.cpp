@@ -20,8 +20,6 @@ namespace LambdaEngine
 
 		m_ParticleCount = 0;
 		m_PushConstant.particleCount = 0;
-		m_PushConstant.Width = 0;
-		m_PushConstant.Height = 0;
 	}
 
 	ParticleUpdater::~ParticleUpdater()
@@ -68,18 +66,27 @@ namespace LambdaEngine
 		// Set 0
 		m_UpdatePipeline.CreateDescriptorSetLayout({ instanceBindingDesc0, instanceBindingDesc1, instanceBindingDesc2, instanceBindingDesc3 });
 
+		DescriptorBindingDesc depthBindingDesc = {};
+		depthBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		depthBindingDesc.DescriptorCount = 1;
+		depthBindingDesc.Binding = 0;
+		depthBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		// Set 1
+		m_UpdatePipeline.CreateDescriptorSetLayout({ depthBindingDesc });
+
 		DescriptorBindingDesc normalBindingDesc = {};
 		normalBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 		normalBindingDesc.DescriptorCount = 1;
 		normalBindingDesc.Binding = 0;
 		normalBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
-		// Set 1
+		// Set 2
 		m_UpdatePipeline.CreateDescriptorSetLayout({ normalBindingDesc });
 
 		ConstantRangeDesc constantRange = {};
 		constantRange.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		constantRange.SizeInBytes = sizeof(float) * 4.0f;
+		constantRange.SizeInBytes = sizeof(float) * 2.0f;
 		constantRange.OffsetInBytes = 0;
 
 		m_UpdatePipeline.CreateConstantRange(constantRange);
@@ -92,7 +99,7 @@ namespace LambdaEngine
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 1;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 1;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 2;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 3;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
@@ -234,7 +241,20 @@ namespace LambdaEngine
 			constexpr uint32 setIndex = 1U;
 			constexpr uint32 setBinding = 0U;
 
-			Sampler* sampler = Sampler::GetLinearSampler();
+			if (!m_Sampler)
+			{
+				SamplerDesc samplerDesc = {};
+				samplerDesc.DebugName = "Depth Sampler";
+				samplerDesc.MinFilter = EFilterType::FILTER_TYPE_NEAREST;
+				samplerDesc.MagFilter = EFilterType::FILTER_TYPE_NEAREST;
+				samplerDesc.MipmapMode = EMipmapMode::MIPMAP_MODE_NEAREST;
+				samplerDesc.AddressModeU = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+				samplerDesc.AddressModeV = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+				samplerDesc.AddressModeW = ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+				samplerDesc.borderColor = ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+				m_Sampler = MakeSharedRef<Sampler>(RenderAPI::GetDevice()->CreateSampler(&samplerDesc));
+			}
+			Sampler* sampler = m_Sampler.Get();
 			SDescriptorTextureUpdateDesc descriptorUpdateDesc = {};
 			descriptorUpdateDesc.ppTextures = &ppPerImageTextureViews[0];
 			descriptorUpdateDesc.ppSamplers = &sampler;
@@ -246,28 +266,23 @@ namespace LambdaEngine
 
 			m_UpdatePipeline.UpdateDescriptorSet("Particle Depth Texture Descriptor Set 1 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
-		//else 
-			
-		/*if (resourceName == "G_BUFFER_COMPACT_NORMAL")
+		else if (resourceName == "G_BUFFER_COMPACT_NORMAL")
 		{
-			constexpr uint32 setIndex = 1U;
+			constexpr uint32 setIndex = 2U;
 			constexpr uint32 setBinding = 0U;
 
-			Sampler* sampler = Sampler::GetLinearSampler();
+			Sampler* sampler = Sampler::GetNearestSampler();
 			SDescriptorTextureUpdateDesc descriptorUpdateDesc = {};
 			descriptorUpdateDesc.ppTextures = &ppPerImageTextureViews[0];
 			descriptorUpdateDesc.ppSamplers = &sampler;
-			descriptorUpdateDesc.TextureState = ETextureState::TEXTURE_STATE_GENERAL;
+			descriptorUpdateDesc.TextureState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 			descriptorUpdateDesc.FirstBinding = setBinding;
 			descriptorUpdateDesc.DescriptorCount = 1;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 			descriptorUpdateDesc.UniqueSamplers = true;
 
-			m_PushConstant.Width = ppPerImageTextureViews[0]->GetDesc().pTexture->GetDesc().Width;
-			m_PushConstant.Height = ppPerImageTextureViews[0]->GetDesc().pTexture->GetDesc().Height;
-
-			m_UpdatePipeline.UpdateDescriptorSet("Particle Depth Texture Descriptor Set 1 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}*/
+			m_UpdatePipeline.UpdateDescriptorSet("Particle Normal Texture Descriptor Set 2 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc, false);
+		}
 	}
 
 	void ParticleUpdater::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)

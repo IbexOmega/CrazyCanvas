@@ -11,8 +11,6 @@ namespace LambdaEngine
 	{
 		struct PushConstantData
 		{
-			uint32 Width;
-			uint32 Height;
 			float delta;
 			uint32 particleCount;
 		};
@@ -66,6 +64,7 @@ namespace LambdaEngine
 
 		PushConstantData					m_PushConstant;
 
+		TSharedRef<Sampler>					m_Sampler = nullptr;
 		TSharedRef<DescriptorHeap>			m_DescriptorHeap			= nullptr;
 		PipelineContext						m_UpdatePipeline;
 

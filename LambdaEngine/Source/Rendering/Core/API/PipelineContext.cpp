@@ -84,9 +84,9 @@ void LambdaEngine::PipelineContext::CreateConstantRange(const ConstantRangeDesc&
 	}
 }
 
-void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorBufferUpdateDesc& descriptorUpdateDesc)
+void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorBufferUpdateDesc& descriptorUpdateDesc, bool shouldCopy)
 {
-	auto descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap);
+	auto descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap, shouldCopy);
 	if (descriptorSet != nullptr)
 	{
 		descriptorSet->WriteBufferDescriptors(
@@ -106,9 +106,9 @@ void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname,
 	}
 }
 
-void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTextureUpdateDesc& descriptorUpdateDesc)
+void LambdaEngine::PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTextureUpdateDesc& descriptorUpdateDesc, bool shouldCopy)
 {
-	auto descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap);
+	auto descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap, shouldCopy);
 	if (descriptorSet != nullptr)
 	{
 		descriptorSet->WriteTextureDescriptors(

@@ -55,8 +55,8 @@ namespace LambdaEngine
 
 		void CreateConstantRange(const ConstantRangeDesc& constantRangeDesc);
 
-		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorBufferUpdateDesc& descriptorUpdateDesc);
-		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTextureUpdateDesc& descriptorUpdateDesc);
+		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorBufferUpdateDesc& descriptorUpdateDesc, bool shouldCopy = true);
+		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTextureUpdateDesc& descriptorUpdateDesc, bool shouldCopy = true);
 
 		void SetVertexShader(GUID_Lambda vertexShader) { m_VertexShaderGUID = vertexShader; };
 		void SetFragmentShader(GUID_Lambda fragmentShader) { m_FragmentShaderGUID = fragmentShader; };

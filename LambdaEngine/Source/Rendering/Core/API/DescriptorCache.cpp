@@ -9,7 +9,7 @@
 namespace LambdaEngine
 {
 
-	TSharedRef<DescriptorSet> DescriptorCache::GetDescriptorSet(const String& debugname, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap)
+	TSharedRef<DescriptorSet> DescriptorCache::GetDescriptorSet(const String& debugname, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap, bool shouldCopy)
 	{
 		TSharedRef<DescriptorSet> ds;
 
@@ -31,7 +31,7 @@ namespace LambdaEngine
 
 		// Copy Descriptor set in use into Descriptor if it exists
 		uint32 inUseIndex = 0;
-		if (!m_InUseDescriptorSets[descriptorLayoutIndex].IsEmpty())
+		if (!m_InUseDescriptorSets[descriptorLayoutIndex].IsEmpty() && shouldCopy)
 		{
 			inUseIndex = m_InUseDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
 			if (inUseIndex < m_InUseDescriptorSets[descriptorLayoutIndex].GetSize())
@@ -40,7 +40,7 @@ namespace LambdaEngine
 			}
 		}
 
-		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty())
+		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty() && shouldCopy)
 		{
 			inUseIndex = m_NewDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
 			if (inUseIndex < m_NewDescriptorSets[descriptorLayoutIndex].GetSize())

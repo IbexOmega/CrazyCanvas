@@ -11,8 +11,6 @@ layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
-	uint	Width;
-	uint	Height;
 	float   DeltaTime;
     uint    ParticleCount; 
 } u_PC;
@@ -40,7 +38,7 @@ layout (binding = 3, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_DepthTexture;
 //layout(binding = 0,		set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_NormalTexture;
-//layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalTexture;
+layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
 
 // Main
 void main()
@@ -70,20 +68,23 @@ void main()
 			particle.CurrentLife = particle.LifeTime + particle.LifeTimeOffset;
 		}
 
-		/*vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
-		vec4 vpPos = frameBuffer.View * vec4(nextPos, 1.f);
-		vec2 uv = vpPos.xy / vpPos.w * 0.5f + 0.5f;
-		ivec2 pixelCoord = ivec2(int(float(u_PC.Width)*uv.x), int(float(u_PC.Height)*uv.y));
-		vec3 normal = UnpackNormal(imageLoad(u_NormalTexture, pixelCoord).xyz);
-		float depth = 0.f;//texture(u_DepthTexture, uv).r;
-		float pDepth = vpPos.z / vpPos.w;
+		vec3 newForce = particle.Acceleration + GLOBAL_DOWN*emitter.Gravity;
 
-		if(pDepth > depth)
+		vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
+		vec4 vpPos = frameBuffer.Projection * frameBuffer.View * vec4(nextPos, 1.f);
+		vpPos.xy = vpPos.xy/vpPos.w * 0.5f + 0.5f;
+		vpPos.y = 1.f - vpPos.y;
+		vec2 uv = vpPos.xy;
+		vec3 normal = UnpackNormal(texture(u_NormalTexture, uv).xyz);
+		float depth = texture(u_DepthTexture, uv).r;
+		float pDepth = vpPos.z/vpPos.w;
+
+		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
 		{
-			particle.Velocity -= dot(particle.Velocity, normal) * normal;
-		}*/
-
-		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
+			particle.Velocity = vec3(0.f);//dot(particle.Velocity, normal) * normal;
+		}
+		else
+			particle.Velocity += newForce * dt;
 		particle.Transform[3].xyz += particle.Velocity*dt;
 
 
