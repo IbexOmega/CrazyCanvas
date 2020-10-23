@@ -15,8 +15,6 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
-#include "Rendering/PaintMaskRenderer.h"
-
 bool WeaponSystem::Init()
 {
 	using namespace LambdaEngine;
