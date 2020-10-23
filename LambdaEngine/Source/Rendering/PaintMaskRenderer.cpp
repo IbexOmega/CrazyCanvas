@@ -345,12 +345,6 @@ namespace LambdaEngine
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
 		{
-			// TODO: This might need to be done. Should need to release the resources, but seems to work if it isn't done too.
-			//for (TSharedRef<DeviceChild> pDeviceChild : currentFrameDeviceResourcesToDestroy)
-			//{
-				//pDeviceChild.Get()->Release();
-				//SAFERELEASE(pDeviceChild);
-			//}
 			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 

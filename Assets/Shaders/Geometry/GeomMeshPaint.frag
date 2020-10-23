@@ -86,6 +86,6 @@ void main()
 	if (clientPainting > 0)
 		team = clientTeam;
 
-	vec3 test = mix(vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), float(team));
-	out_Albedo 					= mix(out_Albedo, test, shouldPaint);
+	// Mix team color
+	out_Albedo 					= mix(out_Albedo, mix(vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), float(team)), shouldPaint);
 }
