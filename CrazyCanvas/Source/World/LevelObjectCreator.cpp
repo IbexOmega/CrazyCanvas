@@ -17,6 +17,7 @@
 #include "Teams/TeamHelper.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/ClientRemoteBase.h"
@@ -209,7 +210,8 @@ bool LevelObjectCreator::CreatePlayer(
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
-	if (pData == nullptr) return false;
+	if (pData == nullptr) 
+		return false;
 
 	using namespace LambdaEngine;
 
@@ -229,6 +231,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
+	pECS->AddComponent<HealthComponent>(playerEntity,			HealthComponent());
 
 	const CharacterColliderCreateInfo colliderInfo =
 	{
@@ -236,7 +239,9 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCollisionGroup::COLLISION_GROUP_PLAYER
+		.CollisionMask	=	FCollisionGroup::COLLISION_GROUP_STATIC |
+							FCollisionGroup::COLLISION_GROUP_PLAYER |
+							FCollisionGroup::COLLISION_GROUP_DYNAMIC
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();

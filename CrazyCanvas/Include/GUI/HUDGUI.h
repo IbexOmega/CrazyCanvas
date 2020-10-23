@@ -20,16 +20,18 @@
 #include "NsCore/Type.h"
 
 #define MAX_SCORE 5
-#define MAX_AMMO 100.0
+#define MAX_AMMO 100
 
 struct GameGUIState
 {
 	float LifeMaxHeight;
 	float DamageTaken;
 	float Health;
-	float Ammo;
+	
+	int8  CurrentScore;
 
-	int8 CurrentScore;
+	int32 Ammo;
+	int32 AmmoCapacity;
 };
 
 class HUDGUI : public Noesis::Grid
@@ -39,15 +41,15 @@ public:
 	HUDGUI(const LambdaEngine::String& xamlFile);
 	~HUDGUI();
 
+	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
+
 	void OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
-
 	bool ApplyDamage(float damage);
 	bool UpdateScore();
-	bool UpdateAmmo();
+	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap);
 
 private:
 

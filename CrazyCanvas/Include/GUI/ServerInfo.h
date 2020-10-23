@@ -16,6 +16,7 @@ struct ServerInfo
 
 	uint8 Players;
 	uint16 Ping;
+	uint64 ServerUID;
 
 	LambdaEngine::IPEndPoint EndPoint;
 	LambdaEngine::Timestamp LastUpdate;
@@ -23,12 +24,12 @@ struct ServerInfo
 
 	bool operator==(const ServerInfo& other) const
 	{
-		return Name == other.Name && MapName == other.MapName && Players == other.Players && Ping == other.Ping && EndPoint == other.EndPoint;
+		return Name == other.Name && MapName == other.MapName && Players == other.Players && Ping == other.Ping && EndPoint == other.EndPoint && ServerUID == other.ServerUID;
 	}
 
 	bool operator!=(const ServerInfo& other) const
 	{
-		return Name != other.Name || MapName != other.MapName || Players != other.Players || Ping != other.Ping || EndPoint != other.EndPoint;
+		return Name != other.Name || MapName != other.MapName || Players != other.Players || Ping != other.Ping || EndPoint != other.EndPoint || ServerUID != other.ServerUID;
 	}
 
 	ServerInfo& operator=(const ServerInfo& other)
@@ -41,6 +42,7 @@ struct ServerInfo
 			Ping = other.Ping;
 			LastUpdate = other.LastUpdate;
 			EndPoint = other.EndPoint;
+			ServerUID = other.ServerUID;
 		}
 		return *this;
 	}

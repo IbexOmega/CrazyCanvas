@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Physics/PhysicsEvents.h"
 
 // MeshPaintHandler listens to events that should cause mesh to be painted
