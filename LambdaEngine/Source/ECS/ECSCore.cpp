@@ -23,6 +23,16 @@ namespace LambdaEngine
 		m_ComponentStorage.ResetDirtyFlags();
 	}
 
+	IComponentArray* ECSCore::GetComponentArray(const ComponentType* pComponentType)
+	{
+		return m_ComponentStorage.GetComponentArray(pComponentType);
+	}
+
+	const IComponentArray* ECSCore::GetComponentArray(const ComponentType* pComponentType) const
+	{
+		return m_ComponentStorage.GetComponentArray(pComponentType);
+	}
+
 	void ECSCore::RemoveEntity(Entity entity)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockRemoveEntity);

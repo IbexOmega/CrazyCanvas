@@ -25,25 +25,29 @@
 
 
 #include "World/LevelManager.h"
-#include "World/Level.h"
+#include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
 #include "Application/API/Events/EventQueue.h"
 
-PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
-	m_pIPAddress(pIPAddress)
+#include "Multiplayer/PacketType.h"
+
+PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) 
+	: m_pIPAddress(pIPAddress)
+	, m_MultiplayerClient()
 {
 }
 
 PlaySessionState::~PlaySessionState()
 {
-	SAFEDELETE(m_pLevel);
 }
 
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
+
+	ClientSystem::GetInstance();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -52,15 +56,19 @@ void PlaySessionState::Init()
 	m_WeaponSystem.Init();
 	m_HealthSystem.Init();
 	m_HUDSystem.Init();
+	m_MultiplayerClient.InitInternal();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PlaySessionState::OnPacketReceived);
-
-	// Scene
+	// Load Match
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
-		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+		MatchDescription matchDescription =
+		{
+			.LevelHash = levelHashes[0]
+		};
+		Match::CreateMatch(&matchDescription);
 	}
 
 	//Preload some resources
@@ -96,7 +104,7 @@ void PlaySessionState::Init()
 		robotAnimationComp.pGraph	= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose		= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
-		glm::vec3 position = glm::vec3(0.0f, 5.75f, -2.5f);
+		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
 		glm::vec3 scale(1.0f);
 
 		Entity entity = pECS->CreateEntity();
@@ -234,10 +242,15 @@ bool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent&
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
-	
+	m_MultiplayerClient.TickMainThreadInternal(delta);
+}
+
+void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
+{
 }
 
 void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
+	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }

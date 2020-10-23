@@ -16,17 +16,17 @@ namespace LambdaEngine
 
 	Entity ServerUtilsImpl::GetEntity(int32 networkUID) const
 	{
-		return networkUID;
+		return (Entity)networkUID;
+	}
+
+	int32 ServerUtilsImpl::GetNetworkUID(Entity entity) const
+	{
+		return (int32)entity;
 	}
 
 	void ServerUtilsImpl::RegisterEntity(Entity entity, int32 networkUID)
 	{
 		UNREFERENCED_VARIABLE(entity);
 		UNREFERENCED_VARIABLE(networkUID);
-	}
-
-	uint64 ServerUtilsImpl::GetSaltAsUID(IClient* pClient)
-	{
-		return pClient->GetStatistics()->GetSalt();
 	}
 }

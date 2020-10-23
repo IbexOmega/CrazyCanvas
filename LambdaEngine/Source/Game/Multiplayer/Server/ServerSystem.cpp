@@ -32,10 +32,10 @@ namespace LambdaEngine
 		desc.Protocol				= EProtocol::UDP;
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(10);
-		desc.UsePingSystem			= true;
+		desc.UsePingSystem			= false;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
-		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
+		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.5f);
 	}
 
 	ServerSystem::~ServerSystem()
@@ -77,6 +77,11 @@ namespace LambdaEngine
 			ClientRemoteSystem* pClientSystem = (ClientRemoteSystem*)pair.second->GetHandler();
 			pClientSystem->TickMainThread(deltaTime);
 		}
+	}
+
+	ServerBase* ServerSystem::GetServer()
+	{
+		return m_pServer;
 	}
 
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()

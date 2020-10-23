@@ -49,9 +49,12 @@
 #include "NoesisPCH.h"
 
 #include "World/LevelManager.h"
-#include "World/Level.h"
+
+#include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
+
+#include "Multiplayer/PacketType.h"
 
 #include <imgui.h>
 
@@ -68,11 +71,12 @@ SandboxState::~SandboxState()
 	}
 
 	SAFEDELETE(m_pRenderGraphEditor);
-	SAFEDELETE(m_pLevel);
 }
 
 void SandboxState::Init()
 {
+	ClientSystem::GetInstance();
+
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
@@ -80,10 +84,10 @@ void SandboxState::Init()
 	// Initialize Systems
 	m_WeaponSystem.Init();
 	m_HealthSystem.Init();
-
+	m_MultiplayerClient.InitInternal();
+	
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &SandboxState::OnPacketReceived);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
 	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
@@ -95,11 +99,16 @@ void SandboxState::Init()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-
-	// Scene
+	// Load Match
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
-		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+		MatchDescription matchDescription =
+		{
+			.LevelHash = levelHashes[0]
+		};
+
+		Match::CreateMatch(&matchDescription);
 	}
 
 	// Robot
@@ -358,10 +367,17 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	m_pRenderGraphEditor->Update();
 	LambdaEngine::Profiler::Tick(delta);
 
+	m_MultiplayerClient.TickMainThreadInternal(delta);
+
 	if constexpr (IMGUI_ENABLED)
 	{
 		RenderImgui();
 	}
+}
+
+void SandboxState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }
 
 void SandboxState::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)

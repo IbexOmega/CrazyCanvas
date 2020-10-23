@@ -14,6 +14,7 @@
 
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
+#include "Physics/CollisionGroups.h"
 
 bool WeaponSystem::Init()
 {
@@ -210,7 +211,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {meshComp}),
 		/* Shape Type */		EShapeType::SIMULATION,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
 		/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
 		/* Velocity */			initialVelocity
 	};

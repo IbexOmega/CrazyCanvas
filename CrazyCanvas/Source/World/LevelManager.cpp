@@ -48,6 +48,7 @@ bool LevelManager::Init()
 		{
 			GenericArray levels = d["levels"].GetArray();
 
+			s_LevelHashes.Resize(levels.Size());
 			s_LevelNames.Resize(levels.Size());
 			s_LevelDescriptions.Resize(levels.Size());
 			
@@ -127,6 +128,7 @@ bool LevelManager::Init()
 
 				levelDesc.Hash			= SHA256::Hash(byteRepresentation);
 
+				s_LevelHashes[l]		= levelDesc.Hash;
 				s_LevelNames[l]			= levelDesc.Name;
 				s_LevelDescriptions[l]	= levelDesc;
 
@@ -249,4 +251,37 @@ Level* LevelManager::LoadLevel(uint32 index)
 
 	LOG_ERROR("[LevelManager]: Level with index %d is out of bounds", index);
 	return nullptr;
+}
+
+const LambdaEngine::SHA256Hash& LevelManager::GetHash(const LambdaEngine::String& levelName)
+{
+	for (uint32 l = 0; l < s_LevelNames.GetSize(); l++)
+	{
+		if (levelName == s_LevelNames[l])
+		{
+			return s_LevelHashes[l];
+		}
+	}
+
+	LOG_ERROR("[LevelManager]: Can't find level with Name: %s", levelName.c_str());
+
+	LambdaEngine::SHA256Hash emptyHash;
+	emptyHash.SHA256Chunk0 = 0;
+	emptyHash.SHA256Chunk1 = 0;
+	return emptyHash;
+}
+
+const LambdaEngine::SHA256Hash& LevelManager::GetHash(uint32 index)
+{
+	if (index < s_LevelDescriptions.GetSize())
+	{
+		return s_LevelHashes[index];
+	}
+
+	LOG_ERROR("[LevelManager]: Level with index %d is out of bounds", index);
+
+	LambdaEngine::SHA256Hash emptyHash;
+	emptyHash.SHA256Chunk0 = 0;
+	emptyHash.SHA256Chunk1 = 0;
+	return emptyHash;
 }

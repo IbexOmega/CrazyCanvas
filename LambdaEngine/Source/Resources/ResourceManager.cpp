@@ -125,7 +125,7 @@ namespace LambdaEngine
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObjectOnLoad>& specialObjects,
+		TArray<LevelObjectOnLoad>& levelObjects,
 		const String& directory)
 	{
 		VALIDATE(pSceneLoadDesc != nullptr);
@@ -138,11 +138,11 @@ namespace LambdaEngine
 
 		if (!ResourceLoader::LoadSceneFromFile(
 			directory + pSceneLoadDesc->Filename,
-			pSceneLoadDesc->SpecialObjectDescriptions,
+			pSceneLoadDesc->LevelObjectDescriptions,
 			sceneLocalMeshComponents,
 			directionalLights,
 			pointLights,
-			specialObjects,
+			levelObjects,
 			meshes, 
 			animations, 
 			materials, 
@@ -222,11 +222,25 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < meshes.GetSize(); i++)
 		{
 			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
+
+			//Loop through mesh component and set the real mesh GUID
 			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
 			{
 				if (sceneLocalMeshComponents[g].MeshGUID == i)
 				{
 					meshComponents[g].MeshGUID = guid;
+				}
+			}
+
+			//Loop through special objects and set their mesh component material GUIDs
+			for (uint32 s = 0; s < levelObjects.GetSize(); s++)
+			{
+				LevelObjectOnLoad* pLevelObject = &levelObjects[s];
+
+				for (MeshComponent& meshComponent : pLevelObject->MeshComponents)
+				{
+					if (meshComponent.MeshGUID == i)
+						meshComponent.MeshGUID = guid;
 				}
 			}
 		}
@@ -272,11 +286,24 @@ namespace LambdaEngine
 			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), pMaterialToBeRegistered);
 			s_MaterialLoadConfigurations[guid] = materialLoadConfig;
 
+			//Loop through mesh component and set the real material GUID
 			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
 			{
 				if (sceneLocalMeshComponents[g].MaterialGUID == i)
 				{
 					meshComponents[g].MaterialGUID = guid;
+				}
+			}
+
+			//Loop through special objects and set their mesh component material GUIDs
+			for (uint32 s = 0; s < levelObjects.GetSize(); s++)
+			{
+				LevelObjectOnLoad* pLevelObject = &levelObjects[s];
+
+				for (MeshComponent& meshComponent : pLevelObject->MeshComponents)
+				{
+					if (meshComponent.MaterialGUID == i)
+						meshComponent.MaterialGUID = guid;
 				}
 			}
 

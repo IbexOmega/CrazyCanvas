@@ -1,4 +1,8 @@
 #pragma once
+
+#include "Types.h"
+#include "Math/Math.h"
+
 namespace LambdaEngine
 {
 	struct GameState

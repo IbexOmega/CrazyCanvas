@@ -22,7 +22,6 @@
 #include "Game/Multiplayer/Client/ClientUtilsImpl.h"
 
 #include "Application/API/Events/EventQueue.h"
-#include "Application/API/Events/NetworkEvents.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -35,7 +34,6 @@ namespace LambdaEngine
 	ClientSystem::ClientSystem(const String& name) :
 		m_pClient(nullptr),
 		m_NetworkPositionSystem(),
-		m_PlayerSystem(),
 		m_Name(name),
 		m_DebuggingWindow(false)
 	{
@@ -49,12 +47,11 @@ namespace LambdaEngine
 		clientDesc.Protocol				= EProtocol::UDP;
 		clientDesc.PingInterval			= Timestamp::Seconds(1);
 		clientDesc.PingTimeout			= Timestamp::Seconds(10);
-		clientDesc.UsePingSystem		= true;
+		clientDesc.UsePingSystem		= false;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
 		m_NetworkPositionSystem.Init();
-		m_PlayerSystem.Init();
 
 		NetworkDiscovery::EnableClient(m_Name, this);
 
@@ -83,8 +80,9 @@ namespace LambdaEngine
 		{
 			MultiplayerUtils::s_IsSinglePlayer = true;
 
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+			NetworkSegment* pPacket = m_pClient->GetFreePacket(1); //PacketType::CREATE_ENTITY
 			BinaryEncoder encoder3(pPacket);
+			encoder3.WriteUInt8(5); //ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER
 			encoder3.WriteBool(true);
 			encoder3.WriteInt32(0);
 			encoder3.WriteVec3(glm::vec3(0.0f, 2.0f, 0.0f));
@@ -106,17 +104,20 @@ namespace LambdaEngine
 		return true;
 	}
 
+	ClientBase* ClientSystem::GetClient()
+	{
+		return m_pClient;
+	}
+
 	void ClientSystem::FixedTickMainThread(Timestamp deltaTime)
 	{
-		m_PlayerSystem.FixedTickMainThread(deltaTime, m_pClient);
+		
 	}
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
 		if(m_DebuggingWindow)
 			NetworkDebugger::RenderStatistics(m_pClient);
-
-		m_PlayerSystem.TickMainThread(deltaTime, m_pClient);
 	}
 
 	void ClientSystem::OnConnecting(IClient* pClient)
@@ -155,16 +156,6 @@ namespace LambdaEngine
 	{
 		PacketReceivedEvent event(pClient, pPacket);
 		EventQueue::SendEventImmediate(event);
-
-		if (pPacket->GetType() == NetworkSegment::TYPE_ENTITY_CREATE)
-		{
-			BinaryDecoder decoder(pPacket);
-			bool isMySelf = decoder.ReadBool();
-			int32 networkUID = decoder.ReadInt32();
-
-			if (isMySelf)
-				m_PlayerSystem.m_NetworkUID = networkUID;
-		}
 	}
 
 	void ClientSystem::OnClientReleased(IClient* pClient)

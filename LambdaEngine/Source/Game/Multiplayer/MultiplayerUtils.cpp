@@ -24,6 +24,11 @@ namespace LambdaEngine
 		return s_pMultiplayerUtility->GetEntity(networkUID);
 	}
 
+	int32 MultiplayerUtils::GetNetworkUID(Entity entity)
+	{
+		return s_pMultiplayerUtility->GetNetworkUID(entity);
+	}
+
 	void MultiplayerUtils::RegisterEntity(Entity entity, int32 networkUID)
 	{
 		s_pMultiplayerUtility->RegisterEntity(entity, networkUID);
@@ -31,7 +36,7 @@ namespace LambdaEngine
 
 	Entity MultiplayerUtils::GetEntityPlayer(IClient* pClient)
 	{
-		return s_pClientEntityAccessor->GetEntityPlayer(s_pMultiplayerUtility->GetSaltAsUID(pClient));
+		return s_pClientEntityAccessor->GetEntityPlayer(pClient->GetUID());
 	}
 
 	void MultiplayerUtils::RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor)
@@ -42,6 +47,12 @@ namespace LambdaEngine
 	bool MultiplayerUtils::IsSingleplayer()
 	{
 		return s_IsSinglePlayer;
+	}
+
+	bool MultiplayerUtils::HasWriteAccessToEntity(Entity entity)
+	{
+		//TODO: Add code checks depending on server or client and ownership of entity
+		return true;
 	}
 
 	void MultiplayerUtils::Init(bool server)
