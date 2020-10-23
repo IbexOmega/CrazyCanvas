@@ -21,6 +21,7 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
@@ -326,7 +327,8 @@ bool LevelObjectCreator::CreatePlayer(
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
-	if (pData == nullptr) return false;
+	if (pData == nullptr) 
+		return false;
 
 	using namespace LambdaEngine;
 
@@ -346,6 +348,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
+	pECS->AddComponent<HealthComponent>(playerEntity,			HealthComponent());
 
 	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
@@ -356,7 +359,11 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG
+		.CollisionMask	=   FCollisionGroup::COLLISION_GROUP_STATIC | 
+                            FCollisionGroup::COLLISION_GROUP_DYNAMIC | 
+                            FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | 
+                            FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;|
+
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();

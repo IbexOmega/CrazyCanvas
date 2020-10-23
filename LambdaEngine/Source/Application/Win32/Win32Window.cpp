@@ -11,6 +11,7 @@ namespace LambdaEngine
 	/*
 	* Win32Window
 	*/
+
 	Win32Window::~Win32Window()
 	{
 		if (::IsWindow(m_hWnd))
