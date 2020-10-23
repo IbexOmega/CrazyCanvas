@@ -68,13 +68,13 @@ void main()
 		if(brushMask.a > EPSILON && maskUV.x > 0.f && maskUV.x < 1.f && maskUV.y > 0.f && maskUV.y < 1.f && valid > 0.5f)
 		{
 			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
-			if (u_UnwrapData.val.RemoteMode == 0)
+			if (u_UnwrapData.val.RemoteMode == 1)
 			{
 				uint client = u_UnwrapData.val.TeamMode << 1;
 				client |= u_UnwrapData.val.PaintMode;
 				out_BitsClient = client & 0xFF;
 			}
-			else if (u_UnwrapData.val.RemoteMode == 1)
+			else if (u_UnwrapData.val.RemoteMode == 2)
 			{
 				uint server = u_UnwrapData.val.TeamMode << 1;
 				server |= u_UnwrapData.val.PaintMode & 0x1;

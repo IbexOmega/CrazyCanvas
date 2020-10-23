@@ -373,7 +373,7 @@ namespace LambdaEngine
 
 			const UnwrapData& data	= s_Collisions.front();
 			isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
-			frameSettings.ShouldPaint = true;
+			frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
 			
 			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
 

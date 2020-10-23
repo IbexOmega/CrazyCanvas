@@ -21,9 +21,9 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 
 	if (projectileHitEvent.AmmoType != EAmmoType::AMMO_TYPE_NONE)
 	{
-		EPaintMode paintMode = EPaintMode::PAINT;
+		EPaintMode paintMode = EPaintMode::NONE;
 		ETeam team = ETeam::NONE;
-		ERemoteMode remoteMode = ERemoteMode::SERVER;
+		ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
 
 		if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
 		{

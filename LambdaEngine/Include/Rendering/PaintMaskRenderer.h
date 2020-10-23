@@ -26,20 +26,22 @@ namespace LambdaEngine
 	enum class EPaintMode
 	{
 		REMOVE	= 0,
-		PAINT	= 1
+		PAINT	= 1,
+		NONE	= 2
 	};
 
 	enum class ERemoteMode
 	{
-		CLIENT	= 0,
-		SERVER	= 1
+		UNDEFINED 	= 0,
+		CLIENT		= 1,
+		SERVER		= 2
 	};
 
 	enum class ETeam
 	{
 		NONE	= 0,
 		RED		= 1,
-		BLUE	= 2,
+		BLUE	= 2
 	};
 
 	class PaintMaskRenderer : public ICustomRenderer
@@ -110,9 +112,9 @@ namespace LambdaEngine
 		{
 			glm::vec4		TargetPosition;
 			glm::vec4		TargetDirection;
-			EPaintMode		PaintMode			= EPaintMode::PAINT;
-			ERemoteMode		RemoteMode			= ERemoteMode::CLIENT;
-			ETeam			Team				= ETeam::RED;
+			EPaintMode		PaintMode			= EPaintMode::NONE;
+			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
+			ETeam			Team				= ETeam::NONE;
 		};
 
 		struct FrameSettings
