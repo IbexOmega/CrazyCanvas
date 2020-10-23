@@ -50,8 +50,8 @@ bool WeaponSystem::Init()
 		};
 		systemReg.SubscriberRegistration.AdditionalAccesses =
 		{
-			{ RW, DynamicCollisionComponent::Type() }, 
-			{ RW, MeshComponent::Type() }, 
+			{ RW, DynamicCollisionComponent::Type() },
+			{ RW, MeshComponent::Type() },
 			{ RW, TeamComponent::Type() }
 		};
 		systemReg.Phase = 1;
@@ -201,7 +201,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileInfo);
 
 	const MeshComponent& meshComp = ammoType == EAmmoType::AMMO_TYPE_PAINT ? m_PaintProjectileMeshComponent : m_WaterProjectileMeshComponent;
-	const DynamicCollisionCreateInfo collisionInfo = 
+	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
@@ -220,7 +220,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 
 	// Play gun fire
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
-	m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
+	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
 }
 
 void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1)
@@ -259,7 +259,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 		{
 			ammoType = pProjectileComponents->GetConstData(collisionInfo0.Entity).AmmoType;
 		}
-		
+
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType);
 		EventQueue::SendEventImmediate(hitEvent);
 	}
@@ -303,6 +303,6 @@ void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent,
 	{
 		// Play out of ammo
 		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
+		m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
 	}
 }
