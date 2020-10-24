@@ -12,7 +12,6 @@ namespace LambdaEngine
 	MultiplayerUtilBase* MultiplayerUtils::s_pMultiplayerUtility = nullptr;
 	bool MultiplayerUtils::s_IsServer = false;
 	bool MultiplayerUtils::s_IsSinglePlayer = false;
-	IClientEntityAccessor* MultiplayerUtils::s_pClientEntityAccessor = nullptr;
 
 	bool MultiplayerUtils::IsServer()
 	{
@@ -32,16 +31,6 @@ namespace LambdaEngine
 	void MultiplayerUtils::RegisterEntity(Entity entity, int32 networkUID)
 	{
 		s_pMultiplayerUtility->RegisterEntity(entity, networkUID);
-	}
-
-	Entity MultiplayerUtils::GetEntityPlayer(IClient* pClient)
-	{
-		return s_pClientEntityAccessor->GetEntityPlayer(pClient->GetUID());
-	}
-
-	void MultiplayerUtils::RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor)
-	{
-		s_pClientEntityAccessor = pAccessor;
 	}
 
 	bool MultiplayerUtils::IsSingleplayer()

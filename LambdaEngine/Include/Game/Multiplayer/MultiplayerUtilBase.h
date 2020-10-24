@@ -4,8 +4,6 @@
 
 #include "ECS/Entity.h"
 
-#include "Game/Multiplayer/PacketFunction.h"
-
 namespace LambdaEngine
 {
 	class IClient;

@@ -1,8 +1,6 @@
 #pragma once
 #include "ECS/System.h"
 
-#include "Application/API/Events/NetworkEvents.h"
-
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "World/Player/PlayerActionSystem.h"
@@ -28,17 +26,14 @@ private:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final {};
 
 	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
-	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
-	void Reconcile();
-	void ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer);
+	void Reconcile(LambdaEngine::Entity entityPlayer);
+	void ReplayGameStatesBasedOnServerGameState(LambdaEngine::Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer);
 	bool CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer);
 
 private:
 	LambdaEngine::IDVector m_Entities;
 	int32 m_NetworkUID;
 	int32 m_SimulationTick;
-	LambdaEngine::IClient* m_pClient;
 	PlayerActionSystem m_PlayerActionSystem;
 	LambdaEngine::TArray<PlayerGameState> m_FramesToReconcile;
 };

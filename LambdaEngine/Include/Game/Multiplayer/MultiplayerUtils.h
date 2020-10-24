@@ -4,20 +4,10 @@
 
 #include "ECS/Entity.h"
 
-#include "Game/Multiplayer/PacketFunction.h"
-
 namespace LambdaEngine
 {
 	class MultiplayerUtilBase;
 	class IClient;
-
-	class IClientEntityAccessor
-	{
-	public:
-		DECL_INTERFACE(IClientEntityAccessor);
-
-		virtual Entity GetEntityPlayer(uint64 saltUID) = 0;
-	};
 
 	class MultiplayerUtils
 	{
@@ -32,8 +22,6 @@ namespace LambdaEngine
 		static Entity GetEntity(int32 networkUID);
 		static int32 GetNetworkUID(Entity entity);
 		static void RegisterEntity(Entity entity, int32 networkUID);
-		static Entity GetEntityPlayer(IClient* pClient);
-		static void RegisterClientEntityAccessor(IClientEntityAccessor* pAccessor);
 		static bool IsSingleplayer();
 		static bool HasWriteAccessToEntity(Entity entity);
 
@@ -45,6 +33,5 @@ namespace LambdaEngine
 		static MultiplayerUtilBase* s_pMultiplayerUtility;
 		static bool s_IsServer;
 		static bool s_IsSinglePlayer;
-		static IClientEntityAccessor* s_pClientEntityAccessor;
 	};
 }

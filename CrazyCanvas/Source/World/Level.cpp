@@ -143,7 +143,7 @@ LambdaEngine::Entity* Level::GetEntities(ELevelObjectType levelObjectType, uint3
 	return nullptr;
 }
 
-LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
+/*LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
 {
 	using namespace LambdaEngine;
 
@@ -163,4 +163,4 @@ LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
 	}
 
 	return UINT32_MAX;
-}
+}*/

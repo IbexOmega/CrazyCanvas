@@ -34,17 +34,14 @@ using namespace LambdaEngine;
 PlayerLocal::PlayerLocal() :
 	m_PlayerActionSystem(),
 	m_FramesToReconcile(),
-	m_SimulationTick(0),
-	m_pClient(nullptr)
+	m_SimulationTick(0)
 {
-	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &PlayerLocal::OnClientConnected);
-	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlayerLocal::OnClientDisconnected);
+
 }
 
 PlayerLocal::~PlayerLocal()
 {
-	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &PlayerLocal::OnClientConnected);
-	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlayerLocal::OnClientDisconnected);
+	
 }
 
 void PlayerLocal::Init()
@@ -86,12 +83,12 @@ void PlayerLocal::FixedTickMainThread(Timestamp deltaTime)
 {
 	if (!m_Entities.Empty())
 	{
-		Reconcile();
+		Entity localPlayerEntity = m_Entities[0];
+
+		Reconcile(localPlayerEntity);
 
 		PlayerGameState gameState = {};
 		gameState.SimulationTick = m_SimulationTick++;
-
-		Entity localPlayerEntity = m_Entities[0];
 
 		TickLocalPlayerAction(deltaTime, localPlayerEntity, &gameState);
 
@@ -167,24 +164,10 @@ void PlayerLocal::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameS
 	pGameState->Rotation = rotationComponent.Quaternion;
 }
 
-bool PlayerLocal::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
-{
-	m_pClient = event.pClient;
-	return false;
-}
-
-bool PlayerLocal::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
-{
-	m_pClient = nullptr;
-	return false;
-}
-
-//Packets in the packet list must be cleard at the end of each fixed tick. Since some ticks may not have a packet and they are therfore reused.....
-
-void PlayerLocal::Reconcile()
+void PlayerLocal::Reconcile(Entity entityPlayer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(m_Entities[0]);
+	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(entityPlayer);
 	const TArray<PlayerActionResponse>& m_FramesProcessedByServer = pPacketComponent.GetPacketsReceived();
 
 	for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
@@ -193,18 +176,16 @@ void PlayerLocal::Reconcile()
 
 		if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[i]))
 		{
-			ReplayGameStatesBasedOnServerGameState(m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[i]);
+			ReplayGameStatesBasedOnServerGameState(entityPlayer, m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[i]);
 		}
 
 		m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
 	}
 }
 
-void PlayerLocal::ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
+void PlayerLocal::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-
-	Entity entityPlayer = MultiplayerUtils::GetEntityPlayer(m_pClient);
 
 	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
 	ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
