@@ -56,7 +56,6 @@ void PlaySessionState::Init()
 	m_WeaponSystem.Init();
 	m_MultiplayerClient.InitInternal();
 
-	m_HUDSecondaryState.Init();
 	m_HealthSystem.Init();
 	m_HUDSystem.Init();
 
@@ -189,76 +188,10 @@ void PlaySessionState::Init()
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
 {
 	m_MultiplayerClient.TickMainThreadInternal(delta);
-	m_HUDSecondaryState.Tick(delta);
-}
-
-/*ool PlaySessionState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
-{
-	using namespace LambdaEngine;
-
-	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
-	{
-		BinaryDecoder decoder(event.pPacket);
-		bool isLocal		= decoder.ReadBool();
-		int32 networkUID	= decoder.ReadInt32();
-		glm::vec3 position	= decoder.ReadVec3();
-		glm::vec3 forward	= decoder.ReadVec3();
-		uint32 teamIndex	= decoder.ReadUInt32();
-
-		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-		const CameraDesc cameraDesc =
-		{
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width		= (float)window->GetWidth(),
-			.Height		= (float)window->GetHeight(),
-			.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
-		};
-
-		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID	= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-		bool animationsExist	= !animations.IsEmpty();
-
-		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		if (animationsExist)
-		{
-			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
-		}
-
-		CreatePlayerDesc createPlayerDesc =
-		{
-			.IsLocal			= isLocal,
-			.NetworkUID			= networkUID,
-			.pClient			= event.pClient,
-			.Position			= position,
-			.Forward			= forward,
-			.Scale				= glm::vec3(1.0f),
-			.TeamIndex			= teamIndex,
-			.pCameraDesc		= &cameraDesc,
-			.MeshGUID			= robotGUID,
-			.AnimationComponent = robotAnimationComp,
-		};
-
-		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
-		return true;
-	}
-
-	return false;
-}*/
-
-void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
-{
-	
 }
 
 void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
-}
-
-void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
-{
 	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }
