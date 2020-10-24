@@ -10,11 +10,11 @@
 
 #include "Containers/THashTable.h"
 
-class PacketDecoderSystem : public LambdaEngine::System
+class PacketTranscoderSystem : public LambdaEngine::System
 {
 public:
-	PacketDecoderSystem();
-	~PacketDecoderSystem();
+	PacketTranscoderSystem();
+	~PacketTranscoderSystem();
 
 	void Init();
 
