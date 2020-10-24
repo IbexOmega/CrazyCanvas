@@ -14,6 +14,7 @@ namespace LambdaEngine
 		friend class ClientSystem;
 		friend class ServerSystem;
 		friend class ClientRemoteSystem;
+		friend class NetworkSystem;
 
 	public:
 		DECL_STATIC_CLASS(MultiplayerUtils);
@@ -21,13 +22,15 @@ namespace LambdaEngine
 		static bool IsServer();
 		static Entity GetEntity(int32 networkUID);
 		static int32 GetNetworkUID(Entity entity);
-		static void RegisterEntity(Entity entity, int32 networkUID);
 		static bool IsSingleplayer();
 		static bool HasWriteAccessToEntity(Entity entity);
 
 	private:
 		static void Init(bool server);
 		static void Release();
+
+		static void RegisterEntity(Entity entity, int32 networkUID);
+		static void UnregisterEntity(Entity entity);
 
 	private:
 		static MultiplayerUtilBase* s_pMultiplayerUtility;

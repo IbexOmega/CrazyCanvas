@@ -33,6 +33,11 @@ namespace LambdaEngine
 		s_pMultiplayerUtility->RegisterEntity(entity, networkUID);
 	}
 
+	void MultiplayerUtils::UnregisterEntity(Entity entity)
+	{
+		s_pMultiplayerUtility->UnregisterEntity(entity);
+	}
+
 	bool MultiplayerUtils::IsSingleplayer()
 	{
 		return s_IsSinglePlayer;
@@ -40,6 +45,8 @@ namespace LambdaEngine
 
 	bool MultiplayerUtils::HasWriteAccessToEntity(Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		//TODO: Add code checks depending on server or client and ownership of entity
 		return true;
 	}

@@ -35,4 +35,10 @@ namespace LambdaEngine
 		m_NetworkUIDToEntityMapper.insert({ networkUID, entity });
 		m_EntityToNetworkUIDMapper.insert({ entity, networkUID });
 	}
+
+	void ClientUtilsImpl::UnregisterEntity(Entity entity)
+	{
+		m_NetworkUIDToEntityMapper.erase(GetNetworkUID(entity));
+		m_EntityToNetworkUIDMapper.erase(entity);
+	}
 }

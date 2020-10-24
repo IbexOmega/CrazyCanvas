@@ -50,6 +50,8 @@ void PacketTranscoderSystem::Init()
 
 void PacketTranscoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	ComponentArray<NetworkComponent>* pNetworkComponents = pECS->GetComponentArray<NetworkComponent>();

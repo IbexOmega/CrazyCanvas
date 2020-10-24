@@ -170,7 +170,7 @@ void PlayerLocal::Reconcile(Entity entityPlayer)
 	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(entityPlayer);
 	const TArray<PlayerActionResponse>& m_FramesProcessedByServer = pPacketComponent.GetPacketsReceived();
 
-	for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
+	for (uint32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
 	{
 		ASSERT(m_FramesProcessedByServer[i].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 

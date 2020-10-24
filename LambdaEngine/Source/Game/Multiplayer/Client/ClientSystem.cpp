@@ -92,6 +92,8 @@ namespace LambdaEngine
 
 	void ClientSystem::TickMainThread(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		if(m_DebuggingWindow)
 			NetworkDebugger::RenderStatistics(m_pClient);
 	}

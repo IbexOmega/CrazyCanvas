@@ -23,7 +23,7 @@ public:
 	void DoAction(LambdaEngine::Timestamp deltaTime, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
 
 private:
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final {};
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
 
 	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
 	void Reconcile(LambdaEngine::Entity entityPlayer);
