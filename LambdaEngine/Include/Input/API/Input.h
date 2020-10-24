@@ -40,6 +40,11 @@ namespace LambdaEngine
 			return s_KeyboardStates[STATE_READ_INDEX].IsKeyUp(key);
 		}
 
+		FORCEINLINE static bool IsInputEnabled()
+		{
+			return s_InputEnabled;
+		}
+
 		FORCEINLINE static const KeyboardState& GetKeyboardState()
 		{
 			return s_KeyboardStates[STATE_READ_INDEX];

@@ -654,18 +654,20 @@ namespace LambdaEngine
 		for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
 		{
 			const PxRigidActor* pActor = actors[actorIdx];
-			glm::vec3 direction;
+
+			/*	Get the direction of the actor. Default to the transform's rotation. If the actor is dynamic and has
+				a non-zero velocity, use that instead. */
+			const PxTransform transformPX = pActor->getGlobalPose();
+			const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
+			glm::vec3 direction = GetForward(rotation);
 			if (pActor->is<PxRigidDynamic>())
 			{
 				const PxRigidDynamic* pDynamicActor = reinterpret_cast<const PxRigidDynamic*>(pActor);
 				const PxVec3 velocityPX = pDynamicActor->getLinearVelocity();
-				direction = glm::normalize(glm::vec3(velocityPX.x, velocityPX.y, velocityPX.z));
-			}
-			else
-			{
-				const PxTransform transformPX = pActor->getGlobalPose();
-				const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
-				direction = GetForward(rotation);
+				if (!velocityPX.isZero())
+				{
+					direction = glm::normalize(glm::vec3(velocityPX.x, velocityPX.y, velocityPX.z));
+				}
 			}
 
 			collisionInfos[actorIdx] =

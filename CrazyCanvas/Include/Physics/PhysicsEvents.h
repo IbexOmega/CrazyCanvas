@@ -21,12 +21,11 @@ public:
 
 	LambdaEngine::String ToString() const override final
 	{
-		return "ProjectileHitEvent={ Entity: " + std::to_string(Entity) + " }";
+		return "ProjectileHitEvent={ Entity: " + std::to_string(CollisionInfo1.Entity) + " }";
 	}
 
 public:
-	LambdaEngine::Entity Entity; // Is this used?
-	const LambdaEngine::EntityCollisionInfo& CollisionInfo0;
-	const LambdaEngine::EntityCollisionInfo& CollisionInfo1;
+	const LambdaEngine::EntityCollisionInfo CollisionInfo0;
+	const LambdaEngine::EntityCollisionInfo CollisionInfo1;
 	const EAmmoType AmmoType;
 };

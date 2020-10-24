@@ -1,12 +1,14 @@
 #pragma once
-
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Player/HealthSystem.h"
+
 #include "Game/State.h"
 
-#include "States/HUDState.h"
+#include "ECS/Systems/GUI/HUDSystem.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
@@ -36,9 +38,10 @@ private:
 	MultiplayerClient m_MultiplayerClient;
 
 	HUDState m_HUDSecondaryState;
-
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
+	HealthSystem m_HealthSystem;
+	HUDSystem m_HUDSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

@@ -21,7 +21,7 @@ namespace LambdaEngine
 		m_ReceivedPackets(),
 		m_LockReceivedPackets()
 	{
-
+		m_Transceiver.SetIgnoreSaltMissmatch(true);
 	}
 
 	ClientNetworkDiscovery::~ClientNetworkDiscovery()

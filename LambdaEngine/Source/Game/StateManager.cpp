@@ -70,35 +70,35 @@ namespace LambdaEngine
 	{
 		switch (m_EnqueuedTransitionAction)
 		{
-			case STATE_TRANSITION::PUSH:
-				m_pECS->AddRegistryPage();
-				m_States.push(m_pEnqueuedState);
-				break;
-			case STATE_TRANSITION::POP:
-				SAFEDELETE(m_States.top());
-				m_pECS->DeleteTopRegistryPage();
-				m_States.pop();
+		case STATE_TRANSITION::PUSH:
+			m_pECS->AddRegistryPage();
+			m_States.push(m_pEnqueuedState);
+			break;
+		case STATE_TRANSITION::POP:
+			SAFEDELETE(m_States.top());
+			m_pECS->DeleteTopRegistryPage();
+			m_States.pop();
 
-				if (!m_States.empty()) {
-					m_pECS->ReinstateTopRegistryPage();
-					m_States.top()->Resume();
-				}
-				break;
-			case STATE_TRANSITION::PAUSE_AND_PUSH:
-				m_States.top()->Pause();
-				m_pECS->DeregisterTopRegistryPage();
+			if (!m_States.empty()) {
+				m_pECS->ReinstateTopRegistryPage();
+				m_States.top()->Resume();
+			}
+			break;
+		case STATE_TRANSITION::PAUSE_AND_PUSH:
+			m_States.top()->Pause();
+			m_pECS->DeregisterTopRegistryPage();
 
-				m_pECS->AddRegistryPage();
-				m_States.push(m_pEnqueuedState);
-				break;
-			case STATE_TRANSITION::POP_AND_PUSH:
-				m_pECS->DeleteTopRegistryPage();
-				m_StatesToDelete.push(m_States.top());
-				m_States.pop();
+			m_pECS->AddRegistryPage();
+			m_States.push(m_pEnqueuedState);
+			break;
+		case STATE_TRANSITION::POP_AND_PUSH:
+			m_pECS->DeleteTopRegistryPage();
+			m_StatesToDelete.push(m_States.top());
+			m_States.pop();
 
-				m_pECS->AddRegistryPage();
-				m_States.push(m_pEnqueuedState);
-				break;
+			m_pECS->AddRegistryPage();
+			m_States.push(m_pEnqueuedState);
+			break;
 		}
 
 		m_pEnqueuedState->Init();
