@@ -661,7 +661,7 @@ namespace LambdaEngine
 		vkCmdPipelineBarrier(m_CommandList, sourceStage, destinationStage, 0, bufferMemoryCount, m_MemoryBarriers, 0, nullptr, 0, nullptr);
 	}
 
-	void CommandListVK::GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter)
+	void CommandListVK::GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter, bool linearFiltering)
 	{
 		VALIDATE(pTexture != nullptr);
 
@@ -688,12 +688,15 @@ namespace LambdaEngine
 
 		//TODO: Fix for devices that do NOT support linear filtering
 
-		VkFormat			formatVk			= ConvertFormat(desc.Format);
-		VkFormatProperties	formatProperties	= m_pDevice->GetFormatProperties(formatVk);
-		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+		if (linearFiltering)
 		{
-			LOG_ERROR("[CommandListVK]: Device does not support generating miplevels at the moment");
-			return;
+			VkFormat			formatVk			= ConvertFormat(desc.Format);
+			VkFormatProperties	formatProperties	= m_pDevice->GetFormatProperties(formatVk);
+			if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+			{
+				LOG_ERROR("[CommandListVK]: Device does not support generating miplevels at the moment");
+				return;
+			}
 		}
 
 		PipelineTextureBarrierDesc textureBarrier = { };
@@ -745,7 +748,10 @@ namespace LambdaEngine
 			blit.dstSubresource.baseArrayLayer	= 0;
 			blit.dstSubresource.layerCount		= 1;
 
-			vkCmdBlitImage(m_CommandList, imageVk, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageVk, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+			if (linearFiltering)
+				vkCmdBlitImage(m_CommandList, imageVk, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageVk, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+			else
+				vkCmdBlitImage(m_CommandList, imageVk, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageVk, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_NEAREST);
 
 			sourceExtent = destinationExtent;
 		}
