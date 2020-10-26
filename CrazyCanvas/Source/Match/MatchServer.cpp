@@ -128,12 +128,14 @@ bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 
 bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
 	LOG_INFO("SERVER: Weapon fired");
 	return false;
 }
 
 bool MatchServer::OnPlayerDied(const PlayerDiedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
 	LOG_INFO("SERVER: Player=%u DIED", event.KilledEntity);
 	return false;
 }

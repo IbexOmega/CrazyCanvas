@@ -8,16 +8,11 @@
 
 #include <mutex>
 
-HealthSystem::HealthSystem()
-	: m_HealthEntities()
-{
-}
+/*
+* HealthSystem
+*/
 
-HealthSystem::~HealthSystem()
-{
-	using namespace LambdaEngine;
-	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HealthSystem::OnProjectileHit);
-}
+HealthSystem HealthSystem::s_Instance;
 
 bool HealthSystem::Init()
 {

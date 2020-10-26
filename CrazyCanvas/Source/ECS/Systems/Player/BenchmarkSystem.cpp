@@ -33,15 +33,17 @@ void BenchmarkSystem::Init()
 				.pSubscriber = &m_WeaponEntities,
 				.ComponentAccesses =
 				{
-					{R, WeaponComponent::Type()}
+					{ R, WeaponComponent::Type() },
+					{ RW, PacketComponent<WeaponFiredPacket>::Type() }
 				}
 			},
 			{
 				.pSubscriber = &m_PlayerEntities,
 				.ComponentAccesses =
 				{
-					{RW, CharacterColliderComponent::Type()}, {R, NetworkPositionComponent::Type()},
-					{RW, VelocityComponent::Type()}
+					{ RW, CharacterColliderComponent::Type() }, 
+					{ R, NetworkPositionComponent::Type() },
+					{ RW, VelocityComponent::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
 			}
@@ -96,21 +98,23 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	{
 		.Function = [weaponEntitiesToFire]
 		{
-			WeaponSystem* pWeaponSystem = WeaponSystem::GetInstance();
+			WeaponSystem& weaponSystem = WeaponSystem::GetInstance();
 			ECSCore* pECS = ECSCore::GetInstance();
 
 			const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 			const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 			const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 			ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+			ComponentArray<PacketComponent<WeaponFiredPacket>>* pWeaponPackets = pECS->GetComponentArray<PacketComponent<WeaponFiredPacket>>();
 
 			for (Entity weaponEntity : weaponEntitiesToFire)
 			{
 				WeaponComponent& weaponComp = pWeaponComponents->GetData(weaponEntity);
+				PacketComponent<WeaponFiredPacket>& weaponPacket = pWeaponPackets->GetData(weaponEntity);
 				const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(weaponComp.WeaponOwner);
 				const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(weaponComp.WeaponOwner);
 				const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(weaponComp.WeaponOwner);
-				pWeaponSystem->TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
+				weaponSystem.TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, weaponPacket, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
 			}
 		},
 		.Components = GetFireProjectileComponentAccesses(),

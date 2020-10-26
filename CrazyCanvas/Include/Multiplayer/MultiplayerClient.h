@@ -23,7 +23,6 @@ private:
 	PlayerLocalSystem m_PlayerLocal;
 	PlayerForeignSystem m_PlayerForeignSystem;
 	
-	WeaponSystem m_WeaponSystem;
 	NetworkPositionSystem m_NetworkPositionSystem;
 
 	ClientFlagSystem* m_pFlagSystem = nullptr;

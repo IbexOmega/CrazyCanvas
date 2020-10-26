@@ -52,10 +52,10 @@ void PlaySessionState::Init()
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
-	WeaponSystem::GetInstance()->Init();
-	m_MultiplayerClient.InitInternal();
+	WeaponSystem::GetInstance().Init();
+	HealthSystem::GetInstance().Init();
 
-	m_HealthSystem.Init();
+	m_MultiplayerClient.InitInternal();
 	m_HUDSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();

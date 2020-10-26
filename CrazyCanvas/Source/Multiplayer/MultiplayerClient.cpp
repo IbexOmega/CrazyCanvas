@@ -22,7 +22,7 @@ void MultiplayerClient::Init()
 	m_pFlagSystem = DBG_NEW ClientFlagSystem();
 	m_pFlagSystem->Init();
 
-	m_WeaponSystem.Init();
+	WeaponSystem::GetInstance().Init();
 }
 
 void MultiplayerClient::TickMainThread(LambdaEngine::Timestamp deltaTime)
@@ -35,5 +35,5 @@ void MultiplayerClient::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 	m_PlayerForeignSystem.FixedTickMainThread(deltaTime);
 	m_PlayerLocal.FixedTickMainThread(deltaTime);
 	m_pFlagSystem->FixedTick(deltaTime);
-	m_WeaponSystem.FixedTick(deltaTime);
+	WeaponSystem::GetInstance().FixedTick(deltaTime);
 }

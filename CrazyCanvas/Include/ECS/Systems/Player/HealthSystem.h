@@ -12,14 +12,17 @@
 class HealthSystem : public LambdaEngine::System
 {
 public:
-	HealthSystem();
-	~HealthSystem();
-
 	bool Init();
 
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final;
 
+public:
+	static HealthSystem& GetInstance() { return s_Instance; }
+
 private:
+	~HealthSystem() = default;
+	HealthSystem() = default;
+	
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
 
 private:
@@ -27,4 +30,7 @@ private:
 	LambdaEngine::SpinLock m_DeferredEventsLock;
 	LambdaEngine::TArray<ProjectileHitEvent> m_DeferredHitEvents;
 	LambdaEngine::TArray<ProjectileHitEvent> m_EventsToProcess;
+
+private:
+	static HealthSystem s_Instance;
 };

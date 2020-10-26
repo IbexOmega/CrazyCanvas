@@ -19,6 +19,5 @@ protected:
 
 private:
 	ServerFlagSystem* m_pFlagSystem = nullptr;
-	WeaponSystem m_WeaponSystem;
 	PlayerRemoteSystem m_PlayerRemoteSystem;
 };

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Game/State.h"
 
 #include "Containers/TArray.h"
@@ -62,18 +61,14 @@ private:
 	Noesis::Ptr<Noesis::IView> m_View;
 
 	LambdaEngine::RenderGraphEditor*	m_pRenderGraphEditor	= nullptr;
-	bool								m_RenderGraphWindow		= false;
-	bool								m_ShowDemoWindow		= false;
-	bool								m_DebuggingWindow		= false;
 
-	bool					m_ShowTextureDebuggingWindow	= false;
+	bool m_RenderGraphWindow			= false;
+	bool m_ShowDemoWindow				= false;
+	bool m_DebuggingWindow				= false;
+	bool m_ShowTextureDebuggingWindow	= false;
+	
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
-
-	Level* m_pLevel = nullptr;
-
-	/* Systems */
-	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

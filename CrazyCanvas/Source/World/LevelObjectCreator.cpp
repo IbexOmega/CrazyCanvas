@@ -544,7 +544,8 @@ bool LevelObjectCreator::CreateProjectile(
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, { desc.MeshComponent }),
 		/* Shape Type */		EShapeType::SIMULATION,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | 
+								(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 		/* CallbackFunction */	desc.Callback,
 		/* Velocity */			velocityComponent
 	};

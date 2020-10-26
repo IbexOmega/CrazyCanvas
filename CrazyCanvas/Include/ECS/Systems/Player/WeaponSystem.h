@@ -2,6 +2,7 @@
 #include "ECS/System.h"
 #include "ECS/Components/Player/ProjectileComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Team/TeamComponent.h"
 
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
@@ -28,17 +29,19 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 	using namespace LambdaEngine;
 	return
 	{
-		{RW, PositionComponent::Type()}, {RW, ScaleComponent::Type()}, {RW, RotationComponent::Type()},
-		{RW, VelocityComponent::Type()}, {RW, WeaponComponent::Type()}, {RW, TeamComponent::Type()},
-		{RW, ProjectileComponent::Type()}, {RW, DynamicCollisionComponent::Type()}, {RW, MeshComponent::Type()}
+		{ RW, PositionComponent::Type()}, { RW, ScaleComponent::Type()}, { RW, RotationComponent::Type() },
+		{ RW, VelocityComponent::Type()}, { RW, WeaponComponent::Type()}, { RW, TeamComponent::Type() },
+		{ RW, ProjectileComponent::Type()}, { RW, DynamicCollisionComponent::Type() }, { RW, MeshComponent::Type() }
 	};
 }
+
+/*
+* WeaponSystem
+*/
 
 class WeaponSystem : public LambdaEngine::System
 {
 public:
-	WeaponSystem() = default;
-	~WeaponSystem() = default;
 
 	bool Init();
 
@@ -50,12 +53,21 @@ public:
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	void TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity);
+	void TryFire(
+		EAmmoType ammoType,
+		WeaponComponent& weaponComponent,
+		PacketComponent<WeaponFiredPacket>& packets,
+		const glm::vec3& startPos, 
+		const glm::quat& direction, 
+		const glm::vec3& playerVelocity);
 
 public:
-	static WeaponSystem* GetInstance() { return &s_Instance; }
+	static WeaponSystem& GetInstance() { return s_Instance; }
 
 private:
+	WeaponSystem() = default;
+	~WeaponSystem() = default;
+
 	void Fire(
 		EAmmoType ammoType, 
 		WeaponComponent& weaponComponent, 
@@ -64,13 +76,6 @@ private:
 		const glm::quat& direction, 
 		const glm::vec3& playerVelocity);
 
-	void TryFire(
-		EAmmoType ammoType,
-		WeaponComponent& weaponComponent,
-		PacketComponent<WeaponFiredPacket>& packets,
-		const glm::vec3& startPos, 
-		const glm::quat& direction, 
-		const glm::vec3& playerVelocity);
 
 	void StartReload(WeaponComponent& weaponComponent);
 	void AbortReload(WeaponComponent& weaponComponent);

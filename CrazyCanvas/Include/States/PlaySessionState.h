@@ -41,7 +41,6 @@ private:
 	LambdaEngine::IPAddress* m_pIPAddress;
 
 	/* Systems */
-	HealthSystem m_HealthSystem;
 	HUDSystem m_HUDSystem;
 	MultiplayerClient m_MultiplayerClient;
 
