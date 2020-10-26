@@ -1,7 +1,5 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Components/Player/Player.h"
-#include "ECS/Components/Player/WeaponComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
 #include "ECS/ECSCore.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -15,19 +13,19 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
+WeaponSystem WeaponSystem::s_Instance;
+
 bool WeaponSystem::Init()
 {
 	using namespace LambdaEngine;
 
 	// Register system
 	{
-		// The write permissions are used when creating projectile entities
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions	= RW;
-		playerGroup.Scale.Permissions		= RW;
-		playerGroup.Rotation.Permissions	= RW;
-		playerGroup.Velocity.Permissions	= RW;
-		playerGroup.Health.Permissions		= NDA;
+		playerGroup.Position.Permissions	= R;
+		playerGroup.Scale.Permissions		= R;
+		playerGroup.Rotation.Permissions	= R;
+		playerGroup.Velocity.Permissions	= R;
 
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -48,12 +46,7 @@ bool WeaponSystem::Init()
 				.ComponentGroups = { &playerGroup }
 			}
 		};
-		systemReg.SubscriberRegistration.AdditionalAccesses =
-		{
-			{ RW, DynamicCollisionComponent::Type() },
-			{ RW, MeshComponent::Type() },
-			{ RW, TeamComponent::Type() }
-		};
+		systemReg.SubscriberRegistration.AdditionalAccesses = GetFireProjectileComponentAccesses();
 		systemReg.Phase = 1;
 
 		RegisterSystem(systemReg);
@@ -161,7 +154,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f), rotationComp.Quaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
 			}
 			else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
 			{
@@ -169,9 +162,39 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f), rotationComp.Quaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
 			}
 		}
+	}
+}
+
+void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity)
+{
+	using namespace LambdaEngine;
+
+	// Add cooldown
+	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
+
+	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
+	if (hasAmmo)
+	{
+		LOG_INFO("Fire paint");
+
+		// If we try to shoot when reloading we abort the reload
+		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
+		if (isReloading)
+		{
+			AbortReload(weaponComponent);
+		}
+
+		// Fire the gun
+		Fire(ammoType, weaponComponent, startPos + glm::vec3(0.0f, 1.0f, 0.0f), direction, playerVelocity);
+	}
+	else
+	{
+		// Play out of ammo
+		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
+		m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
 	}
 }
 
@@ -220,7 +243,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 
 	// Play gun fire
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
-	m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
+	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
 }
 
 void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1)
@@ -274,34 +297,4 @@ void WeaponSystem::AbortReload(WeaponComponent& weaponComponent)
 {
 	LOG_INFO("Abort reload");
 	weaponComponent.ReloadClock = 0;
-}
-
-void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity)
-{
-	using namespace LambdaEngine;
-
-	// Add cooldown
-	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
-
-	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
-	if (hasAmmo)
-	{
-		LOG_INFO("Fire paint");
-
-		// If we try to shoot when reloading we abort the reload
-		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
-		if (isReloading)
-		{
-			AbortReload(weaponComponent);
-		}
-
-		// Fire the gun
-		Fire(ammoType, weaponComponent, startPos + glm::vec3(0.0f, 1.0f, 0.0f), direction, playerVelocity);
-	}
-	else
-	{
-		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
-	}
 }
