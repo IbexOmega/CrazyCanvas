@@ -6,6 +6,8 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
+#include "Multiplayer/Packet/PlayerAction.h"
+
 class PlayerRemoteSystem : public LambdaEngine::System
 {
 public:

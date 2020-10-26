@@ -39,7 +39,9 @@
 
 #include "Rendering/EntityMaskManager.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/Packet/PlayerAction.h"
+#include "Multiplayer/Packet/PlayerActionResponse.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -247,6 +249,9 @@ bool LevelObjectCreator::CreateFlag(
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities, 
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
+	UNREFERENCED_VARIABLE(createdChildEntities);
+	UNREFERENCED_VARIABLE(saltUIDs);
+
 	if (pData == nullptr) return false;
 
 	using namespace LambdaEngine;
@@ -359,7 +364,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC | FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG
+		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC | (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();

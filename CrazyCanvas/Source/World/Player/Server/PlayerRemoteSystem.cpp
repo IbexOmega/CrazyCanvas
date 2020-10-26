@@ -8,6 +8,9 @@
 
 #include "ECS/ECSCore.h"
 
+#include "Multiplayer/Packet/PlayerAction.h"
+#include "Multiplayer/Packet/PlayerActionResponse.h"
+
 using namespace LambdaEngine;
 
 PlayerRemoteSystem::PlayerRemoteSystem()

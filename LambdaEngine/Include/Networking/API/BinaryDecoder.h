@@ -13,7 +13,7 @@ namespace LambdaEngine
 	class LAMBDA_API BinaryDecoder
 	{
 	public:
-		BinaryDecoder(NetworkSegment* packet);
+		BinaryDecoder(NetworkSegment* pPacket);
 		~BinaryDecoder();
 
 		void ReadInt8(int8& value);

@@ -31,7 +31,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 	m_pIPAddress(pIPAddress),

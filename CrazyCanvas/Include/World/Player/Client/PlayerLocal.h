@@ -7,6 +7,8 @@
 
 #include "World/Player/PlayerGameState.h"
 
+#include "Multiplayer/Packet/PlayerActionResponse.h"
+
 class PlayerLocalSystem : public LambdaEngine::System
 {
 public:

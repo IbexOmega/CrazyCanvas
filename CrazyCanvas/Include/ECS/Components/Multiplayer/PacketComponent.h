@@ -9,7 +9,7 @@
 
 #include "Math/Math.h"
 
-#include "Multiplayer/Packet.h"
+#include "Multiplayer/Packet/Packet.h"
 #include "Networking/API/NetworkSegment.h"
 
 
@@ -91,21 +91,3 @@ private:
 	LambdaEngine::TQueue<T> m_PacketsToSend;
 	inline static uint16 s_PacketType = 0;
 };
-
-#pragma pack(push, 1)
-struct PlayerAction : Packet
-{
-	glm::quat Rotation;
-	int8 DeltaForward = 0;
-	int8 DeltaLeft = 0;
-};
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-struct PlayerActionResponse : Packet
-{
-	glm::vec3 Position;
-	glm::vec3 Velocity;
-	glm::quat Rotation;
-};
-#pragma pack(pop)

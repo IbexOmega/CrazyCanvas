@@ -54,7 +54,7 @@
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 #include <imgui.h>
 

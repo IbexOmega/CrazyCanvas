@@ -25,7 +25,8 @@
 
 #include "Input/API/InputActionSystem.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/Packet/PlayerAction.h"
 
 #define EPSILON 0.01f
 
