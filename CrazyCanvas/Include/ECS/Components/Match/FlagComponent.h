@@ -6,6 +6,8 @@
 #include "Multiplayer/Packet.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
+#include "Time/API/Timestamp.h"
+
 constexpr LambdaEngine::CollisionGroup FLAG_CARRIED_COLLISION_MASK = FCrazyCanvasCollisionGroup::COLLISION_GROUP_BASE;
 constexpr LambdaEngine::CollisionGroup FLAG_DROPPED_COLLISION_MASK = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER;
 
@@ -18,6 +20,8 @@ struct FlagSpawnComponent
 struct FlagComponent
 {
 	DECL_COMPONENT(FlagComponent);
+	LambdaEngine::Timestamp PickupAvailableTimestamp;
+	LambdaEngine::Timestamp PickupCooldown;
 };
 
 enum EFlagPacketType : uint8

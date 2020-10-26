@@ -33,6 +33,7 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 	Job job;
 	job.Components =
 	{
+		{ ComponentPermissions::R,	FlagComponent::Type() },
 		{ ComponentPermissions::R,	CharacterColliderComponent::Type() },
 		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
 		{ ComponentPermissions::RW,	ParentComponent::Type() },
@@ -44,41 +45,46 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		const CharacterColliderComponent& playerCollisionComponent	= pECS->GetConstComponent<CharacterColliderComponent>(playerEntity);
+		const FlagComponent& flagComponent = pECS->GetConstComponent<FlagComponent>(flagEntity);
 
-		DynamicCollisionComponent& flagCollisionComponent		= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
-		ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
-		OffsetComponent& flagOffsetComponent					= pECS->GetComponent<OffsetComponent>(flagEntity);
-		PacketComponent<FlagEditedPacket>& flagPacketComponent	= pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
+		if (EngineLoop::GetTimeSinceStart() > flagComponent.PickupAvailableTimestamp)
+		{
+			const CharacterColliderComponent& playerCollisionComponent	= pECS->GetConstComponent<CharacterColliderComponent>(playerEntity);
 
-		PxShape* pFlagShape;
-		flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
-		pFlagShape->acquireReference();
-		flagCollisionComponent.pActor->detachShape(*pFlagShape);
+			DynamicCollisionComponent& flagCollisionComponent		= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
+			ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
+			OffsetComponent& flagOffsetComponent					= pECS->GetComponent<OffsetComponent>(flagEntity);
+			PacketComponent<FlagEditedPacket>& flagPacketComponent	= pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
 
-		//Update Collision Group
-		PxFilterData filterData;
-		filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
-		filterData.word1 = (PxU32)FLAG_CARRIED_COLLISION_MASK;
-		pFlagShape->setSimulationFilterData(filterData);
-		pFlagShape->setQueryFilterData(filterData);
+			PxShape* pFlagShape;
+			flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
+			pFlagShape->acquireReference();
+			flagCollisionComponent.pActor->detachShape(*pFlagShape);
 
-		flagCollisionComponent.pActor->attachShape(*pFlagShape);
-		pFlagShape->release();
+			//Update Collision Group
+			PxFilterData filterData;
+			filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
+			filterData.word1 = (PxU32)FLAG_CARRIED_COLLISION_MASK;
+			pFlagShape->setSimulationFilterData(filterData);
+			pFlagShape->setQueryFilterData(filterData);
 
-		//Set Flag Carrier (Parent)
-		flagParentComponent.Attached	= true;
-		flagParentComponent.Parent		= playerEntity;
+			flagCollisionComponent.pActor->attachShape(*pFlagShape);
+			pFlagShape->release();
 
-		//Set Flag Offset
-		const physx::PxBounds3& playerBoundingBox = playerCollisionComponent.pController->getActor()->getWorldBounds();
-		flagOffsetComponent.Offset = glm::vec3(0.0f, playerBoundingBox.getDimensions().y / 2.0f, 0.0f);
+			//Set Flag Carrier (Parent)
+			flagParentComponent.Attached	= true;
+			flagParentComponent.Parent		= playerEntity;
 
-		//Send Packet
-		FlagEditedPacket packet	= {};
-		packet.FlagPacketType		= EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP;
-		packet.PickedUpNetworkUID	= MultiplayerUtils::GetNetworkUID(playerEntity);
-		flagPacketComponent.SendPacket(packet);
+			//Set Flag Offset
+			const physx::PxBounds3& playerBoundingBox = playerCollisionComponent.pController->getActor()->getWorldBounds();
+			flagOffsetComponent.Offset = glm::vec3(0.0f, playerBoundingBox.getDimensions().y / 2.0f, 0.0f);
+
+			//Send Packet
+			FlagEditedPacket packet	= {};
+			packet.FlagPacketType		= EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP;
+			packet.PickedUpNetworkUID	= MultiplayerUtils::GetNetworkUID(playerEntity);
+			flagPacketComponent.SendPacket(packet);
+		}
 	};
 
 	pECS->ScheduleJobASAP(job);
@@ -93,6 +99,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 	Job job;
 	job.Components =
 	{
+		{ ComponentPermissions::RW,	FlagComponent::Type() },
 		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
 		{ ComponentPermissions::RW,	ParentComponent::Type() },
 		{ ComponentPermissions::RW,	PositionComponent::Type() },
@@ -103,10 +110,14 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
+		FlagComponent& flagComponent							= pECS->GetComponent<FlagComponent>(flagEntity);
 		DynamicCollisionComponent& flagCollisionComponent		= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 		ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
 		PositionComponent& flagPositionComponent				= pECS->GetComponent<PositionComponent>(flagEntity);
 		PacketComponent<FlagEditedPacket>& flagPacketComponent	= pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
+
+		//Set Flag Spawn Timestamp
+		flagComponent.PickupAvailableTimestamp = EngineLoop::GetTimeSinceStart() + flagComponent.PickupCooldown;
 
 		PxShape* pFlagShape;
 		flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
@@ -122,6 +133,19 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 		flagCollisionComponent.pActor->attachShape(*pFlagShape);
 		pFlagShape->release();
+
+		PxTransform transform;
+		transform.p.x = dropPosition.x;
+		transform.p.y = dropPosition.y;
+		transform.p.z = dropPosition.z;
+
+		glm::quat rotation = glm::quatLookAt(glm::vec3(1.0f, 0.0f, 0.0f), g_DefaultUp);
+		transform.q.x = rotation.x;
+		transform.q.y = rotation.y;
+		transform.q.z = rotation.z;
+		transform.q.w = rotation.w;
+
+		flagCollisionComponent.pActor->setKinematicTarget(transform);
 
 		//Set Flag Carrier (None)
 		flagParentComponent.Attached	= false;

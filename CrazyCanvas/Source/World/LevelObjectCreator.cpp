@@ -258,12 +258,14 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity entity = pECS->CreateEntity();
 
+	Timestamp pickupCooldown = 1000 * 1000 * 1000;
+	FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
 	PositionComponent positionComponent{ true, pFlagDesc->Position };
 	ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
 	RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
 	MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
 
-	pECS->AddComponent<FlagComponent>(entity,		FlagComponent());
+	pECS->AddComponent<FlagComponent>(entity,		flagComponent);
 	pECS->AddComponent<PositionComponent>(entity,	positionComponent);
 	pECS->AddComponent<ScaleComponent>(entity,		scaleComponent);
 	pECS->AddComponent<RotationComponent>(entity,	rotationComponent);
@@ -464,7 +466,6 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });
-	//MultiplayerUtils::RegisterEntity(playerEntity, networkUID);
 
 	D_LOG_INFO("Created Player with EntityID %d, NetworkID %d", playerEntity, networkUID);
 	return true;

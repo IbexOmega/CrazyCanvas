@@ -97,7 +97,7 @@ namespace LambdaEngine
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
 #endif
 		//Init 25/9
-		Noesis::GUI::Init("IbexOmega", "Uz25EdN1uRHmmJJyF0SjbeNtuCheNvKnJoeAhCTyh/NxhLSa");
+		Noesis::GUI::Init("IbexOmega", "pafzHzrv8x8dIux79u3WNnpctU8qFestYmp/4JUmJ9C3TcQj");
 
 		m_pXAMLProvider		= new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml");
 		m_pFontProvider		= new NoesisApp::LocalFontProvider("../Assets/NoesisGUI/Fonts");
