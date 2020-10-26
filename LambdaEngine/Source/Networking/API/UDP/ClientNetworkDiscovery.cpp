@@ -205,7 +205,7 @@ namespace LambdaEngine
 		for (Packet& packet : packets)
 		{
 			BinaryDecoder& decoder = packet.Decoder;
-			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), m_Statistics.GetRemoteSalt());
+			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), decoder.ReadUInt64());
 #ifdef LAMBDA_CONFIG_DEBUG
 			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
 #else
