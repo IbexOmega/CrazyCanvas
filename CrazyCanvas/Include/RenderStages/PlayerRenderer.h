@@ -3,6 +3,8 @@
 #include "Rendering/ICustomRenderer.h"
 #include "Rendering/Core/API/DescriptorCache.h"
 
+#define MAX_PLAYERS_IN_MATCH 10
+
 namespace LambdaEngine
 {
 	struct TeamsPushConstant
@@ -46,6 +48,7 @@ namespace LambdaEngine
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
 
+
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
@@ -59,7 +62,7 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool Sleeping)	override final;
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
 		virtual const String& GetName() const override final
@@ -69,16 +72,14 @@ namespace LambdaEngine
 		}
 
 	private:
-		void HandleUnavailableDescriptors(uint32 modFrameIndex);
-
+		bool CreateCopyBuffers();
+		bool CreateBuffers(Buffer** ppBuffer);
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
 		bool CreateShaders();
 		bool CreateCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
-
-		TSharedRef<DescriptorSet> GetDescriptorSet(const String& debugname, uint32 descriptorLayoutIndex);
 
 	private:
 		bool									m_Initilized = false;
@@ -103,23 +104,25 @@ namespace LambdaEngine
 		uint64									m_PipelineStateID = 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
-		TSharedRef<DescriptorSet>				m_PerFrameBufferDescriptorSet;
-		TSharedRef<DescriptorSet>				m_PlayerMaterialDescriptorSet;
-		TArray<TSharedRef<DescriptorSet>>		m_DrawArgsDescriptorSets;
-
-		THashTable<DescriptorSetIndex, TArray<std::pair<TSharedRef<DescriptorSet>, ReleaseFrame>>>	m_UnavailableDescriptorSets;
-		THashTable<DescriptorSetIndex, TArray<TSharedRef<DescriptorSet>>>							m_AvailableDescriptorSets;
+		TSharedRef<DescriptorSet>				m_DescriptorSet0; // always one buffer with different offset
+		TSharedRef<DescriptorSet>				m_DescriptorSet1; // always one buffer with different offset
+		TArray<TSharedRef<DescriptorSet>>		m_DescriptorSetList2; // Needs to switch buffer
+		TArray<TSharedRef<DescriptorSet>>		m_DescriptorSetList3; // Needs to switch buffer
 
 		DescriptorCache							m_DescriptorCache;
 
 		uint32									m_BackBufferCount = 0;
+		//TArray<TSharedRef<const TextureView>>	m_BackBuffers;
+
 		TSharedRef<const TextureView>			m_DepthStencil;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage;
 		uint32									m_ViewerId;
-		TArray<uint32>							m_TeamIds;
+		TArray<TArray<uint32>>					m_TeamIds;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
 
-		TeamsPushConstant						m_PushConstant;
+		bool									m_DirtyUniformBuffers = true;
+		TArray<TSharedRef<Buffer>>				m_UniformCopyBuffers;
+		TArray<TSharedRef<Buffer>>				m_UniformBuffers;
 	private:
 		static PlayerRenderer* s_pInstance;
 
