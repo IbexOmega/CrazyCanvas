@@ -233,38 +233,42 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 {
 	using namespace LambdaEngine;
 
-	if (levelObject.MeshComponents.IsEmpty())
-	{
-		LOG_ERROR("[LevelObjectCreator]: Player Spawn must have a mesh included on load!");
-		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
-	}
-	else if (levelObject.MeshComponents.GetSize() > 1)
+	if (levelObject.BoundingBoxes.GetSize() > 1 )
 	{
 		LOG_WARNING("[LevelObjectCreator]: Player Spawn can currently not be created with more than one mesh, using the first mesh...");
 	}
 
-	const MeshComponent& meshComponent = levelObject.MeshComponents[0];
-	const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
-
-	ECSCore* pECS					= ECSCore::GetInstance();
-	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
-
+	ECSCore* pECS = ECSCore::GetInstance();
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
-	const CollisionCreateInfo collisionCreateInfo =
-	{
-		.Entity			= entity,
-		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
-		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
-		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
-		.Mesh			= pECS->AddComponent<MeshComponent>(entity,		meshComponent),
-		.ShapeType		= EShapeType::SIMULATION,
-		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
-		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-	};
 
-	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
-	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	if (!levelObject.MeshComponents.IsEmpty())
+	{
+		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
+
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+
+		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
+
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			.Entity			= entity,
+			.Position		= positionComponent,
+			.Scale			= scaleComponent,
+			.Rotation		= rotationComponent,
+			.ShapeType		= EShapeType::SIMULATION,
+			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
+			.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+		};
+
+		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo, pMesh);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+	}
 
 	D_LOG_INFO("Created Player Spawn with EntityID %d", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
@@ -294,31 +298,22 @@ ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectO
 	if (!MultiplayerUtils::IsServer())
 		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
 
-	if (levelObject.MeshComponents.IsEmpty())
+	if (levelObject.BoundingBoxes.GetSize() > 1)
 	{
-		LOG_ERROR("[LevelObjectCreator]: Bases must have a mesh included on load!");
-		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
-	}
-	else if (levelObject.MeshComponents.GetSize() > 1)
-	{
-		LOG_WARNING("[LevelObjectCreator]: Bases can currently not be created with more than one mesh, using the first mesh...");
+		LOG_WARNING("[LevelObjectCreator]: Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
 	}
 
-	const MeshComponent& meshComponent = levelObject.MeshComponents[0];
+	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
 
-	PositionComponent positionComponent{ true, levelObject.DefaultPosition + translation };
-	ScaleComponent scaleComponent{ true, levelObject.DefaultScale };
-	RotationComponent rotationComponent{ true, levelObject.DefaultRotation };
-
 	pECS->AddComponent<BaseComponent>(entity, { });
-	pECS->AddComponent<PositionComponent>(entity, positionComponent);
-	pECS->AddComponent<ScaleComponent>(entity, scaleComponent);
-	pECS->AddComponent<RotationComponent>(entity, rotationComponent);
+	const PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	const ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	const RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
 
 	//Only the server checks collision with the flag
 	const CollisionCreateInfo collisionCreateInfo =
@@ -327,13 +322,12 @@ ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectO
 		/* Position */	 		positionComponent,
 		/* Scale */				scaleComponent,
 		/* Rotation */			rotationComponent,
-		/* Mesh */				meshComponent,
 		/* Shape Type */		EShapeType::TRIGGER,
 		/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_BASE,
 		/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 	};
 
-	StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo);
+	StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo, scaleComponent.Scale * boundingBox.Dimensions);
 	pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
 
 	createdEntities.PushBack(entity);
@@ -419,14 +413,13 @@ bool LevelObjectCreator::CreateFlag(
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
-			/* Mesh */				meshComponent,
 			/* Shape Type */		EShapeType::TRIGGER,
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
 			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity, { glm::vec3(0.0f) })
 		};
-		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo);
+		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo, scaleComponent.Scale * ResourceManager::GetMesh(meshComponent.MeshGUID)->BoundingBox.Dimensions);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 
 		//Add second shape (Non-Trigger) to allow Base-Flag Collisions
