@@ -37,7 +37,6 @@ private:
 	LambdaEngine::IPAddress* m_pIPAddress;
 
 	/* Systems */
-	WeaponSystem m_WeaponSystem;
 	HealthSystem m_HealthSystem;
 	HUDSystem m_HUDSystem;
 
