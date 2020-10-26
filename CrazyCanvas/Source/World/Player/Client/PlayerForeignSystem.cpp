@@ -16,12 +16,12 @@ using namespace LambdaEngine;
 
 PlayerForeignSystem::PlayerForeignSystem()
 {
-	
+
 }
 
 PlayerForeignSystem::~PlayerForeignSystem()
 {
-	
+
 }
 
 void PlayerForeignSystem::Init()
@@ -45,7 +45,7 @@ void PlayerForeignSystem::Init()
 	};
 	systemReg.Phase = 0;
 
-	RegisterSystem(systemReg);
+	RegisterSystem(TYPE_NAME(PlayerForeignSystem), systemReg);
 }
 
 void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)

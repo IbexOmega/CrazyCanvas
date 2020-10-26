@@ -5,13 +5,14 @@
 #include "ECS/EntityPublisher.h"
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
-#include "ECS/System.h"
+#include "ECS/ECSVisualizer.h"
 #include "Utilities/IDGenerator.h"
 
 namespace LambdaEngine
 {
 	class EntitySubscriber;
 	class RegularWorker;
+	class System;
 
 	// EntitySerializationHeader is written to the beginning of an entity serialization
 #pragma pack(push, 1)
@@ -106,7 +107,11 @@ namespace LambdaEngine
 		*/
 		bool DeserializeEntity(const uint8* pBuffer);
 
+		void RegisterSystem(System* pSystem, uint32 regularJobID);
+		void DeregisterSystem(uint32 regularJobID);
+
         Timestamp GetDeltaTime() const { return m_DeltaTime; }
+		const IDDVector<System*>& GetSystems() const { return m_Systems; }
 
 	public:
 		static ECSCore* GetInstance() { return s_pInstance; }
@@ -131,10 +136,14 @@ namespace LambdaEngine
 		EntityPublisher m_EntityPublisher;
 		JobScheduler m_JobScheduler;
 		ComponentStorage m_ComponentStorage;
+		ECSVisualizer m_ECSVisualizer;
 
 		std::unordered_set<Entity> m_EntitiesToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToRegister;
+
+		// Maps regular job ID to systems
+		IDDVector<System*> m_Systems;
 
 		Timestamp m_DeltaTime;
 

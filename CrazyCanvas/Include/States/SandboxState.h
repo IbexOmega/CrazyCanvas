@@ -63,6 +63,7 @@ private:
 	bool								m_RenderGraphWindow		= false;
 	bool								m_ShowDemoWindow		= false;
 	bool								m_DebuggingWindow		= false;
+	bool								m_ECSVisualization		= false;
 
 	bool					m_ShowTextureDebuggingWindow	= false;
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;

@@ -50,7 +50,7 @@ bool WeaponSystem::Init()
 		systemReg.SubscriberRegistration.AdditionalAccesses = GetFireProjectileComponentAccesses();
 		systemReg.Phase = 1;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(WeaponSystem), systemReg);
 	}
 
 	// Create rendering resources for projectiles

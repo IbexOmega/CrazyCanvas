@@ -21,19 +21,20 @@ namespace LambdaEngine
 
 	class ComponentHandler;
 
-	// A system processes components each frame in the tick function
-	class LAMBDA_API System : private EntitySubscriber, private RegularWorker
+	// A system processes components in the Tick function
+	class LAMBDA_API System : EntitySubscriber, RegularWorker
 	{
 	public:
-		// Registers the system in the system handler
-		System() = default;
-
-		// Deregisters system
-		virtual ~System() = default;
+		virtual ~System();
 
 		virtual void Tick(Timestamp deltaTime) = 0;
 
+		const String& GetName() const { return m_SystemName; }
+
 	protected:
-		void RegisterSystem(SystemRegistration& systemRegistration);
+		void RegisterSystem(const String& systemName, SystemRegistration& systemRegistration);
+
+	private:
+		String m_SystemName;
 	};
 }
