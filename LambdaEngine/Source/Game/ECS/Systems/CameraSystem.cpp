@@ -27,10 +27,10 @@ namespace LambdaEngine
 					.pSubscriber = &m_CameraEntities,
 					.ComponentAccesses =
 					{
-						{R, CameraComponent::Type()}, 
-						{NDA, ViewProjectionMatricesComponent::Type()}, 
+						{R, CameraComponent::Type()},
+						{NDA, ViewProjectionMatricesComponent::Type()},
 						{RW, VelocityComponent::Type()},
-						{NDA, PositionComponent::Type()}, 
+						{NDA, PositionComponent::Type()},
 						{RW, RotationComponent::Type()},
 					},
 				},
@@ -38,11 +38,11 @@ namespace LambdaEngine
 					.pSubscriber = &m_AttachedCameraEntities,
 					.ComponentAccesses =
 					{
-						{R, CameraComponent::Type()}, 
-						{NDA, ViewProjectionMatricesComponent::Type()}, 
+						{R, CameraComponent::Type()},
+						{NDA, ViewProjectionMatricesComponent::Type()},
 						{R, ParentComponent::Type()},
 						{R, OffsetComponent::Type()},
-						{RW, PositionComponent::Type()}, 
+						{RW, PositionComponent::Type()},
 						{RW, RotationComponent::Type()},
 					},
 				}
@@ -50,7 +50,7 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.AdditionalAccesses = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
 			systemReg.Phase = 0;
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(CameraSystem), systemReg);
 		}
 
 		return true;

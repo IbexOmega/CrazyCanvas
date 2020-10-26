@@ -3,9 +3,18 @@
 #include "Containers/THashTable.h"
 #include "ECS/EntitySubscriber.h"
 #include "ECS/Job.h"
+#include "Time/API/Timestamp.h"
 
 namespace LambdaEngine
 {
+	struct RegularWorkInfo
+	{
+		std::function<void(Timestamp deltaTime)> TickFunction;
+		EntitySubscriberRegistration EntitySubscriberRegistration;
+		uint32 Phase;
+		float32 TickPeriod;
+	};
+
 	// RegularWorker schedules a regular job and deregisters it upon destruction
 	class RegularWorker
 	{
@@ -13,7 +22,12 @@ namespace LambdaEngine
 		RegularWorker() = default;
 		~RegularWorker();
 
-		void ScheduleRegularWork(const Job& job, uint32 phase);
+		void Tick();
+
+		void ScheduleRegularWork(const RegularWorkInfo& regularWorkInfo);
+
+	protected:
+		uint32 GetJobID() const { return m_JobID; }
 
 	protected:
 		// GetUniqueComponentAccesses serializes all unique component accesses in an entity subscriber registration
@@ -25,5 +39,9 @@ namespace LambdaEngine
 	private:
 		uint32 m_Phase = UINT32_MAX;
 		uint32 m_JobID = UINT32_MAX;
+
+		float32 m_TickPeriod = -1.0f;
+
+		std::function<void(Timestamp deltaTime)> m_TickFunction = nullptr;
 	};
 }

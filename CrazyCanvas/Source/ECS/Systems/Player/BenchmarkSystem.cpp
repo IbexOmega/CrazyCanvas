@@ -7,7 +7,7 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
-#include "Game/Multiplayer/CharacterControllerHelper.h"
+#include "World/Player/CharacterControllerHelper.h"
 
 #include "Input/API/Input.h"
 
@@ -48,7 +48,7 @@ void BenchmarkSystem::Init()
 		};
 		systemReg.Phase = 0u;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(BenchmarkSystem), systemReg);
 	}
 }
 

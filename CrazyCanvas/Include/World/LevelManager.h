@@ -43,12 +43,17 @@ public:
 	static Level* LoadLevel(const LambdaEngine::String& levelName);
 	static Level* LoadLevel(uint32 index);
 
+	static const LambdaEngine::SHA256Hash& GetHash(const LambdaEngine::String& levelName);
+	static const LambdaEngine::SHA256Hash& GetHash(uint32 index);
+
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& GetLevelHashes() { return s_LevelHashes; }
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::String>& GetLevelNames() { return s_LevelNames; }
+
 private:
 	static inline LambdaEngine::TArray<LambdaEngine::SHA256Hash> s_LevelHashes;
 	static inline LambdaEngine::TArray<LambdaEngine::String> s_LevelNames;
 	static inline LambdaEngine::TArray<LevelDesc> s_LevelDescriptions;
 
 	static inline LambdaEngine::THashTable<LambdaEngine::String, LevelModule*> s_LoadedModules;
+	static inline LambdaEngine::SHA256Hash s_DefaultEmptyHash;
 };

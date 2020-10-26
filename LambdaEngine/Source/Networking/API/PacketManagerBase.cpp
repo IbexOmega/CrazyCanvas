@@ -1,6 +1,5 @@
 #include "Networking/API/PacketManagerBase.h"
 
-#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/PacketTransceiverBase.h"
 
@@ -12,7 +11,6 @@ namespace LambdaEngine
 		m_SegmentPool(desc.PoolSize),
 		m_QueueIndex(0)
 	{
-
 	}
 
 	uint32 PacketManagerBase::EnqueueSegmentReliable(NetworkSegment* pSegment, IPacketListener* pListener)
@@ -32,17 +30,31 @@ namespace LambdaEngine
 
 	uint32 PacketManagerBase::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
+		if(pSegment->GetType() < 999)
+			ASSERT(pSegment->GetBufferSize() > 0)
+
 		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment();
 		pSegment->GetHeader().ReliableUID = reliableUID;
-		m_SegmentsToSend[m_QueueIndex].push(pSegment);
+		InsertSegment(pSegment);
 		return pSegment->GetHeader().UID;
+	}
+
+	void PacketManagerBase::InsertSegment(NetworkSegment* pSegment)
+	{
+		m_SegmentsToSend[m_QueueIndex].insert(pSegment);
+
+#if LAMBDA_ENABLE_ASSERTS
+		if (pSegment->GetType() < 1000)
+			VALIDATE(pSegment->GetBufferSize() > 0)
+#endif
 	}
 
 	void PacketManagerBase::Flush(PacketTransceiverBase* pTransceiver)
 	{
-		int32 indexToUse = m_QueueIndex;
+		std::scoped_lock<SpinLock> lock1(m_LockSegmentsToSend);
+		std::set<NetworkSegment*, NetworkSegmentUIDOrder>& segments = m_SegmentsToSend[m_QueueIndex];
+
 		m_QueueIndex = (m_QueueIndex + 1) % 2;
-		std::queue<NetworkSegment*>& segments = m_SegmentsToSend[indexToUse];
 
 		Timestamp timestamp = EngineLoop::GetTimeSinceStart();
 
@@ -55,7 +67,7 @@ namespace LambdaEngine
 			{
 				bundle.Timestamp = timestamp;
 
-				std::scoped_lock<SpinLock> lock(m_LockBundles);
+				std::scoped_lock<SpinLock> lock2(m_LockBundles);
 				m_Bundles.insert({ bundleUID, bundle });
 			}
 		}
@@ -63,7 +75,11 @@ namespace LambdaEngine
 
 	void PacketManagerBase::QueryEnd(TArray<NetworkSegment*>& segmentsReceived)
 	{
+#ifdef LAMBDA_CONFIG_DEBUG
+		m_SegmentPool.FreeSegments(segmentsReceived, "PacketManagerBase::QueryEnd");
+#else
 		m_SegmentPool.FreeSegments(segmentsReceived);
+#endif	
 	}
 
 	void PacketManagerBase::DeleteOldBundles()
@@ -165,16 +181,26 @@ namespace LambdaEngine
 		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(segmentsAcked.GetSize());
 
+		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
+
 		for (SegmentInfo& segmentInfo : segmentsAcked)
 		{
 			if (segmentInfo.Listener)
 			{
 				segmentInfo.Listener->OnPacketDelivered(segmentInfo.Segment);
 			}
+
+			m_SegmentsToSend[0].erase(segmentInfo.Segment);
+			m_SegmentsToSend[1].erase(segmentInfo.Segment);
+
 			packetsToFree.PushBack(segmentInfo.Segment);
 		}
 
+#ifdef LAMBDA_CONFIG_DEBUG
+		m_SegmentPool.FreeSegments(packetsToFree, "PacketManagerBase::HandleAcks");
+#else
 		m_SegmentPool.FreeSegments(packetsToFree);
+#endif
 	}
 
 	/*
