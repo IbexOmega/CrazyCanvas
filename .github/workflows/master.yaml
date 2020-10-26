@@ -29,7 +29,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Build Production
-        run: msbuild LambdaEngine.sln -p:Configuration=Production -p:Platform=x64
+        run: msbuild LambdaEngine.sln -p:Configuration=Production -p:Platform=x64 /warnaserror
 
       - name: Benchmark
         run: python .github/workflows/benchmark.py --bin .\Build\bin\Production-windows-x86_64-x64\CrazyCanvas\CrazyCanvas.exe

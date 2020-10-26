@@ -172,9 +172,9 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+	// Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+	// TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -271,9 +271,12 @@ bool LobbyGUI::CheckServerStatus()
 {
 	TArray<uint64> serversToRemove;
 
+	Timestamp timeSinceStart = EngineLoop::GetTimeSinceStart();
+	Timestamp deltaTime;
+
 	for (auto& server : m_Servers)
 	{
-		Timestamp deltaTime = EngineLoop::GetTimeSinceStart() - server.second.LastUpdate;
+		deltaTime = timeSinceStart - server.second.LastUpdate;
 
 		if (deltaTime.AsSeconds() > 5)
 		{
@@ -376,7 +379,7 @@ void LobbyGUI::SetRenderStagesActive()
 void LobbyGUI::ErrorPopUp(PopUpCode errorCode)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
-	
+
 	switch (errorCode)
 	{
 	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To Server!");		break;

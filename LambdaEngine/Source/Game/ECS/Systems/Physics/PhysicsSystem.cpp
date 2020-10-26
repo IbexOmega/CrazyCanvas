@@ -74,7 +74,7 @@ namespace LambdaEngine
 					.pSubscriber = &m_DynamicCollisionEntities,
 					.ComponentAccesses =
 					{
-						{R, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}, {RW, VelocityComponent::Type()}
+						{R, DynamicCollisionComponent::Type()}, {RW, PositionComponent::Type()}, {RW, RotationComponent::Type()}
 					},
 					.OnEntityAdded = onDynamicCollisionAdded,
 					.OnEntityRemoval = onDynamicCollisionRemoval
@@ -87,6 +87,10 @@ namespace LambdaEngine
 					},
 					.OnEntityRemoval = onCharacterCollisionRemoval
 				}
+			};
+			systemReg.SubscriberRegistration.AdditionalAccesses =
+			{
+				{RW, VelocityComponent::Type()}
 			};
 			systemReg.Phase = 1;
 
@@ -198,7 +202,6 @@ namespace LambdaEngine
 			{
 				PositionComponent& positionComp = pPositionComponents->GetData(entity);
 				RotationComponent& rotationComp = pRotationComponents->GetData(entity);
-				VelocityComponent& velocityComp = pVelocityComponents->GetData(entity);
 
 				const PxTransform transformPX = pActor->getGlobalPose();
 				const PxVec3& positionPX = transformPX.p;
@@ -207,8 +210,12 @@ namespace LambdaEngine
 				const PxQuat& quatPX = transformPX.q;
 				rotationComp.Quaternion = { quatPX.x, quatPX.y, quatPX.z, quatPX.w };
 
-				const PxVec3 velocityPX = pActor->getLinearVelocity();
-				velocityComp.Velocity = { velocityPX.x, velocityPX.y, velocityPX.z };
+				VelocityComponent velocityComp;
+				if (pVelocityComponents->GetIf(entity, velocityComp))
+				{
+					const PxVec3 velocityPX = pActor->getLinearVelocity();
+					velocityComp.Velocity = { velocityPX.x, velocityPX.y, velocityPX.z };
+				}
 			}
 		}
 	}
@@ -654,18 +661,20 @@ namespace LambdaEngine
 		for (uint32 actorIdx = 0; actorIdx < 2; actorIdx++)
 		{
 			const PxRigidActor* pActor = actors[actorIdx];
-			glm::vec3 direction;
+
+			/*	Get the direction of the actor. Default to the transform's rotation. If the actor is dynamic and has
+				a non-zero velocity, use that instead. */
+			const PxTransform transformPX = pActor->getGlobalPose();
+			const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
+			glm::vec3 direction = GetForward(rotation);
 			if (pActor->is<PxRigidDynamic>())
 			{
 				const PxRigidDynamic* pDynamicActor = reinterpret_cast<const PxRigidDynamic*>(pActor);
 				const PxVec3 velocityPX = pDynamicActor->getLinearVelocity();
-				direction = glm::normalize(glm::vec3(velocityPX.x, velocityPX.y, velocityPX.z));
-			}
-			else
-			{
-				const PxTransform transformPX = pActor->getGlobalPose();
-				const glm::quat rotation = { transformPX.q.x, transformPX.q.y, transformPX.q.z, transformPX.q.w };
-				direction = GetForward(rotation);
+				if (!velocityPX.isZero())
+				{
+					direction = glm::normalize(glm::vec3(velocityPX.x, velocityPX.y, velocityPX.z));
+				}
 			}
 
 			collisionInfos[actorIdx] =

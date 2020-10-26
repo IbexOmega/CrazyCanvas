@@ -1,11 +1,13 @@
 #pragma once
-
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystem.h"
+
 #include "Game/State.h"
 
 #include "ECS/Systems/GUI/HUDSystem.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
@@ -34,11 +36,10 @@ private:
 
 	LambdaEngine::IPAddress* m_pIPAddress;
 
-
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
+	HealthSystem m_HealthSystem;
 	HUDSystem m_HUDSystem;
-
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

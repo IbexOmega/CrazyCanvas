@@ -1,8 +1,9 @@
 #pragma once
-
 #include "ECS/Component.h"
 
 #include "ECS/Components/Team/TeamComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
+
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
@@ -16,7 +17,13 @@ namespace LambdaEngine
 		{
 			return
 			{
-				PlayerBaseComponent, Position, Scale, Rotation, Velocity, CharacterCollider
+				PlayerBaseComponent,
+				Position,
+				Scale,
+				Rotation,
+				Velocity,
+				CharacterCollider,
+				Health
 			};
 		}
 
@@ -31,5 +38,7 @@ namespace LambdaEngine
 		GroupedComponent<VelocityComponent>	Velocity;
 
 		GroupedComponent<CharacterColliderComponent> CharacterCollider;
+
+		GroupedComponent<HealthComponent> Health;
 	};
 }

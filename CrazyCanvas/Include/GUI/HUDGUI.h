@@ -49,7 +49,7 @@ public:
 
 	bool ApplyDamage(float damage);
 	bool UpdateScore();
-	bool UpdateAmmo(const int32 currentAmmo, const int32 ammoCap);
+	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap);
 
 private:
 

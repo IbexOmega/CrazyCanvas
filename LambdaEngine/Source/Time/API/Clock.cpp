@@ -13,8 +13,8 @@ namespace LambdaEngine
 
 	void Clock::Tick()
 	{
-		const uint64 now = PlatformTime::GetPerformanceCounter();
-		const uint64 delta = now - m_LastTime;
+		const uint64 now	= PlatformTime::GetPerformanceCounter();
+		const uint64 delta	= now - m_LastTime;
 
 		constexpr uint64 NANOSECONDS = 1000 * 1000 * 1000;
 		const uint64 frequency		= PlatformTime::GetPerformanceFrequency();

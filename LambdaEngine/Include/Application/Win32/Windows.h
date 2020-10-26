@@ -1,4 +1,5 @@
 #pragma once
+#include "Containers/String.h"
 
 #ifdef LAMBDA_PLATFORM_WINDOWS
 	#ifndef WIN32_LEAN_AND_MEAN
@@ -16,6 +17,10 @@
 
 		#ifdef CreateWindow
 			#undef CreateWindow
+		#endif
+
+		#ifdef CreateProcess
+			#undef CreateProcess
 		#endif
 
 		#ifdef ERROR

@@ -2,6 +2,8 @@
 
 #include "Debug/Profiler.h"
 
+#include "Threading/API/PlatformThread.h"
+
 #include <argh/argh.h>
 
 #include "Application/API/PlatformMisc.h"
@@ -23,6 +25,9 @@ int main(int argc, char** argv)
 {
 #endif
 	using namespace LambdaEngine;
+
+	// Set the name of the mainthread
+	PlatformThread::SetThreadName(PlatformThread::GetCurrentThreadHandle(), "MainThread");
 
 	argh::parser flagParser(argc, argv);
 
