@@ -87,7 +87,7 @@ namespace LambdaEngine
 			EFilterType filter) override final;
 
 		virtual void TransitionBarrier(
-			Texture* resource,
+			Texture* pResource,
 			FPipelineStageFlags srcStage,
 			FPipelineStageFlags dstStage,
 			uint32 srcAccessMask,
