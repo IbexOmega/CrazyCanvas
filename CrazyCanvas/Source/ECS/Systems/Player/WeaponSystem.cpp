@@ -232,6 +232,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
 		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {meshComp}),
 		/* Shape Type */		EShapeType::SIMULATION,
+		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
 		/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),

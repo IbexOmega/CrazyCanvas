@@ -27,7 +27,7 @@ physx::PxFilterFlags FilterShader(
 		{
 			// Call onContact when PxScene::fetchResults is called
 			pairFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::eNOTIFY_TOUCH_FOUND |
-						PxPairFlag::eNOTIFY_CONTACT_POINTS;
+						PxPairFlag::eNOTIFY_CONTACT_POINTS | PxPairFlag::eDETECT_CCD_CONTACT;
 		}
 
 		return PxFilterFlag::eDEFAULT;
