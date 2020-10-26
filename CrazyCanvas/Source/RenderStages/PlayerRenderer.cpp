@@ -452,13 +452,16 @@ namespace LambdaEngine
 		perFrameBufferDesc.Binding = 0;
 		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
-		// PerFrameBuffer
-		DescriptorBindingDesc materialBufferDesc = {};
-		materialBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
-		materialBufferDesc.DescriptorCount = 1;
-		materialBufferDesc.Binding = 1;
-		materialBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
+		/*
+		layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters { SMaterialParameters val[]; }  b_MaterialParameters;
+
+		layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
+		layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
+		layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
+		*/
+
+		/* VERTEX SHADER */
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		verticesBindingDesc.DescriptorCount = 1;
@@ -471,17 +474,52 @@ namespace LambdaEngine
 		instanceBindingDesc.Binding = 1;
 		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
+		/* PIXEL SHADER */
+		// MaterialParameters
+		DescriptorBindingDesc materialParametersBufferDesc = {};
+		materialParametersBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		materialParametersBufferDesc.DescriptorCount = 1;
+		materialParametersBufferDesc.Binding = 1;	// TEXTURE_SET_INDEX
+		materialParametersBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_AlbedoMaps
+		DescriptorBindingDesc albedoMapsDesc = {};
+		materialParametersBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		materialParametersBufferDesc.DescriptorCount = 1;
+		materialParametersBufferDesc.Binding = 1;	// TEXTURE_SET_INDEX
+		materialParametersBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// NormalMapsDesc
+		DescriptorBindingDesc normalMapsDesc = {};
+		materialParametersBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		materialParametersBufferDesc.DescriptorCount = 1;
+		materialParametersBufferDesc.Binding = 1;	// TEXTURE_SET_INDEX
+		materialParametersBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// CombinedMaterialMaps
+		DescriptorBindingDesc combinedMaterialMapsDesc = {};
+		combinedMaterialMapsDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		combinedMaterialMapsDesc.DescriptorCount = 1;
+		combinedMaterialMapsDesc.Binding = 1;	// TEXTURE_SET_INDEX
+		combinedMaterialMapsDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+
 		// denna mappar till binding = 0
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, verticesBindingDesc, albedoMapsDesc };
 
 		// denna mappar till binding = 1
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
+		descriptorSetLayoutDesc1.DescriptorBindings = { instanceBindingDesc, albedoMapsDesc, materialParametersBufferDesc };
+
+		// denna mappar till binding = 2
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
+		descriptorSetLayoutDesc1.DescriptorBindings = { combinedMaterialMapsDesc };
+
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Player Renderer Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1 };
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
 		pipelineLayoutDesc.ConstantRanges = { };
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
