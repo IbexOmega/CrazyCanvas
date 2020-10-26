@@ -48,7 +48,7 @@ void BenchmarkSystem::Init()
 		};
 		systemReg.Phase = 0u;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(BenchmarkSystem), systemReg);
 	}
 }
 
