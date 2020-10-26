@@ -12,7 +12,7 @@ namespace LambdaEngine
 	class LAMBDA_API BinaryEncoder
 	{
 	public:
-		BinaryEncoder(NetworkSegment* packet);
+		BinaryEncoder(NetworkSegment* pPacket);
 		~BinaryEncoder();
 
 		void WriteInt8(int8 value);
