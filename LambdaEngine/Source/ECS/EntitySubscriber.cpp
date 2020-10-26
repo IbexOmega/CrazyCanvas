@@ -39,7 +39,7 @@ namespace LambdaEngine
 
     void EntitySubscriber::ProcessExcludedTypes(EntitySubscriptionRegistration& subscriptionRegistration)
     {
-    #ifdef LAMBDA_DEVELOPMENT
+    #ifdef LAMBDA_DEBUG
         const TArray<ComponentAccess>& includedTypes = subscriptionRegistration.ComponentAccesses;
         const TArray<const ComponentType*>& excludedTypes = subscriptionRegistration.ExcludedComponentTypes;
 
@@ -50,6 +50,6 @@ namespace LambdaEngine
                 ASSERT_MSG(pExcludedComponent != includedComponent.pTID, "The same component type was both included and excluded in an entity subscription");
             }
         }
-    #endif // LAMBDA_DEVELOPMENT
+    #endif // LAMBDA_DEBUG
     }
 }
