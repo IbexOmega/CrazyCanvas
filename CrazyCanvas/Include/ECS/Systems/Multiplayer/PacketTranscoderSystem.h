@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ECS/System.h"
-#include "ECS/EntitySubscriber.h"
 #include "ECS/ComponentType.h"
 
 #include "Application/API/Events/NetworkEvents.h"
@@ -10,11 +9,11 @@
 
 #include "Containers/THashTable.h"
 
-class PacketDecoderSystem : public LambdaEngine::System
+class PacketTranscoderSystem : public LambdaEngine::System
 {
 public:
-	PacketDecoderSystem();
-	~PacketDecoderSystem();
+	PacketTranscoderSystem();
+	~PacketTranscoderSystem();
 
 	void Init();
 
@@ -22,7 +21,7 @@ public:
 
 private:
 	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final {};
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
 
 private:
 	LambdaEngine::THashTable<const LambdaEngine::ComponentType*, LambdaEngine::IDVector> m_ComponentTypeToEntities;

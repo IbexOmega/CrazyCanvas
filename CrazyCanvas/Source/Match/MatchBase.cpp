@@ -20,7 +20,7 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &MatchBase::OnPacketReceived);
 	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
-	MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+	//MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 
 	if (m_pLevel == nullptr)
 	{

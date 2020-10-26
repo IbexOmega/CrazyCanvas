@@ -77,9 +77,10 @@ workspace "LambdaEngine"
 	disablewarnings { "4201" }
 
 	-- Link warning suppression
-	-- LNK4099: Debugging Database file (pdb) missing for given obj
 	-- LNK4006: Sympbol already defined in another library will pick first definition
-	linkoptions { "-IGNORE:4006,4099" }
+	-- LNK4099: Debugging Database file (pdb) missing for given obj
+	-- LNK4098: defaultlib 'library' conflicts with use of other libs; use /NODEFAULTLIB:library
+	linkoptions { "-IGNORE:4006,4099,4098" }
 
 	-- Set output dir
 	outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}-%{cfg.platform}"

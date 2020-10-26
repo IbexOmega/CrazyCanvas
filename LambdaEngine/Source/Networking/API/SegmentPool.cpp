@@ -53,6 +53,8 @@ namespace LambdaEngine
 
 	void SegmentPool::FreeSegment(NetworkSegment* pSegment, const std::string& returner)
 	{
+		UNREFERENCED_VARIABLE(returner);
+
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		//LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
 		Free(pSegment);
@@ -60,6 +62,8 @@ namespace LambdaEngine
 
 	void SegmentPool::FreeSegments(TArray<NetworkSegment*>& segments, const std::string& returner)
 	{
+		UNREFERENCED_VARIABLE(returner);
+
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		for (NetworkSegment* pSegment : segments)
 		{

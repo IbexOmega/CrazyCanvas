@@ -4,8 +4,6 @@
 
 #include "ECS/Entity.h"
 
-#include "Game/Multiplayer/PacketFunction.h"
-
 namespace LambdaEngine
 {
 	class IClient;
@@ -21,5 +19,6 @@ namespace LambdaEngine
 		virtual Entity GetEntity(int32 networkUID) const = 0;
 		virtual int32 GetNetworkUID(Entity entity) const = 0;
 		virtual void RegisterEntity(Entity entity, int32 networkUID) = 0;
+		virtual void UnregisterEntity(Entity entity) = 0;
 	};
 }

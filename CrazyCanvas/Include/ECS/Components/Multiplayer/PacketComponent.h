@@ -12,9 +12,10 @@
 #include "Multiplayer/Packet.h"
 #include "Networking/API/NetworkSegment.h"
 
+
 struct IPacketComponent
 {
-	friend class PacketDecoderSystem;
+	friend class PacketTranscoderSystem;
 
 	virtual ~IPacketComponent() = default;
 
@@ -35,11 +36,17 @@ struct PacketComponent : public IPacketComponent
 	DECL_COMPONENT(PacketComponent<T>);
 
 public:
+	/*
+	* Returns the packets received. The order is guaranteed to be the same as when the SendPacket was called.
+	*/
 	const LambdaEngine::TArray<T>& GetPacketsReceived() const
 	{
 		return m_PacketsReceived;
 	}
 
+	/*
+	* Puts a packet in the queue for dispatch over the network system.
+	*/
 	void SendPacket(const T& packet)
 	{
 		m_PacketsToSend.push(packet);

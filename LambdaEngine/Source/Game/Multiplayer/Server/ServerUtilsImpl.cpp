@@ -29,4 +29,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(entity);
 		UNREFERENCED_VARIABLE(networkUID);
 	}
+
+	void ServerUtilsImpl::UnregisterEntity(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+	}
 }

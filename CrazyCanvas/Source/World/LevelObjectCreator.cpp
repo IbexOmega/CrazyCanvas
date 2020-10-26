@@ -328,7 +328,7 @@ bool LevelObjectCreator::CreateFlag(
 	}
 
 	pECS->AddComponent<NetworkComponent>(entity, { networkUID });
-	MultiplayerUtils::RegisterEntity(entity, networkUID);
+	//MultiplayerUtils::RegisterEntity(entity, networkUID);
 
 	createdEntities.PushBack(entity);
 
@@ -464,7 +464,7 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });
-	MultiplayerUtils::RegisterEntity(playerEntity, networkUID);
+	//MultiplayerUtils::RegisterEntity(playerEntity, networkUID);
 
 	D_LOG_INFO("Created Player with EntityID %d, NetworkID %d", playerEntity, networkUID);
 	return true;

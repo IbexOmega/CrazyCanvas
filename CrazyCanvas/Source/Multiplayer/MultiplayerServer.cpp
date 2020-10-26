@@ -20,7 +20,7 @@ void MultiplayerServer::Init()
 
 void MultiplayerServer::TickMainThread(LambdaEngine::Timestamp deltaTime)
 {
-
+	UNREFERENCED_VARIABLE(deltaTime);
 }
 
 void MultiplayerServer::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)

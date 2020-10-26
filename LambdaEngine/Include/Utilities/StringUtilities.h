@@ -1,6 +1,8 @@
 #pragma once
-
 #include "Containers/String.h"
+
+#include <codecvt>
+#include <locale>
 
 namespace LambdaEngine
 {
@@ -24,4 +26,16 @@ namespace LambdaEngine
 			return str;
 		}
 	};
+
+	inline WString ConvertToWide(const String& asciiString)
+	{
+		WString wideString = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(asciiString.c_str());
+		return wideString;
+	}
+
+	inline String ConvertToAscii(const WString& wideString)
+	{
+		String asciiString = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(wideString.c_str());
+		return asciiString;
+	}
 }
