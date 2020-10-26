@@ -22,13 +22,14 @@
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
 
+#include "Multiplayer/MultiplayerClient.h"
+
 namespace LambdaEngine
 {
 	class RenderGraphEditor;
 }
 
 class GUITest;
-class Level;
 
 class SandboxState : public LambdaEngine::State, public LambdaEngine::IRenderGraphCreateHandler
 {
@@ -42,6 +43,7 @@ public:
 	void Pause() override final;
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
+	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 	void OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph) override final;
 
@@ -49,7 +51,6 @@ public:
 
 private:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
 
 private:
 	LambdaEngine::Entity m_DirLight;
@@ -68,9 +69,12 @@ private:
 
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
-	Level* m_pLevel = nullptr;
+	/* Systems */
+	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
+
+	MultiplayerClient m_MultiplayerClient;
 };

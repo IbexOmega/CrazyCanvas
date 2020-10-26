@@ -32,10 +32,10 @@ namespace LambdaEngine
 		desc.Protocol				= EProtocol::UDP;
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(10);
-		desc.UsePingSystem			= true;
+		desc.UsePingSystem			= false;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
-		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
+		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.5f);
 	}
 
 	ServerSystem::~ServerSystem()
@@ -57,16 +57,6 @@ namespace LambdaEngine
 		m_pServer->Stop("ServerSystem->Stop()");
 	}
 
-	void ServerSystem::FixedTickMainThread(Timestamp deltaTime)
-	{
-		const ClientMap& pClients = m_pServer->GetClients();
-		for (auto& pair : pClients)
-		{
-			ClientRemoteSystem* pClientSystem = (ClientRemoteSystem*)pair.second->GetHandler();
-			pClientSystem->FixedTickMainThread(deltaTime);
-		}
-	}
-
 	void ServerSystem::TickMainThread(Timestamp deltaTime)
 	{
 		NetworkDebugger::RenderStatistics(m_pServer);
@@ -79,6 +69,11 @@ namespace LambdaEngine
 		}
 	}
 
+	ServerBase* ServerSystem::GetServer()
+	{
+		return m_pServer;
+	}
+
 	IClientRemoteHandler* ServerSystem::CreateClientHandler()
 	{
 		return DBG_NEW ClientRemoteSystem();
@@ -88,12 +83,6 @@ namespace LambdaEngine
 	{
 		ServerDiscoveryPreTransmitEvent event(&encoder, m_pServer);
 		EventQueue::SendEventImmediate(event);
-	}
-
-	void ServerSystem::StaticFixedTickMainThread(Timestamp deltaTime)
-	{
-		if (s_pInstance)
-			s_pInstance->FixedTickMainThread(deltaTime);
 	}
 
 	void ServerSystem::StaticTickMainThread(Timestamp deltaTime)

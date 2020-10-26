@@ -12,6 +12,7 @@
 
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
+#include "Physics/CollisionGroups.h"
 
 WeaponSystem WeaponSystem::s_Instance;
 
@@ -234,7 +235,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
 		/* Shape Type */		EShapeType::SIMULATION,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 		/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
 		/* Velocity */			initialVelocity
 	};
@@ -251,7 +252,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Is this safe? Concurrency issues?

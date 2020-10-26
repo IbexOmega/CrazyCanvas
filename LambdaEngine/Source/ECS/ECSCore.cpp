@@ -19,8 +19,18 @@ namespace LambdaEngine
 		PerformComponentRegistrations();
 		PerformComponentDeletions();
 		PerformEntityDeletions();
-		m_JobScheduler.Tick();
+		m_JobScheduler.Tick((float32)deltaTime.AsSeconds());
 		m_ComponentStorage.ResetDirtyFlags();
+	}
+
+	IComponentArray* ECSCore::GetComponentArray(const ComponentType* pComponentType)
+	{
+		return m_ComponentStorage.GetComponentArray(pComponentType);
+	}
+
+	const IComponentArray* ECSCore::GetComponentArray(const ComponentType* pComponentType) const
+	{
+		return m_ComponentStorage.GetComponentArray(pComponentType);
 	}
 
 	void ECSCore::RemoveEntity(Entity entity)
@@ -36,7 +46,7 @@ namespace LambdaEngine
 
 	void ECSCore::ScheduleJobPostFrame(const Job& job)
 	{
-		m_JobScheduler.ScheduleJob(job, g_LastPhase + 1u);
+		m_JobScheduler.ScheduleJob(job, LAST_PHASE + 1u);
 	}
 
 	void ECSCore::AddRegistryPage()

@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Player/HealthSystem.h"
 
 #include "Game/State.h"
@@ -13,6 +14,8 @@
 
 #include "Networking/API/IPAddress.h"
 
+#include "Multiplayer/MultiplayerClient.h"
+
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
@@ -23,8 +26,6 @@ public:
 
 	void Init() override final;
 
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
-
 	void Resume() override final {};
 	void Pause() override final {};
 
@@ -32,9 +33,9 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 private:
-	Level* m_pLevel = nullptr;
-
 	LambdaEngine::IPAddress* m_pIPAddress;
+
+	MultiplayerClient m_MultiplayerClient;
 
 	/* Systems */
 	HealthSystem m_HealthSystem;
