@@ -71,9 +71,7 @@ private:
 
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
-	/* Systems */
-	WeaponSystem m_WeaponSystem;
-	HealthSystem m_HealthSystem;
+	Level* m_pLevel = nullptr;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

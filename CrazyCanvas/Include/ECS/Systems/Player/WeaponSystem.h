@@ -23,9 +23,16 @@ struct WeaponProperties
 	EAmmoType AmmoType		= EAmmoType::AMMO_TYPE_PAINT;
 };
 
-/*
-* WeaponComponent
-*/
+inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComponentAccesses()
+{
+	using namespace LambdaEngine;
+	return
+	{
+		{RW, PositionComponent::Type()}, {RW, ScaleComponent::Type()}, {RW, RotationComponent::Type()},
+		{RW, VelocityComponent::Type()}, {RW, WeaponComponent::Type()}, {RW, TeamComponent::Type()},
+		{RW, ProjectileComponent::Type()}, {RW, DynamicCollisionComponent::Type()}, {RW, MeshComponent::Type()}
+	};
+}
 
 class WeaponSystem : public LambdaEngine::System
 {
@@ -42,6 +49,11 @@ public:
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
+
+	void TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity);
+
+public:
+	static WeaponSystem* GetInstance() { return &s_Instance; }
 
 private:
 	void Fire(
@@ -64,6 +76,9 @@ private:
 	void AbortReload(WeaponComponent& weaponComponent);
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
+
+private:
+	static WeaponSystem s_Instance;
 
 private:
 	LambdaEngine::IDVector m_WeaponEntities;
