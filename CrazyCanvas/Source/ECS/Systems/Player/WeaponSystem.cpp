@@ -158,29 +158,25 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
 		
 		glm::vec3 weaponPosition;
-		glm::quat weaponQuaternion;
-		if (playerPositionComp.Dirty)
+		if (playerRotationComp.Dirty || playerPositionComp.Dirty)
 		{
 			PositionComponent& weaponPositionComp = pPositionComponents->GetData(weaponEntity);
-			weaponPositionComp.Position = playerPositionComp.Position + weaponOffsetComp.Offset;
+			RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
+			
+			glm::quat quatY = playerRotationComp.Quaternion;
+			quatY.x = 0;
+			quatY.z = 0;
+			quatY = glm::normalize(quatY);
+			weaponPositionComp.Position = playerPositionComp.Position + quatY * weaponOffsetComp.Offset;
 			weaponPosition = weaponPositionComp.Position;
+
+			weaponRotationComp.Quaternion = playerRotationComp.Quaternion;
 		}
 		else
 		{
 			weaponPosition = pPositionComponents->GetConstData(weaponEntity).Position;
 		}
 
-		if (playerRotationComp.Dirty)
-		{
-			RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
-			weaponRotationComp.Quaternion = playerRotationComp.Quaternion;
-			weaponQuaternion = weaponRotationComp.Quaternion;
-		}
-		else
-		{
-			weaponQuaternion = pRotationComponents->GetConstData(weaponEntity).Quaternion;
-		}
-		
 		if (isReloading)
 		{
 			LOG_INFO("Reloading");
@@ -205,8 +201,9 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
+				const RotationComponent& weaponRotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, weaponPosition, weaponQuaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, weaponPosition, weaponRotationComp.Quaternion, velocityComp.Velocity);
 				
 				// Emit particles
 				if (pEmitterComponents->HasComponent(weaponEntity))
@@ -219,8 +216,9 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
+				const RotationComponent& weaponRotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, weaponPosition, weaponQuaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, weaponPosition, weaponRotationComp.Quaternion, velocityComp.Velocity);
 				
 				// Emit particles
 				if (pEmitterComponents->HasComponent(weaponEntity))

@@ -250,7 +250,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0, 1.8f, 0.0) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.2, 1.5f, -0.2) });
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
@@ -273,7 +273,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.TileIndex = 14,
 		.AnimationCount = 1,
 		.FirstAnimationIndex = 16,
-		.Color = glm::vec4(0.0f, 0.0f, 0.5f, 1.0f),
+		.Color = glm::vec4(0.5f, 0.0f, 0.0f, 1.0f),
 		}
 	);
 
