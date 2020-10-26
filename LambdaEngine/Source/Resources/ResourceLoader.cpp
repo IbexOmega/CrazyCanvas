@@ -179,7 +179,7 @@ namespace LambdaEngine
 			if (loadedTexture == context.LoadedTextures.end())
 			{
 				LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
-				pLoadedTexture->pTexture	= ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true);
+				pLoadedTexture->pTexture	= ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 				pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
 
 				context.LoadedTextures[name] = pLoadedTexture;
@@ -400,7 +400,7 @@ namespace LambdaEngine
 		return pMesh;
 	}
 
-	Texture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
+	Texture* ResourceLoader::LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips)
 	{
 		int texWidth	= 0;
 		int texHeight	= 0;
@@ -441,7 +441,7 @@ namespace LambdaEngine
 
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
-			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, generateMips, linearFilteringMips);
 		}
 		else if (format == EFormat::FORMAT_R16_UNORM)
 		{
@@ -471,7 +471,7 @@ namespace LambdaEngine
 				pixels[4 * i + 3] = pPixelsA;
 			}
 
-			pTexture = LoadTextureArrayFromMemory(name, pixels.GetData(), pixels.GetSize(), texWidth, texHeight, format, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, pixels.GetData(), pixels.GetSize(), texWidth, texHeight, format, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, generateMips, linearFilteringMips);
 
 			for (uint32 i = 0; i < pixels.GetSize(); i++)
 			{
@@ -488,7 +488,7 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	Texture* ResourceLoader::LoadCubeTexturesArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
+	Texture* ResourceLoader::LoadCubeTexturesArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips)
 	{
 		int texWidth = 0;
 		int texHeight = 0;
@@ -528,7 +528,7 @@ namespace LambdaEngine
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
 			uint32 flags = FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
-			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, flags, generateMips);
+			pTexture = LoadTextureArrayFromMemory(name, stbi_pixels.GetData(), stbi_pixels.GetSize(), texWidth, texHeight, format, flags, generateMips, linearFilteringMips);
 		}
 
 		for (uint32 i = 0; i < textureCount; i++)
@@ -539,7 +539,7 @@ namespace LambdaEngine
 		return pTexture;
 	}
 
-	Texture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips)
+	Texture* ResourceLoader::LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips, bool linearFilteringMips)
 	{
 		uint32_t miplevels = 1u;
 
@@ -632,7 +632,7 @@ namespace LambdaEngine
 
 		if (generateMips)
 		{
-			s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+			s_pCopyCommandList->GenerateMiplevels(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, linearFilteringMips);
 		}
 		else
 		{
