@@ -399,14 +399,18 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();
-	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
+	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<WeaponFiredPacket>>(weaponEntity, { });
+
+	ChildComponent childComp;
+	childComp.AddChild(weaponEntity, "weapon");
 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
+		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
 		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
@@ -436,6 +440,7 @@ bool LevelObjectCreator::CreatePlayer(
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();
 			childEntities.PushBack(cameraEntity);
+			childComp.AddChild(cameraEntity, "camera");
 
 			//Todo: Better implementation for this somehow maybe?
 			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshGUID);
@@ -477,6 +482,7 @@ bool LevelObjectCreator::CreatePlayer(
 	else
 	{
 		playerNetworkUID = (int32)playerEntity;
+		weaponNetworkUID = (int32)weaponEntity;
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 
 		// Think I am doing this correct // Alex
@@ -484,8 +490,11 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
+	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
 
+	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
+	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
 	return true;
 }
 

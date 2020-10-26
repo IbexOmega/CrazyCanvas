@@ -245,7 +245,6 @@ void WeaponSystem::Fire(
 	packet.InitalVelocity	= initialVelocity;
 	packet.FireDirection	= direction;
 	packet.SimulationTick	= 0;
-	packet.PlayerFiredNetworkUID = weaponComponent.WeaponOwner;
 	packets.SendPacket(packet);
 
 	// Play gun fire
@@ -269,8 +268,6 @@ void WeaponSystem::TryFire(
 	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
 	if (hasAmmo)
 	{
-		LOG_INFO("Fire paint");
-
 		// If we try to shoot when reloading we abort the reload
 		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
 		if (isReloading)

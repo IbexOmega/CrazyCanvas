@@ -151,6 +151,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	ComponentArray<RotationComponent>*	pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
 	ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
 	ComponentArray<ParentComponent>*	pParentComponents	= pECS->GetComponentArray<ParentComponent>();
+	ComponentArray<ChildComponent>*		pChildComponents	= pECS->GetComponentArray<ChildComponent>();
 
 	uint32 otherPlayerCount = 0;
 	Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, otherPlayerCount);
@@ -158,15 +159,17 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	for (uint32 i = 0; i < otherPlayerCount; i++)
 	{
 		Entity otherPlayerEntity = pOtherPlayerEntities[i];
-		const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
-		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
-		const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
-
+		const PositionComponent&	positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
+		const RotationComponent&	rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
+		const TeamComponent&		teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
+		const ChildComponent&		childComp = pChildComponents->GetConstData(otherPlayerEntity);
+		
 		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER));
 		encoder.WriteBool(false);
 		encoder.WriteInt32((int32)otherPlayerEntity);
+		encoder.WriteInt32((int32)childComp.GetEntityWithTag("weapon"));
 		encoder.WriteVec3(positionComponent.Position);
 		encoder.WriteVec3(GetForward(rotationComponent.Quaternion));
 		encoder.WriteUInt32(teamComponent.TeamIndex);
@@ -197,12 +200,16 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 		for (Entity playerEntity : createdPlayerEntities)
 		{
+			ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
+			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(playerEntity);
+
 			{
 				NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
 				BinaryEncoder encoder = BinaryEncoder(pPacket);
 				encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER));
 				encoder.WriteBool(true);
 				encoder.WriteInt32((int32)playerEntity);
+				encoder.WriteInt32((int32)childComp.GetEntityWithTag("weapon"));
 				encoder.WriteVec3(position);
 				encoder.WriteVec3(forward);
 				encoder.WriteUInt32(teamIndex);
@@ -221,6 +228,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 					encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER));
 					encoder.WriteBool(false);
 					encoder.WriteInt32((int32)playerEntity);
+					encoder.WriteInt32((int32)childComp.GetEntityWithTag("weapon"));
 					encoder.WriteVec3(position);
 					encoder.WriteVec3(forward);
 					encoder.WriteUInt32(teamIndex);

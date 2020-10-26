@@ -21,7 +21,7 @@ public:
 
 private:
 	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); }
 
 private:
 	LambdaEngine::THashTable<const LambdaEngine::ComponentType*, LambdaEngine::IDVector> m_ComponentTypeToEntities;

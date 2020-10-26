@@ -31,7 +31,6 @@ struct WeaponComponent
 #pragma pack(push, 1)
 struct WeaponFiredPacket : Packet
 {
-	int32		PlayerFiredNetworkUID = -1;
 	glm::vec3	FirePosition;
 	glm::vec3	InitalVelocity;
 	glm::quat	FireDirection;

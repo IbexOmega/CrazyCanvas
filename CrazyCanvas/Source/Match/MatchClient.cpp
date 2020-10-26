@@ -44,6 +44,7 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 			{
 				bool isLocal			= decoder.ReadBool();
 				int32 playerNetworkUID	= decoder.ReadInt32();
+				int32 weaponNetworkUID	= decoder.ReadInt32();
 				glm::vec3 position		= decoder.ReadVec3();
 				glm::vec3 forward		= decoder.ReadVec3();
 				uint32 teamIndex		= decoder.ReadUInt32();
@@ -75,6 +76,7 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 				{
 					.IsLocal			= isLocal,
 					.PlayerNetworkUID	= playerNetworkUID,
+					.WeaponNetworkUID	= weaponNetworkUID,
 					.pClient			= event.pClient,
 					.Position			= position,
 					.Forward			= forward,
