@@ -70,9 +70,9 @@ private:
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
+	MultiplayerClient m_MultiplayerClient;
+
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
-
-	MultiplayerClient m_MultiplayerClient;
 };
