@@ -42,7 +42,6 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 class WeaponSystem : public LambdaEngine::System
 {
 public:
-
 	bool Init();
 
 	void FixedTick(LambdaEngine::Timestamp deltaTime);
@@ -59,7 +58,8 @@ public:
 		PacketComponent<WeaponFiredPacket>& packets,
 		const glm::vec3& startPos, 
 		const glm::quat& direction, 
-		const glm::vec3& playerVelocity);
+		const glm::vec3& playerVelocity,
+		bool send);
 
 public:
 	static WeaponSystem& GetInstance() { return s_Instance; }
@@ -74,8 +74,8 @@ private:
 		PacketComponent<WeaponFiredPacket>& packets,
 		const glm::vec3& playerPos, 
 		const glm::quat& direction, 
-		const glm::vec3& playerVelocity);
-
+		const glm::vec3& playerVelocity,
+		bool send);
 
 	void StartReload(WeaponComponent& weaponComponent);
 	void AbortReload(WeaponComponent& weaponComponent);

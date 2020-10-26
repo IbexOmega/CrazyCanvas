@@ -17,6 +17,8 @@
 
 #include "Physics/CollisionGroups.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 /*
 * WeaponSystem 
 */
@@ -119,17 +121,30 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
 		WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
+		Entity playerEntity = weaponComponent.WeaponOwner;
+		
 		PacketComponent<WeaponFiredPacket>& packets = pWeaponPackets->GetData(weaponEntity);
 		if (!packets.GetPacketsReceived().IsEmpty())
 		{
 			const TArray<WeaponFiredPacket>& receivedPackets = packets.GetPacketsReceived();
 			for (const WeaponFiredPacket& p : receivedPackets)
 			{
-				LOG_INFO("HEY I GOT A PACKAGE");
+				if (MultiplayerUtils::IsServer())
+				{
+					LOG_INFO("Server Recived Fire At x=%.4f y=%.4f z=%.4f", p.FirePosition.x, p.FirePosition.y, p.FirePosition.z);
+					TryFire(p.AmmoType, weaponComponent, packets, p.FirePosition, p.FireDirection, p.InitalVelocity, true);
+				}
+				else
+				{
+					if (!m_PlayerEntities.HasElement(playerEntity))
+					{
+						LOG_INFO("Client Recived Fire At x=%.4f y=%.4f z=%.4f", p.FirePosition.x, p.FirePosition.y, p.FirePosition.z);
+						TryFire(p.AmmoType, weaponComponent, packets, p.FirePosition, p.FireDirection, p.InitalVelocity, false);
+					}
+				}
 			}
 		}
 
-		Entity playerEntity = weaponComponent.WeaponOwner;
 		if (!m_PlayerEntities.HasElement(playerEntity))
 		{
 			continue;
@@ -175,13 +190,16 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
+				const glm::vec3 firePosition = positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f);
+				LOG_INFO("Fire At x=%.4f y=%.4f z=%.4f", firePosition.x, firePosition.y, firePosition.z);
+
 				TryFire(
 					EAmmoType::AMMO_TYPE_PAINT,
 					weaponComponent,
 					packets,
-					positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f),
+					firePosition,
 					rotationComp.Quaternion,
-					velocityComp.Velocity);
+					velocityComp.Velocity, true);
 			}
 			else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
 			{
@@ -189,13 +207,14 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
+				const glm::vec3 firePosition = positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f);
 				TryFire(
 					EAmmoType::AMMO_TYPE_WATER,
 					weaponComponent,
 					packets,
-					positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f),
+					firePosition,
 					rotationComp.Quaternion,
-					velocityComp.Velocity);
+					velocityComp.Velocity, true);
 			}
 		}
 	}
@@ -207,7 +226,8 @@ void WeaponSystem::Fire(
 	PacketComponent<WeaponFiredPacket>& packets,
 	const glm::vec3& playerPos,
 	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
+	const glm::vec3& playerVelocity,
+	bool send)
 {
 	using namespace LambdaEngine;
 
@@ -215,7 +235,7 @@ void WeaponSystem::Fire(
 	weaponComponent.CurrentAmmunition--;
 
 	constexpr const float projectileInitialSpeed = 13.0f;
-	const glm::vec3 directionVec = GetForward(direction);
+	const glm::vec3 directionVec = GetForward(glm::normalize(direction));
 	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec * 0.3f;
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -239,13 +259,16 @@ void WeaponSystem::Fire(
 	EventQueue::SendEventImmediate(firedEvent);
 
 	// Send packet
-	WeaponFiredPacket packet;
-	packet.AmmoType			= ammoType;
-	packet.FirePosition		= startPos;
-	packet.InitalVelocity	= initialVelocity;
-	packet.FireDirection	= direction;
-	packet.SimulationTick	= 0;
-	packets.SendPacket(packet);
+	if (send)
+	{
+		WeaponFiredPacket packet;
+		packet.AmmoType			= ammoType;
+		packet.FirePosition		= playerPos;
+		packet.InitalVelocity	= playerVelocity;
+		packet.FireDirection	= direction;
+		packet.SimulationTick	= 0;
+		packets.SendPacket(packet);
+	}
 
 	// Play gun fire
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
@@ -258,7 +281,8 @@ void WeaponSystem::TryFire(
 	PacketComponent<WeaponFiredPacket>& packets,
 	const glm::vec3& startPos,
 	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
+	const glm::vec3& playerVelocity,
+	bool send)
 {
 	using namespace LambdaEngine;
 
@@ -276,7 +300,7 @@ void WeaponSystem::TryFire(
 		}
 
 		// Fire the gun
-		Fire(ammoType, weaponComponent, packets, startPos + glm::vec3(0.0f, 1.0f, 0.0f), direction, playerVelocity);
+		Fire(ammoType, weaponComponent, packets, startPos, direction, playerVelocity, send);
 	}
 	else
 	{

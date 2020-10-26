@@ -38,7 +38,7 @@ const PacketTypeMap& PacketType::GetPacketTypeMap()
 
 const LambdaEngine::ComponentType* PacketType::GetComponentType(uint16 packetType)
 {
-	VALIDATE_MSG(packetType != 0 && packetType < s_PacketTypeCount, "Packet type not registered, have you forgotten to register your package?");
+	VALIDATE_MSG(packetType != 0 && packetType <= s_PacketTypeCount, "Packet type not registered, have you forgotten to register your package?");
 
 	auto pair = s_PacketTypeToComponentType.find(packetType);
 	return pair == s_PacketTypeToComponentType.end() ? nullptr : pair->second;
