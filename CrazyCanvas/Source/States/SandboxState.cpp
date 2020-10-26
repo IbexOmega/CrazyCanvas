@@ -82,8 +82,8 @@ void SandboxState::Init()
 	m_MeshPaintHandler.Init();
 
 	// Initialize Systems
-	m_WeaponSystem.Init();
 	m_MultiplayerClient.InitInternal();
+	WeaponSystem::GetInstance()->Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 

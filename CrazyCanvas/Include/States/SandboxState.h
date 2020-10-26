@@ -71,6 +71,7 @@ private:
 
 	/* Systems */
 	WeaponSystem m_WeaponSystem;
+	Level* m_pLevel = nullptr;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
