@@ -12,7 +12,7 @@ public:
 	virtual void OnFlagDropped(LambdaEngine::Entity flagEntity, const glm::vec3& dropPosition) override final;
 
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) override final;
-	virtual void OnBaseFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) override final;
+	virtual void OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) override final;
 
 protected:
 	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) override final;

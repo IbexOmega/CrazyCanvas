@@ -81,7 +81,7 @@ bool LevelObjectCreator::Init()
 			};
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
-			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateBase;
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagDeliveryPoint;
 		}
 	}
 
@@ -304,7 +304,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelOb
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
 }
 
-ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 	//Only the server is allowed to create a Base
@@ -324,6 +324,12 @@ ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectO
 	Entity entity = pECS->CreateEntity();
 
 	pECS->AddComponent<FlagDeliveryPointComponent>(entity, {});
+
+	uint32 teamIndex = 0;
+	size_t teamIndexPos = levelObject.Name.find("TEAM");
+	if (teamIndexPos != String::npos) teamIndex = std::stoul(levelObject.Name.substr(teamIndexPos + 4));
+
+	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
 	const PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
 	const ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	const RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
@@ -352,7 +358,7 @@ ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectO
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Base with EntityID %d", entity);
+	D_LOG_INFO("Created Base with EntityID %d and Team Index %d", entity, teamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
@@ -455,7 +461,7 @@ bool LevelObjectCreator::CreateFlag(
 					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
 					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
-					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnBaseFlagCollision, FlagSystemBase::GetInstance()),
+					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnDeliveryPointFlagCollision, FlagSystemBase::GetInstance()),
 					/* UserData */			&flagDeliveryPointColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
 				},

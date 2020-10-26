@@ -1,5 +1,6 @@
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/Team/TeamComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -13,6 +14,11 @@
 #include "Resources/ResourceManager.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
+
+#include "Match/Match.h"
+
+#include "Application/API/Events/EventQueue.h"
+#include "Events/MatchEvents.h"
 
 ServerFlagSystem::ServerFlagSystem()
 {
@@ -175,16 +181,43 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
-	LOG_WARNING("Server: PLAYER-FLAG COLLISION");
 	OnFlagPickedUp(entity1, entity0);
 }
 
-void ServerFlagSystem::OnBaseFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
-	UNREFERENCED_VARIABLE(entity0);
-	UNREFERENCED_VARIABLE(entity1);
+	using namespace LambdaEngine;
 
-	LOG_WARNING("Server: BASE-FLAG COLLISION");
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Job job;
+	job.Components =
+	{
+		{ ComponentPermissions::R,	TeamComponent::Type() },
+		{ ComponentPermissions::R,	ParentComponent::Type() },
+	};
+
+	job.Function = [entity0, entity1]()
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(entity0);
+
+		if (flagParentComponent.Attached)
+		{
+			const TeamComponent& playerTeamComponent = pECS->GetConstComponent<TeamComponent>(flagParentComponent.Parent);
+			const TeamComponent& deliveryPointTeamComponent = pECS->GetConstComponent<TeamComponent>(entity1);
+
+			if (playerTeamComponent.TeamIndex == deliveryPointTeamComponent.TeamIndex)
+			{
+				EventQueue::SendEvent<OnFlagDeliveredEvent>(OnFlagDeliveredEvent(playerTeamComponent.TeamIndex));
+			}
+		}
+	};
+
+	pECS->ScheduleJobASAP(job);
+
+	
 }
 
 void ServerFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)

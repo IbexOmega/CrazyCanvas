@@ -15,11 +15,10 @@ public:
 	static bool CreateMatch(const MatchDescription* pDesc);
 	static bool ResetMatch();
 	static bool ReleaseMatch();
-	static bool GetScore(uint32 teamIndex);
 
 	static void Tick(LambdaEngine::Timestamp deltaTime);
 
-	FORCEINLINE MatchBase* GetInstance() { return s_pMatchInstance; };
+	FORCEINLINE static bool GetScore(uint32 teamIndex) { return s_pMatchInstance->GetScore(teamIndex); }
 
 private:
 	inline static MatchBase* s_pMatchInstance = nullptr;

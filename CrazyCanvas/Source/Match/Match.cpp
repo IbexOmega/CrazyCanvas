@@ -52,11 +52,6 @@ bool Match::ReleaseMatch()
 	return false;
 }
 
-bool Match::GetScore(uint32 teamIndex)
-{
-	return s_pMatchInstance->GetScore(teamIndex);
-}
-
 void Match::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	s_pMatchInstance->Tick(deltaTime);

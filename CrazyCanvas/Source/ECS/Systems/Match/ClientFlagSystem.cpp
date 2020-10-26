@@ -97,7 +97,7 @@ void ClientFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, Lambd
 	LOG_ERROR("Client: PLAYER-FLAG COLLISION");
 }
 
-void ClientFlagSystem::OnBaseFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+void ClientFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
 	//For now, we don't handle Base-Flag collisions on the client (the base doesn't even exist)
 
