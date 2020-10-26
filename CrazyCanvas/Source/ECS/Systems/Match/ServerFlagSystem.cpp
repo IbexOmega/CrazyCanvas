@@ -193,6 +193,8 @@ void ServerFlagSystem::InternalAddAdditionalAccesses(LambdaEngine::TArray<Lambda
 
 void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	using namespace LambdaEngine;
 
 	if (!m_Flags.Empty())

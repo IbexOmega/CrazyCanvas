@@ -1,6 +1,7 @@
 #include "States/BenchmarkState.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Debug/GPUProfiler.h"
 
@@ -19,6 +20,8 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
 
+#include "Game/Multiplayer/Client/ClientSystem.h"
+
 #include "Input/API/Input.h"
 
 #include "Utilities/RuntimeStats.h"
@@ -35,6 +38,8 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
+#include "Multiplayer/Packet/PacketType.h"
+
 BenchmarkState::~BenchmarkState()
 {
 	SAFEDELETE(m_pLevel);
@@ -47,6 +52,14 @@ void BenchmarkState::Init()
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
+	// Initialize event handlers
+	m_AudioEffectHandler.Init();
+	m_MeshPaintHandler.Init();
+	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
+
+	// Initialize Systems
+	WeaponSystem::GetInstance()->Init();
+	m_BenchmarkSystem.Init();
 	TrackSystem::GetInstance().Init();
 
 	// Create camera with a track
@@ -79,100 +92,6 @@ void BenchmarkState::Init()
 	// Scene
 	{
 		m_pLevel = LevelManager::LoadLevel(0);
-	}
-
-	// Robot
-	{
-		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
-		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-
-		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
-		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
-
-		MaterialProperties materialProperties;
-		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		materialProperties.Roughness	= 1.0f;
-		materialProperties.Metallic		= 1.0f;
-
-		const uint32 robotMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Robot Material",
-			robotAlbedoGUID,
-			robotNormalGUID,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			materialProperties);
-
-		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
-		robotMeshComp.MaterialGUID	= robotMaterialGUID;
-
-		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.pGraph			= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
-		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
-
-		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
-		glm::vec3 scale(0.01f);
-
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, position });
-		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
-		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-
-		position = glm::vec3(0.0f, 0.8f, 0.0f);
-		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
-
-		entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, position });
-		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
-		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-
-		position = glm::vec3(-3.5f, 0.75f, 0.0f);
-		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
-
-		entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, position });
-		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
-		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-
-		position = glm::vec3(3.5f, 0.75f, 0.0f);
-
-		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
-		pAnimationGraph->AddState(DBG_NEW AnimationState("running", running[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("walking", animations[0]));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("running", "walking", 0.2));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("walking", "running", 0.5));
-		robotAnimationComp.pGraph = pAnimationGraph;
-
-		entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, position });
-		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
-		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-
-		// Audio
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
-		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc =
-		{
-				.pName = "RobotSoundInstance",
-				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
-				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-				.Position = position,
-				.Volume = 0.03f
-		};
-
-		pSoundInstance->Init(&desc);
-		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
 	//Sphere Grid
@@ -318,6 +237,9 @@ void BenchmarkState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	}
+
+	// Triggers OnPacketReceived, which creates players
+	ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
 }
 
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
@@ -329,6 +251,78 @@ void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 		PrintBenchmarkResults();
 		LambdaEngine::CommonApplication::Get()->Terminate();
 	}
+}
+
+bool BenchmarkState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	if (event.Type == PacketType::CREATE_LEVEL_OBJECT)
+	{
+		BinaryDecoder decoder(event.pPacket);
+		ELevelObjectType entityType = ELevelObjectType(decoder.ReadUInt8());
+
+		// Create player characters that a benchmark system controls
+
+		if (entityType == ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER)
+		{
+			decoder.ReadBool();
+			int32 networkUID = decoder.ReadInt32();
+			glm::vec3 position = decoder.ReadVec3();
+
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+
+			const CameraDesc cameraDesc =
+			{
+				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+				.Width = (float)window->GetWidth(),
+				.Height = (float)window->GetHeight(),
+				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+			};
+
+			const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+			TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
+
+			AnimationComponent robotAnimationComp = {};
+			robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+
+			CreatePlayerDesc createPlayerDesc =
+			{
+				.IsLocal = false,
+				.NetworkUID = networkUID,
+				.pClient = event.pClient,
+				.Position = position,
+				.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+				.Scale = glm::vec3(1.0f),
+				.TeamIndex = 0,
+				.pCameraDesc = &cameraDesc,
+				.MeshGUID = robotGUID,
+				.AnimationComponent = robotAnimationComp,
+			};
+
+			for (uint32 playerNr = 0; playerNr < 9; playerNr++)
+			{
+				// Each player needs an animation graph of its own
+				createPlayerDesc.AnimationComponent.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
+
+				// Create a 3x3 grid of players in the XZ plane
+				createPlayerDesc.Position.x = -3.0f + 3.0f * (playerNr % 3);
+				createPlayerDesc.Position.z = -3.0f + 3.0f * (playerNr / 3);
+				createPlayerDesc.NetworkUID += (int32)playerNr;
+
+				TArray<Entity> createdPlayerEntities;
+				if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
+				{
+					LOG_ERROR("[BenchmarkState]: Failed to create Player!");
+				}
+			}
+
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void BenchmarkState::PrintBenchmarkResults()

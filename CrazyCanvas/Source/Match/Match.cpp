@@ -3,7 +3,7 @@
 #include "Match/MatchClient.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 bool Match::Init()
 {

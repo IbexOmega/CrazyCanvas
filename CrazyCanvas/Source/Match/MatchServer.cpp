@@ -19,7 +19,7 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -51,9 +51,9 @@ bool MatchServer::InitInternal()
 
 void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
-	using namespace LambdaEngine;
+	UNREFERENCED_VARIABLE(deltaTime);
 
-	ECSCore* pECS = ECSCore::GetInstance();
+	using namespace LambdaEngine;
 
 	if (m_pLevel != nullptr)
 	{
@@ -85,9 +85,12 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
 					ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
 
-					if (ImGui::Button("Drop Flag"))
+					if (flagParentComponent.Attached)
 					{
-						FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
+						if (ImGui::Button("Drop Flag"))
+						{
+							FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
+						}
 					}
 				}
 				else

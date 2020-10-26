@@ -31,7 +31,7 @@ namespace LambdaEngine
 	uint32 PacketManagerBase::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
 		if(pSegment->GetType() < 999)
-			ASSERT(pSegment->GetBufferSize() > 0);
+			ASSERT(pSegment->GetBufferSize() > 0)
 
 		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment();
 		pSegment->GetHeader().ReliableUID = reliableUID;
@@ -43,9 +43,9 @@ namespace LambdaEngine
 	{
 		m_SegmentsToSend[m_QueueIndex].insert(pSegment);
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#if LAMBDA_ENABLE_ASSERTS
 		if (pSegment->GetType() < 1000)
-			VALIDATE(pSegment->GetBufferSize() > 0);
+			VALIDATE(pSegment->GetBufferSize() > 0)
 #endif
 	}
 

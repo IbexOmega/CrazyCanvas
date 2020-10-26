@@ -12,10 +12,27 @@ namespace LambdaEngine
 			pECS->DescheduleRegularJob(m_Phase, m_JobID);
 	}
 
-	void RegularWorker::ScheduleRegularWork(const Job& job, uint32 phase)
+	void RegularWorker::Tick()
 	{
-		m_Phase = phase;
-		m_JobID = ECSCore::GetInstance()->ScheduleRegularJob(job, phase);
+		const Timestamp deltaTime = m_TickPeriod > 0.0f ? Timestamp::Seconds(m_TickPeriod) : ECSCore::GetInstance()->GetDeltaTime();
+		m_TickFunction(deltaTime);
+	}
+
+	void RegularWorker::ScheduleRegularWork(const RegularWorkInfo& regularWorkInfo)
+	{
+		m_Phase = regularWorkInfo.Phase;
+		m_TickPeriod = regularWorkInfo.TickPeriod;
+		m_TickFunction = regularWorkInfo.TickFunction;
+
+		const RegularJob regularJob =
+		{
+			/* Function */		std::bind(&RegularWorker::Tick, this),
+			/* Components */	RegularWorker::GetUniqueComponentAccesses(regularWorkInfo.EntitySubscriberRegistration),
+			/* TickPeriod */	m_TickPeriod,
+			/* Accumulator */	0.0f
+		};
+
+		m_JobID = ECSCore::GetInstance()->ScheduleRegularJob(regularJob, m_Phase);
 	}
 
 	TArray<ComponentAccess> RegularWorker::GetUniqueComponentAccesses(const EntitySubscriberRegistration& subscriberRegistration)

@@ -31,7 +31,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
 	m_pIPAddress(pIPAddress),
@@ -53,10 +53,11 @@ void PlaySessionState::Init()
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
-	m_WeaponSystem.Init();
+	WeaponSystem::GetInstance()->Init();
+	m_MultiplayerClient.InitInternal();
+
 	m_HealthSystem.Init();
 	m_HUDSystem.Init();
-	m_MultiplayerClient.InitInternal();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -75,11 +76,11 @@ void PlaySessionState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
-		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
 		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
-		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");		
+		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
 		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Robot/Reloading.fbx");
 
 		MaterialProperties materialProperties;

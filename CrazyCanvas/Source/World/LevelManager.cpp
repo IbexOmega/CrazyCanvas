@@ -19,6 +19,9 @@ bool LevelManager::Init()
 	using namespace LambdaEngine;
 	using namespace rapidjson;
 
+	s_DefaultEmptyHash.SHA256Chunk0 = 0;
+	s_DefaultEmptyHash.SHA256Chunk1 = 0;
+
 	if (!LevelObjectCreator::Init())
 	{
 		LOG_ERROR("[LevelManager]: Failed to initialize LevelObjectCreator");
@@ -265,10 +268,7 @@ const LambdaEngine::SHA256Hash& LevelManager::GetHash(const LambdaEngine::String
 
 	LOG_ERROR("[LevelManager]: Can't find level with Name: %s", levelName.c_str());
 
-	LambdaEngine::SHA256Hash emptyHash;
-	emptyHash.SHA256Chunk0 = 0;
-	emptyHash.SHA256Chunk1 = 0;
-	return emptyHash;
+	return s_DefaultEmptyHash;
 }
 
 const LambdaEngine::SHA256Hash& LevelManager::GetHash(uint32 index)
@@ -280,8 +280,5 @@ const LambdaEngine::SHA256Hash& LevelManager::GetHash(uint32 index)
 
 	LOG_ERROR("[LevelManager]: Level with index %d is out of bounds", index);
 
-	LambdaEngine::SHA256Hash emptyHash;
-	emptyHash.SHA256Chunk0 = 0;
-	emptyHash.SHA256Chunk1 = 0;
-	return emptyHash;
+	return s_DefaultEmptyHash;
 }
