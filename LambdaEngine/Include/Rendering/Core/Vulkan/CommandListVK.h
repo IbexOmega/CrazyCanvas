@@ -107,7 +107,7 @@ namespace LambdaEngine
 			ETextureState afterState) override final;
       
 		virtual void QueueTransferBarrier(
-			Texture* resource,
+			Texture* pResource,
 			FPipelineStageFlags srcStage,
 			FPipelineStageFlags dstStage,
 			uint32 srcAccessMask,
