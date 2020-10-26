@@ -21,7 +21,7 @@ struct LevelCreateDesc
 	LambdaEngine::TArray<LevelModule*>		LevelModules;
 };
 
-class Level : public LambdaEngine::IClientEntityAccessor
+class Level
 {
 	struct LevelEntitiesOfType
 	{
@@ -43,7 +43,7 @@ public:
 	LambdaEngine::Entity* GetEntities(ELevelObjectType levelObjectType, uint32& countOut);
 
 private:
-	virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
+	//virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
 
 private:
 	LambdaEngine::String m_Name = "";

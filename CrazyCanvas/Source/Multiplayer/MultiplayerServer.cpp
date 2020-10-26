@@ -1,6 +1,8 @@
 #include "Multiplayer/MultiplayerServer.h"
 
-MultiplayerServer::MultiplayerServer()
+MultiplayerServer::MultiplayerServer() : 
+	m_PlayerRemoteSystem(),
+	m_pFlagSystem(nullptr)
 {
 }
 
@@ -15,14 +17,17 @@ void MultiplayerServer::Init()
 	m_pFlagSystem->Init();
 
 	m_WeaponSystem.Init();
+	m_PlayerRemoteSystem.Init();
 }
 
 void MultiplayerServer::TickMainThread(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
 }
 
 void MultiplayerServer::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	m_pFlagSystem->FixedTick(deltaTime);
 	m_WeaponSystem.FixedTick(deltaTime);
+	m_PlayerRemoteSystem.FixedTickMainThread(deltaTime);
 }

@@ -9,12 +9,15 @@
 
 #include "Math/Math.h"
 
-#include "Multiplayer/Packet.h"
+#include "Multiplayer/Packet/Packet.h"
 #include "Networking/API/NetworkSegment.h"
+
 
 struct IPacketComponent
 {
-	friend class PacketDecoderSystem;
+	friend class PacketTranscoderSystem;
+
+	virtual ~IPacketComponent() = default;
 
 private:
 	virtual void* AddPacketReceived() = 0;
@@ -33,11 +36,17 @@ struct PacketComponent : public IPacketComponent
 	DECL_COMPONENT(PacketComponent<T>);
 
 public:
+	/*
+	* Returns the packets received. The order is guaranteed to be the same as when the SendPacket was called.
+	*/
 	const LambdaEngine::TArray<T>& GetPacketsReceived() const
 	{
 		return m_PacketsReceived;
 	}
 
+	/*
+	* Puts a packet in the queue for dispatch over the network system.
+	*/
 	void SendPacket(const T& packet)
 	{
 		m_PacketsToSend.push(packet);
@@ -82,21 +91,3 @@ private:
 	LambdaEngine::TQueue<T> m_PacketsToSend;
 	inline static uint16 s_PacketType = 0;
 };
-
-#pragma pack(push, 1)
-struct PlayerAction : Packet
-{
-	glm::quat Rotation;
-	int8 DeltaForward = 0;
-	int8 DeltaLeft = 0;
-};
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-struct PlayerActionResponse : Packet
-{
-	glm::vec3 Position;
-	glm::vec3 Velocity;
-	glm::quat Rotation;
-};
-#pragma pack(pop)

@@ -55,4 +55,5 @@ private:
 	static inline LambdaEngine::TArray<LevelDesc> s_LevelDescriptions;
 
 	static inline LambdaEngine::THashTable<LambdaEngine::String, LevelModule*> s_LoadedModules;
+	static inline LambdaEngine::SHA256Hash s_DefaultEmptyHash;
 };

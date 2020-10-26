@@ -4,12 +4,6 @@
 
 #include "Time/API/Timestamp.h"
 
-#include "Containers/TArray.h"
-
-#include "World/Player/PlayerGameState.h"
-
-#include "Application/API/Events/NetworkEvents.h"
-
 class PlayerForeignSystem : public LambdaEngine::System
 {
 public:
@@ -23,6 +17,7 @@ public:
 private:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final 
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 private:

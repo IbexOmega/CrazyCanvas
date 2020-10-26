@@ -101,6 +101,8 @@ void ClientFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine:
 
 void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();

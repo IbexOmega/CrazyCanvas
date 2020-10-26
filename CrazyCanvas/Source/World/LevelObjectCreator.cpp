@@ -40,7 +40,9 @@
 
 #include "Rendering/EntityMaskManager.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/Packet/PlayerAction.h"
+#include "Multiplayer/Packet/PlayerActionResponse.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -258,6 +260,9 @@ bool LevelObjectCreator::CreateFlag(
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities, 
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
+	UNREFERENCED_VARIABLE(createdChildEntities);
+	UNREFERENCED_VARIABLE(saltUIDs);
+
 	if (pData == nullptr) return false;
 
 	using namespace LambdaEngine;
@@ -325,7 +330,7 @@ bool LevelObjectCreator::CreateFlag(
 	}
 
 	pECS->AddComponent<NetworkComponent>(entity, { networkUID });
-	MultiplayerUtils::RegisterEntity(entity, networkUID);
+	//MultiplayerUtils::RegisterEntity(entity, networkUID);
 
 	createdEntities.PushBack(entity);
 
@@ -380,10 +385,10 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask	= FCollisionGroup::COLLISION_GROUP_STATIC |
-							FCollisionGroup::COLLISION_GROUP_DYNAMIC |
-							FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
-							FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG
+		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+		 				(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | 
+		 				(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+		 				(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
@@ -412,6 +417,8 @@ bool LevelObjectCreator::CreatePlayer(
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
+
+			saltUIDs.PushBack(UINT64_MAX);
 		}
 		else
 		{
@@ -464,9 +471,9 @@ bool LevelObjectCreator::CreatePlayer(
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
-		}
 
-		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
+			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
+		}
 	}
 	else
 	{
@@ -478,7 +485,6 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
-	MultiplayerUtils::RegisterEntity(playerEntity, playerNetworkUID);
 
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
 	return true;
@@ -546,7 +552,6 @@ bool LevelObjectCreator::CreateProjectile(
 	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo);
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 	pECS->AddComponent<NetworkComponent>(projectileEntity, { networkUID });
-	MultiplayerUtils::RegisterEntity(projectileEntity, networkUID);
 
 	D_LOG_INFO("Created Projectile with EntityID %d and NetworkID %d", projectileEntity, networkUID);
 

@@ -3,7 +3,7 @@
 #include "LambdaEngine.h"
 #include "Time/API/Timestamp.h"
 
-#include "Multiplayer/PacketDecoderSystem.h"
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 
 class MultiplayerBase
 {
@@ -23,5 +23,5 @@ protected:
 	virtual void FixedTickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
 
 private:
-	PacketDecoderSystem m_PacketDecoderSystem;
+	PacketTranscoderSystem m_PacketDecoderSystem;
 };

@@ -32,7 +32,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) 
 	: m_pIPAddress(pIPAddress)
@@ -52,9 +52,11 @@ void PlaySessionState::Init()
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
+	WeaponSystem::GetInstance()->Init();
+	m_MultiplayerClient.InitInternal();
+
 	m_HealthSystem.Init();
 	m_HUDSystem.Init();
-	m_MultiplayerClient.InitInternal();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 

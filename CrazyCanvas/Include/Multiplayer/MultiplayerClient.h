@@ -1,11 +1,12 @@
 #pragma once
 #include "Multiplayer/MultiplayerBase.h"
 
-#include "World/Player/PlayerLocal.h"
-#include "World/Player/PlayerForeignSystem.h"
+#include "World/Player/Client/PlayerLocal.h"
+#include "World/Player/Client/PlayerForeignSystem.h"
 
 #include "ECS/Systems/Match/ClientFlagSystem.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Multiplayer/Client/NetworkPositionSystem.h"
 
 class MultiplayerClient : public MultiplayerBase
 {
@@ -19,8 +20,11 @@ protected:
 	void FixedTickMainThread(LambdaEngine::Timestamp deltaTime) override final;
 
 private:
-	PlayerLocal m_PlayerLocal;
+	PlayerLocalSystem m_PlayerLocal;
 	PlayerForeignSystem m_PlayerForeignSystem;
+	
 	WeaponSystem m_WeaponSystem;
+	NetworkPositionSystem m_NetworkPositionSystem;
+
 	ClientFlagSystem* m_pFlagSystem = nullptr;
 };

@@ -57,16 +57,6 @@ namespace LambdaEngine
 		m_pServer->Stop("ServerSystem->Stop()");
 	}
 
-	void ServerSystem::FixedTickMainThread(Timestamp deltaTime)
-	{
-		const ClientMap& pClients = m_pServer->GetClients();
-		for (auto& pair : pClients)
-		{
-			ClientRemoteSystem* pClientSystem = (ClientRemoteSystem*)pair.second->GetHandler();
-			pClientSystem->FixedTickMainThread(deltaTime);
-		}
-	}
-
 	void ServerSystem::TickMainThread(Timestamp deltaTime)
 	{
 		NetworkDebugger::RenderStatistics(m_pServer);
@@ -93,12 +83,6 @@ namespace LambdaEngine
 	{
 		ServerDiscoveryPreTransmitEvent event(&encoder, m_pServer);
 		EventQueue::SendEventImmediate(event);
-	}
-
-	void ServerSystem::StaticFixedTickMainThread(Timestamp deltaTime)
-	{
-		if (s_pInstance)
-			s_pInstance->FixedTickMainThread(deltaTime);
 	}
 
 	void ServerSystem::StaticTickMainThread(Timestamp deltaTime)

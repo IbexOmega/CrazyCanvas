@@ -4,6 +4,8 @@
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 
+#include "World/Player/Server/PlayerRemoteSystem.h"
+
 class MultiplayerServer : public MultiplayerBase
 {
 public:
@@ -18,4 +20,5 @@ protected:
 private:
 	ServerFlagSystem* m_pFlagSystem = nullptr;
 	WeaponSystem m_WeaponSystem;
+	PlayerRemoteSystem m_PlayerRemoteSystem;
 };

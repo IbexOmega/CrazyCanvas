@@ -55,7 +55,7 @@
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 #include <imgui.h>
 
@@ -81,11 +81,11 @@ void SandboxState::Init()
 	m_MeshPaintHandler.Init();
 
 	// Initialize Systems
-	m_WeaponSystem.Init();
-	m_HealthSystem.Init();
+	m_HealthSystem.Init();	
 	m_MultiplayerClient.InitInternal();
-	
+	WeaponSystem::GetInstance()->Init();
 	TrackSystem::GetInstance().Init();
+	
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");

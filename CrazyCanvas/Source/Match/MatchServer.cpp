@@ -18,7 +18,7 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -44,6 +44,8 @@ bool MatchServer::InitInternal()
 
 void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	using namespace LambdaEngine;
 
 	if (m_pLevel != nullptr)

@@ -24,10 +24,12 @@ public:
 protected:
 	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
 	{
+		UNREFERENCED_VARIABLE(componentAccesses);
 	}
 
 	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
 	{
+		UNREFERENCED_VARIABLE(componentAccesses);
 	}
 
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;

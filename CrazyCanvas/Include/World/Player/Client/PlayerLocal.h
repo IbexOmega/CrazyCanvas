@@ -1,20 +1,20 @@
 #pragma once
 #include "ECS/System.h"
 
-#include "Application/API/Events/NetworkEvents.h"
-
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
-#include "PlayerGameState.h"
+#include "World/Player/PlayerActionSystem.h"
 
-#include "Game/World/Player/PlayerActionSystem.h"
+#include "World/Player/PlayerGameState.h"
 
-class PlayerLocal : public LambdaEngine::System
+#include "Multiplayer/Packet/PlayerActionResponse.h"
+
+class PlayerLocalSystem : public LambdaEngine::System
 {
 public:
-	DECL_UNIQUE_CLASS(PlayerLocal);
-	PlayerLocal();
-	virtual ~PlayerLocal();
+	DECL_UNIQUE_CLASS(PlayerLocalSystem);
+	PlayerLocalSystem();
+	virtual ~PlayerLocalSystem();
 
 	void Init();
 
@@ -27,20 +27,18 @@ public:
 private:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final 
 	{
+		 UNREFERENCED_VARIABLE(deltaTime);
 	}
 
 	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
-	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
-	void Reconcile();
-	void ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer);
+	void Reconcile(LambdaEngine::Entity entityPlayer);
+	void ReplayGameStatesBasedOnServerGameState(LambdaEngine::Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer);
 	bool CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer);
 
 private:
 	LambdaEngine::IDVector m_Entities;
 	int32 m_NetworkUID;
 	int32 m_SimulationTick;
-	LambdaEngine::IClient* m_pClient;
-	LambdaEngine::PlayerActionSystem m_PlayerActionSystem;
+	PlayerActionSystem m_PlayerActionSystem;
 	LambdaEngine::TArray<PlayerGameState> m_FramesToReconcile;
 };

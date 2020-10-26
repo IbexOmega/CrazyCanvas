@@ -68,10 +68,12 @@ private:
 
 	bool					m_ShowTextureDebuggingWindow	= false;
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
-
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
 	Level* m_pLevel = nullptr;
+
+	/* Systems */
+	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

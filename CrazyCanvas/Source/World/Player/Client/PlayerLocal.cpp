@@ -1,7 +1,7 @@
-#include "World/Player/PlayerLocal.h"
+#include "World/Player/Client/PlayerLocal.h"
+#include "World/Player/CharacterControllerHelper.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Game/Multiplayer/CharacterControllerHelper.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
@@ -25,29 +25,27 @@
 
 #include "Input/API/InputActionSystem.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/Packet/PlayerAction.h"
 
 #define EPSILON 0.01f
 
 using namespace LambdaEngine;
 
-PlayerLocal::PlayerLocal() :
+PlayerLocalSystem::PlayerLocalSystem() :
 	m_PlayerActionSystem(),
 	m_FramesToReconcile(),
-	m_SimulationTick(0),
-	m_pClient(nullptr)
+	m_SimulationTick(0)
 {
-	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &PlayerLocal::OnClientConnected);
-	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlayerLocal::OnClientDisconnected);
+
 }
 
-PlayerLocal::~PlayerLocal()
+PlayerLocalSystem::~PlayerLocalSystem()
 {
-	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &PlayerLocal::OnClientConnected);
-	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlayerLocal::OnClientDisconnected);
+	
 }
 
-void PlayerLocal::Init()
+void PlayerLocalSystem::Init()
 {
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -72,7 +70,7 @@ void PlayerLocal::Init()
 	RegisterSystem(systemReg);
 }
 
-void PlayerLocal::TickMainThread(Timestamp deltaTime)
+void PlayerLocalSystem::TickMainThread(Timestamp deltaTime)
 {
 	ASSERT(m_Entities.Size() <= 1);
 
@@ -82,23 +80,25 @@ void PlayerLocal::TickMainThread(Timestamp deltaTime)
 	}
 }
 
-void PlayerLocal::FixedTickMainThread(Timestamp deltaTime)
+void PlayerLocalSystem::FixedTickMainThread(Timestamp deltaTime)
 {
 	if (!m_Entities.Empty())
 	{
-		Reconcile();
+		Entity localPlayerEntity = m_Entities[0];
+
+		Reconcile(localPlayerEntity);
 
 		PlayerGameState gameState = {};
 		gameState.SimulationTick = m_SimulationTick++;
 
-		TickLocalPlayerAction(deltaTime, m_Entities[0], &gameState);
+		TickLocalPlayerAction(deltaTime, localPlayerEntity, &gameState);
 
 		if (!MultiplayerUtils::IsSingleplayer())
-			SendGameState(gameState, m_Entities[0]);
+			SendGameState(gameState, localPlayerEntity);
 	}
 }
 
-void PlayerLocal::SendGameState(const PlayerGameState& gameState, Entity entityPlayer)
+void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity entityPlayer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	PacketComponent<PlayerAction>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerAction>>(entityPlayer);
@@ -112,7 +112,7 @@ void PlayerLocal::SendGameState(const PlayerGameState& gameState, Entity entityP
 	pPacketComponent.SendPacket(packet);
 }
 
-void PlayerLocal::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
+void PlayerLocalSystem::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	float32 dt = (float32)deltaTime.AsSeconds();
@@ -140,7 +140,7 @@ void PlayerLocal::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer
 	m_FramesToReconcile.PushBack(*pGameState);
 }
 
-void PlayerLocal::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
+void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
 
@@ -165,44 +165,28 @@ void PlayerLocal::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameS
 	pGameState->Rotation = rotationComponent.Quaternion;
 }
 
-bool PlayerLocal::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
-{
-	m_pClient = event.pClient;
-	return false;
-}
-
-bool PlayerLocal::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
-{
-	m_pClient = nullptr;
-	return false;
-}
-
-//Packets in the packet list must be cleard at the end of each fixed tick. Since some ticks may not have a packet and they are therfore reused.....
-
-void PlayerLocal::Reconcile()
+void PlayerLocalSystem::Reconcile(Entity entityPlayer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(m_Entities[0]);
+	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(entityPlayer);
 	const TArray<PlayerActionResponse>& m_FramesProcessedByServer = pPacketComponent.GetPacketsReceived();
 
-	for (int32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
+	for (uint32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
 	{
 		ASSERT(m_FramesProcessedByServer[i].SimulationTick == m_FramesToReconcile[0].SimulationTick);
 
 		if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[i]))
 		{
-			ReplayGameStatesBasedOnServerGameState(m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[i]);
+			ReplayGameStatesBasedOnServerGameState(entityPlayer, m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[i]);
 		}
 
 		m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
 	}
 }
 
-void PlayerLocal::ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
+void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-
-	Entity entityPlayer = MultiplayerUtils::GetEntityPlayer(m_pClient);
 
 	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
 	ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
@@ -243,7 +227,7 @@ void PlayerLocal::ReplayGameStatesBasedOnServerGameState(PlayerGameState* pGameS
 	}
 }
 
-bool PlayerLocal::CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer)
+bool PlayerLocalSystem::CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer)
 {
 	bool result = true;
 	if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)

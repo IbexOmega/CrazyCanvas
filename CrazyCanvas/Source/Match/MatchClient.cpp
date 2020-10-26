@@ -1,6 +1,6 @@
 #include "Match/MatchClient.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 #include "World/LevelObjectCreator.h"
 #include "World/LevelManager.h"
@@ -26,6 +26,7 @@ bool MatchClient::InitInternal()
 
 void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
 }
 
 bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)

@@ -25,7 +25,7 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
 	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
-	MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+	//MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 
 	if (m_pLevel == nullptr)
 	{
