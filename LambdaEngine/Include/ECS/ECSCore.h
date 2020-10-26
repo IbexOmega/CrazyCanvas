@@ -58,6 +58,12 @@ namespace LambdaEngine
 		template<typename Comp>
 		const ComponentArray<Comp>* GetComponentArray() const;
 
+		// Fetch a pointer to an array containing all components of a specific type.
+		IComponentArray* GetComponentArray(const ComponentType* pComponentType);
+
+		// Fetch a const pointer to an array containing all components of a specific type.
+		const IComponentArray* GetComponentArray(const ComponentType* pComponentType) const;
+
 		// RemoveComponent enqueues the removal of a component, which is performed at the end of the current/next frame.
 		template<typename Comp>
 		void RemoveComponent(Entity entity);

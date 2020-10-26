@@ -4,9 +4,8 @@
 
 namespace LambdaEngine
 {
-	BinaryDecoder::BinaryDecoder(const NetworkSegment* packet) :
-		m_pNetworkPacket(packet),
-		m_ReadHead(0)
+	BinaryDecoder::BinaryDecoder(NetworkSegment* pPacket) :
+		m_pNetworkPacket(pPacket)
 	{
 
 	}
@@ -81,11 +80,7 @@ namespace LambdaEngine
 
 	void BinaryDecoder::ReadBuffer(uint8* pBuffer, uint16 bytesToRead)
 	{
-		//If this assert is triggerd then you are reading more data than what exists in the Packet
-		ASSERT(m_ReadHead + bytesToRead <= m_pNetworkPacket->GetBufferSize());
-
-		memcpy(pBuffer, m_pNetworkPacket->GetBufferReadOnly() + m_ReadHead, bytesToRead);
-		m_ReadHead += bytesToRead;
+		m_pNetworkPacket->Read(pBuffer, bytesToRead);
 	}
 
 	void BinaryDecoder::ReadVec2(glm::vec2& value)
@@ -220,7 +215,7 @@ namespace LambdaEngine
 		return value;
 	}
 
-	const NetworkSegment* BinaryDecoder::GetPacket() const
+	NetworkSegment* BinaryDecoder::GetPacket()
 	{
 		return m_pNetworkPacket;
 	}
