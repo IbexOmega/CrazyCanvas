@@ -530,19 +530,37 @@ bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& eve
 
 		CreatePlayerDesc createPlayerDesc =
 		{
-			.IsLocal = isLocal,
-			.NetworkUID = networkUID,
-			.pClient = event.pClient,
-			.Position = position,
-			.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-			.Scale = glm::vec3(1.0f),
-			.TeamIndex = 0,
-			.pCameraDesc = &cameraDesc,
-			.MeshGUID = robotGUID,
+			.IsLocal			= isLocal,
+			.NetworkUID			= networkUID,
+			.pClient			= event.pClient,
+			.Position			= position,
+			.Forward			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+			.Scale				= glm::vec3(1.0f),
+			.TeamIndex			= 0,
+			.pCameraDesc		= &cameraDesc,
+			.MeshGUID			= robotGUID,
 			.AnimationComponent = robotAnimationComp,
 		};
 
 		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
+
+#if 1
+		// Create a player to shoot at
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		if (animationsExist)
+		{
+			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
+		}
+
+		createPlayerDesc.IsLocal			= false;
+		createPlayerDesc.TeamIndex			= 2;
+		createPlayerDesc.Position.x			= -3.0f;
+		createPlayerDesc.Position.y			= 0.75f;
+		createPlayerDesc.Position.z			= -3.0f;
+		createPlayerDesc.NetworkUID			+= (int32)1;
+		createPlayerDesc.AnimationComponent = robotAnimationComp;
+		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
+#endif
 
 		return true;
 	}

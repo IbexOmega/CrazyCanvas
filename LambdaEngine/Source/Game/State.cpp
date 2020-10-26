@@ -12,4 +12,9 @@ namespace LambdaEngine
     {
         UNREFERENCED_VARIABLE(pOther);
     }
+
+    void State::FixedTick(Timestamp delta)
+    {
+        UNREFERENCED_VARIABLE(delta);
+    }
 }

@@ -21,12 +21,11 @@ bool WeaponSystem::Init()
 
 	// Register system
 	{
-		// The write permissions are used when creating projectile entities
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = RW;
-		playerGroup.Scale.Permissions = RW;
-		playerGroup.Rotation.Permissions = RW;
-		playerGroup.Velocity.Permissions = RW;
+		playerGroup.Position.Permissions	= R;
+		playerGroup.Scale.Permissions		= R;
+		playerGroup.Rotation.Permissions	= R;
+		playerGroup.Velocity.Permissions	= R;
 
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -35,14 +34,14 @@ bool WeaponSystem::Init()
 				.pSubscriber = &m_WeaponEntities,
 				.ComponentAccesses =
 				{
-					{RW, WeaponComponent::Type()}
+					{ RW, WeaponComponent::Type() }
 				}
 			},
 			{
 				.pSubscriber = &m_PlayerEntities,
 				.ComponentAccesses =
 				{
-					{NDA, PlayerLocalComponent::Type()}
+					{ NDA, PlayerLocalComponent::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
 			}
@@ -136,7 +135,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			if (weaponComponent.ReloadClock < 0.0f)
 			{
 				weaponComponent.ReloadClock			= 0.0f;
-				weaponComponent.CurrentAmmunition	= 5;
+				weaponComponent.CurrentAmmunition	= AMMO_CAPACITY;
 
 				LOG_INFO("Reload Finish");
 			}
@@ -251,7 +250,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit, entity: %d", collisionInfo0.Entity);
+	LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Is this safe? Concurrency issues?
@@ -266,7 +265,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		const uint32 otherEntityTeam	= pTeamComponents->GetConstData(collisionInfo1.Entity).TeamIndex;
 		const uint32 projectileTeam		= pTeamComponents->GetConstData(collisionInfo0.Entity).TeamIndex;
-
 
 		if (projectileTeam == otherEntityTeam)
 		{
