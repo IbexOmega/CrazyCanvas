@@ -342,6 +342,20 @@ namespace LambdaEngine
 			{
 				return false;
 			}
+
+			// Set colors for the teams
+			{
+				// First is default and should always be 0
+				m_PaintMaskColors.PushBack({ 0.0, 0.0, 0.0, 1.0 });
+
+				// Team 1 (default red)
+				m_PaintMaskColors.PushBack({ 214.f/255.f, 0.f/255.f, 0.f/255.f, 1.0 });
+
+				// Team 2 (default blue)
+				m_PaintMaskColors.PushBack({ 0.f/255.f, 29.f/255.f, 214.f/255.f, 1.0 });
+
+				m_PaintMaskColorsResourceDirty = true;
+			}
 		}
 
 		UpdateBuffers();
@@ -408,11 +422,13 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppPerFrameStagingBuffers[b]);
 			SAFERELEASE(m_ppStaticStagingInstanceBuffers[b]);
 			SAFERELEASE(m_ppLightsStagingBuffer[b]);
+			SAFERELEASE(m_ppPaintMaskColorStagingBuffers[b]);
 		}
 
 		SAFERELEASE(m_pMaterialParametersBuffer);
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pLightsBuffer);
+		SAFERELEASE(m_pPaintMaskColorBuffer);
 
 		SAFEDELETE(m_pRenderGraph);
 
@@ -1596,6 +1612,11 @@ namespace LambdaEngine
 			UpdatePointLightTextureResource(pGraphicsCommandList);
 		}
 
+		// Update Paint Mask Color Data
+		{
+			UpdatePaintMaskColorBuffer(pGraphicsCommandList);
+		}
+
 		//Update Empty MaterialData
 		{
 			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
@@ -2175,7 +2196,7 @@ namespace LambdaEngine
 				resourceUpdateDesc.ResourceName = SCENE_POINT_SHADOWMAPS;
 				resourceUpdateDesc.ExternalTextureUpdate.ppTextures							= m_CubeTextures.GetData();
 				resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews						= m_CubeTextureViews.GetData();
-				resourceUpdateDesc.ExternalTextureUpdate.TextureCount								= texturesExisting;
+				resourceUpdateDesc.ExternalTextureUpdate.TextureCount						= texturesExisting;
 				resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_CubeSubImageTextureViews.GetData();
 				resourceUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= CUBE_FACE_COUNT;
 				resourceUpdateDesc.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
@@ -2236,6 +2257,52 @@ namespace LambdaEngine
 			}
 
 			pCommandList->CopyBuffer(pCurrentStagingBuffer, 0, m_pLightsBuffer, 0, lightBufferSize);
+		}
+	}
+
+	void RenderSystem::UpdatePaintMaskColorBuffer(CommandList* pCommandList)
+	{
+		if (m_PaintMaskColorsResourceDirty)
+		{
+			uint32 bufferSize = m_PaintMaskColors.GetSize() * sizeof(glm::vec4);
+
+			// Create or update staging buffer if needed
+			Buffer* pStagingBuffer = m_ppPaintMaskColorStagingBuffers[m_ModFrameIndex];
+			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < bufferSize)
+			{
+				if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
+
+				BufferDesc copyBufferDesc = {};
+				copyBufferDesc.DebugName		= "Paint Mask Color Copy Buffer";
+				copyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				copyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				copyBufferDesc.SizeInBytes		= bufferSize;
+
+				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&copyBufferDesc);
+				m_ppPaintMaskColorStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+			}
+
+			// Transfer data to staging buffer
+			void* pMapped = pStagingBuffer->Map();
+			memcpy(pMapped, m_PaintMaskColors.GetData(), bufferSize);
+			pStagingBuffer->Unmap();
+
+			// Create or update actual GPU buffer if needed
+			if (m_pPaintMaskColorBuffer == nullptr || m_pPaintMaskColorBuffer->GetDesc().SizeInBytes < bufferSize)
+			{
+				if (m_pPaintMaskColorBuffer != nullptr) DeleteDeviceResource(m_pPaintMaskColorBuffer);
+
+				BufferDesc bufferDesc = {};
+				bufferDesc.DebugName		= "Paint Mask Color Buffer";
+				bufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+				bufferDesc.SizeInBytes		= bufferSize;
+
+				m_pPaintMaskColorBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+
+			// Finally copy over the data to the buffer
+			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pPaintMaskColorBuffer, 0, bufferSize);
 		}
 	}
 
@@ -2302,6 +2369,17 @@ namespace LambdaEngine
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			m_LightsResourceDirty = false;
+		}
+
+		if (m_PaintMaskColorsResourceDirty)
+		{
+			ResourceUpdateDesc resourceUpdateDesc				= {};
+			resourceUpdateDesc.ResourceName						= PAINT_MASK_COLORS;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pPaintMaskColorBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			m_PaintMaskColorsResourceDirty = false;
 		}
 
 		if (m_MaterialsResourceDirty)
