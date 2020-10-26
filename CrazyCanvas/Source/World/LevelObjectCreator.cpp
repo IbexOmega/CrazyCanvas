@@ -17,7 +17,6 @@
 
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Components/Match/FlagComponent.h"
-#include "ECS/Components/Match/BaseComponent.h"
 #include "Teams/TeamHelper.h"
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
@@ -50,7 +49,7 @@ bool LevelObjectCreator::Init()
 {
 	using namespace LambdaEngine;
 
-	//Register Create Special Object by Prefix Functions
+	//Register Create Level Object by Prefix Functions
 	{
 		//Spawnpoint
 		{
@@ -74,11 +73,11 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagSpawn;
 		}
 
-		//Base
+		//Flag Delivery Point
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
 			{
-				.Prefix = "SO_BASE_"
+				.Prefix = "SO_FLAG_DELIVERY_POINT"
 			};
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
@@ -184,12 +183,19 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
 		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
 		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
-		.ShapeType		= EShapeType::SIMULATION,
-		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
-		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+		.Shapes = 
+		{
+			{
+				/* ShapeType */			EShapeType::SIMULATION,
+				/* GeometryType */		EGeometryType::MESH,
+				/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+			},
+		},
 	};
 
-	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo, ResourceManager::GetMesh(meshComponent.MeshGUID));
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	return entity;
 }
@@ -261,12 +267,19 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 			.Position		= positionComponent,
 			.Scale			= scaleComponent,
 			.Rotation		= rotationComponent,
-			.ShapeType		= EShapeType::SIMULATION,
-			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
-			.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+			.Shapes =
+			{
+				{
+					/* ShapeType */			EShapeType::SIMULATION,
+					/* GeometryType */		EGeometryType::MESH,
+					/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
+					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+				},
+			},
 		};
 
-		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo, pMesh);
+		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	}
 
@@ -310,7 +323,7 @@ ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectO
 
 	Entity entity = pECS->CreateEntity();
 
-	pECS->AddComponent<BaseComponent>(entity, { });
+	pECS->AddComponent<FlagDeliveryPointComponent>(entity, {});
 	const PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
 	const ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	const RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
@@ -318,22 +331,29 @@ ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectO
 	//Only the server checks collision with the flag
 	const CollisionCreateInfo collisionCreateInfo =
 	{
-		/* Entity */	 		entity,
-		/* Position */	 		positionComponent,
-		/* Scale */				scaleComponent,
-		/* Rotation */			rotationComponent,
-		/* Shape Type */		EShapeType::TRIGGER,
-		/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_BASE,
-		/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+		.Entity		= entity,
+		.Position	= positionComponent,
+		.Scale		= scaleComponent,
+		.Rotation	= rotationComponent,
+		.Shapes =
+		{
+			{
+				/* Shape Type */		EShapeType::TRIGGER,
+				/* GeometryType */		EGeometryType::BOX,
+				/* Geometry */			{ .HalfExtents = boundingBox.Dimensions },
+				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+			},
+		},
 	};
 
-	StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo, scaleComponent.Scale * boundingBox.Dimensions);
+	StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 	pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
 
 	createdEntities.PushBack(entity);
 
 	D_LOG_INFO("Created Base with EntityID %d", entity);
-	return ELevelObjectType::LEVEL_OBJECT_TYPE_BASE;
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
 bool LevelObjectCreator::CreateFlag(
@@ -406,6 +426,11 @@ bool LevelObjectCreator::CreateFlag(
 	}
 	else
 	{
+		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+
+		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
+		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
+
 		//Only the server checks collision with the flag
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
@@ -413,17 +438,32 @@ bool LevelObjectCreator::CreateFlag(
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
-			/* Shape Type */		EShapeType::TRIGGER,
-			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
-			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
+			{
+				{
+					/* Shape Type */		EShapeType::TRIGGER,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
+					/* UserData */			&flagPlayerColliderType,
+					/* UserDataSize */		sizeof(EFlagColliderType)
+				},
+				{
+					/* Shape Type */		EShapeType::SIMULATION,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnBaseFlagCollision, FlagSystemBase::GetInstance()),
+					/* UserData */			&flagDeliveryPointColliderType,
+					/* UserDataSize */		sizeof(EFlagColliderType)
+				},
+			},
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity, { glm::vec3(0.0f) })
 		};
-		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo, scaleComponent.Scale * ResourceManager::GetMesh(meshComponent.MeshGUID)->BoundingBox.Dimensions);
+		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicActor(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-
-		//Add second shape (Non-Trigger) to allow Base-Flag Collisions
-
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
 
 		networkUID = (int32)entity;
