@@ -103,7 +103,7 @@ void main()
 		particle.CurrentLife -= dt;
 
 		// If the particle is not visible, put it outside the view of the players.
-		if(particle.CurrentLife > particle.LifeTime)
+		if(particle.CurrentLife > emitter.LifeTime)
 		{
 			const float OUT_OF_REACH = 10000.f;
 			particle.Transform[3].xyz = vec3(OUT_OF_REACH);
@@ -113,8 +113,8 @@ void main()
 		// Should only happen if it is an emitter that repeats.
 		if(!emitter.OneTime && particle.CurrentLife < 0.f)
 		{
-			float extraLife = mod(abs(particle.CurrentLife), particle.LifeTime);
-			particle.CurrentLife = particle.LifeTime-extraLife;
+			float extraLife = mod(abs(particle.CurrentLife), emitter.LifeTime);
+			particle.CurrentLife = emitter.LifeTime-extraLife;
 			particle.Transform[3].xyz = particle.StartPosition + emitterTransform[3].xyz;
 			particle.Velocity = particle.StartVelocity;
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;

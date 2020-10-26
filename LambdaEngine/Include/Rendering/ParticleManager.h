@@ -59,7 +59,7 @@ namespace LambdaEngine
 		glm::vec3 Velocity;
 		float CurrentLife;
 		glm::vec3 StartVelocity;
-		float LifeTime;
+		float padding0;
 		glm::vec3 Acceleration;
 		uint32 TileIndex;
 		glm::vec3 StartPosition;
@@ -69,7 +69,7 @@ namespace LambdaEngine
 		float EndRadius;
 		float FrictionFactor;
 		float Bounciness;
-		float padding0;
+		float padding1;
 	};
 
 	struct SEmitter

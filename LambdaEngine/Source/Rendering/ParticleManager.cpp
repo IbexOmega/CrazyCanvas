@@ -261,6 +261,7 @@ namespace LambdaEngine
 		
 		// Set data index before creation of particles so each particle now which emitter they belong to
 		emitterInstance.DataIndex = m_IndirectData.GetSize();
+		
 	}
 
 	void ParticleManager::UpdateAliveParticles()
@@ -316,8 +317,7 @@ namespace LambdaEngine
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
 			particle.Bounciness = emitterInstance.Bounciness;
 
-			particle.LifeTime = emitterInstance.LifeTime;
-			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
+			particle.CurrentLife = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
 			if (allocateParticles)
 			{
@@ -363,8 +363,7 @@ namespace LambdaEngine
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
 			particle.Bounciness = emitterInstance.Bounciness;
 
-			particle.LifeTime = emitterInstance.LifeTime;
-			particle.CurrentLife = particle.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
+			particle.CurrentLife = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
 			if (allocateParticles)
 			{
@@ -542,8 +541,8 @@ namespace LambdaEngine
 		if (removeIndex < m_IndirectData.GetSize())
 		{
 			uint32 lastIndex = m_IndirectData.GetSize() - 1U;
-			Entity lastEmitterEntity = m_DataToEntity[lastIndex];
 
+			Entity lastEmitterEntity = m_DataToEntity[lastIndex];
 			// Replace the removed emitters data with the last emitters data
 			m_IndirectData[removeIndex] = m_IndirectData[lastIndex];
 			m_EmitterData[removeIndex] = m_EmitterData[lastIndex];
@@ -557,17 +556,20 @@ namespace LambdaEngine
 			const ParticleChunk& chunk = lastEmitter.ParticleChunk;
 			if (chunk.Size > 0)
 			{
-				for (uint32 i = chunk.Offset; i < chunk.Size; i++)
+				for (uint32 i = chunk.Offset; i < chunk.Offset + chunk.Size; i++)
 				{
-					m_ParticleToEmitterIndex[i] = lastEmitter.DataIndex;
+					m_ParticleToEmitterIndex[i] = removeIndex;
 				}
 			}
+
+			// Add particle chunk to dirty list
+			m_DirtyParticleChunks.PushBack(lastEmitter.ParticleChunk);
 
 			FreeParticleChunk(emitterInstance.ParticleChunk);
 
 			// Remove data index of remove emitter
 			m_DataToEntity[removeIndex] = lastEmitterEntity;
-
+			
 			// Remove copy of last emitter
 			m_DataToEntity.erase(lastIndex);
 			m_IndirectData.PopBack();
@@ -577,9 +579,9 @@ namespace LambdaEngine
 			// Update alive particles buffer
 			UpdateAliveParticles();
 
-			m_DirtyIndirectBuffer = true;
-			m_DirtyEmitterBuffer = true;
 			m_DirtyTransformBuffer = true;
+			m_DirtyEmitterBuffer = true;
+			m_DirtyIndirectBuffer = true;
 			m_DirtyEmitterIndexBuffer = true;
 		}
 		else

@@ -226,7 +226,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
 		pECS->AddComponent<ParticleEmitterComponent>(entity,
 			ParticleEmitterComponent{
-				.ParticleCount = 32,
+				.ParticleCount = 256,
 				.EmitterShape = EEmitterShape::TUBE,
 				.Velocity = 1.0f,
 				.Acceleration = 0.0f,
@@ -532,12 +532,12 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 				.OneTime = true,
 				.Explosive = 0.9f,
 				.SpawnDelay = 0.01f,
-				.ParticleCount = 32,
+				.ParticleCount = Random::UInt32(32, 256),
 				.Velocity = 1.0f + Random::Float32(-3.f, 3.f),
 				.Acceleration = 0.0f,
 				.Gravity = Random::Float32(-5.0f, 5.0f),
 				.LifeTime = Random::Float32(1.0f, 3.0f),
-				.BeginRadius = 0.2f + Random::Float32(-0.05f, 0.1f),
+				.BeginRadius = 0.2f + Random::Float32(0.0f, 0.8f),
 				.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
 				});
 		}
