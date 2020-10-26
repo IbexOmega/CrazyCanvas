@@ -35,6 +35,7 @@ using namespace Noesis;
 LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	m_HostGameDesc(),
 	m_ServerList(xamlFile),
+	m_SavedServerList(),
 	m_Servers()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
@@ -182,7 +183,9 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+	SavedServerSystem::WriteIpsToFile("bajs");
+	SavedServerSystem::WriteIpsToFile("HejSimon");
+
 
 	ErrorPopUp(OTHER_ERROR);
 }

@@ -77,5 +77,7 @@ private:
 	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
 
+	TArray<LambdaEngine::String> m_SavedServerList;
+
 	std::unordered_map<uint64, ServerInfo> m_Servers;
 };
