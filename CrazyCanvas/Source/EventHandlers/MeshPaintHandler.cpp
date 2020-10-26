@@ -21,18 +21,24 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 
 	if (projectileHitEvent.AmmoType != EAmmoType::AMMO_TYPE_NONE)
 	{
-		EPaintMode paintMode;
+		EPaintMode paintMode = EPaintMode::NONE;
+		ETeam team = ETeam::NONE;
+		ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
+
 		if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
 		{
 			paintMode = EPaintMode::PAINT;
+			team = ETeam::RED;
+			remoteMode = ERemoteMode::CLIENT;
 		}
 		else if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			paintMode = EPaintMode::REMOVE;
+			remoteMode = ERemoteMode::CLIENT;
 		}
 
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
-		PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode);
+		PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team);
 	}
 
 	return true;

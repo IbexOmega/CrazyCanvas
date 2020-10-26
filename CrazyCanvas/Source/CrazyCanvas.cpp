@@ -76,6 +76,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 	else if (stateStr == "benchmark")
 	{
+		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW BenchmarkState();
 	}
 
@@ -123,7 +124,7 @@ bool CrazyCanvas::LoadRendererResources()
 			blueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
 		}
 
-		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false);
+		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false, false);
 
 		Texture* pBlueNoiseTexture = ResourceManager::GetTexture(blueNoiseID);
 		TextureView* pBlueNoiseTextureView = ResourceManager::GetTextureView(blueNoiseID);
@@ -151,7 +152,7 @@ bool CrazyCanvas::LoadRendererResources()
 			"Skybox/nz.png"
 		};
 
-		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false);
+		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
 
 		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
 		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
@@ -168,7 +169,7 @@ bool CrazyCanvas::LoadRendererResources()
 
 	// For Mesh painting in RenderGraph
 	{
-		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV2.png", EFormat::FORMAT_R8G8B8A8_UNORM, false);
+		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV2.png", EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
 
 		Texture* pTexture = ResourceManager::GetTexture(brushMaskID);
 		TextureView* pTextureView = ResourceManager::GetTextureView(brushMaskID);

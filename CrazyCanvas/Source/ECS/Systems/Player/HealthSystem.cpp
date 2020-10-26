@@ -50,6 +50,7 @@ bool HealthSystem::Init()
 void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
+	UNREFERENCED_VARIABLE(deltaTime);
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();

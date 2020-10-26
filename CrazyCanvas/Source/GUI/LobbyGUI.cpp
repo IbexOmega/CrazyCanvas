@@ -144,9 +144,9 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+	// Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+	// TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -166,7 +166,7 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 		&lpProcessInfo
 	);*/
 
-	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+	// TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
 	ErrorPopUp(OTHER_ERROR);
 }
@@ -192,7 +192,7 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	{
 		//start Server with populated struct
 		ServerSystem::GetInstance().Start();
-	
+
 		LambdaEngine::GUIApplication::SetView(nullptr);
 
 		SetRenderStagesActive();
@@ -305,7 +305,7 @@ void LobbyGUI::SetRenderStagesActive()
 void LobbyGUI::ErrorPopUp(ErrorCode errorCode)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
-	
+
 	switch (errorCode)
 	{
 	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To Server!");	break;
