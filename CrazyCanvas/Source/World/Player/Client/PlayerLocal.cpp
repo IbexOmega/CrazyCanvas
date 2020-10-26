@@ -31,7 +31,7 @@
 
 using namespace LambdaEngine;
 
-PlayerLocal::PlayerLocal() :
+PlayerLocalSystem::PlayerLocalSystem() :
 	m_PlayerActionSystem(),
 	m_FramesToReconcile(),
 	m_SimulationTick(0)
@@ -39,12 +39,12 @@ PlayerLocal::PlayerLocal() :
 
 }
 
-PlayerLocal::~PlayerLocal()
+PlayerLocalSystem::~PlayerLocalSystem()
 {
 	
 }
 
-void PlayerLocal::Init()
+void PlayerLocalSystem::Init()
 {
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -69,7 +69,7 @@ void PlayerLocal::Init()
 	RegisterSystem(systemReg);
 }
 
-void PlayerLocal::TickMainThread(Timestamp deltaTime)
+void PlayerLocalSystem::TickMainThread(Timestamp deltaTime)
 {
 	ASSERT(m_Entities.Size() <= 1);
 
@@ -79,7 +79,7 @@ void PlayerLocal::TickMainThread(Timestamp deltaTime)
 	}
 }
 
-void PlayerLocal::FixedTickMainThread(Timestamp deltaTime)
+void PlayerLocalSystem::FixedTickMainThread(Timestamp deltaTime)
 {
 	if (!m_Entities.Empty())
 	{
@@ -97,7 +97,7 @@ void PlayerLocal::FixedTickMainThread(Timestamp deltaTime)
 	}
 }
 
-void PlayerLocal::SendGameState(const PlayerGameState& gameState, Entity entityPlayer)
+void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity entityPlayer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	PacketComponent<PlayerAction>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerAction>>(entityPlayer);
@@ -111,7 +111,7 @@ void PlayerLocal::SendGameState(const PlayerGameState& gameState, Entity entityP
 	pPacketComponent.SendPacket(packet);
 }
 
-void PlayerLocal::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
+void PlayerLocalSystem::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	float32 dt = (float32)deltaTime.AsSeconds();
@@ -139,7 +139,7 @@ void PlayerLocal::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer
 	m_FramesToReconcile.PushBack(*pGameState);
 }
 
-void PlayerLocal::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
+void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
 
@@ -164,7 +164,7 @@ void PlayerLocal::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameS
 	pGameState->Rotation = rotationComponent.Quaternion;
 }
 
-void PlayerLocal::Reconcile(Entity entityPlayer)
+void PlayerLocalSystem::Reconcile(Entity entityPlayer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(entityPlayer);
@@ -183,7 +183,7 @@ void PlayerLocal::Reconcile(Entity entityPlayer)
 	}
 }
 
-void PlayerLocal::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
+void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -226,7 +226,7 @@ void PlayerLocal::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, Pl
 	}
 }
 
-bool PlayerLocal::CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer)
+bool PlayerLocalSystem::CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer)
 {
 	bool result = true;
 	if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)

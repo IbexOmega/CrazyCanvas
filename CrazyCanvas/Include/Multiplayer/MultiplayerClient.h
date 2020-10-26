@@ -18,7 +18,7 @@ protected:
 	void FixedTickMainThread(LambdaEngine::Timestamp deltaTime) override final;
 
 private:
-	PlayerLocal m_PlayerLocal;
+	PlayerLocalSystem m_PlayerLocal;
 	PlayerForeignSystem m_PlayerForeignSystem;
 	NetworkPositionSystem m_NetworkPositionSystem;
 
