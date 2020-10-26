@@ -7,12 +7,14 @@
 
 #include "World/Player/PlayerGameState.h"
 
-class PlayerLocal : public LambdaEngine::System
+#include "Multiplayer/Packet/PlayerActionResponse.h"
+
+class PlayerLocalSystem : public LambdaEngine::System
 {
 public:
-	DECL_UNIQUE_CLASS(PlayerLocal);
-	PlayerLocal();
-	virtual ~PlayerLocal();
+	DECL_UNIQUE_CLASS(PlayerLocalSystem);
+	PlayerLocalSystem();
+	virtual ~PlayerLocalSystem();
 
 	void Init();
 

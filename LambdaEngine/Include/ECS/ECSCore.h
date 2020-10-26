@@ -117,8 +117,8 @@ namespace LambdaEngine
 		void UnsubscribeFromEntities(uint32 subscriptionID) { m_EntityPublisher.UnsubscribeFromEntities(subscriptionID); }
 
 		friend RegularWorker;
-		uint32 ScheduleRegularJob(const Job& job, uint32_t phase)   { return m_JobScheduler.ScheduleRegularJob(job, phase); };
-		void DescheduleRegularJob(uint32_t phase, uint32 jobID)     { m_JobScheduler.DescheduleRegularJob(phase, jobID); };
+		uint32 ScheduleRegularJob(const RegularJob& job, uint32_t phase)	{ return m_JobScheduler.ScheduleRegularJob(job, phase); }
+		void DescheduleRegularJob(uint32_t phase, uint32 jobID)				{ m_JobScheduler.DescheduleRegularJob(phase, jobID); }
 
 	private:
 		void PerformComponentRegistrations();

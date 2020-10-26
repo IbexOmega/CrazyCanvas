@@ -122,27 +122,29 @@ namespace LambdaEngine
 	{
 		switch (format)
 		{
+		case EFormat::FORMAT_R8_UINT:
 		case EFormat::FORMAT_R8_UNORM:				return 1;
-        case EFormat::FORMAT_R16_SFLOAT:				
-        case EFormat::FORMAT_R16_UNORM:				return 2;
-        case EFormat::FORMAT_R32_SFLOAT:
-        case EFormat::FORMAT_D24_UNORM_S8_UINT:
-        case EFormat::FORMAT_R8G8B8A8_UNORM:
-        case EFormat::FORMAT_B8G8R8A8_UNORM:
-        case EFormat::FORMAT_R8G8B8A8_SNORM:		
-		case EFormat::FORMAT_R16G16_SFLOAT:			
+		case EFormat::FORMAT_R8G8_UINT:
+		case EFormat::FORMAT_R16_SFLOAT:
+		case EFormat::FORMAT_R16_UNORM:				return 2;
+		case EFormat::FORMAT_R32_SFLOAT:
+		case EFormat::FORMAT_D24_UNORM_S8_UINT:
+		case EFormat::FORMAT_R8G8B8A8_UNORM:
+		case EFormat::FORMAT_B8G8R8A8_UNORM:
+		case EFormat::FORMAT_R8G8B8A8_SNORM:
+		case EFormat::FORMAT_R16G16_SFLOAT:
 		case EFormat::FORMAT_R16G16_SNORM:
-		case EFormat::FORMAT_R10G10B10A2_UNORM:		
+		case EFormat::FORMAT_R10G10B10A2_UNORM:
 		case EFormat::FORMAT_B10G11R11_UFLOAT:		return 4;
+		case EFormat::FORMAT_R32G32_UINT:
 		case EFormat::FORMAT_R32G32_SFLOAT:
 		case EFormat::FORMAT_R16G16B16A16_SNORM:
 		case EFormat::FORMAT_R16G16B16A16_UNORM:
-        case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
-        
-		case EFormat::FORMAT_R32G32B32A32_SFLOAT:	
-        case EFormat::FORMAT_R32G32B32A32_UINT:		return 16;
-        default:                                    return 0;
-        }
+		case EFormat::FORMAT_R16G16B16A16_SFLOAT:	return 8;
+		case EFormat::FORMAT_R32G32B32A32_SFLOAT:
+		case EFormat::FORMAT_R32G32B32A32_UINT:		return 16;
+		default:									return 0;
+		}
 	}
 
 	FORCEINLINE const char* TextureFormatToString(EFormat format)

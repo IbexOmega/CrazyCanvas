@@ -30,7 +30,7 @@
 
 #include "Match/Match.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 
 using namespace LambdaEngine;

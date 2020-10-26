@@ -3,7 +3,7 @@
 #include "ECS/Component.h"
 #include "Physics/CollisionGroups.h"
 
-#include "Multiplayer/Packet.h"
+#include "Multiplayer/Packet/Packet.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "Time/API/Timestamp.h"

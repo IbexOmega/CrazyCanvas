@@ -10,6 +10,8 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
+#include "Multiplayer/Packet/PlayerActionResponse.h"
+
 using namespace LambdaEngine;
 
 PlayerForeignSystem::PlayerForeignSystem()

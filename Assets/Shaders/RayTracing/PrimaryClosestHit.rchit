@@ -83,7 +83,9 @@ void main()
 
 	vec3 sampledAlbedo 		= texture(u_AlbedoMaps[hitDescription.MaterialIndex],			hitDescription.TexCoord).rgb;
 	vec3 sampledMaterial	= texture(u_CombinedMaterialMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).rgb;
-	vec3 sampledPaintMask	= texture(u_PaintMaskTextures[hitDescription.PaintMaskIndex],	hitDescription.TexCoord).rgb;
+	uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[hitDescription.PaintMaskIndex], hitDescription.TexCoord).r);
+	uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[hitDescription.PaintMaskIndex], hitDescription.TexCoord).g);
+	float shouldPaint 			= float((serverData & 0x1) | (clientData & 0x1));
 
 	vec3 albedo				= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 	float ao				= 		materialParameters.AO * sampledMaterial.b;
@@ -92,9 +94,24 @@ void main()
 
 	s_PrimaryPayload.HitPosition		= hitDescription.Position;
 	s_PrimaryPayload.Normal				= hitDescription.Normal;
-	s_PrimaryPayload.Albedo				= mix(albedo, vec3(1.0f, 1.0f, 1.0f), sampledPaintMask.r);
 	s_PrimaryPayload.AO					= ao;
 	s_PrimaryPayload.Roughness			= roughness;
 	s_PrimaryPayload.Metallic			= metallic;
 	s_PrimaryPayload.Distance			= gl_HitTEXT;
+
+	uint clientTeam				= (clientData >> 1) & 0x7F;
+	uint serverTeam				= (serverData >> 1) & 0x7F;
+	uint clientPainting			= clientData & 0x1;
+	uint team = serverTeam;
+	if (clientPainting > 0)
+		team = clientTeam;
+
+	// TODO: Change this to a buffer input which we can index the team color to
+	vec3 color = vec3(0.0);
+	if (team == 1)
+		color = vec3(1.0, 0.0, 0.0);
+	else if (team == 2)
+		color = vec3(0.0, 0.0, 1.0);
+
+	s_PrimaryPayload.Albedo				= mix(albedo, color, shouldPaint);
 }

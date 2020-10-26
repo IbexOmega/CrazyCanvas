@@ -106,7 +106,7 @@ namespace LambdaEngine
 			const PipelineMemoryBarrierDesc* pMemoryBarriers, 
 			uint32 bufferMemoryCount) override final;
 
-		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter) override final;
+		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter, bool linearFiltering) override final;
 
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			override final;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	override final;

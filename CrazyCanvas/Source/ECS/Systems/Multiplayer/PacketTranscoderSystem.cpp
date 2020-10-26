@@ -11,7 +11,7 @@
 #include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 using namespace LambdaEngine;
 

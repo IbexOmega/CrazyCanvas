@@ -59,9 +59,9 @@ namespace LambdaEngine
 		memcpy(buffer, &pSegment->GetHeader(), headerSize);
 		memcpy(buffer + headerSize, pSegment->GetBuffer(), bufferSize);
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#if LAMBDA_ENABLE_ASSERTS
 		if (pSegment->GetType() < 1000)
-			VALIDATE(pSegment->m_SizeOfBuffer > 0);
+			VALIDATE(pSegment->m_SizeOfBuffer > 0)
 #endif
 
 		return headerSize + bufferSize;
@@ -110,9 +110,9 @@ namespace LambdaEngine
 		memcpy(pSegmentBuffer, pBuffer + segmentHeaderSize, messageHeader.Size - segmentHeaderSize);
 		pSegment->m_SizeOfBuffer = messageHeader.Size - segmentHeaderSize;
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#if LAMBDA_ENABLE_ASSERTS
 		if (pSegment->GetType() < 1000)
-			VALIDATE(pSegment->m_SizeOfBuffer > 0);
+			VALIDATE(pSegment->m_SizeOfBuffer > 0)
 
 		pSegment->SetType(messageHeader.Type); //Only for debugging, to create a string with the type name
 #endif

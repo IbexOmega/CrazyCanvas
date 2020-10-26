@@ -1,7 +1,10 @@
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Match/FlagComponent.h"
+
+#include "Multiplayer/Packet/PlayerAction.h"
+#include "Multiplayer/Packet/PlayerActionResponse.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToComponentType;

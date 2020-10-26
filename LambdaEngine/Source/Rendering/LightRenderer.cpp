@@ -15,7 +15,7 @@ namespace LambdaEngine
 {
 
 	LightRenderer* LightRenderer::s_pInstance = nullptr;
-	
+
 	LambdaEngine::LightRenderer::LightRenderer()
 	{
 		VALIDATE(s_pInstance == nullptr);
@@ -197,7 +197,7 @@ namespace LambdaEngine
 
 				m_DrawArgsDescriptorSets.Clear();
 				m_DrawArgsDescriptorSets.Resize(m_DrawCount);
-				
+
 				// Create DrawArgs Descriptors
 				// TODO: Get descriptors instead of reacreating them
 				for (uint32 d = 0; d < m_DrawCount; d++)
@@ -290,7 +290,7 @@ namespace LambdaEngine
 				beginRenderPassDesc.ClearColorCount = 1;
 				beginRenderPassDesc.Offset.x = 0;
 				beginRenderPassDesc.Offset.y = 0;
-				
+
 				psData.Iteration = f;
 				memcpy(m_PushConstant.pData, &psData, sizeof(uint32) * 2U);
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, m_PushConstant.pData, m_PushConstant.DataSize, m_PushConstant.Offset);
@@ -307,7 +307,7 @@ namespace LambdaEngine
 
 					pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 				}
-				
+
 				pCommandList->EndRenderPass();
 			}
 		}
@@ -327,7 +327,7 @@ namespace LambdaEngine
 		verticesBindingDesc.DescriptorCount = 1;
 		verticesBindingDesc.Binding = 0;
 		verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		
+
 		DescriptorBindingDesc instanceBindingDesc = {};
 		instanceBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		instanceBindingDesc.DescriptorCount = 1;
@@ -374,7 +374,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName = "Physics Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount = 64;
+		descriptorHeapDesc.DescriptorSetCount = 256;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
 		m_DescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
@@ -441,7 +441,7 @@ namespace LambdaEngine
 		depthAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
 		depthAttachmentDesc.InitialState = pDepthStencilAttachmentDesc->InitialState;
 		depthAttachmentDesc.FinalState = pDepthStencilAttachmentDesc->FinalState;
-		
+
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = {};
 		subpassDesc.DepthStencilAttachmentState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;

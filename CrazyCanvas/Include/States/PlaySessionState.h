@@ -37,7 +37,6 @@ private:
 	MultiplayerClient m_MultiplayerClient;
 
 	/* Systems */
-	WeaponSystem m_WeaponSystem;
 	HealthSystem m_HealthSystem;
 	HUDSystem m_HUDSystem;
 

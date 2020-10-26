@@ -1,6 +1,6 @@
 #include "Multiplayer/MultiplayerBase.h"
 
-#include "Multiplayer/PacketType.h"
+#include "Multiplayer/Packet/PacketType.h"
 
 #include "Match/Match.h"
 

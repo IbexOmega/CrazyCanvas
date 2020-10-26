@@ -4,8 +4,8 @@
 
 namespace LambdaEngine
 {
-	BinaryDecoder::BinaryDecoder(NetworkSegment* packet) :
-		m_pNetworkPacket(packet)
+	BinaryDecoder::BinaryDecoder(NetworkSegment* pPacket) :
+		m_pNetworkPacket(pPacket)
 	{
 
 	}
