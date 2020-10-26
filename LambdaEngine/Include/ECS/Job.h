@@ -5,12 +5,18 @@
 
 namespace LambdaEngine
 {
-	const uint32 g_PhaseCount = 3;
-	const uint32 g_LastPhase = g_PhaseCount - 1;
+	#define PHASE_COUNT 3u
+	#define LAST_PHASE PHASE_COUNT - 1u
 
 	struct Job
 	{
 		std::function<void()> Function;
 		TArray<ComponentAccess> Components;
+	};
+
+	struct RegularJob : Job
+	{
+		float32 TickPeriod;
+		float32 Accumulator;
 	};
 }

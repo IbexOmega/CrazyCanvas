@@ -27,7 +27,7 @@
 
 namespace LambdaEngine
 {
-	PlayerSystem::PlayerSystem() : 
+	PlayerSystem::PlayerSystem() :
 		m_EntityOtherStates(),
 		m_PlayerActionSystem(),
 		m_FramesToReconcile(),
@@ -56,7 +56,7 @@ namespace LambdaEngine
 		{
 			Entity entityPlayer = MultiplayerUtils::GetEntity(m_NetworkUID);
 			m_PlayerActionSystem.TickMainThread(deltaTime, entityPlayer);
-		}	
+		}
 	}
 
 	void PlayerSystem::FixedTickMainThread(Timestamp deltaTime, IClient* pClient)
@@ -95,7 +95,7 @@ namespace LambdaEngine
 		float32 dt = (float32)deltaTime.AsSeconds();
 
 		ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents	= pECS->GetComponentArray<CharacterColliderComponent>();
-		ComponentArray<NetworkPositionComponent>* pNetPosComponents					= pECS->GetComponentArray<NetworkPositionComponent>();
+		const ComponentArray<NetworkPositionComponent>* pNetPosComponents			= pECS->GetComponentArray<NetworkPositionComponent>();
 		ComponentArray<VelocityComponent>* pVelocityComponents						= pECS->GetComponentArray<VelocityComponent>();
 		const ComponentArray<PositionComponent>* pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
 
@@ -110,7 +110,7 @@ namespace LambdaEngine
 		m_PlayerActionSystem.DoAction(deltaTime, entityPlayer, pGameState);
 
 		CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
-		
+
 		pGameState->Position = netPosComponent.Position;
 		pGameState->Velocity = velocityComponent.Velocity;
 
@@ -244,7 +244,7 @@ namespace LambdaEngine
 
 		//Replay all game states since the game state which resulted in prediction ERROR
 
-		// TODO: Rollback other entities not just the player 
+		// TODO: Rollback other entities not just the player
 
 		const Timestamp deltaTime = EngineLoop::GetFixedTimestep();
 		const float32 dt = (float32)deltaTime.AsSeconds();
