@@ -13,6 +13,7 @@ uint16 PacketType::CREATE_LEVEL_OBJECT		= 0;
 uint16 PacketType::PLAYER_ACTION			= 0;
 uint16 PacketType::PLAYER_ACTION_RESPONSE	= 0;
 uint16 PacketType::FLAG_EDITED				= 0;
+uint16 PacketType::UPDATE_TEAM_SCORE		= 0;
 
 void PacketType::Init()
 {
@@ -20,6 +21,7 @@ void PacketType::Init()
 	PLAYER_ACTION			= RegisterPacketTypeWithComponent<PlayerAction>();
 	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PlayerActionResponse>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
+	UPDATE_TEAM_SCORE		= RegisterPacketType();
 }
 
 uint16 PacketType::RegisterPacketType()

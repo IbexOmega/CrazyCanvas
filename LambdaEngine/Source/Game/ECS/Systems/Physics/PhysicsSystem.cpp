@@ -538,7 +538,7 @@ namespace LambdaEngine
 		constexpr const float stepOffset = 0.20f;
 
 		const glm::vec3& position = characterColliderInfo.Position.Position;
-		const glm::vec3 upDirection = g_DefaultUp * characterColliderInfo.Rotation.Quaternion;
+		const glm::vec3 upDirection = g_DefaultUp * glm::quat(characterColliderInfo.Rotation.Quaternion.w, 0.0f, characterColliderInfo.Rotation.Quaternion.y, 0.0f);
 
 		controllerDesc.material			= m_pMaterial;
 		controllerDesc.position			= { position.x, position.y, position.z };

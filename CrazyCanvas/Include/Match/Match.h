@@ -15,6 +15,7 @@ public:
 	static bool CreateMatch(const MatchDescription* pDesc);
 	static bool ResetMatch();
 	static bool ReleaseMatch();
+	static bool GetScore(uint32 teamIndex);
 
 	static void Tick(LambdaEngine::Timestamp deltaTime);
 

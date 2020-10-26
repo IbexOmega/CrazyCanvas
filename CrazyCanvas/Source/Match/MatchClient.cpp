@@ -123,6 +123,15 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 
 		return true;
 	}
+	else if (event.Type == PacketType::UPDATE_TEAM_SCORE)
+	{
+		BinaryDecoder decoder(event.pPacket);
+		uint32 teamIndex = decoder.ReadUInt32();
+		uint32 score = decoder.ReadUInt32();
+		SetScore(teamIndex, score);
+
+		return true;
+	}
 
 	return false;
 }
