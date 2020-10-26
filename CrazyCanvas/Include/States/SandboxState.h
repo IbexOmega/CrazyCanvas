@@ -15,7 +15,6 @@
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/NetworkEvents.h"
 
-#include "ECS/Systems/Player/WeaponSystem.h"
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
@@ -69,9 +68,6 @@ private:
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
-
-	/* Systems */
-	WeaponSystem m_WeaponSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

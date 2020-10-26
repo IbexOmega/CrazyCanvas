@@ -28,6 +28,7 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
 
 #include "Input/API/Input.h"
