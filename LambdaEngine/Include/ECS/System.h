@@ -15,7 +15,8 @@ namespace LambdaEngine
 	struct SystemRegistration
 	{
 		EntitySubscriberRegistration SubscriberRegistration;
-		uint32_t Phase = 0;
+		uint32 Phase = 0;
+		uint32 TickFrequency = 0;
 	};
 
 	class ComponentHandler;
