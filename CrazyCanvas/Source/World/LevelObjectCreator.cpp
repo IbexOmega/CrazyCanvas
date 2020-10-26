@@ -165,19 +165,19 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 
 	Entity entity = pECS->CreateEntity();
 	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
+	pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
 		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
 		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
-		.Mesh			= pECS->AddComponent<MeshComponent>(entity,		meshComponent),
 		.ShapeType		= EShapeType::SIMULATION,
 		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
 		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	};
 
-	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo, ResourceManager::GetMesh(meshComponent.MeshGUID));
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	return entity;
 }
@@ -263,12 +263,12 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity entity = pECS->CreateEntity();
 
-	Timestamp pickupCooldown = 1000 * 1000 * 1000;
-	FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
-	PositionComponent positionComponent{ true, pFlagDesc->Position };
-	ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
-	RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
-	MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+	const Timestamp pickupCooldown = Timestamp::Seconds(1.0f);
+	const FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
+	const PositionComponent positionComponent{ true, pFlagDesc->Position };
+	const ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
+	const RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
+	const MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
 
 	pECS->AddComponent<FlagComponent>(entity,		flagComponent);
 	pECS->AddComponent<PositionComponent>(entity,	positionComponent);
@@ -314,13 +314,13 @@ bool LevelObjectCreator::CreateFlag(
 	else
 	{
 		//Only the server checks collision with the flag
+		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		entity,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
-			/* Mesh */				meshComponent,
 			/* Shape Type */		EShapeType::TRIGGER,
 			/* Detection Method */	ECollisionDetection::DISCRETE,
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
@@ -328,7 +328,7 @@ bool LevelObjectCreator::CreateFlag(
 			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity,		{ glm::vec3(0.0f) })
 		};
-		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo);
+		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo, pMesh->BoundingBox.Dimensions * 0.5f);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
 
