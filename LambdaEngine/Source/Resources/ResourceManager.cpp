@@ -414,7 +414,7 @@ namespace LambdaEngine
 		for (Animation* pAnimation : rawAnimations)
 		{
 			VALIDATE(pAnimation);
-			
+
 			GUID_Lambda animationsGuid = RegisterLoadedAnimation(pAnimation->Name, pAnimation);
 			animations.EmplaceBack(animationsGuid);
 		}
@@ -536,7 +536,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
+	GUID_Lambda ResourceManager::LoadTextureArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips)
 	{
 		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
 		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
@@ -557,7 +557,7 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[name]	= guid;
 		}
 
-		Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, TEXTURE_DIR, pFilenames, count, format, generateMips);
+		Texture* pTexture = ResourceLoader::LoadTextureArrayFromFile(name, TEXTURE_DIR, pFilenames, count, format, generateMips, linearFilteringMips);
 
 		(*ppMappedTexture) = pTexture;
 
@@ -578,7 +578,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadCubeTexturesArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips)
+	GUID_Lambda ResourceManager::LoadCubeTexturesArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips)
 	{
 		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
 		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
@@ -601,7 +601,7 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[name]	= guid;
 		}
 
-		Texture* pTexture = ResourceLoader::LoadCubeTexturesArrayFromFile(name, TEXTURE_DIR, pFilenames, textureCount, format, generateMips);
+		Texture* pTexture = ResourceLoader::LoadCubeTexturesArrayFromFile(name, TEXTURE_DIR, pFilenames, textureCount, format, generateMips, linearFilteringMips);
 
 		(*ppMappedTexture) = pTexture;
 
@@ -622,12 +622,12 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips)
+	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips, bool linearFiltering)
 	{
-		return LoadTextureArrayFromFile(filename, &filename, 1, format, generateMips);
+		return LoadTextureArrayFromFile(filename, &filename, 1, format, generateMips, linearFiltering);
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips)
+	GUID_Lambda ResourceManager::LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips, bool linearFilteringMips)
 	{
 		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
 		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
@@ -648,7 +648,7 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[name]	= guid;
 		}
 
-		Texture* pTexture = ResourceLoader::LoadTextureArrayFromMemory(name, &pData, 1, width, height, format, usageFlags, generateMips);
+		Texture* pTexture = ResourceLoader::LoadTextureArrayFromMemory(name, &pData, 1, width, height, format, usageFlags, generateMips, linearFilteringMips);
 
 		(*ppMappedTexture) = pTexture;
 
@@ -748,12 +748,12 @@ namespace LambdaEngine
 	}
 
 	GUID_Lambda ResourceManager::CombineMaterialTextures(
-		Material* pMaterial, 
-		Texture* pAOMap, 
-		Texture* pMetallicMap, 
-		Texture* pRoughnessMap, 
-		TextureView* pAOMapView, 
-		TextureView* pMetallicMapView, 
+		Material* pMaterial,
+		Texture* pAOMap,
+		Texture* pMetallicMap,
+		Texture* pRoughnessMap,
+		TextureView* pAOMapView,
+		TextureView* pMetallicMapView,
 		TextureView* pRoughnessMapView)
 	{
 		// Find largest texture size
@@ -881,14 +881,14 @@ namespace LambdaEngine
 			s_pMaterialComputeCommandList->Dispatch(largestWidth, largestHeight, 1);
 
 			s_pMaterialComputeCommandList->QueueTransferBarrier(
-				pCombinedMaterialTexture, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER, 
+				pCombinedMaterialTexture,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE, 
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE, 
-				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS, 
-				ETextureState::TEXTURE_STATE_GENERAL, 
+				ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE,
+				ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS,
+				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
 			s_pMaterialComputeCommandList->End();
@@ -914,7 +914,7 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
-			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, true);
 		}
 		else
 		{
@@ -1663,9 +1663,9 @@ namespace LambdaEngine
 			void* pDefaultColor					= (void*)defaultColor;
 			void* pDefaultNormal				= (void*)defaultNormal;
 			void* pDefaultMask					= (void*)defaultMask;
-			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
-			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
-			Texture* pDefaultMaskMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Mask Map", &pDefaultMask, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false);
+			Texture* pDefaultColorMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Color Map", &pDefaultColor, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false, true);
+			Texture* pDefaultNormalMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Normal Map", &pDefaultNormal, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false, true);
+			Texture* pDefaultMaskMap			= ResourceLoader::LoadTextureArrayFromMemory("Default Mask Map", &pDefaultMask, 1, 1, 1, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, false, true);
 
 			s_TextureNamesToGUIDs[pDefaultColorMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_COLOR_MAP;
 			s_TextureNamesToGUIDs[pDefaultNormalMap->GetDesc().DebugName]	= GUID_TEXTURE_DEFAULT_NORMAL_MAP;

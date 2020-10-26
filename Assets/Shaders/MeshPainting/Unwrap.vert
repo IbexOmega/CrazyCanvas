@@ -5,15 +5,6 @@
 
 #include "../Defines.glsl"
 
-#define UNWRAP_DRAW_SET_INDEX 3
-
-struct SUnwrapData
-{
-	vec4 TargetPosition;
-	vec4 TargetDirection;
-	uint PaintMode;
-};
-
 layout(push_constant) uniform TransformBuffer
 {
 	uint index;
@@ -31,8 +22,6 @@ layout(location = 1) out vec3 out_Normal;
 
 layout(location = 2) out vec3 out_TargetPosition;
 layout(location = 3) out vec3 out_TargetDirection;
-
-layout(location = 4) out uint out_PaintMode;
 
 /*
 	Three parameters are needed to make this work. These are:
@@ -55,8 +44,6 @@ void main()
 
 	out_TargetDirection				= u_UnwrapData.val.TargetDirection.xyz;
 	out_TargetPosition				= u_UnwrapData.val.TargetPosition.xyz;
-
-	out_PaintMode					= u_UnwrapData.val.PaintMode;
 
 	// This is not removed because of debug purposes.
 	//out_TargetDirection             = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));

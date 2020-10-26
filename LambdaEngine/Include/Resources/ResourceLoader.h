@@ -158,7 +158,7 @@ namespace LambdaEngine
 		*	generateMips	- If mipmaps should be generated on load
 		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static Texture* LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
+		static Texture* LoadTextureArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips);
 
 		/*
 		* Load multiple Cube textures from file and combine into Texture Arrays along with TextureViews and CubeTextureViews
@@ -169,7 +169,7 @@ namespace LambdaEngine
 		*	generateMips - If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		static Texture* LoadCubeTexturesArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
+		static Texture* LoadCubeTexturesArrayFromFile(const String& name, const String& dir, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips);
 
 		/*
 		* Load a texture from memory
@@ -183,7 +183,7 @@ namespace LambdaEngine
 		*	generateMips	- If mipmaps should be generated on load
 		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
-		static Texture* LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips);
+		static Texture* LoadTextureArrayFromMemory(const String& name, const void* const * ppData, uint32 arrayCount, uint32 width, uint32 height, EFormat format, uint32 usageFlags, bool generateMips, bool linearFilteringMips);
 
 		/*
 		* Load sound from file
