@@ -28,14 +28,14 @@ void NetworkPositionSystem::Init()
 			.pSubscriber = &m_Entities,
 			.ComponentAccesses =
 			{
-				{RW, PositionComponent::Type()}, 
-				{RW, NetworkPositionComponent::Type()} 
+				{RW, PositionComponent::Type()},
+				{RW, NetworkPositionComponent::Type()}
 			}
 		}
 	};
 	systemReg.Phase = 0;
 
-	RegisterSystem(systemReg);
+	RegisterSystem(TYPE_NAME(NetworkPositionSystem), systemReg);
 }
 
 void NetworkPositionSystem::Tick(Timestamp deltaTime)

@@ -1,6 +1,5 @@
 #pragma once
 #include "ECS/Systems/Player/WeaponSystem.h"
-#include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Player/HealthSystem.h"
 
 #include "Game/State.h"

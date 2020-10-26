@@ -165,19 +165,19 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 
 	Entity entity = pECS->CreateEntity();
 	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
+	pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
 		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
 		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
-		.Mesh			= pECS->AddComponent<MeshComponent>(entity,		meshComponent),
 		.ShapeType		= EShapeType::SIMULATION,
 		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
 		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 	};
 
-	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo, ResourceManager::GetMesh(meshComponent.MeshGUID));
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	return entity;
 }
@@ -244,9 +244,9 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelOb
 }
 
 bool LevelObjectCreator::CreateFlag(
-	const void* pData, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities, 
+	const void* pData,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
 	UNREFERENCED_VARIABLE(createdChildEntities);
@@ -263,26 +263,43 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity entity = pECS->CreateEntity();
 
-	PositionComponent positionComponent{ true, pFlagDesc->Position };
-	ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
-	RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
-	MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+	const Timestamp pickupCooldown = Timestamp::Seconds(1.0f);
+	const FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
+	const PositionComponent positionComponent{ true, pFlagDesc->Position };
+	const ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
+	const RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
+	const MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
 
-	pECS->AddComponent<FlagComponent>(entity,		FlagComponent());
-	pECS->AddComponent<OffsetComponent>(entity,		OffsetComponent{ .Offset = glm::vec3(1.0f) });
+	pECS->AddComponent<FlagComponent>(entity,		flagComponent);
 	pECS->AddComponent<PositionComponent>(entity,	positionComponent);
 	pECS->AddComponent<ScaleComponent>(entity,		scaleComponent);
 	pECS->AddComponent<RotationComponent>(entity,	rotationComponent);
 	pECS->AddComponent<MeshComponent>(entity,		meshComponent);
 
-	if (pFlagDesc->ParentEntity != UINT32_MAX)
+	bool attachedToParent = pFlagDesc->ParentEntity != UINT32_MAX;
+
+	ParentComponent parentComponent =
 	{
-		pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Parent = pFlagDesc->ParentEntity, .Attached = true });
-	}
-	else
+		.Parent		= pFlagDesc->ParentEntity,
+		.Attached	= attachedToParent,
+	};
+
+	OffsetComponent offsetComponent =
 	{
-		pECS->AddComponent<ParentComponent>(entity, ParentComponent{ .Attached = false });
+		.Offset		= glm::vec3(0.0f)
+	};
+
+	if (attachedToParent)
+	{
+		const CharacterColliderComponent& parentCollisionComponent = pECS->GetConstComponent<CharacterColliderComponent>(pFlagDesc->ParentEntity);
+
+		//Set Flag Offset
+		const physx::PxBounds3& parentBoundingBox = parentCollisionComponent.pController->getActor()->getWorldBounds();
+		offsetComponent.Offset = glm::vec3(0.0f, parentBoundingBox.getDimensions().y / 2.0f, 0.0f);
 	}
+
+	pECS->AddComponent<ParentComponent>(entity,	parentComponent);
+	pECS->AddComponent<OffsetComponent>(entity,	offsetComponent);
 
 	//Network Stuff
 	{
@@ -297,20 +314,21 @@ bool LevelObjectCreator::CreateFlag(
 	else
 	{
 		//Only the server checks collision with the flag
+		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		entity,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
-			/* Mesh */				meshComponent,
 			/* Shape Type */		EShapeType::TRIGGER,
+			/* Detection Method */	ECollisionDetection::DISCRETE,
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
 			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity,		{ glm::vec3(0.0f) })
 		};
-		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo);
+		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo, pMesh->BoundingBox.Dimensions * 0.5f);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
 
@@ -332,7 +350,7 @@ bool LevelObjectCreator::CreatePlayer(
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
-	if (pData == nullptr) 
+	if (pData == nullptr)
 		return false;
 
 	using namespace LambdaEngine;

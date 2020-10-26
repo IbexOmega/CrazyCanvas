@@ -1,7 +1,7 @@
 {
   "WindowSize": [
-    300,
-    150
+    800,
+    600
   ],
   "VolumeMasterInital": 1.0,
   "FixedTimestep": 60,

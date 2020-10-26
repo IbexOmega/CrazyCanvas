@@ -140,6 +140,7 @@ LambdaEngine::Entity* Level::GetEntities(ELevelObjectType levelObjectType, uint3
 		return levelEntities.Entities.GetData();
 	}
 
+	countOut = 0;
 	return nullptr;
 }
 
