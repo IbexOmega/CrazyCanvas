@@ -258,7 +258,6 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
 
-		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 		const CollisionCreateInfo collisionCreateInfo =
@@ -282,6 +281,8 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	}
+
+	createdEntities.PushBack(entity);
 
 	D_LOG_INFO("Created Player Spawn with EntityID %d", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
@@ -432,8 +433,6 @@ bool LevelObjectCreator::CreateFlag(
 	}
 	else
 	{
-		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
-
 		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
 		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
 
