@@ -13,6 +13,7 @@ class PlayerLocalSystem : public LambdaEngine::System
 {
 public:
 	DECL_UNIQUE_CLASS(PlayerLocalSystem);
+	
 	PlayerLocalSystem();
 	virtual ~PlayerLocalSystem();
 

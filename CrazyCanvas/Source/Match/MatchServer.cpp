@@ -145,7 +145,6 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();
-
 	IClient* pClient = event.pClient;
 
 	ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();

@@ -59,7 +59,7 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 					.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 				};
 
-				//Todo: Move this ffs
+				// Todo: Move this ffs
 				TArray<GUID_Lambda> animations;
 				const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 				bool animationsExist			= !animations.IsEmpty();

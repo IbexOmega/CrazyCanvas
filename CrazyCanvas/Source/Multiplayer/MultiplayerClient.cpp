@@ -5,7 +5,6 @@ MultiplayerClient::MultiplayerClient() :
 	m_PlayerForeignSystem(),
 	m_NetworkPositionSystem()
 {
-
 }
 
 MultiplayerClient::~MultiplayerClient()

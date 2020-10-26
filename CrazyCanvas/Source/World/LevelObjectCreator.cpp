@@ -330,7 +330,6 @@ bool LevelObjectCreator::CreateFlag(
 	}
 
 	pECS->AddComponent<NetworkComponent>(entity, { networkUID });
-	//MultiplayerUtils::RegisterEntity(entity, networkUID);
 
 	createdEntities.PushBack(entity);
 

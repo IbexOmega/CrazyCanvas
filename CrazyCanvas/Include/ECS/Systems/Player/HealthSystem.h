@@ -20,8 +20,8 @@ public:
 	static HealthSystem& GetInstance() { return s_Instance; }
 
 private:
-	~HealthSystem() = default;
 	HealthSystem() = default;
+	~HealthSystem() = default;
 	
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
 
