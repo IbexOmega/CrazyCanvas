@@ -25,6 +25,13 @@ namespace LambdaEngine
 		TRIGGER		// A trigger shape does not take part in the simulation, it only generates overlap reports
 	};
 
+	enum class ECollisionDetection
+	{
+		// Discrete collision detection is the default method. It is cheaper than continuous detection, but some collisions may be missed.
+		DISCRETE,
+		CONTINUOUS
+	};
+
 	typedef uint32 CollisionGroup;
 	enum FCollisionGroup : CollisionGroup
 	{
@@ -62,6 +69,7 @@ namespace LambdaEngine
 		const RotationComponent& Rotation;
 		const MeshComponent& Mesh;
 		EShapeType ShapeType;
+		ECollisionDetection DetectionMethod = ECollisionDetection::DISCRETE;
 		CollisionGroup CollisionGroup;				// The category of the object
 		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
 		std::variant<CollisionCallback, TriggerCallback> CallbackFunction;	// Optional

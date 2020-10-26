@@ -244,9 +244,9 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelOb
 }
 
 bool LevelObjectCreator::CreateFlag(
-	const void* pData, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities, 
+	const void* pData,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
 	UNREFERENCED_VARIABLE(createdChildEntities);
@@ -322,6 +322,7 @@ bool LevelObjectCreator::CreateFlag(
 			/* Rotation */			rotationComponent,
 			/* Mesh */				meshComponent,
 			/* Shape Type */		EShapeType::TRIGGER,
+			/* Detection Method */	ECollisionDetection::DISCRETE,
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
 			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
@@ -349,7 +350,7 @@ bool LevelObjectCreator::CreatePlayer(
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
-	if (pData == nullptr) 
+	if (pData == nullptr)
 		return false;
 
 	using namespace LambdaEngine;

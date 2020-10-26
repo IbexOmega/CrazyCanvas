@@ -155,6 +155,7 @@ namespace LambdaEngine
 		const PxVec3 gravityPX = { gravity.x, gravity.y, gravity.z };
 
 		PxSceneDesc sceneDesc(m_pPhysics->getTolerancesScale());
+		sceneDesc.flags						= PxSceneFlag::eENABLE_CCD;
 		sceneDesc.gravity					= gravityPX;
 		sceneDesc.cpuDispatcher				= m_pDispatcher;
 		sceneDesc.filterShader				= FilterShader;
@@ -595,6 +596,12 @@ namespace LambdaEngine
 		{
 			pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
 			pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
+		}
+
+		if (pActor->is<PxRigidBody>() && collisionInfo.DetectionMethod == ECollisionDetection::CONTINUOUS)
+		{
+			PxRigidBody* pBody = reinterpret_cast<PxRigidBody*>(pActor);
+			pBody->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		}
 
 		pActor->attachShape(*pShape);
