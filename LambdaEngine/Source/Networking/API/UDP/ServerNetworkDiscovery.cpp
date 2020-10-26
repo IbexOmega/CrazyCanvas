@@ -15,9 +15,11 @@ namespace LambdaEngine
 		m_Transceiver(),
 		m_Statistics(),
 		m_Lock(),
-		m_NameOfGame()
+		m_NameOfGame(),
+		m_ServerUID(0)
 	{
 		m_Transceiver.SetIgnoreSaltMissmatch(true);
+		m_ServerUID = Random::UInt64();
 	}
 
 	ServerNetworkDiscovery::~ServerNetworkDiscovery()
@@ -153,6 +155,7 @@ namespace LambdaEngine
 				BinaryEncoder encoder(pResponse);
 				encoder.WriteString(m_NameOfGame);
 				encoder.WriteUInt16(m_PortOfGameServer);
+				encoder.WriteUInt64(m_ServerUID);
 				m_pHandler->OnNetworkDiscoveryPreTransmit(encoder);
 
 				m_Transceiver.Transmit(&m_SegmentPool, packets, reliableUIDs, sender, &m_Statistics);

@@ -363,9 +363,9 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine:
 }
 
 bool LevelObjectCreator::CreateFlag(
-	const void* pData, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities, 
+	const void* pData,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
 	LambdaEngine::TArray<uint64>& saltUIDs)
 {
 	UNREFERENCED_VARIABLE(createdChildEntities);
@@ -382,12 +382,12 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity entity = pECS->CreateEntity();
 
-	Timestamp pickupCooldown = 1000 * 1000 * 1000;
-	FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
-	PositionComponent positionComponent{ true, pFlagDesc->Position };
-	ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
-	RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
-	MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+	const Timestamp pickupCooldown = Timestamp::Seconds(1.0f);
+	const FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
+	const PositionComponent positionComponent{ true, pFlagDesc->Position };
+	const ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
+	const RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
+	const MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
 
 	pECS->AddComponent<FlagComponent>(entity,		flagComponent);
 	pECS->AddComponent<PositionComponent>(entity,	positionComponent);
@@ -438,9 +438,11 @@ bool LevelObjectCreator::CreateFlag(
 		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
 
 		//Only the server checks collision with the flag
+		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		entity,
+            /* Detection Method */	ECollisionDetection::DISCRETE,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,

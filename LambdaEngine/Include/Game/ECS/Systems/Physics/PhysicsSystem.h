@@ -26,6 +26,13 @@ namespace LambdaEngine
 		TRIGGER		// A trigger shape does not take part in the simulation, it only generates overlap reports
 	};
 
+	enum class ECollisionDetection
+	{
+		// Discrete collision detection is the default method. It is cheaper than continuous detection, but some collisions may be missed.
+		DISCRETE,
+		CONTINUOUS
+	};
+
 	enum class EGeometryType
 	{
 		SPHERE,
@@ -105,6 +112,7 @@ namespace LambdaEngine
 	struct CollisionCreateInfo
 	{
 		Entity Entity;
+        ECollisionDetection DetectionMethod = ECollisionDetection::DISCRETE;
 		const PositionComponent& Position;
 		const ScaleComponent& Scale;
 		const RotationComponent& Rotation;

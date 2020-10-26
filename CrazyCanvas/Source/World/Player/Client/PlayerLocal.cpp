@@ -42,7 +42,7 @@ PlayerLocalSystem::PlayerLocalSystem() :
 
 PlayerLocalSystem::~PlayerLocalSystem()
 {
-	
+
 }
 
 void PlayerLocalSystem::Init()
@@ -67,7 +67,7 @@ void PlayerLocalSystem::Init()
 	};
 	systemReg.Phase = 0;
 
-	RegisterSystem(systemReg);
+	RegisterSystem(TYPE_NAME(PlayerLocalSystem), systemReg);
 }
 
 void PlayerLocalSystem::TickMainThread(Timestamp deltaTime)
@@ -200,7 +200,7 @@ void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlay
 
 	//Replay all game states since the game state which resulted in prediction ERROR
 
-	// TODO: Rollback other entities not just the player 
+	// TODO: Rollback other entities not just the player
 
 	const Timestamp deltaTime = EngineLoop::GetFixedTimestep();
 	const float32 dt = (float32)deltaTime.AsSeconds();

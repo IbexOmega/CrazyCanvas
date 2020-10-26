@@ -90,7 +90,7 @@ namespace LambdaEngine
 			};
 			systemReg.Phase = 1;
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(PhysicsSystem), systemReg);
 
 			SetComponentOwner<StaticCollisionComponent>({ std::bind_front(&PhysicsSystem::StaticCollisionDestructor, this) });
 			SetComponentOwner<DynamicCollisionComponent>({ std::bind_front(&PhysicsSystem::DynamicCollisionDestructor, this) });
@@ -155,6 +155,7 @@ namespace LambdaEngine
 		const PxVec3 gravityPX = { gravity.x, gravity.y, gravity.z };
 
 		PxSceneDesc sceneDesc(m_pPhysics->getTolerancesScale());
+		sceneDesc.flags						= PxSceneFlag::eENABLE_CCD;
 		sceneDesc.gravity					= gravityPX;
 		sceneDesc.cpuDispatcher				= m_pDispatcher;
 		sceneDesc.filterShader				= FilterShader;
@@ -642,7 +643,13 @@ namespace LambdaEngine
 
 	void PhysicsSystem::FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor)
 	{
-		// Set collision callback
+		if (pActor->is<PxRigidBody>() && collisionInfo.DetectionMethod == ECollisionDetection::CONTINUOUS)
+		{
+			PxRigidBody* pBody = reinterpret_cast<PxRigidBody*>(pActor);
+			pBody->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+		}
+		
+        // Set collision callback
 		pActor->userData = DBG_NEW ActorUserData;
 		ActorUserData* pUserData = reinterpret_cast<ActorUserData*>(pActor->userData);
 		pUserData->Entity = collisionInfo.Entity;

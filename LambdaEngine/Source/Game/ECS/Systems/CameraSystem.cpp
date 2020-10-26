@@ -50,7 +50,7 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.AdditionalAccesses = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
 			systemReg.Phase = 0;
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(CameraSystem), systemReg);
 		}
 
 		return true;
