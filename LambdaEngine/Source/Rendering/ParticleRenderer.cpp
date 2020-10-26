@@ -71,6 +71,12 @@ namespace LambdaEngine
 		emitterBindingDesc.Binding = 2;
 		emitterBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
+		DescriptorBindingDesc emitterIndexBindingDesc = {};
+		emitterIndexBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		emitterIndexBindingDesc.DescriptorCount = 1;
+		emitterIndexBindingDesc.Binding = 3;
+		emitterIndexBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
 		DescriptorBindingDesc atlasDataBindingDesc = {};
 		atlasDataBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		atlasDataBindingDesc.DescriptorCount = 1;
@@ -84,7 +90,7 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc2.DescriptorBindings = { textureBindingDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
-		descriptorSetLayoutDesc3.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, emitterBindingDesc };
+		descriptorSetLayoutDesc3.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, emitterBindingDesc, emitterIndexBindingDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc4 = {};
 		descriptorSetLayoutDesc4.DescriptorBindings = { atlasDataBindingDesc };
@@ -105,7 +111,7 @@ namespace LambdaEngine
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 1;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 4;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 5;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
@@ -502,6 +508,28 @@ namespace LambdaEngine
 			constexpr uint32 setBinding = 2U;
 
 			m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Emitter Instance Buffer Descriptor Set 2 Binding 2", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_VertexInstanceDescriptorSet != nullptr)
+			{
+				m_VertexInstanceDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					setBinding,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
+		else if (resourceName == SCENE_EMITTER_INDEX_BUFFER)
+		{
+			constexpr uint32 setIndex = 2U;
+			constexpr uint32 setBinding = 3U;
+
+			m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Emitter Index Buffer Descriptor Set 2 Binding 3", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_VertexInstanceDescriptorSet != nullptr)
 			{
 				m_VertexInstanceDescriptorSet->WriteBufferDescriptors(

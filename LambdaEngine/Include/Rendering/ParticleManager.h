@@ -34,6 +34,7 @@ namespace LambdaEngine
 		float			Angle = 90.f;
 		float			Velocity;
 		float			VelocityRandomness;
+		float			Gravity;
 		float			Acceleration;
 		float			AccelerationRandomness;
 		float			ElapTime = 0.f;
@@ -44,7 +45,7 @@ namespace LambdaEngine
 		glm::vec4		Color;
 		uint32			DataIndex = UINT32_MAX;
 		ParticleChunk	ParticleChunk;
-		uint32			AtlasIndex = 0;
+		GUID_Lambda		AtlasGUID = 0;
 		uint32			TileIndex = 0;
 		uint32			AnimationCount = 0;
 		uint32			FirstAnimationIndex = 0;
@@ -62,13 +63,13 @@ namespace LambdaEngine
 		glm::vec3 Acceleration;
 		uint32 TileIndex;
 		glm::vec3 StartPosition;
-		uint32 EmitterIndex;
-		glm::vec3 StartAcceleration;
 		bool WasCreated = true;
+		glm::vec3 StartAcceleration;
 		float BeginRadius;
 		float EndRadius;
 		float FrictionFactor;
 		float Bounciness;
+		float padding0;
 	};
 
 	struct SEmitter
@@ -118,7 +119,7 @@ namespace LambdaEngine
 		void OnEmitterEntityAdded(Entity entity);
 		void OnEmitterEntityRemoved(Entity entity);
 
-		uint32 GetParticleCount() const { return m_Particles.GetSize();  }
+		uint32 GetParticleCount() const { return m_AliveIndices.GetSize();  }
 		uint32 GetActiveEmitterCount() const { return m_IndirectData.GetSize();  }
 		uint32 GetMaxParticleCount() const { return m_MaxParticleCount; }
 
@@ -131,9 +132,13 @@ namespace LambdaEngine
 	private:
 		bool CreateAtlasTextureInstance(GUID_Lambda atlasGUID, uint32 tileSize);
 
+		void UpdateAliveParticles();
+
+		void UpdateEmitterInstanceData(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
+
 		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
 		bool CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance);
-		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64* pOffsets, uint64* pSize, uint64 regionCount, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
+		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64* pOffsets, uint64* pSize, uint64 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
 		bool ActivateEmitterEntity(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		bool DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance);
@@ -148,13 +153,15 @@ namespace LambdaEngine
 		uint32								m_MaxParticleCount;
 		uint32								m_ModFrameIndex;
 
-		bool								m_DirtyParticleBuffer	= false;
-		bool								m_DirtyVertexBuffer		= false;
-		bool								m_DirtyIndexBuffer		= false;
-		bool								m_DirtyTransformBuffer	= false;
-		bool								m_DirtyEmitterBuffer	= false;
-		bool								m_DirtyIndirectBuffer	= false;
-		bool								m_DirtyAtlasDataBuffer	= false;
+		bool								m_DirtyAliveBuffer			= false;
+		bool								m_DirtyEmitterIndexBuffer	= false;
+		bool								m_DirtyParticleBuffer		= false;
+		bool								m_DirtyVertexBuffer			= false;
+		bool								m_DirtyIndexBuffer			= false;
+		bool								m_DirtyTransformBuffer		= false;
+		bool								m_DirtyEmitterBuffer		= false;
+		bool								m_DirtyIndirectBuffer		= false;
+		bool								m_DirtyAtlasDataBuffer		= false;
 
 		Buffer*								m_ppIndirectStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pIndirectBuffer = nullptr;
@@ -171,6 +178,12 @@ namespace LambdaEngine
 		Buffer*								m_ppEmitterStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pEmitterBuffer = nullptr;
 
+		Buffer*								m_ppEmitterIndexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pEmitterIndexBuffer = nullptr;
+
+		Buffer*								m_ppAliveStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pAliveBuffer = nullptr;
+
 		Buffer*								m_ppParticleStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pParticleBuffer = nullptr;
 
@@ -179,6 +192,8 @@ namespace LambdaEngine
 
 		TArray<DeviceChild*>				m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
+		TArray<uint32>						m_AliveIndices;
+		TArray<uint32>						m_ParticleToEmitterIndex;
 		TArray<SParticle>					m_Particles;
 		// Emitter specfic data
 		TArray<IndirectData>				m_IndirectData;
@@ -196,7 +211,7 @@ namespace LambdaEngine
 		TArray<TextureView*>				m_AtlasTextureViews;
 		TArray<Sampler*>					m_AtlasSamplers;
 
-		THashTable<Entity, ParticleEmitterInstance>	m_ActiveEmitters;
-		THashTable<Entity, ParticleEmitterInstance>	m_SleepingEmitters;
+		TSet<Entity>								m_ActiveEmitters;
+		THashTable<Entity, ParticleEmitterInstance>	m_EmitterEntities;
 	};
 }

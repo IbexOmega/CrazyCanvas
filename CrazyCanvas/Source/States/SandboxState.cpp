@@ -516,13 +516,12 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	// Debugging Emitters
 	static uint32 indexEmitters = 0;
 	static bool removeEmitters = true;
+	const uint32 emitterCount = 10U;
 	if (event.Key == EKey::KEY_8)
 	{
-		uint32 modIndex = indexEmitters % 10U;
-		if (modIndex == 0U)
-			removeEmitters = !removeEmitters;
+		uint32 modIndex = indexEmitters % emitterCount;
 
-		if (!removeEmitters)
+		if (indexEmitters < emitterCount)
 		{
 			Entity e = ecsCore->CreateEntity();
 			m_Emitters[modIndex] = e;
@@ -533,7 +532,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 				.OneTime = true,
 				.Explosive = 0.9f,
 				.SpawnDelay = 0.01f,
-				.ParticleCount = Random::UInt32(1024, 2048),
+				.ParticleCount = 32,
 				.Velocity = 1.0f + Random::Float32(-3.f, 3.f),
 				.Acceleration = 0.0f,
 				.Gravity = Random::Float32(-5.0f, 5.0f),
@@ -544,7 +543,8 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		}
 		else
 		{
-			ecsCore->RemoveEntity(m_Emitters[modIndex]);
+			auto& emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(m_Emitters[modIndex]);
+			emitterComp.Active = true;
 		}
 
 		indexEmitters++;

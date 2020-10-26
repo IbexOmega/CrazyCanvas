@@ -16,27 +16,37 @@ layout(push_constant) uniform PushConstants
 } u_PC;
 
 // Buffers
-layout(binding = 0, set = BUFFER_SET_INDEX) restrict buffer ParticleInstances
-{ 
-	SParticle Val[]; 
-} b_ParticleInstances;
-
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly restrict buffer EmitterInstances
-{ 
-	SEmitter Val[]; 
-} b_EmitterInstances;
-
-layout(binding = 2, set = BUFFER_SET_INDEX) readonly restrict buffer EmitterTransforms
-{ 
-	mat4 Val[]; 
-} b_EmitterTransforms;
-
-layout (binding = 3, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+layout (binding = 0, set = 0) uniform PerFrameBuffer
 {
 	SPerFrameBuffer perFrameBuffer;
 } u_PerFrameBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_DepthTexture;
+layout(binding = 1, set = 0) restrict buffer ParticleInstances
+{ 
+	SParticle Val[]; 
+} b_ParticleInstances;
+
+layout(binding = 2, set = 0) readonly restrict buffer EmitterInstances
+{ 
+	SEmitter Val[]; 
+} b_EmitterInstances;
+
+layout(binding = 3, set = 0) readonly restrict buffer EmitterTransforms
+{ 
+	mat4 Val[]; 
+} b_EmitterTransforms;
+
+layout (binding = 4, set = 0) readonly restrict buffer EmitterIndices
+{
+	uint Val[];
+} b_EmitterIndices;
+
+layout (binding = 5, set = 0) readonly restrict buffer AliveIndices
+{
+	uint Val[];
+} b_AliveIndices;
+
+layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
 
 // Main
@@ -51,10 +61,12 @@ void main()
 
 	while (indexOffset < u_PC.ParticleCount)
 	{
-		// Update particle data 
-		SParticle particle = b_ParticleInstances.Val[indexOffset];
-		SEmitter emitter = b_EmitterInstances.Val[particle.EmitterIndex];
-		mat4 emitterTransform = b_EmitterTransforms.Val[particle.EmitterIndex];
+		// Update particle data
+		uint particleIndex = b_AliveIndices.Val[indexOffset];
+		SParticle particle = b_ParticleInstances.Val[particleIndex];
+		uint emmiterIndex = b_EmitterIndices.Val[particleIndex];
+		SEmitter emitter = b_EmitterInstances.Val[emmiterIndex];
+		mat4 emitterTransform = b_EmitterTransforms.Val[emmiterIndex];
 
 		if(particle.WasCreated)
 		{
@@ -113,7 +125,7 @@ void main()
 		float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
 		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
 
-		b_ParticleInstances.Val[indexOffset] = particle;
+		b_ParticleInstances.Val[particleIndex] = particle;
 		indexOffset += totalInvocations;
 	}
 

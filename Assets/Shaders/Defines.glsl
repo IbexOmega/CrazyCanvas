@@ -171,13 +171,13 @@ struct SParticle
 	vec3 Acceleration;
 	uint TileIndex;
 	vec3 StartPosition;
-	uint EmitterIndex;
-	vec3 StartAcceleration;
 	bool WasCreated;
+	vec3 StartAcceleration;
 	float BeginRadius;
 	float EndRadius;
 	float FrictionFactor;
 	float Bounciness;
+	float padding0;
 };
 
 struct SEmitter
