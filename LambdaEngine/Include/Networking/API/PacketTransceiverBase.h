@@ -12,7 +12,6 @@
 
 namespace LambdaEngine
 {
-	class NetworkSegment;
 	class NetworkStatistics;
 	class ISocket;
 	class SegmentPool;
@@ -22,7 +21,7 @@ namespace LambdaEngine
 	public:
 		DECL_ABSTRACT_CLASS_NO_DEFAULT(PacketTransceiverBase);
 
-		int32 Transmit(SegmentPool* pSegmentPool, std::queue<NetworkSegment*>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& endPoint, NetworkStatistics* pStatistics);
+		int32 Transmit(SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& endPoint, NetworkStatistics* pStatistics);
 		bool ReceiveBegin(IPEndPoint& sender);
 		bool ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics);
 

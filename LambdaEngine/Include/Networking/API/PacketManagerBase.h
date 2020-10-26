@@ -6,6 +6,7 @@
 #include "Containers/TSet.h"
 #include "Containers/THashTable.h"
 
+#include "Networking/API/NetworkSegment.h"
 #include "Networking/API/NetworkStatistics.h"
 #include "Networking/API/SegmentPool.h"
 #include "Networking/API/IPEndPoint.h"
@@ -14,7 +15,6 @@
 
 namespace LambdaEngine
 {
-	class NetworkSegment;
 	class IPacketListener;
 	class PacketTransceiverBase;
 
@@ -67,6 +67,7 @@ namespace LambdaEngine
 
 	protected:
 		virtual bool FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned) = 0;
+		void InsertSegment(NetworkSegment* pSegment);
 
 	private:
 		uint32 EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID);
@@ -80,7 +81,7 @@ namespace LambdaEngine
 		NetworkStatistics m_Statistics;
 		SegmentPool m_SegmentPool;
 		IPEndPoint m_IPEndPoint;
-		std::queue<NetworkSegment*> m_SegmentsToSend[2];
+		std::set<NetworkSegment*, NetworkSegmentUIDOrder> m_SegmentsToSend[2];
 		std::unordered_map<uint32, SegmentInfo> m_SegmentsWaitingForAck;
 		std::unordered_map<uint32, Bundle> m_Bundles;
 		std::atomic_int m_QueueIndex;

@@ -46,6 +46,7 @@
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
+#include "Game/ECS/Systems/Networking/NetworkSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
@@ -114,6 +115,11 @@ namespace LambdaEngine
 
 	bool EngineLoop::InitSystems()
 	{
+		if (!NetworkSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
 		if (!RenderSystem::GetInstance().Init())
 		{
 			return false;
@@ -235,13 +241,9 @@ namespace LambdaEngine
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		// Game
 		Game::Get().FixedTick(delta);
-		StateManager::GetInstance()->FixedTick(delta);
-		ClientSystem::StaticFixedTickMainThread(delta);
-		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
-
+		StateManager::GetInstance()->FixedTick(delta);
 	}
 
 	bool EngineLoop::PreInit(const argh::parser& flagParser)

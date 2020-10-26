@@ -44,6 +44,7 @@ namespace LambdaEngine
 		virtual PacketManagerBase* GetPacketManager() = 0;
 		virtual const PacketManagerBase* GetPacketManager() const = 0;
 		virtual IClientRemoteHandler* GetHandler() = 0;
+		virtual uint64 GetUID() const = 0;
 
 		static std::string StateToString(EClientState state)
 		{

@@ -39,7 +39,7 @@ namespace LambdaEngine
 	struct SceneLoadDesc
 	{
 		String	Filename = "";
-		TArray<SpecialObjectOnLoadDesc> SpecialObjectDescriptions = {};
+		TArray<LevelObjectOnLoadDesc> LevelObjectDescriptions = {};
 	};
 
 	class LAMBDA_API ResourceManager
@@ -74,7 +74,7 @@ namespace LambdaEngine
 		*	meshComponents		- A vector where all loaded MeshComponent(s) will be stored
 		*	directionalLights	- A vector where all loaded LoadedDirectionalLight(s) will be stored
 		*	pointLights			- A vector where all loaded LoadedPointLight(s) will be stored
-		*	specialObjects		- A vector where all loaded SpecialObject(s) will be stored according to the definition given in SceneLoadDesc::SpecialObjectDescriptions
+		*	levelObjects		- A vector where all loaded LevelObject(s) will be stored according to the definition given in SceneLoadDesc::LevelObjectDescriptions
 		* return - true if the scene was loaded, false otherwise
 		*/
 		static bool LoadSceneFromFile(
@@ -82,7 +82,7 @@ namespace LambdaEngine
 			TArray<MeshComponent>& meshComponents,
 			TArray<LoadedDirectionalLight>& directionalLights,
 			TArray<LoadedPointLight>& pointLights,
-			TArray<SpecialObjectOnLoad>& specialObjects,
+			TArray<LevelObjectOnLoad>& levelObjects,
 			const String& directory = SCENE_DIR);
 
 		/*
@@ -140,7 +140,7 @@ namespace LambdaEngine
 		*	generateMips	- If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadTextureArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
+		static GUID_Lambda LoadTextureArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips);
 
 		/*
 		* Load multiple Cube textures from file and combine into Texture Arrays along with TextureViews and CubeTextureViews
@@ -151,7 +151,7 @@ namespace LambdaEngine
 		*	generateMips	- If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadCubeTexturesArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips);
+		static GUID_Lambda LoadCubeTexturesArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips);
 
 		/*
 		* Load a texture from file
@@ -160,7 +160,7 @@ namespace LambdaEngine
 		*	generateMips	- If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadTextureFromFile(const String& filename, EFormat format, bool generateMips);
+		static GUID_Lambda LoadTextureFromFile(const String& filename, EFormat format, bool generateMips, bool linearFilteringMips);
 
 		/*
 		* Load a texture from memory
@@ -173,7 +173,7 @@ namespace LambdaEngine
 		*	generateMips	- If mipmaps should be generated on load
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips);
+		static GUID_Lambda LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips, bool linearFilteringMips);
 
 		/*
 		* Load sound from file

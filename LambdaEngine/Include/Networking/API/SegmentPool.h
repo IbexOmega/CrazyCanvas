@@ -18,21 +18,22 @@ namespace LambdaEngine
 #ifdef LAMBDA_CONFIG_DEBUG
 		NetworkSegment* RequestFreeSegment(const std::string& borrower);
 		bool RequestFreeSegments(uint16 nrOfSegments, TArray<NetworkSegment*>& segmentsReturned, const std::string& borrower);
+		void FreeSegment(NetworkSegment* pSegment, const std::string& returner);
+		void FreeSegments(TArray<NetworkSegment*>& segments, const std::string& returner);
+#else
+		
+		void FreeSegment(NetworkSegment* pSegment);
+		void FreeSegments(TArray<NetworkSegment*>& segments);
 #endif
-
 		NetworkSegment* RequestFreeSegment();
 		bool RequestFreeSegments(uint16 nrOfSegments, TArray<NetworkSegment*>& segmentsReturned);
 
-		void FreeSegment(NetworkSegment* pSegment);
-		void FreeSegments(TArray<NetworkSegment*>& segments);
-	
 		void Reset();
 
 		uint16 GetSize() const;
 		uint16 GetFreeSegments() const;
 
 	private:
-		void Request(NetworkSegment* pSegment);
 		void Free(NetworkSegment* pSegment);
 
 	private:
