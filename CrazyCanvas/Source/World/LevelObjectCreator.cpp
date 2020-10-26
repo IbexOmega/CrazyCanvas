@@ -17,6 +17,7 @@
 
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/Match/BaseComponent.h"
 #include "Teams/TeamHelper.h"
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
@@ -60,7 +61,7 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerSpawn;
 		}
 
-		//Spawnpoint
+		//Flag Spawn
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
 			{
@@ -69,6 +70,17 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagSpawn;
+		}
+
+		//Base
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_BASE_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateBase;
 		}
 	}
 
@@ -217,11 +229,42 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 
 ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
 {
-	UNREFERENCED_VARIABLE(levelObject);
-	UNREFERENCED_VARIABLE(createdEntities);
-	UNREFERENCED_VARIABLE(translation);
+	using namespace LambdaEngine;
 
-	LOG_WARNING("[LevelObjectCreator]: Spawnpoint not implemented!");
+	if (levelObject.MeshComponents.IsEmpty())
+	{
+		LOG_ERROR("[LevelObjectCreator]: Player Spawn must have a mesh included on load!");
+		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
+	}
+	else if (levelObject.MeshComponents.GetSize() > 1)
+	{
+		LOG_WARNING("[LevelObjectCreator]: Player Spawn can currently not be created with more than one mesh, using the first mesh...");
+	}
+
+	const MeshComponent& meshComponent = levelObject.MeshComponents[0];
+	const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+
+	ECSCore* pECS					= ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+	const CollisionCreateInfo collisionCreateInfo =
+	{
+		.Entity			= entity,
+		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
+		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
+		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
+		.Mesh			= pECS->AddComponent<MeshComponent>(entity,		meshComponent),
+		.ShapeType		= EShapeType::SIMULATION,
+		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
+		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+	};
+
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+
+	D_LOG_INFO("Created Player Spawn with EntityID %d", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
@@ -238,7 +281,63 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelOb
 
 	createdEntities.PushBack(entity);
 
+	D_LOG_INFO("Created Flag Spawn with EntityID %d", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
+}
+
+ELevelObjectType LevelObjectCreator::CreateBase(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+	//Only the server is allowed to create a Base
+	if (!MultiplayerUtils::IsServer())
+		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
+
+	if (levelObject.MeshComponents.IsEmpty())
+	{
+		LOG_ERROR("[LevelObjectCreator]: Bases must have a mesh included on load!");
+		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
+	}
+	else if (levelObject.MeshComponents.GetSize() > 1)
+	{
+		LOG_WARNING("[LevelObjectCreator]: Bases can currently not be created with more than one mesh, using the first mesh...");
+	}
+
+	const MeshComponent& meshComponent = levelObject.MeshComponents[0];
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	PositionComponent positionComponent{ true, levelObject.DefaultPosition + translation };
+	ScaleComponent scaleComponent{ true, levelObject.DefaultScale };
+	RotationComponent rotationComponent{ true, levelObject.DefaultRotation };
+
+	pECS->AddComponent<BaseComponent>(entity, { });
+	pECS->AddComponent<PositionComponent>(entity, positionComponent);
+	pECS->AddComponent<ScaleComponent>(entity, scaleComponent);
+	pECS->AddComponent<RotationComponent>(entity, rotationComponent);
+
+	//Only the server checks collision with the flag
+	const CollisionCreateInfo collisionCreateInfo =
+	{
+		/* Entity */	 		entity,
+		/* Position */	 		positionComponent,
+		/* Scale */				scaleComponent,
+		/* Rotation */			rotationComponent,
+		/* Mesh */				meshComponent,
+		/* Shape Type */		EShapeType::TRIGGER,
+		/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_BASE,
+		/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+	};
+
+	StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionBox(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
+
+	createdEntities.PushBack(entity);
+
+	D_LOG_INFO("Created Base with EntityID %d", entity);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_BASE;
 }
 
 bool LevelObjectCreator::CreateFlag(
@@ -320,10 +419,13 @@ bool LevelObjectCreator::CreateFlag(
 			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
 			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
-			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity,		{ glm::vec3(0.0f) })
+			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity, { glm::vec3(0.0f) })
 		};
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+
+		//Add second shape (Non-Trigger) to allow Base-Flag Collisions
+
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
 
 		networkUID = (int32)entity;

@@ -61,12 +61,14 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 			pFlagShape->acquireReference();
 			flagCollisionComponent.pActor->detachShape(*pFlagShape);
 
-			//Update Collision Group
+			//Update Collision Group, and simulation flags to allow the collider to trigger Triggershapes
 			PxFilterData filterData;
 			filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
 			filterData.word1 = (PxU32)FLAG_CARRIED_COLLISION_MASK;
 			pFlagShape->setSimulationFilterData(filterData);
 			pFlagShape->setQueryFilterData(filterData);
+			pFlagShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
+			pFlagShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
 
 			flagCollisionComponent.pActor->attachShape(*pFlagShape);
 			pFlagShape->release();
@@ -130,6 +132,8 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		filterData.word1 = (PxU32)FLAG_DROPPED_COLLISION_MASK;
 		pFlagShape->setSimulationFilterData(filterData);
 		pFlagShape->setQueryFilterData(filterData);
+		pFlagShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+		pFlagShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
 
 		flagCollisionComponent.pActor->attachShape(*pFlagShape);
 		pFlagShape->release();
@@ -166,10 +170,12 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
-	//Handle Flag Collision
-	LOG_WARNING("FLAG COLLIDED Server");
-
 	OnFlagPickedUp(entity1, entity0);
+}
+
+void ServerFlagSystem::OnBaseFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+{
+	LOG_WARNING("Server: BASE-FLAG COLLISION");
 }
 
 void ServerFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)

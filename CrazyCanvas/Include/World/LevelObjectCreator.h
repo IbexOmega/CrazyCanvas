@@ -29,6 +29,7 @@ enum ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_PLAYER			= 5,
 	LEVEL_OBJECT_TYPE_FLAG_SPAWN		= 6,
 	LEVEL_OBJECT_TYPE_FLAG				= 7,
+	LEVEL_OBJECT_TYPE_BASE				= 8,
 };
 
 struct CreateFlagDesc
@@ -95,6 +96,7 @@ public:
 private:
 	static ELevelObjectType CreatePlayerSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
 	static ELevelObjectType CreateFlagSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
+	static ELevelObjectType CreateBase(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation);
 
 	static bool CreateFlag(
 		const void* pData,
