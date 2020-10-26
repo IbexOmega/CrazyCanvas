@@ -213,61 +213,65 @@ namespace LambdaEngine
 		}
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionSphere(const CollisionCreateInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionSphere(const CollisionCreateInfo& collisionInfo, float32 radius)
 	{
-		PxShape* pShape = CreateCollisionSphere(collisionInfo);
+		const float32 scale = glm::compMax(collisionInfo.Scale.Scale);
+		PxShape* pShape = m_pPhysics->createShape(PxSphereGeometry(radius * scale), *m_pMaterial);
 		return FinalizeStaticCollisionActor(collisionInfo, pShape);
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionBox(const CollisionCreateInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionBox(const CollisionCreateInfo& collisionInfo, const glm::vec3& halfExtents)
 	{
-		PxShape* pShape = CreateCollisionBox(collisionInfo);
+		const PxVec3 halfExtentsPX = { halfExtents.x, halfExtents.y, halfExtents.z };
+		PxShape* pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
 		return FinalizeStaticCollisionActor(collisionInfo, pShape);
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionCapsule(const CollisionCreateInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionCapsule(const CollisionCreateInfo& collisionInfo, float32 radius, float32 halfHeight)
 	{
-		PxShape* pShape = CreateCollisionCapsule(collisionInfo);
+		PxShape* pShape = CreateCollisionCapsule(radius, halfHeight);
 
 		// Rotate around Z-axis to get the capsule pointing upwards
 		const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
 		return FinalizeStaticCollisionActor(collisionInfo, pShape, uprightRotation);
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionMesh(const CollisionCreateInfo& collisionInfo)
+	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionMesh(const CollisionCreateInfo& collisionInfo, const Mesh* pMesh)
 	{
-		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo);
+		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo, pMesh);
 		return FinalizeStaticCollisionActor(collisionInfo, pShape);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionSphere(const DynamicCollisionCreateInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionSphere(const DynamicCollisionCreateInfo& collisionInfo, float32 radius)
 	{
-		PxShape* pShape = CreateCollisionSphere(collisionInfo);
+		const float32 scale = glm::compMax(collisionInfo.Scale.Scale);
+		PxShape* pShape = m_pPhysics->createShape(PxSphereGeometry(radius * scale), *m_pMaterial);
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionBox(const DynamicCollisionCreateInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionBox(const DynamicCollisionCreateInfo& collisionInfo, const glm::vec3& halfExtents)
 	{
-		PxShape* pShape = CreateCollisionBox(collisionInfo);
+		const PxVec3 halfExtentsPX = { halfExtents.x, halfExtents.y, halfExtents.z };
+		PxShape* pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionCapsule(const DynamicCollisionCreateInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionCapsule(const DynamicCollisionCreateInfo& collisionInfo, float32 radius, float32 halfHeight)
 	{
-		PxShape* pShape = CreateCollisionCapsule(collisionInfo);
+		PxShape* pShape = CreateCollisionCapsule(radius, halfHeight);
 
 		// Rotate around Z-axis to get the capsule pointing upwards
 		const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape, uprightRotation);
 	}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionMesh(const DynamicCollisionCreateInfo& collisionInfo)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionMesh(const DynamicCollisionCreateInfo& collisionInfo, const Mesh* pMesh)
 	{
-		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo);
+		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo, pMesh);
 		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
 	}
 
-	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderCreateInfo& characterColliderInfo, float height, float radius)
+	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderCreateInfo& characterColliderInfo, float32 height, float32 radius)
 	{
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
@@ -285,6 +289,39 @@ namespace LambdaEngine
 		controllerDesc.halfForwardExtent	= halfExtents.z;
 
 		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
+	}
+
+	float32 PhysicsSystem::CalculateSphereRadius(const Mesh* pMesh)
+	{
+		const TArray<Vertex>& vertices = pMesh->Vertices;
+		float squareRadius = 0.0f;
+
+		for (const Vertex& vertex : vertices)
+		{
+			squareRadius = std::max(squareRadius, glm::length2(vertex.Position));
+		}
+
+		return std::sqrtf(squareRadius);
+	}
+
+	void PhysicsSystem::CalculateCapsuleDimensions(Mesh* pMesh, float32& radius, float32& halfHeight)
+	{
+		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
+			it is rotated around the z-axis. */
+		const TArray<Vertex>& vertices = pMesh->Vertices;
+
+		// The radius in the XZ plane (horizontal)
+		float32 squareRadiusXZ = 0.0f;
+
+		for (const Vertex& vertex : vertices)
+		{
+			const glm::vec3& position = vertex.Position;
+			squareRadiusXZ = std::max(squareRadiusXZ, glm::length2(glm::vec3(position.x, 0.0f, position.z)));
+			halfHeight = std::max(halfHeight, std::abs(position.y));
+		}
+
+		radius = std::sqrtf(squareRadiusXZ);
+		halfHeight = halfHeight - radius;
 	}
 
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
@@ -318,74 +355,26 @@ namespace LambdaEngine
 		}
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionSphere(const CollisionCreateInfo& staticCollisionInfo) const
-	{
-		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
-		const TArray<Vertex>& vertices = pMesh->Vertices;
-
-		float squareRadius = 0.0f;
-
-		for (const Vertex& vertex : vertices)
-		{
-			squareRadius = std::max(squareRadius, glm::length2(vertex.Position));
-		}
-
-		const glm::vec3& scale = staticCollisionInfo.Scale.Scale;
-		const float scaleScalar = std::max(scale.x, std::max(scale.y, scale.z));
-		const float radius = std::sqrtf(squareRadius) * scaleScalar;
-
-		PxShape* pSphereShape = m_pPhysics->createShape(PxSphereGeometry(radius), *m_pMaterial);
-		return pSphereShape;
-	}
-
-	PxShape* PhysicsSystem::CreateCollisionBox(const CollisionCreateInfo& staticCollisionInfo) const
-	{
-		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
-		const glm::vec3 halfExtent = pMesh->BoundingBox.Dimensions * staticCollisionInfo.Scale.Scale;
-		const PxVec3 halfExtentPX(halfExtent.x, halfExtent.y, halfExtent.z);
-
-		PxShape* pBoxShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentPX), *m_pMaterial);
-		return pBoxShape;
-	}
-
-	PxShape* PhysicsSystem::CreateCollisionCapsule(const CollisionCreateInfo& staticCollisionInfo) const
+	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight) const
 	{
 		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
 			it is rotated around the z-axis. */
-		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
-		const TArray<Vertex>& vertices = pMesh->Vertices;
-
-		// The radius in the XZ plane (horizontal)
-		float squareRadiusXZ = 0.0f;
-		float halfHeight = 0.0f;
-
-		for (const Vertex& vertex : vertices)
-		{
-			const glm::vec3& position = vertex.Position;
-			squareRadiusXZ = std::max(squareRadiusXZ, glm::length2(glm::vec3(position.x, 0.0f, position.z)));
-			halfHeight = std::max(halfHeight, std::abs(position.y));
-		}
-
-		const float capsuleRadius = std::sqrtf(squareRadiusXZ);
-		halfHeight = halfHeight - capsuleRadius;
-
 		PxShape* pShape = nullptr;
 		if (halfHeight > 0.0f)
 		{
-			pShape = m_pPhysics->createShape(PxCapsuleGeometry(capsuleRadius, halfHeight), *m_pMaterial);
+			pShape = m_pPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *m_pMaterial);
 		}
 		else
 		{
-			pShape = m_pPhysics->createShape(PxSphereGeometry(capsuleRadius), *m_pMaterial);
+			pShape = m_pPhysics->createShape(PxSphereGeometry(radius), *m_pMaterial);
 		}
 
 		return pShape;
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const CollisionCreateInfo& staticCollisionInfo) const
+	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const CollisionCreateInfo& staticCollisionInfo, const Mesh* pMesh) const
 	{
-		/* PhysX is capable of 'cooking' meshes; generating an optimized collision mesh from triangle data */
-		const Mesh* pMesh = ResourceManager::GetMesh(staticCollisionInfo.Mesh.MeshGUID);
+		/* Perform mesh 'cooking'; generate an optimized collision mesh from triangle data */
 		const TArray<Vertex>& vertices = pMesh->Vertices;
 
 		PxTriangleMeshDesc meshDesc;
