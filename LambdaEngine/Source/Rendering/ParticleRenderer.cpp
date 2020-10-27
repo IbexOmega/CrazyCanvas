@@ -660,7 +660,6 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.y = 0;
 		
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
 		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, m_EmitterCount, sizeof(IndirectData));
 
 		pCommandList->EndRenderPass();

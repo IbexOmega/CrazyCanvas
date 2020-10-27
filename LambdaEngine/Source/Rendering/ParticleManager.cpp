@@ -84,36 +84,31 @@ namespace LambdaEngine
 
 		constexpr float EPSILON = 0.01f;
 
-		// Set active false if timer has elapsed
-		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = ECSCore::GetInstance()->GetComponentArray<ParticleEmitterComponent>();
+		//std::string str;
+		//str += "################\nIndirectData: ";
+		//for (size_t i = 0; i < m_IndirectData.GetSize(); i++)
+		//{
+		//	str += "[first: " + std::to_string(m_IndirectData[i].FirstInstance) + ", count: " + std::to_string(m_IndirectData[i].InstanceCount) + "]";
+		//}
+		//LOG_INFO("%s\n#################", str.c_str());
 
-		for (auto entityIt = m_ActiveEmitters.begin(); entityIt != m_ActiveEmitters.end();)
+		TArray<EmitterID> emittersToDeactivate;
+		for (uint32 i = 0; i < m_Emitters.GetSize();)
 		{
-			Entity entity = *entityIt;
-			if (pEmitterComponents->HasComponent(entity))
+			auto& emitterInstance = m_Emitters[i];
+			if (emitterInstance.OneTime)
 			{
-				const auto& constEmitter = pEmitterComponents->GetConstData(entity);
-				auto& emitterInstance = m_EmitterEntities[entity];
-				if (constEmitter.OneTime && constEmitter.Active)
+				float& elapTime = emitterInstance.ElapTime;
+				elapTime += deltaTime.AsSeconds();
+
+				float longestLifeTime = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * (emitterInstance.ParticleChunk.Size - 1U) * emitterInstance.SpawnDelay;
+				if (elapTime >= longestLifeTime - EPSILON)
 				{
-					float& elapTime = emitterInstance.ElapTime;
-					elapTime += deltaTime.AsSeconds();
-
-					float longestLifeTime = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * (emitterInstance.ParticleChunk.Size - 1U) * emitterInstance.SpawnDelay;
-					if (elapTime >= longestLifeTime - EPSILON)
-					{
-						// Set emitter component to inactive so this dose not trigger again and again
-						auto& Emitter = pEmitterComponents->GetData(entity);
-						Emitter.Active = false;
-						elapTime = 0.f;
-
-						DeactivateEmitterEntity(emitterInstance);
-						entityIt = m_ActiveEmitters.erase(entityIt);
-						continue;
-					}
+					DeactivateEmitterInstance(i);
+					continue;
 				}
 			}
-			entityIt++;
+			i++;
 		}
 	}
 
@@ -123,14 +118,14 @@ namespace LambdaEngine
 		if (emitterComp.Active)
 		{
 			// Check if active
-			auto emitterEntity = m_ActiveEmitters.find(entity);
-			if (emitterEntity != m_ActiveEmitters.end())
+			auto emitterEntity = m_RepeatEmitters.find(entity);
+			if (emitterEntity != m_RepeatEmitters.end())
 			{
-				ParticleEmitterInstance& emitter = m_EmitterEntities[entity];
-				uint32 dataIndex = emitter.DataIndex;
+				EmitterID id = m_EntityToEmitterID[entity];
+				ParticleEmitterInstance& emitter = m_Emitters[id];
 
 				// Update transform of emitter
-				m_EmitterTransformData[dataIndex] = glm::translate(positionComp.Position) * glm::toMat4(rotationComp.Quaternion);
+				m_EmitterTransformData[id] = glm::translate(positionComp.Position) * glm::toMat4(rotationComp.Quaternion);
 				m_DirtyTransformBuffer = true;
 
 				return;
@@ -138,52 +133,38 @@ namespace LambdaEngine
 			else
 			{
 				ParticleEmitterInstance newEmitterInstance;
-				ActivateEmitterEntity(newEmitterInstance, positionComp, rotationComp, emitterComp);
+				EmitterID emitterID = m_Emitters.GetSize();
+				m_Emitters.PushBack(newEmitterInstance);
+				
+				ActivateEmitterInstance(emitterID, positionComp, rotationComp, emitterComp);
 
-				// Map emitter data to entity
-				m_DataToEntity[newEmitterInstance.DataIndex] = entity;
+				// If not onetime emitter the emitter needs to be tracked for updating
+				if (!emitterComp.OneTime)
+				{
+					// Move emitter from active to sleeping
+					m_RepeatEmitters.insert(entity);
 
-				// Move emitter from active to sleeping
-				m_ActiveEmitters.insert(entity);
-				m_EmitterEntities[entity] = newEmitterInstance;
+					m_EntityToEmitterID[entity] = emitterID;
+					m_EmitterIDToEntity[emitterID] = entity;
+				}
 			}
 		}
 	}
 
 	void ParticleManager::OnEmitterEntityAdded(Entity entity)
 	{
-		ECSCore* ecsCore = ECSCore::GetInstance();
-		const ParticleEmitterComponent& emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(entity);
-		if (emitterComp.Active)
-		{
-			const PositionComponent& positionComp = ecsCore->GetComponent<PositionComponent>(entity);
-			const RotationComponent& rotationComp = ecsCore->GetComponent<RotationComponent>(entity);
 
-			ParticleEmitterInstance newEmitterInstance;
-			ActivateEmitterEntity(newEmitterInstance, positionComp, rotationComp, emitterComp);
-
-			// Map emitter data to entity
-			m_DataToEntity[newEmitterInstance.DataIndex] = entity;
-
-			// Move emitter from active to sleeping
-			m_ActiveEmitters.insert(entity);
-			m_EmitterEntities[entity] = newEmitterInstance;
-		}
 	}
 
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
 	{
 		ParticleChunk newFreeChunk;
 		// Remove emitter instance if EmitterComponent is active
-		if (m_ActiveEmitters.find(entity) != m_ActiveEmitters.end())
+		if (m_RepeatEmitters.find(entity) != m_RepeatEmitters.end())
 		{
 			// Remove emitter
-			auto& emitter = m_EmitterEntities[entity];
-
-			DeactivateEmitterEntity(emitter);
-
-			m_ActiveEmitters.erase(entity);
-			m_EmitterEntities.erase(entity);
+			EmitterID id = m_EntityToEmitterID[entity];
+			DeactivateEmitterInstance(id);
 		}
 	}
 
@@ -258,10 +239,33 @@ namespace LambdaEngine
 		emitterInstance.Bounciness = emitterComp.Bounciness;
 
 		emitterInstance.Color = emitterComp.Color;
-		
-		// Set data index before creation of particles so each particle now which emitter they belong to
-		emitterInstance.DataIndex = m_IndirectData.GetSize();
-		
+	}
+
+	void ParticleManager::ReplaceRemovedEmitterWithLast(uint32 removeIndex)
+	{
+		if (m_EmitterIDToEntity.find(removeIndex) != m_EmitterIDToEntity.end())
+		{
+			Entity removedEntity = m_EmitterIDToEntity[removeIndex];
+
+			m_EntityToEmitterID.erase(removedEntity);
+			m_EmitterIDToEntity.erase(removeIndex);
+
+			m_RepeatEmitters.erase(removedEntity);
+		}
+
+		EmitterID lastIndex = m_Emitters.GetSize() - 1U;
+		if (m_EmitterIDToEntity.find(lastIndex) != m_EmitterIDToEntity.end())
+		{
+			Entity lastEntity = m_EmitterIDToEntity[lastIndex];
+
+			m_EmitterIDToEntity.erase(lastIndex);
+			m_EntityToEmitterID[lastEntity] = removeIndex;
+			m_EmitterIDToEntity[removeIndex] = lastEntity;
+		}
+
+		auto& lastEmitter = m_Emitters.GetBack();
+		m_Emitters[removeIndex] = lastEmitter;
+		m_Emitters.PopBack();
 	}
 
 	void ParticleManager::UpdateAliveParticles()
@@ -279,9 +283,10 @@ namespace LambdaEngine
 		m_DirtyAliveBuffer = true;
 	}
 
-	bool ParticleManager::CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance)
+	bool ParticleManager::CreateConeParticleEmitter(EmitterID emitterID)
 	{
 		bool allocateParticles = false;
+		auto& emitterInstance = m_Emitters[emitterID];
 		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
 		{
 			allocateParticles = true;
@@ -322,21 +327,22 @@ namespace LambdaEngine
 			if (allocateParticles)
 			{
 				m_Particles.PushBack(particle);
-				m_ParticleToEmitterIndex.PushBack(emitterInstance.DataIndex);
+				m_ParticleToEmitterIndex.PushBack(emitterID);
 			}
 			else
 			{
 				m_Particles[particleOffset + i] = particle;
-				m_ParticleToEmitterIndex[particleOffset + i] = emitterInstance.DataIndex;
+				m_ParticleToEmitterIndex[particleOffset + i] = emitterID;
 			}
 		}
 
 		return true;
 	}
 
-	bool ParticleManager::CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance)
+	bool ParticleManager::CreateTubeParticleEmitter(EmitterID emitterID)
 	{
 		bool allocateParticles = false;
+		auto& emitterInstance = m_Emitters[emitterID];
 		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
 		{
 			allocateParticles = true;
@@ -368,12 +374,12 @@ namespace LambdaEngine
 			if (allocateParticles)
 			{
 				m_Particles.PushBack(particle);
-				m_ParticleToEmitterIndex.PushBack(emitterInstance.DataIndex);
+				m_ParticleToEmitterIndex.PushBack(emitterID);
 			}
 			else
 			{
 				m_Particles[particleOffset + i] = particle;
-				m_ParticleToEmitterIndex[particleOffset + i] = emitterInstance.DataIndex;
+				m_ParticleToEmitterIndex[particleOffset + i] = emitterID;
 			}
 		}
 
@@ -463,8 +469,9 @@ namespace LambdaEngine
 		return needUpdate;
 	}
 
-	bool ParticleManager::ActivateEmitterEntity(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	bool ParticleManager::ActivateEmitterInstance(EmitterID emitterID, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
 	{
+		auto& emitterInstance = m_Emitters[emitterID];
 		if (emitterInstance.ParticleChunk.Size > 0)
 		{
 			UpdateEmitterInstanceData(emitterInstance, positionComp, rotationComp, emitterComp);
@@ -477,11 +484,11 @@ namespace LambdaEngine
 
 			if (emitterComp.EmitterShape == EEmitterShape::CONE)
 			{
-				CreateConeParticleEmitter(emitterInstance);
+				CreateConeParticleEmitter(emitterID);
 			}
 			else if (emitterComp.EmitterShape == EEmitterShape::TUBE)
 			{
-				CreateTubeParticleEmitter(emitterInstance);
+				CreateTubeParticleEmitter(emitterID);
 			}
 			// Add particle chunk to dirty list
 			m_DirtyParticleChunks.PushBack(emitterInstance.ParticleChunk);
@@ -534,44 +541,37 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ParticleManager::DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance)
+	bool ParticleManager::DeactivateEmitterInstance(EmitterID emitterID)
 	{
 		// Remove indirect draw call
-		uint32 removeIndex = emitterInstance.DataIndex;
+		uint32 removeIndex = emitterID;
 		if (removeIndex < m_IndirectData.GetSize())
 		{
+			auto& emitterInstance = m_Emitters[emitterID];
 			uint32 lastIndex = m_IndirectData.GetSize() - 1U;
 
-			Entity lastEmitterEntity = m_DataToEntity[lastIndex];
 			// Replace the removed emitters data with the last emitters data
 			m_IndirectData[removeIndex] = m_IndirectData[lastIndex];
 			m_EmitterData[removeIndex] = m_EmitterData[lastIndex];
 			m_EmitterTransformData[removeIndex] = m_EmitterTransformData[lastIndex];
 
-			// Update last emitter data index to new one
-			auto& lastEmitter = m_EmitterEntities[lastEmitterEntity];
-			lastEmitter.DataIndex = removeIndex;
-
 			// Update particles of last emitter
-			const ParticleChunk& chunk = lastEmitter.ParticleChunk;
-			if (chunk.Size > 0)
+			uint32 size = m_IndirectData[lastIndex].InstanceCount;
+			if (size > 0)
 			{
-				for (uint32 i = chunk.Offset; i < chunk.Offset + chunk.Size; i++)
+				uint32 offset = m_IndirectData[lastIndex].FirstInstance;
+				for (uint32 i = 0; i < size; i++)
 				{
-					m_ParticleToEmitterIndex[i] = removeIndex;
+					m_ParticleToEmitterIndex[offset + i] = removeIndex;
 				}
+				// Add particle chunk to dirty list
+				m_DirtyParticleChunks.PushBack(ParticleChunk{.Offset = offset, .Size = size});
 			}
-
-			// Add particle chunk to dirty list
-			m_DirtyParticleChunks.PushBack(lastEmitter.ParticleChunk);
-
 			FreeParticleChunk(emitterInstance.ParticleChunk);
-
-			// Remove data index of remove emitter
-			m_DataToEntity[removeIndex] = lastEmitterEntity;
 			
-			// Remove copy of last emitter
-			m_DataToEntity.erase(lastIndex);
+			// Replace removed emitter with last emitter
+			ReplaceRemovedEmitterWithLast(removeIndex);
+
 			m_IndirectData.PopBack();
 			m_EmitterData.PopBack();
 			m_EmitterTransformData.PopBack();
@@ -629,7 +629,6 @@ namespace LambdaEngine
 		// TODO: Handle override max capacity particle request
 		if (!foundChunk)
 			return false;
-
 
 #if DEBUG_PARTICLE
 		LOG_INFO("[ParticleManager]: Allocated Chunk[offset: %d, size: %d]", chunk.Offset, chunk.Size);

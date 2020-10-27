@@ -6,7 +6,7 @@
 
 #include "Rendering/Core/API/GraphicsTypes.h"
 
-#define DEBUG_PARTICLE true
+#define DEBUG_PARTICLE false
 
 namespace LambdaEngine 
 {
@@ -43,7 +43,6 @@ namespace LambdaEngine
 		float			BeginRadius;
 		float			EndRadius;
 		glm::vec4		Color;
-		uint32			DataIndex = UINT32_MAX;
 		ParticleChunk	ParticleChunk;
 		GUID_Lambda		AtlasGUID = 0;
 		uint32			TileIndex = 0;
@@ -103,6 +102,8 @@ namespace LambdaEngine
 		uint32	FirstInstance	= 0;
 	};
 
+	using EmitterID = uint64;
+
 	class ParticleManager
 	{
 	public:
@@ -136,12 +137,14 @@ namespace LambdaEngine
 
 		void UpdateEmitterInstanceData(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 
-		bool CreateConeParticleEmitter(ParticleEmitterInstance& emitterInstance);
-		bool CreateTubeParticleEmitter(ParticleEmitterInstance& emitterInstance);
+		void ReplaceRemovedEmitterWithLast(uint32 removeIndex);
+
+		bool CreateConeParticleEmitter(EmitterID emitterID);
+		bool CreateTubeParticleEmitter(EmitterID emitterID);
 		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64* pOffsets, uint64* pSize, uint64 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
-		bool ActivateEmitterEntity(ParticleEmitterInstance& emitterInstance, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
-		bool DeactivateEmitterEntity(const ParticleEmitterInstance& emitterInstance);
+		bool ActivateEmitterInstance(EmitterID emitterID, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
+		bool DeactivateEmitterInstance(EmitterID emitterID);
 
 		bool AllocateParticleChunk(ParticleChunk& chunk);
 		bool FreeParticleChunk(ParticleChunk chunk);
@@ -199,7 +202,6 @@ namespace LambdaEngine
 		TArray<IndirectData>				m_IndirectData;
 		TArray<SEmitter>					m_EmitterData;
 		TArray<glm::mat4>					m_EmitterTransformData;
-		THashTable<uint32, Entity>			m_DataToEntity;
 
 		TArray<ParticleChunk>				m_DirtyParticleChunks;
 		TArray<ParticleChunk>				m_FreeParticleChunks;
@@ -211,7 +213,10 @@ namespace LambdaEngine
 		TArray<TextureView*>				m_AtlasTextureViews;
 		TArray<Sampler*>					m_AtlasSamplers;
 
-		TSet<Entity>								m_ActiveEmitters;
-		THashTable<Entity, ParticleEmitterInstance>	m_EmitterEntities;
+		TSet<Entity>								m_RepeatEmitters;
+		THashTable<Entity, EmitterID>				m_EntityToEmitterID;
+		THashTable<EmitterID, Entity>				m_EmitterIDToEntity;
+		TArray<ParticleEmitterInstance>				m_Emitters;
+
 	};
 }

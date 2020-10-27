@@ -558,7 +558,7 @@ namespace LambdaEngine
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
 
-		const ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
+		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
 		for (Entity entity : m_ParticleEmitters)
 		{
 			const auto& positionComp = pPositionComponents->GetConstData(entity);
@@ -567,6 +567,13 @@ namespace LambdaEngine
 
 			if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
 				UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
+
+			// If onetime emitter we want to reset active
+			if (emitterComp.OneTime && emitterComp.Active)
+			{
+				auto& emitterCompNonConst = pEmitterComponents->GetData(entity);
+				emitterCompNonConst.Active = false;
+			}
 		}
 		// Particle Updates
 		uint32 particleCount = m_ParticleManager.GetParticleCount();

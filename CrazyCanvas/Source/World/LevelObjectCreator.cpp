@@ -262,7 +262,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.EmitterShape = EEmitterShape::CONE,
 		.Angle = 15.f,
 		.VelocityRandomness = 0.5f,
-		.Velocity = 4.0,
+		.Velocity = 10.0,
 		.Acceleration = 0.0,
 		.Gravity = -4.f,
 		.LifeTime = 2.0f,
