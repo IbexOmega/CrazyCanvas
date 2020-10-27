@@ -47,8 +47,6 @@ public:
 	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
-
 	bool ApplyDamage(float damage);
 	bool UpdateScore();
 	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap);

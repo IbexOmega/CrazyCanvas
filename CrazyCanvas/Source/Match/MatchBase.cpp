@@ -47,3 +47,11 @@ void MatchBase::SetScore(uint32 teamIndex, uint32 score)
 	VALIDATE(teamIndex < m_Scores.GetSize());
 	m_Scores[teamIndex] = score;
 }
+
+void MatchBase::ResetMatch()
+{
+	for (int i = 0; i < m_MatchDesc.NumTeams; i++)
+	{
+		SetScore(i, 0);
+	}
+}

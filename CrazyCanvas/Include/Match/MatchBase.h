@@ -31,6 +31,8 @@ public:
 
 	void SetScore(uint32 teamIndex, uint32 score);
 
+	void ResetMatch();
+
 	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
 
 protected:

@@ -1,5 +1,4 @@
 #include "Match/MatchServer.h"
-#include "Match/Match.h"
 
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Components/Player/Player.h"
@@ -343,7 +342,7 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 
 		pClient->SendReliableBroadcast(pPacket);
 
-		Match::ResetMatch();
+		ResetMatch();
 	}
 
 
