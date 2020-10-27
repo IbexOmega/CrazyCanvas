@@ -1,4 +1,5 @@
 #include "Match/MatchClient.h"
+#include "Match/Match.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -129,6 +130,16 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 		uint32 teamIndex = decoder.ReadUInt32();
 		uint32 score = decoder.ReadUInt32();
 		SetScore(teamIndex, score);
+
+		return true;
+	}
+	else if (event.Type == PacketType::GAME_OVER)
+	{
+		BinaryDecoder decoder(event.pPacket);
+		uint32 teamIndex = decoder.ReadUInt32();
+
+		SetScore(0, 0);
+		SetScore(1, 0);
 
 		return true;
 	}

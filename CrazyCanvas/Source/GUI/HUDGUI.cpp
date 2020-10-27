@@ -5,6 +5,7 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
+#include "Multiplayer/Packet/PacketType.h"
 
 #include "NoesisPCH.h"
 
@@ -25,6 +26,8 @@ HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) :
 	m_GUIState()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+
+	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &HUDGUI::OnPacketReceived);
 
 	InitGUI();
 }
@@ -68,6 +71,28 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 	return false;
 }
 
+bool HUDGUI::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	BinaryDecoder decoder(event.pPacket);
+
+	if (event.Type == PacketType::TEAM_SCORED)
+	{
+		m_GUIState.Scores[0] = Match::GetScore(0);
+		m_GUIState.Scores[1] = Match::GetScore(1);
+	}
+	else if (event.Type == PacketType::GAME_OVER)
+	{
+		m_GUIState.Scores[0] = Match::GetScore(0);
+		m_GUIState.Scores[1] = Match::GetScore(1);
+	}
+
+	UpdateScore();
+
+	return false;
+}
+
+
 bool HUDGUI::ApplyDamage(float damage)
 {
 	//Returns false if player is dead
@@ -105,13 +130,15 @@ bool HUDGUI::UpdateScore()
 	//Returns false if game Over
 	std::string scoreString;
 
-	if (m_GUIState.Scores[0] != Match::GetScore(0))
+	scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
+
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+
+	/*if (m_GUIState.Scores[0] != Match::GetScore(0))
 	{
 		m_GUIState.Scores[0] = Match::GetScore(0);
 
-		scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
-
-		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+		
 	}
 	else if(m_GUIState.Scores[1] != Match::GetScore(1))
 	{
@@ -134,7 +161,7 @@ bool HUDGUI::UpdateScore()
 		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
 
 		return false;
-	}
+	}*/
 	return true;
 }
 

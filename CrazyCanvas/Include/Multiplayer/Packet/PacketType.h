@@ -21,6 +21,7 @@ public:
 	static uint16 PLAYER_ACTION_RESPONSE;
 	static uint16 FLAG_EDITED;
 	static uint16 TEAM_SCORED;
+	static uint16 GAME_OVER;
 
 public:
 	static const LambdaEngine::ComponentType* GetComponentType(uint16 packetType);

@@ -1,4 +1,5 @@
 #include "Match/MatchServer.h"
+#include "Match/Match.h"
 
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Components/Player/Player.h"
@@ -320,18 +321,6 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 
 	const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
 
-	if (newScore == m_MatchDesc.MaxScore)
-	{
-		ClientRemoteBase* pClient = clients.begin()->second;
-
-		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::TEAM_SCORED);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt32(event.TeamIndex);
-		encoder.WriteUInt32(newScore);
-
-		pClient->SendReliableBroadcast(pPacket);
-	}
-
 	if (!clients.empty())
 	{
 		ClientRemoteBase* pClient = clients.begin()->second;
@@ -343,6 +332,20 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 
 		pClient->SendReliableBroadcast(pPacket);
 	}
+
+	if (newScore == m_MatchDesc.MaxScore && !clients.empty())
+	{
+		ClientRemoteBase* pClient = clients.begin()->second;
+
+		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::GAME_OVER);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteUInt32(event.TeamIndex);	// winning team
+
+		pClient->SendReliableBroadcast(pPacket);
+
+		Match::ResetMatch();
+	}
+
 
 	return true;
 }
