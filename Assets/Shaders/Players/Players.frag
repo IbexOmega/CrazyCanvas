@@ -16,21 +16,18 @@ layout(location = 5) in vec2		in_TexCoord;
 layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
+layout(location = 9) in flat uint	in_InstanceIndex;
 
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }	b_MaterialParameters;
+layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer TeamIDs  				{  uint val[]; }				b_TeamIDs;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
-// My attempts
-layout(binding = 3, set = VIEWER_TEAM_SET_INDEX) uniform uint u_TeamId;
-layout(binding = 3, set = OTHER_TEAM_SET_INDEX) uniform uint u_OtherPlayersTeamIds[];
 
-layout(location = 0) out vec4 out_Position;
-layout(location = 1) out vec3 out_Albedo;
-layout(location = 2) out vec4 out_AO_Rough_Metal_Valid;
-layout(location = 3) out vec3 out_Compact_Normal;
-layout(location = 4) out vec2 out_Velocity;
+layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+
+layout(location = 0) out vec4 out_Color;
 
 void main()
 {
@@ -44,7 +41,7 @@ void main()
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
-	
+
 	vec3 shadingNormal		= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
@@ -53,22 +50,32 @@ void main()
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
-	//0
-	out_Position				= vec4(in_WorldPosition, 0.0f);
+	uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
+	uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).g);
+	float shouldPaint 			= float((serverData & 0x1) | (clientData & 0x1));
+
+	uint clientTeam				= (clientData >> 1) & 0x7F;
+	uint serverTeam				= (serverData >> 1) & 0x7F;
+	uint clientPainting			= clientData & 0x1;
+	uint team = serverTeam;
+	if (clientPainting > 0)
+		team = clientTeam;
+
+	// TODO: Change this to a buffer input which we can index the team color to
+	vec3 color = vec3(0.0);
+	if (team == 1)
+		color = vec3(1.0, 0.0, 0.0);
+	else if (team == 2)
+		color = vec3(0.0, 0.0, 1.0);
+
+	// Only render team members and paint on enemy players
+	//uint enemy = b_TeamIDs.val[in_InstanceIndex];
+	//if(enemy != 0 && paintMask.r < 0.5f)
+	//	discard;
 
 	//1
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo					= storedAlbedo;
 
-	//2
-	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
-	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
-
-	//3
-	// vec2 storedShadingNormal  	= DirToOct(shadingNormal);
-	out_Compact_Normal			= PackNormal(shadingNormal);
-
-	//4
-	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
-	out_Velocity				= vec2(screenVelocity);
+	// 5
+	out_Color 					= vec4(mix(storedAlbedo, color, shouldPaint), 1.f);
 }

@@ -34,6 +34,9 @@ namespace LambdaEngine
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
 
+		for (auto buffer : m_UniformBuffers)
+			SAFERELEASE(buffer);
+		
 		if (m_ppGraphicCommandAllocators != nullptr && m_ppGraphicCommandLists != nullptr)
 		{
 			for (uint32 b = 0; b < m_BackBufferCount; b++)
@@ -357,7 +360,7 @@ namespace LambdaEngine
 						m_TeamIds[d].Clear();
 						for (Entity entity : m_pDrawArgs[d].EntityIDs)
 						{
-							if (m_ViewerId != MAXUINT32 && pPlayerLocalComponents->HasComponent(entity))
+							if (m_ViewerId == MAXUINT32 && pPlayerLocalComponents->HasComponent(entity))
 							{
 								m_ViewerId = entity;
 							}
@@ -713,8 +716,8 @@ namespace LambdaEngine
 
 	bool PlayerRenderer::CreateShaders()
 	{
-		m_VertexShaderPointGUID = ResourceManager::LoadShaderFromFile("/Geometry/Geom.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		m_PixelShaderPointGUID = ResourceManager::LoadShaderFromFile("/Geometry/GeomPlayer.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_VertexShaderPointGUID = ResourceManager::LoadShaderFromFile("/Players/Players.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_PixelShaderPointGUID = ResourceManager::LoadShaderFromFile("/Players/Players.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderPointGUID != GUID_NONE && m_PixelShaderPointGUID != GUID_NONE;
 	}
 

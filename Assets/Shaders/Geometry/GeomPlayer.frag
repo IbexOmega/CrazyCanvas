@@ -58,8 +58,8 @@ void main()
 
 	// Only render team members and paint on enemy players
 	uint team = b_TeamIDs.val[in_InstanceIndex];
-	if(team != 0 && paintMask.r < 0.5f)
-		discard;
+	//if(team != 0 && paintMask.r < 0.5f)
+	//	discard;
 
 	//0
 	out_Position				= vec4(in_WorldPosition, 0.0f);
@@ -85,4 +85,5 @@ void main()
 
 	// 5
 	out_Albedo 					= mix(out_Albedo, vec3(1.0f), paintMask.r);
+	out_Albedo = vec3(1.f, 1.f, 1.f);
 }
