@@ -30,9 +30,6 @@ namespace LambdaEngine
 
 	uint32 PacketManagerBase::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
-		if(pSegment->GetType() < 999)
-			ASSERT(pSegment->GetBufferSize() > 0)
-
 		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment();
 		pSegment->GetHeader().ReliableUID = reliableUID;
 		InsertSegment(pSegment);
