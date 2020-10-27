@@ -53,7 +53,7 @@ public:
 	static WeaponSystem* GetInstance() { return &s_Instance; }
 
 private:
-	void Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity);
+	void Fire(EAmmoType ammoType, WeaponComponent& weaponComponen, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity);
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
 	void StartReload(WeaponComponent& weaponComponent);

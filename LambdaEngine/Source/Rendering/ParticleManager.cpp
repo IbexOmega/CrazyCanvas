@@ -26,7 +26,7 @@ namespace LambdaEngine
 		m_FreeParticleChunks.Reserve(chunkReservationSize);
 
 		// Initilize Default Particle Texture
-		m_DefaultAtlasTextureGUID = ResourceManager::LoadTextureFromFile("Particles/ParticleAtlas.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		m_DefaultAtlasTextureGUID = ResourceManager::LoadTextureFromFile("Particles/ParticleAtlas.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		constexpr uint32 DEFAULT_ATLAS_TILE_SIZE = 64U;
 		CreateAtlasTextureInstance(m_DefaultAtlasTextureGUID, DEFAULT_ATLAS_TILE_SIZE);
 
@@ -490,6 +490,7 @@ namespace LambdaEngine
 			{
 				CreateTubeParticleEmitter(emitterID);
 			}
+
 			// Add particle chunk to dirty list
 			m_DirtyParticleChunks.PushBack(emitterInstance.ParticleChunk);
 

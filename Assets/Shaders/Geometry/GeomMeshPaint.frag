@@ -90,5 +90,5 @@ void main()
 	vec4 color = b_PaintMaskColor.val[team];
 
 	// Mix team color
-	out_Albedo					= mix(out_Albedo, color.rgb, shouldPaint);
+	out_Albedo.rgb					= mix(out_Albedo.rgb, color.rgb, shouldPaint);
 }

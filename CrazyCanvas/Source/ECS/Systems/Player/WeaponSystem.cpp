@@ -200,10 +200,10 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, weaponPosition, weaponRotationComp.Quaternion, velocityComp.Velocity);
 				
 				// Emit particles
-				if (pEmitterComponents->HasComponent(weaponEntity))
+				if (hasAmmo)
 				{
 					ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
-
+					emitterComp.Color = glm::vec4(0.5f, 0.0f, 0.0f, 1.0f);
 					emitterComp.Active = true;
 				}
 			}
@@ -215,10 +215,10 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, weaponPosition, weaponRotationComp.Quaternion, velocityComp.Velocity);
 				
 				// Emit particles
-				if (pEmitterComponents->HasComponent(weaponEntity))
+				if (hasAmmo)
 				{
 					ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
-
+					emitterComp.Color = glm::vec4(0.0f, 0.0f, 0.5f, 1.0f);
 					emitterComp.Active = true;
 				}
 			}
@@ -246,7 +246,7 @@ void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent,
 		}
 
 		// Fire the gun
-		Fire(ammoType, weaponComponent, startPos + glm::vec3(0.0f, 1.0f, 0.0f), direction, playerVelocity);
+		Fire(ammoType, weaponComponent, startPos, direction, playerVelocity);
 	}
 	else
 	{
@@ -303,14 +303,12 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 		},
 		/* Velocity */			initialVelocity
 	};
-
-	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
 	pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
 		.Active = true,
 		.OneTime = false,
 		.Explosive = 0.5f,
 		.SpawnDelay = 0.05f,
-		.ParticleCount = 128,
+		.ParticleCount = 64,
 		.EmitterShape = EEmitterShape::CONE,
 		.Angle = 45.f,
 		.VelocityRandomness = 0.5f,
@@ -329,8 +327,8 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 		}
 	);
 
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
 
-	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo);
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 
 	// Play gun fire

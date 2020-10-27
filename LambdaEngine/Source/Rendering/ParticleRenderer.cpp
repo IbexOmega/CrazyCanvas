@@ -27,15 +27,17 @@ namespace LambdaEngine
 	{
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
-
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		if (m_Initilized)
 		{
-			SAFERELEASE(m_ppGraphicCommandLists[b]);
-			SAFERELEASE(m_ppGraphicCommandAllocators[b]);
-		}
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppGraphicCommandLists[b]);
+				SAFERELEASE(m_ppGraphicCommandAllocators[b]);
+			}
 
-		SAFEDELETE_ARRAY(m_ppGraphicCommandLists);
-		SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
+			SAFEDELETE_ARRAY(m_ppGraphicCommandLists);
+			SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
+		}
 	}
 
 	bool LambdaEngine::ParticleRenderer::CreatePipelineLayout()

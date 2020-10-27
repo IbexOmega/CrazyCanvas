@@ -26,18 +26,20 @@ namespace LambdaEngine
 	{
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
-
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		if (m_Initilized)
 		{
-			SAFERELEASE(m_ppComputeCommandLists[b]);
-			SAFERELEASE(m_ppComputeCommandAllocators[b]);
+			for (uint32 b = 0; b < m_BackBufferCount; b++)
+			{
+				SAFERELEASE(m_ppComputeCommandLists[b]);
+				SAFERELEASE(m_ppComputeCommandAllocators[b]);
+			}
+
+			SAFEDELETE_ARRAY(m_ppComputeCommandLists);
+			SAFEDELETE_ARRAY(m_ppComputeCommandAllocators);
+
+			if (m_Sampler)
+				SAFERELEASE(m_Sampler);
 		}
-
-		SAFEDELETE_ARRAY(m_ppComputeCommandLists);
-		SAFEDELETE_ARRAY(m_ppComputeCommandAllocators);
-
-		if (m_Sampler)
-			SAFERELEASE(m_Sampler);
 	}
 
 	bool LambdaEngine::ParticleUpdater::CreatePipelineLayout()

@@ -543,13 +543,13 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			Entity e = ecsCore->CreateEntity();
 			m_Emitters[modIndex] = e;
 
-			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -5.f + float(modIndex) } });
+			ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
 			ecsCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
 			ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
 				.OneTime = true,
 				.Explosive = 0.9f,
 				.SpawnDelay = 0.01f,
-				.ParticleCount = 256,
+				.ParticleCount = 32,
 				.Velocity = 1.0f + Random::Float32(-3.f, 3.f),
 				.Acceleration = 0.0f,
 				.Gravity = Random::Float32(-5.0f, 5.0f),
