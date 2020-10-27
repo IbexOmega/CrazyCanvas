@@ -8,13 +8,15 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "Multiplayer/MultiplayerServer.h"
+
 class Level;
 
 class ServerState :
 	public LambdaEngine::State
 {
 public:
-	ServerState() = default;
+	ServerState();
 	ServerState(std::string serverHostID, std::string clientHostID);
 	
 	~ServerState();
@@ -24,9 +26,8 @@ public:
 	void Resume() override final {};
 	void Pause() override final {};
 
-	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-
-	virtual void Tick(LambdaEngine::Timestamp delta) override;
+	void Tick(LambdaEngine::Timestamp delta) override final;
+	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
 
@@ -35,8 +36,8 @@ public:
 	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
 
 private:
-	Level* m_pLevel = nullptr;
 	int32 m_ServerHostID = -1;
 	int32 m_ClientHostID = -1;
 	std::string m_ServerName;
+	MultiplayerServer m_MultiplayerServer;
 };

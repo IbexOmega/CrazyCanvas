@@ -12,6 +12,7 @@
 
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
+#include "Physics/CollisionGroups.h"
 
 WeaponSystem WeaponSystem::s_Instance;
 
@@ -49,7 +50,7 @@ bool WeaponSystem::Init()
 		systemReg.SubscriberRegistration.AdditionalAccesses = GetFireProjectileComponentAccesses();
 		systemReg.Phase = 1;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(WeaponSystem), systemReg);
 	}
 
 	// Create rendering resources for projectiles
@@ -224,21 +225,23 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileInfo);
 
 	const MeshComponent& meshComp = ammoType == EAmmoType::AMMO_TYPE_PAINT ? m_PaintProjectileMeshComponent : m_WaterProjectileMeshComponent;
+	pECS->AddComponent<MeshComponent>(projectileEntity, meshComp);
+
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
-		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, { 0.3f, 0.3f, 0.3f }}),
+		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, glm::vec3(1.0f)}),
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
-		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {meshComp}),
 		/* Shape Type */		EShapeType::SIMULATION,
+		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
+		/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 		/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
 		/* Velocity */			initialVelocity
 	};
 
-	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo);
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo, 0.3f);
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 
 	// Play gun fire
@@ -250,7 +253,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Is this safe? Concurrency issues?

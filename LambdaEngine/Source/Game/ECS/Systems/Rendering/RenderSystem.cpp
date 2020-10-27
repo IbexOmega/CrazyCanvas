@@ -52,7 +52,7 @@ namespace LambdaEngine
 			transformGroup.Rotation.Permissions	= R;
 
 			SystemRegistration systemReg = {};
-			systemReg.Phase = g_LastPhase;
+			systemReg.Phase = LAST_PHASE;
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
@@ -146,7 +146,7 @@ namespace LambdaEngine
 				{ R, MeshPaintComponent::Type() }
 			};
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(RenderSystem), systemReg);
 		}
 
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
@@ -1237,7 +1237,7 @@ namespace LambdaEngine
 					{
 						instance.CustomIndex |= textureIndex;
 					}
-				}	
+				}
 
 				Sampler* pNearestSampler = Sampler::GetNearestSampler();
 				ResourceUpdateDesc unwrappedTextureUpdate = {};

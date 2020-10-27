@@ -28,6 +28,7 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
 
 #include "Input/API/Input.h"
@@ -49,9 +50,12 @@
 #include "NoesisPCH.h"
 
 #include "World/LevelManager.h"
-#include "World/Level.h"
+
+#include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
+
+#include "Multiplayer/Packet/PacketType.h"
 
 #include <imgui.h>
 
@@ -68,20 +72,21 @@ SandboxState::~SandboxState()
 	}
 
 	SAFEDELETE(m_pRenderGraphEditor);
-	SAFEDELETE(m_pLevel);
 }
 
 void SandboxState::Init()
 {
+	ClientSystem::GetInstance();
+
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
 	// Initialize Systems
+	m_MultiplayerClient.InitInternal();
 	WeaponSystem::GetInstance()->Init();
 	TrackSystem::GetInstance().Init();
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &SandboxState::OnPacketReceived);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
 	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
@@ -93,19 +98,24 @@ void SandboxState::Init()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-
-	// Scene
+	// Load Match
 	{
-		m_pLevel = LevelManager::LoadLevel(0);
-		MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
+		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+		MatchDescription matchDescription =
+		{
+			.LevelHash = levelHashes[0]
+		};
+
+		Match::CreateMatch(&matchDescription);
 	}
 
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
 		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
-		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
-		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true);
+		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
+		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
 		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
 		TArray<GUID_Lambda> walking		= ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
@@ -356,10 +366,17 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	m_pRenderGraphEditor->Update();
 	LambdaEngine::Profiler::Tick(delta);
 
+	m_MultiplayerClient.TickMainThreadInternal(delta);
+
 	if constexpr (IMGUI_ENABLED)
 	{
 		RenderImgui();
 	}
+}
+
+void SandboxState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }
 
 void SandboxState::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)
@@ -493,77 +510,4 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 
 	return true;
-}
-
-bool SandboxState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
-{
-	using namespace LambdaEngine;
-
-	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
-	{
-		BinaryDecoder decoder(event.pPacket);
-		bool isLocal = decoder.ReadBool();
-		int32 networkUID = decoder.ReadInt32();
-		glm::vec3 position = decoder.ReadVec3();
-
-		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-		const CameraDesc cameraDesc =
-		{
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width = (float)window->GetWidth(),
-			.Height = (float)window->GetHeight(),
-			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
-		};
-
-		TArray<GUID_Lambda> animations;
-		bool animationsExist = ResourceManager::GetAnimationGUIDsFromMeshName("Robot/Standard Walk.fbx", animations);
-		const uint32 robotGUID = ResourceManager::GetMeshGUID("Robot/Standard Walk.fbx");
-
-		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		if (animationsExist)
-		{
-			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
-		}
-
-		CreatePlayerDesc createPlayerDesc =
-		{
-			.IsLocal			= isLocal,
-			.NetworkUID			= networkUID,
-			.pClient			= event.pClient,
-			.Position			= position,
-			.Forward			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-			.Scale				= glm::vec3(1.0f),
-			.TeamIndex			= 0,
-			.pCameraDesc		= &cameraDesc,
-			.MeshGUID			= robotGUID,
-			.AnimationComponent = robotAnimationComp,
-		};
-
-		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
-
-#if 1
-		// Create a player to shoot at
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		if (animationsExist)
-		{
-			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
-		}
-
-		createPlayerDesc.IsLocal			= false;
-		createPlayerDesc.TeamIndex			= 2;
-		createPlayerDesc.Position.x			= -3.0f;
-		createPlayerDesc.Position.y			= 0.75f;
-		createPlayerDesc.Position.z			= -3.0f;
-		createPlayerDesc.NetworkUID			+= (int32)1;
-		createPlayerDesc.AnimationComponent = robotAnimationComp;
-		m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
-#endif
-
-		return true;
-	}
-
-	return false;
 }

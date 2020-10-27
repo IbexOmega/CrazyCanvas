@@ -18,10 +18,9 @@ namespace LambdaEngine
 		bool Start();
 		void Stop();
 
-		void FixedTickMainThread(Timestamp deltaTime);
 		void TickMainThread(Timestamp deltaTime);
 
-		int32 GetSimulationTick() const;
+		ServerBase* GetServer();
 
 	protected:
 		virtual IClientRemoteHandler* CreateClientHandler() override;
@@ -44,7 +43,6 @@ namespace LambdaEngine
 		ServerSystem(const String& name);
 
 	private:
-		static void StaticFixedTickMainThread(Timestamp deltaTime);
 		static void StaticTickMainThread(Timestamp deltaTime);
 		static void StaticRelease();
 

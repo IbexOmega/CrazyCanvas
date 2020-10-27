@@ -39,7 +39,7 @@ void HUDSystem::Init()
 		{R, PlayerLocalComponent::Type()}
 	};
 
-	RegisterSystem(systemReg);
+	RegisterSystem(TYPE_NAME(HUDSystem), systemReg);
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
