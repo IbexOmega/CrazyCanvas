@@ -66,7 +66,6 @@ private:
 	bool CheckServerStatus();
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
-	void HostServer();
 	bool StartUpServer(std::string pApplicationName, std::string pCommandLine);
 	void PopulateServerInfo();
 
@@ -74,6 +73,7 @@ private:
 
 private:
 
+	bool m_HasHostedServer = false;
 	bool m_RayTracingEnabled = false;
 	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;

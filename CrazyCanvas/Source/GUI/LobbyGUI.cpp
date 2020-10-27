@@ -210,10 +210,13 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	{
 		ErrorPopUp(HOST_ERROR);
 	}
-	else
+	else if(!m_HasHostedServer)
 	{
 		//start Server with populated struct
 		NotiPopUP(HOST_NOTIFICATION);
+
+		m_HasHostedServer = true;
+
 		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
 		//LambdaEngine::GUIApplication::SetView(nullptr);
 	}
@@ -295,18 +298,6 @@ bool LobbyGUI::CheckServerStatus()
 	}
 
 	return false;
-}
-
-void LobbyGUI::HostServer()
-{
-	/*
-	NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
-	BinaryEncoder encoder3(pPacket);
-	encoder3.WriteBool(true);
-	encoder3.WriteInt32(0);
-	encoder3.WriteVec3(glm::vec3(0, 2, 0));
-	OnPacketReceived(m_pClient, pPacket);
-	m_pClient->ReturnPacket(pPacket);*/
 }
 
 bool LobbyGUI::StartUpServer(std::string pApplicationName, std::string pCommandLine)
