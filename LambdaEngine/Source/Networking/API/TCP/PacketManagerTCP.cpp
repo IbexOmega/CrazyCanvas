@@ -42,7 +42,11 @@ namespace LambdaEngine
 			}
 		}
 
+#ifdef LAMBDA_CONFIG_DEBUG
+		m_SegmentPool.FreeSegments(packetsToFree, "PacketManagerTCP::FindSegmentsToReturn");
+#else
 		m_SegmentPool.FreeSegments(packetsToFree);
+#endif
 
 
 #ifdef LAMBDA_CONFIG_DEBUG

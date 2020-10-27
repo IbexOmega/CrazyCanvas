@@ -234,6 +234,7 @@ namespace LambdaEngine
 			// PointLight PointLights[] unbounded
 		};
 
+
 	public:
 		~RenderSystem() = default;
 
@@ -309,6 +310,7 @@ namespace LambdaEngine
 		void BuildTLAS(CommandList* pCommandList);
 		void UpdateLightsBuffer(CommandList* pCommandList);
 		void UpdatePointLightTextureResource(CommandList* pCommandList);
+		void UpdatePaintMaskColorBuffer(CommandList* pCommandList);
 
 		void UpdateRenderGraph();
 
@@ -341,6 +343,7 @@ namespace LambdaEngine
 		THashTable<Entity, uint32>	m_EntityToPointLight;
 		THashTable<uint32, Entity>	m_PointLightToEntity;
 		TArray<PointLight>			m_PointLights;
+		TArray<glm::vec4>			m_PaintMaskColors;
 		TArray<Texture*>			m_CubeTextures;
 		TArray<TextureView*>		m_CubeTextureViews;
 		TArray<TextureView*>		m_CubeSubImageTextureViews;
@@ -370,10 +373,12 @@ namespace LambdaEngine
 		// Per Frame
 		PerFrameBuffer		m_PerFrameData;
 
-		Buffer* m_ppLightsStagingBuffer[BACK_BUFFER_COUNT] = {nullptr};
+		Buffer* m_ppLightsStagingBuffer[BACK_BUFFER_COUNT]	= {nullptr};
 		Buffer* m_pLightsBuffer								= nullptr;
 		Buffer* m_ppPerFrameStagingBuffers[BACK_BUFFER_COUNT];
-		Buffer* m_pPerFrameBuffer			= nullptr;
+		Buffer* m_pPerFrameBuffer							= nullptr;
+		Buffer* m_ppPaintMaskColorStagingBuffers[BACK_BUFFER_COUNT];
+		Buffer*	m_pPaintMaskColorBuffer 					= nullptr;
 
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
@@ -399,6 +404,7 @@ namespace LambdaEngine
 		bool						m_MaterialsResourceDirty			= false;
 		bool						m_LightsResourceDirty				= false;
 		bool						m_PerFrameResourceDirty				= true;
+		bool						m_PaintMaskColorsResourceDirty		= true;
 		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;

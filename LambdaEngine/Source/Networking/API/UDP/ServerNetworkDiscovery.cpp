@@ -15,9 +15,11 @@ namespace LambdaEngine
 		m_Transceiver(),
 		m_Statistics(),
 		m_Lock(),
-		m_NameOfGame()
+		m_NameOfGame(),
+		m_ServerUID(0)
 	{
 		m_Transceiver.SetIgnoreSaltMissmatch(true);
+		m_ServerUID = Random::UInt64();
 	}
 
 	ServerNetworkDiscovery::~ServerNetworkDiscovery()
@@ -123,7 +125,11 @@ namespace LambdaEngine
 			if (m_Transceiver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
 				HandleReceivedPacket(sender, packets[0]);
 
+#ifdef LAMBDA_CONFIG_DEBUG
+			m_SegmentPool.FreeSegments(packets, "ServerNetworkDiscovery::RunReceiver");
+#else
 			m_SegmentPool.FreeSegments(packets);
+#endif
 		}
 	}
 
@@ -134,7 +140,7 @@ namespace LambdaEngine
 			BinaryDecoder decoder(pPacket);
 			if (decoder.ReadString() == m_NameOfGame)
 			{
-				TQueue<NetworkSegment*> packets;
+				std::set<NetworkSegment*, NetworkSegmentUIDOrder> packets;
 				TSet<uint32> reliableUIDs;
 
 #ifdef LAMBDA_DEBUG
@@ -144,11 +150,12 @@ namespace LambdaEngine
 #endif
 
 				pResponse->GetHeader().Type = NetworkSegment::TYPE_NETWORK_DISCOVERY;
-				packets.push(pResponse);
+				packets.insert(pResponse);
 
 				BinaryEncoder encoder(pResponse);
 				encoder.WriteString(m_NameOfGame);
 				encoder.WriteUInt16(m_PortOfGameServer);
+				encoder.WriteUInt64(m_ServerUID);
 				m_pHandler->OnNetworkDiscoveryPreTransmit(encoder);
 
 				m_Transceiver.Transmit(&m_SegmentPool, packets, reliableUIDs, sender, &m_Statistics);

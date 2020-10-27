@@ -1,5 +1,6 @@
 #include "ECS/JobScheduler.h"
 
+#include "ECS/ECSCore.h"
 #include "ECS/EntitySubscriber.h"
 #include "Threading/API/ThreadPool.h"
 
@@ -7,17 +8,21 @@
 
 namespace LambdaEngine
 {
-    JobScheduler::JobScheduler()
-        :m_CurrentPhase(0u)
+    JobScheduler::JobScheduler() :
+            m_CurrentPhase(0u)
+        ,   m_DeltaTime(0.0f)
     {}
 
-    void JobScheduler::Tick()
+    void JobScheduler::Tick(float32 dt)
     {
+        m_DeltaTime = dt;
+
         std::unique_lock<std::mutex> uLock(m_Lock);
         SetPhase(0u);
+        AccumulateRegularJobs();
 
-        // m_CurrentPhase == g_PhaseCount means all sytems are finished, and only post-systems jobs are executed
-        while (m_CurrentPhase <= g_PhaseCount)
+        // m_CurrentPhase == PHASE_COUNT means all regular jobs are finished, and only post-systems jobs are executed
+        while (m_CurrentPhase <= PHASE_COUNT)
         {
             const Job* pJob = nullptr;
             do
@@ -44,7 +49,7 @@ namespace LambdaEngine
 
                 if (!PhaseJobsExist())
                 {
-                    SetPhase(m_CurrentPhase + 1u);
+                    NextPhase();
                 }
             }
             else
@@ -66,7 +71,7 @@ namespace LambdaEngine
     void JobScheduler::ScheduleJobASAP(const Job& job)
     {
         std::scoped_lock<std::mutex> lock(m_Lock);
-        uint32 phase = m_CurrentPhase >= m_Jobs.size() ? 0u : m_CurrentPhase;
+        const uint32 phase = m_CurrentPhase >= m_Jobs.size() ? 0u : m_CurrentPhase;
         m_Jobs[phase].EmplaceBack(job);
         m_JobIndices[phase].PushBack(m_Jobs[phase].GetSize() - 1u);
 
@@ -78,24 +83,24 @@ namespace LambdaEngine
         std::scoped_lock<std::mutex> lock(m_Lock);
 
         // Push jobs
-        uint32 oldJobsCount = m_Jobs[phase].GetSize();
+        const uint32 oldJobsCount = m_Jobs[phase].GetSize();
         m_Jobs[phase].Resize(oldJobsCount + jobs.GetSize());
         std::copy_n(jobs.begin(), jobs.GetSize(), &m_Jobs[phase][oldJobsCount]);
 
         // Push job indices
         TArray<uint32>& jobIndices = m_JobIndices[phase];
-        uint32 oldIndicesCount = m_JobIndices[phase].GetSize();
+        const uint32 oldIndicesCount = m_JobIndices[phase].GetSize();
         m_JobIndices[phase].Resize(oldIndicesCount + jobs.GetSize());
         std::iota(&jobIndices[oldIndicesCount - 1u], &jobIndices.GetBack(), oldJobsCount);
 
         m_ScheduleTimeoutCvar.notify_all();
     }
 
-    uint32 JobScheduler::ScheduleRegularJob(const Job& job, uint32_t phase)
+    uint32 JobScheduler::ScheduleRegularJob(const RegularJob& job, uint32_t phase)
     {
         std::scoped_lock<std::mutex> lock(m_Lock);
 
-        uint32 jobID = m_RegularJobIDGenerator.GenID();
+        const uint32 jobID = m_RegularJobIDGenerator.GenID();
         m_RegularJobs[phase].PushBack(job, jobID);
 
         return jobID;
@@ -124,15 +129,23 @@ namespace LambdaEngine
             }
         }
 
-        if (m_CurrentPhase < g_PhaseCount)
+        if (m_CurrentPhase < PHASE_COUNT && !m_RegularJobsToAccumulate[m_CurrentPhase].empty())
         {
-            for (uint32& jobID : m_RegularJobIDsToTick)
+            TArray<uint32>& regularJobIDsToTick = m_RegularJobIDsToTick[m_CurrentPhase];
+            for (uint32& jobID : regularJobIDsToTick)
             {
-                const Job& job = m_RegularJobs[m_CurrentPhase].IndexID(jobID);
+                RegularJob& job = m_RegularJobs[m_CurrentPhase].IndexID(jobID);
+
                 if (CanExecute(job))
                 {
-                    jobID = m_RegularJobIDsToTick.GetBack();
-                    m_RegularJobIDsToTick.PopBack();
+                    job.Accumulator -= job.TickPeriod;
+                    if (job.TickPeriod <= 0.0f || job.Accumulator < job.TickPeriod)
+                    {
+                        m_RegularJobsToAccumulate[m_CurrentPhase].erase(jobID);
+                    }
+
+                    jobID = regularJobIDsToTick.GetBack();
+                    regularJobIDsToTick.PopBack();
 
                     return &job;
                 }
@@ -149,6 +162,8 @@ namespace LambdaEngine
         for (const ComponentAccess& componentReg : job.Components)
         {
             auto processingComponentItr = m_ProcessingComponents.find(componentReg.pTID);
+            /*  processingComponentItr->second is the amount of jobs currently reading from the component type.
+                If the count is zero, a job is writing to the component type. */
             if (processingComponentItr != m_ProcessingComponents.end() && (componentReg.Permissions == RW || processingComponentItr->second == 0))
             {
                 return false;
@@ -156,6 +171,12 @@ namespace LambdaEngine
         }
 
         return true;
+    }
+
+    bool JobScheduler::CanExecuteRegularJob(const RegularJob& job) const
+    {
+        const Job& simpleJob = job;
+        return job.Accumulator >= job.TickPeriod && CanExecute(simpleJob);
     }
 
     void JobScheduler::ExecuteJob(Job job)
@@ -170,7 +191,7 @@ namespace LambdaEngine
     {
         for (const ComponentAccess& componentReg : job.Components)
         {
-            uint32 isReadOnly = componentReg.Permissions == R;
+            const uint32 isReadOnly = componentReg.Permissions == R;
 
             auto processingComponentItr = m_ProcessingComponents.find(componentReg.pTID);
             if (processingComponentItr == m_ProcessingComponents.end())
@@ -205,21 +226,69 @@ namespace LambdaEngine
 
     void JobScheduler::SetPhase(uint32_t phase)
     {
-        if (m_CurrentPhase < g_PhaseCount + 1)
+        if (m_CurrentPhase <= PHASE_COUNT)
         {
             m_Jobs[m_CurrentPhase].Clear();
         }
 
         m_CurrentPhase = phase;
+    }
 
-        if (m_CurrentPhase < g_PhaseCount)
+    void JobScheduler::NextPhase()
+    {
+        uint32 upcomingPhase = m_CurrentPhase + 1u;
+        // All phases have been processed. Some might need to be replayed to accumulate regular jobs
+        if (m_CurrentPhase == PHASE_COUNT)
         {
-            m_RegularJobIDsToTick = m_RegularJobs[m_CurrentPhase].GetIDs();
+            for (uint32 phase = 0; phase < PHASE_COUNT; phase++)
+            {
+                const std::unordered_set<uint32>& regularJobsToAccumulate = m_RegularJobsToAccumulate[phase];
+                if (!regularJobsToAccumulate.empty())
+                {
+                    // Find which regular jobs need accumulating
+                    TArray<uint32>& regularJobIDsToTick = m_RegularJobIDsToTick[phase];
+                    for (uint32 jobID : regularJobsToAccumulate)
+                    {
+                        regularJobIDsToTick.PushBack(jobID);
+                    }
+
+                    upcomingPhase = phase;
+                    break;
+                }
+            }
+        }
+
+        ECSCore* pECS = ECSCore::GetInstance();
+        pECS->PerformComponentRegistrations();
+        pECS->PerformComponentDeletions();
+        pECS->PerformEntityDeletions();
+        SetPhase(upcomingPhase);
+    }
+
+    void JobScheduler::AccumulateRegularJobs()
+    {
+        for (uint32 phase = 0; phase < PHASE_COUNT; phase++)
+        {
+            IDDVector<RegularJob>& regularJobs = m_RegularJobs[phase];
+            const TArray<uint32>& jobIDs = regularJobs.GetIDs();
+            TArray<uint32>& regularJobIDsToTick = m_RegularJobIDsToTick[phase];
+
+            for (uint32 jobIdx = 0; jobIdx < regularJobs.Size(); jobIdx++)
+            {
+                RegularJob& regularJob = regularJobs[jobIdx];
+                // Increase the accumulator only if the regular job has a non-zero tick period
+                regularJob.Accumulator += m_DeltaTime * (regularJob.TickPeriod > 0.0f);
+                if (regularJob.Accumulator >= regularJob.TickPeriod)
+                {
+                    m_RegularJobsToAccumulate[phase].insert(jobIDs[jobIdx]);
+                    regularJobIDsToTick.PushBack(jobIDs[jobIdx]);
+                }
+            }
         }
     }
 
     bool JobScheduler::PhaseJobsExist() const
     {
-        return !m_RegularJobIDsToTick.IsEmpty() || !m_JobIndices[m_CurrentPhase].IsEmpty();
+        return (m_CurrentPhase < PHASE_COUNT && !m_RegularJobIDsToTick[m_CurrentPhase].IsEmpty()) || !m_JobIndices[m_CurrentPhase].IsEmpty();
     }
 }

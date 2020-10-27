@@ -50,6 +50,7 @@ namespace LambdaEngine
         SegmentPool m_SegmentPool;
         SpinLock m_Lock;
         uint16 m_PortOfGameServer;
+        uint64 m_ServerUID;
         String m_NameOfGame;
         INetworkDiscoveryServer* m_pHandler;
     };

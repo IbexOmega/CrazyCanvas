@@ -17,7 +17,8 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
+layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }	b_PaintMaskColor;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -44,15 +45,17 @@ void main()
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 	
-	vec3 shadingNormal		= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal			= normalize(TBN * normalize(shadingNormal));
+	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal				= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
-	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
-
-	vec3 paintMask				= texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).rgb;
+	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
+	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
+	
+	uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
+	uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).g);
+	float shouldPaint 			= float((serverData & 0x1) | (clientData & 0x1));
 
 	//0
 	out_Position				= vec4(in_WorldPosition, 0.0f);
@@ -64,18 +67,28 @@ void main()
 	//2
 	vec3 storedMaterial			= vec3(
 									materialParameters.AO * sampledCombinedMaterial.b, 
-									mix(materialParameters.Roughness * sampledCombinedMaterial.r, 1.0f, paintMask.r), 
+									mix(materialParameters.Roughness * sampledCombinedMaterial.r, 1.0f, shouldPaint), 
 									materialParameters.Metallic * sampledCombinedMaterial.g);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//3
-	// vec2 storedShadingNormal  	= DirToOct(shadingNormal);
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//4
-	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
+	vec2 screenVelocity			= (prevNDC - currentNDC);
 	out_Velocity				= vec2(screenVelocity);
 
 	// 5
-	out_Albedo 					= mix(out_Albedo, vec4(1.0f, 1.0f, 1.0f, 1.f), paintMask.r);
+	uint clientTeam				= (clientData >> 1) & 0x7F;
+	uint serverTeam				= (serverData >> 1) & 0x7F;
+	uint clientPainting			= clientData & 0x1;
+	uint team = serverTeam;
+	if (clientPainting > 0)
+		team = clientTeam;
+
+	// Assume the correct amount of colors have been sent in
+	vec4 color = b_PaintMaskColor.val[team];
+
+	// Mix team color
+	out_Albedo					= mix(out_Albedo, color.rgb, shouldPaint);
 }

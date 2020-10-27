@@ -43,6 +43,7 @@ namespace LambdaEngine
 	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS					= "SCENE_COMBINED_MATERIAL_MAPS";
 
 	constexpr const char* PAINT_MASK_TEXTURES 					= "PAINT_MASK_TEXTURES";
+	constexpr const char* PAINT_MASK_COLORS						= "PAINT_MASK_COLORS";
 
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4;
 

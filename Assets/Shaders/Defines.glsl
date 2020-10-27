@@ -15,6 +15,8 @@
 #define NO_TEXTURES_DRAW_EXTENSION_SET_INDEX 2
 #define NO_BUFFERS_OR_TEXTURES_DRAW_EXTENSION_SET_INDEX 1
 
+#define UNWRAP_DRAW_SET_INDEX 3
+
 #define MAX_UNIQUE_MATERIALS 32
 
 const float INV_PI			= 1.0f / 3.14159265359f;
@@ -200,6 +202,15 @@ struct SAtlasData
 	uint	RowCount;
 	uint	ColCount;
 	uint	AtlasIndex;
+};
+
+struct SUnwrapData
+{
+	vec4 TargetPosition;
+	vec4 TargetDirection;
+	uint PaintMode;
+	uint RemoteMode;
+	uint TeamMode;
 };
 
 #endif

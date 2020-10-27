@@ -391,7 +391,15 @@ namespace LambdaEngine
 
 	bool GameConsole::Release()
 	{
-		return true;
+		static bool s_IsReleased = false;
+		GameConsole& console = GameConsole::Get();
+		if (!s_IsReleased)
+		{
+			s_IsReleased = true;
+			return EventQueue::UnregisterEventHandler(&console, &GameConsole::OnKeyPressed);
+		}
+
+		return false;
 	}
 
 	void GameConsole::Tick()
@@ -621,7 +629,7 @@ namespace LambdaEngine
 
 	GameConsole::~GameConsole()
 	{
-		EventQueue::UnregisterEventHandler(this, &GameConsole::OnKeyPressed);
+		GameConsole::Get().Release();
 	}
 
 	int GameConsole::ExecCommand(const std::string& data)
@@ -677,7 +685,7 @@ namespace LambdaEngine
 					PushError("'" + token + "' is an invalid flag!");
 					return 0;
 				}
-				
+
 				flags[name] = flagIt->second;
 				preFlag = &flags[name];
 			}

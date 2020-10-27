@@ -5,13 +5,14 @@
 #include "ECS/EntityPublisher.h"
 #include "ECS/EntityRegistry.h"
 #include "ECS/JobScheduler.h"
-#include "ECS/System.h"
+#include "ECS/ECSVisualizer.h"
 #include "Utilities/IDGenerator.h"
 
 namespace LambdaEngine
 {
 	class EntitySubscriber;
 	class RegularWorker;
+	class System;
 
 	// EntitySerializationHeader is written to the beginning of an entity serialization
 #pragma pack(push, 1)
@@ -58,6 +59,12 @@ namespace LambdaEngine
 		template<typename Comp>
 		const ComponentArray<Comp>* GetComponentArray() const;
 
+		// Fetch a pointer to an array containing all components of a specific type.
+		IComponentArray* GetComponentArray(const ComponentType* pComponentType);
+
+		// Fetch a const pointer to an array containing all components of a specific type.
+		const IComponentArray* GetComponentArray(const ComponentType* pComponentType) const;
+
 		// RemoveComponent enqueues the removal of a component, which is performed at the end of the current/next frame.
 		template<typename Comp>
 		void RemoveComponent(Entity entity);
@@ -100,7 +107,15 @@ namespace LambdaEngine
 		*/
 		bool DeserializeEntity(const uint8* pBuffer);
 
+		void RegisterSystem(System* pSystem, uint32 regularJobID);
+		void DeregisterSystem(uint32 regularJobID);
+
+		void PerformComponentRegistrations();
+		void PerformComponentDeletions();
+		void PerformEntityDeletions();
+
         Timestamp GetDeltaTime() const { return m_DeltaTime; }
+		const IDDVector<System*>& GetSystems() const { return m_Systems; }
 
 	public:
 		static ECSCore* GetInstance() { return s_pInstance; }
@@ -111,13 +126,10 @@ namespace LambdaEngine
 		void UnsubscribeFromEntities(uint32 subscriptionID) { m_EntityPublisher.UnsubscribeFromEntities(subscriptionID); }
 
 		friend RegularWorker;
-		uint32 ScheduleRegularJob(const Job& job, uint32_t phase)   { return m_JobScheduler.ScheduleRegularJob(job, phase); };
-		void DescheduleRegularJob(uint32_t phase, uint32 jobID)     { m_JobScheduler.DescheduleRegularJob(phase, jobID); };
+		uint32 ScheduleRegularJob(const RegularJob& job, uint32_t phase)	{ return m_JobScheduler.ScheduleRegularJob(job, phase); }
+		void DescheduleRegularJob(uint32_t phase, uint32 jobID)				{ m_JobScheduler.DescheduleRegularJob(phase, jobID); }
 
 	private:
-		void PerformComponentRegistrations();
-		void PerformComponentDeletions();
-		void PerformEntityDeletions();
 		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
 	private:
@@ -125,10 +137,14 @@ namespace LambdaEngine
 		EntityPublisher m_EntityPublisher;
 		JobScheduler m_JobScheduler;
 		ComponentStorage m_ComponentStorage;
+		ECSVisualizer m_ECSVisualizer;
 
 		std::unordered_set<Entity> m_EntitiesToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToDelete;
 		TArray<std::pair<Entity, const ComponentType*>> m_ComponentsToRegister;
+
+		// Maps regular job ID to systems
+		IDDVector<System*> m_Systems;
 
 		Timestamp m_DeltaTime;
 

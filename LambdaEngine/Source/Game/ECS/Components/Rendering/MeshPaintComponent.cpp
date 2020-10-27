@@ -16,16 +16,16 @@ namespace LambdaEngine
 	MeshPaintComponent MeshPaint::CreateComponent(Entity entity, const std::string& textureName, uint32 width, uint32 height)
 	{
 		MeshPaintComponent meshPaintComponent = {};
-		char* pData = DBG_NEW char[width * height * 4];
-		memset(pData, 0, width * height * 4);
+		char* pData = DBG_NEW char[width * height * 2];
+		memset(pData, 0, width * height * 2);
 
-		meshPaintComponent.pTexture = ResourceLoader::LoadTextureArrayFromMemory(textureName, reinterpret_cast<void**>(&pData), 1, width, height, EFormat::FORMAT_R8G8B8A8_UNORM, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, true);
+		meshPaintComponent.pTexture = ResourceLoader::LoadTextureArrayFromMemory(textureName, reinterpret_cast<void**>(&pData), 1, width, height, EFormat::FORMAT_R8G8_UINT, FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, true, false);
 
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= textureName + " Texture View";
 		textureViewDesc.pTexture		= meshPaintComponent.pTexture;
 		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		textureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		textureViewDesc.Format			= EFormat::FORMAT_R8G8_UINT;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		textureViewDesc.MiplevelCount	= textureViewDesc.pTexture->GetDesc().Miplevels;
 		textureViewDesc.ArrayCount		= textureViewDesc.pTexture->GetDesc().ArrayCount;
@@ -37,7 +37,7 @@ namespace LambdaEngine
 		mipZeroTextureViewDesc.DebugName		= textureName + " Mip Zero Texture View";
 		mipZeroTextureViewDesc.pTexture			= meshPaintComponent.pTexture;
 		mipZeroTextureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		mipZeroTextureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		mipZeroTextureViewDesc.Format			= EFormat::FORMAT_R8G8_UINT;
 		mipZeroTextureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
 		mipZeroTextureViewDesc.MiplevelCount	= 1;
 		mipZeroTextureViewDesc.ArrayCount		= textureViewDesc.pTexture->GetDesc().ArrayCount;

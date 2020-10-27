@@ -3,6 +3,7 @@
 #include "ECS/ComponentOwner.h"
 #include "ECS/System.h"
 #include "Game/ECS/Components/Physics/Collision.h"
+#include "Game/ECS/Components/Physics/Transform.h"
 #include "Math/Math.h"
 #include "Physics/PhysX/ErrorCallback.h"
 #include "Physics/PhysX/PhysX.h"
@@ -13,7 +14,7 @@ namespace LambdaEngine
 {
 	using namespace physx;
 
-	struct MeshComponent;
+	struct Mesh;
 	struct PositionComponent;
 	struct ScaleComponent;
 	struct RotationComponent;
@@ -25,12 +26,29 @@ namespace LambdaEngine
 		TRIGGER		// A trigger shape does not take part in the simulation, it only generates overlap reports
 	};
 
-	enum FCollisionGroup : uint32
+	enum class ECollisionDetection
+	{
+		// Discrete collision detection is the default method. It is cheaper than continuous detection, but some collisions may be missed.
+		DISCRETE,
+		CONTINUOUS
+	};
+
+	enum class EGeometryType
+	{
+		SPHERE,
+		BOX,
+		CAPSULE, // A capsule's width is specified by its radius. Its height is radius * 2 + halfHeight * 2.
+		MESH
+	};
+
+	typedef uint32 CollisionGroup;
+	enum FCollisionGroup : CollisionGroup
 	{
 		COLLISION_GROUP_NONE	= 0,
 		COLLISION_GROUP_STATIC	= (1 << 0),
 		COLLISION_GROUP_DYNAMIC	= (1 << 1),
-		COLLISION_GROUP_PLAYER	= (1 << 2),
+
+		COLLISION_GROUP_LAST	= COLLISION_GROUP_DYNAMIC,
 	};
 
 	// EntityCollisionInfo contains information on a colliding entity.
@@ -48,21 +66,57 @@ namespace LambdaEngine
 	struct ActorUserData
 	{
 		Entity Entity;
+	};
+
+	// ShapeUserData is stored in each PxShape::userData. It is used eg. when colliding.
+	struct ShapeUserData
+	{
 		std::variant<CollisionCallback, TriggerCallback> CallbackFunction;
+		void* pUserData = nullptr;
+	};
+
+	struct ShapeCreateInfo
+	{
+		EShapeType ShapeType;
+		EGeometryType GeometryType;
+
+		union
+		{
+			//Sphere
+			float32 Radius;
+
+			//Box
+			glm::vec3 HalfExtents;
+
+			//Capsule
+			struct
+			{
+				float32 Radius;
+				float32 HalfHeight;
+			};
+
+			//Mesh
+			Mesh* pMesh;
+		} GeometryParams;
+
+		CollisionGroup CollisionGroup;				// The category of the object
+		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
+
+		std::variant<CollisionCallback, TriggerCallback> CallbackFunction;	// Optional
+
+		void* pUserData = nullptr;		// Optional userdata, must not depend on a destructor being called on release
+		uint32 UserDataSize = 0;
 	};
 
 	// CollisionCreateInfo contains information required to create a collision component
 	struct CollisionCreateInfo
 	{
 		Entity Entity;
+        ECollisionDetection DetectionMethod = ECollisionDetection::DISCRETE;
 		const PositionComponent& Position;
 		const ScaleComponent& Scale;
 		const RotationComponent& Rotation;
-		const MeshComponent& Mesh;
-		EShapeType ShapeType;
-		FCollisionGroup CollisionGroup;		// The category of the object
-		uint32 CollisionMask;				// Includes the masks of the groups this object collides with
-		std::variant<CollisionCallback, TriggerCallback> CallbackFunction;	// Optional
+		TArray<ShapeCreateInfo> Shapes;
 	};
 
 	struct DynamicCollisionCreateInfo : CollisionCreateInfo
@@ -76,7 +130,7 @@ namespace LambdaEngine
 		Entity Entity;
 		const PositionComponent& Position;
 		const RotationComponent& Rotation;
-		FCollisionGroup CollisionGroup;		// The category of the object
+		CollisionGroup CollisionGroup;		// The category of the object
 		uint32 CollisionMask;				// Includes the masks of the groups this object collides with
 	};
 
@@ -91,24 +145,19 @@ namespace LambdaEngine
 		void Tick(Timestamp deltaTime) override final;
 
 		/* Static collision actors */
-		StaticCollisionComponent CreateStaticCollisionSphere(const CollisionCreateInfo& collisionInfo);
-		StaticCollisionComponent CreateStaticCollisionBox(const CollisionCreateInfo& collisionInfo);
-		StaticCollisionComponent CreateStaticCollisionCapsule(const CollisionCreateInfo& collisionInfo);
-		StaticCollisionComponent CreateStaticCollisionMesh(const CollisionCreateInfo& collisionInfo);
+		StaticCollisionComponent CreateStaticActor(const CollisionCreateInfo& collisionInfo);
 
 		/* Dynamic collision actors */
-		DynamicCollisionComponent CreateDynamicCollisionSphere(const DynamicCollisionCreateInfo& collisionInfo);
-		DynamicCollisionComponent CreateDynamicCollisionBox(const DynamicCollisionCreateInfo& collisionInfo);
-		DynamicCollisionComponent CreateDynamicCollisionCapsule(const DynamicCollisionCreateInfo& collisionInfo);
-		DynamicCollisionComponent CreateDynamicCollisionMesh(const DynamicCollisionCreateInfo& collisionInfo);
+		DynamicCollisionComponent CreateDynamicActor(const DynamicCollisionCreateInfo& collisionInfo);
 
 		/* Character controllers */
 		// CreateCharacterCapsule creates a character collider capsule. Total height is height + radius * 2 (+ contactOffset * 2)
-		CharacterColliderComponent CreateCharacterCapsule(const CharacterColliderCreateInfo& characterColliderInfo, float height, float radius);
+		CharacterColliderComponent CreateCharacterCapsule(const CharacterColliderCreateInfo& characterColliderInfo, float32 height, float32 radius);
 		// CreateCharacterBox creates a character collider box
 		CharacterColliderComponent CreateCharacterBox(const CharacterColliderCreateInfo& characterColliderInfo, const glm::vec3& halfExtents);
 
-		PxScene* GetScene() { return m_pScene; }
+		static float32 CalculateSphereRadius(const Mesh* pMesh);
+		void CalculateCapsuleDimensions(Mesh* pMesh, float32& radius, float32& halfHeight);
 
 		/* Implement PxSimulationEventCallback */
 		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs) override final;
@@ -118,14 +167,15 @@ namespace LambdaEngine
 		void onSleep(PxActor**, PxU32 ) override final {}
 		void onAdvance(const PxRigidBody*const*, const PxTransform*, const PxU32) override final {}
 
+		PxScene* GetScene() { return m_pScene; }
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
 	private:
-		PxShape* CreateCollisionSphere(const CollisionCreateInfo& collisionInfo) const;
-		PxShape* CreateCollisionBox(const CollisionCreateInfo& collisionInfo) const;
+		PxShape* CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& scale) const;
+
 		// CreateCollisionCapsule creates a sphere if no capsule can be made
-		PxShape* CreateCollisionCapsule(const CollisionCreateInfo& collisionInfo) const;
-		PxShape* CreateCollisionTriangleMesh(const CollisionCreateInfo& collisionInfo) const;
+		PxShape* CreateCollisionCapsule(float32 radius, float32 halfHeight) const;
+		PxShape* CreateCollisionTriangleMesh(const Mesh* pMesh, const glm::vec3& scale) const;
 
 		PxTransform CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const;
 
@@ -140,13 +190,13 @@ namespace LambdaEngine
 		void OnDynamicCollisionRemoval(Entity entity);
 		void OnCharacterColliderRemoval(Entity entity);
 
-		StaticCollisionComponent FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
-		DynamicCollisionComponent FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation = glm::identity<glm::quat>());
+		StaticCollisionComponent FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, const glm::quat& additionalRotation = glm::identity<glm::quat>());
+		DynamicCollisionComponent FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, const glm::quat& additionalRotation = glm::identity<glm::quat>());
 		CharacterColliderComponent FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc);
-		void FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape);
+		void FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor);
 
-		void TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors) const;
-		void CollisionCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints) const;
+		void TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors, const std::array<PxShape*, 2>& shapes) const;
+		void CollisionCallbacks(const std::array<PxRigidActor*, 2>& actors, const std::array<PxShape*, 2>& shapes, const TArray<PxContactPairPoint>& contactPoints) const;
 
 	private:
 		static PhysicsSystem s_Instance;
