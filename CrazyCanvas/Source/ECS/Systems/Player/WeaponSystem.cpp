@@ -19,6 +19,8 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
+static const glm::vec3 PROJECTILE_OFFSET = glm::vec3(0.0f, 1.0f, 0.0f);
+
 /*
 * WeaponSystem 
 */
@@ -169,18 +171,29 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			const TArray<PlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
 			for (const PlayerActionResponse& response : receivedPackets)
 			{
-				Fire(response.FiredAmmo, foreignEntity, response.Position, response.Rotation, response.Velocity);
+				if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
+				{
+					const glm::vec3 position = response.Position + PROJECTILE_OFFSET;
+
+					LOG_INFO("Player=%d fired at(x=%.4f, y=%.4f, z=%.4f)", foreignEntity, position.x, position.y, position.z);
+					Fire(response.FiredAmmo, foreignEntity, position, response.Rotation, response.Velocity);
+				}
 			}
 		}
 
 		// TODO: Check local response and maybe roll back
 
 		// Then handle local projectiles
-		for (Entity playerEntity : m_LocalPlayerEntities)
+		for (Entity weaponEntity : m_WeaponEntities)
 		{
-			WeaponComponent& weaponComponent = pWeaponComponents->GetData(playerEntity);
-			PacketComponent<PlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
+			WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
+			Entity playerEntity = weaponComponent.WeaponOwner;
+			if (!m_LocalPlayerEntities.HasElement(playerEntity))
+			{
+				continue;
+			}
 
+			PacketComponent<PlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
 			const bool hasAmmo		= weaponComponent.CurrentAmmunition > 0;
 			const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 			if (!hasAmmo && !isReloading)
@@ -219,7 +232,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				const glm::vec3 firePosition = positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f);
+				const glm::vec3 firePosition = positionComp.Position + PROJECTILE_OFFSET;
 				if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
 				{
 					LOG_INFO("Fire At x=%.4f y=%.4f z=%.4f", firePosition.x, firePosition.y, firePosition.z);
@@ -256,15 +269,20 @@ void WeaponSystem::Fire(
 {
 	using namespace LambdaEngine;
 
+	if (ammoType == EAmmoType::AMMO_TYPE_NONE)
+	{
+		return;
+	}
+
 	constexpr const float projectileInitialSpeed = 13.0f;
 	const glm::vec3 directionVec = GetForward(glm::normalize(direction));
-	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec * 0.3f;
+	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec;
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 	const glm::vec3 initialVelocity = playerVelocity + directionVec * projectileInitialSpeed;
 
-	LOG_INFO("Velocity=[x=%.4f, y=%.4f, z=%.4f]", initialVelocity.x, initialVelocity.y, initialVelocity.z);
+	LOG_INFO("[Fire]: At(x=%.4f, y=%.4f, z=%.4f) Velocity=(x=%.4f, y=%.4f, z=%.4f)", startPos.x, startPos.y, startPos.z, initialVelocity.x, initialVelocity.y, initialVelocity.z);
 
 	const MeshComponent& meshComp = ammoType == EAmmoType::AMMO_TYPE_PAINT ? m_PaintProjectileMeshComponent : m_WaterProjectileMeshComponent;
 

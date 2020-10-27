@@ -112,7 +112,7 @@ namespace LambdaEngine
 	struct CollisionCreateInfo
 	{
 		Entity Entity;
-        ECollisionDetection DetectionMethod = ECollisionDetection::DISCRETE;
+		ECollisionDetection DetectionMethod = ECollisionDetection::DISCRETE;
 		const PositionComponent& Position;
 		const ScaleComponent& Scale;
 		const RotationComponent& Rotation;
