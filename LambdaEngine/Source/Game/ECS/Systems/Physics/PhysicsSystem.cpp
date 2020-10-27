@@ -214,62 +214,44 @@ namespace LambdaEngine
 		}
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionSphere(const CollisionCreateInfo& collisionInfo, float32 radius)
+	StaticCollisionComponent PhysicsSystem::CreateStaticActor(const CollisionCreateInfo& collisionInfo)
 	{
-		const float32 scale = glm::compMax(collisionInfo.Scale.Scale);
-		PxShape* pShape = m_pPhysics->createShape(PxSphereGeometry(radius * scale), *m_pMaterial);
-		return FinalizeStaticCollisionActor(collisionInfo, pShape);
+		StaticCollisionComponent collisionComponent = FinalizeStaticCollisionActor(collisionInfo);
+
+		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
+		{
+			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Scale.Scale);
+
+			if (pShape != nullptr)
+			{
+				collisionComponent.pActor->attachShape(*pShape);
+
+				// Decreases the ref count to 1, which will drop to 0 when the actor is deleted
+				pShape->release();
+			}
+		}
+
+		return collisionComponent;
 	}
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionBox(const CollisionCreateInfo& collisionInfo, const glm::vec3& halfExtents)
+	DynamicCollisionComponent PhysicsSystem::CreateDynamicActor(const DynamicCollisionCreateInfo& collisionInfo)
 	{
-		const PxVec3 halfExtentsPX = { halfExtents.x, halfExtents.y, halfExtents.z };
-		PxShape* pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
-		return FinalizeStaticCollisionActor(collisionInfo, pShape);
-	}
+		DynamicCollisionComponent collisionComponent = FinalizeDynamicCollisionActor(collisionInfo);
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionCapsule(const CollisionCreateInfo& collisionInfo, float32 radius, float32 halfHeight)
-	{
-		PxShape* pShape = CreateCollisionCapsule(radius, halfHeight);
+		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
+		{
+			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Scale.Scale);
 
-		// Rotate around Z-axis to get the capsule pointing upwards
-		const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
-		return FinalizeStaticCollisionActor(collisionInfo, pShape, uprightRotation);
-	}
+			if (pShape != nullptr)
+			{
+				collisionComponent.pActor->attachShape(*pShape);
 
-	StaticCollisionComponent PhysicsSystem::CreateStaticCollisionMesh(const CollisionCreateInfo& collisionInfo, const Mesh* pMesh)
-	{
-		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo, pMesh);
-		return FinalizeStaticCollisionActor(collisionInfo, pShape);
-	}
+				// Decreases the ref count to 1, which will drop to 0 when the actor is deleted
+				pShape->release();
+			}
+		}
 
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionSphere(const DynamicCollisionCreateInfo& collisionInfo, float32 radius)
-	{
-		const float32 scale = glm::compMax(collisionInfo.Scale.Scale);
-		PxShape* pShape = m_pPhysics->createShape(PxSphereGeometry(radius * scale), *m_pMaterial);
-		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
-	}
-
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionBox(const DynamicCollisionCreateInfo& collisionInfo, const glm::vec3& halfExtents)
-	{
-		const PxVec3 halfExtentsPX = { halfExtents.x, halfExtents.y, halfExtents.z };
-		PxShape* pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
-		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
-	}
-
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionCapsule(const DynamicCollisionCreateInfo& collisionInfo, float32 radius, float32 halfHeight)
-	{
-		PxShape* pShape = CreateCollisionCapsule(radius, halfHeight);
-
-		// Rotate around Z-axis to get the capsule pointing upwards
-		const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
-		return FinalizeDynamicCollisionActor(collisionInfo, pShape, uprightRotation);
-	}
-
-	DynamicCollisionComponent PhysicsSystem::CreateDynamicCollisionMesh(const DynamicCollisionCreateInfo& collisionInfo, const Mesh* pMesh)
-	{
-		PxShape* pShape = CreateCollisionTriangleMesh(collisionInfo, pMesh);
-		return FinalizeDynamicCollisionActor(collisionInfo, pShape);
+		return collisionComponent;
 	}
 
 	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderCreateInfo& characterColliderInfo, float32 height, float32 radius)
@@ -335,7 +317,7 @@ namespace LambdaEngine
 			if (contactPair.events & (PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_CONTACT_POINTS))
 			{
 				contactPair.extractContacts(contactPoints.GetData(), contactPair.contactCount);
-				CollisionCallbacks({ pairHeader.actors[0], pairHeader.actors[1] }, contactPoints);
+				CollisionCallbacks({ pairHeader.actors[0], pairHeader.actors[1] }, { contactPair.shapes[0], contactPair.shapes[1] }, contactPoints);
 			}
 		}
 	}
@@ -352,8 +334,84 @@ namespace LambdaEngine
 				continue;
 			}
 
-			TriggerCallbacks({ triggerPair.triggerActor, triggerPair.otherActor });
+			TriggerCallbacks({ triggerPair.triggerActor, triggerPair.otherActor }, { triggerPair .triggerShape, triggerPair.otherShape });
 		}
+	}
+
+	PxShape* PhysicsSystem::CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& scale) const
+	{
+		PxShape* pShape = nullptr;
+
+		switch (shapeCreateInfo.GeometryType)
+		{
+			case EGeometryType::SPHERE:
+			{
+				const float32 maxScale = glm::compMax(scale);
+				pShape = m_pPhysics->createShape(PxSphereGeometry(shapeCreateInfo.GeometryParams.Radius * maxScale), *m_pMaterial);
+				break;
+			}
+			case EGeometryType::BOX:
+			{
+				const PxVec3 halfExtentsPX = 
+				{ 
+					scale.x * shapeCreateInfo.GeometryParams.HalfExtents.x, 
+					scale.y * shapeCreateInfo.GeometryParams.HalfExtents.y, 
+					scale.z * shapeCreateInfo.GeometryParams.HalfExtents.z 
+				};
+				pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
+				break;
+			}
+			case EGeometryType::CAPSULE:
+			{
+				pShape = CreateCollisionCapsule(shapeCreateInfo.GeometryParams.Radius, shapeCreateInfo.GeometryParams.HalfHeight);
+
+				// Rotate around Z-axis to get the capsule pointing upwards
+				const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
+				const PxTransform transformPX = CreatePxTransform(glm::vec3(0.0f), uprightRotation);
+				pShape->setLocalPose(transformPX);
+				break;
+			}
+			case EGeometryType::MESH:
+			{
+				pShape = CreateCollisionTriangleMesh(shapeCreateInfo.GeometryParams.pMesh, scale);
+				break;
+			}
+		}
+
+		if (pShape != nullptr)
+		{
+			// Set shape's filter data
+			PxFilterData filterData;
+			filterData.word0 = (PxU32)shapeCreateInfo.CollisionGroup;
+			filterData.word1 = (PxU32)shapeCreateInfo.CollisionMask;
+			pShape->setSimulationFilterData(filterData);
+			pShape->setQueryFilterData(filterData);
+
+			if (shapeCreateInfo.ShapeType == EShapeType::TRIGGER)
+			{
+				pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+				pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+			}
+			else if (shapeCreateInfo.ShapeType == EShapeType::SIMULATION)
+			{
+				pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
+				pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
+			}
+
+			// Set shape user data
+			ShapeUserData* pShapeUserData = DBG_NEW ShapeUserData;
+			pShapeUserData->CallbackFunction = shapeCreateInfo.CallbackFunction;
+
+			if (shapeCreateInfo.pUserData != nullptr && shapeCreateInfo.UserDataSize > 0)
+			{
+				pShapeUserData->pUserData = DBG_NEW byte[shapeCreateInfo.UserDataSize];
+				memcpy(pShapeUserData->pUserData, shapeCreateInfo.pUserData, shapeCreateInfo.UserDataSize);
+			}
+
+			pShape->userData = pShapeUserData;
+		}
+
+		return pShape;
 	}
 
 	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight) const
@@ -373,7 +431,7 @@ namespace LambdaEngine
 		return pShape;
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const CollisionCreateInfo& staticCollisionInfo, const Mesh* pMesh) const
+	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const Mesh* pMesh, const glm::vec3& scale) const
 	{
 		/* Perform mesh 'cooking'; generate an optimized collision mesh from triangle data */
 		const TArray<Vertex>& vertices = pMesh->Vertices;
@@ -403,8 +461,6 @@ namespace LambdaEngine
 		PxTriangleMesh* pTriangleMesh = m_pPhysics->createTriangleMesh(readBuffer);
 
 		// Create a geometry instance of the mesh and scale it
-		const glm::vec3 scale = staticCollisionInfo.Scale.Scale;
-
 		PxTriangleMeshGeometry triangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
 		return m_pPhysics->createShape(triangleMeshGeometry, *m_pMaterial);
 	}
@@ -431,7 +487,8 @@ namespace LambdaEngine
 	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent)
 	{
 		PxActor* pActor = characterColliderComponent.pController->getActor();
-		SAFEDELETE(pActor->userData);
+		delete reinterpret_cast<ActorUserData*>(pActor->userData);
+		pActor->userData = nullptr;
 		PX_RELEASE(characterColliderComponent.pController);
 		SAFEDELETE(characterColliderComponent.Filters.mFilterData);
 	}
@@ -440,7 +497,24 @@ namespace LambdaEngine
 	{
 		if (pActor)
 		{
-			delete pActor->userData;
+			delete reinterpret_cast<ActorUserData*>(pActor->userData);
+			pActor->userData = nullptr;
+
+			TArray<PxShape*> pxShapes(pActor->getNbShapes());
+			pActor->getShapes(pxShapes.GetData(), pxShapes.GetSize());
+
+			for (PxShape* pShape : pxShapes)
+			{
+				if (pShape->userData != nullptr)
+				{
+					ShapeUserData* pShapeUserData = reinterpret_cast<ShapeUserData*>(pShape->userData);
+					free(pShapeUserData->pUserData);
+					delete pShapeUserData;
+
+					pShape->userData = nullptr;
+				}
+			}
+
 			pActor->release();
 		}
 	}
@@ -489,19 +563,19 @@ namespace LambdaEngine
 		}
 	}
 
-	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
+	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
 		const PxTransform transformPX = CreatePxTransform(position, rotation);
 
 		PxRigidStatic* pActor = m_pPhysics->createRigidStatic(transformPX);
-		FinalizeCollisionActor(collisionInfo, pActor, pShape);
+		FinalizeCollisionActor(collisionInfo, pActor);
 
 		return { pActor };
 	}
 
-	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, PxShape* pShape, const glm::quat& additionalRotation)
+	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
@@ -512,7 +586,7 @@ namespace LambdaEngine
 
 		PxRigidDynamic* pActor = m_pPhysics->createRigidDynamic(transformPX);
 		pActor->setLinearVelocity(initialVelocityPX);
-		FinalizeCollisionActor(collisionInfo, pActor, pShape);
+		FinalizeCollisionActor(collisionInfo, pActor);
 
 		return { pActor };
 	}
@@ -528,7 +602,7 @@ namespace LambdaEngine
 		constexpr const float stepOffset = 0.20f;
 
 		const glm::vec3& position = characterColliderInfo.Position.Position;
-		const glm::vec3 upDirection = g_DefaultUp * characterColliderInfo.Rotation.Quaternion;
+		const glm::vec3 upDirection = g_DefaultUp * glm::quat(characterColliderInfo.Rotation.Quaternion.w, 0.0f, characterColliderInfo.Rotation.Quaternion.y, 0.0f);
 
 		controllerDesc.material			= m_pMaterial;
 		controllerDesc.position			= { position.x, position.y, position.z };
@@ -567,45 +641,21 @@ namespace LambdaEngine
 		return { pController, controllerFilters };
 	}
 
-	void PhysicsSystem::FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor, PxShape* pShape)
+	void PhysicsSystem::FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor)
 	{
-		// Set shape's filter data
-		PxFilterData filterData;
-		filterData.word0 = (PxU32)collisionInfo.CollisionGroup;
-		filterData.word1 = (PxU32)collisionInfo.CollisionMask;
-		pShape->setSimulationFilterData(filterData);
-		pShape->setQueryFilterData(filterData);
-
-		if (collisionInfo.ShapeType == EShapeType::TRIGGER)
-		{
-			pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
-			pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
-		}
-		else if (collisionInfo.ShapeType == EShapeType::SIMULATION)
-		{
-			pShape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
-			pShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
-		}
-
 		if (pActor->is<PxRigidBody>() && collisionInfo.DetectionMethod == ECollisionDetection::CONTINUOUS)
 		{
 			PxRigidBody* pBody = reinterpret_cast<PxRigidBody*>(pActor);
 			pBody->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		}
-
-		pActor->attachShape(*pShape);
-
-		// Decreases the ref count to 1, which will drop to 0 when the actor is deleted
-		pShape->release();
-
-		// Set collision callback
+		
+        // Set collision callback
 		pActor->userData = DBG_NEW ActorUserData;
 		ActorUserData* pUserData = reinterpret_cast<ActorUserData*>(pActor->userData);
 		pUserData->Entity = collisionInfo.Entity;
-		pUserData->CallbackFunction = collisionInfo.CallbackFunction;
 	}
 
-	void PhysicsSystem::TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors) const
+	void PhysicsSystem::TriggerCallbacks(const std::array<PxRigidActor*, 2>& actors, const std::array<PxShape*, 2>& shapes) const
 	{
 		ActorUserData* pActorUserDatas[2] =
 		{
@@ -613,8 +663,14 @@ namespace LambdaEngine
 			reinterpret_cast<ActorUserData*>(actors[1]->userData)
 		};
 
-		const TriggerCallback* pTriggerCallback0 = std::get_if<TriggerCallback>(&pActorUserDatas[0]->CallbackFunction);
-		const TriggerCallback* pTriggerCallback1 = std::get_if<TriggerCallback>(&pActorUserDatas[1]->CallbackFunction);
+		ShapeUserData* pShapeUserDatas[2] =
+		{
+			reinterpret_cast<ShapeUserData*>(shapes[0]->userData),
+			reinterpret_cast<ShapeUserData*>(shapes[1]->userData)
+		};
+
+		const TriggerCallback* pTriggerCallback0 = std::get_if<TriggerCallback>(&pShapeUserDatas[0]->CallbackFunction);
+		const TriggerCallback* pTriggerCallback1 = std::get_if<TriggerCallback>(&pShapeUserDatas[1]->CallbackFunction);
 
 		if (pTriggerCallback0 && *pTriggerCallback0)
 		{
@@ -627,7 +683,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsSystem::CollisionCallbacks(const std::array<PxRigidActor*, 2>& actors, const TArray<PxContactPairPoint>& contactPoints) const
+	void PhysicsSystem::CollisionCallbacks(const std::array<PxRigidActor*, 2>& actors, const std::array<PxShape*, 2>& shapes, const TArray<PxContactPairPoint>& contactPoints) const
 	{
 		ActorUserData* pActorUserDatas[2] =
 		{
@@ -635,8 +691,14 @@ namespace LambdaEngine
 			reinterpret_cast<ActorUserData*>(actors[1]->userData)
 		};
 
-		const CollisionCallback* pCollisionCallback0 = std::get_if<CollisionCallback>(&pActorUserDatas[0]->CallbackFunction);
-		const CollisionCallback* pCollisionCallback1 = std::get_if<CollisionCallback>(&pActorUserDatas[1]->CallbackFunction);
+		ShapeUserData* pShapeUserDatas[2] =
+		{
+			reinterpret_cast<ShapeUserData*>(shapes[0]->userData),
+			reinterpret_cast<ShapeUserData*>(shapes[1]->userData)
+		};
+
+		const CollisionCallback* pCollisionCallback0 = std::get_if<CollisionCallback>(&pShapeUserDatas[0]->CallbackFunction);
+		const CollisionCallback* pCollisionCallback1 = std::get_if<CollisionCallback>(&pShapeUserDatas[1]->CallbackFunction);
 		if (!pCollisionCallback0 && !*pCollisionCallback0 && !pCollisionCallback1 && !*pCollisionCallback1)
 		{
 			return;

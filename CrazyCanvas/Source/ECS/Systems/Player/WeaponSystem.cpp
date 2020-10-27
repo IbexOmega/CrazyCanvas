@@ -230,18 +230,24 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
+        /* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, glm::vec3(1.0f)}),
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
-		/* Shape Type */		EShapeType::SIMULATION,
-		/* Detection Method */	ECollisionDetection::CONTINUOUS,
-		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
-		/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
+		{
+			{
+				/* Shape Type */		EShapeType::SIMULATION,
+				/* Geometry Type */		EGeometryType::SPHERE,
+				/* Geometry Params */	{ .Radius = 0.3f },
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
+			},
+		},
 		/* Velocity */			initialVelocity
 	};
 
-	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo, 0.3f);
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 
 	// Play gun fire

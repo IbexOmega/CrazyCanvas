@@ -144,9 +144,9 @@ namespace LambdaEngine
 		uint32 m_PacketsReceivedFixed;
 
 		uint32 m_PacketsSent;
-		uint32 m_SegmentsRegistered;
+		std::atomic_uint32_t m_SegmentsRegistered;
 		uint32 m_SegmentsSent;
-		uint32 m_ReliableSegmentsSent;
+		std::atomic_uint32_t m_ReliableSegmentsSent;
 		uint32 m_PacketsReceived;
 		uint32 m_SegmentsReceived;
 		uint32 m_BytesSent;
