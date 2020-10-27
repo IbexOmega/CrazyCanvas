@@ -391,7 +391,7 @@ namespace LambdaEngine
 						}
 
 						// Set descriptor to give GPU access to paint mask textures
-						Sampler* sampler = Sampler::GetLinearSampler();
+						Sampler* sampler = Sampler::GetNearestSampler();
 						uint32 bindingIndex = 0;
 
 						m_DescriptorSetList3[d]->WriteTextureDescriptors(
