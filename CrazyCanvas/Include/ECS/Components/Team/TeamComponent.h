@@ -10,5 +10,5 @@ constexpr const uint32 MAX_NUM_TEAMS = 3;
 struct TeamComponent
 {
 	DECL_COMPONENT(TeamComponent);
-	uint32 TeamIndex = 0;
+	uint8 TeamIndex = 0;
 };

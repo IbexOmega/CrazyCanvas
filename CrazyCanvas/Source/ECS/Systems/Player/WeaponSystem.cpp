@@ -215,7 +215,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	const Entity projectileEntity = pECS->CreateEntity();
 
 	// Get the firing player's team index
-	const uint32 playerTeam = pECS->GetConstComponent<TeamComponent>(weaponComponent.WeaponOwner).TeamIndex;
+	const uint8 playerTeam = pECS->GetConstComponent<TeamComponent>(weaponComponent.WeaponOwner).TeamIndex;
 	pECS->AddComponent<TeamComponent>(projectileEntity, { playerTeam });
 
 	const VelocityComponent initialVelocity = { playerVelocity + directionVec * projectileInitialSpeed };

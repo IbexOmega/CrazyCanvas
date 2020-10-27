@@ -19,6 +19,8 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Multiplayer/Packet/CreateLevelObject.h"
+
 bool MatchClient::InitInternal()
 {
 	return true;
@@ -35,19 +37,13 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 
 	if (event.Type == PacketType::CREATE_LEVEL_OBJECT)
 	{
-		BinaryDecoder decoder(event.pPacket);
-		ELevelObjectType entityType = ELevelObjectType(decoder.ReadUInt8());
+		CreateLevelObject packet;
+		event.pPacket->Read(&packet);
 
-		switch (entityType)
+		switch (packet.LevelObjectType)
 		{
 			case ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER:
 			{
-				bool isLocal		= decoder.ReadBool();
-				int32 networkUID	= decoder.ReadInt32();
-				glm::vec3 position	= decoder.ReadVec3();
-				glm::vec3 forward	= decoder.ReadVec3();
-				uint32 teamIndex	= decoder.ReadUInt32();
-
 				TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 				const CameraDesc cameraDesc =
@@ -73,13 +69,13 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 
 				CreatePlayerDesc createPlayerDesc =
 				{
-					.IsLocal			= isLocal,
-					.NetworkUID			= networkUID,
+					.IsLocal			= packet.Player.IsMySelf,
+					.NetworkUID			= packet.NetworkUID,
 					.pClient			= event.pClient,
-					.Position			= position,
-					.Forward			= forward,
+					.Position			= packet.Position,
+					.Forward			= packet.Forward,
 					.Scale				= glm::vec3(1.0f),
-					.TeamIndex			= teamIndex,
+					.TeamIndex			= packet.Player.TeamIndex,
 					.pCameraDesc		= &cameraDesc,
 					.MeshGUID			= robotGUID,
 					.AnimationComponent = robotAnimationComp,
@@ -95,20 +91,15 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 			}
 			case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
 			{
-				int32 networkUID		= decoder.ReadInt32();
-				int32 parentNetworkUID	= decoder.ReadInt32();
-				glm::vec3 position		= decoder.ReadVec3();
-				glm::quat rotation		= decoder.ReadQuat();
-
-				Entity parentEntity = MultiplayerUtils::GetEntity(parentNetworkUID);
+				Entity parentEntity = MultiplayerUtils::GetEntity(packet.Flag.ParentNetworkUID);
 
 				CreateFlagDesc createFlagDesc =
 				{
-					.NetworkUID		= networkUID,
+					.NetworkUID		= packet.NetworkUID,
 					.ParentEntity	= parentEntity,
-					.Position		= position,
+					.Position		= packet.Position,
 					.Scale			= glm::vec3(1.0f),
-					.Rotation		= rotation,
+					.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
 				};
 
 				TArray<Entity> createdFlagEntities;
