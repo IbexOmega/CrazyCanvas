@@ -106,12 +106,8 @@ void main()
 	if (clientPainting > 0)
 		team = clientTeam;
 
-	// TODO: Change this to a buffer input which we can index the team color to
-	vec3 color = vec3(0.0);
-	if (team == 1)
-		color = vec3(1.0, 0.0, 0.0);
-	else if (team == 2)
-		color = vec3(0.0, 0.0, 1.0);
+	// Assume the correct amount of colors have been sent in
+	vec4 color = b_PaintMaskColor.val[team];
 
-	s_PrimaryPayload.Albedo				= mix(albedo, color, shouldPaint);
+	s_PrimaryPayload.Albedo				= mix(albedo, color.rgb, shouldPaint);
 }

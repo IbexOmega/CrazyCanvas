@@ -89,8 +89,22 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 void ClientFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
+	//For now, we don't handle Player-Flag collisions on the client (the flag doesn't even have a collider)
+
 	UNREFERENCED_VARIABLE(entity0);
 	UNREFERENCED_VARIABLE(entity1);
+
+	LOG_ERROR("Client: PLAYER-FLAG COLLISION");
+}
+
+void ClientFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+{
+	//For now, we don't handle Base-Flag collisions on the client (the base doesn't even exist)
+
+	UNREFERENCED_VARIABLE(entity0);
+	UNREFERENCED_VARIABLE(entity1);
+
+	LOG_ERROR("Client: BASE-FLAG COLLISION");
 }
 
 void ClientFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)

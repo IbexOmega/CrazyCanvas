@@ -98,7 +98,7 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaFo
 		return;
 	}
 
-	float32 movespeed = 2.0f;
+	float32 movespeed = 4.0f;
 	glm::vec3 currentVelocity;
 	currentVelocity		= rotation * glm::vec3(deltaForward, 0.0f, deltaLeft);
 	currentVelocity.y	= 0.0f;
