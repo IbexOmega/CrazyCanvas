@@ -42,6 +42,8 @@ namespace LambdaEngine
         void DeregisterJobExecution(const Job& job);
 
         void SetPhase(uint32_t phase);
+        /*  Advances to the next phase. Performs component registrations and deletions and entity deletions. If it's the last phase already,
+            the next phase might be a previous one, to accumulate regular jobs. */
         void NextPhase();
 
         void AccumulateRegularJobs();
