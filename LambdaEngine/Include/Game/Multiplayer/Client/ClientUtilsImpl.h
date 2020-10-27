@@ -14,13 +14,15 @@ namespace LambdaEngine
 		virtual ~ClientUtilsImpl();
 
 		virtual Entity GetEntity(int32 networkUID) const override final;
+		virtual int32 GetNetworkUID(Entity entity) const override final;
 		virtual void RegisterEntity(Entity entity, int32 networkUID) override final;
-		virtual uint64 GetSaltAsUID(IClient* pClient) override final;
+		virtual void UnregisterEntity(Entity entity) override final;
 
 	private:
 		ClientUtilsImpl();
 
 	private:
 		std::unordered_map<int32, Entity> m_NetworkUIDToEntityMapper;
+		std::unordered_map<int32, Entity> m_EntityToNetworkUIDMapper;
 	};
 }

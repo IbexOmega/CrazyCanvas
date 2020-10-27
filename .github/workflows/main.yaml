@@ -26,10 +26,10 @@ jobs:
         run: .\premake5.exe vs2019
 
       - name: Build Debug
-        run: msbuild LambdaEngine.sln -p:Configuration=Debug -p:Platform=x64
+        run: msbuild LambdaEngine.sln -p:Configuration=Debug -p:Platform=x64 /warnaserror
 
       - name: Build Release
-        run: msbuild LambdaEngine.sln -p:Configuration=Release -p:Platform=x64
+        run: msbuild LambdaEngine.sln -p:Configuration=Release -p:Platform=x64 /warnaserror
 
   Lint:
     runs-on: [self-hosted, benchmarker, Windows, X64]

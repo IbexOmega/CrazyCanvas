@@ -46,9 +46,11 @@
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
+#include "Game/ECS/Systems/Networking/NetworkSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 #include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
+
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -113,6 +115,11 @@ namespace LambdaEngine
 
 	bool EngineLoop::InitSystems()
 	{
+		if (!NetworkSystem::GetInstance().Init())
+		{
+			return false;
+		}
+
 		if (!RenderSystem::GetInstance().Init())
 		{
 			return false;
@@ -141,7 +148,7 @@ namespace LambdaEngine
 	{
 		// Stats
 		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
-		
+
 		// Input
 		Input::Tick();
 
@@ -170,7 +177,7 @@ namespace LambdaEngine
 		StateManager::GetInstance()->Tick(delta);
 		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
-		
+
 		// Game
 		Game::Get().Tick(delta);
 
@@ -178,54 +185,54 @@ namespace LambdaEngine
 #ifdef LAMBDA_DEVELOPMENT
 		// TODO: Move to somewere else, does someone have a suggestion?
 		ImGuiRenderer::Get().DrawUI([delta]
-		{
-			const ImGuiWindowFlags flags =
-				ImGuiWindowFlags_NoBackground	|
-				ImGuiWindowFlags_NoTitleBar		|
-				ImGuiWindowFlags_NoMove			|
-				ImGuiWindowFlags_NoResize		|
-				ImGuiWindowFlags_NoDecoration	|
-				ImGuiWindowFlags_NoScrollbar	|
-				ImGuiWindowFlags_NoSavedSettings;
-
-			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-			const uint32 windowWidth	= mainWindow->GetWidth();
-			const uint32 size			= 250;
-
-			ImGui::SetNextWindowPos(ImVec2((float)(windowWidth - size), 0.0f));
-			ImGui::SetNextWindowSize(ImVec2((float32)size, (float32)size));
-
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-
-			if (ImGui::Begin("BuildInfo", (bool*)(0), flags))
 			{
-				const GraphicsDeviceDesc& desc = RenderAPI::GetDevice()->GetDesc();
-				ImGui::Text("RunInfo:");
-				ImGui::Text("FPS: %.2f", 1.0f / delta.AsSeconds());
-				ImGui::Spacing();
-				ImGui::Text("BuildInfo:");
-				ImGui::Text("CrazyCanvas [%s Build]", LAMBDA_CONFIG_NAME);
-				ImGui::Text("API: %s", desc.RenderApi.c_str());
-				ImGui::Text("Version: %s", desc.ApiVersion.c_str());
-				ImGui::Text("Adaper: %s", desc.AdapterName.c_str());
-				ImGui::Text("Driver: %s", desc.DriverVersion.c_str());
-				
-				// Tells the developer if validation layers are on
-				if (!desc.Debug)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-					ImGui::Text("DebugEnabled=false");
-					ImGui::PopStyleColor();
-				}
-				else
-				{
-					ImGui::Text("DebugEnabled=true");
-				}
-			}
-			ImGui::End();
+				const ImGuiWindowFlags flags =
+					ImGuiWindowFlags_NoBackground |
+					ImGuiWindowFlags_NoTitleBar |
+					ImGuiWindowFlags_NoMove |
+					ImGuiWindowFlags_NoResize |
+					ImGuiWindowFlags_NoDecoration |
+					ImGuiWindowFlags_NoScrollbar |
+					ImGuiWindowFlags_NoSavedSettings;
 
-			ImGui::PopStyleColor();
-		});
+				TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+				const uint32 windowWidth = mainWindow->GetWidth();
+				const uint32 size = 250;
+
+				ImGui::SetNextWindowPos(ImVec2((float)(windowWidth - size), 0.0f));
+				ImGui::SetNextWindowSize(ImVec2((float32)size, (float32)size));
+
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+
+				if (ImGui::Begin("BuildInfo", (bool*)(0), flags))
+				{
+					const GraphicsDeviceDesc& desc = RenderAPI::GetDevice()->GetDesc();
+					ImGui::Text("RunInfo:");
+					ImGui::Text("FPS: %.2f", 1.0f / delta.AsSeconds());
+					ImGui::Spacing();
+					ImGui::Text("BuildInfo:");
+					ImGui::Text("CrazyCanvas [%s Build]", LAMBDA_CONFIG_NAME);
+					ImGui::Text("API: %s", desc.RenderApi.c_str());
+					ImGui::Text("Version: %s", desc.ApiVersion.c_str());
+					ImGui::Text("Adaper: %s", desc.AdapterName.c_str());
+					ImGui::Text("Driver: %s", desc.DriverVersion.c_str());
+
+					// Tells the developer if validation layers are on
+					if (!desc.Debug)
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+						ImGui::Text("DebugEnabled=false");
+						ImGui::PopStyleColor();
+					}
+					else
+					{
+						ImGui::Text("DebugEnabled=true");
+					}
+				}
+				ImGui::End();
+
+				ImGui::PopStyleColor();
+			});
 #endif
 		RenderSystem::GetInstance().Render(delta);
 
@@ -234,12 +241,9 @@ namespace LambdaEngine
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		// Game
 		Game::Get().FixedTick(delta);
-
-		ClientSystem::StaticFixedTickMainThread(delta);
-		ServerSystem::StaticFixedTickMainThread(delta);
 		NetworkUtils::FixedTick(delta);
+		StateManager::GetInstance()->FixedTick(delta);
 	}
 
 	bool EngineLoop::PreInit(const argh::parser& flagParser)
@@ -366,14 +370,14 @@ namespace LambdaEngine
 
 	bool EngineLoop::Release()
 	{
-		EventQueue::Release();
-
-		Input::Release();
-
 		if (!GameConsole::Get().Release())
 		{
 			return false;
 		}
+
+		EventQueue::Release();
+
+		Input::Release();
 
 		if (!StateManager::GetInstance()->Release())
 		{

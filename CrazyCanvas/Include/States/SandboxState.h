@@ -15,12 +15,13 @@
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/NetworkEvents.h"
 
-#include "ECS/Systems/Player/WeaponSystem.h"
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
+
+#include "Multiplayer/MultiplayerClient.h"
 
 namespace LambdaEngine
 {
@@ -28,7 +29,6 @@ namespace LambdaEngine
 }
 
 class GUITest;
-class Level;
 
 class SandboxState : public LambdaEngine::State, public LambdaEngine::IRenderGraphCreateHandler
 {
@@ -42,6 +42,7 @@ public:
 	void Pause() override final;
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
+	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 	void OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph) override final;
 
@@ -49,7 +50,6 @@ public:
 
 private:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
 
 private:
 	LambdaEngine::Entity m_DirLight;
@@ -62,18 +62,16 @@ private:
 	bool								m_RenderGraphWindow		= false;
 	bool								m_ShowDemoWindow		= false;
 	bool								m_DebuggingWindow		= false;
+	bool								m_ECSVisualization		= false;
 
 	bool					m_ShowTextureDebuggingWindow	= false;
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
 
-	Level* m_pLevel = nullptr;
-
-	/* Systems */
-	WeaponSystem m_WeaponSystem;
-
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
+
+	MultiplayerClient m_MultiplayerClient;
 };

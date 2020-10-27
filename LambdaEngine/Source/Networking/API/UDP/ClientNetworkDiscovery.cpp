@@ -21,7 +21,7 @@ namespace LambdaEngine
 		m_ReceivedPackets(),
 		m_LockReceivedPackets()
 	{
-
+		m_Transceiver.SetIgnoreSaltMissmatch(true);
 	}
 
 	ClientNetworkDiscovery::~ClientNetworkDiscovery()
@@ -82,7 +82,7 @@ namespace LambdaEngine
 	{
 		while (!ShouldTerminate())
 		{
-			TQueue<NetworkSegment*> packets;
+			std::set<NetworkSegment*, NetworkSegmentUIDOrder> packets;
 			TSet<uint32> reliableUIDs;
 
 #ifdef LAMBDA_DEBUG
@@ -92,7 +92,7 @@ namespace LambdaEngine
 #endif
 
 			pResponse->GetHeader().Type = NetworkSegment::TYPE_NETWORK_DISCOVERY;
-			packets.push(pResponse);
+			packets.insert(pResponse);
 
 			BinaryEncoder encoder(pResponse);
 			encoder.WriteString(m_NameOfGame);
@@ -119,12 +119,20 @@ namespace LambdaEngine
 			{
 				if (!HandleReceivedPacket(sender, packets[0]))
 				{
+#ifdef LAMBDA_CONFIG_DEBUG
+					m_SegmentPool.FreeSegment(packets[0], "ClientNetworkDiscovery::RunReceiver");
+#else
 					m_SegmentPool.FreeSegment(packets[0]);
+#endif		
 				}
 			}
 			else
 			{
+#ifdef LAMBDA_CONFIG_DEBUG
+				m_SegmentPool.FreeSegments(packets, "ClientNetworkDiscovery::RunReceiver2");
+#else
 				m_SegmentPool.FreeSegments(packets);
+#endif				
 			}
 		}
 	}
@@ -197,8 +205,12 @@ namespace LambdaEngine
 		for (Packet& packet : packets)
 		{
 			BinaryDecoder& decoder = packet.Decoder;
-			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), m_Statistics.GetRemoteSalt());
-			m_SegmentPool.FreeSegment(const_cast<NetworkSegment*>(decoder.GetPacket()));
+			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), decoder.ReadUInt64());
+#ifdef LAMBDA_CONFIG_DEBUG
+			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
+#else
+			m_SegmentPool.FreeSegment(decoder.GetPacket());
+#endif	
 		}
 		packets.Clear();
 	}

@@ -38,6 +38,8 @@ namespace LambdaEngine
 		virtual bool HasComponent(Entity entity) const = 0;
 		virtual void ResetDirtyFlags() = 0;
 
+		virtual void* GetRawData(Entity entity) = 0;
+
 	protected:
 		// Systems or other external users should not be able to perform immediate deletions
 		friend ComponentStorage;
@@ -56,8 +58,15 @@ namespace LambdaEngine
 
 		Comp& Insert(Entity entity, const Comp& comp);
 
+		// Fills comp with component data, sets dirty flag if one exists and returns whether the component exists
+		bool GetIf(Entity entity, Comp& comp);
+		// Fills comp with component data and returns whether the component exists
+		bool GetConstIf(Entity entity, Comp& comp) const;
 		Comp& GetData(Entity entity);
 		const Comp& GetConstData(Entity entity) const;
+
+		void* GetRawData(Entity entity) override final;
+
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
 		uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const override final { return SerializeComponent(GetConstData(entity), pBuffer, bufferSize); }
@@ -101,6 +110,47 @@ namespace LambdaEngine
 		m_EntityToIndex[entity] = newIndex;
 		m_IDs.PushBack(entity);
 		return m_Data.PushBack(comp);
+	}
+
+	template<typename Comp>
+	bool ComponentArray<Comp>::GetIf(Entity entity, Comp& comp)
+	{
+		auto indexItr = m_EntityToIndex.find(entity);
+		if (indexItr == m_EntityToIndex.end())
+		{
+			return false;
+		}
+
+		comp = m_Data[indexItr->second];
+
+		if constexpr (Comp::HasDirtyFlag())
+		{
+			comp.Dirty = true;
+		}
+
+		return true;
+	}
+
+	template<typename Comp>
+	bool ComponentArray<Comp>::GetConstIf(Entity entity, Comp& comp) const
+	{
+		auto indexItr = m_EntityToIndex.find(entity);
+		if (indexItr == m_EntityToIndex.end())
+		{
+			return false;
+		}
+
+		comp = m_Data[indexItr->second];
+
+		return true;
+	}
+
+	template<typename Comp>
+	inline void* ComponentArray<Comp>::GetRawData(Entity entity)
+	{
+		auto indexItr = m_EntityToIndex.find(entity);
+		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
+		return &m_Data[indexItr->second];
 	}
 
 	template<typename Comp>

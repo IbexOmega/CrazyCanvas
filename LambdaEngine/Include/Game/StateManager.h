@@ -27,13 +27,14 @@ namespace LambdaEngine
         ~StateManager();
 
         bool Init(ECSCore* pECS);
-		bool Release();
+        bool Release();
 
         // The enqueued transition happens at the end of StateManager::Tick
         void EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting);
         void EnqueueStatePop() { EnqueueStateTransition(nullptr, STATE_TRANSITION::POP); }
 
         void Tick(Timestamp delta);
+        void FixedTick(Timestamp delta);
 
         static StateManager* GetInstance() { return &s_Instance; }
 

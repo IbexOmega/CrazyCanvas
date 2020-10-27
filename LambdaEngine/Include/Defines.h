@@ -25,8 +25,8 @@
 * Exporting dynamic libraries
 */
 
-#if defined(LAMBDA_PLATFORM_WINDOWS) && defined(LAMBDA_SHARED_LIB) 
-	#ifdef LAMBDA_EXPORT	
+#if defined(LAMBDA_PLATFORM_WINDOWS) && defined(LAMBDA_SHARED_LIB)
+	#ifdef LAMBDA_EXPORT
 		#define LAMBDA_API _declspec(dllexport)
 	#else
 		#define LAMBDA_API _declspec(dllimport)
@@ -96,14 +96,14 @@
 
 /*
 * Helper Macros
-*/ 
+*/
 
 #define ZERO_MEMORY(memory, size)	memset(reinterpret_cast<void*>(memory), 0, size)
 #define ARR_SIZE(arr)				sizeof(arr) / sizeof(arr[0])
 
 /*
 * Forceinline
-*/ 
+*/
 
 #ifdef LAMBDA_VISUAL_STUDIO
 	#define FORCEINLINE __forceinline
@@ -139,8 +139,13 @@
 #ifdef LAMBDA_VISUAL_STUDIO
 	#pragma warning(error : 4456) // variable hides a already existing variable
 	#pragma warning(error : 4239) // setting references to rvalues
-	#pragma warning(error : 4715) // not all paths return a value 
+	#pragma warning(error : 4715) // not all paths return a value
 	#pragma warning(error : 4099) // wrong forward declaration
 	#pragma warning(error : 4150) // cannot call destructor on incomplete type
 	#pragma warning(error : 4840) // using string in variadic template (When it should be const char)
 #endif
+
+/*
+* Returns the type name as a string
+*/
+#define TYPE_NAME(typeName) #typeName

@@ -37,7 +37,7 @@ namespace LambdaEngine
 			.Entity = entity,
 			.Position = pECS->GetComponent<PositionComponent>(entity),
 			.Rotation = pECS->GetComponent<RotationComponent>(entity),
-			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_PLAYER,
+			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 			.CollisionMask	= UINT32_MAX								// The player collides with everything
 		};
 

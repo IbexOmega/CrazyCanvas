@@ -43,6 +43,7 @@ namespace LambdaEngine
 		void ReturnPacket(NetworkSegment* pPacket);
 		virtual bool SendUnreliable(NetworkSegment* packet) override;
 		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) override;
+		virtual uint64 GetUID() const override;
 
 	protected:
 		ClientBase(const ClientDesc& desc);

@@ -6,8 +6,11 @@ namespace LambdaEngine
 		m_SizeOfBuffer(0),
 		m_pBuffer(),
 		m_Header(),
-		m_IsBorrowed(false),
-		m_Salt(0)
+		m_Salt(0),
+		m_ReadHead(0)
+#ifdef LAMBDA_CONFIG_DEBUG
+		, m_IsBorrowed(false)
+#endif
 	{
 
 	}
@@ -21,7 +24,7 @@ namespace LambdaEngine
 	{
 		m_Header.Type = type;
 
-#ifndef LAMBDA_CONFIG_PRODUCTION
+#ifdef LAMBDA_CONFIG_DEBUG
 		PacketTypeToString(m_Header.Type, m_Type);
 #endif
 
@@ -33,12 +36,7 @@ namespace LambdaEngine
 		return m_Header.Type;
 	}
 
-	uint8* NetworkSegment::GetBuffer()
-	{
-		return m_pBuffer;
-	}
-
-	const uint8* NetworkSegment::GetBufferReadOnly() const
+	const uint8* NetworkSegment::GetBuffer() const
 	{
 		return m_pBuffer;
 	}
@@ -53,19 +51,26 @@ namespace LambdaEngine
 		return m_Header;
 	}
 
-	uint8 NetworkSegment::GetHeaderSize() const
-	{
-		return sizeof(NetworkSegment::Header);
-	}
-
 	uint16 NetworkSegment::GetTotalSize() const
 	{
-		return GetBufferSize() + GetHeaderSize();
+		return GetBufferSize() + HeaderSize;
 	}
 
-	NetworkSegment* NetworkSegment::AppendBytes(uint16 bytes)
+	NetworkSegment* NetworkSegment::Write(const void* pBuffer, uint16 bytes)
 	{
+		ASSERT(bytes > 0);
+		ASSERT(m_SizeOfBuffer + bytes <= MAXIMUM_SEGMENT_SIZE);
+		memcpy(m_pBuffer + m_SizeOfBuffer, pBuffer, bytes);
 		m_SizeOfBuffer += bytes;
+		return this;
+	}
+
+	NetworkSegment* NetworkSegment::Read(void* pBuffer, uint16 bytes)
+	{
+		ASSERT(bytes > 0);
+		ASSERT(m_ReadHead + bytes <= m_SizeOfBuffer);
+		memcpy(pBuffer, m_pBuffer + m_ReadHead, bytes);
+		m_ReadHead += bytes;
 		return this;
 	}
 
@@ -100,6 +105,11 @@ namespace LambdaEngine
 		memcpy(pSegment->m_pBuffer, m_pBuffer, m_SizeOfBuffer);
 		pSegment->m_SizeOfBuffer = m_SizeOfBuffer;
 		pSegment->m_Salt = m_Salt;
+	}
+
+	void NetworkSegment::ResetReadHead()
+	{
+		m_ReadHead = 0;
 	}
 
 	void NetworkSegment::PacketTypeToString(uint16 type, std::string& str)

@@ -4,8 +4,8 @@
 
 namespace LambdaEngine
 {
-	BinaryEncoder::BinaryEncoder(NetworkSegment* packet) :
-		m_pNetworkPacket(packet)
+	BinaryEncoder::BinaryEncoder(NetworkSegment* pPacket) :
+		m_pNetworkPacket(pPacket)
 	{
 
 	}
@@ -78,8 +78,7 @@ namespace LambdaEngine
 
 	void BinaryEncoder::WriteBuffer(const uint8* pBuffer, uint16 size)
 	{
-		memcpy(m_pNetworkPacket->GetBuffer() + m_pNetworkPacket->GetBufferSize(), pBuffer, size);
-		m_pNetworkPacket->AppendBytes(size);
+		m_pNetworkPacket->Write(pBuffer, size);
 	}
 
 	void BinaryEncoder::WriteVec2(const glm::vec2& value)

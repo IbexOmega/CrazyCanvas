@@ -21,6 +21,14 @@
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
 
+#include <string>
+#include <sstream>
+
+#include <processthreadsapi.h>
+
+STARTUPINFO lpStartupInfo;
+PROCESS_INFORMATION lpProcessInfo;
+
 #include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
@@ -79,6 +87,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	newInfo.Ping = 0;
 	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
 	newInfo.EndPoint = *event.pEndPoint;
+	newInfo.ServerUID = event.ServerUID;
 
 	pDecoder->ReadUInt8(newInfo.Players);
 	pDecoder->ReadString(newInfo.Name);
@@ -100,7 +109,17 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
 		}
 	}
-	return false;
+	else
+	{
+		currentInfo = newInfo;
+	}
+	return true;
+}
+
+void LobbyGUI::FixedTick(LambdaEngine::Timestamp delta)
+{
+	UNREFERENCED_VARIABLE(delta);
+	CheckServerStatus();
 }
 
 void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -125,9 +144,9 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+	// Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
 
-	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+	// TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 }
 
 void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -135,7 +154,19 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
+	/*
+	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
+	lpStartupInfo.cb = sizeof(lpStartupInfo);
+	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
+
+	CreateProcess(L"Server.exe",
+		L"--state server", NULL, NULL,
+		NULL, NULL, NULL, NULL,
+		&lpStartupInfo,
+		&lpProcessInfo
+	);*/
+
+	// TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 
 	ErrorPopUp(OTHER_ERROR);
 }
@@ -161,7 +192,7 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	{
 		//start Server with populated struct
 		ServerSystem::GetInstance().Start();
-	
+
 		LambdaEngine::GUIApplication::SetView(nullptr);
 
 		SetRenderStagesActive();
@@ -169,22 +200,6 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 
 		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-	}
-}
-
-void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
-{
-	for (auto& server : m_Servers)
-	{
-		if (server.second.ServerGrid == pGrid)
-		{
-			LambdaEngine::GUIApplication::SetView(nullptr);
-
-			SetRenderStagesActive();
-
-			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
-			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-		}
 	}
 }
 
@@ -217,6 +232,62 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 	}
 }
 
+void LobbyGUI::StartSelectedServer(Noesis::Grid* pGrid)
+{
+	for (auto& server : m_Servers)
+	{
+		if (server.second.ServerGrid == pGrid)
+		{
+			LambdaEngine::GUIApplication::SetView(nullptr);
+
+			SetRenderStagesActive();
+
+			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
+			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+		}
+	}
+}
+
+bool LobbyGUI::CheckServerStatus()
+{
+	TArray<uint64> serversToRemove;
+
+	Timestamp timeSinceStart = EngineLoop::GetTimeSinceStart();
+	Timestamp deltaTime;
+
+	for (auto& server : m_Servers)
+	{
+		deltaTime = timeSinceStart - server.second.LastUpdate;
+
+		if (deltaTime.AsSeconds() > 5)
+		{
+			ListBox* pParentBox = (ListBox*)server.second.ServerGrid->GetParent();
+			pParentBox->GetItems()->Remove(server.second.ServerGrid);
+
+			serversToRemove.PushBack(server.second.ServerUID);
+		}
+	}
+
+	for (uint64 id : serversToRemove)
+	{
+		m_Servers.erase(id);
+	}
+
+	return false;
+}
+
+void LobbyGUI::HostServer()
+{
+	/*
+	NetworkSegment* pPacket = m_pClient->GetFreePacket(NetworkSegment::TYPE_ENTITY_CREATE);
+	BinaryEncoder encoder3(pPacket);
+	encoder3.WriteBool(true);
+	encoder3.WriteInt32(0);
+	encoder3.WriteVec3(glm::vec3(0, 2, 0));
+	OnPacketReceived(m_pClient, pPacket);
+	m_pClient->ReturnPacket(pPacket);*/
+}
+
 void LobbyGUI::SetRenderStagesActive()
 {
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
@@ -236,7 +307,7 @@ void LobbyGUI::SetRenderStagesActive()
 void LobbyGUI::ErrorPopUp(ErrorCode errorCode)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
-	
+
 	switch (errorCode)
 	{
 	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To Server!");	break;
