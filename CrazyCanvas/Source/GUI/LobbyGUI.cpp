@@ -185,7 +185,6 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	SavedServerSystem::WriteIpsToFile("bajs");
 	SavedServerSystem::WriteIpsToFile("HejSimon");
 
-
 	ErrorPopUp(OTHER_ERROR);
 }
 

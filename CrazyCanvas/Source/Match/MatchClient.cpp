@@ -138,8 +138,7 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 		BinaryDecoder decoder(event.pPacket);
 		uint32 teamIndex = decoder.ReadUInt32();
 
-		SetScore(0, 0);
-		SetScore(1, 0);
+		ResetMatch();
 
 		return true;
 	}

@@ -145,10 +145,9 @@ void HUDGUI::InitGUI()
 	m_GUIState.Health			= 100.0;
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
+
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
-
-
 
 	pHpRect->SetHeight(0.0);
 

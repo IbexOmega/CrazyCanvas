@@ -19,7 +19,6 @@
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
-#define MAX_SCORE 2
 #define MAX_AMMO 100
 
 struct GameGUIState
