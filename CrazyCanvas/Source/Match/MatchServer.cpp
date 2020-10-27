@@ -39,12 +39,14 @@ MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
+	EventQueue::UnregisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 }
 
 bool MatchServer::InitInternal()
 {
 	using namespace LambdaEngine;
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
+	EventQueue::RegisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 
 	return true;
 }
@@ -71,7 +73,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		if (ImGui::Begin("Match"))
+		if (ImGui::Begin("Match Panel"))
 		{
 			if (m_pLevel != nullptr)
 			{
@@ -292,6 +294,42 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		encoder.WriteVec3(positionComponent.Position);
 		encoder.WriteQuat(rotationComponent.Quaternion);
 		pClient->SendReliable(pPacket, nullptr);
+	}
+
+	return true;
+}
+
+bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
+{
+	using namespace LambdaEngine;
+
+	if (m_pLevel != nullptr)
+	{
+		uint32 numFlags = 0;
+		Entity* pFlags = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, numFlags);
+
+		if (numFlags > 0)
+		{
+			Entity flagEntity = pFlags[0];
+			FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
+		}
+	}
+
+	uint32 newScore = GetScore(event.TeamIndex) + 1;
+	SetScore(event.TeamIndex, newScore);
+
+	const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
+
+	if (!clients.empty())
+	{
+		ClientRemoteBase* pClient = clients.begin()->second;
+
+		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::TEAM_SCORED);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteUInt32(event.TeamIndex);
+		encoder.WriteUInt32(newScore);
+
+		pClient->SendReliableBroadcast(pPacket);
 	}
 
 	return true;

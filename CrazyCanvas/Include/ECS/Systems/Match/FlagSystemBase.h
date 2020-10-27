@@ -19,6 +19,7 @@ public:
 	virtual void OnFlagDropped(LambdaEngine::Entity flagEntity, const glm::vec3& dropPosition) = 0;
 
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
+	virtual void OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 
 protected:
 	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) { UNREFERENCED_VARIABLE(componentAccesses); };

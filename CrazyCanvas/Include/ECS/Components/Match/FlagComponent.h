@@ -8,13 +8,21 @@
 
 #include "Time/API/Timestamp.h"
 
-constexpr LambdaEngine::CollisionGroup FLAG_CARRIED_COLLISION_MASK = FCrazyCanvasCollisionGroup::COLLISION_GROUP_BASE;
-constexpr LambdaEngine::CollisionGroup FLAG_DROPPED_COLLISION_MASK = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER;
+enum EFlagColliderType : uint8
+{
+	FLAG_COLLIDER_TYPE_PLAYER			= 0,
+	FLAG_COLLIDER_TYPE_DELIVERY_POINT	= 1,
+};
 
 struct FlagSpawnComponent
 {
 	DECL_COMPONENT(FlagSpawnComponent);
 	float Radius = 1.0f;
+};
+
+struct FlagDeliveryPointComponent
+{
+	DECL_COMPONENT(FlagDeliveryPointComponent);
 };
 
 struct FlagComponent
