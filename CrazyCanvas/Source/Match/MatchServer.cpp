@@ -115,104 +115,79 @@ void MatchServer::SpawnFlag()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	Job job;
-	job.Components =
+	uint32 numFlagSpawnPoints = 0;
+	Entity* pFlagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN, numFlagSpawnPoints);
+
+	if (numFlagSpawnPoints > 0)
 	{
-		{ ComponentPermissions::RW,	FlagSpawnComponent::Type() },
-		{ ComponentPermissions::RW,	PositionComponent::Type() },
-	};
+		const FlagSpawnComponent& flagSpawnComponent	= pECS->GetConstComponent<FlagSpawnComponent>(pFlagSpawnPointEntities[0]);
+		const PositionComponent& positionComponent		= pECS->GetConstComponent<PositionComponent>(pFlagSpawnPointEntities[0]);
 
-	job.Function = [this]()
-	{
-		ECSCore* pECS = ECSCore::GetInstance();
+		float r		= Random::Float32(0.0f, flagSpawnComponent.Radius);
+		float theta = Random::Float32(0.0f, glm::two_pi<float32>());
 
-		uint32 numFlagSpawnPoints = 0;
-		Entity* pFlagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN, numFlagSpawnPoints);
+		CreateFlagDesc createDesc = {};
+		createDesc.Position		= positionComponent.Position + r * glm::vec3(glm::cos(theta), 0.0f, glm::sin(theta));
+		createDesc.Scale		= glm::vec3(1.0f);
+		createDesc.Rotation		= glm::identity<glm::quat>();
 
-		if (numFlagSpawnPoints > 0)
+		TArray<Entity> createdFlagEntities;
+		if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, &createDesc, createdFlagEntities))
 		{
-			const FlagSpawnComponent& flagSpawnComponent	= pECS->GetConstComponent<FlagSpawnComponent>(pFlagSpawnPointEntities[0]);
-			const PositionComponent& positionComponent		= pECS->GetConstComponent<PositionComponent>(pFlagSpawnPointEntities[0]);
+			VALIDATE(createdFlagEntities.GetSize() == 1);
 
-			float r		= Random::Float32(0.0f, flagSpawnComponent.Radius);
-			float theta = Random::Float32(0.0f, glm::two_pi<float32>());
+			//Tell the bois that we created a flag
+			const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
 
-			CreateFlagDesc createDesc = {};
-			createDesc.Position		= positionComponent.Position + r * glm::vec3(glm::cos(theta), 0.0f, glm::sin(theta));
-			createDesc.Scale		= glm::vec3(1.0f);
-			createDesc.Rotation		= glm::identity<glm::quat>();
+			CreateLevelObject packet;
+			packet.LevelObjectType			= ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
+			packet.Position					= createDesc.Position;
+			packet.Forward					= GetForward(createDesc.Rotation);
+			packet.Flag.ParentNetworkUID	= INT32_MAX;
 
-			TArray<Entity> createdFlagEntities;
-			if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, &createDesc, createdFlagEntities))
+			//Tell the bois that we created a flag
+			for (Entity entity : createdFlagEntities)
 			{
-				VALIDATE(createdFlagEntities.GetSize() == 1);
-
-				CreateLevelObject packet;
-				packet.LevelObjectType			= ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
-				packet.Position					= createDesc.Position;
-				packet.Forward					= GetForward(createDesc.Rotation);
-				packet.Flag.ParentNetworkUID	= INT32_MAX;
-
-				//Tell the bois that we created a flag
-				for (Entity entity : createdFlagEntities)
-				{
-					packet.NetworkUID = entity;
-					ServerSystem::GetInstance().GetServer()->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT);
-				}
-			}
-			else
-			{
-				LOG_ERROR("[MatchServer]: Failed to create Flag");
+				packet.NetworkUID = entity;
+				ServerSystem::GetInstance().GetServer()->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT);
 			}
 		}
-	};
-
-	pECS->ScheduleJobASAP(job);
+		else
+		{
+			LOG_ERROR("[MatchServer]: Failed to create Flag");
+		}
+	}
 }
 
-bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
-{
-	UNREFERENCED_VARIABLE(event);
-	return false;
-}
-
-bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
+void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 {
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	ClientRemoteBase* pClient = (ClientRemoteBase*)event.pClient;
+	uint32 numPlayerSpawnPoints = 0;
+	Entity* pPlayerSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN, numPlayerSpawnPoints);
 
 	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
 
-	uint32 otherPlayerCount = 0;
-	Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, otherPlayerCount);
+	glm::vec3 position(0.0f, 5.0f, 0.0f);
+	glm::vec3 forward(0.0f, 0.0f, 1.0f);
 
-	CreateLevelObject packet;
-	packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
-	packet.Player.IsMySelf	= false;
-
-	for (uint32 i = 0; i < otherPlayerCount; i++)
+	for (uint32 i = 0; i < numPlayerSpawnPoints; i++)
 	{
-		Entity otherPlayerEntity = pOtherPlayerEntities[i];
-		const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
-		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
-		const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
+		Entity spawnPoint = pPlayerSpawnPointEntities[i];
 
-		packet.NetworkUID		= otherPlayerEntity;
-		packet.Position			= positionComponent.Position;
-		packet.Forward			= GetForward(rotationComponent.Quaternion);
-		packet.Player.TeamIndex	= teamComponent.TeamIndex;
-		pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+		const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
+
+		if (teamComponent.TeamIndex == m_NextTeamIndex)
+		{
+			const PositionComponent& positionComponent = pPositionComponents->GetConstData(spawnPoint);
+			position = positionComponent.Position + glm::vec3(0.0f, 1.0f, 0.0f);
+			forward = glm::normalize(-glm::vec3(position.x, 0.0f, position.z));
+			break;
+		}
 	}
-
-	static glm::vec3 position(2.0f, 10.0f, 0.0f);
-	static glm::vec3 forward(1.0f, 0.0f, 0.0f);
-	static uint8 teamIndex = 0;
 
 	CreatePlayerDesc createPlayerDesc =
 	{
@@ -220,7 +195,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		.Position		= position,
 		.Forward		= forward,
 		.Scale			= glm::vec3(1.0f),
-		.TeamIndex		= teamIndex,
+		.TeamIndex		= m_NextTeamIndex,
 	};
 
 	TArray<Entity> createdPlayerEntities;
@@ -228,9 +203,11 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	{
 		VALIDATE(createdPlayerEntities.GetSize() == 1);
 
+		CreateLevelObject packet;
+		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Position			= position;
 		packet.Forward			= forward;
-		packet.Player.TeamIndex	= teamIndex;
+		packet.Player.TeamIndex	= m_NextTeamIndex;
 
 		for (Entity playerEntity : createdPlayerEntities)
 		{
@@ -246,37 +223,80 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	else
 	{
 		LOG_ERROR("[MatchServer]: Failed to create Player");
-		return false;
 	}
 
-	teamIndex = (teamIndex + 1) % 2;
+	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
+}
 
-	uint32 flagCount = 0;
-	Entity* pFlagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, flagCount);
+bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	return false;
+}
 
-	packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
+bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
+{
+	using namespace LambdaEngine;
 
-	for (uint32 i = 0; i < flagCount; i++)
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	IClient* pClient = event.pClient;
+
+	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+
+	//Send currently existing players to the new client
 	{
-		Entity flagEntity = pFlagEntities[i];
-		const PositionComponent& positionComponent	= pPositionComponents->GetConstData(flagEntity);
-		const RotationComponent& rotationComponent	= pRotationComponents->GetConstData(flagEntity);
-		const ParentComponent& parentComponent		= pParentComponents->GetConstData(flagEntity);
+		uint32 otherPlayerCount = 0;
+		Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, otherPlayerCount);
 
-		packet.NetworkUID				= flagEntity;
-		packet.Position					= positionComponent.Position;
-		packet.Forward					= GetForward(rotationComponent.Quaternion);
-		packet.Flag.ParentNetworkUID	= parentComponent.Parent;
-		pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+		CreateLevelObject packet;
+		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
+		packet.Player.IsMySelf	= false;
 
-		/*NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG));
-		encoder.WriteInt32((int32)flagEntity);
-		encoder.WriteInt32(parentComponent.Parent);
-		encoder.WriteVec3(positionComponent.Position);
-		encoder.WriteQuat(rotationComponent.Quaternion);
-		pClient->SendReliable(pPacket, nullptr);*/
+		for (uint32 i = 0; i < otherPlayerCount; i++)
+		{
+			Entity otherPlayerEntity = pOtherPlayerEntities[i];
+			const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
+			const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
+			const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
+
+			packet.NetworkUID		= otherPlayerEntity;
+			packet.Position			= positionComponent.Position;
+			packet.Forward			= GetForward(rotationComponent.Quaternion);
+			packet.Player.TeamIndex	= teamComponent.TeamIndex;
+			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+		}
+	}
+
+	//Create a player for the new client, also sends the new player to the connected clients
+	{
+		SpawnPlayer((ClientRemoteBase*)pClient);
+	}
+
+	//Send flag data to clients
+	{
+		uint32 flagCount = 0;
+		Entity* pFlagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, flagCount);
+
+		CreateLevelObject packet;
+		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
+
+		for (uint32 i = 0; i < flagCount; i++)
+		{
+			Entity flagEntity = pFlagEntities[i];
+			const PositionComponent& positionComponent	= pPositionComponents->GetConstData(flagEntity);
+			const RotationComponent& rotationComponent	= pRotationComponents->GetConstData(flagEntity);
+			const ParentComponent& parentComponent		= pParentComponents->GetConstData(flagEntity);
+
+			packet.NetworkUID				= flagEntity;
+			packet.Position					= positionComponent.Position;
+			packet.Forward					= GetForward(rotationComponent.Quaternion);
+			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
+			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+		}
 	}
 
 	return true;

@@ -39,6 +39,7 @@
 #include "World/Level.h"
 
 #include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/SingleplayerInitializer.h"
 
 BenchmarkState::~BenchmarkState()
 {
@@ -248,7 +249,7 @@ void BenchmarkState::Init()
 	}
 
 	// Triggers OnPacketReceived, which creates players
-	ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
+	SingleplayerInitializer::InitSingleplayer();
 }
 
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)

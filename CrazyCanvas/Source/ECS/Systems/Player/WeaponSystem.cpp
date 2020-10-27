@@ -232,16 +232,16 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 		/* Entity */	 		projectileEntity,
         /* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
-		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, glm::vec3(1.0f)}),
+		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, glm::vec3(0.3f)}),
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
 		{
 			{
-				/* Shape Type */		EShapeType::SIMULATION,
-				/* Geometry Type */		EGeometryType::SPHERE,
-				/* Geometry Params */	{ .Radius = 0.3f },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
+				.ShapeType = EShapeType::SIMULATION,
+				.GeometryType = EGeometryType::SPHERE,
+				.GeometryParams = { .Radius = 0.3f },
+				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.CollisionMask = (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CallbackFunction = std::bind_front(&WeaponSystem::OnProjectileHit, this),
 			},
 		},
 		/* Velocity */			initialVelocity
@@ -252,7 +252,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 
 	// Play gun fire
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
-	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
+	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.01f, 1.0f);
 }
 
 void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1)
