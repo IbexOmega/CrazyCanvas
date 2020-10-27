@@ -35,7 +35,6 @@ using namespace Noesis;
 LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	m_HostGameDesc(),
 	m_ServerList(xamlFile),
-	m_SavedServerList(),
 	m_Servers()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());

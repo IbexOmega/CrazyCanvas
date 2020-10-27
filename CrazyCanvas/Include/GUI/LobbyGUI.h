@@ -10,6 +10,7 @@
 #include "GUI/ServerInfo.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+//#include "Containers/TArray.h"
 
 struct HostGameDescription
 {
@@ -77,7 +78,7 @@ private:
 	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
 
-	TArray<LambdaEngine::String> m_SavedServerList;
+	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;
 
 	std::unordered_map<uint64, ServerInfo> m_Servers;
 };
