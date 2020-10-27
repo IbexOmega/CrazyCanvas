@@ -32,8 +32,10 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/SingleplayerInitializer.h"
 
-PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
+PlaySessionState::PlaySessionState(bool singlePlayer, LambdaEngine::IPAddress* pIPAddress) :
+	m_Singleplayer(singlePlayer),
 	m_pIPAddress(pIPAddress),
 	m_MultiplayerClient()
 {
@@ -182,7 +184,14 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
-	ClientSystem::GetInstance().Connect(m_pIPAddress);
+	if (m_Singleplayer)
+	{
+		SingleplayerInitializer::InitSingleplayer();
+	}
+	else
+	{
+		ClientSystem::GetInstance().Connect(m_pIPAddress);
+	}
 }
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
