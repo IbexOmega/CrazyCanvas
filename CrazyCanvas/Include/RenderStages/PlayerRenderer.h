@@ -72,8 +72,6 @@ namespace LambdaEngine
 		}
 
 	private:
-		bool CreateCopyBuffers();
-		TSharedRef<Buffer> CreateBuffers();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
 		bool CreateShaders();
@@ -112,19 +110,15 @@ namespace LambdaEngine
 		DescriptorCache							m_DescriptorCache;
 
 		uint32									m_BackBufferCount = 0;
-		//TArray<TSharedRef<const TextureView>>	m_BackBuffers;
 
 		TSharedRef<const TextureView>			m_DepthStencil;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage;
-		uint32									m_ViewerId;
-		TArray<TArray<uint32>>					m_TeamIds;
+		uint32									m_ViewerTeamId;
+		uint32									m_ViewerDrawArgIndex;
+		TArray<uint32>							m_TeamIds;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
 
 		bool									m_DirtyUniformBuffers = true;
-		TArray<TSharedRef<Buffer>>				m_UniformCopyBuffers;
-		TArray<TSharedRef<Buffer>>				m_UniformBuffers;
-	
-		TArray<TSharedRef<DeviceChild>>			m_pDeviceResourcesToDestroy;
 
 	private:
 		static PlayerRenderer* s_pInstance;

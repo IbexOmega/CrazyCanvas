@@ -157,6 +157,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
@@ -171,6 +172,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
@@ -185,6 +187,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
@@ -219,6 +222,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		// Audio

@@ -18,8 +18,12 @@ layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 layout(location = 9) in flat uint	in_InstanceIndex;
 
+layout(push_constant) uniform TeamIndex
+{
+	uint Index;
+} p_TeamIndex;
+
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }	b_MaterialParameters;
-layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer TeamIDs  				{  uint val[]; }				b_TeamIDs;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -69,9 +73,9 @@ void main()
 		color = vec3(0.0, 0.0, 1.0);
 
 	// Only render team members and paint on enemy players
-	//uint enemy = b_TeamIDs.val[in_InstanceIndex];
-	//if(enemy != 0 && shouldPaint < 0.5f)
-	//	discard;
+	uint enemy = p_TeamIndex.Index;
+	if(enemy != 0 && shouldPaint < 0.5f)
+		discard;
 
 	//1
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
