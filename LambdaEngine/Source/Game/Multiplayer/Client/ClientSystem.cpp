@@ -57,24 +57,6 @@ namespace LambdaEngine
 	{
 		NetworkDiscovery::DisableClient();
 
-		if (pAddress == IPAddress::LOOPBACK)
-		{
-			MultiplayerUtils::s_IsSinglePlayer = true;
-
-			NetworkSegment* pPacket = m_pClient->GetFreePacket(1); //PacketType::CREATE_ENTITY
-			BinaryEncoder encoder3(pPacket);
-			encoder3.WriteUInt8(5); //ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER
-			encoder3.WriteBool(true);
-			encoder3.WriteInt32(0);
-			encoder3.WriteVec3(glm::vec3(0.0f, 2.0f, 0.0f));
-			encoder3.WriteVec3(glm::vec3(1.0f, 0.0f, 0.0f));
-			encoder3.WriteUInt32(0);
-			OnPacketReceived(m_pClient, pPacket);
-			m_pClient->ReturnPacket(pPacket);
-
-			return true;
-		}
-
 		MultiplayerUtils::s_IsSinglePlayer = false;
 
 		if (!m_pClient->Connect(IPEndPoint(pAddress, (uint16)EngineConfig::GetIntProperty("NetworkPort"))))
