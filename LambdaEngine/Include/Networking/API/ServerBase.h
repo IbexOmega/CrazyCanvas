@@ -77,7 +77,7 @@ namespace LambdaEngine
             {
                 IClient* pClient = pair.second;
                 if (pClient != pExclude)
-                    if (!pClient->SendReliableStruct<T>(packet, packetType))
+                    if (!pClient->SendReliableStruct<T>(packet, packetType, pListener))
                         result = false;
             }
             return result;

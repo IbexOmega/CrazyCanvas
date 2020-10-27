@@ -158,19 +158,6 @@ void MatchServer::SpawnFlag()
 				{
 					packet.NetworkUID = entity;
 					ServerSystem::GetInstance().GetServer()->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT);
-
-					/*for (auto& clientPair : clients)
-					{
-						//Send to everyone already connected
-						NetworkSegment* pPacket = clientPair.second->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
-						BinaryEncoder encoder(pPacket);
-						encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG));
-						encoder.WriteInt32((int32)entity);
-						encoder.WriteInt32(INT32_MAX);
-						encoder.WriteVec3(createDesc.Position);
-						encoder.WriteQuat(createDesc.Rotation);
-						clientPair.second->SendReliable(pPacket, nullptr);
-					}*/
 				}
 			}
 			else
@@ -225,7 +212,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 	static glm::vec3 position(2.0f, 10.0f, 0.0f);
 	static glm::vec3 forward(1.0f, 0.0f, 0.0f);
-	static uint32 teamIndex = 0;
+	static uint8 teamIndex = 0;
 
 	CreatePlayerDesc createPlayerDesc =
 	{
