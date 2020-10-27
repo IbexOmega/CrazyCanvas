@@ -54,7 +54,7 @@ void PacketTranscoderSystem::Init()
 	RegisterSystem(TYPE_NAME(PacketTranscoderSystem), systemReg);
 }
 
-void PacketTranscoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
+void PacketTranscoderSystem::FixedTickMainThreadClient(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
 
@@ -62,57 +62,61 @@ void PacketTranscoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTi
 
 	ComponentArray<NetworkComponent>* pNetworkComponents = pECS->GetComponentArray<NetworkComponent>();
 
-	if (MultiplayerUtils::IsServer())
+	ClientBase* pClient = ClientSystem::GetInstance().GetClient();
+
+	for (auto& pair : m_ComponentTypeToEntities)
 	{
-		ServerBase* pServer = ServerSystem::GetInstance().GetServer();
-		const ClientMap& clients = pServer->GetClients();
-		ClientRemoteBase* pClient = nullptr;
-		if (!clients.empty())
-			pClient = clients.begin()->second;
-
-		for (auto& pair : m_ComponentTypeToEntities)
+		IComponentArray* pComponents = pECS->GetComponentArray(pair.first);
+		for (Entity entity : pair.second)
 		{
-			IComponentArray* pComponents = pECS->GetComponentArray(pair.first);
-			for (Entity entity : pair.second)
+			const NetworkComponent& networkComponent = pNetworkComponents->GetData(entity);
+
+			void* pComponent = pComponents->GetRawData(entity);
+			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
+			pPacketComponent->ClearPacketsReceived();
+
+			while (pPacketComponent->GetPacketsToSendCount() > 0)
 			{
-				const NetworkComponent& networkComponent = pNetworkComponents->GetData(entity);
-
-				void* pComponent = pComponents->GetRawData(entity);
-				IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
-				pPacketComponent->ClearPacketsReceived();
-
-				if (pClient)
-				{
-					while (pPacketComponent->GetPacketsToSendCount() > 0)
-					{
-						NetworkSegment* pSegment = pClient->GetFreePacket(pPacketComponent->GetPacketType());
-						pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
-						pClient->SendReliableBroadcast(pSegment);
-					}
-				}
+				NetworkSegment* pSegment = pClient->GetFreePacket(pPacketComponent->GetPacketType());
+				pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
+				pClient->SendReliable(pSegment);
 			}
 		}
 	}
-	else
+}
+
+void PacketTranscoderSystem::FixedTickMainThreadServer(LambdaEngine::Timestamp deltaTime)
+{
+	UNREFERENCED_VARIABLE(deltaTime);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	ComponentArray<NetworkComponent>* pNetworkComponents = pECS->GetComponentArray<NetworkComponent>();
+
+	ServerBase* pServer = ServerSystem::GetInstance().GetServer();
+	const ClientMap& clients = pServer->GetClients();
+	ClientRemoteBase* pClient = nullptr;
+	if (!clients.empty())
+		pClient = clients.begin()->second;
+
+	for (auto& pair : m_ComponentTypeToEntities)
 	{
-		ClientBase* pClient = ClientSystem::GetInstance().GetClient();
-
-		for (auto& pair : m_ComponentTypeToEntities)
+		IComponentArray* pComponents = pECS->GetComponentArray(pair.first);
+		for (Entity entity : pair.second)
 		{
-			IComponentArray* pComponents = pECS->GetComponentArray(pair.first);
-			for (Entity entity : pair.second)
+			const NetworkComponent& networkComponent = pNetworkComponents->GetData(entity);
+
+			void* pComponent = pComponents->GetRawData(entity);
+			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
+			pPacketComponent->ClearPacketsReceived();
+
+			if (pClient)
 			{
-				const NetworkComponent& networkComponent = pNetworkComponents->GetData(entity);
-
-				void* pComponent = pComponents->GetRawData(entity);
-				IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
-				pPacketComponent->ClearPacketsReceived();
-
 				while (pPacketComponent->GetPacketsToSendCount() > 0)
 				{
 					NetworkSegment* pSegment = pClient->GetFreePacket(pPacketComponent->GetPacketType());
 					pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
-					pClient->SendReliable(pSegment);
+					pClient->SendReliableBroadcast(pSegment);
 				}
 			}
 		}
@@ -129,14 +133,18 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 	if (!pEvent)
 		return false;
 
+	uint16 packetSize = pEvent->GetSize();
+	if (packetSize != pSegment->GetBufferSize())
+		return true;
+
 	pSegment->ResetReadHead();
-	pSegment->Read(pEvent->GetRawData(), pEvent->GetSize());
+	pSegment->Read(pEvent->GetRawData(), packetSize);
 	EventQueue::SendEventImmediate(*pEvent);
 
 	const ComponentType* pComponentType = pEvent->GetComponentType();
 
 	if (!pComponentType)
-		return false;
+		return true;
 
 	const Packet* pPacket = (const Packet*)event.pPacket->GetBuffer();
 	Entity entity = MultiplayerUtils::GetEntity(pPacket->NetworkUID);
@@ -152,7 +160,7 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 	IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
 	void* packetData = pPacketComponent->AddPacketReceived();
 	pSegment->ResetReadHead();
-	pSegment->Read(packetData, pPacketComponent->GetSize());
+	pSegment->Read(packetData, packetSize);
 
 	return true;
 }

@@ -17,7 +17,8 @@ public:
 
 	void Init();
 
-	void FixedTickMainThread(LambdaEngine::Timestamp deltaTime);
+	void FixedTickMainThreadClient(LambdaEngine::Timestamp deltaTime);
+	void FixedTickMainThreadServer(LambdaEngine::Timestamp deltaTime);
 
 private:
 	bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event);

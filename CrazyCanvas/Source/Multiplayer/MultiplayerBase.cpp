@@ -41,5 +41,4 @@ void MultiplayerBase::TickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
 	FixedTickMainThread(deltaTime);
-	m_PacketDecoderSystem.FixedTickMainThread(deltaTime);
 }
