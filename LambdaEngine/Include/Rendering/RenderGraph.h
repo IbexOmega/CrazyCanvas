@@ -353,7 +353,7 @@ namespace LambdaEngine
 		/*
 		* Updates the global SBT which is used for all Ray Tracing calls, each SBTRecord should contain addresses to valid Buffers
 		*/
-		void UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords);
+		void UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*> removedDeviceResources);
 		/*
 		* Updates the dimensions of a RenderStage, will only set the dimensions which are set to EXTERNAL
 		*/
