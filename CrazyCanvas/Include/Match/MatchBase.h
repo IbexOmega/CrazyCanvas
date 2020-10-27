@@ -16,6 +16,7 @@ struct MatchDescription
 {
 	LambdaEngine::SHA256Hash LevelHash;
 	uint32 NumTeams = 2;
+	uint32 MaxScore = 5;
 };
 
 class MatchBase
@@ -41,4 +42,6 @@ protected:
 protected:
 	Level* m_pLevel = nullptr;
 	LambdaEngine::TArray<uint32> m_Scores;
+
+	MatchDescription m_MatchDesc;
 };

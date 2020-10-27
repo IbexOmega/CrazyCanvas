@@ -19,7 +19,7 @@
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
-#define MAX_SCORE 5
+#define MAX_SCORE 2
 #define MAX_AMMO 100
 
 struct GameGUIState
@@ -28,7 +28,7 @@ struct GameGUIState
 	float DamageTaken;
 	float Health;
 	
-	int8  CurrentScore;
+	LambdaEngine::TArray<uint32> Scores;
 
 	int32 Ammo;
 	int32 AmmoCapacity;

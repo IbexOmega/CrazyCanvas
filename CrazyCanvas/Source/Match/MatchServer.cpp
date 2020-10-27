@@ -320,6 +320,18 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 
 	const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
 
+	if (newScore == m_MatchDesc.MaxScore)
+	{
+		ClientRemoteBase* pClient = clients.begin()->second;
+
+		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::TEAM_SCORED);
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteUInt32(event.TeamIndex);
+		encoder.WriteUInt32(newScore);
+
+		pClient->SendReliableBroadcast(pPacket);
+	}
+
 	if (!clients.empty())
 	{
 		ClientRemoteBase* pClient = clients.begin()->second;

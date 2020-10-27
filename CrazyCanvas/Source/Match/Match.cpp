@@ -44,6 +44,8 @@ bool Match::CreateMatch(const MatchDescription* pDesc)
 
 bool Match::ResetMatch()
 {
+	s_pMatchInstance->SetScore(0, 0);
+	s_pMatchInstance->SetScore(1, 0);
 	return false;
 }
 

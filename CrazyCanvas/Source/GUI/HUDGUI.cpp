@@ -13,6 +13,8 @@
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
 
+#include "Match/Match.h"
+
 #include <string>
 
 
@@ -23,6 +25,7 @@ HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) :
 	m_GUIState()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+
 	InitGUI();
 }
 
@@ -102,15 +105,34 @@ bool HUDGUI::UpdateScore()
 	//Returns false if game Over
 	std::string scoreString;
 
-	m_GUIState.CurrentScore++;
-
-	scoreString = std::to_string(m_GUIState.CurrentScore) + "/" + std::to_string(MAX_SCORE);
-
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
-
-	if (m_GUIState.CurrentScore == MAX_SCORE)
+	if (m_GUIState.Scores[0] != Match::GetScore(0))
 	{
-		m_GUIState.CurrentScore = 0;
+		m_GUIState.Scores[0] = Match::GetScore(0);
+
+		scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
+
+		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+	}
+	else if(m_GUIState.Scores[1] != Match::GetScore(1))
+	{
+		m_GUIState.Scores[1] = Match::GetScore(1);
+
+		scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
+
+		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+	}
+
+	if (m_GUIState.Scores[0] == MAX_SCORE || m_GUIState.Scores[1] == MAX_SCORE)
+	{
+		m_GUIState.Scores[0] = 0;
+		m_GUIState.Scores[1] = 0;
+
+		Match::ResetMatch();
+
+		scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
+
+		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+
 		return false;
 	}
 	return true;
@@ -144,7 +166,10 @@ void HUDGUI::InitGUI()
 	m_GUIState.Health			= 100.0;
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
-	m_GUIState.CurrentScore		= 0;
+	m_GUIState.Scores.PushBack(Match::GetScore(0));
+	m_GUIState.Scores.PushBack(Match::GetScore(1));
+
+
 
 	pHpRect->SetHeight(0.0);
 
@@ -152,7 +177,7 @@ void HUDGUI::InitGUI()
 	std::string ammoString;
 
 	ammoString	= std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
-	scoreString = std::to_string(m_GUIState.CurrentScore) + "/" + std::to_string(MAX_SCORE);
+	scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
 
 	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());

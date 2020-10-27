@@ -57,7 +57,6 @@ void PlaySessionState::Init()
 	m_MultiplayerClient.InitInternal();
 
 	m_HealthSystem.Init();
-	m_HUDSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -72,6 +71,7 @@ void PlaySessionState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
+	m_HUDSystem.Init();
 	//Preload some resources
 	{
 		TArray<GUID_Lambda> animations;
@@ -194,5 +194,4 @@ void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
 	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
-	m_HUDSystem.FixedTick(delta);
 }

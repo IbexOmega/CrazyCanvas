@@ -20,6 +20,7 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &MatchBase::OnPacketReceived);
 	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
+	m_MatchDesc = *pDesc;
 
 	if (m_pLevel == nullptr)
 	{
@@ -31,7 +32,7 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 		return false;
 	}
 
-	m_Scores.Resize(pDesc->NumTeams);
+	m_Scores.Resize(m_MatchDesc.NumTeams);
 
 	return true;
 }
