@@ -17,12 +17,22 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Engine/EngineConfig.h"
 
-#include "Multiplayer/Packet/CreateLevelObject.h"
+using namespace LambdaEngine;
+
+MatchClient::~MatchClient()
+{
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+}
 
 bool MatchClient::InitInternal()
 {
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	return true;
 }
 
@@ -31,98 +41,88 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 	UNREFERENCED_VARIABLE(deltaTime);
 }
 
-bool MatchClient::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
+bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<CreateLevelObject>& event)
 {
-	using namespace LambdaEngine;
+	const CreateLevelObject& packet = event.Packet;
+	IClient* pClient = event.pClient;
 
-	if (event.Type == PacketType::CREATE_LEVEL_OBJECT)
+	switch (packet.LevelObjectType)
 	{
-		CreateLevelObject packet;
-		event.pPacket->Read(&packet);
-
-		switch (packet.LevelObjectType)
+		case ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER:
 		{
-			case ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER:
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+
+			const CameraDesc cameraDesc =
 			{
-				TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+				.Width = (float)window->GetWidth(),
+				.Height = (float)window->GetHeight(),
+				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+			};
 
-				const CameraDesc cameraDesc =
-				{
-					.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-					.Width		= (float)window->GetWidth(),
-					.Height		= (float)window->GetHeight(),
-					.NearPlane	= EngineConfig::GetFloatProperty("CameraNearPlane"),
-					.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
-				};
+			//Todo: Move this ffs
+			TArray<GUID_Lambda> animations;
+			const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+			bool animationsExist = !animations.IsEmpty();
 
-				//Todo: Move this ffs
-				TArray<GUID_Lambda> animations;
-				const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-				bool animationsExist			= !animations.IsEmpty();
-
-				AnimationComponent robotAnimationComp = {};
-				robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-				if (animationsExist)
-				{
-					robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
-				}
-
-				CreatePlayerDesc createPlayerDesc =
-				{
-					.IsLocal			= packet.Player.IsMySelf,
-					.NetworkUID			= packet.NetworkUID,
-					.pClient			= event.pClient,
-					.Position			= packet.Position,
-					.Forward			= packet.Forward,
-					.Scale				= glm::vec3(1.0f),
-					.TeamIndex			= packet.Player.TeamIndex,
-					.pCameraDesc		= &cameraDesc,
-					.MeshGUID			= robotGUID,
-					.AnimationComponent = robotAnimationComp,
-				};
-
-				TArray<Entity> createdPlayerEntities;
-				if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
-				{
-					LOG_ERROR("[MatchClient]: Failed to create Player!");
-				}
-
-				break;
-			}
-			case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
+			AnimationComponent robotAnimationComp = {};
+			robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+			if (animationsExist)
 			{
-				Entity parentEntity = MultiplayerUtils::GetEntity(packet.Flag.ParentNetworkUID);
-
-				CreateFlagDesc createFlagDesc =
-				{
-					.NetworkUID		= packet.NetworkUID,
-					.ParentEntity	= parentEntity,
-					.Position		= packet.Position,
-					.Scale			= glm::vec3(1.0f),
-					.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
-				};
-
-				TArray<Entity> createdFlagEntities;
-				if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, &createFlagDesc, createdFlagEntities))
-				{
-					LOG_ERROR("[MatchClient]: Failed to create Flag!");
-				}
-
-				break;
+				robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
 			}
+
+			CreatePlayerDesc createPlayerDesc =
+			{
+				.IsLocal = packet.Player.IsMySelf,
+				.NetworkUID = packet.NetworkUID,
+				.pClient = pClient,
+				.Position = packet.Position,
+				.Forward = packet.Forward,
+				.Scale = glm::vec3(1.0f),
+				.TeamIndex = packet.Player.TeamIndex,
+				.pCameraDesc = &cameraDesc,
+				.MeshGUID = robotGUID,
+				.AnimationComponent = robotAnimationComp,
+			};
+
+			TArray<Entity> createdPlayerEntities;
+			if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
+			{
+				LOG_ERROR("[MatchClient]: Failed to create Player!");
+			}
+
+			break;
 		}
+		case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
+		{
+			Entity parentEntity = MultiplayerUtils::GetEntity(packet.Flag.ParentNetworkUID);
 
-		return true;
+			CreateFlagDesc createFlagDesc =
+			{
+				.NetworkUID = packet.NetworkUID,
+				.ParentEntity = parentEntity,
+				.Position = packet.Position,
+				.Scale = glm::vec3(1.0f),
+				.Rotation = glm::quatLookAt(packet.Forward, g_DefaultUp),
+			};
+
+			TArray<Entity> createdFlagEntities;
+			if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, &createFlagDesc, createdFlagEntities))
+			{
+				LOG_ERROR("[MatchClient]: Failed to create Flag!");
+			}
+
+			break;
+		}
 	}
-	else if (event.Type == PacketType::TEAM_SCORED)
-	{
-		BinaryDecoder decoder(event.pPacket);
-		uint32 teamIndex = decoder.ReadUInt32();
-		uint32 score = decoder.ReadUInt32();
-		SetScore(teamIndex, score);
+	return true;
+}
 
-		return true;
-	}
-
-	return false;
+bool MatchClient::OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTeamScored>& event)
+{
+	const PacketTeamScored& packet = event.Packet;
+	SetScore(packet.TeamIndex, packet.Score);
+	return true;
 }

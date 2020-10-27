@@ -21,5 +21,5 @@ public:
 		return LambdaEngine::String("OnFlagDeliveredEvent");
 	}
 
-	uint32 TeamIndex = 0;
+	uint8 TeamIndex = 0;
 };

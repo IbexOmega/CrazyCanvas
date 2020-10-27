@@ -2,6 +2,7 @@
 
 #include "Application/API/Events/Event.h"
 #include "Networking/API/IClient.h"
+#include "ECS/ComponentType.h"
 
 struct IPacketReceivedEvent : public LambdaEngine::Event
 {
@@ -9,7 +10,7 @@ public:
 	virtual ~IPacketReceivedEvent() = default;
 
 public:
-	virtual void* GetRawData() = 0;
+	virtual void* Populate(LambdaEngine::IClient* pClient) = 0;
 	virtual uint16 GetSize() = 0;
 	virtual const LambdaEngine::ComponentType* GetComponentType() = 0;
 };
@@ -23,12 +24,11 @@ public:
 	DECLARE_EVENT_TYPE(PacketReceivedEvent);
 
 public:
-	PacketReceivedEvent(const LambdaEngine::ComponentType* pCompType) :
+	PacketReceivedEvent(const LambdaEngine::ComponentType* pComponentType) :
 		IPacketReceivedEvent(),
 		pClient(nullptr),
-		pComponentType(pCompType)
+		m_pComponentType(pComponentType)
 	{
-
 	}
 
 	virtual LambdaEngine::String ToString() const override
@@ -37,8 +37,9 @@ public:
 	}
 
 private:
-	virtual void* GetRawData() override
+	virtual void* Populate(LambdaEngine::IClient* pNewClient) override
 	{
+		pClient = pNewClient;
 		return &Packet;
 	}
 
@@ -49,7 +50,7 @@ private:
 
 	virtual const LambdaEngine::ComponentType* GetComponentType()
 	{
-		return pComponentType;
+		return m_pComponentType;
 	}
 
 public:
@@ -57,5 +58,5 @@ public:
 	T Packet;
 
 private:
-	const LambdaEngine::ComponentType* pComponentType;
+	const LambdaEngine::ComponentType* m_pComponentType;
 };

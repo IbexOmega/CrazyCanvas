@@ -15,7 +15,7 @@ namespace LambdaEngine
 	public:
 		using EventTypeID = uint64;
 
-		inline constexpr EventType(EventTypeID id, const char* pInName)
+		inline EventType(EventTypeID id, const char* pInName)
 			: ID(id)
 			, pName(pInName)
 		{
@@ -73,7 +73,8 @@ namespace LambdaEngine
 		public: \
 			FORCEINLINE static LambdaEngine::EventType GetStaticType() \
 			{ \
-				constexpr LambdaEngine::EventType type(LambdaEngine::HashString(#Type), #Type); \
+				const std::type_info& info = typeid(Type); \
+				static LambdaEngine::EventType type(LambdaEngine::HashString(info.name()), info.name()); \
 				return type; \
 			} \
 

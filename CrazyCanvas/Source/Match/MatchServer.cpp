@@ -33,6 +33,9 @@
 
 #include "Multiplayer/Packet/CreateLevelObject.h"
 
+#include "Multiplayer/ServerHelper.h"
+#include "Multiplayer/Packet/PacketTeamScored.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -146,7 +149,9 @@ void MatchServer::SpawnFlag()
 			for (Entity entity : createdFlagEntities)
 			{
 				packet.NetworkUID = entity;
-				ServerSystem::GetInstance().GetServer()->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT);
+
+				ServerHelper::SendBroadcast(packet);
+				//ServerSystem::GetInstance().GetServer()->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT);
 			}
 		}
 		else
@@ -223,12 +228,6 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	}
 
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
-}
-
-bool MatchServer::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
-{
-	UNREFERENCED_VARIABLE(event);
-	return false;
 }
 
 bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
@@ -318,19 +317,11 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 	uint32 newScore = GetScore(event.TeamIndex) + 1;
 	SetScore(event.TeamIndex, newScore);
 
-	const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
 
-	if (!clients.empty())
-	{
-		ClientRemoteBase* pClient = clients.begin()->second;
-
-		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::TEAM_SCORED);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt32(event.TeamIndex);
-		encoder.WriteUInt32(newScore);
-
-		pClient->SendReliableBroadcast(pPacket);
-	}
+	PacketTeamScored packet;
+	packet.TeamIndex	= event.TeamIndex;
+	packet.Score		= newScore;
+	ServerHelper::SendBroadcast(packet);
 
 	return true;
 }
