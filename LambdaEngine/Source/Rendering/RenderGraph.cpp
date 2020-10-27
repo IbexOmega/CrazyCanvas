@@ -3593,7 +3593,11 @@ namespace LambdaEngine
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);
-			memcpy(drawArgsArgsIt->second.Args.GetData(), pDesc->ExternalDrawArgsUpdate.pDrawArgs, pDesc->ExternalDrawArgsUpdate.Count * sizeof(DrawArg));
+
+			for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
+			{
+				drawArgsArgsIt->second.Args[d] = pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
+			}
 
 			//Update Synchronization Stage Barriers
 			for (uint32 b = 0; b < pResource->BarriersPerSynchronizationStage.GetSize(); b += pResource->SubResourceCount)
