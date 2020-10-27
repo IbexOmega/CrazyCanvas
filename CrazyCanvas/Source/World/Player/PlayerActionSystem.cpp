@@ -80,7 +80,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 {
-	if (event.Key == EKey::KEY_KEYPAD_0)
+	if (event.Key == EKey::KEY_KEYPAD_0 || event.Key == EKey::KEY_END)
 	{
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(!m_MouseEnabled);
