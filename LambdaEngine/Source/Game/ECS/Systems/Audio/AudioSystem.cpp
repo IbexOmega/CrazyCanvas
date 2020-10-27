@@ -49,7 +49,7 @@ namespace LambdaEngine
 			systemReg.Phase = 0;
 			SetComponentOwner<AudibleComponent>({ std::bind_front(&AudioSystem::AudibleComponentDestructor, this) });
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(AudioSystem), systemReg);
 		}
 
 		return true;

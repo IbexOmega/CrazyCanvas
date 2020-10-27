@@ -36,7 +36,7 @@ bool HealthSystem::Init()
 		// After weaponsystem -> Do not know if this is correct
 		systemReg.Phase = 2;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
 	}
 
 	// Register eventhandler

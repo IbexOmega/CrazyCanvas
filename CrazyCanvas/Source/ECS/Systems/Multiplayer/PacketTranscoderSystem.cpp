@@ -30,6 +30,7 @@ void PacketTranscoderSystem::Init()
 	SystemRegistration systemReg;
 
 	const PacketTypeMap& packetTypeMap = PacketType::GetPacketTypeMap();
+	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.Reserve((uint32)packetTypeMap.size());
 
 	for (auto pair : packetTypeMap)
 	{
@@ -45,7 +46,7 @@ void PacketTranscoderSystem::Init()
 
 	systemReg.Phase = 0;
 
-	RegisterSystem(systemReg);
+	RegisterSystem(TYPE_NAME(PacketTranscoderSystem), systemReg);
 }
 
 void PacketTranscoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)

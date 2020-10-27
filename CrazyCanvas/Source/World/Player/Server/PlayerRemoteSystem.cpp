@@ -15,12 +15,12 @@ using namespace LambdaEngine;
 
 PlayerRemoteSystem::PlayerRemoteSystem()
 {
-	
+
 }
 
 PlayerRemoteSystem::~PlayerRemoteSystem()
 {
-	
+
 }
 
 void PlayerRemoteSystem::Init()
@@ -45,7 +45,7 @@ void PlayerRemoteSystem::Init()
 	};
 	systemReg.Phase = 0;
 
-	RegisterSystem(systemReg);
+	RegisterSystem(TYPE_NAME(PlayerRemoteSystem), systemReg);
 }
 
 void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)

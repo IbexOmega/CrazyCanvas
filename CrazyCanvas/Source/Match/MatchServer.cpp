@@ -1,5 +1,6 @@
 #include "Match/MatchServer.h"
 
+#include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Match/FlagComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
@@ -28,6 +29,12 @@
 
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+#include "Rendering/ImGuiRenderer.h"
+
+#include <imgui.h>
+
+#define RENDER_MATCH_INFORMATION
+
 MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
@@ -54,70 +61,115 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 		m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, numFlags);
 
 		if (numFlags == 0)
+			SpawnFlag();
+	}
+
+	//Render Some Server Match Information
+
+#if defined(RENDER_MATCH_INFORMATION)
+	ImGuiRenderer::Get().DrawUI([this]()
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		if (ImGui::Begin("Match"))
 		{
-			ECSCore* pECS = ECSCore::GetInstance();
-
-			Job job;
-			job.Components =
+			if (m_pLevel != nullptr)
 			{
-				{ ComponentPermissions::RW,	FlagSpawnComponent::Type() },
-				{ ComponentPermissions::RW,	PositionComponent::Type() },
-			};
+				uint32 numFlags = 0;
+				Entity* pFlags = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, numFlags);
 
-			job.Function = [this]()
-			{
-				ECSCore* pECS = ECSCore::GetInstance();
-
-				uint32 numFlagSpawnPoints = 0;
-				Entity* pFlagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN, numFlagSpawnPoints);
-
-				if (numFlagSpawnPoints > 0)
+				if (numFlags > 0)
 				{
-					const FlagSpawnComponent& flagSpawnComponent	= pECS->GetConstComponent<FlagSpawnComponent>(pFlagSpawnPointEntities[0]);
-					const PositionComponent& positionComponent		= pECS->GetConstComponent<PositionComponent>(pFlagSpawnPointEntities[0]);
+					Entity flagEntity = pFlags[0];
 
-					float r		= Random::Float32(0.0f, flagSpawnComponent.Radius);
-					float theta = Random::Float32(0.0f, glm::two_pi<float32>());
+					const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+					ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
 
-					CreateFlagDesc createDesc = {};
-					createDesc.Position		= positionComponent.Position + r * glm::vec3(glm::cos(theta), 0.0f, glm::sin(theta));
-					createDesc.Scale		= glm::vec3(1.0f);
-					createDesc.Rotation		= glm::identity<glm::quat>();
-
-					TArray<Entity> createdFlagEntities;
-					if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, &createDesc, createdFlagEntities))
+					if (flagParentComponent.Attached)
 					{
-						VALIDATE(createdFlagEntities.GetSize() == 1);
-
-						//Tell the bois that we created a flag
-						const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
-
-						for (Entity entity : createdFlagEntities)
+						if (ImGui::Button("Drop Flag"))
 						{
-							for (auto& clientPair : clients)
-							{
-								//Send to everyone already connected
-								NetworkSegment* pPacket = clientPair.second->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
-								BinaryEncoder encoder(pPacket);
-								encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG));
-								encoder.WriteInt32((int32)entity);
-								encoder.WriteInt32(INT32_MAX);
-								encoder.WriteVec3(createDesc.Position);
-								encoder.WriteQuat(createDesc.Rotation);
-								clientPair.second->SendReliable(pPacket, nullptr);
-							}
+							FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
 						}
 					}
-					else
+				}
+				else
+				{
+					ImGui::Text("Flag Status: Not Spawned");
+				}
+			}
+		}
+
+		ImGui::End();
+	});
+#endif
+}
+
+void MatchServer::SpawnFlag()
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Job job;
+	job.Components =
+	{
+		{ ComponentPermissions::RW,	FlagSpawnComponent::Type() },
+		{ ComponentPermissions::RW,	PositionComponent::Type() },
+	};
+
+	job.Function = [this]()
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		uint32 numFlagSpawnPoints = 0;
+		Entity* pFlagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN, numFlagSpawnPoints);
+
+		if (numFlagSpawnPoints > 0)
+		{
+			const FlagSpawnComponent& flagSpawnComponent	= pECS->GetConstComponent<FlagSpawnComponent>(pFlagSpawnPointEntities[0]);
+			const PositionComponent& positionComponent		= pECS->GetConstComponent<PositionComponent>(pFlagSpawnPointEntities[0]);
+
+			float r		= Random::Float32(0.0f, flagSpawnComponent.Radius);
+			float theta = Random::Float32(0.0f, glm::two_pi<float32>());
+
+			CreateFlagDesc createDesc = {};
+			createDesc.Position		= positionComponent.Position + r * glm::vec3(glm::cos(theta), 0.0f, glm::sin(theta));
+			createDesc.Scale		= glm::vec3(1.0f);
+			createDesc.Rotation		= glm::identity<glm::quat>();
+
+			TArray<Entity> createdFlagEntities;
+			if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, &createDesc, createdFlagEntities))
+			{
+				VALIDATE(createdFlagEntities.GetSize() == 1);
+
+				//Tell the bois that we created a flag
+				const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
+
+				for (Entity entity : createdFlagEntities)
+				{
+					for (auto& clientPair : clients)
 					{
-						LOG_ERROR("[MatchServer]: Failed to create Flag");
+						//Send to everyone already connected
+						NetworkSegment* pPacket = clientPair.second->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
+						BinaryEncoder encoder(pPacket);
+						encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG));
+						encoder.WriteInt32((int32)entity);
+						encoder.WriteInt32(INT32_MAX);
+						encoder.WriteVec3(createDesc.Position);
+						encoder.WriteQuat(createDesc.Rotation);
+						clientPair.second->SendReliable(pPacket, nullptr);
 					}
 				}
-			};
-
-			pECS->ScheduleJobASAP(job);
+			}
+			else
+			{
+				LOG_ERROR("[MatchServer]: Failed to create Flag");
+			}
 		}
-	}
+	};
+
+	pECS->ScheduleJobASAP(job);
 }
 
 bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
@@ -189,8 +241,6 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		.TeamIndex		= teamIndex,
 	};
 
-	teamIndex = (teamIndex + 1) % 2;
-
 	TArray<Entity> createdPlayerEntities;
 	if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
 	{
@@ -242,6 +292,8 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		LOG_ERROR("[MatchServer]: Failed to create Player");
 		return false;
 	}
+
+	teamIndex = (teamIndex + 1) % 2;
 
 	uint32 flagCount = 0;
 	Entity* pFlagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, flagCount);

@@ -61,7 +61,7 @@ private:
 	Noesis::Ptr<Noesis::IView> m_View;
 
 	LambdaEngine::RenderGraphEditor*	m_pRenderGraphEditor	= nullptr;
-
+	bool m_ECSVisualization				= false;
 	bool m_RenderGraphWindow			= false;
 	bool m_ShowDemoWindow				= false;
 	bool m_DebuggingWindow				= false;
@@ -69,8 +69,6 @@ private:
 	
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;
-
-	MultiplayerClient m_MultiplayerClient;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

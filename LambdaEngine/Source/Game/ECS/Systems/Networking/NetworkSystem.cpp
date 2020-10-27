@@ -38,7 +38,7 @@ namespace LambdaEngine
 
 		systemReg.Phase = 0;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(NetworkSystem), systemReg);
 		return true;
 	}
 

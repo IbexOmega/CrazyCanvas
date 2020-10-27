@@ -4,8 +4,9 @@ namespace LambdaEngine
 {
 	ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
 
-	ECSCore::ECSCore()
-		:m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry)
+	ECSCore::ECSCore() :
+		m_EntityPublisher(&m_ComponentStorage, &m_EntityRegistry)
+	,	m_ECSVisualizer(&m_JobScheduler)
 	{}
 
 	void ECSCore::Release()
@@ -21,6 +22,10 @@ namespace LambdaEngine
 		PerformEntityDeletions();
 		m_JobScheduler.Tick((float32)deltaTime.AsSeconds());
 		m_ComponentStorage.ResetDirtyFlags();
+
+#ifdef LAMBDA_DEVELOPMENT
+		m_ECSVisualizer.Render();
+#endif
 	}
 
 	IComponentArray* ECSCore::GetComponentArray(const ComponentType* pComponentType)
@@ -198,6 +203,16 @@ namespace LambdaEngine
 		}
 
 		return success;
+	}
+
+	void ECSCore::RegisterSystem(System* pSystem, uint32 regularJobID)
+	{
+		m_Systems.PushBack(pSystem, regularJobID);
+	}
+
+	void ECSCore::DeregisterSystem(uint32 regularJobID)
+	{
+		m_Systems.Pop(regularJobID);
 	}
 
 	void ECSCore::PerformComponentRegistrations()

@@ -49,7 +49,7 @@ bool FlagSystemBase::Init()
 		InternalAddAdditionalRequiredFlagComponents(systemReg.SubscriberRegistration.EntitySubscriptionRegistrations[0].ComponentAccesses);
 		InternalAddAdditionalAccesses(systemReg.SubscriberRegistration.AdditionalAccesses);
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(FlagSystemBase), systemReg);
 	}
 
 	s_Instance = this;

@@ -97,6 +97,7 @@ void BenchmarkState::Init()
 	//Sphere Grid
 	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
 
 		uint32 gridRadius = 5;
 
@@ -128,18 +129,18 @@ void BenchmarkState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
+				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
 				const CollisionCreateInfo collisionCreateInfo = {
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
 					.ShapeType		= EShapeType::SIMULATION,
 					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
 				};
 
-				StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+				const StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo, sphereRadius);
 				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);

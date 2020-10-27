@@ -22,7 +22,7 @@ bool TrackSystem::Init()
 		};
 		systemReg.Phase = 0;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(TrackSystem), systemReg);
 	}
 
 	return true;

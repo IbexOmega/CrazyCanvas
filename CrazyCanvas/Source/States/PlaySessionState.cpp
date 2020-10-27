@@ -193,4 +193,5 @@ void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
 	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+	m_HUDSystem.FixedTick(delta);
 }
