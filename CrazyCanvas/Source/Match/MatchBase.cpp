@@ -25,7 +25,6 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
 	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
-	//MultiplayerUtils::RegisterClientEntityAccessor(m_pLevel);
 
 	if (m_pLevel == nullptr)
 	{
@@ -37,10 +36,18 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 		return false;
 	}
 
+	m_Scores.Resize(pDesc->NumTeams);
+
 	return true;
 }
 
 void MatchBase::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	TickInternal(deltaTime);
+}
+
+void MatchBase::SetScore(uint32 teamIndex, uint32 score)
+{
+	VALIDATE(teamIndex < m_Scores.GetSize());
+	m_Scores[teamIndex] = score;
 }

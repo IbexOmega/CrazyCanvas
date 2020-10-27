@@ -16,6 +16,7 @@ uint16 PacketType::PLAYER_ACTION			= 0;
 uint16 PacketType::PLAYER_ACTION_RESPONSE	= 0;
 uint16 PacketType::WEAPON_FIRE				= 0;
 uint16 PacketType::FLAG_EDITED				= 0;
+uint16 PacketType::TEAM_SCORED				= 0;
 
 void PacketType::Init()
 {
@@ -24,6 +25,7 @@ void PacketType::Init()
 	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PlayerActionResponse>();
 	WEAPON_FIRE				= RegisterPacketTypeWithComponent<WeaponFiredPacket>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
+	TEAM_SCORED				= RegisterPacketType();
 }
 
 uint16 PacketType::RegisterPacketType()

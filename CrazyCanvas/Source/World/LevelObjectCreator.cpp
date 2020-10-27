@@ -50,7 +50,7 @@ bool LevelObjectCreator::Init()
 {
 	using namespace LambdaEngine;
 
-	//Register Create Special Object by Prefix Functions
+	//Register Create Level Object by Prefix Functions
 	{
 		//Spawnpoint
 		{
@@ -63,7 +63,7 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerSpawn;
 		}
 
-		//Spawnpoint
+		//Flag Spawn
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
 			{
@@ -72,6 +72,17 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagSpawn;
+		}
+
+		//Flag Delivery Point
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_FLAG_DELIVERY_POINT"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagDeliveryPoint;
 		}
 	}
 
@@ -174,12 +185,19 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
 		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
 		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
-		.ShapeType		= EShapeType::SIMULATION,
-		.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
-		.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+		.Shapes = 
+		{
+			{
+				/* ShapeType */			EShapeType::SIMULATION,
+				/* GeometryType */		EGeometryType::MESH,
+				/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+			},
+		},
 	};
 
-	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionMesh(collisionCreateInfo, ResourceManager::GetMesh(meshComponent.MeshGUID));
+	StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 	return entity;
 }
@@ -227,11 +245,54 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
 	const glm::vec3& translation)
 {
-	UNREFERENCED_VARIABLE(levelObject);
-	UNREFERENCED_VARIABLE(createdEntities);
-	UNREFERENCED_VARIABLE(translation);
+	using namespace LambdaEngine;
 
-	LOG_WARNING("[LevelObjectCreator]: Spawnpoint not implemented!");
+	if (levelObject.BoundingBoxes.GetSize() > 1 )
+	{
+		LOG_WARNING("[LevelObjectCreator]: Player Spawn can currently not be created with more than one mesh, using the first mesh...");
+	}
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	Entity entity = pECS->CreateEntity();
+
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	if (!levelObject.MeshComponents.IsEmpty())
+	{
+		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
+
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+
+		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
+
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			.Entity			= entity,
+			.Position		= positionComponent,
+			.Scale			= scaleComponent,
+			.Rotation		= rotationComponent,
+			.Shapes =
+			{
+				{
+					/* ShapeType */			EShapeType::SIMULATION,
+					/* GeometryType */		EGeometryType::MESH,
+					/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
+					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+				},
+			},
+		};
+
+		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+	}
+
+	createdEntities.PushBack(entity);
+
+	D_LOG_INFO("Created Player Spawn with EntityID %d", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
@@ -251,7 +312,66 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	createdEntities.PushBack(entity);
 
+	D_LOG_INFO("Created Flag Spawn with EntityID %d", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
+}
+
+ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+	//Only the server is allowed to create a Base
+	if (!MultiplayerUtils::IsServer())
+		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
+
+	if (levelObject.BoundingBoxes.GetSize() > 1)
+	{
+		LOG_WARNING("[LevelObjectCreator]: Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
+	}
+
+	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	pECS->AddComponent<FlagDeliveryPointComponent>(entity, {});
+
+	uint32 teamIndex = 0;
+	size_t teamIndexPos = levelObject.Name.find("TEAM");
+	if (teamIndexPos != String::npos) teamIndex = std::stoul(levelObject.Name.substr(teamIndexPos + 4));
+
+	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+	const PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	const ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	const RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	//Only the server checks collision with the flag
+	const CollisionCreateInfo collisionCreateInfo =
+	{
+		.Entity		= entity,
+		.Position	= positionComponent,
+		.Scale		= scaleComponent,
+		.Rotation	= rotationComponent,
+		.Shapes =
+		{
+			{
+				/* Shape Type */		EShapeType::TRIGGER,
+				/* GeometryType */		EGeometryType::BOX,
+				/* Geometry */			{ .HalfExtents = boundingBox.Dimensions },
+				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+			},
+		},
+	};
+
+	StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
+
+	createdEntities.PushBack(entity);
+
+	D_LOG_INFO("Created Base with EntityID %d and Team Index %d", entity, teamIndex);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
 bool LevelObjectCreator::CreateFlag(
@@ -324,23 +444,44 @@ bool LevelObjectCreator::CreateFlag(
 	}
 	else
 	{
+		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
+		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
+
 		//Only the server checks collision with the flag
 		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		entity,
+            /* Detection Method */	ECollisionDetection::DISCRETE,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
-			/* Shape Type */		EShapeType::TRIGGER,
-			/* Detection Method */	ECollisionDetection::DISCRETE,
-			/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-			/* CollisionMask */		FLAG_DROPPED_COLLISION_MASK,
-			/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
-			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity,		{ glm::vec3(0.0f) })
+			{
+				{
+					/* Shape Type */		EShapeType::TRIGGER,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
+					/* UserData */			&flagPlayerColliderType,
+					/* UserDataSize */		sizeof(EFlagColliderType)
+				},
+				{
+					/* Shape Type */		EShapeType::SIMULATION,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnDeliveryPointFlagCollision, FlagSystemBase::GetInstance()),
+					/* UserData */			&flagDeliveryPointColliderType,
+					/* UserDataSize */		sizeof(EFlagColliderType)
+				},
+			},
+			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity, { glm::vec3(0.0f) })
 		};
 		
-		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicCollisionBox(collisionCreateInfo, pMesh->BoundingBox.Dimensions * 0.5f);
+		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicActor(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
 

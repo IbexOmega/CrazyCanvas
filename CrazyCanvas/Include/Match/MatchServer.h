@@ -3,6 +3,7 @@
 #include "Match/MatchBase.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+#include "Events/MatchEvents.h"
 
 class MatchServer : public MatchBase
 {
@@ -22,4 +23,5 @@ protected:
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
+	bool OnFlagDelivered(const OnFlagDeliveredEvent& event);
 };

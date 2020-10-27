@@ -27,15 +27,16 @@ namespace LambdaEngine
 
 enum class ELevelObjectType : uint8
 {
-	LEVEL_OBJECT_TYPE_NONE				= 0,
-	LEVEL_OBJECT_TYPE_STATIC_GEOMTRY	= 1,
-	LEVEL_OBJECT_TYPE_DIR_LIGHT			= 2,
-	LEVEL_OBJECT_TYPE_POINT_LIGHT		= 3,
-	LEVEL_OBJECT_TYPE_PLAYER_SPAWN		= 4,
-	LEVEL_OBJECT_TYPE_PLAYER			= 5,
-	LEVEL_OBJECT_TYPE_FLAG_SPAWN		= 6,
-	LEVEL_OBJECT_TYPE_FLAG				= 7,
-	LEVEL_OBJECT_TYPE_PROJECTILE		= 8,
+	LEVEL_OBJECT_TYPE_NONE					= 0,
+	LEVEL_OBJECT_TYPE_STATIC_GEOMTRY		= 1,
+	LEVEL_OBJECT_TYPE_DIR_LIGHT				= 2,
+	LEVEL_OBJECT_TYPE_POINT_LIGHT			= 3,
+	LEVEL_OBJECT_TYPE_PLAYER_SPAWN			= 4,
+	LEVEL_OBJECT_TYPE_PLAYER				= 5,
+	LEVEL_OBJECT_TYPE_FLAG_SPAWN			= 6,
+	LEVEL_OBJECT_TYPE_FLAG					= 7,
+	LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT	= 8,
+	LEVEL_OBJECT_TYPE_PROJECTILE			= 9,
 };
 
 /*
@@ -146,6 +147,11 @@ private:
 		const glm::vec3& translation);
 	
 	static ELevelObjectType CreateFlagSpawn(
+		const LambdaEngine::LevelObjectOnLoad& levelObject, 
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+		const glm::vec3& translation);
+
+	static ELevelObjectType CreateFlagDeliveryPoint(
 		const LambdaEngine::LevelObjectOnLoad& levelObject, 
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
 		const glm::vec3& translation);

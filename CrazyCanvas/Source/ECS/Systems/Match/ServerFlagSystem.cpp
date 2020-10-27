@@ -1,5 +1,6 @@
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/Team/TeamComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -13,6 +14,11 @@
 #include "Resources/ResourceManager.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
+
+#include "Match/Match.h"
+
+#include "Application/API/Events/EventQueue.h"
+#include "Events/MatchEvents.h"
 
 ServerFlagSystem::ServerFlagSystem()
 {
@@ -56,20 +62,24 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 			OffsetComponent& flagOffsetComponent					= pECS->GetComponent<OffsetComponent>(flagEntity);
 			PacketComponent<FlagEditedPacket>& flagPacketComponent	= pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
 
-			PxShape* pFlagShape;
-			flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
-			pFlagShape->acquireReference();
-			flagCollisionComponent.pActor->detachShape(*pFlagShape);
+			//Disable the player-flag trigger shape
+			TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
+			flagCollisionComponent.pActor->getShapes(flagShapes.GetData(), flagShapes.GetSize());
+			for (PxShape* pFlagShape : flagShapes)
+			{
+				ShapeUserData* pShapeUserData = reinterpret_cast<ShapeUserData*>(pFlagShape->userData);
+				EFlagColliderType flagColliderType = reinterpret_cast<EFlagColliderType*>(pShapeUserData->pUserData)[0];
 
-			//Update Collision Group
-			PxFilterData filterData;
-			filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
-			filterData.word1 = (PxU32)FLAG_CARRIED_COLLISION_MASK;
-			pFlagShape->setSimulationFilterData(filterData);
-			pFlagShape->setQueryFilterData(filterData);
-
-			flagCollisionComponent.pActor->attachShape(*pFlagShape);
-			pFlagShape->release();
+				if (flagColliderType == EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER)
+				{
+					pFlagShape->acquireReference();
+					flagCollisionComponent.pActor->detachShape(*pFlagShape);
+					pFlagShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
+					pFlagShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+					flagCollisionComponent.pActor->attachShape(*pFlagShape);
+					pFlagShape->release();
+				}
+			}
 
 			//Set Flag Carrier (Parent)
 			flagParentComponent.Attached	= true;
@@ -119,20 +129,24 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		//Set Flag Spawn Timestamp
 		flagComponent.PickupAvailableTimestamp = EngineLoop::GetTimeSinceStart() + flagComponent.PickupCooldown;
 
-		PxShape* pFlagShape;
-		flagCollisionComponent.pActor->getShapes(&pFlagShape, 1);
-		pFlagShape->acquireReference();
-		flagCollisionComponent.pActor->detachShape(*pFlagShape);
+		//Enable the player-flag trigger shape
+		TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
+		flagCollisionComponent.pActor->getShapes(flagShapes.GetData(), flagShapes.GetSize());
+		for (PxShape* pFlagShape : flagShapes)
+		{
+			ShapeUserData* pShapeUserData = reinterpret_cast<ShapeUserData*>(pFlagShape->userData);
+			EFlagColliderType flagColliderType = reinterpret_cast<EFlagColliderType*>(pShapeUserData->pUserData)[0];
 
-		// Update Collision Group
-		PxFilterData filterData;
-		filterData.word0 = (PxU32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG;
-		filterData.word1 = (PxU32)FLAG_DROPPED_COLLISION_MASK;
-		pFlagShape->setSimulationFilterData(filterData);
-		pFlagShape->setQueryFilterData(filterData);
-
-		flagCollisionComponent.pActor->attachShape(*pFlagShape);
-		pFlagShape->release();
+			if (flagColliderType == EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER)
+			{
+				pFlagShape->acquireReference();
+				flagCollisionComponent.pActor->detachShape(*pFlagShape);
+				pFlagShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+				pFlagShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
+				flagCollisionComponent.pActor->attachShape(*pFlagShape);
+				pFlagShape->release();
+			}
+		}
 
 		PxTransform transform;
 		transform.p.x = dropPosition.x;
@@ -166,10 +180,43 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
-	//Handle Flag Collision
-	LOG_WARNING("FLAG COLLIDED Server");
-
 	OnFlagPickedUp(entity1, entity0);
+}
+
+void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Job job;
+	job.Components =
+	{
+		{ ComponentPermissions::R,	TeamComponent::Type() },
+		{ ComponentPermissions::R,	ParentComponent::Type() },
+	};
+
+	job.Function = [entity0, entity1]()
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(entity0);
+
+		if (flagParentComponent.Attached)
+		{
+			const TeamComponent& playerTeamComponent = pECS->GetConstComponent<TeamComponent>(flagParentComponent.Parent);
+			const TeamComponent& deliveryPointTeamComponent = pECS->GetConstComponent<TeamComponent>(entity1);
+
+			if (playerTeamComponent.TeamIndex == deliveryPointTeamComponent.TeamIndex)
+			{
+				EventQueue::SendEvent<OnFlagDeliveredEvent>(OnFlagDeliveredEvent(playerTeamComponent.TeamIndex));
+			}
+		}
+	};
+
+	pECS->ScheduleJobASAP(job);
+
+	
 }
 
 void ServerFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
