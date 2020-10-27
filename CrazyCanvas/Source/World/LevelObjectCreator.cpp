@@ -1,4 +1,5 @@
 #include "World/LevelObjectCreator.h"
+#include "World/KillPlane.h"
 #include "World/Level.h"
 
 #include "Audio/AudioAPI.h"
@@ -82,6 +83,17 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateFlagDeliveryPoint;
+		}
+
+		//Kill plane
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_KILL_PLANE_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateKillPlane;
 		}
 	}
 
@@ -183,7 +195,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
 		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
 		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
-		.Shapes = 
+		.Shapes =
 		{
 			{
 				/* ShapeType */			EShapeType::SIMULATION,
@@ -361,6 +373,40 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine:
 
 	D_LOG_INFO("Created Base with EntityID %d and Team Index %d", entity, teamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
+}
+
+ELevelObjectType LevelObjectCreator::CreateKillPlane(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	const Entity entity = pECS->CreateEntity();
+	const glm::vec3 boxHalfExtents = levelObject.BoundingBoxes.GetBack().Dimensions * levelObject.DefaultScale * 0.5f;
+
+	const CollisionCreateInfo colliderInfo =
+	{
+		.Entity		= entity,
+		.Position	= pECS->AddComponent<PositionComponent>(entity,	{ true, levelObject.DefaultPosition + translation }),
+		.Scale		= pECS->AddComponent<ScaleComponent>(entity,	{ true, levelObject.DefaultScale }),
+		.Rotation	= pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() }),
+		.Shapes	=
+		{
+			{
+				.ShapeType			= EShapeType::TRIGGER,
+				.GeometryType		= EGeometryType::PLANE,
+				.CollisionGroup		= FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask		= ~FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CallbackFunction	= &KillPlaneCallback
+			}
+		}
+	};
+
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+	const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(colliderInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+	createdEntities.PushBack(entity);
+
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
 }
 
 bool LevelObjectCreator::CreateFlag(

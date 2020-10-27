@@ -220,7 +220,7 @@ namespace LambdaEngine
 
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
-			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Scale.Scale);
+			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Position.Position, collisionInfo.Scale.Scale, collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
 			{
@@ -240,7 +240,7 @@ namespace LambdaEngine
 
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
-			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Scale.Scale);
+			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Position.Position, collisionInfo.Scale.Scale, collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
 			{
@@ -338,7 +338,7 @@ namespace LambdaEngine
 		}
 	}
 
-	PxShape* PhysicsSystem::CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& scale) const
+	PxShape* PhysicsSystem::CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& position, const glm::vec3& scale, const glm::quat& rotation) const
 	{
 		PxShape* pShape = nullptr;
 
@@ -352,11 +352,11 @@ namespace LambdaEngine
 			}
 			case EGeometryType::BOX:
 			{
-				const PxVec3 halfExtentsPX = 
-				{ 
-					scale.x * shapeCreateInfo.GeometryParams.HalfExtents.x, 
-					scale.y * shapeCreateInfo.GeometryParams.HalfExtents.y, 
-					scale.z * shapeCreateInfo.GeometryParams.HalfExtents.z 
+				const PxVec3 halfExtentsPX =
+				{
+					scale.x * shapeCreateInfo.GeometryParams.HalfExtents.x,
+					scale.y * shapeCreateInfo.GeometryParams.HalfExtents.y,
+					scale.z * shapeCreateInfo.GeometryParams.HalfExtents.z
 				};
 				pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
 				break;
@@ -368,6 +368,18 @@ namespace LambdaEngine
 				// Rotate around Z-axis to get the capsule pointing upwards
 				const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
 				const PxTransform transformPX = CreatePxTransform(glm::vec3(0.0f), uprightRotation);
+				pShape->setLocalPose(transformPX);
+				break;
+			}
+			case EGeometryType::PLANE:
+			{
+				/*	PhysX treats the planes' x-axis as their normals, whilst the PhysicsSystem API says the Y-axis is
+					the normal. Set a local pose for the shape to make the Y-axis the plane normal. */
+				const glm::vec3 planeNormal = GetUp(rotation);
+				const PxPlane plane({ position.x, position.y, position.z }, { planeNormal.x, planeNormal.y, planeNormal.z });
+				const PxTransform transformPX = PxTransformFromPlaneEquation(plane);
+
+				pShape = m_pPhysics->createShape(PxPlaneGeometry(), *m_pMaterial);
 				pShape->setLocalPose(transformPX);
 				break;
 			}
@@ -568,6 +580,7 @@ namespace LambdaEngine
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
 		const PxTransform transformPX = CreatePxTransform(position, rotation);
+		const PxPlane plane = PxPlaneEquationFromTransform(transformPX);
 
 		PxRigidStatic* pActor = m_pPhysics->createRigidStatic(transformPX);
 		FinalizeCollisionActor(collisionInfo, pActor);
@@ -648,7 +661,7 @@ namespace LambdaEngine
 			PxRigidBody* pBody = reinterpret_cast<PxRigidBody*>(pActor);
 			pBody->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		}
-		
+
         // Set collision callback
 		pActor->userData = DBG_NEW ActorUserData;
 		ActorUserData* pUserData = reinterpret_cast<ActorUserData*>(pActor->userData);
