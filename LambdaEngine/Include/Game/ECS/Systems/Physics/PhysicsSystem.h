@@ -37,7 +37,8 @@ namespace LambdaEngine
 	{
 		SPHERE,
 		BOX,
-		CAPSULE, // A capsule's width is specified by its radius. Its height is radius * 2 + halfHeight * 2.
+		CAPSULE,	// A capsule's width is specified by its radius. Its height is radius * 2 + halfHeight * 2.
+		PLANE,		// A plane collides with anything below it.
 		MESH
 	};
 
@@ -171,7 +172,7 @@ namespace LambdaEngine
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
 	private:
-		PxShape* CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& scale) const;
+		PxShape* CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& position, const glm::vec3& scale, const glm::quat& rotation) const;
 
 		// CreateCollisionCapsule creates a sphere if no capsule can be made
 		PxShape* CreateCollisionCapsule(float32 radius, float32 halfHeight) const;
