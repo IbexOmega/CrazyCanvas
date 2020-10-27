@@ -16,6 +16,7 @@ MultiplayerBase::~MultiplayerBase()
 	{
 		LOG_ERROR("Match Release Failed");
 	}
+	PacketType::Release();
 }
 
 void MultiplayerBase::InitInternal()

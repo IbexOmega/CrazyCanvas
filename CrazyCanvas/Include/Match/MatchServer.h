@@ -17,7 +17,7 @@ protected:
 
 	virtual void SpawnFlag();
 
-	virtual bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event) override final;
+	virtual bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event) override final;
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);

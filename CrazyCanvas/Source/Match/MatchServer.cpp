@@ -170,7 +170,7 @@ void MatchServer::SpawnFlag()
 	pECS->ScheduleJobASAP(job);
 }
 
-bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+bool MatchServer::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	UNREFERENCED_VARIABLE(event);
 	return false;

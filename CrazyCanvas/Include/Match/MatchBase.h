@@ -36,7 +36,7 @@ protected:
 	virtual bool InitInternal() = 0;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
-	virtual bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event) = 0;
+	virtual bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event) = 0;
 
 protected:
 	Level* m_pLevel = nullptr;

@@ -17,6 +17,7 @@ struct IPacketComponent
 {
 	friend class PacketTranscoderSystem;
 
+public:
 	virtual ~IPacketComponent() = default;
 
 private:

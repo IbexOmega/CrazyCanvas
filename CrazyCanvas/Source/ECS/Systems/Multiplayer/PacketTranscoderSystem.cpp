@@ -17,12 +17,12 @@ using namespace LambdaEngine;
 
 PacketTranscoderSystem::PacketTranscoderSystem()
 {
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
+	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
 }
 
 PacketTranscoderSystem::~PacketTranscoderSystem()
 {
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
+	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
 }
 
 void PacketTranscoderSystem::Init()
@@ -34,14 +34,19 @@ void PacketTranscoderSystem::Init()
 
 	for (auto pair : packetTypeMap)
 	{
-		EntitySubscriptionRegistration subscription;
-		subscription.pSubscriber = &m_ComponentTypeToEntities[pair.second];
-		subscription.ComponentAccesses =
+		IPacketReceivedEvent* pEvent = pair.second;
+		const ComponentType* pComponentType = pEvent->GetComponentType();
+		if (pComponentType)
 		{
-			{NDA, NetworkComponent::Type()},
-			{RW, pair.second},
-		};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(subscription);
+			EntitySubscriptionRegistration subscription;
+			subscription.pSubscriber = &m_ComponentTypeToEntities[pComponentType];
+			subscription.ComponentAccesses =
+			{
+				{NDA, NetworkComponent::Type()},
+				{RW, pComponentType},
+			};
+			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(subscription);
+		}
 	}
 
 	systemReg.Phase = 0;
@@ -114,13 +119,21 @@ void PacketTranscoderSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTi
 	}
 }
 
-bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	NetworkSegment* pSegment = event.pPacket;
+	uint16 packetType = event.Type;
+
+	IPacketReceivedEvent* pEvent = PacketType::GetPacketReceivedEventPointer(packetType);
+	if (!pEvent)
+		return false;
 
 	pSegment->ResetReadHead();
-	const ComponentType* pComponentType = PacketType::GetComponentType(event.Type);
+	pSegment->Read(pEvent->GetRawData(), pEvent->GetSize());
+	EventQueue::SendEventImmediate(*pEvent);
+
+	const ComponentType* pComponentType = pEvent->GetComponentType();
 
 	if (!pComponentType)
 		return false;
@@ -138,6 +151,7 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::PacketReceived
 	void* pComponent = pComponents->GetRawData(entity);
 	IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
 	void* packetData = pPacketComponent->AddPacketReceived();
+	pSegment->ResetReadHead();
 	pSegment->Read(packetData, pPacketComponent->GetSize());
 
 	return true;
