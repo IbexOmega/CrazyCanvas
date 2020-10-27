@@ -136,9 +136,6 @@ void MatchServer::SpawnFlag()
 		{
 			VALIDATE(createdFlagEntities.GetSize() == 1);
 
-			//Tell the bois that we created a flag
-			const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
-
 			CreateLevelObject packet;
 			packet.LevelObjectType			= ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
 			packet.Position					= createDesc.Position;
