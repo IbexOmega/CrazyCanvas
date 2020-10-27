@@ -110,6 +110,10 @@ namespace LambdaEngine
 		void RegisterSystem(System* pSystem, uint32 regularJobID);
 		void DeregisterSystem(uint32 regularJobID);
 
+		void PerformComponentRegistrations();
+		void PerformComponentDeletions();
+		void PerformEntityDeletions();
+
         Timestamp GetDeltaTime() const { return m_DeltaTime; }
 		const IDDVector<System*>& GetSystems() const { return m_Systems; }
 
@@ -126,9 +130,6 @@ namespace LambdaEngine
 		void DescheduleRegularJob(uint32_t phase, uint32 jobID)				{ m_JobScheduler.DescheduleRegularJob(phase, jobID); }
 
 	private:
-		void PerformComponentRegistrations();
-		void PerformComponentDeletions();
-		void PerformEntityDeletions();
 		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
 	private:
