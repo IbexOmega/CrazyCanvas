@@ -38,7 +38,7 @@ void BenchmarkSystem::Init()
 				}
 			},
 			{
-				.pSubscriber = &m_PlayerEntities,
+				.pSubscriber = &m_LocalPlayerEntities,
 				.ComponentAccesses =
 				{
 					{ RW, CharacterColliderComponent::Type() }, 
@@ -77,7 +77,7 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	{
 		const WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
 		const Entity playerEntity = weaponComponent.WeaponOwner;
-		if (!m_PlayerEntities.HasElement(playerEntity))
+		if (!m_LocalPlayerEntities.HasElement(playerEntity))
 		{
 			continue;
 		}
@@ -105,16 +105,14 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 			const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 			ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-			ComponentArray<PacketComponent<WeaponFiredPacket>>* pWeaponPackets = pECS->GetComponentArray<PacketComponent<WeaponFiredPacket>>();
 
 			for (Entity weaponEntity : weaponEntitiesToFire)
 			{
 				WeaponComponent& weaponComp = pWeaponComponents->GetData(weaponEntity);
-				PacketComponent<WeaponFiredPacket>& weaponPacket = pWeaponPackets->GetData(weaponEntity);
 				const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(weaponComp.WeaponOwner);
 				const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(weaponComp.WeaponOwner);
 				const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(weaponComp.WeaponOwner);
-				weaponSystem.TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, weaponPacket, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity, false);
+				weaponSystem.TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
 			}
 		},
 		.Components = GetFireProjectileComponentAccesses(),

@@ -393,9 +393,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
 	
-	// Preparation for taking damage
-	pECS->AddComponent<PacketComponent<PlayerHealthChangedPacket>>(playerEntity, { });
-
 	const CharacterColliderCreateInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
@@ -567,8 +564,8 @@ bool LevelObjectCreator::CreateProjectile(
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, { 0.3f, 0.3f, 0.3f }}),
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, desc.FireDirection }),
-		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, { desc.MeshComponent }),
 		/* Shape Type */		EShapeType::SIMULATION,
+		/* CollisionPenis*/		ECollisionDetection::DISCRETE,
 		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | 
 								(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
@@ -576,11 +573,27 @@ bool LevelObjectCreator::CreateProjectile(
 		/* Velocity */			velocityComponent
 	};
 
-	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo);
+	const DynamicCollisionCreateInfo collisionInfo =
+	{
+		/* Entity */	 		projectileEntity,
+		/* Detection Method */	ECollisionDetection::CONTINUOUS,
+		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
+		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, { 0.3f, 0.3f, 0.3f }}),
+		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, desc.FireDirection }),
+		{
+			{
+				/* Shape Type */		EShapeType::SIMULATION,
+				/* Geometry Type */		EGeometryType::SPHERE,
+				/* Geometry Params */	{.Radius = 0.3f },
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
+			},
+		},
+		/* Velocity */			velocityComponent
+	};
+
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
-	pECS->AddComponent<NetworkComponent>(projectileEntity, { networkUID });
-
-	D_LOG_INFO("Created Projectile with EntityID %d and NetworkID %d", projectileEntity, networkUID);
-
 	return true;
 }

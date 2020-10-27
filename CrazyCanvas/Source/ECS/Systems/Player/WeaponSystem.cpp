@@ -45,14 +45,32 @@ bool WeaponSystem::Init()
 				.ComponentAccesses =
 				{
 					{ RW, WeaponComponent::Type() },
-					{ RW, PacketComponent<WeaponFiredPacket>::Type() }
 				}
 			},
 			{
-				.pSubscriber = &m_PlayerEntities,
+				.pSubscriber = &m_ForeignPlayerEntities,
 				.ComponentAccesses =
 				{
-					{ NDA, PlayerLocalComponent::Type() }
+					{ NDA, PlayerForeignComponent::Type() },
+					{ RW, PacketComponent<PlayerActionResponse>::Type() }
+				}
+			},
+			{
+				.pSubscriber = &m_LocalPlayerEntities,
+				.ComponentAccesses =
+				{
+					{ NDA, PlayerLocalComponent::Type() },
+					{ RW, PacketComponent<PlayerAction>::Type() }
+				},
+				.ComponentGroups = { &playerGroup }
+			},
+			{
+				.pSubscriber = &m_RemotePlayerEntities,
+				.ComponentAccesses =
+				{
+					{ NDA, PlayerBaseComponent::Type() },
+					{ R, PacketComponent<PlayerAction>::Type() },
+					{ RW, PacketComponent<PlayerActionResponse>::Type() },
 				},
 				.ComponentGroups = { &playerGroup }
 			}
@@ -112,109 +130,118 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	ComponentArray<PacketComponent<WeaponFiredPacket>>* pWeaponPackets = pECS->GetComponentArray<PacketComponent<WeaponFiredPacket>>();
+	ComponentArray<PacketComponent<PlayerAction>>* pPlayerActionPackets = pECS->GetComponentArray<PacketComponent<PlayerAction>>();
+	ComponentArray<PacketComponent<PlayerActionResponse>>* pPlayerResponsePackets = pECS->GetComponentArray<PacketComponent<PlayerActionResponse>>();
 
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
-	for (Entity weaponEntity : m_WeaponEntities)
+	if (MultiplayerUtils::IsServer())
 	{
-		WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
-		Entity playerEntity = weaponComponent.WeaponOwner;
-		
-		PacketComponent<WeaponFiredPacket>& packets = pWeaponPackets->GetData(weaponEntity);
-		if (!packets.GetPacketsReceived().IsEmpty())
+		// On server fire projectiles to clients
+		for (Entity remoteEntity : m_RemotePlayerEntities)
 		{
-			const TArray<WeaponFiredPacket>& receivedPackets = packets.GetPacketsReceived();
-			for (const WeaponFiredPacket& p : receivedPackets)
+			PacketComponent<PlayerAction>&			actionsRecived	= pPlayerActionPackets->GetData(remoteEntity);
+			PacketComponent<PlayerActionResponse>&	responsesToSend	= pPlayerResponsePackets->GetData(remoteEntity);
+
+			TQueue<PlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
+			const TArray<PlayerAction>& packetsRecived = actionsRecived.GetPacketsReceived();
+			
+			const uint32 packetCount = packetsRecived.GetSize();
+			for (uint32 i = 0; i < packetCount; i++)
 			{
-				if (MultiplayerUtils::IsServer())
+				// TODO: Check on server if player has projectiles
+
+				if (packetsRecived[i].FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
 				{
-					LOG_INFO("Server Recived Fire At x=%.4f y=%.4f z=%.4f", p.FirePosition.x, p.FirePosition.y, p.FirePosition.z);
-					TryFire(p.AmmoType, weaponComponent, packets, p.FirePosition, p.FireDirection, p.InitalVelocity, true);
-				}
-				else
-				{
-					if (!m_PlayerEntities.HasElement(playerEntity))
-					{
-						LOG_INFO("Client Recived Fire At x=%.4f y=%.4f z=%.4f", p.FirePosition.x, p.FirePosition.y, p.FirePosition.z);
-						TryFire(p.AmmoType, weaponComponent, packets, p.FirePosition, p.FireDirection, p.InitalVelocity, false);
-					}
+					packetsToSend.back().FiredAmmo = packetsRecived[i].FiredAmmo;
 				}
 			}
 		}
-
-		if (!m_PlayerEntities.HasElement(playerEntity))
+	}
+	else
+	{
+		// On client fire projectiles from other players
+		for (Entity foreignEntity : m_ForeignPlayerEntities)
 		{
-			continue;
-		}
-
-		const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
-		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
-		if (!hasAmmo && !isReloading)
-		{
-			StartReload(weaponComponent);
-		}
-
-		const bool onCooldown = weaponComponent.CurrentCooldown > 0.0f;
-		if (onCooldown)
-		{
-			weaponComponent.CurrentCooldown -= dt;
-		}
-
-		if (isReloading)
-		{
-			LOG_INFO("Reloading");
-
-			weaponComponent.ReloadClock -= dt;
-			if (weaponComponent.ReloadClock < 0.0f)
+			PacketComponent<PlayerActionResponse>& packets = pPlayerResponsePackets->GetData(foreignEntity);
+			const TArray<PlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
+			for (const PlayerActionResponse& response : receivedPackets)
 			{
-				weaponComponent.ReloadClock = 0.0f;
-				weaponComponent.CurrentAmmunition = AMMO_CAPACITY;
-
-				LOG_INFO("Reload Finish");
+				Fire(response.FiredAmmo, foreignEntity, response.Position, response.Rotation, response.Velocity);
 			}
 		}
 
-		// Reload if we are not reloading
-		if (Input::IsKeyDown(EKey::KEY_R) && !isReloading)
+		// TODO: Check local response and maybe roll back
+
+		// Then handle local projectiles
+		for (Entity playerEntity : m_LocalPlayerEntities)
 		{
-			StartReload(weaponComponent);
-		}
-		else if (!onCooldown) // If we did not hit the reload try and shoot
-		{
-			if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
+			WeaponComponent& weaponComponent = pWeaponComponents->GetData(playerEntity);
+			PacketComponent<PlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
+
+			const bool hasAmmo		= weaponComponent.CurrentAmmunition > 0;
+			const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
+			if (!hasAmmo && !isReloading)
+			{
+				StartReload(weaponComponent);
+			}
+
+			const bool onCooldown = weaponComponent.CurrentCooldown > 0.0f;
+			if (onCooldown)
+			{
+				weaponComponent.CurrentCooldown -= dt;
+			}
+
+			if (isReloading)
+			{
+				LOG_INFO("Reloading");
+
+				weaponComponent.ReloadClock -= dt;
+				if (weaponComponent.ReloadClock < 0.0f)
+				{
+					weaponComponent.ReloadClock = 0.0f;
+					weaponComponent.CurrentAmmunition = AMMO_CAPACITY;
+
+					LOG_INFO("Reload Finish");
+				}
+			}
+
+			// Reload if we are not reloading
+			if (Input::IsKeyDown(EKey::KEY_R) && !isReloading)
+			{
+				StartReload(weaponComponent);
+			}
+			else if (!onCooldown) // If we did not hit the reload try and shoot
 			{
 				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
 				const glm::vec3 firePosition = positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f);
-				LOG_INFO("Fire At x=%.4f y=%.4f z=%.4f", firePosition.x, firePosition.y, firePosition.z);
+				if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
+				{
+					LOG_INFO("Fire At x=%.4f y=%.4f z=%.4f", firePosition.x, firePosition.y, firePosition.z);
 
-				TryFire(
-					EAmmoType::AMMO_TYPE_PAINT,
-					weaponComponent,
-					packets,
-					firePosition,
-					rotationComp.Quaternion,
-					velocityComp.Velocity, true);
-			}
-			else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
-			{
-				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
-				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
-				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
-
-				const glm::vec3 firePosition = positionComp.Position + glm::vec3(0.0f, 1.0f, 0.0f);
-				TryFire(
-					EAmmoType::AMMO_TYPE_WATER,
-					weaponComponent,
-					packets,
-					firePosition,
-					rotationComp.Quaternion,
-					velocityComp.Velocity, true);
+					TryFire(
+						EAmmoType::AMMO_TYPE_PAINT,
+						weaponComponent,
+						playerActions,
+						firePosition,
+						rotationComp.Quaternion,
+						velocityComp.Velocity);
+				}
+				else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
+				{
+					TryFire(
+						EAmmoType::AMMO_TYPE_WATER,
+						weaponComponent,
+						playerActions,
+						firePosition,
+						rotationComp.Quaternion,
+						velocityComp.Velocity);
+				}
 			}
 		}
 	}
@@ -222,24 +249,19 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 void WeaponSystem::Fire(
 	EAmmoType ammoType,
-	WeaponComponent& weaponComponent,
-	PacketComponent<WeaponFiredPacket>& packets,
+	LambdaEngine::Entity weaponOwner,
 	const glm::vec3& playerPos,
 	const glm::quat& direction,
-	const glm::vec3& playerVelocity,
-	bool send)
+	const glm::vec3& playerVelocity)
 {
 	using namespace LambdaEngine;
-
-	// Tick down ammunition
-	weaponComponent.CurrentAmmunition--;
 
 	constexpr const float projectileInitialSpeed = 13.0f;
 	const glm::vec3 directionVec = GetForward(glm::normalize(direction));
 	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec * 0.3f;
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponComponent.WeaponOwner).TeamIndex;
+	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 	const glm::vec3 initialVelocity = playerVelocity + directionVec * projectileInitialSpeed;
 
 	LOG_INFO("Velocity=[x=%.4f, y=%.4f, z=%.4f]", initialVelocity.x, initialVelocity.y, initialVelocity.z);
@@ -248,7 +270,7 @@ void WeaponSystem::Fire(
 
 	// Fire event
 	WeaponFiredEvent firedEvent(
-		weaponComponent.WeaponOwner, 
+		weaponOwner,
 		ammoType, 
 		startPos,
 		initialVelocity, 
@@ -258,18 +280,6 @@ void WeaponSystem::Fire(
 	firedEvent.MeshComponent = meshComp;
 	EventQueue::SendEventImmediate(firedEvent);
 
-	// Send packet
-	if (send)
-	{
-		WeaponFiredPacket packet;
-		packet.AmmoType			= ammoType;
-		packet.FirePosition		= playerPos;
-		packet.InitalVelocity	= playerVelocity;
-		packet.FireDirection	= direction;
-		packet.SimulationTick	= 0;
-		packets.SendPacket(packet);
-	}
-
 	// Play gun fire
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
 	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
@@ -278,11 +288,10 @@ void WeaponSystem::Fire(
 void WeaponSystem::TryFire(
 	EAmmoType ammoType,
 	WeaponComponent& weaponComponent,
-	PacketComponent<WeaponFiredPacket>& packets,
+	PacketComponent<PlayerAction>& packets,
 	const glm::vec3& startPos,
 	const glm::quat& direction,
-	const glm::vec3& playerVelocity,
-	bool send)
+	const glm::vec3& playerVelocity)
 {
 	using namespace LambdaEngine;
 
@@ -300,7 +309,51 @@ void WeaponSystem::TryFire(
 		}
 
 		// Fire the gun
-		Fire(ammoType, weaponComponent, packets, startPos, direction, playerVelocity, send);
+		weaponComponent.CurrentAmmunition--;
+
+		// Send action to server
+		TQueue<PlayerAction>& actions = packets.GetPacketsToSend();
+		if (!actions.empty())
+		{
+			actions.back().FiredAmmo = ammoType;
+		}
+
+		// For creating entity
+		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
+	}
+	else
+	{
+		// Play out of ammo
+		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
+		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
+	}
+}
+
+void WeaponSystem::TryFire(
+	EAmmoType ammoType,
+	WeaponComponent& weaponComponent,
+	const glm::vec3& startPos,
+	const glm::quat& direction,
+	const glm::vec3& playerVelocity)
+{
+	using namespace LambdaEngine;
+
+	// Add cooldown
+	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
+
+	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
+	if (hasAmmo)
+	{
+		// If we try to shoot when reloading we abort the reload
+		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
+		if (isReloading)
+		{
+			AbortReload(weaponComponent);
+		}
+
+		// Fire the gun
+		weaponComponent.CurrentAmmunition--;
+		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
 	}
 	else
 	{

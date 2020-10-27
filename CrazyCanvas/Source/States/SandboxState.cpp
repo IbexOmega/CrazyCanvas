@@ -82,7 +82,6 @@ void SandboxState::Init()
 	m_MeshPaintHandler.Init();
 
 	// Initialize Systems
-	m_MultiplayerClient.InitInternal();
 	HealthSystem::GetInstance().Init();
 	WeaponSystem::GetInstance().Init();
 	TrackSystem::GetInstance().Init();
@@ -315,7 +314,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	m_pRenderGraphEditor->Update();
 	LambdaEngine::Profiler::Tick(delta);
 
-	m_MultiplayerClient.TickMainThreadInternal(delta);
+	// m_MultiplayerClient.TickMainThreadInternal(delta);
 
 	if constexpr (IMGUI_ENABLED)
 	{
@@ -325,7 +324,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 
 void SandboxState::FixedTick(LambdaEngine::Timestamp delta)
 {
-	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+	// m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }
 
 void SandboxState::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)

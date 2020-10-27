@@ -8,6 +8,9 @@
 
 #include "Math/Math.h"
 
+#include "Multiplayer/Packet/PlayerAction.h"
+#include "Multiplayer/Packet/PlayerActionResponse.h"
+
 namespace LambdaEngine
 {
 	struct EntityCollisionInfo;
@@ -55,11 +58,9 @@ public:
 	void TryFire(
 		EAmmoType ammoType,
 		WeaponComponent& weaponComponent,
-		PacketComponent<WeaponFiredPacket>& packets,
 		const glm::vec3& startPos, 
 		const glm::quat& direction, 
-		const glm::vec3& playerVelocity,
-		bool send);
+		const glm::vec3& playerVelocity);
 
 public:
 	static WeaponSystem& GetInstance() { return s_Instance; }
@@ -69,13 +70,19 @@ private:
 	~WeaponSystem() = default;
 
 	void Fire(
-		EAmmoType ammoType, 
-		WeaponComponent& weaponComponent, 
-		PacketComponent<WeaponFiredPacket>& packets,
-		const glm::vec3& playerPos, 
-		const glm::quat& direction, 
-		const glm::vec3& playerVelocity,
-		bool send);
+		EAmmoType ammoType,
+		LambdaEngine::Entity weaponOwner,
+		const glm::vec3& playerPos,
+		const glm::quat& direction,
+		const glm::vec3& playerVelocity);
+
+	void TryFire(
+		EAmmoType ammoType,
+		WeaponComponent& weaponComponent,
+		PacketComponent<PlayerAction>& packets,
+		const glm::vec3& startPos,
+		const glm::quat& direction,
+		const glm::vec3& playerVelocity);
 
 	void StartReload(WeaponComponent& weaponComponent);
 	void AbortReload(WeaponComponent& weaponComponent);
@@ -87,7 +94,9 @@ private:
 
 private:
 	LambdaEngine::IDVector m_WeaponEntities;
-	LambdaEngine::IDVector m_PlayerEntities;
+	LambdaEngine::IDVector m_RemotePlayerEntities;
+	LambdaEngine::IDVector m_LocalPlayerEntities;
+	LambdaEngine::IDVector m_ForeignPlayerEntities;
 
 	// Rendering resources for projectiles
 	LambdaEngine::MeshComponent m_PaintProjectileMeshComponent;
