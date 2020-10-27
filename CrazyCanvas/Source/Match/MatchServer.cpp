@@ -175,21 +175,18 @@ void MatchServer::SpawnPlayer(LambdaEngine::IClient* pClient)
 	glm::vec3 position(0.0f, 5.0f, 0.0f);
 	glm::vec3 forward(0.0f, 0.0f, 1.0f);
 
-	if (numPlayerSpawnPoints > 0)
+	for (uint32 i = 0; i < numPlayerSpawnPoints; i++)
 	{
-		for (uint32 i = 0; i < numPlayerSpawnPoints; i++)
+		Entity spawnPoint = pPlayerSpawnPointEntities[i];
+
+		const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
+
+		if (teamComponent.TeamIndex == m_NextTeamIndex)
 		{
-			Entity spawnPoint = pPlayerSpawnPointEntities[i];
-
-			const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
-
-			if (teamComponent.TeamIndex == m_NextTeamIndex)
-			{
-				const PositionComponent& positionComponent = pPositionComponents->GetConstData(spawnPoint);
-				position = positionComponent.Position + glm::vec3(0.0f, 1.0f, 0.0f);
-				forward = glm::normalize(-glm::vec3(position.x, 0.0f, position.z));
-				break;
-			}
+			const PositionComponent& positionComponent = pPositionComponents->GetConstData(spawnPoint);
+			position = positionComponent.Position + glm::vec3(0.0f, 1.0f, 0.0f);
+			forward = glm::normalize(-glm::vec3(position.x, 0.0f, position.z));
+			break;
 		}
 	}
 
