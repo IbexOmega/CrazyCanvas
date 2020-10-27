@@ -121,6 +121,8 @@ bool ServerState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 		int8 mapNr = decoder.ReadInt8();
 		int32 clientHostID = decoder.ReadInt32();
 
+
+		LOG_ERROR("Starting Server With The Following Information:");
 		LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
 		LOG_ERROR("MAP NR %d", mapNr);
 		LOG_ERROR("receivedHostID: %d", clientHostID);
