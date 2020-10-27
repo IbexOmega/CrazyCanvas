@@ -73,7 +73,7 @@ namespace LambdaEngine
 
 	private:
 		bool CreateCopyBuffers();
-		bool CreateBuffers(Buffer** ppBuffer);
+		TSharedRef<Buffer> CreateBuffers();
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
 		bool CreateShaders();
@@ -123,6 +123,9 @@ namespace LambdaEngine
 		bool									m_DirtyUniformBuffers = true;
 		TArray<TSharedRef<Buffer>>				m_UniformCopyBuffers;
 		TArray<TSharedRef<Buffer>>				m_UniformBuffers;
+	
+		TArray<TSharedRef<DeviceChild>>			m_pDeviceResourcesToDestroy;
+
 	private:
 		static PlayerRenderer* s_pInstance;
 

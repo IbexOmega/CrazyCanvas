@@ -70,7 +70,7 @@ void main()
 
 	// Only render team members and paint on enemy players
 	//uint enemy = b_TeamIDs.val[in_InstanceIndex];
-	//if(enemy != 0 && paintMask.r < 0.5f)
+	//if(enemy != 0 && shouldPaint < 0.5f)
 	//	discard;
 
 	//1

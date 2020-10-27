@@ -34,9 +34,6 @@ namespace LambdaEngine
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
 
-		for (auto buffer : m_UniformBuffers)
-			SAFERELEASE(buffer);
-		
 		if (m_ppGraphicCommandAllocators != nullptr && m_ppGraphicCommandLists != nullptr)
 		{
 			for (uint32 b = 0; b < m_BackBufferCount; b++)
@@ -45,14 +42,21 @@ namespace LambdaEngine
 				SAFERELEASE(m_ppGraphicCommandAllocators[b]);
 			}
 
+			for (TSharedRef<DeviceChild> pDeviceChild : m_pDeviceResourcesToDestroy)
+			{
+				SAFERELEASE(pDeviceChild);
+			}
+
 			SAFEDELETE_ARRAY(m_ppGraphicCommandLists);
 			SAFEDELETE_ARRAY(m_ppGraphicCommandAllocators);
+			m_pDeviceResourcesToDestroy.Clear();
 		}
 	}
 
 	bool PlayerRenderer::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
+		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
 
 		m_UsingMeshShader = EngineConfig::GetBoolProperty("MeshShadersEnabled");
 
@@ -154,7 +158,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool PlayerRenderer::CreateBuffers(Buffer** ppBuffer)
+	TSharedRef<Buffer> PlayerRenderer::CreateBuffers()
 	{
 		BufferDesc uniformBufferDesc = {};
 		uniformBufferDesc.DebugName = "Player Renderer Uniform Buffer";
@@ -162,13 +166,8 @@ namespace LambdaEngine
 		uniformBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 		uniformBufferDesc.SizeInBytes = MAX_PLAYERS_IN_MATCH*sizeof(uint32);
 
-		*ppBuffer = RenderAPI::GetDevice()->CreateBuffer(&uniformBufferDesc);
-		if (!(*ppBuffer))
-		{
-			return false;
-		}
-
-		return true;
+		TSharedRef<Buffer> buffer = RenderAPI::GetDevice()->CreateBuffer(&uniformBufferDesc);
+		return std::move(buffer);
 	}
 
 
@@ -335,9 +334,8 @@ namespace LambdaEngine
 				// m_DrawCount is telling us how many times to draw per drawcall?
 				// should not be more than 1 since there is only one player type we are filtering on.
 
-				/*for (auto buffer : m_UniformBuffers)
-					SAFERELEASE(buffer);*/
-
+				for (TSharedRef<Buffer> buffer : m_UniformBuffers)
+					m_pDeviceResourcesToDestroy.PushBack(std::move(buffer));
 				m_UniformBuffers.Clear();
 				m_DirtyUniformBuffers = true;
 
@@ -382,9 +380,8 @@ namespace LambdaEngine
 
 						// Set constant buffer
 						{
-							Buffer* buffer = nullptr;
-							CreateBuffers(&buffer);
-							m_UniformBuffers.PushBack(MakeSharedRef(buffer));
+							TSharedRef<Buffer> buffer = CreateBuffers();
+							m_UniformBuffers.PushBack(buffer);
 
 							constexpr DescriptorSetIndex setIndex2 = 0U;
 
@@ -500,6 +497,11 @@ namespace LambdaEngine
 
 		if (Sleeping)
 			return;
+
+		// Delete old resources.
+		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy;
+		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
+			currentFrameDeviceResourcesToDestroy.Clear();
 
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 
