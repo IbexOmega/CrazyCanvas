@@ -77,7 +77,7 @@ bool LevelObjectCreator::Init()
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
 			{
-				.Prefix = "SO_FLAG_DELIVERY_POINT"
+				.Prefix = "SO_FLAG_DELIVERY_POINT_"
 			};
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
@@ -251,6 +251,12 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
 
+	uint32 teamIndex = 0;
+	size_t teamIndexPos = levelObject.Name.find("TEAM");
+	if (teamIndexPos != String::npos) teamIndex = std::stoul(levelObject.Name.substr(teamIndexPos + 4));
+
+	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+
 	if (!levelObject.MeshComponents.IsEmpty())
 	{
 		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
@@ -284,7 +290,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Spawn with EntityID %d", entity);
+	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
@@ -301,7 +307,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelOb
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Flag Spawn with EntityID %d", entity);
+	D_LOG_INFO("Created Flag Spawn with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
 }
 
@@ -359,7 +365,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine:
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Base with EntityID %d and Team Index %d", entity, teamIndex);
+	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
@@ -481,7 +487,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Flag with EntityID %d and NetworkID %d", entity, networkUID);
+	D_LOG_INFO("Created Flag with EntityID %u and NetworkID %u", entity, networkUID);
 	return true;
 }
 
@@ -614,6 +620,6 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });
 
-	D_LOG_INFO("Created Player with EntityID %d, NetworkID %d", playerEntity, networkUID);
+	D_LOG_INFO("Created Player with EntityID %u, NetworkID %u", playerEntity, networkUID);
 	return true;
 }
