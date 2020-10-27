@@ -38,6 +38,7 @@
 MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
+	
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::UnregisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 }
@@ -45,6 +46,7 @@ MatchServer::~MatchServer()
 bool MatchServer::InitInternal()
 {
 	using namespace LambdaEngine;
+
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::RegisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 
@@ -162,7 +164,23 @@ void MatchServer::SpawnFlag()
 
 bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 {
-	UNREFERENCED_VARIABLE(event);
+	using namespace LambdaEngine;
+
+	CreateProjectileDesc createProjectileDesc;
+	createProjectileDesc.AmmoType		= event.AmmoType;
+	createProjectileDesc.FireDirection	= event.Direction;
+	createProjectileDesc.FirePosition	= event.Position;
+	createProjectileDesc.InitalVelocity	= event.InitialVelocity;
+	createProjectileDesc.TeamIndex		= event.TeamIndex;
+	createProjectileDesc.Callback		= event.Callback;
+	createProjectileDesc.MeshComponent	= event.MeshComponent;
+
+	TArray<Entity> createdFlagEntities;
+	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
+	{
+		LOG_ERROR("[MatchClient]: Failed to create projectile!");
+	}
+
 	LOG_INFO("SERVER: Weapon fired");
 	return false;
 }
@@ -220,11 +238,10 @@ void MatchServer::SpawnPlayer(LambdaEngine::IClient* pClient)
 
 		const ClientMap& clients = reinterpret_cast<ClientRemoteBase*>(pClient)->GetClients();
 
+		ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
 		for (Entity playerEntity : createdPlayerEntities)
 		{
-			ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
 			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(playerEntity);
-
 			{
 				NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
 				BinaryEncoder encoder = BinaryEncoder(pPacket);
@@ -285,6 +302,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+	ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
 
 	//Send currently existing players to the new client
 	{
@@ -297,12 +315,14 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
 			const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
 			const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
+			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(otherPlayerEntity);
 
 			NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
 			BinaryEncoder encoder(pPacket);
 			encoder.WriteUInt8(uint8(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER));
 			encoder.WriteBool(false);
 			encoder.WriteInt32((int32)otherPlayerEntity);
+			encoder.WriteInt32((int32)childComp.GetEntityWithTag("weapon"));
 			encoder.WriteVec3(positionComponent.Position);
 			encoder.WriteVec3(GetForward(rotationComponent.Quaternion));
 			encoder.WriteUInt32(teamComponent.TeamIndex);

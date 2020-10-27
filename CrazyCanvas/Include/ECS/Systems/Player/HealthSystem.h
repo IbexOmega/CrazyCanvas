@@ -14,7 +14,12 @@ class HealthSystem : public LambdaEngine::System
 public:
 	bool Init();
 
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final;
+	void FixedTick(LambdaEngine::Timestamp deltaTime);
+
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
+	{
+		UNREFERENCED_VARIABLE(deltaTime);
+	}
 
 public:
 	static HealthSystem& GetInstance() { return s_Instance; }

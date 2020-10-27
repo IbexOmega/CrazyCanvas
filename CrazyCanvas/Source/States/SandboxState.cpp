@@ -83,8 +83,6 @@ void SandboxState::Init()
 	m_MeshPaintHandler.Init();
 
 	// Initialize Systems
-	HealthSystem::GetInstance().Init();
-	WeaponSystem::GetInstance().Init();
 	TrackSystem::GetInstance().Init();
 	
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);

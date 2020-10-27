@@ -120,7 +120,7 @@ bool WeaponSystem::Init()
 	}
 
 	// Create soundeffects
-	m_GunFireGUID	= ResourceManager::LoadSoundEffectFromFile("9_mm_gunshot-mike-koenig-123.wav");
+	m_GunFireGUID	= ResourceManager::LoadSoundEffectFromFile("Fart.wav");
 	m_OutOfAmmoGUID	= ResourceManager::LoadSoundEffectFromFile("out_of_ammo.wav");
 	return true;
 }
@@ -157,7 +157,15 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 				if (packetsRecived[i].FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
 				{
-					packetsToSend.back().FiredAmmo = packetsRecived[i].FiredAmmo;
+					EAmmoType ammoType = packetsRecived[i].FiredAmmo;
+					packetsToSend.back().FiredAmmo = ammoType;
+
+					const PositionComponent& positionComp = pPositionComponents->GetConstData(remoteEntity);
+					const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(remoteEntity);
+					const RotationComponent& rotationComp = pRotationComponents->GetConstData(remoteEntity);
+
+					LOG_INFO("Player=%d fired at(x=%.4f, y=%.4f, z=%.4f)", remoteEntity, positionComp.Position.x, positionComp.Position.y, positionComp.Position.z);
+					Fire(ammoType, remoteEntity, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
 				}
 			}
 		}
@@ -299,8 +307,11 @@ void WeaponSystem::Fire(
 	EventQueue::SendEventImmediate(firedEvent);
 
 	// Play gun fire
-	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
-	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
+	if (!MultiplayerUtils::IsServer())
+	{
+		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
+		m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
+	}
 }
 
 void WeaponSystem::TryFire(

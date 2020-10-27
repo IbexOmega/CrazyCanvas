@@ -641,8 +641,6 @@ bool LevelObjectCreator::CreatePlayer(
 			}
 
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
-			pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
-
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			//Create Camera Entity
@@ -692,12 +690,12 @@ bool LevelObjectCreator::CreatePlayer(
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
-
-		pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
+	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
+	pECS->AddComponent<PacketComponent<HealthChangedPacket>>(playerEntity, {});
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
@@ -729,8 +727,12 @@ bool LevelObjectCreator::CreateProjectile(
 	const VelocityComponent velocityComponent = { desc.InitalVelocity };
 	pECS->AddComponent<VelocityComponent>(projectileEntity, velocityComponent);
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, { desc.AmmoType });
-	pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
 	pECS->AddComponent<TeamComponent>(projectileEntity, { desc.TeamIndex });
+
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
+	}
 
 	const DynamicCollisionCreateInfo collisionInfo =
 	{

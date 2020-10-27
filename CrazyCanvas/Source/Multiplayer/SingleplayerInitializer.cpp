@@ -19,7 +19,7 @@ namespace LambdaEngine
 
 		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
 		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt8(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
+		encoder.WriteUInt8(static_cast<uint8>(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER));
 		encoder.WriteBool(true);
 		encoder.WriteInt32(0);
 		encoder.WriteVec3(glm::vec3(0.0f, 2.0f, 0.0f));

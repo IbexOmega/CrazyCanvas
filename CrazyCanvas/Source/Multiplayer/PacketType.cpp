@@ -7,6 +7,7 @@
 #include "Multiplayer/Packet/PlayerActionResponse.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToComponentType;
@@ -15,6 +16,7 @@ uint16 PacketType::CREATE_LEVEL_OBJECT		= 0;
 uint16 PacketType::PLAYER_ACTION			= 0;
 uint16 PacketType::PLAYER_ACTION_RESPONSE	= 0;
 uint16 PacketType::WEAPON_FIRE				= 0;
+uint16 PacketType::HEALTH_CHANGED			= 0;
 uint16 PacketType::FLAG_EDITED				= 0;
 uint16 PacketType::TEAM_SCORED				= 0;
 
@@ -24,6 +26,7 @@ void PacketType::Init()
 	PLAYER_ACTION			= RegisterPacketTypeWithComponent<PlayerAction>();
 	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PlayerActionResponse>();
 	WEAPON_FIRE				= RegisterPacketTypeWithComponent<WeaponFiredPacket>();
+	HEALTH_CHANGED			= RegisterPacketTypeWithComponent<HealthChangedPacket>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
 	TEAM_SCORED				= RegisterPacketType();
 }

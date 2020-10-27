@@ -5,6 +5,7 @@
 #include "Match/Match.h"
 
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystem.h"
 
 MultiplayerBase::MultiplayerBase() : 
 	m_PacketDecoderSystem()
@@ -31,6 +32,8 @@ void MultiplayerBase::InitInternal()
 	}
 
 	WeaponSystem::GetInstance().Init();
+	HealthSystem::GetInstance().Init();
+
 	Init();
 }
 
@@ -44,6 +47,7 @@ void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaT
 {
 	FixedTickMainThread(deltaTime);
 	WeaponSystem::GetInstance().FixedTick(deltaTime);
+	HealthSystem::GetInstance().FixedTick(deltaTime);
 
 	// THIS SHOULD BE CALLED LAST DO NOT PLACE CODE BELOW
 	m_PacketDecoderSystem.FixedTickMainThread(deltaTime);

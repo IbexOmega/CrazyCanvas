@@ -53,10 +53,6 @@ void PlaySessionState::Init()
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
-
-	WeaponSystem::GetInstance().Init();
-	HealthSystem::GetInstance().Init();
-
 	m_MultiplayerClient.InitInternal();
 	m_HUDSystem.Init();
 

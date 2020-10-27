@@ -10,6 +10,7 @@
 MatchBase::~MatchBase()
 {
 	using namespace LambdaEngine;
+
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent>(this, &MatchBase::OnPacketReceived);
 	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
 
