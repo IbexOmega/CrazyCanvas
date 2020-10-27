@@ -24,7 +24,7 @@ namespace LambdaEngine
 
 	private:
 		AudioSystem() = default;
-		void AudibleComponentDestructor(AudibleComponent& audibleComponent);
+		static void AudibleComponentDestructor(AudibleComponent& audibleComponent, Entity entity);
 
 	private:
 		IDVector	m_AudibleEntities;

@@ -92,9 +92,9 @@ namespace LambdaEngine
 
 			RegisterSystem(TYPE_NAME(PhysicsSystem), systemReg);
 
-			SetComponentOwner<StaticCollisionComponent>({ std::bind_front(&PhysicsSystem::StaticCollisionDestructor, this) });
-			SetComponentOwner<DynamicCollisionComponent>({ std::bind_front(&PhysicsSystem::DynamicCollisionDestructor, this) });
-			SetComponentOwner<CharacterColliderComponent>({ std::bind_front(&PhysicsSystem::CharacterColliderDestructor, this) });
+			SetComponentOwner<StaticCollisionComponent>({ .Destructor = &PhysicsSystem::StaticCollisionDestructor });
+			SetComponentOwner<DynamicCollisionComponent>({ .Destructor = &PhysicsSystem::DynamicCollisionDestructor });
+			SetComponentOwner<CharacterColliderComponent>({ .Destructor = &PhysicsSystem::CharacterColliderDestructor });
 		}
 
 		// PhysX setup
@@ -352,11 +352,11 @@ namespace LambdaEngine
 			}
 			case EGeometryType::BOX:
 			{
-				const PxVec3 halfExtentsPX = 
-				{ 
-					scale.x * shapeCreateInfo.GeometryParams.HalfExtents.x, 
-					scale.y * shapeCreateInfo.GeometryParams.HalfExtents.y, 
-					scale.z * shapeCreateInfo.GeometryParams.HalfExtents.z 
+				const PxVec3 halfExtentsPX =
+				{
+					scale.x * shapeCreateInfo.GeometryParams.HalfExtents.x,
+					scale.y * shapeCreateInfo.GeometryParams.HalfExtents.y,
+					scale.z * shapeCreateInfo.GeometryParams.HalfExtents.z
 				};
 				pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
 				break;
@@ -472,20 +472,26 @@ namespace LambdaEngine
 		return PxTransform(positionPX, rotationPX);
 	}
 
-	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent)
+	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		ReleaseActor(collisionComponent.pActor);
 		collisionComponent.pActor = nullptr;
 	}
 
-	void PhysicsSystem::DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent)
+	void PhysicsSystem::DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		ReleaseActor(collisionComponent.pActor);
 		collisionComponent.pActor = nullptr;
 	}
 
-	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent)
+	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		PxActor* pActor = characterColliderComponent.pController->getActor();
 		delete reinterpret_cast<ActorUserData*>(pActor->userData);
 		pActor->userData = nullptr;
@@ -648,7 +654,7 @@ namespace LambdaEngine
 			PxRigidBody* pBody = reinterpret_cast<PxRigidBody*>(pActor);
 			pBody->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		}
-		
+
         // Set collision callback
 		pActor->userData = DBG_NEW ActorUserData;
 		ActorUserData* pUserData = reinterpret_cast<ActorUserData*>(pActor->userData);
