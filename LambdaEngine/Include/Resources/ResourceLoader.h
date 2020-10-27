@@ -62,7 +62,7 @@ namespace LambdaEngine
 
 	/*	SceneLoadRequest contains information needed to begin loading a scene. It is also used to specify whether to
 		skip loading optional resources by setting fields to nullptr. */
-	struct SceneLoadRequest 
+	struct SceneLoadRequest
 	{
 		String									Filepath;
 		int32									AssimpFlags;

@@ -28,7 +28,7 @@ namespace LambdaEngine
 
 		systemReg.Phase = 0;
 		RegisterSystem(TYPE_NAME(AnimationSystem), systemReg);
-		SetComponentOwner<AnimationComponent>({ std::bind(&AnimationSystem::OnAnimationComponentDelete, this, std::placeholders::_1) });
+		SetComponentOwner<AnimationComponent>({ .Destructor = &AnimationSystem::OnAnimationComponentDelete });
 
 		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
 		return true;
@@ -118,8 +118,9 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
-	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation)
+	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
 		SAFEDELETE(animation.pGraph);
 	}
 

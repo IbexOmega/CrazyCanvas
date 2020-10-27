@@ -3,6 +3,7 @@
 #include "Containers/TArray.h"
 #include "Containers/String.h"
 #include "ECS/ComponentType.h"
+#include "ECS/Entity.h"
 
 #define DECL_COMPONENT(Component) \
 	private: \
@@ -75,8 +76,10 @@ namespace LambdaEngine
 	template <typename Comp>
 	struct ComponentOwnership
 	{
+		// Called just after creating a component
+		std::function<void(Comp& component, Entity entity)> Constructor;
 		// Called just before deleting a component
-		std::function<void(Comp&)> Destructor;
+		std::function<void(Comp& component, Entity entity)> Destructor;
 		/**
 		 * Serialize the component into the buffer, excluding the type hash.
 		 * \return The required size of the serialization in bytes.

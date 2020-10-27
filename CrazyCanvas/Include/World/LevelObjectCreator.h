@@ -37,6 +37,7 @@ enum class ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_FLAG					= 7,
 	LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT	= 8,
 	LEVEL_OBJECT_TYPE_PROJECTILE			= 9,
+	LEVEL_OBJECT_TYPE_KILL_PLANE			= 10,
 };
 
 /*
@@ -116,11 +117,11 @@ public:
 	*	Special Objects are entities that can be created at level load time or later, they are more than general than lights and geometry in the sense
 	*	that as long as a create function exists, it can be created. This means that in order to add a new type of Special Object, one just has to add a new
 	*	a new create function for that Special Object.
-	* 
+	*
 	*	The create functions can then either be called at level load time using a prefix which can be registered in LevelObjectCreator::Init and must be set
 	*	on the appropriate mesh, yes mesh (blame assimp), in the Level Editor. Or it can be created by registering the create function in s_LevelObjectTypeCreateFunctions
 	*	and later calling Level::CreateObject with the appropriate LevelObjectType and pData, this will in turn call LevelObjectCreator::CreateLevelObjectOfType.
-	* 
+	*
 	*	Special Objects are similar to ECS::Entities but one Special Object can create many entities.
 	*/
 	static ELevelObjectType CreateLevelObjectFromPrefix(
@@ -152,6 +153,10 @@ private:
 		const glm::vec3& translation);
 
 	static ELevelObjectType CreateFlagDeliveryPoint(
+		const LambdaEngine::LevelObjectOnLoad& levelObject, 
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+		const glm::vec3& translation);
+	static ELevelObjectType CreateKillPlane(
 		const LambdaEngine::LevelObjectOnLoad& levelObject, 
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
 		const glm::vec3& translation);

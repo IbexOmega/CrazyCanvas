@@ -21,7 +21,7 @@ class Level;
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState(LambdaEngine::IPAddress* pIPAddress);
+	PlaySessionState(bool singlePlayer, LambdaEngine::IPAddress* pIPAddress);
 	~PlaySessionState();
 
 	void Init() override final;
@@ -38,6 +38,7 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
 private:
+	bool m_Singleplayer;
 	LambdaEngine::IPAddress* m_pIPAddress;
 
 	/* Systems */
