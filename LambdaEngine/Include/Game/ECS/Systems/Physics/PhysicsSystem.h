@@ -180,10 +180,10 @@ namespace LambdaEngine
 
 		PxTransform CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const;
 
-		void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent);
-		void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent);
-		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
-		void ReleaseActor(PxRigidActor* pActor);
+		static void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity);
+		static void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent, Entity entity);
+		static void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent, Entity entity);
+		static void ReleaseActor(PxRigidActor* pActor);
 
 		void OnStaticCollisionAdded(Entity entity);
 		void OnDynamicCollisionAdded(Entity entity);

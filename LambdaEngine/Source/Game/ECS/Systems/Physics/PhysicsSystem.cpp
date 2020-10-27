@@ -92,9 +92,9 @@ namespace LambdaEngine
 
 			RegisterSystem(TYPE_NAME(PhysicsSystem), systemReg);
 
-			SetComponentOwner<StaticCollisionComponent>({ std::bind_front(&PhysicsSystem::StaticCollisionDestructor, this) });
-			SetComponentOwner<DynamicCollisionComponent>({ std::bind_front(&PhysicsSystem::DynamicCollisionDestructor, this) });
-			SetComponentOwner<CharacterColliderComponent>({ std::bind_front(&PhysicsSystem::CharacterColliderDestructor, this) });
+			SetComponentOwner<StaticCollisionComponent>({ .Destructor = &PhysicsSystem::StaticCollisionDestructor });
+			SetComponentOwner<DynamicCollisionComponent>({ .Destructor = &PhysicsSystem::DynamicCollisionDestructor });
+			SetComponentOwner<CharacterColliderComponent>({ .Destructor = &PhysicsSystem::CharacterColliderDestructor });
 		}
 
 		// PhysX setup
@@ -484,20 +484,26 @@ namespace LambdaEngine
 		return PxTransform(positionPX, rotationPX);
 	}
 
-	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent)
+	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		ReleaseActor(collisionComponent.pActor);
 		collisionComponent.pActor = nullptr;
 	}
 
-	void PhysicsSystem::DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent)
+	void PhysicsSystem::DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		ReleaseActor(collisionComponent.pActor);
 		collisionComponent.pActor = nullptr;
 	}
 
-	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent)
+	void PhysicsSystem::CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		PxActor* pActor = characterColliderComponent.pController->getActor();
 		delete reinterpret_cast<ActorUserData*>(pActor->userData);
 		pActor->userData = nullptr;
