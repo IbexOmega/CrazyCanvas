@@ -133,7 +133,8 @@ bool MatchClient::OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTea
 bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event)
 {
 	const PacketGameOver& packet = event.Packet;
-	//uint32 winningTeamIndex = packet.WinningTeamIndex;
+
+	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
 	ResetMatch();
 
 	return true;
