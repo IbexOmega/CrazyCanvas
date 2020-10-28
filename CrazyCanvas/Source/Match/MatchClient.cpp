@@ -75,8 +75,6 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Cr
 				.Scale				= glm::vec3(1.0f),
 				.TeamIndex			= packet.Player.TeamIndex,
 				.pCameraDesc		= &cameraDesc,
-				.MeshGUID			= robotGUID,
-				.AnimationComponent = robotAnimationComp,
 			};
 
 			TArray<Entity> createdPlayerEntities;

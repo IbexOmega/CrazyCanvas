@@ -302,9 +302,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				.Forward 			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
 				.Scale 				= glm::vec3(1.0f),
 				.TeamIndex 			= 0,
-				.pCameraDesc 		= &cameraDesc,
-				.MeshGUID 			= robotGUID,
-				.AnimationComponent = robotAnimationComp,
+				.pCameraDesc 		= &cameraDesc
 			};
 
 			for (uint32 playerNr = 0; playerNr < 9; playerNr++)
