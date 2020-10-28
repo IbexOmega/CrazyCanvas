@@ -15,11 +15,13 @@ protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
-	virtual void SpawnFlag();
-
-	virtual bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event) override final;
+	void SpawnFlag();
+	void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
 	bool OnFlagDelivered(const OnFlagDeliveredEvent& event);
+
+private:
+	uint8 m_NextTeamIndex = 0;
 };

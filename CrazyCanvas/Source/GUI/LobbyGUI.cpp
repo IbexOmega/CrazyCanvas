@@ -168,7 +168,7 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 	SetRenderStagesActive();
 
-	State* pPlayState = DBG_NEW PlaySessionState(pIP);
+	State* pPlayState = DBG_NEW PlaySessionState(false, pIP);
 	StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
@@ -270,7 +270,7 @@ void LobbyGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 
 			SetRenderStagesActive();
 
-			State* pPlaySessionState = DBG_NEW PlaySessionState(server.second.EndPoint.GetAddress());
+			State* pPlaySessionState = DBG_NEW PlaySessionState(false, server.second.EndPoint.GetAddress());
 			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 		}
 	}

@@ -15,7 +15,9 @@
 namespace LambdaEngine
 {
     class ISocket;
+    class IClient;
     class ClientRemoteBase;
+    class IPacketListener;
     class IServerHandler;
     class IClientRemoteHandler;
 
@@ -51,6 +53,35 @@ namespace LambdaEngine
         const ServerDesc& GetDescription() const;
         const ClientMap& GetClients() const;
         
+        template<class T>
+        bool SendUnreliableStructBroadcast(const T& packet, uint16 packetType, const IClient* pExclude = nullptr)
+        {
+            std::scoped_lock<SpinLock> lock(m_LockClients);
+            bool result = true;
+            for (auto& pair : m_Clients)
+            {
+                IClient* pClient = pair.second;
+                if (pClient != pExclude)
+                    if (!pClient->SendUnreliableStruct<T>(packet, packetType))
+                        result = false;
+            }
+            return result;
+        }
+
+        template<class T>
+        bool SendReliableStructBroadcast(const T& packet, uint16 packetType, IPacketListener* pListener = nullptr, const IClient* pExclude = nullptr)
+        {
+            std::scoped_lock<SpinLock> lock(m_LockClients);
+            bool result = true;
+            for (auto& pair : m_Clients)
+            {
+                IClient* pClient = pair.second;
+                if (pClient != pExclude)
+                    if (!pClient->SendReliableStruct<T>(packet, packetType, pListener))
+                        result = false;
+            }
+            return result;
+        }
 
     protected:
         ServerBase(const ServerDesc& desc);
@@ -69,7 +100,7 @@ namespace LambdaEngine
 
     private:
         IClientRemoteHandler* CreateClientHandler() const;
-        void OnClientAskForTermination(ClientRemoteBase* client);
+        void OnClientAskForTermination(ClientRemoteBase* pClient);
         bool SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener);
         bool SendUnreliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket);
 

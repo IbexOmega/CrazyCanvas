@@ -7,11 +7,12 @@
 
 namespace LambdaEngine
 {
-	KeyboardState		Input::s_KeyboardStates[2];
-	MouseState			Input::s_MouseStates[2];
-	std::atomic_bool	Input::s_InputEnabled = true;
-	SpinLock			Input::s_WriteBufferLockMouse;
-	SpinLock			Input::s_WriteBufferLockKeyboard;
+	KeyboardState			Input::s_KeyboardStates[2][2];
+	MouseState				Input::s_MouseStates[2][2];
+	std::atomic_bool		Input::s_InputEnabled = true;
+	SpinLock				Input::s_WriteBufferLockMouse;
+	SpinLock				Input::s_WriteBufferLockKeyboard;
+	std::stack<InputMode>	Input::s_InputModeStack;
 
 	/*
 	* Input
@@ -35,13 +36,15 @@ namespace LambdaEngine
 		}
 
 		// Update input
-		if (IsInputEnabled())
+		if (IsInputEnabled() && GetCurrentInputmode() != InputMode::NONE)
 		{
+			uint8 inputMode = ConvertInputModeUINT8(s_InputModeStack.top());
+
 			if (IsEventOfType<KeyPressedEvent>(event))
 			{
 				std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
 				const KeyPressedEvent& keyEvent = EventCast<KeyPressedEvent>(event);
-				s_KeyboardStates[STATE_WRITE_INDEX].KeyStates[keyEvent.Key] = true;
+				s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[keyEvent.Key] = true;
 
 				return true;
 			}
@@ -49,7 +52,7 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
 				const KeyReleasedEvent& keyEvent = EventCast<KeyReleasedEvent>(event);
-				s_KeyboardStates[STATE_WRITE_INDEX].KeyStates[keyEvent.Key] = false;
+				s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[keyEvent.Key] = false;
 
 				return true;
 			}
@@ -57,7 +60,7 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 				const MouseButtonClickedEvent& mouseEvent = EventCast<MouseButtonClickedEvent>(event);
-				s_MouseStates[STATE_WRITE_INDEX].ButtonStates[mouseEvent.Button] = IsInputEnabled();
+				s_MouseStates[inputMode][STATE_WRITE_INDEX].ButtonStates[mouseEvent.Button] = IsInputEnabled();
 
 				return true;
 			}
@@ -65,7 +68,7 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 				const MouseButtonReleasedEvent& mouseEvent = EventCast<MouseButtonReleasedEvent>(event);
-				s_MouseStates[STATE_WRITE_INDEX].ButtonStates[mouseEvent.Button] = false;
+				s_MouseStates[inputMode][STATE_WRITE_INDEX].ButtonStates[mouseEvent.Button] = false;
 
 				return true;
 			}
@@ -73,7 +76,7 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 				const MouseMovedEvent& mouseEvent = EventCast<MouseMovedEvent>(event);
-				s_MouseStates[STATE_WRITE_INDEX].Position = { mouseEvent.Position.x, mouseEvent.Position.y };
+				s_MouseStates[inputMode][STATE_WRITE_INDEX].Position = { mouseEvent.Position.x, mouseEvent.Position.y };
 
 				return true;
 			}
@@ -81,14 +84,19 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 				const MouseScrolledEvent& mouseEvent = EventCast<MouseScrolledEvent>(event);
-				s_MouseStates[STATE_WRITE_INDEX].ScrollX = mouseEvent.DeltaX;
-				s_MouseStates[STATE_WRITE_INDEX].ScrollY = mouseEvent.DeltaY;
+				s_MouseStates[inputMode][STATE_WRITE_INDEX].ScrollX = mouseEvent.DeltaX;
+				s_MouseStates[inputMode][STATE_WRITE_INDEX].ScrollY = mouseEvent.DeltaY;
 
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	uint8 Input::ConvertInputModeUINT8(InputMode inputMode)
+	{
+		return static_cast<uint8>(inputMode);
 	}
 
 	/*
@@ -106,6 +114,10 @@ namespace LambdaEngine
 		result = result && EventQueue::RegisterEventHandler<MouseMovedEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<MouseScrolledEvent>(eventHandler);
 		result = result && EventQueue::RegisterEventHandler<WindowFocusChangedEvent>(eventHandler);
+
+		// Default input mode is game
+		PushInputMode(InputMode::GAME);
+
 		return result;
 	}
 
@@ -129,8 +141,10 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
 		std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 
-		s_KeyboardStates[0] = s_KeyboardStates[1];
-		s_MouseStates[0] = s_MouseStates[1];
+		uint8 inputMode = ConvertInputModeUINT8(s_InputModeStack.top());
+
+		s_KeyboardStates[inputMode][0] = s_KeyboardStates[inputMode][1];
+		s_MouseStates[inputMode][0] = s_MouseStates[inputMode][1];
 	}
 
 	void Input::Disable()
@@ -139,7 +153,9 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 		s_InputEnabled = false;
 
-		std::fill_n(s_KeyboardStates[STATE_WRITE_INDEX].KeyStates, EKey::KEY_COUNT, false);
-		std::fill_n(s_MouseStates[STATE_WRITE_INDEX].ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
+		uint8 inputMode = ConvertInputModeUINT8(s_InputModeStack.top());
+
+		std::fill_n(s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates, EKey::KEY_COUNT, false);
+		std::fill_n(s_MouseStates[inputMode][STATE_WRITE_INDEX].ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
 	}
 }
