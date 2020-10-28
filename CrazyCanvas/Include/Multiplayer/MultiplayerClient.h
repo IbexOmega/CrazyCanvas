@@ -1,7 +1,7 @@
 #pragma once
 #include "Multiplayer/MultiplayerBase.h"
 
-#include "World/Player/Client/PlayerLocal.h"
+#include "World/Player/Client/PlayerLocalSystem.h"
 #include "World/Player/Client/PlayerForeignSystem.h"
 
 #include "ECS/Systems/Match/ClientFlagSystem.h"

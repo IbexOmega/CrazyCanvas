@@ -88,10 +88,10 @@ namespace LambdaEngine
 		DECLARE_CONNECTION_EVENT_TYPE(ServerFullEvent);
 	};
 
-	struct PacketReceivedEvent : public Event
+	struct NetworkSegmentReceivedEvent : public Event
 	{
 	public:
-		inline PacketReceivedEvent(IClient* pIClient, NetworkSegment* pNetworkSegment)
+		inline NetworkSegmentReceivedEvent(IClient* pIClient, NetworkSegment* pNetworkSegment)
 			: Event(),
 			pClient(pIClient),
 			pPacket(pNetworkSegment),
@@ -99,11 +99,11 @@ namespace LambdaEngine
 		{
 		}
 
-		DECLARE_EVENT_TYPE(PacketReceivedEvent);
+		DECLARE_EVENT_TYPE(NetworkSegmentReceivedEvent);
 
 		virtual String ToString() const override
 		{
-			return String("PacketReceivedEvent=" + pPacket->ToString());
+			return String("NetworkSegmentReceivedEvent=" + pPacket->ToString());
 		}
 
 	public:

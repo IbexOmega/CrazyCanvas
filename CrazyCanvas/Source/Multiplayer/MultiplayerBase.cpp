@@ -19,6 +19,7 @@ MultiplayerBase::~MultiplayerBase()
 	{
 		LOG_ERROR("Match Release Failed");
 	}
+	PacketType::Release();
 }
 
 void MultiplayerBase::InitInternal()
@@ -46,9 +47,7 @@ void MultiplayerBase::TickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
 	FixedTickMainThread(deltaTime);
+	
 	WeaponSystem::GetInstance().FixedTick(deltaTime);
 	HealthSystem::GetInstance().FixedTick(deltaTime);
-
-	// THIS SHOULD BE CALLED LAST DO NOT PLACE CODE BELOW
-	m_PacketDecoderSystem.FixedTickMainThread(deltaTime);
 }

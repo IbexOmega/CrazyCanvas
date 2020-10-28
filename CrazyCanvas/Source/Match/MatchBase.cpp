@@ -11,8 +11,8 @@ MatchBase::~MatchBase()
 {
 	using namespace LambdaEngine;
 
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent>(this, &MatchBase::OnPacketReceived);
 	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
+	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &MatchBase::OnPacketReceived);
 
 	SAFEDELETE(m_pLevel);
 }
@@ -22,8 +22,8 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 	using namespace LambdaEngine;
 
 	// Register eventhandlers
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &MatchBase::OnPacketReceived);
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
+	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &MatchBase::OnPacketReceived);
 	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
 

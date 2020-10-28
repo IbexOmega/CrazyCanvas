@@ -56,7 +56,7 @@ void BenchmarkState::Init()
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
+	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	// Initialize Systems
 	WeaponSystem::GetInstance().Init();
@@ -263,7 +263,7 @@ void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 	}
 }
 
-bool BenchmarkState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	using namespace LambdaEngine;
 

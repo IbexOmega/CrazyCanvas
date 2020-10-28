@@ -17,13 +17,13 @@ struct IPacketComponent
 {
 	friend class PacketTranscoderSystem;
 
+public:
 	virtual ~IPacketComponent() = default;
 
 private:
 	virtual void* AddPacketReceived() = 0;
 	virtual void ClearPacketsReceived() = 0;
 	virtual void WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) = 0;
-	virtual uint16 GetSize() = 0;
 	virtual uint16 GetPacketsToSendCount() = 0;
 	virtual uint16 GetPacketType() = 0;
 };
@@ -86,11 +86,6 @@ private:
 		packet.NetworkUID = networkUID;
 		pSegment->Write<T>(&packet);
 		m_PacketsToSend.pop();
-	}
-
-	virtual uint16 GetSize() override final
-	{
-		return (uint16)sizeof(T);
 	}
 
 	virtual uint16 GetPacketsToSendCount() override final

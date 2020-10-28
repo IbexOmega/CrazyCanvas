@@ -31,7 +31,7 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 	UNREFERENCED_VARIABLE(deltaTime);
 }
 
-bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+bool MatchClient::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	using namespace LambdaEngine;
 
