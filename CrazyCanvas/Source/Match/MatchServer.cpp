@@ -35,6 +35,7 @@
 
 #include "Multiplayer/ServerHelper.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 
 #include <imgui.h>
 
@@ -227,6 +228,16 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	}
 
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
+}
+
+void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
+{
+	m_pLevel->DeleteObject(entity);
+
+	PacketDeleteLevelObject packet;
+	packet.NetworkUID = entity;
+
+	ServerHelper::SendBroadcast(packet);
 }
 
 bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)

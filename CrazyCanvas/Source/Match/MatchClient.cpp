@@ -27,12 +27,14 @@ MatchClient::~MatchClient()
 {
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 }
 
 bool MatchClient::InitInternal()
 {
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 	return true;
 }
 
@@ -124,5 +126,16 @@ bool MatchClient::OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTea
 {
 	const PacketTeamScored& packet = event.Packet;
 	SetScore(packet.TeamIndex, packet.Score);
+	return true;
+}
+
+bool MatchClient::OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<PacketDeleteLevelObject>& event)
+{
+	const PacketDeleteLevelObject& packet = event.Packet;
+	Entity entity = MultiplayerUtils::GetEntity(packet.NetworkUID);
+
+	if(entity != UINT32_MAX)
+		m_pLevel->DeleteObject(entity);
+
 	return true;
 }

@@ -5,6 +5,8 @@
 #include "Application/API/Events/NetworkEvents.h"
 #include "Events/MatchEvents.h"
 
+#include "ECS/Entity.h"
+
 class MatchServer : public MatchBase
 {
 public:
@@ -17,6 +19,7 @@ protected:
 
 	void SpawnFlag();
 	void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
+	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);

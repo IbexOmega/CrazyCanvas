@@ -38,6 +38,7 @@ public:
 
 	bool Init(const LevelCreateDesc* pDesc);
 
+	bool DeleteObject(LambdaEngine::Entity entity);
 	bool CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities);
 
 	LambdaEngine::Entity* GetEntities(ELevelObjectType levelObjectType, uint32& countOut);

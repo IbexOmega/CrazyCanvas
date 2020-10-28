@@ -105,6 +105,11 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	return true;
 }
 
+bool Level::DeleteObject(LambdaEngine::Entity entity)
+{
+	return false;
+}
+
 bool Level::CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities)
 {
 	using namespace LambdaEngine;
@@ -153,25 +158,3 @@ LambdaEngine::Entity* Level::GetEntities(ELevelObjectType levelObjectType, uint3
 	countOut = 0;
 	return nullptr;
 }
-
-/*LambdaEngine::Entity Level::GetEntityPlayer(uint64 saltUID)
-{
-	using namespace LambdaEngine;
-
-	std::scoped_lock<SpinLock> lock(m_SpinLock);
-
-	auto levelObjectTypeIt = m_EntityTypeMap.find(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
-	if (levelObjectTypeIt != m_EntityTypeMap.end())
-	{
-		LevelEntitiesOfType& levelEntities = m_Entities[levelObjectTypeIt->second];
-		for (uint32 i = 0; i < levelEntities.SaltUIDs.GetSize(); i++)
-		{
-			if (levelEntities.SaltUIDs[i] == saltUID)
-			{
-				return levelEntities.Entities[i];
-			}
-		}
-	}
-
-	return UINT32_MAX;
-}*/
