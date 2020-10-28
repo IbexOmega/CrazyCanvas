@@ -21,6 +21,8 @@
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -67,7 +69,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else if (stateStr == "client")
 	{
 		ClientSystem::Init(pGameName);
-		pStartingState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
+		pStartingState = DBG_NEW PlaySessionState(false, NetworkUtils::GetLocalAddress());
 	}
 	else if (stateStr == "server")
 	{

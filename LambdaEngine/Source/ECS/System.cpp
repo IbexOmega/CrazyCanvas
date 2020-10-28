@@ -5,9 +5,20 @@
 
 namespace LambdaEngine
 {
-    void System::RegisterSystem(SystemRegistration& systemRegistration)
+    System::~System()
     {
-        RegularWorkInfo regularWorkInfo =
+        ECSCore* pECS = ECSCore::GetInstance();
+        if (pECS)
+        {
+            pECS->DeregisterSystem(GetJobID());
+        }
+    }
+
+    void System::RegisterSystem(const String& systemName, SystemRegistration& systemRegistration)
+    {
+        m_SystemName = systemName;
+
+        const RegularWorkInfo regularWorkInfo =
         {
             .TickFunction = std::bind_front(&System::Tick, this),
             .EntitySubscriberRegistration = systemRegistration.SubscriberRegistration,
@@ -17,5 +28,6 @@ namespace LambdaEngine
 
         SubscribeToEntities(systemRegistration.SubscriberRegistration);
         ScheduleRegularWork(regularWorkInfo);
+        ECSCore::GetInstance()->RegisterSystem(this, GetJobID());
     }
 }

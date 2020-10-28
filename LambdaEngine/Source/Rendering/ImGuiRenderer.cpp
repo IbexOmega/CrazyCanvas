@@ -1125,7 +1125,7 @@ namespace LambdaEngine
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
 		colorAttachmentDesc.SampleCount		= 1;
-		colorAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
+		colorAttachmentDesc.LoadOp			= (pBackBufferAttachmentDesc->InitialState != ETextureState::TEXTURE_STATE_UNKNOWN) ? ELoadOp::LOAD_OP_LOAD : ELoadOp::LOAD_OP_DONT_CARE;
 		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
 		colorAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
 		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;

@@ -23,6 +23,7 @@ bool AudioEffectHandler::OnProjectileHit(const ProjectileHitEvent& projectileHit
 {
 	UNREFERENCED_VARIABLE(projectileHitEvent);
 	using namespace LambdaEngine;
+
 	//m_pProjectileHitSound->PlayOnceAt(projectileHitEvent.CollisionInfo0.Position);
 	return true;
 }

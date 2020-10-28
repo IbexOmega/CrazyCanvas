@@ -1,5 +1,6 @@
 #include "ECS/JobScheduler.h"
 
+#include "ECS/ECSCore.h"
 #include "ECS/EntitySubscriber.h"
 #include "Threading/API/ThreadPool.h"
 
@@ -257,6 +258,10 @@ namespace LambdaEngine
             }
         }
 
+        ECSCore* pECS = ECSCore::GetInstance();
+        pECS->PerformComponentRegistrations();
+        pECS->PerformComponentDeletions();
+        pECS->PerformEntityDeletions();
         SetPhase(upcomingPhase);
     }
 

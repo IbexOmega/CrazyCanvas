@@ -47,9 +47,9 @@ namespace LambdaEngine
 				}
 			};
 			systemReg.Phase = 0;
-			SetComponentOwner<AudibleComponent>({ std::bind_front(&AudioSystem::AudibleComponentDestructor, this) });
+			SetComponentOwner<AudibleComponent>({ .Destructor = &AudioSystem::AudibleComponentDestructor });
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(AudioSystem), systemReg);
 		}
 
 		return true;
@@ -115,12 +115,9 @@ namespace LambdaEngine
 		}
 	}
 
-	void AudioSystem::AudibleComponentDestructor(AudibleComponent& audibleComponent)
+	void AudioSystem::AudibleComponentDestructor(AudibleComponent& audibleComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
 		SAFEDELETE(audibleComponent.pSoundInstance);
-
 	}
 }
-
-
-

@@ -12,6 +12,7 @@
 
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
+#include "Physics/CollisionGroups.h"
 
 WeaponSystem WeaponSystem::s_Instance;
 
@@ -49,7 +50,7 @@ bool WeaponSystem::Init()
 		systemReg.SubscriberRegistration.AdditionalAccesses = GetFireProjectileComponentAccesses();
 		systemReg.Phase = 1;
 
-		RegisterSystem(systemReg);
+		RegisterSystem(TYPE_NAME(WeaponSystem), systemReg);
 	}
 
 	// Create rendering resources for projectiles
@@ -101,9 +102,10 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+	const ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
@@ -141,28 +143,50 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			}
 		}
 
+		// Update position and orientation of weapon component
+		const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(playerEntity);
+		const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(playerEntity);
+		const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
+		glm::vec3 weaponPosition;
+		if (playerRotationComp.Dirty || playerPositionComp.Dirty)
+		{
+			PositionComponent& weaponPositionComp = pPositionComponents->GetData(weaponEntity);
+			RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
+
+			glm::quat quatY = playerRotationComp.Quaternion;
+			quatY.x = 0;
+			quatY.z = 0;
+			quatY = glm::normalize(quatY);
+			weaponPositionComp.Position = playerPositionComp.Position + quatY * weaponOffsetComp.Offset;
+			weaponPosition = weaponPositionComp.Position;
+
+			weaponRotationComp.Quaternion = playerRotationComp.Quaternion;
+		}
+		else
+		{
+			weaponPosition = pPositionComponents->GetConstData(weaponEntity).Position;
+		}
+
 		// Reload if we are not reloading
-		if (Input::IsKeyDown(EKey::KEY_R) && !isReloading)
+		if (Input::IsKeyDown(InputMode::GAME, EKey::KEY_R) && !isReloading)
 		{
 			StartReload(weaponComponent);
 		}
 		else if (!onCooldown) // If we did not hit the reload try and shoot
 		{
-			if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
+			if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
 			{
-				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
 			}
-			else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
+			else if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
 			{
-				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
 			}
 		}
 	}
@@ -188,7 +212,7 @@ void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent,
 		}
 
 		// Fire the gun
-		Fire(ammoType, weaponComponent, startPos + glm::vec3(0.0f, 1.0f, 0.0f), direction, playerVelocity);
+		Fire(ammoType, weaponComponent, startPos, direction, playerVelocity);
 	}
 	else
 	{
@@ -214,7 +238,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	const Entity projectileEntity = pECS->CreateEntity();
 
 	// Get the firing player's team index
-	const uint32 playerTeam = pECS->GetConstComponent<TeamComponent>(weaponComponent.WeaponOwner).TeamIndex;
+	const uint8 playerTeam = pECS->GetConstComponent<TeamComponent>(weaponComponent.WeaponOwner).TeamIndex;
 	pECS->AddComponent<TeamComponent>(projectileEntity, { playerTeam });
 
 	const VelocityComponent initialVelocity = { playerVelocity + directionVec * projectileInitialSpeed };
@@ -224,26 +248,34 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileInfo);
 
 	const MeshComponent& meshComp = ammoType == EAmmoType::AMMO_TYPE_PAINT ? m_PaintProjectileMeshComponent : m_WaterProjectileMeshComponent;
+	pECS->AddComponent<MeshComponent>(projectileEntity, meshComp);
+
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
+        /* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
-		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, { 0.3f, 0.3f, 0.3f }}),
+		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, glm::vec3(0.3f)}),
 		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
-		/* Mesh */				pECS->AddComponent<MeshComponent>(projectileEntity, {meshComp}),
-		/* Shape Type */		EShapeType::SIMULATION,
-		/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-		/* CollisionMask */		FCollisionGroup::COLLISION_GROUP_PLAYER | FCollisionGroup::COLLISION_GROUP_STATIC,
-		/* CallbackFunction */	std::bind_front(&WeaponSystem::OnProjectileHit, this),
+		{
+			{
+				.ShapeType = EShapeType::SIMULATION,
+				.GeometryType = EGeometryType::SPHERE,
+				.GeometryParams = { .Radius = 0.3f },
+				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.CollisionMask = (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CallbackFunction = std::bind_front(&WeaponSystem::OnProjectileHit, this),
+			},
+		},
 		/* Velocity */			initialVelocity
 	};
 
-	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicCollisionSphere(collisionInfo);
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 
 	// Play gun fire
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
-	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
+	m_pSound->PlayOnceAt(startPos, playerVelocity, 0.01f, 1.0f);
 }
 
 void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1)

@@ -38,6 +38,8 @@ namespace LambdaEngine
 		virtual bool HasComponent(Entity entity) const = 0;
 		virtual void ResetDirtyFlags() = 0;
 
+		virtual void* GetRawData(Entity entity) = 0;
+
 	protected:
 		// Systems or other external users should not be able to perform immediate deletions
 		friend ComponentStorage;
@@ -62,6 +64,9 @@ namespace LambdaEngine
 		bool GetConstIf(Entity entity, Comp& comp) const;
 		Comp& GetData(Entity entity);
 		const Comp& GetConstData(Entity entity) const;
+
+		void* GetRawData(Entity entity) override final;
+
 		const TArray<uint32>& GetIDs() const override final { return m_IDs; }
 
 		uint32 SerializeComponent(Entity entity, uint8* pBuffer, uint32 bufferSize) const override final { return SerializeComponent(GetConstData(entity), pBuffer, bufferSize); }
@@ -87,9 +92,9 @@ namespace LambdaEngine
 	{
 		if (m_ComponentOwnership.Destructor)
 		{
-			for (Comp& component : m_Data)
+			for (uint32 componentIdx = 0; componentIdx < m_Data.GetSize(); componentIdx++)
 			{
-				m_ComponentOwnership.Destructor(component);
+				m_ComponentOwnership.Destructor(m_Data[componentIdx], m_IDs[componentIdx]);
 			}
 		}
 	}
@@ -104,7 +109,14 @@ namespace LambdaEngine
 		uint32 newIndex = m_Data.GetSize();
 		m_EntityToIndex[entity] = newIndex;
 		m_IDs.PushBack(entity);
-		return m_Data.PushBack(comp);
+		Comp& storedComp = m_Data.PushBack(comp);
+
+		if (m_ComponentOwnership.Constructor)
+		{
+			m_ComponentOwnership.Constructor(storedComp, entity);
+		}
+
+		return storedComp;
 	}
 
 	template<typename Comp>
@@ -138,6 +150,14 @@ namespace LambdaEngine
 		comp = m_Data[indexItr->second];
 
 		return true;
+	}
+
+	template<typename Comp>
+	inline void* ComponentArray<Comp>::GetRawData(Entity entity)
+	{
+		auto indexItr = m_EntityToIndex.find(entity);
+		VALIDATE_MSG(indexItr != m_EntityToIndex.end(), "Trying to get a component that does not exist!");
+		return &m_Data[indexItr->second];
 	}
 
 	template<typename Comp>
@@ -175,7 +195,7 @@ namespace LambdaEngine
 
 		if (m_ComponentOwnership.Destructor)
 		{
-			m_ComponentOwnership.Destructor(m_Data[currentIndex]);
+			m_ComponentOwnership.Destructor(m_Data[currentIndex], entity);
 		}
 
 		// Swap the removed component with the last component.

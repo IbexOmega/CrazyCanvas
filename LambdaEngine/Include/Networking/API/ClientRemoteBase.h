@@ -36,10 +36,24 @@ namespace LambdaEngine
 		virtual EClientState GetState() const override;
 		virtual const NetworkStatistics* GetStatistics() const override;
 		virtual IClientRemoteHandler* GetHandler() override;
-		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
+		virtual uint64 GetUID() const override;
+
 		bool SendUnreliableBroadcast(NetworkSegment* pPacket);
+		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
 		const ClientMap& GetClients() const;
 		ServerBase* GetServer();
+
+		template<class T>
+		bool SendUnreliableStructBroadcast(const T& packet, uint16 packetType, bool excludeMySelf = false)
+		{
+			return GetServer()->SendUnreliableStructBroadcast<T>(packet, packetType, excludeMySelf ? this : nullptr);
+		}
+
+		template<class T>
+		bool SendReliableStructBroadcast(const T& packet, uint16 packetType, IPacketListener* pListener = nullptr, bool excludeMySelf = false)
+		{
+			return GetServer()->SendReliableStructBroadcast<T>(packet, packetType, pListener, excludeMySelf ? this : nullptr);
+		}
 
 	protected:		
 		ClientRemoteBase(const ClientRemoteDesc& desc);

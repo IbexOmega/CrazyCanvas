@@ -38,6 +38,9 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
+#include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/SingleplayerInitializer.h"
+
 BenchmarkState::~BenchmarkState()
 {
 	SAFEDELETE(m_pLevel);
@@ -53,7 +56,7 @@ void BenchmarkState::Init()
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
+	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	// Initialize Systems
 	WeaponSystem::GetInstance()->Init();
@@ -95,6 +98,7 @@ void BenchmarkState::Init()
 	//Sphere Grid
 	{
 		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
 
 		uint32 gridRadius = 5;
 
@@ -126,18 +130,26 @@ void BenchmarkState::Init()
 				glm::vec3 scale(1.0f);
 
 				Entity entity = pECS->CreateEntity();
-				const CollisionCreateInfo collisionCreateInfo = {
+				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				const CollisionCreateInfo collisionCreateInfo = 
+				{
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-					.Mesh			= pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
-					.ShapeType		= EShapeType::SIMULATION,
-					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+					.Shapes = 
+					{
+						{
+							.ShapeType		= EShapeType::SIMULATION,
+							.GeometryType	= EGeometryType::SPHERE,
+							.GeometryParams	= { .Radius = sphereRadius },
+							.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+							.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+						},
+					},
 				};
 
-				StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
+				const StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
@@ -237,7 +249,7 @@ void BenchmarkState::Init()
 	}
 
 	// Triggers OnPacketReceived, which creates players
-	ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
+	SingleplayerInitializer::InitSingleplayer();
 }
 
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
@@ -251,62 +263,73 @@ void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 	}
 }
 
-bool BenchmarkState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	using namespace LambdaEngine;
 
-	if (event.Type == NetworkSegment::TYPE_ENTITY_CREATE)
+	if (event.Type == PacketType::CREATE_LEVEL_OBJECT)
 	{
-		// Create player characters that a benchmark system controls
 		BinaryDecoder decoder(event.pPacket);
-		decoder.ReadBool();
-		int32 networkUID = decoder.ReadInt32();
-		glm::vec3 position = decoder.ReadVec3();
+		ELevelObjectType entityType = ELevelObjectType(decoder.ReadUInt8());
 
-		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+		// Create player characters that a benchmark system controls
 
-		const CameraDesc cameraDesc =
+		if (entityType == ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER)
 		{
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width = (float)window->GetWidth(),
-			.Height = (float)window->GetHeight(),
-			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
-		};
+			decoder.ReadBool();
+			int32 networkUID = decoder.ReadInt32();
+			glm::vec3 position = decoder.ReadVec3();
 
-		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
-		TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
+			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
-		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+			const CameraDesc cameraDesc =
+			{
+				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+				.Width = (float)window->GetWidth(),
+				.Height = (float)window->GetHeight(),
+				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
+				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+			};
 
-		CreatePlayerDesc createPlayerDesc =
-		{
-			.IsLocal = false,
-			.NetworkUID = networkUID,
-			.pClient = event.pClient,
-			.Position = position,
-			.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-			.Scale = glm::vec3(1.0f),
-			.TeamIndex = 0,
-			.pCameraDesc = &cameraDesc,
-			.MeshGUID = robotGUID,
-			.AnimationComponent = robotAnimationComp,
-		};
+			const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+			TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
 
-		for (uint32 playerNr = 0; playerNr < 9; playerNr++)
-		{
-			// Each player needs an animation graph of its own
-			createPlayerDesc.AnimationComponent.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
+			AnimationComponent robotAnimationComp = {};
+			robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
-			// Create a 3x3 grid of players in the XZ plane
-			createPlayerDesc.Position.x = -3.0f + 3.0f * (playerNr % 3);
-			createPlayerDesc.Position.z = -3.0f + 3.0f * (playerNr / 3);
-			createPlayerDesc.NetworkUID += (int32)playerNr;
-			m_pLevel->CreateObject(ESpecialObjectType::SPECIAL_OBJECT_TYPE_PLAYER, &createPlayerDesc);
+			CreatePlayerDesc createPlayerDesc =
+			{
+				.IsLocal = false,
+				.NetworkUID = networkUID,
+				.pClient = event.pClient,
+				.Position = position,
+				.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+				.Scale = glm::vec3(1.0f),
+				.TeamIndex = 0,
+				.pCameraDesc = &cameraDesc,
+				.MeshGUID = robotGUID,
+				.AnimationComponent = robotAnimationComp,
+			};
+
+			for (uint32 playerNr = 0; playerNr < 9; playerNr++)
+			{
+				// Each player needs an animation graph of its own
+				createPlayerDesc.AnimationComponent.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
+
+				// Create a 3x3 grid of players in the XZ plane
+				createPlayerDesc.Position.x = -3.0f + 3.0f * (playerNr % 3);
+				createPlayerDesc.Position.z = -3.0f + 3.0f * (playerNr / 3);
+				createPlayerDesc.NetworkUID += (int32)playerNr;
+
+				TArray<Entity> createdPlayerEntities;
+				if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
+				{
+					LOG_ERROR("[BenchmarkState]: Failed to create Player!");
+				}
+			}
+
+			return true;
 		}
-
-		return true;
 	}
 
 	return false;

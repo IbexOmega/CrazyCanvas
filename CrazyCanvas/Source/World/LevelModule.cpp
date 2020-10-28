@@ -28,10 +28,10 @@ bool LevelModule::Init(const LambdaEngine::String& filename, const glm::vec3& tr
 	SceneLoadDesc loadDesc =
 	{
 		.Filename					= filename,
-		.SpecialObjectDescriptions	= LevelObjectCreator::GetSpecialObjectOnLoadDescriptions()
+		.LevelObjectDescriptions	= LevelObjectCreator::GetLevelObjectOnLoadDescriptions()
 	};
 
-	return ResourceManager::LoadSceneFromFile(&loadDesc, m_MeshComponents, m_DirectionalLights, m_PointLights, m_SpecialObjects, LEVEL_MODULES_DIRECTORY);
+	return ResourceManager::LoadSceneFromFile(&loadDesc, m_MeshComponents, m_DirectionalLights, m_PointLights, m_LevelObjects, LEVEL_MODULES_DIRECTORY);
 }
 
 void LevelModule::SetTranslation(const glm::vec3& translation)

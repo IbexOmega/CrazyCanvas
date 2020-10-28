@@ -1,22 +1,16 @@
 #pragma once
 
-#include "Game/Multiplayer/Client/NetworkPositionSystem.h"
-#include "Game/World/Player/PlayerSystem.h"
-
-#include "Game/ECS/Components/Misc/Components.h"
-#include "Game/ECS/Components/Networking/NetworkComponent.h"
-
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/UDP/INetworkDiscoveryClient.h"
 
-#include "Containers/CCBuffer.h"
-#include "Containers/TArray.h"
+#include "Application/API/Events/NetworkEvents.h"
 
 namespace LambdaEngine
 {
 	class ClientSystem : protected IClientHandler, protected INetworkDiscoveryClient
 	{
 		friend class EngineLoop;
+		friend class SingleplayerInitializer;
 
 	public:
 		DECL_UNIQUE_CLASS(ClientSystem);
@@ -24,9 +18,10 @@ namespace LambdaEngine
 
 		bool Connect(IPAddress* pAddress);
 
+		ClientBase* GetClient();
+
 	protected:
 		void TickMainThread(Timestamp deltaTime);
-		void FixedTickMainThread(Timestamp deltaTime);
 
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
@@ -56,14 +51,11 @@ namespace LambdaEngine
 		}
 
 	private:
-		static void StaticFixedTickMainThread(Timestamp deltaTime);
 		static void StaticTickMainThread(Timestamp deltaTime);
 		static void StaticRelease();
 
 	private:
 		ClientBase* m_pClient;
-		NetworkPositionSystem m_NetworkPositionSystem;
-		PlayerSystem m_PlayerSystem;
 		String m_Name;
 		bool m_DebuggingWindow;
 

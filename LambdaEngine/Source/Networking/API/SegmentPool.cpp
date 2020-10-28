@@ -30,8 +30,9 @@ namespace LambdaEngine
 	NetworkSegment* SegmentPool::RequestFreeSegment(const std::string& borrower)
 	{
 		NetworkSegment* pSegment = RequestFreeSegment();
-		pSegment->m_Borrower = borrower;
+		ASSERT(pSegment->m_IsBorrowed == false);
 		pSegment->m_IsBorrowed = true;
+		pSegment->m_Borrower = borrower;
 		return pSegment;
 	}
 
@@ -41,6 +42,7 @@ namespace LambdaEngine
 		{
 			for (NetworkSegment* pSegment : segmentsReturned)
 			{
+				ASSERT(pSegment->m_IsBorrowed == false);
 				pSegment->m_Borrower = borrower;
 				pSegment->m_IsBorrowed = true;
 			}
@@ -48,6 +50,47 @@ namespace LambdaEngine
 		}
 		return false;
 	}
+
+	void SegmentPool::FreeSegment(NetworkSegment* pSegment, const std::string& returner)
+	{
+		UNREFERENCED_VARIABLE(returner);
+
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		//LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
+		Free(pSegment);
+	}
+
+	void SegmentPool::FreeSegments(TArray<NetworkSegment*>& segments, const std::string& returner)
+	{
+		UNREFERENCED_VARIABLE(returner);
+
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		for (NetworkSegment* pSegment : segments)
+		{
+			//LOG_INFO("RETURNING %x, %s", pSegment, returner.c_str());
+			Free(pSegment);
+		}
+		segments.Clear();
+	}
+
+#else
+
+	void SegmentPool::FreeSegment(NetworkSegment* pSegment)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		Free(pSegment);
+	}
+
+	void SegmentPool::FreeSegments(TArray<NetworkSegment*>& segments)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+		for (NetworkSegment* pSegment : segments)
+		{
+			Free(pSegment);
+		}
+		segments.Clear();
+	}
+
 #endif
 
 	NetworkSegment* SegmentPool::RequestFreeSegment()
@@ -84,22 +127,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void SegmentPool::FreeSegment(NetworkSegment* pSegment)
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		Free(pSegment);
-	}
-
-	void SegmentPool::FreeSegments(TArray<NetworkSegment*>& segments)
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
-		for (NetworkSegment* pSegment : segments)
-		{
-			Free(pSegment);
-		}
-		segments.Clear();
-	}
-
 	void SegmentPool::Free(NetworkSegment* pSegment)
 	{
 #ifdef LAMBDA_CONFIG_DEBUG
@@ -107,7 +134,7 @@ namespace LambdaEngine
 		{
 			pSegment->m_IsBorrowed = false;
 		}
-		else
+		else if(pSegment->GetType() != NetworkSegment::TYPE_NETWORK_ACK)
 		{
 			LOG_ERROR("[SegmentPool]: Packet was returned multiple times!");
 			DEBUGBREAK();
@@ -115,6 +142,7 @@ namespace LambdaEngine
 #endif
 
 		pSegment->m_SizeOfBuffer = 0;
+		pSegment->m_ReadHead = 0;
 		m_SegmentsFree.PushBack(pSegment);
 
 #ifdef LAMBDA_CONFIG_DEBUG
@@ -134,6 +162,7 @@ namespace LambdaEngine
 			pSegment->m_IsBorrowed = false;
 #endif
 			pSegment->m_SizeOfBuffer = 0;
+			pSegment->m_ReadHead = 0;
 			m_SegmentsFree.PushBack(pSegment);
 		}
 	}

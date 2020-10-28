@@ -12,6 +12,28 @@
 
 namespace LambdaEngine
 {
+	bool AnimationSystem::Init()
+	{
+		SystemRegistration systemReg = {};
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+		{
+			{
+				.pSubscriber = &m_AnimationEntities,
+				.ComponentAccesses =
+				{
+					{ RW, AnimationComponent::Type() }
+				},
+			},
+		};
+
+		systemReg.Phase = 0;
+		RegisterSystem(TYPE_NAME(AnimationSystem), systemReg);
+		SetComponentOwner<AnimationComponent>({ .Destructor = &AnimationSystem::OnAnimationComponentDelete });
+
+		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
+		return true;
+	}
+
 	AnimationSystem::AnimationSystem()
 		: m_AnimationEntities()
 	{
@@ -75,7 +97,7 @@ namespace LambdaEngine
 			transform			= glm::scale(transform, sqt.Scale);
 			animation.Pose.LocalTransforms[i] = transform;
 		}
-		
+
 		// Create global transforms
 		for (uint32 i = 0; i < skeleton.Joints.GetSize(); i++)
 		{
@@ -96,8 +118,9 @@ namespace LambdaEngine
 		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
 	}
 
-	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation)
+	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
 		SAFEDELETE(animation.pGraph);
 	}
 
@@ -114,28 +137,6 @@ namespace LambdaEngine
 		}
 
 		return false;
-	}
-
-	bool AnimationSystem::Init()
-	{
-		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
-		{
-			{
-				.pSubscriber = &m_AnimationEntities,
-				.ComponentAccesses =
-				{
-					{ RW, AnimationComponent::Type() }
-				},
-			},
-		};
-
-		systemReg.Phase = 0;
-		RegisterSystem(systemReg);
-		SetComponentOwner<AnimationComponent>({ std::bind(&AnimationSystem::OnAnimationComponentDelete, this, std::placeholders::_1) });
-
-		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
-		return true;
 	}
 
 	void AnimationSystem::Tick(Timestamp deltaTime)

@@ -29,6 +29,8 @@ namespace LambdaEngine
         uint32 ScheduleRegularJob(const RegularJob& job, uint32_t phase);
         void DescheduleRegularJob(uint32 phase, uint32 jobID);
 
+        const std::array<IDDVector<RegularJob>, PHASE_COUNT>& GetRegularJobs() const { return m_RegularJobs; }
+
     private:
         const Job* FindExecutableJob();
         bool CanExecute(const Job& job) const;
@@ -40,6 +42,8 @@ namespace LambdaEngine
         void DeregisterJobExecution(const Job& job);
 
         void SetPhase(uint32_t phase);
+        /*  Advances to the next phase. Performs component registrations and deletions and entity deletions. If it's the last phase already,
+            the next phase might be a previous one, to accumulate regular jobs. */
         void NextPhase();
 
         void AccumulateRegularJobs();

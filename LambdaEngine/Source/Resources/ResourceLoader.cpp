@@ -20,6 +20,8 @@
 
 #include "Resources/GLSLang.h"
 
+#include "Game/ECS/Components/Physics/Transform.h"
+
 #include <cstdio>
 
 #include <assimp/Importer.hpp>
@@ -194,11 +196,11 @@ namespace LambdaEngine
 
 	bool ResourceLoader::LoadSceneFromFile(
 		const String& filepath,
-		const TArray<SpecialObjectOnLoadDesc>& specialObjectDescriptions,
+		const TArray<LevelObjectOnLoadDesc>& levelObjectDescriptions,
 		TArray<MeshComponent>& meshComponents,
 		TArray<LoadedDirectionalLight>& directionalLights,
 		TArray<LoadedPointLight>& pointLights,
-		TArray<SpecialObjectOnLoad>& specialObjects,
+		TArray<LevelObjectOnLoad>& levelObjects,
 		TArray<Mesh*>& meshes,
 		TArray<Animation*>& animations,
 		TArray<LoadedMaterial*>& materials,
@@ -220,17 +222,16 @@ namespace LambdaEngine
 			aiProcess_GenUVCoords				|
 			aiProcess_FindDegenerates			|
 			aiProcess_OptimizeMeshes			|
-			aiProcess_PreTransformVertices		|
 			aiProcess_FindInvalidData;
 
 		SceneLoadRequest loadRequest = 
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
-			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.LevelObjectDescriptions	= levelObjectDescriptions,
 			.DirectionalLights			= directionalLights,
 			.PointLights				= pointLights,
-			.SpecialObjects				= specialObjects,
+			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
 			.Animations					= animations,
 			.MeshComponents				= meshComponents,
@@ -271,19 +272,19 @@ namespace LambdaEngine
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 
-		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		const TArray<LevelObjectOnLoadDesc>	levelObjectDescriptions;
 		TArray<LoadedDirectionalLight>			directionalLightComponents;
 		TArray<LoadedPointLight>				pointLightComponents;
-		TArray<SpecialObjectOnLoad>				specialObjects;
+		TArray<LevelObjectOnLoad>				levelObjects;
 
 		SceneLoadRequest loadRequest =
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
-			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.LevelObjectDescriptions	= levelObjectDescriptions,
 			.DirectionalLights			= directionalLightComponents,
 			.PointLights				= pointLightComponents,
-			.SpecialObjects				= specialObjects,
+			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
 			.Animations					= animations,
 			.MeshComponents				= meshComponent,
@@ -345,19 +346,19 @@ namespace LambdaEngine
 		TArray<Mesh*>						meshes;
 		TArray<Animation*>					animations;
 		TArray<MeshComponent>				meshComponent;
-		const TArray<SpecialObjectOnLoadDesc>	specialObjectDescriptions;
+		const TArray<LevelObjectOnLoadDesc>	levelObjectDescriptions;
 		TArray<LoadedDirectionalLight>			directionalLightComponents;
 		TArray<LoadedPointLight>				pointLightComponents;
-		TArray<SpecialObjectOnLoad>				specialObjects;
+		TArray<LevelObjectOnLoad>				levelObjects;
 
 		SceneLoadRequest loadRequest =
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
-			.SpecialObjectDescriptions	= specialObjectDescriptions,
+			.LevelObjectDescriptions	= levelObjectDescriptions,
 			.DirectionalLights			= directionalLightComponents,
 			.PointLights				= pointLightComponents,
-			.SpecialObjects				= specialObjects,
+			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
 			.Animations					= animations,
 			.MeshComponents				= meshComponent,
@@ -903,7 +904,7 @@ namespace LambdaEngine
 		}
 
 		boundingBox.Dimensions = maxExtent - minExtent;
-		LOG_INFO("Bounding Box: %f %f %f", boundingBox.Dimensions.x, boundingBox.Dimensions.y, boundingBox.Dimensions.z);
+		LOG_INFO("Bounding Box Half Extent: %f %f %f", boundingBox.Dimensions.x, boundingBox.Dimensions.y, boundingBox.Dimensions.z);
 	}
 
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
@@ -955,8 +956,8 @@ namespace LambdaEngine
 			pMesh->Vertices[vertexIdx] = vertex;
 		}
 
-		pMesh->BoundingBox.Dimensions = (maxExtent - minExtent);
-		LOG_INFO("Bounding Box: %f %f %f", pMesh->BoundingBox.Dimensions.x, pMesh->BoundingBox.Dimensions.y, pMesh->BoundingBox.Dimensions.z);
+		pMesh->BoundingBox.Dimensions = maxExtent - minExtent;
+		LOG_INFO("Bounding Box Half Extent: %f %f %f", pMesh->BoundingBox.Dimensions.x, pMesh->BoundingBox.Dimensions.y, pMesh->BoundingBox.Dimensions.z);
 	}
 
 	void ResourceLoader::LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI)
@@ -1410,10 +1411,10 @@ namespace LambdaEngine
 		SceneLoadingContext context = 
 		{
 			.DirectoryPath				= filepath.substr(0, lastPathDivisor + 1),
-			.SpecialObjectDescriptions	= sceneLoadRequest.SpecialObjectDescriptions,
+			.LevelObjectDescriptions	= sceneLoadRequest.LevelObjectDescriptions,
 			.DirectionalLights			= sceneLoadRequest.DirectionalLights,
 			.PointLights				= sceneLoadRequest.PointLights,
-			.SpecialObjects				= sceneLoadRequest.SpecialObjects,
+			.LevelObjects				= sceneLoadRequest.LevelObjects,
 			.Meshes						= sceneLoadRequest.Meshes,
 			.MeshComponents				= sceneLoadRequest.MeshComponents,
 			.Animations					= sceneLoadRequest.Animations,
@@ -1439,21 +1440,6 @@ namespace LambdaEngine
 			}
 		}
 
-		// Load all meshes
-		if (!sceneLoadRequest.AnimationsOnly)
-		{
-			ProcessAssimpNode(context, pScene->mRootNode, pScene);
-		}
-
-		// Load all animations
-		if (pScene->mNumAnimations > 0)
-		{
-			for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
-			{
-				LoadAnimation(context, pScene->mAnimations[animationIndex]);
-			}
-		}
-
 		//Load Lights
 		if (pScene->HasLights())
 		{
@@ -1470,8 +1456,9 @@ namespace LambdaEngine
 					{
 						LoadedDirectionalLight loadedDirectionalLight =
 						{
-							.ColorIntensity	= glm::vec4(lightRadiance, intensity),
-							.Direction		= glm::vec3(pLight->mDirection.x, pLight->mDirection.y, pLight->mDirection.z)
+							.Name = pLight->mName.C_Str(),
+							.ColorIntensity = glm::vec4(lightRadiance, intensity),
+							.Direction = glm::vec3(pLight->mDirection.x, pLight->mDirection.y, pLight->mDirection.z)
 						};
 
 						context.DirectionalLights.PushBack(loadedDirectionalLight);
@@ -1481,9 +1468,10 @@ namespace LambdaEngine
 					{
 						LoadedPointLight loadedPointLight =
 						{
-							.ColorIntensity	= glm::vec4(lightRadiance, intensity),
-							.Position		= glm::vec3(pLight->mPosition.x, pLight->mPosition.y, pLight->mPosition.z),
-							.Attenuation	= glm::vec3(pLight->mAttenuationConstant, pLight->mAttenuationLinear, pLight->mAttenuationQuadratic)
+							.Name = pLight->mName.C_Str(),
+							.ColorIntensity = glm::vec4(lightRadiance, intensity),
+							.Position = glm::vec3(pLight->mPosition.x, pLight->mPosition.y, pLight->mPosition.z),
+							.Attenuation = glm::vec3(pLight->mAttenuationConstant, pLight->mAttenuationLinear, pLight->mAttenuationQuadratic)
 						};
 
 						context.PointLights.PushBack(loadedPointLight);
@@ -1493,20 +1481,48 @@ namespace LambdaEngine
 			}
 		}
 
+		// Load all meshes
+		if (!sceneLoadRequest.AnimationsOnly)
+		{
+			aiMatrix4x4 identity;
+			ProcessAssimpNode(context, pScene->mRootNode, pScene, &identity);
+		}
+
+		// Load all animations
+		if (pScene->mNumAnimations > 0)
+		{
+			for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
+			{
+				LoadAnimation(context, pScene->mAnimations[animationIndex]);
+			}
+		}
+
 		return true;
 	}
 
-	void ResourceLoader::ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene)
+	void ResourceLoader::ProcessAssimpNode(SceneLoadingContext& context, const aiNode* pNode, const aiScene* pScene, const void* pParentTransform)
 	{
 		String nodeName = pNode->mName.C_Str();
 		bool loadNormally	= false;
 		bool isSpecial		= false;
-		TArray<SpecialObjectOnLoad*> specialObjectToBeSet;
+		bool isLight		= false;
+		TArray<LevelObjectOnLoad*> levelObjectToBeSet;
+
+		aiMatrix4x4 nodeTransform = (*reinterpret_cast<const aiMatrix4x4*>(pParentTransform)) * pNode->mTransformation;
+
+		aiVector3D		aiPosition;
+		aiQuaternion	aiRotation;
+		aiVector3D		aiScale;
+		nodeTransform.Decompose(aiScale, aiRotation, aiPosition);
+
+		glm::vec3 defaultPosition	= glm::vec3(aiPosition.x, aiPosition.y, aiPosition.z);
+		glm::quat defaultRotation	= glm::quat(aiRotation.w, aiRotation.x, aiRotation.y, aiRotation.z);
+		glm::vec3 defaultScale		= glm::vec3(aiScale.x, aiScale.y, aiScale.z);
 
 		//Check if there are any special object descriptions referencing this object
-		for (const SpecialObjectOnLoadDesc& specialObjectDesc : context.SpecialObjectDescriptions)
+		for (const LevelObjectOnLoadDesc& levelObjectDesc : context.LevelObjectDescriptions)
 		{
-			size_t prefixIndex = nodeName.find(specialObjectDesc.Prefix);
+			size_t prefixIndex = nodeName.find(levelObjectDesc.Prefix);
 
 			//We only check for prefixes, so index must be 0
 			if (prefixIndex == 0)
@@ -1519,81 +1535,111 @@ namespace LambdaEngine
 					loadNormally = true;
 				}
 
-				SpecialObjectOnLoad specialObject =
+				LevelObjectOnLoad levelObject =
 				{
-					.Prefix		= specialObjectDesc.Prefix,
-					.Name		= nodeName.substr(specialObjectDesc.Prefix.length() + 1)
+					.Prefix				= levelObjectDesc.Prefix,
+					.Name				= nodeName.substr(levelObjectDesc.Prefix.length()),
+					.DefaultPosition	= defaultPosition,
+					.DefaultRotation	= defaultRotation,
+					.DefaultScale		= defaultScale,
 				};
 
-				specialObjectToBeSet.PushBack(&context.SpecialObjects.PushBack(specialObject));
+				levelObjectToBeSet.PushBack(&context.LevelObjects.PushBack(levelObject));
 			}
 		}
 
-		if (loadNormally || !isSpecial)
+		//Check if this node is a light
+		if (auto dirLightIt = std::find_if(context.DirectionalLights.Begin(), context.DirectionalLights.End(), [nodeName](const LoadedDirectionalLight& dirLight) { return dirLight.Name == nodeName; }); dirLightIt != context.DirectionalLights.End())
 		{
-			context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
-			for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
+			dirLightIt->Direction = GetForward(defaultRotation);
+			isLight = true;
+		}
+
+		if (auto pointLightIt = std::find_if(context.PointLights.Begin(), context.PointLights.End(), [nodeName](const LoadedPointLight& pointLight) { return pointLight.Name == nodeName; }); pointLightIt != context.PointLights.End())
+		{
+			pointLightIt->Position = defaultPosition;
+			isLight = true;
+		}
+
+		if (!isLight)
+		{
+			if (loadNormally || !isSpecial)
 			{
-				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
-				Mesh* pMesh = DBG_NEW Mesh;
-
-				LoadVertices(pMesh, pMeshAI);
-				LoadIndices(pMesh, pMeshAI);
-
-				if (context.pMaterials)
+				context.Meshes.Reserve(context.Meshes.GetSize() + pNode->mNumMeshes);
+				for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
 				{
-					LoadMaterial(context, pScene, pMeshAI);
-				}
+					aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
+					Mesh* pMesh = DBG_NEW Mesh();
 
-				if (pMeshAI->mNumBones > 0)
-				{
-					LoadSkeleton(pMesh, pMeshAI);
-					if (pMesh->pSkeleton)
+					pMesh->DefaultPosition	= defaultPosition;
+					pMesh->DefaultRotation	= defaultRotation;
+					pMesh->DefaultScale		= defaultScale;
+
+					LoadVertices(pMesh, pMeshAI);
+					LoadIndices(pMesh, pMeshAI);
+
+					if (context.pMaterials)
 					{
-						//Assume Mixamo has replaced our rotation
-						glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
-						meshTransform				= meshTransform * AssimpToGLMMat4(pNode->mTransformation);
-						glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
-						pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
+						LoadMaterial(context, pScene, pMeshAI);
+					}
 
-						LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+					if (pMeshAI->mNumBones > 0)
+					{
+						LoadSkeleton(pMesh, pMeshAI);
+						if (pMesh->pSkeleton)
+						{
+							//Assume Mixamo has replaced our rotation
+							glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+							meshTransform				= meshTransform * AssimpToGLMMat4(pNode->mTransformation);
+							glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
+							pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
+
+							LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+						}
+					}
+
+					MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+
+					context.Meshes.EmplaceBack(pMesh);
+
+					MeshComponent newMeshComponent;
+					newMeshComponent.MeshGUID = context.Meshes.GetSize() - 1;
+					newMeshComponent.MaterialGUID = context.MaterialIndices[pMeshAI->mMaterialIndex];
+
+					if (levelObjectToBeSet.IsEmpty())
+					{
+						context.MeshComponents.PushBack(newMeshComponent);
+					}
+					else
+					{
+						for (LevelObjectOnLoad* pLevelObject : levelObjectToBeSet)
+						{
+							pLevelObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
+							pLevelObject->MeshComponents.PushBack(newMeshComponent);
+						}
 					}
 				}
-
-				MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
-
-				context.Meshes.EmplaceBack(pMesh);
-
-				MeshComponent newMeshComponent;
-				newMeshComponent.MeshGUID = context.Meshes.GetSize() - 1;
-				newMeshComponent.MaterialGUID = context.MaterialIndices[pMeshAI->mMaterialIndex];
-				context.MeshComponents.PushBack(newMeshComponent);
-
-				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
-				{
-					pSpecialObject->BoundingBoxes.PushBack(pMesh->BoundingBox);
-				}
 			}
-		}
-		else
-		{
-			for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
+			else
 			{
-				aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
+				for (uint32 meshIdx = 0; meshIdx < pNode->mNumMeshes; meshIdx++)
+				{
+					aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
 				BoundingBox boundingBox;
 				LoadBoundingBox(boundingBox, pMeshAI);
 
-				for (SpecialObjectOnLoad* pSpecialObject : specialObjectToBeSet)
-				{
-					pSpecialObject->BoundingBoxes.PushBack(boundingBox);
+					for (LevelObjectOnLoad* pLevelObject : levelObjectToBeSet)
+					{
+						pLevelObject->BoundingBoxes.PushBack(boundingBox);
+					}
 				}
 			}
 		}
 
 		for (uint32 childIdx = 0; childIdx < pNode->mNumChildren; childIdx++)
 		{
-			ProcessAssimpNode(context, pNode->mChildren[childIdx], pScene);
+			ProcessAssimpNode(context, pNode->mChildren[childIdx], pScene, &nodeTransform);
 		}
 	}
 

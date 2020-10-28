@@ -50,7 +50,7 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.AdditionalAccesses = { {{R, FreeCameraComponent::Type()}, {R, FPSControllerComponent::Type()}} };
 			systemReg.Phase = 0;
 
-			RegisterSystem(systemReg);
+			RegisterSystem(TYPE_NAME(CameraSystem), systemReg);
 		}
 
 		return true;
@@ -105,7 +105,7 @@ namespace LambdaEngine
 				}
 
 				#ifdef LAMBDA_DEBUG
-					if (Input::IsKeyDown(EKey::KEY_T))
+					if (Input::IsKeyDown(InputMode::GAME, EKey::KEY_T))
 					{
 						RenderFrustum(entity, pPositionComponents->GetData(entity), rotationComp);
 					}
@@ -206,7 +206,7 @@ namespace LambdaEngine
 
 		if (m_MouseEnabled)
 		{
-			const MouseState& mouseState = Input::GetMouseState();
+			const MouseState& mouseState = Input::GetMouseState(InputMode::GAME);
 
 			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 			const uint16 width = window->GetWidth();

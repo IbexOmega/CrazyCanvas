@@ -27,6 +27,9 @@ namespace LambdaEngine
 		void ScheduleRegularWork(const RegularWorkInfo& regularWorkInfo);
 
 	protected:
+		uint32 GetJobID() const { return m_JobID; }
+
+	protected:
 		// GetUniqueComponentAccesses serializes all unique component accesses in an entity subscriber registration
 		static TArray<ComponentAccess> GetUniqueComponentAccesses(const EntitySubscriberRegistration& subscriberRegistration);
 
