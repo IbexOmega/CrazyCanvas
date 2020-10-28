@@ -40,8 +40,8 @@ using namespace LambdaEngine;
 ServerState::ServerState(const std::string& clientHostID, const std::string& authenticationID) :
 	m_MultiplayerServer()
 {
-	ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID));
-	ServerHostHelper::SetClientHostID(std::stoi(clientHostID));
+	ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID)); //ID server checks to authenticate client with higher authorities
+	ServerHostHelper::SetClientHostID(std::stoi(clientHostID)); // ID client checks to see if it were the creater of server
 }
 
 ServerState::ServerState() : 
