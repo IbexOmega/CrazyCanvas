@@ -31,6 +31,8 @@ struct WeaponComponent
 #pragma pack(push, 1)
 struct WeaponFiredPacket : Packet
 {
+	DECL_PACKET(WeaponFiredPacket);
+
 	glm::vec3	FirePosition;
 	glm::vec3	InitalVelocity;
 	glm::quat	FireDirection;
