@@ -55,30 +55,16 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 					.FarPlane	= EngineConfig::GetFloatProperty("CameraFarPlane")
 				};
 
-				//Todo: Move this ffs
-				TArray<GUID_Lambda> animations;
-				const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
-				bool animationsExist			= !animations.IsEmpty();
-
-				AnimationComponent robotAnimationComp = {};
-				robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-				if (animationsExist)
-				{
-					robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
-				}
-
 				CreatePlayerDesc createPlayerDesc =
 				{
-					.IsLocal			= packet.Player.IsMySelf,
-					.NetworkUID			= packet.NetworkUID,
-					.pClient			= event.pClient,
-					.Position			= packet.Position,
-					.Forward			= packet.Forward,
-					.Scale				= glm::vec3(1.0f),
-					.TeamIndex			= packet.Player.TeamIndex,
-					.pCameraDesc		= &cameraDesc,
-					.MeshGUID			= robotGUID,
-					.AnimationComponent = robotAnimationComp,
+					.IsLocal		= packet.Player.IsMySelf,
+					.NetworkUID		= packet.NetworkUID,
+					.pClient		= event.pClient,
+					.Position		= packet.Position,
+					.Forward		= packet.Forward,
+					.Scale			= glm::vec3(1.0f),
+					.TeamIndex		= packet.Player.TeamIndex,
+					.pCameraDesc	= &cameraDesc,
 				};
 
 				TArray<Entity> createdPlayerEntities;

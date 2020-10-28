@@ -52,8 +52,6 @@ struct CreatePlayerDesc
 	glm::vec3							Scale				= glm::vec3(1.0f);
 	uint8								TeamIndex			= 0;
 	const LambdaEngine::CameraDesc*		pCameraDesc			= nullptr;
-	GUID_Lambda							MeshGUID			= GUID_NONE;
-	LambdaEngine::AnimationComponent	AnimationComponent;
 };
 
 class LevelObjectCreator
@@ -119,4 +117,11 @@ private:
 
 	inline static GUID_Lambda s_FlagMeshGUID		= GUID_NONE;
 	inline static GUID_Lambda s_FlagMaterialGUID	= GUID_NONE;
+
+	inline static GUID_Lambda s_PlayerMeshGUID = GUID_NONE;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerIdleGUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunGUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerWalkGUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
 };

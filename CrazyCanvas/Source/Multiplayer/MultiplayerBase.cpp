@@ -22,6 +22,7 @@ void MultiplayerBase::InitInternal()
 {
 	PacketType::Init();
 	m_PacketDecoderSystem.Init();
+	m_PlayerAnimationSystem.Init();
 
 	if (!Match::Init())
 	{

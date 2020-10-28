@@ -105,6 +105,19 @@ bool LevelObjectCreator::Init()
 
 	//Load Object Meshes & Materials
 	{
+		//Player
+
+		TArray<GUID_Lambda> animations;
+		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Player/Walk.fbx", animations);
+		bool animationsExist = !animations.IsEmpty();
+
+		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+		if (animationsExist)
+		{
+			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
+		}
+
 		//Flag
 		{
 			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("gun.obj");
@@ -120,6 +133,15 @@ bool LevelObjectCreator::Init()
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				materialProperties);
+		}
+
+		//Player
+		{
+			s_PlayerMeshGUID			= ResourceManager::LoadMeshFromFile("Player/Idle.fbx", s_PlayerIdleGUIDs);
+			s_PlayerRunGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/Run.fbx");
+			s_PlayerWalkGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/Walk.fbx");
+			s_PlayerStrafeLeftGUIDs		= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.fbx");
+			s_PlayerStrafeRightGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.fbx");
 		}
 	}
 
@@ -593,9 +615,21 @@ bool LevelObjectCreator::CreatePlayer(
 	{
 		networkUID = pPlayerDesc->NetworkUID;
 
-		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
-		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
-		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
+
+		AnimationComponent animationComponent = {};
+		animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+
+		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Idle", 0.1f));
+		animationComponent.pGraph = pAnimationGraph;
+
+		pAnimationGraph->TransitionToState("Running");
+
+		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
+		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = s_PlayerMeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
 
 		if (!pPlayerDesc->IsLocal)
@@ -621,7 +655,7 @@ bool LevelObjectCreator::CreatePlayer(
 			childEntities.PushBack(cameraEntity);
 
 			//Todo: Better implementation for this somehow maybe?
-			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshGUID);
+			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
