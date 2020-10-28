@@ -38,6 +38,7 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
+#include "Multiplayer/Packet/CreateLevelObject.h"
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
@@ -131,13 +132,13 @@ void BenchmarkState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-				const CollisionCreateInfo collisionCreateInfo = 
+				const CollisionCreateInfo collisionCreateInfo =
 				{
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-					.Shapes = 
+					.Shapes =
 					{
 						{
 							.ShapeType		= EShapeType::SIMULATION,
@@ -269,17 +270,12 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 
 	if (event.Type == PacketType::CREATE_LEVEL_OBJECT)
 	{
-		BinaryDecoder decoder(event.pPacket);
-		ELevelObjectType entityType = ELevelObjectType(decoder.ReadUInt8());
+		CreateLevelObject packet;
+		event.pPacket->Read(&packet);
 
 		// Create player characters that a benchmark system controls
-
-		if (entityType == ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER)
+		if (packet.LevelObjectType == ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER)
 		{
-			decoder.ReadBool();
-			int32 networkUID = decoder.ReadInt32();
-			glm::vec3 position = decoder.ReadVec3();
-
 			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
 			const CameraDesc cameraDesc =
@@ -300,9 +296,9 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 			CreatePlayerDesc createPlayerDesc =
 			{
 				.IsLocal = false,
-				.NetworkUID = networkUID,
+				.NetworkUID = packet.NetworkUID,
 				.pClient = event.pClient,
-				.Position = position,
+				.Position = packet.Position,
 				.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
 				.Scale = glm::vec3(1.0f),
 				.TeamIndex = 0,

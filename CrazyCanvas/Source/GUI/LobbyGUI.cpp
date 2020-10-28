@@ -366,6 +366,7 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);

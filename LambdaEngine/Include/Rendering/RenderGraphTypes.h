@@ -7,6 +7,7 @@
 
 #include "Containers/String.h"
 #include "Containers/TSet.h"
+#include "ECS/Entity.h"
 
 namespace LambdaEngine
 {
@@ -334,6 +335,8 @@ namespace LambdaEngine
 
 	struct DrawArg
 	{
+		TArray<Entity> EntityIDs;
+
 		Buffer* pVertexBuffer			= nullptr;
 		Buffer* pIndexBuffer			= nullptr;
 		Buffer* pInstanceBuffer			= nullptr;
@@ -814,7 +817,7 @@ namespace LambdaEngine
 			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	return FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		return FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
 		}
@@ -839,7 +842,7 @@ namespace LambdaEngine
 			if (pRenderStageDesc->Graphics.Shaders.DomainShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_DOMAIN_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.HullShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_HULL_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.GeometryShaderName.size() > 0)	pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_GEOMETRY_SHADER;
-			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT;
+			if (pRenderStageDesc->Graphics.Shaders.VertexShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.MeshShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_MESH_SHADER;
 			if (pRenderStageDesc->Graphics.Shaders.TaskShaderName.size() > 0)		pipelineStageMask |= FPipelineStageFlag::PIPELINE_STAGE_FLAG_TASK_SHADER;
 		}

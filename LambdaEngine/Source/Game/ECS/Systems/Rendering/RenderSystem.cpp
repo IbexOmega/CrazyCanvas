@@ -153,15 +153,15 @@ namespace LambdaEngine
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
-			swapChainDesc.DebugName		= "Renderer Swap Chain";
-			swapChainDesc.pWindow		= pActiveWindow;
-			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
-			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width			= pActiveWindow->GetWidth();
-			swapChainDesc.Height		= pActiveWindow->GetHeight();
-			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
-			swapChainDesc.SampleCount	= 1;
-			swapChainDesc.VerticalSync	= false;
+			swapChainDesc.DebugName = "Renderer Swap Chain";
+			swapChainDesc.pWindow = pActiveWindow;
+			swapChainDesc.pQueue = RenderAPI::GetGraphicsQueue();
+			swapChainDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
+			swapChainDesc.Width = pActiveWindow->GetWidth();
+			swapChainDesc.Height = pActiveWindow->GetHeight();
+			swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
+			swapChainDesc.SampleCount = 1;
+			swapChainDesc.VerticalSync = false;
 
 			m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
 			if (!m_SwapChain)
@@ -170,103 +170,11 @@ namespace LambdaEngine
 				return false;
 			}
 
-			m_ppBackBuffers		= DBG_NEW Texture*[BACK_BUFFER_COUNT];
-			m_ppBackBufferViews	= DBG_NEW TextureView*[BACK_BUFFER_COUNT];
+			m_ppBackBuffers = DBG_NEW Texture * [BACK_BUFFER_COUNT];
+			m_ppBackBufferViews = DBG_NEW TextureView * [BACK_BUFFER_COUNT];
 
 			m_FrameIndex++;
 			m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
-		}
-
-		//Create RenderGraph
-		{
-			RenderGraphStructureDesc renderGraphStructure = {};
-
-			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
-			if (renderGraphName != "")
-			{
-				String prefix	= m_RayTracingEnabled ? "RT_" : "";
-				String postfix	= m_MeshShadersEnabled ? "_MESH" : "";
-				size_t pos		= renderGraphName.find_first_of(".lrg");
-				if (pos != String::npos)
-				{
-					renderGraphName.insert(pos, postfix);
-				}
-				else
-				{
-					renderGraphName += postfix + ".lrg";
-				}
-
-				renderGraphName = prefix + renderGraphName;
-			}
-
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
-			{
-				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
-
-				renderGraphStructure = {};
-				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
-			}
-
-			RenderGraphDesc renderGraphDesc = {};
-			renderGraphDesc.Name						= "Default Rendergraph";
-			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
-			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
-			renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
-			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
-			renderGraphDesc.CustomRenderers				= { };
-
-			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
-			{
-				m_pLineRenderer = DBG_NEW LineRenderer();
-				m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
-			}
-
-			// Add paint mask renderer to the custom renderers inside the render graph.
-			{
-				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
-				m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
-			}
-
-			// Light Renderer
-			{
-				m_pLightRenderer = DBG_NEW LightRenderer();
-				m_pLightRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-			}
-
-			//GUI Renderer
-			{
-				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
-				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
-			}
-
-			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
-			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
-			{
-				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
-				return false;
-			}
-		}
-
-		//Update RenderGraph with Back Buffer
-		{
-			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
-			{
-				m_ppBackBuffers[v]		= m_SwapChain->GetBuffer(v);
-				m_ppBackBufferViews[v]	= m_SwapChain->GetBufferView(v);
-			}
-
-			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppBackBuffers;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
-
-			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		// Per Frame Buffer
@@ -289,7 +197,7 @@ namespace LambdaEngine
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
-		}
+		} 
 
 		// Create animation resources
 		{
@@ -358,6 +266,119 @@ namespace LambdaEngine
 			}
 		}
 
+		return true;
+	}
+
+
+	bool RenderSystem::InitRenderGraphs() {
+
+		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
+
+		//Create RenderGraph
+		{
+			RenderGraphStructureDesc renderGraphStructure = {};
+
+			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
+			if (renderGraphName != "")
+			{
+				String prefix = m_RayTracingEnabled ? "RT_" : "";
+				String postfix = m_MeshShadersEnabled ? "_MESH" : "";
+				size_t pos = renderGraphName.find_first_of(".lrg");
+				if (pos != String::npos)
+				{
+					renderGraphName.insert(pos, postfix);
+				}
+				else
+				{
+					renderGraphName += postfix + ".lrg";
+				}
+
+				renderGraphName = prefix + renderGraphName;
+			}
+
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
+			{
+				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
+
+				renderGraphStructure = {};
+				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
+			}
+
+			RenderGraphDesc renderGraphDesc = {};
+			renderGraphDesc.Name = "Default Rendergraph";
+			renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
+			renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
+			renderGraphDesc.BackBufferWidth = pActiveWindow->GetWidth();
+			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
+			renderGraphDesc.CustomRenderers = { };
+
+			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
+			{
+				m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+				m_pLineRenderer->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
+			}
+
+			// Add paint mask renderer to the custom renderers inside the render graph.
+			{
+				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+				m_pPaintMaskRenderer->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
+			}
+
+			// Light Renderer
+			{
+				m_pLightRenderer = DBG_NEW LightRenderer();
+				m_pLightRenderer->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+			}
+
+			//GUI Renderer
+			{
+				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
+			}
+
+			// Other Custom Renderers constructed in game
+			if (!m_GameSpecificCustomRenderers.IsEmpty())
+			{
+				for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
+				{
+					if (pCustomRenderer)
+					{
+						pCustomRenderer->Init();
+						renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
+					}
+				}
+			}
+
+			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
+			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
+			{
+				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
+				return false;
+			}
+		}
+
+		//Update RenderGraph with Back Buffer
+		{
+			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
+			{
+				m_ppBackBuffers[v] = m_SwapChain->GetBuffer(v);
+				m_ppBackBufferViews[v] = m_SwapChain->GetBufferView(v);
+			}
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_ppBackBuffers;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		} 
+
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -392,6 +413,13 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
+
+		// Delete Custom Renderers
+		for (uint32 c = 0; c < m_GameSpecificCustomRenderers.GetSize(); c++)
+		{
+			SAFEDELETE(m_GameSpecificCustomRenderers[c]);
+
+		}
 
 		// Remove Pointlight Texture and Texture Views
 		for (uint32 c = 0; c < m_CubeTextures.GetSize(); c++)
@@ -578,8 +606,8 @@ namespace LambdaEngine
 
 		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
 		{
-			m_pLineRenderer = DBG_NEW LineRenderer();
-			m_pLineRenderer->init(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+			m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
+			m_pLineRenderer->Init();
 
 			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 		}
@@ -596,8 +624,8 @@ namespace LambdaEngine
 		}
 
 		{
-			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer();
-			m_pPaintMaskRenderer->init(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
+			m_pPaintMaskRenderer->Init();
 
 			renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
 		}
@@ -622,6 +650,16 @@ namespace LambdaEngine
 		}
 
 		UpdateRenderGraph();
+	}
+
+	void RenderSystem::AddCustomRenderer(ICustomRenderer* pCustomRenderer)
+	{
+		if (!pCustomRenderer)
+		{
+			LOG_WARNING("[RenderSystem]: AddCustomRenderer failed - CustomRenderer not constructed");
+			return;
+		}
+		m_GameSpecificCustomRenderers.PushBack(pCustomRenderer);
 	}
 
 	void RenderSystem::SetRenderStageSleeping(const String& renderStageName, bool sleeping)
@@ -1547,6 +1585,9 @@ namespace LambdaEngine
 			{
 				DrawArg drawArg = { };
 
+				// Get all entites that are using this mesh
+				drawArg.EntityIDs = meshEntryPair.second.EntityIDs;
+
 				// Assume animated
 				if (meshEntryPair.second.pAnimatedVertexBuffer)
 				{
@@ -2334,7 +2375,7 @@ namespace LambdaEngine
 		{
 			if (!m_SBTRecords.IsEmpty())
 			{
-				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords);
+				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords, m_ResourcesToRemove[m_ModFrameIndex]);
 			}
 
 			m_RenderGraphSBTRecordsDirty = false;

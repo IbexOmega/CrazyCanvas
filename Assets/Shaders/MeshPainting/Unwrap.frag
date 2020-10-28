@@ -37,7 +37,7 @@ void main()
 	if (p_FrameSettings.ShouldPaint > 0)
 	{		
 		const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
-		const float BRUSH_SIZE	= 0.2f;
+		const float BRUSH_SIZE	= 0.5f;
 		const float PAINT_DEPTH = BRUSH_SIZE*2.0f;
 
 		vec3 worldPosition		= in_WorldPosition;
