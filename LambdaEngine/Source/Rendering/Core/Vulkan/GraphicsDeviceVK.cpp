@@ -624,12 +624,12 @@ namespace LambdaEngine
 		}
 	}
 
-	SBT* GraphicsDeviceVK::CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const
+	SBT* GraphicsDeviceVK::CreateSBT(CommandList* pCommandList, const SBTDesc* pDesc) const
 	{
 		VALIDATE(pDesc != nullptr);
 
 		SBTVK* pSBT = DBG_NEW SBTVK(this);
-		if (!pSBT->Init(pCommandQueue, pDesc))
+		if (!pSBT->Init(pCommandList, pDesc))
 		{
 			pSBT->Release();
 			return nullptr;
