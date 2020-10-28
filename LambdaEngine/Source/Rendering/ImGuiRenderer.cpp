@@ -905,7 +905,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		CopyTextureFromBufferDesc copyDesc = {};
+		CopyTextureBufferDesc copyDesc = {};
 		copyDesc.SrcOffset		= 0;
 		copyDesc.SrcRowPitch	= 0;
 		copyDesc.SrcHeight		= 0;
