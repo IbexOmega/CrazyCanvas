@@ -56,6 +56,9 @@ void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 	ComponentArray<AnimationComponent>* pAnimationComponents = pECS->GetComponentArray<AnimationComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+#ifndef LAMBDA_DEBUG
+	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+#endif
 
 	for (Entity playerEntity : m_PlayerEntities)
 	{
