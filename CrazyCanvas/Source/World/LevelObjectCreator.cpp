@@ -585,6 +585,8 @@ bool LevelObjectCreator::CreatePlayer(
 	glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
+	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
+
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	NetworkPositionComponent{ .Position = pPlayerDesc->Position, .PositionLast = pPlayerDesc->Position, .TimestampStart = EngineLoop::GetTimeSinceStart(), .Duration = EngineLoop::GetFixedTimestep() });
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });

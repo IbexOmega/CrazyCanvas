@@ -36,8 +36,14 @@ namespace LambdaEngine
 	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_Collisions;
 	bool										PaintMaskRenderer::s_ShouldReset = false;
 
-	PaintMaskRenderer::PaintMaskRenderer()
+	PaintMaskRenderer::PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
 	{
+		m_BackBuffers.Resize(backBufferCount);
+		m_BackBufferCount = backBufferCount;
+
+		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
+
+		m_pGraphicsDevice = pGraphicsDevice;
 	}
 
 	PaintMaskRenderer::~PaintMaskRenderer()
@@ -61,14 +67,13 @@ namespace LambdaEngine
 		}
 	}
 
-	bool PaintMaskRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
+	bool PaintMaskRenderer::Init()
 	{
-		m_BackBuffers.Resize(backBufferCount);
-		m_BackBufferCount = backBufferCount;
-
-		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
-
-		m_pGraphicsDevice = pGraphicsDevice;
+		if (!m_pGraphicsDevice)
+		{
+			LOG_ERROR("[PaintMaskRenderer]: Graphic Device is null.");
+			return false;
+		}
 
 		if (!CreateCopyCommandList())
 		{
