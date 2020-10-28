@@ -235,6 +235,11 @@ void ServerFlagSystem::InternalAddAdditionalAccesses(LambdaEngine::TArray<Lambda
 void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
+}
+
+void ServerFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
+{
+	UNREFERENCED_VARIABLE(deltaTime);
 
 	using namespace LambdaEngine;
 
@@ -248,8 +253,8 @@ void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 		if (parentComponent.Attached)
 		{
-			const NetworkPositionComponent& parentPositionComponent = pECS->GetComponent<NetworkPositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent		= pECS->GetComponent<RotationComponent>(parentComponent.Parent);
+			const NetworkPositionComponent& parentPositionComponent = pECS->GetConstComponent<NetworkPositionComponent>(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent		= pECS->GetConstComponent<RotationComponent>(parentComponent.Parent);
 
 			DynamicCollisionComponent& flagCollisionComponent	= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 			const OffsetComponent& flagOffsetComponent			= pECS->GetConstComponent<OffsetComponent>(flagEntity);
