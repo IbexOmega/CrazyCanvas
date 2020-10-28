@@ -638,7 +638,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName = "Player Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount = 64;
+		descriptorHeapDesc.DescriptorSetCount = 512;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
 		m_DescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
