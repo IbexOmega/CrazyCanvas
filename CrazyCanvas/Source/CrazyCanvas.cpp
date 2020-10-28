@@ -6,6 +6,7 @@
 #include "Resources/ResourceManager.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
+#include "RenderStages/PlayerRenderer.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -47,6 +48,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		LOG_ERROR("Team Helper Init Failed");
 	}
+
+	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+	RenderSystem::GetInstance().InitRenderGraphs();
 
 	LoadRendererResources();
 
