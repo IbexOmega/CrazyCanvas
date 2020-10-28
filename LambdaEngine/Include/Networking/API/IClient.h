@@ -35,8 +35,8 @@ namespace LambdaEngine
 		virtual void Disconnect(const std::string& reason) = 0;
 		virtual void Release() = 0;
 		virtual bool IsConnected() = 0;
-		virtual bool SendUnreliable(NetworkSegment* packet) = 0;
-		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) = 0;
+		virtual bool SendUnreliable(NetworkSegment* pPacket) = 0;
+		virtual bool SendReliable(NetworkSegment* pPacket, IPacketListener* pListener = nullptr) = 0;
 		virtual const IPEndPoint& GetEndPoint() const = 0;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) = 0;
 		virtual EClientState GetState() const = 0;
@@ -45,6 +45,22 @@ namespace LambdaEngine
 		virtual const PacketManagerBase* GetPacketManager() const = 0;
 		virtual IClientRemoteHandler* GetHandler() = 0;
 		virtual uint64 GetUID() const = 0;
+
+		template<class T>
+		bool SendUnreliableStruct(const T& packet, uint16 packetType)
+		{
+			NetworkSegment* pSegment = GetFreePacket(packetType);
+			pSegment->Write<T>(&packet);
+			return SendUnreliable(pSegment);
+		}
+
+		template<class T>
+		bool SendReliableStruct(const T& packet, uint16 packetType, IPacketListener* pListener = nullptr)
+		{
+			NetworkSegment* pSegment = GetFreePacket(packetType);
+			pSegment->Write<T>(&packet);
+			return SendReliable(pSegment, pListener);
+		}
 
 		static std::string StateToString(EClientState state)
 		{

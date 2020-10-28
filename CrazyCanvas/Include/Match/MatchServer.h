@@ -16,7 +16,7 @@ protected:
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
 	void SpawnFlag();
-	void SpawnPlayer(LambdaEngine::IClient* pClient);
+	void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
 
 	virtual bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event) override final;
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
@@ -27,5 +27,5 @@ private:
 	bool OnFlagDelivered(const OnFlagDeliveredEvent& event);
 
 private:
-	uint32 m_NextTeamIndex = 0;
+	uint8 m_NextTeamIndex = 0;
 };

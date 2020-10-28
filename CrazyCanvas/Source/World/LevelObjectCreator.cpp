@@ -271,9 +271,9 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
 
-	uint32 teamIndex = 0;
+	uint8 teamIndex = 0;
 	size_t teamIndexPos = levelObject.Name.find("TEAM");
-	if (teamIndexPos != String::npos) teamIndex = std::stoul(levelObject.Name.substr(teamIndexPos + 4));
+	if (teamIndexPos != String::npos) teamIndex = (uint8)std::stoi(levelObject.Name.substr(teamIndexPos + 4));
 
 	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
 
@@ -355,9 +355,9 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine:
 
 	pECS->AddComponent<FlagDeliveryPointComponent>(entity, {});
 
-	uint32 teamIndex = 0;
+	uint8 teamIndex = 0;
 	size_t teamIndexPos = levelObject.Name.find("TEAM");
-	if (teamIndexPos != String::npos) teamIndex = std::stoul(levelObject.Name.substr(teamIndexPos + 4));
+	if (teamIndexPos != String::npos) teamIndex = (uint8)std::stoi(levelObject.Name.substr(teamIndexPos + 4));
 
 	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
 	const PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
