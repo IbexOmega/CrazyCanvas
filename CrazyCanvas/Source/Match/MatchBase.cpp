@@ -7,9 +7,6 @@
 
 MatchBase::~MatchBase()
 {
-	using namespace LambdaEngine;
-	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &MatchBase::OnPacketReceived);
-
 	SAFEDELETE(m_pLevel);
 }
 
@@ -17,8 +14,6 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 {
 	using namespace LambdaEngine;
 
-	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &MatchBase::OnPacketReceived);
-	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
 
 	if (m_pLevel == nullptr)

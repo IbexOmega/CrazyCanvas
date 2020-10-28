@@ -168,20 +168,20 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		}
 
 		// Reload if we are not reloading
-		if (Input::IsKeyDown(EKey::KEY_R) && !isReloading)
+		if (Input::IsKeyDown(InputMode::GAME, EKey::KEY_R) && !isReloading)
 		{
 			StartReload(weaponComponent);
 		}
 		else if (!onCooldown) // If we did not hit the reload try and shoot
 		{
-			if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
+			if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
 				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
 			}
-			else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
+			else if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);

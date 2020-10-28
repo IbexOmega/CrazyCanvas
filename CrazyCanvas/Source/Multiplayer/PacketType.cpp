@@ -5,6 +5,8 @@
 
 #include "Multiplayer/Packet/PlayerAction.h"
 #include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketTeamScored.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -18,12 +20,12 @@ uint16 PacketType::TEAM_SCORED				= 0;
 
 void PacketType::Init()
 {
-	CREATE_LEVEL_OBJECT		= RegisterPacketTypeRaw();
+	CREATE_LEVEL_OBJECT		= RegisterPacketType<CreateLevelObject>();
 	DELETE_LEVEL_OBJECT		= RegisterPacketTypeRaw();
 	PLAYER_ACTION			= RegisterPacketTypeWithComponent<PlayerAction>();
 	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PlayerActionResponse>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
-	TEAM_SCORED				= RegisterPacketTypeRaw();
+	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

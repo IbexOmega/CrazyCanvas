@@ -115,7 +115,7 @@ namespace LambdaEngine
 		virtual PipelineState* CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) const override final;
 		virtual PipelineState* CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc) const override final;
 
-		virtual SBT* CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const override final;
+		virtual SBT* CreateSBT(CommandList* pCommandList, const SBTDesc* pDesc) const override final;
 
 		virtual AccelerationStructure* CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const override final;
 

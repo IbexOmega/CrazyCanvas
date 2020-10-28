@@ -615,7 +615,7 @@ namespace LambdaEngine
 			memcpy((void*)(uint64(pTextureDataDst) + bufferOffset), pTextureDataSrc, pixelDataSize);
 			pTextureData->Unmap();
 
-			CopyTextureFromBufferDesc copyDesc = {};
+			CopyTextureBufferDesc copyDesc = {};
 			copyDesc.SrcOffset		= bufferOffset;
 			copyDesc.SrcRowPitch	= 0;
 			copyDesc.SrcHeight		= 0;

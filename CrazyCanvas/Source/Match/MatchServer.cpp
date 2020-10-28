@@ -33,6 +33,9 @@
 
 #include "Multiplayer/Packet/CreateLevelObject.h"
 
+#include "Multiplayer/ServerHelper.h"
+#include "Multiplayer/Packet/PacketTeamScored.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -146,7 +149,8 @@ void MatchServer::SpawnFlag()
 			for (Entity entity : createdFlagEntities)
 			{
 				packet.NetworkUID = entity;
-				ServerSystem::GetInstance().GetServer()->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT);
+
+				ServerHelper::SendBroadcast(packet);
 			}
 		}
 		else
@@ -211,10 +215,10 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 			packet.Player.IsMySelf	= true;
 			packet.NetworkUID		= playerEntity;
 
-			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT, nullptr);
+			ServerHelper::Send(pClient, packet);
 
 			packet.Player.IsMySelf	= false;
-			pClient->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT, nullptr, true);
+			ServerHelper::SendBroadcast(packet, nullptr, pClient);
 		}
 	}
 	else
@@ -223,12 +227,6 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	}
 
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
-}
-
-bool MatchServer::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
-{
-	UNREFERENCED_VARIABLE(event);
-	return false;
 }
 
 bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
@@ -264,7 +262,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			packet.Position			= positionComponent.Position;
 			packet.Forward			= GetForward(rotationComponent.Quaternion);
 			packet.Player.TeamIndex	= teamComponent.TeamIndex;
-			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+			ServerHelper::Send(pClient, packet);
 		}
 	}
 
@@ -292,7 +290,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			packet.Position					= positionComponent.Position;
 			packet.Forward					= GetForward(rotationComponent.Quaternion);
 			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
-			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+			ServerHelper::Send(pClient, packet);
 		}
 	}
 
@@ -318,19 +316,11 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 	uint32 newScore = GetScore(event.TeamIndex) + 1;
 	SetScore(event.TeamIndex, newScore);
 
-	const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
 
-	if (!clients.empty())
-	{
-		ClientRemoteBase* pClient = clients.begin()->second;
-
-		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::TEAM_SCORED);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt32(event.TeamIndex);
-		encoder.WriteUInt32(newScore);
-
-		pClient->SendReliableBroadcast(pPacket);
-	}
+	PacketTeamScored packet;
+	packet.TeamIndex	= event.TeamIndex;
+	packet.Score		= newScore;
+	ServerHelper::SendBroadcast(packet);
 
 	return true;
 }

@@ -157,7 +157,7 @@ namespace LambdaEngine
 			pCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 		}
 
-		CopyTextureFromBufferDesc copyDesc = {};
+		CopyTextureBufferDesc copyDesc = {};
 		copyDesc.SrcOffset		= 0;
 		copyDesc.SrcRowPitch	= 0;
 		copyDesc.SrcHeight		= 0;
