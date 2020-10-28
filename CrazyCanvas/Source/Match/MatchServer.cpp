@@ -332,7 +332,7 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 		pClient->SendReliableBroadcast(pPacket);
 	}
 
-	if (newScore == m_MatchDesc.MaxScore && !clients.empty())
+	if (newScore == m_MatchDesc.MaxScore && !clients.empty()) // game over
 	{
 		ClientRemoteBase* pClient = clients.begin()->second;
 

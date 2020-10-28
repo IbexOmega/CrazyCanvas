@@ -6,8 +6,6 @@
 
 #include <argh/argh.h>
 
-#include "Application/API/PlatformMisc.h"
-
 namespace LambdaEngine
 {
 	extern Game* CreateGame(const argh::parser& flagParser);

@@ -31,15 +31,21 @@
 #include "Match/Match.h"
 
 #include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/ServerHostHelper.h"
+
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 
 using namespace LambdaEngine;
 
-ServerState::ServerState(std::string serverHostID, std::string clientHostID)
+ServerState::ServerState(const std::string& serverHostID, const std::string& clientHostID)
 {
-	m_ServerHostID = std::stoi(serverHostID);
-	m_ClientHostID = std::stoi(clientHostID);
+	ServerHostHelper::SetClientHostID(std::stoi(clientHostID));
+	ServerHostHelper::SetServerHostID(std::stoi(serverHostID));
+
+	/*m_ServerHostID = std::stoi(serverHostID);
+	m_ClientHostID = std::stoi(clientHostID);*/
 }
+
 ServerState::ServerState() : 
 	m_MultiplayerServer()
 {
@@ -114,7 +120,7 @@ bool ServerState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 {
 	NetworkSegment* pPacket = event.pPacket;
 
-	if (pPacket->GetType() == NetworkSegment::TYPE_HOST_SERVER)
+	if (pPacket->GetType() == PacketType::HOST_SERVER)
 	{
 		BinaryDecoder decoder(pPacket);
 		int8 nrOfPlayers = decoder.ReadInt8();
@@ -126,7 +132,7 @@ bool ServerState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 		LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
 		LOG_ERROR("MAP NR %d", mapNr);
 		LOG_ERROR("receivedHostID: %d", clientHostID);
-		LOG_ERROR("LocalHostID: %d", m_ClientHostID);
+		LOG_ERROR("LocalHostID: %d", ServerHostHelper::GetClientHostID());
 	}
 	return false;
 }

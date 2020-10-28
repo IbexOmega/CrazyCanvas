@@ -9,6 +9,8 @@
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+#include "Multiplayer/Packet/PacketType.h"
+
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "States/PlaySessionState.h"
@@ -26,6 +28,8 @@
 #include <wchar.h>
 
 #include "Math\Random.h"
+
+#include "Multiplayer/ServerHostHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -97,7 +101,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 	ServerInfo& currentInfo = m_Servers[event.ServerUID];
 
-	if (serverHostID == ClientSystem::GetInstance().GetServerHostID())
+	if (ServerHostHelper::GetServerHostID() != -1)
 	{
 		SetRenderStagesActive();
 
@@ -131,13 +135,14 @@ bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event
 {
 	IClient* pClient = event.pClient;
 
-	if (ClientSystem::GetInstance().GetClientHostID() != -1)
+
+	if (ServerHostHelper::GetClientHostID() != -1)
 	{
-		NetworkSegment* pPacket = pClient->GetFreePacket(NetworkSegment::TYPE_HOST_SERVER);
+		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::HOST_SERVER);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteInt8(m_HostGameDesc.PlayersNumber);
 		encoder.WriteInt8(m_HostGameDesc.MapNumber);
-		encoder.WriteInt32(ClientSystem::GetInstance().GetClientHostID());
+		encoder.WriteInt32(ServerHostHelper::GetClientHostID());
 		pClient->SendReliable(pPacket, nullptr);
 	}
 
@@ -182,8 +187,8 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	SavedServerSystem::WriteIpsToFile("bajs");
-	SavedServerSystem::WriteIpsToFile("HejSimon");
+	SavedServerSystem::WriteIpsToFile("foo");
+	SavedServerSystem::WriteIpsToFile("bar");
 
 	ErrorPopUp(OTHER_ERROR);
 }
@@ -299,7 +304,7 @@ bool LobbyGUI::CheckServerStatus()
 	return false;
 }
 
-bool LobbyGUI::StartUpServer(std::string pApplicationName, std::string pCommandLine)
+bool LobbyGUI::StartUpServer(const std::string& applicationName, const std::string& commandLine)
 {
 	//additional Info
 	STARTUPINFOA lpStartupInfo;
@@ -308,13 +313,13 @@ bool LobbyGUI::StartUpServer(std::string pApplicationName, std::string pCommandL
 	uint32 randClientSpecificID = Random::UInt32(0, UINT32_MAX / 2);
 	uint32 randServerSpecificID = Random::UInt32(0, UINT32_MAX / 2);
 
-	ClientSystem::GetInstance().SetServerHostID(randServerSpecificID);
-	ClientSystem::GetInstance().SetClientHostID(randClientSpecificID);
+	ServerHostHelper::SetClientHostID(randClientSpecificID);
+	ServerHostHelper::SetServerHostID(randServerSpecificID);
 
-	std::string hostServerSideID = std::to_string(randServerSpecificID);
-	std::string hostClientSideID = std::to_string(randClientSpecificID);
+	std::string hostServerID = std::to_string(randServerSpecificID);
+	std::string hostClientID = std::to_string(randClientSpecificID);
 
-	std::string finalCLine = pApplicationName + " " + pCommandLine + " " + hostServerSideID + " " + hostClientSideID;
+	std::string finalCLine = applicationName + " " + commandLine + " " + hostServerID + " " + hostClientID;
 
 	// set the size of the structures
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));

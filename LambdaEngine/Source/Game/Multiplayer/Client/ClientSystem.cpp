@@ -18,9 +18,7 @@ namespace LambdaEngine
 	ClientSystem::ClientSystem(const String& name) :
 		m_pClient(nullptr),
 		m_Name(name),
-		m_DebuggingWindow(false),
-		m_ServerHostID(0),
-		m_ClientHostID(0)
+		m_DebuggingWindow(false)
 	{
 		MultiplayerUtils::Init(false);
 
@@ -85,26 +83,6 @@ namespace LambdaEngine
 			return false;
 		}
 		return true;
-	}
-
-	void ClientSystem::SetServerHostID(uint32 serverHostID)
-	{
-		m_ServerHostID = (int32)serverHostID;
-	}
-
-	void ClientSystem::SetClientHostID(uint32 clientHostID)
-	{
-		m_ClientHostID = (int32)clientHostID;
-	}
-
-	int32 ClientSystem::GetServerHostID()
-	{
-		return m_ServerHostID;
-	}
-
-	int32 ClientSystem::GetClientHostID()
-	{
-		return m_ClientHostID;
 	}
 	
 	ClientBase* ClientSystem::GetClient()

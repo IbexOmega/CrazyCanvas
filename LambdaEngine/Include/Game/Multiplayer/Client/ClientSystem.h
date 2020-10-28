@@ -63,8 +63,6 @@ namespace LambdaEngine
 		ClientBase* m_pClient;
 		String m_Name;
 		bool m_DebuggingWindow;
-		int32 m_ServerHostID;
-		int32 m_ClientHostID;
 
 	private:
 		static ClientSystem* s_pInstance;

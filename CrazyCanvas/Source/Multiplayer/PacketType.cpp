@@ -15,6 +15,7 @@ uint16 PacketType::PLAYER_ACTION_RESPONSE	= 0;
 uint16 PacketType::FLAG_EDITED				= 0;
 uint16 PacketType::TEAM_SCORED				= 0;
 uint16 PacketType::GAME_OVER				= 0;
+uint16 PacketType::HOST_SERVER				= 0;
 
 void PacketType::Init()
 {
@@ -24,6 +25,7 @@ void PacketType::Init()
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
 	TEAM_SCORED				= RegisterPacketType();
 	GAME_OVER				= RegisterPacketType();
+	HOST_SERVER				= RegisterPacketType();
 }
 
 uint16 PacketType::RegisterPacketType()

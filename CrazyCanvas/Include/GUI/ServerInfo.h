@@ -55,20 +55,17 @@
 		}
 	};
 
-namespace LambdaEngine
+
+class SavedServerSystem
 {
+public:
 
-	class LAMBDA_API SavedServerSystem
-	{
-	public:
-		DECL_STATIC_CLASS(SavedServerSystem);
+	static bool LoadIpsFromFile(LambdaEngine::TArray<LambdaEngine::String>& ipAddressess);
+	static bool WriteIpsToFile(const char* ip);
+	static void CreateFile();
+	//static bool IsOnline(const String& action);
 
-		static bool LoadIpsFromFile(TArray<String>& ipAddressess);
-		static bool WriteIpsToFile(const char* ip);
-		static void CreateFile();
-		//static bool IsOnline(const String& action);
+private:
+	static rapidjson::Document s_SavedServerDocument;
+};
 
-	private:
-		static rapidjson::Document s_SavedServerDocument;
-	};
-}
