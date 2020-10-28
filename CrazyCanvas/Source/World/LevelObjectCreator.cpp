@@ -703,12 +703,10 @@ bool LevelObjectCreator::CreatePlayer(
 bool LevelObjectCreator::CreateProjectile(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	using namespace LambdaEngine;
 
-	UNREFERENCED_VARIABLE(saltUIDs);
 	UNREFERENCED_VARIABLE(createdChildEntities);
 
 	if (pData == nullptr)

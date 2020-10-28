@@ -172,8 +172,7 @@ private:
 	static bool CreateProjectile(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-		LambdaEngine::TArray<uint64>& saltUIDs);
+		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
 
 private:
 	inline static LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc> s_LevelObjectOnLoadDescriptions;
