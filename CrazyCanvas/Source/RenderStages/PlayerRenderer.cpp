@@ -306,6 +306,10 @@ namespace LambdaEngine
 
 				m_DirtyUniformBuffers = true;
 
+				ECSCore* pECSCore = ECSCore::GetInstance();
+				const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
+
 				m_ViewerTeamId = MAXUINT32;
 				m_TeamIds.Clear(); // All players which are not the viewer.
 				for (uint32 d = 0; d < m_DrawCount; d++)
@@ -317,16 +321,11 @@ namespace LambdaEngine
 
 					if (m_DescriptorSetList2[d] != nullptr)
 					{
-						// Get Team Ids
-						ECSCore* pECSCore = ECSCore::GetInstance();
-						ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
-						ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
-
 						// Assume EntityIDs is always 1 in length. (Because animated meshes.)
 						Entity entity = m_pDrawArgs[d].EntityIDs[0];
 						if (pTeamComponents->HasComponent(entity))
 						{
-							if (pPlayerLocalComponents->HasComponent(entity))
+							if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
 							{
 								TeamComponent teamComp = pTeamComponents->GetConstData(entity);
 								m_ViewerTeamId = teamComp.TeamIndex;
