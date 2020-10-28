@@ -17,6 +17,7 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 layout(location = 9) in flat uint	in_InstanceIndex;
+layout(location = 10) in vec3 		in_ViewDirection;
 
 layout(push_constant) uniform TeamIndex
 {
@@ -24,6 +25,7 @@ layout(push_constant) uniform TeamIndex
 } p_TeamIndex;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }	b_MaterialParameters;
+layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors			{ vec4 val[]; }					b_PaintMaskColor;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -66,11 +68,10 @@ void main()
 		team = clientTeam;
 
 	// TODO: Change this to a buffer input which we can index the team color to
-	vec3 color = vec3(0.0);
-	if (team == 1)
-		color = vec3(1.0, 0.0, 0.0);
-	else if (team == 2)
-		color = vec3(0.0, 0.0, 1.0);
+	vec3 color = b_PaintMaskColor.val[team].rgb;
+
+	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));
+	color = mix(color, color*0.8, backSide);
 
 	// Only render team members and paint on enemy players
 	uint enemy = p_TeamIndex.Index;

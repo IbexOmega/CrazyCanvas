@@ -234,6 +234,27 @@ namespace LambdaEngine
 				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
 			}
 		}
+		else if (resourceName == PAINT_MASK_COLORS)
+		{
+			constexpr DescriptorSetIndex setIndex = 0U;
+
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet0 != nullptr)
+			{
+				m_DescriptorSet0->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					2,
+					1,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
+			}
+		}
 
 		if (resourceName == PER_FRAME_BUFFER)
 		{
@@ -527,6 +548,12 @@ namespace LambdaEngine
 		materialParametersBufferDesc.Binding = 1;
 		materialParametersBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
+		DescriptorBindingDesc paintMaskColorsBufferDesc = {};
+		paintMaskColorsBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		paintMaskColorsBufferDesc.DescriptorCount = 1;
+		paintMaskColorsBufferDesc.Binding = 2;
+		paintMaskColorsBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
 		// u_AlbedoMaps
 		DescriptorBindingDesc albedoMapsDesc = {};
 		albedoMapsDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
@@ -562,7 +589,7 @@ namespace LambdaEngine
 
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
@@ -596,8 +623,8 @@ namespace LambdaEngine
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 4;
-		descriptorCountDesc.ConstantBufferDescriptorCount = 1;		  // framebuffer
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 3; // Vertice, instance and material
+		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 4;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 

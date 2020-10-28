@@ -20,6 +20,7 @@ layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
 layout(location = 8) out flat uint out_ExtensionIndex;
 layout(location = 9) out flat uint out_InstanceIndex;
+layout(location = 10) out vec3 out_ViewDirection;
 
 void main()
 {
@@ -45,6 +46,7 @@ void main()
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
     out_ExtensionIndex		= instance.ExtensionIndex;
     out_InstanceIndex		= gl_InstanceIndex;
+	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	gl_Position = out_ClipPosition;
