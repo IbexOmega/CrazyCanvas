@@ -17,10 +17,11 @@ public:
 
 	void Init();
 
-	void FixedTickMainThread(LambdaEngine::Timestamp deltaTime);
+	void FixedTickMainThreadClient(LambdaEngine::Timestamp deltaTime);
+	void FixedTickMainThreadServer(LambdaEngine::Timestamp deltaTime);
 
 private:
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
+	bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event);
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
 
 private:
