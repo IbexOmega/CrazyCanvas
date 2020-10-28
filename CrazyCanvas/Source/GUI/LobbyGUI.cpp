@@ -101,11 +101,11 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 	ServerInfo& currentInfo = m_Servers[event.ServerUID];
 
-	if (ServerHostHelper::GetServerHostID() != -1)
+	if (ServerHostHelper::GetClientHostID() != -1)
 	{
 		SetRenderStagesActive();
 
-		State* pPlaySessionState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
+		State* pPlaySessionState = DBG_NEW PlaySessionState(newInfo.EndPoint.GetAddress());
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
 
@@ -136,13 +136,13 @@ bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event
 	IClient* pClient = event.pClient;
 
 
-	if (ServerHostHelper::GetClientHostID() != -1)
+	if (ServerHostHelper::GetAuthenticationHostID() != -1)
 	{
 		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::HOST_SERVER);
 		BinaryEncoder encoder(pPacket);
 		encoder.WriteInt8(m_HostGameDesc.PlayersNumber);
 		encoder.WriteInt8(m_HostGameDesc.MapNumber);
-		encoder.WriteInt32(ServerHostHelper::GetClientHostID());
+		encoder.WriteInt32(ServerHostHelper::GetAuthenticationHostID());
 		pClient->SendReliable(pPacket, nullptr);
 	}
 
@@ -313,8 +313,8 @@ bool LobbyGUI::StartUpServer(const std::string& applicationName, const std::stri
 	uint32 randClientSpecificID = Random::UInt32(0, UINT32_MAX / 2);
 	uint32 randServerSpecificID = Random::UInt32(0, UINT32_MAX / 2);
 
-	ServerHostHelper::SetClientHostID(randClientSpecificID);
-	ServerHostHelper::SetServerHostID(randServerSpecificID);
+	ServerHostHelper::SetAuthenticationID(randClientSpecificID);
+	ServerHostHelper::SetClientHostID(randServerSpecificID);
 
 	std::string hostServerID = std::to_string(randServerSpecificID);
 	std::string hostClientID = std::to_string(randClientSpecificID);

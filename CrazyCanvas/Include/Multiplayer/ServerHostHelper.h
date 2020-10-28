@@ -6,13 +6,13 @@ class ServerHostHelper
 {
 public:
 
-	static void SetServerHostID(int32 serverHostID);
-	static void SetClientHostID(int32 clientHostID);
+	static void SetClientHostID(int32 serverHostID);
+	static void SetAuthenticationID(int32 clientHostID);
 
-	static int32 GetServerHostID();
 	static int32 GetClientHostID();
+	static int32 GetAuthenticationHostID();
 
 private:
-	static int32 m_sServerHostID;
 	static int32 m_sClientHostID;
+	static int32 m_sAuthenticationID;
 };

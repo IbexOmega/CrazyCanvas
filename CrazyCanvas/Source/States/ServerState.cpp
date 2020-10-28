@@ -40,8 +40,8 @@ using namespace LambdaEngine;
 ServerState::ServerState(const std::string& serverHostID, const std::string& clientHostID) :
 	m_MultiplayerServer()
 {
-	ServerHostHelper::SetClientHostID(std::stoi(clientHostID));
-	ServerHostHelper::SetServerHostID(std::stoi(serverHostID));
+	ServerHostHelper::SetAuthenticationID(std::stoi(clientHostID));
+	ServerHostHelper::SetClientHostID(std::stoi(serverHostID));
 }
 
 ServerState::ServerState() : 
@@ -99,7 +99,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	pEncoder->WriteUInt8(pServer->GetClientCount());
 	pEncoder->WriteString(m_ServerName);
 	pEncoder->WriteString("Map Name");
-	pEncoder->WriteInt32(m_ServerHostID);
+	pEncoder->WriteInt32(ServerHostHelper::GetClientHostID());
 
 	return true;
 }
@@ -125,12 +125,11 @@ bool ServerState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 		int8 mapNr = decoder.ReadInt8();
 		int32 clientHostID = decoder.ReadInt32();
 
-
 		LOG_ERROR("Starting Server With The Following Information:");
 		LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
 		LOG_ERROR("MAP NR %d", mapNr);
 		LOG_ERROR("receivedHostID: %d", clientHostID);
-		LOG_ERROR("LocalHostID: %d", ServerHostHelper::GetClientHostID());
+		LOG_ERROR("LocalHostID: %d", ServerHostHelper::GetAuthenticationHostID());
 	}
 	return false;
 }

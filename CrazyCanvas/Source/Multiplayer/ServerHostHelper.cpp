@@ -1,25 +1,25 @@
 #include "Multiplayer/ServerHostHelper.h"
 
 
-int32 ServerHostHelper::m_sServerHostID = -1;
 int32 ServerHostHelper::m_sClientHostID = -1;
+int32 ServerHostHelper::m_sAuthenticationID = -1;
 
-void ServerHostHelper::SetServerHostID(int32 serverHostID)
+void ServerHostHelper::SetClientHostID(int32 serverHostID)
 {
-	m_sServerHostID = serverHostID;
+	m_sClientHostID = serverHostID;
 }
 
-void ServerHostHelper::SetClientHostID(int32 clientHostID)
+void ServerHostHelper::SetAuthenticationID(int32 clientHostID)
 {
-	m_sClientHostID = clientHostID;
-}
-
-int32 ServerHostHelper::GetServerHostID()
-{
-	return m_sServerHostID;
+	m_sAuthenticationID = clientHostID;
 }
 
 int32 ServerHostHelper::GetClientHostID()
 {
 	return m_sClientHostID;
+}
+
+int32 ServerHostHelper::GetAuthenticationHostID()
+{
+	return m_sAuthenticationID;
 }

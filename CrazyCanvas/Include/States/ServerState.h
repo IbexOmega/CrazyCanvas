@@ -36,8 +36,6 @@ public:
 	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
 
 private:
-	int32 m_ServerHostID = -1;
-	int32 m_ClientHostID = -1;
 	std::string m_ServerName;
 	MultiplayerServer m_MultiplayerServer;
 };
