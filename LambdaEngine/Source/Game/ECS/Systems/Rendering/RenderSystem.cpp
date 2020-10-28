@@ -256,7 +256,7 @@ namespace LambdaEngine
 
 			// Particle Renderer & Manager
 			{
-				constexpr uint32 MAX_PARTICLE_COUNT = 10000U;
+				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
 				m_pParticleRenderer = DBG_NEW ParticleRenderer();
 				m_pParticleRenderer->Init();
@@ -591,6 +591,9 @@ namespace LambdaEngine
 				emitterCompNonConst.Active = false;
 			}
 		}
+		// Tick Particle Manager
+		m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
+
 		// Particle Updates
 		uint32 particleCount = m_ParticleManager.GetParticleCount();
 		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
@@ -613,7 +616,6 @@ namespace LambdaEngine
 		StagingBufferCache::Tick();
 		CleanBuffers();
 
-		m_ParticleManager.Tick(delta, m_ModFrameIndex);
 		UpdateBuffers();
 		UpdateRenderGraph();
 
