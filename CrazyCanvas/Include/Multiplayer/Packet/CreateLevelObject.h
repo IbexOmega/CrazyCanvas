@@ -11,6 +11,7 @@ namespace Obj
 	{
 		bool IsMySelf;
 		uint8 TeamIndex;
+		int32 WeaponNetworkUID;
 	};
 #pragma pack(pop)
 

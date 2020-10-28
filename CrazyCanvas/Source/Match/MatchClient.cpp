@@ -70,7 +70,8 @@ bool MatchClient::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& even
 				CreatePlayerDesc createPlayerDesc =
 				{
 					.IsLocal			= packet.Player.IsMySelf,
-					.NetworkUID			= packet.NetworkUID,
+					.PlayerNetworkUID	= packet.NetworkUID,
+					.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 					.pClient			= event.pClient,
 					.Position			= packet.Position,
 					.Forward			= packet.Forward,

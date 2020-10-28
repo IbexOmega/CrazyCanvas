@@ -241,8 +241,10 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 		ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
 		for (Entity playerEntity : createdPlayerEntities)
 		{
+			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(playerEntity);
 			packet.Player.IsMySelf	= true;
 			packet.NetworkUID		= playerEntity;
+			packet.Player.WeaponNetworkUID = childComp.GetEntityWithTag("weapon");
 
 			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT, nullptr);
 
@@ -295,7 +297,8 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
 			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(otherPlayerEntity);
 
-			packet.NetworkUID		= otherPlayerEntity;
+			packet.NetworkUID				= otherPlayerEntity;
+			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");
 			packet.Position			= positionComponent.Position;
 			packet.Forward			= GetForward(rotationComponent.Quaternion);
 			packet.Player.TeamIndex	= teamComponent.TeamIndex;
