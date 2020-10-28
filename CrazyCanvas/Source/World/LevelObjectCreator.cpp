@@ -231,14 +231,13 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 	ELevelObjectType levelObjectType,
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	auto createFuncIt = s_LevelObjectByTypeCreateFunctions.find(levelObjectType);
 
 	if (createFuncIt != s_LevelObjectByTypeCreateFunctions.end())
 	{
-		return createFuncIt->second(pData, createdEntities, createdChildEntities, saltUIDs);
+		return createFuncIt->second(pData, createdEntities, createdChildEntities);
 	}
 	else
 	{
@@ -418,11 +417,9 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(const LambdaEngine::LevelOb
 bool LevelObjectCreator::CreateFlag(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	UNREFERENCED_VARIABLE(createdChildEntities);
-	UNREFERENCED_VARIABLE(saltUIDs);
 
 	if (pData == nullptr) return false;
 
@@ -540,8 +537,7 @@ bool LevelObjectCreator::CreateFlag(
 bool LevelObjectCreator::CreatePlayer(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	if (pData == nullptr)
 		return false;
@@ -587,7 +583,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.4, 0.5f, -0.2) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.4, 0.5f, -0.2f) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 
@@ -604,8 +600,6 @@ bool LevelObjectCreator::CreatePlayer(
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
-
-			saltUIDs.PushBack(UINT64_MAX);
 		}
 		else
 		{
@@ -657,14 +651,11 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
-
-			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
 		}
 	}
 	else
 	{
 		networkUID = (int32)playerEntity;
-		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });

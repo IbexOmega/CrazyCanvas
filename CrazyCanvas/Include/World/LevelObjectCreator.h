@@ -59,7 +59,7 @@ struct CreatePlayerDesc
 class LevelObjectCreator
 {
 	typedef ELevelObjectType(*LevelObjectCreateByPrefixFunc)(const LambdaEngine::LevelObjectOnLoad&, LambdaEngine::TArray<LambdaEngine::Entity>&, const glm::vec3&);
-	typedef bool(*LevelObjectCreateByTypeFunc)(const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>&, LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>&, LambdaEngine::TArray<uint64>&);
+	typedef bool(*LevelObjectCreateByTypeFunc)(const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>&, LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>&);
 
 	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
 	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
@@ -89,8 +89,7 @@ public:
 		ELevelObjectType levelObjectType,
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-		LambdaEngine::TArray<uint64>& saltUIDs);
+		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
 
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc>& GetLevelObjectOnLoadDescriptions() { return s_LevelObjectOnLoadDescriptions; }
 
@@ -103,14 +102,12 @@ private:
 	static bool CreateFlag(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-		LambdaEngine::TArray<uint64>& saltUIDs);
+		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
 
 	static bool CreatePlayer(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-		LambdaEngine::TArray<uint64>& saltUIDs);
+		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
 
 private:
 	inline static LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc> s_LevelObjectOnLoadDescriptions;
