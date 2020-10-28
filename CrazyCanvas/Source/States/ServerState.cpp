@@ -31,9 +31,18 @@
 #include "Match/Match.h"
 
 #include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/ServerHostHelper.h"
+
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 
 using namespace LambdaEngine;
+
+ServerState::ServerState(const std::string& clientHostID, const std::string& authenticationID) :
+	m_MultiplayerServer()
+{
+	ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID)); //ID server checks to authenticate client with higher authorities
+	ServerHostHelper::SetClientHostID(std::stoi(clientHostID)); // ID client checks to see if it were the creater of server
+}
 
 ServerState::ServerState() : 
 	m_MultiplayerServer()
@@ -53,6 +62,7 @@ void ServerState::Init()
 
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketHostServer>>(this, &ServerState::OnPacketHostServerReceived);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -88,7 +98,8 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
 	pEncoder->WriteString(m_ServerName);
-	pEncoder->WriteString("This Is The Map Name");
+	pEncoder->WriteString("Map Name");
+	pEncoder->WriteInt32(ServerHostHelper::GetClientHostID());
 
 	return true;
 }
@@ -103,3 +114,19 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
+bool ServerState::OnPacketHostServerReceived(const PacketReceivedEvent<PacketHostServer>& event)
+{	
+	const PacketHostServer& packet = event.Packet;
+
+	int8 nrOfPlayers = packet.PlayersNumber;
+	int8 mapNr = packet.MapNumber;
+	int32 authenticationID = packet.AuthenticationID;
+
+	LOG_ERROR("Starting Server With The Following Information:");
+	LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
+	LOG_ERROR("MAP NR %d", mapNr);
+	LOG_ERROR("receivedHostID: %d", authenticationID);
+	LOG_ERROR("LocalHostID: %d", ServerHostHelper::GetAuthenticationHostID());
+
+	return false;
+}

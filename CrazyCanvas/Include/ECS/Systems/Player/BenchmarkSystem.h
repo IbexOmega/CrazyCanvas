@@ -15,5 +15,5 @@ public:
 
 private:
 	LambdaEngine::IDVector m_WeaponEntities;
-	LambdaEngine::IDVector m_PlayerEntities;
+	LambdaEngine::IDVector m_LocalPlayerEntities;
 };

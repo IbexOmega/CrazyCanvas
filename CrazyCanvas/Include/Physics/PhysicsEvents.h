@@ -6,16 +6,23 @@
 
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
+#include "Rendering/PaintMaskRenderer.h"
+
 struct ProjectileHitEvent : LambdaEngine::Event
 {
 public:
 	DECLARE_EVENT_TYPE(ProjectileHitEvent);
 
-	inline ProjectileHitEvent(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1, const EAmmoType ammoType)
+	inline ProjectileHitEvent(
+			const LambdaEngine::EntityCollisionInfo& collisionInfo0, 
+			const LambdaEngine::EntityCollisionInfo& collisionInfo1, 
+			const EAmmoType ammoType,
+			const LambdaEngine::ETeam team)
 		: Event()
 		, CollisionInfo0(collisionInfo0)
 		, CollisionInfo1(collisionInfo1)
 		, AmmoType(ammoType)
+		, Team(team)
 	{
 	}
 
@@ -28,4 +35,5 @@ public:
 	const LambdaEngine::EntityCollisionInfo CollisionInfo0;
 	const LambdaEngine::EntityCollisionInfo CollisionInfo1;
 	const EAmmoType AmmoType;
+	const LambdaEngine::ETeam Team;
 };

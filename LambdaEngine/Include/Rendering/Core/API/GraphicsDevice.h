@@ -142,7 +142,7 @@ namespace LambdaEngine
 		virtual PipelineState*	CreateComputePipelineState(const ComputePipelineStateDesc* pDesc) 		const = 0;
 		virtual PipelineState*	CreateRayTracingPipelineState(const RayTracingPipelineStateDesc* pDesc)	const = 0;
 
-		virtual SBT* CreateSBT(CommandQueue* pCommandQueue, const SBTDesc* pDesc) const = 0;
+		virtual SBT* CreateSBT(CommandList* pCommandList, const SBTDesc* pDesc) const = 0;
 		
 		virtual AccelerationStructure*	CreateAccelerationStructure(const AccelerationStructureDesc* pDesc) const = 0;
 		

@@ -47,7 +47,6 @@ void HUDSystem::Init()
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
 	GUIApplication::SetView(m_View);
-
 }
 
 void HUDSystem::Tick(LambdaEngine::Timestamp deltaTime)
@@ -70,6 +69,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 		if (pPlayerLocalComponents->HasComponent(playerEntity) && m_HUDGUI)
 		{
 			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition, weaponComponent.AmmoCapacity);
+			m_HUDGUI->UpdateScore();
 		}
 	}
 }
