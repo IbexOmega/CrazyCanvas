@@ -350,7 +350,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*> removedDeviceResources)
+	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
 	{
 		m_GlobalShaderRecords = shaderRecords;
 
