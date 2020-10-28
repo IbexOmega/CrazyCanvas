@@ -242,7 +242,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 
 	// Centre projectile direction
 	const glm::vec3 Diff = glm::vec3(playerPos.x - weaponPos.x, 0.0f, playerPos.z - weaponPos.z) * 0.1f;
-	const glm::vec3 directionVec = glm::normalize(GetForward(direction) + Diff);//
+	const glm::vec3 directionVec = glm::normalize(GetForward(direction) + Diff);
 	const VelocityComponent initialVelocity = { playerVelocity + directionVec * projectileInitialSpeed };
 	pECS->AddComponent<VelocityComponent>(projectileEntity, initialVelocity);
 
