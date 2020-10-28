@@ -83,7 +83,7 @@ bool HUDGUI::ApplyDamage(float damage)
 
 		life = std::to_string((int)m_GUIState.Health) + " %";
 
-		FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
+		FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
 		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
 	}
 	else
@@ -94,7 +94,7 @@ bool HUDGUI::ApplyDamage(float damage)
 		{//Resets
 			m_GUIState.DamageTaken = 0.0;
 			m_GUIState.Health = 100.0;
-			FrameworkElement::FindName<Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
+			FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
 		}
 		return false;
 	}
@@ -138,7 +138,7 @@ bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap)
 
 void HUDGUI::InitGUI()
 {
-	Rectangle* pHpRect = FrameworkElement::FindName<Rectangle>("HEALTH_RECT");
+	Noesis::Rectangle* pHpRect = FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT");
 
 	m_GUIState.DamageTaken		= 0.0;
 	m_GUIState.LifeMaxHeight	= pHpRect->GetHeight();
