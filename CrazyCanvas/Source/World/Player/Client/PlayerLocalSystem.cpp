@@ -40,11 +40,6 @@ PlayerLocalSystem::PlayerLocalSystem() :
 
 }
 
-PlayerLocalSystem::~PlayerLocalSystem()
-{
-
-}
-
 void PlayerLocalSystem::Init()
 {
 	SystemRegistration systemReg = {};

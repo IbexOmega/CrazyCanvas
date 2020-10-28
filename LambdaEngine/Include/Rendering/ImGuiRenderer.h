@@ -65,10 +65,10 @@ namespace LambdaEngine
 		DECL_REMOVE_COPY(ImGuiRenderer);
 		DECL_REMOVE_MOVE(ImGuiRenderer);
 
-		ImGuiRenderer(const GraphicsDevice* pGraphicsDevice);
+		ImGuiRenderer(const GraphicsDevice* pGraphicsDevice, ImGuiRendererDesc* pDesc);
 		~ImGuiRenderer();
 
-		bool Init(const ImGuiRendererDesc* pDesc);
+		bool Init();
 
 		// Be careful to not specify to many params in lambda function since that may result in a heap allocation
 		void DrawUI(ImGuiDrawFunc drawFunc);
@@ -91,7 +91,7 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool Sleeping)	override final;
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
 		bool OnEvent(const Event& event);
@@ -124,7 +124,7 @@ namespace LambdaEngine
 
 	private:
 		const GraphicsDevice*	m_pGraphicsDevice			= nullptr;
-
+		ImGuiRendererDesc* m_pDesc;
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;
 		uint32 m_BackBufferCount = 0;
 

@@ -31,10 +31,10 @@ namespace LambdaEngine
 	class LineRenderer : public ICustomRenderer
 	{
 	public:
-		LineRenderer();
+		LineRenderer(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
 		virtual ~LineRenderer();
 
-		bool init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
+		virtual bool Init() override final;
 
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
@@ -45,7 +45,7 @@ namespace LambdaEngine
 		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count) override final;
 		virtual void Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)	override final;
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 		FORCEINLINE virtual const String& GetName() const override
 		{
@@ -113,6 +113,7 @@ namespace LambdaEngine
 
 		THashTable<uint32, TArray<VertexData>> m_LineGroups;
 		TArray<VertexData> m_Verticies;
+		uint32 m_verticiesBufferSize;
 
 		uint32 m_BackBufferCount = 0;
 		TArray<TSharedRef<const TextureView>>	m_BackBuffers;

@@ -75,9 +75,12 @@ void PacketTranscoderSystem::FixedTickMainThreadClient(LambdaEngine::Timestamp d
 			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
 			pPacketComponent->ClearPacketsReceived();
 
+			const uint16 packetType = pPacketComponent->GetPacketType();
+			VALIDATE_MSG(packetType != 0, "Packet type not registered, have you forgotten to register your package?");
+
 			while (pPacketComponent->GetPacketsToSendCount() > 0)
 			{
-				NetworkSegment* pSegment = pClient->GetFreePacket(pPacketComponent->GetPacketType());
+				NetworkSegment* pSegment = pClient->GetFreePacket(packetType);
 				pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
 				pClient->SendReliable(pSegment);
 			}
@@ -110,11 +113,14 @@ void PacketTranscoderSystem::FixedTickMainThreadServer(LambdaEngine::Timestamp d
 			IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
 			pPacketComponent->ClearPacketsReceived();
 
+			const uint16 packetType = pPacketComponent->GetPacketType();
+			VALIDATE_MSG(packetType != 0, "Packet type not registered, have you forgotten to register your package?");
+
 			if (pClient)
 			{
 				while (pPacketComponent->GetPacketsToSendCount() > 0)
 				{
-					NetworkSegment* pSegment = pClient->GetFreePacket(pPacketComponent->GetPacketType());
+					NetworkSegment* pSegment = pClient->GetFreePacket(packetType);
 					pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
 					pClient->SendReliableBroadcast(pSegment);
 				}
@@ -148,7 +154,6 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 
 	const Packet* pPacket = (const Packet*)event.pPacket->GetBuffer();
 	Entity entity = MultiplayerUtils::GetEntity(pPacket->NetworkUID);
-
 	if (entity == UINT32_MAX)
 		return true;
 

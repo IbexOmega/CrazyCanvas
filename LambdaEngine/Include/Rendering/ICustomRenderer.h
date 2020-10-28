@@ -29,6 +29,11 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(ICustomRenderer);
 
+		/*
+		* Called once by RenderSystem, required arguments which be passed in constructor.
+		*/
+		virtual bool Init() = 0;
+
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) = 0;
 
 

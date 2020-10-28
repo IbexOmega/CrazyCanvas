@@ -39,6 +39,7 @@ int main(int argc, char** argv)
 	{
 		return -1;
 	}
+
 	LAMBDA_PROFILER_END_SESSION();
 
 	LAMBDA_PROFILER_BEGIN_SESSION("Runtime", "LambdaProfile-Runtime.json");

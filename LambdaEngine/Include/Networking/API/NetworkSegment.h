@@ -12,7 +12,6 @@ namespace LambdaEngine
 		friend class PacketTranscoder;
 		friend class SegmentPool;
 		friend class PacketManager;
-		friend class PacketManager2;
 		friend struct NetworkSegmentUIDOrder;
 
 	public:
