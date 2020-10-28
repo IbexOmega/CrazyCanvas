@@ -15,7 +15,10 @@ public:
 	void FixedTickMainThread(LambdaEngine::Timestamp deltaTime);
 
 private:
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final 
+	{
+		UNREFERENCED_VARIABLE(deltaTime);
+	}
 
 private:
 	LambdaEngine::IDVector m_Entities;

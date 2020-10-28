@@ -48,7 +48,6 @@ public:
 	
 	void JoinSelectedServer(Noesis::Grid* pGrid);
 
-
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
 

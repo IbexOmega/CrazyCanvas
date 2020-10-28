@@ -24,8 +24,9 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
-
 #include "World/LevelManager.h"
+#include "World/LevelObjectCreator.h"
+
 #include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
@@ -51,16 +52,10 @@ void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
 
-	ClientSystem::GetInstance();
-
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
-
-	WeaponSystem::GetInstance()->Init();
 	m_MultiplayerClient.InitInternal();
-
-	m_HealthSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 

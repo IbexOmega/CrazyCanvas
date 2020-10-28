@@ -32,11 +32,11 @@ bool FlagSystemBase::Init()
 				.pSubscriber = &m_Flags,
 				.ComponentAccesses =
 				{
-					{NDA, FlagComponent::Type()},
-					{RW, PositionComponent::Type()},
-					{RW, RotationComponent::Type()},
-					{R, OffsetComponent::Type()},
-					{R, ParentComponent::Type()},
+					{ NDA, FlagComponent::Type() },
+					{ RW, PositionComponent::Type() },
+					{ RW, RotationComponent::Type() },
+					{ R, OffsetComponent::Type() },
+					{ R, ParentComponent::Type() },
 				}
 			}
 		};
@@ -80,7 +80,12 @@ void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
 	//TickInternal(deltaTime);
 }
 
-void FlagSystemBase::CalculateAttachedFlagPosition(glm::vec3& flagPosition, glm::quat& flagRotation, const glm::vec3& flagOffset, const glm::vec3& parentPosition, const glm::quat parentRotation)
+void FlagSystemBase::CalculateAttachedFlagPosition(
+	glm::vec3& flagPosition, 
+	glm::quat& flagRotation, 
+	const glm::vec3& flagOffset, 
+	const glm::vec3& parentPosition, 
+	const glm::quat parentRotation)
 {
 	flagPosition = parentPosition + flagOffset;
 	flagRotation = parentRotation;

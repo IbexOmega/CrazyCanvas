@@ -108,7 +108,7 @@ namespace LambdaEngine
 
 		if (itr != m_CurrentKeyBindings.end()) {
 			EKey keyPressed = itr->second;
-			return Input::IsKeyDown(InputMode::GAME, keyPressed);
+			return Input::IsKeyDown(EInputLayer::GAME, keyPressed);
 		}
 
 		LOG_ERROR("Action %s is not defined.", action.c_str());

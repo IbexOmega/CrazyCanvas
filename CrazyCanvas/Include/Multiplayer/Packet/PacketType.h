@@ -22,6 +22,8 @@ public:
 	static uint16 DELETE_LEVEL_OBJECT;
 	static uint16 PLAYER_ACTION;
 	static uint16 PLAYER_ACTION_RESPONSE;
+	static uint16 WEAPON_FIRE;
+	static uint16 HEALTH_CHANGED;
 	static uint16 FLAG_EDITED;
 	static uint16 TEAM_SCORED;
 	static uint16 GAME_OVER;
@@ -57,6 +59,7 @@ uint16 PacketType::RegisterPacketType(const LambdaEngine::ComponentType* pType)
 	VALIDATE_MSG(Type::s_Type == 0, "PacketType already Registered!");
 	Type::s_Type = packetType;
 	s_PacketTypeToEvent[packetType] = pEvent;
+
 	return packetType;
 }
 
