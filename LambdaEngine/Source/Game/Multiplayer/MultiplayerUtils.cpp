@@ -51,6 +51,11 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void MultiplayerUtils::SetIsSingleplayer(bool value)
+	{
+		s_IsSinglePlayer = value;
+	}
+
 	void MultiplayerUtils::Init(bool server)
 	{
 		Release();

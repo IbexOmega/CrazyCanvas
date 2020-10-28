@@ -1538,7 +1538,7 @@ namespace LambdaEngine
 				LevelObjectOnLoad levelObject =
 				{
 					.Prefix				= levelObjectDesc.Prefix,
-					.Name				= nodeName.substr(levelObjectDesc.Prefix.length() + 1),
+					.Name				= nodeName.substr(levelObjectDesc.Prefix.length()),
 					.DefaultPosition	= defaultPosition,
 					.DefaultRotation	= defaultRotation,
 					.DefaultScale		= defaultScale,

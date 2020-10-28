@@ -28,7 +28,7 @@ private:
 	static void PrintBenchmarkResults();
 
 private:
-	bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event);
+	bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event);
 
 private:
 	LambdaEngine::Entity m_Camera;

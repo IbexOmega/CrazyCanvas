@@ -8,7 +8,9 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
-typedef LambdaEngine::THashTable<uint16, const LambdaEngine::ComponentType*> PacketTypeMap;
+#include "Multiplayer/Packet/MultiplayerEvents.h"
+
+typedef LambdaEngine::THashTable<uint16, IPacketReceivedEvent*> PacketTypeMap;
 
 class PacketType
 {
@@ -17,34 +19,49 @@ public:
 	DECL_STATIC_CLASS(PacketType);
 
 	static uint16 CREATE_LEVEL_OBJECT;
+	static uint16 DELETE_LEVEL_OBJECT;
 	static uint16 PLAYER_ACTION;
 	static uint16 PLAYER_ACTION_RESPONSE;
 	static uint16 FLAG_EDITED;
 	static uint16 TEAM_SCORED;
 
 public:
-	static const LambdaEngine::ComponentType* GetComponentType(uint16 packetType);
+	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);
 	static const PacketTypeMap& GetPacketTypeMap();
 
 private:
 	static void Init();
 
-	static uint16 RegisterPacketType();
+	template<typename Type>
+	static uint16 RegisterPacketType(const LambdaEngine::ComponentType* pType = nullptr);
 
 	template<typename Type>
 	static uint16 RegisterPacketTypeWithComponent();
 
+	static uint16 RegisterPacketTypeRaw();
+
+	static void Release();
+
 private:
 	static uint16 s_PacketTypeCount;
-	static PacketTypeMap s_PacketTypeToComponentType;
+	static PacketTypeMap s_PacketTypeToEvent;
 };
+
+template<typename Type>
+uint16 PacketType::RegisterPacketType(const LambdaEngine::ComponentType* pType)
+{
+	PacketReceivedEvent<Type>* pEvent = DBG_NEW PacketReceivedEvent<Type>(pType);
+	uint16 packetType = RegisterPacketTypeRaw();
+	VALIDATE_MSG(Type::s_Type == 0, "PacketType already Registered!");
+	Type::s_Type = packetType;
+	s_PacketTypeToEvent[packetType] = pEvent;
+	return packetType;
+}
 
 template<typename Type>
 uint16 PacketType::RegisterPacketTypeWithComponent()
 {
-	const LambdaEngine::ComponentType* type = PacketComponent<Type>::Type();
-	uint16 packetType = RegisterPacketType();
+	uint16 packetType = RegisterPacketType<Type>(PacketComponent<Type>::Type());
 	PacketComponent<Type>::s_PacketType = packetType;
-	s_PacketTypeToComponentType[packetType] = type;
 	return packetType;
 }

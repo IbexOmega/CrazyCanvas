@@ -57,6 +57,7 @@
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
 #include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/SingleplayerInitializer.h"
 
 #include <imgui.h>
 
@@ -364,7 +365,7 @@ void SandboxState::Init()
 			}
 		});
 
-	ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
+	SingleplayerInitializer::InitSingleplayer();
 }
 
 void SandboxState::Resume()

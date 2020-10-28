@@ -9,12 +9,14 @@ namespace LambdaEngine
 
 	bool MeshPaintComponentOwner::Init()
 	{
-		SetComponentOwner<MeshPaintComponent>({ std::bind_front(&MeshPaintComponentOwner::MeshPaintDestructor, this) });
+		SetComponentOwner<MeshPaintComponent>({ .Destructor = &MeshPaintComponentOwner::MeshPaintDestructor });
 		return true;
 	}
 
-	void MeshPaintComponentOwner::MeshPaintDestructor(MeshPaintComponent& meshPaintComponent)
+	void MeshPaintComponentOwner::MeshPaintDestructor(MeshPaintComponent& meshPaintComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		SAFERELEASE(meshPaintComponent.pTexture);
 		SAFERELEASE(meshPaintComponent.pTextureView);
 		SAFERELEASE(meshPaintComponent.pMipZeroTextureView);
