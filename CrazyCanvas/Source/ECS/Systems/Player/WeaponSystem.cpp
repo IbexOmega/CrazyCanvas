@@ -179,20 +179,20 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, playerPositionComp.Position, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
 			}
 			else if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
-
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
+		
+				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, playerPositionComp.Position, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
 			}
 		}
 	}
 }
 
-void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::quat& direction, const glm::vec3& playerVelocity)
+void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& startPos, const glm::vec3& weaponPos, const glm::quat& direction, const glm::vec3& playerVelocity)
 {
 	using namespace LambdaEngine;
 
@@ -212,7 +212,7 @@ void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent,
 		}
 
 		// Fire the gun
-		Fire(ammoType, weaponComponent, startPos, direction, playerVelocity);
+		Fire(ammoType, weaponComponent, startPos, weaponPos, direction, playerVelocity);
 	}
 	else
 	{
@@ -222,7 +222,7 @@ void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent,
 	}
 }
 
-void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::quat& direction, const glm::vec3& playerVelocity)
+void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, const glm::vec3& playerPos, const glm::vec3& weaponPos, const glm::quat& direction, const glm::vec3& playerVelocity)
 {
 	using namespace LambdaEngine;
 
@@ -230,8 +230,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	weaponComponent.CurrentAmmunition--;
 
 	constexpr const float projectileInitialSpeed = 13.0f;
-	const glm::vec3 directionVec = GetForward(direction);
-	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec * 0.3f;
+	const glm::vec3 startPos = weaponPos;
 
 	// Create a projectile entity
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -241,6 +240,9 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 	const uint8 playerTeam = pECS->GetConstComponent<TeamComponent>(weaponComponent.WeaponOwner).TeamIndex;
 	pECS->AddComponent<TeamComponent>(projectileEntity, { playerTeam });
 
+	// Centre projectile direction
+	const glm::vec3 Diff = glm::vec3(playerPos.x - weaponPos.x, 0.0f, playerPos.z - weaponPos.z) * 0.1f;
+	const glm::vec3 directionVec = glm::normalize(GetForward(direction) + Diff);//
 	const VelocityComponent initialVelocity = { playerVelocity + directionVec * projectileInitialSpeed };
 	pECS->AddComponent<VelocityComponent>(projectileEntity, initialVelocity);
 
@@ -256,7 +258,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
         /* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, {true, startPos}),
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, {true, glm::vec3(0.3f)}),
-		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, direction}),
+		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, {true, GetRotationQuaternion(directionVec)}),
 		{
 			{
 				.ShapeType = EShapeType::SIMULATION,

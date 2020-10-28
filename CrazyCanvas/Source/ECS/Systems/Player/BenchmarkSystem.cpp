@@ -110,7 +110,9 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(weaponComp.WeaponOwner);
 				const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(weaponComp.WeaponOwner);
 				const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(weaponComp.WeaponOwner);
-				pWeaponSystem->TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
+
+				const PositionComponent& weaponPositionComp = pPositionComponents->GetConstData(weaponEntity);
+				pWeaponSystem->TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, weaponPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
 			}
 		},
 		.Components = GetFireProjectileComponentAccesses(),
