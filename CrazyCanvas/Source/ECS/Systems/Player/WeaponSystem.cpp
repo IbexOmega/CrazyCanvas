@@ -102,9 +102,10 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+	const ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
@@ -142,6 +143,30 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			}
 		}
 
+		// Update position and orientation of weapon component
+		const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(playerEntity);
+		const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(playerEntity);
+		const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
+		glm::vec3 weaponPosition;
+		if (playerRotationComp.Dirty || playerPositionComp.Dirty)
+		{
+			PositionComponent& weaponPositionComp = pPositionComponents->GetData(weaponEntity);
+			RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
+
+			glm::quat quatY = playerRotationComp.Quaternion;
+			quatY.x = 0;
+			quatY.z = 0;
+			quatY = glm::normalize(quatY);
+			weaponPositionComp.Position = playerPositionComp.Position + quatY * weaponOffsetComp.Offset;
+			weaponPosition = weaponPositionComp.Position;
+
+			weaponRotationComp.Quaternion = playerRotationComp.Quaternion;
+		}
+		else
+		{
+			weaponPosition = pPositionComponents->GetConstData(weaponEntity).Position;
+		}
+
 		// Reload if we are not reloading
 		if (Input::IsKeyDown(EKey::KEY_R) && !isReloading)
 		{
@@ -151,19 +176,17 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		{
 			if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
 			{
-				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
 			}
 			else if (Input::GetMouseState().IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
 			{
-				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 				const RotationComponent& rotationComp = pRotationComponents->GetConstData(playerEntity);
 
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponComponent, weaponPosition, rotationComp.Quaternion, velocityComp.Velocity);
 			}
 		}
 	}
@@ -189,7 +212,7 @@ void WeaponSystem::TryFire(EAmmoType ammoType, WeaponComponent& weaponComponent,
 		}
 
 		// Fire the gun
-		Fire(ammoType, weaponComponent, startPos + glm::vec3(0.0f, 1.0f, 0.0f), direction, playerVelocity);
+		Fire(ammoType, weaponComponent, startPos, direction, playerVelocity);
 	}
 	else
 	{
