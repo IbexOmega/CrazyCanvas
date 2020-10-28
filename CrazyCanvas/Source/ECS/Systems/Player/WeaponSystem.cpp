@@ -303,29 +303,6 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 		},
 		/* Velocity */			initialVelocity
 	};
-	pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
-		.Active = true,
-		.OneTime = false,
-		.Explosive = 0.5f,
-		.SpawnDelay = 0.05f,
-		.ParticleCount = 64,
-		.EmitterShape = EEmitterShape::CONE,
-		.Angle = 45.f,
-		.VelocityRandomness = 0.5f,
-		.Velocity = -4.0,
-		.Acceleration = 0.0,
-		.Gravity = -4.f,
-		.LifeTime = 2.0f,
-		.RadiusRandomness = 0.5f,
-		.BeginRadius = 0.1f,
-		.FrictionFactor = 0.f,
-		.Bounciness = 0.f,
-		.TileIndex = 14,
-		.AnimationCount = 1,
-		.FirstAnimationIndex = 16,
-		.Color = glm::vec4(0.5f, 0.0f, 0.0f, 1.0f),
-		}
-	);
 
 	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
 
