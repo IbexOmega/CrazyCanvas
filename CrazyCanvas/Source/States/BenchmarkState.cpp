@@ -296,9 +296,9 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 			CreatePlayerDesc createPlayerDesc =
 			{
 				.IsLocal 			= false,
-				.PlayerNetworkUID 	= networkUID,
+				.PlayerNetworkUID 	= packet.NetworkUID,
 				.pClient 			= event.pClient,
-				.Position 			= position,
+				.Position 			= packet.Position,
 				.Forward 			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
 				.Scale 				= glm::vec3(1.0f),
 				.TeamIndex 			= 0,
