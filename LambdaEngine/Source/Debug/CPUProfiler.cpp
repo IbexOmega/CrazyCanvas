@@ -105,7 +105,7 @@ namespace LambdaEngine
 	void CPUProfiler::ToggleSample(EKey key, uint32_t frameCount)
 	{
 		static uint32_t frameCounter = 0;
-		if (Input::GetKeyboardState(InputMode::GAME).IsKeyDown(key))
+		if (Input::GetKeyboardState(EInputLayer::GAME).IsKeyDown(key))
 		{
 			frameCounter = 0;
 			CPUProfiler::g_RunProfilingSample = true;
