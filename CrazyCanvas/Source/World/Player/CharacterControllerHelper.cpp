@@ -31,14 +31,6 @@ void CharacterControllerHelper::TickForeignCharacterController(
 
 	pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
 
-	const PxExtendedVec3& newPositionPX = pController->getFootPosition();
-	velocityComp.Velocity = {
-		(float)newPositionPX.x - oldPositionPX.x,
-		(float)newPositionPX.y - oldPositionPX.y,
-		(float)newPositionPX.z - oldPositionPX.z
-	};
-	velocityComp.Velocity /= dt;
-
 	if (glm::length2(velocityComp.Velocity) > glm::epsilon<float>())
 	{
 		// Disable vertical movement if the character is on the ground

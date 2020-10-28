@@ -121,7 +121,9 @@ private:
 	inline static GUID_Lambda s_PlayerMeshGUID = GUID_NONE;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerIdleGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerWalkGUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunMirroredGUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardGUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
 };

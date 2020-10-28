@@ -347,8 +347,6 @@ namespace LambdaEngine
 				break;
 			}
 		}
-
-		LOG_INFO("Transition from '%s' to '%s'", pCurrentState->GetName().c_str(), name.c_str());
 	}
 
 	void AnimationGraph::MakeCurrentState(const String& name)

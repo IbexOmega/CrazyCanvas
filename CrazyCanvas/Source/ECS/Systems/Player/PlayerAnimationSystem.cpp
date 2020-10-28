@@ -65,24 +65,94 @@ void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		Transition* pCurrentTransition = animationComponent.pGraph->GetCurrentTransition();
 		AnimationState* pCurrentAnimationState = animationComponent.pGraph->GetCurrentState();
 		
-		String currentStateName;
+		String targetStateName = pCurrentTransition != nullptr ? pCurrentTransition->GetToState()->GetName() : "";
+		String currentStateName = pCurrentAnimationState->GetName();
 
-		if (pCurrentTransition != nullptr)
-		{
-			currentStateName = pCurrentTransition->GetToState()->GetName();
-		}
-		else
-		{
-			currentStateName = pCurrentAnimationState->GetName();
-		}
+		bool idling = glm::length2(velocityComponent.Velocity) < 0.5f;
 
-		if (glm::length2(velocityComponent.Velocity) < 0.5f && currentStateName != "Idle")
+		if (idling)
 		{
-			animationComponent.pGraph->TransitionToState("Idle");
+			if (currentStateName != "Idle" && targetStateName != "Idle")
+			{
+				animationComponent.pGraph->TransitionToState("Idle");
+			}
 		}
-		else
+#ifndef LAMBDA_DEBUG
+		else 
 		{
-			animationComponent.pGraph->TransitionToState("Running");
+			glm::vec3 forwardDirection = GetForward(rotationComponent.Quaternion);
+			glm::vec3 rightDirection = GetRight(rotationComponent.Quaternion);
+			float32 dotFV = glm::dot(forwardDirection, velocityComponent.Velocity);
+			float32 dotRV = glm::dot(rightDirection, velocityComponent.Velocity);
+			float32 epsilon = 0.01f;
+			bool runningForward		= dotFV > epsilon;
+			bool runningBackward	= dotFV < -epsilon;
+			bool strafingRight		= dotRV > epsilon;
+			bool strafingLeft		= dotRV < -epsilon;
+
+			if (runningForward)
+			{
+				if (strafingRight)
+				{
+					if (currentStateName != "Running & Strafe Right" && targetStateName != "Running & Strafe Right")
+					{
+						animationComponent.pGraph->TransitionToState("Running & Strafe Right");
+					}
+				}
+				else if (strafingLeft)
+				{
+					if (currentStateName != "Running & Strafe Left" && targetStateName != "Running & Strafe Left")
+					{
+						animationComponent.pGraph->TransitionToState("Running & Strafe Left");
+					}
+				}
+				else
+				{
+					if (currentStateName != "Running" && targetStateName != "Running")
+					{
+						animationComponent.pGraph->TransitionToState("Running");
+					}
+				}
+			}
+			else if (runningBackward)
+			{
+				if (strafingRight)
+				{
+					if (currentStateName != "Run Backward & Strafe Right" && targetStateName != "Run Backward & Strafe Right")
+					{
+						animationComponent.pGraph->TransitionToState("Run Backward & Strafe Right");
+					}
+				}
+				else if (strafingLeft)
+				{
+					if (currentStateName != "Run Backward & Strafe Left" && targetStateName != "Run Backward & Strafe Left")
+					{
+						animationComponent.pGraph->TransitionToState("Run Backward & Strafe Left");
+					}
+				}
+				else
+				{
+					if (currentStateName != "Run Backward" && targetStateName != "Run Backward")
+					{
+						animationComponent.pGraph->TransitionToState("Run Backward");
+					}
+				}
+			}
+			else if (strafingRight)
+			{
+				if (currentStateName != "Strafe Right" && targetStateName != "Strafe Right")
+				{
+					animationComponent.pGraph->TransitionToState("Strafe Right");
+				}
+			}
+			else if (strafingLeft)
+			{
+				if (currentStateName != "Strafe Left" && targetStateName != "Strafe Left")
+				{
+					animationComponent.pGraph->TransitionToState("Strafe Left");
+				}
+			}
 		}
+#endif
 	}
 }
