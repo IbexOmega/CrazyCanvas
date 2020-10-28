@@ -149,7 +149,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		}
 		else if (!onCooldown) // If we did not hit the reload try and shoot
 		{
-			if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_FORWARD))
+			if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
 			{
 				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
@@ -157,7 +157,7 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComponent, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
 			}
-			else if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_BACK))
+			else if (Input::GetMouseState(InputMode::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
 			{
 				const PositionComponent& positionComp = pPositionComponents->GetConstData(playerEntity);
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
