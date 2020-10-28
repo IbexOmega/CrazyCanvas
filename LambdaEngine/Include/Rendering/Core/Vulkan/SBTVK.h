@@ -17,11 +17,13 @@ namespace LambdaEngine
 		SBTVK(const GraphicsDeviceVK* pDevice);
 		~SBTVK();
 
-		bool Init(CommandQueue* pCommandQueue, const SBTDesc* pDesc);
+		bool Init(CommandList* pCommandList, const SBTDesc* pDesc);
+
+		virtual bool Build(CommandList* pCommandList, TArray<DeviceChild*>& removedDeviceResources, const SBTDesc* pDesc) override;
 
 		FORCEINLINE BufferVK* GetSBT()
 		{
-			return m_SBTBuffer.Get();
+			return m_pSBTBuffer;
 		}
 		
 		FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
@@ -48,10 +50,10 @@ namespace LambdaEngine
 		virtual void SetName(const String& debugName) override final;
 
 	private:
-		TSharedRef<BufferVK>	m_ShaderHandleStorageBuffer = nullptr;
-		TSharedRef<BufferVK>	m_SBTBuffer					= nullptr;
-		TSharedRef<BufferVK>	m_ShaderRecordsBuffer		= nullptr;
-		uint32					m_NumShaderRecords			= 0;
+		BufferVK*				m_pShaderHandleStorageBuffer	= nullptr;
+		BufferVK*				m_pSBTBuffer					= nullptr;
+		BufferVK*				m_pShaderRecordsBuffer			= nullptr;
+		uint32					m_NumShaderRecords				= 0;
 
 		VkStridedBufferRegionKHR m_RaygenBufferRegion	= {};
 		VkStridedBufferRegionKHR m_HitBufferRegion		= {};

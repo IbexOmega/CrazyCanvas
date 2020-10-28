@@ -2334,7 +2334,7 @@ namespace LambdaEngine
 		{
 			if (!m_SBTRecords.IsEmpty())
 			{
-				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords);
+				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords, m_ResourcesToRemove[m_ModFrameIndex]);
 			}
 
 			m_RenderGraphSBTRecordsDirty = false;

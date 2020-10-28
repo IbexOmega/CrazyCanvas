@@ -350,7 +350,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords)
+	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
 	{
 		m_GlobalShaderRecords = shaderRecords;
 
@@ -360,14 +360,19 @@ namespace LambdaEngine
 
 			if (pRenderStage->pPipelineState != nullptr && pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 			{
-				m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
-
 				SBTDesc sbtDesc = {};
 				sbtDesc.DebugName		= "Render Graph Global SBT";
 				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
 				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
 
-				pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+				if (pRenderStage->pSBT == nullptr)
+				{
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
+				}
+				else
+				{
+					pRenderStage->pSBT->Build(AcquireComputeCopyCommandList(), removedDeviceResources, &sbtDesc);
+				}
 			}
 		}
 	}
@@ -1268,7 +1273,7 @@ namespace LambdaEngine
 					sbtDesc.pPipelineState = pRenderStage->pPipelineState;
 					sbtDesc.SBTRecords = m_GlobalShaderRecords;
 
-					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
 				}
 			}
 		}
