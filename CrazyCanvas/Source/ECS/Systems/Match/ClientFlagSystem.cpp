@@ -123,14 +123,14 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 	if (!m_Flags.Empty())
 	{
-		Entity flagEntity = m_Flags[0];
+		const Entity flagEntity = m_Flags[0];
 
 		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
 
 		if (parentComponent.Attached)
 		{
-			const PositionComponent& parentPositionComponent = pECS->GetComponent<PositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent = pECS->GetComponent<RotationComponent>(parentComponent.Parent);
+			const PositionComponent& parentPositionComponent = pECS->GetConstComponent<PositionComponent>(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent = pECS->GetConstComponent<RotationComponent>(parentComponent.Parent);
 
 			const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
 			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);

@@ -254,8 +254,8 @@ void ServerFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp delta
 
 		if (parentComponent.Attached)
 		{
-			const NetworkPositionComponent& parentPositionComponent = pECS->GetComponent<NetworkPositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent		= pECS->GetComponent<RotationComponent>(parentComponent.Parent);
+			const NetworkPositionComponent& parentPositionComponent = pECS->GetConstComponent<NetworkPositionComponent>(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent		= pECS->GetConstComponent<RotationComponent>(parentComponent.Parent);
 
 			DynamicCollisionComponent& flagCollisionComponent	= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 			const OffsetComponent& flagOffsetComponent			= pECS->GetConstComponent<OffsetComponent>(flagEntity);
