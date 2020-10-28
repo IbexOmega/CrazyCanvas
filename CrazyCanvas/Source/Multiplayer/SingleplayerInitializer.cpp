@@ -3,7 +3,11 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
+#include "Multiplayer/Packet/CreateLevelObject.h"
+
 #include "Multiplayer/Packet/PacketType.h"
+
+#include "Application/API/Events/EventQueue.h"
 
 #include "World/LevelObjectCreator.h"
 
@@ -13,19 +17,24 @@ namespace LambdaEngine
 	{
 		using namespace LambdaEngine;
 
+		CreateLevelObject packet;
+		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
+		packet.Position = glm::vec3(0.0f, 2.0f, 0.0f);
+		packet.Forward = glm::vec3(1.0f, 0.0f, 0.0f);
+		packet.Player.TeamIndex = 0;
+		packet.Player.IsMySelf = true;
+		packet.NetworkUID = 0;
+
 		MultiplayerUtils::SetIsSingleplayer(true);
 		ClientSystem& clientSystem = ClientSystem::GetInstance();
 		ClientBase* pClient = clientSystem.GetClient();
 
-		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteUInt8(static_cast<uint8>(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER));
-		encoder.WriteBool(true);
-		encoder.WriteInt32(0);
-		encoder.WriteVec3(glm::vec3(0.0f, 2.0f, 0.0f));
-		encoder.WriteVec3(glm::vec3(1.0f, 0.0f, 0.0f));
-		encoder.WriteUInt32(0);
-		clientSystem.OnPacketReceived(pClient, pPacket);
-		pClient->ReturnPacket(pPacket);
+		NetworkSegment* pNetworkSegment = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
+
+		pNetworkSegment->Write(&packet);
+
+		clientSystem.OnPacketReceived(pClient, pNetworkSegment);
+
+		pClient->ReturnPacket(pNetworkSegment);
 	}
 }

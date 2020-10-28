@@ -108,6 +108,8 @@ namespace LambdaEngine
 		bool						m_ParsedGraphRenderDirty		= true;
 		bool						m_ApplyRenderGraph				= false;
 
+		bool						m_GraphActive					= false;
+
 	private:
 		static int32 s_NextNodeID;
 		static int32 s_NextAttributeID;
