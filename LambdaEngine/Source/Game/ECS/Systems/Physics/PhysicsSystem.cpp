@@ -504,7 +504,23 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(entity);
 
-		PxActor* pActor = characterColliderComponent.pController->getActor();
+		PxRigidDynamic* pActor = characterColliderComponent.pController->getActor();
+		
+		TArray<PxShape*> pxShapes(pActor->getNbShapes());
+		pActor->getShapes(pxShapes.GetData(), pxShapes.GetSize());
+
+		for (PxShape* pShape : pxShapes)
+		{
+			if (pShape->userData != nullptr)
+			{
+				ShapeUserData* pShapeUserData = reinterpret_cast<ShapeUserData*>(pShape->userData);
+				free(pShapeUserData->pUserData);
+				delete pShapeUserData;
+
+				pShape->userData = nullptr;
+			}
+		}
+
 		delete reinterpret_cast<ActorUserData*>(pActor->userData);
 		pActor->userData = nullptr;
 		PX_RELEASE(characterColliderComponent.pController);
@@ -651,6 +667,8 @@ namespace LambdaEngine
 		filterData.word0 = (PxU32)characterColliderInfo.CollisionGroup;
 		filterData.word1 = (PxU32)characterColliderInfo.CollisionMask;
 		pShape->setSimulationFilterData(filterData);
+
+		pShape->userData = DBG_NEW ShapeUserData();
 
 		// Set actor's user data
 		ActorUserData* pActorUserData = DBG_NEW ActorUserData;
