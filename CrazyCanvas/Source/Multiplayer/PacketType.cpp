@@ -7,6 +7,8 @@
 #include "Multiplayer/Packet/PlayerActionResponse.h"
 #include "Multiplayer/Packet/CreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketHostServer.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -29,7 +31,7 @@ void PacketType::Init()
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
-	HOST_SERVER				= RegisterPacketType();
+	HOST_SERVER				= RegisterPacketType<PacketHostServer>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

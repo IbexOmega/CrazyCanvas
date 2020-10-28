@@ -62,7 +62,7 @@ void ServerState::Init()
 
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &ServerState::OnPacketReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketHostServer>>(this, &ServerState::OnPacketHostServerReceived);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -114,22 +114,19 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
-bool ServerState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
-{
-	NetworkSegment* pPacket = event.pPacket;
+bool ServerState::OnPacketHostServerReceived(const PacketReceivedEvent<PacketHostServer>& event)
+{	
+	const PacketHostServer& packet = event.Packet;
 
-	if (pPacket->GetType() == PacketType::HOST_SERVER)
-	{
-		BinaryDecoder decoder(pPacket);
-		int8 nrOfPlayers = decoder.ReadInt8();
-		int8 mapNr = decoder.ReadInt8();
-		int32 clientHostID = decoder.ReadInt32();
+	int8 nrOfPlayers = packet.PlayersNumber;
+	int8 mapNr = packet.MapNumber;
+	int32 authenticationID = packet.AuthenticationID;
 
-		LOG_ERROR("Starting Server With The Following Information:");
-		LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
-		LOG_ERROR("MAP NR %d", mapNr);
-		LOG_ERROR("receivedHostID: %d", clientHostID);
-		LOG_ERROR("LocalHostID: %d", ServerHostHelper::GetAuthenticationHostID());
-	}
+	LOG_ERROR("Starting Server With The Following Information:");
+	LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
+	LOG_ERROR("MAP NR %d", mapNr);
+	LOG_ERROR("receivedHostID: %d", authenticationID);
+	LOG_ERROR("LocalHostID: %d", ServerHostHelper::GetAuthenticationHostID());
+
 	return false;
 }

@@ -30,6 +30,7 @@
 #include "Math\Random.h"
 
 #include "Multiplayer/ServerHostHelper.h"
+#include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -106,7 +107,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	{
 		SetRenderStagesActive();
 
-		State* pPlaySessionState = DBG_NEW PlaySessionState(newInfo.EndPoint.GetAddress());
+		State* pPlaySessionState = DBG_NEW PlaySessionState(false, newInfo.EndPoint.GetAddress());
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
 
@@ -134,16 +135,14 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	IClient* pClient = event.pClient;
-
 	if (ServerHostHelper::GetAuthenticationHostID() != -1)
 	{
-		NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::HOST_SERVER);
-		BinaryEncoder encoder(pPacket);
-		encoder.WriteInt8(m_HostGameDesc.PlayersNumber);
-		encoder.WriteInt8(m_HostGameDesc.MapNumber);
-		encoder.WriteInt32(ServerHostHelper::GetAuthenticationHostID());
-		pClient->SendReliable(pPacket, nullptr);
+		PacketHostServer packet;
+		packet.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
+		packet.MapNumber = m_HostGameDesc.MapNumber;
+		packet.PlayersNumber = m_HostGameDesc.PlayersNumber;
+
+		ClientHelper::Send(packet);
 	}
 
 	return false;
