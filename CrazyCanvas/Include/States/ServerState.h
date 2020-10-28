@@ -17,7 +17,7 @@ class ServerState :
 {
 public:
 	ServerState();
-	ServerState(const std::string& serverHostID, const std::string& clientHostID);
+	ServerState(const std::string& clientHostID, const std::string& authenticationID);
 	
 	~ServerState();
 

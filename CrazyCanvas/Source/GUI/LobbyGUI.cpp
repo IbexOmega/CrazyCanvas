@@ -310,16 +310,16 @@ bool LobbyGUI::StartUpServer(const std::string& applicationName, const std::stri
 	STARTUPINFOA lpStartupInfo;
 	PROCESS_INFORMATION lpProcessInfo;
 	
-	uint32 randClientSpecificID = Random::UInt32(0, UINT32_MAX / 2);
-	uint32 randServerSpecificID = Random::UInt32(0, UINT32_MAX / 2);
+	uint32 randAuthenticationID = Random::UInt32(0, UINT32_MAX / 2);
+	uint32 randClientHostID = Random::UInt32(0, UINT32_MAX / 2);
 
-	ServerHostHelper::SetAuthenticationID(randClientSpecificID);
-	ServerHostHelper::SetClientHostID(randServerSpecificID);
+	ServerHostHelper::SetAuthenticationID(randAuthenticationID);
+	ServerHostHelper::SetClientHostID(randClientHostID);
 
-	std::string hostServerID = std::to_string(randServerSpecificID);
-	std::string hostClientID = std::to_string(randClientSpecificID);
+	std::string authenticationID = std::to_string(randAuthenticationID);
+	std::string clientHostID = std::to_string(randClientHostID);
 
-	std::string finalCLine = applicationName + " " + commandLine + " " + hostServerID + " " + hostClientID;
+	std::string finalCLine = applicationName + " " + commandLine + " " + clientHostID + " " + authenticationID;
 
 	// set the size of the structures
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
