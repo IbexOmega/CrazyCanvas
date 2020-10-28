@@ -107,19 +107,6 @@ bool LevelObjectCreator::Init()
 
 	//Load Object Meshes & Materials
 	{
-		//Player
-
-		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Player/Walk.fbx", animations);
-		bool animationsExist = !animations.IsEmpty();
-
-		AnimationComponent robotAnimationComp = {};
-		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-		if (animationsExist)
-		{
-			robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("dancing", animations[0]));
-		}
-
 		//Flag
 		{
 			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("Roller.obj");
