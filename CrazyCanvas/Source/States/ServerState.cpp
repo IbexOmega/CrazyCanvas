@@ -37,13 +37,11 @@
 
 using namespace LambdaEngine;
 
-ServerState::ServerState(const std::string& serverHostID, const std::string& clientHostID)
+ServerState::ServerState(const std::string& serverHostID, const std::string& clientHostID) :
+	m_MultiplayerServer()
 {
 	ServerHostHelper::SetClientHostID(std::stoi(clientHostID));
 	ServerHostHelper::SetServerHostID(std::stoi(serverHostID));
-
-	/*m_ServerHostID = std::stoi(serverHostID);
-	m_ClientHostID = std::stoi(clientHostID);*/
 }
 
 ServerState::ServerState() : 
