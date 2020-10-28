@@ -23,9 +23,7 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 	void FixedTick(LambdaEngine::Timestamp delta);
 
-
 private:
-
 	LambdaEngine::IDVector m_WeaponEntities;
 
 	Noesis::Ptr<HUDGUI> m_HUDGUI;

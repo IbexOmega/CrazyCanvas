@@ -15,7 +15,7 @@ public:
 	DECL_UNIQUE_CLASS(PlayerLocalSystem);
 	
 	PlayerLocalSystem();
-	virtual ~PlayerLocalSystem();
+	virtual ~PlayerLocalSystem() = default;
 
 	void Init();
 

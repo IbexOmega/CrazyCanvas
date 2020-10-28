@@ -47,7 +47,6 @@ void HUDSystem::Init()
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
 	GUIApplication::SetView(m_View);
-
 }
 
 void HUDSystem::Tick(LambdaEngine::Timestamp deltaTime)

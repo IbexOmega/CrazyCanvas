@@ -170,7 +170,6 @@ namespace LambdaEngine
 		}
 
 		velocity.x = horizontalVelocity.x;
-		velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
 		velocity.z = horizontalVelocity.y;
 
 		const glm::vec3 forward	= GetForward(rotationComp.Quaternion);

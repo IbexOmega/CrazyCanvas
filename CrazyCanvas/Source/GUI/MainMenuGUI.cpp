@@ -195,8 +195,9 @@ void MainMenuGUI::SetRenderStagesSleeping()
 	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", true);
 
 	if (m_RayTracingEnabled)
 		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", m_RayTracingSleeping);
