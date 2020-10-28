@@ -1,4 +1,5 @@
 #include "Match/MatchClient.h"
+#include "Match/Match.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -27,12 +28,14 @@ MatchClient::~MatchClient()
 {
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 }
 
 bool MatchClient::InitInternal()
 {
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 	return true;
 }
 
@@ -63,14 +66,17 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Cr
 
 			CreatePlayerDesc createPlayerDesc =
 			{
-				.IsLocal		= packet.Player.IsMySelf,
-				.NetworkUID		= packet.NetworkUID,
-				.pClient		= pClient,
-				.Position		= packet.Position,
-				.Forward		= packet.Forward,
-				.Scale			= glm::vec3(1.0f),
-				.TeamIndex		= packet.Player.TeamIndex,
-				.pCameraDesc	= &cameraDesc,
+				.IsLocal			= packet.Player.IsMySelf,
+				.PlayerNetworkUID	= packet.NetworkUID,
+				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
+				.pClient			= pClient,
+				.Position			= packet.Position,
+				.Forward			= packet.Forward,
+				.Scale				= glm::vec3(1.0f),
+				.TeamIndex			= packet.Player.TeamIndex,
+				.pCameraDesc		= &cameraDesc,
+				.MeshGUID			= robotGUID,
+				.AnimationComponent = robotAnimationComp,
 			};
 
 			TArray<Entity> createdPlayerEntities;
@@ -111,4 +117,42 @@ bool MatchClient::OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTea
 	const PacketTeamScored& packet = event.Packet;
 	SetScore(packet.TeamIndex, packet.Score);
 	return true;
+}
+
+bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event)
+{
+	const PacketGameOver& packet = event.Packet;
+
+	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
+	ResetMatch();
+
+	return true;
+}
+bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
+{
+	using namespace LambdaEngine;
+
+	CreateProjectileDesc createProjectileDesc;
+	createProjectileDesc.AmmoType		= event.AmmoType;
+	createProjectileDesc.FireDirection	= event.Direction;
+	createProjectileDesc.FirePosition	= event.Position;
+	createProjectileDesc.InitalVelocity = event.InitialVelocity;
+	createProjectileDesc.TeamIndex		= event.TeamIndex;
+	createProjectileDesc.Callback		= event.Callback;
+	createProjectileDesc.MeshComponent	= event.MeshComponent;
+
+	TArray<Entity> createdFlagEntities;
+	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
+	{
+		LOG_ERROR("[MatchClient]: Failed to create projectile!");
+	}
+
+	LOG_INFO("CLIENT: Weapon fired");
+	return true;
+}
+
+bool MatchClient::OnPlayerDied(const PlayerDiedEvent& event)
+{
+	LOG_INFO("CLIENT: Player=%u DIED", event.KilledEntity);
+	return false;
 }

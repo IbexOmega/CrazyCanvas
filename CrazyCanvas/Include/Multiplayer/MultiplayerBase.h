@@ -22,6 +22,7 @@ protected:
 	virtual void Init() = 0;
 	virtual void TickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
 	virtual void FixedTickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
+	virtual void PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
 
 protected:
 	PacketTranscoderSystem m_PacketDecoderSystem;

@@ -4,6 +4,9 @@
 
 #include "Match/Match.h"
 
+#include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystem.h"
+
 MultiplayerBase::MultiplayerBase() : 
 	m_PacketDecoderSystem()
 {
@@ -30,6 +33,9 @@ void MultiplayerBase::InitInternal()
 		LOG_ERROR("Match Init Failed");
 	}
 
+	WeaponSystem::GetInstance().Init();
+	HealthSystem::GetInstance().Init();
+
 	Init();
 }
 
@@ -42,4 +48,9 @@ void MultiplayerBase::TickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
 	FixedTickMainThread(deltaTime);
+
+	WeaponSystem::GetInstance().FixedTick(deltaTime);
+	HealthSystem::GetInstance().FixedTick(deltaTime);
+
+	PostFixedTickMainThread(deltaTime);
 }

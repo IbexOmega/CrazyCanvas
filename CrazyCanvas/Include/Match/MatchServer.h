@@ -17,6 +17,9 @@ protected:
 
 	void SpawnFlag();
 	void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
+	
+	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
+	virtual bool OnPlayerDied(const PlayerDiedEvent& event) override final;
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);

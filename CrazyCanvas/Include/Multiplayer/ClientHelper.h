@@ -18,5 +18,5 @@ template<class T>
 bool ClientHelper::Send(const T& packet, LambdaEngine::IPacketListener* pListener)
 {
 	LambdaEngine::IClient* pClient = LambdaEngine::ClientSystem::GetInstance().GetClient();
-	return pClient->SendReliable<T>(packet, T::Type(), pListener);
+	return pClient->SendReliableStruct<T>(packet, T::Type(), pListener);
 }

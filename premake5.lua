@@ -72,7 +72,8 @@ workspace "LambdaEngine"
 	startproject "CrazyCanvas"
 	architecture "x64"
 	warnings "extra"
-
+	flags { "MultiProcessorCompile" }
+	
 	-- Disable C4201 nonstandard extension used: nameless struct/union
 	disablewarnings { "4201" }
 

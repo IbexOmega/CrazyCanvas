@@ -1,5 +1,4 @@
 #pragma once
-
 #include "ECS/System.h"
 
 #include "Time/API/Timestamp.h"

@@ -32,11 +32,11 @@ bool FlagSystemBase::Init()
 				.pSubscriber = &m_Flags,
 				.ComponentAccesses =
 				{
-					{NDA, FlagComponent::Type()},
-					{RW, PositionComponent::Type()},
-					{RW, RotationComponent::Type()},
-					{R, OffsetComponent::Type()},
-					{R, ParentComponent::Type()},
+					{ NDA, FlagComponent::Type() },
+					{ RW, PositionComponent::Type() },
+					{ RW, RotationComponent::Type() },
+					{ R, OffsetComponent::Type() },
+					{ R, ParentComponent::Type() },
 				}
 			}
 		};
@@ -44,7 +44,7 @@ bool FlagSystemBase::Init()
 		{
 			{R, TeamComponent::Type()}
 		};
-		systemReg.Phase = 1;
+		systemReg.Phase = 1u;
 
 		InternalAddAdditionalRequiredFlagComponents(systemReg.SubscriberRegistration.EntitySubscriptionRegistrations[0].ComponentAccesses);
 		InternalAddAdditionalAccesses(systemReg.SubscriberRegistration.AdditionalAccesses);
@@ -65,23 +65,31 @@ void FlagSystemBase::FixedTick(LambdaEngine::Timestamp deltaTime)
 		LOG_WARNING("[FlagSystemBase]: More than one flag entity exists");
 	}
 
-	TickInternal(deltaTime);
+	FixedTickMainThreadInternal(deltaTime);
 }
 
 void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
 
-	//if (m_Flags.Size() > 1)
-	//{
-	//	LOG_WARNING("[FlagSystemBase]: More than one flag entity exists");
-	//}
+	if (m_Flags.Size() > 1)
+	{
+		LOG_WARNING("[FlagSystemBase]: More than one flag entity exists");
+	}
 
-	//TickInternal(deltaTime);
+	TickInternal(deltaTime);
 }
 
-void FlagSystemBase::CalculateAttachedFlagPosition(glm::vec3& flagPosition, glm::quat& flagRotation, const glm::vec3& flagOffset, const glm::vec3& parentPosition, const glm::quat parentRotation)
+void FlagSystemBase::CalculateAttachedFlagPosition(
+	glm::vec3& flagPosition, 
+	glm::quat& flagRotation, 
+	const glm::vec3& flagOffset, 
+	const glm::vec3& parentPosition, 
+	const glm::quat parentRotation)
 {
-	flagPosition = parentPosition + flagOffset;
 	flagRotation = parentRotation;
+	flagRotation.x = 0.0f;
+	flagRotation.z = 0.0f;
+	flagRotation = glm::normalize(flagRotation);
+	flagPosition = parentPosition + flagOffset + flagRotation * glm::vec3(0.0f, 0.0f, 0.1f);
 }

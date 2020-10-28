@@ -1,6 +1,7 @@
 #pragma once
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystem.h"
+#include "ECS/Systems/Match/FlagSystemBase.h"
 
 #include "Game/State.h"
 
@@ -25,8 +26,13 @@ public:
 
 	void Init() override final;
 
-	void Resume() override final {};
-	void Pause() override final {};
+	void Resume() override final 
+	{
+	}
+
+	void Pause() override final 
+	{
+	}
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
@@ -35,11 +41,9 @@ private:
 	bool m_Singleplayer;
 	LambdaEngine::IPAddress* m_pIPAddress;
 
-	MultiplayerClient m_MultiplayerClient;
-
 	/* Systems */
-	HealthSystem m_HealthSystem;
 	HUDSystem m_HUDSystem;
+	MultiplayerClient m_MultiplayerClient;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
