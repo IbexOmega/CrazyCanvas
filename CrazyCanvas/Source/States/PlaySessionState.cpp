@@ -57,8 +57,6 @@ void PlaySessionState::Init()
 	m_MeshPaintHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
-	ECSCore* pECS = ECSCore::GetInstance();
-
 	// Load Match
 	{
 		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
