@@ -623,7 +623,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName			= "Paint Mask Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount	= 227;
+		descriptorHeapDesc.DescriptorSetCount	= 512;
 		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
