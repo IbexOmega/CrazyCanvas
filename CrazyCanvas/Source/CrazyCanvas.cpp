@@ -116,31 +116,31 @@ bool CrazyCanvas::LoadRendererResources()
 {
 	using namespace LambdaEngine;
 
-	{
-		String blueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
+	// {
+	// 	String blueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
 
-		for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
-		{
-			char str[5];
-			snprintf(str, 5, "%04d", i);
-			blueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
-		}
+	// 	for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
+	// 	{
+	// 		char str[5];
+	// 		snprintf(str, 5, "%04d", i);
+	// 		blueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
+	// 	}
 
-		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false, false);
+	// 	GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false, false);
 
-		Texture* pBlueNoiseTexture = ResourceManager::GetTexture(blueNoiseID);
-		TextureView* pBlueNoiseTextureView = ResourceManager::GetTextureView(blueNoiseID);
+	// 	Texture* pBlueNoiseTexture = ResourceManager::GetTexture(blueNoiseID);
+	// 	TextureView* pBlueNoiseTextureView = ResourceManager::GetTextureView(blueNoiseID);
 
-		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+	// 	Sampler* pNearestSampler = Sampler::GetNearestSampler();
 
-		ResourceUpdateDesc blueNoiseUpdateDesc = {};
-		blueNoiseUpdateDesc.ResourceName = "BLUE_NOISE_LUT";
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures = &pBlueNoiseTexture;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pBlueNoiseTextureView;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
+	// 	ResourceUpdateDesc blueNoiseUpdateDesc = {};
+	// 	blueNoiseUpdateDesc.ResourceName = "BLUE_NOISE_LUT";
+	// 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures = &pBlueNoiseTexture;
+	// 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pBlueNoiseTextureView;
+	// 	blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
 
-		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
-	}
+	// 	RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
+	// }
 
 	// For Skybox RenderGraph
 	{
