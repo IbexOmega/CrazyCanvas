@@ -8,7 +8,7 @@
 struct OnFlagDeliveredEvent : public LambdaEngine::Event
 {
 public:
-	inline OnFlagDeliveredEvent(uint32 teamIndex) : 
+	inline OnFlagDeliveredEvent(uint8 teamIndex) : 
 		Event(),
 		TeamIndex(teamIndex)
 	{

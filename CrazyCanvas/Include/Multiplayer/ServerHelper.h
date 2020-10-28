@@ -18,13 +18,13 @@ public:
 };
 
 template<class T>
-static bool ServerHelper::Send(LambdaEngine::IClient* pClient, const T& packet, LambdaEngine::IPacketListener* pListener)
+bool ServerHelper::Send(LambdaEngine::IClient* pClient, const T& packet, LambdaEngine::IPacketListener* pListener)
 {
-	return pClient->SendReliable<T>(packet, T::Type(), pListener);
+	return pClient->SendReliableStruct<T>(packet, T::Type(), pListener);
 }
 
 template<class T>
-static bool ServerHelper::SendBroadcast(const T& packet, LambdaEngine::IPacketListener* pListener, LambdaEngine::IClient* pExcludeClient)
+bool ServerHelper::SendBroadcast(const T& packet, LambdaEngine::IPacketListener* pListener, LambdaEngine::IClient* pExcludeClient)
 {
 	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
 	return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pExcludeClient);

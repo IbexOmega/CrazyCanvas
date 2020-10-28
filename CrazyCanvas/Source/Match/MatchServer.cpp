@@ -151,7 +151,6 @@ void MatchServer::SpawnFlag()
 				packet.NetworkUID = entity;
 
 				ServerHelper::SendBroadcast(packet);
-				//ServerSystem::GetInstance().GetServer()->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT);
 			}
 		}
 		else
@@ -216,10 +215,10 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 			packet.Player.IsMySelf	= true;
 			packet.NetworkUID		= playerEntity;
 
-			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT, nullptr);
+			ServerHelper::Send(pClient, packet);
 
 			packet.Player.IsMySelf	= false;
-			pClient->SendReliableStructBroadcast(packet, PacketType::CREATE_LEVEL_OBJECT, nullptr, true);
+			ServerHelper::SendBroadcast(packet, nullptr, pClient);
 		}
 	}
 	else
@@ -263,7 +262,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			packet.Position			= positionComponent.Position;
 			packet.Forward			= GetForward(rotationComponent.Quaternion);
 			packet.Player.TeamIndex	= teamComponent.TeamIndex;
-			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+			ServerHelper::Send(pClient, packet);
 		}
 	}
 
@@ -291,7 +290,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			packet.Position					= positionComponent.Position;
 			packet.Forward					= GetForward(rotationComponent.Quaternion);
 			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
-			pClient->SendReliableStruct(packet, PacketType::CREATE_LEVEL_OBJECT);
+			ServerHelper::Send(pClient, packet);
 		}
 	}
 
