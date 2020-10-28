@@ -3057,6 +3057,22 @@ namespace LambdaEngine
 						requiredDrawArgMasks.insert(maskDesc);
 
 						pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
+
+						DrawArgsData drawArgsData = {};
+						drawArgsData.InitialTransitionBarrierTemplate.pBuffer				= nullptr;
+						drawArgsData.InitialTransitionBarrierTemplate.QueueBefore			= prevQueue;
+						drawArgsData.InitialTransitionBarrierTemplate.QueueAfter			= drawArgsData.InitialTransitionBarrierTemplate.QueueBefore;
+						drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+						drawArgsData.InitialTransitionBarrierTemplate.DstMemoryAccessFlags	= srcMemoryAccessFlags;
+
+						drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore			= prevQueue;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.QueueAfter				= drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+						pResource->DrawArgs.FullMaskToArgs[maskDesc.FullMask] = drawArgsData;
 					}
 
 					// Textures from draw arg extensions.

@@ -181,9 +181,9 @@ namespace LambdaEngine
 
 		struct DrawArgsData
 		{
-			PipelineBufferBarrierDesc			InitialTransitionBarrierTemplate;
-			PipelineTextureBarrierDesc			InitialTextureTransitionBarrierTemplate;
-			TArray<DrawArg>						Args;
+			PipelineBufferBarrierDesc	InitialTransitionBarrierTemplate;
+			PipelineTextureBarrierDesc	InitialTextureTransitionBarrierTemplate;
+			TArray<DrawArg>				Args;
 		};
 
 		struct Resource
