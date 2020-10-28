@@ -12,7 +12,7 @@ namespace LambdaEngine
 	#define STATE_READ_INDEX 0
 	#define STATE_WRITE_INDEX 1
 
-	enum class InputMode : uint8
+	enum class EInputLayer : uint8
 	{
 		GUI		= 0,
 		GAME	= 1,
@@ -37,7 +37,7 @@ namespace LambdaEngine
 			s_InputEnabled = true;
 		}
 
-		FORCEINLINE static void PushInputMode(InputMode inputMode)
+		FORCEINLINE static void PushInputMode(EInputLayer inputMode)
 		{
 			s_InputModeStack.push(inputMode);
 		}
@@ -47,19 +47,19 @@ namespace LambdaEngine
 			s_InputModeStack.pop();
 		}
 
-		FORCEINLINE static InputMode GetCurrentInputmode()
+		FORCEINLINE static EInputLayer GetCurrentInputmode()
 		{
 			return s_InputModeStack.top();
 		}
 
 		static void Disable();
 
-		FORCEINLINE static bool IsKeyDown(InputMode inputMode, EKey key)
+		FORCEINLINE static bool IsKeyDown(EInputLayer inputMode, EKey key)
 		{
 			return s_KeyboardStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX].IsKeyDown(key);
 		}
 
-		FORCEINLINE static bool IsKeyUp(InputMode inputMode, EKey key)
+		FORCEINLINE static bool IsKeyUp(EInputLayer inputMode, EKey key)
 		{
 			return s_KeyboardStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX].IsKeyUp(key);
 		}
@@ -69,19 +69,19 @@ namespace LambdaEngine
 			return s_InputEnabled;
 		}
 
-		FORCEINLINE static const KeyboardState& GetKeyboardState(InputMode inputMode)
+		FORCEINLINE static const KeyboardState& GetKeyboardState(EInputLayer inputMode)
 		{
 			return s_KeyboardStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX];
 		}
 
-		FORCEINLINE static const MouseState& GetMouseState(InputMode inputMode)
+		FORCEINLINE static const MouseState& GetMouseState(EInputLayer inputMode)
 		{
 			return s_MouseStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX];
 		}
 
 	private:
 		static bool HandleEvent(const Event& event);
-		static uint8 ConvertInputModeUINT8(InputMode inputMode);
+		static uint8 ConvertInputModeUINT8(EInputLayer inputMode);
 
 	private:
 		// Input states are double buffered. The first one is read from, the second is written to.
@@ -93,6 +93,6 @@ namespace LambdaEngine
 		static SpinLock s_WriteBufferLockKeyboard;
 		static std::atomic_bool s_InputEnabled;
 
-		static std::stack<InputMode> s_InputModeStack;
+		static std::stack<EInputLayer> s_InputModeStack;
 	};
 }

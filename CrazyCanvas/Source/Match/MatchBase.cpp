@@ -5,8 +5,14 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Events/GameplayEvents.h"
+
 MatchBase::~MatchBase()
 {
+	using namespace LambdaEngine;
+
+	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
+
 	SAFEDELETE(m_pLevel);
 }
 
@@ -14,6 +20,9 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 {
 	using namespace LambdaEngine;
 
+	// Register eventhandlers
+	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
+	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
 
 	if (m_pLevel == nullptr)

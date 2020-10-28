@@ -129,7 +129,6 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		//Set Flag Spawn Timestamp
 		flagComponent.PickupAvailableTimestamp = EngineLoop::GetTimeSinceStart() + flagComponent.PickupCooldown;
 
-
 		//Enable the player-flag trigger shape
 		TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
 		flagCollisionComponent.pActor->getShapes(flagShapes.GetData(), flagShapes.GetSize());
@@ -166,10 +165,10 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		flagParentComponent.Attached	= false;
 		flagParentComponent.Parent		= UINT32_MAX;
 
-		//Set Position
+		// Set Position
 		flagPositionComponent.Position	= dropPosition;
 
-		//Send Packet
+		// Send Packet
 		FlagEditedPacket packet	= {};
 		packet.FlagPacketType	= EFlagPacketType::FLAG_PACKET_TYPE_DROPPED;
 		packet.DroppedPosition	= dropPosition;

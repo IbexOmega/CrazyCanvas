@@ -105,7 +105,7 @@ namespace LambdaEngine
 				}
 
 				#ifdef LAMBDA_DEBUG
-					if (Input::IsKeyDown(InputMode::GAME, EKey::KEY_T))
+					if (Input::IsKeyDown(EInputLayer::GAME, EKey::KEY_T))
 					{
 						RenderFrustum(entity, pPositionComponents->GetData(entity), rotationComp);
 					}
@@ -205,7 +205,7 @@ namespace LambdaEngine
 
 		if (m_MouseEnabled)
 		{
-			const MouseState& mouseState = Input::GetMouseState(InputMode::GAME);
+			const MouseState& mouseState = Input::GetMouseState(EInputLayer::GAME);
 
 			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 			const uint16 width = window->GetWidth();

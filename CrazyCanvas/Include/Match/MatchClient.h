@@ -16,6 +16,9 @@ protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
+	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
+	virtual bool OnPlayerDied(const PlayerDiedEvent& event) override final;
+
 	bool OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<CreateLevelObject>& event);
 	bool OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTeamScored>& event);
 };

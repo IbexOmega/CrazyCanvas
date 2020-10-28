@@ -50,6 +50,7 @@
 #include "NoesisPCH.h"
 
 #include "World/LevelManager.h"
+#include "World/LevelObjectCreator.h"
 
 #include "Match/Match.h"
 
@@ -65,7 +66,7 @@ using namespace LambdaEngine;
 
 SandboxState::~SandboxState()
 {
-    EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
 
 	if (m_GUITest.GetPtr() != nullptr)
 	{
@@ -78,21 +79,18 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
-	ClientSystem::GetInstance();
-
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 
 	// Initialize Systems
-	m_MultiplayerClient.InitInternal();
-	WeaponSystem::GetInstance()->Init();
 	TrackSystem::GetInstance().Init();
+	
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
-	m_ShowDemoWindow = EngineConfig::GetBoolProperty("ShowDemo");
-	m_DebuggingWindow = EngineConfig::GetBoolProperty("Debugging");
+	m_ShowDemoWindow	= EngineConfig::GetBoolProperty("ShowDemo");
+	m_DebuggingWindow	= EngineConfig::GetBoolProperty("Debugging");
 
 	m_GUITest	= *new GUITest("Test.xaml");
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
@@ -242,58 +240,6 @@ void SandboxState::Init()
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
-	////Sphere Grid
-	//{
-	//	uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
-	//	uint32 gridRadius = 5;
-
-	//	for (uint32 y = 0; y < gridRadius; y++)
-	//	{
-	//		float32 roughness = y / float32(gridRadius - 1);
-
-	//		for (uint32 x = 0; x < gridRadius; x++)
-	//		{
-	//			float32 metallic = x / float32(gridRadius - 1);
-
-	//			MaterialProperties materialProperties;
-	//			materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-	//			materialProperties.Roughness = roughness;
-	//			materialProperties.Metallic = metallic;
-
-	//			MeshComponent sphereMeshComp = {};
-	//			sphereMeshComp.MeshGUID = sphereMeshGUID;
-	//			sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-	//				"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-	//				materialProperties);
-
-	//			const glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 4.0f);
-	//			const glm::vec3 scale(1.0f);
-
-	//			Entity entity = pECS->CreateEntity();
-	//			m_Entities.PushBack(entity);
-	//			const CollisionInfo collisionCreateInfo = {
-	//				.Entity = entity,
-	//				.Position = pECS->AddComponent<PositionComponent>(entity, { true, position }),
-	//				.Scale = pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
-	//				.Rotation = pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-	//				.Mesh = pECS->AddComponent<MeshComponent>(entity, sphereMeshComp),
-	//				.ShapeType		= EShapeType::SIMULATION,
-	//				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
-	//				.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
-	//			};
-
-	//			StaticCollisionComponent collisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo);
-	//			pECS->AddComponent<StaticCollisionComponent>(entity, collisionComponent);
-	//			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "BallsUnwrappedTexture_" + std::to_string(x + y*gridRadius), 256, 256));
-	//		}
-	//	}
-	//}
-
 	//Preload some resources
 	{
 		TArray<GUID_Lambda> animations;
@@ -380,7 +326,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	m_pRenderGraphEditor->Update();
 	LambdaEngine::Profiler::Tick(delta);
 
-	m_MultiplayerClient.TickMainThreadInternal(delta);
+	// m_MultiplayerClient.TickMainThreadInternal(delta);
 
 	if constexpr (IMGUI_ENABLED)
 	{
@@ -390,7 +336,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 
 void SandboxState::FixedTick(LambdaEngine::Timestamp delta)
 {
-	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+	// m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }
 
 void SandboxState::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)

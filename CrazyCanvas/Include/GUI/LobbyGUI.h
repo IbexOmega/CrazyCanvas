@@ -45,7 +45,6 @@ public:
 	
 	void StartSelectedServer(Noesis::Grid* pGrid);
 
-
 	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
 
 	void FixedTick(LambdaEngine::Timestamp delta);

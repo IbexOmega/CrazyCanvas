@@ -60,7 +60,7 @@ void BenchmarkState::Init()
 	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	// Initialize Systems
-	WeaponSystem::GetInstance()->Init();
+	WeaponSystem::GetInstance().Init();
 	m_BenchmarkSystem.Init();
 	TrackSystem::GetInstance().Init();
 
@@ -295,15 +295,15 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 
 			CreatePlayerDesc createPlayerDesc =
 			{
-				.IsLocal = false,
-				.NetworkUID = packet.NetworkUID,
-				.pClient = event.pClient,
-				.Position = packet.Position,
-				.Forward = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
-				.Scale = glm::vec3(1.0f),
-				.TeamIndex = 0,
-				.pCameraDesc = &cameraDesc,
-				.MeshGUID = robotGUID,
+				.IsLocal 			= false,
+				.PlayerNetworkUID 	= packet.NetworkUID,
+				.pClient 			= event.pClient,
+				.Position 			= packet.Position,
+				.Forward 			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+				.Scale 				= glm::vec3(1.0f),
+				.TeamIndex 			= 0,
+				.pCameraDesc 		= &cameraDesc,
+				.MeshGUID 			= robotGUID,
 				.AnimationComponent = robotAnimationComp,
 			};
 
@@ -313,9 +313,9 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				createPlayerDesc.AnimationComponent.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 
 				// Create a 3x3 grid of players in the XZ plane
-				createPlayerDesc.Position.x = -3.0f + 3.0f * (playerNr % 3);
-				createPlayerDesc.Position.z = -3.0f + 3.0f * (playerNr / 3);
-				createPlayerDesc.NetworkUID += (int32)playerNr;
+				createPlayerDesc.Position.x			= -3.0f + 3.0f * (playerNr % 3);
+				createPlayerDesc.Position.z			= -3.0f + 3.0f * (playerNr / 3);
+				createPlayerDesc.PlayerNetworkUID	+= (int32)playerNr;
 
 				TArray<Entity> createdPlayerEntities;
 				if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))

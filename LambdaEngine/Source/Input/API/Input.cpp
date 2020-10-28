@@ -12,7 +12,7 @@ namespace LambdaEngine
 	std::atomic_bool		Input::s_InputEnabled = true;
 	SpinLock				Input::s_WriteBufferLockMouse;
 	SpinLock				Input::s_WriteBufferLockKeyboard;
-	std::stack<InputMode>	Input::s_InputModeStack;
+	std::stack<EInputLayer>	Input::s_InputModeStack;
 
 	/*
 	* Input
@@ -36,7 +36,7 @@ namespace LambdaEngine
 		}
 
 		// Update input
-		if (IsInputEnabled() && GetCurrentInputmode() != InputMode::NONE)
+		if (IsInputEnabled() && GetCurrentInputmode() != EInputLayer::NONE)
 		{
 			uint8 inputMode = ConvertInputModeUINT8(s_InputModeStack.top());
 
@@ -94,7 +94,7 @@ namespace LambdaEngine
 		return false;
 	}
 
-	uint8 Input::ConvertInputModeUINT8(InputMode inputMode)
+	uint8 Input::ConvertInputModeUINT8(EInputLayer inputMode)
 	{
 		return static_cast<uint8>(inputMode);
 	}
@@ -116,7 +116,7 @@ namespace LambdaEngine
 		result = result && EventQueue::RegisterEventHandler<WindowFocusChangedEvent>(eventHandler);
 
 		// Default input mode is game
-		PushInputMode(InputMode::GAME);
+		PushInputMode(EInputLayer::GAME);
 
 		return result;
 	}

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Types.h"
 
 #define DECL_PACKET(Packet) \

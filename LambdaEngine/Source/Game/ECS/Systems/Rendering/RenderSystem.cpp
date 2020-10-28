@@ -92,7 +92,7 @@ namespace LambdaEngine
 					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
-					.pSubscriber = &m_PlayerEntities,
+					.pSubscriber = &m_LocalPlayerEntities,
 					.ComponentAccesses =
 					{
 						{ NDA, PlayerBaseComponent::Type() },
@@ -536,7 +536,7 @@ namespace LambdaEngine
 		ComponentArray<MeshComponent>*		pMeshComponents			= pECSCore->GetComponentArray<MeshComponent>();
 		ComponentArray<AnimationComponent>*	pAnimationComponents	= pECSCore->GetComponentArray<AnimationComponent>();
 		{
-			for (Entity entity : m_PlayerEntities)
+			for (Entity entity : m_LocalPlayerEntities)
 			{
 				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
 				AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
