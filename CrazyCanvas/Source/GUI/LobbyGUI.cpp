@@ -59,6 +59,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 LobbyGUI::~LobbyGUI()
 {
 	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
+	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
 }
 
 bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -97,11 +98,11 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	pDecoder->ReadUInt8(newInfo.Players);
 	pDecoder->ReadString(newInfo.Name);
 	pDecoder->ReadString(newInfo.MapName);
-	int32 serverHostID = pDecoder->ReadInt32();
+	int32 clientHostID = pDecoder->ReadInt32();
 
 	ServerInfo& currentInfo = m_Servers[event.ServerUID];
 
-	if (ServerHostHelper::GetClientHostID() != -1)
+	if (ServerHostHelper::GetClientHostID() == clientHostID)
 	{
 		SetRenderStagesActive();
 
@@ -134,7 +135,6 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
 	IClient* pClient = event.pClient;
-
 
 	if (ServerHostHelper::GetAuthenticationHostID() != -1)
 	{
