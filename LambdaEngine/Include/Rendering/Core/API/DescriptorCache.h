@@ -27,7 +27,7 @@ namespace LambdaEngine
 		*	Used to either create or repurpose an already existing descriptor sets
 		*	*Caution* All Descriptor sets created on this LayoutIndex will be prepared for repurposing
 		*/
-		TSharedRef<DescriptorSet> GetDescriptorSet(const String& debugname, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap);
+		TSharedRef<DescriptorSet> GetDescriptorSet(const String& debugname, const PipelineLayout* pPipelineLayout, uint32 descriptorLayoutIndex, DescriptorHeap* pDescriptorHeap, bool shouldCopy = true);
 
 		/*
 		*	Checks if unavailable descriptor sets can be set to available

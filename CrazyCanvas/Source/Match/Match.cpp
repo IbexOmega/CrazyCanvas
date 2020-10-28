@@ -17,7 +17,7 @@ bool Match::Init()
 	{
 		s_pMatchInstance = DBG_NEW MatchClient();
 	}
-	
+
 	return true;
 }
 
@@ -44,6 +44,7 @@ bool Match::CreateMatch(const MatchDescription* pDesc)
 
 bool Match::ResetMatch()
 {
+	s_pMatchInstance->ResetMatch();
 	return false;
 }
 

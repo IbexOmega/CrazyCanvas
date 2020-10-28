@@ -615,7 +615,7 @@ namespace LambdaEngine
 			memcpy((void*)(uint64(pTextureDataDst) + bufferOffset), pTextureDataSrc, pixelDataSize);
 			pTextureData->Unmap();
 
-			CopyTextureFromBufferDesc copyDesc = {};
+			CopyTextureBufferDesc copyDesc = {};
 			copyDesc.SrcOffset		= bufferOffset;
 			copyDesc.SrcRowPitch	= 0;
 			copyDesc.SrcHeight		= 0;
@@ -1538,7 +1538,7 @@ namespace LambdaEngine
 				LevelObjectOnLoad levelObject =
 				{
 					.Prefix				= levelObjectDesc.Prefix,
-					.Name				= nodeName.substr(levelObjectDesc.Prefix.length() + 1),
+					.Name				= nodeName.substr(levelObjectDesc.Prefix.length()),
 					.DefaultPosition	= defaultPosition,
 					.DefaultRotation	= defaultRotation,
 					.DefaultScale		= defaultScale,

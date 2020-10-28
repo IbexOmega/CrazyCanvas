@@ -5,10 +5,13 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Events/GameplayEvents.h"
+
 MatchBase::~MatchBase()
 {
 	using namespace LambdaEngine;
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent>(this, &MatchBase::OnPacketReceived);
+
+	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
 
 	SAFEDELETE(m_pLevel);
 }
@@ -17,9 +20,11 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 {
 	using namespace LambdaEngine;
 
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &MatchBase::OnPacketReceived);
+	// Register eventhandlers
+	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
 	
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
+	m_MatchDesc = *pDesc;
 
 	if (m_pLevel == nullptr)
 	{
@@ -31,7 +36,7 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 		return false;
 	}
 
-	m_Scores.Resize(pDesc->NumTeams);
+	m_Scores.Resize(m_MatchDesc.NumTeams);
 
 	return true;
 }
@@ -45,4 +50,12 @@ void MatchBase::SetScore(uint32 teamIndex, uint32 score)
 {
 	VALIDATE(teamIndex < m_Scores.GetSize());
 	m_Scores[teamIndex] = score;
+}
+
+void MatchBase::ResetMatch()
+{
+	for (uint32 i = 0; i < m_MatchDesc.NumTeams; i++)
+	{
+		SetScore(i, 0);
+	}
 }

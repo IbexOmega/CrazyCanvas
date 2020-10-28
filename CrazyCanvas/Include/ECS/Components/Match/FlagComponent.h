@@ -1,10 +1,10 @@
 #pragma once
-
 #include "ECS/Component.h"
+#include "ECS/Components/Multiplayer/PacketComponent.h"
+
 #include "Physics/CollisionGroups.h"
 
 #include "Multiplayer/Packet/Packet.h"
-#include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "Time/API/Timestamp.h"
 
@@ -41,6 +41,8 @@ enum EFlagPacketType : uint8
 #pragma pack(push, 1)
 struct FlagEditedPacket : Packet
 {
+	DECL_PACKET(FlagEditedPacket);
+
 	EFlagPacketType	FlagPacketType;
 	int32			PickedUpNetworkUID = -1;
 	glm::vec3		DroppedPosition;

@@ -33,15 +33,17 @@ void BenchmarkSystem::Init()
 				.pSubscriber = &m_WeaponEntities,
 				.ComponentAccesses =
 				{
-					{R, WeaponComponent::Type()}
+					{ R, WeaponComponent::Type() },
+					{ RW, PacketComponent<WeaponFiredPacket>::Type() }
 				}
 			},
 			{
-				.pSubscriber = &m_PlayerEntities,
+				.pSubscriber = &m_LocalPlayerEntities,
 				.ComponentAccesses =
 				{
-					{RW, CharacterColliderComponent::Type()}, {R, NetworkPositionComponent::Type()},
-					{RW, VelocityComponent::Type()}
+					{ RW, CharacterColliderComponent::Type() }, 
+					{ R, NetworkPositionComponent::Type() },
+					{ RW, VelocityComponent::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
 			}
@@ -75,7 +77,7 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	{
 		const WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
 		const Entity playerEntity = weaponComponent.WeaponOwner;
-		if (!m_PlayerEntities.HasElement(playerEntity))
+		if (!m_LocalPlayerEntities.HasElement(playerEntity))
 		{
 			continue;
 		}
@@ -96,7 +98,7 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	{
 		.Function = [weaponEntitiesToFire]
 		{
-			WeaponSystem* pWeaponSystem = WeaponSystem::GetInstance();
+			WeaponSystem& weaponSystem = WeaponSystem::GetInstance();
 			ECSCore* pECS = ECSCore::GetInstance();
 
 			const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
@@ -110,7 +112,7 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(weaponComp.WeaponOwner);
 				const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(weaponComp.WeaponOwner);
 				const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(weaponComp.WeaponOwner);
-				pWeaponSystem->TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
+				weaponSystem.TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
 			}
 		},
 		.Components = GetFireProjectileComponentAccesses(),

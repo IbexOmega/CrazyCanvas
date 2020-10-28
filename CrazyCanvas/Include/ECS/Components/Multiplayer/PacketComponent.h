@@ -17,13 +17,13 @@ struct IPacketComponent
 {
 	friend class PacketTranscoderSystem;
 
+public:
 	virtual ~IPacketComponent() = default;
 
 private:
 	virtual void* AddPacketReceived() = 0;
 	virtual void ClearPacketsReceived() = 0;
 	virtual void WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) = 0;
-	virtual uint16 GetSize() = 0;
 	virtual uint16 GetPacketsToSendCount() = 0;
 	virtual uint16 GetPacketType() = 0;
 };
@@ -32,6 +32,7 @@ template<class T>
 struct PacketComponent : public IPacketComponent
 {
 	friend class PacketType;
+
 	static_assert(std::is_base_of<Packet, T>::value, "T must inherit from Packet!");
 	DECL_COMPONENT(PacketComponent<T>);
 
@@ -42,6 +43,22 @@ public:
 	const LambdaEngine::TArray<T>& GetPacketsReceived() const
 	{
 		return m_PacketsReceived;
+	}
+
+	/*
+	* Returns the packets to be sent.
+	*/
+	const LambdaEngine::TQueue<T>& GetPacketsToSend() const
+	{
+		return m_PacketsToSend;
+	}
+
+	/*
+	* Returns the packets to be sent.
+	*/
+	LambdaEngine::TQueue<T>& GetPacketsToSend()
+	{
+		return m_PacketsToSend;
 	}
 
 	/*
@@ -69,11 +86,6 @@ private:
 		packet.NetworkUID = networkUID;
 		pSegment->Write<T>(&packet);
 		m_PacketsToSend.pop();
-	}
-
-	virtual uint16 GetSize() override final
-	{
-		return (uint16)sizeof(T);
 	}
 
 	virtual uint16 GetPacketsToSendCount() override final

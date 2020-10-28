@@ -2,8 +2,6 @@
 
 #include "Resources/ResourceManager.h"
 
-#include <glm/gtx/color_space.hpp>
-
 bool TeamHelper::Init()
 {
 	using namespace LambdaEngine;

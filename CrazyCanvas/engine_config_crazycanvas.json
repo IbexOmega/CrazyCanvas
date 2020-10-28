@@ -3,7 +3,7 @@
     1920,
     1080
   ],
-  "VolumeMasterInital": 1.0,
+  "VolumeMasterInital": 0.1,
   "FixedTimestep": 60,
   "NetworkPort": 4444,
   "RayTracingEnabled": true,
@@ -16,5 +16,5 @@
   "CameraFOV": 90.0,
   "CameraNearPlane": 0.001,
   "CameraFarPlane": 1000.0,
-  "StreamPhysx": false
+  "StreamPhysx": true
 }

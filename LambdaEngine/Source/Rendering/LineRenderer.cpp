@@ -31,10 +31,17 @@ namespace LambdaEngine
 {
 	LineRenderer* LineRenderer::s_pInstance = nullptr;
 
-	LineRenderer::LineRenderer()
+	LineRenderer::LineRenderer(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
+
+		m_BackBuffers.Resize(backBufferCount);
+		m_BackBufferCount = backBufferCount;
+
+		m_pGraphicsDevice = pGraphicsDevice;
+
+		m_verticiesBufferSize = verticiesBufferSize;
 	}
 
 	LineRenderer::~LineRenderer()
@@ -59,13 +66,8 @@ namespace LambdaEngine
 		m_LineGroups.clear();
 	}
 
-	bool LineRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
+	bool LineRenderer::Init()
 	{
-		m_BackBuffers.Resize(backBufferCount);
-		m_BackBufferCount = backBufferCount;
-
-		m_pGraphicsDevice = pGraphicsDevice;
-
 		ConsoleCommand cmdTest;
 		cmdTest.Init("physics_render_line", true);
 		cmdTest.AddDescription("Renders a test line for physics renderer");
@@ -88,7 +90,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateBuffers(verticiesBufferSize))
+		if (!CreateBuffers(m_verticiesBufferSize))
 		{
 			LOG_ERROR("[LineRenderer]: Failed to create buffers");
 			return false;
@@ -113,7 +115,7 @@ namespace LambdaEngine
 		}
 
 		uint64 offset 	= 0;
-		uint64 size 	= verticiesBufferSize;
+		uint64 size 	= m_verticiesBufferSize;
 		m_DescriptorSet->WriteBufferDescriptors(&m_UniformBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		// Draw the XYZ axis in the center of the world

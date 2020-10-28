@@ -10,6 +10,7 @@ namespace LambdaEngine
 	class ClientSystem : protected IClientHandler, protected INetworkDiscoveryClient
 	{
 		friend class EngineLoop;
+		friend class SingleplayerInitializer;
 
 	public:
 		DECL_UNIQUE_CLASS(ClientSystem);

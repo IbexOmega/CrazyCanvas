@@ -129,7 +129,6 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		//Set Flag Spawn Timestamp
 		flagComponent.PickupAvailableTimestamp = EngineLoop::GetTimeSinceStart() + flagComponent.PickupCooldown;
 
-
 		//Enable the player-flag trigger shape
 		TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
 		flagCollisionComponent.pActor->getShapes(flagShapes.GetData(), flagShapes.GetSize());
@@ -166,10 +165,10 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		flagParentComponent.Attached	= false;
 		flagParentComponent.Parent		= UINT32_MAX;
 
-		//Set Position
+		// Set Position
 		flagPositionComponent.Position	= dropPosition;
 
-		//Send Packet
+		// Send Packet
 		FlagEditedPacket packet	= {};
 		packet.FlagPacketType	= EFlagPacketType::FLAG_PACKET_TYPE_DROPPED;
 		packet.DroppedPosition	= dropPosition;
@@ -236,6 +235,11 @@ void ServerFlagSystem::InternalAddAdditionalAccesses(LambdaEngine::TArray<Lambda
 void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
+}
+
+void ServerFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
+{
+	UNREFERENCED_VARIABLE(deltaTime);
 
 	using namespace LambdaEngine;
 
@@ -249,8 +253,8 @@ void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 		if (parentComponent.Attached)
 		{
-			const NetworkPositionComponent& parentPositionComponent = pECS->GetComponent<NetworkPositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent		= pECS->GetComponent<RotationComponent>(parentComponent.Parent);
+			const NetworkPositionComponent& parentPositionComponent = pECS->GetConstComponent<NetworkPositionComponent>(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent		= pECS->GetConstComponent<RotationComponent>(parentComponent.Parent);
 
 			DynamicCollisionComponent& flagCollisionComponent	= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 			const OffsetComponent& flagOffsetComponent			= pECS->GetConstComponent<OffsetComponent>(flagEntity);

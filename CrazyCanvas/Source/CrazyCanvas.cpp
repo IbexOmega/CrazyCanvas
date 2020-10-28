@@ -6,6 +6,7 @@
 #include "Resources/ResourceManager.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
+#include "RenderStages/PlayerRenderer.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -48,13 +49,28 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Team Helper Init Failed");
 	}
 
+	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+	RenderSystem::GetInstance().InitRenderGraphs();
+
 	LoadRendererResources();
 
 	constexpr const char* pGameName = "Crazy Canvas";
 	constexpr const char* pDefaultStateStr = "crazycanvas";
+	constexpr const char* pDefaultIsHostStr = "-1";
 	State* pStartingState = nullptr;
 	String stateStr;
+
+	String AuthenticationIDStr; // Used on server To Identify Host(Client transmits HostID)
+	String clientHostIDStr; // Used on Client To Identify Host(Server transmits HostID)
+
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
+
+	if (stateStr == "server")
+	{
+		flagParser(1, pDefaultIsHostStr) >> clientHostIDStr;
+
+		flagParser(2, pDefaultIsHostStr) >> AuthenticationIDStr;
+	}
 
 	if (stateStr == "crazycanvas")
 	{
@@ -69,12 +85,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else if (stateStr == "client")
 	{
 		ClientSystem::Init(pGameName);
-		pStartingState = DBG_NEW PlaySessionState(NetworkUtils::GetLocalAddress());
+		pStartingState = DBG_NEW PlaySessionState(false, NetworkUtils::GetLocalAddress());
 	}
 	else if (stateStr == "server")
 	{
 		ServerSystem::Init(pGameName);
-		pStartingState = DBG_NEW ServerState();
+		pStartingState = DBG_NEW ServerState(clientHostIDStr, AuthenticationIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{
@@ -116,32 +132,6 @@ bool CrazyCanvas::LoadRendererResources()
 {
 	using namespace LambdaEngine;
 
-	{
-		String blueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
-
-		for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
-		{
-			char str[5];
-			snprintf(str, 5, "%04d", i);
-			blueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
-		}
-
-		GUID_Lambda blueNoiseID = ResourceManager::LoadTextureArrayFromFile("Blue Noise Texture", blueNoiseLUTFileNames, NUM_BLUE_NOISE_LUTS, EFormat::FORMAT_R16_UNORM, false, false);
-
-		Texture* pBlueNoiseTexture = ResourceManager::GetTexture(blueNoiseID);
-		TextureView* pBlueNoiseTextureView = ResourceManager::GetTextureView(blueNoiseID);
-
-		Sampler* pNearestSampler = Sampler::GetNearestSampler();
-
-		ResourceUpdateDesc blueNoiseUpdateDesc = {};
-		blueNoiseUpdateDesc.ResourceName = "BLUE_NOISE_LUT";
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextures = &pBlueNoiseTexture;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppTextureViews = &pBlueNoiseTextureView;
-		blueNoiseUpdateDesc.ExternalTextureUpdate.ppSamplers = &pNearestSampler;
-
-		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&blueNoiseUpdateDesc);
-	}
-
 	// For Skybox RenderGraph
 	{
 		String skybox[]
@@ -171,7 +161,7 @@ bool CrazyCanvas::LoadRendererResources()
 
 	// For Mesh painting in RenderGraph
 	{
-		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV2.png", EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
+		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV3.png", EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
 
 		Texture* pTexture = ResourceManager::GetTexture(brushMaskID);
 		TextureView* pTextureView = ResourceManager::GetTextureView(brushMaskID);

@@ -10,46 +10,26 @@ namespace LambdaEngine
 {
 	NetworkSystem NetworkSystem::s_Instance;
 
-	NetworkSystem::NetworkSystem()
-	{
-
-	}
-
-	NetworkSystem::~NetworkSystem()
-	{
-
-	}
-
 	bool NetworkSystem::Init()
 	{
-		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+		const ComponentOwnership<NetworkComponent> networkComponentOwnership =
 		{
-			{
-				.pSubscriber = &m_Entities,
-				.ComponentAccesses =
-				{
-					{RW, NetworkComponent::Type()}
-				},
-				.OnEntityAdded = std::bind_front(&NetworkSystem::OnEntityAdded, this),
-				.OnEntityRemoval = std::bind_front(&NetworkSystem::OnEntityRemoved, this)
-			}
+			.Constructor = std::bind_front(&NetworkSystem::NetworkComponentConstructor),
+			.Destructor = std::bind_front(&NetworkSystem::NetworkComponentDestructor)
 		};
+		SetComponentOwner<NetworkComponent>(networkComponentOwnership);
 
-		systemReg.Phase = 0;
-
-		RegisterSystem(TYPE_NAME(NetworkSystem), systemReg);
 		return true;
 	}
 
-	void NetworkSystem::OnEntityAdded(Entity entity)
+	void NetworkSystem::NetworkComponentConstructor(NetworkComponent& networkComponent, Entity entity)
 	{
-		NetworkComponent pNetworkComponent = ECSCore::GetInstance()->GetComponent<NetworkComponent>(entity);
-		MultiplayerUtils::RegisterEntity(entity, pNetworkComponent.NetworkUID);
+		MultiplayerUtils::RegisterEntity(entity, networkComponent.NetworkUID);
 	}
 
-	void NetworkSystem::OnEntityRemoved(Entity entity)
+	void NetworkSystem::NetworkComponentDestructor(NetworkComponent& networkComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(networkComponent);
 		MultiplayerUtils::UnregisterEntity(entity);
 	}
 }

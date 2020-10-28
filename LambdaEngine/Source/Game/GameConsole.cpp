@@ -828,6 +828,10 @@ namespace LambdaEngine
 		if (event.Key == EKey::KEY_GRAVE_ACCENT && !event.IsRepeat)
 		{
 			m_IsActive = !m_IsActive;
+			if (m_IsActive)
+				Input::PushInputMode(EInputLayer::GUI);
+			else
+				Input::PopInputMode();
 			return true;
 		}
 

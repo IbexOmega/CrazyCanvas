@@ -37,7 +37,8 @@ namespace LambdaEngine
 	{
 		SPHERE,
 		BOX,
-		CAPSULE, // A capsule's width is specified by its radius. Its height is radius * 2 + halfHeight * 2.
+		CAPSULE,	// A capsule's width is specified by its radius. Its height is radius * 2 + halfHeight * 2.
+		PLANE,		// A plane collides with anything below it.
 		MESH
 	};
 
@@ -112,7 +113,7 @@ namespace LambdaEngine
 	struct CollisionCreateInfo
 	{
 		Entity Entity;
-        ECollisionDetection DetectionMethod = ECollisionDetection::DISCRETE;
+		ECollisionDetection DetectionMethod = ECollisionDetection::DISCRETE;
 		const PositionComponent& Position;
 		const ScaleComponent& Scale;
 		const RotationComponent& Rotation;
@@ -171,7 +172,7 @@ namespace LambdaEngine
 		static PhysicsSystem* GetInstance() { return &s_Instance; }
 
 	private:
-		PxShape* CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& scale) const;
+		PxShape* CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& position, const glm::vec3& scale, const glm::quat& rotation) const;
 
 		// CreateCollisionCapsule creates a sphere if no capsule can be made
 		PxShape* CreateCollisionCapsule(float32 radius, float32 halfHeight) const;
@@ -179,10 +180,10 @@ namespace LambdaEngine
 
 		PxTransform CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const;
 
-		void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent);
-		void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent);
-		void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent);
-		void ReleaseActor(PxRigidActor* pActor);
+		static void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity);
+		static void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent, Entity entity);
+		static void CharacterColliderDestructor(CharacterColliderComponent& characterColliderComponent, Entity entity);
+		static void ReleaseActor(PxRigidActor* pActor);
 
 		void OnStaticCollisionAdded(Entity entity);
 		void OnDynamicCollisionAdded(Entity entity);

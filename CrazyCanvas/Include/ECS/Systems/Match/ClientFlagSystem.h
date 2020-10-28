@@ -18,4 +18,5 @@ public:
 
 protected:
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
+	virtual void FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime) override final;
 };

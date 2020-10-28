@@ -15,6 +15,7 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
@@ -23,17 +24,21 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
-
 #include "World/LevelManager.h"
+#include "World/LevelObjectCreator.h"
+
 #include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Rendering/EntityMaskManager.h"
 #include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/SingleplayerInitializer.h"
 
-PlaySessionState::PlaySessionState(LambdaEngine::IPAddress* pIPAddress) :
+PlaySessionState::PlaySessionState(bool singlePlayer, LambdaEngine::IPAddress* pIPAddress) :
+	m_Singleplayer(singlePlayer),
 	m_pIPAddress(pIPAddress),
 	m_MultiplayerClient()
 {
@@ -47,17 +52,10 @@ void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
 
-	ClientSystem::GetInstance();
-
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
-
-	WeaponSystem::GetInstance()->Init();
 	m_MultiplayerClient.InitInternal();
-
-	m_HealthSystem.Init();
-	m_HUDSystem.Init();
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -72,6 +70,7 @@ void PlaySessionState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
+	m_HUDSystem.Init();
 	//Preload some resources
 	{
 		TArray<GUID_Lambda> animations;
@@ -114,6 +113,10 @@ void PlaySessionState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 1 });
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 
@@ -125,6 +128,10 @@ void PlaySessionState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 1 });
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
@@ -135,6 +142,10 @@ void PlaySessionState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 0 });
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
@@ -165,6 +176,10 @@ void PlaySessionState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512));
+		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<TeamComponent>(entity, { 0 });
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
@@ -182,7 +197,14 @@ void PlaySessionState::Init()
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
-	ClientSystem::GetInstance().Connect(m_pIPAddress);
+	if (m_Singleplayer)
+	{
+		SingleplayerInitializer::InitSingleplayer();
+	}
+	else
+	{
+		ClientSystem::GetInstance().Connect(m_pIPAddress);
+	}
 }
 
 void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
@@ -194,5 +216,4 @@ void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
 	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
-	m_HUDSystem.FixedTick(delta);
 }

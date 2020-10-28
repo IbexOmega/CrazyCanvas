@@ -28,3 +28,9 @@ void MultiplayerServer::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 	m_pFlagSystem->FixedTick(deltaTime);
 	m_PlayerRemoteSystem.FixedTickMainThread(deltaTime);
 }
+
+void MultiplayerServer::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)
+{
+	//Must run last
+	m_PacketDecoderSystem.FixedTickMainThreadServer(deltaTime);
+}

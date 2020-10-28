@@ -10,6 +10,7 @@ public:
 	FlagSystemBase() = default;
 	~FlagSystemBase();
 
+	// Remember to call this if overriding FlagSystemBase::Init
 	virtual bool Init();
 
 	void FixedTick(LambdaEngine::Timestamp deltaTime);
@@ -22,9 +23,18 @@ public:
 	virtual void OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 
 protected:
-	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) { UNREFERENCED_VARIABLE(componentAccesses); };
-	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) { UNREFERENCED_VARIABLE(componentAccesses); };
+	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
+	{
+		UNREFERENCED_VARIABLE(componentAccesses);
+	}
+
+	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
+	{
+		UNREFERENCED_VARIABLE(componentAccesses);
+	}
+
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
+	virtual void FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
 public:
 	FORCEINLINE static FlagSystemBase* GetInstance() 
@@ -33,7 +43,12 @@ public:
 	}
 
 protected:
-	static void CalculateAttachedFlagPosition(glm::vec3& flagPosition, glm::quat& flagRotation, const glm::vec3& flagOffset, const glm::vec3& parentPosition, const glm::quat parentRotation);
+	static void CalculateAttachedFlagPosition(
+		glm::vec3& flagPosition, 
+		glm::quat& flagRotation, 
+		const glm::vec3& flagOffset, 
+		const glm::vec3& parentPosition, 
+		const glm::quat parentRotation);
 
 protected:
 	LambdaEngine::IDVector m_Flags;

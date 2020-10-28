@@ -1,5 +1,6 @@
 #include "Input/API/InputActionSystem.h"
 #include "Input/API/Input.h"
+
 #pragma warning( push, 0 )
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/filewritestream.h>
@@ -107,7 +108,7 @@ namespace LambdaEngine
 
 		if (itr != m_CurrentKeyBindings.end()) {
 			EKey keyPressed = itr->second;
-			return Input::IsKeyDown(keyPressed);
+			return Input::IsKeyDown(EInputLayer::GAME, keyPressed);
 		}
 
 		LOG_ERROR("Action %s is not defined.", action.c_str());
