@@ -17,12 +17,6 @@ namespace LambdaEngine
 
 		bool Connect(IPAddress* pAddress);
 
-		void SetServerHostID(uint32 serverHostID);
-		void SetClientHostID(uint32 clientHostID);
-		
-		int32 GetServerHostID();
-		int32 GetClientHostID();
-		
 		ClientBase* GetClient();
 
 	protected:
