@@ -89,7 +89,7 @@ workspace "LambdaEngine"
 	platforms
 	{
 		"x64"
-    }
+	}
 	defines
 	{
 		"NS_STATIC_LIBRARY"
@@ -216,12 +216,12 @@ workspace "LambdaEngine"
 			}
 	group ""
 
-    -- Engine Project
-    project "LambdaEngine"
-        language "C++"
-        cppdialect "C++latest"
-        systemversion "latest"
-        location "LambdaEngine"
+	-- Engine Project
+	project "LambdaEngine"
+		language "C++"
+		cppdialect "C++latest"
+		systemversion "latest"
+		location "LambdaEngine"
 
 		-- Pre-Compiled Headers
 		pchheader "PreCompiled.h"
@@ -232,7 +232,7 @@ workspace "LambdaEngine"
 			"PreCompiled.h"
 		}
 
-        -- Platform
+		-- Platform
 		kind "StaticLib"
 
 		-- Targets
@@ -262,14 +262,14 @@ workspace "LambdaEngine"
 
 		-- Remove files not available for windows builds
 		filter "system:windows"
-		    files
-            {
-                "%{prj.name}/**.natvis",
-            }
-            removefiles
-            {
-                "%{prj.name}/Include/Application/Mac/**",
-                "%{prj.name}/Source/Application/Mac/**",
+			files
+			{
+				"%{prj.name}/**.natvis",
+			}
+			removefiles
+			{
+				"%{prj.name}/Include/Application/Mac/**",
+				"%{prj.name}/Source/Application/Mac/**",
 
 				"%{prj.name}/Include/Input/Mac/**",
 				"%{prj.name}/Source/Input/Mac/**",
