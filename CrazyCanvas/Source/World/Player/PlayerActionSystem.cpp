@@ -42,7 +42,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 	if (m_MouseEnabled)
 	{
-		const MouseState& mouseState = Input::GetMouseState();
+		const MouseState& mouseState = Input::GetMouseState(InputMode::GAME);
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const int32 halfWidth		= int32(0.5f * float32(window->GetWidth()));
@@ -80,7 +80,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 {
-	if (event.Key == EKey::KEY_KEYPAD_0)
+	if (event.Key == EKey::KEY_KEYPAD_0 || event.Key == EKey::KEY_END)
 	{
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(!m_MouseEnabled);

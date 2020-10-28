@@ -11,6 +11,8 @@
 #include "Utilities/IOUtilities.h"
 #include "Time/API/Clock.h"
 
+#include "Input/API/Input.h"
+
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -104,6 +106,12 @@ namespace LambdaEngine
 	{
 		if (ImGui::Begin("Render Graph Editor"))
 		{
+			if (!m_GraphActive)
+			{
+				m_GraphActive = true;
+				Input::PushInputMode(InputMode::GUI);
+			}
+
 			ImVec2 contentRegionMin = ImGui::GetWindowContentRegionMin();
 			ImVec2 contentRegionMax = ImGui::GetWindowContentRegionMax();
 
@@ -209,6 +217,11 @@ namespace LambdaEngine
 			}
 
 			ImGui::EndChild();
+		}
+		else if (m_GraphActive)
+		{
+			m_GraphActive = false;
+			Input::PopInputMode();
 		}
 		ImGui::End();
 
@@ -1132,6 +1145,7 @@ namespace LambdaEngine
 
 		if (ImGui::BeginMenuBar())
 		{
+
 			if (ImGui::BeginMenu("Menu"))
 			{
 				if (ImGui::MenuItem("New"))
