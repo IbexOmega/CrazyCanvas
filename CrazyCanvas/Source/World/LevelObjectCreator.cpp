@@ -715,6 +715,9 @@ bool LevelObjectCreator::CreateProjectile(
 {
 	using namespace LambdaEngine;
 
+	UNREFERENCED_VARIABLE(saltUIDs);
+	UNREFERENCED_VARIABLE(createdChildEntities);
+
 	if (pData == nullptr)
 	{
 		return false;

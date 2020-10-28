@@ -99,7 +99,8 @@ private:
 	LambdaEngine::IDVector m_ForeignPlayerEntities;
 
 	// Rendering resources for projectiles
-	LambdaEngine::MeshComponent m_PaintProjectileMeshComponent;
+	LambdaEngine::MeshComponent m_RedPaintProjectileMeshComponent;
+	LambdaEngine::MeshComponent m_BluePaintProjectileMeshComponent;
 	LambdaEngine::MeshComponent m_WaterProjectileMeshComponent;
 
 	GUID_Lambda m_GunFireGUID	= GUID_NONE;

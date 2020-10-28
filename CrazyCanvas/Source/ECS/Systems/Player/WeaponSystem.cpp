@@ -5,19 +5,19 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Events/GameplayEvents.h"
 
 #include "Input/API/Input.h"
 
 #include "Physics/PhysicsEvents.h"
+#include "Physics/CollisionGroups.h"
 
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
-#include "Physics/CollisionGroups.h"
-
-#include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Teams/TeamHelper.h"
 
 static const glm::vec3 PROJECTILE_OFFSET = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -93,10 +93,23 @@ bool WeaponSystem::Init()
 		const uint32 projectileMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
 
 		// Paint
-		m_PaintProjectileMeshComponent = { };
-		m_PaintProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
-		m_PaintProjectileMeshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Paint Projectile",
+		m_RedPaintProjectileMeshComponent = { };
+		m_RedPaintProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
+		m_RedPaintProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+			"Red Paint Projectile",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			projectileMaterialProperties);
+
+		projectileMaterialProperties.Albedo = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+		m_BluePaintProjectileMeshComponent = { };
+		m_BluePaintProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
+		m_BluePaintProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+			"Blue Paint Projectile",
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
@@ -105,7 +118,7 @@ bool WeaponSystem::Init()
 			projectileMaterialProperties);
 
 		// Water
-		projectileMaterialProperties.Albedo = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		projectileMaterialProperties.Albedo = glm::vec4(87.0f / 255.0f, 217.0f / 255.0f, 1.0f, 1.0f);
 
 		m_WaterProjectileMeshComponent = { };
 		m_WaterProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
@@ -120,7 +133,7 @@ bool WeaponSystem::Init()
 	}
 
 	// Create soundeffects
-	m_GunFireGUID	= ResourceManager::LoadSoundEffectFromFile("Fart.wav");
+	m_GunFireGUID	= ResourceManager::LoadSoundEffectFromFile("gun.wav");
 	m_OutOfAmmoGUID	= ResourceManager::LoadSoundEffectFromFile("out_of_ammo.wav");
 	return true;
 }
@@ -317,7 +330,22 @@ void WeaponSystem::Fire(
 
 	LOG_INFO("[Fire]: At(x=%.4f, y=%.4f, z=%.4f) Velocity=(x=%.4f, y=%.4f, z=%.4f)", startPos.x, startPos.y, startPos.z, initialVelocity.x, initialVelocity.y, initialVelocity.z);
 
-	const MeshComponent& meshComp = ammoType == EAmmoType::AMMO_TYPE_PAINT ? m_PaintProjectileMeshComponent : m_WaterProjectileMeshComponent;
+	MeshComponent* pMeshComp = nullptr;
+	if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+	{
+		if (playerTeam == 0)
+		{
+			pMeshComp = &m_BluePaintProjectileMeshComponent;
+		}
+		else
+		{
+			pMeshComp = &m_RedPaintProjectileMeshComponent;
+		}
+	}
+	else
+	{
+		pMeshComp = &m_WaterProjectileMeshComponent;
+	}
 
 	// Fire event
 	WeaponFiredEvent firedEvent(
@@ -328,7 +356,7 @@ void WeaponSystem::Fire(
 		direction,
 		playerTeam);
 	firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
-	firedEvent.MeshComponent = meshComp;
+	firedEvent.MeshComponent = *pMeshComp;
 	EventQueue::SendEventImmediate(firedEvent);
 
 	// Play gun fire
@@ -432,11 +460,10 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 
 	// Disable friendly fire
 	bool friendly = false;
+	const uint32 projectileTeam = pTeamComponents->GetConstData(collisionInfo0.Entity).TeamIndex;
 	if (pTeamComponents->HasComponent(collisionInfo1.Entity))
 	{
 		const uint32 otherEntityTeam	= pTeamComponents->GetConstData(collisionInfo1.Entity).TeamIndex;
-		const uint32 projectileTeam		= pTeamComponents->GetConstData(collisionInfo0.Entity).TeamIndex;
-
 		if (projectileTeam == otherEntityTeam)
 		{
 			LOG_INFO("Friendly fire!");
@@ -454,7 +481,8 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 			ammoType = pProjectileComponents->GetConstData(collisionInfo0.Entity).AmmoType;
 		}
 
-		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType);
+		ETeam team = projectileTeam == 0 ? ETeam::BLUE : ETeam::RED;
+		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team);
 		EventQueue::SendEventImmediate(hitEvent);
 	}
 }
