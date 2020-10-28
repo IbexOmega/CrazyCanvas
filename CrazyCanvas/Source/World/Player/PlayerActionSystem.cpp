@@ -42,7 +42,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 	if (m_MouseEnabled)
 	{
-		const MouseState& mouseState = Input::GetMouseState(InputMode::GAME);
+		const MouseState& mouseState = Input::GetMouseState(EInputLayer::GAME);
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const int32 halfWidth		= int32(0.5f * float32(window->GetWidth()));

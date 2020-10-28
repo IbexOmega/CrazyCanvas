@@ -18,6 +18,8 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(SBT);
 
+		virtual bool Build(CommandList* pCommandList, TArray<DeviceChild*>& removedDeviceResources, const SBTDesc* pDesc) = 0;
+
 	protected:
 		String m_DebugName;
 	};

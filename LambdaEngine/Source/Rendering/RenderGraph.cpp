@@ -350,7 +350,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords)
+	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
 	{
 		m_GlobalShaderRecords = shaderRecords;
 
@@ -360,14 +360,19 @@ namespace LambdaEngine
 
 			if (pRenderStage->pPipelineState != nullptr && pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 			{
-				m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
-
 				SBTDesc sbtDesc = {};
 				sbtDesc.DebugName		= "Render Graph Global SBT";
 				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
 				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
 
-				pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+				if (pRenderStage->pSBT == nullptr)
+				{
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
+				}
+				else
+				{
+					pRenderStage->pSBT->Build(AcquireComputeCopyCommandList(), removedDeviceResources, &sbtDesc);
+				}
 			}
 		}
 	}
@@ -1268,7 +1273,7 @@ namespace LambdaEngine
 					sbtDesc.pPipelineState = pRenderStage->pPipelineState;
 					sbtDesc.SBTRecords = m_GlobalShaderRecords;
 
-					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
 				}
 			}
 		}
@@ -2347,14 +2352,14 @@ namespace LambdaEngine
 
 					if (imGuiRenderStageIt == m_DebugRenderers.End())
 					{
-						ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice);
 
 						ImGuiRendererDesc imguiRendererDesc = {};
 						imguiRendererDesc.BackBufferCount	= m_BackBufferCount;
 						imguiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);
 						imguiRendererDesc.IndexBufferSize	= MEGA_BYTE(8);
 
-						if (!pImGuiRenderer->Init(&imguiRendererDesc))
+						ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice, &imguiRendererDesc);
+						if (!pImGuiRenderer->Init())
 						{
 							LOG_ERROR("[RenderGraph] Could not initialize ImGui Custom Renderer");
 							return false;
@@ -3593,7 +3598,11 @@ namespace LambdaEngine
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);
-			memcpy(drawArgsArgsIt->second.Args.GetData(), pDesc->ExternalDrawArgsUpdate.pDrawArgs, pDesc->ExternalDrawArgsUpdate.Count * sizeof(DrawArg));
+
+			for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
+			{
+				drawArgsArgsIt->second.Args[d] = pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
+			}
 
 			//Update Synchronization Stage Barriers
 			for (uint32 b = 0; b < pResource->BarriersPerSynchronizationStage.GetSize(); b += pResource->SubResourceCount)

@@ -66,7 +66,7 @@ namespace LambdaEngine
 		}
 		return true;
 	}
-
+	
 	ClientBase* ClientSystem::GetClient()
 	{
 		return m_pClient;

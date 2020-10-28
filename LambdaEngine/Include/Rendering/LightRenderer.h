@@ -38,7 +38,7 @@ namespace LambdaEngine
 		LightRenderer();
 		~LightRenderer();
 
-		bool Init();
+		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
@@ -60,7 +60,7 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool Sleeping)	override final;
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_INPUT; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
 		virtual const String& GetName() const override final

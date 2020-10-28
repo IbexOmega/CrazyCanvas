@@ -4,18 +4,17 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Events/GameplayEvents.h"
+
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 #include <mutex>
 
-HealthSystem::HealthSystem()
-	: m_HealthEntities()
-{
-}
+/*
+* HealthSystem
+*/
 
-HealthSystem::~HealthSystem()
-{
-	using namespace LambdaEngine;
-	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HealthSystem::OnProjectileHit);
-}
+HealthSystem HealthSystem::s_Instance;
 
 bool HealthSystem::Init()
 {
@@ -30,12 +29,13 @@ bool HealthSystem::Init()
 				.pSubscriber = &m_HealthEntities,
 				.ComponentAccesses =
 				{
-					{ RW, HealthComponent::Type() }
+					{ RW, HealthComponent::Type() },
+					{ RW, PacketComponent<HealthChangedPacket>::Type() }
 				}
 			}
 		};
 
-		// After weaponsystem -> Do not know if this is correct
+		// After weaponsystem
 		systemReg.Phase = 2;
 
 		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
@@ -47,76 +47,116 @@ bool HealthSystem::Init()
 	return true;
 }
 
-void HealthSystem::Tick(LambdaEngine::Timestamp deltaTime)
+void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(deltaTime);
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
+	ComponentArray<PacketComponent<HealthChangedPacket>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<HealthChangedPacket>>();
 
-	// Since the events are not sent threadsafe
+	if (MultiplayerUtils::IsServer())
 	{
-		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
-		if (!m_DeferredHitEvents.IsEmpty())
+		// Since the events are not sent threadsafe
 		{
-			m_EventsToProcess = m_DeferredHitEvents;
-			m_DeferredHitEvents.Clear();
+			std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
+			if (!m_DeferredHitEvents.IsEmpty())
+			{
+				m_EventsToProcess = m_DeferredHitEvents;
+				m_DeferredHitEvents.Clear();
+			}
+		}
+
+		if (!m_EventsToProcess.IsEmpty())
+		{
+			for (ProjectileHitEvent& event : m_EventsToProcess)
+			{
+				// CollisionInfo1 is the entity that got hit
+				Entity entity = event.CollisionInfo1.Entity;
+				EAmmoType ammoType = event.AmmoType;
+
+				LOG_INFO("Retriving health from entity=%d", entity);
+
+				HealthComponent& healthComponent = pHealthComponents->GetData(entity);
+				PacketComponent<HealthChangedPacket>& packets = pHealthChangedComponents->GetData(entity);
+				if (healthComponent.CurrentHealth > 0)
+				{
+					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+					{
+						healthComponent.CurrentHealth -= 10;
+						LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
+					}
+					else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+					{
+						healthComponent.CurrentHealth += 10;
+						LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
+					}
+
+					if (healthComponent.CurrentHealth <= 0)
+					{
+						LOG_INFO("PLAYER DIED");
+						healthComponent.CurrentHealth = 0;
+
+						PlayerDiedEvent diedEvent(entity);
+						EventQueue::SendEvent(diedEvent);
+					}
+
+					HealthChangedPacket packet = {};
+					packet.CurrentHealth = healthComponent.CurrentHealth;
+					packets.SendPacket(packet);
+				}
+			}
+
+			m_EventsToProcess.Clear();
 		}
 	}
-
-	if (!m_EventsToProcess.IsEmpty())
+	else
 	{
-		for (ProjectileHitEvent& event : m_EventsToProcess)
+		for (Entity entity : m_HealthEntities)
 		{
-			// CollisionInfo1 is the entity that got hit
-			Entity entity = event.CollisionInfo1.Entity;
-			EAmmoType ammoType = event.AmmoType;
-
-			LOG_INFO("Retriving health from entity=%d", entity);
-
 			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-			// Hmm... better solution.. maybe??
-			if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+			PacketComponent<HealthChangedPacket>& packets = pHealthChangedComponents->GetData(entity);
+			for (const HealthChangedPacket& packet : packets.GetPacketsReceived())
 			{
-				healthComponent.CurrentHealth -= 10;
-				LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
-			}
-			else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
-			{
-				healthComponent.CurrentHealth += 10;
-				LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
-			}
+				LOG_INFO("GOT A HEALTH PACKAGE");
 
-			if (healthComponent.CurrentHealth <= 0)
-			{
-				LOG_INFO("PLAYER DIED");
-				healthComponent.CurrentHealth = 0;
+				if (healthComponent.CurrentHealth != packet.CurrentHealth)
+				{
+					LOG_INFO("Health changed old=%d new=%d", healthComponent.CurrentHealth, packet.CurrentHealth);
+					healthComponent.CurrentHealth = packet.CurrentHealth;
+				}
 			}
 		}
-		m_EventsToProcess.Clear();
 	}
 }
 
 bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 {
 	using namespace LambdaEngine;
-
-	std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
-	LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
-
-	for (Entity entity : m_HealthEntities)
+	
+	if (MultiplayerUtils::IsServer())
 	{
-		LOG_INFO("....Entity: %d", entity);
+		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
+		LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
 
-		// CollisionInfo0 is the projectile
-		if (projectileHitEvent.CollisionInfo1.Entity == entity)
+		for (Entity entity : m_HealthEntities)
 		{
-			m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
-			LOG_INFO("Player got hit");
-			break;
-		}
-	}
+			LOG_INFO("....Entity: %d", entity);
 
-	return true;
+			// CollisionInfo0 is the projectile
+			if (projectileHitEvent.CollisionInfo1.Entity == entity)
+			{
+				m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
+				LOG_INFO("Player got hit");
+				break;
+			}
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
