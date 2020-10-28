@@ -1404,7 +1404,7 @@
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
@@ -1436,7 +1436,7 @@
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]

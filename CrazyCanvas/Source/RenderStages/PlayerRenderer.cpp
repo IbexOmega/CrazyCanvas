@@ -447,13 +447,6 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 
-		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
-		pCommandList->Begin(nullptr);
-
-		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
-
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
 
@@ -470,6 +463,27 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
 
+		if (m_DrawCount == 0)
+		{
+			m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+			//Begin and End RenderPass to transition Texture State (Lazy)
+			pCommandList->BeginRenderPass(&beginRenderPassDesc);
+			pCommandList->EndRenderPass();
+
+			pCommandList->End();
+
+			(*ppFirstExecutionStage) = pCommandList;
+			return;
+		}
+
+		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
+
+		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
+
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		Viewport viewport = {};
@@ -485,11 +499,6 @@ namespace LambdaEngine
 		scissorRect.Width = width;
 		scissorRect.Height = height;
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
-		// ---------------- START: Not sure what it is used for? -------------------
-		// Looking at other CustomRenderStages they are looping on m_DrawCount
-		// m_DrawCount -> how many meshes to draw in total
-		// one draw arg is all instances of a mesh
 
 		for (uint32 d = 0, teamIndex = 0; d < m_DrawCount; d++)
 		{
