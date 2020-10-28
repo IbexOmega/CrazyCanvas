@@ -138,7 +138,7 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 		return true;
 
 	pSegment->ResetReadHead();
-	pSegment->Read(pEvent->GetRawData(), packetSize);
+	pSegment->Read(pEvent->Populate(event.pClient), packetSize);
 	EventQueue::SendEventImmediate(*pEvent);
 
 	const ComponentType* pComponentType = pEvent->GetComponentType();
