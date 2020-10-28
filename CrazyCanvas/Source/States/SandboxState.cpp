@@ -82,6 +82,7 @@ void SandboxState::Init()
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
+	m_MultiplayerClient.InitInternal();
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
