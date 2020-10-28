@@ -48,6 +48,8 @@ bool PlayerAnimationSystem::Init()
 
 void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -60,7 +62,10 @@ void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	{
 		AnimationComponent& animationComponent = pAnimationComponents->GetData(playerEntity);
 		const VelocityComponent& velocityComponent = pVelocityComponents->GetConstData(playerEntity);
+
+#ifndef LAMBDA_DEBUG
 		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(playerEntity);
+#endif
 
 		Transition* pCurrentTransition = animationComponent.pGraph->GetCurrentTransition();
 		AnimationState* pCurrentAnimationState = animationComponent.pGraph->GetCurrentState();
