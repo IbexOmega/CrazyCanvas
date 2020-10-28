@@ -125,22 +125,6 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 	{
 		Entity flagEntity = m_Flags[0];
 
-		PacketComponent<FlagEditedPacket>& flagPacketComponent = pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
-		const TArray<FlagEditedPacket>& flagEditedPackets = flagPacketComponent.GetPacketsReceived();
-
-		for (const FlagEditedPacket& editedPacket : flagEditedPackets)
-		{
-			switch (editedPacket.FlagPacketType)
-			{
-			case EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP:
-				OnFlagPickedUp(MultiplayerUtils::GetEntity(editedPacket.PickedUpNetworkUID), flagEntity);
-				break;
-			case EFlagPacketType::FLAG_PACKET_TYPE_DROPPED:
-				OnFlagDropped(flagEntity, editedPacket.DroppedPosition);
-				break;
-			}
-		}
-
 		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
 
 		if (parentComponent.Attached)
@@ -158,6 +142,36 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 				flagOffsetComponent.Offset,
 				parentPositionComponent.Position,
 				parentRotationComponent.Quaternion);
+		}
+	}
+}
+
+void ClientFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
+{
+	UNREFERENCED_VARIABLE(deltaTime);
+
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	if (!m_Flags.Empty())
+	{
+		Entity flagEntity = m_Flags[0];
+
+		PacketComponent<FlagEditedPacket>& flagPacketComponent = pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
+		const TArray<FlagEditedPacket>& flagEditedPackets = flagPacketComponent.GetPacketsReceived();
+
+		for (const FlagEditedPacket& editedPacket : flagEditedPackets)
+		{
+			switch (editedPacket.FlagPacketType)
+			{
+			case EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP:
+				OnFlagPickedUp(MultiplayerUtils::GetEntity(editedPacket.PickedUpNetworkUID), flagEntity);
+				break;
+			case EFlagPacketType::FLAG_PACKET_TYPE_DROPPED:
+				OnFlagDropped(flagEntity, editedPacket.DroppedPosition);
+				break;
+			}
 		}
 	}
 }

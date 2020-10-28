@@ -107,7 +107,7 @@ bool LevelObjectCreator::Init()
 	{
 		//Flag
 		{
-			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("gun.obj");
+			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("Roller.obj");
 
 			MaterialProperties materialProperties = {};
 			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);

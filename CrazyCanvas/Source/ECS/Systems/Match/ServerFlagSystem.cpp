@@ -236,6 +236,11 @@ void ServerFlagSystem::InternalAddAdditionalAccesses(LambdaEngine::TArray<Lambda
 void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
+}
+
+void ServerFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
+{
+	UNREFERENCED_VARIABLE(deltaTime);
 
 	using namespace LambdaEngine;
 
