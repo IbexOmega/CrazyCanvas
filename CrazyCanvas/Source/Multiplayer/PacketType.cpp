@@ -7,6 +7,8 @@
 #include "Multiplayer/Packet/PlayerActionResponse.h"
 #include "Multiplayer/Packet/CreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketHostServer.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
@@ -22,6 +24,8 @@ uint16 PacketType::WEAPON_FIRE				= 0;
 uint16 PacketType::HEALTH_CHANGED			= 0;
 uint16 PacketType::FLAG_EDITED				= 0;
 uint16 PacketType::TEAM_SCORED				= 0;
+uint16 PacketType::GAME_OVER				= 0;
+uint16 PacketType::HOST_SERVER				= 0;
 
 void PacketType::Init()
 {
@@ -33,6 +37,8 @@ void PacketType::Init()
 	HEALTH_CHANGED			= RegisterPacketTypeWithComponent<HealthChangedPacket>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
+	GAME_OVER				= RegisterPacketType<PacketGameOver>();
+	HOST_SERVER				= RegisterPacketType<PacketHostServer>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

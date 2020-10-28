@@ -20,6 +20,7 @@ struct MatchDescription
 {
 	LambdaEngine::SHA256Hash LevelHash;
 	uint32 NumTeams = 2;
+	uint32 MaxScore = 5;
 };
 
 class MatchBase
@@ -34,6 +35,8 @@ public:
 
 	void SetScore(uint32 teamIndex, uint32 score);
 
+	void ResetMatch();
+
 	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
 
 protected:
@@ -46,4 +49,6 @@ protected:
 protected:
 	Level* m_pLevel = nullptr;
 	LambdaEngine::TArray<uint32> m_Scores;
+
+	MatchDescription m_MatchDesc;
 };

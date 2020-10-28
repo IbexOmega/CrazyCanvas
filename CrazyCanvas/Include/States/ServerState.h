@@ -9,6 +9,8 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "Multiplayer/MultiplayerServer.h"
+#include "Multiplayer/Packet/MultiplayerEvents.h"
+#include "Multiplayer/Packet/PacketHostServer.h"
 
 class Level;
 
@@ -17,6 +19,8 @@ class ServerState :
 {
 public:
 	ServerState();
+	ServerState(const std::string& clientHostID, const std::string& authenticationID);
+	
 	~ServerState();
 
 	void Init() override final;
@@ -26,6 +30,8 @@ public:
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
+
+	bool OnPacketHostServerReceived(const PacketReceivedEvent<PacketHostServer>& event);
 
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 

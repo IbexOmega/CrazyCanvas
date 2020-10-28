@@ -35,6 +35,7 @@
 
 #include "Multiplayer/ServerHelper.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketGameOver.h"
 
 #include <imgui.h>
 
@@ -359,6 +360,17 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 	packet.TeamIndex	= event.TeamIndex;
 	packet.Score		= newScore;
 	ServerHelper::SendBroadcast(packet);
+
+	if (newScore == m_MatchDesc.MaxScore) // game over
+	{
+		PacketGameOver gameOverPacket;
+		gameOverPacket.WinningTeamIndex = event.TeamIndex;
+
+		ServerHelper::SendBroadcast(gameOverPacket);
+
+		ResetMatch();
+	}
+
 
 	return true;
 }
