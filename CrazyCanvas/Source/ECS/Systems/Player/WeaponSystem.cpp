@@ -178,7 +178,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(remoteEntity);
 					const RotationComponent& rotationComp = pRotationComponents->GetConstData(remoteEntity);
 
-					LOG_INFO("Player=%d fired at(x=%.4f, y=%.4f, z=%.4f)", remoteEntity, positionComp.Position.x, positionComp.Position.y, positionComp.Position.z);
+					//LOG_INFO("Player=%d fired at(x=%.4f, y=%.4f, z=%.4f)", remoteEntity, positionComp.Position.x, positionComp.Position.y, positionComp.Position.z);
 					Fire(ammoType, remoteEntity, positionComp.Position, rotationComp.Quaternion, velocityComp.Velocity);
 				}
 			}
@@ -197,7 +197,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				{
 					const glm::vec3 position = response.Position + PROJECTILE_OFFSET;
 
-					LOG_INFO("Player=%d fired at(x=%.4f, y=%.4f, z=%.4f)", foreignEntity, position.x, position.y, position.z);
+					//LOG_INFO("Player=%d fired at(x=%.4f, y=%.4f, z=%.4f)", foreignEntity, position.x, position.y, position.z);
 					Fire(response.FiredAmmo, foreignEntity, position, response.Rotation, response.Velocity);
 				}
 			}
@@ -231,7 +231,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			if (isReloading)
 			{
-				LOG_INFO("Reloading");
+				//LOG_INFO("Reloading");
 
 				weaponComponent.ReloadClock -= dt;
 				if (weaponComponent.ReloadClock < 0.0f)
@@ -239,7 +239,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					weaponComponent.ReloadClock = 0.0f;
 					weaponComponent.CurrentAmmunition = AMMO_CAPACITY;
 
-					LOG_INFO("Reload Finish");
+					//LOG_INFO("Reload Finish");
 				}
 			}
 
@@ -281,7 +281,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				const glm::vec3 firePosition = weaponPosition;
 				if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
 				{
-					LOG_INFO("Fire At x=%.4f y=%.4f z=%.4f", firePosition.x, firePosition.y, firePosition.z);
+					//LOG_INFO("Fire At x=%.4f y=%.4f z=%.4f", firePosition.x, firePosition.y, firePosition.z);
 
 					TryFire(
 						EAmmoType::AMMO_TYPE_PAINT,
@@ -328,7 +328,7 @@ void WeaponSystem::Fire(
 	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 	const glm::vec3 initialVelocity = playerVelocity + directionVec * projectileInitialSpeed;
 
-	LOG_INFO("[Fire]: At(x=%.4f, y=%.4f, z=%.4f) Velocity=(x=%.4f, y=%.4f, z=%.4f)", startPos.x, startPos.y, startPos.z, initialVelocity.x, initialVelocity.y, initialVelocity.z);
+	//LOG_INFO("[Fire]: At(x=%.4f, y=%.4f, z=%.4f) Velocity=(x=%.4f, y=%.4f, z=%.4f)", startPos.x, startPos.y, startPos.z, initialVelocity.x, initialVelocity.y, initialVelocity.z);
 
 	MeshComponent* pMeshComp = nullptr;
 	if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
@@ -449,7 +449,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
+	//LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 
 	// Is this safe? Concurrency issues?
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -466,7 +466,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 		const uint32 otherEntityTeam	= pTeamComponents->GetConstData(collisionInfo1.Entity).TeamIndex;
 		if (projectileTeam == otherEntityTeam)
 		{
-			LOG_INFO("Friendly fire!");
+			//LOG_INFO("Friendly fire!");
 			friendly = true;
 		}
 	}
@@ -489,12 +489,12 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 
 void WeaponSystem::StartReload(WeaponComponent& weaponComponent)
 {
-	LOG_INFO("Start reload");
+	//LOG_INFO("Start reload");
 	weaponComponent.ReloadClock = weaponComponent.ReloadTime;
 }
 
 void WeaponSystem::AbortReload(WeaponComponent& weaponComponent)
 {
-	LOG_INFO("Abort reload");
+	//LOG_INFO("Abort reload");
 	weaponComponent.ReloadClock = 0;
 }
