@@ -109,7 +109,6 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECS->GetComponentArray<ParticleEmitterComponent>();
 	const ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-	const ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
@@ -145,31 +144,6 @@ void WeaponSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 				LOG_INFO("Reload Finish");
 			}
-		}
-
-		// Update position and orientation
-		const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(playerEntity);
-		const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(playerEntity);
-		const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
-		
-		glm::vec3 weaponPosition;
-		if (playerRotationComp.Dirty || playerPositionComp.Dirty)
-		{
-			PositionComponent& weaponPositionComp = pPositionComponents->GetData(weaponEntity);
-			RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
-			
-			glm::quat quatY = playerRotationComp.Quaternion;
-			quatY.x = 0;
-			quatY.z = 0;
-			quatY = glm::normalize(quatY);
-			weaponPositionComp.Position = playerPositionComp.Position + quatY * weaponOffsetComp.Offset;
-			weaponPosition = weaponPositionComp.Position;
-
-			weaponRotationComp.Quaternion = playerRotationComp.Quaternion;
-		}
-		else
-		{
-			weaponPosition = pPositionComponents->GetConstData(weaponEntity).Position;
 		}
 
 		if (isReloading)
@@ -290,7 +264,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, WeaponComponent& weaponComponent, co
 
 	constexpr const float projectileInitialSpeed = 13.0f;
 	const glm::vec3 directionVec = GetForward(direction);
-	const glm::vec3 startPos = playerPos + g_DefaultUp + directionVec * 0.3f;
+	const glm::vec3 startPos = playerPos;
 
 	// Create a projectile entity
 	ECSCore* pECS = ECSCore::GetInstance();
