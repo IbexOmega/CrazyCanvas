@@ -114,7 +114,7 @@ namespace LambdaEngine
 
 	void ClientSystem::OnPacketReceived(IClient* pClient, NetworkSegment* pPacket)
 	{
-		PacketReceivedEvent event(pClient, pPacket);
+		NetworkSegmentReceivedEvent event(pClient, pPacket);
 		EventQueue::SendEventImmediate(event);
 	}
 

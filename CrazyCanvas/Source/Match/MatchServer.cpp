@@ -225,7 +225,7 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
 }
 
-bool MatchServer::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+bool MatchServer::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	UNREFERENCED_VARIABLE(event);
 	return false;
