@@ -123,6 +123,39 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 	if (!m_Flags.Empty())
 	{
+		const Entity flagEntity = m_Flags[0];
+
+		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+
+		if (parentComponent.Attached)
+		{
+			const PositionComponent& parentPositionComponent = pECS->GetConstComponent<PositionComponent>(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent = pECS->GetConstComponent<RotationComponent>(parentComponent.Parent);
+
+			const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
+			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
+			RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
+
+			CalculateAttachedFlagPosition(
+				flagPositionComponent.Position,
+				flagRotationComponent.Quaternion,
+				flagOffsetComponent.Offset,
+				parentPositionComponent.Position,
+				parentRotationComponent.Quaternion);
+		}
+	}
+}
+
+void ClientFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
+{
+	UNREFERENCED_VARIABLE(deltaTime);
+
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	if (!m_Flags.Empty())
+	{
 		Entity flagEntity = m_Flags[0];
 
 		PacketComponent<FlagEditedPacket>& flagPacketComponent = pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
@@ -139,25 +172,6 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 				OnFlagDropped(flagEntity, editedPacket.DroppedPosition);
 				break;
 			}
-		}
-
-		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
-
-		if (parentComponent.Attached)
-		{
-			const PositionComponent& parentPositionComponent = pECS->GetComponent<PositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent = pECS->GetComponent<RotationComponent>(parentComponent.Parent);
-
-			const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
-			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
-			RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
-
-			CalculateAttachedFlagPosition(
-				flagPositionComponent.Position,
-				flagRotationComponent.Quaternion,
-				flagOffsetComponent.Offset,
-				parentPositionComponent.Position,
-				parentRotationComponent.Quaternion);
 		}
 	}
 }

@@ -18,4 +18,5 @@ protected:
 	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) override final;
 	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
+	virtual void FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime) override final;
 };
