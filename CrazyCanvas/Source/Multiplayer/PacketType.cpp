@@ -40,6 +40,8 @@ uint16 PacketType::RegisterPacketTypeRaw()
 
 IPacketReceivedEvent* PacketType::GetPacketReceivedEventPointer(uint16 packetType)
 {
+	VALIDATE_MSG(packetType != 0 && packetType <= s_PacketTypeCount, "Packet type not registered, have you forgotten to register your package?");
+
 	auto pair = s_PacketTypeToEvent.find(packetType);
 	return pair == s_PacketTypeToEvent.end() ? nullptr : pair->second;
 }

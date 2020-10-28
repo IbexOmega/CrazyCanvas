@@ -32,7 +32,10 @@ void MultiplayerClient::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 	m_PlayerForeignSystem.FixedTickMainThread(deltaTime);
 	m_PlayerLocal.FixedTickMainThread(deltaTime);
 	m_pFlagSystem->FixedTick(deltaTime);
+}
 
+void MultiplayerClient::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)
+{
 	//Must run last
 	m_PacketDecoderSystem.FixedTickMainThreadClient(deltaTime);
 }
