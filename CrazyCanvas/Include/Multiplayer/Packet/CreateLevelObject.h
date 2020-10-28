@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Entity.h"
+#include "Multiplayer/Packet/Packet.h"
 #include "Math/Math.h"
 #include "World/LevelObjectCreator.h"
 
@@ -26,6 +26,8 @@ namespace Obj
 #pragma pack(push, 1)
 struct CreateLevelObject
 {
+	DECL_PACKET(CreateLevelObject);
+
 	ELevelObjectType LevelObjectType;
 	int32 NetworkUID;
 	glm::vec3 Position;

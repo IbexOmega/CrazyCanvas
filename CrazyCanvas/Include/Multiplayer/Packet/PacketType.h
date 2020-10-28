@@ -54,6 +54,8 @@ uint16 PacketType::RegisterPacketType(const LambdaEngine::ComponentType* pType)
 {
 	PacketReceivedEvent<Type>* pEvent = DBG_NEW PacketReceivedEvent<Type>(pType);
 	uint16 packetType = RegisterPacketTypeRaw();
+	VALIDATE_MSG(Type::s_Type == 0, "PacketType already Registered!");
+	Type::s_Type = packetType;
 	s_PacketTypeToEvent[packetType] = pEvent;
 
 	return packetType;

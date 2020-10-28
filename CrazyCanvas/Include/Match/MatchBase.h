@@ -40,7 +40,6 @@ protected:
 	virtual bool InitInternal() = 0;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
-	virtual bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event) = 0;
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) = 0;
 	virtual bool OnPlayerDied(const PlayerDiedEvent& event) = 0;
 	
