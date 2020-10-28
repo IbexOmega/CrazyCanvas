@@ -92,9 +92,9 @@ namespace LambdaEngine
 	{
 		if (m_ComponentOwnership.Destructor)
 		{
-			for (Comp& component : m_Data)
+			for (uint32 componentIdx = 0; componentIdx < m_Data.GetSize(); componentIdx++)
 			{
-				m_ComponentOwnership.Destructor(component);
+				m_ComponentOwnership.Destructor(m_Data[componentIdx], m_IDs[componentIdx]);
 			}
 		}
 	}
@@ -109,7 +109,14 @@ namespace LambdaEngine
 		uint32 newIndex = m_Data.GetSize();
 		m_EntityToIndex[entity] = newIndex;
 		m_IDs.PushBack(entity);
-		return m_Data.PushBack(comp);
+		Comp& storedComp = m_Data.PushBack(comp);
+
+		if (m_ComponentOwnership.Constructor)
+		{
+			m_ComponentOwnership.Constructor(storedComp, entity);
+		}
+
+		return storedComp;
 	}
 
 	template<typename Comp>
@@ -188,7 +195,7 @@ namespace LambdaEngine
 
 		if (m_ComponentOwnership.Destructor)
 		{
-			m_ComponentOwnership.Destructor(m_Data[currentIndex]);
+			m_ComponentOwnership.Destructor(m_Data[currentIndex], entity);
 		}
 
 		// Swap the removed component with the last component.

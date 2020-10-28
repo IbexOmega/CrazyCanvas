@@ -39,6 +39,7 @@
 #include "World/Level.h"
 
 #include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/SingleplayerInitializer.h"
 
 BenchmarkState::~BenchmarkState()
 {
@@ -55,7 +56,7 @@ void BenchmarkState::Init()
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
-	EventQueue::RegisterEventHandler<PacketReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
+	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	// Initialize Systems
 	WeaponSystem::GetInstance()->Init();
@@ -130,17 +131,25 @@ void BenchmarkState::Init()
 
 				Entity entity = pECS->CreateEntity();
 				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-				const CollisionCreateInfo collisionCreateInfo = {
+				const CollisionCreateInfo collisionCreateInfo = 
+				{
 					.Entity			= entity,
 					.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
 					.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
 					.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
-					.ShapeType		= EShapeType::SIMULATION,
-					.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
-					.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC // Collide with any non-static object
+					.Shapes = 
+					{
+						{
+							.ShapeType		= EShapeType::SIMULATION,
+							.GeometryType	= EGeometryType::SPHERE,
+							.GeometryParams	= { .Radius = sphereRadius },
+							.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+							.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+						},
+					},
 				};
 
-				const StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticCollisionSphere(collisionCreateInfo, sphereRadius);
+				const StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 				pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
 
 				glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
@@ -240,7 +249,7 @@ void BenchmarkState::Init()
 	}
 
 	// Triggers OnPacketReceived, which creates players
-	ClientSystem::GetInstance().Connect(IPAddress::LOOPBACK);
+	SingleplayerInitializer::InitSingleplayer();
 }
 
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
@@ -254,7 +263,7 @@ void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 	}
 }
 
-bool BenchmarkState::OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event)
+bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	using namespace LambdaEngine;
 

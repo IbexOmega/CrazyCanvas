@@ -17,7 +17,7 @@ bool Match::Init()
 	{
 		s_pMatchInstance = DBG_NEW MatchClient();
 	}
-	
+
 	return true;
 }
 

@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	class MeshPaintComponentOwner : public ComponentOwner
+	class MeshPaintComponentOwner : ComponentOwner
 	{
 	public:
 		DECL_SINGLETON_CLASS(MeshPaintComponentOwner);
@@ -14,7 +14,7 @@ namespace LambdaEngine
 		bool Init();
 
 	private:
-		void MeshPaintDestructor(MeshPaintComponent& meshPaintComponent);
+		static void MeshPaintDestructor(MeshPaintComponent& meshPaintComponent, Entity entity);
 
 	public:
 		FORCEINLINE static MeshPaintComponentOwner* GetInstance() { return &s_Instance; }

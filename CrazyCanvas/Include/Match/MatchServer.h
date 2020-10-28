@@ -3,6 +3,7 @@
 #include "Match/MatchBase.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+#include "Events/MatchEvents.h"
 
 class MatchServer : public MatchBase
 {
@@ -14,10 +15,15 @@ protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
-	virtual void SpawnFlag();
+	void SpawnFlag();
+	void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
 
-	virtual bool OnPacketReceived(const LambdaEngine::PacketReceivedEvent& event) override final;
+	virtual bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event) override final;
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
+	bool OnFlagDelivered(const OnFlagDeliveredEvent& event);
+
+private:
+	uint8 m_NextTeamIndex = 0;
 };

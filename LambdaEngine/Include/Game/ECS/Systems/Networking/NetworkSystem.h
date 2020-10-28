@@ -1,24 +1,26 @@
 #pragma once
 
+#include "ECS/ComponentOwner.h"
 #include "ECS/System.h"
 
 namespace LambdaEngine
 {
-	class NetworkSystem : public System
+	struct NetworkComponent;
+
+	class NetworkSystem : ComponentOwner
 	{
 	public:
-		NetworkSystem();
-		~NetworkSystem();
+		NetworkSystem() = default;
+		~NetworkSystem() = default;
 
 		bool Init();
 
-	private:
-		virtual void Tick(Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
-		void OnEntityAdded(Entity entity);
-		void OnEntityRemoved(Entity entity);
-
 	public:
 		static NetworkSystem& GetInstance() { return s_Instance; }
+
+	private:
+		static void NetworkComponentConstructor(NetworkComponent& networkComponent, Entity entity);
+		static void NetworkComponentDestructor(NetworkComponent& networkComponent, Entity entity);
 
 	private:
 		IDVector m_Entities;

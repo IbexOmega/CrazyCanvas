@@ -86,8 +86,18 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 			if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
 			{
-				m_EntityTypeMap[levelObjectType] = m_Entities.GetSize();
-				m_Entities.PushBack(levelEntities);
+				if (auto levelObjectTypeIt = m_EntityTypeMap.find(levelObjectType); levelObjectTypeIt != m_EntityTypeMap.end())
+				{
+					LevelEntitiesOfType& levelEntitiesOfType = m_Entities[levelObjectTypeIt->second];
+					levelEntitiesOfType.SaltUIDs.Insert(levelEntitiesOfType.SaltUIDs.End(), levelEntities.SaltUIDs.Begin(), levelEntities.SaltUIDs.End());
+					levelEntitiesOfType.Entities.Insert(levelEntitiesOfType.Entities.End(), levelEntities.Entities.Begin(), levelEntities.Entities.End());
+					levelEntitiesOfType.ChildEntities.Insert(levelEntitiesOfType.ChildEntities.End(), levelEntities.ChildEntities.Begin(), levelEntities.ChildEntities.End());
+				}
+				else
+				{
+					m_EntityTypeMap[levelObjectType] = m_Entities.GetSize();
+					m_Entities.PushBack(levelEntities);
+				}
 			}
 		}
 	}

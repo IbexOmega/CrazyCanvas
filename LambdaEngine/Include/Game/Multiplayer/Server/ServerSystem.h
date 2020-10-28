@@ -4,6 +4,7 @@
 
 #include "Networking/API/PlatformNetworkUtils.h"
 #include "Networking/API/UDP/INetworkDiscoveryServer.h"
+#include "Networking/API/UDP/ClientRemoteUDP.h"
 
 namespace LambdaEngine
 {

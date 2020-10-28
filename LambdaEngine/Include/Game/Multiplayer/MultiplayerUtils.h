@@ -13,7 +13,6 @@ namespace LambdaEngine
 	{
 		friend class ClientSystem;
 		friend class ServerSystem;
-		friend class ClientRemoteSystem;
 		friend class NetworkSystem;
 
 	public:
@@ -24,6 +23,8 @@ namespace LambdaEngine
 		static int32 GetNetworkUID(Entity entity);
 		static bool IsSingleplayer();
 		static bool HasWriteAccessToEntity(Entity entity);
+
+		static void SetIsSingleplayer(bool value);
 
 	private:
 		static void Init(bool server);
