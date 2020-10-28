@@ -1,4 +1,5 @@
 #include "Match/MatchClient.h"
+#include "Match/Match.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -27,12 +28,14 @@ MatchClient::~MatchClient()
 {
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 }
 
 bool MatchClient::InitInternal()
 {
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 	return true;
 }
 
@@ -128,6 +131,15 @@ bool MatchClient::OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTea
 	return true;
 }
 
+bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event)
+{
+	const PacketGameOver& packet = event.Packet;
+
+	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
+	ResetMatch();
+
+	return true;
+}
 bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 {
 	using namespace LambdaEngine;

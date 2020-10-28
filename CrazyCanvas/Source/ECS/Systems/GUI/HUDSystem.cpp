@@ -69,6 +69,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 		if (pPlayerLocalComponents->HasComponent(playerEntity) && m_HUDGUI)
 		{
 			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition, weaponComponent.AmmoCapacity);
+			m_HUDGUI->UpdateScore();
 		}
 	}
 }
