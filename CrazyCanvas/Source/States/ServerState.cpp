@@ -35,6 +35,9 @@
 
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 
+#include <windows.h>
+#include <Lmcons.h>
+
 using namespace LambdaEngine;
 
 ServerState::ServerState(const std::string& clientHostID, const std::string& authenticationID) :
@@ -47,7 +50,9 @@ ServerState::ServerState(const std::string& clientHostID, const std::string& aut
 ServerState::ServerState() : 
 	m_MultiplayerServer()
 {
-
+	m_ServerName.reserve(UNLEN + 1);
+	DWORD length = m_ServerName.capacity();
+	GetUserNameA(m_ServerName.data(), &length);
 }
 
 ServerState::~ServerState()
@@ -69,7 +74,6 @@ void ServerState::Init()
 
 	m_MultiplayerServer.InitInternal();
 
-	m_ServerName = "Crazy Canvas Server";
 
 	// Load Match
 	{
