@@ -8,6 +8,7 @@
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
+#include "Events/GameplayEvents.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
@@ -44,6 +45,10 @@
 
 BenchmarkState::~BenchmarkState()
 {
+	using namespace LambdaEngine;
+	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &BenchmarkState::OnWeaponFired);
+	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
+
 	SAFEDELETE(m_pLevel);
 }
 
@@ -57,6 +62,7 @@ void BenchmarkState::Init()
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
+	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &BenchmarkState::OnWeaponFired);
 	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	// Initialize Systems
@@ -293,10 +299,13 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 			AnimationComponent robotAnimationComp = {};
 			robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
 
+			constexpr const uint32 playerCount = 9;
+
 			CreatePlayerDesc createPlayerDesc =
 			{
 				.IsLocal 			= false,
 				.PlayerNetworkUID 	= packet.NetworkUID,
+				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.pClient 			= event.pClient,
 				.Position 			= packet.Position,
 				.Forward 			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
@@ -305,12 +314,13 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				.pCameraDesc 		= &cameraDesc
 			};
 
-			for (uint32 playerNr = 0; playerNr < 9; playerNr++)
+			for (uint32 playerNr = 0; playerNr < playerCount; playerNr++)
 			{
 				// Create a 3x3 grid of players in the XZ plane
 				createPlayerDesc.Position.x			= -3.0f + 3.0f * (playerNr % 3);
 				createPlayerDesc.Position.z			= -3.0f + 3.0f * (playerNr / 3);
-				createPlayerDesc.PlayerNetworkUID	+= (int32)playerNr;
+				createPlayerDesc.PlayerNetworkUID	+= 2;
+				createPlayerDesc.WeaponNetworkUID	+= 2;
 
 				TArray<Entity> createdPlayerEntities;
 				if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
@@ -324,6 +334,28 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 	}
 
 	return false;
+}
+
+bool BenchmarkState::OnWeaponFired(const WeaponFiredEvent& event)
+{
+	using namespace LambdaEngine;
+
+	CreateProjectileDesc createProjectileDesc;
+	createProjectileDesc.AmmoType		= event.AmmoType;
+	createProjectileDesc.FireDirection	= event.Direction;
+	createProjectileDesc.FirePosition	= event.Position;
+	createProjectileDesc.InitalVelocity = event.InitialVelocity;
+	createProjectileDesc.TeamIndex		= event.TeamIndex;
+	createProjectileDesc.Callback		= event.Callback;
+	createProjectileDesc.MeshComponent	= event.MeshComponent;
+
+	TArray<Entity> createdFlagEntities;
+	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
+	{
+		LOG_ERROR("Failed to create projectile");
+	}
+
+	return true;
 }
 
 void BenchmarkState::PrintBenchmarkResults()

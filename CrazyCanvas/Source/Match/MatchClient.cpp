@@ -126,6 +126,7 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	return true;
 }
+
 bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 {
 	using namespace LambdaEngine;

@@ -22,7 +22,7 @@
 static const glm::vec3 PROJECTILE_OFFSET = glm::vec3(0.0f, 1.0f, 0.0f);
 
 /*
-* WeaponSystem 
+* WeaponSystem
 */
 
 WeaponSystem WeaponSystem::s_Instance;
@@ -163,7 +163,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			TQueue<PlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
 			const TArray<PlayerAction>& packetsRecived = actionsRecived.GetPacketsReceived();
-			
+
 			const uint32 packetCount = packetsRecived.GetSize();
 			for (uint32 i = 0; i < packetCount; i++)
 			{
@@ -247,7 +247,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			const PositionComponent& playerPositionComp	= pPositionComponents->GetConstData(playerEntity);
 			const RotationComponent& playerRotationComp	= pRotationComponents->GetConstData(playerEntity);
 			const OffsetComponent& weaponOffsetComp		= pOffsetComponents->GetConstData(weaponEntity);
-			
+
 			glm::vec3 weaponPosition;
 			//if (playerRotationComp.Dirty || playerPositionComp.Dirty)
 			//{
@@ -350,9 +350,9 @@ void WeaponSystem::Fire(
 	// Fire event
 	WeaponFiredEvent firedEvent(
 		weaponOwner,
-		ammoType, 
+		ammoType,
 		startPos,
-		initialVelocity, 
+		initialVelocity,
 		direction,
 		playerTeam);
 	firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
@@ -401,40 +401,6 @@ void WeaponSystem::TryFire(
 		}
 
 		// For creating entity
-		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
-	}
-	else
-	{
-		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
-	}
-}
-
-void WeaponSystem::TryFire(
-	EAmmoType ammoType,
-	WeaponComponent& weaponComponent,
-	const glm::vec3& startPos,
-	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
-{
-	using namespace LambdaEngine;
-
-	// Add cooldown
-	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
-
-	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
-	if (hasAmmo)
-	{
-		// If we try to shoot when reloading we abort the reload
-		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
-		if (isReloading)
-		{
-			AbortReload(weaponComponent);
-		}
-
-		// Fire the gun
-		weaponComponent.CurrentAmmunition--;
 		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
 	}
 	else
