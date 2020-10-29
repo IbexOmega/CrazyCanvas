@@ -15,14 +15,13 @@ layout(triangles, max_vertices = MAX_VERTICES, max_primitives = MAX_PRIMITIVES) 
 
 // Output block for vertices
 layout(location = 0) out flat uint	out_MaterialSlot[];
-layout(location = 1) out vec3		out_WorldPosition[];
-layout(location = 2) out vec3		out_Normal[];
-layout(location = 3) out vec3		out_Tangent[];
-layout(location = 4) out vec3		out_Bitangent[];
-layout(location = 5) out vec2		out_TexCoord[];
-layout(location = 6) out vec4		out_ClipPosition[];
-layout(location = 7) out vec4		out_PrevClipPosition[];
-layout(location = 8) out flat uint 	out_ExtensionIndex[];
+layout(location = 1) out vec3		out_Normal[];
+layout(location = 2) out vec3		out_Tangent[];
+layout(location = 3) out vec3		out_Bitangent[];
+layout(location = 4) out vec2		out_TexCoord[];
+layout(location = 5) out vec4		out_ClipPosition[];
+layout(location = 6) out vec4		out_PrevClipPosition[];
+layout(location = 7) out flat uint 	out_ExtensionIndex[];
 
 // Constant data
 const vec3 POSITIONS[3] = 
@@ -111,7 +110,6 @@ void main()
 		vec2 texcoord		= vertex.TexCoord.xy;
 
 		// Material
-		out_WorldPosition[vert]	= worldPosition.xyz;
 		out_MaterialSlot[vert]	= instance.MaterialSlot;
 		out_Normal[vert]		= normal;
 		out_Tangent[vert]		= tangent;

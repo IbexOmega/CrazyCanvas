@@ -18,17 +18,16 @@ layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 	SPointLight pointLights[];  
 } b_LightsBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferPosition;
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAORoughMetalValid;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferCompactNormal;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVelocity;
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferDepthStencil;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo;
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAORoughMetalValid;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferCompactNormal;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVelocity;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferDepthStencil;
 
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
-layout(binding = 7, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
 
-layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_RayTracedRadiance;
+layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_RayTracedRadiance;
 
 layout(location = 0) out vec4 out_Color;
 

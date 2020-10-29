@@ -8,14 +8,13 @@
 #include "../Helpers.glsl"
 
 layout(location = 0) in flat uint	in_MaterialSlot;
-layout(location = 1) in vec3		in_WorldPosition;
-layout(location = 2) in vec3		in_Normal;
-layout(location = 3) in vec3		in_Tangent;
-layout(location = 4) in vec3		in_Bitangent;
-layout(location = 5) in vec2		in_TexCoord;
-layout(location = 6) in vec4		in_ClipPosition;
-layout(location = 7) in vec4		in_PrevClipPosition;
-layout(location = 8) in flat uint	in_ExtensionIndex;
+layout(location = 1) in vec3		in_Normal;
+layout(location = 2) in vec3		in_Tangent;
+layout(location = 3) in vec3		in_Bitangent;
+layout(location = 4) in vec2		in_TexCoord;
+layout(location = 5) in vec4		in_ClipPosition;
+layout(location = 6) in vec4		in_PrevClipPosition;
+layout(location = 7) in flat uint	in_ExtensionIndex;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }	b_PaintMaskColor;
@@ -26,11 +25,10 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMateria
 
 layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
-layout(location = 0) out vec4 out_Position;
-layout(location = 1) out vec3 out_Albedo;
-layout(location = 2) out vec4 out_AO_Rough_Metal_Valid;
-layout(location = 3) out vec3 out_Compact_Normal;
-layout(location = 4) out vec2 out_Velocity;
+layout(location = 0) out vec3 out_Albedo;
+layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
+layout(location = 2) out vec3 out_Compact_Normal;
+layout(location = 3) out vec2 out_Velocity;
 
 void main()
 {
@@ -58,27 +56,6 @@ void main()
 	float shouldPaint 			= float((serverData & 0x1) | (clientData & 0x1));
 
 	//0
-	out_Position				= vec4(in_WorldPosition, 0.0f);
-
-	//1
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo					= storedAlbedo;
-
-	//2
-	vec3 storedMaterial			= vec3(
-									materialParameters.AO * sampledCombinedMaterial.b, 
-									mix(materialParameters.Roughness * sampledCombinedMaterial.r, 1.0f, shouldPaint), 
-									materialParameters.Metallic * sampledCombinedMaterial.g);
-	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
-
-	//3
-	out_Compact_Normal			= PackNormal(shadingNormal);
-
-	//4
-	vec2 screenVelocity			= (prevNDC - currentNDC);
-	out_Velocity				= vec2(screenVelocity);
-
-	// 5
 	uint clientTeam				= (clientData >> 1) & 0x7F;
 	uint serverTeam				= (serverData >> 1) & 0x7F;
 	uint clientPainting			= clientData & 0x1;
@@ -87,8 +64,25 @@ void main()
 		team = clientTeam;
 
 	// Assume the correct amount of colors have been sent in
-	vec4 color = b_PaintMaskColor.val[team];
+	vec3 paintColor = b_PaintMaskColor.val[team].rgb;
 
 	// Mix team color
-	out_Albedo					= mix(out_Albedo, color.rgb, shouldPaint);
+
+	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+	storedAlbedo				= mix(storedAlbedo, paintColor, shouldPaint);
+	out_Albedo					= storedAlbedo;
+
+	//1
+	vec3 storedMaterial			= vec3(
+									materialParameters.AO * sampledCombinedMaterial.b, 
+									mix(materialParameters.Roughness * sampledCombinedMaterial.r, 1.0f, shouldPaint), 
+									materialParameters.Metallic * sampledCombinedMaterial.g);
+	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
+
+	//2
+	out_Compact_Normal			= PackNormal(shadingNormal);
+
+	//3
+	vec2 screenVelocity			= (prevNDC - currentNDC);
+	out_Velocity				= vec2(screenVelocity);
 }

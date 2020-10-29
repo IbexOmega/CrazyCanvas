@@ -79,7 +79,7 @@ void main()
 {
 	SRayHitDescription hitDescription = CalculateHitData();
 
-	SMaterialParameters materialParameters = u_MaterialParameters.val[hitDescription.MaterialIndex];
+	SMaterialParameters materialParameters = b_MaterialParameters.val[hitDescription.MaterialIndex];
 
 	vec3 sampledAlbedo 		= texture(u_AlbedoMaps[hitDescription.MaterialIndex],			hitDescription.TexCoord).rgb;
 	vec3 sampledMaterial	= texture(u_CombinedMaterialMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).rgb;

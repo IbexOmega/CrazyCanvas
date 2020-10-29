@@ -40,7 +40,6 @@ void main()
     SPositions positions    = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
 
     //Sample GBuffer
-    vec3 worldPosition      = texelFetch(u_GBufferPosition, pixelCoords, 0).xyz;
     vec3 normal             = UnpackNormal(texelFetch(u_GBufferCompactNormal, pixelCoords, 0).xyz);
 
     //Initialize required parameters for first bounce
