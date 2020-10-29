@@ -2,12 +2,12 @@
 #include "ECS/Components/Player/Player.h"
 #include "ECS/ECSCore.h"
 
-
 #include "Application/API/Events/EventQueue.h"
 
-#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/ECS/Components/Physics/Transform.h"
 
 #include "Events/GameplayEvents.h"
 
@@ -46,7 +46,7 @@ static glm::vec3 CalculateWeaponPosition(
 	weaponPositionComp.Position = playerPosition + quatY * weaponOffsetComp.Offset;
 	weaponRotationComp.Quaternion = playerRotation;
 
-	weaponPosition = weaponPositionComp.Position;
+	weaponPosition = weaponPositionComp.Position + LambdaEngine::GetForward(weaponRotationComp.Quaternion) * 0.2f;
 	return weaponPosition;
 }
 
@@ -255,7 +255,8 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						// Create projectile
 						Fire(
 							ammoType, 
-							remotePlayerEntity, 
+							remotePlayerEntity,
+							weaponEntity,
 							playerPositionComp.Position, 
 							playerRotationComp.Quaternion, 
 							velocityComp.Velocity);
@@ -293,7 +294,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							weaponRotationComp,
 							weaponOffsetComp);
 
-						Fire(response.FiredAmmo, playerEntity, weaponPosition, response.Rotation, response.Velocity);
+						Fire(response.FiredAmmo, playerEntity, weaponEntity, weaponPosition, response.Rotation, response.Velocity);
 					}
 				}
 
@@ -354,15 +355,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						EAmmoType::AMMO_TYPE_PAINT,
 						weaponComponent,
 						playerActions,
+						weaponEntity,
 						weaponPosition,
 						playerRotationComp.Quaternion,
 						velocityComp.Velocity);
-
-					if (hasAmmo)
-					{
-						ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
-						emitterComp.Active = true;
-					}
 				}
 				else if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
 				{
@@ -370,15 +366,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						EAmmoType::AMMO_TYPE_WATER,
 						weaponComponent,
 						playerActions,
+						weaponEntity,
 						weaponPosition,
 						playerRotationComp.Quaternion,
 						velocityComp.Velocity);
-
-					if (hasAmmo)
-					{
-						ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
-						emitterComp.Active = true;
-					}
 				}
 			}
 		}
@@ -388,6 +379,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 void WeaponSystem::Fire(
 	EAmmoType ammoType,
 	LambdaEngine::Entity weaponOwner,
+	LambdaEngine::Entity weaponEntity,
 	const glm::vec3& playerPos,
 	const glm::quat& direction,
 	const glm::vec3& playerVelocity)
@@ -404,7 +396,7 @@ void WeaponSystem::Fire(
 	const glm::vec3 startPos = playerPos;
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
+	const uint32	playerTeam = pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 	const glm::vec3 initialVelocity = playerVelocity + directionVec * projectileInitialSpeed;
 
 	//LOG_INFO("[Fire]: At(x=%.4f, y=%.4f, z=%.4f) Velocity=(x=%.4f, y=%.4f, z=%.4f)", startPos.x, startPos.y, startPos.z, initialVelocity.x, initialVelocity.y, initialVelocity.z);
@@ -429,20 +421,23 @@ void WeaponSystem::Fire(
 	// Fire event
 	WeaponFiredEvent firedEvent(
 		weaponOwner,
-		ammoType, 
+		ammoType,
 		startPos,
-		initialVelocity, 
+		initialVelocity,
 		direction,
 		playerTeam);
 	firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	firedEvent.MeshComponent = *pMeshComp;
 	EventQueue::SendEventImmediate(firedEvent);
 
-	// Play gun fire
+	// Play gun fire and spawn particles
 	if (!MultiplayerUtils::IsServer())
 	{
 		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
 		m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
+
+		ParticleEmitterComponent& emitterComp = pECS->GetComponent<ParticleEmitterComponent>(weaponEntity);
+		emitterComp.Active = true;
 	}
 }
 
@@ -450,6 +445,7 @@ void WeaponSystem::TryFire(
 	EAmmoType ammoType,
 	WeaponComponent& weaponComponent,
 	PacketComponent<PlayerAction>& packets,
+	LambdaEngine::Entity weaponEntity,
 	const glm::vec3& startPos,
 	const glm::quat& direction,
 	const glm::vec3& playerVelocity)
@@ -480,7 +476,7 @@ void WeaponSystem::TryFire(
 		}
 
 		// For creating entity
-		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
+		Fire(ammoType, weaponComponent.WeaponOwner, weaponEntity, startPos, direction, playerVelocity);
 	}
 	else
 	{
@@ -493,6 +489,7 @@ void WeaponSystem::TryFire(
 void WeaponSystem::TryFire(
 	EAmmoType ammoType,
 	WeaponComponent& weaponComponent,
+	LambdaEngine::Entity weaponEntity,
 	const glm::vec3& startPos,
 	const glm::quat& direction,
 	const glm::vec3& playerVelocity)
@@ -514,7 +511,7 @@ void WeaponSystem::TryFire(
 
 		// Fire the gun
 		weaponComponent.CurrentAmmunition--;
-		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
+		Fire(ammoType, weaponComponent.WeaponOwner, weaponEntity, startPos, direction, playerVelocity);
 	}
 	else
 	{
