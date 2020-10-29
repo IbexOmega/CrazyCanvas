@@ -135,7 +135,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	if (ServerHostHelper::GetAuthenticationHostID() != -1)
+	if (m_HasHostedServer)
 	{
 		PacketHostServer packet;
 		packet.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();

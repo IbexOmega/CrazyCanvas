@@ -4,12 +4,7 @@
 
 namespace LambdaEngine
 {
-	std::default_random_engine Random::s_Generator((uint32)0);
-
-	void Random::PreInit()
-	{
-		s_Generator = std::default_random_engine((uint32)PlatformTime::GetPerformanceCounter());
-	}
+	std::default_random_engine Random::s_Generator((uint32)PlatformTime::GetPerformanceCounter());
 
 	int32 Random::Int32(int32 min, int32 max)
 	{
@@ -31,13 +26,13 @@ namespace LambdaEngine
 
 	float32 Random::Float32()
 	{
-		std::uniform_real_distribution<float32> dist(0, 1.0F);
+		std::uniform_real_distribution<float32> dist(0.0F, 1.0F);
 		return dist(s_Generator);
 	}
 
-	uint64 Random::UInt64()
+	uint64 Random::UInt64(uint64 min, uint64 max)
 	{
-		std::uniform_int_distribution<uint64> dist(0, UINT64_MAX);
+		std::uniform_int_distribution<uint64> dist(min, max);
 		return dist(s_Generator);
 	}
 
