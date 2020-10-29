@@ -47,7 +47,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
 
-	const char* pIP = "192.168.1.65";
+	const char* pIP = "81.170.143.133";
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");

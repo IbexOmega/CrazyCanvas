@@ -23,6 +23,7 @@ namespace LambdaEngine
 		packet.Forward = glm::vec3(1.0f, 0.0f, 0.0f);
 		packet.Player.TeamIndex = 0;
 		packet.Player.IsMySelf = true;
+		packet.Player.WeaponNetworkUID = 1;
 		packet.NetworkUID = 0;
 
 		MultiplayerUtils::SetIsSingleplayer(true);
