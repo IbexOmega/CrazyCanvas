@@ -456,32 +456,52 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	const ComponentArray<TeamComponent>*		pTeamComponents			= pECS->GetComponentArray<TeamComponent>();
 	const ComponentArray<ProjectileComponent>*	pProjectileComponents	= pECS->GetComponentArray<ProjectileComponent>();
 
+	// Detect selfhit
+	bool selfHit = false;
+	EAmmoType ammoType = EAmmoType::AMMO_TYPE_NONE;
+	if (pProjectileComponents->HasComponent(collisionInfo0.Entity))
+	{
+		const ProjectileComponent& projectilComp = pProjectileComponents->GetConstData(collisionInfo0.Entity);
+		ammoType = projectilComp.AmmoType;
+		
+		if (projectilComp.Owner == collisionInfo1.Entity)
+		{
+			selfHit = true;
+		}
+	}
+
+	// On selfhit return
+	if (selfHit)
+	{
+		LOG_INFO("SELF HIT");
+		return;
+	}
+
+	// Always destroy projectile but do not send event if we hit a friend
 	pECS->RemoveEntity(collisionInfo0.Entity);
 
 	// Disable friendly fire
-	bool friendly = false;
+	bool friendly	= false;
+	bool levelHit	= false;
 	const uint32 projectileTeam = pTeamComponents->GetConstData(collisionInfo0.Entity).TeamIndex;
 	if (pTeamComponents->HasComponent(collisionInfo1.Entity))
 	{
-		const uint32 otherEntityTeam	= pTeamComponents->GetConstData(collisionInfo1.Entity).TeamIndex;
+		// Friendly if we hit teammate and the type is paint
+		const uint32 otherEntityTeam = pTeamComponents->GetConstData(collisionInfo1.Entity).TeamIndex;
 		if (projectileTeam == otherEntityTeam)
 		{
 			//LOG_INFO("Friendly fire!");
 			friendly = true;
 		}
 	}
-
-	// Always destroy projectile but do not send event if we hit a friend
-	pECS->RemoveEntity(collisionInfo0.Entity);
-	if (!friendly)
+	else
 	{
-		EAmmoType ammoType = EAmmoType::AMMO_TYPE_NONE;
-		if (pProjectileComponents->HasComponent(collisionInfo0.Entity))
-		{
-			ammoType = pProjectileComponents->GetConstData(collisionInfo0.Entity).AmmoType;
-		}
+		levelHit = true;
+	}
 
-		ETeam team = projectileTeam == 0 ? ETeam::BLUE : ETeam::RED;
+	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
+	{
+		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team);
 		EventQueue::SendEventImmediate(hitEvent);
 	}

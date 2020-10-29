@@ -174,6 +174,7 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.InitalVelocity	= event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
+	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
 	createProjectileDesc.MeshComponent	= event.MeshComponent;
 
 	TArray<Entity> createdFlagEntities;
