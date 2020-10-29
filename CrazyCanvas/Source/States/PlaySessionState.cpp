@@ -51,7 +51,7 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
-
+	
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
@@ -69,6 +69,8 @@ void PlaySessionState::Init()
 	}
 
 	m_HUDSystem.Init();
+
+	CommonApplication::Get()->SetMouseVisibility(false);
 
 	if (m_Singleplayer)
 	{
