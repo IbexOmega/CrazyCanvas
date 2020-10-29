@@ -51,7 +51,7 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
-
+	
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
@@ -196,6 +196,8 @@ void PlaySessionState::Init()
 		pSoundInstance->Init(&desc);
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
+
+	CommonApplication::Get()->SetMouseVisibility(false);
 
 	if (m_Singleplayer)
 	{
