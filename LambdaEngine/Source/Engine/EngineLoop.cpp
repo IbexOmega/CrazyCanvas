@@ -11,6 +11,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Math/Random.h"
+
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -254,6 +256,9 @@ namespace LambdaEngine
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
+		PlatformTime::PreInit();
+		Random::PreInit();
+
 		if (!EngineConfig::LoadFromFile(flagParser))
 		{
 			return false;
@@ -275,8 +280,6 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-
-		PlatformTime::PreInit();
 
 		return true;
 	}

@@ -26,7 +26,7 @@
 #include "Input/API/InputActionSystem.h"
 
 #include "Multiplayer/Packet/PacketType.h"
-#include "Multiplayer/Packet/PlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
 
 #define EPSILON 0.01f
 
@@ -55,8 +55,8 @@ void PlayerLocalSystem::Init()
 				{R , PositionComponent::Type()},
 				{RW, VelocityComponent::Type()},
 				{RW, RotationComponent::Type()},
-				{RW, PacketComponent<PlayerAction>::Type()},
-				{R, PacketComponent<PlayerActionResponse>::Type()},
+				{RW, PacketComponent<PacketPlayerAction>::Type()},
+				{R, PacketComponent<PacketPlayerActionResponse>::Type()},
 			}
 		}
 	};
@@ -96,9 +96,9 @@ void PlayerLocalSystem::FixedTickMainThread(Timestamp deltaTime)
 void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity entityPlayer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	PacketComponent<PlayerAction>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerAction>>(entityPlayer);
+	PacketComponent<PacketPlayerAction>& pPacketComponent = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(entityPlayer);
 
-	PlayerAction packet		= {};
+	PacketPlayerAction packet		= {};
 	packet.SimulationTick	= gameState.SimulationTick;
 	packet.Rotation			= gameState.Rotation;
 	packet.DeltaForward		= gameState.DeltaForward;
@@ -163,8 +163,8 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 void PlayerLocalSystem::Reconcile(Entity entityPlayer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	const PacketComponent<PlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PlayerActionResponse>>(entityPlayer);
-	const TArray<PlayerActionResponse>& m_FramesProcessedByServer = pPacketComponent.GetPacketsReceived();
+	const PacketComponent<PacketPlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PacketPlayerActionResponse>>(entityPlayer);
+	const TArray<PacketPlayerActionResponse>& m_FramesProcessedByServer = pPacketComponent.GetPacketsReceived();
 
 	for (uint32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
 	{
@@ -179,7 +179,7 @@ void PlayerLocalSystem::Reconcile(Entity entityPlayer)
 	}
 }
 
-void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer)
+void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PacketPlayerActionResponse& gameStateServer)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -222,7 +222,7 @@ void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlay
 	}
 }
 
-bool PlayerLocalSystem::CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer)
+bool PlayerLocalSystem::CompareGameStates(const PlayerGameState& gameStateLocal, const PacketPlayerActionResponse& gameStateServer)
 {
 	bool result = true;
 	if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)

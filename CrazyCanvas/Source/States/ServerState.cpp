@@ -35,6 +35,8 @@
 
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 
+#include "Multiplayer/ServerHelper.h"
+
 #include <windows.h>
 #include <Lmcons.h>
 
@@ -43,31 +45,29 @@ using namespace LambdaEngine;
 ServerState::ServerState(const std::string& clientHostID, const std::string& authenticationID) :
 	m_MultiplayerServer()
 {
-	ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID)); //ID server checks to authenticate client with higher authorities
-	ServerHostHelper::SetClientHostID(std::stoi(clientHostID)); // ID client checks to see if it were the creater of server
-}
+	if(!authenticationID.empty())
+		ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID)); //ID server checks to authenticate client with higher authorities
+	if (!clientHostID.empty())
+		ServerHostHelper::SetClientHostID(std::stoi(clientHostID)); // ID client checks to see if it were the creater of server
 
-ServerState::ServerState() : 
-	m_MultiplayerServer()
-{
-	m_ServerName.reserve(UNLEN + 1);
-	DWORD length = m_ServerName.capacity();
-	GetUserNameA(m_ServerName.data(), &length);
+	DWORD length = UNLEN + 1;
+	char buffer[UNLEN + 1];
+	GetUserNameA(buffer, &length);
+	m_ServerName = buffer;
 }
 
 ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketConfigureServer>>(this, &ServerState::OnPacketConfigureServerReceived);
 }
 
 void ServerState::Init()
 {
-	ServerSystem::GetInstance();
-
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketHostServer>>(this, &ServerState::OnPacketHostServerReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketConfigureServer>>(this, &ServerState::OnPacketConfigureServerReceived);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -118,19 +118,22 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
-bool ServerState::OnPacketHostServerReceived(const PacketReceivedEvent<PacketHostServer>& event)
+bool ServerState::OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketConfigureServer>& event)
 {	
-	const PacketHostServer& packet = event.Packet;
+	const PacketConfigureServer& packet = event.Packet;
 
-	int8 nrOfPlayers = packet.PlayersNumber;
-	int8 mapNr = packet.MapNumber;
-	int32 authenticationID = packet.AuthenticationID;
+	if (packet.AuthenticationID == ServerHostHelper::GetAuthenticationHostID())
+	{
+		LOG_INFO("Configuring Server With The Following Settings:");
+		LOG_INFO("Players: %u", packet.Players);
+		LOG_INFO("MapID: %u", packet.MapID);
 
-	LOG_ERROR("Starting Server With The Following Information:");
-	LOG_ERROR("NR OF PLAYERS %d", nrOfPlayers);
-	LOG_ERROR("MAP NR %d", mapNr);
-	LOG_ERROR("receivedHostID: %d", authenticationID);
-	LOG_ERROR("LocalHostID: %d", ServerHostHelper::GetAuthenticationHostID());
+		ServerHelper::SetMaxClients(packet.Players);
+	}
+	else
+	{
+		LOG_ERROR("Unauthorised Client tried to exectute a server command!");
+	}
 
-	return false;
+	return true;
 }

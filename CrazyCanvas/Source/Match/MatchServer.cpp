@@ -31,7 +31,7 @@
 
 #include "Rendering/ImGuiRenderer.h"
 
-#include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 
 #include "Multiplayer/ServerHelper.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
@@ -142,7 +142,7 @@ void MatchServer::SpawnFlag()
 		{
 			VALIDATE(createdFlagEntities.GetSize() == 1);
 
-			CreateLevelObject packet;
+			PacketCreateLevelObject packet;
 			packet.LevelObjectType			= ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
 			packet.Position					= createDesc.Position;
 			packet.Forward					= GetForward(createDesc.Rotation);
@@ -238,7 +238,7 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	{
 		VALIDATE(createdPlayerEntities.GetSize() == 1);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Position			= position;
 		packet.Forward			= forward;
@@ -285,7 +285,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		uint32 otherPlayerCount = 0;
 		Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, otherPlayerCount);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Player.IsMySelf	= false;
 
@@ -316,7 +316,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		uint32 flagCount = 0;
 		Entity* pFlagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, flagCount);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
 
 		for (uint32 i = 0; i < flagCount; i++)
