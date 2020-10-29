@@ -95,7 +95,6 @@ void main()
 	s_PrimaryPayload.HitPosition		= hitDescription.Position;
 	s_PrimaryPayload.Normal				= hitDescription.Normal;
 	s_PrimaryPayload.AO					= ao;
-	s_PrimaryPayload.Roughness			= roughness;
 	s_PrimaryPayload.Metallic			= metallic;
 	s_PrimaryPayload.Distance			= gl_HitTEXT;
 
@@ -110,4 +109,5 @@ void main()
 	vec4 color = b_PaintMaskColor.val[team];
 
 	s_PrimaryPayload.Albedo				= mix(albedo, color.rgb, shouldPaint);
+	s_PrimaryPayload.Roughness			= mix(roughness, 1.0f, shouldPaint);
 }

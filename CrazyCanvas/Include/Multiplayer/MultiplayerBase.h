@@ -4,6 +4,7 @@
 #include "Time/API/Timestamp.h"
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "ECS/Systems/Player/PlayerAnimationSystem.h"
 
 class MultiplayerBase
 {
@@ -25,4 +26,5 @@ protected:
 
 protected:
 	PacketTranscoderSystem m_PacketDecoderSystem;
+	PlayerAnimationSystem m_PlayerAnimationSystem;
 };

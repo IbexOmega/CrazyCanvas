@@ -123,6 +123,20 @@ bool LevelObjectCreator::Init()
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				materialProperties);
 		}
+
+		//Player
+		{
+			s_PlayerMeshGUID					= ResourceManager::LoadMeshFromFile("Player/Idle.fbx", s_PlayerIdleGUIDs);
+
+#ifndef LAMBDA_DEBUG
+			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.fbx");
+			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.fbx");
+			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.fbx");
+			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.fbx");
+			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.fbx");
+			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.fbx");
+#endif
+		}
 	}
 
 	return true;
@@ -621,9 +635,143 @@ bool LevelObjectCreator::CreatePlayer(
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
-		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
-		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
-		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
+
+		AnimationComponent animationComponent = {};
+		animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+
+		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+
+#ifndef LAMBDA_DEBUG
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", s_PlayerStrafeRightGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", s_PlayerStrafeLeftGUIDs[0]));
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Left");
+			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft	= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Right");
+			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
+			ClipNode* pStrafeRight	= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Left");
+			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft		= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Right");
+			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
+			ClipNode* pStrafeRight		= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward & Strafe Left", 0.1f));
+#endif
+
+		animationComponent.pGraph = pAnimationGraph;
+
+		pAnimationGraph->TransitionToState("Idle");
+
+		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
+		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = s_PlayerMeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
 
 		if (!pPlayerDesc->IsLocal)
@@ -648,7 +796,7 @@ bool LevelObjectCreator::CreatePlayer(
 			childComp.AddChild(cameraEntity, "camera");
 
 			//Todo: Better implementation for this somehow maybe?
-			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshGUID);
+			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
