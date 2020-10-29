@@ -85,14 +85,15 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 					{
 						healthComponent.CurrentHealth -= 10;
-						//LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
+						LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
 					}
 					else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 					{
 						healthComponent.CurrentHealth += 10;
-						//LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
+						LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
 					}
 
+					// Set min/max health 
 					if (healthComponent.CurrentHealth <= 0)
 					{
 						LOG_INFO("PLAYER DIED");
@@ -100,6 +101,11 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 						PlayerDiedEvent diedEvent(entity);
 						EventQueue::SendEvent(diedEvent);
+					}
+					else if (healthComponent.CurrentHealth > 100)
+					{
+						LOG_INFO("PLAYER REACHED FULL HEALTH");
+						healthComponent.CurrentHealth = 100;
 					}
 
 					HealthChangedPacket packet = {};
