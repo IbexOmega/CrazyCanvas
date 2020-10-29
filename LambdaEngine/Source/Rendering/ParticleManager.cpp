@@ -37,15 +37,21 @@ namespace LambdaEngine
 
 		m_FreeParticleChunks.PushBack(chunk);
 
-		// Create dummy buffers to avoid crash of synch	
-		BufferDesc bufferDesc = {};
-		bufferDesc.DebugName = "Dummy";
-		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		bufferDesc.SizeInBytes = sizeof(byte);
+		// Dummy emitter to init buffers
+		ParticleEmitterInstance newEmitterInstance;
+		EmitterID emitterID = m_Emitters.GetSize();
+		m_Emitters.PushBack(newEmitterInstance);
 
-		m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		ActivateEmitterInstance(emitterID,
+			{ .Position = {0.f, 0.f, 0.f} },
+			{ .Quaternion = glm::identity<glm::quat>() },
+			{
+				.Active = true,
+				.OneTime = true,
+				.ParticleCount = 1,
+				.LifeTime = 0.1f
+			}
+		);
 
 		m_DirtyIndexBuffer = true;
 		m_DirtyVertexBuffer = true;
@@ -398,6 +404,9 @@ namespace LambdaEngine
 		if (regionCount > 0)
 		{
 			uint32 neededSize = pOffsets[0] + pSize[0];
+			if (neededSize == 0)
+				return false;
+
 			// Find largest offset + size to determine needed buffer size;
 			if (regionCount > 1)
 			{

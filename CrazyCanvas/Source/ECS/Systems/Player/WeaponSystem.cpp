@@ -296,7 +296,6 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					if (hasAmmo)
 					{
 						ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
-						emitterComp.Color = glm::vec4(0.5f, 0.0f, 0.0f, 1.0f);
 						emitterComp.Active = true;
 					}
 				}
@@ -313,7 +312,6 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					if (hasAmmo)
 					{
 						ParticleEmitterComponent& emitterComp = pEmitterComponents->GetData(weaponEntity);
-						emitterComp.Color = glm::vec4(0.0f, 0.0f, 0.5f, 1.0f);
 						emitterComp.Active = true;
 					}
 				}

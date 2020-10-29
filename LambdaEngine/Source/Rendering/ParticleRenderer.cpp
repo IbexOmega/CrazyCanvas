@@ -607,7 +607,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(Sleeping);
 
-		if (Sleeping || m_EmitterCount == 0)
+		if (Sleeping)
 			return;
 
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
@@ -662,7 +662,9 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.y = 0;
 		
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, m_EmitterCount, sizeof(IndirectData));
+
+		if(m_EmitterCount > 0)
+			pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, m_EmitterCount, sizeof(IndirectData));
 
 		pCommandList->EndRenderPass();
 		pCommandList->End();

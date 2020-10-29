@@ -34,3 +34,11 @@ GUID_Lambda TeamHelper::GetTeamColorMaterialGUID(uint32 teamIndex)
 	VALIDATE(teamIndex < MAX_NUM_TEAMS);
 	return s_TeamColorMaterialGUIDs[teamIndex];
 }
+
+glm::vec3 TeamHelper::GetTeamColor(uint32 teamIndex)
+{
+	float32 baseAngle = 240.0f;
+	float32 deltaAngle = 360.0f / MAX_NUM_TEAMS;
+
+	return glm::rgbColor(glm::vec3(baseAngle + deltaAngle * float32(teamIndex), 1.0f, 1.0f));
+}

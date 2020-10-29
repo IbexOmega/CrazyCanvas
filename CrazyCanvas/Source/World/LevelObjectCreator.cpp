@@ -629,7 +629,15 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.5, 1.5f, -0.2) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
-	pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
+
+	ChildComponent childComp;
+	childComp.AddChild(weaponEntity, "weapon");
+
+	int32 playerNetworkUID;
+	int32 weaponNetworkUID;
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
 		.Active = false,
 		.OneTime = true,
 		.Explosive = 1.0f,
@@ -648,17 +656,10 @@ bool LevelObjectCreator::CreatePlayer(
 		.TileIndex = 14,
 		.AnimationCount = 1,
 		.FirstAnimationIndex = 16,
-		.Color = glm::vec4(0.5f, 0.0f, 0.0f, 1.0f),
-		}
-	);
+		.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
+			}
+		);
 
-	ChildComponent childComp;
-	childComp.AddChild(weaponEntity, "weapon");
-
-	int32 playerNetworkUID;
-	int32 weaponNetworkUID;
-	if (!MultiplayerUtils::IsServer())
-	{
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
