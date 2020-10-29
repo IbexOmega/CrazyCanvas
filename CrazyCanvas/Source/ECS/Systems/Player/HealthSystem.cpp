@@ -76,7 +76,7 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				Entity entity = event.CollisionInfo1.Entity;
 				EAmmoType ammoType = event.AmmoType;
 
-				LOG_INFO("Retriving health from entity=%d", entity);
+				//LOG_INFO("Retriving health from entity=%d", entity);
 
 				HealthComponent& healthComponent = pHealthComponents->GetData(entity);
 				PacketComponent<HealthChangedPacket>& packets = pHealthChangedComponents->GetData(entity);
@@ -85,12 +85,12 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 					{
 						healthComponent.CurrentHealth -= 10;
-						LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
+						//LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
 					}
 					else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 					{
 						healthComponent.CurrentHealth += 10;
-						LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
+						//LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
 					}
 
 					if (healthComponent.CurrentHealth <= 0)
@@ -119,11 +119,11 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			PacketComponent<HealthChangedPacket>& packets = pHealthChangedComponents->GetData(entity);
 			for (const HealthChangedPacket& packet : packets.GetPacketsReceived())
 			{
-				LOG_INFO("GOT A HEALTH PACKAGE");
+				//LOG_INFO("GOT A HEALTH PACKAGE");
 
 				if (healthComponent.CurrentHealth != packet.CurrentHealth)
 				{
-					LOG_INFO("Health changed old=%d new=%d", healthComponent.CurrentHealth, packet.CurrentHealth);
+					//LOG_INFO("Health changed old=%d new=%d", healthComponent.CurrentHealth, packet.CurrentHealth);
 					healthComponent.CurrentHealth = packet.CurrentHealth;
 				}
 			}
@@ -138,17 +138,17 @@ bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 	if (MultiplayerUtils::IsServer())
 	{
 		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
-		LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
+		//LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
 
 		for (Entity entity : m_HealthEntities)
 		{
-			LOG_INFO("....Entity: %d", entity);
+			//LOG_INFO("....Entity: %d", entity);
 
 			// CollisionInfo0 is the projectile
 			if (projectileHitEvent.CollisionInfo1.Entity == entity)
 			{
 				m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
-				LOG_INFO("Player got hit");
+				//LOG_INFO("Player got hit");
 				break;
 			}
 		}

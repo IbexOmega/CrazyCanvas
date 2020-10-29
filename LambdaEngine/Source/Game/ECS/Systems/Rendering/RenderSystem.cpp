@@ -1065,7 +1065,15 @@ namespace LambdaEngine
 
 				if (m_RayTracingEnabled)
 				{
-					meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
+					if (isAnimated)
+					{
+						meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pAnimatedVertexBuffer->GetDeviceAdress();
+					}
+					else
+					{
+						meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
+					}
+
 					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
 					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
 					m_SBTRecordsDirty = true;

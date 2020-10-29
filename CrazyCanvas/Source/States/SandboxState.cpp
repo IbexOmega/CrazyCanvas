@@ -82,6 +82,7 @@ void SandboxState::Init()
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
+	m_MultiplayerClient.InitInternal();
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
@@ -326,7 +327,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	m_pRenderGraphEditor->Update();
 	LambdaEngine::Profiler::Tick(delta);
 
-	// m_MultiplayerClient.TickMainThreadInternal(delta);
+	m_MultiplayerClient.TickMainThreadInternal(delta);
 
 	if constexpr (IMGUI_ENABLED)
 	{
@@ -336,7 +337,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 
 void SandboxState::FixedTick(LambdaEngine::Timestamp delta)
 {
-	// m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
 }
 
 void SandboxState::OnRenderGraphRecreate(LambdaEngine::RenderGraph* pRenderGraph)

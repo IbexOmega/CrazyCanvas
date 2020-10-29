@@ -26,5 +26,5 @@ public:
 	static void ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result);
 
 private:
-	bool m_MouseEnabled = false;
+	bool m_MouseEnabled = true;
 };
