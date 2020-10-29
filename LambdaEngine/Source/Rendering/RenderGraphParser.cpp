@@ -654,7 +654,8 @@ namespace LambdaEngine
 								SynchronizationStageDesc* pPreviousSynchronizationStage = &orderedSynchronizationStages[orderedPipelineStages[previousSynchronizationPipelineStageDescIndex].StageIndex];
 
 								//If this is a queue transfer, the barrier must remain but the state change should be handled by the Render Pass, otherwise remove it
-								if (previousSynchronizationDescIt->PrevQueue != previousSynchronizationDescIt->NextQueue)
+								if (previousSynchronizationDescIt->PrevQueue != previousSynchronizationDescIt->NextQueue &&
+									!IsReadOnly(previousSynchronizationDescIt->PrevBindingType))
 								{
 									previousSynchronizationDescIt->NextBindingType = previousSynchronizationDescIt->PrevBindingType;
 								}
@@ -692,7 +693,8 @@ namespace LambdaEngine
 								SynchronizationStageDesc* pNextSynchronizationStage = &orderedSynchronizationStages[orderedPipelineStages[nextSynchronizationPipelineStageDescIndex].StageIndex];
 
 								//If this is a queue transfer, the barrier must remain but the state change should be handled by the Render Pass, otherwise remove it
-								if (nextSynchronizationDescIt->PrevQueue != nextSynchronizationDescIt->NextQueue)
+								if (nextSynchronizationDescIt->PrevQueue != nextSynchronizationDescIt->NextQueue &&
+									!IsReadOnly(nextSynchronizationDescIt->NextBindingType))
 								{
 									nextSynchronizationDescIt->PrevBindingType = nextSynchronizationDescIt->NextBindingType;
 								}

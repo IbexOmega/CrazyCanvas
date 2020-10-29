@@ -13,6 +13,7 @@ struct PlayerAction : Packet
 	glm::quat Rotation;
 	int8 DeltaForward	= 0;
 	int8 DeltaLeft		= 0;
-	EAmmoType FiredAmmo = EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projektiles
+	bool StartedReload	= false;
+	EAmmoType FiredAmmo	= EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projectiles
 };
 #pragma pack(pop)

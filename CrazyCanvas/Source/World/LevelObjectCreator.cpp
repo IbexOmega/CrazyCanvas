@@ -906,7 +906,11 @@ bool LevelObjectCreator::CreateProjectile(
 
 	const VelocityComponent velocityComponent = { desc.InitalVelocity };
 	pECS->AddComponent<VelocityComponent>(projectileEntity, velocityComponent);
-	pECS->AddComponent<ProjectileComponent>(projectileEntity, { desc.AmmoType });
+
+	ProjectileComponent projectileComp;
+	projectileComp.AmmoType	= desc.AmmoType;
+	projectileComp.Owner	= desc.WeaponOwner;
+	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
 	if (!MultiplayerUtils::IsServer())
