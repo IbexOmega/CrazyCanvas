@@ -16,12 +16,10 @@ using namespace LambdaEngine;
 
 PlayerForeignSystem::PlayerForeignSystem()
 {
-
 }
 
 PlayerForeignSystem::~PlayerForeignSystem()
 {
-
 }
 
 void PlayerForeignSystem::Init()

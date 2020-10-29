@@ -46,26 +46,30 @@
 		#ifdef RELATIVE
 			#undef RELATIVE
 		#endif
+		#ifdef CreateProcess
+			#undef CreateProcess
+		#endif
 	#endif
 
-	namespace LambdaEngine
+namespace LambdaEngine
+{
+	inline String GetLastErrorAsString()
 	{
-		inline String GetLastErrorAsString()
+		DWORD dwError = ::GetLastError();
+		if (dwError == 0)
 		{
-			DWORD dwError = ::GetLastError();
-			if (dwError == 0)
-			{
-				return String();
-			}
-
-			LPSTR messageBuffer = nullptr;
-			size_t size = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL, dwError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&messageBuffer), 0, NULL);
-
-			String message(messageBuffer, size);
-			// Free the buffer 
-			LocalFree(messageBuffer);
-			return message;
+			return String();
 		}
+
+		LPSTR messageBuffer = nullptr;
+		size_t size = ::FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, dwError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&messageBuffer), 0, NULL);
+
+		String message(messageBuffer, size);
+		// Free the buffer 
+		LocalFree(messageBuffer);
+		return message;
 	}
+}
+
 #endif

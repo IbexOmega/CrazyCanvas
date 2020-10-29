@@ -350,7 +350,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords)
+	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
 	{
 		m_GlobalShaderRecords = shaderRecords;
 
@@ -360,14 +360,19 @@ namespace LambdaEngine
 
 			if (pRenderStage->pPipelineState != nullptr && pRenderStage->pPipelineState->GetType() == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 			{
-				m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pRenderStage->pSBT);
-
 				SBTDesc sbtDesc = {};
 				sbtDesc.DebugName		= "Render Graph Global SBT";
 				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
 				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
 
-				pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+				if (pRenderStage->pSBT == nullptr)
+				{
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
+				}
+				else
+				{
+					pRenderStage->pSBT->Build(AcquireComputeCopyCommandList(), removedDeviceResources, &sbtDesc);
+				}
 			}
 		}
 	}
@@ -1268,7 +1273,7 @@ namespace LambdaEngine
 					sbtDesc.pPipelineState = pRenderStage->pPipelineState;
 					sbtDesc.SBTRecords = m_GlobalShaderRecords;
 
-					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(RenderAPI::GetComputeQueue(), &sbtDesc);
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
 				}
 			}
 		}
@@ -2361,14 +2366,14 @@ namespace LambdaEngine
 
 					if (imGuiRenderStageIt == m_DebugRenderers.End())
 					{
-						ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice);
 
 						ImGuiRendererDesc imguiRendererDesc = {};
 						imguiRendererDesc.BackBufferCount	= m_BackBufferCount;
 						imguiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);
 						imguiRendererDesc.IndexBufferSize	= MEGA_BYTE(8);
 
-						if (!pImGuiRenderer->Init(&imguiRendererDesc))
+						ImGuiRenderer* pImGuiRenderer = DBG_NEW ImGuiRenderer(m_pGraphicsDevice, &imguiRendererDesc);
+						if (!pImGuiRenderer->Init())
 						{
 							LOG_ERROR("[RenderGraph] Could not initialize ImGui Custom Renderer");
 							return false;
@@ -3066,6 +3071,22 @@ namespace LambdaEngine
 						requiredDrawArgMasks.insert(maskDesc);
 
 						pResource->BarriersPerSynchronizationStage.PushBack(barrierInfo);
+
+						DrawArgsData drawArgsData = {};
+						drawArgsData.InitialTransitionBarrierTemplate.pBuffer				= nullptr;
+						drawArgsData.InitialTransitionBarrierTemplate.QueueBefore			= prevQueue;
+						drawArgsData.InitialTransitionBarrierTemplate.QueueAfter			= drawArgsData.InitialTransitionBarrierTemplate.QueueBefore;
+						drawArgsData.InitialTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+						drawArgsData.InitialTransitionBarrierTemplate.DstMemoryAccessFlags	= srcMemoryAccessFlags;
+
+						drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore			= prevQueue;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.QueueAfter				= drawArgsData.InitialTextureTransitionBarrierTemplate.QueueBefore;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.SrcMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.DstMemoryAccessFlags	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.StateBefore			= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+						drawArgsData.InitialTextureTransitionBarrierTemplate.StateAfter				= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+						pResource->DrawArgs.FullMaskToArgs[maskDesc.FullMask] = drawArgsData;
 					}
 
 					// Textures from draw arg extensions.
@@ -3607,7 +3628,11 @@ namespace LambdaEngine
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);
-			memcpy(drawArgsArgsIt->second.Args.GetData(), pDesc->ExternalDrawArgsUpdate.pDrawArgs, pDesc->ExternalDrawArgsUpdate.Count * sizeof(DrawArg));
+
+			for (uint32 d = 0; d < pDesc->ExternalDrawArgsUpdate.Count; d++)
+			{
+				drawArgsArgsIt->second.Args[d] = pDesc->ExternalDrawArgsUpdate.pDrawArgs[d];
+			}
 
 			//Update Synchronization Stage Barriers
 			for (uint32 b = 0; b < pResource->BarriersPerSynchronizationStage.GetSize(); b += pResource->SubResourceCount)
@@ -4170,14 +4195,23 @@ namespace LambdaEngine
 			for (const TArray<PipelineTextureBarrierDesc>& sameQueueUnboundedTextureBarriers : sameQueueUnboundedTextureBarrierArrays)
 			{
 				UNREFERENCED_VARIABLE(sameQueueUnboundedTextureBarriers);
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueTextureBarriers.GetData(), sameQueueTextureBarriers.GetSize());
+
+				if (sameQueueTextureBarriers.GetSize() > 0)
+				{
+					pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, sameQueueTextureBarriers.GetData(), sameQueueTextureBarriers.GetSize());
+				}
 			}
 
 			for (const TArray<PipelineTextureBarrierDesc>& otherQueueUnboundedTextureBarriers : otherQueueUnboundedTextureBarrierArrays)
 			{
 				UNREFERENCED_VARIABLE(otherQueueUnboundedTextureBarriers);
-				pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
-				pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
+
+				if (otherQueueTextureBarriers.GetSize() > 0)
+				{
+					pFirstExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->SameQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
+					pSecondExecutionCommandList->PipelineTextureBarriers(pSynchronizationStage->SrcPipelineStage, pSynchronizationStage->OtherQueueDstPipelineStage, otherQueueTextureBarriers.GetData(), otherQueueTextureBarriers.GetSize());
+				}
+
 				(*ppSecondExecutionStage) = pSecondExecutionCommandList;
 			}
 		}

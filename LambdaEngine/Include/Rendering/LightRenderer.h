@@ -38,7 +38,7 @@ namespace LambdaEngine
 		LightRenderer();
 		~LightRenderer();
 
-		bool Init();
+		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 

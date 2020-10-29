@@ -5,6 +5,7 @@
 #include "Audio/AudioAPI.h"
 #include "Audio/FMOD/AudioDeviceFMOD.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
+
 #include "Game/ECS/Components/Audio/ListenerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
@@ -16,28 +17,28 @@
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+
+#include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
-#include "Teams/TeamHelper.h"
-
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryEncoder.h"
-
-#include "ECS/ECSCore.h"
-#include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "Math/Math.h"
 #include "Math/Random.h"
 
 #include "Resources/ResourceManager.h"
-
-#include "Game/Multiplayer/MultiplayerUtils.h"
-#include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "Rendering/EntityMaskManager.h"
 
@@ -100,15 +101,16 @@ bool LevelObjectCreator::Init()
 
 	//Register Create Special Object by Type Functions
 	{
-		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]	= &LevelObjectCreator::CreateFlag;
-		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]	= &LevelObjectCreator::CreatePlayer;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]		= &LevelObjectCreator::CreateFlag;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]		= &LevelObjectCreator::CreatePlayer;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
 	}
 
 	//Load Object Meshes & Materials
 	{
 		//Flag
 		{
-			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("gun.obj");
+			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("Roller.obj");
 
 			MaterialProperties materialProperties = {};
 			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -121,6 +123,20 @@ bool LevelObjectCreator::Init()
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				materialProperties);
+		}
+
+		//Player
+		{
+			s_PlayerMeshGUID					= ResourceManager::LoadMeshFromFile("Player/Idle.fbx", s_PlayerIdleGUIDs);
+
+#ifndef LAMBDA_DEBUG
+			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.fbx");
+			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.fbx");
+			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.fbx");
+			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.fbx");
+			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.fbx");
+			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.fbx");
+#endif
 		}
 	}
 
@@ -213,7 +229,10 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	return entity;
 }
 
-ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	auto createFuncIt = s_LevelObjectByPrefixCreateFunctions.find(levelObject.Prefix);
 
@@ -248,7 +267,10 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 	}
 }
 
-ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 
@@ -307,7 +329,10 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(const LambdaEngine::Level
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
-ELevelObjectType LevelObjectCreator::CreateFlagSpawn(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 
@@ -522,6 +547,7 @@ bool LevelObjectCreator::CreateFlag(
 			},
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity, { glm::vec3(0.0f) })
 		};
+		
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicActor(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
@@ -530,7 +556,6 @@ bool LevelObjectCreator::CreateFlag(
 	}
 
 	pECS->AddComponent<NetworkComponent>(entity, { networkUID });
-	//MultiplayerUtils::RegisterEntity(entity, networkUID);
 
 	createdEntities.PushBack(entity);
 
@@ -559,17 +584,25 @@ bool LevelObjectCreator::CreatePlayer(
 	glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
+	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
+
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
+	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	
+		NetworkPositionComponent
+		{ 
+		.Position		= pPlayerDesc->Position, 
+		.PositionLast	= pPlayerDesc->Position, 
+		.TimestampStart = EngineLoop::GetTimeSinceStart(), 
+		.Duration		= EngineLoop::GetFixedTimestep() 
+		});
+
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
-	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	NetworkPositionComponent{ .Position = pPlayerDesc->Position, .PositionLast = pPlayerDesc->Position, .TimestampStart = EngineLoop::GetTimeSinceStart(), .Duration = EngineLoop::GetFixedTimestep() });
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	pECS->AddComponent<HealthComponent>(playerEntity,			HealthComponent());
-
 	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
-
+	
 	const CharacterColliderCreateInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
@@ -583,12 +616,17 @@ bool LevelObjectCreator::CreatePlayer(
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(colliderInfo, std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), PLAYER_CAPSULE_RADIUS);
+	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+		colliderInfo, 
+		std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), 
+		PLAYER_CAPSULE_RADIUS);
+
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.2, 1.5f, -0.2) });
-	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity, });
+	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
+	pECS->AddComponent<PacketComponent<WeaponFiredPacket>>(weaponEntity, { });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.5, 1.5f, -0.2) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
@@ -614,14 +652,153 @@ bool LevelObjectCreator::CreatePlayer(
 		}
 	);
 
-	int32 networkUID;
+	ChildComponent childComp;
+	childComp.AddChild(weaponEntity, "weapon");
+
+	int32 playerNetworkUID;
+	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		networkUID = pPlayerDesc->NetworkUID;
+		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
+		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
-		//Todo: Set DrawArgs Mask here to avoid rendering local mesh
-		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = pPlayerDesc->MeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
-		pECS->AddComponent<AnimationComponent>(playerEntity, pPlayerDesc->AnimationComponent);
+
+		AnimationComponent animationComponent = {};
+		animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+
+		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+
+#ifndef LAMBDA_DEBUG
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", s_PlayerStrafeRightGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", s_PlayerStrafeLeftGUIDs[0]));
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Left");
+			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft	= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Right");
+			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
+			ClipNode* pStrafeRight	= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Left");
+			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft		= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		{
+			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Right");
+			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
+			ClipNode* pStrafeRight		= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
+			pAnimationState->SetOutputNode(pBlendNode);
+			pAnimationGraph->AddState(pAnimationState);
+		}
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward & Strafe Right", 0.1f));
+
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Idle", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward & Strafe Left", 0.1f));
+#endif
+
+		animationComponent.pGraph = pAnimationGraph;
+
+		pAnimationGraph->TransitionToState("Idle");
+
+		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
+		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = s_PlayerMeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
 
 		if (!pPlayerDesc->IsLocal)
@@ -645,9 +822,10 @@ bool LevelObjectCreator::CreatePlayer(
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();
 			childEntities.PushBack(cameraEntity);
+			childComp.AddChild(cameraEntity, "camera");
 
 			//Todo: Better implementation for this somehow maybe?
-			const Mesh* pMesh = ResourceManager::GetMesh(pPlayerDesc->MeshGUID);
+			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
@@ -678,7 +856,6 @@ bool LevelObjectCreator::CreatePlayer(
 				.FOV		= pPlayerDesc->pCameraDesc->FOVDegrees
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
-
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 
 			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
@@ -686,12 +863,79 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
-		networkUID = (int32)playerEntity;
+		playerNetworkUID = (int32)playerEntity;
+		weaponNetworkUID = (int32)weaponEntity;
 		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 	}
 
-	pECS->AddComponent<NetworkComponent>(playerEntity, { networkUID });
+	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
+	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
+	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
+	pECS->AddComponent<PacketComponent<HealthChangedPacket>>(playerEntity, {});
 
-	D_LOG_INFO("Created Player with EntityID %u, NetworkID %u", playerEntity, networkUID);
+	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
+	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
+	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
+	
+	return true;
+}
+
+bool LevelObjectCreator::CreateProjectile(
+	const void* pData,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
+	LambdaEngine::TArray<uint64>& saltUIDs)
+{
+	using namespace LambdaEngine;
+
+	UNREFERENCED_VARIABLE(saltUIDs);
+	UNREFERENCED_VARIABLE(createdChildEntities);
+
+	if (pData == nullptr)
+	{
+		return false;
+	}
+
+	const CreateProjectileDesc& desc = *reinterpret_cast<const CreateProjectileDesc*>(pData);
+
+	// Create a projectile entity
+	ECSCore* pECS = ECSCore::GetInstance();
+	const Entity projectileEntity = pECS->CreateEntity();
+	createdEntities.PushBack(projectileEntity);
+
+	const VelocityComponent velocityComponent = { desc.InitalVelocity };
+	pECS->AddComponent<VelocityComponent>(projectileEntity, velocityComponent);
+	pECS->AddComponent<ProjectileComponent>(projectileEntity, { desc.AmmoType });
+	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
+
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
+	}
+
+	const DynamicCollisionCreateInfo collisionInfo =
+	{
+		/* Entity */	 		projectileEntity,
+		/* Detection Method */	ECollisionDetection::CONTINUOUS,
+		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
+		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) }),
+		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, desc.FireDirection }),
+		{
+			{
+				/* Shape Type */		EShapeType::SIMULATION,
+				/* Geometry Type */		EGeometryType::SPHERE,
+				/* Geometry Params */	{ .Radius = 0.3f },
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* CallbackFunction */	desc.Callback,
+			},
+		},
+		/* Velocity */			velocityComponent
+	};
+
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
+	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
+
 	return true;
 }

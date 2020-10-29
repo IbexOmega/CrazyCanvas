@@ -13,8 +13,9 @@ class PlayerLocalSystem : public LambdaEngine::System
 {
 public:
 	DECL_UNIQUE_CLASS(PlayerLocalSystem);
+	
 	PlayerLocalSystem();
-	virtual ~PlayerLocalSystem();
+	virtual ~PlayerLocalSystem() = default;
 
 	void Init();
 
@@ -25,7 +26,10 @@ public:
 	void DoAction(LambdaEngine::Timestamp deltaTime, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
 
 private:
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final 
+	{
+		 UNREFERENCED_VARIABLE(deltaTime);
+	}
 
 	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
 	void Reconcile(LambdaEngine::Entity entityPlayer);

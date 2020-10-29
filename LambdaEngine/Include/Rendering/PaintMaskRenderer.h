@@ -4,6 +4,8 @@
 #include "Rendering/RenderGraph.h"
 #include <optional>
 
+#define MAX_PAINT_PER_FRAME 10
+
 namespace LambdaEngine
 {
 	class CommandAllocator;
@@ -47,10 +49,10 @@ namespace LambdaEngine
 	class PaintMaskRenderer : public ICustomRenderer
 	{
 	public:
-		PaintMaskRenderer();
+		PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
 		~PaintMaskRenderer();
 
-		bool init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
+		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
@@ -115,12 +117,14 @@ namespace LambdaEngine
 			EPaintMode		PaintMode			= EPaintMode::NONE;
 			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 			ETeam			Team				= ETeam::NONE;
+			uint32			Padding0			= 0;
 		};
 
 		struct FrameSettings
 		{
-			uint32 ShouldReset = 0;
-			uint32 ShouldPaint = 0;
+			uint32 ShouldReset	= 0;
+			uint32 ShouldPaint	= 0;
+			uint32 PaintCount	= 0;
 		};
 
 	private:
@@ -148,7 +152,7 @@ namespace LambdaEngine
 		TSharedRef<RenderPass>		m_RenderPass = nullptr;
 
 		TSharedRef<Sampler>			m_Sampler = nullptr;
-		TArray<TSharedRef<Buffer>>	m_UnwrapDataCopyBuffers;
+		TArray<TArray<TSharedRef<Buffer>>>	m_UnwrapDataCopyBuffers;
 		TSharedRef<Buffer>			m_UnwrapDataBuffer = nullptr;
 
 		const DrawArg*												m_pDrawArgs = nullptr;
@@ -162,7 +166,8 @@ namespace LambdaEngine
 
 		TArray<RenderTarget>										m_RenderTargets;
 	private:
-		static std::list<UnwrapData>	s_Collisions;
+		static TArray<UnwrapData>		s_ServerCollisions;
+		static TArray<UnwrapData>		s_ClientCollisions;
 		static bool						s_ShouldReset;
 	};
 }

@@ -24,7 +24,7 @@
             <StackPanel>
                 <Button Click="OnButtonSingleplayerClick" Content="Singleplayer"  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
                 <Button Click="OnButtonMultiplayerClick"  Content="Multiplayer"   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
-                <Button Click="OnButtonBenchmarkClick"  Content="Benchmark"   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="45.2,10" Padding="20"  MinWidth="220" FontSize="32"/>
+                <Button Click="OnButtonBenchmarkClick"    Content="Benchmark"     HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
                 <Button Click="OnButtonSettingsClick"     Content="Settings"      HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
                 <Button Click="OnButtonExitClick"         Content="Exit"          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Padding="20"  MinWidth="220" FontSize="32"/>
             </StackPanel>

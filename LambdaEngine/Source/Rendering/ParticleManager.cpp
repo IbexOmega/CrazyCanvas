@@ -84,14 +84,6 @@ namespace LambdaEngine
 
 		constexpr float EPSILON = 0.01f;
 
-		//std::string str;
-		//str += "################\nIndirectData: ";
-		//for (size_t i = 0; i < m_IndirectData.GetSize(); i++)
-		//{
-		//	str += "[first: " + std::to_string(m_IndirectData[i].FirstInstance) + ", count: " + std::to_string(m_IndirectData[i].InstanceCount) + "]";
-		//}
-		//LOG_INFO("%s\n#################", str.c_str());
-
 		TArray<EmitterID> emittersToDeactivate;
 		for (uint32 i = 0; i < m_Emitters.GetSize();)
 		{
@@ -122,7 +114,6 @@ namespace LambdaEngine
 			if (emitterEntity != m_RepeatEmitters.end())
 			{
 				EmitterID id = m_EntityToEmitterID[entity];
-				ParticleEmitterInstance& emitter = m_Emitters[id];
 
 				// Update transform of emitter
 				m_EmitterTransformData[id] = glm::translate(positionComp.Position) * glm::toMat4(rotationComp.Quaternion);
@@ -243,6 +234,7 @@ namespace LambdaEngine
 
 	void ParticleManager::ReplaceRemovedEmitterWithLast(uint32 removeIndex)
 	{
+		// If removed emitter is a repeat emitter
 		if (m_EmitterIDToEntity.find(removeIndex) != m_EmitterIDToEntity.end())
 		{
 			Entity removedEntity = m_EmitterIDToEntity[removeIndex];

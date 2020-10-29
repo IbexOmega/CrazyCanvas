@@ -30,7 +30,7 @@ namespace LambdaEngine
 		clientDesc.Protocol				= EProtocol::UDP;
 		clientDesc.PingInterval			= Timestamp::Seconds(1);
 		clientDesc.PingTimeout			= Timestamp::Seconds(10);
-		clientDesc.UsePingSystem		= false;
+		clientDesc.UsePingSystem		= true;
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
@@ -66,7 +66,7 @@ namespace LambdaEngine
 		}
 		return true;
 	}
-
+	
 	ClientBase* ClientSystem::GetClient()
 	{
 		return m_pClient;

@@ -5,7 +5,7 @@
 * EAmmoType
 */
 
-enum class EAmmoType
+enum class EAmmoType : uint8
 {
 	AMMO_TYPE_NONE	= 0,
 	AMMO_TYPE_PAINT	= 1,

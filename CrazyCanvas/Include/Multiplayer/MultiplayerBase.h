@@ -4,6 +4,7 @@
 #include "Time/API/Timestamp.h"
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "ECS/Systems/Player/PlayerAnimationSystem.h"
 
 class MultiplayerBase
 {
@@ -21,7 +22,9 @@ protected:
 	virtual void Init() = 0;
 	virtual void TickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
 	virtual void FixedTickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
+	virtual void PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
 
 protected:
 	PacketTranscoderSystem m_PacketDecoderSystem;
+	PlayerAnimationSystem m_PlayerAnimationSystem;
 };

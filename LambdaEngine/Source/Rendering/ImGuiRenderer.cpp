@@ -45,11 +45,14 @@ namespace LambdaEngine
 	/*
 	* ImGuiRenderer
 	*/
-	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice)
+	ImGuiRenderer::ImGuiRenderer(const GraphicsDevice* pGraphicsDevice, ImGuiRendererDesc* pDesc)
 		: m_pGraphicsDevice(pGraphicsDevice)
 	{
 		VALIDATE(s_pRendererInstance == nullptr);
+		VALIDATE(pDesc);
+
 		s_pRendererInstance = this;
+		m_pDesc = pDesc;
 	}
 
 	ImGuiRenderer::~ImGuiRenderer()
@@ -82,11 +85,9 @@ namespace LambdaEngine
 		ImGui::DestroyContext();
 	}
 
-	bool ImGuiRenderer::Init(const ImGuiRendererDesc* pDesc)
+	bool ImGuiRenderer::Init()
 	{
-		VALIDATE(pDesc);
-
-		uint32 backBufferCount = pDesc->BackBufferCount;
+		uint32 backBufferCount = m_pDesc->BackBufferCount;
 		m_BackBuffers.Resize(backBufferCount);
 
 		if (!InitImGui())
@@ -101,7 +102,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateBuffers(pDesc->VertexBufferSize, pDesc->IndexBufferSize))
+		if (!CreateBuffers(m_pDesc->VertexBufferSize, m_pDesc->IndexBufferSize))
 		{
 			LOG_ERROR("[ImGuiRenderer]: Failed to create buffers");
 			return false;
@@ -905,7 +906,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		CopyTextureFromBufferDesc copyDesc = {};
+		CopyTextureBufferDesc copyDesc = {};
 		copyDesc.SrcOffset		= 0;
 		copyDesc.SrcRowPitch	= 0;
 		copyDesc.SrcHeight		= 0;

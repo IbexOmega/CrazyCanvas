@@ -149,22 +149,27 @@
                         <Button Click="OnButtonRefreshClick" Content="Refresh" Grid.Column="6" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
                         <Button  Content="Join" Click="OnButtonJoinClick" Grid.Column="2" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
                         <Button.Triggers>
+                        
                                 <EventTrigger RoutedEvent="Button.Click">
                                     <BeginStoryboard>
-                                        <!-- Storyboard property is the content property of BeginStoryboard -->
-                                        <!-- class, so we don't need to make it explicit in the code -->
                                         <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
                                             <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </EventTrigger>
+                                <EventTrigger RoutedEvent="Button.Click">
+                                    <BeginStoryboard>
+                                        <Storyboard TargetName="NOTIFICATION_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
+                                            <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="NOTIFICATION_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+
                             </Button.Triggers>
                         <Button Click="OnButtonErrorClick" Content="Error" Grid.Column="1" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
                             <Button.Triggers>
                                 <EventTrigger RoutedEvent="Button.Click">
                                     <BeginStoryboard>
-                                        <!-- Storyboard property is the content property of BeginStoryboard -->
-                                        <!-- class, so we don't need to make it explicit in the code -->
                                         <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
                                             <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
                                         </Storyboard>
@@ -251,6 +256,16 @@
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </EventTrigger>
+                                <EventTrigger RoutedEvent="Button.Click">
+                                    <BeginStoryboard>
+                                        <!-- Storyboard property is the content property of BeginStoryboard -->
+                                        <!-- class, so we don't need to make it explicit in the code -->
+                                        <Storyboard TargetName="NOTIFICATION_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
+                                            <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="NOTIFICATION_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+
                             </Button.Triggers>
                         </Button>
 
@@ -285,5 +300,19 @@
                 </Button.Triggers>
             </Button>
         </Grid>
+
+        <Grid x:Name="NOTIFICATION_BOX_CONTAINER"  Grid.Column="2" HorizontalAlignment="Center" Height="100" VerticalAlignment="Center" Width="250">
+            <Grid.Background>
+                <SolidColorBrush Color="Teal" Opacity="0"/>
+            </Grid.Background>
+            <Rectangle x:Name="NOTIFICATION_BOX"  Margin="0">
+                <Rectangle.RenderTransform>
+                    <TranslateTransform X="0" Y="0"/>
+                </Rectangle.RenderTransform>
+            </Rectangle>
+            <TextBlock x:Name="NOTIFICATION_BOX_TEXT" HorizontalAlignment="Center" TextWrapping="Wrap" Text="Notifaction PlaceHolder" VerticalAlignment="Center" FontSize="20" FontWeight="Bold"/>
+
+        </Grid>
+
         <Button Grid.Column="0" Margin="20" Content="Back"  Click="OnButtonBackClick" HorizontalAlignment="Center" VerticalAlignment="Bottom"  Padding="20"  MinWidth="220" FontSize="22"/>
     </Grid>

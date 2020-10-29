@@ -239,6 +239,7 @@ namespace LambdaEngine
 		~RenderSystem() = default;
 
 		bool Init();
+		bool InitRenderGraphs();
 		bool Release();
 
 		virtual void Tick(Timestamp deltaTime) override final;
@@ -249,6 +250,12 @@ namespace LambdaEngine
 		* Set new rendergraph to be executed
 		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
+
+
+		/*
+		* Adds new Game specific Custom Renderer 
+		*/
+		void AddCustomRenderer(ICustomRenderer* pCustomRenderer);
 
 		/*
 		* Puts given render stage to sleep, this will prevent execution of renderstage
@@ -317,7 +324,7 @@ namespace LambdaEngine
 	private:
 		IDVector m_StaticMeshEntities;
 		IDVector m_AnimatedEntities;
-		IDVector m_PlayerEntities;
+		IDVector m_LocalPlayerEntities;
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;
 		IDVector m_CameraEntities;
@@ -424,6 +431,7 @@ namespace LambdaEngine
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
+		TArray<ICustomRenderer*>	m_GameSpecificCustomRenderers;
 
 	private:
 		static RenderSystem		s_Instance;

@@ -32,6 +32,7 @@ template<class T>
 struct PacketComponent : public IPacketComponent
 {
 	friend class PacketType;
+
 	static_assert(std::is_base_of<Packet, T>::value, "T must inherit from Packet!");
 	DECL_COMPONENT(PacketComponent<T>);
 
@@ -42,6 +43,22 @@ public:
 	const LambdaEngine::TArray<T>& GetPacketsReceived() const
 	{
 		return m_PacketsReceived;
+	}
+
+	/*
+	* Returns the packets to be sent.
+	*/
+	const LambdaEngine::TQueue<T>& GetPacketsToSend() const
+	{
+		return m_PacketsToSend;
+	}
+
+	/*
+	* Returns the packets to be sent.
+	*/
+	LambdaEngine::TQueue<T>& GetPacketsToSend()
+	{
+		return m_PacketsToSend;
 	}
 
 	/*

@@ -33,11 +33,18 @@
 
 namespace LambdaEngine
 {
-	std::list<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_Collisions;
-	bool										PaintMaskRenderer::s_ShouldReset = false;
+	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
+	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
+	bool									PaintMaskRenderer::s_ShouldReset = false;
 
-	PaintMaskRenderer::PaintMaskRenderer()
+	PaintMaskRenderer::PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
 	{
+		m_BackBuffers.Resize(backBufferCount);
+		m_BackBufferCount = backBufferCount;
+
+		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
+
+		m_pGraphicsDevice = pGraphicsDevice;
 	}
 
 	PaintMaskRenderer::~PaintMaskRenderer()
@@ -61,14 +68,13 @@ namespace LambdaEngine
 		}
 	}
 
-	bool PaintMaskRenderer::init(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
+	bool PaintMaskRenderer::Init()
 	{
-		m_BackBuffers.Resize(backBufferCount);
-		m_BackBufferCount = backBufferCount;
-
-		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
-
-		m_pGraphicsDevice = pGraphicsDevice;
+		if (!m_pGraphicsDevice)
+		{
+			LOG_ERROR("[PaintMaskRenderer]: Graphic Device is null.");
+			return false;
+		}
 
 		if (!CreateCopyCommandList())
 		{
@@ -168,7 +174,7 @@ namespace LambdaEngine
 		}
 
 		uint64 offset = 0;
-		uint64 size = sizeof(UnwrapData);
+		uint64 size = sizeof(UnwrapData) * MAX_PAINT_PER_FRAME;
 		Buffer* buffer = m_UnwrapDataBuffer.Get();
 		UpdateBufferResource("UNWRAP_DATA_BUFFER", &buffer, &offset, &size, 1, false);
 
@@ -350,8 +356,7 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
-
-		if ((m_RenderTargets.IsEmpty() || s_Collisions.empty()) && !s_ShouldReset)
+		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())) && !s_ShouldReset)
 		{
 			return;
 		}
@@ -359,109 +364,136 @@ namespace LambdaEngine
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
-		bool isServer		= false;
-		
-		FrameSettings frameSettings = {};
-		frameSettings.ShouldReset = s_ShouldReset;
+		// "combine" both arrays to loop through
+		TArray<TArray<UnwrapData>*> collisions{&s_ClientCollisions, &s_ServerCollisions};
 
-		// Transfer current collision data
-		if (!s_ShouldReset || !s_Collisions.empty())
+		for (uint32 index = 0; auto& collisionArray : collisions)
 		{
-			TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex];
+			bool isServer = false;
 
-			byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
+			FrameSettings frameSettings = {};
+			frameSettings.ShouldReset = s_ShouldReset;
 
-			const UnwrapData& data	= s_Collisions.front();
-			isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
-			frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
-			
-			memcpy(pUniformMapping, &data, sizeof(UnwrapData));
-
-			s_Collisions.pop_front();
-			unwrapDataCopyBuffer->Unmap();
-			pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData));
-		}
-
-		if (!frameSettings.ShouldReset && !frameSettings.ShouldPaint)
-		{
-			LOG_WARNING("[Paint Mask Renderer]: Renderer had data to draw, but some enum was not set!");
-			return;
-		}
-
-		for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
-		{
-			RenderTarget	renderTargetDesc	= m_RenderTargets[t];
-			uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
-			uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
-			const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-			TextureView*	renderTarget		= renderTargetDesc.pTextureView;
-
-			uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
-			uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
-
-			BeginRenderPassDesc beginRenderPassDesc = {};
-			beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
-			beginRenderPassDesc.ppRenderTargets		= &renderTarget;
-			beginRenderPassDesc.RenderTargetCount	= 1;
-			beginRenderPassDesc.Width				= width;
-			beginRenderPassDesc.Height				= height;
-			beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-			beginRenderPassDesc.pClearColors		= nullptr;
-			beginRenderPassDesc.ClearColorCount		= 0;
-			beginRenderPassDesc.Offset.x			= 0;
-			beginRenderPassDesc.Offset.y			= 0;
-
-			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
-			Viewport viewport = {};
-			viewport.MinDepth	= 0.0f;
-			viewport.MaxDepth	= 1.0f;
-			viewport.Width		= (float32)width;
-			viewport.Height		= -(float32)height;
-			viewport.x			= 0.0f;
-			viewport.y			= (float32)height;
-			pCommandList->SetViewports(&viewport, 0, 1);
-
-			ScissorRect scissorRect = {};
-			scissorRect.Width	= width;
-			scissorRect.Height	= height;
-			pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
-			if (isServer && s_ShouldReset)
-				pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateBothID));
-			else if (isServer)
-				pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateServerID));
-			else
-				pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateClientID));
-
-			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-
-			if (m_PerFrameBufferDescriptorSet.Get())
+			// Transfer current collision data
+			if (!collisionArray->IsEmpty())
 			{
-				pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
+				TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex][index++];
+
+				byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
+
+				const UnwrapData& data	= collisionArray->GetFront();
+				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
+				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
+
+				uint32 size = 0;
+				// Current limit is 10 draw calls per frame - might change in future if needed
+				if (collisionArray->GetSize() > MAX_PAINT_PER_FRAME)
+				{
+					size = 10;
+					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
+
+					// Handle the swaperino
+					uint32 extraHits = collisionArray->GetSize() - MAX_PAINT_PER_FRAME;
+					for (uint32 newIndex = 0, currentIndex = MAX_PAINT_PER_FRAME; currentIndex < collisionArray->GetSize(); currentIndex++)
+					{
+						(*collisionArray)[newIndex++] = (*collisionArray)[currentIndex];
+					}
+					collisionArray->Resize(extraHits);
+
+					LOG_INFO("Extra hits: %d", extraHits);
+				}
+				else
+				{
+					size = collisionArray->GetSize();
+					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
+					collisionArray->Clear();
+				}
+
+				unwrapDataCopyBuffer->Unmap();
+				pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData) * size);
+				frameSettings.PaintCount = size;
 			}
 
-			if (m_BrushMaskDescriptorSet.Get())
+			if (!frameSettings.ShouldReset && !frameSettings.ShouldPaint)
 			{
-				pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+				continue;
 			}
 
-			if (m_UnwrapDataDescriptorSet.Get())
+			for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 			{
-				pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.Get(), m_PipelineLayout.Get(), 3);
+				RenderTarget	renderTargetDesc	= m_RenderTargets[t];
+				uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
+				uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
+				const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
+				TextureView*	renderTarget		= renderTargetDesc.pTextureView;
+
+				uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
+				uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
+
+				BeginRenderPassDesc beginRenderPassDesc = {};
+				beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
+				beginRenderPassDesc.ppRenderTargets		= &renderTarget;
+				beginRenderPassDesc.RenderTargetCount	= 1;
+				beginRenderPassDesc.Width				= width;
+				beginRenderPassDesc.Height				= height;
+				beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+				beginRenderPassDesc.pClearColors		= nullptr;
+				beginRenderPassDesc.ClearColorCount		= 0;
+				beginRenderPassDesc.Offset.x			= 0;
+				beginRenderPassDesc.Offset.y			= 0;
+
+				pCommandList->BeginRenderPass(&beginRenderPassDesc);
+
+				Viewport viewport = {};
+				viewport.MinDepth	= 0.0f;
+				viewport.MaxDepth	= 1.0f;
+				viewport.Width		= (float32)width;
+				viewport.Height		= -(float32)height;
+				viewport.x			= 0.0f;
+				viewport.y			= (float32)height;
+				pCommandList->SetViewports(&viewport, 0, 1);
+
+				ScissorRect scissorRect = {};
+				scissorRect.Width	= width;
+				scissorRect.Height	= height;
+				pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+				if (isServer && s_ShouldReset)
+					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateBothID));
+				else if (isServer)
+					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateServerID));
+				else
+					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateClientID));
+
+				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+
+				if (m_PerFrameBufferDescriptorSet.Get())
+				{
+					pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
+				}
+
+				if (m_BrushMaskDescriptorSet.Get())
+				{
+					pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
+				}
+
+				if (m_UnwrapDataDescriptorSet.Get())
+				{
+					pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.Get(), m_PipelineLayout.Get(), 3);
+				}
+
+				pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
+
+				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
+				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &frameSettings, sizeof(FrameSettings), sizeof(uint32));
+
+				pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
+
+				pCommandList->EndRenderPass();
+
+				if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
+					pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, false);
 			}
-
-			pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
-
-			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
-			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &frameSettings, sizeof(FrameSettings), sizeof(uint32));
-
-			pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
-
-			pCommandList->EndRenderPass();
-
-			if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
-				pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, false);
 		}
 
 		s_ShouldReset = false;
@@ -478,7 +510,10 @@ namespace LambdaEngine
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
 
-		s_Collisions.push_back(data);
+		if (remoteMode == ERemoteMode::CLIENT)
+			s_ClientCollisions.PushBack(data);
+		else if (remoteMode == ERemoteMode::SERVER)
+			s_ServerCollisions.PushBack(data);
 	}
 
 	void PaintMaskRenderer::ResetClient()
@@ -510,20 +545,24 @@ namespace LambdaEngine
 		uniformCopyBufferDesc.DebugName		= "Paint Mask Renderer Unwrap Data Copy Buffer";
 		uniformCopyBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 		uniformCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		uniformCopyBufferDesc.SizeInBytes	= sizeof(glm::mat4);
+		uniformCopyBufferDesc.SizeInBytes	= sizeof(UnwrapData) * MAX_PAINT_PER_FRAME;
 
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		m_UnwrapDataCopyBuffers.Resize(backBufferCount);
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
-			TSharedRef<Buffer> uniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformCopyBufferDesc);
-			if (uniformBuffer != nullptr)
+			m_UnwrapDataCopyBuffers[b].Resize(2);
+			for (uint32 c = 0; c < 2; c++)
 			{
-				m_UnwrapDataCopyBuffers[b] = uniformBuffer;
-			}
-			else
-			{
-				return false;
+				TSharedRef<Buffer> uniformBuffer = m_pGraphicsDevice->CreateBuffer(&uniformCopyBufferDesc);
+				if (uniformBuffer != nullptr)
+				{
+					m_UnwrapDataCopyBuffers[b][c] = uniformBuffer;
+				}
+				else
+				{
+					return false;
+				}
 			}
 		}
 
@@ -618,7 +657,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName			= "Paint Mask Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount	= 227;
+		descriptorHeapDesc.DescriptorSetCount	= 512;
 		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
