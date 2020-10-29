@@ -6,6 +6,7 @@
 #include "Multiplayer/Packet/PlayerAction.h"
 #include "Multiplayer/Packet/PlayerActionResponse.h"
 #include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 #include "Multiplayer/Packet/PacketHostServer.h"
@@ -30,7 +31,7 @@ uint16 PacketType::HOST_SERVER				= 0;
 void PacketType::Init()
 {
 	CREATE_LEVEL_OBJECT		= RegisterPacketType<CreateLevelObject>();
-	DELETE_LEVEL_OBJECT		= RegisterPacketTypeRaw();
+	DELETE_LEVEL_OBJECT		= RegisterPacketType<PacketDeleteLevelObject>();
 	PLAYER_ACTION			= RegisterPacketTypeWithComponent<PlayerAction>();
 	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PlayerActionResponse>();
 	WEAPON_FIRE				= RegisterPacketTypeWithComponent<WeaponFiredPacket>();

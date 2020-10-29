@@ -167,6 +167,47 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 bool Level::DeleteObject(LambdaEngine::Entity entity)
 {
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	auto levelObjectTypeIt = m_EntityToLevelObjectTypeMap.find(entity);
+	if (levelObjectTypeIt != m_EntityToLevelObjectTypeMap.end())
+	{
+		auto entityTypeMapIt = m_EntityTypeMap.find(levelObjectTypeIt->second);
+		if (entityTypeMapIt != m_EntityTypeMap.end())
+		{
+			uint32 index = entityTypeMapIt->second;
+			TArray<Entity>& entities = m_LevelEntities[index];
+			int32 entityIndex = -1;
+			for (uint32 i = 0; i < entities.GetSize(); i++)
+			{
+				if (entities[i] == entity)
+				{
+					entityIndex = (int32)i;
+					break;
+				}
+			}
+
+			if (entityIndex >= 0)
+			{
+				entities.Erase(entities.Begin() + entityIndex);
+				TArray<TArray<Entity>>& entitiesWithChildren = m_LevelChildEntities[index];
+				TArray<Entity>& childEntities = entitiesWithChildren[entityIndex];
+
+				for (uint32 i = 0; i < childEntities.GetSize(); i++)
+				{
+					pECS->RemoveEntity(childEntities[i]);
+				}
+
+				entitiesWithChildren.Erase(entitiesWithChildren.begin() + entityIndex);
+
+				pECS->RemoveEntity(entity);
+				return true;
+			}
+		}
+	}
+
 	return false;
 }
 
