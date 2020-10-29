@@ -1,8 +1,11 @@
 #include "Multiplayer/ServerHostHelper.h"
 
+#include "Math/Random.h"
 
-int32 ServerHostHelper::m_sClientHostID = -1;
-int32 ServerHostHelper::m_sAuthenticationID = -1;
+using namespace LambdaEngine;
+
+int32 ServerHostHelper::m_sClientHostID = Random::Int32();
+int32 ServerHostHelper::m_sAuthenticationID = Random::Int32();
 
 void ServerHostHelper::SetClientHostID(int32 serverHostID)
 {
