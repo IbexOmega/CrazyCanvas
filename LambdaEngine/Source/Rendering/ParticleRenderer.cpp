@@ -607,7 +607,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(Sleeping);
 
-		if (Sleeping)
+		if (Sleeping || m_EmitterCount == 0)
 			return;
 
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];

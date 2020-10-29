@@ -37,6 +37,16 @@ namespace LambdaEngine
 
 		m_FreeParticleChunks.PushBack(chunk);
 
+		// Create dummy buffers to avoid crash of synch	
+		BufferDesc bufferDesc = {};
+		bufferDesc.DebugName = "Dummy";
+		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC;
+		bufferDesc.SizeInBytes = sizeof(byte);
+
+		m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+
 		m_DirtyIndexBuffer = true;
 		m_DirtyVertexBuffer = true;
 	}
