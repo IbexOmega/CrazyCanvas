@@ -103,10 +103,10 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 	ServerInfo& currentInfo = m_Servers[event.ServerUID];
 
-	if (ServerHostHelper::GetClientHostID() == clientHostID)
+	if (ServerHostHelper::GetClientHostID() == clientHostID && m_HasHostedServer)
 	{
 		SetRenderStagesActive();
-
+		m_HasHostedServer = false; //this will prevent you from auto Joining if you decide to go back out of lobby and has hosted a game
 		State* pPlaySessionState = DBG_NEW PlaySessionState(false, newInfo.EndPoint.GetAddress());
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
