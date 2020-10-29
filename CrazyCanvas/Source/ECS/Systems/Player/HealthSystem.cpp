@@ -88,7 +88,9 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						if (healthComponent.CurrentHealth <= 0)
 						{
 							LOG_INFO("PLAYER DIED");
-							healthComponent.CurrentHealth = 0;
+
+							// Set player's health to 100 here so we do not have to reset it later
+							healthComponent.CurrentHealth = 100;
 
 							PlayerDiedEvent diedEvent(entity);
 							EventQueue::SendEvent(diedEvent);

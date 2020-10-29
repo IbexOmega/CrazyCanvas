@@ -47,6 +47,7 @@ MatchServer::~MatchServer()
 	
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::UnregisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::UnregisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
 }
 
 bool MatchServer::InitInternal()
@@ -55,6 +56,7 @@ bool MatchServer::InitInternal()
 
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::RegisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::RegisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
 
 	return true;
 }
@@ -189,9 +191,59 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 
 bool MatchServer::OnPlayerDied(const PlayerDiedEvent& event)
 {
+	using namespace LambdaEngine;
+
 	UNREFERENCED_VARIABLE(event);
+
 	LOG_INFO("SERVER: Player=%u DIED", event.KilledEntity);
-	return false;
+
+	Job job;
+	job.Components =
+	{
+		{ ComponentPermissions::R,	PositionComponent::Type() },
+		{ ComponentPermissions::R,	TeamComponent::Type() },
+		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
+		{ ComponentPermissions::RW,	NetworkPositionComponent::Type() },
+	};
+
+	job.Function = [=]()
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(event.KilledEntity);
+
+		// Get spawnpoint from level
+		glm::vec3 newPosition = glm::vec3(0.0f);
+		if (m_pLevel != nullptr)
+		{
+			uint32 numSpawnPoints = 0;
+			Entity* pSpawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN, numSpawnPoints);
+			
+			ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+			ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
+
+			uint8 playerTeam = pTeamComponents->GetConstData(event.KilledEntity).TeamIndex;
+			if (numSpawnPoints > 0)
+			{
+				for (uint32 i = 0; i < numSpawnPoints; i++)
+				{
+					if (pTeamComponents->HasComponent(pSpawnPoints[i]))
+					{
+						if (pTeamComponents->GetConstData(pSpawnPoints[i]).TeamIndex == playerTeam)
+						{
+							newPosition = pPositionComponents->GetConstData(pSpawnPoints[i]).Position;
+						}
+					}
+				}
+			}
+		}
+
+		positionComp.Position = newPosition;
+	};
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	pECS->ScheduleJobASAP(job);
+
+	return true;
 }
 
 void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
