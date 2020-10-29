@@ -23,11 +23,12 @@ layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAORoughMetalValid;
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferCompactNormal;
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVelocity;
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferDepthStencil;
 
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
+layout(binding = 7, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
 
-layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_RayTracedRadiance;
+layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_RayTracedRadiance;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -53,7 +54,11 @@ void main()
 		float roughness	= max(0.05f, aoRoughMetalValid.g);
 		float metallic	= aoRoughMetalValid.b;
 
-		vec3 worldPos 		= texture(u_GBufferPosition, in_TexCoord).rgb;
+		//Calculate World Position
+		float sampledDepth      = texture(u_GBufferDepthStencil, in_TexCoord).r;
+		SPositions positions    = CalculatePositionsFromDepth(in_TexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+
+		vec3 worldPos 		= positions.WorldPos;
 		vec3 N 				= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
 		vec3 viewVector		= perFrameBuffer.CameraPosition.xyz - worldPos;
 		float viewDistance	= length(viewVector);

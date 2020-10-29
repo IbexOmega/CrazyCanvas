@@ -23,7 +23,6 @@ void main()
 	const ivec2 pixelCoords = ivec2(gl_LaunchIDEXT.xy);
 	const vec2 pixelCenter  = vec2(pixelCoords) + vec2(0.5f);
 	vec2 screenTexCoord     = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
-    screenTexCoord.y =  1.0f - screenTexCoord.y;
 
     //Sample required
     vec4 aoRoughMetalValid  = texelFetch(u_GBufferAORoughMetalValid, pixelCoords, 0);
