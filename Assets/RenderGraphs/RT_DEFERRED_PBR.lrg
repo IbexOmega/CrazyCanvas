@@ -879,7 +879,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "PLAYER_PASS"
+                    "src_stage": "RENDER_STAGE_PARTICLE_RENDER"
                 },
                 {
                     "name": "INTERMEDIATE_OUTPUT_IMAGE",
@@ -1305,7 +1305,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "RENDER_STAGE_PARTICLE_RENDER"
+                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
                 },
                 {
                     "name": "PAINT_MASK_TEXTURES",
@@ -1689,7 +1689,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
+                    "src_stage": "PLAYER_PASS"
                 }
             ]
         },
@@ -1869,7 +1869,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
+                    "src_stage": "PLAYER_PASS"
                 },
                 {
                     "name": "G_BUFFER_COMPACT_NORMAL",
