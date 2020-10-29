@@ -85,7 +85,7 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 					{
 						healthComponent.CurrentHealth -= 10;
-						if (healthComponent.CurrentHealth < 0)
+						if (healthComponent.CurrentHealth <= 0)
 						{
 							LOG_INFO("PLAYER DIED");
 							healthComponent.CurrentHealth = 0;
