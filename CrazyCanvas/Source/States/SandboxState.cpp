@@ -262,7 +262,6 @@ void SandboxState::Init()
 		);
 	}
 
-
 	//Preload some resources
 	{
 		TArray<GUID_Lambda> animations;
@@ -360,8 +359,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	// Debugging Emitters
 	ECSCore* ecsCore = ECSCore::GetInstance();
 	static uint32 indexEmitters = 0;
-	static LambdaEngine::Timestamp time = 0.f;
-	static bool removeEmitters = true;
+	static LambdaEngine::Timestamp time;
 	const uint32 emitterCount = 10U;
 	if (m_DebugEmitters)
 	{
@@ -404,7 +402,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 			}
 
 			indexEmitters++;
-			time = 0.f;
+			time = 0;
 		}
 	}
 }

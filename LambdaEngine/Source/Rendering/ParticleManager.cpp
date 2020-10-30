@@ -143,16 +143,21 @@ namespace LambdaEngine
 				EmitterID emitterID = m_Emitters.GetSize();
 				m_Emitters.PushBack(newEmitterInstance);
 				
-				ActivateEmitterInstance(emitterID, positionComp, rotationComp, emitterComp);
-
-				// If not onetime emitter the emitter needs to be tracked for updating
-				if (!emitterComp.OneTime)
+				if (ActivateEmitterInstance(emitterID, positionComp, rotationComp, emitterComp))
 				{
-					// Move emitter from active to sleeping
-					m_RepeatEmitters.insert(entity);
+					// If not onetime emitter the emitter needs to be tracked for updating
+					if (!emitterComp.OneTime)
+					{
+						// Move emitter from active to sleeping
+						m_RepeatEmitters.insert(entity);
 
-					m_EntityToEmitterID[entity] = emitterID;
-					m_EmitterIDToEntity[emitterID] = entity;
+						m_EntityToEmitterID[entity] = emitterID;
+						m_EmitterIDToEntity[emitterID] = entity;
+					}
+				}
+				else
+				{
+					m_Emitters.PopBack();
 				}
 			}
 		}
@@ -489,7 +494,7 @@ namespace LambdaEngine
 
 			if (!AllocateParticleChunk(emitterInstance.ParticleChunk))
 			{
-				LOG_WARNING("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				LOG_ERROR("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
 				return false;
 			}
 
