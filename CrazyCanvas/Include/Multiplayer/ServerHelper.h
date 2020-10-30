@@ -15,6 +15,9 @@ public:
 
 	template<class T>
 	static bool SendBroadcast(const T& packet, LambdaEngine::IPacketListener* pListener = nullptr, LambdaEngine::IClient* pExcludeClient = nullptr);
+
+	static void SetMaxClients(uint8 clients);
+	static void SetIgnoreNewClients(bool ignore);
 };
 
 template<class T>

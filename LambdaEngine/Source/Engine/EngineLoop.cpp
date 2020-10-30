@@ -5,13 +5,13 @@
 #include "Time/API/PlatformTime.h"
 #include "Time/API/Clock.h"
 
-#include "Math/Random.h"
-
 #include "Application/API/PlatformMisc.h"
 #include "Application/API/PlatformConsole.h"
 #include "Application/API/CommonApplication.h"
 
 #include "Application/API/Events/EventQueue.h"
+
+#include "Math/Random.h"
 
 #include "ECS/ECSCore.h"
 
@@ -256,6 +256,9 @@ namespace LambdaEngine
 		Malloc::SetDebugFlags(MEMORY_DEBUG_FLAGS_OVERFLOW_PROTECT | MEMORY_DEBUG_FLAGS_LEAK_CHECK);
 #endif
 
+		PlatformTime::PreInit();
+		Random::PreInit();
+
 		if (!EngineConfig::LoadFromFile(flagParser))
 		{
 			return false;
@@ -277,10 +280,6 @@ namespace LambdaEngine
 		{
 			return false;
 		}
-
-		PlatformTime::PreInit();
-
-		Random::PreInit();
 
 		return true;
 	}

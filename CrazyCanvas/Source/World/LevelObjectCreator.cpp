@@ -43,8 +43,8 @@
 #include "Rendering/EntityMaskManager.h"
 
 #include "Multiplayer/Packet/PacketType.h"
-#include "Multiplayer/Packet/PlayerAction.h"
-#include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -600,8 +600,8 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
-	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
+	pECS->AddComponent<PacketComponent<PacketPlayerAction>>(playerEntity, { });
+	pECS->AddComponent<PacketComponent<PacketPlayerActionResponse>>(playerEntity, { });
 	
 	const CharacterColliderCreateInfo colliderInfo =
 	{

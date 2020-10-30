@@ -83,7 +83,7 @@ bool WeaponSystem::Init()
 				.ComponentAccesses =
 				{
 					{ NDA, PlayerForeignComponent::Type() },
-					{ RW, PacketComponent<PlayerActionResponse>::Type() }
+					{ RW, PacketComponent<PacketPlayerActionResponse>::Type() }
 				}
 			},
 			{
@@ -91,7 +91,7 @@ bool WeaponSystem::Init()
 				.ComponentAccesses =
 				{
 					{ NDA, PlayerLocalComponent::Type() },
-					{ RW, PacketComponent<PlayerAction>::Type() }
+					{ RW, PacketComponent<PacketPlayerAction>::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
 			},
@@ -100,8 +100,8 @@ bool WeaponSystem::Init()
 				.ComponentAccesses =
 				{
 					{ NDA, PlayerBaseComponent::Type() },
-					{ R, PacketComponent<PlayerAction>::Type() },
-					{ RW, PacketComponent<PlayerActionResponse>::Type() },
+					{ R, PacketComponent<PacketPlayerAction>::Type() },
+					{ RW, PacketComponent<PacketPlayerActionResponse>::Type() },
 				},
 				.ComponentGroups = { &playerGroup }
 			}
@@ -174,8 +174,8 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 	const float32 dt = (float32)deltaTime.AsSeconds();
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<PacketComponent<PlayerAction>>* pPlayerActionPackets = pECS->GetComponentArray<PacketComponent<PlayerAction>>();
-	ComponentArray<PacketComponent<PlayerActionResponse>>* pPlayerResponsePackets = pECS->GetComponentArray<PacketComponent<PlayerActionResponse>>();
+	ComponentArray<PacketComponent<PacketPlayerAction>>* pPlayerActionPackets = pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
+	ComponentArray<PacketComponent<PacketPlayerActionResponse>>* pPlayerResponsePackets = pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
 	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
@@ -211,10 +211,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				}
 			}
 
-			PacketComponent<PlayerAction>& actionsRecived = pPlayerActionPackets->GetData(remotePlayerEntity);
-			PacketComponent<PlayerActionResponse>& responsesToSend = pPlayerResponsePackets->GetData(remotePlayerEntity);
-			TQueue<PlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
-			const TArray<PlayerAction>& packetsRecived	= actionsRecived.GetPacketsReceived();
+			PacketComponent<PacketPlayerAction>& actionsRecived = pPlayerActionPackets->GetData(remotePlayerEntity);
+			PacketComponent<PacketPlayerActionResponse>& responsesToSend = pPlayerResponsePackets->GetData(remotePlayerEntity);
+			TQueue<PacketPlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
+			const TArray<PacketPlayerAction>& packetsRecived	= actionsRecived.GetPacketsReceived();
 
 			// Handle packets
 			const uint32 packetCount = packetsRecived.GetSize();
@@ -278,9 +278,9 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			// Foreign Players
 			if (!m_LocalPlayerEntities.HasElement(playerEntity))
 			{
-				PacketComponent<PlayerActionResponse>& packets = pPlayerResponsePackets->GetData(playerEntity);
-				const TArray<PlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
-				for (const PlayerActionResponse& response : receivedPackets)
+				PacketComponent<PacketPlayerActionResponse>& packets = pPlayerResponsePackets->GetData(playerEntity);
+				const TArray<PacketPlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
+				for (const PacketPlayerActionResponse& response : receivedPackets)
 				{
 					if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
 					{
@@ -302,7 +302,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			}
 
 			// LocalPlayers
-			PacketComponent<PlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
+			PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
 			const bool hasAmmo		= weaponComponent.CurrentAmmunition > 0;
 			const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 			if (!hasAmmo && !isReloading)
@@ -444,7 +444,7 @@ void WeaponSystem::Fire(
 void WeaponSystem::TryFire(
 	EAmmoType ammoType,
 	WeaponComponent& weaponComponent,
-	PacketComponent<PlayerAction>& packets,
+	PacketComponent<PacketPlayerAction>& packets,
 	LambdaEngine::Entity weaponEntity,
 	const glm::vec3& startPos,
 	const glm::quat& direction,
@@ -469,7 +469,7 @@ void WeaponSystem::TryFire(
 		weaponComponent.CurrentAmmunition--;
 
 		// Send action to server
-		TQueue<PlayerAction>& actions = packets.GetPacketsToSend();
+		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
 		if (!actions.empty())
 		{
 			actions.back().FiredAmmo = ammoType;
@@ -583,12 +583,12 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	}
 }
 
-void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent<PlayerAction>& packets)
+void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets)
 {
 	using namespace LambdaEngine;
 
 	// Send action to server
-	TQueue<PlayerAction>& actions = packets.GetPacketsToSend();
+	TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
 	if (!actions.empty())
 	{
 		actions.back().StartedReload = true;

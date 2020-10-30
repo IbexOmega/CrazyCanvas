@@ -9,8 +9,8 @@
 
 #include "Math/Math.h"
 
-#include "Multiplayer/Packet/PlayerAction.h"
-#include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
 namespace LambdaEngine
 {
@@ -82,13 +82,13 @@ private:
 	void TryFire(
 		EAmmoType ammoType,
 		WeaponComponent& weaponComponent,
-		PacketComponent<PlayerAction>& packets,
+		PacketComponent<PacketPlayerAction>& packets,
 		LambdaEngine::Entity weaponEntity,
 		const glm::vec3& startPos,
 		const glm::quat& direction,
 		const glm::vec3& playerVelocity);
 
-	void StartReload(WeaponComponent& weaponComponent, PacketComponent<PlayerAction>& packets);
+	void StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets);
 	void AbortReload(WeaponComponent& weaponComponent);
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);

@@ -7,7 +7,7 @@
 
 #include "World/Player/PlayerGameState.h"
 
-#include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
 class PlayerLocalSystem : public LambdaEngine::System
 {
@@ -33,8 +33,8 @@ private:
 
 	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
 	void Reconcile(LambdaEngine::Entity entityPlayer);
-	void ReplayGameStatesBasedOnServerGameState(LambdaEngine::Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PlayerActionResponse& gameStateServer);
-	bool CompareGameStates(const PlayerGameState& gameStateLocal, const PlayerActionResponse& gameStateServer);
+	void ReplayGameStatesBasedOnServerGameState(LambdaEngine::Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PacketPlayerActionResponse& gameStateServer);
+	bool CompareGameStates(const PlayerGameState& gameStateLocal, const PacketPlayerActionResponse& gameStateServer);
 
 private:
 	LambdaEngine::IDVector m_Entities;

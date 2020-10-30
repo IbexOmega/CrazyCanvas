@@ -4,8 +4,9 @@
 
 class ServerHostHelper
 {
-public:
+	friend class CrazyCanvas;
 
+public:
 	static void SetClientHostID(int32 serverHostID);
 	static void SetAuthenticationID(int32 clientHostID);
 
@@ -13,6 +14,9 @@ public:
 	static int32 GetAuthenticationHostID();
 
 private:
-	static int32 m_sClientHostID;
-	static int32 m_sAuthenticationID;
+	static void Init();
+
+private:
+	static int32 s_ClientHostID;
+	static int32 s_AuthenticationID;
 };

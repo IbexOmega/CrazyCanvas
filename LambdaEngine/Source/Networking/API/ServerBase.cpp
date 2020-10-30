@@ -90,12 +90,17 @@ namespace LambdaEngine
 		m_Accepting = accepting;
 	}
 
-	bool ServerBase::IsAcceptingConnections()
+	void ServerBase::SetMaxClients(uint8 clients)
+	{
+		m_Description.MaxClients = clients;
+	}
+
+	bool ServerBase::IsAcceptingConnections() const
 	{
 		return m_Accepting;
 	}
 
-	uint8 ServerBase::GetClientCount()
+	uint8 ServerBase::GetClientCount() const
 	{
 		return (uint8)m_Clients.size();
 	}

@@ -13,8 +13,6 @@ namespace LambdaEngine
 		virtual ~ClientRemoteSystem();
 
 	protected:
-		virtual void TickMainThread(Timestamp deltaTime);
-
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
 		virtual void OnDisconnecting(IClient* pClient) override;
