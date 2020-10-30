@@ -49,7 +49,6 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
 {
 	const PacketCreateLevelObject& packet = event.Packet;
-	IClient* pClient = event.pClient;
 
 	switch (packet.LevelObjectType)
 	{
@@ -71,7 +70,6 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				.IsLocal			= packet.Player.IsMySelf,
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
-				.pClient			= pClient,
 				.Position			= packet.Position,
 				.Forward			= packet.Forward,
 				.Scale				= glm::vec3(1.0f),

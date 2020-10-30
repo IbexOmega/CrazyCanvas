@@ -222,7 +222,6 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 
 	CreatePlayerDesc createPlayerDesc =
 	{
-		.pClient		= pClient,
 		.Position		= position,
 		.Forward		= forward,
 		.Scale			= glm::vec3(1.0f),

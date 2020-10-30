@@ -62,7 +62,6 @@ struct CreatePlayerDesc
 	bool								IsLocal				= false;
 	int32								PlayerNetworkUID	= -1;
 	int32								WeaponNetworkUID	= -1;
-	LambdaEngine::IClient*				pClient				= nullptr;
 	glm::vec3							Position			= glm::vec3(0.0f);
 	glm::vec3							Forward				= glm::vec3(1.0f, 0.0f, 0.0f);
 	glm::vec3							Scale				= glm::vec3(1.0f);
