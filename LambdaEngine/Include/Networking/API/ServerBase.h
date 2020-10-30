@@ -48,8 +48,9 @@ namespace LambdaEngine
         bool IsRunning();
         const IPEndPoint& GetEndPoint() const;
         void SetAcceptingConnections(bool accepting);
-        bool IsAcceptingConnections();
-        uint8 GetClientCount();
+        bool IsAcceptingConnections() const;
+        void SetMaxClients(uint8 clients);
+        uint8 GetClientCount() const;
         const ServerDesc& GetDescription() const;
         const ClientMap& GetClients() const;
         

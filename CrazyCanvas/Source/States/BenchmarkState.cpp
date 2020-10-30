@@ -39,7 +39,7 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
-#include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
@@ -276,7 +276,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 
 	if (event.Type == PacketType::CREATE_LEVEL_OBJECT)
 	{
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		event.pPacket->Read(&packet);
 
 		// Create player characters that a benchmark system controls
