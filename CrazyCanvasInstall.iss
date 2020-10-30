@@ -24,6 +24,7 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=CrazyCanvas.ico
+UsePreviousAppDir=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
