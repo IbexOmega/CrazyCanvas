@@ -18,7 +18,7 @@ layout(push_constant) uniform PushConstants
 // Buffers
 layout (binding = 0, set = 0) uniform PerFrameBuffer
 {
-	SPerFrameBuffer perFrameBuffer;
+	SPerFrameBuffer PerFrameBuffer;
 } u_PerFrameBuffer;
 
 layout(binding = 1, set = 0) restrict buffer ParticleInstances
@@ -55,7 +55,7 @@ void main()
 	// Return in case this thread is outside of our ParticleCount
 	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint indexOffset = gl_GlobalInvocationID.x;
-	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
+	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.PerFrameBuffer;
 	const float dt = u_PC.DeltaTime;
 	const vec3 GLOBAL_DOWN = vec3(0.f, 1.f, 0.f);
 

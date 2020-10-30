@@ -6,7 +6,7 @@
 
 layout (binding = 0, set = 0) uniform PerFrameBuffer
 {
-	SPerFrameBuffer perFrameBuffer;
+	SPerFrameBuffer PerFrameBuffer;
 } u_PerFrameBuffer;
 
 layout(binding = 0, set = 2) restrict readonly buffer Vertices
@@ -43,7 +43,7 @@ void main()
 	SParticle 		particle 	= b_ParticleInstances.Val[gl_InstanceIndex];
 	SEmitter 		emitter 	= b_EmitterInstances.Val[b_EmitterIndices.Val[gl_InstanceIndex]];
 	SParticleVertex vertex 		= b_Vertices.Val[gl_VertexIndex];
-	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.perFrameBuffer;
+	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.PerFrameBuffer;
 	SAtlasData 		atlasData 	= b_Atlases.Val[emitter.AtlasIndex];
 	out_AtlasIndex = emitter.AtlasIndex;
 	in_EmitterColor = emitter.Color;
