@@ -82,6 +82,7 @@ struct CreateProjectileDesc
 	glm::quat	FireDirection;
 	int32		PlayerFiredNetworkUID = -1;
 	uint32		TeamIndex;
+	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
 	LambdaEngine::MeshComponent		MeshComponent;
 };

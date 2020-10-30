@@ -139,6 +139,7 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
 	createProjectileDesc.MeshComponent	= event.MeshComponent;
+	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
 
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
