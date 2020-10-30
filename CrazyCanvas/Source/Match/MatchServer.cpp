@@ -347,7 +347,7 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 	{
 		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
-		if (!flagEntities.GetSize())
+		if (!flagEntities.IsEmpty())
 		{
 			Entity flagEntity = flagEntities[0];
 			FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
