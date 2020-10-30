@@ -801,7 +801,7 @@ namespace LambdaEngine
 			uint32 dirtyChunks = m_DirtyParticleChunks.GetSize();
 			TArray<uint32> offsets(dirtyChunks);
 			TArray<uint32> elementCounts(dirtyChunks);
-			for (size_t i = 0; i < m_DirtyParticleChunks.GetSize(); i++)
+			for (uint32 i = 0; i < m_DirtyParticleChunks.GetSize(); i++)
 			{
 				offsets[i] = m_DirtyParticleChunks[i].Offset;
 				elementCounts[i] = m_DirtyParticleChunks[i].Size;
