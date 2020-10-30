@@ -102,7 +102,7 @@ namespace LambdaEngine
 		uint32	FirstInstance	= 0;
 	};
 
-	using EmitterID = uint64;
+	using EmitterID = uint32;
 
 	class ParticleManager
 	{
@@ -117,7 +117,6 @@ namespace LambdaEngine
 
 		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 
-		void OnEmitterEntityAdded(Entity entity);
 		void OnEmitterEntityRemoved(Entity entity);
 
 		uint32 GetParticleCount() const { return m_AliveIndices.GetSize();  }
@@ -141,7 +140,7 @@ namespace LambdaEngine
 
 		bool CreateConeParticleEmitter(EmitterID emitterID);
 		bool CreateTubeParticleEmitter(EmitterID emitterID);
-		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint64* pOffsets, uint64* pSize, uint64 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
+		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
 
 		bool ActivateEmitterInstance(EmitterID emitterID, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		bool DeactivateEmitterInstance(EmitterID emitterID);

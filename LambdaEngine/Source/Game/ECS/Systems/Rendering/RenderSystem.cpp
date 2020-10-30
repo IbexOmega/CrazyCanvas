@@ -151,7 +151,6 @@ namespace LambdaEngine
 						{ NDA, PositionComponent::Type() },
 						{ NDA, RotationComponent::Type() }
 					},
-					.OnEntityAdded = std::bind(&RenderSystem::OnEmitterEntityAdded, this, std::placeholders::_1),
 					.OnEntityRemoval = std::bind(&RenderSystem::OnEmitterEntityRemoved, this, std::placeholders::_1)
 				}
 			};
@@ -906,11 +905,6 @@ namespace LambdaEngine
 		}
 
 		m_LightsBufferDirty = true;
-	}
-
-	void RenderSystem::OnEmitterEntityAdded(Entity entity)
-	{
-		m_ParticleManager.OnEmitterEntityAdded(entity);
 	}
 
 	void RenderSystem::OnEmitterEntityRemoved(Entity entity)

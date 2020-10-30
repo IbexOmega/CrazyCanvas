@@ -163,14 +163,8 @@ namespace LambdaEngine
 		}
 	}
 
-	void ParticleManager::OnEmitterEntityAdded(Entity entity)
-	{
-
-	}
-
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
 	{
-		ParticleChunk newFreeChunk;
 		// Remove emitter instance if EmitterComponent is active
 		if (m_RepeatEmitters.find(entity) != m_RepeatEmitters.end())
 		{
@@ -400,7 +394,7 @@ namespace LambdaEngine
 		return allocateParticles;
 	}
 
-	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint64* pOffsets, uint64* pSize, uint64 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
+	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
 	{
 		Buffer* pStagingBuffer = pStagingBuffers[m_ModFrameIndex];
 		Buffer* pPreviousBuffer = nullptr;
@@ -408,14 +402,14 @@ namespace LambdaEngine
 
 		if (regionCount > 0)
 		{
-			uint32 neededSize = pOffsets[0] + pSize[0];
+			size_t neededSize = pOffsets[0] + pSize[0];
 			if (neededSize == 0)
 				return false;
 
 			// Find largest offset + size to determine needed buffer size;
 			if (regionCount > 1)
 			{
-				for (uint64 i = 1; i < regionCount; i++)
+				for (uint32 i = 1; i < regionCount; i++)
 				{
 					uint32 size = pOffsets[i] + pSize[i];
 					if (neededSize < size)
@@ -494,7 +488,7 @@ namespace LambdaEngine
 
 			if (!AllocateParticleChunk(emitterInstance.ParticleChunk))
 			{
-				LOG_ERROR("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %d exceeded!", m_Particles.GetSize());
+				LOG_ERROR("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %u exceeded!", m_Particles.GetSize());
 				return false;
 			}
 
@@ -648,7 +642,7 @@ namespace LambdaEngine
 			return false;
 
 #if DEBUG_PARTICLE
-		LOG_INFO("[ParticleManager]: Allocated Chunk[offset: %d, size: %d]", chunk.Offset, chunk.Size);
+		LOG_INFO("[ParticleManager]: Allocated Chunk[offset: %u, size: %u]", chunk.Offset, chunk.Size);
 #endif
 
 		return true;
@@ -678,11 +672,11 @@ namespace LambdaEngine
 		}
 
 #if DEBUG_PARTICLE
-		LOG_INFO("[ParticleManager]: Freed Chunk: [offset: %d, size : %d]", chunk.Offset, chunk.Size);
+		LOG_INFO("[ParticleManager]: Freed Chunk: [offset: %u, size : %u]", chunk.Offset, chunk.Size);
 		LOG_INFO("[ParticleManager]: Current Free Chunks:");
 		for (size_t i = 0; i < m_FreeParticleChunks.GetSize(); i++)
 		{
-			LOG_INFO("\tFree chunk%d - [offset: %d, size : %d] ", i, m_FreeParticleChunks[i].Offset, m_FreeParticleChunks[i].Size);
+			LOG_INFO("\tFree chunk%u - [offset: %u, size : %u] ", i, m_FreeParticleChunks[i].Offset, m_FreeParticleChunks[i].Size);
 		}
 #endif
 		return inserted;
@@ -737,8 +731,8 @@ namespace LambdaEngine
 		// Update Instance Buffer
 		if (m_DirtyIndirectBuffer)
 		{
-			uint64 offset = 0;
-			uint64 elementCount = m_IndirectData.GetSize();
+			uint32 offset = 0;
+			uint32 elementCount = m_IndirectData.GetSize();
 			m_DirtyIndirectBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_IndirectData.GetData(),
@@ -763,8 +757,8 @@ namespace LambdaEngine
 				glm::vec4(1.0, 1.0, 0.0, 1.0f),
 			};
 
-			uint64 offset = 0;
-			uint64 elementCount = 4;
+			uint32 offset = 0;
+			uint32 elementCount = 4;
 			m_DirtyVertexBuffer = CopyDataToBuffer(
 				pCommandList,
 				(void*)vertices,
@@ -787,8 +781,8 @@ namespace LambdaEngine
 				2,3,1
 			};
 
-			uint64 offset = 0;
-			uint64 elementCount = 6;
+			uint32 offset = 0;
+			uint32 elementCount = 6;
 			m_DirtyIndexBuffer = CopyDataToBuffer(
 				pCommandList,
 				(void*)indices,
@@ -804,9 +798,9 @@ namespace LambdaEngine
 
 		{
 			// Create offset and buffer size array
-			uint64 dirtyChunks = m_DirtyParticleChunks.GetSize();
-			TArray<uint64> offsets(dirtyChunks);
-			TArray<uint64> elementCounts(dirtyChunks);
+			uint32 dirtyChunks = m_DirtyParticleChunks.GetSize();
+			TArray<uint32> offsets(dirtyChunks);
+			TArray<uint32> elementCounts(dirtyChunks);
 			for (size_t i = 0; i < m_DirtyParticleChunks.GetSize(); i++)
 			{
 				offsets[i] = m_DirtyParticleChunks[i].Offset;
@@ -852,8 +846,8 @@ namespace LambdaEngine
 		// Update Emitter Instance Buffer
 		if (m_DirtyAliveBuffer)
 		{
-			uint64 offset = 0;
-			uint64 elementCount = m_AliveIndices.GetSize();
+			uint32 offset = 0;
+			uint32 elementCount = m_AliveIndices.GetSize();
 			m_DirtyAliveBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_AliveIndices.GetData(),
@@ -870,8 +864,8 @@ namespace LambdaEngine
 		// Update Emitter Instance Buffer
 		if (m_DirtyEmitterBuffer)
 		{
-			uint64 offset = 0;
-			uint64 elementCount = m_EmitterData.GetSize();
+			uint32 offset = 0;
+			uint32 elementCount = m_EmitterData.GetSize();
 			m_DirtyEmitterBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_EmitterData.GetData(),
@@ -888,8 +882,8 @@ namespace LambdaEngine
 		// Update Emitter Transform Buffer
 		if (m_DirtyTransformBuffer)
 		{
-			uint64 offset = 0;
-			uint64 elementCount = m_EmitterTransformData.GetSize();
+			uint32 offset = 0;
+			uint32 elementCount = m_EmitterTransformData.GetSize();
 			m_DirtyTransformBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_EmitterTransformData.GetData(),
@@ -906,8 +900,8 @@ namespace LambdaEngine
 		// Update Atlas data Buffer
 		if (m_DirtyAtlasDataBuffer)
 		{
-			uint64 offset = 0;
-			uint64 elementCount = m_AtlasInfoData.GetSize();
+			uint32 offset = 0;
+			uint32 elementCount = m_AtlasInfoData.GetSize();
 			m_DirtyAtlasDataBuffer = CopyDataToBuffer(
 				pCommandList,
 				m_AtlasInfoData.GetData(),
