@@ -10,7 +10,7 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
-#include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
 using namespace LambdaEngine;
 
@@ -37,7 +37,7 @@ void PlayerForeignSystem::Init()
 				{R , PositionComponent::Type()},
 				{RW, VelocityComponent::Type()},
 				{RW, RotationComponent::Type()},
-				{R, PacketComponent<PlayerActionResponse>::Type()},
+				{R, PacketComponent<PacketPlayerActionResponse>::Type()},
 			}
 		}
 	};
@@ -56,20 +56,20 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 	ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	const ComponentArray<PacketComponent<PlayerActionResponse>>* pPacketComponents = pECS->GetComponentArray<PacketComponent<PlayerActionResponse>>();
+	const ComponentArray<PacketComponent<PacketPlayerActionResponse>>* pPacketComponents = pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
 
 	for (Entity entity : m_Entities)
 	{
 		const NetworkPositionComponent& constNetPosComponent = pNetPosComponents->GetConstData(entity);
 		const PositionComponent& positionComponent = pPositionComponents->GetConstData(entity);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
-		const PacketComponent<PlayerActionResponse>& packetComponent = pPacketComponents->GetConstData(entity);
+		const PacketComponent<PacketPlayerActionResponse>& packetComponent = pPacketComponents->GetConstData(entity);
 
-		const TArray<PlayerActionResponse>& gameStates = packetComponent.GetPacketsReceived();
+		const TArray<PacketPlayerActionResponse>& gameStates = packetComponent.GetPacketsReceived();
 
 		if (!gameStates.IsEmpty())
 		{
-			for (const PlayerActionResponse& gameState : gameStates)
+			for (const PacketPlayerActionResponse& gameState : gameStates)
 			{
 				const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entity);
 

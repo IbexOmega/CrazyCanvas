@@ -6,9 +6,9 @@
 #include "ECS/Components/Player/ProjectileComponent.h"
 
 #pragma pack(push, 1)
-struct PlayerActionResponse : Packet
+struct PacketPlayerActionResponse : Packet
 {
-	DECL_PACKET(PlayerActionResponse);
+	DECL_PACKET(PacketPlayerActionResponse);
 
 	glm::vec3 Position;
 	glm::vec3 Velocity;
