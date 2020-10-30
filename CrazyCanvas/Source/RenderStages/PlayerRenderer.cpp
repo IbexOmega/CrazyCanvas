@@ -17,6 +17,8 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 
+#include <algorithm>
+
 
 namespace LambdaEngine
 {
@@ -300,10 +302,6 @@ namespace LambdaEngine
 				m_DescriptorSetList3.Clear();
 				m_DescriptorSetList3.Resize(m_DrawCount);
 				
-				// ---------------- START: Not sure what it is used for? -------------------
-				// m_DrawCount is telling us how many times to draw per drawcall?
-				// should not be more than 1 since there is only one player type we are filtering on.
-
 				m_DirtyUniformBuffers = true;
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
@@ -329,12 +327,15 @@ namespace LambdaEngine
 							{
 								TeamComponent teamComp = pTeamComponents->GetConstData(entity);
 								m_ViewerTeamId = teamComp.TeamIndex;
+								m_ViewerEntityId = entity;
 								m_ViewerDrawArgIndex = d;
 							}
 							else
 							{
 								TeamComponent teamComp = pTeamComponents->GetConstData(entity);
 								m_TeamIds.PushBack(teamComp.TeamIndex);
+
+								m_EntityIds.PushBack(entity);
 
 								// Set Vertex and Instance buffer for rendering
 								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
@@ -499,11 +500,35 @@ namespace LambdaEngine
 		scissorRect.Height = height;
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
+		// Sort Team Ids nack to front
+		m_NextSortedArg.Resize(m_DrawCount - 1);
+
+		const ComponentArray<PositionComponent>* pPlayerPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+
+		const glm::vec3 origin = pPlayerPositionComponents->GetConstData(m_ViewerEntityId).Position;
+
 		for (uint32 d = 0, teamIndex = 0; d < m_DrawCount; d++)
 		{
 			if (d != m_ViewerDrawArgIndex)
 			{
 				const DrawArg& drawArg = m_pDrawArgs[d];
+				const float dist = glm::distance2(origin, pPlayerPositionComponents->GetConstData(d).Position);
+				m_DistanceMap.insert( {d, dist} );
+
+				/*std::sort(m_EntityIds.Begin(), m_EntityIds.End(),
+					[origin, pPlayerPositionComponents](uint32 id1, uint32 id2) {
+						const glm::vec3 posId1 = pPlayerPositionComponents->GetConstData(id1).Position;
+						const glm::vec3 posId2 = pPlayerPositionComponents->GetConstData(id2).Position;
+						return glm::distance2(origin, posId1) > glm::distance2(origin, posId2);
+					});*/
+			}
+		}
+
+		for (uint32 d = 0, teamIndex = 0; d < m_DrawCount; d++)
+		{
+			if (d != m_ViewerDrawArgIndex)
+			{
+				const DrawArg& drawArg = m_pDrawArgs[nextSortedArg[d]];
 
 				uint32 teamId = m_TeamIds[teamIndex++];
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
