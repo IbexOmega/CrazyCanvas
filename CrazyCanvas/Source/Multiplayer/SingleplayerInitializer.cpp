@@ -3,7 +3,7 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 
-#include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -17,7 +17,7 @@ namespace LambdaEngine
 	{
 		using namespace LambdaEngine;
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Position = glm::vec3(0.0f, 2.0f, 0.0f);
 		packet.Forward = glm::vec3(1.0f, 0.0f, 0.0f);

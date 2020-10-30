@@ -137,10 +137,10 @@ bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event
 {
 	if (m_HasHostedServer)
 	{
-		PacketHostServer packet;
-		packet.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
-		packet.MapNumber = m_HostGameDesc.MapNumber;
-		packet.PlayersNumber = m_HostGameDesc.PlayersNumber;
+		PacketConfigureServer packet;
+		packet.AuthenticationID	= ServerHostHelper::GetAuthenticationHostID();
+		packet.MapID			= m_HostGameDesc.MapNumber;
+		packet.Players			= m_HostGameDesc.PlayersNumber;
 
 		ClientHelper::Send(packet);
 	}

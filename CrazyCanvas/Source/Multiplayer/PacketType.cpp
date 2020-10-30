@@ -3,13 +3,12 @@
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Match/FlagComponent.h"
 
-#include "Multiplayer/Packet/PlayerAction.h"
-#include "Multiplayer/Packet/PlayerActionResponse.h"
-#include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
-#include "Multiplayer/Packet/PacketHostServer.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
@@ -26,20 +25,20 @@ uint16 PacketType::HEALTH_CHANGED			= 0;
 uint16 PacketType::FLAG_EDITED				= 0;
 uint16 PacketType::TEAM_SCORED				= 0;
 uint16 PacketType::GAME_OVER				= 0;
-uint16 PacketType::HOST_SERVER				= 0;
+uint16 PacketType::CONFIGURE_SERVER			= 0;
 
 void PacketType::Init()
 {
-	CREATE_LEVEL_OBJECT		= RegisterPacketType<CreateLevelObject>();
+	CREATE_LEVEL_OBJECT		= RegisterPacketType<PacketCreateLevelObject>();
 	DELETE_LEVEL_OBJECT		= RegisterPacketType<PacketDeleteLevelObject>();
-	PLAYER_ACTION			= RegisterPacketTypeWithComponent<PlayerAction>();
-	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PlayerActionResponse>();
+	PLAYER_ACTION			= RegisterPacketTypeWithComponent<PacketPlayerAction>();
+	PLAYER_ACTION_RESPONSE	= RegisterPacketTypeWithComponent<PacketPlayerActionResponse>();
 	WEAPON_FIRE				= RegisterPacketTypeWithComponent<WeaponFiredPacket>();
 	HEALTH_CHANGED			= RegisterPacketTypeWithComponent<HealthChangedPacket>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<FlagEditedPacket>();
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
-	HOST_SERVER				= RegisterPacketType<PacketHostServer>();
+	CONFIGURE_SERVER		= RegisterPacketType<PacketConfigureServer>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

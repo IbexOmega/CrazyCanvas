@@ -13,6 +13,7 @@ namespace LambdaEngine
 {
 	class LAMBDA_API Random
 	{
+		friend class EngineLoop;
 	public:
 		DECL_STATIC_CLASS(Random);
 
@@ -23,6 +24,9 @@ namespace LambdaEngine
 		static uint64  UInt64(uint64 min = 0, uint64 max = UINT64_MAX);
 		static float32 Float32();
 		static bool    Bool();
+
+	private:
+		static void PreInit();
 
 	private:
 		static std::default_random_engine s_Generator;

@@ -8,8 +8,8 @@
 
 #include "ECS/ECSCore.h"
 
-#include "Multiplayer/Packet/PlayerAction.h"
-#include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
 using namespace LambdaEngine;
 
@@ -38,8 +38,8 @@ void PlayerRemoteSystem::Init()
 				{R , PositionComponent::Type()},
 				{RW, VelocityComponent::Type()},
 				{RW, RotationComponent::Type()},
-				{R, PacketComponent<PlayerAction>::Type()},
-				{RW, PacketComponent<PlayerActionResponse>::Type()},
+				{R, PacketComponent<PacketPlayerAction>::Type()},
+				{RW, PacketComponent<PacketPlayerActionResponse>::Type()},
 			}
 		}
 	};
@@ -51,8 +51,8 @@ void PlayerRemoteSystem::Init()
 void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	auto* pPlayerActionComponents = pECS->GetComponentArray<PacketComponent<PlayerAction>>();
-	auto* pPlayerActionResponseComponents = pECS->GetComponentArray<PacketComponent<PlayerActionResponse>>();
+	auto* pPlayerActionComponents = pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
+	auto* pPlayerActionResponseComponents = pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
 	auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
 	auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 	auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
@@ -63,18 +63,18 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 	for(Entity entityPlayer : m_Entities)
 	{
-		const PacketComponent<PlayerAction>& playerActionComponent = pPlayerActionComponents->GetConstData(entityPlayer);
-		PacketComponent<PlayerActionResponse>& playerActionResponseComponent = pPlayerActionResponseComponents->GetData(entityPlayer);
+		const PacketComponent<PacketPlayerAction>& playerActionComponent = pPlayerActionComponents->GetConstData(entityPlayer);
+		PacketComponent<PacketPlayerActionResponse>& playerActionResponseComponent = pPlayerActionResponseComponents->GetData(entityPlayer);
 		const NetworkPositionComponent& netPosComponent = pNetPosComponents->GetConstData(entityPlayer);
 		const PositionComponent& constPositionComponent = pPositionComponents->GetConstData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 		const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entityPlayer);
 
-		const TArray<PlayerAction>& gameStates = playerActionComponent.GetPacketsReceived();
+		const TArray<PacketPlayerAction>& gameStates = playerActionComponent.GetPacketsReceived();
 
-		for (const PlayerAction& gameState : gameStates)
+		for (const PacketPlayerAction& gameState : gameStates)
 		{
-			PlayerAction& currentGameState = m_CurrentGameStates[entityPlayer];
+			PacketPlayerAction& currentGameState = m_CurrentGameStates[entityPlayer];
 			ASSERT(gameState.SimulationTick - 1 == currentGameState.SimulationTick);
 			currentGameState = gameState;
 
@@ -89,7 +89,7 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 			CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 
-			PlayerActionResponse packet;
+			PacketPlayerActionResponse packet;
 			packet.SimulationTick	= gameState.SimulationTick;
 			packet.Position			= netPosComponent.Position;
 			packet.Velocity			= velocityComponent.Velocity;

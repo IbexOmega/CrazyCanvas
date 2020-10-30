@@ -31,7 +31,7 @@
 
 #include "Rendering/ImGuiRenderer.h"
 
-#include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 
 #include "Multiplayer/ServerHelper.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
@@ -141,7 +141,7 @@ void MatchServer::SpawnFlag()
 		{
 			VALIDATE(createdFlagEntities.GetSize() == 1);
 
-			CreateLevelObject packet;
+			PacketCreateLevelObject packet;
 			packet.LevelObjectType			= ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
 			packet.Position					= createDesc.Position;
 			packet.Forward					= GetForward(createDesc.Rotation);
@@ -173,6 +173,7 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.InitalVelocity	= event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
+	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
 	createProjectileDesc.MeshComponent	= event.MeshComponent;
 
 	TArray<Entity> createdFlagEntities;
@@ -233,7 +234,7 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	{
 		VALIDATE(createdPlayerEntities.GetSize() == 1);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Position			= position;
 		packet.Forward			= forward;
@@ -289,7 +290,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	{
 		TArray<Entity> playerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Player.IsMySelf	= false;
 
@@ -318,7 +319,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	{
 		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
 
 		for (Entity flagEntity : flagEntities)

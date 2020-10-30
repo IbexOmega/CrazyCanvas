@@ -4,7 +4,12 @@
 
 namespace LambdaEngine
 {
-	std::default_random_engine Random::s_Generator((uint32)PlatformTime::GetPerformanceCounter());
+	std::default_random_engine Random::s_Generator(0);
+
+	void Random::PreInit()
+	{
+		s_Generator = std::default_random_engine((uint32)PlatformTime::GetPerformanceCounter());
+	}
 
 	int32 Random::Int32(int32 min, int32 max)
 	{

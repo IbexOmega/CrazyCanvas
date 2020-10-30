@@ -26,7 +26,7 @@ using namespace LambdaEngine;
 
 MatchClient::~MatchClient()
 {
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -34,7 +34,7 @@ MatchClient::~MatchClient()
 
 bool MatchClient::InitInternal()
 {
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -46,9 +46,9 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 	UNREFERENCED_VARIABLE(deltaTime);
 }
 
-bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<CreateLevelObject>& event)
+bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
 {
-	const CreateLevelObject& packet = event.Packet;
+	const PacketCreateLevelObject& packet = event.Packet;
 	IClient* pClient = event.pClient;
 
 	switch (packet.LevelObjectType)
@@ -152,6 +152,7 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
 	createProjectileDesc.MeshComponent	= event.MeshComponent;
+	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
 
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))

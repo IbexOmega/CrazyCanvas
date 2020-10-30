@@ -19,10 +19,10 @@
 
 #include "Teams/TeamHelper.h"
 
+#include "Multiplayer/ServerHostHelper.h"
+
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
-
-
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -35,6 +35,8 @@ constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
+
+	ServerHostHelper::Init();
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
@@ -56,7 +58,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	constexpr const char* pGameName = "Crazy Canvas";
 	constexpr const char* pDefaultStateStr = "crazycanvas";
-	constexpr const char* pDefaultIsHostStr = "-1";
+	constexpr const char* pDefaultIsHostStr = "";
 	State* pStartingState = nullptr;
 	String stateStr;
 
