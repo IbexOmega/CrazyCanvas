@@ -14,6 +14,8 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
+#include "Multiplayer/Packet/PacketFlagEdited.h"
+
 ClientFlagSystem::ClientFlagSystem()
 {
 }
@@ -110,7 +112,7 @@ void ClientFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 void ClientFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
 {
 	using namespace LambdaEngine;
-	componentAccesses.PushBack({ R, PacketComponent<FlagEditedPacket>::Type() });
+	componentAccesses.PushBack({ R, PacketComponent<PacketFlagEdited>::Type() });
 }
 
 void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
@@ -158,10 +160,10 @@ void ClientFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp delta
 	{
 		Entity flagEntity = m_Flags[0];
 
-		PacketComponent<FlagEditedPacket>& flagPacketComponent = pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
-		const TArray<FlagEditedPacket>& flagEditedPackets = flagPacketComponent.GetPacketsReceived();
+		PacketComponent<PacketFlagEdited>& flagPacketComponent = pECS->GetComponent<PacketComponent<PacketFlagEdited>>(flagEntity);
+		const TArray<PacketFlagEdited>& flagEditedPackets = flagPacketComponent.GetPacketsReceived();
 
-		for (const FlagEditedPacket& editedPacket : flagEditedPackets)
+		for (const PacketFlagEdited& editedPacket : flagEditedPackets)
 		{
 			switch (editedPacket.FlagPacketType)
 			{

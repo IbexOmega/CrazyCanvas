@@ -44,6 +44,9 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketFlagEdited.h"
+#include "Multiplayer/Packet/PacketHealthChanged.h"
+#include "Multiplayer/Packet/PacketWeaponFired.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -250,14 +253,13 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 	ELevelObjectType levelObjectType,
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	auto createFuncIt = s_LevelObjectByTypeCreateFunctions.find(levelObjectType);
 
 	if (createFuncIt != s_LevelObjectByTypeCreateFunctions.end())
 	{
-		return createFuncIt->second(pData, createdEntities, createdChildEntities, saltUIDs);
+		return createFuncIt->second(pData, createdEntities, createdChildEntities);
 	}
 	else
 	{
@@ -443,11 +445,9 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(const LambdaEngine::LevelOb
 bool LevelObjectCreator::CreateFlag(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	UNREFERENCED_VARIABLE(createdChildEntities);
-	UNREFERENCED_VARIABLE(saltUIDs);
 
 	if (pData == nullptr) return false;
 
@@ -500,7 +500,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	//Network Stuff
 	{
-		pECS->AddComponent<PacketComponent<FlagEditedPacket>>(entity, {});
+		pECS->AddComponent<PacketComponent<PacketFlagEdited>>(entity, {});
 	}
 
 	int32 networkUID;
@@ -565,8 +565,7 @@ bool LevelObjectCreator::CreateFlag(
 bool LevelObjectCreator::CreatePlayer(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	if (pData == nullptr)
 		return false;
@@ -624,7 +623,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
-	pECS->AddComponent<PacketComponent<WeaponFiredPacket>>(weaponEntity, { });
+	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.4, 0.5f, -0.2) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
@@ -781,8 +780,6 @@ bool LevelObjectCreator::CreatePlayer(
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
-
-			saltUIDs.PushBack(UINT64_MAX);
 		}
 		else
 		{
@@ -834,21 +831,18 @@ bool LevelObjectCreator::CreatePlayer(
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
-
-			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
 		}
 	}
 	else
 	{
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
-		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
-	pECS->AddComponent<PacketComponent<HealthChangedPacket>>(playerEntity, {});
+	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
@@ -860,12 +854,10 @@ bool LevelObjectCreator::CreatePlayer(
 bool LevelObjectCreator::CreateProjectile(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	using namespace LambdaEngine;
 
-	UNREFERENCED_VARIABLE(saltUIDs);
 	UNREFERENCED_VARIABLE(createdChildEntities);
 
 	if (pData == nullptr)
