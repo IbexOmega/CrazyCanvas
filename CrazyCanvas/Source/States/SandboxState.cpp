@@ -393,6 +393,13 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 			else
 			{
 				auto& emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(m_Emitters[modIndex]);
+
+				emitterComp.Explosive = 0.9f + Random::Float32(0.f, 0.1f);
+				emitterComp.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f);
+				emitterComp.Velocity = 1.0f + Random::Float32(-3.f, 3.f);
+				emitterComp.Gravity = Random::Float32(-5.0f, 5.0f);
+				emitterComp.LifeTime = Random::Float32(1.0f, 3.0f);
+				emitterComp.Color = glm::vec4(indexEmitters % 2U, indexEmitters % 3U, indexEmitters % 5U, 1.0f),
 				emitterComp.Active = true;
 			}
 
