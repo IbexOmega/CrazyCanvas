@@ -7,6 +7,7 @@
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketConfigureServer.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 
