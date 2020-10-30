@@ -7,6 +7,7 @@
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
 #include "../Noise.glsl"
+#include "../Paint.glsl"
 
 struct SPaintDescription
 {
@@ -87,15 +88,11 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	float paintAmountHor1	= mix(paintSample01.PaintAmount, paintSample11.PaintAmount, subTexel.x);
 	float paintAmountFinal	= mix(paintAmountHor0, paintAmountHor1, subTexel.y);
 
-	float noiseScale			= 8.0f;
-	float deltaNoise			= 0.001f;
-	float h0 					= snoise(noiseScale * (position));
-	float h_u 					= snoise(noiseScale * (position + deltaNoise * tangent));
-	float h_v 					= snoise(noiseScale * (position + deltaNoise * tangent));
-	float dh_u					= (h0 - h_u);
-	float dh_v					= (h0 - h_v);
-	vec3 grad_h					= vec3(dh_u, dh_v, sqrt(1.0f - (dh_u * dh_u) - (dh_v * dh_v)));
-	vec3 paintNormal			= normalize(grad_h);
+	float h0 					= snoise(PAINT_NOISE_SCALE * (position));
+	float h_u 					= snoise(PAINT_NOISE_SCALE * (position + PAINT_DELTA_NOISE * tangent));
+	float h_v 					= snoise(PAINT_NOISE_SCALE * (position + PAINT_DELTA_NOISE * tangent));
+	vec2 grad_h					= vec2(h0 - h_u, h0 - h_v);
+	vec3 paintNormal			= normalize(vec3(PAINT_BUMPINESS * grad_h, sqrt(1.0f - (grad_h.x * grad_h.x) - (grad_h.y * grad_h.y))));
 	vec3 noPaintNormal00		= normalize(vec3(-1.0f,  1.0f, 1.0f));
 	vec3 noPaintNormal10		= normalize(vec3( 1.0f,  1.0f, 1.0f));
 	vec3 noPaintNormal01		= normalize(vec3(-1.0f, -1.0f, 1.0f));
@@ -112,7 +109,7 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 
 	paintDescription.Normal			= combinedNormal;
 	paintDescription.Albedo 		= paintColorFinal;
-	paintDescription.Roughness 		= 0.01f;
+	paintDescription.Roughness 		= PAINT_ROUGHNESS;
 	paintDescription.Interpolation	= paintAmountFinal;
 
 	return paintDescription;
