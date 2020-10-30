@@ -44,6 +44,9 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketFlagEdited.h"
+#include "Multiplayer/Packet/PacketHealthChanged.h"
+#include "Multiplayer/Packet/PacketWeaponFired.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -497,7 +500,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	//Network Stuff
 	{
-		pECS->AddComponent<PacketComponent<FlagEditedPacket>>(entity, {});
+		pECS->AddComponent<PacketComponent<PacketFlagEdited>>(entity, {});
 	}
 
 	int32 networkUID;
@@ -620,7 +623,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
-	pECS->AddComponent<PacketComponent<WeaponFiredPacket>>(weaponEntity, { });
+	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.4, 0.5f, -0.2) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
@@ -839,7 +842,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
-	pECS->AddComponent<PacketComponent<HealthChangedPacket>>(playerEntity, {});
+	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
