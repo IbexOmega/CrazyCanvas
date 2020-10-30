@@ -27,7 +27,7 @@ def lint(cppcheck_path, report_path, ignore_path):
 	if ignore_path:
 		args.append(f'-i{ignore_path}')
 
-	thread_count = os.cpu_count()
+	thread_count = min(os.cpu_count(), 8)
 	if thread_count:
 		print(f'Using {thread_count} threads')
 		args.append(f'-j {thread_count}')

@@ -23,13 +23,6 @@ struct LevelCreateDesc
 
 class Level
 {
-	struct LevelEntitiesOfType
-	{
-		LambdaEngine::TArray<uint64> SaltUIDs;
-		LambdaEngine::TArray<LambdaEngine::Entity> Entities;
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>> ChildEntities;
-	};
-
 public:
 	DECL_UNIQUE_CLASS(Level);
 
@@ -38,9 +31,11 @@ public:
 
 	bool Init(const LevelCreateDesc* pDesc);
 
+	bool DeleteObject(LambdaEngine::Entity entity);
 	bool CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities);
 
-	LambdaEngine::Entity* GetEntities(ELevelObjectType levelObjectType, uint32& countOut);
+	LambdaEngine::TArray<LambdaEngine::Entity> GetEntities(ELevelObjectType levelObjectType);
+	LambdaEngine::TArray< LambdaEngine::TArray<LambdaEngine::Entity>> GetChildEntities(ELevelObjectType levelObjectType);
 
 private:
 	//virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
@@ -49,6 +44,9 @@ private:
 	LambdaEngine::String m_Name = "";
 	LambdaEngine::SpinLock m_SpinLock;
 
+	LambdaEngine::THashTable<LambdaEngine::Entity, ELevelObjectType> m_EntityToLevelObjectTypeMap;
 	LambdaEngine::THashTable<ELevelObjectType, uint32> m_EntityTypeMap;
-	LambdaEngine::TArray<LevelEntitiesOfType> m_Entities;
+
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>> m_LevelEntities;
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>> m_LevelChildEntities;
 };

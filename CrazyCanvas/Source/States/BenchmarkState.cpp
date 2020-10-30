@@ -306,7 +306,6 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				.IsLocal 			= false,
 				.PlayerNetworkUID 	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
-				.pClient 			= event.pClient,
 				.Position 			= packet.Position,
 				.Forward 			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
 				.Scale 				= glm::vec3(1.0f),

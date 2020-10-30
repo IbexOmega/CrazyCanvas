@@ -16,6 +16,8 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
+#include "Multiplayer/Packet/PacketWeaponFired.h"
+
 void BenchmarkSystem::Init()
 {
 	using namespace LambdaEngine;
@@ -36,7 +38,6 @@ void BenchmarkSystem::Init()
 					{ RW, WeaponComponent::Type() },
 					{ R, PositionComponent::Type() },
 					{ R, RotationComponent::Type() },
-					{ RW, PacketComponent<WeaponFiredPacket>::Type() }
 				}
 			},
 			{

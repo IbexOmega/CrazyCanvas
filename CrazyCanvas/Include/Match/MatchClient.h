@@ -5,6 +5,7 @@
 #include "Multiplayer/Packet/MultiplayerEvents.h"
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 
 class MatchClient : public MatchBase
@@ -22,5 +23,6 @@ protected:
 
 	bool OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event);
 	bool OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTeamScored>& event);
+	bool OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<PacketDeleteLevelObject>& event);
 	bool OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event);
 };
