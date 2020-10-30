@@ -169,7 +169,7 @@ struct SParticle
 	vec3 Velocity;
 	float CurrentLife;
 	vec3 StartVelocity;
-	float padding0;
+	float Padding0;
 	vec3 Acceleration;
 	uint TileIndex;
 	vec3 StartPosition;
@@ -179,7 +179,7 @@ struct SParticle
 	float EndRadius;
 	float FrictionFactor;
 	float Bounciness;
-	float padding1;
+	float Padding1;
 };
 
 struct SEmitter
