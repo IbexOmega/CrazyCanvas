@@ -84,7 +84,7 @@ private:
 		const glm::quat& direction,
 		const glm::vec3& playerVelocity);
 
-	void StartReload(WeaponComponent& weaponComponent);
+	void StartReload(WeaponComponent& weaponComponent, PacketComponent<PlayerAction>& packets);
 	void AbortReload(WeaponComponent& weaponComponent);
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);

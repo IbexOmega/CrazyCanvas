@@ -85,21 +85,26 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 					{
 						healthComponent.CurrentHealth -= 10;
-						//LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
+						if (healthComponent.CurrentHealth <= 0)
+						{
+							LOG_INFO("PLAYER DIED");
+							healthComponent.CurrentHealth = 0;
+
+							PlayerDiedEvent diedEvent(entity);
+							EventQueue::SendEvent(diedEvent);
+						}
+
+						LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
 					}
 					else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 					{
-						healthComponent.CurrentHealth += 10;
-						//LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
-					}
+						healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth + 10, 100);
+						if (healthComponent.CurrentHealth >= 100)
+						{
+							LOG_INFO("PLAYER REACHED FULL HEALTH");
+						}
 
-					if (healthComponent.CurrentHealth <= 0)
-					{
-						LOG_INFO("PLAYER DIED");
-						healthComponent.CurrentHealth = 0;
-
-						PlayerDiedEvent diedEvent(entity);
-						EventQueue::SendEvent(diedEvent);
+						LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
 					}
 
 					HealthChangedPacket packet = {};
