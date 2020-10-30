@@ -41,6 +41,8 @@ namespace LambdaEngine
 
 	void PipelineContext::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
+		UNREFERENCED_VARIABLE(delta);
+		UNREFERENCED_VARIABLE(backBufferIndex);
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
 	}
 

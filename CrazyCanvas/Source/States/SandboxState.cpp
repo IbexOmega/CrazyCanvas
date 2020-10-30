@@ -357,7 +357,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	}
 
 	// Debugging Emitters
-	ECSCore* ecsCore = ECSCore::GetInstance();
+	ECSCore* pECSCore = ECSCore::GetInstance();
 	static uint32 indexEmitters = 0;
 	static LambdaEngine::Timestamp time;
 	const uint32 emitterCount = 10U;
@@ -370,12 +370,12 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 
 			if (indexEmitters < emitterCount)
 			{
-				Entity e = ecsCore->CreateEntity();
+				Entity e = pECSCore->CreateEntity();
 				m_Emitters[modIndex] = e;
 
-				ecsCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
-				ecsCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
-				ecsCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
+				pECSCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
+				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
+				pECSCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
 					.OneTime = true,
 					.Explosive = 0.9f,
 					.SpawnDelay = 0.01f,
@@ -386,11 +386,11 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 					.LifeTime = Random::Float32(1.0f, 3.0f),
 					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
 					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
-					});
+				});
 			}
 			else
 			{
-				auto& emitterComp = ecsCore->GetComponent<ParticleEmitterComponent>(m_Emitters[modIndex]);
+				auto& emitterComp = pECSCore->GetComponent<ParticleEmitterComponent>(m_Emitters[modIndex]);
 
 				emitterComp.Explosive = 0.9f + Random::Float32(0.f, 0.1f);
 				emitterComp.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f);

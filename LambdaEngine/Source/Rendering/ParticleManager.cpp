@@ -94,7 +94,7 @@ namespace LambdaEngine
 			SAFERELEASE(m_Sampler);
 	}
 
-	void ParticleManager::Tick(Timestamp deltaTime, uint32 modFrameIndex)
+	void ParticleManager::Tick(Timestamp deltaTime, uint64 modFrameIndex)
 	{
 		m_ModFrameIndex = modFrameIndex;
 
@@ -107,7 +107,7 @@ namespace LambdaEngine
 			if (emitterInstance.OneTime)
 			{
 				float& elapTime = emitterInstance.ElapTime;
-				elapTime += deltaTime.AsSeconds();
+				elapTime += float(deltaTime.AsSeconds());
 
 				float longestLifeTime = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * (emitterInstance.ParticleChunk.Size - 1U) * emitterInstance.SpawnDelay;
 				if (elapTime >= longestLifeTime - EPSILON)
@@ -177,8 +177,8 @@ namespace LambdaEngine
 	bool ParticleManager::CreateAtlasTextureInstance(GUID_Lambda atlasGUID, uint32 tileSize)
 	{
 		// Add atlas texture
-		TextureView* textureView = ResourceManager::GetTextureView(atlasGUID);
-		m_AtlasTextureViews.PushBack(textureView);
+		TextureView* pTextureView = ResourceManager::GetTextureView(atlasGUID);
+		m_AtlasTextureViews.PushBack(pTextureView);
 
 		if (!m_Sampler)
 		{
@@ -194,8 +194,8 @@ namespace LambdaEngine
 		}
 		m_AtlasSamplers.PushBack(m_Sampler.Get());
 
-		uint32 width = textureView->GetDesc().pTexture->GetDesc().Width;
-		uint32 height = textureView->GetDesc().pTexture->GetDesc().Height;
+		uint32 width = pTextureView->GetDesc().pTexture->GetDesc().Width;
+		uint32 height = pTextureView->GetDesc().pTexture->GetDesc().Height;
 
 		// Add atlas information
 		SAtlasInfo atlasInfo = {};
@@ -394,9 +394,9 @@ namespace LambdaEngine
 		return allocateParticles;
 	}
 
-	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name)
+	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** ppStagingBuffers, Buffer** ppBuffer, FBufferFlags flags, const String& name)
 	{
-		Buffer* pStagingBuffer = pStagingBuffers[m_ModFrameIndex];
+		Buffer* pStagingBuffer = ppStagingBuffers[m_ModFrameIndex];
 		Buffer* pPreviousBuffer = nullptr;
 		bool needUpdate = true;
 
@@ -432,7 +432,7 @@ namespace LambdaEngine
 				bufferDesc.SizeInBytes = neededSize;
 
 				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				pStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+				ppStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
 			}
 
 			void* pMapped = pStagingBuffer->Map();
@@ -444,12 +444,12 @@ namespace LambdaEngine
 
 			pStagingBuffer->Unmap();
 
-			if ((*pBuffer) == nullptr || (*pBuffer)->GetDesc().SizeInBytes < neededSize)
+			if ((*ppBuffer) == nullptr || (*ppBuffer)->GetDesc().SizeInBytes < neededSize)
 			{
-				if ((*pBuffer) != nullptr)
+				if ((*ppBuffer) != nullptr)
 				{
-					pPreviousBuffer = (*pBuffer);
-					m_ResourcesToRemove[m_ModFrameIndex].PushBack((*pBuffer));
+					pPreviousBuffer = (*ppBuffer);
+					m_ResourcesToRemove[m_ModFrameIndex].PushBack((*ppBuffer));
 				}
 				BufferDesc bufferDesc = {};
 				bufferDesc.DebugName = name;
@@ -457,7 +457,7 @@ namespace LambdaEngine
 				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC | flags;
 				bufferDesc.SizeInBytes = neededSize;
 
-				(*pBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				(*ppBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
 			else
 			{
@@ -466,11 +466,11 @@ namespace LambdaEngine
 
 			// Copy old data to new buffer
 			if (pPreviousBuffer != nullptr)
-				pCommandList->CopyBuffer(pPreviousBuffer, 0, (*pBuffer), 0, pPreviousBuffer->GetDesc().SizeInBytes);
+				pCommandList->CopyBuffer(pPreviousBuffer, 0, (*ppBuffer), 0, pPreviousBuffer->GetDesc().SizeInBytes);
 
 			for (uint32 r = 0; r < regionCount; r++)
 			{
-				pCommandList->CopyBuffer(pStagingBuffer, pOffsets[r] * elementSize, (*pBuffer), pOffsets[r] * elementSize, pSize[r] * elementSize);
+				pCommandList->CopyBuffer(pStagingBuffer, pOffsets[r] * elementSize, (*ppBuffer), pOffsets[r] * elementSize, pSize[r] * elementSize);
 			}
 		}
 		else
@@ -674,7 +674,7 @@ namespace LambdaEngine
 #if DEBUG_PARTICLE
 		LOG_INFO("[ParticleManager]: Freed Chunk: [offset: %u, size : %u]", chunk.Offset, chunk.Size);
 		LOG_INFO("[ParticleManager]: Current Free Chunks:");
-		for (size_t i = 0; i < m_FreeParticleChunks.GetSize(); i++)
+		for (uint32 i = 0; i < m_FreeParticleChunks.GetSize(); i++)
 		{
 			LOG_INFO("\tFree chunk%u - [offset: %u, size : %u] ", i, m_FreeParticleChunks[i].Offset, m_FreeParticleChunks[i].Size);
 		}

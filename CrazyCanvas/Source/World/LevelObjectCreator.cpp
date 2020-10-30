@@ -633,7 +633,7 @@ bool LevelObjectCreator::CreatePlayer(
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.5, 1.5f, -0.2) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.5f, 1.5f, -0.2f) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 
@@ -645,26 +645,26 @@ bool LevelObjectCreator::CreatePlayer(
 	if (!MultiplayerUtils::IsServer())
 	{
 		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
-		.Active = false,
-		.OneTime = true,
-		.Explosive = 1.0f,
-		.ParticleCount = 128,
-		.EmitterShape = EEmitterShape::CONE,
-		.Angle = 15.f,
-		.VelocityRandomness = 0.5f,
-		.Velocity = 10.0,
-		.Acceleration = 0.0,
-		.Gravity = -4.f,
-		.LifeTime = 2.0f,
-		.RadiusRandomness = 0.5f,
-		.BeginRadius = 0.1f,
-		.FrictionFactor = 0.f,
-		.Bounciness = 0.f,
-		.TileIndex = 14,
-		.AnimationCount = 1,
-		.FirstAnimationIndex = 16,
-		.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
-			}
+			.Active = false,
+			.OneTime = true,
+			.Explosive = 1.0f,
+			.ParticleCount = 128,
+			.EmitterShape = EEmitterShape::CONE,
+			.Angle = 15.f,
+			.VelocityRandomness = 0.5f,
+			.Velocity = 10.0,
+			.Acceleration = 0.0,
+			.Gravity = -4.f,
+			.LifeTime = 2.0f,
+			.RadiusRandomness = 0.5f,
+			.BeginRadius = 0.1f,
+			.FrictionFactor = 0.f,
+			.Bounciness = 0.f,
+			.TileIndex = 14,
+			.AnimationCount = 1,
+			.FirstAnimationIndex = 16,
+			.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
+		}
 		);
 
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;

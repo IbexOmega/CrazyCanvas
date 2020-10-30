@@ -104,7 +104,7 @@ namespace LambdaEngine
 
 		ConstantRangeDesc constantRange = {};
 		constantRange.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-		constantRange.SizeInBytes = sizeof(float) * 2.0f;
+		constantRange.SizeInBytes = sizeof(float) * 2;
 		constantRange.OffsetInBytes = 0;
 
 		m_UpdatePipeline.CreateConstantRange(constantRange);
@@ -240,9 +240,8 @@ namespace LambdaEngine
 	void ParticleUpdater::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
-		UNREFERENCED_VARIABLE(backBufferIndex);
 
-		m_PushConstant.delta = delta.AsSeconds();
+		m_PushConstant.delta = float(delta.AsSeconds());
 
 		m_UpdatePipeline.Update(delta, modFrameIndex, backBufferIndex);
 	}
@@ -272,10 +271,10 @@ namespace LambdaEngine
 				samplerDesc.borderColor = ESamplerBorderColor::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 				m_Sampler = MakeSharedRef<Sampler>(RenderAPI::GetDevice()->CreateSampler(&samplerDesc));
 			}
-			Sampler* sampler = m_Sampler.Get();
+			Sampler* pSampler = m_Sampler.Get();
 			SDescriptorTextureUpdateDesc descriptorUpdateDesc = {};
 			descriptorUpdateDesc.ppTextures = &ppPerImageTextureViews[0];
-			descriptorUpdateDesc.ppSamplers = &sampler;
+			descriptorUpdateDesc.ppSamplers = &pSampler;
 			descriptorUpdateDesc.TextureState = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 			descriptorUpdateDesc.FirstBinding = setBinding;
 			descriptorUpdateDesc.DescriptorCount = 1;
@@ -419,6 +418,7 @@ namespace LambdaEngine
 
 	void ParticleUpdater::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
+		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(Sleeping);
 
@@ -433,7 +433,7 @@ namespace LambdaEngine
 		m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&m_PushConstant, sizeof(PushConstantData), 0U);
 
 		constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
-		uint32 workGroupX = std::ceilf(float(m_ParticleCount) / float(WORK_GROUP_INVOCATIONS));
+		uint32 workGroupX = uint32(std::ceilf(float(m_ParticleCount) / float(WORK_GROUP_INVOCATIONS)));
 		pCommandList->Dispatch(workGroupX, 1U, 1U);
 
 		pCommandList->End();

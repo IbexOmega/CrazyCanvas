@@ -58,7 +58,7 @@ namespace LambdaEngine
 		glm::vec3 Velocity;
 		float CurrentLife;
 		glm::vec3 StartVelocity;
-		float padding0;
+		float Padding0;
 		glm::vec3 Acceleration;
 		uint32 TileIndex;
 		glm::vec3 StartPosition;
@@ -68,7 +68,7 @@ namespace LambdaEngine
 		float EndRadius;
 		float FrictionFactor;
 		float Bounciness;
-		float padding1;
+		float Padding1;
 	};
 
 	struct SEmitter
@@ -81,7 +81,7 @@ namespace LambdaEngine
 		uint32 FirstAnimationIndex;
 		float Gravity;
 		bool OneTime;
-		uint32 Padding2 = 0;
+		uint32 Padding0 = 0;
 	};
 
 	struct SAtlasInfo
@@ -113,7 +113,7 @@ namespace LambdaEngine
 		void Init(uint32 maxParticleCapacity);
 		void Release();
 
-		void Tick(Timestamp deltaTime, uint32 modFrameIndex);
+		void Tick(Timestamp deltaTime, uint64 modFrameIndex);
 
 		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 
@@ -140,7 +140,7 @@ namespace LambdaEngine
 
 		bool CreateConeParticleEmitter(EmitterID emitterID);
 		bool CreateTubeParticleEmitter(EmitterID emitterID);
-		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** pStagingBuffers, Buffer** pBuffer, FBufferFlags flags, const String& name);
+		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** ppStagingBuffers, Buffer** ppBuffer, FBufferFlags flags, const String& name);
 
 		bool ActivateEmitterInstance(EmitterID emitterID, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		bool DeactivateEmitterInstance(EmitterID emitterID);
@@ -153,7 +153,7 @@ namespace LambdaEngine
 
 	private:
 		uint32								m_MaxParticleCount;
-		uint32								m_ModFrameIndex;
+		uint64								m_ModFrameIndex;
 
 		bool								m_DirtyAliveBuffer			= false;
 		bool								m_DirtyEmitterIndexBuffer	= false;

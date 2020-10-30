@@ -15,5 +15,5 @@ void main()
 {
 	vec3 color = texture(u_Skybox, normalize(in_WorldPos)).rgb;
 	float luminance = CalculateLuminance(color);
-	out_Color = vec4(color, 1.f);
+	out_Color = vec4(color, luminance);
 }
