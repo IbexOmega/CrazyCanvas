@@ -17,11 +17,6 @@ namespace LambdaEngine
 
 	}
 
-	void ClientRemoteSystem::TickMainThread(Timestamp deltaTime)
-	{
-		UNREFERENCED_VARIABLE(deltaTime);
-	}
-
 	void ClientRemoteSystem::OnConnecting(IClient* pClient)
 	{
 		m_pClient = (ClientRemoteBase*)pClient;

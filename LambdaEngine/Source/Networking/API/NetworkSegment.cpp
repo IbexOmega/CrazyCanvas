@@ -58,7 +58,6 @@ namespace LambdaEngine
 
 	NetworkSegment* NetworkSegment::Write(const void* pBuffer, uint16 bytes)
 	{
-		ASSERT(bytes > 0);
 		ASSERT(m_SizeOfBuffer + bytes <= MAXIMUM_SEGMENT_SIZE);
 		memcpy(m_pBuffer + m_SizeOfBuffer, pBuffer, bytes);
 		m_SizeOfBuffer += bytes;
@@ -67,7 +66,6 @@ namespace LambdaEngine
 
 	NetworkSegment* NetworkSegment::Read(void* pBuffer, uint16 bytes)
 	{
-		ASSERT(bytes > 0);
 		ASSERT(m_ReadHead + bytes <= m_SizeOfBuffer);
 		memcpy(pBuffer, m_pBuffer + m_ReadHead, bytes);
 		m_ReadHead += bytes;
