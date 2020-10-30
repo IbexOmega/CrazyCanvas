@@ -26,14 +26,14 @@ using namespace LambdaEngine;
 
 MatchClient::~MatchClient()
 {
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 }
 
 bool MatchClient::InitInternal()
 {
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<CreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 	return true;
@@ -44,9 +44,9 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 	UNREFERENCED_VARIABLE(deltaTime);
 }
 
-bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<CreateLevelObject>& event)
+bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
 {
-	const CreateLevelObject& packet = event.Packet;
+	const PacketCreateLevelObject& packet = event.Packet;
 	IClient* pClient = event.pClient;
 
 	switch (packet.LevelObjectType)
