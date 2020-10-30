@@ -197,13 +197,21 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 {
 	using namespace LambdaEngine;
 
-	const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+	Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+
+	float32 maxDim = glm::max<float32>(
+		pMesh->DefaultScale.x * pMesh->BoundingBox.Dimensions.x,
+		glm::max<float32>(
+			pMesh->DefaultScale.y * pMesh->BoundingBox.Dimensions.y,
+			pMesh->DefaultScale.z * pMesh->BoundingBox.Dimensions.z));
+
+	uint32 meshPaintSize = uint32(maxDim * 384.0f);
 
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize));
 	pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	const CollisionCreateInfo collisionCreateInfo =
 	{
@@ -216,7 +224,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 			{
 				/* ShapeType */			EShapeType::SIMULATION,
 				/* GeometryType */		EGeometryType::MESH,
-				/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+				/* Geometry */			{ .pMesh = pMesh },
 				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
 			},
