@@ -97,19 +97,6 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			continue;
 		}
 
-		if (weaponComponent.ReloadClock > 0.0f)
-		{
-			weaponComponent.ReloadClock -= dt;
-			if (weaponComponent.ReloadClock <= 0.0f)
-			{
-				weaponComponent.CurrentAmmunition = AMMO_CAPACITY;
-			}
-			else
-			{
-				continue;
-			}
-		}
-
 		weaponSystem.Fire(
 			EAmmoType::AMMO_TYPE_PAINT,
 			playerEntity,
@@ -119,10 +106,5 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		);
 
 		weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
-
-		if (--weaponComponent.CurrentAmmunition == 0)
-		{
-			weaponComponent.ReloadClock = weaponComponent.ReloadTime;
-		}
 	}
 }
