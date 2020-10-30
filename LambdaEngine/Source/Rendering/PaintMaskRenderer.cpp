@@ -55,16 +55,10 @@ namespace LambdaEngine
 			{
 				SAFERELEASE(m_ppRenderCommandLists[b]);
 				SAFERELEASE(m_ppRenderCommandAllocators[b]);
-
-				for (TSharedRef<DeviceChild> pDeviceChild : m_pDeviceResourcesToDestroy[b])
-				{
-					SAFERELEASE(pDeviceChild);
-				}
 			}
 
 			SAFEDELETE_ARRAY(m_ppRenderCommandLists);
 			SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
-			m_pDeviceResourcesToDestroy.Clear();
 		}
 	}
 

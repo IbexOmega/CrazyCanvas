@@ -57,12 +57,12 @@ public:
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	void TryFire(
+	void Fire(
 		EAmmoType ammoType,
-		WeaponComponent& weaponComponent,
+		LambdaEngine::Entity weaponOwner,
 		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& startPos, 
-		const glm::quat& direction, 
+		const glm::vec3& playerPos,
+		const glm::quat& direction,
 		const glm::vec3& playerVelocity);
 
 public:
@@ -71,14 +71,6 @@ public:
 private:
 	WeaponSystem() = default;
 	~WeaponSystem() = default;
-
-	void Fire(
-		EAmmoType ammoType,
-		LambdaEngine::Entity weaponOwner,
-		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& playerPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity);
 
 	void TryFire(
 		EAmmoType ammoType,

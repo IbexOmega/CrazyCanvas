@@ -46,7 +46,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	m_Name = pDesc->Name;
 
 	using namespace LambdaEngine;
-	
+
 	std::scoped_lock<SpinLock> lock(m_SpinLock);
 
 	for (LevelModule* pModule : pDesc->LevelModules)
