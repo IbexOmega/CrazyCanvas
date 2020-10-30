@@ -99,8 +99,7 @@ void main()
     {
         imageStore(u_RadianceOut, pixelCoords, vec4(0.0f));
     }
-
-    if (shadeOutput)
+    else if (shadeOutput)
     {
         SLightsBuffer lightBuffer = b_LightsBuffer.val;
 

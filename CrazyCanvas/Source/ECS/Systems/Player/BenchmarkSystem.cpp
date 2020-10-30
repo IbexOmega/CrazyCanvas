@@ -16,6 +16,8 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
+#include "Multiplayer/Packet/PacketWeaponFired.h"
+
 void BenchmarkSystem::Init()
 {
 	using namespace LambdaEngine;
@@ -34,7 +36,7 @@ void BenchmarkSystem::Init()
 				.ComponentAccesses =
 				{
 					{ R, WeaponComponent::Type() },
-					{ RW, PacketComponent<WeaponFiredPacket>::Type() }
+					{ RW, PacketComponent<PacketWeaponFired>::Type() }
 				}
 			},
 			{
