@@ -48,7 +48,7 @@ public:
 	
 	void JoinSelectedServer(Noesis::Grid* pGrid);
 
-	bool OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event);
+	bool OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event);
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
 
 	void FixedTick(LambdaEngine::Timestamp delta);
@@ -67,6 +67,9 @@ private:
 
 	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
 	void PopulateServerInfo();
+
+	void OnLANServerFound(const ServerInfo& serverInfo, int32 clientHostID);
+	void OnWANServerFound(const ServerInfo& serverInfo);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)
 

@@ -44,7 +44,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
-	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
+	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerResponse);
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
 
 	const char* pIP = "81.170.143.133";
@@ -60,7 +60,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 
 LobbyGUI::~LobbyGUI()
 {
-	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
+	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerResponse);
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
 }
 
@@ -87,49 +87,25 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
+bool LobbyGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event)
 {
 	BinaryDecoder* pDecoder = event.pDecoder;
 
-	ServerInfo newInfo;
-	newInfo.Ping = (uint16)event.Ping.AsMilliSeconds();
-	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
-	newInfo.EndPoint = *event.pEndPoint;
-	newInfo.ServerUID = event.ServerUID;
+	ServerInfo serverInfo;
+	serverInfo.Ping			= (uint16)event.Ping.AsMilliSeconds();
+	serverInfo.LastUpdate	= EngineLoop::GetTimeSinceStart();
+	serverInfo.EndPoint		= *event.pEndPoint;
+	serverInfo.ServerUID	= event.ServerUID;
 
-	pDecoder->ReadUInt8(newInfo.Players);
-	pDecoder->ReadString(newInfo.Name);
-	pDecoder->ReadString(newInfo.MapName);
+	pDecoder->ReadUInt8(serverInfo.Players);
+	pDecoder->ReadString(serverInfo.Name);
+	pDecoder->ReadString(serverInfo.MapName);
 	int32 clientHostID = pDecoder->ReadInt32();
 
-	ServerInfo& currentInfo = m_Servers[event.ServerUID];
-
-	if (ServerHostHelper::GetClientHostID() == clientHostID)
-	{
-		SetRenderStagesActive();
-
-		State* pPlaySessionState = DBG_NEW PlaySessionState(false, newInfo.EndPoint.GetAddress());
-		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-	}
-
-	if (currentInfo != newInfo)
-	{
-		currentInfo = newInfo;
-		if (currentInfo.ServerGrid) // update current list
-		{
-			m_ServerList.UpdateServerItems(currentInfo);
-		}
-		else // add new item to list
-		{
-			Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-
-			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
-		}
-	}
+	if (event.IsLAN)
+		OnLANServerFound(serverInfo, clientHostID);
 	else
-	{
-		currentInfo = newInfo;
-	}
+		OnWANServerFound(serverInfo);
 
 	return true;
 }
@@ -440,4 +416,42 @@ void LobbyGUI::PopulateServerInfo()
 
 	LOG_MESSAGE("Player count %d", playersNumber);
 	LOG_MESSAGE(pMap);
+}
+
+void LobbyGUI::OnLANServerFound(const ServerInfo& serverInfo, int32 clientHostID)
+{
+	ServerInfo& currentInfo = m_Servers[serverInfo.ServerUID];
+
+	if (ServerHostHelper::GetClientHostID() == clientHostID)
+	{
+		SetRenderStagesActive();
+
+		State* pPlaySessionState = DBG_NEW PlaySessionState(false, serverInfo.EndPoint.GetAddress());
+		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+	}
+
+	if (currentInfo != serverInfo)
+	{
+		currentInfo = serverInfo;
+		if (currentInfo.ServerGrid) // update current list
+		{
+			m_ServerList.UpdateServerItems(currentInfo);
+		}
+		else // add new item to list
+		{
+			Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+
+			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
+		}
+	}
+	else
+	{
+		currentInfo = serverInfo;
+	}
+	LOG_INFO("OnLANServerFound %s", serverInfo.EndPoint.ToString());
+}
+
+void LobbyGUI::OnWANServerFound(const ServerInfo& serverInfo)
+{
+	LOG_INFO("OnWANServerFound %s", serverInfo.EndPoint.ToString());
 }
