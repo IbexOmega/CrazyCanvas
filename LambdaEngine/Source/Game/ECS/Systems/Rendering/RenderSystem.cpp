@@ -148,9 +148,9 @@ namespace LambdaEngine
 					.pSubscriber = &m_ParticleEmitters,
 					.ComponentAccesses =
 					{
-						{ NDA, ParticleEmitterComponent::Type() },
-						{ NDA, PositionComponent::Type() },
-						{ NDA, RotationComponent::Type() }
+						{ RW, ParticleEmitterComponent::Type() },
+						{ RW, PositionComponent::Type() },
+						{ RW, RotationComponent::Type() }
 					},
 					.OnEntityRemoval = std::bind(&RenderSystem::OnEmitterEntityRemoved, this, std::placeholders::_1)
 				}
@@ -611,7 +611,7 @@ namespace LambdaEngine
 			const auto& rotationComp = pRotationComponents->GetConstData(entity);
 			const auto& emitterComp = pEmitterComponents->GetConstData(entity);
 
-			if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
+			//if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
 				UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 
 			// If onetime emitter we want to reset active

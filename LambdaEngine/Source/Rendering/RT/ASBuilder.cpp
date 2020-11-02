@@ -262,6 +262,9 @@ namespace LambdaEngine
 		//Remap the previous Last Instance True (Indirect) Instance Index to point to the removed Index
 		(*lastInstanceIndexIt) = trueInstanceIndex;
 
+		//Invalidate Removed Instance Index
+		m_InstanceIndices[instanceIndex] = UINT32_MAX;
+
 		//Push the Removed Instance Index to Free
 		m_FreeInstanceIndices.PushBack(instanceIndex);
 	}
