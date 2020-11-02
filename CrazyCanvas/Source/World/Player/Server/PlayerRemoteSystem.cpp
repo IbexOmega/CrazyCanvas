@@ -100,7 +100,5 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 				positionComponent.Dirty		= true;
 			}
 		}
-		
-		netPosComponent.Frame++;
 	}
 }
