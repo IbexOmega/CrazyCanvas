@@ -73,7 +73,7 @@ Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, const ServerInfo& ser
 	serverName->SetText(serverInfo.Name.c_str());
 	mapName->SetText(serverInfo.MapName.c_str());
 	players->SetText(std::to_string(serverInfo.Players).c_str());
-	ping->SetText(std::to_string(serverInfo.Ping).c_str());
+	ping->SetText((std::to_string(serverInfo.Ping) + " ms").c_str());
 
 	Color color = Color();
 
@@ -110,7 +110,7 @@ void SavedServerGUI::UpdateServerItems(const ServerInfo& serverInfo)
 
 	serverName->SetText(serverInfo.Name.c_str());
 	mapName->SetText(serverInfo.MapName.c_str());
-	ping->SetText(std::to_string(serverInfo.Ping).c_str());
+	ping->SetText((std::to_string(serverInfo.Ping) + " ms").c_str());
 	playerCount->SetText(std::to_string(serverInfo.Players).c_str());
 }
 

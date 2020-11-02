@@ -91,7 +91,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	BinaryDecoder* pDecoder = event.pDecoder;
 
 	ServerInfo newInfo;
-	newInfo.Ping = 0;
+	newInfo.Ping = (uint16)event.Ping.AsMilliSeconds();
 	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
 	newInfo.EndPoint = *event.pEndPoint;
 	newInfo.ServerUID = event.ServerUID;

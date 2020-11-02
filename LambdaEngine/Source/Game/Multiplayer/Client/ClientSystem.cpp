@@ -129,9 +129,9 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
-	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID)
+	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping)
 	{
-		ServerDiscoveredEvent event(&decoder, &endPoint, serverUID);
+		ServerDiscoveredEvent event(&decoder, &endPoint, serverUID, ping);
 		EventQueue::SendEventImmediate(event);
 	}
 
