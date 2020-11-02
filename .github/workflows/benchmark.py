@@ -85,9 +85,6 @@ def main(argv):
 	run_benchmark(bin_path, original_engine_config, ray_tracing_enabled=True)
 	os.rename(BENCHMARK_RESULTS_PATH, BENCHMARK_RESULTS_PATH_RT_ON)
 
-	run_benchmark(bin_path, original_engine_config, ray_tracing_enabled=False)
-	os.rename(BENCHMARK_RESULTS_PATH, BENCHMARK_RESULTS_PATH_RT_OFF)
-
 	# Restore original engine config
 	os.remove(ENGINE_CONFIG_PATH)
 	os.rename(TEMP_ENGINE_CONFIG_PATH, ENGINE_CONFIG_PATH)

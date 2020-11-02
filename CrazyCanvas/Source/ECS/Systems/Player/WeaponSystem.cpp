@@ -49,7 +49,7 @@ static glm::vec3 CalculateWeaponPosition(
 }
 
 /*
-* WeaponSystem 
+* WeaponSystem
 */
 
 WeaponSystem WeaponSystem::s_Instance;
@@ -192,7 +192,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			const bool hasAmmo		= weaponComp.CurrentAmmunition > 0;
 			const bool isReloading	= weaponComp.ReloadClock > 0.0f;
 			const bool onCooldown	= weaponComp.CurrentCooldown > 0.0f;
-			
+
 			if (onCooldown)
 			{
 				weaponComp.CurrentCooldown -= dt;
@@ -251,10 +251,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 						// Create projectile
 						Fire(
-							ammoType, 
-							remotePlayerEntity, 
-							playerPositionComp.Position, 
-							playerRotationComp.Quaternion, 
+							ammoType,
+							remotePlayerEntity,
+							playerPositionComp.Position,
+							playerRotationComp.Quaternion,
 							velocityComp.Velocity);
 					}
 				}
@@ -334,7 +334,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				weaponPositionComp,
 				weaponRotationComp,
 				weaponOffsetComp);
-			
+
 			// Reload if we are not reloading
 			if (Input::IsKeyDown(EInputLayer::GAME, EKey::KEY_R) && !isReloading)
 			{
@@ -412,9 +412,9 @@ void WeaponSystem::Fire(
 	// Fire event
 	WeaponFiredEvent firedEvent(
 		weaponOwner,
-		ammoType, 
+		ammoType,
 		startPos,
-		initialVelocity, 
+		initialVelocity,
 		direction,
 		playerTeam);
 	firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
@@ -473,40 +473,6 @@ void WeaponSystem::TryFire(
 	}
 }
 
-void WeaponSystem::TryFire(
-	EAmmoType ammoType,
-	WeaponComponent& weaponComponent,
-	const glm::vec3& startPos,
-	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
-{
-	using namespace LambdaEngine;
-
-	// Add cooldown
-	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
-
-	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
-	if (hasAmmo)
-	{
-		// If we try to shoot when reloading we abort the reload
-		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
-		if (isReloading)
-		{
-			AbortReload(weaponComponent);
-		}
-
-		// Fire the gun
-		weaponComponent.CurrentAmmunition--;
-		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
-	}
-	else
-	{
-		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
-	}
-}
-
 void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1)
 {
 	using namespace LambdaEngine;
@@ -525,7 +491,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		const ProjectileComponent& projectilComp = pProjectileComponents->GetConstData(collisionInfo0.Entity);
 		ammoType = projectilComp.AmmoType;
-		
+
 		if (projectilComp.Owner == collisionInfo1.Entity)
 		{
 			selfHit = true;

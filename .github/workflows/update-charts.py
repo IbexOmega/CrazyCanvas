@@ -60,10 +60,6 @@ def update_charts(commit_ID, repo_dir):
         rt_on_results = json.load(benchmarkFile)
         benchmarkFile.close()
 
-    with open(BENCHMARK_RESULTS_PATH_RT_OFF, 'r') as benchmarkFile:
-        rt_off_results = json.load(benchmarkFile)
-        benchmarkFile.close()
-
     with open(f'{repo_dir}/_data/charts.json', 'r+') as chartsFile:
         chartsData = json.load(chartsFile)
         update_commit_data(chartsData, commit_ID)
@@ -72,7 +68,6 @@ def update_charts(commit_ID, repo_dir):
             chartData = chartsData[chartName]
             chartData['commitIDs'].append(commit_ID)
             chartData['rtOn'].append(rt_on_results[chartName])
-            chartData['rtOff'].append(rt_off_results[chartName])
 
         chartsFile.seek(0)
         json.dump(chartsData, chartsFile, indent=4)
