@@ -219,13 +219,6 @@ namespace LambdaEngine
 		m_Verticies.PushBack(toData);
 	}
 
-	void LineRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
-	{
-		UNREFERENCED_VARIABLE(delta);
-		UNREFERENCED_VARIABLE(modFrameIndex);
-		UNREFERENCED_VARIABLE(backBufferIndex);
-	}
-
 	bool LineRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
@@ -253,14 +246,6 @@ namespace LambdaEngine
 		}
 		
 		return true;
-	}
-
-	void LineRenderer::PreBuffersDescriptorSetWrite()
-	{
-	}
-
-	void LineRenderer::PreTexturesDescriptorSetWrite()
-	{
 	}
 
 	void LineRenderer::UpdateTextureResource(
@@ -363,19 +348,6 @@ namespace LambdaEngine
 				}
 			}
 		}
-	}
-
-	void LineRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
-	}
-
-	void LineRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pDrawArgs);
-		UNREFERENCED_VARIABLE(count);
 	}
 
 	void LineRenderer::Render(

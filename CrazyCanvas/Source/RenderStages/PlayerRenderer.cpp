@@ -105,21 +105,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PlayerRenderer::PrepareTextureUpdates(const TArray<UpdateData>& textureIndices)
-	{
-		UNREFERENCED_VARIABLE(textureIndices);
-
-	}
-
-	void PlayerRenderer::PreBuffersDescriptorSetWrite()
-	{
-		// called before removing
-	}
-
-	void PlayerRenderer::PreTexturesDescriptorSetWrite()
-	{
-	}
-
 	void PlayerRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
@@ -278,12 +263,6 @@ namespace LambdaEngine
 			}
 		}
 
-	}
-
-	void PlayerRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
 	void PlayerRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)

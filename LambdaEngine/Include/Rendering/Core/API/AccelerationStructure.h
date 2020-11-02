@@ -51,7 +51,7 @@ namespace LambdaEngine
 		*	return -	Returns a valid 64-bit address on success, otherwise zero. Returns zero on systems that
 		*				does not support deviceaddresses.
 		*/
-		virtual uint64 GetDeviceAdress() const
+		virtual uint64 GetDeviceAddress() const
 		{
 			return 0ULL;
 		}
