@@ -28,6 +28,7 @@ MatchClient::~MatchClient()
 {
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 }
 
@@ -35,6 +36,7 @@ bool MatchClient::InitInternal()
 {
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 	return true;
 }
@@ -47,7 +49,6 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
 {
 	const PacketCreateLevelObject& packet = event.Packet;
-	IClient* pClient = event.pClient;
 
 	switch (packet.LevelObjectType)
 	{
@@ -69,7 +70,6 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				.IsLocal			= packet.Player.IsMySelf,
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
-				.pClient			= pClient,
 				.Position			= packet.Position,
 				.Forward			= packet.Forward,
 				.Scale				= glm::vec3(1.0f),
@@ -117,6 +117,17 @@ bool MatchClient::OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTea
 	return true;
 }
 
+bool MatchClient::OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<PacketDeleteLevelObject>& event)
+{
+	const PacketDeleteLevelObject& packet = event.Packet;
+	Entity entity = MultiplayerUtils::GetEntity(packet.NetworkUID);
+
+	if(entity != UINT32_MAX)
+		m_pLevel->DeleteObject(entity);
+
+	return true;
+}
+
 bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event)
 {
 	const PacketGameOver& packet = event.Packet;
@@ -126,6 +137,7 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	return true;
 }
+
 bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 {
 	using namespace LambdaEngine;

@@ -16,6 +16,8 @@
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
+#include "Multiplayer/Packet/PacketWeaponFired.h"
+
 void BenchmarkSystem::Init()
 {
 	using namespace LambdaEngine;
@@ -33,15 +35,16 @@ void BenchmarkSystem::Init()
 				.pSubscriber = &m_WeaponEntities,
 				.ComponentAccesses =
 				{
-					{ R, WeaponComponent::Type() },
-					{ RW, PacketComponent<WeaponFiredPacket>::Type() }
+					{ RW, WeaponComponent::Type() },
+					{ R, PositionComponent::Type() },
+					{ R, RotationComponent::Type() },
 				}
 			},
 			{
 				.pSubscriber = &m_LocalPlayerEntities,
 				.ComponentAccesses =
 				{
-					{ RW, CharacterColliderComponent::Type() }, 
+					{ RW, CharacterColliderComponent::Type() },
 					{ R, NetworkPositionComponent::Type() },
 					{ RW, VelocityComponent::Type() }
 				},
@@ -60,22 +63,20 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 	const float32 dt = (float32)deltaTime.AsSeconds();
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<WeaponComponent>* pWeaponComponents		= pECS->GetComponentArray<WeaponComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
+
+	ComponentArray<WeaponComponent>* pWeaponComponents				= pECS->GetComponentArray<WeaponComponent>();
+	const ComponentArray<PositionComponent>* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents			= pECS->GetComponentArray<RotationComponent>();
 
 	/* Component arrays for moving character colliders */
 	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents	= pECS->GetComponentArray<CharacterColliderComponent>();
 	const ComponentArray<NetworkPositionComponent>* pNetworkPositionComponents	= pECS->GetComponentArray<NetworkPositionComponent>();
 	ComponentArray<VelocityComponent>* pVelocityComponents						= pECS->GetComponentArray<VelocityComponent>();
 
-	/*	Create jobs that fire weapons. This is a bit ugly since this requires BenchmarkSystem to know what components
-		are accessed when WeaponSystem fires projectiles. */
-	TArray<Entity> weaponEntitiesToFire;
-	weaponEntitiesToFire.Reserve(m_WeaponEntities.Size());
-
+	WeaponSystem& weaponSystem = WeaponSystem::GetInstance();
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
-		const WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
+		WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
 		const Entity playerEntity = weaponComponent.WeaponOwner;
 		if (!m_LocalPlayerEntities.HasElement(playerEntity))
 		{
@@ -90,33 +91,21 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		// Move character controller to apply gravity and to stress the physics system
 		CharacterControllerHelper::TickCharacterController(dt, playerEntity, pCharacterColliderComponents, pNetworkPositionComponents, pVelocityComponents);
 
-		weaponEntitiesToFire.PushBack(weaponEntity);
-	}
-
-	// Fire weapons
-	const Job fireJob =
-	{
-		.Function = [weaponEntitiesToFire]
+		/* Fire weapon if appropriate */
+		if (weaponComponent.CurrentCooldown > 0.0f)
 		{
-			WeaponSystem& weaponSystem = WeaponSystem::GetInstance();
-			ECSCore* pECS = ECSCore::GetInstance();
+			weaponComponent.CurrentCooldown -= dt;
+			continue;
+		}
 
-			const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-			const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-			const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-			ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		weaponSystem.Fire(
+			EAmmoType::AMMO_TYPE_PAINT,
+			playerEntity,
+			pPositionComponents->GetConstData(weaponEntity).Position,
+			pRotationComponents->GetConstData(playerEntity).Quaternion,
+			pVelocityComponents->GetConstData(playerEntity).Velocity
+		);
 
-			for (Entity weaponEntity : weaponEntitiesToFire)
-			{
-				WeaponComponent& weaponComp = pWeaponComponents->GetData(weaponEntity);
-				const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(weaponComp.WeaponOwner);
-				const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(weaponComp.WeaponOwner);
-				const VelocityComponent& playerVelocityComp = pVelocityComponents->GetConstData(weaponComp.WeaponOwner);
-				weaponSystem.TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponComp, playerPositionComp.Position, playerRotationComp.Quaternion, playerVelocityComp.Velocity);
-			}
-		},
-		.Components = GetFireProjectileComponentAccesses(),
-	};
-
-	pECS->ScheduleJobASAP(fireJob);
+		weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
+	}
 }

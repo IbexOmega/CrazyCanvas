@@ -15,15 +15,3 @@ struct HealthComponent
 	DECL_COMPONENT(HealthComponent);
 	int32 CurrentHealth = START_HEALTH;
 };
-
-/*
-* HealthChangedPacket
-*/
-
-#pragma pack(push, 1)
-struct HealthChangedPacket : Packet
-{
-	DECL_PACKET(HealthChangedPacket);
-	int32 CurrentHealth = START_HEALTH;
-};
-#pragma pack(pop)
