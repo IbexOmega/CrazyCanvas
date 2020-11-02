@@ -66,6 +66,7 @@ private:
 	bool m_ShowDemoWindow				= false;
 	bool m_DebuggingWindow				= false;
 	bool m_ShowTextureDebuggingWindow	= false;
+	bool m_DirLightDebug				= false;
 	
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;

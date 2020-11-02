@@ -105,7 +105,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[4]
 		};
 
 		Match::CreateMatch(&matchDescription);
@@ -241,6 +241,22 @@ void SandboxState::Init()
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
+
+	// Create dirLight
+	{
+		DirectionalLightComponent directionalLightComponent =
+		{
+			.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 25.0f),
+		};
+
+		m_DirLight = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(m_DirLight, { true, glm::vec3(0.f) });
+		pECS->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt(glm::normalize(glm::vec3(0.1f, -1.0f, 0.0f)), g_DefaultUp) });
+		pECS->AddComponent<DirectionalLightComponent>(m_DirLight, directionalLightComponent);
+
+		D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+	}
+
 	//Preload some resources
 	{
 		TArray<GUID_Lambda> animations;
@@ -302,6 +318,14 @@ void SandboxState::Init()
 					m_TextureDebuggingNames[i].PixelShaderGUID = textureDebuggingShaderGUID;
 				}
 			}
+		});
+
+	ConsoleCommand cmdDebugLights;
+	cmdDebugLights.Init("debug_light", true);
+	cmdDebugLights.AddArg(Arg::EType::BOOL);
+	cmdDebugLights.AddDescription("Debugging Directional Light'");
+	GameConsole::Get().BindCommand(cmdDebugLights, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
 		});
 
 	SingleplayerInitializer::InitSingleplayer();
@@ -401,6 +425,55 @@ void SandboxState::RenderImgui()
 			}
 
 			ImGui::End();
+		}
+
+		if (m_DirLightDebug)
+		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+
+			auto* dirLightComps = pECSCore->GetComponentArray<DirectionalLightComponent>();
+			auto* posComps = pECSCore->GetComponentArray<PositionComponent>();
+			auto* rotComps = pECSCore->GetComponentArray<RotationComponent>();
+
+
+			if (dirLightComps->HasComponent(m_DirLight))
+			{
+				auto& dirLightComp = dirLightComps->GetData(m_DirLight);
+				auto& posComp = posComps->GetData(m_DirLight);
+				auto& rotComp = rotComps->GetData(m_DirLight);
+
+				static glm::vec3 mRotation = glm::eulerAngles(rotComp.Quaternion);
+
+				if (ImGui::Begin("DirLight Debugging"))
+				{
+					ImGui::Text("Position: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##X", &posComp.Position.x);
+					ImGui::InputFloat("##Y", &posComp.Position.y);
+					ImGui::InputFloat("##Z", &posComp.Position.z);
+
+					ImGui::Text("Rotation: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##rotX", &mRotation.x);
+					ImGui::InputFloat("##rotY", &mRotation.y);
+					ImGui::InputFloat("##rotZ", &mRotation.z);
+
+					ImGui::Text("Frustum Width: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Frustum Width", &dirLightComp.FrustumWidth);
+					ImGui::Text("Frustum Height: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Frustum Height", &dirLightComp.FrustumHeight);
+					ImGui::Text("Z-Near: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Z-Near", &dirLightComp.FrustumZNear);
+					ImGui::Text("Z-Far: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Z-Far", &dirLightComp.FrustumZFar);
+				}
+
+				rotComp.Quaternion = glm::quatLookAt(glm::normalize(mRotation), g_DefaultUp);
+			}
 		}
 	});
 }
