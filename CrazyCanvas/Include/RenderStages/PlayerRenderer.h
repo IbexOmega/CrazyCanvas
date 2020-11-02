@@ -2,6 +2,7 @@
 #include "Rendering/RenderGraphTypes.h"
 #include "Rendering/ICustomRenderer.h"
 #include "Rendering/Core/API/DescriptorCache.h"
+#include "Rendering/Core/API/CommandList.h"
 
 #define MAX_PLAYERS_IN_MATCH 10
 
@@ -62,6 +63,7 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool Sleeping)	override final;
 
+
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
@@ -78,6 +80,7 @@ namespace LambdaEngine
 		bool CreateCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
+		void RenderCull(bool renderEnemy, uint32 modFrameIndex, CommandList** ppFirstExecutionStage, BeginRenderPassDesc& renderPassDesc, Viewport& viewport, ScissorRect& scissorRect, uint64& pipelineId);
 
 	private:
 		bool									m_Initilized = false;
@@ -99,7 +102,9 @@ namespace LambdaEngine
 
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
-		uint64									m_PipelineStateID = 0;
+		uint64									m_PipelineStateIDFrontCull = 0;
+		uint64									m_PipelineStateIDBackCull = 0;
+		uint64									m_PipelineStateIDNoCull = 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
 		TSharedRef<DescriptorSet>				m_DescriptorSet0; // always one buffer with different offset

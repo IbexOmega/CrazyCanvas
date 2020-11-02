@@ -1,6 +1,5 @@
 #include "RenderStages/PlayerRenderer.h"
 #include "Rendering/Core/API/CommandAllocator.h"
-#include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/DescriptorSet.h"
 #include "Rendering/Core/API/PipelineState.h"
@@ -447,8 +446,6 @@ namespace LambdaEngine
 		if (Sleeping)
 			return;
 
-		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
-
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
 
@@ -465,10 +462,25 @@ namespace LambdaEngine
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
 
+		Viewport viewport = {};
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.Width = (float32)width;
+		viewport.Height = -(float32)height;
+		viewport.x = 0.0f;
+		viewport.y = (float32)height;
+
+		ScissorRect scissorRect = {};
+		scissorRect.Width = width;
+		scissorRect.Height = height;
+
+		// Early exit if nothing to draw
+		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 		if (m_DrawCount == 0)
 		{
 			m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
+
 			//Begin and End RenderPass to transition Texture State (Lazy)
 			pCommandList->BeginRenderPass(&beginRenderPassDesc);
 			pCommandList->EndRenderPass();
@@ -479,27 +491,32 @@ namespace LambdaEngine
 			return;
 		}
 
+		// Team members are transparent, Front Culling- and Back Culling is needed
+		RenderCull(false, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDFrontCull);
+		RenderCull(false, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDBackCull);
+		// Render enemy with no culling to see backface of paint
+		RenderCull(true, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDNoCull);
+	}
+
+
+	void PlayerRenderer::RenderCull(bool renderEnemy, uint32 modFrameIndex,
+									CommandList** ppFirstExecutionStage, 
+									BeginRenderPassDesc& renderPassDesc, 
+									Viewport& viewport, 
+									ScissorRect& scissorRect, 
+									uint64& pipelineId) 
+	{
+		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
+
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
-		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateID));
+		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
 
-		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
-		Viewport viewport = {};
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-		viewport.Width = (float32)width;
-		viewport.Height = -(float32)height;
-		viewport.x = 0.0f;
-		viewport.y = (float32)height;
+		pCommandList->BeginRenderPass(&renderPassDesc);
 		pCommandList->SetViewports(&viewport, 0, 1);
-
-		ScissorRect scissorRect = {};
-		scissorRect.Width = width;
-		scissorRect.Height = height;
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 		// Sort player rendering front to back
@@ -529,18 +546,30 @@ namespace LambdaEngine
 				// Get next closest player
 				uint32 next = m_NextPlayerList.GetBack();
 				m_NextPlayerList.PopBack();
-
 				const DrawArg& drawArg = m_pDrawArgs[next];
 
+				// Push team id of current player
 				uint32 teamId = m_TeamIds[next];
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
 
-				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+				// Render only enemys
+				if (renderEnemy) {
+					if (teamId == 1) {
+						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
+						pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+						pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[next].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+						pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[next].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+						pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+					}
+				}
+				else if (teamId == 0)
+				{
+					pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
+					pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[next].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[next].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+					pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+				}
 
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[next].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[next].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
-
-				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 			}
 		}
 
@@ -549,12 +578,10 @@ namespace LambdaEngine
 
 		pCommandList->EndRenderPass();
 
-
 		pCommandList->End();
 
 		(*ppFirstExecutionStage) = pCommandList;
 	}
-
 
 
 	bool PlayerRenderer::CreatePipelineLayout()
@@ -772,7 +799,7 @@ namespace LambdaEngine
 	bool PlayerRenderer::CreatePipelineState()
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.DebugName = "Player Renderer Pipeline State";
+		pipelineStateDesc.DebugName = "Player Renderer Pipeline Back Cull State";
 		pipelineStateDesc.RenderPass = m_RenderPass;
 		pipelineStateDesc.PipelineLayout = m_PipelineLayout;
 
@@ -780,7 +807,7 @@ namespace LambdaEngine
 
 		pipelineStateDesc.RasterizerState.LineWidth = 1.f;
 		pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
-		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
+		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_BACK;
 
 		pipelineStateDesc.DepthStencilState = {};
 		pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
@@ -803,7 +830,78 @@ namespace LambdaEngine
 		pipelineStateDesc.VertexShader.ShaderGUID = m_VertexShaderPointGUID;
 		pipelineStateDesc.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
 
-		m_PipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+		m_PipelineStateIDBackCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+
+
+		ManagedGraphicsPipelineStateDesc pipelineStateDesc2 = {};
+		pipelineStateDesc2.DebugName = "Player Renderer Pipeline Front Cull State";
+		pipelineStateDesc2.RenderPass = m_RenderPass;
+		pipelineStateDesc2.PipelineLayout = m_PipelineLayout;
+
+		pipelineStateDesc2.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+		pipelineStateDesc2.RasterizerState.LineWidth = 1.f;
+		pipelineStateDesc2.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
+		pipelineStateDesc2.RasterizerState.CullMode = ECullMode::CULL_MODE_FRONT;
+
+		pipelineStateDesc2.DepthStencilState = {};
+		pipelineStateDesc2.DepthStencilState.DepthTestEnable = true;
+		pipelineStateDesc2.DepthStencilState.DepthWriteEnable = true;
+
+		pipelineStateDesc2.BlendState.BlendAttachmentStates =
+		{
+			{
+				EBlendOp::BLEND_OP_ADD,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+				EBlendOp::BLEND_OP_ADD,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
+				true
+			}
+		};
+
+		pipelineStateDesc2.VertexShader.ShaderGUID = m_VertexShaderPointGUID;
+		pipelineStateDesc2.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
+
+		m_PipelineStateIDFrontCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc2);
+		
+		ManagedGraphicsPipelineStateDesc pipelineStateDesc3 = {};
+		pipelineStateDesc3.DebugName = "Player Renderer Pipeline No Cull State";
+		pipelineStateDesc3.RenderPass = m_RenderPass;
+		pipelineStateDesc3.PipelineLayout = m_PipelineLayout;
+
+		pipelineStateDesc3.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+		pipelineStateDesc3.RasterizerState.LineWidth = 1.f;
+		pipelineStateDesc3.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
+		pipelineStateDesc3.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
+
+		pipelineStateDesc3.DepthStencilState = {};
+		pipelineStateDesc3.DepthStencilState.DepthTestEnable = true;
+		pipelineStateDesc3.DepthStencilState.DepthWriteEnable = true;
+
+		pipelineStateDesc3.BlendState.BlendAttachmentStates =
+		{
+			{
+				EBlendOp::BLEND_OP_ADD,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+				EBlendOp::BLEND_OP_ADD,
+				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
+				true
+			}
+		};
+
+		pipelineStateDesc3.VertexShader.ShaderGUID = m_VertexShaderPointGUID;
+		pipelineStateDesc3.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
+
+		m_PipelineStateIDNoCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc3);
 		return true;
+
 	}
+		
 }

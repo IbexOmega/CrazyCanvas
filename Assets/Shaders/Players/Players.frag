@@ -64,6 +64,7 @@ void main()
 	uint serverTeam				= (serverData >> 1) & 0x7F;
 	uint clientPainting			= clientData & 0x1;
 	uint team = serverTeam;
+	
 	if (clientPainting > 0)
 		team = clientTeam;
 
@@ -82,5 +83,5 @@ void main()
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 
 	// 5
-	out_Color 					= vec4(mix(storedAlbedo, color, shouldPaint), 1.f);
+	out_Color 					= vec4(mix(storedAlbedo, color, shouldPaint), 0.6f);
 }
