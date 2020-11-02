@@ -188,11 +188,17 @@ namespace LambdaEngine
 		m_pResourcesToRemove[m_ModFrameIndex].PushBack(blasData.pBLAS);
 
 		//Dequeue from updating if enqueued
-		std::remove_if(m_DirtyBLASes.Begin(), m_DirtyBLASes.End(), 
-			[blasData](const BuildBottomLevelAccelerationStructureDesc& blasBuildDesc)
-			{ 
-				return blasBuildDesc.pAccelerationStructure == blasData.pBLAS;
-			});
+		for (auto dirtyBLASIt = m_DirtyBLASes.Begin(); dirtyBLASIt != m_DirtyBLASes.End();)
+		{
+			if (dirtyBLASIt->pAccelerationStructure == blasData.pBLAS)
+			{
+				dirtyBLASIt = m_DirtyBLASes.Erase(dirtyBLASIt);
+			}
+			else
+			{
+				dirtyBLASIt++;
+			}
+		}
 
 		//Push BLAS Free Index
 		m_FreeBLASIndices.PushBack(index);
@@ -202,7 +208,7 @@ namespace LambdaEngine
 		blasData.SBTRecordOffset = UINT32_MAX;
 	}
 
-	uint32 ASBuilder::AddInstance(uint32 blasIndex, const glm::mat4& transform, uint32 customIndex, uint8 hitMask, FAccelerationStructureFlags flags)
+	uint32 ASBuilder::AddInstance(uint32 blasIndex, const glm::mat4& transform, uint32 customIndex, uint8 hitMask, FAccelerationStructureInstanceFlags flags)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
