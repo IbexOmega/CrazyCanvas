@@ -2,9 +2,6 @@
 
 #include "Log/Log.h"
 
-#include "Networking/API/IPEndPoint.h"
-#include "Networking/API/IPAddress.h"
-
 #pragma warning( push, 0 )
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/filewritestream.h>
@@ -53,15 +50,7 @@ bool SavedServerSystem::LoadServers(TArray<ServerInfo>& serverInfos, uint16 defa
 	return true;
 }
 
-/*
-{
-  "SERVERS": [
-    [ "Chrille", "81.170.143.133:4444" ]
-  ]
-}
-*/
-
-bool SavedServerSystem::SaveServers(const THashTable<IPAddress*, ServerInfo>& serverInfos)
+bool SavedServerSystem::SaveServers(const THashTable<IPAddress*, ServerInfo, IPAddressHasher>& serverInfos)
 {
 	FILE* pFile = fopen(FILE_PATH, "w");
 	if (!pFile)

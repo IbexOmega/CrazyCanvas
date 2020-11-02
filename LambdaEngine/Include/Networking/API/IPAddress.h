@@ -63,4 +63,17 @@ namespace LambdaEngine
 		static SpinLock m_Lock;
 		static bool s_Released;
 	};
+
+	struct IPAddressHasher
+	{
+		size_t operator()(const IPAddress& key) const
+		{
+			return key.GetHash();
+		}
+
+		size_t operator()(const IPAddress* key) const
+		{
+			return key->GetHash();
+		}
+	};
 }

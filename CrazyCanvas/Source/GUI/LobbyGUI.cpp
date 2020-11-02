@@ -118,7 +118,7 @@ bool LobbyGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event
 	return true;
 }
 
-void LobbyGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID)
+void LobbyGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave)
 {
 	ServerInfo& currentInfo = m_Servers[serverInfo.EndPoint.GetAddress()];
 
@@ -150,7 +150,7 @@ void LobbyGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID)
 		currentInfo = serverInfo;
 	}
 
-	if (oldName != serverInfo.Name)
+	if (oldName != serverInfo.Name || forceSave)
 		SavedServerSystem::SaveServers(m_Servers);
 }
 
@@ -187,12 +187,13 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 	if (isEndpointValid)
 	{
-		ServerInfo serverInfo;
-		serverInfo.EndPoint = endPoint;
-		serverInfo.Name = "Unnamed";
+		IPAddress* pAddress = endPoint.GetAddress();
+		ClientHelper::AddNetworkDiscoveryTarget(pAddress);
 
-		ClientHelper::AddNetworkDiscoveryTarget(endPoint.GetAddress());
-		HandleServerInfo(serverInfo, -1);
+		ServerInfo& serverInfo = m_Servers[pAddress];
+		serverInfo.EndPoint = endPoint;
+
+		HandleServerInfo(serverInfo, -1, true);
 
 		LambdaEngine::GUIApplication::SetView(nullptr);
 

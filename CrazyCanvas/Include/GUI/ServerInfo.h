@@ -4,6 +4,7 @@
 
 #include "Time/API/Timestamp.h"
 #include "Networking/API/IPEndPoint.h"
+#include "Networking/API/IPAddress.h"
 
 #include "Containers/THashTable.h"
 #pragma warning( push, 0 )
@@ -62,11 +63,8 @@ class SavedServerSystem
 {
 public:
 	static bool LoadServers(LambdaEngine::TArray<ServerInfo>& serverInfos, uint16 defaultPort);
-	static bool SaveServers(const LambdaEngine::THashTable<LambdaEngine::IPAddress*, ServerInfo>& serverInfos);
+	static bool SaveServers(const LambdaEngine::THashTable<LambdaEngine::IPAddress*, ServerInfo, LambdaEngine::IPAddressHasher>& serverInfos);
 
 private:
 	static FILE* CreateFile();
-
-private:
-	static rapidjson::Document s_SavedServerDocument;
 };

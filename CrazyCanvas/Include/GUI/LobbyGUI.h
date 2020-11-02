@@ -65,7 +65,7 @@ private:
 	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
 	void PopulateServerInfo();
 
-	void HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID);
+	void HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave = false);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)
 
@@ -78,5 +78,5 @@ private:
 
 	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;
 
-	std::unordered_map<LambdaEngine::IPAddress*, ServerInfo> m_Servers;
+	std::unordered_map<LambdaEngine::IPAddress*, ServerInfo, LambdaEngine::IPAddressHasher> m_Servers;
 };
