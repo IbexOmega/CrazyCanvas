@@ -25,8 +25,12 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+
+#include "Rendering/ParticleRenderer.h"
+#include "Rendering/ParticleUpdater.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -138,6 +142,16 @@ namespace LambdaEngine
 					{
 						&transformGroup
 					}
+				},
+				{
+					.pSubscriber = &m_ParticleEmitters,
+					.ComponentAccesses =
+					{
+						{ NDA, ParticleEmitterComponent::Type() },
+						{ NDA, PositionComponent::Type() },
+						{ NDA, RotationComponent::Type() }
+					},
+					.OnEntityRemoval = std::bind(&RenderSystem::OnEmitterEntityRemoved, this, std::placeholders::_1)
 				}
 			};
 
@@ -336,6 +350,19 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
 
+			// Particle Renderer & Manager
+			{
+				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
+				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
+				m_pParticleRenderer = DBG_NEW ParticleRenderer();
+				m_pParticleRenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
+
+				m_pParticleUpdater = DBG_NEW ParticleUpdater();
+				m_pParticleUpdater->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+			}
+
 			//GUI Renderer
 			{
 				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
@@ -413,6 +440,8 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
+		SAFEDELETE(m_pParticleRenderer);
+		SAFEDELETE(m_pParticleUpdater);
 
 		// Delete Custom Renderers
 		for (uint32 c = 0; c < m_GameSpecificCustomRenderers.GetSize(); c++)
@@ -457,6 +486,8 @@ namespace LambdaEngine
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pLightsBuffer);
 		SAFERELEASE(m_pPaintMaskColorBuffer);
+
+		m_ParticleManager.Release();
 
 		SAFEDELETE(m_pRenderGraph);
 
@@ -569,6 +600,37 @@ namespace LambdaEngine
 
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
+
+		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
+		for (Entity entity : m_ParticleEmitters)
+		{
+			const auto& positionComp = pPositionComponents->GetConstData(entity);
+			const auto& rotationComp = pRotationComponents->GetConstData(entity);
+			const auto& emitterComp = pEmitterComponents->GetConstData(entity);
+
+			if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
+				UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
+
+			// If onetime emitter we want to reset active
+			if (emitterComp.OneTime && emitterComp.Active)
+			{
+				auto& emitterCompNonConst = pEmitterComponents->GetData(entity);
+				emitterCompNonConst.Active = false;
+			}
+		}
+		// Tick Particle Manager
+		m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
+
+		// Particle Updates
+		uint32 particleCount = m_ParticleManager.GetParticleCount();
+		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
+		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+
+		// Update particle textures
+		TArray<TextureView*>& atlasTextureViews = m_ParticleManager.GetAtlasTextureViews();
+		TArray<Sampler*>& atlasSamplers = m_ParticleManager.GetAtlasSamplers();
+		m_pParticleRenderer->SetAtlasTexturs(atlasTextureViews, atlasSamplers);
 	}
 
 	bool RenderSystem::Render(Timestamp delta)
@@ -615,6 +677,11 @@ namespace LambdaEngine
 		// Light Renderer
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+		}
+
+		{
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
 		}
 
 		//GUI Renderer
@@ -840,6 +907,11 @@ namespace LambdaEngine
 		m_LightsBufferDirty = true;
 	}
 
+	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
+	{
+		m_ParticleManager.OnEmitterEntityRemoved(entity);
+	}
+	
 	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
@@ -1419,6 +1491,11 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderSystem::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	{
+		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
+	}
+
 	void RenderSystem::UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
@@ -1669,6 +1746,11 @@ namespace LambdaEngine
 		//Update Empty MaterialData
 		{
 			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
+		}
+
+		// Update particles
+		{
+			m_ParticleManager.UpdateBuffers(pGraphicsCommandList);
 		}
 
 		// Perform mesh skinning
@@ -2429,6 +2511,11 @@ namespace LambdaEngine
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			m_PaintMaskColorsResourceDirty = false;
+		}
+
+		// Update Particle Resources
+		{
+			m_ParticleManager.UpdateResources(m_pRenderGraph);
 		}
 
 		if (m_MaterialsResourceDirty)

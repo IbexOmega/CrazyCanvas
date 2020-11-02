@@ -26,8 +26,9 @@
 #include "Rendering/Core/API/AccelerationStructure.h"
 
 #include "Rendering/RenderGraphTypes.h"
-
 #include "Rendering/LightRenderer.h"
+
+#include "Rendering/ParticleManager.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
@@ -46,6 +47,8 @@ namespace LambdaEngine
 	// Custom Renderers
 	class LineRenderer;
 	class PaintMaskRenderer;
+	class ParticleRenderer;
+	class ParticleUpdater;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -287,6 +290,9 @@ namespace LambdaEngine
 		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
 		void RemoveRenderableEntity(Entity entity);
 
+		void OnEmitterEntityRemoved(Entity entity);
+
+		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);
@@ -321,6 +327,7 @@ namespace LambdaEngine
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;
 		IDVector m_CameraEntities;
+		IDVector m_ParticleEmitters;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -414,10 +421,15 @@ namespace LambdaEngine
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
+		// Particles
+		ParticleManager				m_ParticleManager;
+
 		// Custom Renderers
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
+		ParticleRenderer*			m_pParticleRenderer		= nullptr;
+		ParticleUpdater*			m_pParticleUpdater		= nullptr;
 		TArray<ICustomRenderer*>	m_GameSpecificCustomRenderers;
 
 	private:
