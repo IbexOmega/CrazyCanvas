@@ -648,7 +648,7 @@ bool LevelObjectCreator::CreatePlayer(
 			.Active = false,
 			.OneTime = true,
 			.Explosive = 1.0f,
-			.ParticleCount = 128,
+			.ParticleCount = 64,
 			.EmitterShape = EEmitterShape::CONE,
 			.Angle = 15.f,
 			.VelocityRandomness = 0.5f,
