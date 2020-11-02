@@ -151,9 +151,7 @@ void LobbyGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID)
 	}
 
 	if (oldName != serverInfo.Name)
-	{
 		SavedServerSystem::SaveServers(m_Servers);
-	}
 }
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
