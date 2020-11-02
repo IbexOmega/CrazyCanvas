@@ -471,6 +471,7 @@ void SandboxState::RenderImgui()
 					ImGui::SameLine();
 					ImGui::InputFloat("##Z-Far", &dirLightComp.FrustumZFar);
 				}
+				ImGui::End();
 
 				rotComp.Quaternion = glm::quatLookAt(glm::normalize(mRotation), g_DefaultUp);
 			}

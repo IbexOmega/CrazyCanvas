@@ -190,7 +190,7 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
-	float bias = max(0.3 * (1.0 - dot(fragNormal, lightDir)), 0.3);
+	float bias = max(0.05 * (1.0 - dot(fragNormal, lightDir)), 0.005);
 	float shadow = 0.0;
     
 	// shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
