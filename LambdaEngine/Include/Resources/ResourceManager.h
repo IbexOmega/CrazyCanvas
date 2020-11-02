@@ -264,20 +264,20 @@ namespace LambdaEngine
 	private:
 		static GUID_Lambda s_NextFreeGUID;
 
-		static std::unordered_map<GUID_Lambda, String>			s_MeshGUIDsToNames;
-		static std::unordered_map<GUID_Lambda, String>			s_MaterialGUIDsToNames;
-		static std::unordered_map<GUID_Lambda, String>			s_AnimationGUIDsToNames;
-		static std::unordered_map<GUID_Lambda, String>			s_TextureGUIDsToNames;
-		static std::unordered_map<GUID_Lambda, String>			s_ShaderGUIDsToNames;
-		static std::unordered_map<GUID_Lambda, String>			s_SoundEffectGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_MeshGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_MaterialGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_AnimationGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_TextureGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_ShaderGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_SoundEffectGUIDsToNames;
 
-		static std::unordered_map<String, GUID_Lambda>			s_MeshNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>			s_MaterialNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>			s_AnimationNamesToGUIDs;
-		static std::unordered_map<String, TArray<GUID_Lambda>>	s_FileNamesToAnimationGUIDs;
-		static std::unordered_map<String, GUID_Lambda>			s_TextureNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>			s_ShaderNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>			s_SoundEffectNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_MeshNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_MaterialNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_AnimationNamesToGUIDs;
+		static std::unordered_map<String, TArray<GUID_Lambda>>		s_FileNamesToAnimationGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_TextureNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_ShaderNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_SoundEffectNamesToGUIDs;
 
 		static std::unordered_map<GUID_Lambda, Mesh*>				s_Meshes;
 		static std::unordered_map<GUID_Lambda, Material*>			s_Materials;

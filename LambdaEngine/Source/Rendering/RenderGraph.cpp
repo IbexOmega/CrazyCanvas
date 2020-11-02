@@ -2310,8 +2310,22 @@ namespace LambdaEngine
 						renderPassRenderTargetStates.PushBack(ETextureState::TEXTURE_STATE_RENDER_TARGET);
 
 						BlendAttachmentStateDesc blendAttachmentState = {};
-						blendAttachmentState.BlendEnabled			= false;
-						blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+						if (pRenderStageDesc->Graphics.AlphaBlendingEnabled)
+						{
+							blendAttachmentState.BlendOp					= EBlendOp::BLEND_OP_ADD;
+							blendAttachmentState.SrcBlend					= EBlendFactor::BLEND_FACTOR_SRC_ALPHA;
+							blendAttachmentState.DstBlend					= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA;
+							blendAttachmentState.BlendOpAlpha				= EBlendOp::BLEND_OP_ADD;
+							blendAttachmentState.SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_SRC_ALPHA;
+							blendAttachmentState.DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA;
+							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+							blendAttachmentState.BlendEnabled				= true;
+						}
+						else
+						{
+							blendAttachmentState.BlendEnabled				= false;
+							blendAttachmentState.RenderTargetComponentMask	= COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A;
+						}
 
 						renderPassBlendAttachmentStates.PushBack(blendAttachmentState);
 						renderStageRenderTargets.PushBack(std::make_pair(pResource, finalState));
@@ -3227,7 +3241,7 @@ namespace LambdaEngine
 					pPipelineStage->ppComputeCommandAllocators[f]	= m_pGraphicsDevice->CreateCommandAllocator("Render Graph Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
 					CommandListDesc graphicsCommandListDesc = {};
-					graphicsCommandListDesc.DebugName				= "Render Graph Graphics Command List";
+					graphicsCommandListDesc.DebugName				= pipelineStageName + " Graphics Command List";
 					graphicsCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 					graphicsCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
@@ -3237,7 +3251,7 @@ namespace LambdaEngine
 					Profiler::GetGPUProfiler()->AddTimestamp(pPipelineStage->ppGraphicsCommandLists[f], pipelineStageName + " GRAPHICS");
 
 					CommandListDesc computeCommandListDesc = {};
-					computeCommandListDesc.DebugName				= "Render Graph Compute Command List";
+					computeCommandListDesc.DebugName				= pipelineStageName + " Compute Command List";
 					computeCommandListDesc.CommandListType			= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 					computeCommandListDesc.Flags					= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 

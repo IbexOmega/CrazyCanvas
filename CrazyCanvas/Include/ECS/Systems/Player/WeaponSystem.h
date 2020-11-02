@@ -5,6 +5,7 @@
 #include "ECS/Components/Team/TeamComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
 #include "Math/Math.h"
@@ -59,6 +60,7 @@ public:
 	void Fire(
 		EAmmoType ammoType,
 		LambdaEngine::Entity weaponOwner,
+		LambdaEngine::Entity weaponEntity,
 		const glm::vec3& playerPos,
 		const glm::quat& direction,
 		const glm::vec3& playerVelocity);
@@ -74,6 +76,7 @@ private:
 		EAmmoType ammoType,
 		WeaponComponent& weaponComponent,
 		PacketComponent<PacketPlayerAction>& packets,
+		LambdaEngine::Entity weaponEntity,
 		const glm::vec3& startPos,
 		const glm::quat& direction,
 		const glm::vec3& playerVelocity);

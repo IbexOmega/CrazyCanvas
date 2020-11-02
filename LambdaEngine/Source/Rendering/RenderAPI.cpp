@@ -17,6 +17,7 @@
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/DescriptorSet.h"
 #include "Rendering/Core/API/AccelerationStructure.h"
+#include "Engine/EngineConfig.h"
 
 #include "Application/API/CommonApplication.h"
 
@@ -36,7 +37,7 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceDesc deviceDesc = { };
 #ifdef LAMBDA_DEVELOPMENT
-		deviceDesc.Debug = true;
+		deviceDesc.Debug = EngineConfig::GetBoolProperty("EnableValidationLayersInDebug");
 #else
 		deviceDesc.Debug = false;
 #endif
