@@ -174,6 +174,7 @@ namespace LambdaEngine
 			{
 				std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
 				m_ReceivedPackets[m_BufferIndex].PushBack({ decoder, sender });
+				m_Statistics.m_Ping = EngineLoop::GetTimeSinceStart() - m_TimeOfLastSearch;
 				return true;
 			}
 		}
@@ -205,7 +206,9 @@ namespace LambdaEngine
 		for (Packet& packet : packets)
 		{
 			BinaryDecoder& decoder = packet.Decoder;
-			m_pHandler->OnServerFound(decoder, IPEndPoint(packet.Sender.GetAddress(), decoder.ReadUInt16()), decoder.ReadUInt64());
+			IPEndPoint endpoint(packet.Sender.GetAddress(), decoder.ReadUInt16());
+			uint64 serverUID = decoder.ReadUInt64();
+			m_pHandler->OnServerFound(decoder, endpoint, serverUID, m_Statistics.m_Ping);
 #ifdef LAMBDA_CONFIG_DEBUG
 			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
 #else

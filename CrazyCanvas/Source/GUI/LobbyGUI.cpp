@@ -91,7 +91,7 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 	BinaryDecoder* pDecoder = event.pDecoder;
 
 	ServerInfo newInfo;
-	newInfo.Ping = 0;
+	newInfo.Ping = (uint16)event.Ping.AsMilliSeconds();
 	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
 	newInfo.EndPoint = *event.pEndPoint;
 	newInfo.ServerUID = event.ServerUID;
@@ -135,12 +135,12 @@ bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	if (ServerHostHelper::GetAuthenticationHostID() != -1)
+	if (m_HasHostedServer)
 	{
-		PacketHostServer packet;
-		packet.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
-		packet.MapNumber = m_HostGameDesc.MapNumber;
-		packet.PlayersNumber = m_HostGameDesc.PlayersNumber;
+		PacketConfigureServer packet;
+		packet.AuthenticationID	= ServerHostHelper::GetAuthenticationHostID();
+		packet.MapID			= m_HostGameDesc.MapNumber;
+		packet.Players			= m_HostGameDesc.PlayersNumber;
 
 		ClientHelper::Send(packet);
 	}

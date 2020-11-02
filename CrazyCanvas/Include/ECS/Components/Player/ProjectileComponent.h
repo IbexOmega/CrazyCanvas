@@ -20,4 +20,5 @@ struct ProjectileComponent
 {
 	DECL_COMPONENT(ProjectileComponent);
 	EAmmoType AmmoType;
+	LambdaEngine::Entity Owner;
 };

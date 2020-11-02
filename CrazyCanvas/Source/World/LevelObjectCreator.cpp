@@ -42,8 +42,11 @@
 #include "Rendering/EntityMaskManager.h"
 
 #include "Multiplayer/Packet/PacketType.h"
-#include "Multiplayer/Packet/PlayerAction.h"
-#include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketFlagEdited.h"
+#include "Multiplayer/Packet/PacketHealthChanged.h"
+#include "Multiplayer/Packet/PacketWeaponFired.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -197,13 +200,21 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 {
 	using namespace LambdaEngine;
 
-	const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+	Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
+
+	float32 maxDim = glm::max<float32>(
+		pMesh->DefaultScale.x * pMesh->BoundingBox.Dimensions.x,
+		glm::max<float32>(
+			pMesh->DefaultScale.y * pMesh->BoundingBox.Dimensions.y,
+			pMesh->DefaultScale.z * pMesh->BoundingBox.Dimensions.z));
+
+	uint32 meshPaintSize = uint32(maxDim * 384.0f);
 
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 4096, 4096));
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize));
 	pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	const CollisionCreateInfo collisionCreateInfo =
 	{
@@ -216,7 +227,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 			{
 				/* ShapeType */			EShapeType::SIMULATION,
 				/* GeometryType */		EGeometryType::MESH,
-				/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+				/* Geometry */			{ .pMesh = pMesh },
 				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
 			},
@@ -229,8 +240,8 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 }
 
 ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	auto createFuncIt = s_LevelObjectByPrefixCreateFunctions.find(levelObject.Prefix);
@@ -250,14 +261,13 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 	ELevelObjectType levelObjectType,
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	auto createFuncIt = s_LevelObjectByTypeCreateFunctions.find(levelObjectType);
 
 	if (createFuncIt != s_LevelObjectByTypeCreateFunctions.end())
 	{
-		return createFuncIt->second(pData, createdEntities, createdChildEntities, saltUIDs);
+		return createFuncIt->second(pData, createdEntities, createdChildEntities);
 	}
 	else
 	{
@@ -267,8 +277,8 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 }
 
 ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -329,8 +339,8 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -443,11 +453,9 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(const LambdaEngine::LevelOb
 bool LevelObjectCreator::CreateFlag(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	UNREFERENCED_VARIABLE(createdChildEntities);
-	UNREFERENCED_VARIABLE(saltUIDs);
 
 	if (pData == nullptr) return false;
 
@@ -500,7 +508,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	//Network Stuff
 	{
-		pECS->AddComponent<PacketComponent<FlagEditedPacket>>(entity, {});
+		pECS->AddComponent<PacketComponent<PacketFlagEdited>>(entity, {});
 	}
 
 	int32 networkUID;
@@ -546,7 +554,7 @@ bool LevelObjectCreator::CreateFlag(
 			},
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity, { glm::vec3(0.0f) })
 		};
-		
+
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicActor(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
@@ -565,8 +573,7 @@ bool LevelObjectCreator::CreateFlag(
 bool LevelObjectCreator::CreatePlayer(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	if (pData == nullptr)
 		return false;
@@ -576,32 +583,32 @@ bool LevelObjectCreator::CreatePlayer(
 	const CreatePlayerDesc* pPlayerDesc = reinterpret_cast<const CreatePlayerDesc*>(pData);
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	Entity playerEntity = pECS->CreateEntity();
+	const Entity playerEntity = pECS->CreateEntity();
 	createdEntities.PushBack(playerEntity);
 	TArray<Entity>& childEntities = createdChildEntities.PushBack({});
 
-	glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
+	const glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
 
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
-	pECS->AddComponent<NetworkPositionComponent>(playerEntity,	
+	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
 		NetworkPositionComponent
-		{ 
-		.Position		= pPlayerDesc->Position, 
-		.PositionLast	= pPlayerDesc->Position, 
-		.TimestampStart = EngineLoop::GetTimeSinceStart(), 
-		.Duration		= EngineLoop::GetFixedTimestep() 
+		{
+		.Position		= pPlayerDesc->Position,
+		.PositionLast	= pPlayerDesc->Position,
+		.TimestampStart = EngineLoop::GetTimeSinceStart(),
+		.Duration		= EngineLoop::GetFixedTimestep()
 		});
 
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	pECS->AddComponent<PacketComponent<PlayerAction>>(playerEntity, { });
-	pECS->AddComponent<PacketComponent<PlayerActionResponse>>(playerEntity, { });
-	
+	pECS->AddComponent<PacketComponent<PacketPlayerAction>>(playerEntity, { });
+	pECS->AddComponent<PacketComponent<PacketPlayerActionResponse>>(playerEntity, { });
+
 	const CharacterColliderCreateInfo colliderInfo =
 	{
 		.Entity			= playerEntity,
@@ -616,15 +623,15 @@ bool LevelObjectCreator::CreatePlayer(
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 	CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
-		colliderInfo, 
-		std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS), 
+		colliderInfo,
+		std::max(0.0f, PLAYER_CAPSULE_HEIGHT - 2.0f * PLAYER_CAPSULE_RADIUS),
 		PLAYER_CAPSULE_RADIUS);
 
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
-	pECS->AddComponent<PacketComponent<WeaponFiredPacket>>(weaponEntity, { });
+	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.4, 0.5f, -0.2) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
@@ -781,8 +788,6 @@ bool LevelObjectCreator::CreatePlayer(
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
-
-			saltUIDs.PushBack(UINT64_MAX);
 		}
 		else
 		{
@@ -834,38 +839,33 @@ bool LevelObjectCreator::CreatePlayer(
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
-
-			saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetRemoteSalt());
 		}
 	}
 	else
 	{
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
-		saltUIDs.PushBack(pPlayerDesc->pClient->GetStatistics()->GetSalt());
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
-	pECS->AddComponent<PacketComponent<HealthChangedPacket>>(playerEntity, {});
+	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
 	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
-	
+
 	return true;
 }
 
 bool LevelObjectCreator::CreateProjectile(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities,
-	LambdaEngine::TArray<uint64>& saltUIDs)
+	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
 {
 	using namespace LambdaEngine;
 
-	UNREFERENCED_VARIABLE(saltUIDs);
 	UNREFERENCED_VARIABLE(createdChildEntities);
 
 	if (pData == nullptr)
@@ -882,7 +882,11 @@ bool LevelObjectCreator::CreateProjectile(
 
 	const VelocityComponent velocityComponent = { desc.InitalVelocity };
 	pECS->AddComponent<VelocityComponent>(projectileEntity, velocityComponent);
-	pECS->AddComponent<ProjectileComponent>(projectileEntity, { desc.AmmoType });
+
+	ProjectileComponent projectileComp;
+	projectileComp.AmmoType	= desc.AmmoType;
+	projectileComp.Owner	= desc.WeaponOwner;
+	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
 	if (!MultiplayerUtils::IsServer())

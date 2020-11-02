@@ -3,13 +3,14 @@
 #include "ECS/Components/Player/ProjectileComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Team/TeamComponent.h"
+#include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
 #include "Math/Math.h"
 
-#include "Multiplayer/Packet/PlayerAction.h"
-#include "Multiplayer/Packet/PlayerActionResponse.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
 namespace LambdaEngine
 {
@@ -55,11 +56,11 @@ public:
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	void TryFire(
+	void Fire(
 		EAmmoType ammoType,
-		WeaponComponent& weaponComponent,
-		const glm::vec3& startPos, 
-		const glm::quat& direction, 
+		LambdaEngine::Entity weaponOwner,
+		const glm::vec3& playerPos,
+		const glm::quat& direction,
 		const glm::vec3& playerVelocity);
 
 public:
@@ -69,22 +70,15 @@ private:
 	WeaponSystem() = default;
 	~WeaponSystem() = default;
 
-	void Fire(
-		EAmmoType ammoType,
-		LambdaEngine::Entity weaponOwner,
-		const glm::vec3& playerPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity);
-
 	void TryFire(
 		EAmmoType ammoType,
 		WeaponComponent& weaponComponent,
-		PacketComponent<PlayerAction>& packets,
+		PacketComponent<PacketPlayerAction>& packets,
 		const glm::vec3& startPos,
 		const glm::quat& direction,
 		const glm::vec3& playerVelocity);
 
-	void StartReload(WeaponComponent& weaponComponent);
+	void StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets);
 	void AbortReload(WeaponComponent& weaponComponent);
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);

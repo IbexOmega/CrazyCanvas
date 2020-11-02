@@ -37,14 +37,3 @@ enum EFlagPacketType : uint8
 	FLAG_PACKET_TYPE_PICKED_UP	= 0,
 	FLAG_PACKET_TYPE_DROPPED	= 1,
 };
-
-#pragma pack(push, 1)
-struct FlagEditedPacket : Packet
-{
-	DECL_PACKET(FlagEditedPacket);
-
-	EFlagPacketType	FlagPacketType;
-	int32			PickedUpNetworkUID = -1;
-	glm::vec3		DroppedPosition;
-};
-#pragma pack(pop)

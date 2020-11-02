@@ -14,11 +14,12 @@ layout(push_constant) uniform FrameSettingBuffer
 {
 	layout(offset = 4) uint ShouldReset;
 	layout(offset = 8) uint ShouldPaint;
+	layout(offset = 12) uint PaintCount;
 } p_FrameSettings;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
-layout(binding = 0, set = UNWRAP_DRAW_SET_INDEX) uniform UnwrapData				{ SUnwrapData val; }		u_UnwrapData;
+layout(binding = 0, set = UNWRAP_DRAW_SET_INDEX) uniform UnwrapData				{ SUnwrapData val[10]; }		u_UnwrapData;
 
 layout(location = 0, component = 0) out uint   out_BitsServer;
 layout(location = 0, component = 1) out uint   out_BitsClient;
@@ -34,7 +35,8 @@ void main()
 		out_BitsClient = 0;
 	}
 
-	if (p_FrameSettings.ShouldPaint > 0)
+	bool shouldDiscard = true;
+	for (uint hitPointIndex = 0; hitPointIndex < p_FrameSettings.PaintCount; hitPointIndex++)
 	{		
 		const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);
 		const float BRUSH_SIZE	= 0.5f;
@@ -69,20 +71,23 @@ void main()
 		if(brushMask.a > EPSILON && maskUV.x > 0.f && maskUV.x < 1.f && maskUV.y > 0.f && maskUV.y < 1.f && valid > 0.5f)
 		{
 			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
-			if (u_UnwrapData.val.RemoteMode == 1)
+			if (u_UnwrapData.val[hitPointIndex].RemoteMode == 1)
 			{
-				uint client = u_UnwrapData.val.TeamMode << 1;
-				client |= u_UnwrapData.val.PaintMode;
+				uint client = u_UnwrapData.val[hitPointIndex].TeamMode << 1;
+				client |= u_UnwrapData.val[hitPointIndex].PaintMode;
 				out_BitsClient = client & 0xFF;
 			}
-			else if (u_UnwrapData.val.RemoteMode == 2)
+			else if (u_UnwrapData.val[hitPointIndex].RemoteMode == 2)
 			{
-				uint server = u_UnwrapData.val.TeamMode << 1;
-				server |= u_UnwrapData.val.PaintMode & 0x1;
+				uint server = u_UnwrapData.val[hitPointIndex].TeamMode << 1;
+				server |= u_UnwrapData.val[hitPointIndex].PaintMode & 0x1;
 				out_BitsServer = server & 0xFF;
 			}
+
+			shouldDiscard = false;
 		}
-		else if (p_FrameSettings.ShouldReset == 0)
-			discard;
 	}
+
+	if (shouldDiscard)
+		discard;
 }
