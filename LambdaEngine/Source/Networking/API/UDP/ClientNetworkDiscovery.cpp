@@ -9,7 +9,7 @@ namespace LambdaEngine
 	ClientNetworkDiscovery::ClientNetworkDiscovery() : 
 		m_SegmentPool(8),
 		m_pSocket(nullptr),
-		m_IPEndPoint(),
+		m_pEndPoints(nullptr),
 		m_Statistics(),
 		m_Transceiver(),
 		m_NameOfGame(),
@@ -29,11 +29,12 @@ namespace LambdaEngine
 		LOG_INFO("[ClientNetworkDiscovery]: Released");
 	}
 
-	bool ClientNetworkDiscovery::Connect(const IPEndPoint& endPoint, const String& nameOfGame, INetworkDiscoveryClient* pHandler, Timestamp searchInterval)
+	bool ClientNetworkDiscovery::Connect(const TSet<IPEndPoint>* pEndPoints, SpinLock* pLock, const String& nameOfGame, INetworkDiscoveryClient* pHandler, Timestamp searchInterval)
 	{
 		if (!ThreadsAreRunning() && ThreadsHasTerminated())
 		{
-			m_IPEndPoint = endPoint;
+			m_pEndPoints = pEndPoints;
+			m_pLockEndPoints = pLock;
 			m_NameOfGame = nameOfGame;
 			m_pHandler = pHandler;
 			m_SearchInterval = searchInterval;
@@ -82,23 +83,28 @@ namespace LambdaEngine
 	{
 		while (!ShouldTerminate())
 		{
-			std::set<NetworkSegment*, NetworkSegmentUIDOrder> packets;
-			TSet<uint32> reliableUIDs;
+			{
+				std::scoped_lock<SpinLock> lock(*m_pLockEndPoints);
+				for (const IPEndPoint& endpoint : *m_pEndPoints)
+				{
+					std::set<NetworkSegment*, NetworkSegmentUIDOrder> packets;
+					TSet<uint32> reliableUIDs;
 
 #ifdef LAMBDA_DEBUG
-			NetworkSegment* pResponse = m_SegmentPool.RequestFreeSegment("ClientNetworkDiscovery");
+					NetworkSegment* pResponse = m_SegmentPool.RequestFreeSegment("ClientNetworkDiscovery");
 #else
-			NetworkSegment* pResponse = m_SegmentPool.RequestFreeSegment();
+					NetworkSegment* pResponse = m_SegmentPool.RequestFreeSegment();
 #endif
 
-			pResponse->GetHeader().Type = NetworkSegment::TYPE_NETWORK_DISCOVERY;
-			packets.insert(pResponse);
+					pResponse->GetHeader().Type = NetworkSegment::TYPE_NETWORK_DISCOVERY;
+					packets.insert(pResponse);
 
-			BinaryEncoder encoder(pResponse);
-			encoder.WriteString(m_NameOfGame);
+					BinaryEncoder encoder(pResponse);
+					encoder.WriteString(m_NameOfGame);
 
-			m_Transceiver.Transmit(&m_SegmentPool, packets, reliableUIDs, m_IPEndPoint, &m_Statistics);
-
+					m_Transceiver.Transmit(&m_SegmentPool, packets, reliableUIDs, endpoint, &m_Statistics);
+				}
+			}
 			YieldTransmitter();
 		}
 	}
@@ -173,8 +179,7 @@ namespace LambdaEngine
 			if (decoder.ReadString() == m_NameOfGame)
 			{
 				std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
-				m_ReceivedPackets[m_BufferIndex].PushBack({ decoder, sender });
-				m_Statistics.m_Ping = EngineLoop::GetTimeSinceStart() - m_TimeOfLastSearch;
+				m_ReceivedPackets[m_BufferIndex].PushBack({ decoder, sender,  EngineLoop::GetTimeSinceStart() - m_TimeOfLastSearch });
 				return true;
 			}
 		}
@@ -208,7 +213,7 @@ namespace LambdaEngine
 			BinaryDecoder& decoder = packet.Decoder;
 			IPEndPoint endpoint(packet.Sender.GetAddress(), decoder.ReadUInt16());
 			uint64 serverUID = decoder.ReadUInt64();
-			m_pHandler->OnServerFound(decoder, endpoint, serverUID, m_Statistics.m_Ping);
+			m_pHandler->OnServerFound(decoder, endpoint, serverUID, packet.Ping);
 #ifdef LAMBDA_CONFIG_DEBUG
 			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
 #else

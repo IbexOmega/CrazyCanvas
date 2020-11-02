@@ -88,6 +88,11 @@ namespace LambdaEngine
 		return m_Hash != other.m_Hash;
 	}
 
+	bool IPEndPoint::operator<(const IPEndPoint& other) const
+	{
+		return GetHash() < other.GetHash();
+	}
+
 	void IPEndPoint::UpdateHash()
 	{
 		uint64 port64 = m_Port;
