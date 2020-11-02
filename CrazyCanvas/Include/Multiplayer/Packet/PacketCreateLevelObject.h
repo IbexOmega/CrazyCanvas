@@ -24,9 +24,9 @@ namespace Obj
 }
 
 #pragma pack(push, 1)
-struct CreateLevelObject
+struct PacketCreateLevelObject
 {
-	DECL_PACKET(CreateLevelObject);
+	DECL_PACKET(PacketCreateLevelObject);
 
 	ELevelObjectType LevelObjectType;
 	int32 NetworkUID;

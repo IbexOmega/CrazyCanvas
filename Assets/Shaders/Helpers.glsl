@@ -41,12 +41,6 @@ vec3 UnpackNormal(vec3 normal)
 	return normalize((normal * 2.0f) - 1.0f);
 }
 
-float LinearizeDepth(float depth, float near, float far)
-{
-	float z = depth * 2.0 - 1.0;
-	return (2.0 * near * far) / (far + near - z * (far - near));
-}
-
 /*
 	Schlick Fresnel function
 */
@@ -114,42 +108,12 @@ vec3 GammaCorrection(vec3 color, float gamma)
 	return result;
 }
 
-float GoldNoise(vec3 x, float seed, float min, float max)
-{
-	const float BASE_SEED   = 10000.0f;
-	const float GOLD_PHI    = 1.61803398874989484820459 * 00000.1; // Golden Ratio
-	const float GOLD_PI     = 3.14159265358979323846264 * 00000.1; // PI
-	const float GOLD_SQ2    = 1.41421356237309504880169 * 10000.0; // Square Root of Two
-	const float GOLD_E      = 2.71828182846;
-
-	return mix(min, max, fract(tan(distance(x * (BASE_SEED + seed + GOLD_PHI), vec3(GOLD_PHI, GOLD_PI, GOLD_E))) * GOLD_SQ2) * 0.5f + 0.5f);
-}
-
 void CreateCoordinateSystem(in vec3 N, out vec3 Nt, out vec3 Nb)
 {
 	if (abs(N.x) > abs(N.y))  	Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z);
 	else 						Nt = vec3(0, -N.z, N.y) / sqrt(N.y * N.y + N.z * N.z);
 	//Nt = vec3(N.z, 0, -N.x) / sqrt(N.x * N.x + N.z * N.z);
 	Nb = cross(N, Nt);
-}
-
-vec3 ReflectanceDirection(vec3 reflDir, vec3 Rt, vec3 Rb, float roughness, vec2 uniformRandom)
-{
-	float specularExponent = 2.0f / (pow(roughness, 4.0f)) - 2.0f;
-
-	if (specularExponent > 2048.0f)
-		return reflDir;
-
-	float cosTheta = pow(0.244f, 1.0f / (specularExponent + 1.0f));
-	float z = mix(cosTheta, 1.0f, uniformRandom.x);
-	float phi = mix(-2.0f * PI, 2.0f * PI, uniformRandom.y);
-	float sinTheta = sqrt(1.0f - z * z);
-
-	vec3 coneVector = vec3(sinTheta * cos(phi), z, sinTheta * sin(phi));
-	return vec3(
-		coneVector.x * Rb.x + coneVector.y * reflDir.x + coneVector.z * Rt.x,
-		coneVector.x * Rb.y + coneVector.y * reflDir.y + coneVector.z * Rt.y,
-		coneVector.x * Rb.z + coneVector.y * reflDir.z + coneVector.z * Rt.z);
 }
 
 vec3 SphericalToDirection(float sinTheta, float cosTheta, float phi)
@@ -176,20 +140,7 @@ bool IsSameHemisphere(vec3 w_0, vec3 w_1)
 	return w_0.z * w_1.z > 0.0f;
 }
 
-float RadicalInverse_VdC(uint bits)
-{
-	bits = (bits << 16u) | (bits >> 16u);
-	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
-}
 
-vec2 Hammersley(uint i, uint N)
-{
-	return vec2(float(i) / float(N), RadicalInverse_VdC(i));
-}
 
 vec2 DirToOct(vec3 normal)
 {
@@ -203,151 +154,6 @@ vec3 OctToDir(vec2 e)
 	vec3 v = vec3(e, 1.0f - abs(e.x) - abs(e.y));
 	if (v.z < 0.0f) v.xy = (1.0f - abs(v.yx)) * (step(0.0f, v.xy) * 2.0f - vec2(1.0f));
 	return normalize(v);
-}
-
-// A utility to convert a vec3 to a 2-component octohedral representation packed into one uint
-uint dirToOct(vec3 normal)
-{
-	vec2 p = normal.xy * (1.0f / dot(abs(normal), vec3(1.0f)));
-	vec2 e = normal.z > 0.0f ? p : (1.0f - abs(p.yx)) * (step(0.0f, p) * 2.0f - vec2(1.0f));
-	return packSnorm2x16(e.xy);
-	//return (asuint(f32tof16(e.y)) << 16) + (asuint(f32tof16(e.x)));
-}
-
-vec3 octToDir(uint octo)
-{
-	vec2 e = unpackSnorm2x16(octo) ;
-	vec3 v = vec3(e, 1.0f - abs(e.x) - abs(e.y));
-	if (v.z < 0.0f)
-		v.xy = (1.0f - abs(v.yx)) * (step(0.0f, v.xy) * 2.0f - vec2(1.0f));
-	return normalize(v);
-}
-
-/** Returns a relative luminance of an input linear RGB color in the ITU-R BT.709 color space
-\param RGBColor linear HDR RGB color in the ITU-R BT.709 color space
-*/
-float luminance(vec3 rgb)
-{
-	return dot(rgb, vec3(0.2126f, 0.7152f, 0.0722f));
-}
-
-float SphereSurfaceArea(float radius)
-{
-	return FOUR_PI * radius * radius;
-}
-
-float DiskSurfaceArea(float radius)
-{
-	return PI * radius * radius;
-}
-
-float QuadSurfaceArea(float radiusX, float radiusY)
-{
-	return 4 * radiusX * radiusY;
-}
-
-vec2 ConcentricSampleDisk(vec2 u)
-{
-	vec2 uOffset = u * 2.0f - 1.0f;
-	if (dot(uOffset, uOffset) == 0.0f) return vec2(0.0f);
-
-	float r     = 0.0f;
-	float theta = 0.0f;
-
-	if (abs(uOffset.x) > abs(uOffset.y))
-	{
-		r = uOffset.x;
-		theta = PI_OVER_FOUR * uOffset.y / uOffset.x;
-	}
-	else
-	{
-		r = uOffset.y;
-		theta = PI_OVER_TWO - PI_OVER_FOUR * uOffset.x / uOffset.y;
-	}
-
-	return r * vec2(cos(theta), sin(theta));
-}
-
-//These functions assume that the untransformed quad lies in the xz-plane with normal pointing in positive y direction and has a radius of 1 (side length of 2)
-float QuadPDF(mat4 transform)
-{
-	return 1.0f / QuadSurfaceArea(length(transform[0].xyz), length(transform[2].xyz));
-}
-
-vec3 QuadNormal(mat4 transform)
-{
-	return (transform * vec4(0.0f, 1.0f, 0.0f, 0.0f)).xyz;
-}
-
-SShapeSample SampleQuad(mat4 transform, vec2 u)
-{
-	SShapeSample shapeSample;
-
-	u = u * 2.0f - 1.0f;
-	shapeSample.Position 	= (transform * vec4(u.x, 0.0f, u.y, 1.0f)).xyz; //Assume quad thickiness of 0.0f
-	shapeSample.Normal		= QuadNormal(transform);
-	shapeSample.PDF			= QuadPDF(transform);
-
-	return shapeSample;
-}
-
-SShapeSample SampleQuad(vec3 position, vec3 direction, float radius, vec2 u)
-{
-	SShapeSample shapeSample;
-
-	direction = normalize(direction);
-
-	vec3 tangent;
-	vec3 bitangent;
-	CreateCoordinateSystem(direction, tangent, bitangent);
-
-	u = u * 2.0f - 1.0f;
-	shapeSample.Position 	= position + radius * (u.x * tangent + u.y * bitangent); //Assume quad thickiness of 0.0f
-	shapeSample.Normal		= direction;
-	shapeSample.PDF			= 1.0f / QuadSurfaceArea(radius, radius);
-
-	return shapeSample;
-}
-
-SShapeSample SampleDisk(vec3 position, vec3 direction, float radius, vec2 u)
-{
-	SShapeSample shapeSample;
-
-	direction = normalize(direction);
-
-	vec3 tangent;
-	vec3 bitangent;
-	CreateCoordinateSystem(direction, tangent, bitangent);
-
-	vec2 pd = ConcentricSampleDisk(u);
-	shapeSample.Position 	= position + radius * (pd.x * tangent + pd.y * bitangent); //Assume disk thickiness of 0.0f
-	shapeSample.Normal		= direction;
-	shapeSample.PDF			= 1.0f / DiskSurfaceArea(radius);
-
-	return shapeSample;
-}
-
-SShapeSample UniformSampleUnitSphere(vec2 u)
-{
-	SShapeSample shapeSample;
-
-	float z 	= 1.0f - 2.0f * u.x;
-	float r 	= sqrt(max(0.0f, 1.0f - z * z));
-	float phi 	= 2.0f * PI * u.y;
-
-	shapeSample.Position 	= vec3(r * cos(phi), r * sin(phi), z);
-	shapeSample.Normal	 	= normalize(shapeSample.Position);
-	shapeSample.PDF 		= 1.0f / FOUR_PI;
-	return shapeSample;
-}
-
-SShapeSample UniformSampleSphereSurface(vec3 position, float radius, vec2 u)
-{
-	SShapeSample shapeSample = UniformSampleUnitSphere(u);
-
-	shapeSample.Position	 = position + radius * shapeSample.Normal; //The normal as returned from UniformSampleUnitSphere can be interpreted as a point on the surface
-	shapeSample.PDF 		 /= (radius * radius);
-	return shapeSample;
 }
 
 float PowerHeuristic(float nf, float fPDF, float ng, float gPDF)

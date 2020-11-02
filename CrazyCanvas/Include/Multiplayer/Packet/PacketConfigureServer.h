@@ -3,12 +3,12 @@
 #include "Multiplayer/Packet/Packet.h"
 
 #pragma pack(push, 1)
-struct PacketHostServer
+struct PacketConfigureServer
 {
-	DECL_PACKET(PacketHostServer);
+	DECL_PACKET(PacketConfigureServer);
 
-	int8 PlayersNumber = -1;
-	int8 MapNumber = -1;
 	int32 AuthenticationID = -1;
+	uint8 Players = 0;
+	uint8 MapID = 0;
 };
 #pragma pack(pop)

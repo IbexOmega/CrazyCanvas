@@ -31,10 +31,11 @@
 
 #include "Rendering/ImGuiRenderer.h"
 
-#include "Multiplayer/Packet/CreateLevelObject.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 
 #include "Multiplayer/ServerHelper.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 
 #include <imgui.h>
@@ -67,10 +68,9 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 	if (m_pLevel != nullptr)
 	{
-		uint32 numFlags = 0;
-		m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, numFlags);
+		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
-		if (numFlags == 0)
+		if (flagEntities.IsEmpty())
 			SpawnFlag();
 	}
 
@@ -85,12 +85,11 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 		{
 			if (m_pLevel != nullptr)
 			{
-				uint32 numFlags = 0;
-				Entity* pFlags = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, numFlags);
+				TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
-				if (numFlags > 0)
+				if (!flagEntities.IsEmpty())
 				{
-					Entity flagEntity = pFlags[0];
+					Entity flagEntity = flagEntities[0];
 
 					const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
 					ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
@@ -121,13 +120,13 @@ void MatchServer::SpawnFlag()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	uint32 numFlagSpawnPoints = 0;
-	Entity* pFlagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN, numFlagSpawnPoints);
+	TArray<Entity> flagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN);
 
-	if (numFlagSpawnPoints > 0)
+	if (!flagSpawnPointEntities.IsEmpty())
 	{
-		const FlagSpawnComponent& flagSpawnComponent	= pECS->GetConstComponent<FlagSpawnComponent>(pFlagSpawnPointEntities[0]);
-		const PositionComponent& positionComponent		= pECS->GetConstComponent<PositionComponent>(pFlagSpawnPointEntities[0]);
+		Entity flagSpawnPoint = flagSpawnPointEntities[0];
+		const FlagSpawnComponent& flagSpawnComponent	= pECS->GetConstComponent<FlagSpawnComponent>(flagSpawnPoint);
+		const PositionComponent& positionComponent		= pECS->GetConstComponent<PositionComponent>(flagSpawnPoint);
 
 		float r		= Random::Float32(0.0f, flagSpawnComponent.Radius);
 		float theta = Random::Float32(0.0f, glm::two_pi<float32>());
@@ -142,7 +141,7 @@ void MatchServer::SpawnFlag()
 		{
 			VALIDATE(createdFlagEntities.GetSize() == 1);
 
-			CreateLevelObject packet;
+			PacketCreateLevelObject packet;
 			packet.LevelObjectType			= ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
 			packet.Position					= createDesc.Position;
 			packet.Forward					= GetForward(createDesc.Rotation);
@@ -200,8 +199,7 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	uint32 numPlayerSpawnPoints = 0;
-	Entity* pPlayerSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN, numPlayerSpawnPoints);
+	TArray<Entity> playerSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
 
 	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
@@ -209,10 +207,8 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	glm::vec3 position(0.0f, 5.0f, 0.0f);
 	glm::vec3 forward(0.0f, 0.0f, 1.0f);
 
-	for (uint32 i = 0; i < numPlayerSpawnPoints; i++)
+	for (Entity spawnPoint : playerSpawnPointEntities)
 	{
-		Entity spawnPoint = pPlayerSpawnPointEntities[i];
-
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
 
 		if (teamComponent.TeamIndex == m_NextTeamIndex)
@@ -226,7 +222,6 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 
 	CreatePlayerDesc createPlayerDesc =
 	{
-		.pClient		= pClient,
 		.Position		= position,
 		.Forward		= forward,
 		.Scale			= glm::vec3(1.0f),
@@ -238,7 +233,7 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	{
 		VALIDATE(createdPlayerEntities.GetSize() == 1);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Position			= position;
 		packet.Forward			= forward;
@@ -266,6 +261,16 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
 }
 
+void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
+{
+	m_pLevel->DeleteObject(entity);
+
+	PacketDeleteLevelObject packet;
+	packet.NetworkUID = entity;
+
+	ServerHelper::SendBroadcast(packet);
+}
+
 bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
 	using namespace LambdaEngine;
@@ -282,16 +287,14 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 	//Send currently existing players to the new client
 	{
-		uint32 otherPlayerCount = 0;
-		Entity* pOtherPlayerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, otherPlayerCount);
+		TArray<Entity> playerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Player.IsMySelf	= false;
 
-		for (uint32 i = 0; i < otherPlayerCount; i++)
+		for (Entity otherPlayerEntity : playerEntities)
 		{
-			Entity otherPlayerEntity = pOtherPlayerEntities[i];
 			const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
 			const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
 			const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
@@ -313,15 +316,13 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 
 	//Send flag data to clients
 	{
-		uint32 flagCount = 0;
-		Entity* pFlagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, flagCount);
+		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
-		CreateLevelObject packet;
+		PacketCreateLevelObject packet;
 		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
 
-		for (uint32 i = 0; i < flagCount; i++)
+		for (Entity flagEntity : flagEntities)
 		{
-			Entity flagEntity = pFlagEntities[i];
 			const PositionComponent& positionComponent	= pPositionComponents->GetConstData(flagEntity);
 			const RotationComponent& rotationComponent	= pRotationComponents->GetConstData(flagEntity);
 			const ParentComponent& parentComponent		= pParentComponents->GetConstData(flagEntity);
@@ -343,12 +344,11 @@ bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
 
 	if (m_pLevel != nullptr)
 	{
-		uint32 numFlags = 0;
-		Entity* pFlags = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG, numFlags);
+		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
-		if (numFlags > 0)
+		if (!flagEntities.IsEmpty())
 		{
-			Entity flagEntity = pFlags[0];
+			Entity flagEntity = flagEntities[0];
 			FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
 		}
 	}

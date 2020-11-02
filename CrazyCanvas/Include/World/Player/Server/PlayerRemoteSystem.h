@@ -5,7 +5,7 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
-#include "Multiplayer/Packet/PlayerAction.h"
+#include "Multiplayer/Packet/PacketPlayerAction.h"
 
 class PlayerRemoteSystem : public LambdaEngine::System
 {
@@ -22,5 +22,5 @@ private:
 
 private:
 	LambdaEngine::IDVector m_Entities;
-	LambdaEngine::THashTable<LambdaEngine::Entity, PlayerAction> m_CurrentGameStates;
+	LambdaEngine::THashTable<LambdaEngine::Entity, PacketPlayerAction> m_CurrentGameStates;
 };

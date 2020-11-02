@@ -22,7 +22,7 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 
 	// Register eventhandlers
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
-	
+
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
 	m_MatchDesc = *pDesc;
 

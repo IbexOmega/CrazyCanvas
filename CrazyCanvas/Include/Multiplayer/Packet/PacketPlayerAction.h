@@ -6,9 +6,9 @@
 #include "ECS/Components/Player/ProjectileComponent.h"
 
 #pragma pack(push, 1)
-struct PlayerAction : Packet
+struct PacketPlayerAction : Packet
 {
-	DECL_PACKET(PlayerAction);
+	DECL_PACKET(PacketPlayerAction);
 
 	glm::quat Rotation;
 	int8 DeltaForward	= 0;

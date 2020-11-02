@@ -49,7 +49,7 @@ static glm::vec3 CalculateWeaponPosition(
 }
 
 /*
-* WeaponSystem 
+* WeaponSystem
 */
 
 WeaponSystem WeaponSystem::s_Instance;
@@ -81,7 +81,7 @@ bool WeaponSystem::Init()
 				.ComponentAccesses =
 				{
 					{ NDA, PlayerForeignComponent::Type() },
-					{ RW, PacketComponent<PlayerActionResponse>::Type() }
+					{ RW, PacketComponent<PacketPlayerActionResponse>::Type() }
 				}
 			},
 			{
@@ -89,7 +89,7 @@ bool WeaponSystem::Init()
 				.ComponentAccesses =
 				{
 					{ NDA, PlayerLocalComponent::Type() },
-					{ RW, PacketComponent<PlayerAction>::Type() }
+					{ RW, PacketComponent<PacketPlayerAction>::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
 			},
@@ -98,8 +98,8 @@ bool WeaponSystem::Init()
 				.ComponentAccesses =
 				{
 					{ NDA, PlayerBaseComponent::Type() },
-					{ R, PacketComponent<PlayerAction>::Type() },
-					{ RW, PacketComponent<PlayerActionResponse>::Type() },
+					{ R, PacketComponent<PacketPlayerAction>::Type() },
+					{ RW, PacketComponent<PacketPlayerActionResponse>::Type() },
 				},
 				.ComponentGroups = { &playerGroup }
 			}
@@ -172,8 +172,8 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 	const float32 dt = (float32)deltaTime.AsSeconds();
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<PacketComponent<PlayerAction>>* pPlayerActionPackets = pECS->GetComponentArray<PacketComponent<PlayerAction>>();
-	ComponentArray<PacketComponent<PlayerActionResponse>>* pPlayerResponsePackets = pECS->GetComponentArray<PacketComponent<PlayerActionResponse>>();
+	ComponentArray<PacketComponent<PacketPlayerAction>>* pPlayerActionPackets = pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
+	ComponentArray<PacketComponent<PacketPlayerActionResponse>>* pPlayerResponsePackets = pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
 	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
@@ -192,7 +192,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			const bool hasAmmo		= weaponComp.CurrentAmmunition > 0;
 			const bool isReloading	= weaponComp.ReloadClock > 0.0f;
 			const bool onCooldown	= weaponComp.CurrentCooldown > 0.0f;
-			
+
 			if (onCooldown)
 			{
 				weaponComp.CurrentCooldown -= dt;
@@ -208,10 +208,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				}
 			}
 
-			PacketComponent<PlayerAction>& actionsRecived = pPlayerActionPackets->GetData(remotePlayerEntity);
-			PacketComponent<PlayerActionResponse>& responsesToSend = pPlayerResponsePackets->GetData(remotePlayerEntity);
-			TQueue<PlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
-			const TArray<PlayerAction>& packetsRecived	= actionsRecived.GetPacketsReceived();
+			PacketComponent<PacketPlayerAction>& actionsRecived = pPlayerActionPackets->GetData(remotePlayerEntity);
+			PacketComponent<PacketPlayerActionResponse>& responsesToSend = pPlayerResponsePackets->GetData(remotePlayerEntity);
+			TQueue<PacketPlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
+			const TArray<PacketPlayerAction>& packetsRecived	= actionsRecived.GetPacketsReceived();
 
 			// Handle packets
 			const uint32 packetCount = packetsRecived.GetSize();
@@ -251,10 +251,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 						// Create projectile
 						Fire(
-							ammoType, 
-							remotePlayerEntity, 
-							playerPositionComp.Position, 
-							playerRotationComp.Quaternion, 
+							ammoType,
+							remotePlayerEntity,
+							playerPositionComp.Position,
+							playerRotationComp.Quaternion,
 							velocityComp.Velocity);
 					}
 				}
@@ -274,9 +274,9 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			// Foreign Players
 			if (!m_LocalPlayerEntities.HasElement(playerEntity))
 			{
-				PacketComponent<PlayerActionResponse>& packets = pPlayerResponsePackets->GetData(playerEntity);
-				const TArray<PlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
-				for (const PlayerActionResponse& response : receivedPackets)
+				PacketComponent<PacketPlayerActionResponse>& packets = pPlayerResponsePackets->GetData(playerEntity);
+				const TArray<PacketPlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
+				for (const PacketPlayerActionResponse& response : receivedPackets)
 				{
 					if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
 					{
@@ -298,7 +298,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			}
 
 			// LocalPlayers
-			PacketComponent<PlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
+			PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
 			const bool hasAmmo		= weaponComponent.CurrentAmmunition > 0;
 			const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 			if (!hasAmmo && !isReloading)
@@ -334,7 +334,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				weaponPositionComp,
 				weaponRotationComp,
 				weaponOffsetComp);
-			
+
 			// Reload if we are not reloading
 			if (Input::IsKeyDown(EInputLayer::GAME, EKey::KEY_R) && !isReloading)
 			{
@@ -412,9 +412,9 @@ void WeaponSystem::Fire(
 	// Fire event
 	WeaponFiredEvent firedEvent(
 		weaponOwner,
-		ammoType, 
+		ammoType,
 		startPos,
-		initialVelocity, 
+		initialVelocity,
 		direction,
 		playerTeam);
 	firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
@@ -432,7 +432,7 @@ void WeaponSystem::Fire(
 void WeaponSystem::TryFire(
 	EAmmoType ammoType,
 	WeaponComponent& weaponComponent,
-	PacketComponent<PlayerAction>& packets,
+	PacketComponent<PacketPlayerAction>& packets,
 	const glm::vec3& startPos,
 	const glm::quat& direction,
 	const glm::vec3& playerVelocity)
@@ -456,47 +456,13 @@ void WeaponSystem::TryFire(
 		weaponComponent.CurrentAmmunition--;
 
 		// Send action to server
-		TQueue<PlayerAction>& actions = packets.GetPacketsToSend();
+		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
 		if (!actions.empty())
 		{
 			actions.back().FiredAmmo = ammoType;
 		}
 
 		// For creating entity
-		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
-	}
-	else
-	{
-		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
-	}
-}
-
-void WeaponSystem::TryFire(
-	EAmmoType ammoType,
-	WeaponComponent& weaponComponent,
-	const glm::vec3& startPos,
-	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
-{
-	using namespace LambdaEngine;
-
-	// Add cooldown
-	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
-
-	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
-	if (hasAmmo)
-	{
-		// If we try to shoot when reloading we abort the reload
-		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
-		if (isReloading)
-		{
-			AbortReload(weaponComponent);
-		}
-
-		// Fire the gun
-		weaponComponent.CurrentAmmunition--;
 		Fire(ammoType, weaponComponent.WeaponOwner, startPos, direction, playerVelocity);
 	}
 	else
@@ -525,7 +491,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		const ProjectileComponent& projectilComp = pProjectileComponents->GetConstData(collisionInfo0.Entity);
 		ammoType = projectilComp.AmmoType;
-		
+
 		if (projectilComp.Owner == collisionInfo1.Entity)
 		{
 			selfHit = true;
@@ -569,12 +535,12 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	}
 }
 
-void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent<PlayerAction>& packets)
+void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets)
 {
 	using namespace LambdaEngine;
 
 	// Send action to server
-	TQueue<PlayerAction>& actions = packets.GetPacketsToSend();
+	TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
 	if (!actions.empty())
 	{
 		actions.back().StartedReload = true;
