@@ -157,6 +157,53 @@ struct SShapeSample
 	float	PDF;
 };
 
+struct SParticleVertex
+{
+	vec3 Position;
+	float padding0;
+};
+
+struct SParticle
+{
+	mat4 Transform;
+	vec3 Velocity;
+	float CurrentLife;
+	vec3 StartVelocity;
+	float Padding0;
+	vec3 Acceleration;
+	uint TileIndex;
+	vec3 StartPosition;
+	bool WasCreated;
+	vec3 StartAcceleration;
+	float BeginRadius;
+	float EndRadius;
+	float FrictionFactor;
+	float Bounciness;
+	float Padding1;
+};
+
+struct SEmitter
+{
+	vec4 Color;
+	float LifeTime;
+	float Radius;
+	uint AtlasIndex;
+	uint AnimationCount;
+	uint FirstAnimationIndex;
+	float Gravity;
+	bool OneTime;
+	uint Padding2;
+};
+
+struct SAtlasData
+{
+	float	TileFactorX;
+	float	TileFactorY;
+	uint	RowCount;
+	uint	ColCount;
+	uint	AtlasIndex;
+};
+
 struct SUnwrapData
 {
 	vec4 TargetPosition;
