@@ -448,10 +448,10 @@ void LobbyGUI::OnLANServerFound(const ServerInfo& serverInfo, int32 clientHostID
 	{
 		currentInfo = serverInfo;
 	}
-	LOG_INFO("OnLANServerFound %s", serverInfo.EndPoint.ToString());
+	//LOG_INFO("OnLANServerFound %s", serverInfo.EndPoint.ToString().c_str());
 }
 
 void LobbyGUI::OnWANServerFound(const ServerInfo& serverInfo)
 {
-	LOG_INFO("OnWANServerFound %s", serverInfo.EndPoint.ToString());
+	//LOG_INFO("OnWANServerFound %s", serverInfo.EndPoint.ToString().c_str());
 }
