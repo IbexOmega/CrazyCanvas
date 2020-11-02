@@ -78,6 +78,11 @@ namespace LambdaEngine
 		return m_Hash;
 	}
 
+	bool IPEndPoint::IsValid() const
+	{
+		return m_pAddress->IsValid();
+	}
+
 	bool IPEndPoint::operator==(const IPEndPoint& other) const
 	{
 		return m_Hash == other.m_Hash/*other.GetAddress()->GetHash() == GetAddress()->GetHash() && other.GetPort() == GetPort()*/;
@@ -97,5 +102,29 @@ namespace LambdaEngine
 	{
 		uint64 port64 = m_Port;
 		m_Hash = port64 ^ m_pAddress->GetHash() + 0x9e3779b9 + (port64 << 6) + (port64 >> 2);
+	}
+
+	IPEndPoint IPEndPoint::Parse(const String& string, uint16 defaultPort, bool* result)
+	{
+		String addressStr;
+		String portStr;
+		bool addressFound = false;
+
+		for (const char c : string)
+		{
+			if (c == ':')
+				addressFound = true;
+			else if (addressFound)
+				portStr += c;
+			else
+				addressStr += c;
+		}
+
+		IPAddress* pAddress = IPAddress::Get(addressStr);
+		uint16 port = portStr.empty() ? defaultPort : (uint16)std::stoi(portStr);
+
+		*result = pAddress->IsValid();
+		
+		return IPEndPoint(pAddress, port);
 	}
 }

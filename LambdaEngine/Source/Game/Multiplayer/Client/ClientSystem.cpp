@@ -53,17 +53,17 @@ namespace LambdaEngine
 		MultiplayerUtils::Release();
 	}
 
-	bool ClientSystem::Connect(IPAddress* pAddress)
+	bool ClientSystem::Connect(const IPEndPoint& endPoint)
 	{
-		NetworkDiscovery::DisableClient();
-
 		MultiplayerUtils::s_IsSinglePlayer = false;
 
-		if (!m_pClient->Connect(IPEndPoint(pAddress, (uint16)EngineConfig::GetIntProperty("NetworkPort"))))
+		if (!m_pClient->Connect(endPoint))
 		{
 			LOG_ERROR("Failed to connect!");
 			return false;
 		}
+
+		NetworkDiscovery::DisableClient();
 		return true;
 	}
 	

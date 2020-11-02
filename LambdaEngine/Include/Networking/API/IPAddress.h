@@ -18,8 +18,8 @@ namespace LambdaEngine
 		* return - The ip-address as a string
 		*/
 		const std::string& ToString() const;
-
 		uint64 GetHash() const;
+		bool IsValid() const;
 
 		bool operator==(const IPAddress& other) const;
 		bool operator!=(const IPAddress& other) const;
@@ -39,6 +39,9 @@ namespace LambdaEngine
 	private:
 		static void InitStatic();
 		static void ReleaseStatic();
+
+	protected:
+		bool m_IsValid;
 
 	private:
 		std::string m_Address;

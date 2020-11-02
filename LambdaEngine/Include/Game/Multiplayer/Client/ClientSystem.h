@@ -16,7 +16,7 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(ClientSystem);
 		virtual ~ClientSystem();
 
-		bool Connect(IPAddress* pAddress);
+		bool Connect(const IPEndPoint& endPoint);
 
 		ClientBase* GetClient();
 

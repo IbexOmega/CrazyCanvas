@@ -1,16 +1,11 @@
 #pragma once
-/*#include "Containers/String.h"
-
-#include "NsGui/UserControl.h"
-#include "NsGui/Grid.h"
-#include "NsGui/GroupBox.h"
-#include "NsGui/Slider.h"*/
 
 #include "GUI/SavedServerGUI.h"
 #include "GUI/ServerInfo.h"
 
 #include "Application/API/Events/NetworkEvents.h"
-//#include "Containers/TArray.h"
+
+#include "Networking/API/IPAddress.h"
 
 struct HostGameDescription
 {
@@ -21,7 +16,9 @@ struct HostGameDescription
 enum PopUpCode
 {
 	CONNECT_ERROR,
+	CONNECT_ERROR_INVALID,
 	JOIN_ERROR,
+	JOIN_ERROR_OFFLINE,
 	HOST_ERROR,
 	OTHER_ERROR,
 	HOST_NOTIFICATION,
@@ -46,7 +43,7 @@ public:
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	
-	void JoinSelectedServer(Noesis::Grid* pGrid);
+	bool JoinSelectedServer(Noesis::Grid* pGrid);
 
 	bool OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event);
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
@@ -68,8 +65,7 @@ private:
 	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
 	void PopulateServerInfo();
 
-	void OnLANServerFound(const ServerInfo& serverInfo, int32 clientHostID);
-	void OnWANServerFound(const ServerInfo& serverInfo);
+	void HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)
 
@@ -82,5 +78,5 @@ private:
 
 	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;
 
-	std::unordered_map<uint64, ServerInfo> m_Servers;
+	std::unordered_map<LambdaEngine::IPAddress*, ServerInfo> m_Servers;
 };

@@ -78,6 +78,11 @@ namespace LambdaEngine
 		s_EndPoints.erase(IPEndPoint(pAddress, portOfBroadcastServer));
 	}
 
+	const TSet<IPEndPoint>& NetworkDiscovery::GetTargets()
+	{
+		return s_EndPoints;
+	}
+
 	void NetworkDiscovery::FixedTickStatic(Timestamp delta)
 	{
 		if (s_pClient)

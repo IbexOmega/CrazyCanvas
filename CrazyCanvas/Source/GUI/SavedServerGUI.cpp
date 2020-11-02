@@ -5,12 +5,17 @@
 
 #include "NoesisPCH.h"
 
+#define SERVER_ITEM_COLUMNS 5
 
 using namespace LambdaEngine;
 using namespace Noesis;
 
+SavedServerGUI::SavedServerGUI()
+{
 
-SavedServerGUI::SavedServerGUI(const LambdaEngine::String& xamlFile)
+}
+
+SavedServerGUI::~SavedServerGUI()
 {
 
 }
@@ -21,33 +26,27 @@ void SavedServerGUI::Init(ListBox* pSavedListView, ListBox* pLocalListView)
 	m_LocalServerList = *pLocalListView;
 }
 
-SavedServerGUI::~SavedServerGUI()
+void SavedServerGUI::AddServer(Grid* pParentGrid, ServerInfo& serverInfo)
 {
-}
+	Ptr<Grid> grid = AddServerItem(pParentGrid, serverInfo);
 
-Ptr<Grid> SavedServerGUI::AddSavedServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
-{
-	Ptr<Grid> grid = AddServerItem(pParentGrid, serverInfo, isRunning);
-	if (m_SavedServerList->GetItems()->Add(grid) == -1)
+	if (serverInfo.IsLAN)
 	{
-		LOG_ERROR("Refreshing Saved List");
+		if (m_LocalServerList->GetItems()->Add(grid) == -1)
+		{
+			LOG_INFO("Refreshing Local List");
+		}
 	}
-
-	return grid;
-}
-
-Ptr<Grid> SavedServerGUI::AddLocalServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
-{
-	Ptr<Grid> grid = AddServerItem(pParentGrid, serverInfo, isRunning);
-	if (m_LocalServerList->GetItems()->Add(grid) == -1)
+	else
 	{
-		LOG_ERROR("Refreshing Local List");
+		if (m_SavedServerList->GetItems()->Add(grid) == -1)
+		{
+			LOG_INFO("Refreshing Saved List");
+		}
 	}
-
-	return grid;
 }
 
-Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, const ServerInfo& serverInfo, bool isRunning)
+Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, ServerInfo& serverInfo)
 {
 	Ptr<Grid> grid = *new Grid();
 
@@ -67,50 +66,43 @@ Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, const ServerInfo& ser
 	Ptr<TextBlock> mapName		= *new TextBlock();
 	Ptr<TextBlock> players		= *new TextBlock();
 	Ptr<TextBlock> ping			= *new TextBlock();
-	Ptr<Rectangle> isRun		= *new Rectangle();
+	Ptr<Rectangle> isOnline		= *new Rectangle();
 	Ptr<SolidColorBrush> brush	= *new SolidColorBrush();
 
-	serverName->SetText(serverInfo.Name.c_str());
-	mapName->SetText(serverInfo.MapName.c_str());
-	players->SetText(std::to_string(serverInfo.Players).c_str());
-	ping->SetText((std::to_string(serverInfo.Ping) + " ms").c_str());
-
-	Color color = Color();
-
-	if (isRun)
-		brush->SetColor(color.Green());
-	else
-		brush->SetColor(color.Red());
-
-	isRun->SetFill(brush);
+	isOnline->SetFill(new SolidColorBrush());
 
 	grid->GetChildren()->Add(serverName);
 	grid->GetChildren()->Add(mapName);
 	grid->GetChildren()->Add(players);
 	grid->GetChildren()->Add(ping);
-	grid->GetChildren()->Add(isRun);
+	grid->GetChildren()->Add(isOnline);
 
 	grid->SetColumn(serverName,	0);
 	grid->SetColumn(mapName,	1);
 	grid->SetColumn(players,	2);
 	grid->SetColumn(ping,		3);
-	grid->SetColumn(isRun,		4);
-	//grid->SetRow(pServerName, m_ItemCount++);
+	grid->SetColumn(isOnline,	4);
+
+	serverInfo.GridUI = grid;
+
+	UpdateServerInfo(serverInfo);
 
 	return grid;
 }
 
-
-void SavedServerGUI::UpdateServerItems(const ServerInfo& serverInfo)
+void SavedServerGUI::UpdateServerInfo(const ServerInfo& serverInfo)
 {
-	TextBlock* serverName	= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(0);
-	TextBlock* mapName		= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(1);
-	TextBlock* playerCount	= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(2);
-	TextBlock* ping			= (TextBlock*)serverInfo.ServerGrid->GetChildren()->Get(3);
+	TextBlock* pName		= (TextBlock*)serverInfo.GridUI->GetChildren()->Get(0);
+	TextBlock* pMapName		= (TextBlock*)serverInfo.GridUI->GetChildren()->Get(1);
+	TextBlock* pPlayerCount	= (TextBlock*)serverInfo.GridUI->GetChildren()->Get(2);
+	TextBlock* pPing		= (TextBlock*)serverInfo.GridUI->GetChildren()->Get(3);
+	Rectangle* pIsOnline	= (Rectangle*)serverInfo.GridUI->GetChildren()->Get(4);
 
-	serverName->SetText(serverInfo.Name.c_str());
-	mapName->SetText(serverInfo.MapName.c_str());
-	ping->SetText((std::to_string(serverInfo.Ping) + " ms").c_str());
-	playerCount->SetText(std::to_string(serverInfo.Players).c_str());
+	SolidColorBrush* pBrush = (SolidColorBrush*)pIsOnline->GetFill();
+
+	pName->SetText(serverInfo.Name.c_str());
+	pMapName->SetText(serverInfo.IsOnline ? serverInfo.MapName.c_str() : "-");
+	pPing->SetText((serverInfo.IsOnline ? std::to_string(serverInfo.Ping) + " ms" : "-").c_str());
+	pPlayerCount->SetText(serverInfo.IsOnline ? std::to_string(serverInfo.Players).c_str() : "-");
+	pBrush->SetColor(serverInfo.IsOnline ? Color::Green() : Color::Red());
 }
-

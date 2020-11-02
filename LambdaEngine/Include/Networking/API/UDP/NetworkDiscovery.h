@@ -33,6 +33,7 @@ namespace LambdaEngine
 		static bool IsClientEnabled();
 		static void AddTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4450);
 		static void RemoveTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4450);
+		static const TSet<IPEndPoint>& GetTargets();
 
 	private:
 		static void FixedTickStatic(Timestamp delta);
