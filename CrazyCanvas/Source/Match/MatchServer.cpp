@@ -44,7 +44,7 @@ MatchServer::~MatchServer()
 	using namespace LambdaEngine;
 	
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
-	EventQueue::UnregisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
 }
 
@@ -53,7 +53,7 @@ bool MatchServer::InitInternal()
 	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
-	EventQueue::RegisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
 
 	return true;
@@ -366,7 +366,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	return true;
 }
 
-bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
+bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 {
 	using namespace LambdaEngine;
 

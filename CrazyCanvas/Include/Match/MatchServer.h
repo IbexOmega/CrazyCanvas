@@ -27,7 +27,7 @@ protected:
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-	bool OnFlagDelivered(const OnFlagDeliveredEvent& event);
+	bool OnFlagDelivered(const FlagDeliveredEvent& event);
 
 private:
 	uint8 m_NextTeamIndex = 0;

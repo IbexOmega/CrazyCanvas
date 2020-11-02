@@ -21,7 +21,6 @@ public:
 		: Event()
 		, KilledEntity(killedEntity)
 	{
-		LOG_INFO("PlayerDiedEvent created");
 	}
 
 	DECLARE_EVENT_TYPE(PlayerDiedEvent);

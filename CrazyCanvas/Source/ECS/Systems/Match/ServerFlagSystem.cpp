@@ -211,7 +211,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 
 			if (playerTeamComponent.TeamIndex == deliveryPointTeamComponent.TeamIndex)
 			{
-				EventQueue::SendEvent<OnFlagDeliveredEvent>(OnFlagDeliveredEvent(playerTeamComponent.TeamIndex));
+				EventQueue::SendEvent<FlagDeliveredEvent>(FlagDeliveredEvent(playerTeamComponent.TeamIndex));
 			}
 		}
 	};
