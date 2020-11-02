@@ -56,6 +56,7 @@ private:
 private:
 	LambdaEngine::Entity m_DirLight;
 	LambdaEngine::Entity m_PointLights[10];
+	LambdaEngine::Entity m_Emitters[10];
 
 	Noesis::Ptr<GUITest> m_GUITest;
 	Noesis::Ptr<Noesis::IView> m_View;
@@ -66,6 +67,7 @@ private:
 	bool m_ShowDemoWindow				= false;
 	bool m_DebuggingWindow				= false;
 	bool m_ShowTextureDebuggingWindow	= false;
+	bool m_DebugEmitters				= false;
 	
 	LambdaEngine::TArray<LambdaEngine::ImGuiTexture> m_TextureDebuggingNames;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_Entities;

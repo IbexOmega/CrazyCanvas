@@ -270,6 +270,11 @@ void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 	}
 }
 
+void BenchmarkState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	WeaponSystem::GetInstance().FixedTick(delta);
+}
+
 bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	using namespace LambdaEngine;
@@ -307,7 +312,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				.PlayerNetworkUID 	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.Position 			= packet.Position,
-				.Forward 			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+				.Forward 			= glm::normalize(glm::vec3(0.1f, -1.0f, 0.0f)),
 				.Scale 				= glm::vec3(1.0f),
 				.TeamIndex 			= 0,
 				.pCameraDesc 		= &cameraDesc
@@ -318,6 +323,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				// Create a 3x3 grid of players in the XZ plane
 				createPlayerDesc.Position.x			= -3.0f + 3.0f * (playerNr % 3);
 				createPlayerDesc.Position.z			= -3.0f + 3.0f * (playerNr / 3);
+				createPlayerDesc.Position.y			= 5.0f;
 				createPlayerDesc.PlayerNetworkUID	+= 2;
 				createPlayerDesc.WeaponNetworkUID	+= 2;
 
