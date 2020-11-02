@@ -293,7 +293,13 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							weaponRotationComp,
 							weaponOffsetComp);
 
-						Fire(response.FiredAmmo, playerEntity, weaponEntity, weaponPosition, response.Rotation, response.Velocity);
+						Fire(
+							response.FiredAmmo, 
+							playerEntity, 
+							weaponEntity, 
+							weaponPosition, 
+							response.Rotation, 
+							response.Velocity);
 					}
 				}
 
@@ -475,7 +481,13 @@ void WeaponSystem::TryFire(
 		}
 
 		// For creating entity
-		Fire(ammoType, weaponComponent.WeaponOwner, weaponEntity, startPos, direction, playerVelocity);
+		Fire(
+			ammoType, 
+			weaponComponent.WeaponOwner, 
+			weaponEntity, 
+			startPos, 
+			direction, 
+			playerVelocity);
 	}
 	else
 	{
@@ -489,7 +501,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	//LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
+	LOG_INFO("Projectile hit: collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 
 	// Is this safe? Concurrency issues?
 	ECSCore* pECS = ECSCore::GetInstance();

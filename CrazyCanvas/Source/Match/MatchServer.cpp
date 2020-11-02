@@ -1,10 +1,12 @@
 #include "Match/MatchServer.h"
+#include "Match/Match.h"
 
-#include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/ECSCore.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Match/FlagComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
-#include "ECS/ECSCore.h"
+#include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Player/HealthSystem.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
@@ -45,7 +47,15 @@ MatchServer::~MatchServer()
 	
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
-	EventQueue::UnregisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
+	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
+}
+
+void MatchServer::KillPlayer(LambdaEngine::Entity playerEntity)
+{
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
+	m_PlayersToKill.EmplaceBack(playerEntity);
 }
 
 bool MatchServer::InitInternal()
@@ -54,7 +64,7 @@ bool MatchServer::InitInternal()
 
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
-	EventQueue::RegisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
+	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 
 	return true;
 }
@@ -79,13 +89,12 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 	ImGuiRenderer::Get().DrawUI([this]()
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-
 		if (ImGui::Begin("Match Panel"))
 		{
 			if (m_pLevel != nullptr)
 			{
+				// Flags
 				TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
-
 				if (!flagEntities.IsEmpty())
 				{
 					Entity flagEntity = flagEntities[0];
@@ -105,12 +114,65 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 				{
 					ImGui::Text("Flag Status: Not Spawned");
 				}
+
+				// Player
+				TArray<Entity> playerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
+				if (!playerEntities.IsEmpty())
+				{
+					ComponentArray<ChildComponent>*		pChildComponents	= pECS->GetComponentArray<ChildComponent>();
+					ComponentArray<HealthComponent>*	pHealthComponents	= pECS->GetComponentArray<HealthComponent>();
+					ComponentArray<WeaponComponent>*	pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
+
+					ImGui::Text("Player Status:");
+					for (uint32 i = 0; Entity playerEntity : playerEntities)
+					{
+						std::string name = "Player " + std::to_string(++i);
+						if (ImGui::TreeNode(name.c_str()))
+						{
+							const HealthComponent& health = pHealthComponents->GetConstData(playerEntity);
+							ImGui::Text("Health: %u", health.CurrentHealth);
+
+							const ChildComponent& children = pChildComponents->GetConstData(playerEntity);
+							Entity weapon = children.GetEntityWithTag("weapon");
+
+							const WeaponComponent& weaponComp = pWeaponComponents->GetConstData(weapon);
+							ImGui::Text("Ammunition: %u/%u", weaponComp.CurrentAmmunition, weaponComp.AmmoCapacity);
+
+							if (ImGui::Button("Kill"))
+							{
+								Match::KillPlayer(playerEntity);
+							}
+
+							ImGui::TreePop();
+						}
+					}
+				}
+				else
+				{
+					ImGui::Text("Player Status: No players");
+				}
 			}
 		}
 
 		ImGui::End();
 	});
 #endif
+}
+
+void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
+{
+	using namespace LambdaEngine;
+
+	{
+		std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
+		for (Entity playerEntity : m_PlayersToKill)
+		{
+			LOG_INFO("SERVER: Player=%u DIED", playerEntity);
+			KillPlayerInternal(playerEntity);
+		}
+
+		m_PlayersToKill.Clear();
+	}
 }
 
 void MatchServer::SpawnFlag()
@@ -185,42 +247,6 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	return false;
 }
 
-bool MatchServer::OnPlayerDied(const PlayerDiedEvent& event)
-{
-	using namespace LambdaEngine;
-
-	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
-	LOG_INFO("SERVER: Player=%u DIED", event.KilledEntity);
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(event.KilledEntity);
-
-	// Get spawnpoint from level
-	glm::vec3 newPosition = glm::vec3(0.0f);
-	if (m_pLevel != nullptr)
-	{
-		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
-
-		ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
-
-		uint8 playerTeam = pTeamComponents->GetConstData(event.KilledEntity).TeamIndex;
-		for (Entity spawnEntity : spawnPoints)
-		{
-			if (pTeamComponents->HasComponent(spawnEntity))
-			{
-				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
-				{
-					newPosition = pPositionComponents->GetConstData(spawnEntity).Position;
-				}
-			}
-		}
-	}
-
-	positionComp.Position = newPosition;
-	return true;
-}
-
 void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 {
 	using namespace LambdaEngine;
@@ -284,6 +310,13 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	else
 	{
 		LOG_ERROR("[MatchServer]: Failed to create Player");
+	}
+
+	const uint64 cliendID = pClient->GetUID();
+	if (m_ClientIDToPlayerEntitiy.count(cliendID) == 0)
+	{
+		m_ClientIDToPlayerEntitiy.insert(std::make_pair(cliendID, createdPlayerEntities[0]));
+		m_PlayerEntitiyToClientID.insert(std::make_pair(createdPlayerEntities[0], cliendID));
 	}
 
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
@@ -366,6 +399,23 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	return true;
 }
 
+bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
+{
+	VALIDATE(event.pClient != nullptr);
+
+	const uint64 clientID = event.pClient->GetUID();
+	const LambdaEngine::Entity playerEntity = m_ClientIDToPlayerEntitiy[clientID];
+	m_ClientIDToPlayerEntitiy.erase(clientID);
+	m_PlayerEntitiyToClientID.erase(playerEntity);
+
+	Match::KillPlayer(playerEntity);
+
+	// TODO: Fix this
+	//DeleteGameLevelObject(playerEntity);
+
+	return true;
+}
+
 bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 {
 	using namespace LambdaEngine;
@@ -402,4 +452,56 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 
 
 	return true;
+}
+
+void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
+{
+	using namespace LambdaEngine;
+
+	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
+	ECSCore* pECS = ECSCore::GetInstance();
+	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
+
+	// Get spawnpoint from level
+	const glm::vec3 oldPosition = positionComp.Position;
+	glm::vec3 newPosition = glm::vec3(0.0f);
+	if (m_pLevel != nullptr)
+	{
+		// Retrive spawnpoints
+		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+
+		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+
+		uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
+		for (Entity spawnEntity : spawnPoints)
+		{
+			if (pTeamComponents->HasComponent(spawnEntity))
+			{
+				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
+				{
+					newPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+				}
+			}
+		}
+
+		// Drop flag if player carries it
+		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+		if (!flagEntities.IsEmpty())
+		{
+			Entity flagEntity = flagEntities[0];
+
+			const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+			if (flagParentComponent.Attached && flagParentComponent.Parent == playerEntity)
+			{
+				FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, oldPosition);
+			}
+		}
+	}
+
+	// Reset position
+	positionComp.Position = newPosition;
+
+	// Reset health
+	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
 }
