@@ -15,11 +15,10 @@
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "World/LevelManager.h"
 #include "World/Level.h"
-
-#include "Multiplayer/Packet/PacketType.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -27,13 +26,11 @@
 
 #include "Networking/API/ClientRemoteBase.h"
 
-#include "Game/Multiplayer/Server/ServerSystem.h"
-
 #include "Rendering/ImGuiRenderer.h"
 
-#include "Multiplayer/Packet/PacketCreateLevelObject.h"
-
 #include "Multiplayer/ServerHelper.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
@@ -181,7 +178,7 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
 	{
-		LOG_ERROR("[MatchClient]: Failed to create projectile!");
+		LOG_ERROR("[MatchServer]: Failed to create projectile!");
 	}
 
 	LOG_INFO("SERVER: Weapon fired");
@@ -192,56 +189,35 @@ bool MatchServer::OnPlayerDied(const PlayerDiedEvent& event)
 {
 	using namespace LambdaEngine;
 
-	UNREFERENCED_VARIABLE(event);
-
+	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	LOG_INFO("SERVER: Player=%u DIED", event.KilledEntity);
 
-	Job job;
-	job.Components =
-	{
-		{ ComponentPermissions::R,	PositionComponent::Type() },
-		{ ComponentPermissions::R,	TeamComponent::Type() },
-		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
-		{ ComponentPermissions::RW,	NetworkPositionComponent::Type() },
-	};
+	ECSCore* pECS = ECSCore::GetInstance();
+	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(event.KilledEntity);
 
-	job.Function = [=]()
+	// Get spawnpoint from level
+	glm::vec3 newPosition = glm::vec3(0.0f);
+	if (m_pLevel != nullptr)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(event.KilledEntity);
+		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
 
-		// Get spawnpoint from level
-		glm::vec3 newPosition = glm::vec3(0.0f);
-		if (m_pLevel != nullptr)
+		ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
+
+		uint8 playerTeam = pTeamComponents->GetConstData(event.KilledEntity).TeamIndex;
+		for (Entity spawnEntity : spawnPoints)
 		{
-			uint32 numSpawnPoints = 0;
-			Entity* pSpawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN, numSpawnPoints);
-			
-			ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-			ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
-
-			uint8 playerTeam = pTeamComponents->GetConstData(event.KilledEntity).TeamIndex;
-			if (numSpawnPoints > 0)
+			if (pTeamComponents->HasComponent(spawnEntity))
 			{
-				for (uint32 i = 0; i < numSpawnPoints; i++)
+				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
 				{
-					if (pTeamComponents->HasComponent(pSpawnPoints[i]))
-					{
-						if (pTeamComponents->GetConstData(pSpawnPoints[i]).TeamIndex == playerTeam)
-						{
-							newPosition = pPositionComponents->GetConstData(pSpawnPoints[i]).Position;
-						}
-					}
+					newPosition = pPositionComponents->GetConstData(spawnEntity).Position;
 				}
 			}
 		}
+	}
 
-		positionComp.Position = newPosition;
-	};
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	pECS->ScheduleJobASAP(job);
-
+	positionComp.Position = newPosition;
 	return true;
 }
 

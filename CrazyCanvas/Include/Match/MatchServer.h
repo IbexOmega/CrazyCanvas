@@ -22,6 +22,7 @@ protected:
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
+	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	virtual bool OnPlayerDied(const PlayerDiedEvent& event) override final;
 
 private:

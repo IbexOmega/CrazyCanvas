@@ -12,6 +12,8 @@
 
 #include <mutex>
 
+#define HIT_DAMAGE 100
+
 /*
 * HealthSystem
 */
@@ -86,7 +88,7 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				{
 					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 					{
-						healthComponent.CurrentHealth -= 10;
+						healthComponent.CurrentHealth -= HIT_DAMAGE;
 						if (healthComponent.CurrentHealth <= 0)
 						{
 							LOG_INFO("PLAYER DIED");
@@ -95,14 +97,14 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							healthComponent.CurrentHealth = 100;
 
 							PlayerDiedEvent diedEvent(entity);
-							EventQueue::SendEvent(diedEvent);
+							EventQueue::SendEventImmediate(diedEvent);
 						}
 
 						LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
 					}
 					else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 					{
-						healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth + 10, 100);
+						healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth + HIT_DAMAGE, 100);
 						if (healthComponent.CurrentHealth >= 100)
 						{
 							LOG_INFO("PLAYER REACHED FULL HEALTH");

@@ -14,5 +14,6 @@ namespace LambdaEngine
 		glm::vec3 PositionLast		= glm::vec3(0.0f);
 		Timestamp TimestampStart	= EngineLoop::GetTimeSinceStart();
 		Timestamp Duration			= EngineLoop::GetFixedTimestep();
+		mutable uint64 Frame = 0;
 	};
 }

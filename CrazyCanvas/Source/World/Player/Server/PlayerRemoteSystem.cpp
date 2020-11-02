@@ -32,14 +32,14 @@ void PlayerRemoteSystem::Init()
 			.pSubscriber = &m_Entities,
 			.ComponentAccesses =
 			{
-				{NDA, PlayerBaseComponent::Type()},
-				{RW, CharacterColliderComponent::Type()},
-				{RW, NetworkPositionComponent::Type()},
-				{R , PositionComponent::Type()},
-				{RW, VelocityComponent::Type()},
-				{RW, RotationComponent::Type()},
-				{R, PacketComponent<PacketPlayerAction>::Type()},
-				{RW, PacketComponent<PacketPlayerActionResponse>::Type()},
+				{ NDA, PlayerBaseComponent::Type() },
+				{ RW, CharacterColliderComponent::Type() },
+				{ RW, NetworkPositionComponent::Type() },
+				{ R , PositionComponent::Type() },
+				{ RW, VelocityComponent::Type() },
+				{ RW, RotationComponent::Type() },
+				{ R, PacketComponent<PacketPlayerAction>::Type() },
+				{ RW, PacketComponent<PacketPlayerActionResponse>::Type() },
 			}
 		}
 	};
@@ -51,16 +51,15 @@ void PlayerRemoteSystem::Init()
 void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	auto* pPlayerActionComponents = pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
-	auto* pPlayerActionResponseComponents = pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
-	auto* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-	auto* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	auto* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-	auto* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-	auto* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	auto* pPlayerActionComponents			= pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
+	auto* pPlayerActionResponseComponents	= pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
+	auto* pCharacterColliderComponents		= pECS->GetComponentArray<CharacterColliderComponent>();
+	auto* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+	auto* pNetPosComponents		= pECS->GetComponentArray<NetworkPositionComponent>();
+	auto* pVelocityComponents	= pECS->GetComponentArray<VelocityComponent>();
+	auto* pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
 
 	const float32 dt = (float32)deltaTime.AsSeconds();
-
 	for(Entity entityPlayer : m_Entities)
 	{
 		const PacketComponent<PacketPlayerAction>& playerActionComponent = pPlayerActionComponents->GetConstData(entityPlayer);
@@ -71,7 +70,6 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entityPlayer);
 
 		const TArray<PacketPlayerAction>& gameStates = playerActionComponent.GetPacketsReceived();
-
 		for (const PacketPlayerAction& gameState : gameStates)
 		{
 			PacketPlayerAction& currentGameState = m_CurrentGameStates[entityPlayer];
@@ -81,13 +79,12 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 			if (constRotationComponent.Quaternion != gameState.Rotation)
 			{
 				RotationComponent& rotationComponent = const_cast<RotationComponent&>(constRotationComponent);
-				rotationComponent.Quaternion = gameState.Rotation;
-				rotationComponent.Dirty = true;
+				rotationComponent.Quaternion	= gameState.Rotation;
+				rotationComponent.Dirty			= true;
 			}
 
 			PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
 			CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
-
 
 			PacketPlayerActionResponse packet;
 			packet.SimulationTick	= gameState.SimulationTick;
@@ -96,14 +93,14 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 			packet.Rotation			= constRotationComponent.Quaternion;
 			playerActionResponseComponent.SendPacket(packet);
 
-
 			if (constPositionComponent.Position != netPosComponent.Position)
 			{
 				PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
-
-				positionComponent.Position = netPosComponent.Position;
-				positionComponent.Dirty = true;
+				positionComponent.Position	= netPosComponent.Position;
+				positionComponent.Dirty		= true;
 			}
 		}
+		
+		netPosComponent.Frame++;
 	}
 }
