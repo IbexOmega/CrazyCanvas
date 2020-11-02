@@ -8,6 +8,8 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
+#include "Multiplayer/Packet/PacketHealthChanged.h"
+
 #include <mutex>
 
 /*
@@ -30,7 +32,7 @@ bool HealthSystem::Init()
 				.ComponentAccesses =
 				{
 					{ RW, HealthComponent::Type() },
-					{ RW, PacketComponent<HealthChangedPacket>::Type() }
+					{ RW, PacketComponent<PacketHealthChanged>::Type() }
 				}
 			}
 		};
@@ -54,7 +56,7 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
-	ComponentArray<PacketComponent<HealthChangedPacket>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<HealthChangedPacket>>();
+	ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 	if (MultiplayerUtils::IsServer())
 	{
@@ -79,7 +81,7 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				//LOG_INFO("Retriving health from entity=%d", entity);
 
 				HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-				PacketComponent<HealthChangedPacket>& packets = pHealthChangedComponents->GetData(entity);
+				PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
 				if (healthComponent.CurrentHealth > 0)
 				{
 					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
@@ -109,7 +111,7 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
 					}
 
-					HealthChangedPacket packet = {};
+					PacketHealthChanged packet = {};
 					packet.CurrentHealth = healthComponent.CurrentHealth;
 					packets.SendPacket(packet);
 				}
@@ -123,8 +125,8 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 		for (Entity entity : m_HealthEntities)
 		{
 			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-			PacketComponent<HealthChangedPacket>& packets = pHealthChangedComponents->GetData(entity);
-			for (const HealthChangedPacket& packet : packets.GetPacketsReceived())
+			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
+			for (const PacketHealthChanged& packet : packets.GetPacketsReceived())
 			{
 				//LOG_INFO("GOT A HEALTH PACKAGE");
 

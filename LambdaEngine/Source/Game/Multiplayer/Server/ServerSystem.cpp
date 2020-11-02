@@ -59,14 +59,8 @@ namespace LambdaEngine
 
 	void ServerSystem::TickMainThread(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
 		NetworkDebugger::RenderStatistics(m_pServer);
-
-		const ClientMap& pClients = m_pServer->GetClients();
-		for (auto& pair : pClients)
-		{
-			ClientRemoteSystem* pClientSystem = (ClientRemoteSystem*)pair.second->GetHandler();
-			pClientSystem->TickMainThread(deltaTime);
-		}
 	}
 
 	ServerBase* ServerSystem::GetServer()

@@ -10,6 +10,7 @@
 #include "World/Level.h"
 
 class Level;
+struct WeaponFiredEvent;
 
 class BenchmarkState : public LambdaEngine::State
 {
@@ -29,6 +30,7 @@ private:
 
 private:
 	bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event);
+	bool OnWeaponFired(const WeaponFiredEvent& event);
 
 private:
 	LambdaEngine::Entity m_Camera;

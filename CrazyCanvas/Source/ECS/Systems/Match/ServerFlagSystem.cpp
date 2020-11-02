@@ -17,6 +17,8 @@
 
 #include "Match/Match.h"
 
+#include "Multiplayer/Packet/PacketFlagEdited.h"
+
 #include "Application/API/Events/EventQueue.h"
 #include "Events/MatchEvents.h"
 
@@ -44,7 +46,7 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
 		{ ComponentPermissions::RW,	ParentComponent::Type() },
 		{ ComponentPermissions::RW,	OffsetComponent::Type() },
-		{ ComponentPermissions::RW,	PacketComponent<FlagEditedPacket>::Type() },
+		{ ComponentPermissions::RW,	PacketComponent<PacketFlagEdited>::Type() },
 	};
 
 	job.Function = [flagEntity, playerEntity]()
@@ -60,7 +62,7 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 			DynamicCollisionComponent& flagCollisionComponent		= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 			ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
 			OffsetComponent& flagOffsetComponent					= pECS->GetComponent<OffsetComponent>(flagEntity);
-			PacketComponent<FlagEditedPacket>& flagPacketComponent	= pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
+			PacketComponent<PacketFlagEdited>& flagPacketComponent	= pECS->GetComponent<PacketComponent<PacketFlagEdited>>(flagEntity);
 
 			//Disable the player-flag trigger shape
 			TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
@@ -90,7 +92,7 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 			flagOffsetComponent.Offset = glm::vec3(0.0f, playerBoundingBox.getDimensions().y / 2.0f, 0.0f);
 
 			//Send Packet
-			FlagEditedPacket packet	= {};
+			PacketFlagEdited packet	= {};
 			packet.FlagPacketType		= EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP;
 			packet.PickedUpNetworkUID	= MultiplayerUtils::GetNetworkUID(playerEntity);
 			flagPacketComponent.SendPacket(packet);
@@ -113,7 +115,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
 		{ ComponentPermissions::RW,	ParentComponent::Type() },
 		{ ComponentPermissions::RW,	PositionComponent::Type() },
-		{ ComponentPermissions::RW,	PacketComponent<FlagEditedPacket>::Type() },
+		{ ComponentPermissions::RW,	PacketComponent<PacketFlagEdited>::Type() },
 	};
 
 	job.Function = [flagEntity, dropPosition]()
@@ -124,7 +126,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		DynamicCollisionComponent& flagCollisionComponent		= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
 		ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
 		PositionComponent& flagPositionComponent				= pECS->GetComponent<PositionComponent>(flagEntity);
-		PacketComponent<FlagEditedPacket>& flagPacketComponent	= pECS->GetComponent<PacketComponent<FlagEditedPacket>>(flagEntity);
+		PacketComponent<PacketFlagEdited>& flagPacketComponent	= pECS->GetComponent<PacketComponent<PacketFlagEdited>>(flagEntity);
 
 		//Set Flag Spawn Timestamp
 		flagComponent.PickupAvailableTimestamp = EngineLoop::GetTimeSinceStart() + flagComponent.PickupCooldown;
@@ -169,7 +171,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		flagPositionComponent.Position	= dropPosition;
 
 		// Send Packet
-		FlagEditedPacket packet	= {};
+		PacketFlagEdited packet	= {};
 		packet.FlagPacketType	= EFlagPacketType::FLAG_PACKET_TYPE_DROPPED;
 		packet.DroppedPosition	= dropPosition;
 		flagPacketComponent.SendPacket(packet);
@@ -223,7 +225,7 @@ void ServerFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine:
 {
 	using namespace LambdaEngine;
 	componentAccesses.PushBack({ RW, DynamicCollisionComponent::Type() });
-	componentAccesses.PushBack({ RW, PacketComponent<FlagEditedPacket>::Type() });
+	componentAccesses.PushBack({ RW, PacketComponent<PacketFlagEdited>::Type() });
 }
 
 void ServerFlagSystem::InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
