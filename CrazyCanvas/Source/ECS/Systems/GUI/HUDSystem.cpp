@@ -22,7 +22,6 @@ HUDSystem::~HUDSystem()
 
 void HUDSystem::Init()
 {
-
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{

@@ -41,7 +41,7 @@ void HUDGUI::OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::Rou
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	ApplyDamage(10);
+	//ApplyDamage(10);
 }
 
 void HUDGUI::OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -138,10 +138,10 @@ bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap)
 
 void HUDGUI::InitGUI()
 {
-	Noesis::Rectangle* pHpRect = FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT");
+	//Noesis::Rectangle* pHpRect = FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT");
 
 	m_GUIState.DamageTaken		= 0.0;
-	m_GUIState.LifeMaxHeight	= pHpRect->GetHeight();
+	//m_GUIState.LifeMaxHeight	= pHpRect->GetHeight();
 	m_GUIState.Health			= 100.0;
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
@@ -149,7 +149,7 @@ void HUDGUI::InitGUI()
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 
-	pHpRect->SetHeight(0.0);
+	//pHpRect->SetHeight(0.0);
 
 	std::string scoreString;
 	std::string ammoString;
