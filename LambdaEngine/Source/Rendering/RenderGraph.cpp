@@ -491,9 +491,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(modFrameIndex);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
-		for (auto& customRenderer : m_CustomRenderers)
+		for (CustomRenderer* pCustomRenderer : m_CustomRenderers)
 		{
-			customRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
+			pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
 		}
 
 		UpdateResourceBindings();
@@ -3305,7 +3305,7 @@ namespace LambdaEngine
 
 	bool RenderGraph::CustomRenderStagesPostInit()
 	{
-		for (auto pCustomRenderer : m_CustomRenderers)
+		for (CustomRenderer* pCustomRenderer : m_CustomRenderers)
 		{
 			if (!pCustomRenderer->RenderGraphPostInit())
 			{
