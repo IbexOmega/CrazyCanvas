@@ -195,7 +195,7 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	EngineConfig::SetFloatProperty("VolumeMasterInital", volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
-	// TODO: EngineConfig does not set the expected values
+	EngineConfig::WriteToFile();
 
 	OnButtonBackClick(pSender, args);
 }
