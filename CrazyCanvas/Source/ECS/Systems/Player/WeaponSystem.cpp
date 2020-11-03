@@ -212,7 +212,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			PacketComponent<PacketPlayerAction>& actionsRecived = pPlayerActionPackets->GetData(remotePlayerEntity);
 			PacketComponent<PacketPlayerActionResponse>& responsesToSend = pPlayerResponsePackets->GetData(remotePlayerEntity);
-			TQueue<PacketPlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
+			TQueue<PacketPlayerActionResponse>& packetsToSend	= responsesToSend.GetPacketsToSend();
 			const TArray<PacketPlayerAction>& packetsRecived	= actionsRecived.GetPacketsReceived();
 
 			// Handle packets
@@ -256,7 +256,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							ammoType, 
 							remotePlayerEntity,
 							weaponEntity,
-							playerPositionComp.Position, 
+							weaponPosition,
 							playerRotationComp.Quaternion, 
 							velocityComp.Velocity);
 					}
@@ -352,8 +352,6 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			else if (!onCooldown) // If we did not hit the reload try and shoot
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
-
-				const glm::vec3 firePosition = weaponPosition;
 				if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
 				{
 					TryFire(

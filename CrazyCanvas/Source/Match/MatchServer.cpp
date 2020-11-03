@@ -126,7 +126,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					ImGui::Text("Player Status:");
 					for (uint32 i = 0; Entity playerEntity : playerEntities)
 					{
-						std::string name = "Player " + std::to_string(++i);
+						std::string name = "Player " + std::to_string(++i) + " : [EntityID=" + std::to_string(playerEntity) + "]";
 						if (ImGui::TreeNode(name.c_str()))
 						{
 							const HealthComponent& health = pHealthComponents->GetConstData(playerEntity);
@@ -141,6 +141,18 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 							if (ImGui::Button("Kill"))
 							{
 								Match::KillPlayer(playerEntity);
+							}
+							
+							ImGui::SameLine();
+
+							if (ImGui::Button("Disconnect"))
+							{
+								const uint64 uid = m_PlayerEntitiyToClientID[playerEntity];
+								ClientRemoteBase* pClient = ServerHelper::GetClient(uid);
+								if (pClient)
+								{
+									pClient->Disconnect("Kicked");
+								}
 							}
 
 							ImGui::TreePop();

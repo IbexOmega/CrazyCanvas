@@ -14,7 +14,7 @@
 
 #include <mutex>
 
-#define HIT_DAMAGE 100
+#define HIT_DAMAGE 20
 
 /*
 * HealthSystem
