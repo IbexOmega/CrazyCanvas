@@ -107,16 +107,23 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 
 bool HUDGUI::UpdateScore()
 {
-	//Returns false if game Over
 	std::string scoreString;
 
-	if (m_GUIState.Scores[0] != Match::GetScore(0) || m_GUIState.Scores[1] != Match::GetScore(1))
+	if (m_GUIState.Scores[0] != Match::GetScore(0))
 	{
 		m_GUIState.Scores[0] = Match::GetScore(0);
-		m_GUIState.Scores[1] = Match::GetScore(1);
-		scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
 
-		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+		scoreString = std::to_string(m_GUIState.Scores[0]);
+
+		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText(scoreString.c_str());
+	}
+	else if (m_GUIState.Scores[1] != Match::GetScore(1))
+	{
+		m_GUIState.Scores[1] = Match::GetScore(1);
+
+		scoreString = std::to_string(m_GUIState.Scores[1]);
+
+		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText(scoreString.c_str());
 	}
 	return true;
 }
@@ -157,12 +164,11 @@ void HUDGUI::InitGUI()
 
 	//pHpRect->SetHeight(0.0);
 
-	std::string scoreString;
 	std::string ammoString;
 
 	ammoString	= std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
-	scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
 
 	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
 }
