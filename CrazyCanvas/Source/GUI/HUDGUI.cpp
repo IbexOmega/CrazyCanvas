@@ -75,6 +75,7 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 	if (currentHealth != m_GUIState.Health)
 	{
 		Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
+		SolidColorBrush* pBrush = (SolidColorBrush*)pHpRect->GetBackground();
 		Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
 
 		float healthScale = (float)currentHealth / (float)m_GUIState.MaxHealth;
@@ -90,6 +91,16 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 
 		if (m_GUIState.Health <= 0)
 			return false;
+		else if(m_GUIState.Health <= 20)
+			pBrush->SetColor(Color(255, 28, 0));
+		else if(m_GUIState.Health <= 40)
+			pBrush->SetColor(Color(255, 132, 0));
+		else if(m_GUIState.Health <= 60)
+			pBrush->SetColor(Color(255, 188, 0));
+		else if(m_GUIState.Health <= 80)
+			pBrush->SetColor(Color(141, 207, 0));		
+		else if(m_GUIState.Health == 100)
+			pBrush->SetColor(Color(0, 207, 56));
 	}
 	return true;
 }
