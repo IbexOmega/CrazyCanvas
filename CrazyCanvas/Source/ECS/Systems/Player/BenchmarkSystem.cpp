@@ -101,6 +101,7 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		weaponSystem.Fire(
 			EAmmoType::AMMO_TYPE_PAINT,
 			playerEntity,
+			weaponEntity,
 			pPositionComponents->GetConstData(weaponEntity).Position,
 			pRotationComponents->GetConstData(playerEntity).Quaternion,
 			pVelocityComponents->GetConstData(playerEntity).Velocity

@@ -175,22 +175,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PaintMaskRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
-	{
-		UNREFERENCED_VARIABLE(delta);
-		UNREFERENCED_VARIABLE(modFrameIndex);
-		UNREFERENCED_VARIABLE(backBufferIndex);
-	}
-
-
-	void PaintMaskRenderer::PreBuffersDescriptorSetWrite()
-	{
-	}
-
-	void PaintMaskRenderer::PreTexturesDescriptorSetWrite()
-	{
-	}
-
 	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
@@ -260,12 +244,6 @@ namespace LambdaEngine
 				}
 			}
 		}
-	}
-
-	void PaintMaskRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)

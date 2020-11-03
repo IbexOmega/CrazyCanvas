@@ -25,6 +25,7 @@
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
@@ -241,6 +242,26 @@ void SandboxState::Init()
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
+	// Emitter
+	{
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 5,
+				.EmitterShape = EEmitterShape::TUBE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 0.5f,
+				.TileIndex = 16,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+			}
+		);
+	}
+
 
 	// Create dirLight
 	//{
@@ -262,6 +283,7 @@ void SandboxState::Init()
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 	}
+
 
 	if constexpr (IMGUI_ENABLED)
 	{
@@ -356,6 +378,56 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	if constexpr (IMGUI_ENABLED)
 	{
 		RenderImgui();
+	}
+
+	// Debugging Emitters
+	ECSCore* pECSCore = ECSCore::GetInstance();
+	static uint32 indexEmitters = 0;
+	static LambdaEngine::Timestamp time;
+	const uint32 emitterCount = 10U;
+	if (m_DebugEmitters)
+	{
+		time += delta;
+		if (time.AsSeconds() > 0.1f)
+		{
+			uint32 modIndex = indexEmitters % emitterCount;
+
+			if (indexEmitters < emitterCount)
+			{
+				Entity e = pECSCore->CreateEntity();
+				m_Emitters[modIndex] = e;
+
+				pECSCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
+				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
+				pECSCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
+					.OneTime = true,
+					.Explosive = 0.9f,
+					.SpawnDelay = 0.01f,
+					.ParticleCount = 256,
+					.Velocity = 1.0f + Random::Float32(-3.f, 3.f),
+					.Acceleration = 0.0f,
+					.Gravity = Random::Float32(-5.0f, 5.0f),
+					.LifeTime = Random::Float32(1.0f, 3.0f),
+					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
+					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
+				});
+			}
+			else
+			{
+				auto& emitterComp = pECSCore->GetComponent<ParticleEmitterComponent>(m_Emitters[modIndex]);
+
+				emitterComp.Explosive = 0.9f + Random::Float32(0.f, 0.1f);
+				emitterComp.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f);
+				emitterComp.Velocity = 1.0f + Random::Float32(-3.f, 3.f);
+				emitterComp.Gravity = Random::Float32(-5.0f, 5.0f);
+				emitterComp.LifeTime = Random::Float32(1.0f, 3.0f);
+				emitterComp.Color = glm::vec4(indexEmitters % 2U, indexEmitters % 3U, indexEmitters % 5U, 1.0f),
+				emitterComp.Active = true;
+			}
+
+			indexEmitters++;
+			time = 0;
+		}
 	}
 }
 
@@ -519,16 +591,16 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 
 	// Debugging Lights
-	static uint32 index = 0;
-	static bool remove = true;
+	static uint32 indexLights = 0;
+	static bool removeLights = true;
 	ECSCore* ecsCore = ECSCore::GetInstance();
 	if (event.Key == EKey::KEY_9)
 	{
-		uint32 modIndex = index % 10U;
+		uint32 modIndex = indexLights % 10U;
 		if (modIndex == 0U)
-			remove = !remove;
+			removeLights = !removeLights;
 
-		if (!remove)
+		if (!removeLights)
 		{
 			Entity e = ecsCore->CreateEntity();
 			m_PointLights[modIndex] = e;
@@ -541,7 +613,13 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			ecsCore->RemoveEntity(m_PointLights[modIndex]);
 		}
 
-		index++;
+		indexLights++;
+	}
+
+	// Debugging Emitters
+	if (event.Key == EKey::KEY_8)
+	{
+		m_DebugEmitters = !m_DebugEmitters;
 	}
 
 	return true;

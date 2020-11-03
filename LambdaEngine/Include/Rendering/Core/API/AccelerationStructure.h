@@ -30,12 +30,12 @@ namespace LambdaEngine
 
 	struct AccelerationStructureInstance
 	{
-		glm::mat3x4						Transform;
-		uint32							CustomIndex			: 24;
-		uint32							Mask				: 8;
-		uint32							SBTRecordOffset		: 24;
-		FAccelerationStructureFlags		Flags				: 8;
-		uint64							AccelerationStructureAddress;
+		glm::mat3x4								Transform;
+		uint32									CustomIndex			: 24;
+		uint32									Mask				: 8;
+		uint32									SBTRecordOffset		: 24;
+		FAccelerationStructureInstanceFlags		Flags				: 8;
+		uint64									AccelerationStructureAddress;
 	};
 
 	/*
@@ -51,7 +51,7 @@ namespace LambdaEngine
 		*	return -	Returns a valid 64-bit address on success, otherwise zero. Returns zero on systems that
 		*				does not support deviceaddresses.
 		*/
-		virtual uint64 GetDeviceAdress() const
+		virtual uint64 GetDeviceAddress() const
 		{
 			return 0ULL;
 		}
