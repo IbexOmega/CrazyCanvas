@@ -94,6 +94,8 @@ namespace LambdaEngine
 				s_ConfigDocument[actionStr.c_str()].SetString(keyStr.c_str(),
 					static_cast<rapidjson::SizeType>(keyStr.length()), s_ConfigDocument.GetAllocator());
 
+				WriteToFile();
+
 				LOG_INFO("Action %s has changed keybinding to %s\n",
 					actionStr.c_str(), keyStr.c_str());
 				return true;
@@ -115,6 +117,8 @@ namespace LambdaEngine
 			{
 				s_ConfigDocument[actionStr.c_str()].SetString(buttonStr.c_str(),
 					static_cast<rapidjson::SizeType>(buttonStr.length()), s_ConfigDocument.GetAllocator());
+
+				WriteToFile();
 
 				LOG_INFO("Action %s has changed keybinding to %s\n",
 					actionStr.c_str(), buttonStr.c_str());
