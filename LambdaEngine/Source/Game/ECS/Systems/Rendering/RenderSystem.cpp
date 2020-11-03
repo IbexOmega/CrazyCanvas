@@ -611,7 +611,7 @@ namespace LambdaEngine
 			const auto& rotationComp = pRotationComponents->GetConstData(entity);
 			const auto& emitterComp = pEmitterComponents->GetConstData(entity);
 
-			//if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
+			if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
 				UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 
 			// If onetime emitter we want to reset active
