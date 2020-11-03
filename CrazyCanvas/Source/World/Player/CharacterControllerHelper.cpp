@@ -14,7 +14,6 @@ void CharacterControllerHelper::TickForeignCharacterController(
 	const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
 	ComponentArray<VelocityComponent>* pVelocityComponents)
 {
-
 	CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
 	const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
 	VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
@@ -41,7 +40,7 @@ void CharacterControllerHelper::TickForeignCharacterController(
 			velocityComp.Velocity.y = 0.0f;
 		}
 	}
-	//Maybe add something to change the rendered PositionComponent here in case we collide
+	// Maybe add something to change the rendered PositionComponent here in case we collide
 }
 
 /*
@@ -63,17 +62,16 @@ void CharacterControllerHelper::TickCharacterController(
 
 	PxController* pController = characterCollider.pController;
 
-	//Update velocity
+	// Update velocity
 	glm::vec3& velocity = velocityComp.Velocity;
 	velocity.y -= GRAVITATIONAL_ACCELERATION;
 
-	//Calculate Tick Translation
+	// Calculate Tick Translation
 	PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 	translationPX *= dt;
 
-	const glm::vec3& position = positionComp.Position;
-
 	// Distance between the capsule's feet to its center position. Includes contact offset.
+	const glm::vec3& position = positionComp.Position;
 	if (positionComp.Dirty)
 	{
 		pController->setFootPosition({ position.x,  position.y,  position.z });
@@ -102,8 +100,7 @@ void CharacterControllerHelper::TickCharacterController(
 
 		// Update entity's position
 		NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
-		positionCompMutable.Dirty = true;
-
-		positionCompMutable.Position = { newPositionPX.x, newPositionPX.y, newPositionPX.z };
+		positionCompMutable.Position	= { newPositionPX.x, newPositionPX.y, newPositionPX.z };
+		positionCompMutable.Dirty		= true;
 	}
 }
