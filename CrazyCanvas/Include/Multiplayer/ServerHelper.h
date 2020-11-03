@@ -18,6 +18,8 @@ public:
 
 	static void SetMaxClients(uint8 clients);
 	static void SetIgnoreNewClients(bool ignore);
+
+	static class LambdaEngine::ClientRemoteBase* GetClient(uint64 uid);
 };
 
 template<class T>

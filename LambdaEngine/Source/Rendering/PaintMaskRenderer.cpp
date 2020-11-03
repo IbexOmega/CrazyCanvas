@@ -175,7 +175,13 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PaintMaskRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const * ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
+	void PaintMaskRenderer::UpdateTextureResource(
+		const String& resourceName, 
+		const TextureView* const * ppPerImageTextureViews, 
+		const TextureView* const* ppPerSubImageTextureViews, 
+		uint32 imageCount, 
+		uint32 subImageCount, 
+		bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
@@ -208,7 +214,13 @@ namespace LambdaEngine
 		}
 	}
 
-	void PaintMaskRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
+	void PaintMaskRenderer::UpdateBufferResource(
+		const String& resourceName, 
+		const Buffer* const* ppBuffers, 
+		uint64* pOffsets, 
+		uint64* pSizesInBytes, 
+		uint32 count, 
+		bool backBufferBound)
 	{
 		if (count == 1 || backBufferBound)
 		{
@@ -313,7 +325,12 @@ namespace LambdaEngine
 		}
 	}
 
-	void PaintMaskRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool sleeping)
+	void PaintMaskRenderer::Render(
+		uint32 modFrameIndex, 
+		uint32 backBufferIndex, 
+		CommandList** ppFirstExecutionStage, 
+		CommandList** ppSecondaryExecutionStage, 
+		bool sleeping)
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
@@ -473,7 +490,12 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void PaintMaskRenderer::AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam team)
+	void PaintMaskRenderer::AddHitPoint(
+		const glm::vec3& position, 
+		const glm::vec3& direction, 
+		EPaintMode paintMode, 
+		ERemoteMode remoteMode, 
+		ETeam team)
 	{
 		UnwrapData data = {};
 		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };

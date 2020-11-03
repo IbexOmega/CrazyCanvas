@@ -115,6 +115,18 @@ namespace LambdaEngine
 		return m_Clients;
 	}
 
+	ClientRemoteBase* ServerBase::GetClient(uint64 uid)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		auto pIterator = m_UIDToClient.find(uid);
+		if (pIterator != m_UIDToClient.end())
+		{
+			return pIterator->second;
+		}
+
+		return nullptr;
+	}
+
 	void ServerBase::OnClientAskForTermination(ClientRemoteBase* pClient)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClientVectors);
@@ -260,6 +272,7 @@ namespace LambdaEngine
 								m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
 
 						m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
+						m_UIDToClient.erase(m_ClientsToRemove[i]->GetUID());
 						m_ClientsToRemove[i]->OnTerminationApproved();
 					}
 
@@ -272,6 +285,7 @@ namespace LambdaEngine
 						{
 							LOG_INFO("[ServerBase]: Client Registered");
 							m_Clients.insert({ pClient->GetEndPoint(), pClient });
+							m_UIDToClient.insert({ pClient->GetUID(), pClient });
 							m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
 							clientsApproved.PushBack(pClient);
 						}
