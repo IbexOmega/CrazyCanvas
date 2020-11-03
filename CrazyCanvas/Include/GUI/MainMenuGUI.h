@@ -48,6 +48,7 @@ public:
 private:
 	void SetRenderStagesSleeping();
 	void SetDefaultSettings();
+	void SetDefaultKeyBindings();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 

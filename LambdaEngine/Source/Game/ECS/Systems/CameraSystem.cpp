@@ -132,9 +132,9 @@ namespace LambdaEngine
 	{
 		glm::vec3& velocity = velocityComp.Velocity;
 		velocity = {
-			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-			float(InputActionSystem::IsActive("CAM_UP")			- InputActionSystem::IsActive("CAM_DOWN")),		// Y: Up
-			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Z: Forward
+			float(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT)		- InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),		// X: Right
+			float(InputActionSystem::IsActive(EAction::ACTION_CAM_UP)			- InputActionSystem::IsActive(EAction::ACTION_CAM_DOWN)),		// Y: Up
+			float(InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD)		- InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD))	// Z: Forward
 		};
 
 		const glm::vec3 forward = GetForward(rotationComp.Quaternion);
@@ -142,7 +142,7 @@ namespace LambdaEngine
 		if (glm::length2(velocity) > glm::epsilon<float>())
 		{
 			const glm::vec3 right = GetRight(rotationComp.Quaternion);
-			const float shiftSpeedFactor = InputActionSystem::IsActive("CAM_SPEED_MODIFIER") ? 2.0f : 1.0f;
+			const float shiftSpeedFactor = InputActionSystem::IsActive(EAction::ACTION_MOVE_SPRINT) ? 2.0f : 1.0f;
 			velocity = glm::normalize(velocity) * freeCamComp.SpeedFactor * shiftSpeedFactor;
 
 			velocity = velocity.x * right + velocity.y * GetUp(rotationComp.Quaternion) + velocity.z * forward;
@@ -158,13 +158,13 @@ namespace LambdaEngine
 		glm::vec3& velocity = velocityComp.Velocity;
 
 		glm::vec2 horizontalVelocity = {
-			float(InputActionSystem::IsActive("CAM_RIGHT")		- InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-			float(InputActionSystem::IsActive("CAM_FORWARD")	- InputActionSystem::IsActive("CAM_BACKWARD"))	// Y: Forward
+			float(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT)		- InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),		// X: Right
+			float(InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD)	- InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD))	// Y: Forward
 		};
 
 		if (glm::length2(horizontalVelocity) > glm::epsilon<float>())
 		{
-			const int8 isSprinting = InputActionSystem::IsActive("CAM_SPEED_MODIFIER");
+			const int8 isSprinting = InputActionSystem::IsActive(EAction::ACTION_MOVE_SPRINT);
 			const float32 sprintFactor = std::max(1.0f, FPSComp.SprintSpeedFactor * isSprinting);
 			horizontalVelocity = glm::normalize(horizontalVelocity) * FPSComp.SpeedFactor * sprintFactor;
 		}
@@ -186,10 +186,10 @@ namespace LambdaEngine
 	void CameraSystem::RotateCamera(float32 dt, float32 mouseSpeedFactor, const glm::vec3& forward, glm::quat& rotation)
 	{
 		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-		float addedPitch	= dt * float(InputActionSystem::IsActive("CAM_ROT_UP") - InputActionSystem::IsActive("CAM_ROT_DOWN"));
-		float addedYaw		= dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
+		float addedPitch	= dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
+		float addedYaw		= dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
-		if (InputActionSystem::IsActive("TOGGLE_MOUSE"))
+		if (InputActionSystem::IsActive(EAction::ACTION_TOGGLE_MOUSE))
 		{
 			if (!m_CIsPressed)
 			{
