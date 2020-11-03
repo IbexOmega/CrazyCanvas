@@ -7,8 +7,6 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Engine/EngineConfig.h"
-
 #include "Game/GameConsole.h"
 
 namespace LambdaEngine

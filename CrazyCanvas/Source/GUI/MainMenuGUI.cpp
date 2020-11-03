@@ -180,19 +180,19 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	// Ray Tracing
 	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
 	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
-	EngineConfig::SetBoolProperty("RayTracingEnabled", m_RayTracingEnabled);
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
 
 	// Mesh Shader
 	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
-	EngineConfig::SetBoolProperty("MeshShadersEnabled", m_MeshShadersEnabled);
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
 
 	// Volume
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	float volume = pVolumeSlider->GetValue();
 	float maxVolume = pVolumeSlider->GetMaximum();
 	volume /= maxVolume;
-	EngineConfig::SetFloatProperty("VolumeMasterInital", volume);
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	EngineConfig::WriteToFile();
@@ -302,20 +302,20 @@ void MainMenuGUI::SetDefaultSettings()
 	// Set inital volume
 	Noesis::Slider* volumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(volumeSlider);
-	float volume = EngineConfig::GetFloatProperty("VolumeMasterInital");
+	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
 	volumeSlider->SetValue(volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	SetDefaultKeyBindings();
 
 	// Ray Tracing Toggle
-	m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
+	m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
 	CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
 	NS_ASSERT(pToggleRayTracing);
 	pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
 
 	// Mesh Shader Toggle
-	m_MeshShadersEnabled = EngineConfig::GetBoolProperty("MeshShadersEnabled");
+	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	NS_ASSERT(pToggleMeshShader);
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);

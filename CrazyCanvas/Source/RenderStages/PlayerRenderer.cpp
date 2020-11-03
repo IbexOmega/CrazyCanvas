@@ -51,7 +51,7 @@ namespace LambdaEngine
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 
-		m_UsingMeshShader = EngineConfig::GetBoolProperty("MeshShadersEnabled");
+		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 
 		if (!CreatePipelineLayout())
 		{
