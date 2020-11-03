@@ -161,9 +161,3 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 	LOG_INFO("CLIENT: Weapon fired");
 	return true;
 }
-
-bool MatchClient::OnPlayerDied(const PlayerDiedEvent& event)
-{
-	LOG_INFO("CLIENT: Player=%u DIED", event.KilledEntity);
-	return false;
-}

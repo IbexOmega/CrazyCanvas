@@ -212,7 +212,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			PacketComponent<PacketPlayerAction>& actionsRecived = pPlayerActionPackets->GetData(remotePlayerEntity);
 			PacketComponent<PacketPlayerActionResponse>& responsesToSend = pPlayerResponsePackets->GetData(remotePlayerEntity);
-			TQueue<PacketPlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
+			TQueue<PacketPlayerActionResponse>& packetsToSend	= responsesToSend.GetPacketsToSend();
 			const TArray<PacketPlayerAction>& packetsRecived	= actionsRecived.GetPacketsReceived();
 
 			// Handle packets
@@ -256,7 +256,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							ammoType, 
 							remotePlayerEntity,
 							weaponEntity,
-							playerPositionComp.Position, 
+							weaponPosition,
 							playerRotationComp.Quaternion, 
 							velocityComp.Velocity);
 					}
@@ -293,7 +293,13 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							weaponRotationComp,
 							weaponOffsetComp);
 
-						Fire(response.FiredAmmo, playerEntity, weaponEntity, weaponPosition, response.Rotation, response.Velocity);
+						Fire(
+							response.FiredAmmo, 
+							playerEntity, 
+							weaponEntity, 
+							weaponPosition, 
+							response.Rotation, 
+							response.Velocity);
 					}
 				}
 
@@ -346,8 +352,6 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			else if (!onCooldown) // If we did not hit the reload try and shoot
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
-
-				const glm::vec3 firePosition = weaponPosition;
 				if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
 				{
 					TryFire(
@@ -475,7 +479,13 @@ void WeaponSystem::TryFire(
 		}
 
 		// For creating entity
-		Fire(ammoType, weaponComponent.WeaponOwner, weaponEntity, startPos, direction, playerVelocity);
+		Fire(
+			ammoType, 
+			weaponComponent.WeaponOwner, 
+			weaponEntity, 
+			startPos, 
+			direction, 
+			playerVelocity);
 	}
 	else
 	{
@@ -489,7 +499,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	//LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
+	LOG_INFO("Projectile hit: collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 
 	// Is this safe? Concurrency issues?
 	ECSCore* pECS = ECSCore::GetInstance();

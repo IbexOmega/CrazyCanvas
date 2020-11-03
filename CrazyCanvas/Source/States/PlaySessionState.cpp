@@ -37,9 +37,9 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
-PlaySessionState::PlaySessionState(bool singlePlayer, LambdaEngine::IPAddress* pIPAddress) :
+PlaySessionState::PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndPoint& endPoint) :
 	m_Singleplayer(singlePlayer),
-	m_pIPAddress(pIPAddress),
+	m_EndPoint(endPoint),
 	m_MultiplayerClient()
 {
 }
@@ -78,7 +78,7 @@ void PlaySessionState::Init()
 	}
 	else
 	{
-		ClientSystem::GetInstance().Connect(m_pIPAddress);
+		ClientSystem::GetInstance().Connect(m_EndPoint);
 	}
 }
 
