@@ -129,8 +129,9 @@ void main()
             float NdotL = max(dot(normal, lightDir), 0.0f);
 
 			vec4 fragPosLight 		 = lightBuffer.DirL_ProjView * vec4(worldPos, 1.0f);
+            float inShadow 			= DirShadowDepthTest(fragPosLight, normal, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance;
+			vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
 
 			float NDF   = Distribution(normal, halfwayDir, roughness);
 			float G     = Geometry(normal, viewDir, lightDir, roughness);
