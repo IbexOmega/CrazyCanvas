@@ -25,6 +25,7 @@ namespace LambdaEngine
 		else if (!inet_pton(AF_INET, address.c_str(), &m_Addr))
 		{
 			LOG_ERROR("[MacIPAddress]: Faild to convert [%s] to a valid IP-Address", address.c_str());
+			m_IsValid = false;
 		}
 	}
 

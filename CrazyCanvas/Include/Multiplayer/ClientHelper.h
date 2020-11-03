@@ -4,6 +4,7 @@
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Networking/API/IPacketListener.h"
+#include "Networking/API/IPAddress.h"
 
 class ClientHelper
 {
@@ -12,6 +13,9 @@ class ClientHelper
 public:
 	template<class T>
 	static bool Send(const T& packet, LambdaEngine::IPacketListener* pListener = nullptr);
+
+	static void AddNetworkDiscoveryTarget(LambdaEngine::IPAddress* pAddress);
+	static void RemoveNetworkDiscoveryTarget(LambdaEngine::IPAddress* pAddress);
 };
 
 template<class T>

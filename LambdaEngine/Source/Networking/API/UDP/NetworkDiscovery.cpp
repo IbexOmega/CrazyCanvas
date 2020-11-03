@@ -11,6 +11,7 @@ namespace LambdaEngine
 	ServerNetworkDiscovery* NetworkDiscovery::s_pServer = nullptr;
 	ClientNetworkDiscovery* NetworkDiscovery::s_pClient = nullptr;
 	SpinLock NetworkDiscovery::s_Lock;
+	TSet<IPEndPoint> NetworkDiscovery::s_EndPoints;
 
 	bool NetworkDiscovery::EnableServer(const String& nameOfGame, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler, uint16 portOfBroadcastServer)
 	{
@@ -44,7 +45,8 @@ namespace LambdaEngine
 		if (!s_pClient)
 		{
 			s_pClient = DBG_NEW ClientNetworkDiscovery();
-			return s_pClient->Connect(IPEndPoint(IPAddress::BROADCAST, portOfBroadcastServer), nameOfGame, pHandler, searchInterval);
+			s_EndPoints.insert(IPEndPoint(IPAddress::BROADCAST, portOfBroadcastServer));
+			return s_pClient->Connect(&s_EndPoints, &s_Lock, nameOfGame, pHandler, searchInterval);
 		}
 		return false;
 	}
@@ -62,6 +64,23 @@ namespace LambdaEngine
 	bool NetworkDiscovery::IsClientEnabled()
 	{
 		return s_pClient;
+	}
+
+	void NetworkDiscovery::AddTarget(IPAddress* pAddress, uint16 portOfBroadcastServer)
+	{
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		s_EndPoints.insert(IPEndPoint(pAddress, portOfBroadcastServer));
+	}
+
+	void NetworkDiscovery::RemoveTarget(IPAddress* pAddress, uint16 portOfBroadcastServer)
+	{
+		std::scoped_lock<SpinLock> lock(s_Lock);
+		s_EndPoints.erase(IPEndPoint(pAddress, portOfBroadcastServer));
+	}
+
+	const TSet<IPEndPoint>& NetworkDiscovery::GetTargets()
+	{
+		return s_EndPoints;
 	}
 
 	void NetworkDiscovery::FixedTickStatic(Timestamp delta)
