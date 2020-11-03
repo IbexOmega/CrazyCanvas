@@ -624,14 +624,6 @@ namespace LambdaEngine
 		}
 	}
 
-	void GUIRenderer::PreBuffersDescriptorSetWrite()
-	{
-	}
-
-	void GUIRenderer::PreTexturesDescriptorSetWrite()
-	{
-	}
-
 	void GUIRenderer::UpdateTextureResource(
 		const String& resourceName,
 		const TextureView* const* ppPerImageTextureViews,
@@ -655,29 +647,6 @@ namespace LambdaEngine
 		{
 			m_DepthStencilTextureView = MakeSharedRef(ppPerSubImageTextureViews[0]);
 		}
-	}
-
-	void GUIRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppBuffers);
-		UNREFERENCED_VARIABLE(pOffsets);
-		UNREFERENCED_VARIABLE(pSizesInBytes);
-		UNREFERENCED_VARIABLE(count);
-		UNREFERENCED_VARIABLE(backBufferBound);
-	}
-
-	void GUIRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
-	}
-
-	void GUIRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pDrawArgs);
-		UNREFERENCED_VARIABLE(count);
 	}
 
 	void GUIRenderer::Render(

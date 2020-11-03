@@ -29,6 +29,7 @@
 #include "Rendering/LightRenderer.h"
 
 #include "Rendering/ParticleManager.h"
+#include "Rendering/RT/ASBuilder.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
@@ -137,8 +138,8 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
-			AccelerationStructure* pBLAS	= nullptr;
-			SBTRecord ShaderRecord			= {};
+			uint32 BLASIndex = BLAS_UNINITIALIZED_INDEX;
+			TArray<uint32> ASInstanceIndices;
 
 			DescriptorSet* pAnimationDescriptorSet = nullptr;
 
@@ -162,10 +163,6 @@ namespace LambdaEngine
 			TArray<uint32>					InstanceIndexToExtensionGroup;
 			bool	HasExtensions			= false;
 			uint32	DrawArgsMask			= 0x0;
-
-			Buffer* pASInstanceBuffer		= nullptr;
-			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
-			TArray<AccelerationStructureInstance> ASInstances;
 
 			Buffer* pRasterInstanceBuffer				= nullptr;
 			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
@@ -255,7 +252,7 @@ namespace LambdaEngine
 		/*
 		* Adds new Game specific Custom Renderer 
 		*/
-		void AddCustomRenderer(ICustomRenderer* pCustomRenderer);
+		void AddCustomRenderer(CustomRenderer* pCustomRenderer);
 
 		/*
 		* Puts given render stage to sleep, this will prevent execution of renderstage
@@ -310,10 +307,6 @@ namespace LambdaEngine
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
-		void UpdateShaderRecords();
-		void BuildBLASs(CommandList* pCommandList);
-		void UpdateASInstanceBuffers(CommandList* pCommandList);
-		void BuildTLAS(CommandList* pCommandList);
 		void UpdateLightsBuffer(CommandList* pCommandList);
 		void UpdatePointLightTextureResource(CommandList* pCommandList);
 		void UpdatePaintMaskColorBuffer(CommandList* pCommandList);
@@ -388,15 +381,7 @@ namespace LambdaEngine
 
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
-
-		// Ray Tracing
-		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
-		Buffer*						m_pCompleteInstanceBuffer		= nullptr;
-		uint32						m_MaxSupportedTLASInstances		= 0;
-		uint32						m_BuiltTLASInstanceCount		= 0;
-		AccelerationStructure*		m_pTLAS							= nullptr;
-		TArray<PendingBufferUpdate>	m_CompleteInstanceBufferPendingCopies;
-		TArray<SBTRecord>			m_SBTRecords;
+		
 
 		// Animation
 		uint64						m_SkinningPipelineID;
@@ -404,20 +389,14 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
 
 		// Pending/Dirty
-		bool						m_SBTRecordsDirty					= true;
-		bool						m_RenderGraphSBTRecordsDirty		= true;
 		bool						m_MaterialsPropertiesBufferDirty	= false;
 		bool						m_MaterialsResourceDirty			= false;
 		bool						m_LightsResourceDirty				= false;
 		bool						m_PerFrameResourceDirty				= true;
 		bool						m_PaintMaskColorsResourceDirty		= true;
 		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
-		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
-		TSet<MeshEntry*>			m_DirtyBLASs;
 		TSet<MeshEntry*>			m_AnimationsToUpdate;
-		bool						m_TLASDirty							= true;
-		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
@@ -430,7 +409,8 @@ namespace LambdaEngine
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
-		TArray<ICustomRenderer*>	m_GameSpecificCustomRenderers;
+		ASBuilder*					m_pASBuilder			= nullptr;
+		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
 	private:
 		static RenderSystem		s_Instance;
