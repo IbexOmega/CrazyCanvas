@@ -5,7 +5,7 @@
 #include "Containers/String.h"
 
 #include "RenderGraphTypes.h"
-#include "ICustomRenderer.h"
+#include "CustomRenderer.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -57,7 +57,7 @@ namespace LambdaEngine
 		GUID_Lambda	PixelShaderGUID		= GUID_NONE;
 	};
 
-	class LAMBDA_API ImGuiRenderer : public ICustomRenderer
+	class LAMBDA_API ImGuiRenderer : public CustomRenderer
 	{
 		using ImGuiDrawFunc = std::function<void()>;
 
@@ -78,10 +78,7 @@ namespace LambdaEngine
 		virtual void PreBuffersDescriptorSetWrite()		override final;
 		virtual void PreTexturesDescriptorSetWrite()	override final;
 
-		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
-		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
-		virtual void UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure) override final;
 		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count) override final;
 
 		virtual void Render(
@@ -91,8 +88,8 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool Sleeping)	override final;
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
-		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage()	override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
 		bool OnEvent(const Event& event);
 		

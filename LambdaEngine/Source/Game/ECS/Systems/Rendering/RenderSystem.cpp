@@ -25,8 +25,13 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+
+#include "Rendering/ParticleRenderer.h"
+#include "Rendering/ParticleUpdater.h"
+#include "Rendering/RT/ASBuilder.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -138,6 +143,16 @@ namespace LambdaEngine
 					{
 						&transformGroup
 					}
+				},
+				{
+					.pSubscriber = &m_ParticleEmitters,
+					.ComponentAccesses =
+					{
+						{ RW, ParticleEmitterComponent::Type() },
+						{ RW, PositionComponent::Type() },
+						{ RW, RotationComponent::Type() }
+					},
+					.OnEntityRemoval = std::bind(&RenderSystem::OnEmitterEntityRemoved, this, std::placeholders::_1)
 				}
 			};
 
@@ -336,9 +351,31 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
 
+			// Particle Renderer & Manager
+			{
+				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
+				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
+				m_pParticleRenderer = DBG_NEW ParticleRenderer();
+				m_pParticleRenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
+
+				m_pParticleUpdater = DBG_NEW ParticleUpdater();
+				m_pParticleUpdater->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+			}
+
+			// AS Builder
+			if (m_RayTracingEnabled)
+			{
+				m_pASBuilder = DBG_NEW ASBuilder();
+				m_pASBuilder->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			}
+
 			//GUI Renderer
 			{
-				ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+				CustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
 				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
@@ -389,7 +426,6 @@ namespace LambdaEngine
 	{
 		for (auto& meshAndInstancesIt : m_MeshAndInstancesMap)
 		{
-			SAFERELEASE(meshAndInstancesIt.second.pBLAS);
 			SAFERELEASE(meshAndInstancesIt.second.pPrimitiveIndices);
 			SAFERELEASE(meshAndInstancesIt.second.pUniqueIndices);
 			SAFERELEASE(meshAndInstancesIt.second.pMeshlets);
@@ -401,11 +437,9 @@ namespace LambdaEngine
 			SAFERELEASE(meshAndInstancesIt.second.pStagingMatrixBuffer);
 			SAFERELEASE(meshAndInstancesIt.second.pIndexBuffer);
 			SAFERELEASE(meshAndInstancesIt.second.pRasterInstanceBuffer);
-			SAFERELEASE(meshAndInstancesIt.second.pASInstanceBuffer);
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
-				SAFERELEASE(meshAndInstancesIt.second.ppASInstanceStagingBuffers[b]);
 				SAFERELEASE(meshAndInstancesIt.second.ppRasterInstanceStagingBuffers[b]);
 			}
 		}
@@ -413,12 +447,14 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
+		SAFEDELETE(m_pParticleRenderer);
+		SAFEDELETE(m_pParticleUpdater);
+		SAFEDELETE(m_pASBuilder);
 
 		// Delete Custom Renderers
 		for (uint32 c = 0; c < m_GameSpecificCustomRenderers.GetSize(); c++)
 		{
 			SAFEDELETE(m_GameSpecificCustomRenderers[c]);
-
 		}
 
 		// Remove Pointlight Texture and Texture Views
@@ -433,9 +469,6 @@ namespace LambdaEngine
 			SAFERELEASE(m_CubeSubImageTextureViews[f]);
 		}
 
-		SAFERELEASE(m_pTLAS);
-		SAFERELEASE(m_pCompleteInstanceBuffer);
-
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
 			TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[b];
@@ -448,7 +481,6 @@ namespace LambdaEngine
 
 			SAFERELEASE(m_ppMaterialParametersStagingBuffers[b]);
 			SAFERELEASE(m_ppPerFrameStagingBuffers[b]);
-			SAFERELEASE(m_ppStaticStagingInstanceBuffers[b]);
 			SAFERELEASE(m_ppLightsStagingBuffer[b]);
 			SAFERELEASE(m_ppPaintMaskColorStagingBuffers[b]);
 		}
@@ -457,6 +489,8 @@ namespace LambdaEngine
 		SAFERELEASE(m_pPerFrameBuffer);
 		SAFERELEASE(m_pLightsBuffer);
 		SAFERELEASE(m_pPaintMaskColorBuffer);
+
+		m_ParticleManager.Release();
 
 		SAFEDELETE(m_pRenderGraph);
 
@@ -569,6 +603,37 @@ namespace LambdaEngine
 
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
+
+		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
+		for (Entity entity : m_ParticleEmitters)
+		{
+			const auto& positionComp = pPositionComponents->GetConstData(entity);
+			const auto& rotationComp = pRotationComponents->GetConstData(entity);
+			const auto& emitterComp = pEmitterComponents->GetConstData(entity);
+
+			if (positionComp.Dirty || rotationComp.Dirty || emitterComp.Dirty)
+				UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
+
+			// If onetime emitter we want to reset active
+			if (emitterComp.OneTime && emitterComp.Active)
+			{
+				auto& emitterCompNonConst = pEmitterComponents->GetData(entity);
+				emitterCompNonConst.Active = false;
+			}
+		}
+		// Tick Particle Manager
+		m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
+
+		// Particle Updates
+		uint32 particleCount = m_ParticleManager.GetParticleCount();
+		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
+		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+
+		// Update particle textures
+		TArray<TextureView*>& atlasTextureViews = m_ParticleManager.GetAtlasTextureViews();
+		TArray<Sampler*>& atlasSamplers = m_ParticleManager.GetAtlasSamplers();
+		m_pParticleRenderer->SetAtlasTexturs(atlasTextureViews, atlasSamplers);
 	}
 
 	bool RenderSystem::Render(Timestamp delta)
@@ -617,12 +682,25 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 		}
 
-		//GUI Renderer
+		// Particles
 		{
-			ICustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+		}
+
+		// AS Builder
+		if (m_RayTracingEnabled)
+		{
+			renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+		}
+
+		// GUI Renderer
+		{
+			CustomRenderer* pGUIRenderer = GUIApplication::GetRenderer();
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 		}
 
+		// Paint Mask Renderer
 		{
 			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
 			m_pPaintMaskRenderer->Init();
@@ -640,19 +718,13 @@ namespace LambdaEngine
 		m_PerFrameResourceDirty				= true;
 		m_MaterialsResourceDirty			= true;
 		m_MaterialsPropertiesBufferDirty	= true;
-		m_RenderGraphSBTRecordsDirty		= true;
 		m_LightsBufferDirty					= true;
 		m_PointLightsDirty					= true;
-
-		if (m_RayTracingEnabled)
-		{
-			m_TLASResourceDirty = true;
-		}
 
 		UpdateRenderGraph();
 	}
 
-	void RenderSystem::AddCustomRenderer(ICustomRenderer* pCustomRenderer)
+	void RenderSystem::AddCustomRenderer(CustomRenderer* pCustomRenderer)
 	{
 		if (!pCustomRenderer)
 		{
@@ -840,6 +912,11 @@ namespace LambdaEngine
 		m_LightsBufferDirty = true;
 	}
 
+	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
+	{
+		m_ParticleManager.OnEmitterEntityRemoved(entity);
+	}
+	
 	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
@@ -1061,23 +1138,18 @@ namespace LambdaEngine
 					}
 				}
 
-				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
-
 				if (m_RayTracingEnabled)
 				{
-					if (isAnimated)
-					{
-						meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pAnimatedVertexBuffer->GetDeviceAdress();
-					}
-					else
-					{
-						meshAndInstancesIt->second.ShaderRecord.VertexBufferAddress = meshEntry.pVertexBuffer->GetDeviceAdress();
-					}
-
-					meshAndInstancesIt->second.ShaderRecord.IndexBufferAddress = meshEntry.pIndexBuffer->GetDeviceAdress();
-					m_DirtyBLASs.insert(&meshAndInstancesIt->second);
-					m_SBTRecordsDirty = true;
+					m_pASBuilder->BuildTriBLAS(
+						meshEntry.BLASIndex,
+						isAnimated ? meshEntry.pAnimatedVertexBuffer : meshEntry.pVertexBuffer,
+						meshEntry.pIndexBuffer,
+						meshEntry.VertexCount,
+						meshEntry.IndexCount,
+						isAnimated);
 				}
+
+				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
 			}
 		}
 
@@ -1190,26 +1262,20 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			uint32 customIndex = (materialIndex & 0xFF) << 8;
-			customIndex |= hasPaintMask ? ((uint32)(std::max(0u, m_PaintMaskTextures.GetSize() - 1))) & 0xFF : 0;
+			uint32 customIndex =
+				((materialIndex & 0xFF) << 8) |
+				(hasPaintMask ? (std::max(0u, m_PaintMaskTextures.GetSize() - 1)) & 0xFF : 0);
+			uint8 hitMask = 0xFF;
+			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
-			AccelerationStructureInstance asInstance = {};
-			asInstance.Transform		= glm::transpose(transform);
-			asInstance.CustomIndex		= customIndex;
-			asInstance.Mask				= 0xFF;
-			asInstance.Flags			= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
+			uint32 asInstanceIndex = m_pASBuilder->AddInstance(
+				meshAndInstancesIt->second.BLASIndex,
+				transform,
+				customIndex,
+				hitMask,
+				asFlags);
 
-			//If the SBT Record is already created in another instance, set it here
-			if (!meshAndInstancesIt->second.ASInstances.IsEmpty())
-				asInstance.SBTRecordOffset = meshAndInstancesIt->second.ASInstances[0].SBTRecordOffset;
-
-			//If the BLAS is already built, set it here
-			if (meshAndInstancesIt->second.pBLAS != nullptr)
-				asInstance.AccelerationStructureAddress	= meshAndInstancesIt->second.pBLAS->GetDeviceAdress();
-
-			meshAndInstancesIt->second.ASInstances.PushBack(asInstance);
-			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
-			m_TLASDirty = true;
+			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
 
 		Instance instance = {};
@@ -1273,13 +1339,14 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			// Remove RT ASInstance
-			TArray<AccelerationStructureInstance>& asInstances = meshAndInstancesIt->second.ASInstances;
-			const uint32 textureIndex = asInstances[instanceIndex].CustomIndex & 0xFF;
-			asInstances[instanceIndex] = asInstances.GetBack();
-			asInstances.PopBack();
-			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
-			m_TLASDirty = true;
+			// Remove ASInstance
+			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceIndex];
+			const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
+			m_pASBuilder->RemoveInstance(asInstanceIndex);
+			
+			//Swap Removed with Back
+			meshAndInstancesIt->second.ASInstanceIndices[instanceIndex] = meshAndInstancesIt->second.ASInstanceIndices.GetBack();
+			meshAndInstancesIt->second.ASInstanceIndices.PopBack();
 
 			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
 			ECSCore* pECS = ECSCore::GetInstance();
@@ -1293,13 +1360,15 @@ namespace LambdaEngine
 				m_PaintMaskTextureViews.PopBack();
 
 				// Update custom indicies
-				for (auto& instance : asInstances)
-				{
-					if (changedIndex == (instance.CustomIndex & 0xFF0000))
+				m_pASBuilder->UpdateInstances(
+					[changedIndex, textureIndex](AccelerationStructureInstance& asInstance)
 					{
-						instance.CustomIndex |= textureIndex;
-					}
-				}
+						if (changedIndex == (asInstance.CustomIndex & 0xFF))
+						{
+							asInstance.CustomIndex &= 0xFFFF00;
+							asInstance.CustomIndex |= textureIndex;
+						}
+					});
 
 				Sampler* pNearestSampler = Sampler::GetNearestSampler();
 				ResourceUpdateDesc unwrappedTextureUpdate = {};
@@ -1358,14 +1427,12 @@ namespace LambdaEngine
 		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
-			DeleteDeviceResource(meshAndInstancesIt->second.pBLAS);
 			DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
 			DeleteDeviceResource(meshAndInstancesIt->second.pPrimitiveIndices);
 			DeleteDeviceResource(meshAndInstancesIt->second.pMeshlets);
 			DeleteDeviceResource(meshAndInstancesIt->second.pRasterInstanceBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pASInstanceBuffer);
 
 			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
 			{
@@ -1389,34 +1456,29 @@ namespace LambdaEngine
 
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
-				DeleteDeviceResource(meshAndInstancesIt->second.ppASInstanceStagingBuffers[b]);
 				DeleteDeviceResource(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
 			}
 
-			m_SBTRecordsDirty = true;
-
-			auto dirtyASInstanceToRemove = std::find_if(m_DirtyASInstanceBuffers.begin(), m_DirtyASInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
-				{
-					return pMeshEntry == &meshAndInstancesIt->second;
-				});
 			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
 				{
 					return pMeshEntry == &meshAndInstancesIt->second;
 				});
-			auto dirtyBLASToRemove = std::find_if(m_DirtyBLASs.begin(), m_DirtyBLASs.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
-				{
-					return pMeshEntry == &meshAndInstancesIt->second;
-				});
 
-			if (dirtyASInstanceToRemove != m_DirtyASInstanceBuffers.end())
-				m_DirtyASInstanceBuffers.erase(dirtyASInstanceToRemove);
 			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end())
 				m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
-			if (dirtyBLASToRemove != m_DirtyBLASs.end())
-				m_DirtyBLASs.erase(dirtyBLASToRemove);
+
+			if (m_RayTracingEnabled)
+			{
+				m_pASBuilder->ReleaseBLAS(meshAndInstancesIt->second.BLASIndex);
+			}
 
 			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
 		}
+	}
+
+	void RenderSystem::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	{
+		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
 	void RenderSystem::UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
@@ -1507,8 +1569,17 @@ namespace LambdaEngine
 
 			MeshEntry* pMeshEntry = &meshEntryIt->second;
 			m_AnimationsToUpdate.insert(pMeshEntry);
-			m_DirtyBLASs.insert(pMeshEntry);
-			m_TLASDirty = true;
+
+			if (m_RayTracingEnabled)
+			{
+				m_pASBuilder->BuildTriBLAS(
+					pMeshEntry->BLASIndex,
+					pMeshEntry->pAnimatedVertexBuffer,
+					pMeshEntry->pIndexBuffer,
+					pMeshEntry->VertexCount,
+					pMeshEntry->IndexCount,
+					true);
+			}
 		}
 	}
 
@@ -1541,10 +1612,8 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			AccelerationStructureInstance* pASInstanceToUpdate = &meshAndInstancesIt->second.ASInstances[instanceKeyIt->second.InstanceIndex];
-			pASInstanceToUpdate->Transform = glm::transpose(transform);
-			m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
-			m_TLASDirty = true;
+			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
+			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
 		}
 
 		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
@@ -1671,18 +1740,14 @@ namespace LambdaEngine
 			UpdateMaterialPropertiesBuffer(pGraphicsCommandList);
 		}
 
+		// Update particles
+		{
+			m_ParticleManager.UpdateBuffers(pGraphicsCommandList);
+		}
+
 		// Perform mesh skinning
 		{
 			PerformMeshSkinning(pComputeCommandList);
-		}
-
-		//Update Acceleration Structures
-		if (m_RayTracingEnabled)
-		{
-			UpdateShaderRecords();
-			BuildBLASs(pComputeCommandList);
-			UpdateASInstanceBuffers(pComputeCommandList);
-			BuildTLAS(pComputeCommandList);
 		}
 	}
 
@@ -1836,7 +1901,7 @@ namespace LambdaEngine
 		{
 			uint32 requiredBufferSize = m_MaterialProperties.GetSize() * sizeof(MaterialProperties);
 
-			Buffer* pStagingBuffer = m_ppStaticStagingInstanceBuffers[m_ModFrameIndex];
+			Buffer* pStagingBuffer = m_ppMaterialParametersStagingBuffers[m_ModFrameIndex];
 
 			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 			{
@@ -1849,7 +1914,7 @@ namespace LambdaEngine
 				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				m_ppStaticStagingInstanceBuffers[m_ModFrameIndex] = pStagingBuffer;
+				m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
 			}
 
 			void* pMapped = pStagingBuffer->Map();
@@ -1872,243 +1937,6 @@ namespace LambdaEngine
 			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 
 			m_MaterialsPropertiesBufferDirty = false;
-		}
-	}
-
-	void RenderSystem::UpdateShaderRecords()
-	{
-		if (m_SBTRecordsDirty)
-		{
-			m_SBTRecords.Clear();
-
-			for (MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
-			{
-				uint32 shaderRecordOffset = m_SBTRecords.GetSize();
-
-				for (AccelerationStructureInstance& asInstance : meshAndInstancesIt->second.ASInstances)
-				{
-					asInstance.SBTRecordOffset = shaderRecordOffset;
-				}
-
-				m_SBTRecords.PushBack(meshAndInstancesIt->second.ShaderRecord);
-				m_DirtyASInstanceBuffers.insert(&meshAndInstancesIt->second);
-			}
-
-			m_SBTRecordsDirty = false;
-			m_TLASDirty = true;
-			m_RenderGraphSBTRecordsDirty = true;
-		}
-	}
-
-	void RenderSystem::BuildBLASs(CommandList* pCommandList)
-	{
-		if (!m_DirtyBLASs.empty())
-		{
-			for (MeshEntry* pDirtyBLAS : m_DirtyBLASs)
-			{
-				//We assume that VertexCount/PrimitiveCount does not change and thus do not check if we need to recreate them
-
-				bool update = true;
-
-				if (pDirtyBLAS->pBLAS == nullptr)
-				{
-					update = false;
-
-					AccelerationStructureDesc blasCreateDesc = {};
-					blasCreateDesc.DebugName		= "BLAS";
-					blasCreateDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
-					blasCreateDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-					blasCreateDesc.MaxTriangleCount = pDirtyBLAS->IndexCount / 3;
-					blasCreateDesc.MaxVertexCount	= pDirtyBLAS->VertexCount;
-					blasCreateDesc.AllowsTransform	= false;
-
-					pDirtyBLAS->pBLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&blasCreateDesc);
-				}
-
-				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
-				blasBuildDesc.pAccelerationStructure	= pDirtyBLAS->pBLAS;
-				blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				if (pDirtyBLAS->pAnimatedVertexBuffer)
-				{
-					blasBuildDesc.pVertexBuffer = pDirtyBLAS->pAnimatedVertexBuffer;
-				}
-				else
-				{
-					blasBuildDesc.pVertexBuffer = pDirtyBLAS->pVertexBuffer;
-				}
-
-				blasBuildDesc.FirstVertexIndex		= 0;
-				blasBuildDesc.VertexStride			= sizeof(Vertex);
-				blasBuildDesc.pIndexBuffer			= pDirtyBLAS->pIndexBuffer;
-				blasBuildDesc.IndexBufferByteOffset	= 0;
-				blasBuildDesc.TriangleCount			= pDirtyBLAS->IndexCount / 3;
-				blasBuildDesc.pTransformBuffer		= nullptr;
-				blasBuildDesc.TransformByteOffset	= 0;
-				blasBuildDesc.Update				= update;
-
-				pCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
-
-				uint64 blasAddress = pDirtyBLAS->pBLAS->GetDeviceAdress();
-				for (AccelerationStructureInstance& asInstance : pDirtyBLAS->ASInstances)
-				{
-					asInstance.AccelerationStructureAddress = blasAddress;
-				}
-
-				m_DirtyASInstanceBuffers.insert(pDirtyBLAS);
-			}
-
-			//This is required to sync up BLAS building with TLAS building, to make sure that the BLAS is built before the TLAS
-			PipelineMemoryBarrierDesc memoryBarrier = {};
-			memoryBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			memoryBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			pCommandList->PipelineMemoryBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &memoryBarrier, 1);
-
-			m_DirtyBLASs.clear();
-		}
-	}
-
-	void RenderSystem::UpdateASInstanceBuffers(CommandList* pCommandList)
-	{
-		if (!m_DirtyASInstanceBuffers.empty())
-		{
-			//AS Instances
-			for (MeshEntry* pDirtyInstanceBufferEntry : m_DirtyASInstanceBuffers)
-			{
-				uint32 requiredBufferSize = pDirtyInstanceBufferEntry->ASInstances.GetSize() * sizeof(AccelerationStructureInstance);
-
-				Buffer* pStagingBuffer = pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex];
-
-				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
-				{
-					if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
-
-					BufferDesc bufferDesc = {};
-					bufferDesc.DebugName = "AS Instance Staging Buffer";
-					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					bufferDesc.SizeInBytes = requiredBufferSize;
-
-					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-					pDirtyInstanceBufferEntry->ppASInstanceStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
-				}
-
-				void* pMapped = pStagingBuffer->Map();
-				memcpy(pMapped, pDirtyInstanceBufferEntry->ASInstances.GetData(), requiredBufferSize);
-				pStagingBuffer->Unmap();
-
-				if (pDirtyInstanceBufferEntry->pASInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pASInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
-				{
-					if (pDirtyInstanceBufferEntry->pASInstanceBuffer != nullptr) DeleteDeviceResource(pDirtyInstanceBufferEntry->pASInstanceBuffer);
-
-					BufferDesc bufferDesc = {};
-					bufferDesc.DebugName = "AS Instance Buffer";
-					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					bufferDesc.SizeInBytes = requiredBufferSize;
-
-					pDirtyInstanceBufferEntry->pASInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				}
-
-				pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pASInstanceBuffer, 0, requiredBufferSize);
-			}
-
-			PipelineMemoryBarrierDesc memoryBarrier = {};
-			memoryBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-			memoryBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			pCommandList->PipelineMemoryBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD, &memoryBarrier, 1);
-
-			m_DirtyASInstanceBuffers.clear();
-		}
-	}
-
-	void RenderSystem::BuildTLAS(CommandList* pCommandList)
-	{
-		if (m_TLASDirty)
-		{
-			m_TLASDirty = false;
-			m_CompleteInstanceBufferPendingCopies.Clear();
-
-			uint32 newInstanceCount = 0;
-
-			for (MeshAndInstancesMap::const_iterator meshAndInstancesIt = m_MeshAndInstancesMap.begin(); meshAndInstancesIt != m_MeshAndInstancesMap.end(); meshAndInstancesIt++)
-			{
-				uint32 instanceCount = meshAndInstancesIt->second.ASInstances.GetSize();
-
-				PendingBufferUpdate copyToCompleteInstanceBuffer = {};
-				copyToCompleteInstanceBuffer.pSrcBuffer		= meshAndInstancesIt->second.pASInstanceBuffer;
-				copyToCompleteInstanceBuffer.SrcOffset		= 0;
-				copyToCompleteInstanceBuffer.DstOffset		= newInstanceCount * sizeof(AccelerationStructureInstance);
-				copyToCompleteInstanceBuffer.SizeInBytes	= instanceCount * sizeof(AccelerationStructureInstance);
-				m_CompleteInstanceBufferPendingCopies.PushBack(copyToCompleteInstanceBuffer);
-
-				newInstanceCount += instanceCount;
-			}
-
-			if (newInstanceCount == 0)
-				return;
-
-			uint32 requiredCompleteInstancesBufferSize = newInstanceCount * sizeof(AccelerationStructureInstance);
-
-			if (m_pCompleteInstanceBuffer == nullptr || m_pCompleteInstanceBuffer->GetDesc().SizeInBytes < requiredCompleteInstancesBufferSize)
-			{
-				if (m_pCompleteInstanceBuffer != nullptr) DeleteDeviceResource(m_pCompleteInstanceBuffer);
-
-				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Complete Instance Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
-				bufferDesc.SizeInBytes	= requiredCompleteInstancesBufferSize;
-
-				m_pCompleteInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			}
-
-			for (const PendingBufferUpdate& pendingUpdate : m_CompleteInstanceBufferPendingCopies)
-			{
-				pCommandList->CopyBuffer(pendingUpdate.pSrcBuffer, pendingUpdate.SrcOffset, m_pCompleteInstanceBuffer, pendingUpdate.DstOffset, pendingUpdate.SizeInBytes);
-			}
-
-			if (m_MeshAndInstancesMap.empty())
-				return;
-
-			bool update = true;
-
-			//Recreate TLAS completely if m_MaxSupportedTLASInstances < newInstanceCount
-			if (m_MaxSupportedTLASInstances < newInstanceCount)
-			{
-				if (m_pTLAS != nullptr) DeleteDeviceResource(m_pTLAS);
-
-				m_MaxSupportedTLASInstances = newInstanceCount;
-				m_BuiltTLASInstanceCount = newInstanceCount;
-
-				AccelerationStructureDesc createTLASDesc = {};
-				createTLASDesc.DebugName = "TLAS";
-				createTLASDesc.Type = EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-				createTLASDesc.Flags = FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				createTLASDesc.InstanceCount = m_MaxSupportedTLASInstances;
-
-				m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
-
-				update = false;
-
-				m_TLASResourceDirty = true;
-			}
-			else if (m_BuiltTLASInstanceCount != newInstanceCount)
-			{
-				m_BuiltTLASInstanceCount = newInstanceCount;
-				update = false;
-			}
-
-			if (m_pTLAS != nullptr)
-			{
-				BuildTopLevelAccelerationStructureDesc buildTLASDesc = {};
-				buildTLASDesc.pAccelerationStructure	= m_pTLAS;
-				buildTLASDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
-				buildTLASDesc.Update					= update;
-				buildTLASDesc.pInstanceBuffer			= m_pCompleteInstanceBuffer;
-				buildTLASDesc.InstanceCount				= newInstanceCount;
-
-				pCommandList->BuildTopLevelAccelerationStructure(&buildTLASDesc);
-			}
 		}
 	}
 
@@ -2379,16 +2207,6 @@ namespace LambdaEngine
 			m_DirtyDrawArgs.clear();
 		}
 
-		if (m_RenderGraphSBTRecordsDirty)
-		{
-			if (!m_SBTRecords.IsEmpty())
-			{
-				m_pRenderGraph->UpdateGlobalSBT(m_SBTRecords, m_ResourcesToRemove[m_ModFrameIndex]);
-			}
-
-			m_RenderGraphSBTRecordsDirty = false;
-		}
-
 		if (m_PerFrameResourceDirty)
 		{
 			ResourceUpdateDesc resourceUpdateDesc				= {};
@@ -2431,6 +2249,11 @@ namespace LambdaEngine
 			m_PaintMaskColorsResourceDirty = false;
 		}
 
+		// Update Particle Resources
+		{
+			m_ParticleManager.UpdateResources(m_pRenderGraph);
+		}
+
 		if (m_MaterialsResourceDirty)
 		{
 			ResourceUpdateDesc resourceUpdateDesc				= {};
@@ -2471,21 +2294,6 @@ namespace LambdaEngine
 			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
 
 			m_MaterialsResourceDirty = false;
-		}
-
-		if (m_RayTracingEnabled)
-		{
-			if (m_TLASResourceDirty)
-			{
-				//Create Resource Update for RenderGraph
-				ResourceUpdateDesc resourceUpdateDesc					= {};
-				resourceUpdateDesc.ResourceName							= SCENE_TLAS;
-				resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= m_pTLAS;
-
-				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-
-				m_TLASResourceDirty = false;
-			}
 		}
 	}
 }
