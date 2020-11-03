@@ -1268,12 +1268,16 @@ namespace LambdaEngine
 			uint8 hitMask = 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
-			uint32 asInstanceIndex = m_pASBuilder->AddInstance(
-				meshAndInstancesIt->second.BLASIndex,
-				transform,
-				customIndex,
-				hitMask,
-				asFlags);
+			ASInstanceDesc asInstanceDesc =
+			{
+				.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
+				.Transform		= transform,
+				.CustomIndex	= customIndex,
+				.HitMask		= hitMask,
+				.Flags			= asFlags
+			};
+
+			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
 
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
@@ -1486,8 +1490,9 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
 		m_LightBufferData.DirL_Direction = -GetForward(direction);
 
-		m_LightBufferData.DirL_ProjViews = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
-		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
+		glm::mat4 lightView = glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
+		glm::mat4 lightProj = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
+		m_LightBufferData.DirL_ProjViews = lightProj * lightView;
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsBufferDirty = true;

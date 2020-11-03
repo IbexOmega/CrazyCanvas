@@ -183,6 +183,12 @@ namespace LambdaEngine
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
 			return false;
 		}
+		
+		if (!CustomRenderStagesPostInit())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
+			return false;
+		}
 
 		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
 		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
@@ -262,6 +268,12 @@ namespace LambdaEngine
 		if (!CreatePipelineStages(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
+			return false;
+		}
+
+		if (!CustomRenderStagesPostInit())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
 			return false;
 		}
 
@@ -3287,6 +3299,19 @@ namespace LambdaEngine
 		}
 
 		m_ppExecutionStages = DBG_NEW CommandList*[m_ExecutionStageCount];
+
+		return true;
+	}
+
+	bool RenderGraph::CustomRenderStagesPostInit()
+	{
+		for (auto& customRenderer : m_CustomRenderers)
+		{
+			if (!customRenderer->RenderGraphPostInit())
+			{
+				return false;
+			}
+		}
 
 		return true;
 	}

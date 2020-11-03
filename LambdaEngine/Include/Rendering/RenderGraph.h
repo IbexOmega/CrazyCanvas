@@ -424,6 +424,7 @@ namespace LambdaEngine
 		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
+		bool CustomRenderStagesPostInit();
 
 		void UpdateRelativeParameters();
 		void UpdateInternalResource(InternalResourceUpdateDesc& desc);
