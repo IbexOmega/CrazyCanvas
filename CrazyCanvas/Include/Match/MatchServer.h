@@ -22,11 +22,12 @@ protected:
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
+	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	virtual bool OnPlayerDied(const PlayerDiedEvent& event) override final;
 
 private:
 	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-	bool OnFlagDelivered(const OnFlagDeliveredEvent& event);
+	bool OnFlagDelivered(const FlagDeliveredEvent& event);
 
 private:
 	uint8 m_NextTeamIndex = 0;

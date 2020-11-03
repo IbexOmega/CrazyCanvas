@@ -12,12 +12,10 @@ namespace LambdaEngine
 		, m_IsBorrowed(false)
 #endif
 	{
-
 	}
 
 	NetworkSegment::~NetworkSegment()
 	{
-
 	}
 
 	NetworkSegment* NetworkSegment::SetType(uint16 type)
