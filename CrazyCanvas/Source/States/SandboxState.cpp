@@ -508,11 +508,11 @@ void SandboxState::RenderImgui()
 			auto* pPosComps = pECSCore->GetComponentArray<PositionComponent>();
 			auto* pRotComps = pECSCore->GetComponentArray<RotationComponent>();
 
-			if (dirLightComps->HasComponent(m_DirLight))
+			if (pDirLightComps->HasComponent(m_DirLight))
 			{
-				auto& dirLightComp = dirLightComps->GetData(m_DirLight);
-				auto& posComp = posComps->GetData(m_DirLight);
-				auto& rotComp = rotComps->GetData(m_DirLight);
+				auto& dirLightComp = pDirLightComps->GetData(m_DirLight);
+				auto& posComp = pPosComps->GetData(m_DirLight);
+				auto& rotComp = pRotComps->GetData(m_DirLight);
 
 				static glm::vec3 mRotation = glm::eulerAngles(rotComp.Quaternion);
 
