@@ -164,7 +164,19 @@ namespace LambdaEngine
 				blasBuildDesc.TransformByteOffset		= 0;
 				blasBuildDesc.Update					= true;
 
-				m_DirtyBLASes.PushBack(blasBuildDesc);
+				if (auto blasAlreadyDirtyIt = std::find_if(m_DirtyBLASes.Begin(), m_DirtyBLASes.End(),
+					[blasBuildDesc](const BuildBottomLevelAccelerationStructureDesc& searchedBlasBuildDesc)
+					{
+						return blasBuildDesc.pAccelerationStructure == searchedBlasBuildDesc.pAccelerationStructure;
+					}); blasAlreadyDirtyIt != m_DirtyBLASes.End())
+				{
+					blasAlreadyDirtyIt->pVertexBuffer	= blasBuildDesc.pVertexBuffer;
+					blasAlreadyDirtyIt->pIndexBuffer	= blasBuildDesc.pIndexBuffer;
+				}
+				else
+				{
+					m_DirtyBLASes.PushBack(blasBuildDesc);
+				}
 			}
 
 			//Update SBT Record (if needed)
@@ -392,13 +404,13 @@ namespace LambdaEngine
 				//This is required to sync up BLAS building with TLAS building, to make sure that the BLAS is built before the TLAS
 				static constexpr const PipelineMemoryBarrierDesc BLAS_POST_MEMORY_BARRIER
 				{
-					.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
-					.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+					.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE,
+					.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_READ,
 				};
 
 				pMainCommandList->PipelineMemoryBarriers(
-					FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD, 
-					FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD,
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD,
 					&BLAS_POST_MEMORY_BARRIER,
 					1);
 
@@ -560,7 +572,7 @@ namespace LambdaEngine
 
 				static constexpr const PipelineMemoryBarrierDesc TLAS_MEMORY_BARRIER
 				{
-					.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+					.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_ACCELERATION_STRUCTURE_WRITE,
 					.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
 				};
 
