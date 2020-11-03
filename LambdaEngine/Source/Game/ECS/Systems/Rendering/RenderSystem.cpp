@@ -1490,8 +1490,9 @@ namespace LambdaEngine
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
 		m_LightBufferData.DirL_Direction = -GetForward(direction);
 
-		m_LightBufferData.DirL_ProjViews = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
-		m_LightBufferData.DirL_ProjViews *= glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
+		glm::mat4 lightView = glm::lookAt(position, position - m_LightBufferData.DirL_Direction, g_DefaultUp);
+		glm::mat4 lightProj = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
+		m_LightBufferData.DirL_ProjViews = lightProj * lightView;
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsBufferDirty = true;
