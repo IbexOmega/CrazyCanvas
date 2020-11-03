@@ -140,6 +140,8 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 
 void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
 {
+	UNREFERENCED_VARIABLE(dt);
+
 	if (!m_Entities.Empty())
 	{
 		Entity localPlayerEntity = m_Entities[0];
@@ -161,6 +163,8 @@ void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, fl
 */
 void PlayerLocalSystem::ReplayGameState(Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	Entity entityPlayer = m_Entities[0];
 
 	ECSCore* pECS = ECSCore::GetInstance();
