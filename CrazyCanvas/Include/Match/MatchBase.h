@@ -23,7 +23,7 @@ struct MatchDescription
 	uint32 MaxScore = 5;
 };
 
-static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 10.0f;
+static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 5.0f;
 
 class MatchBase
 {
