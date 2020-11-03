@@ -3305,9 +3305,9 @@ namespace LambdaEngine
 
 	bool RenderGraph::CustomRenderStagesPostInit()
 	{
-		for (auto& customRenderer : m_CustomRenderers)
+		for (auto pCustomRenderer : m_CustomRenderers)
 		{
-			if (!customRenderer->RenderGraphPostInit())
+			if (!pCustomRenderer->RenderGraphPostInit())
 			{
 				return false;
 			}
