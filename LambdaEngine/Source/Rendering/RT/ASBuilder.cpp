@@ -212,7 +212,7 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		VALIDATE(blasIndex < m_BLASes.GetSize());
+		VALIDATE(asInstanceDesc.BlasIndex < m_BLASes.GetSize());
 		
 		BLASData& blasData = m_BLASes[asInstanceDesc.BlasIndex];
 
@@ -408,13 +408,13 @@ namespace LambdaEngine
 					{
 						if (m_pInstanceIndicesBuffer != nullptr) deviceResourcesToRemove.PushBack(m_pInstanceIndicesBuffer);
 
-						BufferDesc instanceBufferDesc = {};
-						instanceBufferDesc.DebugName		= "Instance Indices Buffer";
-						instanceBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-						instanceBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-						instanceBufferDesc.SizeInBytes		= requiredInstanceIndicesBufferSize;
+						BufferDesc instanceIndicesBufferDesc = {};
+						instanceIndicesBufferDesc.DebugName		= "Instance Indices Buffer";
+						instanceIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+						instanceIndicesBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+						instanceIndicesBufferDesc.SizeInBytes	= requiredInstanceIndicesBufferSize;
 
-						m_pInstanceIndicesBuffer = RenderAPI::GetDevice()->CreateBuffer(&instanceBufferDesc);
+						m_pInstanceIndicesBuffer = RenderAPI::GetDevice()->CreateBuffer(&instanceIndicesBufferDesc);
 
 						ResourceUpdateDesc resourceUpdateDesc = {};
 						resourceUpdateDesc.ResourceName						= AS_INSTANCE_INDICES_BUFFER;
@@ -640,6 +640,42 @@ namespace LambdaEngine
 		{
 			m_ppInstanceIndicesStagingBuffers[b] = nullptr;
 			m_ppInstanceStagingBuffers[b] = nullptr;
+		}
+
+		// Create Instance Index Dummy Buffer
+		{
+			BufferDesc instanceBufferDesc = {};
+			instanceBufferDesc.DebugName		= "Instance Indices Dummy Buffer";
+			instanceBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+			instanceBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			instanceBufferDesc.SizeInBytes		= 1;
+
+			m_pInstanceIndicesBuffer = RenderAPI::GetDevice()->CreateBuffer(&instanceBufferDesc);
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName						= AS_INSTANCE_INDICES_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pInstanceIndicesBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
+		// Create Instance Dummy Buffer
+		{
+			BufferDesc instanceIndicesBufferDesc = {};
+			instanceIndicesBufferDesc.DebugName		= "Instance Dummy Buffer";
+			instanceIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			instanceIndicesBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+			instanceIndicesBufferDesc.SizeInBytes	= 1;
+
+			m_pInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&instanceIndicesBufferDesc);
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName						= AS_INSTANCES_BUFFER;
+			resourceUpdateDesc.ExternalBufferUpdate.Count		= 1;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer	= &m_pInstanceBuffer;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
 		return true;
