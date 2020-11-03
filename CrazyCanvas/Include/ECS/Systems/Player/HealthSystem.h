@@ -34,6 +34,7 @@ private:
 
 private:
 	LambdaEngine::IDVector m_HealthEntities;
+	LambdaEngine::IDVector m_LocalPlayerEntities;
 
 	LambdaEngine::SpinLock m_DeferredEventsLock;
 	LambdaEngine::TArray<ProjectileHitEvent> m_DeferredHitEvents;

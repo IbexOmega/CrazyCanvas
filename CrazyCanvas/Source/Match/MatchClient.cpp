@@ -83,6 +83,13 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
 			}
 
+			// Notify systems that a new player connected (Not myself tho)
+			if (!packet.Player.IsMySelf)
+			{
+				PlayerConnectedEvent event(createdPlayerEntities[0], packet.Position);
+				EventQueue::SendEvent(event);
+			}
+
 			break;
 		}
 		case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
