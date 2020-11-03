@@ -99,15 +99,21 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 				{
 					Entity flagEntity = flagEntities[0];
 
-					const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
-					ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
-
-					if (flagParentComponent.Attached)
+					std::string name = "Flag : [EntityID=" + std::to_string(flagEntity) + "]";
+					if (ImGui::TreeNode(name.c_str()))
 					{
-						if (ImGui::Button("Drop Flag"))
+						const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+						ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
+
+						if (flagParentComponent.Attached)
 						{
-							FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
+							if (ImGui::Button("Drop Flag"))
+							{
+								FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
+							}
 						}
+
+						ImGui::TreePop();
 					}
 				}
 				else
@@ -372,8 +378,8 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		{
 			const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
 			const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
-			const TeamComponent& teamComponent = pTeamComponents->GetConstData(otherPlayerEntity);
-			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(otherPlayerEntity);
+			const TeamComponent& teamComponent	= pTeamComponents->GetConstData(otherPlayerEntity);
+			const ChildComponent& childComp		= pCreatedChildComponents->GetConstData(otherPlayerEntity);
 
 			packet.NetworkUID				= otherPlayerEntity;
 			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");

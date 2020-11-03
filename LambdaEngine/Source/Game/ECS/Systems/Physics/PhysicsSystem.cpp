@@ -220,7 +220,11 @@ namespace LambdaEngine
 
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
-			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Position.Position, collisionInfo.Scale.Scale, collisionInfo.Rotation.Quaternion);
+			PxShape* pShape = CreateShape(
+				shapeCreateInfo, 
+				collisionInfo.Position.Position, 
+				collisionInfo.Scale.Scale, 
+				collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
 			{
@@ -240,7 +244,11 @@ namespace LambdaEngine
 
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
-			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Position.Position, collisionInfo.Scale.Scale, collisionInfo.Rotation.Quaternion);
+			PxShape* pShape = CreateShape(
+				shapeCreateInfo, 
+				collisionInfo.Position.Position, 
+				collisionInfo.Scale.Scale, 
+				collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
 			{
@@ -407,6 +415,8 @@ namespace LambdaEngine
 			filterData.word1 = (PxU32)shapeCreateInfo.CollisionMask;
 			filterData.word2 = (PxU32)shapeCreateInfo.EntityID;
 			pShape->setSimulationFilterData(filterData);
+			
+			filterData.word2 = 0;
 			pShape->setQueryFilterData(filterData);
 
 			if (shapeCreateInfo.ShapeType == EShapeType::TRIGGER)

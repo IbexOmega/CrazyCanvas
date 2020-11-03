@@ -481,12 +481,12 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity flagEntity = pECS->CreateEntity();
 
-	const Timestamp pickupCooldown = Timestamp::Seconds(1.0f);
-	const FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
-	const PositionComponent positionComponent{ true, pFlagDesc->Position };
-	const ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
-	const RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
-	const MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+	const Timestamp			pickupCooldown = Timestamp::Seconds(1.0f);
+	const FlagComponent		flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
+	const PositionComponent	positionComponent{ true, pFlagDesc->Position };
+	const ScaleComponent	scaleComponent{ true, pFlagDesc->Scale };
+	const RotationComponent	rotationComponent{ true, pFlagDesc->Rotation };
+	const MeshComponent		meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
 
 	pECS->AddComponent<FlagComponent>(flagEntity,		flagComponent);
 	pECS->AddComponent<PositionComponent>(flagEntity,	positionComponent);
