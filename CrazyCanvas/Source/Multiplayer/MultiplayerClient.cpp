@@ -41,6 +41,6 @@ void MultiplayerClient::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 void MultiplayerClient::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
-	//Must run last
+	// Must run last
 	m_PacketDecoderSystem.FixedTickMainThreadClient(deltaTime);
 }

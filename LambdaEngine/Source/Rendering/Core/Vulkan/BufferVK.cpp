@@ -167,7 +167,7 @@ namespace LambdaEngine
 		m_Desc.DebugName = debugname;
 	}
 	
-	uint64 BufferVK::GetDeviceAdress() const
+	uint64 BufferVK::GetDeviceAddress() const
 	{
 		return static_cast<uint64>(m_DeviceAddress);
 	}

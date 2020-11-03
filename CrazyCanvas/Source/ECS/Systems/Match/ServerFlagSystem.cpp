@@ -136,8 +136,8 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		flagCollisionComponent.pActor->getShapes(flagShapes.GetData(), flagShapes.GetSize());
 		for (PxShape* pFlagShape : flagShapes)
 		{
-			ShapeUserData* pShapeUserData = reinterpret_cast<ShapeUserData*>(pFlagShape->userData);
-			EFlagColliderType flagColliderType = reinterpret_cast<EFlagColliderType*>(pShapeUserData->pUserData)[0];
+			ShapeUserData* pShapeUserData		= reinterpret_cast<ShapeUserData*>(pFlagShape->userData);
+			EFlagColliderType flagColliderType	= reinterpret_cast<EFlagColliderType*>(pShapeUserData->pUserData)[0];
 
 			if (flagColliderType == EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER)
 			{
@@ -211,7 +211,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 
 			if (playerTeamComponent.TeamIndex == deliveryPointTeamComponent.TeamIndex)
 			{
-				EventQueue::SendEvent<OnFlagDeliveredEvent>(OnFlagDeliveredEvent(playerTeamComponent.TeamIndex));
+				EventQueue::SendEvent<FlagDeliveredEvent>(FlagDeliveredEvent(playerTeamComponent.TeamIndex));
 			}
 		}
 	};

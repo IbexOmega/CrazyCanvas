@@ -36,7 +36,7 @@ namespace LambdaEngine
 		virtual void SetName(const String& name) override final;
 
 		// AccelerationStructure interface
-		FORCEINLINE virtual uint64 GetDeviceAdress() const override final
+		FORCEINLINE virtual uint64 GetDeviceAddress() const override final
 		{
 			return m_AccelerationStructureDeviceAddress;
 		}

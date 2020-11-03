@@ -33,7 +33,7 @@ namespace LambdaEngine
 		virtual void* Map() override final;
 		virtual void Unmap() override final;
 		
-		virtual uint64 GetDeviceAdress() const override final;
+		virtual uint64 GetDeviceAddress() const override final;
 		virtual uint64 GetAlignmentRequirement() const override final;
 
 		inline virtual uint64 GetHandle() const override final

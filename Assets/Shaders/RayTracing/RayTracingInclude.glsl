@@ -37,15 +37,14 @@ layout(binding = 1,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_NormalMaps
 layout(binding = 2,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_CombinedMaterialMaps[];
 layout(binding = 3,		set = TEXTURE_SET_INDEX) uniform samplerCube				u_Skybox;
 
-layout(binding = 4,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferPosition;
-layout(binding = 5,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAlbedo;
-layout(binding = 6,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAORoughMetalValid;
-layout(binding = 7,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferCompactNormal;
-layout(binding = 8,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferDepthStencil;
-layout(binding = 9,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_PaintMaskTextures[];
-layout(binding = 10, 	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
-layout(binding = 11, 	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
-layout(binding = 12,	set = TEXTURE_SET_INDEX, r11f_g11f_b10f) restrict uniform image2D	u_RadianceOut;
+layout(binding = 4,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAlbedo;
+layout(binding = 5,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAORoughMetalValid;
+layout(binding = 6,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferCompactNormal;
+layout(binding = 7,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferDepthStencil;
+layout(binding = 8,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_PaintMaskTextures[];
+layout(binding = 9, 	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
+layout(binding = 10, 	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
+layout(binding = 11,	set = TEXTURE_SET_INDEX, r11f_g11f_b10f) restrict uniform image2D	u_RadianceOut;
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)
 {

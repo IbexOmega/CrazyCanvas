@@ -152,6 +152,7 @@ void BenchmarkState::Init()
 							.GeometryParams	= { .Radius = sphereRadius },
 							.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 							.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+							.EntityID		= entity,
 						},
 					},
 				};
