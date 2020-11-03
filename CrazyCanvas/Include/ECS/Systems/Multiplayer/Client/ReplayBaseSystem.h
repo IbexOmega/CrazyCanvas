@@ -70,10 +70,9 @@ void ReplaySystem<C, S>::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, f
 template<class C, class S>
 void ReplaySystem<C, S>::SurrenderGameState(int32 simulationTick)
 {
-	const C& clientState = m_FramesToReconcile[0];
 	const S& serverState = m_FramesProcessedByServer[0];
 
-	ASSERT(clientState.SimulationTick == simulationTick);
+	ASSERT(m_FramesToReconcile[0].SimulationTick == simulationTick);
 	ASSERT(serverState.SimulationTick == simulationTick);
 
 	SurrenderGameState(serverState);
@@ -104,11 +103,8 @@ bool ReplaySystem<C, S>::CompareNextGamesStates(int32 simulationTick)
 template<class C, class S>
 void ReplaySystem<C, S>::DeleteGameState(int32 simulationTick)
 {
-	const C& clientState = m_FramesToReconcile[0];
-	const S& serverState = m_FramesProcessedByServer[0];
-
-	ASSERT(clientState.SimulationTick == simulationTick);
-	ASSERT(serverState.SimulationTick == simulationTick);
+	ASSERT(m_FramesToReconcile[0].SimulationTick == simulationTick);
+	ASSERT(m_FramesProcessedByServer[0].SimulationTick == simulationTick);
 
 	m_FramesToReconcile.Erase(m_FramesToReconcile.begin());
 	m_FramesProcessedByServer.Erase(m_FramesProcessedByServer.begin());
