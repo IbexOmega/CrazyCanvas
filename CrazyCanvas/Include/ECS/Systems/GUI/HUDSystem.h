@@ -24,6 +24,7 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta);
 
 private:
+	LambdaEngine::IDVector m_PlayerEntities;
 	LambdaEngine::IDVector m_WeaponEntities;
 
 	Noesis::Ptr<HUDGUI> m_HUDGUI;

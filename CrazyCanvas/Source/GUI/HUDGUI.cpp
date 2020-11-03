@@ -69,11 +69,32 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 	return false;
 }
 
-bool HUDGUI::ApplyDamage(float damage)
+bool HUDGUI::UpdateHealth(int32 currentHealth)
 {
 	//Returns false if player is dead
 
-	m_GUIState.DamageTaken += damage;
+
+
+
+	if (currentHealth != m_GUIState.Health)
+	{
+		LOG_ERROR("Health Changed to %d", currentHealth);
+		Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
+		Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
+
+		float healthScale = currentHealth / m_GUIState.MaxHealth;
+
+		scale->SetScaleX(healthScale);
+		pHpRect->SetRenderTransform(scale);
+		m_GUIState.Health = currentHealth;
+
+		if (m_GUIState.Health <= 0)
+			return false;
+	}
+
+
+
+	/*m_GUIState.DamageTaken += damage;
 	std::string life;
 
 	if (m_GUIState.DamageTaken < m_GUIState.LifeMaxHeight)
@@ -97,7 +118,7 @@ bool HUDGUI::ApplyDamage(float damage)
 			FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
 		}
 		return false;
-	}
+	}*/
 	return true;
 }
 
@@ -138,11 +159,12 @@ bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap)
 
 void HUDGUI::InitGUI()
 {
-	//Noesis::Rectangle* pHpRect = FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT");
+	Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
 
-	m_GUIState.DamageTaken		= 0.0;
-	//m_GUIState.LifeMaxHeight	= pHpRect->GetHeight();
-	m_GUIState.Health			= 100.0;
+	/*Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
+	pHpRect->SetRenderTransform(scale);*/
+
+	m_GUIState.Health			= m_GUIState.MaxHealth;
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
 

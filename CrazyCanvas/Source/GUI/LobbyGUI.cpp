@@ -231,7 +231,6 @@ void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-
 	ErrorPopUpClose();
 }
 
@@ -254,7 +253,13 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 
 		m_HasHostedServer = true;
 
+#if defined(LAMBDA_CONFIG_DEBUG)
 		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
+#elif defined(LAMBDA_CONFIG_RELEASE)
+		StartUpServer("../Build/bin/Release-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
+#elif defined(LAMBDA_CONFIG_PRODUCTION)
+		StartUpServer("../Build/bin/Production-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
+#endif
 		//LambdaEngine::GUIApplication::SetView(nullptr);
 	}
 }

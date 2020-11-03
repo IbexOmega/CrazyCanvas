@@ -23,10 +23,9 @@
 
 struct GameGUIState
 {
-	float LifeMaxHeight;
-	float DamageTaken;
-	float Health;
-	
+	int32 Health;
+	int32 MaxHealth = 100;
+
 	LambdaEngine::TArray<uint32> Scores;
 
 	int32 Ammo;
@@ -46,7 +45,7 @@ public:
 	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	bool ApplyDamage(float damage);
+	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
 	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap);
 

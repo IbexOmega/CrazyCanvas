@@ -29,14 +29,18 @@ void HUDSystem::Init()
 			.pSubscriber = &m_WeaponEntities,
 			.ComponentAccesses =
 			{
-				{R, WeaponComponent::Type()}
+				{ R, WeaponComponent::Type() },
 			}
 		},
+		{
+			.pSubscriber = &m_PlayerEntities,
+			.ComponentAccesses =
+			{
+				{ R, HealthComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
+			}
+		}
 	};
-	systemReg.SubscriberRegistration.AdditionalAccesses =
-	{
-		{R, PlayerLocalComponent::Type()}
-	};
+	systemReg.Phase = 1;
 
 	RegisterSystem(TYPE_NAME(HUDSystem), systemReg);
 
@@ -58,17 +62,26 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
 	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-	for (Entity weaponEntity : m_WeaponEntities)
+
+	for (Entity players : m_PlayerEntities)
 	{
-		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weaponEntity);
+		const HealthComponent& healthComponent = pHealthComponents->GetConstData(players);
+		m_HUDGUI->UpdateScore();
+		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
+	}
+
+	for (Entity playerWeapon : m_WeaponEntities)
+	{
+		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+		const HealthComponent& healthComponent = pHealthComponents->GetConstData(playerWeapon);
 		Entity playerEntity = weaponComponent.WeaponOwner;
 
 		if (pPlayerLocalComponents->HasComponent(playerEntity) && m_HUDGUI)
 		{
 			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition, weaponComponent.AmmoCapacity);
-			m_HUDGUI->UpdateScore();
 		}
 	}
 }
