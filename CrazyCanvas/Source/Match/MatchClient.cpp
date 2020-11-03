@@ -86,8 +86,8 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			// Notify systems that a new player connected (Not myself tho)
 			if (!packet.Player.IsMySelf)
 			{
-				PlayerConnectedEvent event(createdPlayerEntities[0], packet.Position);
-				EventQueue::SendEvent(event);
+				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
+				EventQueue::SendEvent(connectedEvent);
 			}
 
 			break;
