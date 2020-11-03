@@ -43,7 +43,12 @@ bool MatchClient::InitInternal()
 
 void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
-	UNREFERENCED_VARIABLE(deltaTime);
+	if (m_MatchBeginTimer > 0.0f)
+	{
+		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
+
+		LOG_ERROR("CLIENT: Match Begin");
+	}
 }
 
 bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
@@ -124,6 +129,14 @@ bool MatchClient::OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<Pa
 
 	if(entity != UINT32_MAX)
 		m_pLevel->DeleteObject(entity);
+
+	return true;
+}
+
+bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchStart>& event)
+{
+	m_HasBegun = false;
+	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
 
 	return true;
 }

@@ -34,6 +34,7 @@
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketMatchStart.h"
 
 #include <imgui.h>
 
@@ -313,7 +314,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
 	ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
 
-	//Send currently existing players to the new client
+	// Send currently existing players to the new client
 	{
 		TArray<Entity> playerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
 
@@ -337,12 +338,12 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		}
 	}
 
-	//Create a player for the new client, also sends the new player to the connected clients
+	// Create a player for the new client, also sends the new player to the connected clients
 	{
 		SpawnPlayer((ClientRemoteBase*)pClient);
 	}
 
-	//Send flag data to clients
+	// Send flag data to clients
 	{
 		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
@@ -361,6 +362,12 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
 			ServerHelper::Send(pClient, packet);
 		}
+	}
+
+	// Send Match Start Packet
+	{
+		PacketMatchStart matchStartPacket;
+		ServerHelper::SendBroadcast(matchStartPacket);
 	}
 
 	return true;

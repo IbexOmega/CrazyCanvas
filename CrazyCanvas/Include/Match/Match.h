@@ -18,6 +18,7 @@ public:
 
 	static void Tick(LambdaEngine::Timestamp deltaTime);
 
+	FORCEINLINE static bool HasBegun() { return s_pMatchInstance->HasBegun(); }
 	FORCEINLINE static uint32 GetScore(uint32 teamIndex) { return s_pMatchInstance->GetScore(teamIndex); }
 
 private:
