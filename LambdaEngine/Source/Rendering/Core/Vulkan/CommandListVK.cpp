@@ -320,9 +320,6 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
-		accelerationStructureBuildInfo.update						= VK_FALSE;
-		accelerationStructureBuildInfo.srcAccelerationStructure		= VK_NULL_HANDLE;
-		accelerationStructureBuildInfo.dstAccelerationStructure		= pAccelerationStructureVk->GetAccelerationStructure();
 		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAddress();
 
 		//Extra Flags
