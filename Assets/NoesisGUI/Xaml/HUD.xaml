@@ -61,11 +61,11 @@
         <Border BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="3" BorderBrush="Black" Background="#FF184A81" >
 
         </Border>
-        <Border  BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="3"  Background="#FFFFD1D1" Margin="5,10,10,10" >
+        <Border  BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="3"  Background="#FFFFD1D1" Margin="10" >
 
         </Border>
 
-        <Border x:Name="HEALTH_RECT"  BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="3"  Background="#FFE66868" Margin="5,10,10,10" RenderTransformOrigin="0.0,0.0">
+        <Border x:Name="HEALTH_RECT"  BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="3"  Background="#FFE66868" Margin="10" RenderTransformOrigin="0.0,0.0">
             <Border.RenderTransform>
                 <ScaleTransform ScaleX="1"/>
             </Border.RenderTransform>
@@ -83,7 +83,7 @@
 
 
 
-
+    <!--
     <Button x:Name="fill" Click="OnButtonGrowClick" Content="FIll"  Grid.Column="2" Grid.Row="4" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
         <Button.Triggers>
             <EventTrigger RoutedEvent="Button.Click">
@@ -97,7 +97,7 @@
             </EventTrigger>
         </Button.Triggers>
     </Button>
-    <!-- Removed, just uncomment to test functionality
+     Removed, just uncomment to test functionality
     <Button  Content="Shoot" Click="OnButtonShootClick" Grid.Column="2" Grid.Row="5" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
     <Button  Content="Score" Click="OnButtonScoreClick" Grid.Column="2" Grid.Row="6" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
     -->

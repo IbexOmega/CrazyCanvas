@@ -72,53 +72,25 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 bool HUDGUI::UpdateHealth(int32 currentHealth)
 {
 	//Returns false if player is dead
-
-
-
-
 	if (currentHealth != m_GUIState.Health)
 	{
-		LOG_ERROR("Health Changed to %d", currentHealth);
 		Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
 		Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
 
-		float healthScale = currentHealth / m_GUIState.MaxHealth;
-
+		float healthScale = (float)currentHealth / (float)m_GUIState.MaxHealth;
+		scale->SetCenterX(0.0);
+		scale->SetCenterY(0.0);
 		scale->SetScaleX(healthScale);
 		pHpRect->SetRenderTransform(scale);
+
+		std::string hpString = std::to_string((int32)(healthScale * 100)) + "%";
+		FrameworkElement::FindName<Noesis::TextBlock>("HEALTH_DISPLAY")->SetText(hpString.c_str());
+
 		m_GUIState.Health = currentHealth;
 
 		if (m_GUIState.Health <= 0)
 			return false;
 	}
-
-
-
-	/*m_GUIState.DamageTaken += damage;
-	std::string life;
-
-	if (m_GUIState.DamageTaken < m_GUIState.LifeMaxHeight)
-	{
-		float percent = (damage / m_GUIState.LifeMaxHeight) * 100;
-		m_GUIState.Health -= percent;
-
-		life = std::to_string((int)m_GUIState.Health) + " %";
-
-		FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
-		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
-	}
-	else
-	{
-		life = "0 %";
-		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
-
-		{//Resets
-			m_GUIState.DamageTaken = 0.0;
-			m_GUIState.Health = 100.0;
-			FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
-		}
-		return false;
-	}*/
 	return true;
 }
 
@@ -161,8 +133,9 @@ void HUDGUI::InitGUI()
 {
 	Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
 
-	/*Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
-	pHpRect->SetRenderTransform(scale);*/
+	//Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
+
+	//pHpRect->SetRenderTransform(scale);
 
 	m_GUIState.Health			= m_GUIState.MaxHealth;
 	m_GUIState.AmmoCapacity		= 50;

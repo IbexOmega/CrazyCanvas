@@ -173,7 +173,6 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			{
 				if (healthComponent.CurrentHealth != packet.CurrentHealth)
 				{
-					LOG_INFO("Health changed old=%d new=%d", healthComponent.CurrentHealth, packet.CurrentHealth);
 					healthComponent.CurrentHealth = packet.CurrentHealth;
 					if (packet.Killed)
 					{
