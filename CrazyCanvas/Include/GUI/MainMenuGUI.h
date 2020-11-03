@@ -7,6 +7,7 @@
 #include "NsGui/Grid.h"
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
+#include "NsGui/Button.h"
 
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
@@ -40,18 +41,20 @@ public:
 	void OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 	// Key bindings (hate my life)
-	void OnButtonSetForwardKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 private:
 	void SetRenderStagesSleeping();
 	void SetDefaultSettings();
-	bool KeyboardCallback(const KeyPressedEvent& event);
-	bool MouseCallback(const MouseButtonClickedEvent& evenet);
-	void SetKey(const char* buttonName);
+	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
+	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 
 private:
 	bool 	m_ListenToCallbacks			= false;
-	Noesis::Button* pSetKeyButton		= nullptr;
+	Noesis::Button* m_pSetKeyButton		= nullptr;
+	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
 
 	bool	m_RayTracingEnabled			= false;
 	bool	m_MeshShadersEnabled		= false;

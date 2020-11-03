@@ -32,7 +32,7 @@ MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 	m_ContextStack.push(m_pStartGrid);
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &MainMenuGUI::KeyboardCallback);
-	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseCallback);
+	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseButtonCallback);
 
 	SetDefaultSettings();
 }
@@ -40,7 +40,7 @@ MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
 MainMenuGUI::~MainMenuGUI()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &MainMenuGUI::KeyboardCallback);
-	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseCallback);
+	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseButtonCallback);
 }
 
 bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -68,7 +68,9 @@ bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 	NS_CONNECT_EVENT(Button, Click, OnButtonCancelSettingsClick);
 
 	// Key Bindings
-	NS_CONNECT_EVENT(Button, Click, OnButtonSetForwardKey);
+	NS_CONNECT_EVENT(Button, Click, OnButtonSetKey);
+	NS_CONNECT_EVENT(Button, Click, OnButtonApplyKeyBindingsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonCancelKeyBindingsClick);
 
 	return false;
 }
@@ -222,12 +224,43 @@ void MainMenuGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender,
 *	KEYBINDINGS BUTTONS
 *
 */
-void MainMenuGUI::OnButtonSetForwardKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	SetKey("CAM_FORWARD");
+	// Starts listening to callbacks with specific button to be changed. This action is deferred to
+	// the callback functions of KeyboardCallback and MouseButtonCallback.
+
+	Noesis::Button* pCalledButton = static_cast<Noesis::Button*>(pSender);
+	LambdaEngine::String buttonName = pCalledButton->GetName();
+
+	m_pSetKeyButton = FrameworkElement::FindName<Button>(buttonName.c_str());
+	m_ListenToCallbacks = true;
+}
+
+void MainMenuGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Go through all keys to set - and set them
+	for (auto& stringPair : m_KeysToSet)
+	{
+		InputActionSystem::ChangeKeyBinding(stringPair.first, StringToKey(stringPair.second));
+	}
+	m_KeysToSet.clear();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Reset
+	for (auto& stringPair : m_KeysToSet)
+	{
+		LambdaEngine::String keyString = KeyToString(InputActionSystem::GetKey(stringPair.first));
+		FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(keyString.c_str());
+	}
+	m_KeysToSet.clear();
+
+	OnButtonBackClick(pSender, args);
 }
 
 /*
@@ -263,12 +296,11 @@ void MainMenuGUI::SetDefaultSettings()
 
 	// Init Keybindings
 	FrameworkElement::FindName<Button>("CAM_FORWARD")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_FORWARD")));
-
-	FrameworkElement::FindName<TextBox>("CAM_BACKWARD")->SetText(KeyToString(InputActionSystem::GetKey("CAM_BACKWARD")));
-	FrameworkElement::FindName<TextBox>("CAM_LEFT")	->SetText(KeyToString(InputActionSystem::GetKey("CAM_LEFT")));
-	FrameworkElement::FindName<TextBox>("CAM_RIGHT")->SetText(KeyToString(InputActionSystem::GetKey("CAM_RIGHT")));
-	FrameworkElement::FindName<TextBox>("CAM_JUMP")	->SetText(KeyToString(InputActionSystem::GetKey("CAM_JUMP")));
-	FrameworkElement::FindName<TextBox>("CAM_SPEED_MODIFIER")->SetText(KeyToString(InputActionSystem::GetKey("CAM_SPEED_MODIFIER")));
+	FrameworkElement::FindName<Button>("CAM_BACKWARD")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_BACKWARD")));
+	FrameworkElement::FindName<Button>("CAM_LEFT")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_LEFT")));
+	FrameworkElement::FindName<Button>("CAM_RIGHT")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_RIGHT")));
+	FrameworkElement::FindName<Button>("CAM_JUMP")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_JUMP")));
+	FrameworkElement::FindName<Button>("CAM_SPEED_MODIFIER")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_SPEED_MODIFIER")));
 
 	// TODO: Get attack buttons (primary shoot, secondary shoot, reload) when they are available from the config file
 
@@ -289,21 +321,28 @@ bool MainMenuGUI::KeyboardCallback(const KeyPressedEvent& event)
 {
 	if (m_ListenToCallbacks)
 	{
+		LambdaEngine::String keyString = KeyToString(event.Key);
+
+		// TODO: Sanitize input?
+		m_pSetKeyButton->SetContent(keyString.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = keyString;
+
 		m_ListenToCallbacks = false;
+
+		return true;
 	}
+
+	return false;
 }
 
-bool MainMenuGUI::MouseCallback(const MouseButtonClickedEvent& event)
+bool MainMenuGUI::MouseButtonCallback(const MouseButtonClickedEvent& event)
 {
 	if (m_ListenToCallbacks)
 	{
 		m_ListenToCallbacks = false;
+
+		return true;
 	}
-}
 
-void MainMenuGUI::SetKey(const char* buttonName)
-{
-	Noesis::Button* button = FrameworkElement::FindName<Button>(buttonName);
-
-
+	return false;
 }

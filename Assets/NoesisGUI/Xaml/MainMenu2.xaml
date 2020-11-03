@@ -156,8 +156,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Forward" Foreground="White" FontSize="29.333" />
-                <!-- <TextBox x:Name="CAM_FORWARD" Grid.Column="1" Margin="50 5 50 5" /> -->
-                <Button Click="OnButtonSetForwardKey" x:Name="CAM_FORWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="CAM_FORWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Backward-->
@@ -168,7 +167,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Backward" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="CAM_BACKWARD" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="CAM_BACKWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Left-->
@@ -179,7 +178,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Left" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="CAM_LEFT" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="CAM_LEFT" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Right-->
@@ -190,7 +189,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Right" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="CAM_RIGHT" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="CAM_RIGHT" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Jump-->
@@ -201,7 +200,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Jump" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="CAM_JUMP" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="CAM_JUMP" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Sprint-->
@@ -212,7 +211,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Sprint" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="CAM_SPEED_MODIFIER" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="CAM_SPEED_MODIFIER" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Attack Title-->
@@ -234,7 +233,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Primary" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="ATTACK_PRIMARY" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="ATTACK_PRIMARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Secondary-->
@@ -245,10 +244,10 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Secondary" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="ATTACK_SECONDARY" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="ATTACK_SECONDARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
-            <!--Secondary-->
+            <!--Reload-->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
@@ -256,7 +255,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Reload" Foreground="White" FontSize="29.333" />
-                <TextBox x:Name="ATTACK_RELOAD" Grid.Column="1" Margin="50 5 50 5" />
+                <Button Click="OnButtonSetKey" x:Name="ATTACK_RELOAD" Content="" Grid.Column="1" Margin="50 5 50 5" />
             </Grid>
 
             <!--Finish Buttons-->
@@ -266,8 +265,8 @@
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <Button Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
-                <Button Click="OnButtonBackClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
+                <Button Click="OnButtonApplyKeyBindingsClick" Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
+                <Button Click="OnButtonCancelKeyBindingsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
             </Grid>
         </StackPanel>
     </Grid>
