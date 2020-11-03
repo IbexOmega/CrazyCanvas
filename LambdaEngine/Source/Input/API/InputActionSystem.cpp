@@ -11,9 +11,34 @@
 
 namespace LambdaEngine
 {
-	THashTable<EAction, String> InputActionSystem::m_CurrentBindings;
-
+	THashTable<EAction, String> InputActionSystem::s_CurrentBindings;
 	rapidjson::Document InputActionSystem::s_ConfigDocument;
+
+	THashTable<EAction, String> InputActionSystem::s_DefaultBindings = {
+		// Movement
+		{EAction::ACTION_MOVE_FORWARD, "W"},
+		{EAction::ACTION_MOVE_BACKWARD, "S"},
+		{EAction::ACTION_MOVE_LEFT, "A"},
+		{EAction::ACTION_MOVE_RIGHT, "D"},
+		{EAction::ACTION_MOVE_SPRINT, "LEFT_SHIFT"},
+		{EAction::ACTION_MOVE_CROUCH, "LEFT_CONTROL"},
+		{EAction::ACTION_MOVE_JUMP, "SPACE"},
+
+		// Attack
+		{EAction::ACTION_ATTACK_PRIMARY, "MOUSE_LEFT"},
+		{EAction::ACTION_ATTACK_SECONDARY, "MOUSE_RIGHT"},
+		{EAction::ACTION_ATTACK_RELOAD, "R"},
+		{EAction::ACTION_ATTACK_MELEE, "E"},
+
+		// Debug
+		{EAction::ACTION_CAM_ROT_UP, "UP"},
+		{EAction::ACTION_CAM_ROT_DOWN, "DOWN"},
+		{EAction::ACTION_CAM_ROT_LEFT, "LEFT"},
+		{EAction::ACTION_CAM_ROT_RIGHT, "RIGHT"},
+		{EAction::ACTION_CAM_UP, "E"},
+		{EAction::ACTION_CAM_DOWN, "Q"},
+		{EAction::ACTION_TOGGLE_MOUSE, "C"},
+	};
 
 	bool InputActionSystem::LoadFromFile()
 	{
@@ -22,10 +47,9 @@ namespace LambdaEngine
 		FILE* pFile = fopen(pKeyBindingsConfigPath, "r");
 		if (!pFile)
 		{
-			// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
-			LOG_ERROR("Config file could not be opened: %s", pKeyBindingsConfigPath);
-			DEBUGBREAK();
-			return false;
+			LOG_ERROR("Config file could not be opened: %s. \nWill create a default file", pKeyBindingsConfigPath);
+			CreateDefaults();
+			return true;
 		}
 
 		char readBuffer[2048];
@@ -48,7 +72,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				m_CurrentBindings.insert({ action, strBinding });
+				s_CurrentBindings.insert({ action, strBinding });
 				LOG_INFO("Action %s is bounded to %s\n", strAction.c_str(), strBinding.c_str());
 			}
 
@@ -85,10 +109,10 @@ namespace LambdaEngine
 	bool InputActionSystem::ChangeKeyBinding(EAction action, EKey key)
 	{
 		String actionStr = ActionToString(action);
-		if (m_CurrentBindings.contains(action))
+		if (s_CurrentBindings.contains(action))
 		{
 			String keyStr = KeyToString(key);
-			m_CurrentBindings[action] = keyStr;
+			s_CurrentBindings[action] = keyStr;
 			if (s_ConfigDocument.HasMember(actionStr.c_str()))
 			{
 				s_ConfigDocument[actionStr.c_str()].SetString(keyStr.c_str(),
@@ -109,10 +133,10 @@ namespace LambdaEngine
 	bool InputActionSystem::ChangeKeyBinding(EAction action, EMouseButton button)
 	{
 		String actionStr = ActionToString(action);
-		if (m_CurrentBindings.contains(action))
+		if (s_CurrentBindings.contains(action))
 		{
 			String buttonStr = ButtonToString(button);
-			m_CurrentBindings[action] = buttonStr;
+			s_CurrentBindings[action] = buttonStr;
 			if (s_ConfigDocument.HasMember(actionStr.c_str()))
 			{
 				s_ConfigDocument[actionStr.c_str()].SetString(buttonStr.c_str(),
@@ -151,10 +175,10 @@ namespace LambdaEngine
 
 	bool InputActionSystem::IsActive(EAction action)
 	{
-		if (m_CurrentBindings.contains(action))
+		if (s_CurrentBindings.contains(action))
 		{
-			EKey key = StringToKey(m_CurrentBindings[action]);
-			EMouseButton mouseButton = StringToButton(m_CurrentBindings[action]);
+			EKey key = StringToKey(s_CurrentBindings[action]);
+			EMouseButton mouseButton = StringToButton(s_CurrentBindings[action]);
 
 			if (key != EKey::KEY_UNKNOWN)
 			{
@@ -182,9 +206,18 @@ namespace LambdaEngine
 
 	EKey InputActionSystem::GetKey(EAction action)
 	{
-		if (m_CurrentBindings.contains(action))
+		if (s_CurrentBindings.contains(action))
 		{
-			return StringToKey(m_CurrentBindings[action]);
+			return StringToKey(s_CurrentBindings[action]);
+		}
+		else if (s_DefaultBindings.contains(action))
+		{
+			LOG_WARNING("Binding %s was not found. Using default (%s) instead",
+				ActionToString(action), s_DefaultBindings[action].c_str());
+
+			s_CurrentBindings[action] = s_DefaultBindings[action];
+			WriteNewMember(action, s_CurrentBindings[action]);
+			return StringToKey(s_CurrentBindings[action]);
 		}
 
 		LOG_WARNING("Action %s is not defined.", ActionToString(action));
@@ -193,12 +226,44 @@ namespace LambdaEngine
 
 	EMouseButton InputActionSystem::GetMouseButton(EAction action)
 	{
-		if (m_CurrentBindings.contains(action))
+		if (s_CurrentBindings.contains(action))
 		{
-			return StringToButton(m_CurrentBindings[action]);
+			return StringToButton(s_CurrentBindings[action]);
+		}
+		else if (s_DefaultBindings.contains(action))
+		{
+			LOG_WARNING("Binding %s was not found. Using default (%s) instead",
+				ActionToString(action), s_DefaultBindings[action].c_str());
+
+			s_CurrentBindings[action] = s_DefaultBindings[action];
+			WriteNewMember(action, s_CurrentBindings[action]);
+			return StringToButton(s_CurrentBindings[action]);
 		}
 
 		LOG_WARNING("Action %s is not defined.", ActionToString(action));
 		return EMouseButton::MOUSE_BUTTON_UNKNOWN;
+	}
+
+	void InputActionSystem::CreateDefaults()
+	{
+		s_ConfigDocument.SetObject();
+		for (auto& pair : s_DefaultBindings)
+		{
+			s_CurrentBindings.insert({ pair.first, pair.second });
+			rapidjson::Value key(ActionToString(pair.first), strlen(ActionToString(pair.first)), s_ConfigDocument.GetAllocator());
+			rapidjson::Value value(pair.second.c_str(), pair.second.size(), s_ConfigDocument.GetAllocator());
+			s_ConfigDocument.AddMember(key, value, s_ConfigDocument.GetAllocator());
+		}
+
+		WriteToFile();
+	}
+
+	void InputActionSystem::WriteNewMember(EAction action, String strValue)
+	{
+		rapidjson::Value key(ActionToString(action), strlen(ActionToString(action)), s_ConfigDocument.GetAllocator());
+		rapidjson::Value value(strValue.c_str(), strValue.size(), s_ConfigDocument.GetAllocator());
+		s_ConfigDocument.AddMember(key, value, s_ConfigDocument.GetAllocator());
+
+		WriteToFile();
 	}
 }
