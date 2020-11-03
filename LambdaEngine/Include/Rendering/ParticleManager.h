@@ -6,7 +6,7 @@
 
 #include "Rendering/Core/API/GraphicsTypes.h"
 
-#define DEBUG_PARTICLE true
+#define DEBUG_PARTICLE false
 
 namespace LambdaEngine 
 {

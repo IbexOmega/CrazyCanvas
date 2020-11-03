@@ -482,10 +482,10 @@ namespace LambdaEngine
 	bool ParticleManager::ActivateEmitterInstance(EmitterID emitterID, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
 	{
 		auto& emitterInstance = m_Emitters[emitterID];
+		UpdateEmitterInstanceData(emitterInstance, positionComp, rotationComp, emitterComp);
+		
 		if (emitterInstance.ParticleChunk.Size > 0)
 		{
-			UpdateEmitterInstanceData(emitterInstance, positionComp, rotationComp, emitterComp);
-
 			if (!AllocateParticleChunk(emitterInstance.ParticleChunk))
 			{
 				LOG_ERROR("[ParticleManager]: Failed to allocate Emitter Particles. Max particle capacity of %u exceeded!", m_Particles.GetSize());
