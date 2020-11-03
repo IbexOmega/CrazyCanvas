@@ -49,6 +49,8 @@ void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaT
 {
 	HealthSystem::GetInstance().FixedTick(deltaTime);
 	
+	Match::FixedTick(deltaTime);
+
 	FixedTickMainThread(deltaTime);
 
 	WeaponSystem::GetInstance().FixedTick(deltaTime);
