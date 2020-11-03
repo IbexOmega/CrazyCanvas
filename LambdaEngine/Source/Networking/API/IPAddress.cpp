@@ -21,7 +21,8 @@ namespace LambdaEngine
 
 	IPAddress::IPAddress(const std::string& address, uint64 hash) :
 		m_Address(address),
-		m_Hash(hash)
+		m_Hash(hash),
+		m_IsValid(true)
 	{
 		
 	}
@@ -42,6 +43,11 @@ namespace LambdaEngine
 	uint64 IPAddress::GetHash() const
 	{
 		return m_Hash;
+	}
+
+	bool IPAddress::IsValid() const
+	{
+		return m_IsValid;
 	}
 
 	bool IPAddress::operator==(const IPAddress& other) const
