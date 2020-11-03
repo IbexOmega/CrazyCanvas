@@ -47,11 +47,11 @@ namespace LambdaEngine
 		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 
 		// Audio Footsteps
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("walking-short.wav");
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("walking-short.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc = {
 				.pName = "WalkingSoundInstance",
-				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
 				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 				.Position = cameraDesc.Position,
 				.Volume = 0.055f

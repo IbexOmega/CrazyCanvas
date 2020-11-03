@@ -163,8 +163,8 @@ bool WeaponSystem::Init()
 	}
 
 	// Create soundeffects
-	m_GunFireGUID	= ResourceManager::LoadSoundEffectFromFile("gun.wav");
-	m_OutOfAmmoGUID	= ResourceManager::LoadSoundEffectFromFile("out_of_ammo.wav");
+	m_GunFireGUID	= ResourceManager::LoadSoundEffect3DFromFile("gun.wav");
+	m_OutOfAmmoGUID	= ResourceManager::LoadSoundEffect3DFromFile("out_of_ammo.wav");
 	return true;
 }
 
@@ -432,7 +432,7 @@ void WeaponSystem::Fire(
 	// Play gun fire and spawn particles
 	if (!MultiplayerUtils::IsServer())
 	{
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
+		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
 		m_pSound->PlayOnceAt(startPos, playerVelocity, 0.2f, 1.0f);
 
 		ParticleEmitterComponent& emitterComp = pECS->GetComponent<ParticleEmitterComponent>(weaponEntity);
@@ -480,7 +480,7 @@ void WeaponSystem::TryFire(
 	else
 	{
 		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
+		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_OutOfAmmoGUID);
 		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
 	}
 }

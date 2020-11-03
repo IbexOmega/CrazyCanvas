@@ -13,8 +13,8 @@ AudioEffectHandler::~AudioEffectHandler()
 void AudioEffectHandler::Init()
 {
 	using namespace LambdaEngine;
-	GUID_Lambda projectileHitID = ResourceManager::LoadSoundEffectFromFile("9_mm_gunshot-mike-koenig-123.wav");
-	m_pProjectileHitSound = ResourceManager::GetSoundEffect(projectileHitID);
+	GUID_Lambda projectileHitID = ResourceManager::LoadSoundEffect3DFromFile("9_mm_gunshot-mike-koenig-123.wav");
+	m_pProjectileHitSound = ResourceManager::GetSoundEffect3D(projectileHitID);
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent, AudioEffectHandler>(this, &AudioEffectHandler::OnProjectileHit);
 }

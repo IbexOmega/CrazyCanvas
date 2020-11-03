@@ -22,6 +22,10 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Resources/ResourceManager.h"
+
+#include "Audio/AudioAPI.h"
+
 using namespace LambdaEngine;
 
 MatchClient::~MatchClient()
@@ -48,6 +52,13 @@ bool MatchClient::InitInternal()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+
+	m_CountdownSoundEffects[4] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/five.wav");
+	m_CountdownSoundEffects[3] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/four.wav");
+	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
+	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
+	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
+
 	return true;
 }
 
@@ -55,10 +66,35 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	if (!m_ClientSideBegun)
 	{
+		float32 previousTimer = m_MatchBeginTimer;
 		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
-		m_ClientSideBegun = true;
 
-		LOG_ERROR("CLIENT: Match Should Begin");
+		if (previousTimer >= 5.0f && m_MatchBeginTimer < 5.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[4])->PlayOnce(0.1f);
+		}
+		else if (previousTimer >= 4.0f && m_MatchBeginTimer < 4.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[3])->PlayOnce(0.1f);
+		}
+		else if (previousTimer >= 3.0f && m_MatchBeginTimer < 3.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[2])->PlayOnce(0.1f);
+		}
+		else if (previousTimer >= 2.0f && m_MatchBeginTimer < 2.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[1])->PlayOnce(0.1f);
+		}
+		else if (previousTimer >= 1.0f && m_MatchBeginTimer < 1.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
+		}
+
+		if (m_MatchBeginTimer < 0.0f)
+		{
+			m_ClientSideBegun = true;
+			LOG_ERROR("CLIENT: Match Should Begin");
+		}		
 	}
 }
 
