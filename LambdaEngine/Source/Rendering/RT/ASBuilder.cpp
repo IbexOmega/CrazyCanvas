@@ -45,10 +45,30 @@ namespace LambdaEngine
 
 			m_BackBufferCount = pPreInitDesc->BackBufferCount;
 
-			CreateCommandLists();
-			CreateBuffers();
+			if (!CreateCommandLists())
+			{
+				LOG_ERROR("[ASBuilder]: Failed to create Command Lists");
+				return false;
+			}
+
+			if (!CreateBuffers())
+			{
+				LOG_ERROR("[ASBuilder]: Failed to create Buffers");
+				return false;
+			}
 
 			m_pResourcesToRemove = DBG_NEW TArray<DeviceChild*>[m_BackBufferCount];
+		}
+
+		return true;
+	}
+
+	bool ASBuilder::RenderGraphPostInit()
+	{
+		if (!CreateDummyBuffers())
+		{
+			LOG_ERROR("[ASBuilder]: Failed to create Dummy Buffers");
+			return false;
 		}
 
 		return true;
@@ -641,6 +661,14 @@ namespace LambdaEngine
 			m_ppInstanceIndicesStagingBuffers[b] = nullptr;
 			m_ppInstanceStagingBuffers[b] = nullptr;
 		}
+
+		return true;
+	}
+
+	bool ASBuilder::CreateDummyBuffers()
+	{
+		SAFERELEASE(m_pInstanceIndicesBuffer);
+		SAFERELEASE(m_pInstanceBuffer);
 
 		// Create Instance Index Dummy Buffer
 		{

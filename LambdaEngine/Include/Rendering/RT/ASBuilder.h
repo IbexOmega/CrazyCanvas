@@ -32,6 +32,7 @@ namespace LambdaEngine
 
 		virtual bool Init() override final;
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
+		virtual bool RenderGraphPostInit() override final;
 
 		/*
 		* Creates a BLAS and SBT Record for the given Vertex- and Index Buffer if index == BLAS_UNINITIALIZED_INDEX, it then generates a new index which gets stored in the index variable.
@@ -106,6 +107,7 @@ namespace LambdaEngine
 
 		bool CreateCommandLists();
 		bool CreateBuffers();
+		bool CreateDummyBuffers();
 
 	private:
 		RenderGraph* m_pRenderGraph = nullptr;
