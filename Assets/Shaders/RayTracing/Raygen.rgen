@@ -95,7 +95,7 @@ void main()
     //We don't want to shade if we reached max bounces, our fake energy loss will make the color black anyway
     if (b == MAX_BOUNCES)
     {
-        imageStore(u_RadianceOut, pixelCoords, vec4(0.0f));
+        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(0.0f));
     }
     else if (shadeOutput)
     {
@@ -185,10 +185,26 @@ void main()
 		vec3 ambient    = 0.03f * albedo * ao;
 		vec3 colorHDR   = bounceDarkening * (ambient + Lo);
 
-        imageStore(u_RadianceOut, pixelCoords, vec4(colorHDR, 1.0f));
+        float luminance = CalculateLuminance(colorHDR);
+
+        //Reinhard Tone-Mapping
+        vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+
+        //Gamma Correction
+        vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
     }
     else
     {
-        imageStore(u_RadianceOut, pixelCoords, vec4(s_PrimaryPayload.Albedo, 1.0f));
+        float luminance = CalculateLuminance(s_PrimaryPayload.Albedo);
+
+		//Reinhard Tone-Mapping
+		vec3 colorLDR = s_PrimaryPayload.Albedo / (s_PrimaryPayload.Albedo + vec3(1.0f));
+
+		//Gamma Correction
+		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
     }
 }
