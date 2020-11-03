@@ -160,8 +160,10 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 
 		DirectionalLightComponent directionalLightComponent =
 		{
-			.ColorIntensity = directionalLight.ColorIntensity
+			.ColorIntensity = directionalLight.ColorIntensity,
 		};
+
+		LOG_ERROR("LightDIRECTION: (%f, %f, %f)", directionalLight.Direction.x, directionalLight.Direction.y, directionalLight.Direction.z);
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, (translation) });
@@ -211,7 +213,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 			pMesh->DefaultScale.y * pMesh->BoundingBox.Dimensions.y,
 			pMesh->DefaultScale.z * pMesh->BoundingBox.Dimensions.z));
 
-	uint32 meshPaintSize = uint32(maxDim * 384.0f);
+	uint32 meshPaintSize = glm::max<uint32>(1, uint32(maxDim * 384.0f));
 
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
