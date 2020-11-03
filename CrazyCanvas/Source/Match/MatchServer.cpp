@@ -175,6 +175,8 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	{
 		std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
 		for (Entity playerEntity : m_PlayersToKill)
