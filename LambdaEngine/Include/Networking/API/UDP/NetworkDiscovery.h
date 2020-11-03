@@ -6,6 +6,10 @@
 
 #include "Containers/String.h"
 
+#include "Containers/TSet.h"
+
+#include "Networking/API/IPEndPoint.h"
+
 namespace LambdaEngine
 {
 	class INetworkDiscoveryServer;
@@ -27,6 +31,9 @@ namespace LambdaEngine
 		static bool EnableClient(const String& nameOfGame, INetworkDiscoveryClient* pHandler, uint16 portOfBroadcastServer = 4450, Timestamp searchInterval = Timestamp::Seconds(1));
 		static void DisableClient();
 		static bool IsClientEnabled();
+		static void AddTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4450);
+		static void RemoveTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4450);
+		static const TSet<IPEndPoint>& GetTargets();
 
 	private:
 		static void FixedTickStatic(Timestamp delta);
@@ -36,5 +43,6 @@ namespace LambdaEngine
 		static ServerNetworkDiscovery* s_pServer;
 		static ClientNetworkDiscovery* s_pClient;
 		static SpinLock s_Lock;
+		static TSet<IPEndPoint> s_EndPoints;
 	};
 }

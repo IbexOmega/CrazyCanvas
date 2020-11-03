@@ -38,7 +38,7 @@ namespace LambdaEngine
 	class PipelineState;
 	class DescriptorSet;
 	class DescriptorHeap;
-	class ICustomRenderer;
+	class CustomRenderer;
 	class CommandList;
 	class TextureView;
 	class Texture;
@@ -54,7 +54,7 @@ namespace LambdaEngine
 		uint32 BackBufferCount								= 3;
 		uint16 BackBufferWidth								= 0;
 		uint16 BackBufferHeight								= 0;
-		TArray<ICustomRenderer*>	CustomRenderers;
+		TArray<CustomRenderer*>	CustomRenderers;
 	};
 
 	struct PushConstantsUpdate
@@ -259,7 +259,7 @@ namespace LambdaEngine
 			glm::uvec3				Dimensions							= glm::uvec3(0);
 
 			bool					UsesCustomRenderer					= false;
-			ICustomRenderer*		pCustomRenderer						= nullptr;
+			CustomRenderer*			pCustomRenderer						= nullptr;
 
 			FPipelineStageFlags		FirstPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
 			FPipelineStageFlags		LastPipelineStage					= FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN;
@@ -353,7 +353,7 @@ namespace LambdaEngine
 		/*
 		* Updates the global SBT which is used for all Ray Tracing calls, each SBTRecord should contain addresses to valid Buffers
 		*/
-		void UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources);
+		void UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources);
 		/*
 		* Updates the dimensions of a RenderStage, will only set the dimensions which are set to EXTERNAL
 		*/
@@ -421,7 +421,7 @@ namespace LambdaEngine
 		bool CreateCopyCommandLists();
 		bool CreateProfiler(uint32 pipelineStageCount);
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
+		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 
@@ -468,8 +468,8 @@ namespace LambdaEngine
 		Fence*											s_pMaterialFence					= nullptr;
 		uint64											m_SignalValue						= 1;
 
-		TArray<ICustomRenderer*>						m_CustomRenderers;
-		TArray<ICustomRenderer*>						m_DebugRenderers;
+		TArray<CustomRenderer*>							m_CustomRenderers;
+		TArray<CustomRenderer*>							m_DebugRenderers;
 
 		CommandAllocator**								m_ppGraphicsCopyCommandAllocators	= nullptr;
 		CommandList**									m_ppGraphicsCopyCommandLists		= nullptr;

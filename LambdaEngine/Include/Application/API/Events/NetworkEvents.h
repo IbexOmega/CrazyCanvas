@@ -115,11 +115,13 @@ namespace LambdaEngine
 	struct ServerDiscoveredEvent : public Event
 	{
 	public:
-		inline ServerDiscoveredEvent(BinaryDecoder* pBinaryDecoder, const IPEndPoint* pIPEndPoint, uint64 serverUID)
+		inline ServerDiscoveredEvent(BinaryDecoder* pBinaryDecoder, const IPEndPoint* pIPEndPoint, uint64 serverUID, Timestamp ping, bool isLAN)
 			: Event(),
 			pDecoder(pBinaryDecoder),
 			pEndPoint(pIPEndPoint),
-			ServerUID(serverUID)
+			ServerUID(serverUID),
+			Ping(ping),
+			IsLAN(isLAN)
 		{
 		}
 
@@ -134,6 +136,8 @@ namespace LambdaEngine
 		BinaryDecoder* pDecoder;
 		const IPEndPoint* pEndPoint;
 		uint64 ServerUID;
+		Timestamp Ping;
+		bool IsLAN;
 	};
 
 	struct ServerDiscoveryPreTransmitEvent : public Event

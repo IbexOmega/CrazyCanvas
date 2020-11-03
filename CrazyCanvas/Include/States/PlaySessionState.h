@@ -21,7 +21,7 @@ class Level;
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState(bool singlePlayer, LambdaEngine::IPAddress* pIPAddress);
+	PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndPoint& endPoint);
 	~PlaySessionState();
 
 	void Init() override final;
@@ -39,7 +39,7 @@ public:
 
 private:
 	bool m_Singleplayer;
-	LambdaEngine::IPAddress* m_pIPAddress;
+	LambdaEngine::IPEndPoint m_EndPoint;
 
 	/* Systems */
 	HUDSystem m_HUDSystem;

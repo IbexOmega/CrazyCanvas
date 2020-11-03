@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Containers/String.h"
+#include "Containers/TArray.h"
 
 #include "Time/API/Timestamp.h"
 
@@ -25,6 +26,8 @@ namespace LambdaEngine
 		{
 			BinaryDecoder Decoder;
 			IPEndPoint Sender;
+			Timestamp Ping;
+			bool IsLAN;
 		};
 
 	public:
@@ -32,7 +35,7 @@ namespace LambdaEngine
 		virtual ~ClientNetworkDiscovery();
 
 		void Release();
-		bool Connect(const IPEndPoint& ipEndPoint, const String& nameOfGame, INetworkDiscoveryClient* pHandler, Timestamp searchInterval);
+		bool Connect(const TSet<IPEndPoint>* pEndPoints, SpinLock* pLock, const String& nameOfGame, INetworkDiscoveryClient* pHandler, Timestamp searchInterval);
 
 	protected:
 		virtual bool OnThreadsStarted(std::string& reason) override;
@@ -51,12 +54,13 @@ namespace LambdaEngine
 
 	private:
 		ISocketUDP* m_pSocket;
-		IPEndPoint m_IPEndPoint;
+		const TSet<IPEndPoint>* m_pEndPoints;
 		SegmentPool m_SegmentPool;
 		NetworkStatistics m_Statistics;
 		PacketTransceiverUDP m_Transceiver;
 		String m_NameOfGame;
 		SpinLock m_Lock;
+		SpinLock* m_pLockEndPoints;
 		INetworkDiscoveryClient* m_pHandler;
 		Timestamp m_TimeOfLastSearch;
 		Timestamp m_SearchInterval;

@@ -15,11 +15,10 @@
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "World/LevelManager.h"
 #include "World/Level.h"
-
-#include "Multiplayer/Packet/PacketType.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -27,13 +26,11 @@
 
 #include "Networking/API/ClientRemoteBase.h"
 
-#include "Game/Multiplayer/Server/ServerSystem.h"
-
 #include "Rendering/ImGuiRenderer.h"
 
-#include "Multiplayer/Packet/PacketCreateLevelObject.h"
-
 #include "Multiplayer/ServerHelper.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
@@ -47,7 +44,8 @@ MatchServer::~MatchServer()
 	using namespace LambdaEngine;
 	
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
-	EventQueue::UnregisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::UnregisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
 }
 
 bool MatchServer::InitInternal()
@@ -55,7 +53,8 @@ bool MatchServer::InitInternal()
 	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
-	EventQueue::RegisterEventHandler<OnFlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::RegisterEventHandler<PlayerDiedEvent>(this, &MatchServer::OnPlayerDied);
 
 	return true;
 }
@@ -179,7 +178,7 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
 	{
-		LOG_ERROR("[MatchClient]: Failed to create projectile!");
+		LOG_ERROR("[MatchServer]: Failed to create projectile!");
 	}
 
 	LOG_INFO("SERVER: Weapon fired");
@@ -188,9 +187,38 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 
 bool MatchServer::OnPlayerDied(const PlayerDiedEvent& event)
 {
-	UNREFERENCED_VARIABLE(event);
+	using namespace LambdaEngine;
+
+	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	LOG_INFO("SERVER: Player=%u DIED", event.KilledEntity);
-	return false;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(event.KilledEntity);
+
+	// Get spawnpoint from level
+	glm::vec3 newPosition = glm::vec3(0.0f);
+	if (m_pLevel != nullptr)
+	{
+		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+
+		ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
+
+		uint8 playerTeam = pTeamComponents->GetConstData(event.KilledEntity).TeamIndex;
+		for (Entity spawnEntity : spawnPoints)
+		{
+			if (pTeamComponents->HasComponent(spawnEntity))
+			{
+				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
+				{
+					newPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+				}
+			}
+		}
+	}
+
+	positionComp.Position = newPosition;
+	return true;
 }
 
 void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
@@ -338,7 +366,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	return true;
 }
 
-bool MatchServer::OnFlagDelivered(const OnFlagDeliveredEvent& event)
+bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 {
 	using namespace LambdaEngine;
 

@@ -19,6 +19,7 @@ vec3 CalculateNormal(vec4 sampledNormalMetallicRoughness)
 SPositions CalculatePositionsFromDepth(vec2 screenTexCoord, float sampledDepth, mat4 cameraProjectionInv, mat4 cameraViewInv)
 {
 	vec2 xy = screenTexCoord * 2.0f - 1.0f;
+	xy = vec2(xy.x, -xy.y);
 
 	vec4 clipSpacePosition = vec4(xy, sampledDepth, 1.0f);
 	vec4 viewSpacePosition = cameraProjectionInv * clipSpacePosition;

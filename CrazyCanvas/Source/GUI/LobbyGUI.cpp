@@ -39,15 +39,15 @@ using namespace Noesis;
 
 LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	m_HostGameDesc(),
-	m_ServerList(xamlFile),
+	m_ServerList(),
 	m_Servers()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
-	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
+	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerResponse);
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
 
-	const char* pIP = "81.170.143.133";
+	const char* pIP = "81.170.143.133:4444";
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
@@ -55,11 +55,21 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	
 	ErrorPopUpClose();
 	NotiPopUpClose();
+
+	TArray<ServerInfo> serverInfos;
+	uint16 defaultPort = (uint16)EngineConfig::GetIntProperty("NetworkPort");
+	SavedServerSystem::LoadServers(serverInfos, defaultPort);
+
+	for (ServerInfo& serverInfo : serverInfos)
+	{
+		HandleServerInfo(serverInfo, -1);
+		ClientHelper::AddNetworkDiscoveryTarget(serverInfo.EndPoint.GetAddress());
+	}
 }
 
 LobbyGUI::~LobbyGUI()
 {
-	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnLANServerFound);
+	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerResponse);
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
 }
 
@@ -86,51 +96,62 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-bool LobbyGUI::OnLANServerFound(const LambdaEngine::ServerDiscoveredEvent& event)
+bool LobbyGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event)
 {
 	BinaryDecoder* pDecoder = event.pDecoder;
 
-	ServerInfo newInfo;
-	newInfo.Ping = 0;
-	newInfo.LastUpdate = EngineLoop::GetTimeSinceStart();
-	newInfo.EndPoint = *event.pEndPoint;
-	newInfo.ServerUID = event.ServerUID;
+	ServerInfo serverInfo;
+	serverInfo.Ping			= (uint16)event.Ping.AsMilliSeconds();
+	serverInfo.LastUpdate	= EngineLoop::GetTimeSinceStart();
+	serverInfo.EndPoint		= *event.pEndPoint;
+	serverInfo.ServerUID	= event.ServerUID;
+	serverInfo.IsLAN		= event.IsLAN;
+	serverInfo.IsOnline		= true;
 
-	pDecoder->ReadUInt8(newInfo.Players);
-	pDecoder->ReadString(newInfo.Name);
-	pDecoder->ReadString(newInfo.MapName);
+	pDecoder->ReadUInt8(serverInfo.Players);
+	pDecoder->ReadString(serverInfo.Name);
+	pDecoder->ReadString(serverInfo.MapName);
 	int32 clientHostID = pDecoder->ReadInt32();
 
-	ServerInfo& currentInfo = m_Servers[event.ServerUID];
+	HandleServerInfo(serverInfo, clientHostID);
+
+	return true;
+}
+
+void LobbyGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave)
+{
+	ServerInfo& currentInfo = m_Servers[serverInfo.EndPoint.GetAddress()];
 
 	if (ServerHostHelper::GetClientHostID() == clientHostID)
 	{
 		SetRenderStagesActive();
 
-		State* pPlaySessionState = DBG_NEW PlaySessionState(false, newInfo.EndPoint.GetAddress());
+		State* pPlaySessionState = DBG_NEW PlaySessionState(false, serverInfo.EndPoint);
 		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
 	}
 
-	if (currentInfo != newInfo)
+	LambdaEngine::String oldName = currentInfo.Name;
+
+	if (currentInfo != serverInfo)
 	{
-		currentInfo = newInfo;
-		if (currentInfo.ServerGrid) // update current list
+		currentInfo = serverInfo;
+		if (currentInfo.GridUI)
 		{
-			m_ServerList.UpdateServerItems(currentInfo);
+			m_ServerList.UpdateServerInfo(currentInfo);
 		}
-		else // add new item to list
+		else
 		{
 			Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-
-			currentInfo.ServerGrid = m_ServerList.AddLocalServerItem(pServerGrid, currentInfo, true);
+			m_ServerList.AddServer(pServerGrid, currentInfo);
 		}
 	}
 	else
 	{
-		currentInfo = newInfo;
+		currentInfo = serverInfo;
 	}
 
-	return true;
+	if (oldName != serverInfo.Name || forceSave)
+		SavedServerSystem::SaveServers(m_Servers);
 }
 
 bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
@@ -159,16 +180,32 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	LOG_MESSAGE(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
+	LambdaEngine::String address	= FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText();
+	bool isEndpointValid			= false;
+	uint16 defaultPort				= (uint16)EngineConfig::GetIntProperty("NetworkPort");
+	IPEndPoint endPoint				= IPEndPoint::Parse(address, defaultPort, &isEndpointValid);
 
-	IPAddress* pIP = IPAddress::Get(FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText());
+	if (isEndpointValid)
+	{
+		IPAddress* pAddress = endPoint.GetAddress();
+		ClientHelper::AddNetworkDiscoveryTarget(pAddress);
 
-	LambdaEngine::GUIApplication::SetView(nullptr);
+		ServerInfo& serverInfo = m_Servers[pAddress];
+		serverInfo.EndPoint = endPoint;
 
-	SetRenderStagesActive();
+		HandleServerInfo(serverInfo, -1, true);
 
-	State* pPlayState = DBG_NEW PlaySessionState(false, pIP);
-	StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
+		LambdaEngine::GUIApplication::SetView(nullptr);
+
+		SetRenderStagesActive();
+
+		State* pPlayState = DBG_NEW PlaySessionState(false, endPoint);
+		StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
+	}
+	else
+	{
+		ErrorPopUp(CONNECT_ERROR_INVALID);
+	}
 }
 
 void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -185,9 +222,6 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
-
-	SavedServerSystem::WriteIpsToFile("foo");
-	SavedServerSystem::WriteIpsToFile("bar");
 
 	ErrorPopUp(OTHER_ERROR);
 }
@@ -231,74 +265,79 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 	UNREFERENCED_VARIABLE(args);
 
 	TabItem* pTab = FrameworkElement::FindName<TabItem>("LOCAL");
-	if (pTab->GetIsSelected()) // From LAN Server List
-	{
-		ListBox* pBox = FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST");
-		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
+	const char* GUI_ID = pTab->GetIsSelected() ? "LOCAL_SERVER_LIST" : "SAVED_SERVER_LIST";
+	ListBox* pBox = FrameworkElement::FindName<ListBox>(GUI_ID);
+	Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
-		if (pSelectedItem)
-		{
+	if (pSelectedItem)
+	{
+		if (JoinSelectedServer(pSelectedItem))
 			NotiPopUP(JOIN_NOTIFICATION);
-			JoinSelectedServer(pSelectedItem);
-		}
 		else
-			ErrorPopUp(JOIN_ERROR);
+			ErrorPopUp(JOIN_ERROR_OFFLINE);
 	}
-	else // From Saved Server List
+	else
 	{
-		ListBox* pBox = FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
-		Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
-
-		if (pSelectedItem)
-		{
-			NotiPopUP(JOIN_NOTIFICATION);
-			JoinSelectedServer(pSelectedItem);
-		}
-		else
-			ErrorPopUp(JOIN_ERROR);
+		ErrorPopUp(JOIN_ERROR);
 	}
 }
 
-void LobbyGUI::JoinSelectedServer(Noesis::Grid* pGrid)
+bool LobbyGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 {
 	for (auto& server : m_Servers)
 	{
-		if (server.second.ServerGrid == pGrid)
+		const ServerInfo& serverInfo = server.second;
+
+		if (serverInfo.GridUI == pGrid)
 		{
-			LambdaEngine::GUIApplication::SetView(nullptr);
+			if (serverInfo.IsOnline)
+			{
+				LambdaEngine::GUIApplication::SetView(nullptr);
 
-			SetRenderStagesActive();
+				SetRenderStagesActive();
 
-			State* pPlaySessionState = DBG_NEW PlaySessionState(false, server.second.EndPoint.GetAddress());
-			StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+				State* pPlaySessionState = DBG_NEW PlaySessionState(false, serverInfo.EndPoint);
+				StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+				return true;
+			}
+			return false;
 		}
 	}
+	return false;
 }
 
 bool LobbyGUI::CheckServerStatus()
 {
-	TArray<uint64> serversToRemove;
+	TArray<IPAddress*> serversToRemove;
 
 	Timestamp timeSinceStart = EngineLoop::GetTimeSinceStart();
 	Timestamp deltaTime;
+	static Timestamp timeout = Timestamp::Seconds(5);
 
 	for (auto& server : m_Servers)
 	{
 		deltaTime = timeSinceStart - server.second.LastUpdate;
 
-		if (deltaTime.AsSeconds() > 5)
+		if (deltaTime > timeout)
 		{
-			ListBox* pParentBox = (ListBox*)server.second.ServerGrid->GetParent();
-			pParentBox->GetItems()->Remove(server.second.ServerGrid);
+			ServerInfo& serverInfo = server.second;
 
-			serversToRemove.PushBack(server.second.ServerUID);
+			if (serverInfo.IsLAN)
+			{
+				ListBox* pParentBox = (ListBox*)serverInfo.GridUI->GetParent();
+				pParentBox->GetItems()->Remove(serverInfo.GridUI);
+				serversToRemove.PushBack(serverInfo.EndPoint.GetAddress());
+			}
+			else if(serverInfo.IsOnline)
+			{
+				serverInfo.IsOnline = false;
+				m_ServerList.UpdateServerInfo(serverInfo);
+			}
 		}
 	}
 
-	for (uint64 id : serversToRemove)
-	{
-		m_Servers.erase(id);
-	}
+	for (IPAddress* address : serversToRemove)
+		m_Servers.erase(address);
 
 	return false;
 }
@@ -370,7 +409,6 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
-
 }
 
 void LobbyGUI::ErrorPopUp(PopUpCode errorCode)
@@ -379,10 +417,12 @@ void LobbyGUI::ErrorPopUp(PopUpCode errorCode)
 
 	switch (errorCode)
 	{
-	case CONNECT_ERROR:		pTextBox->SetText("Couldn't Connect To Server!");		break;
-	case JOIN_ERROR:		pTextBox->SetText("No Server Selected!");				break;
-	case HOST_ERROR:		pTextBox->SetText("Couldn't Host Server!");				break;
-	case OTHER_ERROR:		pTextBox->SetText("Something Went Wrong!");				break;
+	case CONNECT_ERROR:				pTextBox->SetText("Couldn't Connect To Server!");		break;
+	case CONNECT_ERROR_INVALID:		pTextBox->SetText("The address format is invalid!");	break;
+	case JOIN_ERROR:				pTextBox->SetText("No Server Selected!");				break;
+	case JOIN_ERROR_OFFLINE:		pTextBox->SetText("Server is offline!");				break;
+	case HOST_ERROR:				pTextBox->SetText("Couldn't Host Server!");				break;
+	case OTHER_ERROR:				pTextBox->SetText("Something Went Wrong!");				break;
 	}
 
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
@@ -410,7 +450,6 @@ void LobbyGUI::NotiPopUpClose()
 {
 	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
 }
-
 
 bool LobbyGUI::CheckServerSettings(const HostGameDescription& serverSettings)
 {
