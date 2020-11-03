@@ -26,8 +26,10 @@
 #include "Rendering/Core/API/AccelerationStructure.h"
 
 #include "Rendering/RenderGraphTypes.h"
-
 #include "Rendering/LightRenderer.h"
+
+#include "Rendering/ParticleManager.h"
+#include "Rendering/RT/ASBuilder.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
@@ -46,6 +48,8 @@ namespace LambdaEngine
 	// Custom Renderers
 	class LineRenderer;
 	class PaintMaskRenderer;
+	class ParticleRenderer;
+	class ParticleUpdater;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -134,8 +138,8 @@ namespace LambdaEngine
 
 		struct MeshEntry
 		{
-			AccelerationStructure* pBLAS	= nullptr;
-			SBTRecord ShaderRecord			= {};
+			uint32 BLASIndex = BLAS_UNINITIALIZED_INDEX;
+			TArray<uint32> ASInstanceIndices;
 
 			DescriptorSet* pAnimationDescriptorSet = nullptr;
 
@@ -159,10 +163,6 @@ namespace LambdaEngine
 			TArray<uint32>					InstanceIndexToExtensionGroup;
 			bool	HasExtensions			= false;
 			uint32	DrawArgsMask			= 0x0;
-
-			Buffer* pASInstanceBuffer		= nullptr;
-			Buffer* ppASInstanceStagingBuffers[BACK_BUFFER_COUNT];
-			TArray<AccelerationStructureInstance> ASInstances;
 
 			Buffer* pRasterInstanceBuffer				= nullptr;
 			Buffer* ppRasterInstanceStagingBuffers[BACK_BUFFER_COUNT];
@@ -252,7 +252,7 @@ namespace LambdaEngine
 		/*
 		* Adds new Game specific Custom Renderer 
 		*/
-		void AddCustomRenderer(ICustomRenderer* pCustomRenderer);
+		void AddCustomRenderer(CustomRenderer* pCustomRenderer);
 
 		/*
 		* Puts given render stage to sleep, this will prevent execution of renderstage
@@ -287,6 +287,9 @@ namespace LambdaEngine
 		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
 		void RemoveRenderableEntity(Entity entity);
 
+		void OnEmitterEntityRemoved(Entity entity);
+
+		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
 		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);
@@ -304,10 +307,6 @@ namespace LambdaEngine
 		void UpdatePerFrameBuffer(CommandList* pCommandList);
 		void UpdateRasterInstanceBuffers(CommandList* pCommandList);
 		void UpdateMaterialPropertiesBuffer(CommandList* pCommandList);
-		void UpdateShaderRecords();
-		void BuildBLASs(CommandList* pCommandList);
-		void UpdateASInstanceBuffers(CommandList* pCommandList);
-		void BuildTLAS(CommandList* pCommandList);
 		void UpdateLightsBuffer(CommandList* pCommandList);
 		void UpdatePointLightTextureResource(CommandList* pCommandList);
 		void UpdatePaintMaskColorBuffer(CommandList* pCommandList);
@@ -321,6 +320,7 @@ namespace LambdaEngine
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;
 		IDVector m_CameraEntities;
+		IDVector m_ParticleEmitters;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -381,15 +381,7 @@ namespace LambdaEngine
 
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
-
-		// Ray Tracing
-		Buffer*						m_ppStaticStagingInstanceBuffers[BACK_BUFFER_COUNT];
-		Buffer*						m_pCompleteInstanceBuffer		= nullptr;
-		uint32						m_MaxSupportedTLASInstances		= 0;
-		uint32						m_BuiltTLASInstanceCount		= 0;
-		AccelerationStructure*		m_pTLAS							= nullptr;
-		TArray<PendingBufferUpdate>	m_CompleteInstanceBufferPendingCopies;
-		TArray<SBTRecord>			m_SBTRecords;
+		
 
 		// Animation
 		uint64						m_SkinningPipelineID;
@@ -397,28 +389,28 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
 
 		// Pending/Dirty
-		bool						m_SBTRecordsDirty					= true;
-		bool						m_RenderGraphSBTRecordsDirty		= true;
 		bool						m_MaterialsPropertiesBufferDirty	= false;
 		bool						m_MaterialsResourceDirty			= false;
 		bool						m_LightsResourceDirty				= false;
 		bool						m_PerFrameResourceDirty				= true;
 		bool						m_PaintMaskColorsResourceDirty		= true;
 		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
-		TSet<MeshEntry*>			m_DirtyASInstanceBuffers;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
-		TSet<MeshEntry*>			m_DirtyBLASs;
 		TSet<MeshEntry*>			m_AnimationsToUpdate;
-		bool						m_TLASDirty							= true;
-		bool						m_TLASResourceDirty					= false;
 		TArray<PendingBufferUpdate> m_PendingBufferUpdates;
 		TArray<DeviceChild*>		m_ResourcesToRemove[BACK_BUFFER_COUNT];
+
+		// Particles
+		ParticleManager				m_ParticleManager;
 
 		// Custom Renderers
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
-		TArray<ICustomRenderer*>	m_GameSpecificCustomRenderers;
+		ParticleRenderer*			m_pParticleRenderer		= nullptr;
+		ParticleUpdater*			m_pParticleUpdater		= nullptr;
+		ASBuilder*					m_pASBuilder			= nullptr;
+		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
 	private:
 		static RenderSystem		s_Instance;

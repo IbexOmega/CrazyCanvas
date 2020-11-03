@@ -23,11 +23,10 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
-layout(location = 0) out vec4 out_Position;
-layout(location = 1) out vec3 out_Albedo;
-layout(location = 2) out vec4 out_AO_Rough_Metal_Valid;
-layout(location = 3) out vec3 out_Compact_Normal;
-layout(location = 4) out vec2 out_Velocity;
+layout(location = 0) out vec4 out_Albedo;
+layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
+layout(location = 2) out vec3 out_Compact_Normal;
+layout(location = 3) out vec2 out_Velocity;
 
 void main()
 {
@@ -38,7 +37,7 @@ void main()
 
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
+	vec4 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord);
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 	
@@ -51,21 +50,17 @@ void main()
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
 	//0
-	out_Position				= vec4(in_WorldPosition, 0.0f);
+	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
+	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//1
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo					= storedAlbedo;
-
-	//2
 	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
-	//3
-	// vec2 storedShadingNormal  	= DirToOct(shadingNormal);
+	//2
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
-	//4
+	//3
 	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
 	out_Velocity				= vec2(screenVelocity);
 }

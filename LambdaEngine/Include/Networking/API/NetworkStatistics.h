@@ -17,6 +17,7 @@ namespace LambdaEngine
 		friend class PacketManagerBase;
 		friend class ClientBase;
 		friend class ClientRemoteBase;
+		friend class ClientNetworkDiscovery;
 
 	public:
 		NetworkStatistics();

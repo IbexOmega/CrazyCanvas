@@ -113,14 +113,6 @@ namespace LambdaEngine
 			m_TextureUpdateQueue.Insert(std::end(m_TextureUpdateQueue), std::begin(textureIndices), std::end(textureIndices));
 	}
 
-	void LightRenderer::PreBuffersDescriptorSetWrite()
-	{
-	}
-
-	void LightRenderer::PreTexturesDescriptorSetWrite()
-	{
-	}
-
 	void LightRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
@@ -176,12 +168,6 @@ namespace LambdaEngine
 				LOG_ERROR("[LightRenderer]: Failed to update DescriptorSet[%d]", 0);
 			}
 		}
-	}
-
-	void LightRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
 	void LightRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)

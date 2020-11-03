@@ -35,6 +35,10 @@
 			#undef UpdateResource
 		#endif
 
+		#ifdef FindResource
+			#undef FindResource
+		#endif
+
 		#ifdef UNREFERENCED_PARAMETER
 			#undef UNREFERENCED_PARAMETER
 		#endif

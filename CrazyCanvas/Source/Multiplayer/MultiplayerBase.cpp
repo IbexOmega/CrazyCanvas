@@ -47,10 +47,11 @@ void MultiplayerBase::TickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 
 void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
+	HealthSystem::GetInstance().FixedTick(deltaTime);
+	
 	FixedTickMainThread(deltaTime);
 
 	WeaponSystem::GetInstance().FixedTick(deltaTime);
-	HealthSystem::GetInstance().FixedTick(deltaTime);
 
 	PostFixedTickMainThread(deltaTime);
 }

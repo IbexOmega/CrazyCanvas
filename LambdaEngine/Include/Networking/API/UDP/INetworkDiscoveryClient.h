@@ -5,6 +5,8 @@
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/IPEndPoint.h"
 
+#include "Time/API/Timestamp.h"
+
 namespace LambdaEngine
 {
 
@@ -13,6 +15,6 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(INetworkDiscoveryClient);
 
-		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID) = 0;
+		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping, bool isLAN) = 0;
 	};
 }

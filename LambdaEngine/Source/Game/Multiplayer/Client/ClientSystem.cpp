@@ -53,17 +53,17 @@ namespace LambdaEngine
 		MultiplayerUtils::Release();
 	}
 
-	bool ClientSystem::Connect(IPAddress* pAddress)
+	bool ClientSystem::Connect(const IPEndPoint& endPoint)
 	{
-		NetworkDiscovery::DisableClient();
-
 		MultiplayerUtils::s_IsSinglePlayer = false;
 
-		if (!m_pClient->Connect(IPEndPoint(pAddress, (uint16)EngineConfig::GetIntProperty("NetworkPort"))))
+		if (!m_pClient->Connect(endPoint))
 		{
 			LOG_ERROR("Failed to connect!");
 			return false;
 		}
+
+		NetworkDiscovery::DisableClient();
 		return true;
 	}
 	
@@ -129,9 +129,9 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
-	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID)
+	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping, bool isLAN)
 	{
-		ServerDiscoveredEvent event(&decoder, &endPoint, serverUID);
+		ServerDiscoveredEvent event(&decoder, &endPoint, serverUID, ping, isLAN);
 		EventQueue::SendEventImmediate(event);
 	}
 

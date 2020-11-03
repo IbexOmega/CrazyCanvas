@@ -16,7 +16,7 @@ namespace LambdaEngine
 		DECL_UNIQUE_CLASS(ClientSystem);
 		virtual ~ClientSystem();
 
-		bool Connect(IPAddress* pAddress);
+		bool Connect(const IPEndPoint& endPoint);
 
 		ClientBase* GetClient();
 
@@ -31,7 +31,7 @@ namespace LambdaEngine
 		virtual void OnClientReleased(IClient* pClient) override;
 		virtual void OnServerFull(IClient* pClient) override;
 
-		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID) override;
+		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping, bool isLAN) override;
 
 		bool OnDisconnectedEvent(const ClientDisconnectedEvent& event);
 

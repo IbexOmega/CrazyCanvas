@@ -232,7 +232,7 @@ namespace LambdaEngine
 		geometryData.geometryType							= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 		geometryData.geometry.instances.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 		geometryData.geometry.instances.arrayOfPointers		= VK_FALSE;
-		geometryData.geometry.instances.data.deviceAddress	= pInstanceBufferVk->GetDeviceAdress();
+		geometryData.geometry.instances.data.deviceAddress	= pInstanceBufferVk->GetDeviceAddress();
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
 
@@ -243,7 +243,7 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
-		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAddress();
 
 		//Extra Flags
 		{
@@ -300,15 +300,15 @@ namespace LambdaEngine
 		geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 		geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 		geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
-		geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAdress();
+		geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAddress();
 		geometryData.geometry.triangles.vertexStride				= pBuildDesc->VertexStride;
 		geometryData.geometry.triangles.indexType					= VK_INDEX_TYPE_UINT32;
-		geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAdress();
+		geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAddress();
 
 		if (pBuildDesc->pTransformBuffer != nullptr)
 		{
 			const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
-			geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAdress();
+			geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAddress();
 		}
 
 		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
@@ -320,10 +320,7 @@ namespace LambdaEngine
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
-		accelerationStructureBuildInfo.update						= VK_FALSE;
-		accelerationStructureBuildInfo.srcAccelerationStructure		= VK_NULL_HANDLE;
-		accelerationStructureBuildInfo.dstAccelerationStructure		= pAccelerationStructureVk->GetAccelerationStructure();
-		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAdress();
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAddress();
 
 		//Extra Flags
 		{
