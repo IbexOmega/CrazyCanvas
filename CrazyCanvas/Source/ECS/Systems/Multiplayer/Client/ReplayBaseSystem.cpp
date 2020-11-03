@@ -1,6 +1,5 @@
 #include "ECS/Systems/Multiplayer/Client/ReplayBaseSystem.h"
-
-#include "ECS/Systems/Multiplayer/Client/ReplaySystem.h"
+#include "ECS/Systems/Multiplayer/Client/ReplayManagerSystem.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
@@ -11,5 +10,5 @@ void ReplayBaseSystem::RegisterSystem(const String& systemName, SystemRegistrati
 	System::RegisterSystem(systemName, systemRegistration);
 
 	ASSERT(!MultiplayerUtils::IsServer());
-	ReplaySystem::GetInstance()->RegisterReplaySystem(this);
+	ReplayManagerSystem::GetInstance()->RegisterReplaySystem(this);
 }

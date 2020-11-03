@@ -9,7 +9,7 @@
 
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
-class PlayerLocalSystem : public ReplayBaseSystem
+class PlayerLocalSystem : public ReplaySystem<PlayerGameState, PacketPlayerActionResponse>
 {
 public:
 	DECL_UNIQUE_CLASS(PlayerLocalSystem);
@@ -20,29 +20,20 @@ public:
 	void Init() override;
 
 	void TickMainThread(LambdaEngine::Timestamp deltaTime);
-	void FixedTickMainThread(LambdaEngine::Timestamp deltaTime) override;
 
 	void TickLocalPlayerAction(LambdaEngine::Timestamp deltaTime, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
 	void DoAction(LambdaEngine::Timestamp deltaTime, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
 
 protected:
-	virtual void PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, int32 simulationTick) override;
-	virtual void ReplaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, uint32 i, int32 simulationTick) override;
-	virtual void SurrenderGameState(int32 simulationTick) override;
-	virtual int32 GetNextAvailableSimulationTick() override;
-	virtual bool CompareNextGamesStates(int32 simulationTick) override;
-	virtual void DeleteGameState(int32 simulationTick) override;
+	virtual void PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState) override;
+	virtual void ReplayGameState(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState) override;
+	virtual void SurrenderGameState(const PacketPlayerActionResponse& serverState) override;
+	virtual bool CompareGamesStates(const PlayerGameState& clientState, const PacketPlayerActionResponse& serverState) override;
 
 private:
 	void SendGameState(const PlayerGameState& gameState, LambdaEngine::Entity entityPlayer);
-	//void Reconcile(LambdaEngine::Entity entityPlayer);
-	//void ReplayGameStatesBasedOnServerGameState(LambdaEngine::Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PacketPlayerActionResponse& gameStateServer);
-	bool CompareGameStates(const PlayerGameState& gameStateLocal, const PacketPlayerActionResponse& gameStateServer);
 
 private:
 	LambdaEngine::IDVector m_Entities;
 	PlayerActionSystem m_PlayerActionSystem;
-	LambdaEngine::TArray<PlayerGameState> m_FramesToReconcile;
-
-	LambdaEngine::TArray<PacketPlayerActionResponse> m_FramesProcessedByServer;
 };

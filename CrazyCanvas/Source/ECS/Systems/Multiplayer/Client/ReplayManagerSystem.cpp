@@ -1,6 +1,4 @@
-#include "ECS/Systems/Multiplayer/Client/ReplaySystem.h"
-
-#include "ECS/Components/Multiplayer/ReplayComponent.h"
+#include "ECS/Systems/Multiplayer/Client/ReplayManagerSystem.h"
 
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
@@ -12,9 +10,9 @@
 
 using namespace LambdaEngine;
 
-ReplaySystem* ReplaySystem::s_pInstance = nullptr;
+ReplayManagerSystem* ReplayManagerSystem::s_pInstance = nullptr;
 
-ReplaySystem::ReplaySystem() : 
+ReplayManagerSystem::ReplayManagerSystem() : 
 	m_SimulationTick(0),
 	m_SimulationTickApproved(-1),
 	m_ReplaySystems()
@@ -23,12 +21,12 @@ ReplaySystem::ReplaySystem() :
 	s_pInstance = this;
 }
 
-ReplaySystem::~ReplaySystem()
+ReplayManagerSystem::~ReplayManagerSystem()
 {
 
 }
 
-void ReplaySystem::Init()
+void ReplayManagerSystem::Init()
 {
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -46,7 +44,7 @@ void ReplaySystem::Init()
 	RegisterSystem(TYPE_NAME(PlayerLocalSystem), systemReg);
 }
 
-void ReplaySystem::FixedTickMainThread(Timestamp deltaTime)
+void ReplayManagerSystem::FixedTickMainThread(Timestamp deltaTime)
 {
 	if (m_PlayerLocalEntities.Empty())
 		return;
@@ -88,7 +86,7 @@ void ReplaySystem::FixedTickMainThread(Timestamp deltaTime)
 	m_SimulationTick++;
 }
 
-void ReplaySystem::ReplaySimulationTicksFrom(int32 simulationTick)
+void ReplayManagerSystem::ReplaySimulationTicksFrom(int32 simulationTick)
 {
 	Timestamp deltaTime = EngineLoop::GetFixedTimestep();
 	float32 dt = (float32)deltaTime.AsSeconds();
@@ -104,12 +102,12 @@ void ReplaySystem::ReplaySimulationTicksFrom(int32 simulationTick)
 	}
 }
 
-void ReplaySystem::RegisterReplaySystem(ReplayBaseSystem* pReplaySystem)
+void ReplayManagerSystem::RegisterReplaySystem(ReplayBaseSystem* pReplaySystem)
 {
 	m_ReplaySystems.PushBack(pReplaySystem);
 }
 
-bool ReplaySystem::IsNewTickToCompare(int32 oldestAvailableSimulationTick)
+bool ReplayManagerSystem::IsNewTickToCompare(int32 oldestAvailableSimulationTick)
 {
 	if (oldestAvailableSimulationTick >= 0 && oldestAvailableSimulationTick < INT32_MAX)
 	{
@@ -121,7 +119,7 @@ bool ReplaySystem::IsNewTickToCompare(int32 oldestAvailableSimulationTick)
 	return false;
 }
 
-bool ReplaySystem::CheckForPredictionError(int32 simulationTick)
+bool ReplayManagerSystem::CheckForPredictionError(int32 simulationTick)
 {
 	bool predictionError = false;
 	for (ReplayBaseSystem* pSystem : m_ReplaySystems)
@@ -135,7 +133,7 @@ bool ReplaySystem::CheckForPredictionError(int32 simulationTick)
 	return predictionError;
 }
 
-void ReplaySystem::DeleteGameState(int32 simulationTick)
+void ReplayManagerSystem::DeleteGameState(int32 simulationTick)
 {
 	for (ReplayBaseSystem* pSystem : m_ReplaySystems)
 	{

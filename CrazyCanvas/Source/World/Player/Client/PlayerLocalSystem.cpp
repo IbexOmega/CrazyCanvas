@@ -33,8 +33,7 @@
 using namespace LambdaEngine;
 
 PlayerLocalSystem::PlayerLocalSystem() :
-	m_PlayerActionSystem(),
-	m_FramesToReconcile()
+	m_PlayerActionSystem()
 {
 
 }
@@ -72,11 +71,6 @@ void PlayerLocalSystem::TickMainThread(Timestamp deltaTime)
 	{
 		m_PlayerActionSystem.TickMainThread(deltaTime, m_Entities[0]);
 	}
-}
-
-void PlayerLocalSystem::FixedTickMainThread(Timestamp deltaTime)
-{
-	
 }
 
 void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity entityPlayer)
@@ -117,8 +111,6 @@ void PlayerLocalSystem::TickLocalPlayerAction(Timestamp deltaTime, Entity entity
 
 	pGameState->Position = netPosComponent.Position;
 	pGameState->Velocity = velocityComponent.Velocity;
-
-	m_FramesToReconcile.PushBack(*pGameState);
 }
 
 void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
@@ -146,7 +138,7 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 	pGameState->Rotation = rotationComponent.Quaternion;
 }
 
-void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, int32 simulationTick)
+void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
 {
 	if (!m_Entities.Empty())
 	{
@@ -155,23 +147,19 @@ void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, fl
 		//Get new packets
 		ECSCore* pECS = ECSCore::GetInstance();
 		const PacketComponent<PacketPlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PacketPlayerActionResponse>>(localPlayerEntity);
-		const TArray<PacketPlayerActionResponse>& packets = pPacketComponent.GetPacketsReceived();
-		m_FramesProcessedByServer.Insert(m_FramesProcessedByServer.end(), packets.begin(), packets.end());
+		RegisterServerGameStates(pPacketComponent.GetPacketsReceived());
 
-		PlayerGameState gameState = {};
-		gameState.SimulationTick = simulationTick;
-
-		TickLocalPlayerAction(deltaTime, localPlayerEntity, &gameState);
+		TickLocalPlayerAction(deltaTime, localPlayerEntity, &clientState);
 
 		if (!MultiplayerUtils::IsSingleplayer())
-			SendGameState(gameState, localPlayerEntity);
+			SendGameState(clientState, localPlayerEntity);
 	}
 }
 
 /*
 * Called when to replay a specific simulation tick
 */
-void PlayerLocalSystem::ReplaySimulationTick(Timestamp deltaTime, float32 dt, uint32 i, int32 simulationTick)
+void PlayerLocalSystem::ReplayGameState(Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
 {
 	Entity entityPlayer = m_Entities[0];
 
@@ -184,15 +172,10 @@ void PlayerLocalSystem::ReplaySimulationTick(Timestamp deltaTime, float32 dt, ui
 	NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
 	VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
-	PlayerGameState& clientFrame = m_FramesToReconcile[i];
-
-	ASSERT(clientFrame.SimulationTick == simulationTick);
-
-
 	/*
 	* Returns the velocity based on key presses
 	*/
-	PlayerActionSystem::ComputeVelocity(clientFrame.Rotation, clientFrame.DeltaForward, clientFrame.DeltaLeft, velocityComponent.Velocity);
+	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaForward, clientState.DeltaLeft, velocityComponent.Velocity);
 
 	/*
 	* Sets the position of the PxController taken from the PositionComponent.
@@ -202,86 +185,35 @@ void PlayerLocalSystem::ReplaySimulationTick(Timestamp deltaTime, float32 dt, ui
 	*/
 	CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
-	clientFrame.Position = netPosComponent.Position;
-	clientFrame.Velocity = velocityComponent.Velocity;
+	clientState.Position = netPosComponent.Position;
+	clientState.Velocity = velocityComponent.Velocity;
 }
 
-/*
-* Called on the SimulationTick that got a prediction error
-*/
-void PlayerLocalSystem::SurrenderGameState(int32 simulationTick)
+void PlayerLocalSystem::SurrenderGameState(const PacketPlayerActionResponse& serverState)
 {
 	Entity entityPlayer = m_Entities[0];
-
-	PacketPlayerActionResponse& serverFrame = m_FramesProcessedByServer[0];
-	PlayerGameState& clientFrame = m_FramesToReconcile[0];
-
-	ASSERT(serverFrame.SimulationTick == simulationTick);
-	ASSERT(clientFrame.SimulationTick == simulationTick);
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	NetworkPositionComponent& netPosComponent = pECS->GetComponent<NetworkPositionComponent>(entityPlayer);
 	VelocityComponent& velocityComponent = pECS->GetComponent<VelocityComponent>(entityPlayer);
 
-	netPosComponent.Position = serverFrame.Position;
-	velocityComponent.Velocity = serverFrame.Velocity;
+	netPosComponent.Position = serverState.Position;
+	velocityComponent.Velocity = serverState.Velocity;
 }
 
-/*
-* Returns the next SimulationTick that this system is ready for
-*/
-int32 PlayerLocalSystem::GetNextAvailableSimulationTick()
-{
-	if (m_FramesProcessedByServer.IsEmpty())
-		return -1;
-
-	return m_FramesProcessedByServer[0].SimulationTick;
-}
-
-/*
-* Compares the local gamestate with the server gamestate
-*/
-bool PlayerLocalSystem::CompareNextGamesStates(int32 simulationTick)
-{
-	Entity entityPlayer = m_Entities[0];
-
-	PacketPlayerActionResponse& serverFrame = m_FramesProcessedByServer[0];
-	PlayerGameState& clientFrame = m_FramesToReconcile[0];
-
-	ASSERT(serverFrame.SimulationTick == simulationTick);
-	ASSERT(clientFrame.SimulationTick == simulationTick);
-
-	return CompareGameStates(clientFrame, serverFrame);
-}
-
-/*
-* Deletes the gamestate
-*/
-void PlayerLocalSystem::DeleteGameState(int32 simulationTick)
-{
-	PacketPlayerActionResponse& serverFrame = m_FramesProcessedByServer[0];
-	PlayerGameState& clientFrame = m_FramesToReconcile[0];
-
-	ASSERT(serverFrame.SimulationTick == simulationTick);
-	ASSERT(clientFrame.SimulationTick == simulationTick);
-
-	m_FramesProcessedByServer.Erase(m_FramesProcessedByServer.begin());
-	m_FramesToReconcile.Erase(m_FramesToReconcile.begin());
-}
-
-bool PlayerLocalSystem::CompareGameStates(const PlayerGameState& gameStateLocal, const PacketPlayerActionResponse& gameStateServer)
+bool PlayerLocalSystem::CompareGamesStates(const PlayerGameState& clientState, const PacketPlayerActionResponse& serverState)
 {
 	bool result = true;
-	if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
+	if (glm::distance(clientState.Position, serverState.Position) > EPSILON)
 	{
-		LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z);
+		LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", clientState.SimulationTick, clientState.Position.x, clientState.Position.y, serverState.Position.z, serverState.Position.x, serverState.Position.y, serverState.Position.z);
 		result = false;
 	}
 
-	if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
+	if (glm::distance(clientState.Velocity, serverState.Velocity) > EPSILON)
 	{
-		LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Velocity.x, gameStateLocal.Velocity.y, gameStateLocal.Velocity.z, gameStateServer.Velocity.x, gameStateServer.Velocity.y, gameStateServer.Velocity.z);
+		LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", clientState.SimulationTick, clientState.Velocity.x, clientState.Velocity.y, serverState.Velocity.z, serverState.Velocity.x, serverState.Velocity.y, serverState.Velocity.z);
 		result = false;
 	}
 

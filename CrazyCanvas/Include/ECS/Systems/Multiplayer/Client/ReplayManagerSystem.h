@@ -4,13 +4,13 @@
 
 class ReplayBaseSystem;
 
-class ReplaySystem : public LambdaEngine::System
+class ReplayManagerSystem : public LambdaEngine::System
 {
 	friend class ReplayBaseSystem;
 
 public:
-	ReplaySystem();
-	~ReplaySystem();
+	ReplayManagerSystem();
+	~ReplayManagerSystem();
 
 	void Init();
 
@@ -27,7 +27,7 @@ private:
 	void ReplaySimulationTicksFrom(int32 simulationTick);
 
 private:
-	static ReplaySystem* GetInstance() { return s_pInstance; }
+	static ReplayManagerSystem* GetInstance() { return s_pInstance; }
 
 private:
 	int32 m_SimulationTick;
@@ -36,5 +36,5 @@ private:
 	LambdaEngine::TArray<ReplayBaseSystem*> m_ReplaySystems;
 
 private:
-	static ReplaySystem* s_pInstance;
+	static ReplayManagerSystem* s_pInstance;
 };

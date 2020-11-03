@@ -7,7 +7,7 @@
 #include "ECS/Systems/Match/ClientFlagSystem.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Multiplayer/Client/NetworkPositionSystem.h"
-#include "ECS/Systems/Multiplayer/Client/ReplaySystem.h"
+#include "ECS/Systems/Multiplayer/Client/ReplayManagerSystem.h"
 
 class MultiplayerClient : public MultiplayerBase
 {
@@ -22,7 +22,7 @@ protected:
 	void PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime) override final;
 
 private:
-	ReplaySystem m_ReplaySystem;
+	ReplayManagerSystem m_ReplaySystem;
 	PlayerLocalSystem m_PlayerLocal;
 	PlayerForeignSystem m_PlayerForeignSystem;
 	
