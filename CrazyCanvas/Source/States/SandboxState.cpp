@@ -504,9 +504,9 @@ void SandboxState::RenderImgui()
 			// If you want to use this debug you have to create a directional light entity and store entityID in m_DirLight
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
-			auto* dirLightComps = pECSCore->GetComponentArray<DirectionalLightComponent>();
-			auto* posComps = pECSCore->GetComponentArray<PositionComponent>();
-			auto* rotComps = pECSCore->GetComponentArray<RotationComponent>();
+			auto* pDirLightComps = pECSCore->GetComponentArray<DirectionalLightComponent>();
+			auto* pPosComps = pECSCore->GetComponentArray<PositionComponent>();
+			auto* pRotComps = pECSCore->GetComponentArray<RotationComponent>();
 
 			if (dirLightComps->HasComponent(m_DirLight))
 			{
