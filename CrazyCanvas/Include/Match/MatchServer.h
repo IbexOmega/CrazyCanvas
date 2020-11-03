@@ -37,7 +37,7 @@ private:
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
-	LambdaEngine::THashTable<uint64, LambdaEngine::Entity> m_ClientIDToPlayerEntitiy;
-	LambdaEngine::THashTable<LambdaEngine::Entity, uint64> m_PlayerEntitiyToClientID;
+	LambdaEngine::THashTable<uint64, LambdaEngine::Entity> m_ClientIDToPlayerEntity;
+	LambdaEngine::THashTable<LambdaEngine::Entity, uint64> m_PlayerEntityToClientID;
 	uint8 m_NextTeamIndex = 0;
 };

@@ -147,7 +147,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 							if (ImGui::Button("Disconnect"))
 							{
-								const uint64 uid = m_PlayerEntitiyToClientID[playerEntity];
+								const uint64 uid = m_PlayerEntityToClientID[playerEntity];
 								ClientRemoteBase* pClient = ServerHelper::GetClient(uid);
 								if (pClient)
 								{
@@ -327,10 +327,10 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	}
 
 	const uint64 cliendID = pClient->GetUID();
-	if (m_ClientIDToPlayerEntitiy.count(cliendID) == 0)
+	if (m_ClientIDToPlayerEntity.count(cliendID) == 0)
 	{
-		m_ClientIDToPlayerEntitiy.insert(std::make_pair(cliendID, createdPlayerEntities[0]));
-		m_PlayerEntitiyToClientID.insert(std::make_pair(createdPlayerEntities[0], cliendID));
+		m_ClientIDToPlayerEntity.insert(std::make_pair(cliendID, createdPlayerEntities[0]));
+		m_PlayerEntityToClientID.insert(std::make_pair(createdPlayerEntities[0], cliendID));
 	}
 
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
@@ -418,9 +418,9 @@ bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEve
 	VALIDATE(event.pClient != nullptr);
 
 	const uint64 clientID = event.pClient->GetUID();
-	const LambdaEngine::Entity playerEntity = m_ClientIDToPlayerEntitiy[clientID];
-	m_ClientIDToPlayerEntitiy.erase(clientID);
-	m_PlayerEntitiyToClientID.erase(playerEntity);
+	const LambdaEngine::Entity playerEntity = m_ClientIDToPlayerEntity[clientID];
+	m_ClientIDToPlayerEntity.erase(clientID);
+	m_PlayerEntityToClientID.erase(playerEntity);
 
 	Match::KillPlayer(playerEntity);
 
