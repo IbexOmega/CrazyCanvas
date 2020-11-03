@@ -40,7 +40,6 @@ void MainMenuState::Init()
 
 	RenderGraphStructureDesc renderGraphStructure = {};
 
-	// m_MainMenuGUI = *new MainMenuGUIOld("MainMenu.xaml");
 	m_MainMenuGUI = *new MainMenuGUI("MainMenu2.xaml");
 	m_View = Noesis::GUI::CreateView(m_MainMenuGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
