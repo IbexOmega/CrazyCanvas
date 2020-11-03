@@ -179,7 +179,7 @@ float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
 float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir, sampler2D shadowMap)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	projCoords = (projCoords * 0.5 + 0.5);
+	projCoords.xy = (projCoords.xy * 0.5 + 0.5);
 	projCoords.y = 1.0 - projCoords.y;
 
 	if (projCoords.z > 1.0)
@@ -190,10 +190,9 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
-	float bias = max(0.05 * (1.0 - dot(fragNormal, lightDir)), 0.005);
+	float bias = max(0.001 * (1.0 - dot(fragNormal, -lightDir)), 0.004);
 	float shadow = 0.0;
     
-	// shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0); // Todo: send in shadowMap width as pushback constant
 	for(int x = -1; x <= 1; ++x)
 	{

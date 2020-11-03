@@ -40,6 +40,7 @@ void main()
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 	vec3 colorHDR;
 	float test;
+	vec3 normal;
 	if (aoRoughMetalValid.a < 1.0f)
 	{
 		colorHDR = albedo / (albedo + vec3(1.0f));
@@ -71,6 +72,7 @@ void main()
 			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(worldPos, 1.0);
 			float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			test = inShadow;
+			normal = lightBuffer.DirL_Direction;
 			vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
 			vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
 

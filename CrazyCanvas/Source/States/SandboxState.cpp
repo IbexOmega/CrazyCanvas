@@ -243,19 +243,19 @@ void SandboxState::Init()
 
 
 	// Create dirLight
-	{
-		DirectionalLightComponent directionalLightComponent =
-		{
-			.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 25.0f),
-		};
+	//{
+	//	DirectionalLightComponent directionalLightComponent =
+	//	{
+	//		.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 5.0f),
+	//	};
 
-		m_DirLight = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(m_DirLight, { true, glm::vec3(0.f) });
-		pECS->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt(glm::normalize(glm::vec3(0.1f, -1.0f, 0.0f)), g_DefaultUp) });
-		pECS->AddComponent<DirectionalLightComponent>(m_DirLight, directionalLightComponent);
+	//	m_DirLight = pECS->CreateEntity();
+	//	pECS->AddComponent<PositionComponent>(m_DirLight, { true, glm::vec3(0.f) });
+	//	pECS->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt(glm::normalize(glm::vec3(0.5f, -1.0f, 0.5f)), g_DefaultUp) });
+	//	pECS->AddComponent<DirectionalLightComponent>(m_DirLight, directionalLightComponent);
 
-		D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
-	}
+	//	D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+	//}
 
 	//Preload some resources
 	{
@@ -429,12 +429,12 @@ void SandboxState::RenderImgui()
 
 		if (m_DirLightDebug)
 		{
+			// If you want to use this debug you have to create a directional light entity and store entityID in m_DirLight
 			ECSCore* pECSCore = ECSCore::GetInstance();
 
 			auto* dirLightComps = pECSCore->GetComponentArray<DirectionalLightComponent>();
 			auto* posComps = pECSCore->GetComponentArray<PositionComponent>();
 			auto* rotComps = pECSCore->GetComponentArray<RotationComponent>();
-
 
 			if (dirLightComps->HasComponent(m_DirLight))
 			{
