@@ -195,24 +195,6 @@ namespace LambdaEngine
 	{
 	}
 
-	//void ImGuiRenderer::UpdateParameters(void* pData)
-	//{
-	//	UNREFERENCED_VARIABLE(pData);
-	//}
-
-	/*void ImGuiRenderer::UpdatePushConstants(void* pData, uint32 dataSize)
-	{
-		UNREFERENCED_VARIABLE(pData);
-		UNREFERENCED_VARIABLE(dataSize);
-	}*/
-
-	void ImGuiRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
-	{
-		UNREFERENCED_VARIABLE(delta);
-		UNREFERENCED_VARIABLE(modFrameIndex);
-		UNREFERENCED_VARIABLE(backBufferIndex);
-	}
-
 	void ImGuiRenderer::UpdateTextureResource(
 		const String& resourceName, 
 		const TextureView* const* ppPerImageTextureViews, 
@@ -318,22 +300,6 @@ namespace LambdaEngine
 		{
 			LOG_WARNING("[ImGuiRenderer]: Textures with subImageCount or imageCount != subImageCount and not BackBufferBound is not implemented. imageCount: %d, subImageCount: %d", imageCount, subImageCount);
 		}
-	}
-
-	void ImGuiRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppBuffers);
-		UNREFERENCED_VARIABLE(pOffsets);
-		UNREFERENCED_VARIABLE(pSizesInBytes);
-		UNREFERENCED_VARIABLE(count);
-		UNREFERENCED_VARIABLE(backBufferBound);
-	}
-
-	void ImGuiRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
 	void ImGuiRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)

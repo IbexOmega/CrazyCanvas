@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Rendering/ICustomRenderer.h"
+#include "Rendering/CustomRenderer.h"
 #include "Rendering/RenderGraph.h"
 #include <optional>
 
@@ -46,7 +46,7 @@ namespace LambdaEngine
 		BLUE	= 2
 	};
 
-	class PaintMaskRenderer : public ICustomRenderer
+	class PaintMaskRenderer : public CustomRenderer
 	{
 	public:
 		PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
@@ -55,10 +55,6 @@ namespace LambdaEngine
 		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
-		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
-		
-		virtual void PreBuffersDescriptorSetWrite() override final;
-		virtual void PreTexturesDescriptorSetWrite() override final;
 		
 		virtual void UpdateTextureResource(
 			const String& resourceName, 
@@ -67,7 +63,7 @@ namespace LambdaEngine
 			uint32 imageCount, 
 			uint32 subImageCount, 
 			bool backBufferBound) override final;
-		
+
 		virtual void UpdateBufferResource(
 			const String& resourceName, 
 			const Buffer* const * ppBuffers, 
@@ -75,11 +71,7 @@ namespace LambdaEngine
 			uint64* pSizesInBytes, 
 			uint32 count, 
 			bool backBufferBound) override final;
-		
-		virtual void UpdateAccelerationStructureResource(
-			const String& resourceName, 
-			const AccelerationStructure* pAccelerationStructure) override final;
-		
+
 		virtual void UpdateDrawArgsResource(
 			const String& resourceName, 
 			const DrawArg* pDrawArgs, 
@@ -92,8 +84,8 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool sleeping) override final;
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
-		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
 		FORCEINLINE virtual const String& GetName() const override final
 		{
