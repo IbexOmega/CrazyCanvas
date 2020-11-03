@@ -35,6 +35,7 @@
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
+#include "Multiplayer/Packet/PacketMatchBegin.h"
 
 #include <imgui.h>
 
@@ -62,9 +63,17 @@ bool MatchServer::InitInternal()
 
 void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
-	UNREFERENCED_VARIABLE(deltaTime);
-
 	using namespace LambdaEngine;
+
+	if (!m_HasBegun)
+	{
+		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
+
+		if (m_MatchBeginTimer < 0.0f)
+		{
+			MatchBegin();
+		}
+	}
 
 	if (m_pLevel != nullptr)
 	{
@@ -75,7 +84,6 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 	}
 
 	//Render Some Server Match Information
-
 #if defined(RENDER_MATCH_INFORMATION)
 	ImGuiRenderer::Get().DrawUI([this]()
 	{
@@ -112,6 +120,27 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 		ImGui::End();
 	});
 #endif
+}
+
+void MatchServer::MatchStart()
+{
+	m_HasBegun = false;
+	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+
+	PacketMatchStart matchStartPacket;
+	ServerHelper::SendBroadcast(matchStartPacket);
+
+	LOG_ERROR("SERVER: Match Start");
+}
+
+void MatchServer::MatchBegin()
+{
+	m_HasBegun = true;
+
+	PacketMatchBegin matchBeginPacket;
+	ServerHelper::SendBroadcast(matchBeginPacket);
+
+	LOG_ERROR("SERVER: Match Begin");
 }
 
 void MatchServer::SpawnFlag()
@@ -364,10 +393,9 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		}
 	}
 
-	// Send Match Start Packet
+	// Match Start
 	{
-		PacketMatchStart matchStartPacket;
-		ServerHelper::SendBroadcast(matchStartPacket);
+		MatchStart();
 	}
 
 	return true;

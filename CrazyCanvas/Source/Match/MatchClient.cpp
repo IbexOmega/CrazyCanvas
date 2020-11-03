@@ -30,24 +30,35 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 }
 
 bool MatchClient::InitInternal()
 {
+	if (MultiplayerUtils::IsSingleplayer())
+	{
+		m_HasBegun = true;
+		m_ClientSideBegun = true;
+	}
+
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 	return true;
 }
 
 void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
-	if (m_MatchBeginTimer > 0.0f)
+	if (!m_ClientSideBegun)
 	{
 		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
+		m_ClientSideBegun = true;
 
-		LOG_ERROR("CLIENT: Match Begin");
+		LOG_ERROR("CLIENT: Match Should Begin");
 	}
 }
 
@@ -133,10 +144,22 @@ bool MatchClient::OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<Pa
 	return true;
 }
 
-bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchStart>& event)
+bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMatchStart>& event)
 {
 	m_HasBegun = false;
+	m_ClientSideBegun = false;
 	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+
+	LOG_ERROR("CLIENT: Match Start");
+
+	return true;
+}
+
+bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event)
+{
+	m_HasBegun = true;
+
+	LOG_ERROR("CLIENT: Match Begin");
 
 	return true;
 }
