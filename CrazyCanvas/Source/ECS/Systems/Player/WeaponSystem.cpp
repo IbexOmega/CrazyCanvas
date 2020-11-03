@@ -21,6 +21,8 @@
 
 #include "Teams/TeamHelper.h"
 
+#include "Match/Match.h"
+
 /*
 * Constants
 */
@@ -450,6 +452,11 @@ void WeaponSystem::TryFire(
 	const glm::vec3& playerVelocity)
 {
 	using namespace LambdaEngine;
+
+	if (!Match::HasBegun())
+	{
+		return;
+	}
 
 	// Add cooldown
 	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
