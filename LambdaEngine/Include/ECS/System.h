@@ -32,7 +32,7 @@ namespace LambdaEngine
 		const String& GetName() const { return m_SystemName; }
 
 	protected:
-		void RegisterSystem(const String& systemName, SystemRegistration& systemRegistration);
+		virtual void RegisterSystem(const String& systemName, SystemRegistration& systemRegistration);
 
 	private:
 		String m_SystemName;
