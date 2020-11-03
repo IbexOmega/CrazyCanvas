@@ -371,13 +371,26 @@ namespace LambdaEngine
 
 			//Build BLASes
 			{
+				//This is required to sync up any Vertex Updates with BLAS building
+				static constexpr const PipelineMemoryBarrierDesc BLAS_PRE_MEMORY_BARRIER
+				{
+					.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+					.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+				};
+
+				pMainCommandList->PipelineMemoryBarriers(
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD,
+					&BLAS_PRE_MEMORY_BARRIER,
+					1);
+
 				for (BuildBottomLevelAccelerationStructureDesc& blasBuildDesc : m_DirtyBLASes)
 				{
 					pMainCommandList->BuildBottomLevelAccelerationStructure(&blasBuildDesc);
 				}
 
 				//This is required to sync up BLAS building with TLAS building, to make sure that the BLAS is built before the TLAS
-				static constexpr const PipelineMemoryBarrierDesc BLAS_MEMORY_BARRIER
+				static constexpr const PipelineMemoryBarrierDesc BLAS_POST_MEMORY_BARRIER
 				{
 					.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 					.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
@@ -386,7 +399,7 @@ namespace LambdaEngine
 				pMainCommandList->PipelineMemoryBarriers(
 					FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD, 
 					FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
-					&BLAS_MEMORY_BARRIER,
+					&BLAS_POST_MEMORY_BARRIER,
 					1);
 
 				m_DirtyBLASes.Clear();
