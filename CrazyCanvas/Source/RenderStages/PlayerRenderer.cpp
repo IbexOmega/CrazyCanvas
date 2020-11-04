@@ -453,44 +453,39 @@ namespace LambdaEngine
 
 		// Early exit if nothing to draw
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
+		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
+
 		if (m_DrawCount == 0)
 		{
-			m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
-			pCommandList->Begin(nullptr);
-
 			//Begin and End RenderPass to transition Texture State (Lazy)
 			pCommandList->BeginRenderPass(&beginRenderPassDesc);
 			pCommandList->EndRenderPass();
+		}
+		else
+		{
+			// Render enemy with no culling to see backface of paint
+			bool renderEnemies = true;
+			RenderCull(renderEnemies, modFrameIndex, pCommandList, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDNoCull);
 
-			pCommandList->End();
-
-			(*ppFirstExecutionStage) = pCommandList;
-			return;
+			// Team members are transparent, Front Culling- and Back Culling is needed
+			renderEnemies = false;
+			RenderCull(renderEnemies, modFrameIndex, pCommandList, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDBackCull);
+			RenderCull(renderEnemies, modFrameIndex, pCommandList, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDFrontCull);
 		}
 
-		// Render enemy with no culling to see backface of paint
-		bool renderEnemies = true;
-		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDNoCull);
-
-		// Team members are transparent, Front Culling- and Back Culling is needed
-		renderEnemies = false;
-		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDBackCull);
-		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDFrontCull);
+		pCommandList->End();
+		(*ppFirstExecutionStage) = pCommandList;
 	}
 
 
 	void PlayerRenderer::RenderCull(bool renderEnemy, uint32 modFrameIndex,
-									CommandList** ppFirstExecutionStage, 
+									CommandList* pCommandList, 
 									BeginRenderPassDesc& renderPassDesc, 
 									Viewport& viewport, 
 									ScissorRect& scissorRect, 
 									uint64& pipelineId) 
 	{
-		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
-
-		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
-		pCommandList->Begin(nullptr);
-
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
@@ -552,12 +547,6 @@ namespace LambdaEngine
 
 		m_PlayerDistances.Clear();
 		m_NextPlayerList.Clear();
-
-		pCommandList->EndRenderPass();
-
-		pCommandList->End();
-
-		(*ppFirstExecutionStage) = pCommandList;
 	}
 
 

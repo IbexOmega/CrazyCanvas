@@ -72,7 +72,7 @@ namespace LambdaEngine
 		bool CreateCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
-		void RenderCull(bool renderEnemy, uint32 modFrameIndex, CommandList** ppFirstExecutionStage, BeginRenderPassDesc& renderPassDesc, Viewport& viewport, ScissorRect& scissorRect, uint64& pipelineId);
+		void RenderCull(bool renderEnemy, uint32 modFrameIndex, CommandList* pCommandList, BeginRenderPassDesc& renderPassDesc, Viewport& viewport, ScissorRect& scissorRect, uint64& pipelineId);
 
 	private:
 		bool									m_Initilized = false;
