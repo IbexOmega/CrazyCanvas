@@ -128,12 +128,17 @@ bool HUDGUI::UpdateScore()
 	return true;
 }
 
-bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap, EAmmoType ammoType)
+bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType)
 {
 	//Returns false if Out Of Ammo
 	std::string ammoString;
 	
-	ammoString = std::to_string(currentAmmo) + "/" + std::to_string(ammoCap);
+	auto ammo = WeaponTypeAmmo.find(ammoType);
+	if (ammo != WeaponTypeAmmo.end())
+		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
+	else
+		LOG_ERROR("Non-existing ammoType");
+
 
 	if(ammoType == EAmmoType::AMMO_TYPE_WATER)
 		FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY")->SetText(ammoString.c_str());
@@ -141,10 +146,6 @@ bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap, EAmmoType ammoType)
 	if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 		FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY")->SetText(ammoString.c_str());
 
-	if (currentAmmo <= 0)
-	{
-		return false;
-	}
 	return true;
 }
 

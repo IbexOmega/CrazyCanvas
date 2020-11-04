@@ -67,10 +67,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 	UNREFERENCED_VARIABLE(delta);
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
-	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
-
 
 	for (Entity players : m_PlayerEntities)
 	{
@@ -92,7 +89,7 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 
 		if (pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity) && m_HUDGUI)
 		{
-			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition, weaponComponent.AmmoCapacity, event.AmmoType);
+			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
 		}
 	}
 

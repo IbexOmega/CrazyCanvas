@@ -49,7 +49,7 @@ public:
 
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
-	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap, EAmmoType ammoType);
+	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 
 private:
 
