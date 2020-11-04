@@ -27,8 +27,6 @@ layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferDepthS
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
 
-layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_RayTracedRadiance;
-
 layout(location = 0) out vec4 out_Color;
 
 void main()
@@ -40,14 +38,20 @@ void main()
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 	vec3 colorHDR;
 
-	if (aoRoughMetalValid.a < 1.0f)
+	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
 	{
-		colorHDR = albedo / (albedo + vec3(1.0f));
-		colorHDR = pow(colorHDR, vec3(1.0f / GAMMA));
-		out_Color = vec4(colorHDR, CalculateLuminance(colorHDR));
+		float luminance = CalculateLuminance(albedo);
+
+		//Reinhard Tone-Mapping
+		vec3 colorLDR = albedo / (albedo + vec3(1.0f));
+
+		//Gamma Correction
+		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+		out_Color = vec4(finalColor, luminance);
 		return;
 	}
-	else if (aoRoughMetalValid.g > 0.0f)
+	else
 	{
 		float ao		= aoRoughMetalValid.r;
 		float roughness	= max(0.05f, aoRoughMetalValid.g);
@@ -127,10 +131,6 @@ void main()
 		
 		vec3 ambient    = 0.03f * albedo * ao;
 		colorHDR      	= ambient + Lo;
-	}
-	else
-	{
-		colorHDR = texture(u_RayTracedRadiance, in_TexCoord).rgb;
 	}
 
 	float luminance = CalculateLuminance(colorHDR);

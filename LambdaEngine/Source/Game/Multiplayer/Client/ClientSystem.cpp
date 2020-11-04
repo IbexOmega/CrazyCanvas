@@ -7,9 +7,9 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Engine/EngineConfig.h"
-
 #include "Game/GameConsole.h"
+
+#include "Engine/EngineConfig.h"
 
 namespace LambdaEngine
 {
@@ -22,12 +22,14 @@ namespace LambdaEngine
 	{
 		MultiplayerUtils::Init(false);
 
+		const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
+
 		ClientDesc clientDesc			= {};
-		clientDesc.PoolSize				= 1024;
-		clientDesc.MaxRetries			= 10;
+		clientDesc.PoolSize				= 8192;
+		clientDesc.MaxRetries			= 25;
 		clientDesc.ResendRTTMultiplier	= 5.0f;
 		clientDesc.Handler				= this;
-		clientDesc.Protocol				= EProtocol::UDP;
+		clientDesc.Protocol				= EProtocolParser::FromString(protocol);
 		clientDesc.PingInterval			= Timestamp::Seconds(1);
 		clientDesc.PingTimeout			= Timestamp::Seconds(10);
 		clientDesc.UsePingSystem		= true;
@@ -37,7 +39,7 @@ namespace LambdaEngine
 		NetworkDiscovery::EnableClient(m_Name, this);
 
 		ConsoleCommand netStatsCmd;
-		netStatsCmd.Init("show_net_stats", m_DebuggingWindow);
+		netStatsCmd.Init("show_net_stats", true);
 		netStatsCmd.AddArg(Arg::EType::BOOL);
 		netStatsCmd.AddDescription("Activate/Deactivate Network debugging window.\n\t'show_net_stats true'");
 		GameConsole::Get().BindCommand(netStatsCmd, [&, this](GameConsole::CallbackInput& input)->void {

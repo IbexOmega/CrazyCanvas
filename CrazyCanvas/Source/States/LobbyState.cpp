@@ -4,7 +4,6 @@
 #include "Rendering/RenderGraphSerializer.h"
 #include "Rendering/RenderAPI.h"
 
-#include "Engine/EngineConfig.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 

@@ -46,8 +46,8 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
-		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty("MeshShadersEnabled");
+		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{
@@ -293,7 +293,7 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
+			String renderGraphName = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RENDER_GRAPH_NAME);
 			if (renderGraphName != "")
 			{
 				String prefix = m_RayTracingEnabled ? "RT_" : "";
@@ -327,7 +327,7 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers = { };
 
-			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
+			if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER))
 			{
 				m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 				m_pLineRenderer->Init();
@@ -669,7 +669,7 @@ namespace LambdaEngine
 		renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
 		renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 
-		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
+		if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER))
 		{
 			m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 			m_pLineRenderer->Init();
@@ -1268,12 +1268,16 @@ namespace LambdaEngine
 			uint8 hitMask = 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
-			uint32 asInstanceIndex = m_pASBuilder->AddInstance(
-				meshAndInstancesIt->second.BLASIndex,
-				transform,
-				customIndex,
-				hitMask,
-				asFlags);
+			ASInstanceDesc asInstanceDesc =
+			{
+				.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
+				.Transform		= transform,
+				.CustomIndex	= customIndex,
+				.HitMask		= hitMask,
+				.Flags			= asFlags
+			};
+
+			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
 
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
