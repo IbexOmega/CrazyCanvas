@@ -48,12 +48,16 @@ void AudioEffectHandler::Init()
 
 bool AudioEffectHandler::OnPlayerDied(const PlayerDiedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	m_pPlayerKilledSound->PlayOnce();
 	return true;
 }
 
 bool AudioEffectHandler::OnPlayerConnected(const PlayerConnectedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	m_pConnectSound->PlayOnce();
 	return true;
 }

@@ -22,7 +22,7 @@ using namespace LambdaEngine;
 
 MainMenuGUI::MainMenuGUI()
 {
-	GUI::LoadComponent(this, "MainMenu2.xaml");
+	GUI::LoadComponent(this, "MainMenu.xaml");
 
 	// Main Grids
 	m_pStartGrid		= FrameworkElement::FindName<Grid>("StartGrid");

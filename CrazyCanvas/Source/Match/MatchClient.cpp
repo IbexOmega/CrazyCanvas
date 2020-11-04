@@ -215,6 +215,8 @@ bool MatchClient::OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<Pa
 
 bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMatchStart>& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	m_HasBegun = false;
 	m_ClientSideBegun = false;
 	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
@@ -226,6 +228,8 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 
 bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	m_HasBegun = true;
 
 	LOG_INFO("CLIENT: Match Begin");
