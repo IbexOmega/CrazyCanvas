@@ -195,7 +195,7 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	EngineConfig::SetFloatProperty("VolumeMasterInital", volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
-	// TODO: EngineConfig does not set the expected values
+	EngineConfig::WriteToFile();
 
 	OnButtonBackClick(pSender, args);
 }
@@ -243,7 +243,7 @@ void MainMenuGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, 
 	// Go through all keys to set - and set them
 	for (auto& stringPair : m_KeysToSet)
 	{
-		InputActionSystem::ChangeKeyBinding(stringPair.first, StringToKey(stringPair.second));
+		InputActionSystem::ChangeKeyBinding(StringToAction(stringPair.first), stringPair.second);
 	}
 	m_KeysToSet.clear();
 
@@ -255,8 +255,20 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 	// Reset
 	for (auto& stringPair : m_KeysToSet)
 	{
-		LambdaEngine::String keyString = KeyToString(InputActionSystem::GetKey(stringPair.first));
-		FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(keyString.c_str());
+		EAction action = StringToAction(stringPair.first);
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			LambdaEngine::String keyStr = KeyToString(key);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(keyStr.c_str());
+		}
+		if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			LambdaEngine::String mouseButtonStr = ButtonToString(mouseButton);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(mouseButtonStr.c_str());
+		}
 	}
 	m_KeysToSet.clear();
 
@@ -294,15 +306,7 @@ void MainMenuGUI::SetDefaultSettings()
 	volumeSlider->SetValue(volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
-	// Init Keybindings
-	FrameworkElement::FindName<Button>("CAM_FORWARD")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_FORWARD")));
-	FrameworkElement::FindName<Button>("CAM_BACKWARD")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_BACKWARD")));
-	FrameworkElement::FindName<Button>("CAM_LEFT")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_LEFT")));
-	FrameworkElement::FindName<Button>("CAM_RIGHT")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_RIGHT")));
-	FrameworkElement::FindName<Button>("CAM_JUMP")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_JUMP")));
-	FrameworkElement::FindName<Button>("CAM_SPEED_MODIFIER")->SetContent(KeyToString(InputActionSystem::GetKey("CAM_SPEED_MODIFIER")));
-
-	// TODO: Get attack buttons (primary shoot, secondary shoot, reload) when they are available from the config file
+	SetDefaultKeyBindings();
 
 	// Ray Tracing Toggle
 	m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
@@ -317,17 +321,50 @@ void MainMenuGUI::SetDefaultSettings()
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
 }
 
+void MainMenuGUI::SetDefaultKeyBindings()
+{
+	TArray<EAction> actions = {
+		// Movement
+		EAction::ACTION_MOVE_FORWARD,
+		EAction::ACTION_MOVE_BACKWARD,
+		EAction::ACTION_MOVE_LEFT,
+		EAction::ACTION_MOVE_RIGHT,
+		EAction::ACTION_MOVE_JUMP,
+		EAction::ACTION_MOVE_SPRINT,
+
+		// Attack
+		EAction::ACTION_ATTACK_PRIMARY,
+		EAction::ACTION_ATTACK_SECONDARY,
+		EAction::ACTION_ATTACK_RELOAD,
+	};
+
+	for (EAction action : actions)
+	{
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(KeyToString(key));
+		}
+		else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
+		}
+	}
+}
+
 bool MainMenuGUI::KeyboardCallback(const KeyPressedEvent& event)
 {
 	if (m_ListenToCallbacks)
 	{
-		LambdaEngine::String keyString = KeyToString(event.Key);
+		LambdaEngine::String keyStr = KeyToString(event.Key);
 
-		// TODO: Sanitize input?
-		m_pSetKeyButton->SetContent(keyString.c_str());
-		m_KeysToSet[m_pSetKeyButton->GetName()] = keyString;
+		m_pSetKeyButton->SetContent(keyStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = keyStr;
 
 		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
 
 		return true;
 	}
@@ -339,7 +376,13 @@ bool MainMenuGUI::MouseButtonCallback(const MouseButtonClickedEvent& event)
 {
 	if (m_ListenToCallbacks)
 	{
+		LambdaEngine::String mouseButtonStr = ButtonToString(event.Button);
+
+		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;
+
 		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
 
 		return true;
 	}
