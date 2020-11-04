@@ -23,7 +23,6 @@ void main()
 	const ivec2 pixelCoords = ivec2(gl_LaunchIDEXT.xy);
 	const vec2 pixelCenter  = vec2(pixelCoords) + vec2(0.5f);
 	vec2 screenTexCoord     = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
-    screenTexCoord.y =  1.0f - screenTexCoord.y;
 
     //Sample required
     vec4 aoRoughMetalValid  = texelFetch(u_GBufferAORoughMetalValid, pixelCoords, 0);
@@ -41,7 +40,6 @@ void main()
     SPositions positions    = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
 
     //Sample GBuffer
-    vec3 worldPosition      = texelFetch(u_GBufferPosition, pixelCoords, 0).xyz;
     vec3 normal             = UnpackNormal(texelFetch(u_GBufferCompactNormal, pixelCoords, 0).xyz);
 
     //Initialize required parameters for first bounce
@@ -97,7 +95,7 @@ void main()
     //We don't want to shade if we reached max bounces, our fake energy loss will make the color black anyway
     if (b == MAX_BOUNCES)
     {
-        imageStore(u_RadianceOut, pixelCoords, vec4(0.0f));
+        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(0.0f));
     }
     else if (shadeOutput)
     {
@@ -131,8 +129,9 @@ void main()
             float NdotL = max(dot(normal, lightDir), 0.0f);
 
 			vec4 fragPosLight 		 = lightBuffer.DirL_ProjView * vec4(worldPos, 1.0f);
+            float inShadow 			= DirShadowDepthTest(fragPosLight, normal, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance;
+			vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
 
 			float NDF   = Distribution(normal, halfwayDir, roughness);
 			float G     = Geometry(normal, viewDir, lightDir, roughness);
@@ -187,10 +186,26 @@ void main()
 		vec3 ambient    = 0.03f * albedo * ao;
 		vec3 colorHDR   = bounceDarkening * (ambient + Lo);
 
-        imageStore(u_RadianceOut, pixelCoords, vec4(colorHDR, 1.0f));
+        float luminance = CalculateLuminance(colorHDR);
+
+        //Reinhard Tone-Mapping
+        vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+
+        //Gamma Correction
+        vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
     }
     else
     {
-        imageStore(u_RadianceOut, pixelCoords, vec4(s_PrimaryPayload.Albedo, 1.0f));
+        float luminance = CalculateLuminance(s_PrimaryPayload.Albedo);
+
+		//Reinhard Tone-Mapping
+		vec3 colorLDR = s_PrimaryPayload.Albedo / (s_PrimaryPayload.Albedo + vec3(1.0f));
+
+		//Gamma Correction
+		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
     }
 }

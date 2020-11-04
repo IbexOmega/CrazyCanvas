@@ -18,8 +18,8 @@ namespace LambdaEngine
 		* return - The ip-address as a string
 		*/
 		const std::string& ToString() const;
-
 		uint64 GetHash() const;
+		bool IsValid() const;
 
 		bool operator==(const IPAddress& other) const;
 		bool operator!=(const IPAddress& other) const;
@@ -40,6 +40,9 @@ namespace LambdaEngine
 		static void InitStatic();
 		static void ReleaseStatic();
 
+	protected:
+		bool m_IsValid;
+
 	private:
 		std::string m_Address;
 		uint64 m_Hash;
@@ -59,5 +62,18 @@ namespace LambdaEngine
 		static std::unordered_map<uint64, IPAddress*> s_CachedAddresses;
 		static SpinLock m_Lock;
 		static bool s_Released;
+	};
+
+	struct IPAddressHasher
+	{
+		size_t operator()(const IPAddress& key) const
+		{
+			return key.GetHash();
+		}
+
+		size_t operator()(const IPAddress* key) const
+		{
+			return key->GetHash();
+		}
 	};
 }

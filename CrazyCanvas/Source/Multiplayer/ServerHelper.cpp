@@ -11,3 +11,8 @@ void ServerHelper::SetIgnoreNewClients(bool ignore)
 {
 	ServerSystem::GetInstance().GetServer()->SetAcceptingConnections(!ignore);
 }
+
+ClientRemoteBase* ServerHelper::GetClient(uint64 uid)
+{
+	return ServerSystem::GetInstance().GetServer()->GetClient(uid);
+}

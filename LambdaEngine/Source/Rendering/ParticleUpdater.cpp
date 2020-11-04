@@ -229,14 +229,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ParticleUpdater::PreBuffersDescriptorSetWrite()
-	{
-	}
-
-	void ParticleUpdater::PreTexturesDescriptorSetWrite()
-	{
-	}
-
 	void ParticleUpdater::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
@@ -401,19 +393,6 @@ namespace LambdaEngine
 
 			m_UpdatePipeline.UpdateDescriptorSet("Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
-	}
-
-	void ParticleUpdater::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
-	}
-
-	void ParticleUpdater::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pDrawArgs);
-		UNREFERENCED_VARIABLE(count);
 	}
 
 	void ParticleUpdater::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)

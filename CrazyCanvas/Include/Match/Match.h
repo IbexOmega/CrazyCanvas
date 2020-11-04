@@ -16,9 +16,15 @@ public:
 	static bool ResetMatch();
 	static bool ReleaseMatch();
 
-	static void Tick(LambdaEngine::Timestamp deltaTime);
+	static void KillPlayer(LambdaEngine::Entity playerEntity);
 
-	FORCEINLINE static uint32 GetScore(uint32 teamIndex) { return s_pMatchInstance->GetScore(teamIndex); }
+	static void Tick(LambdaEngine::Timestamp deltaTime);
+	static void FixedTick(LambdaEngine::Timestamp deltaTime);
+
+	FORCEINLINE static uint32 GetScore(uint32 teamIndex) 
+	{ 
+		return s_pMatchInstance->GetScore(teamIndex);
+	}
 
 private:
 	inline static MatchBase* s_pMatchInstance = nullptr;

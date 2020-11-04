@@ -15,6 +15,6 @@ namespace LambdaEngine
 	public:
 		DECL_INTERFACE(INetworkDiscoveryClient);
 
-		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping) = 0;
+		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping, bool isLAN) = 0;
 	};
 }

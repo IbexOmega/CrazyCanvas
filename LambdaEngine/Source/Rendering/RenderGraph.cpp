@@ -1,5 +1,5 @@
 #include "Rendering/RenderGraph.h"
-#include "Rendering/ICustomRenderer.h"
+#include "Rendering/CustomRenderer.h"
 #include "Rendering/ImGuiRenderer.h"
 
 #include "Rendering/Core/API/GraphicsDevice.h"
@@ -183,6 +183,12 @@ namespace LambdaEngine
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
 			return false;
 		}
+		
+		if (!CustomRenderStagesPostInit())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
+			return false;
+		}
 
 		m_WindowWidth	= (float32)pDesc->BackBufferWidth;
 		m_WindowHeight	= (float32)pDesc->BackBufferHeight;
@@ -262,6 +268,12 @@ namespace LambdaEngine
 		if (!CreatePipelineStages(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
+			return false;
+		}
+
+		if (!CustomRenderStagesPostInit())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
 			return false;
 		}
 
@@ -350,7 +362,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateGlobalSBT(const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
+	void RenderGraph::UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
 	{
 		m_GlobalShaderRecords = shaderRecords;
 
@@ -367,11 +379,11 @@ namespace LambdaEngine
 
 				if (pRenderStage->pSBT == nullptr)
 				{
-					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
+					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(pCommandList, &sbtDesc);
 				}
 				else
 				{
-					pRenderStage->pSBT->Build(AcquireComputeCopyCommandList(), removedDeviceResources, &sbtDesc);
+					pRenderStage->pSBT->Build(pCommandList, removedDeviceResources, &sbtDesc);
 				}
 			}
 		}
@@ -479,9 +491,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(modFrameIndex);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
-		for (auto& customRenderer : m_CustomRenderers)
+		for (CustomRenderer* pCustomRenderer : m_CustomRenderers)
 		{
-			customRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
+			pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
 		}
 
 		UpdateResourceBindings();
@@ -613,23 +625,26 @@ namespace LambdaEngine
 			{
 				if (!pResource->ResourceBindings.IsEmpty())
 				{
-					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[0]; //Assume only one acceleration structure
-					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
+					for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)
+					{
+						ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
+						RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
-					if (pRenderStage->UsesCustomRenderer)
-					{
-						pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
-							pResource->Name,
-							pResource->AccelerationStructure.pTLAS);
-					}
-					else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
-					{
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
+						if (pRenderStage->UsesCustomRenderer)
 						{
-							pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
-								&pResource->AccelerationStructure.pTLAS,
-								pResourceBinding->Binding,
-								1);
+							pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
+								pResource->Name,
+								pResource->AccelerationStructure.pTLAS);
+						}
+						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
+						{
+							for (uint32 b = 0; b < m_BackBufferCount; b++)
+							{
+								pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
+									&pResource->AccelerationStructure.pTLAS,
+									pResourceBinding->Binding,
+									1);
+							}
 						}
 					}
 				}
@@ -934,7 +949,7 @@ namespace LambdaEngine
 						if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset) && pRenderStage->pDisabledRenderPass == nullptr)
 							continue;
 
-						ICustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
+						CustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 						pCustomRenderer->Render(
 							uint32(m_ModFrameIndex),
 							m_BackBufferIndex,
@@ -1844,7 +1859,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<ICustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
+	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
 		m_RenderStageMap.reserve(m_RenderStageCount);
@@ -2358,11 +2373,11 @@ namespace LambdaEngine
 
 			if (pRenderStageDesc->CustomRenderer)
 			{
-				ICustomRenderer* pCustomRenderer = nullptr;
+				CustomRenderer* pCustomRenderer = nullptr;
 
 				if (isImGuiStage)
 				{
-					auto imGuiRenderStageIt = std::find_if(m_DebugRenderers.Begin(), m_DebugRenderers.End(), [](const ICustomRenderer* pCustomRenderer) { return pCustomRenderer->GetName() == RENDER_GRAPH_IMGUI_STAGE_NAME; });
+					auto imGuiRenderStageIt = std::find_if(m_DebugRenderers.Begin(), m_DebugRenderers.End(), [](const CustomRenderer* pCustomRenderer) { return pCustomRenderer->GetName() == RENDER_GRAPH_IMGUI_STAGE_NAME; });
 
 					if (imGuiRenderStageIt == m_DebugRenderers.End())
 					{
@@ -2391,7 +2406,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					auto customRendererIt = std::find_if(customRenderers.Begin(), customRenderers.End(), [pRenderStageDesc](const ICustomRenderer* pCustomRenderer) { return pRenderStageDesc->Name == pCustomRenderer->GetName(); });
+					auto customRendererIt = std::find_if(customRenderers.Begin(), customRenderers.End(), [pRenderStageDesc](const CustomRenderer* pCustomRenderer) { return pRenderStageDesc->Name == pCustomRenderer->GetName(); });
 
 					if (customRendererIt == customRenderers.end())
 					{
@@ -2408,6 +2423,7 @@ namespace LambdaEngine
 				m_CustomRenderers.PushBack(pCustomRenderer);
 
 				CustomRendererRenderGraphInitDesc customRendererInitDesc = {};
+				customRendererInitDesc.pRenderGraph					= this;
 				customRendererInitDesc.BackBufferCount				= m_BackBufferCount;
 				customRendererInitDesc.pColorAttachmentDesc			= renderPassAttachmentDescriptions.GetData();
 				customRendererInitDesc.ColorAttachmentCount			= (uint32)renderPassAttachmentDescriptions.GetSize();
@@ -3283,6 +3299,19 @@ namespace LambdaEngine
 		}
 
 		m_ppExecutionStages = DBG_NEW CommandList*[m_ExecutionStageCount];
+
+		return true;
+	}
+
+	bool RenderGraph::CustomRenderStagesPostInit()
+	{
+		for (CustomRenderer* pCustomRenderer : m_CustomRenderers)
+		{
+			if (!pCustomRenderer->RenderGraphPostInit())
+			{
+				return false;
+			}
+		}
 
 		return true;
 	}

@@ -11,7 +11,7 @@
 
 namespace LambdaEngine
 {
-	THashTable<String, EKey> InputActionSystem::m_CurrentKeyBindings;
+	THashTable<EAction, String> InputActionSystem::m_CurrentBindings;
 
 	rapidjson::Document InputActionSystem::s_ConfigDocument;
 
@@ -36,19 +36,20 @@ namespace LambdaEngine
 		for (auto& m : s_ConfigDocument.GetObject())
 		{
 
-			String action = m.name.GetString();
-			String strKey = m.value.GetString();
+			String strBinding 	= m.value.GetString();
+			String strAction	= m.name.GetString();
+			EAction action		= StringToAction(strAction);
 
-			EKey keybinding = StringToKey(strKey);
-
-			if (keybinding == EKey::KEY_UNKNOWN) {
-				LOG_ERROR("Action %s is keybounded to unknown. Make sure key is defined.", action.c_str());
+			EKey keybinding = StringToKey(strBinding);
+			EMouseButton mouseButtonBinding = StringToButton(strBinding);
+			if (keybinding == EKey::KEY_UNKNOWN && mouseButtonBinding == EMouseButton::MOUSE_BUTTON_UNKNOWN)
+			{
+				LOG_ERROR("Action %s is bounded to unknown. Make sure key is defined.", strAction.c_str());
 			}
 			else
 			{
-				m_CurrentKeyBindings.insert({ action, keybinding });
-				LOG_INFO("Action %s is keybounded to %s\n",
-					action.c_str(), strKey.c_str());
+				m_CurrentBindings.insert({ action, strBinding });
+				LOG_INFO("Action %s is bounded to %s\n", strAction.c_str(), strBinding.c_str());
 			}
 
 		}
@@ -81,51 +82,123 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool InputActionSystem::ChangeKeyBinding(const String& action, EKey key)
+	bool InputActionSystem::ChangeKeyBinding(EAction action, EKey key)
 	{
-		auto itr = m_CurrentKeyBindings.find(action);
-
-		if (itr != m_CurrentKeyBindings.end()) {
-			itr->second = key;
-			if (s_ConfigDocument.HasMember(action.c_str()))
+		String actionStr = ActionToString(action);
+		if (m_CurrentBindings.contains(action))
+		{
+			String keyStr = KeyToString(key);
+			m_CurrentBindings[action] = keyStr;
+			if (s_ConfigDocument.HasMember(actionStr.c_str()))
 			{
-				String keyStr = KeyToString(key);
-				s_ConfigDocument[action.c_str()].SetString(keyStr.c_str(), static_cast<rapidjson::SizeType>(strlen(keyStr.c_str())), s_ConfigDocument.GetAllocator());
+				s_ConfigDocument[actionStr.c_str()].SetString(keyStr.c_str(),
+					static_cast<rapidjson::SizeType>(keyStr.length()), s_ConfigDocument.GetAllocator());
+
+				WriteToFile();
 
 				LOG_INFO("Action %s has changed keybinding to %s\n",
-					action.c_str(), KeyToString(key));
+					actionStr.c_str(), keyStr.c_str());
 				return true;
 			}
 		}
 
-		LOG_ERROR("Action %s is not defined.", action.c_str());
+		LOG_WARNING("Action %s is not defined.", actionStr.c_str());
 		return false;
 	}
 
-	bool InputActionSystem::IsActive(const String& action)
+	bool InputActionSystem::ChangeKeyBinding(EAction action, EMouseButton button)
 	{
-		auto itr = m_CurrentKeyBindings.find(action);
+		String actionStr = ActionToString(action);
+		if (m_CurrentBindings.contains(action))
+		{
+			String buttonStr = ButtonToString(button);
+			m_CurrentBindings[action] = buttonStr;
+			if (s_ConfigDocument.HasMember(actionStr.c_str()))
+			{
+				s_ConfigDocument[actionStr.c_str()].SetString(buttonStr.c_str(),
+					static_cast<rapidjson::SizeType>(buttonStr.length()), s_ConfigDocument.GetAllocator());
 
-		if (itr != m_CurrentKeyBindings.end()) {
-			EKey keyPressed = itr->second;
-			return Input::IsKeyDown(EInputLayer::GAME, keyPressed);
+				WriteToFile();
+
+				LOG_INFO("Action %s has changed keybinding to %s\n",
+					actionStr.c_str(), buttonStr.c_str());
+				return true;
+			}
 		}
 
-		LOG_ERROR("Action %s is not defined.", action.c_str());
+		LOG_WARNING("Action %s is not defined.", actionStr.c_str());
 		return false;
 	}
 
-	EKey InputActionSystem::GetKey(const String& action)
+	bool InputActionSystem::ChangeKeyBinding(EAction action, String keyOrButton)
 	{
-		auto itr = m_CurrentKeyBindings.find(action);
+		EKey key = StringToKey(keyOrButton);
+		EMouseButton mouseButton = StringToButton(keyOrButton);
 
-		if (itr != m_CurrentKeyBindings.end()) {
-			EKey keyPressed = itr->second;
-			return keyPressed;
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			return ChangeKeyBinding(action, key);
+		}
+		else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			return ChangeKeyBinding(action, mouseButton);
 		}
 
-		LOG_ERROR("Action %s is not defined.", action.c_str());
+		LOG_WARNING("Action %s is not defined.", ActionToString(action));
+		return false;
+	}
+
+
+	bool InputActionSystem::IsActive(EAction action)
+	{
+		if (m_CurrentBindings.contains(action))
+		{
+			EKey key = StringToKey(m_CurrentBindings[action]);
+			EMouseButton mouseButton = StringToButton(m_CurrentBindings[action]);
+
+			if (key != EKey::KEY_UNKNOWN)
+			{
+				return Input::IsKeyDown(EInputLayer::GAME, key);
+			}
+			else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+			{
+				return Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(mouseButton);
+			}
+		}
+
+		LOG_ERROR("Action %s is not defined.", ActionToString(action));
+		return false;
+	}
+
+	bool InputActionSystem::IsBoundToKey(EAction action)
+	{
+		return GetKey(action) != EKey::KEY_UNKNOWN;
+	}
+
+	bool InputActionSystem::IsBoundToMouseButton(EAction action)
+	{
+		return GetMouseButton(action) != EMouseButton::MOUSE_BUTTON_UNKNOWN;
+	}
+
+	EKey InputActionSystem::GetKey(EAction action)
+	{
+		if (m_CurrentBindings.contains(action))
+		{
+			return StringToKey(m_CurrentBindings[action]);
+		}
+
+		LOG_WARNING("Action %s is not defined.", ActionToString(action));
 		return EKey::KEY_UNKNOWN;
 	}
 
+	EMouseButton InputActionSystem::GetMouseButton(EAction action)
+	{
+		if (m_CurrentBindings.contains(action))
+		{
+			return StringToButton(m_CurrentBindings[action]);
+		}
+
+		LOG_WARNING("Action %s is not defined.", ActionToString(action));
+		return EMouseButton::MOUSE_BUTTON_UNKNOWN;
+	}
 }

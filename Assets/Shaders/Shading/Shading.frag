@@ -18,16 +18,14 @@ layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 	SPointLight pointLights[];  
 } b_LightsBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferPosition;
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAORoughMetalValid;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferCompactNormal;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVelocity;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo;
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAORoughMetalValid;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferCompactNormal;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVelocity;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferDepthStencil;
 
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
-
-layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_RayTracedRadiance;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -40,39 +38,45 @@ void main()
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 	vec3 colorHDR;
 
-	if (aoRoughMetalValid.a < 1.0f)
+	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
 	{
-		colorHDR = albedo / (albedo + vec3(1.0f));
-		colorHDR = pow(colorHDR, vec3(1.0f / GAMMA));
-		out_Color = vec4(colorHDR, CalculateLuminance(colorHDR));
+		float luminance = CalculateLuminance(albedo);
+
+		//Reinhard Tone-Mapping
+		vec3 colorLDR = albedo / (albedo + vec3(1.0f));
+
+		//Gamma Correction
+		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+		out_Color = vec4(finalColor, luminance);
 		return;
 	}
-	else if (aoRoughMetalValid.g > 0.0f)
+	else
 	{
 		float ao		= aoRoughMetalValid.r;
 		float roughness	= max(0.05f, aoRoughMetalValid.g);
 		float metallic	= aoRoughMetalValid.b;
+		float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
 
-		vec3 worldPos 		= texture(u_GBufferPosition, in_TexCoord).rgb;
-		vec3 N 				= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
-		vec3 viewVector		= perFrameBuffer.CameraPosition.xyz - worldPos;
-		float viewDistance	= length(viewVector);
-		vec3 V 				= normalize(viewVector);
+		SPositions positions    = CalculatePositionsFromDepth(in_TexCoord, depth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+		vec3 N 					= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
+		vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - positions.WorldPos;
+		float viewDistance		= length(viewVector);
+		vec3 V 					= normalize(viewVector);
 
 		vec3 Lo = vec3(0.0f);
 		vec3 F0 = vec3(0.04f);
 
 		F0 = mix(F0, albedo, metallic);
-
 		// Directional Light
 		{
 			vec3 L = normalize(lightBuffer.DirL_Direction);
 			vec3 H = normalize(V + L);
 
-			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(worldPos, 1.0);
-			// float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
+			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0);
+			float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance;// * (1.0 - inShadow);
+			vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
 
 			float NDF   = Distribution(N, H, roughness);
 			float G     = Geometry(N, V, L, roughness);
@@ -97,12 +101,12 @@ void main()
 		{
 			SPointLight light = b_LightsBuffer.pointLights[i];
 
-			vec3 L = (light.Position - worldPos);
+			vec3 L = (light.Position - positions.WorldPos);
 			float distance = length(L);
 			L = normalize(L);
 			vec3 H = normalize(V + L);
 			
-			float inShadow 			= PointShadowDepthTest(worldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
+			float inShadow 			= PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			float attenuation   	= 1.0f / (distance * distance);
 			vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
@@ -127,10 +131,6 @@ void main()
 		
 		vec3 ambient    = 0.03f * albedo * ao;
 		colorHDR      	= ambient + Lo;
-	}
-	else
-	{
-		colorHDR = texture(u_RayTracedRadiance, in_TexCoord).rgb;
 	}
 
 	float luminance = CalculateLuminance(colorHDR);

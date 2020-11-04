@@ -42,11 +42,10 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMateria
 
 layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
-layout(location = 0) out vec4 out_Position;
-layout(location = 1) out vec3 out_Albedo;
-layout(location = 2) out vec4 out_AO_Rough_Metal_Valid;
-layout(location = 3) out vec3 out_Compact_Normal;
-layout(location = 4) out vec2 out_Velocity;
+layout(location = 0) out vec3 out_Albedo;
+layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
+layout(location = 2) out vec3 out_Compact_Normal;
+layout(location = 3) out vec2 out_Velocity;
 
 SPaintSample SamplePaint(in ivec2 p, in uint paintMaskIndex)
 {
@@ -132,25 +131,22 @@ void main()
 	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
 
 	//0
-	out_Position				= vec4(in_WorldPosition, 0.0f);
-
-	//1
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 	out_Albedo					= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
 
-	//2
+	//1
 	vec3 storedMaterial			= vec3(
 									materialParameters.AO * sampledCombinedMaterial.b, 
 									mix(materialParameters.Roughness * sampledCombinedMaterial.r, paintDescription.Roughness, paintDescription.Interpolation), 
 									materialParameters.Metallic * sampledCombinedMaterial.g);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
-	//3
+	//2
 	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal				= normalize(TBN * normalize(shadingNormal));
 	out_Compact_Normal			= PackNormal(mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation));
 
-	//4
+	//3
 	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 	vec2 screenVelocity			= (prevNDC - currentNDC);
