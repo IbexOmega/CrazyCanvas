@@ -832,7 +832,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 			//Todo: Better implementation for this somehow maybe?
 			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
-			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
+			OffsetComponent offsetComponent = { .Offset = glm::vec3(0.f, 1.7f, 0.f)/*pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f)*/ };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
 			pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
