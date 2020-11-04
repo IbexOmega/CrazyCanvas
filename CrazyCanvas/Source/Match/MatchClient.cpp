@@ -58,11 +58,11 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
 				.Width = (float)window->GetWidth(),
 				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+				.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			CreatePlayerDesc createPlayerDesc =
