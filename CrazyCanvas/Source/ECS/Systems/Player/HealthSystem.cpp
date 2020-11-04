@@ -1,6 +1,7 @@
 #include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/Player/Player.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -28,6 +29,12 @@ bool HealthSystem::Init()
 
 	// Register system
 	{
+		PlayerGroup playerGroup;
+		playerGroup.Position.Permissions	= R;
+		playerGroup.Scale.Permissions		= NDA;
+		playerGroup.Rotation.Permissions	= NDA;
+		playerGroup.Velocity.Permissions	= NDA;
+
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
@@ -38,7 +45,15 @@ bool HealthSystem::Init()
 					{ RW, HealthComponent::Type() },
 					{ RW, PacketComponent<PacketHealthChanged>::Type() }
 				}
-			}
+			},
+			{
+				.pSubscriber = &m_LocalPlayerEntities,
+				.ComponentAccesses =
+				{
+					{ NDA, PlayerLocalComponent::Type() },
+				},
+				.ComponentGroups = { &playerGroup }
+			},
 		};
 
 		// After weaponsystem
@@ -179,6 +194,24 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						Match::KillPlayer(entity);
 						LOG_INFO("PLAYER DIED");
 					}
+
+					// Is this the local player
+					bool isLocal = false;
+					for (Entity playerEntity : m_LocalPlayerEntities)
+					{
+						if (playerEntity == entity)
+						{
+							isLocal = true;
+							break;
+						}
+					}
+
+					// Send event to notify systems that a player got hit
+					const PositionComponent& positionComp = pECS->GetConstComponent<PositionComponent>(entity);
+					const glm::vec3 position = positionComp.Position;
+
+					PlayerHitEvent event(entity, position, isLocal);
+					EventQueue::SendEvent(event);
 				}
 			}
 		}

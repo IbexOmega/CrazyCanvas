@@ -1,21 +1,21 @@
 {
-  "WindowSize": [
+  "CONFIG_OPTION_WINDOW_SIZE": [
     800,
     600
   ],
-  "VolumeMasterInital": 1.0,
-  "FixedTimestep": 60,
-  "NetworkPort": 4444,
-  "RayTracingEnabled": true,
-  "MeshShadersEnabled": false,
-  "ShowRenderGraph": false,
-  "EnableLineRenderer": false,
-  "RenderGraphName": "",
-  "ShowDemo": false,
-  "Debugging": false,
-  "CameraFOV": 90.0,
-  "CameraNearPlane": 0.001,
-  "CameraFarPlane": 1000.0,
-  "StreamPhysx": false,
-  "EnableValidationLayersInDebug": true
+  "CONFIG_OPTION_VOLUME_MASTER": 1.0,
+  "CONFIG_OPTION_FIXED_TIMESTEMP": 60,
+  "CONFIG_OPTION_NETWORK_PORT": 4444,
+  "CONFIG_OPTION_RAY_TRACING": false,
+  "CONFIG_OPTION_MESH_SHADER": false,
+  "CONFIG_OPTION_SHOW_RENDER_GRAPH": false,
+  "CONFIG_OPTION_RENDER_GRAPH_NAME": "",
+  "CONFIG_OPTION_LINE_RENDERER": false,
+  "CONFIG_OPTION_SHOW_DEMO": false,
+  "CONFIG_OPTION_DEBUGGING": false,
+  "CONFIG_OPTION_CAMERA_FOV": 90.0,
+  "CONFIG_OPTION_CAMERA_NEAR_PLANE": 0.001,
+  "CONFIG_OPTION_CAMERA_FAR_PLANE": 1000.0,
+  "CONFIG_OPTION_STREAM_PHYSX": false,
+  "CONFIG_OPTION_VALIDATION_LAYER_IN_DEBUG": true
 }

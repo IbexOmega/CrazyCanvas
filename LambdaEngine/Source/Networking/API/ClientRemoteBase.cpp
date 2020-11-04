@@ -24,9 +24,8 @@ namespace LambdaEngine
 		m_BufferIndex(0),
 		m_ReceivedPackets(),
 		m_LockReceivedPackets()
-    {
-
-    }
+	{
+	}
 
 	ClientRemoteBase::~ClientRemoteBase()
 	{

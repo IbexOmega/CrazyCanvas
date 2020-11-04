@@ -44,7 +44,7 @@ layout(binding = 7,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferDepthS
 layout(binding = 8,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_PaintMaskTextures[];
 layout(binding = 9, 	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
 layout(binding = 10, 	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
-layout(binding = 11,	set = TEXTURE_SET_INDEX, r11f_g11f_b10f) restrict uniform image2D	u_RadianceOut;
+layout(binding = 11,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_IntermediateOutputImage;
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)
 {

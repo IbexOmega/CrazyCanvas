@@ -381,31 +381,6 @@
             "type_params": {}
         },
         {
-            "name": "RAY_TRACED_RADIANCE",
-            "type": "TEXTURE",
-            "back_buffer_bound": false,
-            "should_synchronize": true,
-            "sub_resource_count": 1,
-            "editable": true,
-            "external": false,
-            "type_params": {
-                "texture_format": "FORMAT_B10G11R11_UFLOAT",
-                "is_of_array_type": false,
-                "unbounded_array": false,
-                "texture_type": "TEXTURE_2D",
-                "x_dim_type": "RELATIVE",
-                "y_dim_type": "RELATIVE",
-                "x_dim_var": 1.0,
-                "y_dim_var": 1.0,
-                "sample_count": 1,
-                "miplevel_count": 1,
-                "sampler_type": "LINEAR",
-                "sampler_address_mode": "REPEAT",
-                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
-                "memory_type": "MEMORY_TYPE_GPU"
-            }
-        },
-        {
             "name": "SCENE_PARTICLE_INSTANCE_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
@@ -512,6 +487,26 @@
         },
         {
             "name": "SCENE_PARTICLE_ALIVE_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "AS_INSTANCE_INDICES_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "AS_INSTANCES_BUFFER",
             "type": "BUFFER",
             "back_buffer_bound": false,
             "should_synchronize": true,
@@ -653,6 +648,18 @@
                 },
                 {
                     "name": "SCENE_PARTICLE_ALIVE_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "AS_INSTANCE_INDICES_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "AS_INSTANCES_BUFFER",
                     "removable": false,
                     "binding_type": "CONSTANT_BUFFER",
                     "src_stage": ""
@@ -847,7 +854,7 @@
             "type": "GRAPHICS",
             "custom_renderer": false,
             "allow_overriding_of_binding_types": false,
-            "trigger_type": "EVERY",
+            "trigger_type": "TRIGGERED",
             "frame_delay": 0,
             "frame_offset": 0,
             "x_dim_type": "CONSTANT",
@@ -1127,14 +1134,6 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "RENDER_STAGE_LIGHT"
-                },
-                {
-                    "name": "RAY_TRACED_RADIANCE",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "RAY_TRACING"
                 }
             ]
         },
@@ -1291,12 +1290,12 @@
                     "src_stage": "RENDER_STAGE_LIGHT"
                 },
                 {
-                    "name": "RAY_TRACED_RADIANCE",
+                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "UNORDERED_ACCESS_W",
-                    "src_stage": ""
+                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "src_stage": "SHADING_PASS"
                 }
             ]
         },
@@ -1704,7 +1703,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "SHADING_PASS"
+                    "src_stage": "RAY_TRACING"
                 },
                 {
                     "name": "SCENE_MAT_PARAM_BUFFER",
@@ -1773,6 +1772,22 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "UNORDERED_ACCESS_RW",
                     "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "AS_INSTANCE_INDICES_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "RENDER_STAGE_PARTICLE_UPDATE"
+                },
+                {
+                    "name": "AS_INSTANCES_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "RENDER_STAGE_PARTICLE_UPDATE"
                 }
             ]
         },
@@ -1807,7 +1822,7 @@
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
@@ -1848,7 +1863,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "PLAYER_PASS"
+                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
                 },
                 {
                     "name": "G_BUFFER_COMPACT_NORMAL",
@@ -1857,6 +1872,22 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
+                },
+                {
+                    "name": "AS_INSTANCE_INDICES_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "AS_INSTANCES_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]
         },
