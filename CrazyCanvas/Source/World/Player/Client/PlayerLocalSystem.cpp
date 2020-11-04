@@ -143,8 +143,8 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 
 	glm::i8vec2 deltaVelocity =
 	{
-		int8(InputActionSystem::IsActive("CAM_RIGHT") - InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-		int8(InputActionSystem::IsActive("CAM_BACKWARD") - InputActionSystem::IsActive("CAM_FORWARD"))	// Y: Forward
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),		// X: Right
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD))	// Y: Forward
 	};
 
 	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();

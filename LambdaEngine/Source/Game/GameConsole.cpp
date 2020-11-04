@@ -235,7 +235,7 @@ namespace LambdaEngine
 			cmdSetBool.AddDescription("Change boolean value in config file with a given key\n\t 'set_bool key bool'");
 			BindCommand(cmdSetBool, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Boolean))
+					if (!EngineConfig::SetBoolProperty(StringToConfigOption(input.Arguments.GetFront().Value.String), input.Arguments.GetBack().Value.Boolean))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -249,7 +249,7 @@ namespace LambdaEngine
 			cmdSetFloat.AddDescription("Change float value in config file with a given key\n\t 'set_float key value'");
 			BindCommand(cmdSetFloat, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetFloatProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Float32))
+					if (!EngineConfig::SetFloatProperty(StringToConfigOption(input.Arguments.GetFront().Value.String), input.Arguments.GetBack().Value.Float32))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -263,7 +263,7 @@ namespace LambdaEngine
 			cmdSetInt.AddDescription("Change integer value in config file with a given key\n\t 'set_int key value'");
 			BindCommand(cmdSetInt, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetIntProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.Int32))
+					if (!EngineConfig::SetIntProperty(StringToConfigOption(input.Arguments.GetFront().Value.String), input.Arguments.GetBack().Value.Int32))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -277,7 +277,7 @@ namespace LambdaEngine
 			cmdSetDouble.AddDescription("Change double value in config file with a given key\n\t 'set_double key value'");
 			BindCommand(cmdSetDouble, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetDoubleProperty(input.Arguments.GetFront().Value.String, static_cast<double>(input.Arguments.GetBack().Value.Float32)))
+					if (!EngineConfig::SetDoubleProperty(StringToConfigOption(input.Arguments.GetFront().Value.String), static_cast<double>(input.Arguments.GetBack().Value.Float32)))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -292,7 +292,7 @@ namespace LambdaEngine
 			cmdSetString.AddDescription("Change boolean value in config file with a given key\n\t 'set_string key string'");
 			BindCommand(cmdSetString, [this](GameConsole::CallbackInput& input)->void
 				{
-					if (!EngineConfig::SetBoolProperty(input.Arguments.GetFront().Value.String, input.Arguments.GetBack().Value.String))
+					if (!EngineConfig::SetBoolProperty(StringToConfigOption(input.Arguments.GetFront().Value.String), input.Arguments.GetBack().Value.String))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -330,7 +330,7 @@ namespace LambdaEngine
 							arg.erase(0, arg.find(","));
 					}
 
-					if (!EngineConfig::SetFloatArrayProperty(input.Arguments.GetFront().Value.String, arr))
+					if (!EngineConfig::SetFloatArrayProperty(StringToConfigOption(input.Arguments.GetFront().Value.String), arr))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}
@@ -368,7 +368,7 @@ namespace LambdaEngine
 							arg.erase(0, arg.find(","));
 					}
 
-					if (!EngineConfig::SetIntArrayProperty(input.Arguments.GetFront().Value.String, arr))
+					if (!EngineConfig::SetIntArrayProperty(StringToConfigOption(input.Arguments.GetFront().Value.String), arr))
 						PushError((input.Arguments.GetFront().Value.String));
 				});
 		}

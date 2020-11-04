@@ -46,6 +46,11 @@ void MatchBase::Tick(LambdaEngine::Timestamp deltaTime)
 	TickInternal(deltaTime);
 }
 
+void MatchBase::FixedTick(LambdaEngine::Timestamp deltaTime)
+{
+	FixedTickInternal(deltaTime);
+}
+
 void MatchBase::SetScore(uint32 teamIndex, uint32 score)
 {
 	VALIDATE(teamIndex < m_Scores.GetSize());
