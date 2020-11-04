@@ -81,13 +81,12 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 	for (Entity playerWeapon : m_WeaponEntities)
 	{
 		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
 
-		if (pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity) && m_HUDGUI)
+		if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && m_HUDGUI)
 		{
 			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
 		}
