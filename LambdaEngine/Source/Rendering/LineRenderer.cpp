@@ -267,11 +267,6 @@ namespace LambdaEngine
 				m_BackBuffers[i] = MakeSharedRef(ppPerSubImageTextureViews[i]);
 			}
 		}
-		// Might be a bit too hard coded
-		// else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
-		// {
-		// 	m_DepthStencilBuffer = MakeSharedRef(ppPerSubImageTextureViews[0]);
-		// }
 	}
 
 	void LineRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
@@ -626,11 +621,8 @@ namespace LambdaEngine
 		colorAttachmentDesc.InitialState	= pBackBufferAttachmentDesc->InitialState;
 		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
 
-		// RenderPassAttachmentDesc depthAttachmentDesc = *pDepthStencilAttachmentDesc;
-
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		// subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
@@ -642,7 +634,7 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName			= "Physics Renderer Render Pass";
-		renderPassDesc.Attachments			= { colorAttachmentDesc/*, depthAttachmentDesc*/ };
+		renderPassDesc.Attachments			= { colorAttachmentDesc };
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 
