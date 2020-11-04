@@ -1,5 +1,9 @@
 #include "ECS/Systems/Player/HealthSystemClient.h"
+#include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/Player/Player.h"
+
+#include "Application/API/Events/EventQueue.h"
 
 #include "Events/GameplayEvents.h"
 
@@ -59,5 +63,35 @@ void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 bool HealthSystemClient::InitInternal()
 {
+	using namespace LambdaEngine;
+
+	// Register system
+	{
+		PlayerGroup playerGroup;
+		playerGroup.Position.Permissions = R;
+		playerGroup.Scale.Permissions = NDA;
+		playerGroup.Rotation.Permissions = NDA;
+		playerGroup.Velocity.Permissions = NDA;
+
+		SystemRegistration systemReg = {};
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+		{
+			{
+				.pSubscriber = &m_LocalPlayerEntities,
+					.ComponentAccesses =
+				{
+					{ NDA, PlayerLocalComponent::Type() },
+				},
+				.ComponentGroups = { &playerGroup }
+			},
+		};
+
+		// After weaponsystem
+		systemReg.Phase = 2;
+
+		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
+	}
+
 	return HealthSystem::InitInternal();
 }
+

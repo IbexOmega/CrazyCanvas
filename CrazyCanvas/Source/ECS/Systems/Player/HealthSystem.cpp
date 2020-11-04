@@ -65,14 +65,6 @@ bool HealthSystem::InitInternal()
 					{ RW, PacketComponent<PacketHealthChanged>::Type() }
 				}
 			},
-			{
-				.pSubscriber = &m_LocalPlayerEntities,
-				.ComponentAccesses =
-				{
-					{ NDA, PlayerLocalComponent::Type() },
-				},
-				.ComponentGroups = { &playerGroup }
-			},
 		};
 
 		// After weaponsystem
