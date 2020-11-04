@@ -95,7 +95,6 @@ namespace LambdaEngine
 
 	public:
 		/* Adds a hitpoint to draw out a splash at
-		* Note: Currently only one hitpoint will be handled at each frame
 		*	position - vec3 of the hit point position
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintMode - painting mode to be used for the target
