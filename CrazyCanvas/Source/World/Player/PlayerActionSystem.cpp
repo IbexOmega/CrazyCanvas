@@ -93,7 +93,9 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 
 void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
 {
-	if (!Match::HasBegun() || (deltaForward == 0 && deltaLeft == 0))
+	bool hasBegun = Match::HasBegun();
+	LOG_ERROR("%u", hasBegun ? 1 : 0);
+	if (!hasBegun || (deltaForward == 0 && deltaLeft == 0))
 	{
 		result.x = 0.0f;
 		result.z = 0.0f;

@@ -7,7 +7,7 @@ struct ProjectileHitEvent;
 
 namespace LambdaEngine
 {
-	class ISoundEffect3D;
+	class ISoundEffect2D;
 }
 
 // AudioEffectHandler handles events that should cause audio effects to be played
@@ -25,8 +25,8 @@ private:
 	bool OnPlayerHit(const PlayerHitEvent& event);
 
 private:
-	LambdaEngine::ISoundEffect3D* m_pEnemyHitSound		= nullptr;
-	LambdaEngine::ISoundEffect3D* m_pHitSound			= nullptr;
-	LambdaEngine::ISoundEffect3D* m_pPlayerKilledSound	= nullptr;
-	LambdaEngine::ISoundEffect3D* m_pConnectSound		= nullptr;
+	LambdaEngine::ISoundEffect2D* m_pEnemyHitSound		= nullptr;
+	LambdaEngine::ISoundEffect2D* m_pHitSound			= nullptr;
+	LambdaEngine::ISoundEffect2D* m_pPlayerKilledSound	= nullptr;
+	LambdaEngine::ISoundEffect2D* m_pConnectSound		= nullptr;
 };

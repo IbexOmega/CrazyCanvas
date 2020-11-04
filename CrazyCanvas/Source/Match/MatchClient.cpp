@@ -42,8 +42,9 @@ bool MatchClient::InitInternal()
 {
 	if (MultiplayerUtils::IsSingleplayer())
 	{
-		m_HasBegun = true;
-		m_ClientSideBegun = true;
+		m_HasBegun = false;
+		m_ClientSideBegun = false;
+		m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
@@ -99,6 +100,11 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 		{
 			m_ClientSideBegun = true;
 			LOG_ERROR("CLIENT: Match Should Begin");
+
+			if (MultiplayerUtils::IsSingleplayer())
+			{
+				m_HasBegun = true;
+			}
 		}		
 	}
 }
