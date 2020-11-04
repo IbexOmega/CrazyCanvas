@@ -60,8 +60,13 @@ void Match::KillPlayer(LambdaEngine::Entity playerEntity)
 {
 	using namespace LambdaEngine;
 
+	// Get player position at time of death
+	ECSCore* pECS = ECSCore::GetInstance();
+	const PositionComponent& positionComp = pECS->GetConstComponent<PositionComponent>(playerEntity);
+	const glm::vec3 position = positionComp.Position;
+
 	// Send event to notify other systems
-	PlayerDiedEvent diedEvent(playerEntity);
+	PlayerDiedEvent diedEvent(playerEntity, position);
 	EventQueue::SendEventImmediate(diedEvent);
 
 	s_pMatchInstance->KillPlayer(playerEntity);
