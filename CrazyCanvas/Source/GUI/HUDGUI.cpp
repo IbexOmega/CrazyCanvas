@@ -132,19 +132,35 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 {
 	//Returns false if Out Of Ammo
 	std::string ammoString;
-	
+	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
+
 	auto ammo = WeaponTypeAmmo.find(ammoType);
+
 	if (ammo != WeaponTypeAmmo.end())
+	{
 		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
+		float ammoScale = (float)ammo->second.first / (float)ammo->second.second;
+		scale->SetCenterX(0.0);
+		scale->SetCenterY(0.0);
+		scale->SetScaleX(ammoScale);
+	}
 	else
+	{
 		LOG_ERROR("Non-existing ammoType");
+		return false;
+	}
 
 
-	if(ammoType == EAmmoType::AMMO_TYPE_WATER)
+	if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+	{
 		FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY")->SetText(ammoString.c_str());
-
-	if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+		m_pWaterAmmoRect->SetRenderTransform(scale);
+	}
+	else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+	{
 		FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY")->SetText(ammoString.c_str());
+		m_pPaintAmmoRect->SetRenderTransform(scale);
+	}
 
 	return true;
 }
@@ -160,11 +176,15 @@ void HUDGUI::InitGUI()
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 
+	m_pWaterAmmoRect = FrameworkElement::FindName<Border>("WATER_RECT");
+	m_pPaintAmmoRect = FrameworkElement::FindName<Border>("PAINT_RECT");
+
 	std::string ammoString;
 
 	ammoString	= std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
 
-	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
+	FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY")->SetText(ammoString.c_str());
+	FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY")->SetText(ammoString.c_str());
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
 }

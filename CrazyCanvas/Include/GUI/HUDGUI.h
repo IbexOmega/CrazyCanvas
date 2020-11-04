@@ -16,6 +16,7 @@
 #include "NsGui/TextBlock.h"
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
+#include "NsGui/Border.h"
 #include "NsGui/ObservableCollection.h"
 
 #include "NsCore/BaseComponent.h"
@@ -59,4 +60,7 @@ private:
 
 private:
 	GameGUIState m_GUIState;
+
+	Noesis::Border* m_pWaterAmmoRect;
+	Noesis::Border* m_pPaintAmmoRect;
 };
