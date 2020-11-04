@@ -24,10 +24,10 @@ layout(binding = 2, set = 2) restrict readonly buffer EmitterInstances
 	SEmitter Val[]; 
 } b_EmitterInstances;
 
-layout (binding = 3, set = 2) readonly restrict buffer EmitterIndices
+layout (binding = 3, set = 2) readonly restrict buffer ParticleIndirectIndices
 {
-	uint Val[];
-} b_EmitterIndices;
+	SParticleIndexData Val[];
+} b_ParticleIndirectIndices;
 
 layout(binding = 0, set = 3) restrict readonly buffer Atlases
 { 
@@ -41,7 +41,7 @@ layout(location = 2) out vec4 in_EmitterColor;
 void main()
 {
 	SParticle 		particle 	= b_ParticleInstances.Val[gl_InstanceIndex];
-	SEmitter 		emitter 	= b_EmitterInstances.Val[b_EmitterIndices.Val[gl_InstanceIndex]];
+	SEmitter 		emitter 	= b_EmitterInstances.Val[b_ParticleIndirectIndices.Val[gl_InstanceIndex].EmitterIndex];
 	SParticleVertex vertex 		= b_Vertices.Val[gl_VertexIndex];
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.PerFrameBuffer;
 	SAtlasData 		atlasData 	= b_Atlases.Val[emitter.AtlasIndex];

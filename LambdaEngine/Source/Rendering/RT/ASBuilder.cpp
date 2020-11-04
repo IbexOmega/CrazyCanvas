@@ -74,11 +74,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ASBuilder::BuildTriBLAS(uint32& index, Buffer* pVertexBuffer, Buffer* pIndexBuffer, uint32 vertexCount, uint32 indexCount, bool allowUpdate)
+	void ASBuilder::BuildTriBLAS(uint32& blasIndex, uint32 hitGroupIndex, Buffer* pVertexBuffer, Buffer* pIndexBuffer, uint32 vertexCount, uint32 vertexSize, uint32 indexCount, bool allowUpdate)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		if (index == BLAS_UNINITIALIZED_INDEX)
+		if (blasIndex == BLAS_UNINITIALIZED_INDEX)
 		{
 			BLASData blasData = {};
 
@@ -95,6 +95,7 @@ namespace LambdaEngine
 				blasData.pBLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&blasCreateDesc);
 
 				SBTRecord* pSBTRecord;
+				uint32* pHitGroupIndex;
 
 				if (!m_FreeSBTIndices.IsEmpty())
 				{
@@ -102,26 +103,30 @@ namespace LambdaEngine
 					m_FreeSBTIndices.PopBack();
 
 					pSBTRecord = &m_SBTRecords[blasData.SBTRecordOffset];
+					pHitGroupIndex = &m_HitGroupIndices[blasData.SBTRecordOffset];
 				}
 				else
 				{
 					blasData.SBTRecordOffset = m_SBTRecords.GetSize();
 					pSBTRecord = &m_SBTRecords.PushBack({});
+					pHitGroupIndex = &m_HitGroupIndices.PushBack(0);
 				}
 
 				pSBTRecord->VertexBufferAddress	= pVertexBuffer->GetDeviceAddress();
 				pSBTRecord->IndexBufferAddress	= pIndexBuffer->GetDeviceAddress();
+				*pHitGroupIndex = hitGroupIndex;
+
 				m_SBTRecordsDirty = true;
 
 				if (!m_FreeBLASIndices.IsEmpty())
 				{
-					index = m_FreeBLASIndices.GetBack();
+					blasIndex = m_FreeBLASIndices.GetBack();
 					m_FreeBLASIndices.PopBack();
-					m_BLASes[index] = blasData;
+					m_BLASes[blasIndex] = blasData;
 				}
 				else
 				{
-					index = m_BLASes.GetSize();
+					blasIndex = m_BLASes.GetSize();
 					m_BLASes.PushBack(blasData);
 				}
 			}
@@ -133,7 +138,7 @@ namespace LambdaEngine
 				blasBuildDesc.Flags						= allowUpdate ? FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE : 0;
 				blasBuildDesc.pVertexBuffer				= pVertexBuffer;
 				blasBuildDesc.FirstVertexIndex			= 0;
-				blasBuildDesc.VertexStride				= sizeof(Vertex);
+				blasBuildDesc.VertexStride				= vertexSize;
 				blasBuildDesc.pIndexBuffer				= pIndexBuffer;
 				blasBuildDesc.IndexBufferByteOffset		= 0;
 				blasBuildDesc.TriangleCount				= indexCount / 3;
@@ -144,9 +149,9 @@ namespace LambdaEngine
 				m_DirtyBLASes.PushBack(blasBuildDesc);
 			}
 		}
-		else if (index < m_BLASes.GetSize())
+		else if (blasIndex < m_BLASes.GetSize())
 		{
-			BLASData& blasData = m_BLASes[index];
+			BLASData& blasData = m_BLASes[blasIndex];
 
 			//Create BLAS build Desc
 			{
@@ -156,7 +161,7 @@ namespace LambdaEngine
 				blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
 				blasBuildDesc.pVertexBuffer				= pVertexBuffer;
 				blasBuildDesc.FirstVertexIndex			= 0;
-				blasBuildDesc.VertexStride				= sizeof(Vertex);
+				blasBuildDesc.VertexStride				= vertexSize;
 				blasBuildDesc.pIndexBuffer				= pIndexBuffer;
 				blasBuildDesc.IndexBufferByteOffset		= 0;
 				blasBuildDesc.TriangleCount				= indexCount / 3;
@@ -170,9 +175,16 @@ namespace LambdaEngine
 			//Update SBT Record (if needed)
 			{
 				SBTRecord* pSBTRecord = &m_SBTRecords[blasData.SBTRecordOffset];
+				uint32* pHitGroupIndex = &m_HitGroupIndices[blasData.SBTRecordOffset];
 
 				uint64 vertexBufferDeviceAddress	= pVertexBuffer->GetDeviceAddress();
 				uint64 indexBufferDeviceAddress		= pIndexBuffer->GetDeviceAddress();
+
+				if (*pHitGroupIndex != hitGroupIndex)
+				{
+					*pHitGroupIndex = hitGroupIndex;
+					m_SBTRecordsDirty = true;
+				}
 
 				if (pSBTRecord->VertexBufferAddress != vertexBufferDeviceAddress)
 				{
@@ -189,7 +201,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_ERROR("[ASBuilder]: BuildTriBLAS called with index %u, but that BLAS doesn't exist...", index);
+			LOG_ERROR("[ASBuilder]: BuildTriBLAS called with index %u, but that BLAS doesn't exist...", blasIndex);
 		}
 	}
 
@@ -266,7 +278,7 @@ namespace LambdaEngine
 		return externalIndex;
 	}
 
-	void ASBuilder::AddInstances(const TArray<ASInstanceDesc>& asInstanceDescriptions, TArray<uint32> asInstanceIDs)
+	void ASBuilder::AddInstances(const TArray<ASInstanceDesc>& asInstanceDescriptions, TArray<uint32>& asInstanceIDs)
 	{
 		asInstanceIDs.Reserve(asInstanceDescriptions.GetSize());
 
@@ -365,7 +377,7 @@ namespace LambdaEngine
 
 			if (m_SBTRecordsDirty)
 			{
-				m_pRenderGraph->UpdateGlobalSBT(pMainCommandList, m_SBTRecords, deviceResourcesToRemove);
+				m_pRenderGraph->UpdateGlobalSBT(pMainCommandList, m_SBTRecords, m_HitGroupIndices, deviceResourcesToRemove);
 				m_SBTRecordsDirty = false;
 			}
 

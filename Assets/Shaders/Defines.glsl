@@ -214,4 +214,21 @@ struct SUnwrapData
 	uint Padding0;
 };
 
+struct SAccelerationStructureInstance
+{
+    mat3x4  Transform;
+    uint    CustomIndex_HitMask;
+    uint    SBTRecordOffset_Flags;
+    uint    AccelerationStructureHandleTop32;
+    uint    AccelerationStructureHandleBottom32;
+};
+
+struct SParticleIndexData
+{
+    uint    EmitterIndex;
+    uint    ASInstanceIndirectIndex;
+	uint    Padding0;
+	uint    Padding1;
+};
+
 #endif

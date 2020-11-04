@@ -362,9 +362,10 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
+	void RenderGraph::UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, const TArray<uint32>& hitGroupIndices, TArray<DeviceChild*>& removedDeviceResources)
 	{
 		m_GlobalShaderRecords = shaderRecords;
+		m_GlobalHitGroupIndices = hitGroupIndices;
 
 		for (uint32 r = 0; r < m_RenderStageCount; r++)
 		{
@@ -376,6 +377,7 @@ namespace LambdaEngine
 				sbtDesc.DebugName		= "Render Graph Global SBT";
 				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
 				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
+				sbtDesc.HitGroupIndices = m_GlobalHitGroupIndices;
 
 				if (pRenderStage->pSBT == nullptr)
 				{
@@ -1287,6 +1289,7 @@ namespace LambdaEngine
 					sbtDesc.DebugName = "Render Graph Global SBT";
 					sbtDesc.pPipelineState = pRenderStage->pPipelineState;
 					sbtDesc.SBTRecords = m_GlobalShaderRecords;
+					sbtDesc.HitGroupIndices = m_GlobalHitGroupIndices;
 
 					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
 				}

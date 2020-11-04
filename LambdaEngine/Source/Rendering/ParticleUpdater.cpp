@@ -74,15 +74,35 @@ namespace LambdaEngine
 		instanceBindingDesc4.Binding = 4;
 		instanceBindingDesc4.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
-
 		DescriptorBindingDesc instanceBindingDesc5 = {};
 		instanceBindingDesc5.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		instanceBindingDesc5.DescriptorCount = 1;
 		instanceBindingDesc5.Binding = 5;
 		instanceBindingDesc5.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
+		DescriptorBindingDesc instanceBindingDesc6 = {};
+		instanceBindingDesc6.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		instanceBindingDesc6.DescriptorCount = 1;
+		instanceBindingDesc6.Binding = 6;
+		instanceBindingDesc6.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+		DescriptorBindingDesc instanceBindingDesc7 = {};
+		instanceBindingDesc7.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		instanceBindingDesc7.DescriptorCount = 1;
+		instanceBindingDesc7.Binding = 7;
+		instanceBindingDesc7.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
 		// Set 0
-		m_UpdatePipeline.CreateDescriptorSetLayout({ instanceBindingDesc0, instanceBindingDesc1, instanceBindingDesc2, instanceBindingDesc3, instanceBindingDesc4, instanceBindingDesc5 });
+		m_UpdatePipeline.CreateDescriptorSetLayout({
+			instanceBindingDesc0,
+			instanceBindingDesc1,
+			instanceBindingDesc2,
+			instanceBindingDesc3,
+			instanceBindingDesc4,
+			instanceBindingDesc5,
+			instanceBindingDesc6,
+			instanceBindingDesc7
+		});
 
 		DescriptorBindingDesc depthBindingDesc = {};
 		depthBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
@@ -119,13 +139,13 @@ namespace LambdaEngine
 		descriptorCountDesc.TextureDescriptorCount = 1;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 2;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 6;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 8;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName = "Particle Updater Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount = 64;
+		descriptorHeapDesc.DescriptorSetCount = 128;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
 		m_DescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
@@ -392,6 +412,36 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
 			m_UpdatePipeline.UpdateDescriptorSet("Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+		}
+		else if (resourceName == AS_INSTANCES_BUFFER)
+		{
+			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 6U;
+
+			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+			descriptorUpdateDesc.ppBuffers = ppBuffers;
+			descriptorUpdateDesc.pOffsets = pOffsets;
+			descriptorUpdateDesc.pSizes = pSizesInBytes;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = count;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+
+			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCES_BUFFER Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+		}
+		else if (resourceName == AS_INSTANCE_INDICES_BUFFER)
+		{
+			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 7U;
+
+			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+			descriptorUpdateDesc.ppBuffers = ppBuffers;
+			descriptorUpdateDesc.pOffsets = pOffsets;
+			descriptorUpdateDesc.pSizes = pSizesInBytes;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = count;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+
+			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCE_INDICES_BUFFER Descriptor Set 0 Binding 7", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 	}
 

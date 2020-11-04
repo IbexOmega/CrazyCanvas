@@ -161,8 +161,6 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(const LambdaEngi
 			.ColorIntensity = directionalLight.ColorIntensity,
 		};
 
-		LOG_ERROR("LightDIRECTION: (%f, %f, %f)", directionalLight.Direction.x, directionalLight.Direction.y, directionalLight.Direction.z);
-
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, (translation) });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });

@@ -6,6 +6,8 @@
 
 #include "Rendering/Core/API/GraphicsTypes.h"
 
+#include "Rendering/RT/ASBuilder.h"
+
 #define DEBUG_PARTICLE false
 
 namespace LambdaEngine 
@@ -102,6 +104,14 @@ namespace LambdaEngine
 		uint32	FirstInstance	= 0;
 	};
 
+	struct SParticleIndexData
+	{
+		uint32 EmitterIndex				= 0;
+		uint32 ASInstanceIndirectIndex	= 0;
+		uint32 Padding0					= 0;
+		uint32 Padding1					= 0;
+	};
+
 	using EmitterID = uint32;
 
 	class ParticleManager
@@ -110,7 +120,10 @@ namespace LambdaEngine
 		ParticleManager() = default;
 		~ParticleManager() = default;
 
-		void Init(uint32 maxParticleCapacity);
+		/*
+		*	Destruction of ASBuilder is not ParticleManagers responsibility, but access is needed to update raytraced particles
+		*/
+		void Init(uint32 maxParticleCapacity, ASBuilder* pASBuilder);
 		void Release();
 
 		void Tick(Timestamp deltaTime, uint64 modFrameIndex);
@@ -155,6 +168,8 @@ namespace LambdaEngine
 		uint32								m_MaxParticleCount;
 		uint64								m_ModFrameIndex;
 
+		bool								m_CreatedDummyBuffer		= false;
+
 		bool								m_DirtyAliveBuffer			= false;
 		bool								m_DirtyEmitterIndexBuffer	= false;
 		bool								m_DirtyParticleBuffer		= false;
@@ -164,6 +179,10 @@ namespace LambdaEngine
 		bool								m_DirtyEmitterBuffer		= false;
 		bool								m_DirtyIndirectBuffer		= false;
 		bool								m_DirtyAtlasDataBuffer		= false;
+
+		// Raytracing particle data
+		ASBuilder*							m_pASBuilder = nullptr;
+		uint32								m_BLASIndex = BLAS_UNINITIALIZED_INDEX;
 
 		Buffer*								m_ppIndirectStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pIndirectBuffer = nullptr;
@@ -195,7 +214,7 @@ namespace LambdaEngine
 		TArray<DeviceChild*>				m_ResourcesToRemove[BACK_BUFFER_COUNT];
 
 		TArray<uint32>						m_AliveIndices;
-		TArray<uint32>						m_ParticleToEmitterIndex;
+		TArray<SParticleIndexData>			m_ParticleIndexData;
 		TArray<SParticle>					m_Particles;
 		// Emitter specfic data
 		TArray<IndirectData>				m_IndirectData;
