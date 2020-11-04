@@ -151,7 +151,15 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 							Entity weapon = children.GetEntityWithTag("weapon");
 
 							const WeaponComponent& weaponComp = pWeaponComponents->GetConstData(weapon);
-							ImGui::Text("Ammunition: %u/%u", weaponComp.CurrentAmmunition, weaponComp.AmmoCapacity);
+
+							auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+							if(waterAmmo != weaponComp.WeaponTypeAmmo.end())
+								ImGui::Text("Water Ammunition: %u/%u", waterAmmo->second.first, waterAmmo->second.second);
+
+							auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+							if (paintAmmo != weaponComp.WeaponTypeAmmo.end())
+								ImGui::Text("Paint Ammunition: %u/%u", paintAmmo->second.first, paintAmmo->second.second);
+
 
 							if (ImGui::Button("Kill"))
 							{

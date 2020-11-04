@@ -6,6 +6,8 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "ECS/Components/Player/ProjectileComponent.h"
+
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
 #include "NsGui/GroupBox.h"
@@ -14,6 +16,7 @@
 #include "NsGui/TextBlock.h"
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
+#include "NsGui/Border.h"
 #include "NsGui/ObservableCollection.h"
 
 #include "NsCore/BaseComponent.h"
@@ -23,10 +26,9 @@
 
 struct GameGUIState
 {
-	float LifeMaxHeight;
-	float DamageTaken;
-	float Health;
-	
+	int32 Health;
+	int32 MaxHealth = 100;
+
 	LambdaEngine::TArray<uint32> Scores;
 
 	int32 Ammo;
@@ -45,9 +47,9 @@ public:
 	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	bool ApplyDamage(float damage);
+	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
-	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap);
+	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 	void UpdateCountdown(uint8 countDownTime);
 
 private:
@@ -58,4 +60,10 @@ private:
 
 private:
 	GameGUIState m_GUIState;
+
+	Noesis::Border* m_pWaterAmmoRect;		
+	Noesis::Border* m_pPaintAmmoRect;		
+	
+	Noesis::TextBlock* m_pWaterAmmoText;
+	Noesis::TextBlock* m_pPaintAmmoText;
 };
