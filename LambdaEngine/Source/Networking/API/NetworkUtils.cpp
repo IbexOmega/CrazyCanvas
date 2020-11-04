@@ -25,6 +25,8 @@ namespace LambdaEngine
 		ServerBase::FixedTickStatic(dt);
 		ClientBase::FixedTickStatic(dt);
 		NetworkDiscovery::FixedTickStatic(dt);
+		NetWorker::FixedTickStatic(dt);
+		ClientRemoteBase::FixedTickStatic(dt);
 	}
 
 	void NetworkUtils::PreRelease()
@@ -34,6 +36,8 @@ namespace LambdaEngine
 
 	void NetworkUtils::PostRelease()
 	{
+		NetWorker::ReleaseStatic();
+		ClientRemoteBase::ReleaseStatic();
 		IPAddress::ReleaseStatic();
 	}
 
