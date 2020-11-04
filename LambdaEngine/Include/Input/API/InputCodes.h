@@ -447,12 +447,29 @@ namespace LambdaEngine
 	{
 		switch (Button)
 		{
-		case MOUSE_BUTTON_LEFT:		return "LEFT";
-		case MOUSE_BUTTON_RIGHT:	return "RIGHT";
-		case MOUSE_BUTTON_MIDDLE:	return "MIDDLE";
-		case MOUSE_BUTTON_BACK:		return "BACK";
-		case MOUSE_BUTTON_FORWARD:	return "FORWARD";
+		case MOUSE_BUTTON_LEFT:		return "MOUSE_LEFT";
+		case MOUSE_BUTTON_RIGHT:	return "MOUSE_RIGHT";
+		case MOUSE_BUTTON_MIDDLE:	return "MOUSE_MIDDLE";
+		case MOUSE_BUTTON_BACK:		return "MOUSE_BACK";
+		case MOUSE_BUTTON_FORWARD:	return "MOUSE_FORWARD";
 		default:					return "UNKNOWN";
 		}
+	}
+
+	inline EMouseButton StringToButton(String str)
+	{
+		static const THashTable<String, EMouseButton> mouseButtonMap = {
+			{"MOUSE_LEFT", EMouseButton::MOUSE_BUTTON_LEFT},
+			{"MOUSE_RIGHT", EMouseButton::MOUSE_BUTTON_RIGHT},
+			{"MOUSE_MIDDLE", EMouseButton::MOUSE_BUTTON_MIDDLE},
+			{"MOUSE_BACK", EMouseButton::MOUSE_BUTTON_BACK},
+			{"MOUSE_FORWARD", EMouseButton::MOUSE_BUTTON_FORWARD},
+		};
+
+		auto itr = mouseButtonMap.find(str);
+		if (itr != mouseButtonMap.end()) {
+			return itr->second;
+		}
+		return EMouseButton::MOUSE_BUTTON_UNKNOWN;
 	}
 }

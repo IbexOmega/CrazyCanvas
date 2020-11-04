@@ -25,6 +25,7 @@
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
@@ -89,9 +90,9 @@ void SandboxState::Init()
 	
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
-	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
-	m_ShowDemoWindow	= EngineConfig::GetBoolProperty("ShowDemo");
-	m_DebuggingWindow	= EngineConfig::GetBoolProperty("Debugging");
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
+	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
+	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
 
 	m_GUITest	= *new GUITest("Test.xaml");
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
@@ -241,11 +242,48 @@ void SandboxState::Init()
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
+	// Emitter
+	{
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 5,
+				.EmitterShape = EEmitterShape::TUBE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 0.5f,
+				.TileIndex = 16,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+			}
+		);
+	}
+
+
+	// Create dirLight
+	//{
+	//	DirectionalLightComponent directionalLightComponent =
+	//	{
+	//		.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 5.0f),
+	//	};
+
+	//	m_DirLight = pECS->CreateEntity();
+	//	pECS->AddComponent<PositionComponent>(m_DirLight, { true, glm::vec3(0.f) });
+	//	pECS->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt(glm::normalize(glm::vec3(0.5f, -1.0f, 0.5f)), g_DefaultUp) });
+	//	pECS->AddComponent<DirectionalLightComponent>(m_DirLight, directionalLightComponent);
+
+	//	D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+	//}
+
 	//Preload some resources
 	{
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
 	}
+
 
 	if constexpr (IMGUI_ENABLED)
 	{
@@ -304,6 +342,14 @@ void SandboxState::Init()
 			}
 		});
 
+	ConsoleCommand cmdDebugLights;
+	cmdDebugLights.Init("debug_light", true);
+	cmdDebugLights.AddArg(Arg::EType::BOOL);
+	cmdDebugLights.AddDescription("Debugging Directional Light'");
+	GameConsole::Get().BindCommand(cmdDebugLights, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
+		});
+
 	SingleplayerInitializer::InitSingleplayer();
 }
 
@@ -332,6 +378,56 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	if constexpr (IMGUI_ENABLED)
 	{
 		RenderImgui();
+	}
+
+	// Debugging Emitters
+	ECSCore* pECSCore = ECSCore::GetInstance();
+	static uint32 indexEmitters = 0;
+	static LambdaEngine::Timestamp time;
+	const uint32 emitterCount = 10U;
+	if (m_DebugEmitters)
+	{
+		time += delta;
+		if (time.AsSeconds() > 0.1f)
+		{
+			uint32 modIndex = indexEmitters % emitterCount;
+
+			if (indexEmitters < emitterCount)
+			{
+				Entity e = pECSCore->CreateEntity();
+				m_Emitters[modIndex] = e;
+
+				pECSCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
+				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
+				pECSCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
+					.OneTime = true,
+					.Explosive = 0.9f,
+					.SpawnDelay = 0.01f,
+					.ParticleCount = 256,
+					.Velocity = 1.0f + Random::Float32(-3.f, 3.f),
+					.Acceleration = 0.0f,
+					.Gravity = Random::Float32(-5.0f, 5.0f),
+					.LifeTime = Random::Float32(1.0f, 3.0f),
+					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
+					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
+				});
+			}
+			else
+			{
+				auto& emitterComp = pECSCore->GetComponent<ParticleEmitterComponent>(m_Emitters[modIndex]);
+
+				emitterComp.Explosive = 0.9f + Random::Float32(0.f, 0.1f);
+				emitterComp.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f);
+				emitterComp.Velocity = 1.0f + Random::Float32(-3.f, 3.f);
+				emitterComp.Gravity = Random::Float32(-5.0f, 5.0f);
+				emitterComp.LifeTime = Random::Float32(1.0f, 3.0f);
+				emitterComp.Color = glm::vec4(indexEmitters % 2U, indexEmitters % 3U, indexEmitters % 5U, 1.0f),
+				emitterComp.Active = true;
+			}
+
+			indexEmitters++;
+			time = 0;
+		}
 	}
 }
 
@@ -402,6 +498,56 @@ void SandboxState::RenderImgui()
 
 			ImGui::End();
 		}
+
+		if (m_DirLightDebug)
+		{
+			// If you want to use this debug you have to create a directional light entity and store entityID in m_DirLight
+			ECSCore* pECSCore = ECSCore::GetInstance();
+
+			auto* pDirLightComps = pECSCore->GetComponentArray<DirectionalLightComponent>();
+			auto* pPosComps = pECSCore->GetComponentArray<PositionComponent>();
+			auto* pRotComps = pECSCore->GetComponentArray<RotationComponent>();
+
+			if (pDirLightComps->HasComponent(m_DirLight))
+			{
+				auto& dirLightComp = pDirLightComps->GetData(m_DirLight);
+				auto& posComp = pPosComps->GetData(m_DirLight);
+				auto& rotComp = pRotComps->GetData(m_DirLight);
+
+				static glm::vec3 mRotation = glm::eulerAngles(rotComp.Quaternion);
+
+				if (ImGui::Begin("DirLight Debugging"))
+				{
+					ImGui::Text("Position: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##X", &posComp.Position.x);
+					ImGui::InputFloat("##Y", &posComp.Position.y);
+					ImGui::InputFloat("##Z", &posComp.Position.z);
+
+					ImGui::Text("Rotation: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##rotX", &mRotation.x);
+					ImGui::InputFloat("##rotY", &mRotation.y);
+					ImGui::InputFloat("##rotZ", &mRotation.z);
+
+					ImGui::Text("Frustum Width: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Frustum Width", &dirLightComp.FrustumWidth);
+					ImGui::Text("Frustum Height: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Frustum Height", &dirLightComp.FrustumHeight);
+					ImGui::Text("Z-Near: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Z-Near", &dirLightComp.FrustumZNear);
+					ImGui::Text("Z-Far: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Z-Far", &dirLightComp.FrustumZFar);
+				}
+				ImGui::End();
+
+				rotComp.Quaternion = glm::quatLookAt(glm::normalize(mRotation), g_DefaultUp);
+			}
+		}
 	});
 }
 
@@ -445,16 +591,16 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 	}
 
 	// Debugging Lights
-	static uint32 index = 0;
-	static bool remove = true;
+	static uint32 indexLights = 0;
+	static bool removeLights = true;
 	ECSCore* ecsCore = ECSCore::GetInstance();
 	if (event.Key == EKey::KEY_9)
 	{
-		uint32 modIndex = index % 10U;
+		uint32 modIndex = indexLights % 10U;
 		if (modIndex == 0U)
-			remove = !remove;
+			removeLights = !removeLights;
 
-		if (!remove)
+		if (!removeLights)
 		{
 			Entity e = ecsCore->CreateEntity();
 			m_PointLights[modIndex] = e;
@@ -467,7 +613,13 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			ecsCore->RemoveEntity(m_PointLights[modIndex]);
 		}
 
-		index++;
+		indexLights++;
+	}
+
+	// Debugging Emitters
+	if (event.Key == EKey::KEY_8)
+	{
+		m_DebugEmitters = !m_DebugEmitters;
 	}
 
 	return true;

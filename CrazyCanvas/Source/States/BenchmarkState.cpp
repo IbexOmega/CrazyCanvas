@@ -85,11 +85,11 @@ void BenchmarkState::Init()
 		};
 
 		const CameraDesc cameraDesc = {
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+			.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
 			.Width = (float32)window->GetWidth(),
 			.Height = (float32)window->GetHeight(),
-			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+			.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+			.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 		};
 		m_Camera = CreateCameraTrackEntity(cameraDesc, cameraTrack);
 	}
@@ -152,6 +152,7 @@ void BenchmarkState::Init()
 							.GeometryParams	= { .Radius = sphereRadius },
 							.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 							.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+							.EntityID		= entity,
 						},
 					},
 				};
@@ -270,6 +271,11 @@ void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 	}
 }
 
+void BenchmarkState::FixedTick(LambdaEngine::Timestamp delta)
+{
+	WeaponSystem::GetInstance().FixedTick(delta);
+}
+
 bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
 {
 	using namespace LambdaEngine;
@@ -286,11 +292,11 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
 				.Width = (float)window->GetWidth(),
 				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+				.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
@@ -307,7 +313,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				.PlayerNetworkUID 	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.Position 			= packet.Position,
-				.Forward 			= glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)),
+				.Forward 			= glm::normalize(glm::vec3(0.1f, -1.0f, 0.0f)),
 				.Scale 				= glm::vec3(1.0f),
 				.TeamIndex 			= 0,
 				.pCameraDesc 		= &cameraDesc
@@ -318,6 +324,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				// Create a 3x3 grid of players in the XZ plane
 				createPlayerDesc.Position.x			= -3.0f + 3.0f * (playerNr % 3);
 				createPlayerDesc.Position.z			= -3.0f + 3.0f * (playerNr / 3);
+				createPlayerDesc.Position.y			= 5.0f;
 				createPlayerDesc.PlayerNetworkUID	+= 2;
 				createPlayerDesc.WeaponNetworkUID	+= 2;
 

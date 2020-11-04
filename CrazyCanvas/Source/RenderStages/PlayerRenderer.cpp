@@ -52,10 +52,8 @@ namespace LambdaEngine
 	bool PlayerRenderer::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
-		m_ViewerTeamId = MAXUINT32;			// Used to filter in shader
-		m_ViewerEntityId = MAXUINT32;		// Used to get Position
-		m_ViewerDrawArgIndex = MAXUINT32;	// Used to filter in render()
-		m_UsingMeshShader = EngineConfig::GetBoolProperty("MeshShadersEnabled");
+
+		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 
 		if (!CreatePipelineLayout())
 		{
@@ -107,21 +105,6 @@ namespace LambdaEngine
 		}
 
 		return true;
-	}
-
-	void PlayerRenderer::PrepareTextureUpdates(const TArray<UpdateData>& textureIndices)
-	{
-		UNREFERENCED_VARIABLE(textureIndices);
-
-	}
-
-	void PlayerRenderer::PreBuffersDescriptorSetWrite()
-	{
-		// called before removing
-	}
-
-	void PlayerRenderer::PreTexturesDescriptorSetWrite()
-	{
 	}
 
 	void PlayerRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
@@ -235,7 +218,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_MAT_PARAM_BUFFER", setIndex);
 			}
 		}
 		else if (resourceName == PAINT_MASK_COLORS)
@@ -256,7 +239,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] PAINT_MASK_COLORS", setIndex);
 			}
 		}
 
@@ -278,16 +261,10 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] PER_FRAME_BUFFER", setIndex);
 			}
 		}
 
-	}
-
-	void PlayerRenderer::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pAccelerationStructure);
 	}
 
 	void PlayerRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)

@@ -106,7 +106,7 @@ namespace LambdaEngine
 		}
 
 	#ifdef LAMBDA_DEBUG
-		if (EngineConfig::GetBoolProperty("StreamPhysx"))
+		if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_STREAM_PHYSX))
 		{
 			m_pVisDbg = PxCreatePvd(*m_pFoundation);
 			PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
@@ -220,7 +220,11 @@ namespace LambdaEngine
 
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
-			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Position.Position, collisionInfo.Scale.Scale, collisionInfo.Rotation.Quaternion);
+			PxShape* pShape = CreateShape(
+				shapeCreateInfo, 
+				collisionInfo.Position.Position, 
+				collisionInfo.Scale.Scale, 
+				collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
 			{
@@ -240,7 +244,11 @@ namespace LambdaEngine
 
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
-			PxShape* pShape = CreateShape(shapeCreateInfo, collisionInfo.Position.Position, collisionInfo.Scale.Scale, collisionInfo.Rotation.Quaternion);
+			PxShape* pShape = CreateShape(
+				shapeCreateInfo, 
+				collisionInfo.Position.Position, 
+				collisionInfo.Scale.Scale, 
+				collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
 			{
@@ -254,7 +262,10 @@ namespace LambdaEngine
 		return collisionComponent;
 	}
 
-	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(const CharacterColliderCreateInfo& characterColliderInfo, float32 height, float32 radius)
+	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(
+		const CharacterColliderCreateInfo& characterColliderInfo, 
+		float32 height, 
+		float32 radius)
 	{
 		PxCapsuleControllerDesc controllerDesc = {};
 		controllerDesc.radius			= radius;
@@ -264,7 +275,9 @@ namespace LambdaEngine
 		return FinalizeCharacterController(characterColliderInfo, controllerDesc);
 	}
 
-	CharacterColliderComponent PhysicsSystem::CreateCharacterBox(const CharacterColliderCreateInfo& characterColliderInfo, const glm::vec3& halfExtents)
+	CharacterColliderComponent PhysicsSystem::CreateCharacterBox(
+		const CharacterColliderCreateInfo& characterColliderInfo, 
+		const glm::vec3& halfExtents)
 	{
 		PxBoxControllerDesc controllerDesc = {};
 		controllerDesc.halfHeight			= halfExtents.y;
@@ -338,7 +351,11 @@ namespace LambdaEngine
 		}
 	}
 
-	PxShape* PhysicsSystem::CreateShape(const ShapeCreateInfo& shapeCreateInfo, const glm::vec3& position, const glm::vec3& scale, const glm::quat& rotation) const
+	PxShape* PhysicsSystem::CreateShape(
+		const ShapeCreateInfo& shapeCreateInfo, 
+		const glm::vec3& position, 
+		const glm::vec3& scale, 
+		const glm::quat& rotation) const
 	{
 		PxShape* pShape = nullptr;
 
@@ -396,7 +413,10 @@ namespace LambdaEngine
 			PxFilterData filterData;
 			filterData.word0 = (PxU32)shapeCreateInfo.CollisionGroup;
 			filterData.word1 = (PxU32)shapeCreateInfo.CollisionMask;
+			filterData.word2 = (PxU32)shapeCreateInfo.EntityID;
 			pShape->setSimulationFilterData(filterData);
+			
+			filterData.word2 = 0;
 			pShape->setQueryFilterData(filterData);
 
 			if (shapeCreateInfo.ShapeType == EShapeType::TRIGGER)
@@ -597,7 +617,9 @@ namespace LambdaEngine
 		}
 	}
 
-	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(const CollisionCreateInfo& collisionInfo, const glm::quat& additionalRotation)
+	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(
+		const CollisionCreateInfo& collisionInfo, 
+		const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
@@ -610,7 +632,9 @@ namespace LambdaEngine
 		return { pActor };
 	}
 
-	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(const DynamicCollisionCreateInfo& collisionInfo, const glm::quat& additionalRotation)
+	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(
+		const DynamicCollisionCreateInfo& collisionInfo, 
+		const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
@@ -626,7 +650,9 @@ namespace LambdaEngine
 		return { pActor };
 	}
 
-	CharacterColliderComponent PhysicsSystem::FinalizeCharacterController(const CharacterColliderCreateInfo& characterColliderInfo, PxControllerDesc& controllerDesc)
+	CharacterColliderComponent PhysicsSystem::FinalizeCharacterController(
+		const CharacterColliderCreateInfo& characterColliderInfo, 
+		PxControllerDesc& controllerDesc)
 	{
 		/*	For information about PhysX character controllers in general:
 			https://docs.nvidia.com/gameworks/content/gameworkslibrary/physx/guide/Manual/CharacterControllers.html */
@@ -634,7 +660,7 @@ namespace LambdaEngine
 		/*	Max height of obstacles that can be climbed. Note that capsules can automatically climb obstacles because
 			of their round bottoms, so the total step height is taller than the specified one below.
 			This can be turned off however. */
-		constexpr const float stepOffset = 0.20f;
+		constexpr const float STEP_OFFSET = 0.20f;
 
 		const glm::vec3& position = characterColliderInfo.Position.Position;
 		const glm::vec3 upDirection = g_DefaultUp * glm::quat(characterColliderInfo.Rotation.Quaternion.w, 0.0f, characterColliderInfo.Rotation.Quaternion.y, 0.0f);
@@ -642,7 +668,7 @@ namespace LambdaEngine
 		controllerDesc.material			= m_pMaterial;
 		controllerDesc.position			= { position.x, position.y, position.z };
 		controllerDesc.upDirection		= { upDirection.x, upDirection.y, upDirection.z };
-		controllerDesc.stepOffset		= stepOffset;
+		controllerDesc.stepOffset		= STEP_OFFSET;
 		controllerDesc.nonWalkableMode	= PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
 
 		PxController* pController = m_pControllerManager->createController(controllerDesc);
@@ -652,7 +678,7 @@ namespace LambdaEngine
 		PxFilterData* pFilterData = DBG_NEW PxFilterData(
 			(PxU32)characterColliderInfo.CollisionGroup,
 			(PxU32)characterColliderInfo.CollisionMask,
-			0u,
+			(PxU32)characterColliderInfo.EntityID,
 			0u
 		);
 
@@ -666,6 +692,7 @@ namespace LambdaEngine
 		PxFilterData filterData;
 		filterData.word0 = (PxU32)characterColliderInfo.CollisionGroup;
 		filterData.word1 = (PxU32)characterColliderInfo.CollisionMask;
+		filterData.word2 = (PxU32)characterColliderInfo.EntityID;
 		pShape->setSimulationFilterData(filterData);
 
 		pShape->userData = DBG_NEW ShapeUserData();
@@ -686,7 +713,7 @@ namespace LambdaEngine
 			pBody->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 		}
 
-        // Set collision callback
+		// Set collision callback
 		pActor->userData = DBG_NEW ActorUserData;
 		ActorUserData* pUserData = reinterpret_cast<ActorUserData*>(pActor->userData);
 		pUserData->Entity = collisionInfo.Entity;
@@ -720,7 +747,10 @@ namespace LambdaEngine
 		}
 	}
 
-	void PhysicsSystem::CollisionCallbacks(const std::array<PxRigidActor*, 2>& actors, const std::array<PxShape*, 2>& shapes, const TArray<PxContactPairPoint>& contactPoints) const
+	void PhysicsSystem::CollisionCallbacks(
+		const std::array<PxRigidActor*, 2>& actors, 
+		const std::array<PxShape*, 2>& shapes, 
+		const TArray<PxContactPairPoint>& contactPoints) const
 	{
 		ActorUserData* pActorUserDatas[2] =
 		{

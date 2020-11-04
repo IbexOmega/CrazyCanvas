@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Multiplayer/Packet/Packet.h"
 
 #include "ECS/Components/Player/HealthComponent.h"
@@ -8,6 +7,7 @@
 struct PacketHealthChanged : Packet
 {
 	DECL_PACKET(PacketHealthChanged);
-	int32 CurrentHealth = START_HEALTH;
+	int32	CurrentHealth	= START_HEALTH;
+	bool	Killed			= false;
 };
 #pragma pack(pop)

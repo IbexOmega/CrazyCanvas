@@ -46,15 +46,10 @@ namespace LambdaEngine
 
 		static void OnAnimationComponentDelete(AnimationComponent& animation, Entity entity);
 
-		// TODO: Remove this since it is only for testing
-		bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
-
 	public:
 		static AnimationSystem& GetInstance();
 
 	private:
-		bool	m_Walking		= false; // TODO: Remove this since it is only for testing
-		bool	m_Reload		= false; // TODO: Remove this since it is only for testing
 		bool	m_HasInitClock	= false;
 		Clock	m_Clock;
 

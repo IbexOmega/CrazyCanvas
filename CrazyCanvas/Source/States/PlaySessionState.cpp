@@ -7,8 +7,6 @@
 #include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/ECSCore.h"
 
-#include "Engine/EngineConfig.h"
-
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
@@ -37,9 +35,9 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
-PlaySessionState::PlaySessionState(bool singlePlayer, LambdaEngine::IPAddress* pIPAddress) :
+PlaySessionState::PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndPoint& endPoint) :
 	m_Singleplayer(singlePlayer),
-	m_pIPAddress(pIPAddress),
+	m_EndPoint(endPoint),
 	m_MultiplayerClient()
 {
 }
@@ -78,7 +76,7 @@ void PlaySessionState::Init()
 	}
 	else
 	{
-		ClientSystem::GetInstance().Connect(m_pIPAddress);
+		ClientSystem::GetInstance().Connect(m_EndPoint);
 	}
 }
 

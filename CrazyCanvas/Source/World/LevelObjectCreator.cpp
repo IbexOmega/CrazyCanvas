@@ -16,6 +16,7 @@
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
@@ -145,7 +146,9 @@ bool LevelObjectCreator::Init()
 	return true;
 }
 
-LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(const LambdaEngine::LoadedDirectionalLight& directionalLight, const glm::vec3& translation)
+LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
+	const LambdaEngine::LoadedDirectionalLight& directionalLight, 
+	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 
@@ -157,8 +160,10 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(const LambdaEngi
 
 		DirectionalLightComponent directionalLightComponent =
 		{
-			.ColorIntensity = directionalLight.ColorIntensity
+			.ColorIntensity = directionalLight.ColorIntensity,
 		};
+
+		LOG_ERROR("LightDIRECTION: (%f, %f, %f)", directionalLight.Direction.x, directionalLight.Direction.y, directionalLight.Direction.z);
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, (translation) });
@@ -208,7 +213,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 			pMesh->DefaultScale.y * pMesh->BoundingBox.Dimensions.y,
 			pMesh->DefaultScale.z * pMesh->BoundingBox.Dimensions.z));
 
-	uint32 meshPaintSize = uint32(maxDim * 384.0f);
+	uint32 meshPaintSize = glm::max<uint32>(1, uint32(maxDim * 384.0f));
 
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
@@ -230,6 +235,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 				/* Geometry */			{ .pMesh = pMesh },
 				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+				/* EntityID*/			entity
 			},
 		},
 	};
@@ -324,6 +330,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 					/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
 					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
 					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+					/* EntityID*/			entity
 				},
 			},
 		};
@@ -358,7 +365,10 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
 }
 
-ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 	//Only the server is allowed to create a Base
@@ -403,6 +413,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine:
 				/* Geometry */			{ .HalfExtents = boundingBox.Dimensions },
 				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
 				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+				/* EntityID*/			entity
 			},
 		},
 	};
@@ -416,7 +427,10 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(const LambdaEngine:
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
-ELevelObjectType LevelObjectCreator::CreateKillPlane(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+ELevelObjectType LevelObjectCreator::CreateKillPlane(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
 
@@ -437,6 +451,7 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(const LambdaEngine::LevelOb
 				.GeometryType		= EGeometryType::PLANE,
 				.CollisionGroup		= FCollisionGroup::COLLISION_GROUP_STATIC,
 				.CollisionMask		= ~FCollisionGroup::COLLISION_GROUP_STATIC,
+				.EntityID			= entity,
 				.CallbackFunction	= &KillPlaneCallback
 			}
 		}
@@ -466,20 +481,20 @@ bool LevelObjectCreator::CreateFlag(
 	ECSCore* pECS = ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
-	Entity entity = pECS->CreateEntity();
+	Entity flagEntity = pECS->CreateEntity();
 
-	const Timestamp pickupCooldown = Timestamp::Seconds(1.0f);
-	const FlagComponent flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
-	const PositionComponent positionComponent{ true, pFlagDesc->Position };
-	const ScaleComponent scaleComponent{ true, pFlagDesc->Scale };
-	const RotationComponent rotationComponent{ true, pFlagDesc->Rotation };
-	const MeshComponent meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+	const Timestamp			pickupCooldown = Timestamp::Seconds(1.0f);
+	const FlagComponent		flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
+	const PositionComponent	positionComponent{ true, pFlagDesc->Position };
+	const ScaleComponent	scaleComponent{ true, pFlagDesc->Scale };
+	const RotationComponent	rotationComponent{ true, pFlagDesc->Rotation };
+	const MeshComponent		meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
 
-	pECS->AddComponent<FlagComponent>(entity,		flagComponent);
-	pECS->AddComponent<PositionComponent>(entity,	positionComponent);
-	pECS->AddComponent<ScaleComponent>(entity,		scaleComponent);
-	pECS->AddComponent<RotationComponent>(entity,	rotationComponent);
-	pECS->AddComponent<MeshComponent>(entity,		meshComponent);
+	pECS->AddComponent<FlagComponent>(flagEntity,		flagComponent);
+	pECS->AddComponent<PositionComponent>(flagEntity,	positionComponent);
+	pECS->AddComponent<ScaleComponent>(flagEntity,		scaleComponent);
+	pECS->AddComponent<RotationComponent>(flagEntity,	rotationComponent);
+	pECS->AddComponent<MeshComponent>(flagEntity,		meshComponent);
 
 	bool attachedToParent = pFlagDesc->ParentEntity != UINT32_MAX;
 
@@ -503,12 +518,12 @@ bool LevelObjectCreator::CreateFlag(
 		offsetComponent.Offset = glm::vec3(0.0f, parentBoundingBox.getDimensions().y / 2.0f, 0.0f);
 	}
 
-	pECS->AddComponent<ParentComponent>(entity,	parentComponent);
-	pECS->AddComponent<OffsetComponent>(entity,	offsetComponent);
+	pECS->AddComponent<ParentComponent>(flagEntity,	parentComponent);
+	pECS->AddComponent<OffsetComponent>(flagEntity,	offsetComponent);
 
 	//Network Stuff
 	{
-		pECS->AddComponent<PacketComponent<PacketFlagEdited>>(entity, {});
+		pECS->AddComponent<PacketComponent<PacketFlagEdited>>(flagEntity, {});
 	}
 
 	int32 networkUID;
@@ -525,7 +540,7 @@ bool LevelObjectCreator::CreateFlag(
 		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
-			/* Entity */	 		entity,
+			/* Entity */	 		flagEntity,
             /* Detection Method */	ECollisionDetection::DISCRETE,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
@@ -537,6 +552,7 @@ bool LevelObjectCreator::CreateFlag(
 					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
 					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					/* EntityID*/			flagEntity,
 					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
 					/* UserData */			&flagPlayerColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
@@ -547,26 +563,27 @@ bool LevelObjectCreator::CreateFlag(
 					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
 					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+					/* EntityID*/			flagEntity,
 					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnDeliveryPointFlagCollision, FlagSystemBase::GetInstance()),
 					/* UserData */			&flagDeliveryPointColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
 				},
 			},
-			/* Velocity */			pECS->AddComponent<VelocityComponent>(entity, { glm::vec3(0.0f) })
+			/* Velocity */			pECS->AddComponent<VelocityComponent>(flagEntity, { glm::vec3(0.0f) })
 		};
 
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicActor(collisionCreateInfo);
 		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-		pECS->AddComponent<DynamicCollisionComponent>(entity, collisionComponent);
+		pECS->AddComponent<DynamicCollisionComponent>(flagEntity, collisionComponent);
 
-		networkUID = (int32)entity;
+		networkUID = (int32)flagEntity;
 	}
 
-	pECS->AddComponent<NetworkComponent>(entity, { networkUID });
+	pECS->AddComponent<NetworkComponent>(flagEntity, { networkUID });
 
-	createdEntities.PushBack(entity);
+	createdEntities.PushBack(flagEntity);
 
-	D_LOG_INFO("Created Flag with EntityID %u and NetworkID %u", entity, networkUID);
+	D_LOG_INFO("Created Flag with EntityID %u and NetworkID %u", flagEntity, networkUID);
 	return true;
 }
 
@@ -615,10 +632,11 @@ bool LevelObjectCreator::CreatePlayer(
 		.Position		= pECS->GetComponent<PositionComponent>(playerEntity),
 		.Rotation		= pECS->GetComponent<RotationComponent>(playerEntity),
 		.CollisionGroup	= FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-		.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
-						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC
+						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+		.EntityID		= playerEntity
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
@@ -632,7 +650,7 @@ bool LevelObjectCreator::CreatePlayer(
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.4, 0.5f, -0.2) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.5f, 1.5f, -0.2f) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 
@@ -643,6 +661,29 @@ bool LevelObjectCreator::CreatePlayer(
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
+		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
+			.Active = false,
+			.OneTime = true,
+			.Explosive = 1.0f,
+			.ParticleCount = 64,
+			.EmitterShape = EEmitterShape::CONE,
+			.Angle = 15.f,
+			.VelocityRandomness = 0.5f,
+			.Velocity = 10.0,
+			.Acceleration = 0.0,
+			.Gravity = -4.f,
+			.LifeTime = 2.0f,
+			.RadiusRandomness = 0.5f,
+			.BeginRadius = 0.1f,
+			.FrictionFactor = 0.f,
+			.Bounciness = 0.f,
+			.TileIndex = 14,
+			.AnimationCount = 1,
+			.FirstAnimationIndex = 16,
+			.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
+		}
+		);
+
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
@@ -909,6 +950,7 @@ bool LevelObjectCreator::CreateProjectile(
 				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* EntityID*/			desc.WeaponOwner,
 				/* CallbackFunction */	desc.Callback,
 			},
 		},

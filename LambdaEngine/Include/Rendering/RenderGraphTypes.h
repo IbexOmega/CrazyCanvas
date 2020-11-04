@@ -11,33 +11,48 @@
 
 namespace LambdaEngine
 {
-	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME			= "RENDER_STAGE_IMGUI";
-	constexpr const char* RENDER_GRAPH_NOESIS_GUI_STAGE_NAME	= "RENDER_STAGE_NOESIS_GUI";
-	constexpr const char* RENDER_GRAPH_LIGHT_STAGE_NAME			= "RENDER_STAGE_LIGHT";
-	constexpr const char* RENDER_GRAPH_PHYSICS_DEBUG_NAME		= "RENDER_STAGE_PHYSICS_DEBUG";
-	constexpr const char* RENDER_GRAPH_MESH_UNWRAP_NAME			= "RENDER_STAGE_MESH_UNWRAP";
+	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME					= "RENDER_STAGE_IMGUI";
+	constexpr const char* RENDER_GRAPH_NOESIS_GUI_STAGE_NAME			= "RENDER_STAGE_NOESIS_GUI";
+	constexpr const char* RENDER_GRAPH_LIGHT_STAGE_NAME					= "RENDER_STAGE_LIGHT";
+	constexpr const char* RENDER_GRAPH_PARTICLE_UPDATE_STAGE_NAME		= "RENDER_STAGE_PARTICLE_UPDATE";
+	constexpr const char* RENDER_GRAPH_PARTICLE_RENDER_STAGE_NAME		= "RENDER_STAGE_PARTICLE_RENDER";
+	constexpr const char* RENDER_GRAPH_PHYSICS_DEBUG_NAME				= "RENDER_STAGE_PHYSICS_DEBUG";
+	constexpr const char* RENDER_GRAPH_MESH_UNWRAP_NAME					= "RENDER_STAGE_MESH_UNWRAP";
 
-	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT	= "BACK_BUFFER_TEXTURE";
+	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT			= "BACK_BUFFER_TEXTURE";
 
-	constexpr const char* PER_FRAME_BUFFER						= "PER_FRAME_BUFFER";
-	constexpr const char* SCENE_LIGHTS_BUFFER					= "SCENE_LIGHTS_BUFFER";
-	constexpr const char* SCENE_POINT_SHADOWMAPS				= "SCENE_POINT_SHADOWMAPS";
+	constexpr const char* PER_FRAME_BUFFER								= "PER_FRAME_BUFFER";
+	constexpr const char* SCENE_LIGHTS_BUFFER							= "SCENE_LIGHTS_BUFFER";
+	constexpr const char* SCENE_POINT_SHADOWMAPS						= "SCENE_POINT_SHADOWMAPS";
 
-	constexpr const char* SCENE_MAT_PARAM_BUFFER				= "SCENE_MAT_PARAM_BUFFER";
-	constexpr const char* SCENE_DRAW_ARGS						= "SCENE_DRAW_ARGS";
-	constexpr const char* SCENE_TLAS							= "SCENE_TLAS";
+	constexpr const char* SCENE_PARTICLE_VERTEX_BUFFER					= "SCENE_PARTICLE_VERTEX_BUFFER";
+	constexpr const char* SCENE_PARTICLE_INDEX_BUFFER					= "SCENE_PARTICLE_INDEX_BUFFER";
+	constexpr const char* SCENE_PARTICLE_INSTANCE_BUFFER				= "SCENE_PARTICLE_INSTANCE_BUFFER";
+	constexpr const char* SCENE_EMITTER_INSTANCE_BUFFER					= "SCENE_EMITTER_BUFFER";
+	constexpr const char* SCENE_EMITTER_INDEX_BUFFER					= "SCENE_EMITTER_INDEX_BUFFER";
+	constexpr const char* SCENE_EMITTER_TRANSFORM_BUFFER				= "SCENE_EMITTER_TRANSFORM_BUFFER";
+	constexpr const char* SCENE_PARTICLE_INDIRECT_BUFFER				= "SCENE_PARTICLE_INDIRECT_BUFFER";
+	constexpr const char* SCENE_PARTICLE_ALIVE_BUFFER					= "SCENE_PARTICLE_ALIVE_BUFFER";
+	constexpr const char* SCENE_PARTICLE_ATLAS_INFO_BUFFER				= "SCENE_PARTICLE_ATLAS_INFO_BUFFER";
 
-	constexpr const char* SCENE_ALBEDO_MAPS						= "SCENE_ALBEDO_MAPS";
-	constexpr const char* SCENE_NORMAL_MAPS						= "SCENE_NORMAL_MAPS";
-	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS			= "SCENE_COMBINED_MATERIAL_MAPS";
+	constexpr const char* SCENE_MAT_PARAM_BUFFER						= "SCENE_MAT_PARAM_BUFFER";
+	constexpr const char* SCENE_DRAW_ARGS								= "SCENE_DRAW_ARGS";
+
+	constexpr const char* AS_INSTANCE_INDICES_BUFFER					= "AS_INSTANCE_INDICES_BUFFER";
+	constexpr const char* AS_INSTANCES_BUFFER							= "AS_INSTANCES_BUFFER";
+	constexpr const char* SCENE_TLAS									= "SCENE_TLAS";
+
+	constexpr const char* SCENE_ALBEDO_MAPS								= "SCENE_ALBEDO_MAPS";
+	constexpr const char* SCENE_NORMAL_MAPS								= "SCENE_NORMAL_MAPS";
+	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS					= "SCENE_COMBINED_MATERIAL_MAPS";
 
 	constexpr const char* PAINT_MASK_TEXTURES 					= "PAINT_MASK_TEXTURES";
 	constexpr const char* PAINT_MASK_COLORS						= "PAINT_MASK_COLORS";
 
 	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4;
 
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX	= 0;
-	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES	= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX			= 0;
+	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES			= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
 	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 8;
 	constexpr const uint32 MAX_TEXTURES_PER_EXTENSION			= 16;
@@ -250,6 +265,7 @@ namespace LambdaEngine
 			String					IndexBufferName			= "";
 			String					IndirectArgsBufferName	= "";
 			bool					DepthTestEnabled		= true;
+			bool					AlphaBlendingEnabled	= false;
 			ECullMode				CullMode				= ECullMode::CULL_MODE_BACK;
 			EPolygonMode			PolygonMode				= EPolygonMode::POLYGON_MODE_FILL;
 			EPrimitiveTopology		PrimitiveTopology		= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -422,6 +438,7 @@ namespace LambdaEngine
 			GraphicsShaderNames		Shaders;
 			ERenderStageDrawType	DrawType							= ERenderStageDrawType::NONE;
 			bool					DepthTestEnabled					= true;
+			bool					AlphaBlendingEnabled				= false;
 			ECullMode				CullMode							= ECullMode::CULL_MODE_BACK;
 			EPolygonMode			PolygonMode							= EPolygonMode::POLYGON_MODE_FILL;
 			EPrimitiveTopology		PrimitiveTopology					= EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

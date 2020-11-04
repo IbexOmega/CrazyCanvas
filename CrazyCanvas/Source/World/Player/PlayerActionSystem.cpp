@@ -37,8 +37,8 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 	float32 dt = (float32)deltaTime.AsSeconds();
 
 	// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-	float addedPitch = dt * float(InputActionSystem::IsActive("CAM_ROT_UP") - InputActionSystem::IsActive("CAM_ROT_DOWN"));
-	float addedYaw = dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
+	float addedPitch = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
+	float addedYaw = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
 	if (m_MouseEnabled)
 	{

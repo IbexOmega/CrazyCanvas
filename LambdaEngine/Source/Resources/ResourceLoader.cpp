@@ -264,7 +264,7 @@ namespace LambdaEngine
 		
 		// Prevent crashes in assimp when using this flag
 		String path = ConvertSlashes(filepath);
-		if (path.find(".obj") == String::npos)
+		if (path.find(".obj") == String::npos && path.find(".glb") == String::npos)
 		{
 			assimpFlags |= aiProcess_PopulateArmatureData;
 		}
@@ -829,6 +829,7 @@ namespace LambdaEngine
 	{
 		SoundEffect3DDesc soundDesc = {};
 		soundDesc.Filepath = ConvertSlashes(filepath);
+
 
 		ISoundEffect3D* pSound = AudioAPI::GetDevice()->CreateSoundEffect(&soundDesc);
 		if (pSound == nullptr)
