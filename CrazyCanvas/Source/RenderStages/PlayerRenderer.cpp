@@ -301,9 +301,7 @@ namespace LambdaEngine
 						Entity entity = m_pDrawArgs[d].EntityIDs[0];
 						if (pTeamComponents->HasComponent(entity))
 						{
-							// Used to sort by distance in render()
-							m_EntityIds.PushBack(entity);
-							m_TeamIds.PushBack(pTeamComponents->GetConstData(entity).TeamIndex);
+						
 
 							if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
 							{
@@ -314,6 +312,10 @@ namespace LambdaEngine
 							}
 							else
 							{
+								// Used to sort by distance in render()
+								m_TeamIds.PushBack(pTeamComponents->GetConstData(entity).TeamIndex);
+								m_EntityIds.PushBack(entity);
+
 								// Set Vertex and Instance buffer for rendering
 								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
 								uint64 pOffsets[2] = { 0, 0 };
@@ -458,13 +460,7 @@ namespace LambdaEngine
 		pCommandList->SetViewports(&viewport, 0, 1);
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		if (m_DrawCount == 0)
-		{
-			//Begin and End RenderPass to transition Texture State (Lazy)
-			pCommandList->BeginRenderPass(&beginRenderPassDesc);
-			pCommandList->EndRenderPass();
-		}
-		else
+		if (m_DrawCount > 0)
 		{
 			// Render enemy with no culling to see backface of paint
 			bool renderEnemies = true;
@@ -472,8 +468,8 @@ namespace LambdaEngine
 
 			// Team members are transparent, Front Culling- and Back Culling is needed
 			renderEnemies = false;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
 			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
+			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
 		}
 
 		pCommandList->EndRenderPass();
@@ -507,7 +503,7 @@ namespace LambdaEngine
 		// Rank indexes of distance2
 		std::iota(m_NextPlayerList.Begin(), m_NextPlayerList.End(), 0);
 		std::sort(m_NextPlayerList.Begin(), m_NextPlayerList.End(),
-			[&](uint32 i1, uint32 i2) {return m_PlayerDistances[i1] < m_PlayerDistances[i2]; });
+			[&](uint32 i1, uint32 i2) {return m_PlayerDistances[i1] > m_PlayerDistances[i2]; });
 
 		for (uint32 d = 0; d < m_DrawCount; d++)
 		{
@@ -522,6 +518,7 @@ namespace LambdaEngine
 				// Push team id of current player
 				uint32 teamId = m_TeamIds[next];
 				bool isEnemy = (teamId == 1);
+				bool isTeamMate = (teamId == 0);
 
 				// Filter enemies if rendering teamates
 				if (!renderEnemy && isEnemy) {
@@ -529,7 +526,7 @@ namespace LambdaEngine
 				}
 
 				// Filter teammates if rendering enemies
-				if (renderEnemy && !isEnemy) {
+				if (renderEnemy && isTeamMate) {
 					continue;
 				}
 
