@@ -21,6 +21,7 @@ public:
 template<class T>
 bool ClientHelper::Send(const T& packet, LambdaEngine::IPacketListener* pListener)
 {
+	ASSERT_MSG(T::Type() != 0, "Packet type not registered!")
 	LambdaEngine::IClient* pClient = LambdaEngine::ClientSystem::GetInstance().GetClient();
 	return pClient->SendReliableStruct<T>(packet, T::Type(), pListener);
 }

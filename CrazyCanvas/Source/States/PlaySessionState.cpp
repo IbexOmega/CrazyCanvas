@@ -76,7 +76,7 @@ void PlaySessionState::Init()
 	}
 	else
 	{
-		ClientSystem::GetInstance().Connect(m_EndPoint);
+		//ClientSystem::GetInstance().Connect(m_EndPoint);
 	}
 }
 

@@ -10,6 +10,8 @@
 #include "Multiplayer/Packet/PacketWeaponFired.h"
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 #include "Multiplayer/Packet/PacketFlagEdited.h"
+#include "Multiplayer/Packet/PacketJoin.h"
+#include "Multiplayer/Packet/PacketLeave.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -24,6 +26,9 @@ uint16 PacketType::FLAG_EDITED				= 0;
 uint16 PacketType::TEAM_SCORED				= 0;
 uint16 PacketType::GAME_OVER				= 0;
 uint16 PacketType::CONFIGURE_SERVER			= 0;
+uint16 PacketType::JOIN						= 0;
+uint16 PacketType::LEAVE					= 0;
+uint16 PacketType::CHAT_MESSAGE				= 0;
 
 void PacketType::Init()
 {
@@ -37,6 +42,9 @@ void PacketType::Init()
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
 	CONFIGURE_SERVER		= RegisterPacketType<PacketConfigureServer>();
+	JOIN					= RegisterPacketType<PacketJoin>();
+	LEAVE					= RegisterPacketType<PacketLeave>();
+	CHAT_MESSAGE			= RegisterPacketTypeRaw();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

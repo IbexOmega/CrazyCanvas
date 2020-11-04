@@ -14,7 +14,8 @@ typedef LambdaEngine::THashTable<uint16, IPacketReceivedEvent*> PacketTypeMap;
 
 class PacketType
 {
-	friend class MultiplayerBase;
+	friend class CrazyCanvas;
+
 public:
 	DECL_STATIC_CLASS(PacketType);
 
@@ -28,6 +29,9 @@ public:
 	static uint16 TEAM_SCORED;
 	static uint16 GAME_OVER;
 	static uint16 CONFIGURE_SERVER;
+	static uint16 JOIN;
+	static uint16 LEAVE;
+	static uint16 CHAT_MESSAGE;
 
 public:
 	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);

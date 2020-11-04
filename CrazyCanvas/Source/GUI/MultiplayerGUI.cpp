@@ -13,7 +13,7 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-#include "States/PlaySessionState.h"
+#include "States/LobbyState.h"
 
 #include "GUI/MultiplayerGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -33,6 +33,11 @@
 #include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
+
+#include "Lobby/PlayerManager.h"
+
+#include <windows.h>
+#include <Lmcons.h>
 
 using namespace LambdaEngine;
 using namespace Noesis;
@@ -126,8 +131,7 @@ void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID
 	{
 		SetRenderStagesActive();
 
-		State* pPlaySessionState = DBG_NEW PlaySessionState(false, serverInfo.EndPoint);
-		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
+		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
 	}
 
 	LambdaEngine::String oldName = currentInfo.Name;
@@ -156,7 +160,16 @@ void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID
 
 bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	if (m_HasHostedServer)
+	DWORD length = UNLEN + 1;
+	char name[UNLEN + 1];
+	GetUserNameA(name, &length);
+
+	PlayerManager::RegisterLocalPlayer(name, event.pClient);
+
+	State* pLobbyState = DBG_NEW LobbyState();
+	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
+
+	/*if (m_HasHostedServer)
 	{
 		PacketConfigureServer packet;
 		packet.AuthenticationID	= ServerHostHelper::GetAuthenticationHostID();
@@ -164,7 +177,7 @@ bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent&
 		packet.Players			= m_HostGameDesc.PlayersNumber;
 
 		ClientHelper::Send(packet);
-	}
+	}*/
 
 	return false;
 }
@@ -199,8 +212,7 @@ void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const 
 
 		SetRenderStagesActive();
 
-		State* pPlayState = DBG_NEW PlaySessionState(false, endPoint);
-		StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
+		ClientSystem::GetInstance().Connect(endPoint);
 	}
 	else
 	{
@@ -296,9 +308,7 @@ bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 
 				SetRenderStagesActive();
 
-				State* pPlaySessionState = DBG_NEW PlaySessionState(false, serverInfo.EndPoint);
-				StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-				return true;
+				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);;
 			}
 			return false;
 		}

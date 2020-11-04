@@ -26,6 +26,12 @@
 
 #include "Engine/EngineConfig.h"
 
+
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Lobby/PlayerManager.h"
+#include "Chat/ChatManager.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -52,6 +58,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		LOG_ERROR("Team Helper Init Failed");
 	}
+
+	PacketType::Init();
+	PacketTranscoderSystem::GetInstance().Init();
+	PlayerManager::Init();
+	ChatManager::Init();
 
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
 	RenderSystem::GetInstance().InitRenderGraphs();
@@ -112,6 +123,10 @@ CrazyCanvas::~CrazyCanvas()
 	{
 		LOG_ERROR("Level Manager Release Failed");
 	}
+
+	ChatManager::Release();
+	PlayerManager::Release();
+	PacketType::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)

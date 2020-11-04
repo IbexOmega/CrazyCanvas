@@ -2,11 +2,13 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Chat/ChatManager.h"
+
 using namespace LambdaEngine;
 
 LobbyState::~LobbyState()
 {
-
+	
 }
 
 void LobbyState::Init()
@@ -19,6 +21,12 @@ void LobbyState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
+
+	/*m_LobbyGUI = *new LobbyGUI("Lobby.xaml");
+	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
+	LambdaEngine::GUIApplication::SetView(m_View);*/
+
+	ChatManager::SendChatMessage("This is a chat message");
 }
 
 void LobbyState::Tick(LambdaEngine::Timestamp delta)

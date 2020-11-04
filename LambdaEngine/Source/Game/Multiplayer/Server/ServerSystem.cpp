@@ -34,7 +34,7 @@ namespace LambdaEngine
 		desc.Protocol				= EProtocolParser::FromString(protocol);
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(10);
-		desc.UsePingSystem			= true;
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
 
 		m_pServer = NetworkUtils::CreateServer(desc);
 		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.5f);

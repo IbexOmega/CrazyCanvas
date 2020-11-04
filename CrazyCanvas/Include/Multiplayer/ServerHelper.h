@@ -25,12 +25,14 @@ public:
 template<class T>
 bool ServerHelper::Send(LambdaEngine::IClient* pClient, const T& packet, LambdaEngine::IPacketListener* pListener)
 {
+	ASSERT_MSG(T::Type() != 0, "Packet type not registered!")
 	return pClient->SendReliableStruct<T>(packet, T::Type(), pListener);
 }
 
 template<class T>
 bool ServerHelper::SendBroadcast(const T& packet, LambdaEngine::IPacketListener* pListener, LambdaEngine::IClient* pExcludeClient)
 {
+	ASSERT_MSG(T::Type() != 0, "Packet type not registered!")
 	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
 	return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pExcludeClient);
 }
