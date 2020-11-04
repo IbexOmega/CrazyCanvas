@@ -58,6 +58,7 @@ bool MatchClient::InitInternal()
 	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
 	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
 	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
+	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
 
 	return true;
 }
@@ -88,6 +89,10 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 		else if (previousTimer >= 1.0f && m_MatchBeginTimer < 1.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
+		}
+		else if (previousTimer >= 0.0f && m_MatchBeginTimer < 0.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.1f);
 		}
 
 		if (m_MatchBeginTimer < 0.0f)

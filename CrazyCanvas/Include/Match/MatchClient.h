@@ -34,4 +34,5 @@ private:
 	bool m_ClientSideBegun = false;
 
 	GUID_Lambda m_CountdownSoundEffects[5];
+	GUID_Lambda m_CountdownDoneSoundEffect;
 };
