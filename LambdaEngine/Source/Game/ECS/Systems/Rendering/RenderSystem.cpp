@@ -327,14 +327,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers = { };
 
-			// if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER))
-			// {
-			// 	m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
-			// 	m_pLineRenderer->Init();
-
-			// 	renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
-			// }
-
 			// Add paint mask renderer to the custom renderers inside the render graph.
 			{
 				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);

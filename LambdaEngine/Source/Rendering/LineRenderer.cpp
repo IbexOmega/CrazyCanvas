@@ -393,6 +393,8 @@ namespace LambdaEngine
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
+		pCommandList->SetLineWidth(1.f);
+
 		// Transfer data to copy buffers then the GPU buffers
 		uint32 drawCount = 0;
 		{
@@ -666,6 +668,8 @@ namespace LambdaEngine
 		pipelineStateDesc.RasterizerState.LineWidth		= 1.f;
 		pipelineStateDesc.RasterizerState.PolygonMode 	= EPolygonMode::POLYGON_MODE_LINE;
 		pipelineStateDesc.RasterizerState.CullMode		= ECullMode::CULL_MODE_NONE;
+
+		pipelineStateDesc.ExtraDynamicState 			= FExtraDynamicStateFlag::EXTRA_DYNAMIC_STATE_FLAG_LINE_WIDTH;
 
 		pipelineStateDesc.DepthStencilState = {};
 		pipelineStateDesc.DepthStencilState.DepthTestEnable = false;

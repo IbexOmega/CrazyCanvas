@@ -230,6 +230,10 @@ namespace LambdaEngine
 		{
 			dynamicStates.PushBack(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
 		}
+		if (pDesc->ExtraDynamicState & FExtraDynamicStateFlag::EXTRA_DYNAMIC_STATE_FLAG_LINE_WIDTH)
+		{
+			dynamicStates.PushBack(VK_DYNAMIC_STATE_LINE_WIDTH);
+		}
 
 		VkPipelineDynamicStateCreateInfo dynamicState = {};
 		dynamicState.sType				= VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
