@@ -20,9 +20,9 @@
 using namespace Noesis;
 using namespace LambdaEngine;
 
-MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
+MainMenuGUI::MainMenuGUI()
 {
-	GUI::LoadComponent(this, xamlFile.c_str());
+	GUI::LoadComponent(this, "MainMenu2.xaml");
 
 	// Main Grids
 	m_pStartGrid		= FrameworkElement::FindName<Grid>("StartGrid");

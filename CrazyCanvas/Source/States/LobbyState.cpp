@@ -27,7 +27,7 @@ void LobbyState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
 
-	m_LobbyGUI = *new LobbyGUI("Lobby.xaml");
+	m_LobbyGUI = *new LobbyGUI();
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 }

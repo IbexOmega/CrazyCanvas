@@ -10,6 +10,7 @@
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
 
+#include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
 
@@ -17,10 +18,13 @@ HUDSystem::~HUDSystem()
 {
 	m_HUDGUI.Reset();
 	m_View.Reset();
+
+	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 }
 
 void HUDSystem::Init()
 {
+	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -42,7 +46,7 @@ void HUDSystem::Init()
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
-	m_HUDGUI = *new HUDGUI("HUD.xaml");
+	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
 	GUIApplication::SetView(m_View);
@@ -71,4 +75,11 @@ void HUDSystem::FixedTick(Timestamp delta)
 			m_HUDGUI->UpdateScore();
 		}
 	}
+}
+
+bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
+{
+	m_HUDGUI->UpdateCountdown(event.CountDownTime);
+
+	return false;
 }

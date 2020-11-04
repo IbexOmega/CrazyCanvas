@@ -65,6 +65,12 @@
 
 using namespace LambdaEngine;
 
+
+SandboxState::SandboxState()
+{
+	SingleplayerInitializer::Init();
+}
+
 SandboxState::~SandboxState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
@@ -76,6 +82,8 @@ SandboxState::~SandboxState()
 	}
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	SingleplayerInitializer::Release();
 }
 
 void SandboxState::Init()
@@ -350,7 +358,7 @@ void SandboxState::Init()
 		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
 		});
 
-	SingleplayerInitializer::InitSingleplayer();
+	SingleplayerInitializer::Setup();
 }
 
 void SandboxState::Resume()

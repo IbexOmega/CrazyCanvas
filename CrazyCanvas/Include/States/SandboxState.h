@@ -35,7 +35,7 @@ class GUITest;
 class SandboxState : public LambdaEngine::State, public LambdaEngine::IRenderGraphCreateHandler
 {
 public:
-	SandboxState() = default;
+	SandboxState();
 	~SandboxState();
 
 	void Init() override final;

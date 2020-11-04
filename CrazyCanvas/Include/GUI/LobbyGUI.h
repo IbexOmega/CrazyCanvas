@@ -30,7 +30,7 @@ class LobbyGUI : public Noesis::Grid
 	//ObservableCollection<HostGameDescription> Servers;
 
 public:
-	LobbyGUI(const LambdaEngine::String& xamlFile);
+	LobbyGUI();
 	~LobbyGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;

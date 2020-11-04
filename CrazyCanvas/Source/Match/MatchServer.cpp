@@ -194,7 +194,7 @@ void MatchServer::MatchStart()
 	PacketMatchStart matchStartPacket;
 	ServerHelper::SendBroadcast(matchStartPacket);
 
-	LOG_ERROR("SERVER: Match Start");
+	LOG_INFO("SERVER: Match Start");
 }
 
 void MatchServer::MatchBegin()
@@ -204,7 +204,7 @@ void MatchServer::MatchBegin()
 	PacketMatchBegin matchBeginPacket;
 	ServerHelper::SendBroadcast(matchBeginPacket);
 
-	LOG_ERROR("SERVER: Match Begin");
+	LOG_INFO("SERVER: Match Begin");
 }
 
 void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)

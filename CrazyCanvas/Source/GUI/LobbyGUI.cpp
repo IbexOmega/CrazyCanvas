@@ -37,12 +37,12 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
+LobbyGUI::LobbyGUI() : 
 	m_HostGameDesc(),
 	m_ServerList(),
 	m_Servers()
 {
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+	Noesis::GUI::LoadComponent(this, "Lobby.xaml");
 
 	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerResponse);
 	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
@@ -52,7 +52,7 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
 	//m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
 	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"), FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST"));
-	
+
 	ErrorPopUpClose();
 	NotiPopUpClose();
 

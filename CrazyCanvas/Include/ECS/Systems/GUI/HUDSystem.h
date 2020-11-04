@@ -8,6 +8,7 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+#include "Events/MatchEvents.h"
 
 class HUDSystem : public LambdaEngine::System
 {
@@ -22,6 +23,9 @@ public:
 	*/
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 	void FixedTick(LambdaEngine::Timestamp delta);
+
+private:
+	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
 
 private:
 	LambdaEngine::IDVector m_WeaponEntities;

@@ -18,6 +18,8 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Events/MatchEvents.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 #include "Engine/EngineConfig.h"
@@ -74,38 +76,51 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 		if (previousTimer >= 5.0f && m_MatchBeginTimer < 5.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[4])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(5);
 		}
 		else if (previousTimer >= 4.0f && m_MatchBeginTimer < 4.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[3])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(4);
 		}
 		else if (previousTimer >= 3.0f && m_MatchBeginTimer < 3.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[2])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(3);
 		}
 		else if (previousTimer >= 2.0f && m_MatchBeginTimer < 2.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[1])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(2);
 		}
 		else if (previousTimer >= 1.0f && m_MatchBeginTimer < 1.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(1);
 		}
 		else if (previousTimer >= 0.0f && m_MatchBeginTimer < 0.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.1f);
-		}
+			EventQueue::SendEvent<MatchCountdownEvent>(0);
 
-		if (m_MatchBeginTimer < 0.0f)
-		{
 			m_ClientSideBegun = true;
-			LOG_ERROR("CLIENT: Match Should Begin");
+			m_CountdownHideTimer = 1.0f;
 
 			if (MultiplayerUtils::IsSingleplayer())
 			{
 				m_HasBegun = true;
 			}
-		}		
+		}	
+	}
+
+	if (m_CountdownHideTimer >= 0.0f)
+	{
+		m_CountdownHideTimer -= float32(deltaTime.AsSeconds());
+
+		if (m_CountdownHideTimer < 0.0f)
+		{
+			EventQueue::SendEvent<MatchCountdownEvent>(UINT8_MAX);
+		}
 	}
 }
 
@@ -204,7 +219,7 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 	m_ClientSideBegun = false;
 	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
 
-	LOG_ERROR("CLIENT: Match Start");
+	LOG_INFO("CLIENT: Match Start");
 
 	return true;
 }
@@ -213,7 +228,7 @@ bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMat
 {
 	m_HasBegun = true;
 
-	LOG_ERROR("CLIENT: Match Begin");
+	LOG_INFO("CLIENT: Match Begin");
 
 	return true;
 }

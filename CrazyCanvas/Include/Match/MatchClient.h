@@ -32,6 +32,8 @@ protected:
 private:
 	bool m_ClientSideBegun = false;
 
+	float32 m_CountdownHideTimer = 0.0f;
+
 	GUID_Lambda m_CountdownSoundEffects[5];
 	GUID_Lambda m_CountdownDoneSoundEffect;
 };

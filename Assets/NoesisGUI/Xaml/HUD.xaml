@@ -3,6 +3,7 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:noesis="clr-namespace:NoesisGUIExtensions;assembly=Noesis.GUI.Extensions"
   xmlns:uc="clr-namespace:CrazyCanvas"
   mc:Ignorable="d"
   d:DesignWidth="443.419" d:DesignHeight="235.461"
@@ -54,8 +55,8 @@
     -->
     <TextBlock x:Name="AMMUNITION_DISPLAY" Grid.Column="9" Grid.Row="9" TextWrapping="Wrap" Text="TextBlock" FontSize="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-    <Canvas Grid.Column="5" Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <uc:Countdown x:Name="COUNTDOWN" ClipToBounds="False" Canvas.Left="-26" Canvas.Top="-51"/>
-    </Canvas>
+    <Grid Grid.Column="4" Grid.Row="2" Grid.ColumnSpan="3" Grid.RowSpan="5">
+        <uc:CountdownGUI x:Name="COUNTDOWN" Canvas.Left="-26" Canvas.Top="-51" Opacity="0.0"/>
+    </Grid>
 
 </Grid>
