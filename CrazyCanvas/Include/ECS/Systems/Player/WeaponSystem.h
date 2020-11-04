@@ -48,15 +48,39 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 }
 
 /*
+* Helpers
+*/
+
+inline glm::vec3 CalculateWeaponPosition(
+	const glm::vec3& playerPosition,
+	const glm::quat& playerRotation,
+	LambdaEngine::PositionComponent& weaponPositionComp,
+	LambdaEngine::RotationComponent& weaponRotationComp,
+	const LambdaEngine::OffsetComponent& weaponOffsetComp)
+{
+	glm::vec3 weaponPosition;
+	glm::quat quatY = playerRotation;
+	quatY.x = 0;
+	quatY.z = 0;
+	quatY = glm::normalize(quatY);
+	weaponPositionComp.Position = playerPosition + quatY * weaponOffsetComp.Offset;
+	weaponRotationComp.Quaternion = playerRotation;
+
+	weaponPosition = weaponPositionComp.Position + LambdaEngine::GetForward(weaponRotationComp.Quaternion) * 0.2f;
+	return weaponPosition;
+}
+
+/*
 * WeaponSystem
 */
 
 class WeaponSystem : public LambdaEngine::System
 {
 public:
-	bool Init();
+	WeaponSystem()	= default;
+	~WeaponSystem()	= default;
 
-	void FixedTick(LambdaEngine::Timestamp deltaTime);
+	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) = 0;
 
 	// Empty tick
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
@@ -64,7 +88,7 @@ public:
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	void Fire(
+	virtual void Fire(
 		EAmmoType ammoType,
 		LambdaEngine::Entity weaponOwner,
 		LambdaEngine::Entity weaponEntity,
@@ -73,13 +97,27 @@ public:
 		const glm::vec3& playerVelocity);
 
 public:
-	static WeaponSystem& GetInstance() { return s_Instance; }
+	static bool Init();
+	static void Release();
 
-private:
-	WeaponSystem() = default;
-	~WeaponSystem() = default;
+	FORCEINLINE static WeaponSystem& GetInstance() 
+	{ 
+		VALIDATE(s_pInstance != nullptr);
+		return *s_pInstance;
+	}
 
-	void TryFire(
+protected:
+	virtual bool InitInternal();
+
+	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam)
+	{
+		UNREFERENCED_VARIABLE(ammoType);
+		UNREFERENCED_VARIABLE(playerTeam);
+		return LambdaEngine::MeshComponent();
+	}
+
+	// Returns true if we could fire
+	virtual bool TryFire(
 		EAmmoType ammoType,
 		WeaponComponent& weaponComponent,
 		PacketComponent<PacketPlayerAction>& packets,
@@ -94,19 +132,8 @@ private:
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
 private:
-	static WeaponSystem s_Instance;
+	static WeaponSystem* s_pInstance;
 
-private:
+protected:
 	LambdaEngine::IDVector m_WeaponEntities;
-	LambdaEngine::IDVector m_RemotePlayerEntities;
-	LambdaEngine::IDVector m_LocalPlayerEntities;
-	LambdaEngine::IDVector m_ForeignPlayerEntities;
-
-	// Rendering resources for projectiles
-	LambdaEngine::MeshComponent m_RedPaintProjectileMeshComponent;
-	LambdaEngine::MeshComponent m_BluePaintProjectileMeshComponent;
-	LambdaEngine::MeshComponent m_WaterProjectileMeshComponent;
-
-	GUID_Lambda m_GunFireGUID	= GUID_NONE;
-	GUID_Lambda m_OutOfAmmoGUID	= GUID_NONE;
 };
