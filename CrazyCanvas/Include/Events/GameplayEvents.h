@@ -17,9 +17,10 @@
 struct PlayerDiedEvent : public LambdaEngine::Event
 {
 public:
-	inline PlayerDiedEvent(const LambdaEngine::Entity killedEntity)
+	inline PlayerDiedEvent(const LambdaEngine::Entity killedEntity, const glm::vec3 position)
 		: Event()
 		, KilledEntity(killedEntity)
+		, Position(position)
 	{
 	}
 
@@ -28,10 +29,93 @@ public:
 	virtual LambdaEngine::String ToString() const
 	{
 		using namespace LambdaEngine;
-		return String("Player Died. EntitiyID=%u", KilledEntity);
+		return
+			"Player Died. EntitiyID=" +
+			std::to_string(KilledEntity) +
+			"Position=[" +
+			std::to_string(Position.x) +
+			", " +
+			std::to_string(Position.y) +
+			", " +
+			std::to_string(Position.z) +
+			"]";
 	}
 
 	const LambdaEngine::Entity KilledEntity;
+	const glm::vec3 Position;
+};
+
+/*
+* PlayerConnectedEvent
+*/
+
+struct PlayerConnectedEvent : public LambdaEngine::Event
+{
+public:
+	inline PlayerConnectedEvent(const LambdaEngine::Entity newEntity, const glm::vec3 position)
+		: Event()
+		, NewEntity(newEntity)
+		, Position(position)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(PlayerConnectedEvent);
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return
+			"Player Connected. EntitiyID=" +
+			std::to_string(NewEntity) +
+			"Position=[" +
+			std::to_string(Position.x) +
+			", " +
+			std::to_string(Position.y) +
+			", " +
+			std::to_string(Position.z) +
+			"]";
+	}
+
+	const LambdaEngine::Entity NewEntity;
+	const glm::vec3 Position;
+};
+
+/*
+* PlayerHitEvent
+*/
+
+struct PlayerHitEvent : public LambdaEngine::Event
+{
+public:
+	inline PlayerHitEvent(const LambdaEngine::Entity hitEntity, const glm::vec3 hitPosition, const bool isLocal)
+		: Event()
+		, HitEntity(hitEntity)
+		, HitPosition(hitPosition)
+		, IsLocal(isLocal)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(PlayerHitEvent);
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return
+			"Local player got hit. EntitiyID=" +
+			std::to_string(HitEntity) +
+			"Position=[" +
+			std::to_string(HitPosition.x) +
+			", " +
+			std::to_string(HitPosition.y) +
+			", " +
+			std::to_string(HitPosition.z) +
+			"] Local=" + 
+			(IsLocal ? "true" : "false");
+	}
+
+	const LambdaEngine::Entity HitEntity;
+	const glm::vec3 HitPosition;
+	const bool IsLocal;
 };
 
 /*

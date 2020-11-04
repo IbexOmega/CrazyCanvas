@@ -1,6 +1,5 @@
 #include "ECS/Systems/GUI/HUDSystem.h"
 
-#include "Engine/EngineConfig.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"

@@ -33,9 +33,7 @@
 using namespace LambdaEngine;
 
 PlayerLocalSystem::PlayerLocalSystem() :
-	m_PlayerActionSystem(),
-	m_FramesToReconcile(),
-	m_SimulationTick(0)
+	m_PlayerActionSystem()
 {
 
 }
@@ -72,24 +70,6 @@ void PlayerLocalSystem::TickMainThread(Timestamp deltaTime)
 	if (!m_Entities.Empty())
 	{
 		m_PlayerActionSystem.TickMainThread(deltaTime, m_Entities[0]);
-	}
-}
-
-void PlayerLocalSystem::FixedTickMainThread(Timestamp deltaTime)
-{
-	if (!m_Entities.Empty())
-	{
-		Entity localPlayerEntity = m_Entities[0];
-
-		Reconcile(localPlayerEntity);
-
-		PlayerGameState gameState = {};
-		gameState.SimulationTick = m_SimulationTick++;
-
-		TickLocalPlayerAction(deltaTime, localPlayerEntity, &gameState);
-
-		if (!MultiplayerUtils::IsSingleplayer())
-			SendGameState(gameState, localPlayerEntity);
 	}
 }
 
@@ -131,8 +111,6 @@ void PlayerLocalSystem::TickLocalPlayerAction(Timestamp deltaTime, Entity entity
 
 	pGameState->Position = netPosComponent.Position;
 	pGameState->Velocity = velocityComponent.Velocity;
-
-	m_FramesToReconcile.PushBack(*pGameState);
 }
 
 void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
@@ -143,8 +121,8 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 
 	glm::i8vec2 deltaVelocity =
 	{
-		int8(InputActionSystem::IsActive("CAM_RIGHT") - InputActionSystem::IsActive("CAM_LEFT")),		// X: Right
-		int8(InputActionSystem::IsActive("CAM_BACKWARD") - InputActionSystem::IsActive("CAM_FORWARD"))	// Y: Forward
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),		// X: Right
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD))	// Y: Forward
 	};
 
 	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
@@ -160,27 +138,35 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 	pGameState->Rotation = rotationComponent.Quaternion;
 }
 
-void PlayerLocalSystem::Reconcile(Entity entityPlayer)
+void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
 {
-	ECSCore* pECS = ECSCore::GetInstance();
-	const PacketComponent<PacketPlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PacketPlayerActionResponse>>(entityPlayer);
-	const TArray<PacketPlayerActionResponse>& m_FramesProcessedByServer = pPacketComponent.GetPacketsReceived();
+	UNREFERENCED_VARIABLE(dt);
 
-	for (uint32 i = 0; i < m_FramesProcessedByServer.GetSize(); i++)
+	if (!m_Entities.Empty())
 	{
-		ASSERT(m_FramesProcessedByServer[i].SimulationTick == m_FramesToReconcile[0].SimulationTick);
+		Entity localPlayerEntity = m_Entities[0];
 
-		if (!CompareGameStates(m_FramesToReconcile[0], m_FramesProcessedByServer[i]))
-		{
-			ReplayGameStatesBasedOnServerGameState(entityPlayer, m_FramesToReconcile.GetData(), m_FramesToReconcile.GetSize(), m_FramesProcessedByServer[i]);
-		}
+		//Get new packets
+		ECSCore* pECS = ECSCore::GetInstance();
+		const PacketComponent<PacketPlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PacketPlayerActionResponse>>(localPlayerEntity);
+		RegisterServerGameStates(pPacketComponent.GetPacketsReceived());
 
-		m_FramesToReconcile.Erase(m_FramesToReconcile.Begin());
+		TickLocalPlayerAction(deltaTime, localPlayerEntity, &clientState);
+
+		if (!MultiplayerUtils::IsSingleplayer())
+			SendGameState(clientState, localPlayerEntity);
 	}
 }
 
-void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlayer, PlayerGameState* pGameStates, uint32 count, const PacketPlayerActionResponse& gameStateServer)
+/*
+* Called when to replay a specific simulation tick
+*/
+void PlayerLocalSystem::ReplayGameState(Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
+	Entity entityPlayer = m_Entities[0];
+
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
@@ -190,50 +176,48 @@ void PlayerLocalSystem::ReplayGameStatesBasedOnServerGameState(Entity entityPlay
 	NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
 	VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
-	netPosComponent.Position = gameStateServer.Position;
-	velocityComponent.Velocity = gameStateServer.Velocity;
+	/*
+	* Returns the velocity based on key presses
+	*/
+	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaForward, clientState.DeltaLeft, velocityComponent.Velocity);
 
-	//Replay all game states since the game state which resulted in prediction ERROR
+	/*
+	* Sets the position of the PxController taken from the PositionComponent.
+	* Move the PxController using the VelocityComponent by the deltatime.
+	* Calculates a new Velocity based on the difference of the last position and the new one.
+	* Sets the new position of the PositionComponent
+	*/
+	CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
-	// TODO: Rollback other entities not just the player
-
-	const Timestamp deltaTime = EngineLoop::GetFixedTimestep();
-	const float32 dt = (float32)deltaTime.AsSeconds();
-
-	for (uint32 i = 1; i < count; i++)
-	{
-		PlayerGameState& gameState = pGameStates[i];
-
-		/*
-		* Returns the velocity based on key presses
-		*/
-		PlayerActionSystem::ComputeVelocity(gameState.Rotation, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
-
-		/*
-		* Sets the position of the PxController taken from the PositionComponent.
-		* Move the PxController using the VelocityComponent by the deltatime.
-		* Calculates a new Velocity based on the difference of the last position and the new one.
-		* Sets the new position of the PositionComponent
-		*/
-		CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
-
-		gameState.Position = netPosComponent.Position;
-		gameState.Velocity = velocityComponent.Velocity;
-	}
+	clientState.Position = netPosComponent.Position;
+	clientState.Velocity = velocityComponent.Velocity;
 }
 
-bool PlayerLocalSystem::CompareGameStates(const PlayerGameState& gameStateLocal, const PacketPlayerActionResponse& gameStateServer)
+void PlayerLocalSystem::SurrenderGameState(const PacketPlayerActionResponse& serverState)
+{
+	Entity entityPlayer = m_Entities[0];
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	NetworkPositionComponent& netPosComponent = pECS->GetComponent<NetworkPositionComponent>(entityPlayer);
+	VelocityComponent& velocityComponent = pECS->GetComponent<VelocityComponent>(entityPlayer);
+
+	netPosComponent.Position = serverState.Position;
+	velocityComponent.Velocity = serverState.Velocity;
+}
+
+bool PlayerLocalSystem::CompareGamesStates(const PlayerGameState& clientState, const PacketPlayerActionResponse& serverState)
 {
 	bool result = true;
-	if (glm::distance(gameStateLocal.Position, gameStateServer.Position) > EPSILON)
+	if (glm::distance(clientState.Position, serverState.Position) > EPSILON)
 	{
-		LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Position.x, gameStateLocal.Position.y, gameStateLocal.Position.z, gameStateServer.Position.x, gameStateServer.Position.y, gameStateServer.Position.z);
+		LOG_ERROR("Prediction Error, Tick: %d, Position: [L: %f, %f, %f] [S: %f, %f, %f]", clientState.SimulationTick, clientState.Position.x, clientState.Position.y, serverState.Position.z, serverState.Position.x, serverState.Position.y, serverState.Position.z);
 		result = false;
 	}
 
-	if (glm::distance(gameStateLocal.Velocity, gameStateServer.Velocity) > EPSILON)
+	if (glm::distance(clientState.Velocity, serverState.Velocity) > EPSILON)
 	{
-		LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", gameStateLocal.SimulationTick, gameStateLocal.Velocity.x, gameStateLocal.Velocity.y, gameStateLocal.Velocity.z, gameStateServer.Velocity.x, gameStateServer.Velocity.y, gameStateServer.Velocity.z);
+		LOG_ERROR("Prediction Error, Tick: %d, Velocity: [L: %f, %f, %f] [S: %f, %f, %f]", clientState.SimulationTick, clientState.Velocity.x, clientState.Velocity.y, serverState.Velocity.z, serverState.Velocity.x, serverState.Velocity.y, serverState.Velocity.z);
 		result = false;
 	}
 

@@ -1,7 +1,5 @@
 #include "Game/State.h"
 
-#include "Engine/EngineConfig.h"
-
 #include "GUI/HUDGUI.h"
 #include "GUI/Core/GUIApplication.h"
 

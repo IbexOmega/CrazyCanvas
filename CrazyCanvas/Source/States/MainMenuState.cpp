@@ -33,7 +33,7 @@ void MainMenuState::Init()
 	// Check if raytracing is enabled/supported
 	GraphicsDeviceFeatureDesc deviceFeatures;
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-	bool rayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
+	bool rayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
 
 	if(rayTracingEnabled)
 		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);

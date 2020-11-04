@@ -106,7 +106,7 @@ namespace LambdaEngine
 		}
 
 	#ifdef LAMBDA_DEBUG
-		if (EngineConfig::GetBoolProperty("StreamPhysx"))
+		if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_STREAM_PHYSX))
 		{
 			m_pVisDbg = PxCreatePvd(*m_pFoundation);
 			PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
