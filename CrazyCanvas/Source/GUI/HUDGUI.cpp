@@ -151,7 +151,7 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 void HUDGUI::InitGUI()
 {
-	Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
+	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
 
 	m_GUIState.Health			= m_GUIState.MaxHealth;
 	m_GUIState.AmmoCapacity		= 50;

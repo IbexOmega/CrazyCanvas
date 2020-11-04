@@ -191,7 +191,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			Entity remotePlayerEntity	= weaponComp.WeaponOwner;
 
 			// Update weapon
-			const bool hasAmmo		= weaponComp.CurrentAmmunition > 0;
+			const bool hasAmmo		= (weaponComp.WeaponTypeAmmo[EAmmoType::AMMO_TYPE_WATER].first > 0 && weaponComp.WeaponTypeAmmo[EAmmoType::AMMO_TYPE_PAINT].first > 0);
 			const bool isReloading	= weaponComp.ReloadClock > 0.0f;
 			const bool onCooldown	= weaponComp.CurrentCooldown > 0.0f;
 
@@ -208,6 +208,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					weaponComp.ReloadClock = 0.0f;
 					weaponComp.WeaponTypeAmmo[EAmmoType::AMMO_TYPE_PAINT].first = AMMO_CAPACITY;
 					weaponComp.WeaponTypeAmmo[EAmmoType::AMMO_TYPE_WATER].first = AMMO_CAPACITY;
+
+					//Reload Event
+					WeaponReloadFinishedEvent reloadEvent(weaponComp.WeaponOwner);
+					EventQueue::SendEventImmediate(reloadEvent);
 				}
 			}
 
@@ -331,6 +335,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 					weaponComponent.ReloadClock			= 0.0f;
 					weaponComponent.WeaponTypeAmmo[EAmmoType::AMMO_TYPE_WATER].first = AMMO_CAPACITY;
 					weaponComponent.WeaponTypeAmmo[EAmmoType::AMMO_TYPE_PAINT].first = AMMO_CAPACITY;
+
+					//Reload Event
+					WeaponReloadFinishedEvent reloadEvent(weaponComponent.WeaponOwner);
+					EventQueue::SendEventImmediate(reloadEvent);
 				}
 			}
 

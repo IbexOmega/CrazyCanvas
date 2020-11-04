@@ -26,6 +26,7 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta);
 
 	bool OnWeaponFired(const WeaponFiredEvent& event);
+	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
 
 private:
 	LambdaEngine::IDVector m_PlayerEntities;

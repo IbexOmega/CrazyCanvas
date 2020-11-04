@@ -50,6 +50,7 @@ void HUDSystem::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
+	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
 
 
 	m_HUDGUI = *new HUDGUI("HUD.xaml");
@@ -90,6 +91,26 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 		if (pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity) && m_HUDGUI)
 		{
 			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+		}
+	}
+
+	return false;
+}
+
+bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
+{
+	ECSCore* pECS = ECSCore::GetInstance();
+	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+
+	for (Entity playerWeapon : m_WeaponEntities)
+	{
+		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+		if (pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity) && m_HUDGUI)
+		{
+			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
+			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
 		}
 	}
 
