@@ -1,17 +1,16 @@
 #pragma once
 #include "Game/State.h"
 
-#include "GUI/LobbyGUI.h"
+#include "GUI/MultiplayerGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
-
-class LobbyState : public LambdaEngine::State
+class MultiplayerState : public LambdaEngine::State
 {
 public:
-	LobbyState() = default;
-	~LobbyState();
+	MultiplayerState() = default;
+	~MultiplayerState();
 
 	void Init() override final;
 
@@ -22,6 +21,6 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta) override;
 
 private:
-	Noesis::Ptr<LobbyGUI> m_LobbyGUI;
+	Noesis::Ptr<MultiplayerGUI> m_LobbyGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
 };
