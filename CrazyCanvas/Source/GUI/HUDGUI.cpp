@@ -128,17 +128,18 @@ bool HUDGUI::UpdateScore()
 	return true;
 }
 
-bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap)
+bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap, EAmmoType ammoType)
 {
 	//Returns false if Out Of Ammo
 	std::string ammoString;
-
-	m_GUIState.Ammo			= currentAmmo;
-	m_GUIState.AmmoCapacity = ammoCap;
 	
-	ammoString = std::to_string(m_GUIState.Ammo) + "/" + std::to_string(m_GUIState.AmmoCapacity);
+	ammoString = std::to_string(currentAmmo) + "/" + std::to_string(ammoCap);
 
-	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
+	if(ammoType == EAmmoType::AMMO_TYPE_WATER)
+		FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY")->SetText(ammoString.c_str());
+
+	if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+		FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY")->SetText(ammoString.c_str());
 
 	if (currentAmmo <= 0)
 	{
@@ -151,18 +152,12 @@ void HUDGUI::InitGUI()
 {
 	Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
 
-	//Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
-
-	//pHpRect->SetRenderTransform(scale);
-
 	m_GUIState.Health			= m_GUIState.MaxHealth;
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
 
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
-
-	//pHpRect->SetHeight(0.0);
 
 	std::string ammoString;
 

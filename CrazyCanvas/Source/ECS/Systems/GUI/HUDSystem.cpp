@@ -12,6 +12,9 @@
 #include "Input/API/InputActionSystem.h"
 
 
+#include "Application/API/Events/EventQueue.h"
+
+
 using namespace LambdaEngine;
 
 HUDSystem::~HUDSystem()
@@ -46,6 +49,9 @@ void HUDSystem::Init()
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
+	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
+
+
 	m_HUDGUI = *new HUDGUI("HUD.xaml");
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
@@ -72,16 +78,23 @@ void HUDSystem::FixedTick(Timestamp delta)
 		m_HUDGUI->UpdateScore();
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
 	}
+}
+
+bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
+{
+	ECSCore* pECS = ECSCore::GetInstance();
+	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 	for (Entity playerWeapon : m_WeaponEntities)
 	{
 		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
-		const HealthComponent& healthComponent = pHealthComponents->GetConstData(playerWeapon);
-		Entity playerEntity = weaponComponent.WeaponOwner;
 
-		if (pPlayerLocalComponents->HasComponent(playerEntity) && m_HUDGUI)
+		if (pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity) && m_HUDGUI)
 		{
-			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition, weaponComponent.AmmoCapacity);
+			m_HUDGUI->UpdateAmmo(weaponComponent.CurrentAmmunition, weaponComponent.AmmoCapacity, event.AmmoType);
 		}
 	}
+
+	return false;
 }

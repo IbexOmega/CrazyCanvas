@@ -3,6 +3,8 @@
 
 #include "ECS/System.h"
 
+#include "Events/GameplayEvents.h"
+
 #include "GUI/HUDGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -22,6 +24,8 @@ public:
 	*/
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 	void FixedTick(LambdaEngine::Timestamp delta);
+
+	bool OnWeaponFired(const WeaponFiredEvent& event);
 
 private:
 	LambdaEngine::IDVector m_PlayerEntities;

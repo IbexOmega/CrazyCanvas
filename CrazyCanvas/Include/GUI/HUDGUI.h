@@ -6,6 +6,8 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "ECS/Components/Player/ProjectileComponent.h"
+
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
 #include "NsGui/GroupBox.h"
@@ -47,7 +49,7 @@ public:
 
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
-	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap);
+	bool UpdateAmmo(int32 currentAmmo, int32 ammoCap, EAmmoType ammoType);
 
 private:
 
