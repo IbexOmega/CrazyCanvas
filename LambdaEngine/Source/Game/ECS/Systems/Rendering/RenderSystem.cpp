@@ -1268,12 +1268,16 @@ namespace LambdaEngine
 			uint8 hitMask = 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
-			uint32 asInstanceIndex = m_pASBuilder->AddInstance(
-				meshAndInstancesIt->second.BLASIndex,
-				transform,
-				customIndex,
-				hitMask,
-				asFlags);
+			ASInstanceDesc asInstanceDesc =
+			{
+				.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
+				.Transform		= transform,
+				.CustomIndex	= customIndex,
+				.HitMask		= hitMask,
+				.Flags			= asFlags
+			};
+
+			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
 
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
