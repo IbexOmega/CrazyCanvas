@@ -9,36 +9,40 @@
 #pragma warning( pop )
 #include <fstream>
 
+#define FILE_PATH "Saved_Servers.json"
 
 using namespace LambdaEngine;
 
-rapidjson::Document SavedServerSystem::s_SavedServerDocument;
-
-
-bool SavedServerSystem::LoadIpsFromFile(TArray<String>& ipAddressess)
+bool SavedServerSystem::LoadServers(TArray<ServerInfo>& serverInfos, uint16 defaultPort)
 {
-	const char* pSavedServersPath = "Saved_Servers.json";
-
-	FILE* pFile = fopen(pSavedServersPath, "r");
+	FILE* pFile = fopen(FILE_PATH, "r");
 	if (!pFile)
 	{
-		// TODO: We should probably create a default so that the user does not need to have a config file to even run the application
-		LOG_ERROR("Server file could not be opened: %s", pSavedServersPath);
-		DEBUGBREAK();
-		return false;
+		pFile = CreateFile();
+		if (!pFile)
+			return false;
 	}
 
 	char readBuffer[2048];
 	rapidjson::FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
+	rapidjson::Document document;
+	document.ParseStream(inputStream);
+	const rapidjson::Value& serverArray = document["SERVERS"];
 
-	s_SavedServerDocument.ParseStream(inputStream);
-
-	const rapidjson::Value& a = s_SavedServerDocument["SERVER_IP"];
-
-	for (rapidjson::SizeType i = 0; i < a.Size(); i++) // Uses SizeType instead of size_t
+	for (rapidjson::SizeType i = 0; i < serverArray.Size(); i++)
 	{
-		LOG_ERROR("Server%d = %s\n", i, a[i].GetString());
-		ipAddressess.PushBack(a[i].GetString());
+		const rapidjson::Value& serverNode = serverArray[i];
+
+		ServerInfo serverInfo;
+		serverInfo.Name = serverNode["Name"].GetString();
+		String address = serverNode["Address"].GetString();
+		LOG_INFO("Loading Server [%s, %s] ", serverInfo.Name.c_str(), address.c_str());
+
+		bool isEndpointValid = false;
+		serverInfo.EndPoint = IPEndPoint::Parse(address, defaultPort, &isEndpointValid);
+
+		if (isEndpointValid)
+			serverInfos.PushBack(serverInfo);
 	}
 
 	fclose(pFile);
@@ -46,79 +50,61 @@ bool SavedServerSystem::LoadIpsFromFile(TArray<String>& ipAddressess)
 	return true;
 }
 
-bool SavedServerSystem::WriteIpsToFile(const char* ip)
+bool SavedServerSystem::SaveServers(const THashTable<IPAddress*, ServerInfo, IPAddressHasher>& serverInfos)
 {
-	const char* pSavedServersPath = "Saved_Servers.json";
-
-	FILE* pFile = fopen(pSavedServersPath, "r");
+	FILE* pFile = fopen(FILE_PATH, "w");
 	if (!pFile)
 	{
-		LOG_WARNING("Config file could not be opened: %s", pSavedServersPath);
+		LOG_ERROR("Failed to write %s", FILE_PATH);
 		return false;
 	}
 
-	char readBuffer[2048];
-	rapidjson::FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
+	char writeBuffer[2048];
+	rapidjson::Document document;
+	document.SetObject();
 
-	s_SavedServerDocument.ParseStream(inputStream);
+	rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>& allocator = document.GetAllocator();
 
-	fclose(pFile);
+	rapidjson::Value serverArray(rapidjson::kArrayType);
 
-
-	rapidjson::Value& ips = s_SavedServerDocument["SERVER_IP"];
-	assert(ips.IsArray());
-	rapidjson::Document::AllocatorType& allocator = s_SavedServerDocument.GetAllocator();
-
-	bool isNew = true;
-
-	for (rapidjson::SizeType i = 0; i < ips.Size(); i++) // Uses SizeType instead of size_t
+	for (auto& pair : serverInfos)
 	{
-		if (ips[i] == ip)
+		const ServerInfo& serverInfo = pair.second;
+
+		if (!serverInfo.IsLAN && serverInfo.EndPoint.GetAddress() != IPAddress::BROADCAST)
 		{
-			isNew = false;
+			String address = serverInfo.EndPoint.ToString();
+			LOG_INFO("Saving Server %s", address.c_str());
+			rapidjson::Value serverNode;
+			serverNode.SetObject();
+
+			rapidjson::Value nameNode(serverInfo.Name.c_str(), allocator);
+			serverNode.AddMember("Name", nameNode, allocator);
+
+			rapidjson::Value addressNode(address.c_str(), allocator);
+			serverNode.AddMember("Address", addressNode, allocator);
+
+			serverArray.PushBack(serverNode, allocator);
 		}
 	}
 
-	if (isNew)
-	{
-		rapidjson::Value newIP(ip, allocator);
-		ips.PushBack(newIP, allocator);
-	}
-	else
-	{
-		return false;
-	}
+	document.AddMember("SERVERS", serverArray, allocator);
 
-	pFile = fopen(pSavedServersPath, "w");
-	if (!pFile)
-	{
-		LOG_WARNING("Config file could not be opened: %s", pSavedServersPath);
-		return false;
-	}
-
-
-
-	rapidjson::FileWriteStream outputStream(pFile, readBuffer, sizeof(readBuffer));
-
+	rapidjson::FileWriteStream outputStream(pFile, writeBuffer, sizeof(writeBuffer));
 	rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(outputStream);
-
-	s_SavedServerDocument.Accept(writer);
+	document.Accept(writer);
 
 	fclose(pFile);
 
 	return true;
 }
 
-void SavedServerSystem::CreateFile()
+FILE* SavedServerSystem::CreateFile()
 {
-	const char* pSavedServersPath = "Saved_Servers.json";
-
-	FILE* pFile = fopen(pSavedServersPath, "w");
+	FILE* pFile = fopen(FILE_PATH, "w");
 	if (!pFile)
 	{
-		LOG_WARNING("Config file could not be opened: %s", pSavedServersPath);
-		DEBUGBREAK();
+		LOG_ERROR("Failed to create %s", FILE_PATH);
 	}
-
-
+	return pFile;
 }

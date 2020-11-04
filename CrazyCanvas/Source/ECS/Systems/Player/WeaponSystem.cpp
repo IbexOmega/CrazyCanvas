@@ -4,14 +4,14 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 
 #include "Events/GameplayEvents.h"
 
-#include "Input/API/Input.h"
+// #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Physics/PhysicsEvents.h"
 #include "Physics/CollisionGroups.h"
@@ -212,7 +212,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			PacketComponent<PacketPlayerAction>& actionsRecived = pPlayerActionPackets->GetData(remotePlayerEntity);
 			PacketComponent<PacketPlayerActionResponse>& responsesToSend = pPlayerResponsePackets->GetData(remotePlayerEntity);
-			TQueue<PacketPlayerActionResponse>& packetsToSend = responsesToSend.GetPacketsToSend();
+			TQueue<PacketPlayerActionResponse>& packetsToSend	= responsesToSend.GetPacketsToSend();
 			const TArray<PacketPlayerAction>& packetsRecived	= actionsRecived.GetPacketsReceived();
 
 			// Handle packets
@@ -256,7 +256,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							ammoType, 
 							remotePlayerEntity,
 							weaponEntity,
-							playerPositionComp.Position, 
+							weaponPosition,
 							playerRotationComp.Quaternion, 
 							velocityComp.Velocity);
 					}
@@ -293,7 +293,13 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 							weaponRotationComp,
 							weaponOffsetComp);
 
-						Fire(response.FiredAmmo, playerEntity, weaponEntity, weaponPosition, response.Rotation, response.Velocity);
+						Fire(
+							response.FiredAmmo, 
+							playerEntity, 
+							weaponEntity, 
+							weaponPosition, 
+							response.Rotation, 
+							response.Velocity);
 					}
 				}
 
@@ -339,7 +345,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				weaponOffsetComp);
 
 			// Reload if we are not reloading
-			if (Input::IsKeyDown(EInputLayer::GAME, EKey::KEY_R) && !isReloading)
+			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
 			{
 				StartReload(weaponComponent, playerActions);
 			}
@@ -347,8 +353,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 
-				const glm::vec3 firePosition = weaponPosition;
-				if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
+				if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
 				{
 					TryFire(
 						EAmmoType::AMMO_TYPE_PAINT,
@@ -359,7 +364,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						playerRotationComp.Quaternion,
 						velocityComp.Velocity);
 				}
-				else if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
+				else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
 				{
 					TryFire(
 						EAmmoType::AMMO_TYPE_WATER,
@@ -475,7 +480,13 @@ void WeaponSystem::TryFire(
 		}
 
 		// For creating entity
-		Fire(ammoType, weaponComponent.WeaponOwner, weaponEntity, startPos, direction, playerVelocity);
+		Fire(
+			ammoType, 
+			weaponComponent.WeaponOwner, 
+			weaponEntity, 
+			startPos, 
+			direction, 
+			playerVelocity);
 	}
 	else
 	{
@@ -489,32 +500,19 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	//LOG_INFO("Projectile hit, collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
+	LOG_INFO("Projectile hit: collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
 
 	// Is this safe? Concurrency issues?
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<TeamComponent>*		pTeamComponents			= pECS->GetComponentArray<TeamComponent>();
 	const ComponentArray<ProjectileComponent>*	pProjectileComponents	= pECS->GetComponentArray<ProjectileComponent>();
 
-	// Detect selfhit
-	bool selfHit = false;
+	// Get ammotype
 	EAmmoType ammoType = EAmmoType::AMMO_TYPE_NONE;
 	if (pProjectileComponents->HasComponent(collisionInfo0.Entity))
 	{
 		const ProjectileComponent& projectilComp = pProjectileComponents->GetConstData(collisionInfo0.Entity);
 		ammoType = projectilComp.AmmoType;
-
-		if (projectilComp.Owner == collisionInfo1.Entity)
-		{
-			selfHit = true;
-		}
-	}
-
-	// On selfhit return
-	if (selfHit)
-	{
-		LOG_INFO("SELF HIT");
-		return;
 	}
 
 	// Always destroy projectile but do not send event if we hit a friend

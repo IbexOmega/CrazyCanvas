@@ -269,7 +269,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		SetFixedTimestep(Timestamp::Seconds(1.0 / EngineConfig::GetDoubleProperty("FixedTimestep")));
+		SetFixedTimestep(Timestamp::Seconds(1.0 / EngineConfig::GetDoubleProperty(EConfigOption::CONFIG_OPTION_FIXED_TIMESTEMP)));
 
 		if (!ThreadPool::Init())
 		{

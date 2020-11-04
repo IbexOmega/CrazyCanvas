@@ -29,8 +29,6 @@ namespace LambdaEngine
 		systemReg.Phase = 0;
 		RegisterSystem(TYPE_NAME(AnimationSystem), systemReg);
 		SetComponentOwner<AnimationComponent>({ .Destructor = &AnimationSystem::OnAnimationComponentDelete });
-
-		EventQueue::RegisterEventHandler(this, &AnimationSystem::OnKeyPressed);
 		return true;
 	}
 
@@ -60,31 +58,6 @@ namespace LambdaEngine
 		// Call the graphs tick
 		VALIDATE(animation.pGraph != nullptr);
 		animation.pGraph->Tick(skeleton, GetDeltaTimeInSeconds());
-
-		// TODO: Remove this since it is only for testing
-		if (m_Walking)
-		{
-			if (animation.pGraph->GetCurrentState()->GetName() == "running")
-			{
-				animation.pGraph->TransitionToState("walking");
-			}
-			else
-			{
-				animation.pGraph->TransitionToState("running");
-			}
-		}
-
-		if (m_Reload)
-		{
-			if (animation.pGraph->GetCurrentState()->GetName() == "running")
-			{
-				animation.pGraph->TransitionToState("reload");
-			}
-			else
-			{
-				animation.pGraph->TransitionToState("running");
-			}
-		}
 
 		// Create localtransforms
 		const TArray<SQT>& currentFrame = animation.pGraph->GetCurrentFrame();
@@ -124,21 +97,6 @@ namespace LambdaEngine
 		SAFEDELETE(animation.pGraph);
 	}
 
-	// TODO: Remove this since it is only for testing
-	bool AnimationSystem::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
-	{
-		if (keyPressedEvent.Key == EKey::KEY_Q)
-		{
-			m_Walking = true;
-		}
-		else if (keyPressedEvent.Key == EKey::KEY_1)
-		{
-			m_Reload = true;
-		}
-
-		return false;
-	}
-
 	void AnimationSystem::Tick(Timestamp deltaTime)
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
@@ -176,9 +134,6 @@ namespace LambdaEngine
 			ThreadPool::Join(index);
 		}
 		m_JobIndices.Clear();
-
-		m_Walking	= false;
-		m_Reload	= false;
 	}
 
 	AnimationSystem& AnimationSystem::GetInstance()

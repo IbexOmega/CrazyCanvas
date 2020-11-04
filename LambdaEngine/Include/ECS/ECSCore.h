@@ -24,18 +24,18 @@ namespace LambdaEngine
 	};
 #pragma pack(pop)
 
-    class LAMBDA_API ECSCore
-    {
-    public:
-        ECSCore();
-        ~ECSCore() = default;
+	class LAMBDA_API ECSCore
+	{
+	public:
+		ECSCore();
+		~ECSCore() = default;
 
 		ECSCore(const ECSCore& other) = delete;
 		void operator=(const ECSCore& other) = delete;
 
 		static void Release();
 
-        void Tick(Timestamp deltaTime);
+		void Tick(Timestamp deltaTime);
 
 		Entity CreateEntity() { return m_EntityRegistry.CreateEntity(); }
 
@@ -114,7 +114,7 @@ namespace LambdaEngine
 		void PerformComponentDeletions();
 		void PerformEntityDeletions();
 
-        Timestamp GetDeltaTime() const { return m_DeltaTime; }
+		Timestamp GetDeltaTime() const { return m_DeltaTime; }
 		const IDDVector<System*>& GetSystems() const { return m_Systems; }
 
 	public:

@@ -7,6 +7,12 @@
 #include "NsGui/Grid.h"
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
+#include "NsGui/Button.h"
+
+#include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/MouseEvents.h"
+
+#include <stack>
 
 class MainMenuGUI : public Noesis::Grid
 {
@@ -15,31 +21,49 @@ public:
 	~MainMenuGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSoruce, const char* pEvent, const char* pHandler) override;
-	void OnButtonSingleplayerClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	// General
+	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	// StartGrid
+	void OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	// PlayGrid
+	void OnButtonSandboxClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonMultiplayerClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonKeybindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonApplyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnRayTracingChecked(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnMeshShadersChecked(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+
+	// Settings
+	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	// Key bindings (hate my life)
+	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
 private:
 	void SetRenderStagesSleeping();
-	void ToggleView(Noesis::FrameworkElement* element);
+	void SetDefaultSettings();
+	void SetDefaultKeyBindings();
+	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
+	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 
 private:
-	bool	m_RayTracingEnabled		= false;
-	bool	m_MeshShadersEnabled	= false;
-	bool	m_RayTracingSleeping	= false;
-	bool	m_MeshShadersSleeping	= false;
+	bool 	m_ListenToCallbacks			= false;
+	Noesis::Button* m_pSetKeyButton		= nullptr;
+	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
 
-	Noesis::GroupBox*	m_pMainMenu;
-	Noesis::GroupBox*	m_pSettingsGroupBox;
-	Noesis::GroupBox*	m_pKeybindingsGroupBox;	
-	Noesis::Slider*		m_pVolumeSlider;
+	bool	m_RayTracingEnabled			= false;
+	bool	m_MeshShadersEnabled		= false;
+
+	Noesis::Grid*	m_pStartGrid		= nullptr;
+	Noesis::Grid*	m_pPlayGrid			= nullptr;
+	Noesis::Grid*	m_pSettingsGrid 	= nullptr;
+	Noesis::Grid*	m_pKeyBindingsGrid 	= nullptr;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
 

@@ -32,10 +32,16 @@ public:
 	bool Init(const MatchDescription* pDesc);
 
 	void Tick(LambdaEngine::Timestamp deltaTime);
+	void FixedTick(LambdaEngine::Timestamp deltaTime);
 
 	void SetScore(uint32 teamIndex, uint32 score);
 
 	void ResetMatch();
+
+	virtual void KillPlayer(LambdaEngine::Entity playerEntity)
+	{
+		UNREFERENCED_VARIABLE(playerEntity);
+	}
 
 	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
 
@@ -43,8 +49,12 @@ protected:
 	virtual bool InitInternal() = 0;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
+	virtual void FixedTickInternal(LambdaEngine::Timestamp deltaTime)
+	{
+		UNREFERENCED_VARIABLE(deltaTime);
+	}
+
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) = 0;
-	virtual bool OnPlayerDied(const PlayerDiedEvent& event) = 0;
 	
 protected:
 	Level* m_pLevel = nullptr;

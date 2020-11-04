@@ -1,6 +1,7 @@
 #include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/Player/Player.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -10,7 +11,11 @@
 
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 
+#include "Match/Match.h"
+
 #include <mutex>
+
+#define HIT_DAMAGE 20
 
 /*
 * HealthSystem
@@ -24,6 +29,12 @@ bool HealthSystem::Init()
 
 	// Register system
 	{
+		PlayerGroup playerGroup;
+		playerGroup.Position.Permissions	= R;
+		playerGroup.Scale.Permissions		= NDA;
+		playerGroup.Rotation.Permissions	= NDA;
+		playerGroup.Velocity.Permissions	= NDA;
+
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
@@ -34,7 +45,15 @@ bool HealthSystem::Init()
 					{ RW, HealthComponent::Type() },
 					{ RW, PacketComponent<PacketHealthChanged>::Type() }
 				}
-			}
+			},
+			{
+				.pSubscriber = &m_LocalPlayerEntities,
+				.ComponentAccesses =
+				{
+					{ NDA, PlayerLocalComponent::Type() },
+				},
+				.ComponentGroups = { &playerGroup }
+			},
 		};
 
 		// After weaponsystem
@@ -49,6 +68,24 @@ bool HealthSystem::Init()
 	return true;
 }
 
+void HealthSystem::ResetEntityHealth(LambdaEngine::Entity entityToReset)
+{
+	using namespace LambdaEngine;
+
+	if (MultiplayerUtils::IsServer())
+	{
+		std::scoped_lock<SpinLock> lock(m_DeferredResetsLock);
+		for (Entity entity : m_HealthEntities)
+		{
+			if (entityToReset == entity)
+			{
+				m_DeferredResets.EmplaceBack(entityToReset);
+				break;
+			}
+		}
+	}
+}
+
 void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
@@ -60,13 +97,35 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 	if (MultiplayerUtils::IsServer())
 	{
-		// Since the events are not sent threadsafe
+		// More threadsafe
 		{
 			std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
 			if (!m_DeferredHitEvents.IsEmpty())
 			{
 				m_EventsToProcess = m_DeferredHitEvents;
 				m_DeferredHitEvents.Clear();
+			}
+		}
+
+		// More threadsafe
+		{
+			std::scoped_lock<SpinLock> lock(m_DeferredResetsLock);
+			if (!m_DeferredResets.IsEmpty())
+			{
+				// Reset health
+				for (Entity entity : m_DeferredResets)
+				{
+					HealthComponent& healthComponent				= pECS->GetComponent<HealthComponent>(entity);
+					PacketComponent<PacketHealthChanged>& packets	= pECS->GetComponent<PacketComponent<PacketHealthChanged>>(entity);
+					healthComponent.CurrentHealth = START_HEALTH;
+
+					PacketHealthChanged packet = {};
+					packet.CurrentHealth	= healthComponent.CurrentHealth;
+					packet.Killed			= false;
+					packets.SendPacket(packet);
+				}
+
+				m_DeferredResets.Clear();
 			}
 		}
 
@@ -78,29 +137,29 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				Entity entity = event.CollisionInfo1.Entity;
 				EAmmoType ammoType = event.AmmoType;
 
-				//LOG_INFO("Retriving health from entity=%d", entity);
+				LOG_INFO("Retrived ProjectileHitEvent");
 
 				HealthComponent& healthComponent = pHealthComponents->GetData(entity);
 				PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
 				if (healthComponent.CurrentHealth > 0)
 				{
+					bool killed = false;
 					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 					{
-						healthComponent.CurrentHealth -= 10;
+						healthComponent.CurrentHealth -= HIT_DAMAGE;
 						if (healthComponent.CurrentHealth <= 0)
 						{
-							LOG_INFO("PLAYER DIED");
-							healthComponent.CurrentHealth = 0;
+							Match::KillPlayer(entity);
+							killed = true;
 
-							PlayerDiedEvent diedEvent(entity);
-							EventQueue::SendEvent(diedEvent);
+							LOG_INFO("PLAYER DIED");
 						}
 
 						LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
 					}
 					else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 					{
-						healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth + 10, 100);
+						healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth + HIT_DAMAGE, 100);
 						if (healthComponent.CurrentHealth >= 100)
 						{
 							LOG_INFO("PLAYER REACHED FULL HEALTH");
@@ -111,6 +170,7 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 					PacketHealthChanged packet = {};
 					packet.CurrentHealth = healthComponent.CurrentHealth;
+					packet.Killed = killed;
 					packets.SendPacket(packet);
 				}
 			}
@@ -126,12 +186,32 @@ void HealthSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
 			for (const PacketHealthChanged& packet : packets.GetPacketsReceived())
 			{
-				//LOG_INFO("GOT A HEALTH PACKAGE");
-
 				if (healthComponent.CurrentHealth != packet.CurrentHealth)
 				{
-					//LOG_INFO("Health changed old=%d new=%d", healthComponent.CurrentHealth, packet.CurrentHealth);
 					healthComponent.CurrentHealth = packet.CurrentHealth;
+					if (packet.Killed)
+					{
+						Match::KillPlayer(entity);
+						LOG_INFO("PLAYER DIED");
+					}
+
+					// Is this the local player
+					bool isLocal = false;
+					for (Entity playerEntity : m_LocalPlayerEntities)
+					{
+						if (playerEntity == entity)
+						{
+							isLocal = true;
+							break;
+						}
+					}
+
+					// Send event to notify systems that a player got hit
+					const PositionComponent& positionComp = pECS->GetConstComponent<PositionComponent>(entity);
+					const glm::vec3 position = positionComp.Position;
+
+					PlayerHitEvent event(entity, position, isLocal);
+					EventQueue::SendEvent(event);
 				}
 			}
 		}
@@ -145,17 +225,14 @@ bool HealthSystem::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
 	if (MultiplayerUtils::IsServer())
 	{
 		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
-		//LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
+		LOG_INFO("Something got hit CollisionInfo0=%d, CollisionInfo1=%d", projectileHitEvent.CollisionInfo0.Entity, projectileHitEvent.CollisionInfo1.Entity);
 
 		for (Entity entity : m_HealthEntities)
 		{
-			//LOG_INFO("....Entity: %d", entity);
-
 			// CollisionInfo0 is the projectile
 			if (projectileHitEvent.CollisionInfo1.Entity == entity)
 			{
 				m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
-				//LOG_INFO("Player got hit");
 				break;
 			}
 		}
