@@ -22,8 +22,6 @@ struct WeaponComponent
 	float32 ReloadTime			= 2.0f;
 	float32	CurrentCooldown		= 0.0f; // Time until the weapon can be fired again
 	float32 ReloadClock			= 0.0f;
-	int32	CurrentAmmunition	= AMMO_CAPACITY;
-	int32   AmmoCapacity		= AMMO_CAPACITY;
 
 	std::unordered_map<EAmmoType, std::pair<int32, int32>> WeaponTypeAmmo =
 		{
