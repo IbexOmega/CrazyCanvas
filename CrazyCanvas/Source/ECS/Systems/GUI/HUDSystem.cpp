@@ -20,6 +20,9 @@ HUDSystem::~HUDSystem()
 {
 	m_HUDGUI.Reset();
 	m_View.Reset();
+
+	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
+	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
 }
 
 void HUDSystem::Init()
