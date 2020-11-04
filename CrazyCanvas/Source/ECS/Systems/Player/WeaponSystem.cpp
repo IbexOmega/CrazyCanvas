@@ -191,7 +191,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			Entity remotePlayerEntity	= weaponComp.WeaponOwner;
 			
 			auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(waterAmmo != weaponComp.WeaponTypeAmmo.end())
+
 			auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(waterAmmo != weaponComp.WeaponTypeAmmo.end())
 
 			// Update weapon
 			const bool hasAmmo		= (waterAmmo->second.first > 0 && paintAmmo->second.first > 0);
@@ -287,7 +290,10 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 			Entity playerEntity = weaponComponent.WeaponOwner;
 
 			auto waterAmmoC = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(waterAmmoC != weaponComponent.WeaponTypeAmmo.end())
+
 			auto paintAmmoC = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(paintAmmoC != weaponComponent.WeaponTypeAmmo.end())
 
 			// Foreign Players
 			if (!m_LocalPlayerEntities.HasElement(playerEntity))
