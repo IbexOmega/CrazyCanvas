@@ -90,6 +90,7 @@ namespace LambdaEngine
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
+		static void ReleaseStatic();
 
 	protected:
 		bool m_DisconnectedByRemote;
@@ -111,6 +112,7 @@ namespace LambdaEngine
 
 	private:
 		static SpinLock s_LockStatic;
+		static std::atomic_int s_Instances;
 		static THashTable<ClientRemoteBase*, uint8> s_ClientRemoteBasesToDelete;
 	};
 }

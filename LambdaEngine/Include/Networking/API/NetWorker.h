@@ -52,6 +52,7 @@ namespace LambdaEngine
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);
+		static void ReleaseStatic();
 
 	protected:
 		char m_pReceiveBuffer[UINT16_MAX];
@@ -71,6 +72,7 @@ namespace LambdaEngine
 
 	private:
 		static SpinLock s_LockStatic;
+		static std::atomic_int s_Instances;
 		static THashTable<NetWorker*, uint8> s_NetworkersToDelete;
 	};
 }

@@ -36,6 +36,8 @@ namespace LambdaEngine
 
 	void NetworkUtils::PostRelease()
 	{
+		NetWorker::ReleaseStatic();
+		ClientRemoteBase::ReleaseStatic();
 		IPAddress::ReleaseStatic();
 	}
 

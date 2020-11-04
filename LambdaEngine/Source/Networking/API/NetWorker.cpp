@@ -4,9 +4,12 @@
 
 #include "Threading/API/Thread.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	SpinLock NetWorker::s_LockStatic;
+	std::atomic_int NetWorker::s_Instances = 0;
 	THashTable<NetWorker*, uint8> NetWorker::s_NetworkersToDelete;
 
 	NetWorker::NetWorker() : 
@@ -20,13 +23,15 @@ namespace LambdaEngine
 		m_Release(false),
 		m_pReceiveBuffer()
 	{
-
+		s_Instances++;
 	}
 
 	NetWorker::~NetWorker()
 	{
 		if (!m_Release)
 			LOG_ERROR("[NetWorker]: Do not use delete on a NetWorker object. Use the Release() function!");
+
+		s_Instances--;
 	}
 
 	void NetWorker::Flush()
@@ -47,7 +52,10 @@ namespace LambdaEngine
 		}
 
 		if (m_ThreadsTerminated)
-			s_NetworkersToDelete.insert({ this, 5});
+		{
+			s_NetworkersToDelete.insert(std::make_pair(this, (uint8)5));
+			LOG_ERROR("TerminateAndRelease");
+		}
 	}
 
 	bool NetWorker::TerminateThreads(const std::string& reason)
@@ -166,6 +174,8 @@ namespace LambdaEngine
 
 	void NetWorker::FixedTickStatic(Timestamp timestamp)
 	{
+		UNREFERENCED_VARIABLE(timestamp);
+
 		if (!s_NetworkersToDelete.empty())
 		{
 			std::scoped_lock<SpinLock> lock(s_LockStatic);
@@ -182,5 +192,11 @@ namespace LambdaEngine
 				delete pNetworker;
 			}
 		}
+	}
+
+	void NetWorker::ReleaseStatic()
+	{
+		while (s_Instances > 0)
+			FixedTickStatic(EngineLoop::GetFixedTimestep());
 	}
 }
