@@ -153,12 +153,12 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 	if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 	{
-		FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY")->SetText(ammoString.c_str());
+		m_pWaterAmmoText->SetText(ammoString.c_str());
 		m_pWaterAmmoRect->SetRenderTransform(scale);
 	}
 	else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 	{
-		FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY")->SetText(ammoString.c_str());
+		m_pPaintAmmoText->SetText(ammoString.c_str());
 		m_pPaintAmmoRect->SetRenderTransform(scale);
 	}
 
@@ -179,12 +179,16 @@ void HUDGUI::InitGUI()
 	m_pWaterAmmoRect = FrameworkElement::FindName<Border>("WATER_RECT");
 	m_pPaintAmmoRect = FrameworkElement::FindName<Border>("PAINT_RECT");
 
+	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
+	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
+
 	std::string ammoString;
 
 	ammoString	= std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
 
-	FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY")->SetText(ammoString.c_str());
-	FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY")->SetText(ammoString.c_str());
+	m_pWaterAmmoText->SetText(ammoString.c_str());
+	m_pPaintAmmoText->SetText(ammoString.c_str());
+
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
 }

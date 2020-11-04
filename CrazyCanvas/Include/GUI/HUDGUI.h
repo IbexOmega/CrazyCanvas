@@ -61,6 +61,9 @@ private:
 private:
 	GameGUIState m_GUIState;
 
-	Noesis::Border* m_pWaterAmmoRect;
-	Noesis::Border* m_pPaintAmmoRect;
+	Noesis::Border* m_pWaterAmmoRect;		
+	Noesis::Border* m_pPaintAmmoRect;		
+	
+	Noesis::TextBlock* m_pWaterAmmoText;
+	Noesis::TextBlock* m_pPaintAmmoText;
 };
