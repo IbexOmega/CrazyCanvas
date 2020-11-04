@@ -250,8 +250,8 @@ namespace LambdaEngine
 		for (auto& pair : s_DefaultBindings)
 		{
 			s_CurrentBindings.insert({ pair.first, pair.second });
-			rapidjson::Value key(ActionToString(pair.first), strlen(ActionToString(pair.first)), s_ConfigDocument.GetAllocator());
-			rapidjson::Value value(pair.second.c_str(), pair.second.size(), s_ConfigDocument.GetAllocator());
+			rapidjson::Value key(ActionToString(pair.first), static_cast<rapidjson::SizeType>(strlen(ActionToString(pair.first))), s_ConfigDocument.GetAllocator());
+			rapidjson::Value value(pair.second.c_str(), static_cast<rapidjson::SizeType>(pair.second.size()), s_ConfigDocument.GetAllocator());
 			s_ConfigDocument.AddMember(key, value, s_ConfigDocument.GetAllocator());
 		}
 
@@ -260,8 +260,8 @@ namespace LambdaEngine
 
 	void InputActionSystem::WriteNewMember(EAction action, String strValue)
 	{
-		rapidjson::Value key(ActionToString(action), strlen(ActionToString(action)), s_ConfigDocument.GetAllocator());
-		rapidjson::Value value(strValue.c_str(), strValue.size(), s_ConfigDocument.GetAllocator());
+		rapidjson::Value key(ActionToString(action), static_cast<rapidjson::SizeType>(strlen(ActionToString(action))), s_ConfigDocument.GetAllocator());
+		rapidjson::Value value(strValue.c_str(), static_cast<rapidjson::SizeType>(strValue.size()), s_ConfigDocument.GetAllocator());
 		s_ConfigDocument.AddMember(key, value, s_ConfigDocument.GetAllocator());
 
 		WriteToFile();
