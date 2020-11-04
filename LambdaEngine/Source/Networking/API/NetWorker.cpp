@@ -7,6 +7,7 @@
 namespace LambdaEngine
 {
 	SpinLock NetWorker::s_LockStatic;
+	THashTable<NetWorker*, uint8> NetWorker::s_NetworkersToDelete;
 
 	NetWorker::NetWorker() : 
 		m_pThreadReceiver(nullptr),
@@ -46,9 +47,7 @@ namespace LambdaEngine
 		}
 
 		if (m_ThreadsTerminated)
-		{
-			delete this;
-		}
+			s_NetworkersToDelete.insert({ this, 5});
 	}
 
 	bool NetWorker::TerminateThreads(const std::string& reason)
@@ -163,5 +162,25 @@ namespace LambdaEngine
 
 		if (m_Release)
 			TerminateAndRelease("All Threads Terminated");
+	}
+
+	void NetWorker::FixedTickStatic(Timestamp timestamp)
+	{
+		if (!s_NetworkersToDelete.empty())
+		{
+			std::scoped_lock<SpinLock> lock(s_LockStatic);
+			TArray<NetWorker*> networkersToDelete;
+			for (auto& pair : s_NetworkersToDelete)
+			{
+				if (--pair.second == 0)
+					networkersToDelete.PushBack(pair.first);
+			}
+
+			for (NetWorker* pNetworker : networkersToDelete)
+			{
+				s_NetworkersToDelete.erase(pNetworker);
+				delete pNetworker;
+			}
+		}
 	}
 }

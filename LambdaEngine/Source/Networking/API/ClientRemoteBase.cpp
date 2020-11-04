@@ -10,6 +10,9 @@
 
 namespace LambdaEngine
 {
+	SpinLock ClientRemoteBase::s_LockStatic;
+	THashTable<ClientRemoteBase*, uint8> ClientRemoteBase::s_ClientRemoteBasesToDelete;
+
 	ClientRemoteBase::ClientRemoteBase(const ClientRemoteDesc& desc) :
 		m_pServer(desc.Server),
 		m_PingInterval(desc.PingInterval),
@@ -119,7 +122,9 @@ namespace LambdaEngine
 		{
 			if (m_pHandler)
 				m_pHandler->OnClientReleased(this);
-			delete this;
+
+			std::scoped_lock<SpinLock> lock(s_LockStatic);
+			s_ClientRemoteBasesToDelete.insert({this, 5});
 		}
 	}
 
@@ -417,5 +422,25 @@ namespace LambdaEngine
 	{
 		LOG_INFO("ClientRemoteBase::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 		Disconnect("Max Tries Reached");
+	}
+
+	void ClientRemoteBase::FixedTickStatic(Timestamp timestamp)
+	{
+		if (!s_ClientRemoteBasesToDelete.empty())
+		{
+			std::scoped_lock<SpinLock> lock(s_LockStatic);
+			TArray<ClientRemoteBase*> networkersToDelete;
+			for (auto& pair : s_ClientRemoteBasesToDelete)
+			{
+				if (--pair.second == 0)
+					networkersToDelete.PushBack(pair.first);
+			}
+
+			for (ClientRemoteBase* pClient : networkersToDelete)
+			{
+				s_ClientRemoteBasesToDelete.erase(pClient);
+				delete pClient;
+			}
+		}
 	}
 }

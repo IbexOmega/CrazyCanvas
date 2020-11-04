@@ -6,6 +6,10 @@
 
 #include "Networking/API/NetworkSegment.h"
 
+#include "Containers/THashTable.h"
+
+#include "Time/API/Timestamp.h"
+
 #include <atomic>
 
 namespace LambdaEngine
@@ -14,6 +18,8 @@ namespace LambdaEngine
 
 	class LAMBDA_API NetWorker
 	{
+		friend class NetworkUtils;
+
 	public:
 		DECL_UNIQUE_CLASS(NetWorker);
 		NetWorker();
@@ -44,6 +50,9 @@ namespace LambdaEngine
 		void ThreadReceiverDeleted();
 		void ThreadsDeleted();
 
+	private:
+		static void FixedTickStatic(Timestamp timestamp);
+
 	protected:
 		char m_pReceiveBuffer[UINT16_MAX];
 
@@ -62,5 +71,6 @@ namespace LambdaEngine
 
 	private:
 		static SpinLock s_LockStatic;
+		static THashTable<NetWorker*, uint8> s_NetworkersToDelete;
 	};
 }

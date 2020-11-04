@@ -68,6 +68,9 @@ namespace LambdaEngine
 		void UpdatePingSystem();
 		void HandleReceivedPacketsMainThread();
 
+	private:
+		static void FixedTickStatic(Timestamp timestamp);
+
 	protected:
 		std::atomic_bool m_SendDisconnectPacket;
 
@@ -83,9 +86,6 @@ namespace LambdaEngine
 		SpinLock m_LockReceivedPackets;
 		std::atomic_int8_t m_BufferIndex;
 		TArray<NetworkSegment*> m_ReceivedPackets[2];
-
-	private:
-		static void FixedTickStatic(Timestamp timestamp);
 
 	private:
 		static std::set<ClientBase*> s_Clients;
