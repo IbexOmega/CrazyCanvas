@@ -125,8 +125,8 @@ bool ServerState::OnPacketConfigureServerReceived(const PacketReceivedEvent<Pack
 	if (packet.AuthenticationID == ServerHostHelper::GetAuthenticationHostID())
 	{
 		LOG_INFO("Configuring Server With The Following Settings:");
-		LOG_INFO("Players: %u", packet.Players);
-		LOG_INFO("MapID: %u", packet.MapID);
+		LOG_INFO("Players: %hhu", packet.Players);
+		LOG_INFO("MapID: %hhu", packet.MapID);
 
 		ServerHelper::SetMaxClients(packet.Players);
 	}
