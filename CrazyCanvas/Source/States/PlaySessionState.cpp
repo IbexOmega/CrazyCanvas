@@ -7,8 +7,6 @@
 #include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/ECSCore.h"
 
-#include "Engine/EngineConfig.h"
-
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"

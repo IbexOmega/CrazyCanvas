@@ -50,14 +50,14 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	const char* pIP = "81.170.143.133:4444";
 
 	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
-	//m_RayTracingEnabled = EngineConfig::GetBoolProperty("RayTracingEnabled");
+	//m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
 	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"), FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST"));
 	
 	ErrorPopUpClose();
 	NotiPopUpClose();
 
 	TArray<ServerInfo> serverInfos;
-	uint16 defaultPort = (uint16)EngineConfig::GetIntProperty("NetworkPort");
+	uint16 defaultPort = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
 	SavedServerSystem::LoadServers(serverInfos, defaultPort);
 
 	for (ServerInfo& serverInfo : serverInfos)
@@ -182,7 +182,7 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 
 	LambdaEngine::String address	= FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText();
 	bool isEndpointValid			= false;
-	uint16 defaultPort				= (uint16)EngineConfig::GetIntProperty("NetworkPort");
+	uint16 defaultPort				= (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
 	IPEndPoint endPoint				= IPEndPoint::Parse(address, defaultPort, &isEndpointValid);
 
 	if (isEndpointValid)

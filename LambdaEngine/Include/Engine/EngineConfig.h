@@ -2,6 +2,7 @@
 
 #include "Defines.h"
 #include "Containers/String.h"
+#include "ConfigCodes.h"
 
 #include <argh/argh.h>
 #pragma warning( push, 0 )
@@ -18,21 +19,23 @@ namespace LambdaEngine
 		static bool				LoadFromFile(const argh::parser& flagParser);
 		static bool				WriteToFile();
 
-		static bool				GetBoolProperty(const String& propertyName);
-		static float			GetFloatProperty(const String& propertyName);
-		static int				GetIntProperty(const String& propertyName);
-		static double			GetDoubleProperty(const String& propertyName);
-		static String			GetStringProperty(const String& propertyName);
-		static TArray<float>	GetFloatArrayProperty(const String& propertyName);
-		static TArray<int>		GetIntArrayProperty(const String& propertyName);
+		static bool				GetBoolProperty(EConfigOption configOption);
+		static float			GetFloatProperty(EConfigOption configOption);
+		static int				GetIntProperty(EConfigOption configOption);
+		static uint32			GetUint32Property(EConfigOption configOption);
+		static double			GetDoubleProperty(EConfigOption configOption);
+		static String			GetStringProperty(EConfigOption configOption);
+		static TArray<float>	GetFloatArrayProperty(EConfigOption configOption);
+		static TArray<int>		GetIntArrayProperty(EConfigOption configOption);
 
-		static bool				SetBoolProperty(const String& propertyName, bool value);
-		static bool				SetFloatProperty(const String& propertyName, float value);
-		static bool				SetIntProperty(const String& propertyName, int value);
-		static bool				SetDoubleProperty(const String& propertyName, double value);
-		static bool				SetStringProperty(const String& propertyName, const String& string);
-		static bool				SetFloatArrayProperty(const String& propertyName, const TArray<float>& arr);
-		static bool				SetIntArrayProperty(const String& propertyName, const TArray<int>& arr);
+		static bool				SetBoolProperty(EConfigOption configOption, bool value);
+		static bool				SetFloatProperty(EConfigOption configOption, float value);
+		static bool				SetIntProperty(EConfigOption configOption, int value);
+		static bool				SetUint32Property(EConfigOption configOption, uint32 value);
+		static bool				SetDoubleProperty(EConfigOption configOption, double value);
+		static bool				SetStringProperty(EConfigOption configOption, const String& string);
+		static bool				SetFloatArrayProperty(EConfigOption configOption, const TArray<float>& arr);
+		static bool				SetIntArrayProperty(EConfigOption configOption, const TArray<int>& arr);
 
 	private:
 		static rapidjson::Document s_ConfigDocument;

@@ -90,9 +90,9 @@ void SandboxState::Init()
 	
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
-	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
-	m_ShowDemoWindow	= EngineConfig::GetBoolProperty("ShowDemo");
-	m_DebuggingWindow	= EngineConfig::GetBoolProperty("Debugging");
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
+	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
+	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
 
 	m_GUITest	= *new GUITest("Test.xaml");
 	m_View		= Noesis::GUI::CreateView(m_GUITest);

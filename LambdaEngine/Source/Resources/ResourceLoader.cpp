@@ -830,6 +830,7 @@ namespace LambdaEngine
 		SoundEffect3DDesc soundDesc = {};
 		soundDesc.Filepath = ConvertSlashes(filepath);
 
+
 		ISoundEffect3D* pSound = AudioAPI::GetDevice()->CreateSoundEffect(&soundDesc);
 		if (pSound == nullptr)
 		{

@@ -41,7 +41,7 @@ void ReplayManagerSystem::Init()
 	};
 	systemReg.Phase = 0;
 
-	RegisterSystem(TYPE_NAME(PlayerLocalSystem), systemReg);
+	RegisterSystem(TYPE_NAME(ReplayManagerSystem), systemReg);
 }
 
 void ReplayManagerSystem::FixedTickMainThread(Timestamp deltaTime)
