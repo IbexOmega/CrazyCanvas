@@ -468,7 +468,6 @@ namespace LambdaEngine
 			return;
 		}
 
-		
 		// Render enemy with no culling to see backface of paint
 		bool renderEnemies = true;
 		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDNoCull);
@@ -477,8 +476,6 @@ namespace LambdaEngine
 		renderEnemies = false;
 		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDBackCull);
 		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDFrontCull);
-		
-
 	}
 
 
