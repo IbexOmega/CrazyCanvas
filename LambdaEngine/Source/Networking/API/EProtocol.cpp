@@ -4,7 +4,7 @@ namespace LambdaEngine
 {
     String EProtocolParser::ToString(EProtocol protocol)
     {
-        return EProtocol::UDP ? "UDP" : "TCP";
+        return protocol == EProtocol::UDP ? "UDP" : "TCP";
     }
 
     EProtocol EProtocolParser::FromString(const String& string)
