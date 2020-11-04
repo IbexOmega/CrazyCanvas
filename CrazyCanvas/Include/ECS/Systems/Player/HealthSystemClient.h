@@ -15,4 +15,7 @@ public:
 
 protected:
 	virtual bool InitInternal() override final;
+
+private:
+	LambdaEngine::IDVector m_LocalPlayerEntities;
 };

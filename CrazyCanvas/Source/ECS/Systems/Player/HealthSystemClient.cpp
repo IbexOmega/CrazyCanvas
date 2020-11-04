@@ -21,22 +21,40 @@ void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 	ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 	for (Entity entity : m_HealthEntities)
-	{
-		HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-		PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
-		for (const PacketHealthChanged& packet : packets.GetPacketsReceived())
 		{
-			if (healthComponent.CurrentHealth != packet.CurrentHealth)
+			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
+			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
+			for (const PacketHealthChanged& packet : packets.GetPacketsReceived())
 			{
-				healthComponent.CurrentHealth = packet.CurrentHealth;
-				if (packet.Killed)
+				if (healthComponent.CurrentHealth != packet.CurrentHealth)
 				{
-					Match::KillPlayer(entity);
-					LOG_INFO("PLAYER DIED");
+					healthComponent.CurrentHealth = packet.CurrentHealth;
+					if (packet.Killed)
+					{
+						Match::KillPlayer(entity);
+						LOG_INFO("PLAYER DIED");
+					}
+
+					// Is this the local player
+					bool isLocal = false;
+					for (Entity playerEntity : m_LocalPlayerEntities)
+					{
+						if (playerEntity == entity)
+						{
+							isLocal = true;
+							break;
+						}
+					}
+
+					// Send event to notify systems that a player got hit
+					const PositionComponent& positionComp = pECS->GetConstComponent<PositionComponent>(entity);
+					const glm::vec3 position = positionComp.Position;
+
+					PlayerHitEvent event(entity, position, isLocal);
+					EventQueue::SendEvent(event);
 				}
 			}
 		}
-	}
 }
 
 bool HealthSystemClient::InitInternal()
