@@ -4,14 +4,14 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 
 #include "Events/GameplayEvents.h"
 
-#include "Input/API/Input.h"
+// #include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Physics/PhysicsEvents.h"
 #include "Physics/CollisionGroups.h"
@@ -345,14 +345,15 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				weaponOffsetComp);
 
 			// Reload if we are not reloading
-			if (Input::IsKeyDown(EInputLayer::GAME, EKey::KEY_R) && !isReloading)
+			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
 			{
 				StartReload(weaponComponent, playerActions);
 			}
 			else if (!onCooldown) // If we did not hit the reload try and shoot
 			{
 				const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
-				if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_LEFT))
+
+				if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
 				{
 					TryFire(
 						EAmmoType::AMMO_TYPE_PAINT,
@@ -363,7 +364,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						playerRotationComp.Quaternion,
 						velocityComp.Velocity);
 				}
-				else if (Input::GetMouseState(EInputLayer::GAME).IsButtonPressed(EMouseButton::MOUSE_BUTTON_RIGHT))
+				else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
 				{
 					TryFire(
 						EAmmoType::AMMO_TYPE_WATER,

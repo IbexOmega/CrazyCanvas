@@ -51,7 +51,7 @@ namespace LambdaEngine
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 
-		m_UsingMeshShader = EngineConfig::GetBoolProperty("MeshShadersEnabled");
+		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 
 		if (!CreatePipelineLayout())
 		{
@@ -216,7 +216,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_MAT_PARAM_BUFFER", setIndex);
 			}
 		}
 		else if (resourceName == PAINT_MASK_COLORS)
@@ -237,7 +237,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] PAINT_MASK_COLORS", setIndex);
 			}
 		}
 
@@ -259,7 +259,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d]", setIndex);
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] PER_FRAME_BUFFER", setIndex);
 			}
 		}
 

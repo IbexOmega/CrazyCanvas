@@ -3,6 +3,7 @@
 #include "ECS/Systems/Player/HealthSystemClient.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/Player/Player.h"
 
 #include "Events/GameplayEvents.h"
 
@@ -47,6 +48,12 @@ bool HealthSystem::InitInternal()
 
 	// Register system
 	{
+		PlayerGroup playerGroup;
+		playerGroup.Position.Permissions	= R;
+		playerGroup.Scale.Permissions		= NDA;
+		playerGroup.Rotation.Permissions	= NDA;
+		playerGroup.Velocity.Permissions	= NDA;
+
 		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
@@ -57,7 +64,15 @@ bool HealthSystem::InitInternal()
 					{ RW, HealthComponent::Type() },
 					{ RW, PacketComponent<PacketHealthChanged>::Type() }
 				}
-			}
+			},
+			{
+				.pSubscriber = &m_LocalPlayerEntities,
+				.ComponentAccesses =
+				{
+					{ NDA, PlayerLocalComponent::Type() },
+				},
+				.ComponentGroups = { &playerGroup }
+			},
 		};
 
 		// After weaponsystem

@@ -58,11 +58,11 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
 				.Width = (float)window->GetWidth(),
 				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+				.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			CreatePlayerDesc createPlayerDesc =
@@ -81,6 +81,13 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
 			{
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
+			}
+
+			// Notify systems that a new player connected (Not myself tho)
+			if (!packet.Player.IsMySelf)
+			{
+				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
+				EventQueue::SendEvent(connectedEvent);
 			}
 
 			break;

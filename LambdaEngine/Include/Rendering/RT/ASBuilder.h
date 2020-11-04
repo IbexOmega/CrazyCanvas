@@ -9,6 +9,15 @@ namespace LambdaEngine
 {
 	constexpr const uint32 BLAS_UNINITIALIZED_INDEX = UINT32_MAX;
 
+	struct ASInstanceDesc
+	{
+		uint32								BlasIndex	= BLAS_UNINITIALIZED_INDEX;
+		const glm::mat4&					Transform;
+		uint32								CustomIndex	= 0;
+		uint8								HitMask		= 0;
+		FAccelerationStructureInstanceFlags	Flags		= 0;
+	};
+
 	class ASBuilder : public CustomRenderer
 	{
 		struct BLASData
@@ -23,6 +32,7 @@ namespace LambdaEngine
 
 		virtual bool Init() override final;
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
+		virtual bool RenderGraphPostInit() override final;
 
 		/*
 		* Creates a BLAS and SBT Record for the given Vertex- and Index Buffer if index == BLAS_UNINITIALIZED_INDEX, it then generates a new index which gets stored in the index variable.
@@ -42,14 +52,21 @@ namespace LambdaEngine
 		void ReleaseBLAS(uint32 index);
 
 		/*
-		* Adds a new Instance to the TLAS.
+		* Adds a new Instance to the TLAS. 
+		* Below the variables in ASInstanceDesc are explained.
 		*	blasIndex - An index corresponding to a valid BLAS.
 		*	transform - A valid transform
 		*	customIndex - Lower 24 bits will be copied into the instance
 		*	hitMask - A hit mask which will be set in the instance and can be used when tracing rays to only hit specific instances
 		*	flags - Flags which will be set in the instance
+		*	return - The ASInstance ID that corresponds to this new instance
 		*/
-		uint32 AddInstance(uint32 blasIndex, const glm::mat4& transform, uint32 customIndex, uint8 hitMask, FAccelerationStructureInstanceFlags flags);
+		uint32 AddInstance(const ASInstanceDesc& asInstanceDesc);
+
+		/*
+		* Adds multiple instances, the returned ASInstance IDs are stored in asInstanceIDs and are guaranteed to be in the same order as asInstanceData.
+		*/
+		void AddInstances(const TArray<ASInstanceDesc>& asInstanceDescriptions, TArray<uint32> asInstanceIDs);
 
 		/*
 		* Removes an Instance from the TLAS.
@@ -90,6 +107,7 @@ namespace LambdaEngine
 
 		bool CreateCommandLists();
 		bool CreateBuffers();
+		bool CreateDummyBuffers();
 
 	private:
 		RenderGraph* m_pRenderGraph = nullptr;
@@ -111,9 +129,13 @@ namespace LambdaEngine
 
 		//TLAS
 		TArray<uint32> m_FreeInstanceIndices;				//Keeps track of holes in m_InstanceIndices
+		bool m_InstanceIndicesChanged = false;
 		TArray<uint32> m_InstanceIndices;					//Maps Instance Index returned from AddInstance() to index in m_Instances
+		Buffer** m_ppInstanceIndicesStagingBuffers = nullptr;
+		Buffer* m_pInstanceIndicesBuffer = nullptr;
 		TArray<AccelerationStructureInstance> m_Instances;	//Dense Array of Instances
-		Buffer** m_ppInstanceBuffers = nullptr;
+		Buffer** m_ppInstanceStagingBuffers = nullptr;
+		Buffer* m_pInstanceBuffer = nullptr;
 		uint32 m_MaxSupportedTLASInstances = 0;
 		uint32 m_BuiltTLASInstanceCount = 0;
 		AccelerationStructure* m_pTLAS = nullptr;
