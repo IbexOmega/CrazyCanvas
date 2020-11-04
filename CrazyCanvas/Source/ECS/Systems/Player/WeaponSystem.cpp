@@ -95,6 +95,7 @@ bool WeaponSystem::Init()
 		s_pInstance = DBG_NEW WeaponSystemClient();
 	}
 
+	//EventQueue::RegisterEventHandler(s_pInstance, &WeaponSystem::OnProjectileHit);
 	return s_pInstance->InitInternal();
 }
 

@@ -17,6 +17,7 @@ AudioEffectHandler::~AudioEffectHandler()
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerDied);
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerHit);
+		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnWindowFocusChanged);
 	}
 }
 
@@ -43,31 +44,60 @@ void AudioEffectHandler::Init()
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerDied);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerHit);
+		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnWindowFocusChanged);
 	}
 }
 
 bool AudioEffectHandler::OnPlayerDied(const PlayerDiedEvent& event)
 {
-	m_pPlayerKilledSound->PlayOnceAt(event.Position);
-	return true;
+	if (m_HasFocus)
+	{
+		m_pPlayerKilledSound->PlayOnceAt(event.Position);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool AudioEffectHandler::OnPlayerConnected(const PlayerConnectedEvent& event)
 {
-	m_pConnectSound->PlayOnceAt(event.Position);
-	return true;
+	if (m_HasFocus)
+	{
+		m_pConnectSound->PlayOnceAt(event.Position);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool AudioEffectHandler::OnPlayerHit(const PlayerHitEvent& event)
 {
-	if (event.IsLocal)
+	if (m_HasFocus)
 	{
-		m_pHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
+		if (event.IsLocal)
+		{
+			m_pHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
+		}
+		else
+		{
+			m_pEnemyHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
+		}
+
+		LOG_INFO("PLAYER HIT SOUND");
+		return true;
 	}
 	else
 	{
-		m_pEnemyHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
+		return false;
 	}
+}
 
-	return false;
+bool AudioEffectHandler::OnWindowFocusChanged(const LambdaEngine::WindowFocusChangedEvent& event)
+{
+	m_HasFocus = event.HasFocus;
+	return true;
 }

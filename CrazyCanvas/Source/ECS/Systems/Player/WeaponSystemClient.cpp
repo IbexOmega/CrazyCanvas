@@ -120,7 +120,8 @@ bool WeaponSystemClient::InitInternal()
 				{
 					{ NDA,	PlayerForeignComponent::Type() },
 					{ RW,	PacketComponent<PacketPlayerActionResponse>::Type() }
-				}
+				},
+				.ComponentGroups = { &playerGroup }
 			},
 			{
 				.pSubscriber		= &m_LocalPlayerEntities,
@@ -227,7 +228,8 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	else
 	{
 		// Send action to server
-		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponEntity);
+		const WeaponComponent& weaponComponent = pECS->GetConstComponent<WeaponComponent>(weaponEntity);
+		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
 		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
 		if (!actions.empty())
 		{
