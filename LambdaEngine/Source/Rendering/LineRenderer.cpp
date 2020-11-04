@@ -31,7 +31,7 @@ namespace LambdaEngine
 {
 	LineRenderer* LineRenderer::s_pInstance = nullptr;
 
-	LineRenderer::LineRenderer(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
+	LineRenderer::LineRenderer(const GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
@@ -268,10 +268,10 @@ namespace LambdaEngine
 			}
 		}
 		// Might be a bit too hard coded
-		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
-		{
-			m_DepthStencilBuffer = MakeSharedRef(ppPerSubImageTextureViews[0]);
-		}
+		// else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+		// {
+		// 	m_DepthStencilBuffer = MakeSharedRef(ppPerSubImageTextureViews[0]);
+		// }
 	}
 
 	void LineRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
@@ -370,7 +370,7 @@ namespace LambdaEngine
 		beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
 		beginRenderPassDesc.ppRenderTargets		= &backBuffer;
 		beginRenderPassDesc.RenderTargetCount	= 1;
-		beginRenderPassDesc.pDepthStencil		= m_DepthStencilBuffer.Get();
+		beginRenderPassDesc.pDepthStencil		= nullptr; //m_DepthStencilBuffer.Get();
 		beginRenderPassDesc.Width				= width;
 		beginRenderPassDesc.Height				= height;
 		beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
@@ -626,11 +626,11 @@ namespace LambdaEngine
 		colorAttachmentDesc.InitialState	= pBackBufferAttachmentDesc->InitialState;
 		colorAttachmentDesc.FinalState		= pBackBufferAttachmentDesc->FinalState;
 
-		RenderPassAttachmentDesc depthAttachmentDesc = *pDepthStencilAttachmentDesc;
+		// RenderPassAttachmentDesc depthAttachmentDesc = *pDepthStencilAttachmentDesc;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates			= { ETextureState::TEXTURE_STATE_RENDER_TARGET };
-		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+		// subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
 		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
@@ -642,7 +642,7 @@ namespace LambdaEngine
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName			= "Physics Renderer Render Pass";
-		renderPassDesc.Attachments			= { colorAttachmentDesc, depthAttachmentDesc };
+		renderPassDesc.Attachments			= { colorAttachmentDesc/*, depthAttachmentDesc*/ };
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 
@@ -677,7 +677,7 @@ namespace LambdaEngine
 
 		pipelineStateDesc.DepthStencilState = {};
 		pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
-		pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
+		pipelineStateDesc.DepthStencilState.DepthWriteEnable = false;
 
 		pipelineStateDesc.BlendState.BlendAttachmentStates =
 		{

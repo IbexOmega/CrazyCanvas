@@ -31,7 +31,7 @@ namespace LambdaEngine
 	class LineRenderer : public CustomRenderer
 	{
 	public:
-		LineRenderer(GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
+		LineRenderer(const GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount);
 		virtual ~LineRenderer();
 
 		virtual bool Init() override final;
@@ -45,7 +45,7 @@ namespace LambdaEngine
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 		FORCEINLINE virtual const String& GetName() const override
 		{
-			static String name = RENDER_GRAPH_PHYSICS_DEBUG_NAME;
+			static String name = RENDER_GRAPH_LINE_RENDERER_STAGE_NAME;
 			return name;
 		}
 
