@@ -451,10 +451,12 @@ namespace LambdaEngine
 		scissorRect.Width = width;
 		scissorRect.Height = height;
 
-		// Early exit if nothing to draw
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
+		pCommandList->BeginRenderPass(&beginRenderPassDesc);
+		pCommandList->SetViewports(&viewport, 0, 1);
+		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 		if (m_DrawCount == 0)
 		{
@@ -466,33 +468,27 @@ namespace LambdaEngine
 		{
 			// Render enemy with no culling to see backface of paint
 			bool renderEnemies = true;
-			RenderCull(renderEnemies, modFrameIndex, pCommandList, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDNoCull);
+			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
 
 			// Team members are transparent, Front Culling- and Back Culling is needed
 			renderEnemies = false;
-			RenderCull(renderEnemies, modFrameIndex, pCommandList, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDBackCull);
-			RenderCull(renderEnemies, modFrameIndex, pCommandList, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDFrontCull);
+			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
 		}
 
+		pCommandList->EndRenderPass();
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
 
-	void PlayerRenderer::RenderCull(bool renderEnemy, uint32 modFrameIndex,
+	void PlayerRenderer::RenderCull(bool renderEnemy,
 									CommandList* pCommandList, 
-									BeginRenderPassDesc& renderPassDesc, 
-									Viewport& viewport, 
-									ScissorRect& scissorRect, 
 									uint64& pipelineId) 
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
-
-		pCommandList->BeginRenderPass(&renderPassDesc);
-		pCommandList->SetViewports(&viewport, 0, 1);
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 		// Sort player rendering front to back
 		m_PlayerDistances.Resize(m_EntityIds.GetSize());
@@ -511,7 +507,7 @@ namespace LambdaEngine
 		// Rank indexes of distance2
 		std::iota(m_NextPlayerList.Begin(), m_NextPlayerList.End(), 0);
 		std::sort(m_NextPlayerList.Begin(), m_NextPlayerList.End(),
-			[&](uint32 i1, uint32 i2) {return m_PlayerDistances[i1] > m_PlayerDistances[i2]; });
+			[&](uint32 i1, uint32 i2) {return m_PlayerDistances[i1] < m_PlayerDistances[i2]; });
 
 		for (uint32 d = 0; d < m_DrawCount; d++)
 		{
