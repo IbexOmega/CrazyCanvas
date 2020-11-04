@@ -227,9 +227,10 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	}
 	else
 	{
-		// Send action to server
 		const WeaponComponent& weaponComponent = pECS->GetConstComponent<WeaponComponent>(weaponEntity);
 		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
+		
+		// Send action to server
 		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
 		if (!actions.empty())
 		{

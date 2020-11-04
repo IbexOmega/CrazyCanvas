@@ -64,9 +64,8 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	ComponentArray<WeaponComponent>*			pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
-	const ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>*			pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<WeaponComponent>*	pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
+	ComponentArray<RotationComponent>*	pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
 
 	/* Component arrays for moving character colliders */
 	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents	= pECS->GetComponentArray<CharacterColliderComponent>();
