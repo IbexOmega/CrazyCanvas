@@ -468,11 +468,17 @@ namespace LambdaEngine
 			return;
 		}
 
-		// Team members are transparent, Front Culling- and Back Culling is needed
-		RenderCull(false, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDFrontCull);
-		RenderCull(false, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDBackCull);
+		
 		// Render enemy with no culling to see backface of paint
-		RenderCull(true, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDNoCull);
+		bool renderEnemies = true;
+		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDNoCull);
+
+		// Team members are transparent, Front Culling- and Back Culling is needed
+		renderEnemies = false;
+		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDBackCull);
+		RenderCull(renderEnemies, modFrameIndex, ppFirstExecutionStage, beginRenderPassDesc, viewport, scissorRect, m_PipelineStateIDFrontCull);
+		
+
 	}
 
 
@@ -513,40 +519,37 @@ namespace LambdaEngine
 		// Rank indexes of distance2
 		std::iota(m_NextPlayerList.Begin(), m_NextPlayerList.End(), 0);
 		std::sort(m_NextPlayerList.Begin(), m_NextPlayerList.End(),
-			[&](uint32 i1, uint32 i2) {return m_PlayerDistances[i1] < m_PlayerDistances[i2]; });
+			[&](uint32 i1, uint32 i2) {return m_PlayerDistances[i1] > m_PlayerDistances[i2]; });
 
 		for (uint32 d = 0; d < m_DrawCount; d++)
 		{
 			// Skip drawing local player
 			if (d != m_ViewerDrawArgIndex)
 			{
-				// Get next closest player
+				// Get next furthest player
 				uint32 next = m_NextPlayerList.GetBack();
 				m_NextPlayerList.PopBack();
 				const DrawArg& drawArg = m_pDrawArgs[next];
 
 				// Push team id of current player
 				uint32 teamId = m_TeamIds[next];
+				bool isEnemy = (teamId == 1);
 
-				// Render only enemys
-				if (renderEnemy) {
-					if (teamId == 1) {
-						pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
-						pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-						pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[next].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-						pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[next].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
-						pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
-					}
-				}
-				else if (teamId == 0)
-				{
-					pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
-					pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[next].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[next].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
-					pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+				// Filter enemies if rendering teamates
+				if (!renderEnemy && isEnemy) {
+					continue;
 				}
 
+				// Filter teammates if rendering enemies
+				if (renderEnemy && !isEnemy) {
+					continue;
+				}
+
+				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
+				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[next].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[next].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 			}
 		}
 

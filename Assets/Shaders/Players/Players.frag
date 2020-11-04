@@ -76,12 +76,13 @@ void main()
 
 	// Only render team members and paint on enemy players
 	uint enemy = p_TeamIndex.Index;
-	if(enemy != 0 && shouldPaint < 0.5f)
+	bool isPaint = !(shouldPaint < 0.5f);
+	if(enemy && !isPaint)
 		discard;
 
 	//1
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 
-	// 5
-	out_Color 					= vec4(mix(storedAlbedo, color, shouldPaint), 0.6f);
+	// 5	
+	out_Color = vec4(mix(storedAlbedo, color, shouldPaint), isPaint ? 1.0f : 0.6f);
 }
