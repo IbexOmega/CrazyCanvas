@@ -19,12 +19,8 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<PacketComponent<PacketPlayerAction>>*			pPlayerActionPackets	= pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
 	ComponentArray<PacketComponent<PacketPlayerActionResponse>>*	pPlayerResponsePackets	= pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
-	ComponentArray<WeaponComponent>*	pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
-	ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>*	pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
-	const ComponentArray<VelocityComponent>*	pVelocityComponents	= pECS->GetComponentArray<VelocityComponent>();
-	const ComponentArray<OffsetComponent>*		pOffsetComponents	= pECS->GetComponentArray<OffsetComponent>();
-
+	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+	
 	// TODO: Check local response and maybe roll back
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
@@ -34,72 +30,31 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		// Foreign Players
 		if (!m_LocalPlayerEntities.HasElement(playerEntity))
 		{
-			PacketComponent<PacketPlayerActionResponse>& packets = pPlayerResponsePackets->GetData(playerEntity);
-			const TArray<PacketPlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
+			PacketComponent<PacketPlayerActionResponse>&	packets			= pPlayerResponsePackets->GetData(playerEntity);
+			const TArray<PacketPlayerActionResponse>&		receivedPackets	= packets.GetPacketsReceived();
 			for (const PacketPlayerActionResponse& response : receivedPackets)
 			{
 				if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
 				{
-					const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
-					PositionComponent& weaponPositionComp = pPositionComponents->GetData(weaponEntity);
-					RotationComponent& weaponRotationComp = pRotationComponents->GetData(weaponEntity);
-					glm::vec3 weaponPosition = CalculateWeaponPosition(
-						response.Position,
-						response.Rotation,
-						weaponPositionComp,
-						weaponRotationComp,
-						weaponOffsetComp);
-
-					Fire(
-						response.FiredAmmo,
-						playerEntity,
-						weaponEntity,
-						weaponPosition,
-						response.Rotation,
-						response.Velocity);
+					Fire(response.FiredAmmo, weaponEntity);
 				}
 			}
 
 			continue;
 		}
 
-		// LocalPlayers
+		// Local Player
 		PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
 		const bool hasAmmo		= weaponComponent.CurrentAmmunition > 0;
 		const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
+		const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
 		if (!hasAmmo && !isReloading)
 		{
 			StartReload(weaponComponent, playerActions);
 		}
 
-		const bool onCooldown = weaponComponent.CurrentCooldown > 0.0f;
-		if (onCooldown)
-		{
-			weaponComponent.CurrentCooldown -= dt;
-		}
-
-		if (isReloading)
-		{
-			weaponComponent.ReloadClock -= dt;
-			if (weaponComponent.ReloadClock < 0.0f)
-			{
-				weaponComponent.ReloadClock = 0.0f;
-				weaponComponent.CurrentAmmunition = AMMO_CAPACITY;
-			}
-		}
-
-		// Update position and orientation of weapon component
-		const PositionComponent& playerPositionComp = pPositionComponents->GetConstData(playerEntity);
-		const RotationComponent& playerRotationComp = pRotationComponents->GetConstData(playerEntity);
-		const OffsetComponent& weaponOffsetComp	= pOffsetComponents->GetConstData(weaponEntity);
-		PositionComponent& weaponPositionComp	= pPositionComponents->GetData(weaponEntity);
-		RotationComponent& weaponRotationComp	= pRotationComponents->GetData(weaponEntity);
-		glm::vec3 weaponPosition = CalculateWeaponPosition(
-			playerPositionComp.Position,
-			playerRotationComp.Quaternion,
-			weaponPositionComp,
-			weaponRotationComp,
-			weaponOffsetComp);
+		// Update reload and cooldown timers
+		UpdateWeapon(weaponComponent, dt);
 
 		// Reload if we are not reloading
 		if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
@@ -108,56 +63,32 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		}
 		else if (!onCooldown) // If we did not hit the reload try and shoot
 		{
-			const VelocityComponent& velocityComp = pVelocityComponents->GetConstData(playerEntity);
 			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
 			{
-				TryFire(
-					EAmmoType::AMMO_TYPE_PAINT,
-					weaponComponent,
-					playerActions,
-					weaponEntity,
-					weaponPosition,
-					playerRotationComp.Quaternion,
-					velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
 			}
 			else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
 			{
-				TryFire(
-					EAmmoType::AMMO_TYPE_WATER,
-					weaponComponent,
-					playerActions,
-					weaponEntity,
-					weaponPosition,
-					playerRotationComp.Quaternion,
-					velocityComp.Velocity);
+				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
 			}
 		}
 	}
 }
 
-void WeaponSystemClient::Fire(
-	EAmmoType ammoType, 
-	LambdaEngine::Entity weaponOwner, 
-	LambdaEngine::Entity weaponEntity, 
-	const glm::vec3& playerPos, 
-	const glm::quat& direction, 
-	const glm::vec3& playerVelocity)
+void WeaponSystemClient::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 {
 	using namespace LambdaEngine;
 
-	WeaponSystem::Fire(
-		ammoType,
-		weaponOwner,
-		weaponEntity,
-		playerPos,
-		direction,
-		playerVelocity);
+	WeaponSystem::Fire(ammoType, weaponEntity);
 
 	ECSCore* pECS = ECSCore::GetInstance();
+	const WeaponComponent&		weaponComponent		= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
+	const PositionComponent&	positionComponent	= pECS->GetConstComponent<PositionComponent>(weaponComponent.WeaponOwner);
+	const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
 
 	// Play gun fire and spawn particles
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
-	m_pSound->PlayOnceAt(playerPos, playerVelocity, 0.2f, 1.0f);
+	m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 0.2f, 1.0f);
 
 	ParticleEmitterComponent& emitterComp = pECS->GetComponent<ParticleEmitterComponent>(weaponEntity);
 	emitterComp.Active = true;
@@ -277,31 +208,31 @@ bool WeaponSystemClient::InitInternal()
 	return true;
 }
 
-bool WeaponSystemClient::TryFire(
-	EAmmoType ammoType,
-	WeaponComponent& weaponComponent,
-	PacketComponent<PacketPlayerAction>& packets,
-	LambdaEngine::Entity weaponEntity,
-	const glm::vec3& startPos,
-	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
+bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 {
 	using namespace LambdaEngine;
 
-	const bool didFire = WeaponSystem::TryFire(
-		ammoType,
-		weaponComponent,
-		packets,
-		weaponEntity,
-		startPos,
-		direction,
-		playerVelocity);
-
+	ECSCore* pECS = ECSCore::GetInstance();
+	const bool didFire = WeaponSystem::TryFire(ammoType, weaponEntity);
 	if (!didFire)
 	{
+		const WeaponComponent&		weaponComponent		= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
+		const PositionComponent&	positionComponent	= pECS->GetConstComponent<PositionComponent>(weaponEntity);
+		const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
+
 		// Play out of ammo
 		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(startPos, playerVelocity, 1.0f, 1.0f);
+		m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 1.0f, 1.0f);
+	}
+	else
+	{
+		// Send action to server
+		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponEntity);
+		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
+		if (!actions.empty())
+		{
+			actions.back().FiredAmmo = ammoType;
+		}
 	}
 
 	return didFire;

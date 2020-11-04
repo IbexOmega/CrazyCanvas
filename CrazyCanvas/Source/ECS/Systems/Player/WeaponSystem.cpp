@@ -28,6 +28,60 @@
 
 WeaponSystem* WeaponSystem::s_pInstance = nullptr;
 
+void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
+{
+	using namespace LambdaEngine;
+
+	if (ammoType == EAmmoType::AMMO_TYPE_NONE)
+	{
+		return;
+	}
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	WeaponComponent& weaponComponent = pECS->GetComponent<WeaponComponent>(weaponEntity);
+
+	const Entity weaponOwner = weaponComponent.WeaponOwner;
+	PositionComponent&			weaponPositionComponent	= pECS->GetComponent<PositionComponent>(weaponEntity);
+	RotationComponent&			weaponRotationComponent	= pECS->GetComponent<RotationComponent>(weaponEntity);
+	const OffsetComponent&		weaponOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(weaponEntity);
+	const PositionComponent&	positionComponent = pECS->GetConstComponent<PositionComponent>(weaponOwner);
+	const RotationComponent&	rotationComponent = pECS->GetConstComponent<RotationComponent>(weaponOwner);
+	const VelocityComponent&	velocityComponent = pECS->GetConstComponent<VelocityComponent>(weaponOwner);
+	const glm::quat& direction		= rotationComponent.Quaternion;
+	const glm::vec3& playerPos		= positionComponent.Position;
+	const glm::vec3& playerVelocity	= velocityComponent.Velocity;
+	
+	{
+		glm::quat quatY = direction;
+		quatY.x = 0;
+		quatY.z = 0;
+		quatY = glm::normalize(quatY);
+		weaponPositionComponent.Position	= playerPos + quatY * weaponOffsetComponent.Offset;
+		weaponRotationComponent.Quaternion	= direction;
+	}
+
+	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
+	const glm::vec3 weaponPos		= weaponPositionComponent.Position + GetForward(weaponRotationComponent.Quaternion) * 0.2f;
+	const glm::vec3 directionVec	= GetForward(glm::normalize(direction));
+	const glm::vec3 initialVelocity	= playerVelocity + directionVec * PROJECTILE_INITAL_SPEED;
+	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
+
+	// Fire event
+	WeaponFiredEvent firedEvent(
+		weaponOwner,
+		ammoType,
+		weaponPos,
+		initialVelocity,
+		direction,
+		playerTeam);
+	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
+	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
+	EventQueue::SendEventImmediate(firedEvent);
+
+	// Fire the gun
+	weaponComponent.CurrentAmmunition--;
+}
+
 bool WeaponSystem::Init()
 {
 	using namespace LambdaEngine;
@@ -82,55 +136,14 @@ bool WeaponSystem::InitInternal()
 	return true;
 }
 
-void WeaponSystem::Fire(
-	EAmmoType ammoType,
-	LambdaEngine::Entity weaponOwner,
-	LambdaEngine::Entity weaponEntity,
-	const glm::vec3& playerPos,
-	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
-{
-	using namespace LambdaEngine;
-
-	if (ammoType == EAmmoType::AMMO_TYPE_NONE)
-	{
-		return;
-	}
-
-	constexpr const float projectileInitialSpeed = 13.0f;
-	const glm::vec3 directionVec	= GetForward(glm::normalize(direction));
-	const glm::vec3 startPos		= playerPos;
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
-	const glm::vec3 initialVelocity	= playerVelocity + directionVec * projectileInitialSpeed;
-
-	// Fire event
-	WeaponFiredEvent firedEvent(
-		weaponOwner,
-		ammoType,
-		startPos,
-		initialVelocity,
-		direction,
-		playerTeam);
-	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
-	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
-	EventQueue::SendEventImmediate(firedEvent);
-}
-
-bool WeaponSystem::TryFire(
-	EAmmoType ammoType,
-	WeaponComponent& weaponComponent,
-	PacketComponent<PacketPlayerAction>& packets,
-	LambdaEngine::Entity weaponEntity,
-	const glm::vec3& startPos,
-	const glm::quat& direction,
-	const glm::vec3& playerVelocity)
+bool WeaponSystem::TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 {
 	using namespace LambdaEngine;
 
 	// Add cooldown
-	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
+	ECSCore* pECS = ECSCore::GetInstance();
+	WeaponComponent& weaponComponent	= pECS->GetComponent<WeaponComponent>(weaponEntity);
+	weaponComponent.CurrentCooldown		= 1.0f / weaponComponent.FireRate;
 
 	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
 	if (hasAmmo)
@@ -142,30 +155,34 @@ bool WeaponSystem::TryFire(
 			AbortReload(weaponComponent);
 		}
 
-		// Fire the gun
-		weaponComponent.CurrentAmmunition--;
-
-		// Send action to server
-		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
-		if (!actions.empty())
-		{
-			actions.back().FiredAmmo = ammoType;
-		}
-
 		// For creating entity
-		Fire(
-			ammoType, 
-			weaponComponent.WeaponOwner, 
-			weaponEntity, 
-			startPos, 
-			direction, 
-			playerVelocity);
-
+		Fire(ammoType, weaponEntity);
 		return true;
 	}
 	else
 	{
 		return false;
+	}
+}
+
+void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
+{
+	const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
+	const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
+
+	if (onCooldown)
+	{
+		weaponComponent.CurrentCooldown -= dt;
+	}
+
+	if (isReloading)
+	{
+		weaponComponent.ReloadClock -= dt;
+		if (weaponComponent.ReloadClock < 0.0f)
+		{
+			weaponComponent.ReloadClock = 0.0f;
+			weaponComponent.CurrentAmmunition = AMMO_CAPACITY;
+		}
 	}
 }
 

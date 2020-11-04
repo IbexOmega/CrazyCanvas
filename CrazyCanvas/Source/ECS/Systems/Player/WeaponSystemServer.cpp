@@ -14,11 +14,7 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<PacketComponent<PacketPlayerAction>>*			pPlayerActionPackets	= pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
 	ComponentArray<PacketComponent<PacketPlayerActionResponse>>*	pPlayerResponsePackets	= pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
-	ComponentArray<WeaponComponent>*	pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
-	ComponentArray<PositionComponent>*	pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>*	pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
-	const ComponentArray<VelocityComponent>*	pVelocityComponents	= pECS->GetComponentArray<VelocityComponent>();
-	const ComponentArray<OffsetComponent>*		pOffsetComponents	= pECS->GetComponentArray<OffsetComponent>();
+	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
@@ -30,20 +26,8 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		const bool isReloading	= weaponComp.ReloadClock > 0.0f;
 		const bool onCooldown	= weaponComp.CurrentCooldown > 0.0f;
 
-		if (onCooldown)
-		{
-			weaponComp.CurrentCooldown -= dt;
-		}
-
-		if (isReloading)
-		{
-			weaponComp.ReloadClock -= dt;
-			if (weaponComp.ReloadClock < 0.0f)
-			{
-				weaponComp.ReloadClock = 0.0f;
-				weaponComp.CurrentAmmunition = AMMO_CAPACITY;
-			}
-		}
+		// Update reload and cooldown timers
+		UpdateWeapon(weaponComp, dt);
 
 		PacketComponent<PacketPlayerAction>&			actionsRecived	= pPlayerActionPackets->GetData(remotePlayerEntity);
 		PacketComponent<PacketPlayerActionResponse>&	responsesToSend	= pPlayerResponsePackets->GetData(remotePlayerEntity);
@@ -66,34 +50,14 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				if (hasAmmo)
 				{
 					// Update position and orientation of weapon component
-					const PositionComponent& playerPositionComp	= pPositionComponents->GetConstData(remotePlayerEntity);
-					const RotationComponent& playerRotationComp	= pRotationComponents->GetConstData(remotePlayerEntity);
-					const VelocityComponent& velocityComp		= pVelocityComponents->GetConstData(remotePlayerEntity);
-					const OffsetComponent& weaponOffsetComp = pOffsetComponents->GetConstData(weaponEntity);
-					PositionComponent& weaponPositionComp	= pPositionComponents->GetData(weaponEntity);
-					RotationComponent& weaponRotationComp	= pRotationComponents->GetData(weaponEntity);
-					glm::vec3 weaponPosition = CalculateWeaponPosition(
-						playerPositionComp.Position,
-						playerRotationComp.Quaternion,
-						weaponPositionComp,
-						weaponRotationComp,
-						weaponOffsetComp);
-
 					const EAmmoType ammoType = packetsRecived[i].FiredAmmo;
 					packetsToSend.back().FiredAmmo = ammoType;
 
 					// Handle fire
-					weaponComp.CurrentAmmunition--;
 					weaponComp.CurrentCooldown = 1.0f / weaponComp.FireRate;
 
 					// Create projectile
-					Fire(
-						ammoType,
-						remotePlayerEntity,
-						weaponEntity,
-						weaponPosition,
-						playerRotationComp.Quaternion,
-						velocityComp.Velocity);
+					Fire(ammoType, weaponEntity);
 				}
 			}
 		}
@@ -111,7 +75,7 @@ bool WeaponSystemServer::InitInternal()
 
 	// Register system
 	{
-		PlayerGroup playerGroup;
+		PlayerGroup playerGroup = {};
 		playerGroup.Position.Permissions	= R;
 		playerGroup.Scale.Permissions		= R;
 		playerGroup.Rotation.Permissions	= R;
@@ -139,6 +103,4 @@ bool WeaponSystemServer::InitInternal()
 	}
 
 	return true;
-
-	return false;
 }

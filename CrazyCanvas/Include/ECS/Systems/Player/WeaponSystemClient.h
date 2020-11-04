@@ -13,16 +13,11 @@ public:
 
 	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) override final;
 
-	virtual void Fire(
-		EAmmoType ammoType,
-		LambdaEngine::Entity weaponOwner,
-		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& playerPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity) override final;
+	virtual void Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity) override final;
 
 protected:
 	virtual bool InitInternal() override final;
+	virtual bool TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity) override final;
 
 	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam) override final
 	{
@@ -42,15 +37,6 @@ protected:
 			return m_WaterProjectileMeshComponent;
 		}
 	}
-
-	virtual bool TryFire(
-		EAmmoType ammoType,
-		WeaponComponent& weaponComponent,
-		PacketComponent<PacketPlayerAction>& packets,
-		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& startPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity) override final;
 
 private:
 	LambdaEngine::IDVector m_LocalPlayerEntities;

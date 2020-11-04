@@ -48,29 +48,6 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 }
 
 /*
-* Helpers
-*/
-
-inline glm::vec3 CalculateWeaponPosition(
-	const glm::vec3& playerPosition,
-	const glm::quat& playerRotation,
-	LambdaEngine::PositionComponent& weaponPositionComp,
-	LambdaEngine::RotationComponent& weaponRotationComp,
-	const LambdaEngine::OffsetComponent& weaponOffsetComp)
-{
-	glm::vec3 weaponPosition;
-	glm::quat quatY = playerRotation;
-	quatY.x = 0;
-	quatY.z = 0;
-	quatY = glm::normalize(quatY);
-	weaponPositionComp.Position = playerPosition + quatY * weaponOffsetComp.Offset;
-	weaponRotationComp.Quaternion = playerRotation;
-
-	weaponPosition = weaponPositionComp.Position + LambdaEngine::GetForward(weaponRotationComp.Quaternion) * 0.2f;
-	return weaponPosition;
-}
-
-/*
 * WeaponSystem
 */
 
@@ -88,13 +65,9 @@ public:
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	virtual void Fire(
-		EAmmoType ammoType,
-		LambdaEngine::Entity weaponOwner,
-		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& playerPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity);
+	virtual void Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
+	// Returns true if we could fire
+	virtual bool TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
 
 public:
 	static bool Init();
@@ -116,15 +89,7 @@ protected:
 		return LambdaEngine::MeshComponent();
 	}
 
-	// Returns true if we could fire
-	virtual bool TryFire(
-		EAmmoType ammoType,
-		WeaponComponent& weaponComponent,
-		PacketComponent<PacketPlayerAction>& packets,
-		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& startPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity);
+	void UpdateWeapon(WeaponComponent& weaponComponent, float32 dt);
 
 	void StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets);
 	void AbortReload(WeaponComponent& weaponComponent);
