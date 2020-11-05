@@ -799,7 +799,8 @@ namespace LambdaEngine
 			{
 				.Entity = pActorUserDatas[actorIdx]->Entity,
 				.Position = { contactPoint.position.x, contactPoint.position.y, contactPoint.position.z },
-				.Direction = direction
+				.Direction = direction,
+				.Normal = { contactPoint.normal.x, contactPoint.normal.y, contactPoint.normal.z }
 			};
 		}
 

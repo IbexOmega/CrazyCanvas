@@ -164,8 +164,39 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	return true;
 }
 
-void HUDGUI::DisplayHitIndicator(const glm::vec3& direction)
+void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
 {
+	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
+
+	glm::vec3 forwardDir = glm::normalize(glm::vec3(direction.x, 0.0f, direction.z));
+	glm::vec3 nor = glm::normalize(glm::vec3(collisionNormal.x, 0.0f, collisionNormal.z));
+
+	float32 result = glm::dot(forwardDir, nor);
+	float32 rotation = 0.0f;
+
+
+	if (result > 0.99f)
+	{
+		rotation = 0.0f;
+	}
+	else if (result < -0.99f)
+	{
+		rotation = 180.0f;
+	}
+	else
+	{
+		glm::vec3 res = glm::cross(forwardDir, nor);
+
+		rotation = glm::degrees(glm::acos(glm::dot(forwardDir, nor)));
+		
+		if (res.y > 0)
+		{
+			rotation *= -1;
+		}
+	}
+
+	rotateTransform->SetAngle(rotation);
+	m_pHitIndicatorGrid->SetRenderTransform(rotateTransform);
 }
 
 void HUDGUI::InitGUI()
@@ -184,6 +215,8 @@ void HUDGUI::InitGUI()
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
+
+	m_pHitIndicatorGrid = FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 
 	std::string ammoString;
 

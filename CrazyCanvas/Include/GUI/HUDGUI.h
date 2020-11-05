@@ -52,7 +52,7 @@ public:
 	bool UpdateScore();
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 
-	void DisplayHitIndicator(const glm::vec3& direction);
+	void DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 
 private:
 
@@ -68,4 +68,6 @@ private:
 	
 	Noesis::TextBlock* m_pWaterAmmoText;
 	Noesis::TextBlock* m_pPaintAmmoText;
+
+	Noesis::Grid* m_pHitIndicatorGrid;
 };
