@@ -37,7 +37,7 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceDesc deviceDesc = { };
 #ifdef LAMBDA_DEVELOPMENT
-		deviceDesc.Debug = EngineConfig::GetBoolProperty("EnableValidationLayersInDebug");
+		deviceDesc.Debug = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_VALIDATION_LAYER_IN_DEBUG);
 #else
 		deviceDesc.Debug = false;
 #endif

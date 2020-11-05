@@ -13,29 +13,41 @@
 
 namespace LambdaEngine
 {
-	void SingleplayerInitializer::InitSingleplayer()
+	void SingleplayerInitializer::Init()
 	{
 		using namespace LambdaEngine;
 
-		PacketCreateLevelObject packet;
-		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
-		packet.Position = glm::vec3(0.0f, 2.0f, 0.0f);
-		packet.Forward = glm::vec3(1.0f, 0.0f, 0.0f);
-		packet.Player.TeamIndex = 0;
-		packet.Player.IsMySelf = true;
-		packet.Player.WeaponNetworkUID = 1;
-		packet.NetworkUID = 0;
-
 		MultiplayerUtils::SetIsSingleplayer(true);
-		ClientSystem& clientSystem = ClientSystem::GetInstance();
-		ClientBase* pClient = clientSystem.GetClient();
+	}
 
-		NetworkSegment* pNetworkSegment = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
+	void SingleplayerInitializer::Release()
+	{
+		MultiplayerUtils::SetIsSingleplayer(false);
+	}
 
-		pNetworkSegment->Write(&packet);
+	void SingleplayerInitializer::Setup()
+	{
+		if (MultiplayerUtils::IsSingleplayer())
+		{
+			PacketCreateLevelObject packet;
+			packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
+			packet.Position = glm::vec3(0.0f, 2.0f, 0.0f);
+			packet.Forward = glm::vec3(1.0f, 0.0f, 0.0f);
+			packet.Player.TeamIndex = 0;
+			packet.Player.IsMySelf = true;
+			packet.Player.WeaponNetworkUID = 1;
+			packet.NetworkUID = 0;
 
-		clientSystem.OnPacketReceived(pClient, pNetworkSegment);
+			ClientSystem& clientSystem = ClientSystem::GetInstance();
+			ClientBase* pClient = clientSystem.GetClient();
 
-		pClient->ReturnPacket(pNetworkSegment);
+			NetworkSegment* pNetworkSegment = pClient->GetFreePacket(PacketType::CREATE_LEVEL_OBJECT);
+
+			pNetworkSegment->Write(&packet);
+
+			clientSystem.OnPacketReceived(pClient, pNetworkSegment);
+
+			pClient->ReturnPacket(pNetworkSegment);
+		}
 	}
 }

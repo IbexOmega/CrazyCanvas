@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Physics/PhysX/PhysX.h"
 
 /*	This filter shader controls which collisions are registered by PhysX. It is a copy-paste from the PhysX SDK's
@@ -16,7 +15,7 @@ physx::PxFilterFlags FilterShader(
 	UNREFERENCED_VARIABLE(constantBlockSize);
 
 	// Trigger the contact callback for pairs (A,B) where the filtermask of A contains the ID of B and vice versa
-	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1) && (filterData0.word2 != filterData1.word2))
 	{
 		if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
 		{

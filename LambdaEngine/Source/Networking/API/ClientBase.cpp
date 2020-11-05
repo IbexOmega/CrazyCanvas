@@ -324,8 +324,7 @@ namespace LambdaEngine
 		if (m_pSocket)
 		{
 			m_pSocket->Close();
-			delete m_pSocket;
-			m_pSocket = nullptr;
+			SAFEDELETE(m_pSocket);
 		}
 		
 		LOG_INFO("[ClientBase]: Disconnected");

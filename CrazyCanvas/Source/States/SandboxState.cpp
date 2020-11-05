@@ -65,6 +65,12 @@
 
 using namespace LambdaEngine;
 
+
+SandboxState::SandboxState()
+{
+	SingleplayerInitializer::Init();
+}
+
 SandboxState::~SandboxState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
@@ -76,6 +82,8 @@ SandboxState::~SandboxState()
 	}
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	SingleplayerInitializer::Release();
 }
 
 void SandboxState::Init()
@@ -87,12 +95,13 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
-	
+	WeaponSystem::Init();
+
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
-	m_RenderGraphWindow = EngineConfig::GetBoolProperty("ShowRenderGraph");
-	m_ShowDemoWindow	= EngineConfig::GetBoolProperty("ShowDemo");
-	m_DebuggingWindow	= EngineConfig::GetBoolProperty("Debugging");
+	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
+	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
+	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
 
 	m_GUITest	= *new GUITest("Test.xaml");
 	m_View		= Noesis::GUI::CreateView(m_GUITest);
@@ -227,12 +236,12 @@ void SandboxState::Init()
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		// Audio
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc =
 		{
 			.pName = "RobotSoundInstance",
-			.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+			.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
 			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 			.Position = position,
 			.Volume = 0.03f
@@ -261,6 +270,22 @@ void SandboxState::Init()
 			}
 		);
 	}
+
+
+	// Create dirLight
+	//{
+	//	DirectionalLightComponent directionalLightComponent =
+	//	{
+	//		.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 5.0f),
+	//	};
+
+	//	m_DirLight = pECS->CreateEntity();
+	//	pECS->AddComponent<PositionComponent>(m_DirLight, { true, glm::vec3(0.f) });
+	//	pECS->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt(glm::normalize(glm::vec3(0.5f, -1.0f, 0.5f)), g_DefaultUp) });
+	//	pECS->AddComponent<DirectionalLightComponent>(m_DirLight, directionalLightComponent);
+
+	//	D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+	//}
 
 	//Preload some resources
 	{
@@ -326,7 +351,15 @@ void SandboxState::Init()
 			}
 		});
 
-	SingleplayerInitializer::InitSingleplayer();
+	ConsoleCommand cmdDebugLights;
+	cmdDebugLights.Init("debug_light", true);
+	cmdDebugLights.AddArg(Arg::EType::BOOL);
+	cmdDebugLights.AddDescription("Debugging Directional Light'");
+	GameConsole::Get().BindCommand(cmdDebugLights, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	SingleplayerInitializer::Setup();
 }
 
 void SandboxState::Resume()
@@ -473,6 +506,56 @@ void SandboxState::RenderImgui()
 			}
 
 			ImGui::End();
+		}
+
+		if (m_DirLightDebug)
+		{
+			// If you want to use this debug you have to create a directional light entity and store entityID in m_DirLight
+			ECSCore* pECSCore = ECSCore::GetInstance();
+
+			auto* pDirLightComps = pECSCore->GetComponentArray<DirectionalLightComponent>();
+			auto* pPosComps = pECSCore->GetComponentArray<PositionComponent>();
+			auto* pRotComps = pECSCore->GetComponentArray<RotationComponent>();
+
+			if (pDirLightComps->HasComponent(m_DirLight))
+			{
+				auto& dirLightComp = pDirLightComps->GetData(m_DirLight);
+				auto& posComp = pPosComps->GetData(m_DirLight);
+				auto& rotComp = pRotComps->GetData(m_DirLight);
+
+				static glm::vec3 mRotation = glm::eulerAngles(rotComp.Quaternion);
+
+				if (ImGui::Begin("DirLight Debugging"))
+				{
+					ImGui::Text("Position: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##X", &posComp.Position.x);
+					ImGui::InputFloat("##Y", &posComp.Position.y);
+					ImGui::InputFloat("##Z", &posComp.Position.z);
+
+					ImGui::Text("Rotation: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##rotX", &mRotation.x);
+					ImGui::InputFloat("##rotY", &mRotation.y);
+					ImGui::InputFloat("##rotZ", &mRotation.z);
+
+					ImGui::Text("Frustum Width: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Frustum Width", &dirLightComp.FrustumWidth);
+					ImGui::Text("Frustum Height: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Frustum Height", &dirLightComp.FrustumHeight);
+					ImGui::Text("Z-Near: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Z-Near", &dirLightComp.FrustumZNear);
+					ImGui::Text("Z-Far: ");
+					ImGui::SameLine();
+					ImGui::InputFloat("##Z-Far", &dirLightComp.FrustumZFar);
+				}
+				ImGui::End();
+
+				rotComp.Quaternion = glm::quatLookAt(glm::normalize(mRotation), g_DefaultUp);
+			}
 		}
 	});
 }

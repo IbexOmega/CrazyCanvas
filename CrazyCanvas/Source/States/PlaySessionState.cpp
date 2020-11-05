@@ -7,8 +7,6 @@
 #include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/ECSCore.h"
 
-#include "Engine/EngineConfig.h"
-
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
@@ -42,10 +40,22 @@ PlaySessionState::PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndP
 	m_EndPoint(endPoint),
 	m_MultiplayerClient()
 {
+	using namespace LambdaEngine;
+
+	if (m_Singleplayer)
+	{
+		SingleplayerInitializer::Init();
+	}
 }
 
 PlaySessionState::~PlaySessionState()
 {
+	using namespace LambdaEngine;
+
+	if (m_Singleplayer)
+	{
+		SingleplayerInitializer::Release();
+	}
 }
 
 void PlaySessionState::Init()
@@ -74,7 +84,7 @@ void PlaySessionState::Init()
 
 	if (m_Singleplayer)
 	{
-		SingleplayerInitializer::InitSingleplayer();
+		SingleplayerInitializer::Setup();
 	}
 	else
 	{

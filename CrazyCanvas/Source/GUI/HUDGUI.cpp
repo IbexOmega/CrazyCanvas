@@ -1,9 +1,8 @@
-#include "Game/State.h"
-
-#include "Engine/EngineConfig.h"
-
 #include "GUI/HUDGUI.h"
+#include "GUI/CountdownGUI.h"
 #include "GUI/Core/GUIApplication.h"
+
+#include "Game/State.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -17,19 +16,18 @@
 #include "Match/Match.h"
 
 #include <string>
-
+#include "..\..\Include\GUI\HUDGUI.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) : 
+HUDGUI::HUDGUI() : 
 	m_GUIState()
 {
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+	Noesis::GUI::LoadComponent(this, "HUD.xaml");
 
 	InitGUI();
 }
-
 
 HUDGUI::~HUDGUI()
 {
@@ -41,7 +39,7 @@ void HUDGUI::OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::Rou
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	ApplyDamage(10);
+	//ApplyDamage(10);
 }
 
 void HUDGUI::OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -58,7 +56,6 @@ void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 	UpdateScore();
 }
 
-
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
@@ -69,94 +66,136 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 	return false;
 }
 
-bool HUDGUI::ApplyDamage(float damage)
+bool HUDGUI::UpdateHealth(int32 currentHealth)
 {
 	//Returns false if player is dead
-
-	m_GUIState.DamageTaken += damage;
-	std::string life;
-
-	if (m_GUIState.DamageTaken < m_GUIState.LifeMaxHeight)
+	if (currentHealth != m_GUIState.Health)
 	{
-		float percent = (damage / m_GUIState.LifeMaxHeight) * 100;
-		m_GUIState.Health -= percent;
+		Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
+		SolidColorBrush* pBrush = (SolidColorBrush*)pHpRect->GetBackground();
+		Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
 
-		life = std::to_string((int)m_GUIState.Health) + " %";
+		float healthScale = (float)currentHealth / (float)m_GUIState.MaxHealth;
+		scale->SetCenterX(0.0);
+		scale->SetCenterY(0.0);
+		scale->SetScaleX(healthScale);
+		pHpRect->SetRenderTransform(scale);
 
-		FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
-		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
-	}
-	else
-	{
-		life = "0 %";
-		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(life.c_str());
+		std::string hpString = std::to_string((int32)(healthScale * 100)) + "%";
+		FrameworkElement::FindName<Noesis::TextBlock>("HEALTH_DISPLAY")->SetText(hpString.c_str());
 
-		{//Resets
-			m_GUIState.DamageTaken = 0.0;
-			m_GUIState.Health = 100.0;
-			FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT")->SetHeight(m_GUIState.DamageTaken);
-		}
-		return false;
+		m_GUIState.Health = currentHealth;
+
+		if (m_GUIState.Health <= 0)
+			return false;
+		else if(m_GUIState.Health <= 20)
+			pBrush->SetColor(Color(255, 28, 0));
+		else if(m_GUIState.Health <= 40)
+			pBrush->SetColor(Color(255, 132, 0));
+		else if(m_GUIState.Health <= 60)
+			pBrush->SetColor(Color(255, 188, 0));
+		else if(m_GUIState.Health <= 80)
+			pBrush->SetColor(Color(141, 207, 0));		
+		else if(m_GUIState.Health == 100)
+			pBrush->SetColor(Color(0, 207, 56));
 	}
 	return true;
 }
 
 bool HUDGUI::UpdateScore()
 {
-	//Returns false if game Over
 	std::string scoreString;
 
-	if (m_GUIState.Scores[0] != Match::GetScore(0) || m_GUIState.Scores[1] != Match::GetScore(1))
+	if (m_GUIState.Scores[0] != Match::GetScore(0))
 	{
 		m_GUIState.Scores[0] = Match::GetScore(0);
-		m_GUIState.Scores[1] = Match::GetScore(1);
-		scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
 
-		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+		scoreString = std::to_string(m_GUIState.Scores[0]);
+
+		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText(scoreString.c_str());
+	}
+	else if (m_GUIState.Scores[1] != Match::GetScore(1))
+	{
+		m_GUIState.Scores[1] = Match::GetScore(1);
+
+		scoreString = std::to_string(m_GUIState.Scores[1]);
+
+		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText(scoreString.c_str());
 	}
 	return true;
 }
 
-bool HUDGUI::UpdateAmmo(int32 currentAmmo, int32 ammoCap)
+bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType)
 {
 	//Returns false if Out Of Ammo
 	std::string ammoString;
+	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
 
-	m_GUIState.Ammo			= currentAmmo;
-	m_GUIState.AmmoCapacity = ammoCap;
-	
-	ammoString = std::to_string(m_GUIState.Ammo) + "/" + std::to_string(m_GUIState.AmmoCapacity);
+	auto ammo = WeaponTypeAmmo.find(ammoType);
 
-	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
-
-	if (currentAmmo <= 0)
+	if (ammo != WeaponTypeAmmo.end())
 	{
+		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
+		float ammoScale = (float)ammo->second.first / (float)ammo->second.second;
+		scale->SetCenterX(0.0);
+		scale->SetCenterY(0.0);
+		scale->SetScaleX(ammoScale);
+	}
+	else
+	{
+		LOG_ERROR("Non-existing ammoType");
 		return false;
 	}
+
+
+	if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+	{
+		m_pWaterAmmoText->SetText(ammoString.c_str());
+		m_pWaterAmmoRect->SetRenderTransform(scale);
+	}
+	else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+	{
+		m_pPaintAmmoText->SetText(ammoString.c_str());
+		m_pPaintAmmoRect->SetRenderTransform(scale);
+	}
+
 	return true;
+}
+
+void HUDGUI::UpdateCountdown(uint8 countDownTime)
+{
+	CountdownGUI* pCountdownGUI = FindName<CountdownGUI>("COUNTDOWN");
+	pCountdownGUI->UpdateCountdown(countDownTime);
+}
+
+void HUDGUI::DisplayHitIndicator(const glm::vec3& direction)
+{
 }
 
 void HUDGUI::InitGUI()
 {
-	Noesis::Rectangle* pHpRect = FrameworkElement::FindName<Noesis::Rectangle>("HEALTH_RECT");
+	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
 
-	m_GUIState.DamageTaken		= 0.0;
-	m_GUIState.LifeMaxHeight	= pHpRect->GetHeight();
-	m_GUIState.Health			= 100.0;
+	m_GUIState.Health			= m_GUIState.MaxHealth;
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
 
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 
-	pHpRect->SetHeight(0.0);
+	m_pWaterAmmoRect = FrameworkElement::FindName<Border>("WATER_RECT");
+	m_pPaintAmmoRect = FrameworkElement::FindName<Border>("PAINT_RECT");
 
-	std::string scoreString;
+	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
+	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
+
 	std::string ammoString;
 
 	ammoString	= std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
-	scoreString = std::to_string(m_GUIState.Scores[0]) + "/" + std::to_string(m_GUIState.Scores[1]);
 
-	FrameworkElement::FindName<TextBlock>("AMMUNITION_DISPLAY")->SetText(ammoString.c_str());
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY")->SetText(scoreString.c_str());
+	m_pWaterAmmoText->SetText(ammoString.c_str());
+	m_pPaintAmmoText->SetText(ammoString.c_str());
+
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
 }

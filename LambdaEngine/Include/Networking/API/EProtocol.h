@@ -1,7 +1,23 @@
 #pragma once
 
-enum EProtocol
+#include "LambdaEngine.h"
+
+#include "Containers/String.h"
+
+namespace LambdaEngine
 {
-	TCP,
-	UDP
-};
+	enum EProtocol
+	{
+		TCP,
+		UDP
+	};
+
+	class EProtocolParser
+	{
+		DECL_STATIC_CLASS(EProtocolParser);
+
+	public:
+		static String ToString(EProtocol protocol);
+		static EProtocol FromString(const String& string);
+	};
+}

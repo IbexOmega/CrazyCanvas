@@ -37,7 +37,7 @@ namespace LambdaEngine
 		virtual bool Init() = 0;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) = 0;
-
+		virtual bool RenderGraphPostInit() { return true; };
 
 		/*
 		* Called every frame, can be used for internal resource handling in custom renderers
