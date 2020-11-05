@@ -9,11 +9,15 @@ namespace LambdaEngine
 	struct AudioGeometryDesc;
 	struct ReverbSphereDesc;
 	struct SoundEffect3DDesc;
+	struct SoundEffect2DDesc;
 	struct SoundInstance3DDesc;
+	struct SoundInstance2DDesc;
 
 	class IMusic;
 	class ISoundEffect3D;
+	class ISoundEffect2D;
 	class ISoundInstance3D;
+	class ISoundInstance2D;
 	class IAudioGeometry;
 	class IReverbSphere;
 
@@ -60,8 +64,10 @@ namespace LambdaEngine
 
 		virtual uint32				CreateAudioListener()									= 0;
 		virtual IMusic*				CreateMusic(const MusicDesc* pDesc)						= 0;
-		virtual ISoundEffect3D*		CreateSoundEffect(const SoundEffect3DDesc* pDesc)		= 0;
-		virtual ISoundInstance3D*	CreateSoundInstance(const SoundInstance3DDesc* pDesc)	= 0;
+		virtual ISoundEffect3D*		Create3DSoundEffect(const SoundEffect3DDesc* pDesc)		= 0;
+		virtual ISoundEffect2D*		Create2DSoundEffect(const SoundEffect2DDesc* pDesc)		= 0;
+		virtual ISoundInstance3D*	Create3DSoundInstance(const SoundInstance3DDesc* pDesc)	= 0;
+		virtual ISoundInstance2D*	Create2DSoundInstance(const SoundInstance2DDesc* pDesc)	= 0;
 		virtual IAudioGeometry*		CreateAudioGeometry(const AudioGeometryDesc* pDesc)		= 0;
 		virtual IReverbSphere*		CreateReverbSphere(const ReverbSphereDesc* pDesc)		= 0;
 

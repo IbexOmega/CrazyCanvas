@@ -63,4 +63,6 @@ void MatchBase::ResetMatch()
 	{
 		SetScore(i, 0);
 	}
+
+	m_HasBegun = false;
 }
