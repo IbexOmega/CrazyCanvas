@@ -118,6 +118,7 @@ namespace LambdaEngine
 		SAFEDELETE_ALL(s_Animations);
 		SAFEDELETE_ALL(s_SoundEffects3D);
 		SAFEDELETE_ALL(s_SoundEffects2D);
+		SAFEDELETE_ALL(s_Music);
 
 		// TODO: Change to TSharedRef would prevent for the need of these
 		SAFERELEASE_ALL(s_Textures);
