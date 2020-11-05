@@ -309,6 +309,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 
 			CreatePlayerDesc createPlayerDesc =
 			{
+				.ClientUID			= event.pClient->GetUID(),
 				.IsLocal 			= false,
 				.PlayerNetworkUID 	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,

@@ -29,7 +29,8 @@
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 #include "Multiplayer/Packet/PacketType.h"
-#include "Lobby/PlayerManager.h"
+#include "Lobby/PlayerManagerClient.h"
+#include "Lobby/PlayerManagerServer.h"
 #include "Chat/ChatManager.h"
 
 #include <rapidjson/document.h>
@@ -61,8 +62,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	PacketType::Init();
 	PacketTranscoderSystem::GetInstance().Init();
-	PlayerManager::Init();
-	ChatManager::Init();
 
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
 	RenderSystem::GetInstance().InitRenderGraphs();
@@ -115,6 +114,13 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+
+	if(MultiplayerUtils::IsServer())
+		PlayerManagerServer::Init();
+	else
+		PlayerManagerClient::Init();
+
+	ChatManager::Init();
 }
 
 CrazyCanvas::~CrazyCanvas()
@@ -125,7 +131,7 @@ CrazyCanvas::~CrazyCanvas()
 	}
 
 	ChatManager::Release();
-	PlayerManager::Release();
+	PlayerManagerBase::Release();
 	PacketType::Release();
 }
 
@@ -134,8 +140,11 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 	Render(delta);
 }
 
-void CrazyCanvas::FixedTick(LambdaEngine::Timestamp)
-{}
+void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
+{
+	if (LambdaEngine::MultiplayerUtils::IsServer())
+		PlayerManagerServer::FixedTick(delta);
+}
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)
 {}

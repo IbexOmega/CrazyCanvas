@@ -12,6 +12,7 @@
 #include "Multiplayer/Packet/PacketFlagEdited.h"
 #include "Multiplayer/Packet/PacketJoin.h"
 #include "Multiplayer/Packet/PacketLeave.h"
+#include "Multiplayer/Packet/PacketPlayerInfo.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -29,6 +30,7 @@ uint16 PacketType::CONFIGURE_SERVER			= 0;
 uint16 PacketType::JOIN						= 0;
 uint16 PacketType::LEAVE					= 0;
 uint16 PacketType::CHAT_MESSAGE				= 0;
+uint16 PacketType::PLAYER_INFO				= 0;
 
 void PacketType::Init()
 {
@@ -45,6 +47,7 @@ void PacketType::Init()
 	JOIN					= RegisterPacketType<PacketJoin>();
 	LEAVE					= RegisterPacketType<PacketLeave>();
 	CHAT_MESSAGE			= RegisterPacketTypeRaw();
+	PLAYER_INFO				= RegisterPacketType<PacketPlayerInfo>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

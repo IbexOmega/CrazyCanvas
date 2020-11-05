@@ -4,7 +4,10 @@ using namespace LambdaEngine;
 
 Player::Player() : 
     m_Name(),
+    m_Entity(UINT32_MAX),
     m_Ping(),
+    m_State(PLAYER_STATE_LOBBY),
+    m_Team(0),
     m_Kills(0),
     m_Deaths(0),
     m_FlagsCaptured(0),
@@ -19,27 +22,42 @@ const String& Player::GetName() const
     return m_Name;
 }
 
-Timestamp Player::GetPing() const
+LambdaEngine::Entity Player::GetEntity() const
+{
+    return m_Entity;
+}
+
+uint16 Player::GetPing() const
 {
     return m_Ping;
 }
 
-uint16 Player::GetKills() const
+EPlayerState Player::GetState() const
+{
+    return m_State;
+}
+
+uint8 Player::GetTeam() const
+{
+    return m_Team;
+}
+
+uint8 Player::GetKills() const
 {
     return m_Kills;
 }
 
-uint16 Player::GetDeaths() const
+uint8 Player::GetDeaths() const
 {
     return m_Deaths;
 }
 
-uint16 Player::GetFlagsCaptured() const
+uint8 Player::GetFlagsCaptured() const
 {
     return m_FlagsCaptured;
 }
 
-uint16 Player::GetFlagsDefended() const
+uint8 Player::GetFlagsDefended() const
 {
     return m_FlagsDefended;
 }

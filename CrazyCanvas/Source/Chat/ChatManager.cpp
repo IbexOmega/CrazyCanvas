@@ -2,7 +2,9 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Lobby/PlayerManager.h"
+#include "Events/ChatEvents.h"
+
+#include "Lobby/PlayerManagerClient.h"
 
 #include "Networking/API/BinaryDecoder.h"
 #include "Networking/API/BinaryEncoder.h"
@@ -13,9 +15,10 @@
 
 #include "Multiplayer/Packet/PacketType.h"
 
+
 using namespace LambdaEngine;
 
-TArray<String> ChatManager::m_ChatHistory;
+TArray<ChatMessage> ChatManager::m_ChatHistory;
 
 void ChatManager::Init()
 {
@@ -29,12 +32,15 @@ void ChatManager::Release()
 	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(&ChatManager::OnClientConnected);
 }
 
-NetworkSegment* ChatManager::MakePacket(LambdaEngine::IClient* pClient, uint64 uid, const LambdaEngine::String message)
+NetworkSegment* ChatManager::MakePacket(IClient* pClient, const ChatMessage& message)
 {
 	NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CHAT_MESSAGE);
 	BinaryEncoder encoder(pPacket);
-	encoder.WriteUInt64(uid);
-	encoder.WriteString(message);
+	encoder.WriteBool(message.IsRecap);
+	encoder.WriteUInt64(message.UID);
+	encoder.WriteUInt8(message.Team);
+	encoder.WriteString(message.Name);
+	encoder.WriteString(message.Message);
 	return pPacket;
 }
 
@@ -42,35 +48,35 @@ void ChatManager::SendChatMessage(String message)
 {
 	if (MultiplayerUtils::IsServer())
 	{
-		m_ChatHistory.PushBack("[Server] " + message);
-
 		ServerBase* pServer = ServerSystem::GetInstance().GetServer();
 		if (pServer->GetClientCount() > 0)
 		{
-			SystemChatEvent newEvent(message);
-			EventQueue::SendEventImmediate(newEvent);
-
 			ClientRemoteBase* pClientRemoteBase = pServer->GetClients().begin()->second;
-			NetworkSegment* pPacket = MakePacket(pClientRemoteBase, UINT64_MAX, message);
+			const ChatMessage& chatMessage = { false, UINT64_MAX, UINT8_MAX, "Server", message };
+			NetworkSegment* pPacket = MakePacket(pClientRemoteBase, chatMessage);
+			m_ChatHistory.PushBack(chatMessage);
 			pClientRemoteBase->SendReliableBroadcast(pPacket, nullptr, true);
+
+			ChatEvent event(chatMessage);
+			EventQueue::SendEventImmediate(event);
 		}
 	}
 	else
 	{
-		const Player* pPlayer = PlayerManager::GetPlayerLocal();
+		const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
 
 		if (pPlayer)
 		{
-			m_ChatHistory.PushBack("[" + pPlayer->GetName() + "] " + message);
-
 			LOG_INFO("[CHAT] %s: %s", pPlayer->GetName().c_str(), message.c_str());
 
-			PlayerChatEvent newEvent(*pPlayer, message);
-			EventQueue::SendEventImmediate(newEvent);
-
 			IClient* pClient = ClientSystem::GetInstance().GetClient();
-			NetworkSegment* pPacket = MakePacket(pClient, pPlayer->GetUID(), message);
+			const ChatMessage& chatMessage = { false, pPlayer->GetUID(), pPlayer->GetTeam(), pPlayer->GetName(), message };
+			NetworkSegment* pPacket = MakePacket(pClient, chatMessage);
+			m_ChatHistory.PushBack(chatMessage);
 			pClient->SendReliable(pPacket);
+
+			ChatEvent event(chatMessage);
+			EventQueue::SendEventImmediate(event);
 		}
 	}
 }
@@ -79,52 +85,52 @@ bool ChatManager::OnPacketReceived(const NetworkSegmentReceivedEvent& event)
 {
 	if (event.Type == PacketType::CHAT_MESSAGE)
 	{
+		ChatMessage chatMessage;
 		BinaryDecoder decoder(event.pPacket);
-		uint64 playerUID = decoder.ReadUInt64();
-		String message = decoder.ReadString();
+		decoder.ReadBool(chatMessage.IsRecap);
+		decoder.ReadUInt64(chatMessage.UID);
+		decoder.ReadUInt8(chatMessage.Team);
+		decoder.ReadString(chatMessage.Name);
+		decoder.ReadString(chatMessage.Message);
 
-		if (playerUID == UINT64_MAX)
+		if (chatMessage.UID == UINT64_MAX)
 		{
 			if (!MultiplayerUtils::IsServer())
 			{
-				m_ChatHistory.PushBack("[Server] " + message);
+				m_ChatHistory.PushBack(chatMessage);
 
-				SystemChatEvent newEvent(message);
-				EventQueue::SendEventImmediate(newEvent);
-			}
-		}
-		else if (playerUID == 0)
-		{
-			if (!MultiplayerUtils::IsServer())
-			{
-				m_ChatHistory.PushBack(message);
-
-				LOG_INFO("[CHAT_RECAP] %s", message.c_str());
-
-				PlayerChatRecapEvent newEvent(message);
+				ChatEvent newEvent(chatMessage);
 				EventQueue::SendEventImmediate(newEvent);
 			}
 		}
 		else
 		{
-			const Player* pPlayer = PlayerManager::GetPlayer(playerUID);
-
-			if (pPlayer)
+			if (MultiplayerUtils::IsServer())
 			{
-				m_ChatHistory.PushBack("[" + pPlayer->GetName() + "] " + message);
+				const Player* pPlayer = PlayerManagerBase::GetPlayer(event.pClient->GetUID());
 
-				LOG_INFO("[CHAT] %s: %s", pPlayer->GetName().c_str(), message.c_str());
-
-				PlayerChatEvent newEvent(*pPlayer, message);
-				EventQueue::SendEventImmediate(newEvent);
-
-				if (MultiplayerUtils::IsServer())
+				if (pPlayer)
 				{
-					ClientRemoteBase* pClientRemoteBase = (ClientRemoteBase*)event.pClient;
-					NetworkSegment* pPacket = MakePacket(pClientRemoteBase, pClientRemoteBase->GetUID(), message);
-					pClientRemoteBase->SendReliableBroadcast(pPacket, nullptr, true);
+					chatMessage.IsRecap = false;
+					chatMessage.UID = pPlayer->GetUID();
+					chatMessage.Team = pPlayer->GetTeam();
+					chatMessage.Name = pPlayer->GetName();
+
+					if (MultiplayerUtils::IsServer())
+					{
+						ClientRemoteBase* pClientRemoteBase = (ClientRemoteBase*)event.pClient;
+						NetworkSegment* pPacket = MakePacket(pClientRemoteBase, chatMessage);
+						pClientRemoteBase->SendReliableBroadcast(pPacket, nullptr, true);
+					}
 				}
 			}
+
+			m_ChatHistory.PushBack(chatMessage);
+
+			LOG_INFO("[CHAT] %s: %s", chatMessage.Name.c_str(), chatMessage.Message.c_str());
+
+			ChatEvent newEvent(chatMessage);
+			EventQueue::SendEventImmediate(newEvent);
 		}
 		
 		return true;
@@ -138,9 +144,10 @@ bool ChatManager::OnClientConnected(const ClientConnectedEvent& event)
 	{
 		IClient* pClient = event.pClient;
 
-		for (const String& message : m_ChatHistory)
+		for (ChatMessage& message : m_ChatHistory)
 		{
-			NetworkSegment* pPacket = MakePacket(pClient, 0, message);
+			message.IsRecap = true;
+			NetworkSegment* pPacket = MakePacket(pClient, message);
 			pClient->SendReliable(pPacket);
 		}
 	}

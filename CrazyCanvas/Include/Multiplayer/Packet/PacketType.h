@@ -32,6 +32,7 @@ public:
 	static uint16 JOIN;
 	static uint16 LEAVE;
 	static uint16 CHAT_MESSAGE;
+	static uint16 PLAYER_INFO;
 
 public:
 	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);

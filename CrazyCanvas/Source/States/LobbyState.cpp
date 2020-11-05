@@ -4,15 +4,23 @@
 
 #include "Chat/ChatManager.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
+#include "Application/API/Events/EventQueue.h"
+
 using namespace LambdaEngine;
 
 LobbyState::~LobbyState()
 {
-	
+	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
+	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
 }
 
 void LobbyState::Init()
 {
+	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
+	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
+
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", true);
@@ -27,6 +35,7 @@ void LobbyState::Init()
 	LambdaEngine::GUIApplication::SetView(m_View);*/
 
 	ChatManager::SendChatMessage("This is a chat message");
+	PlayerManagerClient::SetLocalPlayerReady(true);
 }
 
 void LobbyState::Tick(LambdaEngine::Timestamp delta)
@@ -37,4 +46,14 @@ void LobbyState::Tick(LambdaEngine::Timestamp delta)
 void LobbyState::FixedTick(LambdaEngine::Timestamp delta)
 {
 
+}
+
+bool LobbyState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
+{
+	return false;
+}
+
+bool LobbyState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
+{
+	return false;
 }

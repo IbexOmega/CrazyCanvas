@@ -37,6 +37,8 @@
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 
+#include "Lobby/PlayerManagerBase.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -153,11 +155,10 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 							if (ImGui::Button("Disconnect"))
 							{
-								const uint64 uid = m_PlayerEntityToClientID[playerEntity];
-								ClientRemoteBase* pClient = ServerHelper::GetClient(uid);
-								if (pClient)
+								const Player* pPlayer = PlayerManagerBase::GetPlayer(playerEntity);
+								if (pPlayer)
 								{
-									pClient->Disconnect("Kicked");
+									ServerHelper::DisconnectPlayer(pPlayer, "Kicked");
 								}
 							}
 
@@ -296,6 +297,7 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 
 	CreatePlayerDesc createPlayerDesc =
 	{
+		.ClientUID		= pClient->GetUID(),
 		.Position		= position,
 		.Forward		= forward,
 		.Scale			= glm::vec3(1.0f),
@@ -331,13 +333,14 @@ void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
 	{
 		LOG_ERROR("[MatchServer]: Failed to create Player");
 	}
-
-	const uint64 cliendID = pClient->GetUID();
+	/*const uint64 cliendID = pClient->GetUID();
 	if (m_ClientIDToPlayerEntity.count(cliendID) == 0)
 	{
 		m_ClientIDToPlayerEntity.insert(std::make_pair(cliendID, createdPlayerEntities[0]));
 		m_PlayerEntityToClientID.insert(std::make_pair(createdPlayerEntities[0], cliendID));
-	}
+	}*/
+	
+
 
 	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
 }
@@ -423,12 +426,17 @@ bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEve
 {
 	VALIDATE(event.pClient != nullptr);
 
-	const uint64 clientID = event.pClient->GetUID();
+	/*const uint64 clientID = event.pClient->GetUID();
 	const LambdaEngine::Entity playerEntity = m_ClientIDToPlayerEntity[clientID];
 	m_ClientIDToPlayerEntity.erase(clientID);
-	m_PlayerEntityToClientID.erase(playerEntity);
+	m_PlayerEntityToClientID.erase(playerEntity);*/
 
-	Match::KillPlayer(playerEntity);
+	const Player* pPlayer = PlayerManagerBase::GetPlayer(event.pClient);
+	if (pPlayer)
+	{
+		Match::KillPlayer(pPlayer->GetEntity());
+	}
+	
 
 	// TODO: Fix this
 	//DeleteGameLevelObject(playerEntity);

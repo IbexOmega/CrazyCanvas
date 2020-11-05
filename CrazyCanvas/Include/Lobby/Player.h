@@ -4,19 +4,33 @@
 
 #include "Containers/String.h"
 
-#include "Time/API/Timestamp.h"
+#include "ECS/Entity.h"
+
+enum EPlayerState : uint8
+{
+	PLAYER_STATE_LOBBY,
+	PLAYER_STATE_READY,
+	PLAYER_STATE_LOADING,
+	PLAYER_STATE_PLAYING,
+	PLAYER_STATE_DEAD,
+};
 
 class Player
 {
-	friend class PlayerManager;
+	friend class PlayerManagerBase;
+	friend class PlayerManagerClient;
+	friend class PlayerManagerServer;
 
 public:
 	const LambdaEngine::String& GetName() const;
-	LambdaEngine::Timestamp GetPing() const;
-	uint16 GetKills() const;
-	uint16 GetDeaths() const;
-	uint16 GetFlagsCaptured() const;
-	uint16 GetFlagsDefended() const;
+	LambdaEngine::Entity GetEntity() const;
+	uint16 GetPing() const;
+	EPlayerState GetState() const;
+	uint8 GetTeam() const;
+	uint8 GetKills() const;
+	uint8 GetDeaths() const;
+	uint8 GetFlagsCaptured() const;
+	uint8 GetFlagsDefended() const;
 	uint64 GetUID() const;
 
 	bool operator==(const Player& other) const;
@@ -28,10 +42,13 @@ private:
 
 private:
 	LambdaEngine::String m_Name;
-	LambdaEngine::Timestamp m_Ping;
-	uint16 m_Kills;
-	uint16 m_Deaths;
-	uint16 m_FlagsCaptured;
-	uint16 m_FlagsDefended;
+	LambdaEngine::Entity m_Entity;
+	uint16 m_Ping;
+	EPlayerState m_State;
+	uint8 m_Team;
+	uint8 m_Kills;
+	uint8 m_Deaths;
+	uint8 m_FlagsCaptured;
+	uint8 m_FlagsDefended;
 	uint64 m_UID;
 };

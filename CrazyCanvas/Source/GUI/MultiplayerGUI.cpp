@@ -34,7 +34,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Lobby/PlayerManager.h"
+#include "Lobby/PlayerManagerClient.h"
 
 #include <windows.h>
 #include <Lmcons.h>
@@ -164,7 +164,7 @@ bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent&
 	char name[UNLEN + 1];
 	GetUserNameA(name, &length);
 
-	PlayerManager::RegisterLocalPlayer(name, event.pClient);
+	PlayerManagerClient::RegisterLocalPlayer(name, event.pClient);
 
 	State* pLobbyState = DBG_NEW LobbyState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);

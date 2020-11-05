@@ -4,7 +4,7 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
-#include "Lobby/LobbyClient.h"
+#include "Events/PlayerEvents.h"
 
 class LobbyState : public LambdaEngine::State
 {
@@ -22,7 +22,11 @@ protected:
 	void FixedTick(LambdaEngine::Timestamp delta) override;
 
 private:
-	LobbyClient m_LobbyClient;
+	bool OnPlayerJoinedEvent(const PlayerJoinedEvent& event);
+	bool OnPlayerLeftEvent(const PlayerLeftEvent& event);
+
+private:
+	
 
 private:
 	/*Noesis::Ptr<LobbyGUI> m_LobbyGUI;
