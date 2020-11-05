@@ -28,6 +28,7 @@ public:
 	static uint16 TEAM_SCORED;
 	static uint16 GAME_OVER;
 	static uint16 CONFIGURE_SERVER;
+	static uint16 PROJECTILE_HIT;
 
 public:
 	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);
