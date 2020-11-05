@@ -22,7 +22,6 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		Entity remotePlayerEntity	= weaponComp.WeaponOwner;
 
 		// Update weapon
-		const bool hasAmmo		= weaponComp.CurrentAmmunition > 0;
 		const bool isReloading	= weaponComp.ReloadClock > 0.0f;
 		const bool onCooldown	= weaponComp.CurrentCooldown > 0.0f;
 
@@ -39,17 +38,21 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		for (uint32 i = 0; i < packetCount; i++)
 		{
 			// Start reload
+			const EAmmoType ammoType = packetsRecived[i].FiredAmmo;
 			if (packetsRecived[i].StartedReload && !isReloading)
 			{
 				weaponComp.ReloadClock = weaponComp.ReloadTime;
 			}
-			else if (packetsRecived[i].FiredAmmo != EAmmoType::AMMO_TYPE_NONE && !onCooldown)
+			else if (ammoType != EAmmoType::AMMO_TYPE_NONE && !onCooldown)
 			{
+				auto ammoState = weaponComp.WeaponTypeAmmo.find(ammoType);
+				VALIDATE(ammoState != weaponComp.WeaponTypeAmmo.end())
+
 				// Only send if the weapon has ammo on the server
+				const bool hasAmmo = ammoState->second.first;
 				if (hasAmmo)
 				{
 					// Update position and orientation of weapon component
-					const EAmmoType ammoType = packetsRecived[i].FiredAmmo;
 					packetsToSend.back().FiredAmmo = ammoType;
 
 					// Handle fire

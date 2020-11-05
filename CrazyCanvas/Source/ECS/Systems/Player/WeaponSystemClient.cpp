@@ -45,7 +45,13 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 		// Local Player
 		PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
-		const bool hasAmmo		= weaponComponent.CurrentAmmunition > 0;
+		auto waterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+		VALIDATE(waterAmmo != weaponComponent.WeaponTypeAmmo.end())
+
+		auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+		VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
+		
+		const bool hasAmmo		= (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
 		const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 		const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
 		if (!hasAmmo && !isReloading)

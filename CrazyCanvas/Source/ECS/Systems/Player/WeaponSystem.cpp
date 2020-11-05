@@ -79,10 +79,10 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	EventQueue::SendEventImmediate(firedEvent);
 
 	// Fire the gun
-	auto ammoType = weaponComponent.WeaponTypeAmmo.find(ammoType);
-	VALIDATE(ammoType != weaponComponent.WeaponTypeAmmo.end())
+	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
+	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
 
-	ammoType->second.first--;
+	ammoState->second.first--;
 }
 
 bool WeaponSystem::Init()
@@ -143,7 +143,10 @@ bool WeaponSystem::TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity
 	WeaponComponent& weaponComponent	= pECS->GetComponent<WeaponComponent>(weaponEntity);
 	weaponComponent.CurrentCooldown		= 1.0f / weaponComponent.FireRate;
 
-	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
+	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
+	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end());
+
+	const bool hasAmmo = (ammoState->second.first > 0);
 	if (hasAmmo)
 	{
 		// If we try to shoot when reloading we abort the reload
@@ -165,6 +168,8 @@ bool WeaponSystem::TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity
 
 void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
 {
+	using namespace LambdaEngine;
+
 	const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 	const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
 
@@ -190,7 +195,7 @@ void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
 			waterAmmo->second.first = AMMO_CAPACITY;
 
 			//Reload Event
-			WeaponReloadFinishedEvent reloadEvent(weaponComp.WeaponOwner);
+			WeaponReloadFinishedEvent reloadEvent(weaponComponent.WeaponOwner);
 			EventQueue::SendEventImmediate(reloadEvent);
 		}
 	}
