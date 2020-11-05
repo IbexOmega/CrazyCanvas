@@ -21,10 +21,8 @@ public:
 	static void Tick(LambdaEngine::Timestamp deltaTime);
 	static void FixedTick(LambdaEngine::Timestamp deltaTime);
 
-	FORCEINLINE static uint32 GetScore(uint32 teamIndex) 
-	{ 
-		return s_pMatchInstance->GetScore(teamIndex);
-	}
+	FORCEINLINE static bool HasBegun()						{ return s_pMatchInstance != nullptr ? s_pMatchInstance->HasBegun() : false; }
+	FORCEINLINE static uint32 GetScore(uint32 teamIndex)	{ return s_pMatchInstance != nullptr ? s_pMatchInstance->GetScore(teamIndex) : 0; }
 
 private:
 	inline static MatchBase* s_pMatchInstance = nullptr;
