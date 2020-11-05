@@ -1744,6 +1744,14 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]
         },

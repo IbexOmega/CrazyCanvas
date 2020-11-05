@@ -24,8 +24,17 @@ layout(push_constant) uniform TeamIndex
 	uint Index;
 } p_TeamIndex;
 
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+{ 
+	SPerFrameBuffer val; 
+} u_PerFrameBuffer;
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }	b_MaterialParameters;
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors			{ vec4 val[]; }					b_PaintMaskColor;
+layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
+{
+	SLightsBuffer val; 
+	SPointLight pointLights[];  
+} b_LightsBuffer;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -80,9 +89,15 @@ void main()
 	if(enemy != 0 && !isPainted)
 		discard;
 
+
+	// PBR shading
+	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
+	SLightsBuffer lightBuffer		= b_LightsBuffer.val;
+
 	//1
 	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 
-	// 5	
+	// 5
 	out_Color = vec4(mix(storedAlbedo, color, shouldPaint), isPainted ? 1.0f : 0.6f);
+	out_Color.xyz  = normalize(lightBuffer.DirL_Direction);
 }

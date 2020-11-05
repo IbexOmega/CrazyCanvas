@@ -241,6 +241,27 @@ namespace LambdaEngine
 				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] PAINT_MASK_COLORS", setIndex);
 			}
 		}
+		else if (resourceName == SCENE_LIGHTS_BUFFER)
+		{
+			constexpr DescriptorSetIndex setIndex = 0U;
+
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet0 != nullptr)
+			{
+				m_DescriptorSet0->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					3,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_LIGHTS_BUFFER", setIndex);
+			}
+		}
 
 		if (resourceName == PER_FRAME_BUFFER)
 		{
@@ -543,7 +564,7 @@ namespace LambdaEngine
 		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		perFrameBufferDesc.DescriptorCount = 1;
 		perFrameBufferDesc.Binding = 0;
-		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -603,10 +624,19 @@ namespace LambdaEngine
 		paintMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		paintMaskDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
+		// LightBuffer
+		DescriptorBindingDesc lightBufferDesc = {};
+		lightBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		lightBufferDesc.DescriptorCount = 6000;
+		lightBufferDesc.Binding = 3;
+		lightBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		lightBufferDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+
 
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
