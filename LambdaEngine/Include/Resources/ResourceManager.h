@@ -90,7 +90,7 @@ namespace LambdaEngine
 		*	filename - The name of the file
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadMeshFromFile(const String& filename);
+		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID);
 
 		/*
 		* Load a mesh from file
@@ -98,7 +98,7 @@ namespace LambdaEngine
 		*	animations	- TArray with valid GUIDs for all the animations
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadMeshFromFile(const String& filename, TArray<GUID_Lambda>& animations);
+		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID, TArray<GUID_Lambda>& animations);
 
 		/*
 		* Load a mesh from file

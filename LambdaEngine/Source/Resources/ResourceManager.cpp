@@ -156,6 +156,8 @@ namespace LambdaEngine
 
 		TArray<TextureView*> textureViewsToDelete;
 
+		//Spinlock yes no?
+
 		meshComponents = sceneLocalMeshComponents;
 		for (uint32 i = 0; i < textures.GetSize(); i++)
 		{
@@ -295,7 +297,7 @@ namespace LambdaEngine
 				}
 			}
 
-			//Loop through special objects and set their mesh component material GUIDs
+			//Loop through level objects and set their mesh component material GUIDs
 			for (uint32 s = 0; s < levelObjects.GetSize(); s++)
 			{
 				LevelObjectOnLoad* pLevelObject = &levelObjects[s];
@@ -349,64 +351,93 @@ namespace LambdaEngine
 		return true;
 	}
 
-	GUID_Lambda ResourceManager::LoadMeshFromFile(const String& filename)
+	void ResourceManager::LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID)
 	{
-		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename);
-		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
+		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
-			return loadedMeshGUID->second;
+			meshGUID = loadedMeshGUID->second;
+
+			auto loadedMaterialGUID = s_MaterialNamesToGUIDs.find(filename);
+			materialGUID = loadedMaterialGUID != s_MaterialNamesToGUIDs.end() ? loadedMaterialGUID->second : GUID_MATERIAL_DEFAULT;
+
+			return;
 		}
 
-		GUID_Lambda guid = GUID_NONE;
+		TArray<Animation*> rawAnimations;
+		TArray<LoadedMaterial*> materials;
+		TArray<LoadedTexture*> textures;
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, materials, textures, rawAnimations);
+
 		Mesh** ppMappedMesh = nullptr;
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshGUIDsToNames[guid]		= filename;
-			s_MeshNamesToGUIDs[filename]	= guid;
-		}
+			meshGUID						= s_NextFreeGUID++;
+			s_Meshes[meshGUID]				= pMesh;
+			s_MeshGUIDsToNames[meshGUID]	= filename;
+			s_MeshNamesToGUIDs[filename]	= meshGUID;
 
-		TArray<Animation*> rawAnimations;
-		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, rawAnimations);
+			if (!materials.IsEmpty())
+			{
+				if (materials.GetSize() > 1)
+				{
+					LOG_WARNING("[ResourceManager]: Mesh %s loaded with more than one material, the other materials will be ignored");
+				}
+			}
+			else
+			{
+				meshGUID = GUID_MATERIAL_DEFAULT;
+			}
+		}
 
 		// If we load with this function, we do not care about the animations, and therefore delete them
 		for (Animation* pAnimation : rawAnimations)
 		{
 			SAFEDELETE(pAnimation);
 		}
-
-		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadMeshFromFile(const String& filename, TArray<GUID_Lambda>& animations)
+	void ResourceManager::LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID, TArray<GUID_Lambda>& animations)
 	{
-		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename);
-		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
+		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
-			auto loadedAnimations = s_FileNamesToAnimationGUIDs.find(filename);
-			if (loadedAnimations != s_FileNamesToAnimationGUIDs.end())
+			meshGUID = loadedMeshGUID->second;
+
+			if (auto loadedAnimations = s_FileNamesToAnimationGUIDs.find(filename); loadedAnimations != s_FileNamesToAnimationGUIDs.end())
 			{
 				animations = loadedAnimations->second;
 			}
 
-			return loadedMeshGUID->second;
+			auto loadedMaterialGUID = s_MaterialNamesToGUIDs.find(filename);
+			materialGUID = loadedMaterialGUID != s_MaterialNamesToGUIDs.end() ? loadedMaterialGUID->second : GUID_MATERIAL_DEFAULT;
 		}
 
-		GUID_Lambda guid = GUID_NONE;
+		TArray<Animation*> rawAnimations;
+		TArray<LoadedMaterial*> materials;
+		TArray<LoadedTexture*> textures;
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, materials, textures, rawAnimations);
+
 		Mesh** ppMappedMesh = nullptr;
 
 		//Spinlock
 		{
-			guid							= s_NextFreeGUID++;
-			ppMappedMesh					= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshGUIDsToNames[guid]		= filename;
-			s_MeshNamesToGUIDs[filename]	= guid;
-		}
+			meshGUID						= s_NextFreeGUID++;
+			s_Meshes[meshGUID]				= pMesh;
+			s_MeshGUIDsToNames[meshGUID]	= filename;
+			s_MeshNamesToGUIDs[filename]	= meshGUID;
 
-		TArray<Animation*> rawAnimations;
-		(*ppMappedMesh) = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, rawAnimations);
+			if (!materials.IsEmpty())
+			{
+				if (materials.GetSize() > 1)
+				{
+					LOG_WARNING("[ResourceManager]: Mesh %s loaded with more than one material, the other materials will be ignored");
+				}
+			}
+			else
+			{
+				meshGUID = GUID_MATERIAL_DEFAULT;
+			}
+		}
 
 		// Register animations
 		animations.Clear();
@@ -420,7 +451,6 @@ namespace LambdaEngine
 		}
 
 		s_FileNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
-		return guid;
 	}
 
 	TArray<GUID_Lambda> ResourceManager::LoadAnimationsFromFile(const String& filename)

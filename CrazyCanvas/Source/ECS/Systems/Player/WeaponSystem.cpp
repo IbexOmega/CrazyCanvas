@@ -120,7 +120,9 @@ bool WeaponSystem::Init()
 		projectileMaterialProperties.Metallic	= 0.5f;
 		projectileMaterialProperties.Roughness	= 0.5f;
 
-		const uint32 projectileMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		GUID_Lambda projectileMeshGUID;
+		GUID_Lambda projectileMaterialGUID;
+		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID, projectileMaterialGUID);
 
 		// Paint
 		m_RedPaintProjectileMeshComponent = { };

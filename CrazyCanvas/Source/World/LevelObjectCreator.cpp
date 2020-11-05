@@ -113,7 +113,8 @@ bool LevelObjectCreator::Init()
 	{
 		//Flag
 		{
-			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("Roller.obj");
+			GUID_Lambda flagMaterialGUID;
+			ResourceManager::LoadMeshFromFile("Roller.obj", s_FlagMeshGUID, flagMaterialGUID);
 
 			MaterialProperties materialProperties = {};
 			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -130,7 +131,8 @@ bool LevelObjectCreator::Init()
 
 		//Player
 		{
-			s_PlayerMeshGUID					= ResourceManager::LoadMeshFromFile("Player/Idle.fbx", s_PlayerIdleGUIDs);
+			GUID_Lambda playerMaterialGUID;
+			ResourceManager::LoadMeshFromFile("Player/Idle.fbx", s_PlayerMeshGUID, playerMaterialGUID, s_PlayerIdleGUIDs);
 
 #ifndef LAMBDA_DEBUG
 			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.fbx");

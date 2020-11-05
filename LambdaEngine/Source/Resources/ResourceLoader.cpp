@@ -164,7 +164,7 @@ namespace LambdaEngine
 	/*
 	* Assimp Parsing
 	*/
-	static LoadedTexture* LoadAssimpTexture(SceneLoadingContext& context, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
+	static LoadedTexture* LoadAssimpTexture(SceneLoadingContext& context, const aiScene* pScene, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
 	{
 		if (pMaterial->GetTextureCount(type) > index)
 		{
@@ -172,22 +172,45 @@ namespace LambdaEngine
 			pMaterial->GetTexture(type, index, &str);
 
 			String name = str.C_Str();
-			ConvertSlashes(name);
-			RemoveExtraData(name);
 
-			auto loadedTexture = context.LoadedTextures.find(name);
-			if (loadedTexture == context.LoadedTextures.end())
+			if (name[0] == '*')
 			{
-				LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
-				pLoadedTexture->pTexture	= ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
-				pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+				//Load Embedded Texture
+				uint32 textureIndex = std::stoul(name.substr(1).c_str());
 
-				context.LoadedTextures[name] = pLoadedTexture;
-				return context.pTextures->PushBack(pLoadedTexture);
+				if (textureIndex >= pScene->mNumTextures)
+				{
+					LOG_ERROR("Assimp embedded texture with index %u exceeds number of textures in scene %u", textureIndex, pScene->mNumTextures);
+				}
+				else
+				{
+					aiTexture* pTextureAI = pScene->mTextures[textureIndex];
+
+					//Remap ARGB data to RGBA
+					//pTextureAI->pcData
+				}
 			}
 			else
 			{
-				return loadedTexture->second;
+				//Load Texture from File
+
+				ConvertSlashes(name);
+				RemoveExtraData(name);
+
+				auto loadedTexture = context.LoadedTextures.find(name);
+				if (loadedTexture == context.LoadedTextures.end())
+				{
+					LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
+					pLoadedTexture->pTexture = ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
+					pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+
+					context.LoadedTextures[name] = pLoadedTexture;
+					return context.pTextures->PushBack(pLoadedTexture);
+				}
+				else
+				{
+					return loadedTexture->second;
+				}
 			}
 		}
 
@@ -243,7 +266,7 @@ namespace LambdaEngine
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations)
+	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>& materials, TArray<LoadedTexture*>& textures, TArray<Animation*>& animations)
 	{
 		int32 assimpFlags = 
 			aiProcess_FlipWindingOrder			|
@@ -288,8 +311,8 @@ namespace LambdaEngine
 			.Meshes						= meshes,
 			.Animations					= animations,
 			.MeshComponents				= meshComponent,
-			.pMaterials					= nullptr,
-			.pTextures					= nullptr,
+			.pMaterials					= &materials,
+			.pTextures					= &textures,
 			.AnimationsOnly 			= false
 		};
 
@@ -1295,44 +1318,46 @@ namespace LambdaEngine
 				pMaterial->Properties.Roughness = 1.0f;
 			}
 			
+			LoadedTexture* pDiffuseTexture = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
+			LoadedTexture* pMetallicRoughnessTexture = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
 
 			// Albedo
-			pMaterial->pAlbedoMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_BASE_COLOR, 0);
+			pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_BASE_COLOR, 0);
 			if (!pMaterial->pAlbedoMap)
 			{
-				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_DIFFUSE, 0);
+				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_DIFFUSE, 0);
 			}
 
 			// Normal
-			pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_NORMAL_CAMERA, 0);
+			pMaterial->pNormalMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_NORMAL_CAMERA, 0);
 			if (!pMaterial->pNormalMap)
 			{
-				pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_NORMALS, 0);
+				pMaterial->pNormalMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_NORMALS, 0);
 			}
 			if (!pMaterial->pNormalMap)
 			{
-				pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_HEIGHT, 0);
+				pMaterial->pNormalMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_HEIGHT, 0);
 			}
 
 			// AO
-			pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_AMBIENT_OCCLUSION, 0);
+			pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_AMBIENT_OCCLUSION, 0);
 			if (!pMaterial->pAmbientOcclusionMap)
 			{
-				pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_AMBIENT, 0);
+				pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_AMBIENT, 0);
 			}
 
 			// Metallic
-			pMaterial->pMetallicMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_METALNESS, 0);
+			pMaterial->pMetallicMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_METALNESS, 0);
 			if (!pMaterial->pMetallicMap)
 			{
-				pMaterial->pMetallicMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_REFLECTION, 0);
+				pMaterial->pMetallicMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_REFLECTION, 0);
 			}
 
 			// Roughness
-			pMaterial->pRoughnessMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_DIFFUSE_ROUGHNESS, 0);
+			pMaterial->pRoughnessMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_DIFFUSE_ROUGHNESS, 0);
 			if (!pMaterial->pRoughnessMap)
 			{
-				pMaterial->pRoughnessMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_SHININESS, 0);
+				pMaterial->pRoughnessMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_SHININESS, 0);
 			}
 
 			context.pMaterials->EmplaceBack(pMaterial);

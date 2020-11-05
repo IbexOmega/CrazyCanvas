@@ -43,6 +43,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 
+	{
+		GUID_Lambda gunMeshGUID;
+		GUID_Lambda gunMaterialGUID;
+		ResourceManager::LoadMeshFromFile("Gun/Gun.glb", gunMeshGUID, gunMaterialGUID);
+	}
+
 	if (!LevelManager::Init())
 	{
 		LOG_ERROR("Level Manager Init Failed");

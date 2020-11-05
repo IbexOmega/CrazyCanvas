@@ -115,7 +115,9 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		GUID_Lambda robotMeshGUID;
+		GUID_Lambda robotLoadedMaterialGUID;
+		ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", robotMeshGUID, robotLoadedMaterialGUID, animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
@@ -139,12 +141,12 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MeshGUID		= robotMeshGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.pGraph			= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
-		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotMeshGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
 		glm::vec3 scale(1.0f);
@@ -280,8 +282,10 @@ void SandboxState::Init()
 
 	//Preload some resources
 	{
+		GUID_Lambda meshGUID;
+		GUID_Lambda materialGUID;
 		TArray<GUID_Lambda> animations;
-		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, materialGUID, animations);
 	}
 
 

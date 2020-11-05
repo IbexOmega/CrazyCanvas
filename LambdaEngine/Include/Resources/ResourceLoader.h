@@ -129,7 +129,7 @@ namespace LambdaEngine
 		*	animations	- The animations in this file
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
-		static Mesh* LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations);
+		static Mesh* LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>& materials, TArray<LoadedTexture*>& textures, TArray<Animation*>& animations);
 
 		/*
 		* Load a mesh from file
