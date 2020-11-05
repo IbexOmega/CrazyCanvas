@@ -189,9 +189,15 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 		{
 			WeaponComponent& weaponComp = pWeaponComponents->GetData(weaponEntity);
 			Entity remotePlayerEntity	= weaponComp.WeaponOwner;
+			
+			auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(waterAmmo != weaponComp.WeaponTypeAmmo.end())
+
+			auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(waterAmmo != weaponComp.WeaponTypeAmmo.end())
 
 			// Update weapon
-			const bool hasAmmo		= weaponComp.CurrentAmmunition > 0;
+			const bool hasAmmo		= (waterAmmo->second.first > 0 && paintAmmo->second.first > 0);
 			const bool isReloading	= weaponComp.ReloadClock > 0.0f;
 			const bool onCooldown	= weaponComp.CurrentCooldown > 0.0f;
 
@@ -206,7 +212,12 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				if (weaponComp.ReloadClock < 0.0f)
 				{
 					weaponComp.ReloadClock = 0.0f;
-					weaponComp.CurrentAmmunition = AMMO_CAPACITY;
+					paintAmmo->second.first = AMMO_CAPACITY;
+					waterAmmo->second.first = AMMO_CAPACITY;
+
+					//Reload Event
+					WeaponReloadFinishedEvent reloadEvent(weaponComp.WeaponOwner);
+					EventQueue::SendEventImmediate(reloadEvent);
 				}
 			}
 
@@ -248,7 +259,11 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 						packetsToSend.back().FiredAmmo = ammoType;
 
 						// Handle fire
-						weaponComp.CurrentAmmunition--;
+						if(ammoType == EAmmoType::AMMO_TYPE_PAINT)
+							paintAmmo->second.first--;
+						else if(ammoType == EAmmoType::AMMO_TYPE_WATER)
+							waterAmmo->second.first--;
+
 						weaponComp.CurrentCooldown = 1.0f / weaponComp.FireRate;
 
 						// Create projectile
@@ -273,6 +288,12 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 		{
 			WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
 			Entity playerEntity = weaponComponent.WeaponOwner;
+
+			auto waterAmmoC = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(waterAmmoC != weaponComponent.WeaponTypeAmmo.end())
+
+			auto paintAmmoC = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(paintAmmoC != weaponComponent.WeaponTypeAmmo.end())
 
 			// Foreign Players
 			if (!m_LocalPlayerEntities.HasElement(playerEntity))
@@ -308,7 +329,7 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			// LocalPlayers
 			PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
-			const bool hasAmmo		= weaponComponent.CurrentAmmunition > 0;
+			const bool hasAmmo		= (waterAmmoC->second.first > 0 && paintAmmoC->second.first > 0);
 			const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 			if (!hasAmmo && !isReloading)
 			{
@@ -327,7 +348,12 @@ void WeaponSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 				if (weaponComponent.ReloadClock < 0.0f)
 				{
 					weaponComponent.ReloadClock			= 0.0f;
-					weaponComponent.CurrentAmmunition	= AMMO_CAPACITY;
+					waterAmmoC->second.first = AMMO_CAPACITY;
+					paintAmmoC->second.first = AMMO_CAPACITY;
+
+					//Reload Event
+					WeaponReloadFinishedEvent reloadEvent(weaponComponent.WeaponOwner);
+					EventQueue::SendEventImmediate(reloadEvent);
 				}
 			}
 
@@ -459,7 +485,7 @@ void WeaponSystem::TryFire(
 	// Add cooldown
 	weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
 
-	const bool hasAmmo = weaponComponent.CurrentAmmunition > 0;
+	const bool hasAmmo = weaponComponent.WeaponTypeAmmo[ammoType].first > 0;
 	if (hasAmmo)
 	{
 		// If we try to shoot when reloading we abort the reload
@@ -470,7 +496,7 @@ void WeaponSystem::TryFire(
 		}
 
 		// Fire the gun
-		weaponComponent.CurrentAmmunition--;
+		weaponComponent.WeaponTypeAmmo[ammoType].first--;
 
 		// Send action to server
 		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();

@@ -1,8 +1,11 @@
 #pragma once
-#include "ProjectileComponent.h"
 
 #include "ECS/Component.h"
 #include "ECS/Entity.h"
+
+#include "ProjectileComponent.h"
+#include <unordered_map>
+#include <utility>
 
 #define AMMO_CAPACITY 50
 
@@ -19,6 +22,11 @@ struct WeaponComponent
 	float32 ReloadTime			= 2.0f;
 	float32	CurrentCooldown		= 0.0f; // Time until the weapon can be fired again
 	float32 ReloadClock			= 0.0f;
-	int32	CurrentAmmunition	= AMMO_CAPACITY;
-	int32   AmmoCapacity		= AMMO_CAPACITY;
+
+	std::unordered_map<EAmmoType, std::pair<int32, int32>> WeaponTypeAmmo =
+		{
+			{ EAmmoType::AMMO_TYPE_PAINT, {AMMO_CAPACITY, AMMO_CAPACITY} },
+			{ EAmmoType::AMMO_TYPE_WATER, {AMMO_CAPACITY, AMMO_CAPACITY} }
+		};
+
 };

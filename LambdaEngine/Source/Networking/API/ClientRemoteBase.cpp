@@ -10,6 +10,10 @@
 
 namespace LambdaEngine
 {
+	SpinLock ClientRemoteBase::s_LockStatic;
+	std::atomic_int ClientRemoteBase::s_Instances = 0;
+	THashTable<ClientRemoteBase*, uint8> ClientRemoteBase::s_ClientRemoteBasesToDelete;
+
 	ClientRemoteBase::ClientRemoteBase(const ClientRemoteDesc& desc) :
 		m_pServer(desc.Server),
 		m_PingInterval(desc.PingInterval),
@@ -25,6 +29,7 @@ namespace LambdaEngine
 		m_ReceivedPackets(),
 		m_LockReceivedPackets()
 	{
+		s_Instances++;
 	}
 
 	ClientRemoteBase::~ClientRemoteBase()
@@ -33,6 +38,8 @@ namespace LambdaEngine
 			LOG_ERROR("[ClientRemoteBase]: Do not use delete on a ClientRemoteBase object. Use the Release() function!");
 		else
 			LOG_INFO("[ClientRemoteBase]: Released");
+
+		s_Instances--;
 	}
 
 	void ClientRemoteBase::Disconnect(const std::string& reason)
@@ -118,7 +125,9 @@ namespace LambdaEngine
 		{
 			if (m_pHandler)
 				m_pHandler->OnClientReleased(this);
-			delete this;
+
+			std::scoped_lock<SpinLock> lock(s_LockStatic);
+			s_ClientRemoteBasesToDelete.insert(std::make_pair(this, (uint8)5));
 		}
 	}
 
@@ -416,5 +425,33 @@ namespace LambdaEngine
 	{
 		LOG_INFO("ClientRemoteBase::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 		Disconnect("Max Tries Reached");
+	}
+
+	void ClientRemoteBase::FixedTickStatic(Timestamp timestamp)
+	{
+		UNREFERENCED_VARIABLE(timestamp);
+
+		if (!s_ClientRemoteBasesToDelete.empty())
+		{
+			std::scoped_lock<SpinLock> lock(s_LockStatic);
+			TArray<ClientRemoteBase*> networkersToDelete;
+			for (auto& pair : s_ClientRemoteBasesToDelete)
+			{
+				if (--pair.second == 0)
+					networkersToDelete.PushBack(pair.first);
+			}
+
+			for (ClientRemoteBase* pClient : networkersToDelete)
+			{
+				s_ClientRemoteBasesToDelete.erase(pClient);
+				delete pClient;
+			}
+		}
+	}
+
+	void ClientRemoteBase::ReleaseStatic()
+	{
+		while (s_Instances > 0)
+			FixedTickStatic(EngineLoop::GetFixedTimestep());
 	}
 }
