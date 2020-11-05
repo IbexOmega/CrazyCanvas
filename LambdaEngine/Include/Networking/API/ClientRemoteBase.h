@@ -6,6 +6,8 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Containers/THashTable.h"
+
 namespace LambdaEngine
 {
 	class IClientRemoteHandler;
@@ -21,6 +23,7 @@ namespace LambdaEngine
 		protected IPacketListener
 	{
 		friend class ServerBase;
+		friend class NetworkUtils;
 
 	public:
 		DECL_UNIQUE_CLASS(ClientRemoteBase);
@@ -85,6 +88,10 @@ namespace LambdaEngine
 		void OnTerminationApproved();
 		void OnConnectionApproved();
 
+	private:
+		static void FixedTickStatic(Timestamp timestamp);
+		static void ReleaseStatic();
+
 	protected:
 		bool m_DisconnectedByRemote;
 
@@ -102,5 +109,10 @@ namespace LambdaEngine
 		SpinLock m_LockReceivedPackets;
 		std::atomic_int8_t m_BufferIndex;
 		TArray<NetworkSegment*> m_ReceivedPackets[2];
+
+	private:
+		static SpinLock s_LockStatic;
+		static std::atomic_int s_Instances;
+		static THashTable<ClientRemoteBase*, uint8> s_ClientRemoteBasesToDelete;
 	};
 }
