@@ -284,10 +284,10 @@ namespace LambdaEngine
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
 				const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
 
-				m_TeamIds.Clear(); // All players which are not the viewer.
-				m_EntityIds.Clear();
+				m_PlayerData.Clear();
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					constexpr DescriptorSetIndex setIndex = 2U;
@@ -299,23 +299,25 @@ namespace LambdaEngine
 					{
 						// Assume EntityIDs is always 1 in length. (Because animated meshes.)
 						Entity entity = m_pDrawArgs[d].EntityIDs[0];
+
+						// Used to sort by distance in render()
 						if (pTeamComponents->HasComponent(entity))
 						{
-						
+							PlayerData playerData;
+							playerData.drawArgIndex = d;
+							playerData.teamId = pTeamComponents->GetConstData(entity).TeamIndex;
+							playerData.position = pPositionComponents->GetConstData(entity).Position;
+							m_PlayerData.PushBack(playerData);
 
 							if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
 							{
-								TeamComponent teamComp = pTeamComponents->GetConstData(entity);
-								m_ViewerTeamId = teamComp.TeamIndex;
-								m_ViewerEntityId = entity;
-								m_ViewerDrawArgIndex = d;
+								m_Viewer.teamId = pTeamComponents->GetConstData(entity).TeamIndex;
+								m_Viewer.entityId = entity;
+								m_Viewer.drawArgIndex = d;
+								m_Viewer.positon = pPositionComponents->GetConstData(entity).Position;
 							}
 							else
 							{
-								// Used to sort by distance in render()
-								m_TeamIds.PushBack(pTeamComponents->GetConstData(entity).TeamIndex);
-								m_EntityIds.PushBack(entity);
-
 								// Set Vertex and Instance buffer for rendering
 								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
 								uint64 pOffsets[2] = { 0, 0 };
@@ -343,12 +345,17 @@ namespace LambdaEngine
 				}
 
 				// Map player not same team as viewer to 1. Shader will filter
-				std::transform(m_TeamIds.Begin(), m_TeamIds.End(), m_TeamIds.Begin(),
-				[&](uint32& teamId)->uint32 {
-					if (teamId == m_ViewerTeamId)
-						return 0;
-					return 1;
-				});
+				for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
+				{
+					if (m_PlayerData[i].teamId != m_Viewer.teamId)
+					{
+						m_PlayerData[i].teamId = 1;
+					}
+					else
+					{
+						m_PlayerData[i].teamId = 0;
+					}
+				}
 
 				// Get Paint Mask Texture from each player
 				for (uint32 d = 0; d < count; d++)
@@ -487,38 +494,23 @@ namespace LambdaEngine
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
 
 		// Sort player rendering front to back
-		m_PlayerDistances.Resize(m_EntityIds.GetSize());
-		m_NextPlayerList.Resize(m_EntityIds.GetSize());
-
-		const ComponentArray<PositionComponent>* pPlayerPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
-
-		// Map EntityIds to their distance2 from viewing player
-		const glm::vec3 origin = pPlayerPositionComponents->GetConstData(m_ViewerEntityId).Position;
-		std::transform(m_EntityIds.Begin(), m_EntityIds.End(), m_PlayerDistances.Begin(),
-			[origin, pPlayerPositionComponents](uint32 entity) -> float {
-				const glm::vec3 pos = pPlayerPositionComponents->GetConstData(entity).Position;
-				return (float)glm::distance2(origin, pos);
-			});
-
-		// Rank indexes of distance2
-		std::iota(m_NextPlayerList.Begin(), m_NextPlayerList.End(), 0);
-		std::sort(m_NextPlayerList.Begin(), m_NextPlayerList.End(),
-			[&](uint32 i1, uint32 i2) {return m_PlayerDistances[i1] > m_PlayerDistances[i2]; });
-
-		for (uint32 d = 0; d < m_DrawCount; d++)
+		for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
 		{
-			// Skip drawing local player
-			if (d != m_ViewerDrawArgIndex)
-			{
-				// Get next furthest player
-				uint32 next = m_NextPlayerList.GetBack();
-				m_NextPlayerList.PopBack();
-				const DrawArg& drawArg = m_pDrawArgs[next];
+			m_PlayerData[i].distance2ToViewer = glm::distance2(m_Viewer.positon, m_PlayerData[i].position);
+		}
+		
+		std::sort(m_PlayerData.Begin(), m_PlayerData.End(),
+			[&](const PlayerData pd1, PlayerData pd2) {return pd1.distance2ToViewer < pd2.distance2ToViewer; });
 
-				// Push team id of current player
-				uint32 teamId = m_TeamIds[next];
-				bool isEnemy = (teamId == 1);
-				bool isTeamMate = (teamId == 0);
+		for (auto& player : m_PlayerData) 
+		{
+			bool drawingVisiblePlayer = player.drawArgIndex != m_Viewer.drawArgIndex;
+			
+			// Skip drawing local player
+			if (drawingVisiblePlayer)
+			{
+				bool isEnemy = (player.teamId == 1);
+				bool isTeamMate = (player.teamId == 0);
 
 				// Filter enemies if rendering teamates
 				if (!renderEnemy && isEnemy) {
@@ -530,16 +522,16 @@ namespace LambdaEngine
 					continue;
 				}
 
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &teamId, sizeof(uint32), 0);
+				const DrawArg& drawArg = m_pDrawArgs[player.drawArgIndex];
+
+				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.teamId, sizeof(uint32), 0);
 				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[next].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[next].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.drawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.drawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 			}
-		}
 
-		m_PlayerDistances.Clear();
-		m_NextPlayerList.Clear();
+		}
 	}
 
 

@@ -8,24 +8,20 @@
 
 namespace LambdaEngine
 {
-	struct TeamsPushConstant
+	struct ViewerData
 	{
-		byte* pData = nullptr;
-		uint32	DataSize = 0;
-		uint32	Offset = 0;
-		uint32	MaxDataSize = 0;
+		uint32 teamId;
+		uint32 entityId;
+		uint32 drawArgIndex;
+		glm::vec3 positon;
 	};
 
-	struct TeamsPushConstantData
+	struct PlayerData
 	{
-		uint32 viewerTeamId;
-		uint32 ToBeDrawnTeamId;
-	};
-
-	struct UpdateData
-	{
-		uint32 viewerTeamId;
-		uint32 ToBeDrawnTeamId;
+		uint32 drawArgIndex;
+		uint32 teamId;
+		glm::vec3 position;
+		float32 distance2ToViewer;
 	};
 
 	using ReleaseFrame = uint32;
@@ -110,14 +106,17 @@ namespace LambdaEngine
 
 		TSharedRef<const TextureView>			m_DepthStencil;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage;
-		uint32									m_ViewerTeamId;			// Used to filter in shader
-		TArray<uint32>							m_TeamIds;				// Used to filter in shader
-		uint32									m_ViewerEntityId;		// Used to get Position
-		uint32									m_ViewerDrawArgIndex;	// Used to filter in render()
-		TArray<float>							m_PlayerDistances;
+		//uint32									m_ViewerTeamId;			// Used to filter in shader
+		//TArray<uint32>							m_TeamIds;				// Used to filter in shader
+		//uint32									m_ViewerEntityId;		// Used to get Position
+		//uint32									m_ViewerDrawArgIndex;	// Used to filter in render()
+		//TArray<float>							m_PlayerDistances;
+		ViewerData								m_Viewer;
 		TArray<uint32>							m_NextPlayerList;
 		TArray<uint32>							m_EntityIds;
 		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
+
+		TArray<PlayerData>						m_PlayerData;
 
 		bool									m_DirtyUniformBuffers = true;
 
