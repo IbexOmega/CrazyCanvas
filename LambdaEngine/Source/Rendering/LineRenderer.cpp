@@ -29,7 +29,10 @@
 
 namespace LambdaEngine
 {
-	LineRenderer* LineRenderer::s_pInstance = nullptr;
+	LineRenderer*							LineRenderer::s_pInstance = nullptr;
+	TArray<VertexData>						LineRenderer::s_Verticies;
+	THashTable<uint32, TArray<VertexData>>	LineRenderer::s_LineGroups;
+	float32									LineRenderer::s_LineWidth = 1.0f;
 
 	LineRenderer::LineRenderer(const GraphicsDevice* pGraphicsDevice, uint32 verticiesBufferSize, uint32 backBufferCount)
 	{
@@ -58,12 +61,12 @@ namespace LambdaEngine
 		SAFEDELETE_ARRAY(m_ppRenderCommandLists);
 		SAFEDELETE_ARRAY(m_ppRenderCommandAllocators);
 
-		m_Verticies.Clear();
-		for (auto& lineGroup : m_LineGroups)
+		s_Verticies.Clear();
+		for (auto& lineGroup : s_LineGroups)
 		{
 			lineGroup.second.Clear();
 		}
-		m_LineGroups.clear();
+		s_LineGroups.clear();
 	}
 
 	bool LineRenderer::Init()
@@ -128,8 +131,8 @@ namespace LambdaEngine
 
 	uint32 LineRenderer::AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color)
 	{
-		uint32 ID = (uint32)m_LineGroups.size();
-		TArray<VertexData>& vertexPoints = m_LineGroups[ID];
+		uint32 ID = (uint32)s_LineGroups.size();
+		TArray<VertexData>& vertexPoints = s_LineGroups[ID];
 		uint32 size = points.GetSize();
 
 		// If points did not contain an equal amount of points, don't use the last point to avoid wrong drawings
@@ -151,9 +154,9 @@ namespace LambdaEngine
 
 	uint32 LineRenderer::UpdateLineGroup(uint32 ID, const TArray<glm::vec3>& points, const glm::vec3& color)
 	{
-		if (m_LineGroups.contains(ID))
+		if (s_LineGroups.contains(ID))
 		{
-			TArray<VertexData>& vertexPoints = m_LineGroups[ID];
+			TArray<VertexData>& vertexPoints = s_LineGroups[ID];
 			if (points.GetSize() > vertexPoints.GetSize())
 			{
 				vertexPoints.Resize(points.GetSize());
@@ -180,11 +183,11 @@ namespace LambdaEngine
 
 	void LineRenderer::RemoveLineGroup(uint32 ID)
 	{
-		if (m_LineGroups.contains(ID))
+		if (s_LineGroups.contains(ID))
 		{
-			auto& arr = m_LineGroups[ID];
+			auto& arr = s_LineGroups[ID];
 			arr.Clear();
-			m_LineGroups.erase(ID);
+			s_LineGroups.erase(ID);
 		}
 		else
 		{
@@ -192,18 +195,27 @@ namespace LambdaEngine
 		}
 	}
 
+	void LineRenderer::SetLineWidth(float32 lineWidth)
+	{
+		if (lineWidth > 1.0f)
+			s_LineWidth = lineWidth;
+		else
+			LOG_WARNING("[Line Renderer]: Line Width must be greater than 1.0f. Input: %f, defaulted to: 1.0f", lineWidth);
+	}
+
+
 	void LineRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
 	{
 		// if (m_DebugMode > 0)
 		VertexData fromData = {};
 		fromData.Position 	= { from.x, from.y, from.z, 1.0f };
 		fromData.Color		= { color.x, color.y, color.z, 1.0f };
-		m_Verticies.PushBack(fromData);
+		s_Verticies.PushBack(fromData);
 
 		VertexData toData	= {};
 		toData.Position		= { to.x, to.y, to.z, 1.0f };
 		toData.Color		= { color.x, color.y, color.z, 1.0f };
-		m_Verticies.PushBack(toData);
+		s_Verticies.PushBack(toData);
 	}
 
 	void LineRenderer::DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor)
@@ -211,12 +223,12 @@ namespace LambdaEngine
 		VertexData fromData = {};
 		fromData.Position 	= { from.x, from.y, from.z, 1.0f };
 		fromData.Color		= { fromColor.x, fromColor.y, fromColor.z, 1.0f };
-		m_Verticies.PushBack(fromData);
+		s_Verticies.PushBack(fromData);
 
 		VertexData toData	= {};
 		toData.Position		= { to.x, to.y, to.z, 1.0f };
 		toData.Color		= { toColor.x, toColor.y, toColor.z, 1.0f };
-		m_Verticies.PushBack(toData);
+		s_Verticies.PushBack(toData);
 	}
 
 	bool LineRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
@@ -376,7 +388,7 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
-		if (m_LineGroups.size() == 0 && m_Verticies.GetSize() == 0)
+		if (s_LineGroups.size() == 0 && s_Verticies.GetSize() == 0)
 		{
 			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
@@ -393,7 +405,7 @@ namespace LambdaEngine
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
-		pCommandList->SetLineWidth(1.f);
+		pCommandList->SetLineWidth(s_LineWidth);
 
 		// Transfer data to copy buffers then the GPU buffers
 		uint32 drawCount = 0;
@@ -403,7 +415,7 @@ namespace LambdaEngine
 			uint32 totalBufferSize 	= 0;
 			byte* pUniformMapping	= reinterpret_cast<byte*>(uniformCopyBuffer->Map());
 
-			for (auto& lineGroup : m_LineGroups)
+			for (auto& lineGroup : s_LineGroups)
 			{
 				const uint32 currentBufferSize = lineGroup.second.GetSize() * sizeof(VertexData);
 				memcpy(pUniformMapping + totalBufferSize, lineGroup.second.GetData(), currentBufferSize);
@@ -411,11 +423,11 @@ namespace LambdaEngine
 				drawCount += lineGroup.second.GetSize();
 			}
 
-			if (m_Verticies.GetSize() > 0)
+			if (s_Verticies.GetSize() > 0)
 			{
-				memcpy(pUniformMapping + totalBufferSize, m_Verticies.GetData(), m_Verticies.GetSize() * sizeof(VertexData));
-				totalBufferSize += m_Verticies.GetSize() * sizeof(VertexData);
-				drawCount += m_Verticies.GetSize();
+				memcpy(pUniformMapping + totalBufferSize, s_Verticies.GetData(), s_Verticies.GetSize() * sizeof(VertexData));
+				totalBufferSize += s_Verticies.GetSize() * sizeof(VertexData);
+				drawCount += s_Verticies.GetSize();
 			}
 
 			uniformCopyBuffer->Unmap();

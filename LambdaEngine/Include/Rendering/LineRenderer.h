@@ -37,9 +37,27 @@ namespace LambdaEngine
 		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
-		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
-		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
-		virtual void Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)	override final;
+
+		virtual void UpdateTextureResource(
+			const String& resourceName,
+			const TextureView* const* ppPerImageTextureViews,
+			const TextureView* const* ppPerSubImageTextureViews,
+			uint32 imageCount,
+			uint32 subImageCount,
+			bool backBufferBound) override final;
+
+		virtual void UpdateBufferResource(const String& resourceName,
+			const Buffer* const* ppBuffers,
+			uint64* pOffsets,
+			uint64* pSizesInBytes,
+			uint32 count,
+			bool backBufferBound) override final;
+
+		virtual void Render(uint32 modFrameIndex,
+			uint32 backBufferIndex,
+			CommandList** ppFirstExecutionStage,
+			CommandList** ppSecondaryExecutionStage,
+			bool Sleeping) override final;
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
@@ -55,7 +73,7 @@ namespace LambdaEngine
 		*	color - Color the lines should be
 		*	return - Returns an ID to be used when removing or updating the set of points using Update- or RemoveLineGroup
 		*/
-		uint32 AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color);
+		static uint32 AddLineGroup(const TArray<glm::vec3>& points, const glm::vec3& color);
 
 		/*
 		* Update a previously added group using the ID of the points - If ID does not exist, uses AddLineGroup
@@ -64,16 +82,16 @@ namespace LambdaEngine
 		*	color - Color the lines should be
 		*	return - Returns an ID to be used when removing or updating the set of points using Update- or RemoveLineGroup
 		*/
-		uint32 UpdateLineGroup(uint32 ID, const TArray<glm::vec3>& points, const glm::vec3& color);
+		static uint32 UpdateLineGroup(uint32 ID, const TArray<glm::vec3>& points, const glm::vec3& color);
 
 		/*
 		* Remove a previously added group using the ID of the points
 		*	ID - Identification of the set of points to be removed
 		*/
-		void RemoveLineGroup(uint32 ID);
+		static void RemoveLineGroup(uint32 ID);
 
 		/*
-		* Draw a line that will be static in the scene and cannot be removed (old Bullet implementation)
+		* Draw a line that will be static in the scene and cannot be removed (legacy Bullet implementation)
 		* from - glm::vec3 of point to draw from
 		* to - glm::vec3 of point to draw to
 		* color - color the line between from and to should be
@@ -81,13 +99,19 @@ namespace LambdaEngine
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color);
 
 		/*
-		* Draw a line that will be static in the scene and cannot be removed (old Bullet implementation)
+		* Draw a line that will be static in the scene and cannot be removed (legacy Bullet implementation)
 		* from - glm::vec3 of point to draw from
 		* to - glm::vec3 of point to draw to
 		* fromColor - start color the line should be - will be interpolated to the toColor
 		* toColor -  end color the line should be - will be interpolated from fromColor
 		*/
 		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor);
+
+		/*
+		* Sets the line width to be used for all lines
+		* lineWidth - width of the lines
+		*/
+		static void SetLineWidth(float32 lineWidth);
 
 	public:
 		static LineRenderer* Get();
@@ -107,8 +131,6 @@ namespace LambdaEngine
 	private:
 		const GraphicsDevice*	m_pGraphicsDevice = nullptr;
 
-		THashTable<uint32, TArray<VertexData>> m_LineGroups;
-		TArray<VertexData> m_Verticies;
 		uint32 m_verticiesBufferSize;
 
 		uint32 m_BackBufferCount = 0;
@@ -138,7 +160,10 @@ namespace LambdaEngine
 		THashTable<GUID_Lambda, THashTable<GUID_Lambda, uint64>>	m_ShadersIDToPipelineStateIDMap;
 
 	private:
-		static LineRenderer* s_pInstance;
+		static LineRenderer*							s_pInstance;
+		static TArray<VertexData>						s_Verticies;
+		static THashTable<uint32, TArray<VertexData>>	s_LineGroups;
+		static float32									s_LineWidth;
 	};
 
 }
