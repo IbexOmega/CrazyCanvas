@@ -999,6 +999,8 @@ namespace LambdaEngine
 		bool generateImGuiStage,
 		bool generateLineRendererStage)
 	{
+		UNREFERENCED_VARIABLE(generateLineRendererStage);
+
 		const EditorRenderStageDesc* pCurrentRenderStage				= currentOrderedRenderStageIt->second;
 
 		const EditorRenderGraphResourceState* pNextResourceState		= nullptr;

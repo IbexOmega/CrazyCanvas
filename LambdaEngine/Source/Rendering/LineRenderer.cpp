@@ -245,7 +245,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0], &pPreInitDesc->pDepthStencilAttachmentDesc[0]))
+		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0]))
 		{
 			LOG_ERROR("[Physics Renderer]: Failed to create RenderPass");
 			return false;
@@ -623,7 +623,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool LineRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc)
+	bool LineRenderer::CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;

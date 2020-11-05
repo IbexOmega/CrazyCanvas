@@ -123,7 +123,7 @@ namespace LambdaEngine
 		bool CreateDescriptorSet();
 		bool CreateShaders();
 		bool CreateCommandLists();
-		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
+		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 		bool CreatePipelineState();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader);
