@@ -136,9 +136,6 @@ namespace LambdaEngine
 		uint32 GetActiveEmitterCount() const { return m_IndirectData.GetSize();  }
 		uint32 GetMaxParticleCount() const { return m_MaxParticleCount; }
 
-		TArray<TextureView*>& GetAtlasTextureViews() { return m_AtlasTextureViews; }
-		TArray<Sampler*>& GetAtlasSamplers() { return m_AtlasSamplers; }
-
 		bool UpdateBuffers(CommandList* pCommandList);
 		bool UpdateResources(RenderGraph* pRendergraph);
 
@@ -179,6 +176,7 @@ namespace LambdaEngine
 		bool								m_DirtyEmitterBuffer		= false;
 		bool								m_DirtyIndirectBuffer		= false;
 		bool								m_DirtyAtlasDataBuffer		= false;
+		bool								m_DirtyAtlasTexture			= false;
 
 		// Raytracing particle data
 		ASBuilder*							m_pASBuilder = nullptr;
@@ -228,6 +226,7 @@ namespace LambdaEngine
 		TSharedRef<Sampler>					m_Sampler = nullptr;
 		GUID_Lambda							m_DefaultAtlasTextureGUID;
 		THashTable<GUID_Lambda, SAtlasInfo>	m_AtlasResources;
+		TArray<Texture*>					m_AtlasTextures;
 		TArray<TextureView*>				m_AtlasTextureViews;
 		TArray<Sampler*>					m_AtlasSamplers;
 

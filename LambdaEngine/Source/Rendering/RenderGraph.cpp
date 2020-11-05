@@ -670,6 +670,7 @@ namespace LambdaEngine
 							pResource->Name,
 							pResource->Texture.PerImageTextureViews.GetData(),
 							pResource->Texture.PerSubImageTextureViews.GetData(),
+							pResource->Texture.Samplers.GetData(),
 							pResource->Texture.PerImageTextureViews.GetSize(),
 							pResource->Texture.PerSubImageTextureViews.GetSize(),
 							pResource->BackBufferBound);
@@ -1246,6 +1247,7 @@ namespace LambdaEngine
 						backBufferResourceIt->second.Name,
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetData(),
 						backBufferResourceIt->second.Texture.PerSubImageTextureViews.GetData(),
+						backBufferResourceIt->second.Texture.Samplers.GetData(),
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetSize(),
 						backBufferResourceIt->second.Texture.PerSubImageTextureViews.GetSize(),
 						true);

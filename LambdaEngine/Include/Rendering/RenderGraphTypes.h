@@ -34,6 +34,7 @@ namespace LambdaEngine
 	constexpr const char* SCENE_PARTICLE_INDIRECT_BUFFER				= "SCENE_PARTICLE_INDIRECT_BUFFER";
 	constexpr const char* SCENE_PARTICLE_ALIVE_BUFFER					= "SCENE_PARTICLE_ALIVE_BUFFER";
 	constexpr const char* SCENE_PARTICLE_ATLAS_INFO_BUFFER				= "SCENE_PARTICLE_ATLAS_INFO_BUFFER";
+	constexpr const char* SCENE_PARTICLE_ATLAS_IMAGES					= "SCENE_PARTICLE_ATLAS_IMAGES";
 
 	constexpr const char* SCENE_MAT_PARAM_BUFFER						= "SCENE_MAT_PARAM_BUFFER";
 	constexpr const char* SCENE_DRAW_ARGS								= "SCENE_DRAW_ARGS";

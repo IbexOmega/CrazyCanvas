@@ -662,7 +662,7 @@ bool LevelObjectCreator::CreatePlayer(
 			.Bounciness = 0.f,
 			.TileIndex = 14,
 			.AnimationCount = 1,
-			.FirstAnimationIndex = 16,
+			.FirstAnimationIndex = 14,
 			.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
 		}
 		);

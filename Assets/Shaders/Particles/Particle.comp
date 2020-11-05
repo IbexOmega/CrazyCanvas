@@ -59,9 +59,15 @@ layout (binding = 7, set = 0) readonly restrict buffer AccelerationStructureInst
 layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
 
-void UpdateParticlePosition(vec3 position , inout SParticle particle, inout SAccelerationStructureInstance ASInstance)
+void UpdateParticleTransform(vec3 position , inout SParticle particle, inout SAccelerationStructureInstance ASInstance, SEmitter emitter)
 {
 	particle.Transform[3].xyz = position;
+	
+	float scale = mix(particle.EndRadius, particle.BeginRadius, particle.CurrentLife / emitter.LifeTime);
+	ASInstance.Transform[0].x = scale;
+	ASInstance.Transform[1].y = scale;
+	ASInstance.Transform[2].z = scale;
+
 	ASInstance.Transform[0].w = position.x;
 	ASInstance.Transform[1].w = position.y;
 	ASInstance.Transform[2].w = position.z;
@@ -93,7 +99,7 @@ void main()
 			particle.WasCreated = false;
 			vec3 particlePosition = emitterTransform[3].xyz + particle.StartPosition;
 			
-			UpdateParticlePosition(particlePosition, particle, ASInstance);
+			UpdateParticleTransform(particlePosition, particle, ASInstance, emitter);
 
 			// Rotate the initial acceleration and velocity to match its emitter's.
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
@@ -119,7 +125,7 @@ void main()
 			particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
 		}
 		
-		UpdateParticlePosition(particle.Transform[3].xyz + particle.Velocity*dt, particle, ASInstance);
+		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, particle, ASInstance, emitter);
 
 		particle.CurrentLife -= dt;
 
@@ -127,7 +133,7 @@ void main()
 		if(particle.CurrentLife > emitter.LifeTime)
 		{
 			const float OUT_OF_REACH = 10000.f;
-			UpdateParticlePosition(vec3(OUT_OF_REACH), particle, ASInstance);
+			UpdateParticleTransform(vec3(OUT_OF_REACH), particle, ASInstance, emitter);
 			particle.WasCreated = true;
 		}
 
@@ -136,7 +142,7 @@ void main()
 		{
 			float extraLife = mod(abs(particle.CurrentLife), emitter.LifeTime);
 			particle.CurrentLife = emitter.LifeTime-extraLife;
-			UpdateParticlePosition(particle.StartPosition + emitterTransform[3].xyz, particle, ASInstance);
+			UpdateParticleTransform(particle.StartPosition + emitterTransform[3].xyz, particle, ASInstance, emitter);
 			particle.Velocity = particle.StartVelocity;
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
@@ -148,9 +154,9 @@ void main()
 
 		// We only want to update AS instance if particle is alive
 		b_ParticleInstances.Val[particleIndex] = particle;
-		if (particle.CurrentLife > 0.f && particle.CurrentLife < emitter.LifeTime)
+		if (particle.CurrentLife > 0.f)
 		{
-
+			ASInstance.HitMask_CustomProperties = (0xFF000000 | particleIndex);
 			b_ASInstance.Val[ASIndirectIndex] = ASInstance;
 		}
 		

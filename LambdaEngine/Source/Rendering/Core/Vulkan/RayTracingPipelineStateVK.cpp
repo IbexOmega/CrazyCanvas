@@ -100,7 +100,7 @@ namespace LambdaEngine
 			shaderGroupCreateInfo.closestHitShader		= VK_SHADER_UNUSED_NV;
 			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 
-			m_MissShaderCount = pDesc->ClosestHitShaders.GetSize();
+			m_MissShaderCount = pDesc->MissShaders.GetSize();
 		}
 
 		VkPipelineLibraryCreateInfoKHR rayTracingPipelineLibrariesInfo = {};

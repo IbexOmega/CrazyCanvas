@@ -217,7 +217,7 @@ struct SUnwrapData
 struct SAccelerationStructureInstance
 {
     mat3x4  Transform;
-    uint    CustomIndex_HitMask;
+    uint    HitMask_CustomProperties;
     uint    SBTRecordOffset_Flags;
     uint    AccelerationStructureHandleTop32;
     uint    AccelerationStructureHandleBottom32;

@@ -75,7 +75,7 @@ namespace LambdaEngine
 		m_pIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		m_DirtyIndexBuffer = true;
 
-		m_pASBuilder->BuildTriBLAS(m_BLASIndex, 0U, m_pVertexBuffer, m_pIndexBuffer, VERTEX_COUNT, sizeof(glm::vec4), INDEX_COUNT, false);
+		m_pASBuilder->BuildTriBLAS(m_BLASIndex, 1U, m_pVertexBuffer, m_pIndexBuffer, VERTEX_COUNT, sizeof(glm::vec4), INDEX_COUNT, false);
 	}
 
 	void ParticleManager::Release()
@@ -199,7 +199,9 @@ namespace LambdaEngine
 	{
 		// Add atlas texture
 		TextureView* pTextureView = ResourceManager::GetTextureView(atlasGUID);
+		Texture* pTexture = ResourceManager::GetTexture(atlasGUID);
 		m_AtlasTextureViews.PushBack(pTextureView);
+		m_AtlasTextures.PushBack(pTexture);
 
 		if (!m_Sampler)
 		{
@@ -228,7 +230,7 @@ namespace LambdaEngine
 		m_AtlasResources[atlasGUID] = atlasInfo;
 		m_AtlasInfoData.PushBack(atlasInfo);
 		m_DirtyAtlasDataBuffer = true;
-
+		m_DirtyAtlasTexture = true;
 		return true;
 	}
 
@@ -1109,6 +1111,19 @@ namespace LambdaEngine
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
 		}
 		m_DirtyAtlasDataBuffer = false;
+
+		if (m_DirtyAtlasTexture)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = SCENE_PARTICLE_ATLAS_IMAGES;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_AtlasTextures.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_AtlasTextureViews.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers = m_AtlasSamplers.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.TextureCount = m_AtlasTextures.GetSize();
+			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount = m_AtlasSamplers.GetSize();
+			pRendergraph->UpdateResource(&resourceUpdateDesc);
+		}
+		m_DirtyAtlasTexture = false;
 
 		m_CreatedDummyBuffer = true;
 

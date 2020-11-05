@@ -178,13 +178,14 @@ namespace LambdaEngine
 	void PaintMaskRenderer::UpdateTextureResource(
 		const String& resourceName, 
 		const TextureView* const * ppPerImageTextureViews, 
-		const TextureView* const* ppPerSubImageTextureViews, 
+		const TextureView* const* ppPerSubImageTextureViews,
+		const Sampler* const* ppPerImageSamplers,
 		uint32 imageCount, 
 		uint32 subImageCount, 
 		bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(subImageCount);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
