@@ -87,7 +87,8 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
-	
+	WeaponSystem::Init();
+
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
