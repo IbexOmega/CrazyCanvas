@@ -14,11 +14,11 @@ layout(binding = 3, set = 0) uniform sampler2D 	u_Roughness;
 void main()
 {
     uvec2 OUTPUT_IMAGE_SIZE = imageSize(u_OutputImage);
-	vec2 texcoord   = vec2(gl_GlobalInvocationID.xy) / vec2(OUTPUT_IMAGE_SIZE);
+	vec2 texCoord   = (vec2(gl_GlobalInvocationID.xy) + 0.5f) / vec2(OUTPUT_IMAGE_SIZE);
 
-    float ao 		        = textureLod(u_AO, 			texcoord, 0).r;
-    float metallic 		    = textureLod(u_Metallic, 	texcoord, 0).r;
-    float roughness 		= textureLod(u_Roughness, 	texcoord, 0).r;
+    float ao 		        = textureLod(u_AO, 			texCoord, 0).r;
+    float metallic 		    = textureLod(u_Metallic, 	texCoord, 0).r;
+    float roughness 		= textureLod(u_Roughness, 	texCoord, 0).r;
 
 	vec4 combinedMaterial = vec4(ao, roughness, metallic, 1.0f);
     imageStore(u_OutputImage, ivec2(gl_GlobalInvocationID.xy), combinedMaterial);

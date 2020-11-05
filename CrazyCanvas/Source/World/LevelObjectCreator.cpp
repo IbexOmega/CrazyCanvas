@@ -142,6 +142,8 @@ bool LevelObjectCreator::Init()
 			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.fbx");
 			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.fbx");
 #endif
+
+			ResourceManager::LoadMeshFromFile("Gun/Gun.glb", s_WeaponMesh, s_WeaponMaterial);
 		}
 	}
 
@@ -221,7 +223,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize));
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
 	pECS->AddComponent<MeshComponent>(entity, meshComponent);
 	const CollisionCreateInfo collisionCreateInfo =
 	{
@@ -314,7 +316,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
 
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
 
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
@@ -652,9 +654,10 @@ bool LevelObjectCreator::CreatePlayer(
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.5f, 1.5f, -0.2f) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.3f, -0.5f) });//glm::vec3(0.5f, 1.5f, -0.2f)
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
+	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 
 	ChildComponent childComp;
 	childComp.AddChild(weaponEntity, "weapon");
@@ -663,28 +666,35 @@ bool LevelObjectCreator::CreatePlayer(
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
-			.Active = false,
-			.OneTime = true,
-			.Explosive = 1.0f,
-			.ParticleCount = 64,
-			.EmitterShape = EEmitterShape::CONE,
-			.Angle = 15.f,
-			.VelocityRandomness = 0.5f,
-			.Velocity = 10.0,
-			.Acceleration = 0.0,
-			.Gravity = -4.f,
-			.LifeTime = 2.0f,
-			.RadiusRandomness = 0.5f,
-			.BeginRadius = 0.1f,
-			.FrictionFactor = 0.f,
-			.Bounciness = 0.f,
-			.TileIndex = 14,
-			.AnimationCount = 1,
-			.FirstAnimationIndex = 16,
-			.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
-		}
+		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent
+			{
+				.Active = false,
+				.OneTime = true,
+				.Explosive = 1.0f,
+				.ParticleCount = 64,
+				.EmitterShape = EEmitterShape::CONE,
+				.Angle = 15.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 10.0,
+				.Acceleration = 0.0,
+				.Gravity = -4.f,
+				.LifeTime = 2.0f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.1f,
+				.FrictionFactor = 0.f,
+				.Bounciness = 0.f,
+				.TileIndex = 14,
+				.AnimationCount = 1,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
+			}
 		);
+
+		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
+			{
+				.MeshGUID = s_WeaponMesh,
+				.MaterialGUID = s_WeaponMaterial,
+			});
 
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
@@ -826,7 +836,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = s_PlayerMeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
-		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
 
 		if (!pPlayerDesc->IsLocal)
 		{
