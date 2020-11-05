@@ -12,9 +12,7 @@
 
 struct SRayHitDescription
 {
-	vec3	Position;
-	vec3	Normal;
-	vec4	Albedo;
+	float	Alpha;
 };
 
 layout(buffer_reference, buffer_reference_align = 16) buffer VertexBuffer 
@@ -68,12 +66,10 @@ SRayHitDescription CalculateHitData()
 	vec2 texCoord = (v0TexCoord * barycentricCoords.x + v1TexCoord * barycentricCoords.y + v2TexCoord * barycentricCoords.z);
 	vec3 shadingNormal		= vec3(1.0, 0.0, 0.0);
 
-	vec4 albedo = emitter.Color * texture(u_TextureAtlases[emitter.AtlasIndex], texCoord);
+	float alpha = texture(u_TextureAtlases[emitter.AtlasIndex], texCoord).a;
 
 	SRayHitDescription hitDescription;
-	hitDescription.Position			= gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
-	hitDescription.Normal			= shadingNormal;
-	hitDescription.Albedo			= albedo;
+	hitDescription.Alpha			= alpha;
 	
 	return hitDescription;
 }
@@ -82,11 +78,8 @@ void main()
 {
 	SRayHitDescription hitDescription = CalculateHitData();
 	
-	s_PrimaryPayload.HitPosition		= hitDescription.Position;
-	s_PrimaryPayload.Normal				= hitDescription.Normal;
-	s_PrimaryPayload.Albedo				= hitDescription.Albedo;
-	s_PrimaryPayload.AO					= 1.0;
-	s_PrimaryPayload.Roughness			= 1.0;
-	s_PrimaryPayload.Metallic			= 0.0;
-	s_PrimaryPayload.Distance			= gl_HitTEXT;
+	if (hitDescription.Alpha > 0)
+		return;
+	else
+		ignoreIntersectionEXT();
 }
