@@ -109,12 +109,18 @@ namespace LambdaEngine
 	{
 		switch (textureType)
 		{
-		case aiTextureType::aiTextureType_DIFFUSE:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
-		case aiTextureType::aiTextureType_NORMALS:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
-		case aiTextureType::aiTextureType_HEIGHT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
-		case aiTextureType::aiTextureType_AMBIENT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
-		case aiTextureType::aiTextureType_REFLECTION:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
-		case aiTextureType::aiTextureType_SHININESS:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		case aiTextureType::aiTextureType_BASE_COLOR:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
+		case aiTextureType::aiTextureType_DIFFUSE:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
+		case aiTextureType::aiTextureType_NORMAL_CAMERA:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_NORMALS:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_HEIGHT:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_AMBIENT_OCCLUSION:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
+		case aiTextureType::aiTextureType_AMBIENT:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
+		case aiTextureType::aiTextureType_METALNESS:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
+		case aiTextureType::aiTextureType_REFLECTION:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
+		case aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		case aiTextureType::aiTextureType_SHININESS:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		case aiTextureType::aiTextureType_UNKNOWN:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC_ROUGHNESS;
 		}
 
 		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NONE;
@@ -175,19 +181,95 @@ namespace LambdaEngine
 
 			if (name[0] == '*')
 			{
-				//Load Embedded Texture
-				uint32 textureIndex = std::stoul(name.substr(1).c_str());
+				name = context.Filename + name;
 
-				if (textureIndex >= pScene->mNumTextures)
+				auto loadedTexture = context.LoadedTextures.find(name);
+				if (loadedTexture == context.LoadedTextures.end())
 				{
-					LOG_ERROR("Assimp embedded texture with index %u exceeds number of textures in scene %u", textureIndex, pScene->mNumTextures);
+					//Load Embedded Texture
+					const aiTexture* pTextureAI = pScene->GetEmbeddedTexture(str.C_Str());
+
+					uint32 textureWidth;
+					uint32 textureHeight;
+					byte* pTextureData;
+					bool loadedWithSTBI;
+
+					//Remap ARGB data to RGBA
+					if (pTextureAI->mHeight == 0)
+					{
+						//Data is compressed
+						loadedWithSTBI = true;
+
+						int32 stbiTextureWidth = 0;
+						int32 stbiTextureHeight = 0;
+						int32 bpp = 0;
+
+						pTextureData = stbi_load_from_memory(
+							reinterpret_cast<stbi_uc*>(pTextureAI->pcData),
+							pTextureAI->mWidth,
+							&stbiTextureWidth,
+							&stbiTextureHeight,
+							&bpp,
+							STBI_rgb_alpha);
+
+						textureWidth = uint32(stbiTextureWidth);
+						textureHeight = uint32(stbiTextureHeight);
+					}
+					else
+					{
+						loadedWithSTBI = false;
+
+						uint32 numTexels = pTextureAI->mWidth * pTextureAI->mHeight;
+						uint32 textureDataSize = 4u * numTexels;
+						pTextureData = DBG_NEW byte[textureDataSize];
+
+						//This sucks, but we need to make ARGB -> RGBA
+						for (uint32 t = 0; t < numTexels; t++)
+						{
+							const aiTexel& texel = pTextureAI->pcData[t];
+
+							pTextureData[4 * t + 0] = texel.r;
+							pTextureData[4 * t + 1] = texel.g;
+							pTextureData[4 * t + 2] = texel.b;
+							pTextureData[4 * t + 3] = texel.a;
+						}
+
+						textureWidth = pTextureAI->mWidth;
+						textureHeight = pTextureAI->mHeight;
+					}
+
+					LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
+
+					void* pData = reinterpret_cast<void*>(pTextureData);
+					pLoadedTexture->pTexture = ResourceLoader::LoadTextureArrayFromMemory(
+						name,
+						&pData,
+						1,
+						textureWidth,
+						textureHeight,
+						EFormat::FORMAT_R8G8B8A8_UNORM,
+						FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE,
+						true,
+						true);
+
+					pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+
+					if (loadedWithSTBI)
+					{
+						stbi_image_free(pTextureData);
+					}
+					else
+					{
+						SAFEDELETE_ARRAY(pTextureData);
+					}
+
+					context.LoadedTextures[name] = pLoadedTexture;
+					return context.pTextures->PushBack(pLoadedTexture);
 				}
 				else
 				{
-					aiTexture* pTextureAI = pScene->mTextures[textureIndex];
-
-					//Remap ARGB data to RGBA
-					//pTextureAI->pcData
+					loadedTexture->second->Flags |= AssimpTextureFlagToLambdaTextureFlag(type);
+					return loadedTexture->second;
 				}
 			}
 			else
@@ -209,6 +291,7 @@ namespace LambdaEngine
 				}
 				else
 				{
+					loadedTexture->second->Flags |= AssimpTextureFlagToLambdaTextureFlag(type);
 					return loadedTexture->second;
 				}
 			}
@@ -1317,15 +1400,16 @@ namespace LambdaEngine
 			{
 				pMaterial->Properties.Roughness = 1.0f;
 			}
-			
-			LoadedTexture* pDiffuseTexture = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
-			LoadedTexture* pMetallicRoughnessTexture = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
 
 			// Albedo
 			pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_BASE_COLOR, 0);
 			if (!pMaterial->pAlbedoMap)
 			{
 				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_DIFFUSE, 0);
+			}
+			if (!pMaterial->pAlbedoMap)
+			{
+				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
 			}
 
 			// Normal
@@ -1358,6 +1442,12 @@ namespace LambdaEngine
 			if (!pMaterial->pRoughnessMap)
 			{
 				pMaterial->pRoughnessMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_SHININESS, 0);
+			}
+
+			//Combined Metallic Roughness
+			if (!pMaterial->pMetallicMap && !pMaterial->pRoughnessMap)
+			{
+				pMaterial->pMetallicRoughnessMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
 			}
 
 			context.pMaterials->EmplaceBack(pMaterial);
@@ -1436,6 +1526,7 @@ namespace LambdaEngine
 
 		SceneLoadingContext context = 
 		{
+			.Filename					= filepath.substr(lastPathDivisor + 1),
 			.DirectoryPath				= filepath.substr(0, lastPathDivisor + 1),
 			.LevelObjectDescriptions	= sceneLoadRequest.LevelObjectDescriptions,
 			.DirectionalLights			= sceneLoadRequest.DirectionalLights,

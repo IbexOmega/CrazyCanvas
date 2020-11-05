@@ -69,7 +69,7 @@ namespace LambdaEngine
 		const TArray<LevelObjectOnLoadDesc>&	LevelObjectDescriptions;
 		TArray<LoadedDirectionalLight>&			DirectionalLights;
 		TArray<LoadedPointLight>&				PointLights;
-		TArray<LevelObjectOnLoad>&			LevelObjects;
+		TArray<LevelObjectOnLoad>&				LevelObjects;
 		TArray<Mesh*>&							Meshes;
 		TArray<Animation*>&						Animations;
 		TArray<MeshComponent>&					MeshComponents;
@@ -82,11 +82,12 @@ namespace LambdaEngine
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
 	struct SceneLoadingContext
 	{
+		String									Filename;
 		String									DirectoryPath;
 		const TArray<LevelObjectOnLoadDesc>&	LevelObjectDescriptions;
 		TArray<LoadedDirectionalLight>&			DirectionalLights;
 		TArray<LoadedPointLight>&				PointLights;
-		TArray<LevelObjectOnLoad>&			LevelObjects;
+		TArray<LevelObjectOnLoad>&				LevelObjects;
 		TArray<Mesh*>&							Meshes;
 		TArray<MeshComponent>&					MeshComponents;
 		TArray<Animation*>&						Animations;

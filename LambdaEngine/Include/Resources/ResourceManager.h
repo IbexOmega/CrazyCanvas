@@ -198,13 +198,16 @@ namespace LambdaEngine
 		* Combine PBR materials into one texture
 		*/
 		static GUID_Lambda CombineMaterialTextures(
+			const String& combinedTextureName,
 			Material* pMaterial,
 			Texture* pAOMap,
 			Texture* pMetallicMap,
 			Texture* pRoughnessMap,
+			Texture* pMetallicRoughnessMap,
 			TextureView* pAOMapView,
 			TextureView* pMetallicMapView,
-			TextureView* pRoughnessMapView);
+			TextureView* pRoughnessMapView,
+			TextureView* pMetallicRoughnessMapView);
 
 		static bool UnloadMesh(GUID_Lambda guid);
 		static bool UnloadMaterial(GUID_Lambda guid);
@@ -248,11 +251,28 @@ namespace LambdaEngine
 	private:
 		static bool OnShaderRecompileEvent(const ShaderRecompileEvent& event);
 
-		static GUID_Lambda RegisterLoadedMesh(const String& name, Mesh* pMesh);
-		static GUID_Lambda RegisterLoadedMaterial(const String& name, Material* pMaterial);
-		static GUID_Lambda RegisterLoadedAnimation(const String& name, Animation* pAnimation);
-		static GUID_Lambda RegisterLoadedTexture(Texture* pTexture);
-		static GUID_Lambda RegisterLoadedTextureWithView(Texture* pTexture, TextureView* pTextureView);
+		static void RegisterLoadedMaterialTexture(
+			LoadedTexture* pLoadedTexture,
+			LoadedMaterial* pLoadedMaterial,
+			MaterialLoadDesc& materialLoadDescription,
+			TArray<TextureView*>& textureViewsToDelete);
+
+		static void RegisterLoadedMaterialTexture(
+			LoadedTexture* pLoadedTexture, 
+			TArray<LoadedMaterial*>& loadedMaterials, 
+			TArray<MaterialLoadDesc>& materialLoadDescriptions,
+			TArray<TextureView*>& textureViewsToDelete);
+
+		static GUID_Lambda RegisterLoadedMaterial(
+			const String& name,
+			LoadedMaterial* pLoadedMaterial,
+			MaterialLoadDesc& materialLoadConfig);
+
+		static GUID_Lambda RegisterMesh(const String& name, Mesh* pMesh);
+		static GUID_Lambda RegisterMaterial(const String& name, Material* pMaterial);
+		static GUID_Lambda RegisterAnimation(const String& name, Animation* pAnimation);
+		static GUID_Lambda RegisterTexture(Texture* pTexture);
+		static GUID_Lambda RegisterTextureWithView(Texture* pTexture, TextureView* pTextureView);
 
 		static GUID_Lambda GetGUID(const std::unordered_map<String, GUID_Lambda>& namesToGUIDs, const String& name);
 
@@ -304,9 +324,12 @@ namespace LambdaEngine
 		static DescriptorSet* s_pMaterialDescriptorSet;
 
 		static PipelineLayout* s_pMaterialPipelineLayout;
-		static PipelineState* s_pMaterialPipelineState;
 
-		static GUID_Lambda s_MaterialShaderGUID;
+		static PipelineState* s_pAllChannelsSeperateMaterialPipelineState;
+		static PipelineState* s_pAOSeperateMetRoughCombinedMaterialPipelineState;
+
+		static GUID_Lambda s_AllChannelsSeperateMaterialShaderGUID;
+		static GUID_Lambda s_AOSeperateMetRoughCombinedMaterialShaderGUID;
 
 		static TSet<GUID_Lambda> s_UnloadedGUIDs;
 	};

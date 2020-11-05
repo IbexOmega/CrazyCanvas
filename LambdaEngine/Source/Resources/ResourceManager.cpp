@@ -85,9 +85,12 @@ namespace LambdaEngine
 	DescriptorSet* ResourceManager::s_pMaterialDescriptorSet	= nullptr;
 
 	PipelineLayout* ResourceManager::s_pMaterialPipelineLayout	= nullptr;
-	PipelineState* ResourceManager::s_pMaterialPipelineState	= nullptr;
 
-	GUID_Lambda ResourceManager::s_MaterialShaderGUID = GUID_NONE;
+	PipelineState* ResourceManager::s_pAllChannelsSeperateMaterialPipelineState	= nullptr;
+	PipelineState* ResourceManager::s_pAOSeperateMetRoughCombinedMaterialPipelineState	= nullptr;
+
+	GUID_Lambda ResourceManager::s_AllChannelsSeperateMaterialShaderGUID = GUID_NONE;
+	GUID_Lambda ResourceManager::s_AOSeperateMetRoughCombinedMaterialShaderGUID = GUID_NONE;
 
 	TSet<GUID_Lambda> ResourceManager::s_UnloadedGUIDs;
 
@@ -163,67 +166,16 @@ namespace LambdaEngine
 		{
 			LoadedTexture* pLoadedTexture = textures[i];
 
-			if (pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO ||
-				pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL)
-			{
-				GUID_Lambda guid = RegisterLoadedTexture(pLoadedTexture->pTexture);
-
-				// RegisterLoadedTexture will create a TextureView for the texture, this needs to be registered in the correct materials
-				for (uint32 j = 0; j < materials.GetSize(); j++)
-				{
-					LoadedMaterial* pLoadedMaterial = materials[j];
-					MaterialLoadDesc& materialLoadConfig = materialLoadConfigurations[j];
-
-					if (pLoadedMaterial->pAlbedoMap == pLoadedTexture)
-					{
-						pLoadedMaterial->pAlbedoMapView = s_TextureViews[guid];
-						s_TextureMaterialRefs[guid]++;
-						materialLoadConfig.AlbedoMapGUID = guid;
-					}
-
-					if (pLoadedMaterial->pNormalMap == pLoadedTexture)
-					{
-						pLoadedMaterial->pNormalMapView = s_TextureViews[guid];
-						s_TextureMaterialRefs[guid]++;
-						materialLoadConfig.NormalMapGUID = guid;
-					}
-				}
-			}
-			else
-			{
-				TextureViewDesc textureViewDesc = {};
-				textureViewDesc.DebugName		= pLoadedTexture->pTexture->GetDesc().DebugName + " Texture View";
-				textureViewDesc.pTexture		= pLoadedTexture->pTexture;
-				textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-				textureViewDesc.Format			= pLoadedTexture->pTexture->GetDesc().Format;
-				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-				textureViewDesc.MiplevelCount	= pLoadedTexture->pTexture->GetDesc().Miplevels;
-				textureViewDesc.ArrayCount		= pLoadedTexture->pTexture->GetDesc().ArrayCount;
-				textureViewDesc.Miplevel		= 0;
-				textureViewDesc.ArrayIndex		= 0;
-
-				TextureView* pTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-				textureViewsToDelete.PushBack(pTextureView);
-
-				//Registered in the correct materials
-				for (uint32 j = 0; j < materials.GetSize(); j++)
-				{
-					LoadedMaterial* pLoadedMaterial = materials[j];
-					if (pLoadedMaterial->pAmbientOcclusionMap == pLoadedTexture)
-						pLoadedMaterial->pAmbientOcclusionMapView = pTextureView;
-
-					if (pLoadedMaterial->pMetallicMap == pLoadedTexture)
-						pLoadedMaterial->pMetallicMapView = pTextureView;
-
-					if (pLoadedMaterial->pRoughnessMap == pLoadedTexture)
-						pLoadedMaterial->pRoughnessMapView = pTextureView;
-				}
-			}
+			RegisterLoadedMaterialTexture(
+				pLoadedTexture,
+				materials,
+				materialLoadConfigurations,
+				textureViewsToDelete);
 		}
 
 		for (uint32 i = 0; i < meshes.GetSize(); i++)
 		{
-			GUID_Lambda guid = RegisterLoadedMesh("Scene Mesh " + std::to_string(i), meshes[i]);
+			GUID_Lambda guid = RegisterMesh("Scene Mesh " + std::to_string(i), meshes[i]);
 
 			//Loop through mesh component and set the real mesh GUID
 			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
@@ -252,41 +204,10 @@ namespace LambdaEngine
 			LoadedMaterial* pLoadedMaterial = materials[i];
 			MaterialLoadDesc& materialLoadConfig = materialLoadConfigurations[i];
 
-			Material* pMaterialToBeRegistered = DBG_NEW Material();
-			pMaterialToBeRegistered->Properties		= pLoadedMaterial->Properties;
-			pMaterialToBeRegistered->pAlbedoMap		= pLoadedMaterial->pAlbedoMap != nullptr ? pLoadedMaterial->pAlbedoMap->pTexture : nullptr;
-			pMaterialToBeRegistered->pNormalMap		= pLoadedMaterial->pNormalMap != nullptr ? pLoadedMaterial->pNormalMap->pTexture : nullptr;
-			pMaterialToBeRegistered->pAlbedoMapView	= pLoadedMaterial->pAlbedoMapView;
-			pMaterialToBeRegistered->pNormalMapView	= pLoadedMaterial->pNormalMapView;
-
-			//If AO, Metallic & Roughness are all nullptr we can set default
-			if (pLoadedMaterial->pAmbientOcclusionMap	== nullptr &&
-				pLoadedMaterial->pMetallicMap			== nullptr &&
-				pLoadedMaterial->pRoughnessMap			== nullptr)
-			{
-				pMaterialToBeRegistered->pAOMetallicRoughnessMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-				pMaterialToBeRegistered->pAOMetallicRoughnessMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-			}
-			else
-			{
-				Texture*		pDefaultColorTexture		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-				TextureView*	pDefaultColorTextureView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
-
-				GUID_Lambda aoMetallicRoughnessGUID = CombineMaterialTextures(
-					pMaterialToBeRegistered,
-					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMap->pTexture	: pDefaultColorTexture,
-					pLoadedMaterial->pMetallicMap			!= nullptr ? pLoadedMaterial->pMetallicMap->pTexture			: pDefaultColorTexture,
-					pLoadedMaterial->pRoughnessMap			!= nullptr ? pLoadedMaterial->pRoughnessMap->pTexture			: pDefaultColorTexture,
-					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMapView			: pDefaultColorTextureView,
-					pLoadedMaterial->pMetallicMap			!= nullptr ? pLoadedMaterial->pMetallicMapView					: pDefaultColorTextureView,
-					pLoadedMaterial->pRoughnessMap			!= nullptr ? pLoadedMaterial->pRoughnessMapView					: pDefaultColorTextureView);
-
-				s_TextureMaterialRefs[aoMetallicRoughnessGUID]++;
-				materialLoadConfig.NormalMapGUID = aoMetallicRoughnessGUID;
-			}
-
-			GUID_Lambda guid = RegisterLoadedMaterial("Scene Material " + std::to_string(i), pMaterialToBeRegistered);
-			s_MaterialLoadConfigurations[guid] = materialLoadConfig;
+			GUID_Lambda guid = RegisterLoadedMaterial(
+				"Scene Material " + std::to_string(i), 
+				pLoadedMaterial, 
+				materialLoadConfig);
 
 			//Loop through mesh component and set the real material GUID
 			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
@@ -310,7 +231,6 @@ namespace LambdaEngine
 			}
 
 			SAFEDELETE(pLoadedMaterial);
-
 		}
 
 		for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
@@ -327,7 +247,7 @@ namespace LambdaEngine
 			}
 		}
 
-		//Delete AO, Metallic & Roughness Textures
+		//Delete AO, Metallic, Roughness & Metallic/Roughness Textures
 		for (uint32 i = 0; i < textures.GetSize(); i++)
 		{
 			LoadedTexture* pLoadedTexture = textures[i];
@@ -366,6 +286,7 @@ namespace LambdaEngine
 		TArray<Animation*> rawAnimations;
 		TArray<LoadedMaterial*> materials;
 		TArray<LoadedTexture*> textures;
+		TArray<TextureView*> textureViewsToDelete;
 		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, materials, textures, rawAnimations);
 
 		Mesh** ppMappedMesh = nullptr;
@@ -383,10 +304,27 @@ namespace LambdaEngine
 				{
 					LOG_WARNING("[ResourceManager]: Mesh %s loaded with more than one material, the other materials will be ignored");
 				}
+
+				LoadedMaterial* pMaterial = materials[0];
+				MaterialLoadDesc materialLoadDesc;
+
+				for (LoadedTexture* pLoadedTexture : textures)
+				{
+					RegisterLoadedMaterialTexture(
+						pLoadedTexture,
+						pMaterial,
+						materialLoadDesc,
+						textureViewsToDelete);
+				}
+
+				materialGUID = RegisterLoadedMaterial(
+					filename,
+					pMaterial,
+					materialLoadDesc);
 			}
 			else
 			{
-				meshGUID = GUID_MATERIAL_DEFAULT;
+				materialGUID = GUID_MATERIAL_DEFAULT;
 			}
 		}
 
@@ -394,6 +332,30 @@ namespace LambdaEngine
 		for (Animation* pAnimation : rawAnimations)
 		{
 			SAFEDELETE(pAnimation);
+		}
+
+		//Delete Material Wrappers
+		for (LoadedMaterial* pLoadedMaterial : materials)
+		{
+			SAFEDELETE(pLoadedMaterial);
+		}
+
+		//Delete AO, Metallic, Roughness & Metallic/Roughness Textures
+		for (LoadedTexture* pLoadedTexture : textures)
+		{
+			if ((pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO) == 0 &&
+				(pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL) == 0)
+			{
+				SAFERELEASE(pLoadedTexture->pTexture);
+			}
+
+			SAFEDELETE(pLoadedTexture);
+		}
+
+		//Delete Temp Texture Views used to Generate Combined Materials
+		for (TextureView* pTextureViewToDelete : textureViewsToDelete)
+		{
+			SAFERELEASE(pTextureViewToDelete);
 		}
 	}
 
@@ -415,6 +377,7 @@ namespace LambdaEngine
 		TArray<Animation*> rawAnimations;
 		TArray<LoadedMaterial*> materials;
 		TArray<LoadedTexture*> textures;
+		TArray<TextureView*> textureViewsToDelete;
 		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, materials, textures, rawAnimations);
 
 		Mesh** ppMappedMesh = nullptr;
@@ -432,10 +395,27 @@ namespace LambdaEngine
 				{
 					LOG_WARNING("[ResourceManager]: Mesh %s loaded with more than one material, the other materials will be ignored");
 				}
+
+				LoadedMaterial* pMaterial = materials[0];
+				MaterialLoadDesc materialLoadDesc;
+
+				for (LoadedTexture* pLoadedTexture : textures)
+				{
+					RegisterLoadedMaterialTexture(
+						pLoadedTexture,
+						pMaterial,
+						materialLoadDesc,
+						textureViewsToDelete);
+				}
+
+				materialGUID = RegisterLoadedMaterial(
+					filename,
+					pMaterial,
+					materialLoadDesc);
 			}
 			else
 			{
-				meshGUID = GUID_MATERIAL_DEFAULT;
+				materialGUID = GUID_MATERIAL_DEFAULT;
 			}
 		}
 
@@ -446,11 +426,35 @@ namespace LambdaEngine
 		{
 			VALIDATE(pAnimation);
 
-			GUID_Lambda animationsGuid = RegisterLoadedAnimation(pAnimation->Name, pAnimation);
+			GUID_Lambda animationsGuid = RegisterAnimation(pAnimation->Name, pAnimation);
 			animations.EmplaceBack(animationsGuid);
 		}
 
 		s_FileNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
+
+		//Delete Material Wrappers
+		for (LoadedMaterial* pLoadedMaterial : materials)
+		{
+			SAFEDELETE(pLoadedMaterial);
+		}
+
+		//Delete AO, Metallic, Roughness & Metallic/Roughness Textures
+		for (LoadedTexture* pLoadedTexture : textures)
+		{
+			if ((pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO) == 0 &&
+				(pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL) == 0)
+			{
+				SAFERELEASE(pLoadedTexture->pTexture);
+			}
+
+			SAFEDELETE(pLoadedTexture);
+		}
+
+		//Delete Temp Texture Views used to Generate Combined Materials
+		for (TextureView* pTextureViewToDelete : textureViewsToDelete)
+		{
+			SAFERELEASE(pTextureViewToDelete);
+		}
 	}
 
 	TArray<GUID_Lambda> ResourceManager::LoadAnimationsFromFile(const String& filename)
@@ -473,7 +477,7 @@ namespace LambdaEngine
 		{
 			VALIDATE(pAnimation);
 
-			GUID_Lambda animationsGuid = RegisterLoadedAnimation(pAnimation->Name, pAnimation);
+			GUID_Lambda animationsGuid = RegisterAnimation(pAnimation->Name, pAnimation);
 			animations.EmplaceBack(animationsGuid);
 		}
 
@@ -504,7 +508,14 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadMaterialFromMemory(const String& name, GUID_Lambda albedoMap, GUID_Lambda normalMap, GUID_Lambda ambientOcclusionMap, GUID_Lambda metallicMap, GUID_Lambda roughnessMap, const MaterialProperties& properties)
+	GUID_Lambda ResourceManager::LoadMaterialFromMemory(
+		const String& name, 
+		GUID_Lambda albedoMap, 
+		GUID_Lambda normalMap, 
+		GUID_Lambda ambientOcclusionMap, 
+		GUID_Lambda metallicMap, 
+		GUID_Lambda roughnessMap, 
+		const MaterialProperties& properties)
 	{
 		auto loadedMaterialGUID = s_MaterialNamesToGUIDs.find(name);
 		if (loadedMaterialGUID != s_MaterialNamesToGUIDs.end())
@@ -551,7 +562,17 @@ namespace LambdaEngine
 		(*ppMappedMaterial)->pAlbedoMapView = pAlbedoMapView;
 		(*ppMappedMaterial)->pNormalMapView = pNormalMapView;
 
-		GUID_Lambda aoMetallicRoughnessGUID = CombineMaterialTextures(*ppMappedMaterial, pAmbientOcclusionMap, pMetallicMap, pRoughnessMap, pAmbientOcclusionMapView, pMetallicMapView, pRoughnessMapView);
+		GUID_Lambda aoMetallicRoughnessGUID = CombineMaterialTextures(
+			name + " Combined Material Texture",
+			*ppMappedMaterial,
+			pAmbientOcclusionMap,
+			pMetallicMap,
+			pRoughnessMap,
+			nullptr,
+			pAmbientOcclusionMapView,
+			pMetallicMapView,
+			pRoughnessMapView,
+			nullptr);
 
 		MaterialLoadDesc materialLoadDesc = {};
 		materialLoadDesc.AlbedoMapGUID				= albedoMap;
@@ -778,17 +799,31 @@ namespace LambdaEngine
 	}
 
 	GUID_Lambda ResourceManager::CombineMaterialTextures(
+		const String& combinedTextureName,
 		Material* pMaterial,
 		Texture* pAOMap,
 		Texture* pMetallicMap,
 		Texture* pRoughnessMap,
+		Texture* pMetallicRoughnessMap,
 		TextureView* pAOMapView,
 		TextureView* pMetallicMapView,
-		TextureView* pRoughnessMapView)
+		TextureView* pRoughnessMapView,
+		TextureView* pMetallicRoughnessMapView)
 	{
+		uint32 largestWidth;
+		uint32 largestHeight;
+
 		// Find largest texture size
-		uint32 largestWidth		= std::max(pMetallicMap->GetDesc().Width, std::max(pRoughnessMap->GetDesc().Width, pAOMap->GetDesc().Width));
-		uint32 largestHeight	= std::max(pMetallicMap->GetDesc().Height, std::max(pRoughnessMap->GetDesc().Height, pAOMap->GetDesc().Height));
+		if (pMetallicRoughnessMap == nullptr)
+		{
+			largestWidth	= std::max(pMetallicMap->GetDesc().Width, std::max(pRoughnessMap->GetDesc().Width, pAOMap->GetDesc().Width));
+			largestHeight	= std::max(pMetallicMap->GetDesc().Height, std::max(pRoughnessMap->GetDesc().Height, pAOMap->GetDesc().Height));
+		}
+		else
+		{
+			largestWidth	= std::max(pMetallicRoughnessMap->GetDesc().Width, pAOMap->GetDesc().Width);
+			largestHeight	= std::max(pMetallicRoughnessMap->GetDesc().Height, pAOMap->GetDesc().Height);
+		}
 
 		uint32_t miplevels = 1u;
 		miplevels = uint32(glm::floor(glm::log2((float)glm::max(largestWidth, largestHeight)))) + 1u;
@@ -799,7 +834,7 @@ namespace LambdaEngine
 		//Create new Combined Material Texture & Texture View
 		{
 			TextureDesc textureDesc = { };
-			textureDesc.DebugName		= "Combined Material Texture";
+			textureDesc.DebugName		= combinedTextureName;
 			textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
 			textureDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 			textureDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
@@ -820,7 +855,7 @@ namespace LambdaEngine
 			}
 
 			TextureViewDesc textureViewDesc;
-			textureViewDesc.DebugName		= "Combined Material Texture View";
+			textureViewDesc.DebugName		= combinedTextureName + " Texture View";
 			textureViewDesc.pTexture		= pCombinedMaterialTexture;
 			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
 			textureViewDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
@@ -842,40 +877,56 @@ namespace LambdaEngine
 		//Update Descriptor Set
 		{
 			s_pMaterialDescriptorSet->WriteTextureDescriptors(
-				&pAOMapView,
-				nullptr,
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-				0,
-				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-				true);
-
-			s_pMaterialDescriptorSet->WriteTextureDescriptors(
-				&pMetallicMapView,
-				nullptr,
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-				1,
-				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-				true);
-
-			s_pMaterialDescriptorSet->WriteTextureDescriptors(
-				&pRoughnessMapView,
-				nullptr,
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-				2,
-				1,
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-				true);
-
-			s_pMaterialDescriptorSet->WriteTextureDescriptors(
 				&pCombinedMaterialTextureView,
 				nullptr,
 				ETextureState::TEXTURE_STATE_GENERAL,
-				3,
+				0,
 				1,
 				EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
 				true);
+
+			s_pMaterialDescriptorSet->WriteTextureDescriptors(
+				&pAOMapView,
+				nullptr,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				1,
+				1,
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
+
+			if (pMetallicRoughnessMap == nullptr)
+			{
+				//Metallic and Roughness Channels are seperate textures
+
+				s_pMaterialDescriptorSet->WriteTextureDescriptors(
+					&pMetallicMapView,
+					nullptr,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					2,
+					1,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					true);
+
+				s_pMaterialDescriptorSet->WriteTextureDescriptors(
+					&pRoughnessMapView,
+					nullptr,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					3,
+					1,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					true);
+			}
+			else
+			{
+				s_pMaterialDescriptorSet->WriteTextureDescriptors(
+					&pMetallicRoughnessMapView,
+					nullptr,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					2,
+					1,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					true);
+			}
 		}
 
 		PipelineTextureBarrierDesc transitionToCopyDstBarrier = { };
@@ -902,7 +953,15 @@ namespace LambdaEngine
 			s_pMaterialComputeCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
 
 			s_pMaterialComputeCommandList->BindDescriptorSetCompute(s_pMaterialDescriptorSet, s_pMaterialPipelineLayout, 0);
-			s_pMaterialComputeCommandList->BindComputePipeline(s_pMaterialPipelineState);
+
+			if (pMetallicRoughnessMap == nullptr)
+			{
+				s_pMaterialComputeCommandList->BindComputePipeline(s_pAllChannelsSeperateMaterialPipelineState);
+			}
+			else
+			{
+				s_pMaterialComputeCommandList->BindComputePipeline(s_pAOSeperateMetRoughCombinedMaterialPipelineState);
+			}
 
 			// Dispatch
 			largestWidth = std::max<uint32>(largestWidth / 8, 1);
@@ -969,7 +1028,7 @@ namespace LambdaEngine
 
 		pMaterial->pAOMetallicRoughnessMap		= pCombinedMaterialTexture;
 		pMaterial->pAOMetallicRoughnessMapView	= pCombinedMaterialTextureView;
-		return RegisterLoadedTextureWithView(pCombinedMaterialTexture, pCombinedMaterialTextureView);
+		return RegisterTextureWithView(pCombinedMaterialTexture, pCombinedMaterialTextureView);
 	}
 
 	bool ResourceManager::UnloadMesh(GUID_Lambda guid)
@@ -1455,7 +1514,160 @@ namespace LambdaEngine
 		return true;
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedMesh(const String& name, Mesh* pResource)
+	void ResourceManager::RegisterLoadedMaterialTexture(
+		LoadedTexture* pLoadedTexture, 
+		LoadedMaterial* pLoadedMaterial, 
+		MaterialLoadDesc& materialLoadDescription, 
+		TArray<TextureView*>& textureViewsToDelete)
+	{
+		TArray<LoadedMaterial*> loadedMaterials(1, pLoadedMaterial);
+		TArray<MaterialLoadDesc> loadedMaterialDescriptions(1, materialLoadDescription);
+
+		RegisterLoadedMaterialTexture(
+			pLoadedTexture,
+			loadedMaterials,
+			loadedMaterialDescriptions,
+			textureViewsToDelete);
+	}
+
+	void ResourceManager::RegisterLoadedMaterialTexture(
+		LoadedTexture* pLoadedTexture,
+		TArray<LoadedMaterial*>& loadedMaterials,
+		TArray<MaterialLoadDesc>& materialLoadDescriptions,
+		TArray<TextureView*>& textureViewsToDelete)
+	{
+		if (pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO ||
+			pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL)
+		{
+			GUID_Lambda guid = RegisterTexture(pLoadedTexture->pTexture);
+
+			// RegisterLoadedTexture will create a TextureView for the texture, this needs to be registered in the correct materials
+			for (uint32 j = 0; j < loadedMaterials.GetSize(); j++)
+			{
+				LoadedMaterial* pLoadedMaterial = loadedMaterials[j];
+				MaterialLoadDesc& materialLoadDesc = materialLoadDescriptions[j];
+
+				if (pLoadedMaterial->pAlbedoMap == pLoadedTexture)
+				{
+					pLoadedMaterial->pAlbedoMapView = s_TextureViews[guid];
+					s_TextureMaterialRefs[guid]++;
+					materialLoadDesc.AlbedoMapGUID = guid;
+				}
+
+				if (pLoadedMaterial->pNormalMap == pLoadedTexture)
+				{
+					pLoadedMaterial->pNormalMapView = s_TextureViews[guid];
+					s_TextureMaterialRefs[guid]++;
+					materialLoadDesc.NormalMapGUID = guid;
+				}
+			}
+		}
+			
+		if (pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO			||
+			pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC	||
+			pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS	||
+			pLoadedTexture->Flags & FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC_ROUGHNESS)
+		{
+			TextureViewDesc textureViewDesc = {};
+			textureViewDesc.DebugName		= pLoadedTexture->pTexture->GetDesc().DebugName + " Texture View";
+			textureViewDesc.pTexture		= pLoadedTexture->pTexture;
+			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Format			= pLoadedTexture->pTexture->GetDesc().Format;
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+			textureViewDesc.MiplevelCount	= pLoadedTexture->pTexture->GetDesc().Miplevels;
+			textureViewDesc.ArrayCount		= pLoadedTexture->pTexture->GetDesc().ArrayCount;
+			textureViewDesc.Miplevel		= 0;
+			textureViewDesc.ArrayIndex		= 0;
+
+			TextureView* pTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+			textureViewsToDelete.PushBack(pTextureView);
+
+			//Registered in the correct materials
+			for (uint32 j = 0; j < loadedMaterials.GetSize(); j++)
+			{
+				LoadedMaterial* pLoadedMaterial = loadedMaterials[j];
+
+				if (pLoadedMaterial->pAmbientOcclusionMap == pLoadedTexture)
+					pLoadedMaterial->pAmbientOcclusionMapView = pTextureView;
+
+				if (pLoadedMaterial->pMetallicMap == pLoadedTexture)
+					pLoadedMaterial->pMetallicMapView = pTextureView;
+
+				if (pLoadedMaterial->pRoughnessMap == pLoadedTexture)
+					pLoadedMaterial->pRoughnessMapView = pTextureView;
+
+				if (pLoadedMaterial->pMetallicRoughnessMap == pLoadedTexture)
+					pLoadedMaterial->pMetallicRoughnessMapView = pTextureView;
+			}
+		}
+	}
+
+	GUID_Lambda ResourceManager::RegisterLoadedMaterial(const String& name, LoadedMaterial* pLoadedMaterial, MaterialLoadDesc& materialLoadConfig)
+	{
+		Material* pMaterialToBeRegistered = DBG_NEW Material();
+		pMaterialToBeRegistered->Properties		= pLoadedMaterial->Properties;
+		pMaterialToBeRegistered->pAlbedoMap		= pLoadedMaterial->pAlbedoMap != nullptr ? pLoadedMaterial->pAlbedoMap->pTexture : nullptr;
+		pMaterialToBeRegistered->pNormalMap		= pLoadedMaterial->pNormalMap != nullptr ? pLoadedMaterial->pNormalMap->pTexture : nullptr;
+		pMaterialToBeRegistered->pAlbedoMapView	= pLoadedMaterial->pAlbedoMapView;
+		pMaterialToBeRegistered->pNormalMapView	= pLoadedMaterial->pNormalMapView;
+
+		//If AO, Metallic & Roughness are all nullptr we can set default
+		if (pLoadedMaterial->pAmbientOcclusionMap	== nullptr &&
+			pLoadedMaterial->pMetallicMap			== nullptr &&
+			pLoadedMaterial->pRoughnessMap			== nullptr &&
+			pLoadedMaterial->pMetallicRoughnessMap	== nullptr)
+		{
+			pMaterialToBeRegistered->pAOMetallicRoughnessMap		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			pMaterialToBeRegistered->pAOMetallicRoughnessMapView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+		}
+		else
+		{
+			Texture*		pDefaultColorTexture		= s_Textures[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+			TextureView*	pDefaultColorTextureView	= s_TextureViews[GUID_TEXTURE_DEFAULT_COLOR_MAP];
+
+			bool useSeperateChannels = pLoadedMaterial->pMetallicRoughnessMap == nullptr;
+			GUID_Lambda aoMetallicRoughnessGUID = GUID_NONE;
+
+			if (useSeperateChannels)
+			{
+				aoMetallicRoughnessGUID = CombineMaterialTextures(
+					name + " Combined Material Texture",
+					pMaterialToBeRegistered,
+					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMap->pTexture	: pDefaultColorTexture,
+					pLoadedMaterial->pMetallicMap			!= nullptr ? pLoadedMaterial->pMetallicMap->pTexture			: pDefaultColorTexture,
+					pLoadedMaterial->pRoughnessMap			!= nullptr ? pLoadedMaterial->pRoughnessMap->pTexture			: pDefaultColorTexture,
+					nullptr,
+					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMapView			: pDefaultColorTextureView,
+					pLoadedMaterial->pMetallicMap			!= nullptr ? pLoadedMaterial->pMetallicMapView					: pDefaultColorTextureView,
+					pLoadedMaterial->pRoughnessMap			!= nullptr ? pLoadedMaterial->pRoughnessMapView					: pDefaultColorTextureView,
+					nullptr);
+			}
+			else
+			{
+				aoMetallicRoughnessGUID = CombineMaterialTextures(
+					name + " Combined Material Texture",
+					pMaterialToBeRegistered,
+					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMap->pTexture	: pDefaultColorTexture,
+					nullptr,
+					nullptr,
+					pLoadedMaterial->pMetallicRoughnessMap	!= nullptr ? pLoadedMaterial->pMetallicRoughnessMap->pTexture	: pDefaultColorTexture,
+					pLoadedMaterial->pAmbientOcclusionMap	!= nullptr ? pLoadedMaterial->pAmbientOcclusionMapView			: pDefaultColorTextureView,
+					nullptr,
+					nullptr,
+					pLoadedMaterial->pMetallicRoughnessMap	!= nullptr ? pLoadedMaterial->pMetallicRoughnessMapView			: pDefaultColorTextureView);
+			}
+
+			s_TextureMaterialRefs[aoMetallicRoughnessGUID]++;
+			materialLoadConfig.NormalMapGUID = aoMetallicRoughnessGUID;
+		}
+
+		GUID_Lambda guid = RegisterMaterial(name, pMaterialToBeRegistered);
+		s_MaterialLoadConfigurations[guid] = materialLoadConfig;
+
+		return guid;
+	}
+
+	GUID_Lambda ResourceManager::RegisterMesh(const String& name, Mesh* pResource)
 	{
 		VALIDATE(pResource != nullptr);
 
@@ -1474,7 +1686,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedMaterial(const String& name, Material* pResource)
+	GUID_Lambda ResourceManager::RegisterMaterial(const String& name, Material* pResource)
 	{
 		VALIDATE(pResource != nullptr);
 
@@ -1501,7 +1713,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedAnimation(const String& name, Animation* pAnimation)
+	GUID_Lambda ResourceManager::RegisterAnimation(const String& name, Animation* pAnimation)
 	{
 		VALIDATE(pAnimation != nullptr);
 
@@ -1520,7 +1732,7 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedTexture(Texture* pTexture)
+	GUID_Lambda ResourceManager::RegisterTexture(Texture* pTexture)
 	{
 		VALIDATE(pTexture != nullptr);
 
@@ -1537,10 +1749,10 @@ namespace LambdaEngine
 
 		TextureView* pTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 
-		return RegisterLoadedTextureWithView(pTexture, pTextureView);
+		return RegisterTextureWithView(pTexture, pTextureView);
 	}
 
-	GUID_Lambda ResourceManager::RegisterLoadedTextureWithView(Texture* pTexture, TextureView* pTextureView)
+	GUID_Lambda ResourceManager::RegisterTextureWithView(Texture* pTexture, TextureView* pTextureView)
 	{
 		GUID_Lambda		guid				= GUID_NONE;
 		Texture**		ppMappedTexture		= nullptr;
@@ -1619,35 +1831,42 @@ namespace LambdaEngine
 		{
 			TSharedRef<Sampler> sampler = MakeSharedRef(Sampler::GetLinearSampler());
 
-			DescriptorBindingDesc ubo_roughness_mat = { };
-			ubo_roughness_mat.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-			ubo_roughness_mat.DescriptorCount		= 1;
-			ubo_roughness_mat.Binding				= 0;
-			ubo_roughness_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-			ubo_roughness_mat.ImmutableSamplers		= { sampler };
+			DescriptorBindingDesc outputTextureBinding	= { };
+			outputTextureBinding.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			outputTextureBinding.DescriptorCount		= 1;
+			outputTextureBinding.Binding				= 0;
+			outputTextureBinding.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
-			DescriptorBindingDesc ubo_metallic_mat = { };
-			ubo_metallic_mat.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-			ubo_metallic_mat.DescriptorCount		= 1;
-			ubo_metallic_mat.Binding				= 1;
-			ubo_metallic_mat.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-			ubo_metallic_mat.ImmutableSamplers		= { sampler };
+			DescriptorBindingDesc aoBinding				= { };
+			aoBinding.DescriptorType					= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			aoBinding.DescriptorCount					= 1;
+			aoBinding.Binding							= 1;
+			aoBinding.ShaderStageMask					= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			aoBinding.ImmutableSamplers					= { sampler };
 
-			DescriptorBindingDesc ubo_ao_material = { };
-			ubo_ao_material.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-			ubo_ao_material.DescriptorCount			= 1;
-			ubo_ao_material.Binding					= 2;
-			ubo_ao_material.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-			ubo_ao_material.ImmutableSamplers		= { sampler };
+			//This binding is also used for combined metallic/roughness
+			DescriptorBindingDesc metallicBinding		= { };
+			metallicBinding.DescriptorType				= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			metallicBinding.DescriptorCount				= 1;
+			metallicBinding.Binding						= 2;
+			metallicBinding.ShaderStageMask				= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			metallicBinding.ImmutableSamplers			= { sampler };
 
-			DescriptorBindingDesc ubo_output_image = { };
-			ubo_output_image.DescriptorType			= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
-			ubo_output_image.DescriptorCount		= 1;
-			ubo_output_image.Binding				= 3;
-			ubo_output_image.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			DescriptorBindingDesc roughnessBinding		= { };
+			roughnessBinding.DescriptorType				= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			roughnessBinding.DescriptorCount			= 1;
+			roughnessBinding.Binding					= 3;
+			roughnessBinding.ShaderStageMask			= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			roughnessBinding.ImmutableSamplers			= { sampler };
 
 			DescriptorSetLayoutDesc descriptorSetLayoutDesc = { };
-			descriptorSetLayoutDesc.DescriptorBindings = { ubo_roughness_mat, ubo_metallic_mat, ubo_ao_material, ubo_output_image };
+			descriptorSetLayoutDesc.DescriptorBindings = 
+			{ 
+				outputTextureBinding, 
+				aoBinding,
+				metallicBinding,
+				roughnessBinding
+			};
 
 			PipelineLayoutDesc pPipelineLayoutDesc = { };
 			pPipelineLayoutDesc.DebugName				= "Combined Material Pipeline Layout";
@@ -1658,17 +1877,26 @@ namespace LambdaEngine
 			s_pMaterialDescriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet("Combine Material Descriptor Set", s_pMaterialPipelineLayout, 0, s_pMaterialDescriptorHeap);
 
 			// Create Shaders
-			s_MaterialShaderGUID = LoadShaderFromFile("Material/CombineMaterial.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+			s_AllChannelsSeperateMaterialShaderGUID = LoadShaderFromFile("Material/CombineMaterialAllSeperate.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+			s_AOSeperateMetRoughCombinedMaterialShaderGUID = LoadShaderFromFile("Material/CombineMaterialAOSeperateMetRoughCombined.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
 
-			ShaderModuleDesc shaderModuleDesc = { };
-			shaderModuleDesc.pShader = s_Shaders[s_MaterialShaderGUID];
+			{
+				ComputePipelineStateDesc computePipelineStateDesc = { };
+				computePipelineStateDesc.DebugName			= "All Channels Seperate, Material Pipeline State";
+				computePipelineStateDesc.pPipelineLayout	= s_pMaterialPipelineLayout;
+				computePipelineStateDesc.Shader				= { .pShader = s_Shaders[s_AllChannelsSeperateMaterialShaderGUID] };
 
-			ComputePipelineStateDesc computePipelineStateDesc = { };
-			computePipelineStateDesc.DebugName			= "Combined Material Pipeline State";
-			computePipelineStateDesc.pPipelineLayout	= s_pMaterialPipelineLayout;
-			computePipelineStateDesc.Shader				= shaderModuleDesc;
+				s_pAllChannelsSeperateMaterialPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
+			}
 
-			s_pMaterialPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
+			{
+				ComputePipelineStateDesc computePipelineStateDesc = { };
+				computePipelineStateDesc.DebugName			= "AO Seperate, Metallic/Roughness Combined, Material Pipeline State";
+				computePipelineStateDesc.pPipelineLayout	= s_pMaterialPipelineLayout;
+				computePipelineStateDesc.Shader				= { .pShader = s_Shaders[s_AOSeperateMetRoughCombinedMaterialShaderGUID] };
+
+				s_pAOSeperateMetRoughCombinedMaterialPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
+			}
 		}
 	}
 
@@ -1764,7 +1992,8 @@ namespace LambdaEngine
 
 	void ResourceManager::ReleaseMaterialCreation()
 	{
-		s_pMaterialPipelineState->Release();
+		s_pAllChannelsSeperateMaterialPipelineState->Release();
+		s_pAOSeperateMetRoughCombinedMaterialPipelineState->Release();
 		s_pMaterialDescriptorSet->Release();
 		s_pMaterialDescriptorHeap->Release();
 		s_pMaterialPipelineLayout->Release();

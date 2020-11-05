@@ -1,0 +1,25 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+
+#include "../Defines.glsl"
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(binding = 0, set = 0, rgba8) uniform writeonly image2D u_OutputImage;
+
+layout(binding = 1, set = 0) uniform sampler2D 	u_AO;
+layout(binding = 2, set = 0) uniform sampler2D 	u_Metallic;
+layout(binding = 3, set = 0) uniform sampler2D 	u_Roughness;
+
+void main()
+{
+    uvec2 OUTPUT_IMAGE_SIZE = imageSize(u_OutputImage);
+	vec2 texcoord   = vec2(gl_GlobalInvocationID.xy) / vec2(OUTPUT_IMAGE_SIZE);
+
+    float ao 		        = textureLod(u_AO, 			texcoord, 0).r;
+    float metallic 		    = textureLod(u_Metallic, 	texcoord, 0).r;
+    float roughness 		= textureLod(u_Roughness, 	texcoord, 0).r;
+
+	vec4 combinedMaterial = vec4(ao, roughness, metallic, 1.0f);
+    imageStore(u_OutputImage, ivec2(gl_GlobalInvocationID.xy), combinedMaterial);
+}
