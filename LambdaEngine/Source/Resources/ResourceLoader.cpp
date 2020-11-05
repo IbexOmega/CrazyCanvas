@@ -214,7 +214,7 @@ namespace LambdaEngine
 			aiProcess_GenSmoothNormals			|
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
-			aiProcess_LimitBoneWeights			|
+			//aiProcess_LimitBoneWeights			|
 			aiProcess_SplitLargeMeshes			|
 			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_SortByPType				|
@@ -253,7 +253,7 @@ namespace LambdaEngine
 			aiProcess_GenSmoothNormals			|
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
-			aiProcess_LimitBoneWeights			|
+//			aiProcess_LimitBoneWeights			|
 			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
@@ -263,19 +263,19 @@ namespace LambdaEngine
 			aiProcess_FindInvalidData;
 		
 		// Prevent crashes in assimp when using this flag
-		String path = ConvertSlashes(filepath);
-		if (path.find(".obj") == String::npos && path.find(".glb") == String::npos)
-		{
-			assimpFlags |= aiProcess_PopulateArmatureData;
-		}
+		//String path = ConvertSlashes(filepath);
+		//if (path.find(".obj") == String::npos && path.find(".glb") == String::npos)
+		//{
+		//	assimpFlags |= aiProcess_PopulateArmatureData;
+		//}
 
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 
 		const TArray<LevelObjectOnLoadDesc>	levelObjectDescriptions;
-		TArray<LoadedDirectionalLight>			directionalLightComponents;
-		TArray<LoadedPointLight>				pointLightComponents;
-		TArray<LevelObjectOnLoad>				levelObjects;
+		TArray<LoadedDirectionalLight>		directionalLightComponents;
+		TArray<LoadedPointLight>			pointLightComponents;
+		TArray<LevelObjectOnLoad>			levelObjects;
 
 		SceneLoadRequest loadRequest =
 		{
@@ -329,7 +329,7 @@ namespace LambdaEngine
 			aiProcess_FindInstances			|
 			aiProcess_JoinIdenticalVertices	|
 			aiProcess_ImproveCacheLocality	|
-			aiProcess_LimitBoneWeights		|
+			//aiProcess_LimitBoneWeights		|
 			aiProcess_Triangulate			|
 			aiProcess_FindDegenerates		|
 			aiProcess_OptimizeMeshes		|
@@ -337,19 +337,19 @@ namespace LambdaEngine
 			aiProcess_FindInvalidData;
 
 		// Prevent crashes in assimp when using this flag
-		String path = ConvertSlashes(filepath);
-		if (path.find(".obj") == String::npos)
-		{
-			assimpFlags |= aiProcess_PopulateArmatureData;
-		}
+		//String path = ConvertSlashes(filepath);
+		//if (path.find(".obj") == String::npos)
+		//{
+		//	assimpFlags |= aiProcess_PopulateArmatureData;
+		//}
 
 		TArray<Mesh*>						meshes;
 		TArray<Animation*>					animations;
 		TArray<MeshComponent>				meshComponent;
 		const TArray<LevelObjectOnLoadDesc>	levelObjectDescriptions;
-		TArray<LoadedDirectionalLight>			directionalLightComponents;
-		TArray<LoadedPointLight>				pointLightComponents;
-		TArray<LevelObjectOnLoad>				levelObjects;
+		TArray<LoadedDirectionalLight>		directionalLightComponents;
+		TArray<LoadedPointLight>			pointLightComponents;
+		TArray<LevelObjectOnLoad>			levelObjects;
 
 		SceneLoadRequest loadRequest =
 		{
@@ -1010,6 +1010,9 @@ namespace LambdaEngine
 	static aiNode* FindSkeletalRoot(aiNode* pNode)
 	{
 		VALIDATE(pNode != nullptr);
+#if 1
+		LOG_INFO("Name=%s", pNode->mName.C_Str());
+#endif
 
 		aiNode* pParent = pNode->mParent;
 		if (pParent)
@@ -1036,8 +1039,9 @@ namespace LambdaEngine
 			myID = it->second;
 		}
 
-#if 0
-		LOG_INFO("Name=%s, ID=%d", name.c_str(), myID);
+#if 1
+		const int32 parentID = (myID != -1) ? pSkeleton->Joints[myID].ParentBoneIndex : -1;
+		LOG_INFO("Name=%s, ID=%d, ParentID=%d", name.c_str(), myID, parentID);
 #endif
 
 		for (uint32 child = 0; child < pNode->mNumChildren; child++)
@@ -1103,11 +1107,16 @@ namespace LambdaEngine
 			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
+		aiNode* pRoot0 = pMeshAI->mBones[0]->mNode;
+		aiNode* pRoot1 = FindSkeletalRoot(pRoot0);
+		FindSkeletalParent(pRoot1, pSkeleton);
+
 		// We find the parent
 		TArray<TArray<JointIndexType>> children(pMeshAI->mNumBones);
 		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
 		{
 			Joint& joint = pSkeleton->Joints[boneIndex];
+			joint.ParentBoneIndex = INVALID_JOINT_ID;
 
 			// Search the armature aswell
 			aiNode* pNodeAI = pMeshAI->mBones[boneIndex]->mNode;
@@ -1147,7 +1156,7 @@ namespace LambdaEngine
 			}
 		}
 
-#if 1
+#if 0
 		LOG_INFO("-----------------------------------");
 		{
 			JointIndexType rootNode = INVALID_JOINT_ID;
@@ -1172,7 +1181,7 @@ namespace LambdaEngine
 		LOG_INFO("-----------------------------------");
 #endif
 
-#if 0
+#if 1
 		LOG_INFO("-----------------------------------");
 		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
 		{
@@ -1221,13 +1230,14 @@ namespace LambdaEngine
 		}
 
 #if 0
-		for (VertexBoneData& bone : pMesh->VertexBoneData)
+		for (VertexJointData& joint : pMesh->VertexJointData)
 		{
+			const float32 weight3 = 1.0f - (joint.Weight0 + joint.Weight1 + joint.Weight2);
 			LOG_WARNING("JointData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
-				bone.Bone0.BoneID, bone.Bone0.Weight,
-				bone.Bone1.BoneID, bone.Bone1.Weight,
-				bone.Bone2.BoneID, bone.Bone2.Weight,
-				bone.Bone3.BoneID, bone.Bone3.Weight);
+				joint.JointID0, joint.Weight0,
+				joint.JointID1, joint.Weight1,
+				joint.JointID2, joint.Weight2,
+				joint.JointID3, weight3);
 		}
 #endif
 	}
@@ -1426,9 +1436,9 @@ namespace LambdaEngine
 		// Metadata
 		if (pScene->mMetaData)
 		{
-			aiMetadata* pMetaData = pScene->mMetaData;
-
 			LOG_INFO("%s metadata:", filepath.c_str());
+
+			aiMetadata* pMetaData = pScene->mMetaData;
 			for (uint32 i = 0; i < pMetaData->mNumProperties; i++)
 			{
 				aiString string = pMetaData->mKeys[i];
@@ -1590,7 +1600,7 @@ namespace LambdaEngine
 						if (pMesh->pSkeleton)
 						{
 							//Assume Mixamo has replaced our rotation
-							glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
+							glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float32>(), glm::vec3(0.0f, 1.0f, 0.0f));
 							meshTransform				= meshTransform * AssimpToGLMMat4(pNode->mTransformation);
 							glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
 							pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
