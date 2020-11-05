@@ -16,6 +16,7 @@
 #include "Match/Match.h"
 
 #include <string>
+#include "..\..\Include\GUI\HUDGUI.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
@@ -165,6 +166,10 @@ void HUDGUI::UpdateCountdown(uint8 countDownTime)
 {
 	CountdownGUI* pCountdownGUI = FindName<CountdownGUI>("COUNTDOWN");
 	pCountdownGUI->UpdateCountdown(countDownTime);
+}
+
+void HUDGUI::DisplayHitIndicator(const glm::vec3& direction)
+{
 }
 
 void HUDGUI::InitGUI()

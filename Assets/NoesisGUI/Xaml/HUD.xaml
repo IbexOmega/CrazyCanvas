@@ -64,8 +64,15 @@
 
         </Grid.RowDefinitions>
 
-        <Border BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3" BorderBrush="Black" Background="#FF595959" >
-
+        <Border BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3">
+            <Border.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="Black" Offset="0"/>
+                    <GradientStop Color="White" Offset="0.557"/>
+                    <GradientStop Color="#FF858585" Offset="1"/>
+                    <GradientStop Color="#FF414141"/>
+                </LinearGradientBrush>
+            </Border.Background>
         </Border>
         <Border  BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"  Background="#3FD1D1D1" Margin="10" >
 
@@ -98,7 +105,16 @@
 
         </Grid.RowDefinitions>
 
-        <Border  BorderThickness="1" CornerRadius="0, 0, 50, 50" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="0"  Grid.RowSpan="2" Background="#FF595959"  />
+        <Border  BorderThickness="1" CornerRadius="0, 0, 50, 50" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="0"  Grid.RowSpan="2">
+            <Border.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="Black" Offset="0"/>
+                    <GradientStop Color="White" Offset="0.557"/>
+                    <GradientStop Color="#FF858585" Offset="1"/>
+                    <GradientStop Color="#FF414141"/>
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
         <Border  BorderThickness="1" CornerRadius="50" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="0"  Grid.RowSpan="2" Background="#3FD1D1D1" Margin="10" />
 
         <Image Source="Blue Splatt.png" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-25,-40,-25,0"/>

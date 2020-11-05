@@ -25,13 +25,13 @@ enum PopUpCode
 	JOIN_NOTIFICATION
 };
 
-class LobbyGUI : public Noesis::Grid
+class MultiplayerGUI : public Noesis::Grid
 {
 	//ObservableCollection<HostGameDescription> Servers;
 
 public:
-	LobbyGUI();
-	~LobbyGUI();
+	MultiplayerGUI(const LambdaEngine::String& xamlFile);
+	~MultiplayerGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
@@ -67,7 +67,7 @@ private:
 
 	void HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave = false);
 
-	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid)
+	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 
 private:
 

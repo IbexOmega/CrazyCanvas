@@ -5,6 +5,8 @@
 
 #include "Threading/API/SpinLock.h"
 
+#define HIT_DAMAGE 20
+
 /*
 * HealthSystem
 */
@@ -12,37 +14,36 @@
 class HealthSystem : public LambdaEngine::System
 {
 public:
-	bool Init();
+	HealthSystem() = default;
+	~HealthSystem() = default;
 
-	void ResetEntityHealth(LambdaEngine::Entity entityToReset);
-
-	void FixedTick(LambdaEngine::Timestamp deltaTime);
+	virtual void ResetEntityHealth(LambdaEngine::Entity entityToReset)
+	{
+		UNREFERENCED_VARIABLE(entityToReset);
+	}
 
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
+	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) = 0;
+
+protected:
+	virtual bool InitInternal();
+
 public:
-	static HealthSystem& GetInstance() { return s_Instance; }
+	static bool Init();
 
-private:
-	HealthSystem()	= default;
-	~HealthSystem()	= default;
-	
-	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
+	FORCEINLINE static HealthSystem& GetInstance() 
+	{ 
+		VALIDATE(s_Instance != nullptr);
+		return *s_Instance;
+	}
 
-private:
+protected:
 	LambdaEngine::IDVector m_HealthEntities;
-	LambdaEngine::IDVector m_LocalPlayerEntities;
-
-	LambdaEngine::SpinLock m_DeferredEventsLock;
-	LambdaEngine::TArray<ProjectileHitEvent> m_DeferredHitEvents;
-	LambdaEngine::TArray<ProjectileHitEvent> m_EventsToProcess;
-
-	LambdaEngine::SpinLock m_DeferredResetsLock;
-	LambdaEngine::TArray<LambdaEngine::Entity> m_DeferredResets;
 
 private:
-	static HealthSystem s_Instance;
+	static LambdaEngine::TUniquePtr<HealthSystem> s_Instance;
 };
