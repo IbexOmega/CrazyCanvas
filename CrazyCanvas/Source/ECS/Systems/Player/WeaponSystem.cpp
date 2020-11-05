@@ -79,7 +79,10 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	EventQueue::SendEventImmediate(firedEvent);
 
 	// Fire the gun
-	weaponComponent.CurrentAmmunition--;
+	auto ammoType = weaponComponent.WeaponTypeAmmo.find(ammoType);
+	VALIDATE(ammoType != weaponComponent.WeaponTypeAmmo.end())
+
+	ammoType->second.first--;
 }
 
 bool WeaponSystem::Init()
@@ -176,7 +179,19 @@ void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
 		if (weaponComponent.ReloadClock < 0.0f)
 		{
 			weaponComponent.ReloadClock = 0.0f;
-			weaponComponent.CurrentAmmunition = AMMO_CAPACITY;
+
+			auto waterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(waterAmmo != weaponComponent.WeaponTypeAmmo.end())
+
+			auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
+
+			paintAmmo->second.first = AMMO_CAPACITY;
+			waterAmmo->second.first = AMMO_CAPACITY;
+
+			//Reload Event
+			WeaponReloadFinishedEvent reloadEvent(weaponComp.WeaponOwner);
+			EventQueue::SendEventImmediate(reloadEvent);
 		}
 	}
 }
