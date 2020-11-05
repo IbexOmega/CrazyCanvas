@@ -159,3 +159,26 @@ public:
 	LambdaEngine::CollisionCallback Callback;
 	LambdaEngine::MeshComponent		MeshComponent;
 };
+
+/*
+* WeaponReloadFinishedEvent
+*/
+
+struct WeaponReloadFinishedEvent : public LambdaEngine::Event
+{
+public:
+	inline WeaponReloadFinishedEvent(const LambdaEngine::Entity weaponOwnerEntity) : 
+		WeaponOwnerEntity(weaponOwnerEntity)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player finished to reload a weapon. EntitiyID=%u", WeaponOwnerEntity);
+	}
+
+	DECLARE_EVENT_TYPE(WeaponReloadFinishedEvent);
+
+	const LambdaEngine::Entity WeaponOwnerEntity;
+};

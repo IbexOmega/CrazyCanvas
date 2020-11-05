@@ -64,6 +64,7 @@ void main()
 	uint serverTeam				= (serverData >> 1) & 0x7F;
 	uint clientPainting			= clientData & 0x1;
 	uint team = serverTeam;
+	
 	if (clientPainting > 0)
 		team = clientTeam;
 
@@ -75,12 +76,13 @@ void main()
 
 	// Only render team members and paint on enemy players
 	uint enemy = p_TeamIndex.Index;
-	if(enemy != 0 && shouldPaint < 0.5f)
+	bool isPainted = (shouldPaint > 0.5f);
+	if(enemy != 0 && !isPainted)
 		discard;
 
 	//1
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 
-	// 5
-	out_Color 					= vec4(mix(storedAlbedo, color, shouldPaint), 1.f);
+	// 5	
+	out_Color = vec4(mix(storedAlbedo, color, shouldPaint), isPainted ? 1.0f : 0.6f);
 }

@@ -26,7 +26,12 @@ namespace LambdaEngine
 		static EMouseButton GetMouseButton(EAction action);
 
 	private:
-		static THashTable<EAction, String> m_CurrentBindings;
+		static void CreateDefaults();
+		static void WriteNewMember(EAction action, String strValue);
+
+	private:
+		static THashTable<EAction, String> s_CurrentBindings;
 		static rapidjson::Document s_ConfigDocument;
+		static THashTable<EAction, String> s_DefaultBindings;
 	};
 }

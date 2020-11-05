@@ -3,6 +3,9 @@
 
 #include "ECS/System.h"
 
+#include "Events/GameplayEvents.h"
+#include "Physics/PhysicsEvents.h"
+
 #include "GUI/HUDGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -23,7 +26,12 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override;
 	void FixedTick(LambdaEngine::Timestamp delta);
 
+	bool OnWeaponFired(const WeaponFiredEvent& event);
+	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
+	bool OnProjectileHit(const ProjectileHitEvent& event);
+
 private:
+	LambdaEngine::IDVector m_PlayerEntities;
 	LambdaEngine::IDVector m_WeaponEntities;
 
 	Noesis::Ptr<HUDGUI> m_HUDGUI;
