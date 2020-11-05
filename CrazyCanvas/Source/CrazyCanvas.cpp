@@ -28,7 +28,6 @@
 
 #include "GUI/CountdownGUI.h"
 #include "GUI/HUDGUI.h"
-#include "GUI/LobbyGUI.h"
 #include "GUI/MainMenuGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -144,7 +143,6 @@ bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
-	Noesis::RegisterComponent<LobbyGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
 	return true;

@@ -55,9 +55,11 @@ void AudioEffectHandler::Init()
 
 bool AudioEffectHandler::OnPlayerDied(const PlayerDiedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	if (m_HasFocus)
 	{
-		m_pPlayerKilledSound->PlayOnceAt(event.Position);
+		m_pPlayerKilledSound->PlayOnce();
 		return true;
 	}
 	else
@@ -68,9 +70,11 @@ bool AudioEffectHandler::OnPlayerDied(const PlayerDiedEvent& event)
 
 bool AudioEffectHandler::OnPlayerConnected(const PlayerConnectedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	if (m_HasFocus)
 	{
-		m_pConnectSound->PlayOnceAt(event.Position);
+		m_pConnectSound->PlayOnce();
 		return true;
 	}
 	else
@@ -81,15 +85,17 @@ bool AudioEffectHandler::OnPlayerConnected(const PlayerConnectedEvent& event)
 
 bool AudioEffectHandler::OnPlayerHit(const PlayerHitEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	if (m_HasFocus)
 	{
 		if (event.IsLocal)
 		{
-			m_pHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
+			m_pHitSound->PlayOnce(0.5f);
 		}
 		else
 		{
-			m_pEnemyHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
+			m_pEnemyHitSound->PlayOnce(0.5f);
 		}
 
 		return true;
