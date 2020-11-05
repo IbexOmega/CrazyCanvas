@@ -15,7 +15,7 @@
 
 #include "States/PlaySessionState.h"
 
-#include "GUI/LobbyGUI.h"
+#include "GUI/MultiplayerGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
@@ -37,15 +37,15 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
+MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 	m_HostGameDesc(),
 	m_ServerList(),
 	m_Servers()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
-	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerResponse);
-	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
+	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &MultiplayerGUI::OnServerResponse);
+	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MultiplayerGUI::OnClientConnected);
 
 	const char* pIP = "81.170.143.133:4444";
 
@@ -67,13 +67,13 @@ LobbyGUI::LobbyGUI(const LambdaEngine::String& xamlFile) :
 	}
 }
 
-LobbyGUI::~LobbyGUI()
+MultiplayerGUI::~MultiplayerGUI()
 {
-	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &LobbyGUI::OnServerResponse);
-	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &LobbyGUI::OnClientConnected);
+	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &MultiplayerGUI::OnServerResponse);
+	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MultiplayerGUI::OnClientConnected);
 }
 
-bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
+bool MultiplayerGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
 
@@ -87,7 +87,7 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 	return false;
 }
 
-void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MultiplayerGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -96,7 +96,7 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-bool LobbyGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event)
+bool MultiplayerGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event)
 {
 	BinaryDecoder* pDecoder = event.pDecoder;
 
@@ -118,7 +118,7 @@ bool LobbyGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event
 	return true;
 }
 
-void LobbyGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave)
+void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave)
 {
 	ServerInfo& currentInfo = m_Servers[serverInfo.EndPoint.GetAddress()];
 
@@ -154,7 +154,7 @@ void LobbyGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool
 		SavedServerSystem::SaveServers(m_Servers);
 }
 
-bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
+bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
 	if (m_HasHostedServer)
 	{
@@ -169,13 +169,13 @@ bool LobbyGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event
 	return false;
 }
 
-void LobbyGUI::FixedTick(LambdaEngine::Timestamp delta)
+void MultiplayerGUI::FixedTick(LambdaEngine::Timestamp delta)
 {
 	UNREFERENCED_VARIABLE(delta);
 	CheckServerStatus();
 }
 
-void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -208,7 +208,7 @@ void LobbyGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis
 	}
 }
 
-void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MultiplayerGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -218,7 +218,7 @@ void LobbyGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis
 	// TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
 }
 
-void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MultiplayerGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -226,7 +226,7 @@ void LobbyGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::
 	ErrorPopUp(OTHER_ERROR);
 }
 
-void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MultiplayerGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -234,7 +234,7 @@ void LobbyGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis
 	ErrorPopUpClose();
 }
 
-void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -264,7 +264,7 @@ void LobbyGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesi
 	}
 }
 
-void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -287,7 +287,7 @@ void LobbyGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::R
 	}
 }
 
-bool LobbyGUI::JoinSelectedServer(Noesis::Grid* pGrid)
+bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 {
 	for (auto& server : m_Servers)
 	{
@@ -311,7 +311,7 @@ bool LobbyGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 	return false;
 }
 
-bool LobbyGUI::CheckServerStatus()
+bool MultiplayerGUI::CheckServerStatus()
 {
 	TArray<IPAddress*> serversToRemove;
 
@@ -347,7 +347,7 @@ bool LobbyGUI::CheckServerStatus()
 	return false;
 }
 
-bool LobbyGUI::StartUpServer(const std::string& applicationName, const std::string& commandLine)
+bool MultiplayerGUI::StartUpServer(const std::string& applicationName, const std::string& commandLine)
 {
 	//additional Info
 	STARTUPINFOA lpStartupInfo;
@@ -401,7 +401,7 @@ bool LobbyGUI::StartUpServer(const std::string& applicationName, const std::stri
 	}
 }
 
-void LobbyGUI::SetRenderStagesActive()
+void MultiplayerGUI::SetRenderStagesActive()
 {
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
@@ -416,7 +416,7 @@ void LobbyGUI::SetRenderStagesActive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
 }
 
-void LobbyGUI::ErrorPopUp(PopUpCode errorCode)
+void MultiplayerGUI::ErrorPopUp(PopUpCode errorCode)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
 
@@ -433,7 +433,7 @@ void LobbyGUI::ErrorPopUp(PopUpCode errorCode)
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
-void LobbyGUI::NotiPopUP(PopUpCode notificationCode)
+void MultiplayerGUI::NotiPopUP(PopUpCode notificationCode)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("NOTIFICATION_BOX_TEXT");
 
@@ -446,17 +446,17 @@ void LobbyGUI::NotiPopUP(PopUpCode notificationCode)
 	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
-void LobbyGUI::ErrorPopUpClose()
+void MultiplayerGUI::ErrorPopUpClose()
 {
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
 }
 
-void LobbyGUI::NotiPopUpClose()
+void MultiplayerGUI::NotiPopUpClose()
 {
 	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
 }
 
-bool LobbyGUI::CheckServerSettings(const HostGameDescription& serverSettings)
+bool MultiplayerGUI::CheckServerSettings(const HostGameDescription& serverSettings)
 {
 	if (serverSettings.PlayersNumber == -1)
 		return false;
@@ -466,7 +466,7 @@ bool LobbyGUI::CheckServerSettings(const HostGameDescription& serverSettings)
 	return true;
 }
 
-void LobbyGUI::PopulateServerInfo()
+void MultiplayerGUI::PopulateServerInfo()
 {
 	ComboBox* pCBPlayerCount = FrameworkElement::FindName<ComboBox>("PLAYER_NUMBER");
 	ComboBoxItem* pItem = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
