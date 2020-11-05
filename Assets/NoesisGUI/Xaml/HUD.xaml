@@ -202,9 +202,9 @@
         <Grid.RenderTransform>
             <RotateTransform/>
         </Grid.RenderTransform>
-
-        <Image Source="HitIndicator.png" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" >
-        </Image>
+        <uc:DamageIndicatorGUI x:Name="DAMAGE_INDICATOR" HorizontalAlignment="Center" VerticalAlignment="Center"/>  
+        <!--<Image x:Name="DamageIndicator" Source="HitIndicator.png" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" >
+        </Image>-->
     </Grid>
     <!--
     <Button x:Name="fill" Click="OnButtonGrowClick" Content="FIll"  Grid.Column="2" Grid.Row="4" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">

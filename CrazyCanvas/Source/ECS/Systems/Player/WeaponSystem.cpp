@@ -68,6 +68,12 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	const glm::vec3 initialVelocity	= playerVelocity + directionVec * PROJECTILE_INITAL_SPEED;
 	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 
+	// Fire the gun
+	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
+	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
+
+	ammoState->second.first--;
+
 	// Fire event
 	WeaponFiredEvent firedEvent(
 		weaponOwner,
@@ -79,12 +85,6 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
 	EventQueue::SendEventImmediate(firedEvent);
-
-	// Fire the gun
-	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
-	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
-
-	ammoState->second.first--;
 }
 
 bool WeaponSystem::Init()

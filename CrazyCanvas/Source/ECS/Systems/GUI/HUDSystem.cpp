@@ -89,39 +89,44 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 {
-	ECSCore* pECS = ECSCore::GetInstance();
-	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-
-	for (Entity playerWeapon : m_WeaponEntities)
+	if (!MultiplayerUtils::IsServer())
 	{
-		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && m_HUDGUI)
+		for (Entity playerWeapon : m_WeaponEntities)
 		{
-			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (pPlayerLocalComponents->HasComponent(weaponComponent.WeaponOwner) && m_HUDGUI)
+			{
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+			}
 		}
 	}
-
 	return false;
 }
 
 bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 {
-	ECSCore* pECS = ECSCore::GetInstance();
-	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
-
-	for (Entity playerWeapon : m_WeaponEntities)
+	if (!MultiplayerUtils::IsServer())
 	{
-		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		if (pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity) && m_HUDGUI)
+		for (Entity playerWeapon : m_WeaponEntities)
 		{
-			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
-			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			{
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
+			}
 		}
 	}
-
 	return false;
 }
 
