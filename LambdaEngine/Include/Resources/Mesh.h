@@ -85,24 +85,30 @@ namespace LambdaEngine
 	{
 		SQT() = default;
 
-		inline SQT(const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation)
+		inline SQT(const glm::vec3& translation, const glm::vec3& scale, const glm::quat& rotation, JointIndexType jointID = INVALID_JOINT_ID)
 			: Translation(translation)
 			, Scale(scale)
 			, Rotation(rotation)
+			, JointID(jointID)
 		{
 		}
 
 		glm::vec3 Translation;
 		glm::vec3 Scale;
 		glm::quat Rotation;
+		JointIndexType JointID = INVALID_JOINT_ID;
 	};
 
 	struct Skeleton
 	{
 		using JointHashTable = THashTable<PrehashedString, JointIndexType, PrehashedStringHasher>;
 
-		glm::mat4x4		InverseGlobalTransform;
+		glm::mat4 InverseGlobalTransform = glm::identity<glm::mat4>();
+		glm::mat4 SkinTransform		= glm::identity<glm::mat4>();	// Transform of the mesh (This is so that the mesh is correctly scaled etc.)
+		glm::mat4 RootNodeTransform = glm::identity<glm::mat4>();	// Bakes all transforms from root to first joint node
+		JointIndexType	RootJoint;	// The first node in the hiearchy, some meshes have multiple ones, we only take the first we find that has the assimp mRootNode as parent
 		TArray<Joint>	Joints;
+		TArray<glm::mat4> RelativeTransforms; // Relative transforms in seperate array since they are accessed vary rarely
 		JointHashTable	JointMap;
 	};
 

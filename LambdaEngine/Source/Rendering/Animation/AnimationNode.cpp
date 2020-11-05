@@ -109,29 +109,30 @@ namespace LambdaEngine
 		}
 
 		// Make sure we have enough matrices
-		if (m_FrameData.GetSize() < skeleton.Joints.GetSize())
+		Animation& animation = *m_pAnimation;
+		const uint32 channelCount = animation.Channels.GetSize();
+		if (m_FrameData.GetSize() < channelCount)
 		{
-			m_FrameData.Resize(skeleton.Joints.GetSize());
+			m_FrameData.Resize(channelCount, SQT(glm::vec3(0.0f), glm::vec3(1.0f), glm::identity<glm::quat>()));
 		}
 
-		Animation& animation	= *m_pAnimation;
 		const float64 timestamp	= m_NormalizedTime * animation.DurationInTicks;
-		for (Animation::Channel& channel : animation.Channels)
+		for (uint32 channelID = 0; Animation::Channel& channel : animation.Channels)
 		{
 			// Retrive the bone ID
 			auto it = skeleton.JointMap.find(channel.Name);
-			if (it == skeleton.JointMap.end())
+			if (it != skeleton.JointMap.end())
 			{
-				continue;
+				// Sample SQT for this animation
+				glm::vec3 position	= SamplePosition(channel, timestamp);
+				glm::quat rotation	= SampleRotation(channel, timestamp);
+				glm::vec3 scale		= SampleScale(channel, timestamp);
+
+				const uint32 jointID = it->second;
+				m_FrameData[channelID] = SQT(position, scale, rotation, jointID);
 			}
 
-			// Sample SQT for this animation
-			glm::vec3 position	= SamplePosition(channel, timestamp);
-			glm::quat rotation	= SampleRotation(channel, timestamp);
-			glm::vec3 scale		= SampleScale(channel, timestamp);
-
-			const uint32 jointID = it->second;
-			m_FrameData[jointID] = SQT(position, scale, rotation);
+			channelID++;
 		}
 
 		// Handle triggers

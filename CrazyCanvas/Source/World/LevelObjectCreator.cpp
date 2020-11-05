@@ -613,10 +613,10 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
 		NetworkPositionComponent
 		{
-		.Position		= pPlayerDesc->Position,
-		.PositionLast	= pPlayerDesc->Position,
-		.TimestampStart = EngineLoop::GetTimeSinceStart(),
-		.Duration		= EngineLoop::GetFixedTimestep()
+			.Position		= pPlayerDesc->Position,
+			.PositionLast	= pPlayerDesc->Position,
+			.TimestampStart = EngineLoop::GetTimeSinceStart(),
+			.Duration		= EngineLoop::GetFixedTimestep()
 		});
 
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });

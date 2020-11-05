@@ -1072,8 +1072,9 @@ namespace LambdaEngine
 		pMesh->pSkeleton = pSkeleton;
 
 		// Retrive all the bones
-		pSkeleton->Joints.Resize(pMeshAI->mNumBones);
-		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
+		const uint32 numBones = pMeshAI->mNumBones;
+		pSkeleton->Joints.Resize(numBones);
+		for (uint32 boneIndex = 0; boneIndex < numBones; boneIndex++)
 		{
 			Joint& joint = pSkeleton->Joints[boneIndex];
 			
@@ -1096,7 +1097,8 @@ namespace LambdaEngine
 
 		// Find parent node
 		const aiNode* pRootNode	= pSceneAI->mRootNode;
-		TArray<TArray<JointIndexType>> children(pMeshAI->mNumBones);
+		TArray<TArray<JointIndexType>> children(numBones);
+		pSkeleton->RelativeTransforms.Resize(numBones);
 		for (Joint& joint : pSkeleton->Joints)
 		{
 			const aiNode* pNode = FindNodeInScene(joint.Name, pRootNode);
@@ -1104,18 +1106,30 @@ namespace LambdaEngine
 			if (pNode)
 			{
 				myID = FindNodeIdInSkeleton(pNode->mName.C_Str(), pSkeleton);
-			}
-			
-			const aiNode* pParent = pNode->mParent;
-			if (pParent)
-			{
-				JointIndexType parentID = FindNodeIdInSkeleton(pParent->mName.C_Str(), pSkeleton);
-				joint.ParentBoneIndex = parentID;
+				pSkeleton->RelativeTransforms[myID] = AssimpToGLMMat4(pNode->mTransformation);
 
-				if (parentID != INVALID_JOINT_ID)
+				const aiNode* pParent = pNode->mParent;
+				if (pParent)
 				{
-					children[parentID].EmplaceBack(myID);
+					JointIndexType parentID = FindNodeIdInSkeleton(pParent->mName.C_Str(), pSkeleton);
+					joint.ParentBoneIndex = parentID;
+
+					if (parentID != INVALID_JOINT_ID)
+					{
+						children[parentID].EmplaceBack(myID);
+					}
 				}
+			}
+		}
+
+		// Find root node
+		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
+		{
+			Joint& joint = pSkeleton->Joints[jointID];
+			if (joint.ParentBoneIndex == INVALID_JOINT_ID)
+			{
+				pSkeleton->RootJoint = jointID;
+				break;
 			}
 		}
 
@@ -1156,7 +1170,7 @@ namespace LambdaEngine
 
 		// Set weights
 		pMesh->VertexJointData.Resize(pMesh->Vertices.GetSize());
-		for (uint32 boneID = 0; boneID < pMeshAI->mNumBones; boneID++)
+		for (uint32 boneID = 0; boneID < numBones; boneID++)
 		{
 			aiBone* pBone = pMeshAI->mBones[boneID];
 			for (uint32 weightID = 0; weightID < pBone->mNumWeights; weightID++)
@@ -1203,6 +1217,31 @@ namespace LambdaEngine
 				joint.JointID3, weight3);
 		}
 #endif
+
+		// Fix transforms
+		glm::mat4 globalTransform = AssimpToGLMMat4(pSceneAI->mRootNode->mTransformation);
+		pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform);
+
+		// Build root transform
+		const uint32 rootJointID = pSkeleton->RootJoint;
+		if (rootJointID != INVALID_JOINT_ID)
+		{
+			const Joint&	rootJoint		= pSkeleton->Joints[rootJointID];
+			const aiNode*	pRootJointAI	= FindNodeInScene(rootJoint.Name, pSceneAI->mRootNode);
+			const aiNode*	pParent			= pRootJointAI->mParent;
+
+			glm::mat4 rootTransform = glm::identity<glm::mat4>();
+			while (pParent != nullptr)
+			{
+				glm::mat4 parentTransform = AssimpToGLMMat4(pParent->mTransformation);
+				rootTransform = parentTransform * rootTransform;
+				pParent = pParent->mParent;
+			}
+
+			pSkeleton->RootNodeTransform = rootTransform;
+		}
+
+		LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
@@ -1360,7 +1399,11 @@ namespace LambdaEngine
 
 		context.Animations.EmplaceBack(pAnimation);
 
-		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", Duration=%.4f ticks, TicksPerSecond=%.4f", pAnimation->Name.GetString().c_str(), pAnimation->DurationInTicks, pAnimation->TicksPerSecond);
+		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f", 
+			pAnimation->Name.GetString().c_str(),
+			pAnimation->Channels.GetSize(),
+			pAnimation->DurationInTicks, 
+			pAnimation->TicksPerSecond);
 	}
 
 	static void PrintSceneStructure(const aiNode* pNode, int32 depth)
@@ -1373,6 +1416,19 @@ namespace LambdaEngine
 
 		const uint32 numChildren = pNode->mNumChildren;
 		LOG_INFO("%s%s | NumChildren=%u", postfix.c_str(), pNode->mName.C_Str(), numChildren);
+
+#if 0
+		glm::mat4 glmMat = AssimpToGLMMat4(pNode->mTransformation);
+		for (uint32 i = 0; i < 4; i++)
+		{
+			LOG_INFO("%s [%.4f, %.4f, %.4f, %.4f]", 
+				postfix.c_str(), 
+				glmMat[i][0], 
+				glmMat[i][1], 
+				glmMat[i][2], 
+				glmMat[i][3]);
+		}
+#endif
 
 		for (int32 child = 0; child < pNode->mNumChildren; child++)
 		{
@@ -1582,25 +1638,24 @@ namespace LambdaEngine
 					if (pMeshAI->mNumBones > 0)
 					{
 						LoadSkeleton(pMesh, pMeshAI, pScene);
-						if (pMesh->pSkeleton)
+
+						Skeleton* pSkeleton = pMesh->pSkeleton;
+						if (pSkeleton)
 						{
 							//Assume Mixamo has replaced our rotation
-							glm::mat4 meshTransform		= glm::rotate(glm::mat4(1.0f), glm::pi<float32>(), glm::vec3(0.0f, 1.0f, 0.0f));
-							meshTransform				= meshTransform * AssimpToGLMMat4(pNode->mTransformation);
-							glm::mat4 globalTransform	= AssimpToGLMMat4(pScene->mRootNode->mTransformation);
-							pMesh->pSkeleton->InverseGlobalTransform = glm::inverse(globalTransform) * meshTransform;
-
-							LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+							const glm::mat4 meshTransform = glm::rotate(glm::mat4(1.0f), glm::pi<float32>(), glm::vec3(0.0f, 1.0f, 0.0f));
+							const glm::mat4 skinTransform = AssimpToGLMMat4(pNode->mTransformation);
+							pSkeleton->SkinTransform			= skinTransform;
+							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * meshTransform;
 						}
 					}
 
 					MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
-
 					context.Meshes.EmplaceBack(pMesh);
 
 					MeshComponent newMeshComponent;
-					newMeshComponent.MeshGUID = context.Meshes.GetSize() - 1;
-					newMeshComponent.MaterialGUID = context.MaterialIndices[pMeshAI->mMaterialIndex];
+					newMeshComponent.MeshGUID		= context.Meshes.GetSize() - 1;
+					newMeshComponent.MaterialGUID	= context.MaterialIndices[pMeshAI->mMaterialIndex];
 
 					if (levelObjectToBeSet.IsEmpty())
 					{
