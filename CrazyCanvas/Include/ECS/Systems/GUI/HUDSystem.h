@@ -4,6 +4,7 @@
 #include "ECS/System.h"
 
 #include "Events/GameplayEvents.h"
+#include "Physics/PhysicsEvents.h"
 
 #include "GUI/HUDGUI.h"
 
@@ -27,6 +28,7 @@ public:
 
 	bool OnWeaponFired(const WeaponFiredEvent& event);
 	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
+	bool OnProjectileHit(const ProjectileHitEvent& event);
 
 private:
 	LambdaEngine::IDVector m_PlayerEntities;

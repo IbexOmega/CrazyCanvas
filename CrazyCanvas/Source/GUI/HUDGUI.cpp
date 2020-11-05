@@ -15,6 +15,7 @@
 #include "Match/Match.h"
 
 #include <string>
+#include "..\..\Include\GUI\HUDGUI.h"
 
 
 using namespace LambdaEngine;
@@ -161,6 +162,10 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	}
 
 	return true;
+}
+
+void HUDGUI::DisplayHitIndicator(const glm::vec3& direction)
+{
 }
 
 void HUDGUI::InitGUI()

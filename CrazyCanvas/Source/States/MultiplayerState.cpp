@@ -1,4 +1,4 @@
-#include "States/LobbyState.h"
+#include "States/MultiplayerState.h"
 
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphSerializer.h"
@@ -7,13 +7,13 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 
-LobbyState::~LobbyState()
+MultiplayerState::~MultiplayerState()
 {
-	m_LobbyGUI.Reset();
+	m_MultiplayerGUI.Reset();
 	m_View.Reset();
 }
 
-void LobbyState::Init()
+void MultiplayerState::Init()
 {
 	using namespace LambdaEngine;
 
@@ -27,17 +27,17 @@ void LobbyState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
 
-	m_LobbyGUI = *new LobbyGUI("Lobby.xaml");
-	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
+	m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
+	m_View = Noesis::GUI::CreateView(m_MultiplayerGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 }
 
-void LobbyState::Tick(LambdaEngine::Timestamp delta)
+void MultiplayerState::Tick(LambdaEngine::Timestamp delta)
 {
 
 }
 
-void LobbyState::FixedTick(LambdaEngine::Timestamp delta)
+void MultiplayerState::FixedTick(LambdaEngine::Timestamp delta)
 {
-	m_LobbyGUI->FixedTick(delta);
+	m_MultiplayerGUI->FixedTick(delta);
 }
