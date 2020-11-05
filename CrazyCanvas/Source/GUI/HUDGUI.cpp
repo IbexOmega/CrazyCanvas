@@ -1,7 +1,8 @@
-#include "Game/State.h"
-
 #include "GUI/HUDGUI.h"
+#include "GUI/CountdownGUI.h"
 #include "GUI/Core/GUIApplication.h"
+
+#include "Game/State.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -17,18 +18,16 @@
 #include <string>
 #include "..\..\Include\GUI\HUDGUI.h"
 
-
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) : 
+HUDGUI::HUDGUI() : 
 	m_GUIState()
 {
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+	Noesis::GUI::LoadComponent(this, "HUD.xaml");
 
 	InitGUI();
 }
-
 
 HUDGUI::~HUDGUI()
 {
@@ -56,7 +55,6 @@ void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 
 	UpdateScore();
 }
-
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
@@ -164,7 +162,13 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	return true;
 }
 
-void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
+void HUDGUI::UpdateCountdown(uint8 countDownTime)
+{
+	CountdownGUI* pCountdownGUI = FindName<CountdownGUI>("COUNTDOWN");
+	pCountdownGUI->UpdateCountdown(countDownTime);
+}
+
+void HUDGUI::DisplayHitIndicator(const glm::vec3& direction)
 {
 	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
 

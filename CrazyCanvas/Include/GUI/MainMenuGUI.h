@@ -17,7 +17,7 @@
 class MainMenuGUI : public Noesis::Grid
 {
 public:
-	MainMenuGUI(const LambdaEngine::String& xamlFile);
+	MainMenuGUI();
 	~MainMenuGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSoruce, const char* pEvent, const char* pHandler) override;

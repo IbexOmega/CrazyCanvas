@@ -93,7 +93,7 @@ void WeaponSystemClient::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEnt
 	const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
 
 	// Play gun fire and spawn particles
-	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_GunFireGUID);
+	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
 	m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 0.2f, 1.0f);
 
 	ParticleEmitterComponent& emitterComp = pECS->GetComponent<ParticleEmitterComponent>(weaponEntity);
@@ -200,13 +200,13 @@ bool WeaponSystemClient::InitInternal()
 	}
 
 	// Create soundeffects
-	m_GunFireGUID	= ResourceManager::LoadSoundEffectFromFile("gun.wav");
+	m_GunFireGUID	= ResourceManager::LoadSoundEffect3DFromFile("gun.wav");
 	if (m_GunFireGUID == GUID_NONE)
 	{
 		return false;
 	}
 
-	m_OutOfAmmoGUID = ResourceManager::LoadSoundEffectFromFile("out_of_ammo.wav");
+	m_OutOfAmmoGUID = ResourceManager::LoadSoundEffect2DFromFile("out_of_ammo.wav");
 	if (m_OutOfAmmoGUID == GUID_NONE)
 	{
 		return false;
@@ -228,7 +228,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
 
 		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect(m_OutOfAmmoGUID);
+		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_OutOfAmmoGUID);
 		m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 1.0f, 1.0f);
 	}
 	else

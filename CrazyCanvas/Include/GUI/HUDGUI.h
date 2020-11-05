@@ -37,9 +37,8 @@ struct GameGUIState
 
 class HUDGUI : public Noesis::Grid
 {
-
 public:
-	HUDGUI(const LambdaEngine::String& xamlFile);
+	HUDGUI();
 	~HUDGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -51,6 +50,7 @@ public:
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
+	void UpdateCountdown(uint8 countDownTime);
 
 	void DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 
