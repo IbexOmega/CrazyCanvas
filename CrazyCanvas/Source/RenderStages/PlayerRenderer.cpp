@@ -304,17 +304,17 @@ namespace LambdaEngine
 						if (pTeamComponents->HasComponent(entity))
 						{
 							PlayerData playerData;
-							playerData.drawArgIndex = d;
-							playerData.teamId = pTeamComponents->GetConstData(entity).TeamIndex;
-							playerData.position = pPositionComponents->GetConstData(entity).Position;
+							playerData.DrawArgIndex = d;
+							playerData.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
+							playerData.Position = pPositionComponents->GetConstData(entity).Position;
 							m_PlayerData.PushBack(playerData);
 
 							if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
 							{
-								m_Viewer.teamId = pTeamComponents->GetConstData(entity).TeamIndex;
-								m_Viewer.entityId = entity;
-								m_Viewer.drawArgIndex = d;
-								m_Viewer.positon = pPositionComponents->GetConstData(entity).Position;
+								m_Viewer.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
+								m_Viewer.EntityId = entity;
+								m_Viewer.DrawArgIndex = d;
+								m_Viewer.Positon = pPositionComponents->GetConstData(entity).Position;
 							}
 							else
 							{
@@ -347,13 +347,13 @@ namespace LambdaEngine
 				// Map player not same team as viewer to 1. Shader will filter
 				for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
 				{
-					if (m_PlayerData[i].teamId != m_Viewer.teamId)
+					if (m_PlayerData[i].TeamId != m_Viewer.TeamId)
 					{
-						m_PlayerData[i].teamId = 1;
+						m_PlayerData[i].TeamId = 1;
 					}
 					else
 					{
-						m_PlayerData[i].teamId = 0;
+						m_PlayerData[i].TeamId = 0;
 					}
 				}
 
@@ -496,21 +496,21 @@ namespace LambdaEngine
 		// Sort player rendering front to back
 		for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
 		{
-			m_PlayerData[i].distance2ToViewer = glm::distance2(m_Viewer.positon, m_PlayerData[i].position);
+			m_PlayerData[i].Distance2ToViewer = glm::distance2(m_Viewer.Positon, m_PlayerData[i].Position);
 		}
 		
 		std::sort(m_PlayerData.Begin(), m_PlayerData.End(),
-			[&](const PlayerData pd1, PlayerData pd2) {return pd1.distance2ToViewer < pd2.distance2ToViewer; });
+			[&](const PlayerData pd1, PlayerData pd2) {return pd1.Distance2ToViewer < pd2.Distance2ToViewer; });
 
 		for (auto& player : m_PlayerData) 
 		{
-			bool drawingVisiblePlayer = player.drawArgIndex != m_Viewer.drawArgIndex;
+			bool drawingVisiblePlayer = player.DrawArgIndex != m_Viewer.DrawArgIndex;
 			
 			// Skip drawing local player
 			if (drawingVisiblePlayer)
 			{
-				bool isEnemy = (player.teamId == 1);
-				bool isTeamMate = (player.teamId == 0);
+				bool isEnemy = (player.TeamId == 1);
+				bool isTeamMate = (player.TeamId == 0);
 
 				// Filter enemies if rendering teamates
 				if (!renderEnemy && isEnemy) {
@@ -522,12 +522,12 @@ namespace LambdaEngine
 					continue;
 				}
 
-				const DrawArg& drawArg = m_pDrawArgs[player.drawArgIndex];
+				const DrawArg& drawArg = m_pDrawArgs[player.DrawArgIndex];
 
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.teamId, sizeof(uint32), 0);
+				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
 				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.drawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.drawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 			}
 

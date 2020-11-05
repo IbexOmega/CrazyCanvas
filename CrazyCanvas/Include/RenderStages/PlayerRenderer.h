@@ -10,18 +10,18 @@ namespace LambdaEngine
 {
 	struct ViewerData
 	{
-		uint32 teamId;
-		uint32 entityId;
-		uint32 drawArgIndex;
-		glm::vec3 positon;
+		uint32 TeamId;
+		uint32 EntityId;
+		uint32 DrawArgIndex;
+		glm::vec3 Positon;
 	};
 
 	struct PlayerData
 	{
-		uint32 drawArgIndex;
-		uint32 teamId;
-		glm::vec3 position;
-		float32 distance2ToViewer;
+		uint32 DrawArgIndex;
+		uint32 TeamId;
+		glm::vec3 Position;
+		float32 Distance2ToViewer;
 	};
 
 	using ReleaseFrame = uint32;
@@ -107,10 +107,6 @@ namespace LambdaEngine
 		TSharedRef<const TextureView>			m_DepthStencil;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage;
 		ViewerData								m_Viewer;
-		TArray<uint32>							m_NextPlayerList;
-		TArray<uint32>							m_EntityIds;
-		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
-
 		TArray<PlayerData>						m_PlayerData;
 
 		bool									m_DirtyUniformBuffers = true;
