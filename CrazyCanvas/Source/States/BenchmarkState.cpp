@@ -66,7 +66,7 @@ void BenchmarkState::Init()
 	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	// Initialize Systems
-	WeaponSystem::GetInstance().Init();
+	WeaponSystem::Init();
 	m_BenchmarkSystem.Init();
 	TrackSystem::GetInstance().Init();
 

@@ -34,17 +34,16 @@ protected:
 
 public:
 	static bool Init();
-	static void Release();
 
 	FORCEINLINE static HealthSystem& GetInstance() 
 	{ 
-		VALIDATE(s_pInstance != nullptr);
-		return *s_pInstance;
+		VALIDATE(s_Instance != nullptr);
+		return *s_Instance;
 	}
 
 protected:
 	LambdaEngine::IDVector m_HealthEntities;
 
 private:
-	static HealthSystem* s_pInstance;
+	static LambdaEngine::TUniquePtr<HealthSystem> s_Instance;
 };

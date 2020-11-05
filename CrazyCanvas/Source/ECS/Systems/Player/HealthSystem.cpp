@@ -19,7 +19,7 @@
 * HealthSystem
 */
 
-HealthSystem* HealthSystem::s_pInstance = nullptr;
+LambdaEngine::TUniquePtr<HealthSystem> HealthSystem::s_Instance = nullptr;
 
 bool HealthSystem::Init()
 {
@@ -27,19 +27,14 @@ bool HealthSystem::Init()
 
 	if (MultiplayerUtils::IsServer())
 	{
-		s_pInstance = DBG_NEW HealthSystemServer();
+		s_Instance = DBG_NEW HealthSystemServer();
 	}
 	else
 	{
-		s_pInstance = DBG_NEW HealthSystemClient();
+		s_Instance = DBG_NEW HealthSystemClient();
 	}
 
-	return s_pInstance->InitInternal();
-}
-
-void HealthSystem::Release()
-{
-	SAFEDELETE(s_pInstance);
+	return s_Instance->InitInternal();
 }
 
 bool HealthSystem::InitInternal()

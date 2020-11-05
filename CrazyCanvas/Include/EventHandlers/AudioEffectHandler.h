@@ -32,5 +32,5 @@ private:
 	LambdaEngine::ISoundEffect3D* m_pHitSound			= nullptr;
 	LambdaEngine::ISoundEffect3D* m_pPlayerKilledSound	= nullptr;
 	LambdaEngine::ISoundEffect3D* m_pConnectSound		= nullptr;
-	bool m_HasFocus;
+	bool m_HasFocus = false;
 };

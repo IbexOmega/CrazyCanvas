@@ -13,6 +13,8 @@
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
+#include "Containers/TUniquePtr.h"
+
 namespace LambdaEngine
 {
 	struct EntityCollisionInfo;
@@ -71,12 +73,11 @@ public:
 
 public:
 	static bool Init();
-	static void Release();
 
 	FORCEINLINE static WeaponSystem& GetInstance() 
 	{ 
-		VALIDATE(s_pInstance != nullptr);
-		return *s_pInstance;
+		VALIDATE(s_Instance != nullptr);
+		return *s_Instance;
 	}
 
 protected:
@@ -96,9 +97,9 @@ protected:
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
-private:
-	static WeaponSystem* s_pInstance;
-
 protected:
 	LambdaEngine::IDVector m_WeaponEntities;
+
+private:
+	static LambdaEngine::TUniquePtr<WeaponSystem> s_Instance;
 };

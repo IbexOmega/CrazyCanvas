@@ -26,7 +26,7 @@
 * WeaponSystem
 */
 
-WeaponSystem* WeaponSystem::s_pInstance = nullptr;
+LambdaEngine::TUniquePtr<WeaponSystem> WeaponSystem::s_Instance = nullptr;
 
 void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 {
@@ -88,20 +88,14 @@ bool WeaponSystem::Init()
 
 	if (MultiplayerUtils::IsServer())
 	{
-		s_pInstance = DBG_NEW WeaponSystemServer();
+		s_Instance = DBG_NEW WeaponSystemServer();
 	}
 	else
 	{
-		s_pInstance = DBG_NEW WeaponSystemClient();
+		s_Instance = DBG_NEW WeaponSystemClient();
 	}
 
-	//EventQueue::RegisterEventHandler(s_pInstance, &WeaponSystem::OnProjectileHit);
-	return s_pInstance->InitInternal();
-}
-
-void WeaponSystem::Release()
-{
-	SAFEDELETE(s_pInstance);
+	return s_Instance->InitInternal();
 }
 
 bool WeaponSystem::InitInternal()

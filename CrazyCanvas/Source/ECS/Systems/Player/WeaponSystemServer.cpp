@@ -41,7 +41,6 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			// Start reload
 			if (packetsRecived[i].StartedReload && !isReloading)
 			{
-				LOG_INFO("SERVER: STARTED RELOAD");
 				weaponComp.ReloadClock = weaponComp.ReloadTime;
 			}
 			else if (packetsRecived[i].FiredAmmo != EAmmoType::AMMO_TYPE_NONE && !onCooldown)

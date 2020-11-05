@@ -1,6 +1,7 @@
 #include "EventHandlers/AudioEffectHandler.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/CommonApplication.h"
 
 #include "Audio/API/ISoundEffect3D.h"
 
@@ -45,6 +46,10 @@ void AudioEffectHandler::Init()
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerHit);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnWindowFocusChanged);
+
+		// Retrive current state of window
+		TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
+		m_HasFocus = mainWindow->IsActiveWindow();
 	}
 }
 
@@ -87,7 +92,6 @@ bool AudioEffectHandler::OnPlayerHit(const PlayerHitEvent& event)
 			m_pEnemyHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
 		}
 
-		LOG_INFO("PLAYER HIT SOUND");
 		return true;
 	}
 	else
