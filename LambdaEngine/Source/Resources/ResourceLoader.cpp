@@ -1007,61 +1007,6 @@ namespace LambdaEngine
 		return retMat;
 	}
 
-	static aiNode* FindSkeletalRoot(aiNode* pNode)
-	{
-		VALIDATE(pNode != nullptr);
-#if 1
-		LOG_INFO("Name=%s", pNode->mName.C_Str());
-#endif
-
-		aiNode* pParent = pNode->mParent;
-		if (pParent)
-		{
-			return FindSkeletalRoot(pParent);
-		}
-		else
-		{
-			return pNode;
-		}
-	}
-
-	static void FindSkeletalParent(aiNode* pNode, Skeleton* pSkeleton)
-	{
-		VALIDATE(pNode		!= nullptr);
-		VALIDATE(pSkeleton	!= nullptr);
-
-		String name = pNode->mName.C_Str();
-
-		int32 myID = -1;
-		auto it = pSkeleton->JointMap.find(name);
-		if (it != pSkeleton->JointMap.end())
-		{
-			myID = it->second;
-		}
-
-#if 1
-		const int32 parentID = (myID != -1) ? pSkeleton->Joints[myID].ParentBoneIndex : -1;
-		LOG_INFO("Name=%s, ID=%d, ParentID=%d", name.c_str(), myID, parentID);
-#endif
-
-		for (uint32 child = 0; child < pNode->mNumChildren; child++)
-		{
-			aiNode* pChild = pNode->mChildren[child];
-			if (pChild)
-			{
-				String childName = pChild->mName.C_Str();
-				
-				auto childIt = pSkeleton->JointMap.find(childName);
-				if (childIt != pSkeleton->JointMap.end())
-				{
-					pSkeleton->Joints[childIt->second].ParentBoneIndex = (JointIndexType)myID;
-				}
-
-				FindSkeletalParent(pNode->mChildren[child], pSkeleton);
-			}
-		}
-	}
-
 	static void PrintChildren(const TArray<JointIndexType>& children, const TArray<TArray<JointIndexType>>& childrenArr, Skeleton* pSkeleton, uint32 depth)
 	{
 		String postfix;
@@ -1079,7 +1024,49 @@ namespace LambdaEngine
 		}
 	}
 
-	void ResourceLoader::LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI)
+	static const aiNode* FindNodeInScene(const String& nodeName, const aiNode* pParent)
+	{
+		if (strcmp(nodeName.c_str(), pParent->mName.C_Str()) == 0)
+		{
+			return pParent;
+		}
+		else
+		{
+			const uint32 numChildren = pParent->mNumChildren;
+			if (numChildren > 0)
+			{
+				for (uint32 i = 0; i < numChildren; i++)
+				{
+					const aiNode* pChild	= pParent->mChildren[i];
+					const aiNode* pNode		= FindNodeInScene(nodeName, pChild);
+					
+					// If child contains the node -> Break and return
+					if (pNode)
+					{
+						return pNode;
+					}
+				}
+			}
+
+			return nullptr;
+		}
+	}
+
+	static JointIndexType FindNodeIdInSkeleton(const String& nodeName, const Skeleton* pSkeleton)
+	{
+		for (int32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
+		{
+			const Joint& joint = pSkeleton->Joints[i];
+			if (joint.Name == nodeName)
+			{
+				return i;
+			}
+		}
+
+		return INVALID_JOINT_ID;
+	}
+
+	void ResourceLoader::LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI, const aiScene* pSceneAI)
 	{
 		Skeleton* pSkeleton = DBG_NEW Skeleton();
 		pMesh->pSkeleton = pSkeleton;
@@ -1107,56 +1094,32 @@ namespace LambdaEngine
 			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
-		aiNode* pRoot0 = pMeshAI->mBones[0]->mNode;
-		aiNode* pRoot1 = FindSkeletalRoot(pRoot0);
-		FindSkeletalParent(pRoot1, pSkeleton);
-
-		// We find the parent
+		// Find parent node
+		const aiNode* pRootNode	= pSceneAI->mRootNode;
 		TArray<TArray<JointIndexType>> children(pMeshAI->mNumBones);
-		for (uint32 boneIndex = 0; boneIndex < pMeshAI->mNumBones; boneIndex++)
+		for (Joint& joint : pSkeleton->Joints)
 		{
-			Joint& joint = pSkeleton->Joints[boneIndex];
-			joint.ParentBoneIndex = INVALID_JOINT_ID;
-
-			// Search the armature aswell
-			aiNode* pNodeAI = pMeshAI->mBones[boneIndex]->mNode;
-			if (pNodeAI)
+			const aiNode* pNode = FindNodeInScene(joint.Name, pRootNode);
+			JointIndexType myID = INVALID_JOINT_ID;
+			if (pNode)
 			{
-				aiNode* pParent = pNodeAI->mParent;
-				if (pParent)
-				{
-					auto it = pSkeleton->JointMap.find(String(pParent->mName.C_Str()));
-					if (it != pSkeleton->JointMap.end())
-					{
-						joint.ParentBoneIndex = it->second;
-						children[joint.ParentBoneIndex].EmplaceBack(JointIndexType(boneIndex));
-					}
-				}
+				myID = FindNodeIdInSkeleton(pNode->mName.C_Str(), pSkeleton);
 			}
-
-			if (joint.ParentBoneIndex != INVALID_JOINT_ID)
+			
+			const aiNode* pParent = pNode->mParent;
+			if (pParent)
 			{
-				continue;
-			}
+				JointIndexType parentID = FindNodeIdInSkeleton(pParent->mName.C_Str(), pSkeleton);
+				joint.ParentBoneIndex = parentID;
 
-			// Search the armature aswell
-			pNodeAI = pMeshAI->mBones[boneIndex]->mArmature;
-			if (pNodeAI)
-			{
-				aiNode* pParent = pNodeAI->mParent;
-				if (pParent)
+				if (parentID != INVALID_JOINT_ID)
 				{
-					auto it = pSkeleton->JointMap.find(String(pParent->mName.C_Str()));
-					if (it != pSkeleton->JointMap.end())
-					{
-						joint.ParentBoneIndex = it->second;
-						children[joint.ParentBoneIndex].EmplaceBack(JointIndexType(boneIndex));
-					}
+					children[parentID].EmplaceBack(myID);
 				}
 			}
 		}
 
-#if 0
+#if 1
 		LOG_INFO("-----------------------------------");
 		{
 			JointIndexType rootNode = INVALID_JOINT_ID;
@@ -1224,7 +1187,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					LOG_WARNING("More than 4 bones affect this vertex");
+					LOG_WARNING("More than 4 bones affect vertex=%u. Extra weights has been discarded", vertexID);
 				}
 			}
 		}
@@ -1400,6 +1363,24 @@ namespace LambdaEngine
 		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", Duration=%.4f ticks, TicksPerSecond=%.4f", pAnimation->Name.GetString().c_str(), pAnimation->DurationInTicks, pAnimation->TicksPerSecond);
 	}
 
+	static void PrintSceneStructure(const aiNode* pNode, int32 depth)
+	{
+		String postfix;
+		for (uint32 i = 0; i < depth; i++)
+		{
+			postfix += "  ";
+		}
+
+		const uint32 numChildren = pNode->mNumChildren;
+		LOG_INFO("%s%s | NumChildren=%u", postfix.c_str(), pNode->mName.C_Str(), numChildren);
+
+		for (int32 child = 0; child < pNode->mNumChildren; child++)
+		{
+			const aiNode* pChild = pNode->mChildren[child];
+			PrintSceneStructure(pChild, depth + 1);
+		}
+	}
+
 	bool ResourceLoader::LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest)
 	{
 		// Find the directory path
@@ -1492,6 +1473,11 @@ namespace LambdaEngine
 			}
 		}
 
+		// Print scene structure
+#if 1
+		PrintSceneStructure(pScene->mRootNode, 0);
+#endif
+
 		// Load all meshes
 		if (!sceneLoadRequest.AnimationsOnly)
 		{
@@ -1581,7 +1567,6 @@ namespace LambdaEngine
 				{
 					aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 					Mesh* pMesh = DBG_NEW Mesh();
-
 					pMesh->DefaultPosition	= defaultPosition;
 					pMesh->DefaultRotation	= defaultRotation;
 					pMesh->DefaultScale		= defaultScale;
@@ -1596,7 +1581,7 @@ namespace LambdaEngine
 
 					if (pMeshAI->mNumBones > 0)
 					{
-						LoadSkeleton(pMesh, pMeshAI);
+						LoadSkeleton(pMesh, pMeshAI, pScene);
 						if (pMesh->pSkeleton)
 						{
 							//Assume Mixamo has replaced our rotation
@@ -1637,8 +1622,8 @@ namespace LambdaEngine
 				{
 					aiMesh* pMeshAI = pScene->mMeshes[pNode->mMeshes[meshIdx]];
 
-				BoundingBox boundingBox;
-				LoadBoundingBox(boundingBox, pMeshAI);
+					BoundingBox boundingBox;
+					LoadBoundingBox(boundingBox, pMeshAI);
 
 					for (LevelObjectOnLoad* pLevelObject : levelObjectToBeSet)
 					{
