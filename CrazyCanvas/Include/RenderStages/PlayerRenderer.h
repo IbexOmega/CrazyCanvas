@@ -106,11 +106,6 @@ namespace LambdaEngine
 
 		TSharedRef<const TextureView>			m_DepthStencil;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage;
-		//uint32									m_ViewerTeamId;			// Used to filter in shader
-		//TArray<uint32>							m_TeamIds;				// Used to filter in shader
-		//uint32									m_ViewerEntityId;		// Used to get Position
-		//uint32									m_ViewerDrawArgIndex;	// Used to filter in render()
-		//TArray<float>							m_PlayerDistances;
 		ViewerData								m_Viewer;
 		TArray<uint32>							m_NextPlayerList;
 		TArray<uint32>							m_EntityIds;
