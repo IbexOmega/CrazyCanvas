@@ -27,7 +27,7 @@ void MultiplayerState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
 
-	m_MultiplayerGUI = *new MultiplayerGUI("Lobby.xaml");
+	m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
 	m_View = Noesis::GUI::CreateView(m_MultiplayerGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 }
