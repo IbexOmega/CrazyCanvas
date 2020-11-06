@@ -23,5 +23,4 @@ bool DamageIndicatorGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char
 void DamageIndicatorGUI::DisplayIndicator()
 {
 	m_pDamageIndicatorStoryboard->Begin();
-	//m_pDamageIndicatorStoryboard->Stop();
 }
