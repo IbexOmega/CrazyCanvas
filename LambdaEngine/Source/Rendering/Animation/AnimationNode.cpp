@@ -150,7 +150,7 @@ namespace LambdaEngine
 				glm::quat rotation	= SampleRotation(channel, timestamp);
 				glm::vec3 scale		= SampleScale(channel, timestamp);
 
-				const uint32 jointID = it->second;
+				const JointIndexType jointID = it->second;
 				m_FrameData[jointID] = SQT(position, scale, rotation, jointID);
 			}
 		}
@@ -195,8 +195,8 @@ namespace LambdaEngine
 			}
 		}
 
-		const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
-		glm::vec3 position = glm::mix(pos0.Value, pos1.Value, glm::vec3(float32(factor)));
+		const float64 factor	= (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
+		glm::vec3 position		= glm::mix(pos0.Value, pos1.Value, glm::vec3(float32(factor)));
 		return position;
 	}
 

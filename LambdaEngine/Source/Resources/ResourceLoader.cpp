@@ -1082,12 +1082,12 @@ namespace LambdaEngine
 
 	static JointIndexType FindNodeIdInSkeleton(const String& nodeName, const Skeleton* pSkeleton)
 	{
-		for (int32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
+		for (uint32 i = 0; i < pSkeleton->Joints.GetSize(); i++)
 		{
 			const Joint& joint = pSkeleton->Joints[i];
 			if (joint.Name == nodeName)
 			{
-				return i;
+				return JointIndexType(i);
 			}
 		}
 
@@ -1156,7 +1156,7 @@ namespace LambdaEngine
 			Joint& joint = pSkeleton->Joints[jointID];
 			if (joint.ParentBoneIndex == INVALID_JOINT_ID)
 			{
-				pSkeleton->RootJoint = jointID;
+				pSkeleton->RootJoint = JointIndexType(jointID);
 				break;
 			}
 		}
@@ -1437,7 +1437,7 @@ namespace LambdaEngine
 	static void PrintSceneStructure(const aiNode* pNode, int32 depth)
 	{
 		String postfix;
-		for (uint32 i = 0; i < depth; i++)
+		for (int32 i = 0; i < depth; i++)
 		{
 			postfix += "  ";
 		}
@@ -1458,7 +1458,7 @@ namespace LambdaEngine
 		}
 #endif
 
-		for (int32 child = 0; child < pNode->mNumChildren; child++)
+		for (uint32 child = 0; child < pNode->mNumChildren; child++)
 		{
 			const aiNode* pChild = pNode->mChildren[child];
 			PrintSceneStructure(pChild, depth + 1);
@@ -1558,7 +1558,7 @@ namespace LambdaEngine
 		}
 
 		// Print scene structure
-#if 0
+#if 1
 		PrintSceneStructure(pScene->mRootNode, 0);
 #endif
 
@@ -1670,11 +1670,13 @@ namespace LambdaEngine
 						Skeleton* pSkeleton = pMesh->pSkeleton;
 						if (pSkeleton)
 						{
-							//Assume Mixamo has replaced our rotation
+							// Assume Mixamo has replaced our rotation
 							const glm::mat4 meshTransform = glm::rotate(glm::mat4(1.0f), glm::pi<float32>(), glm::vec3(0.0f, 1.0f, 0.0f));
 							const glm::mat4 skinTransform = AssimpToGLMMat4(pNode->mTransformation);
 							pSkeleton->SkinTransform			= skinTransform;
 							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * meshTransform;
+						
+							pMesh->BoundingBox.Scale(skinTransform);
 						}
 					}
 
