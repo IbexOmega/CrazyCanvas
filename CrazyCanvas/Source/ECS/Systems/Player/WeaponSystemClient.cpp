@@ -228,8 +228,8 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
 
 		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 1.0f, 1.0f);
+		ISoundEffect2D* m_pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
+		m_pSound->PlayOnce();
 	}
 	else
 	{
