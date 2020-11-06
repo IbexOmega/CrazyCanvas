@@ -826,8 +826,8 @@ bool LevelObjectCreator::CreatePlayer(
 		pECS->AddComponent<MeshComponent>(playerEntity, 
 			MeshComponent
 			{
-				.MeshGUID = s_PlayerMeshGUID, 
-				.MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
+				.MeshGUID		= s_PlayerMeshGUID, 
+				.MaterialGUID	= TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
 			});
 
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
