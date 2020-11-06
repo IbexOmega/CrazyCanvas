@@ -6,6 +6,8 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+// TEMP - DELTE IF PULLREQUEST
+#include "GUI/LobbyGUI.h"
 
 class MultiplayerState : public LambdaEngine::State
 {
@@ -22,6 +24,6 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta) override;
 
 private:
-	Noesis::Ptr<MultiplayerGUI> m_MultiplayerGUI;
+	Noesis::Ptr<LobbyGUI> m_MultiplayerGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
 };

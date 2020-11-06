@@ -6,7 +6,6 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-
 MultiplayerState::~MultiplayerState()
 {
 	m_MultiplayerGUI.Reset();
@@ -27,7 +26,8 @@ void MultiplayerState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
 
-	m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
+	// m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
+	m_MultiplayerGUI = *new LobbyGUI();
 	m_View = Noesis::GUI::CreateView(m_MultiplayerGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 }
@@ -39,5 +39,5 @@ void MultiplayerState::Tick(LambdaEngine::Timestamp delta)
 
 void MultiplayerState::FixedTick(LambdaEngine::Timestamp delta)
 {
-	m_MultiplayerGUI->FixedTick(delta);
+	// m_MultiplayerGUI->FixedTick(delta);
 }
