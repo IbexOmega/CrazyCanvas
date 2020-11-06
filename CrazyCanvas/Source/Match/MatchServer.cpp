@@ -36,6 +36,8 @@
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketMatchStart.h"
+#include "Multiplayer/Packet/PacketMatchBegin.h"
 
 #include "Lobby/PlayerManagerBase.h"
 
@@ -73,9 +75,17 @@ bool MatchServer::InitInternal()
 
 void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
-	UNREFERENCED_VARIABLE(deltaTime);
-
 	using namespace LambdaEngine;
+
+	if (!m_HasBegun)
+	{
+		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
+
+		if (m_MatchBeginTimer < 0.0f)
+		{
+			MatchBegin();
+		}
+	}
 
 	if (m_pLevel != nullptr)
 	{
@@ -86,7 +96,6 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 	}
 
 	//Render Some Server Match Information
-
 #if defined(RENDER_MATCH_INFORMATION)
 	ImGuiRenderer::Get().DrawUI([this]()
 	{
@@ -144,7 +153,15 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 							Entity weapon = children.GetEntityWithTag("weapon");
 
 							const WeaponComponent& weaponComp = pWeaponComponents->GetConstData(weapon);
-							ImGui::Text("Ammunition: %u/%u", weaponComp.CurrentAmmunition, weaponComp.AmmoCapacity);
+
+							auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+							if(waterAmmo != weaponComp.WeaponTypeAmmo.end())
+								ImGui::Text("Water Ammunition: %u/%u", waterAmmo->second.first, waterAmmo->second.second);
+
+							auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+							if (paintAmmo != weaponComp.WeaponTypeAmmo.end())
+								ImGui::Text("Paint Ammunition: %u/%u", paintAmmo->second.first, paintAmmo->second.second);
+
 
 							if (ImGui::Button("Kill"))
 							{
@@ -176,6 +193,27 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 		ImGui::End();
 	});
 #endif
+}
+
+void MatchServer::MatchStart()
+{
+	m_HasBegun = false;
+	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+
+	PacketMatchStart matchStartPacket;
+	ServerHelper::SendBroadcast(matchStartPacket);
+
+	LOG_INFO("SERVER: Match Start");
+}
+
+void MatchServer::MatchBegin()
+{
+	m_HasBegun = true;
+
+	PacketMatchBegin matchBeginPacket;
+	ServerHelper::SendBroadcast(matchBeginPacket);
+
+	LOG_INFO("SERVER: Match Begin");
 }
 
 void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
@@ -378,7 +416,7 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
 	ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
 
-	//Send currently existing players to the new client
+	// Send currently existing players to the new client
 	{
 		TArray<Entity> playerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
 
@@ -402,12 +440,12 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 		}
 	}
 
-	//Create a player for the new client, also sends the new player to the connected clients
+	// Create a player for the new client, also sends the new player to the connected clients
 	{
 		SpawnPlayer((ClientRemoteBase*)pClient);
 	}
 
-	//Send flag data to clients
+	// Send flag data to clients
 	{
 		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
@@ -426,6 +464,11 @@ bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& ev
 			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
 			ServerHelper::Send(pClient, packet);
 		}
+	}
+
+	// Match Start
+	{
+		MatchStart();
 	}
 
 	return true;

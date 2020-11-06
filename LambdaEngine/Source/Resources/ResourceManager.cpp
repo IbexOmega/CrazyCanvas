@@ -51,7 +51,9 @@ namespace LambdaEngine
 	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_AnimationGUIDsToNames;
 	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_TextureGUIDsToNames;
 	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_ShaderGUIDsToNames;
-	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_SoundEffectGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_SoundEffect3DGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_SoundEffect2DGUIDsToNames;
+	std::unordered_map<GUID_Lambda, String>				ResourceManager::s_MusicGUIDsToNames;
 
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MeshNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MaterialNamesToGUIDs;
@@ -59,7 +61,9 @@ namespace LambdaEngine
 	std::unordered_map<String, TArray<GUID_Lambda>>		ResourceManager::s_FileNamesToAnimationGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_TextureNamesToGUIDs;
 	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_ShaderNamesToGUIDs;
-	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_SoundEffectNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_SoundEffect3DNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_SoundEffect2DNamesToGUIDs;
+	std::unordered_map<String, GUID_Lambda>				ResourceManager::s_MusicNamesToGUIDs;
 
 	std::unordered_map<GUID_Lambda, Mesh*>				ResourceManager::s_Meshes;
 	std::unordered_map<GUID_Lambda, Material*>			ResourceManager::s_Materials;
@@ -67,7 +71,9 @@ namespace LambdaEngine
 	std::unordered_map<GUID_Lambda, Texture*>			ResourceManager::s_Textures;
 	std::unordered_map<GUID_Lambda, TextureView*>		ResourceManager::s_TextureViews;
 	std::unordered_map<GUID_Lambda, Shader*>			ResourceManager::s_Shaders;
-	std::unordered_map<GUID_Lambda, ISoundEffect3D*>	ResourceManager::s_SoundEffects;
+	std::unordered_map<GUID_Lambda, ISoundEffect3D*>	ResourceManager::s_SoundEffects3D;
+	std::unordered_map<GUID_Lambda, ISoundEffect2D*>	ResourceManager::s_SoundEffects2D;
+	std::unordered_map<GUID_Lambda, IMusic*>			ResourceManager::s_Music;
 
 	std::unordered_map<GUID_Lambda, uint32>								ResourceManager::s_TextureMaterialRefs;
 	std::unordered_map<GUID_Lambda, ResourceManager::MaterialLoadDesc>	ResourceManager::s_MaterialLoadConfigurations;
@@ -110,7 +116,9 @@ namespace LambdaEngine
 		SAFEDELETE_ALL(s_Meshes);
 		SAFEDELETE_ALL(s_Materials);
 		SAFEDELETE_ALL(s_Animations);
-		SAFEDELETE_ALL(s_SoundEffects);
+		SAFEDELETE_ALL(s_SoundEffects3D);
+		SAFEDELETE_ALL(s_SoundEffects2D);
+		SAFEDELETE_ALL(s_Music);
 
 		// TODO: Change to TSharedRef would prevent for the need of these
 		SAFERELEASE_ALL(s_Textures);
@@ -724,10 +732,10 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadSoundEffectFromFile(const String& filename)
+	GUID_Lambda ResourceManager::LoadSoundEffect3DFromFile(const String& filename)
 	{
-		auto loadedSoundEffectGUID = s_SoundEffectNamesToGUIDs.find(filename);
-		if (loadedSoundEffectGUID != s_SoundEffectNamesToGUIDs.end())
+		auto loadedSoundEffectGUID = s_SoundEffect3DNamesToGUIDs.find(filename);
+		if (loadedSoundEffectGUID != s_SoundEffect3DNamesToGUIDs.end())
 		{
 			return loadedSoundEffectGUID->second;
 		}
@@ -737,13 +745,59 @@ namespace LambdaEngine
 
 		//Spinlock
 		{
-			guid								= s_NextFreeGUID++;
-			ppMappedSoundEffect					= &s_SoundEffects[guid]; //Creates new entry if not existing
-			s_SoundEffectGUIDsToNames[guid]		= filename;
-			s_SoundEffectNamesToGUIDs[filename]	= guid;
+			guid									= s_NextFreeGUID++;
+			ppMappedSoundEffect						= &s_SoundEffects3D[guid]; //Creates new entry if not existing
+			s_SoundEffect3DGUIDsToNames[guid]		= filename;
+			s_SoundEffect3DNamesToGUIDs[filename]	= guid;
 		}
 
-		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffectFromFile(SOUND_DIR + filename);
+		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffect3DFromFile(SOUND_DIR + filename);
+		return guid;
+	}
+
+	GUID_Lambda ResourceManager::LoadSoundEffect2DFromFile(const String& filename)
+	{
+		auto loadedSoundEffectGUID = s_SoundEffect2DNamesToGUIDs.find(filename);
+		if (loadedSoundEffectGUID != s_SoundEffect2DNamesToGUIDs.end())
+		{
+			return loadedSoundEffectGUID->second;
+		}
+
+		GUID_Lambda			guid = GUID_NONE;
+		ISoundEffect2D**	ppMappedSoundEffect = nullptr;
+
+		//Spinlock
+		{
+			guid									= s_NextFreeGUID++;
+			ppMappedSoundEffect						= &s_SoundEffects2D[guid]; //Creates new entry if not existing
+			s_SoundEffect2DGUIDsToNames[guid]		= filename;
+			s_SoundEffect2DNamesToGUIDs[filename]	= guid;
+		}
+
+		(*ppMappedSoundEffect) = ResourceLoader::LoadSoundEffect2DFromFile(SOUND_DIR + filename);
+		return guid;
+	}
+
+	GUID_Lambda ResourceManager::LoadMusicFromFile(const String& filename, float32 defaultVolume, float32 defaultPitch)
+	{
+		auto loadedMusicGUID = s_MusicNamesToGUIDs.find(filename);
+		if (loadedMusicGUID != s_MusicNamesToGUIDs.end())
+		{
+			return loadedMusicGUID->second;
+		}
+
+		GUID_Lambda	guid = GUID_NONE;
+		IMusic**	ppMappedMusic = nullptr;
+
+		//Spinlock
+		{
+			guid							= s_NextFreeGUID++;
+			ppMappedMusic					= &s_Music[guid]; //Creates new entry if not existing
+			s_MusicGUIDsToNames[guid]		= filename;
+			s_MusicNamesToGUIDs[filename]	= guid;
+		}
+
+		(*ppMappedMusic) = ResourceLoader::LoadMusicFromFile(SOUND_DIR + filename, defaultVolume, defaultPitch);
 		return guid;
 	}
 
@@ -1206,40 +1260,130 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ResourceManager::UnloadSoundEffect(GUID_Lambda guid)
+	bool ResourceManager::UnloadSoundEffect3D(GUID_Lambda guid)
 	{
-		auto soundEffectIt = s_SoundEffects.find(guid);
-		if (soundEffectIt != s_SoundEffects.end())
+		auto soundEffectIt = s_SoundEffects3D.find(guid);
+		if (soundEffectIt != s_SoundEffects3D.end())
 		{
-			D_LOG_WARNING("Deleted Sound Effect GUID: %d", guid);
+			D_LOG_WARNING("Deleted 3D Sound Effect GUID: %d", guid);
 
 			SAFEDELETE(soundEffectIt->second);
-			s_SoundEffects.erase(soundEffectIt);
+			s_SoundEffects3D.erase(soundEffectIt);
 
-			auto soundEffectGUIDToNameIt = s_SoundEffectGUIDsToNames.find(guid);
-			if (soundEffectGUIDToNameIt != s_SoundEffectGUIDsToNames.end())
+			auto soundEffectGUIDToNameIt = s_SoundEffect3DGUIDsToNames.find(guid);
+			if (soundEffectGUIDToNameIt != s_SoundEffect3DGUIDsToNames.end())
 			{
 				//Clean Sound Effect Name -> GUID
-				auto soundEffectNameToGUIDIt = s_SoundEffectNamesToGUIDs.find(soundEffectGUIDToNameIt->second);
-				if (soundEffectNameToGUIDIt != s_SoundEffectNamesToGUIDs.end()) s_SoundEffectNamesToGUIDs.erase(soundEffectNameToGUIDIt);
+				auto soundEffectNameToGUIDIt = s_SoundEffect3DNamesToGUIDs.find(soundEffectGUIDToNameIt->second);
+				if (soundEffectNameToGUIDIt != s_SoundEffect3DNamesToGUIDs.end()) s_SoundEffect3DNamesToGUIDs.erase(soundEffectNameToGUIDIt);
 				else
 				{
-					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectNamesToGUIDs GUID: %d", guid);
+					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffect3DNamesToGUIDs GUID: %d", guid);
 					return false;
 				}
 
 				//Clean Sound Effect GUID -> Name
-				s_SoundEffectGUIDsToNames.erase(soundEffectGUIDToNameIt);
+				s_SoundEffect3DGUIDsToNames.erase(soundEffectGUIDToNameIt);
 			}
 			else
 			{
-				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffectGUIDsToNames GUID: %d", guid);
+				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffect3DGUIDsToNames GUID: %d", guid);
 				return false;
 			}
 		}
 		else if (s_UnloadedGUIDs.count(guid) == 0)
 		{
-			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects GUID: %d", guid);
+			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects3D GUID: %d", guid);
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+
+		s_UnloadedGUIDs.insert(guid);
+		return true;
+	}
+
+	bool ResourceManager::UnloadSoundEffect2D(GUID_Lambda guid)
+	{
+		auto soundEffectIt = s_SoundEffects2D.find(guid);
+		if (soundEffectIt != s_SoundEffects2D.end())
+		{
+			D_LOG_WARNING("Deleted 2D Sound Effect GUID: %d", guid);
+
+			SAFEDELETE(soundEffectIt->second);
+			s_SoundEffects2D.erase(soundEffectIt);
+
+			auto soundEffectGUIDToNameIt = s_SoundEffect2DGUIDsToNames.find(guid);
+			if (soundEffectGUIDToNameIt != s_SoundEffect2DGUIDsToNames.end())
+			{
+				//Clean Sound Effect Name -> GUID
+				auto soundEffectNameToGUIDIt = s_SoundEffect2DNamesToGUIDs.find(soundEffectGUIDToNameIt->second);
+				if (soundEffectNameToGUIDIt != s_SoundEffect2DNamesToGUIDs.end()) s_SoundEffect2DNamesToGUIDs.erase(soundEffectNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffect2DNamesToGUIDs GUID: %d", guid);
+					return false;
+				}
+
+				//Clean Sound Effect GUID -> Name
+				s_SoundEffect2DGUIDsToNames.erase(soundEffectGUIDToNameIt);
+			}
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffect2DGUIDsToNames GUID: %d", guid);
+				return false;
+			}
+		}
+		else if (s_UnloadedGUIDs.count(guid) == 0)
+		{
+			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_SoundEffects2D GUID: %d", guid);
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+
+		s_UnloadedGUIDs.insert(guid);
+		return true;
+	}
+
+	bool ResourceManager::UnloadMusic(GUID_Lambda guid)
+	{
+		auto musicIt = s_Music.find(guid);
+		if (musicIt != s_Music.end())
+		{
+			D_LOG_WARNING("Deleted 2D Sound Effect GUID: %d", guid);
+
+			SAFEDELETE(musicIt->second);
+			s_Music.erase(musicIt);
+
+			auto musicGUIDToNameIt = s_MusicGUIDsToNames.find(guid);
+			if (musicGUIDToNameIt != s_MusicGUIDsToNames.end())
+			{
+				//Clean Sound Effect Name -> GUID
+				auto musicNameToGUIDIt = s_MusicNamesToGUIDs.find(musicGUIDToNameIt->second);
+				if (musicNameToGUIDIt != s_MusicNamesToGUIDs.end()) s_MusicNamesToGUIDs.erase(musicNameToGUIDIt);
+				else
+				{
+					LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_MusicNamesToGUIDs GUID: %d", guid);
+					return false;
+				}
+
+				//Clean Sound Effect GUID -> Name
+				s_MusicGUIDsToNames.erase(musicGUIDToNameIt);
+			}
+			else
+			{
+				LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_MusicGUIDsToNames GUID: %d", guid);
+				return false;
+			}
+		}
+		else if (s_UnloadedGUIDs.count(guid) == 0)
+		{
+			LOG_ERROR("[ResourceManager]: UnloadSoundEffect Failed at s_Music GUID: %d", guid);
 			return false;
 		}
 		else
@@ -1311,9 +1455,14 @@ namespace LambdaEngine
 		return GetGUID(s_ShaderNamesToGUIDs, name);
 	}
 
-	GUID_Lambda ResourceManager::GetSoundEffectGUID(const String& name)
+	GUID_Lambda ResourceManager::GetSoundEffect3DGUID(const String& name)
 	{
-		return GetGUID(s_SoundEffectNamesToGUIDs, name);
+		return GetGUID(s_SoundEffect3DNamesToGUIDs, name);
+	}
+
+	GUID_Lambda ResourceManager::GetSoundEffect2DGUID(const String& name)
+	{
+		return GetGUID(s_SoundEffect2DNamesToGUIDs, name);
 	}
 
 	Mesh* ResourceManager::GetMesh(GUID_Lambda guid)
@@ -1388,15 +1537,39 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
-	ISoundEffect3D* ResourceManager::GetSoundEffect(GUID_Lambda guid)
+	ISoundEffect3D* ResourceManager::GetSoundEffect3D(GUID_Lambda guid)
 	{
-		auto it = s_SoundEffects.find(guid);
-		if (it != s_SoundEffects.end())
+		auto it = s_SoundEffects3D.find(guid);
+		if (it != s_SoundEffects3D.end())
 		{
 			return it->second;
 		}
 
 		D_LOG_WARNING("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	ISoundEffect2D* ResourceManager::GetSoundEffect2D(GUID_Lambda guid)
+	{
+		auto it = s_SoundEffects2D.find(guid);
+		if (it != s_SoundEffects2D.end())
+		{
+			return it->second;
+		}
+
+		D_LOG_WARNING("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
+		return nullptr;
+	}
+
+	IMusic* ResourceManager::GetMusic(GUID_Lambda guid)
+	{
+		auto it = s_Music.find(guid);
+		if (it != s_Music.end())
+		{
+			return it->second;
+		}
+
+		D_LOG_WARNING("[ResourceManager]: GetMusic called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -1649,7 +1822,9 @@ namespace LambdaEngine
 		s_Textures[GUID_NONE]		= nullptr;
 		s_TextureViews[GUID_NONE]	= nullptr;
 		s_Shaders[GUID_NONE]		= nullptr;
-		s_SoundEffects[GUID_NONE]	= nullptr;
+		s_SoundEffects3D[GUID_NONE]	= nullptr;
+		s_SoundEffects2D[GUID_NONE]	= nullptr;
+		s_Music[GUID_NONE]			= nullptr;
 
 		{
 			s_MeshNamesToGUIDs["Quad"]			= GUID_MESH_QUAD;

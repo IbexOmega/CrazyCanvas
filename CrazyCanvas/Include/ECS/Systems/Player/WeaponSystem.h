@@ -13,6 +13,8 @@
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
+#include "Containers/TUniquePtr.h"
+
 namespace LambdaEngine
 {
 	struct EntityCollisionInfo;
@@ -54,9 +56,10 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 class WeaponSystem : public LambdaEngine::System
 {
 public:
-	bool Init();
+	WeaponSystem()	= default;
+	~WeaponSystem()	= default;
 
-	void FixedTick(LambdaEngine::Timestamp deltaTime);
+	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) = 0;
 
 	// Empty tick
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
@@ -64,49 +67,39 @@ public:
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	void Fire(
-		EAmmoType ammoType,
-		LambdaEngine::Entity weaponOwner,
-		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& playerPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity);
+	virtual void Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
+	// Returns true if we could fire
+	virtual bool TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
 
 public:
-	static WeaponSystem& GetInstance() { return s_Instance; }
+	static bool Init();
 
-private:
-	WeaponSystem() = default;
-	~WeaponSystem() = default;
+	FORCEINLINE static WeaponSystem& GetInstance() 
+	{ 
+		VALIDATE(s_Instance != nullptr);
+		return *s_Instance;
+	}
 
-	void TryFire(
-		EAmmoType ammoType,
-		WeaponComponent& weaponComponent,
-		PacketComponent<PacketPlayerAction>& packets,
-		LambdaEngine::Entity weaponEntity,
-		const glm::vec3& startPos,
-		const glm::quat& direction,
-		const glm::vec3& playerVelocity);
+protected:
+	virtual bool InitInternal();
+
+	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam)
+	{
+		UNREFERENCED_VARIABLE(ammoType);
+		UNREFERENCED_VARIABLE(playerTeam);
+		return LambdaEngine::MeshComponent();
+	}
+
+	void UpdateWeapon(WeaponComponent& weaponComponent, float32 dt);
 
 	void StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets);
 	void AbortReload(WeaponComponent& weaponComponent);
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
-private:
-	static WeaponSystem s_Instance;
-
-private:
+protected:
 	LambdaEngine::IDVector m_WeaponEntities;
-	LambdaEngine::IDVector m_RemotePlayerEntities;
-	LambdaEngine::IDVector m_LocalPlayerEntities;
-	LambdaEngine::IDVector m_ForeignPlayerEntities;
 
-	// Rendering resources for projectiles
-	LambdaEngine::MeshComponent m_RedPaintProjectileMeshComponent;
-	LambdaEngine::MeshComponent m_BluePaintProjectileMeshComponent;
-	LambdaEngine::MeshComponent m_WaterProjectileMeshComponent;
-
-	GUID_Lambda m_GunFireGUID	= GUID_NONE;
-	GUID_Lambda m_OutOfAmmoGUID	= GUID_NONE;
+private:
+	static LambdaEngine::TUniquePtr<WeaponSystem> s_Instance;
 };

@@ -27,8 +27,8 @@ void MultiplayerBase::InitInternal()
 		LOG_ERROR("Match Init Failed");
 	}
 
-	WeaponSystem::GetInstance().Init();
-	HealthSystem::GetInstance().Init();
+	WeaponSystem::Init();
+	HealthSystem::Init();
 
 	Init();
 }

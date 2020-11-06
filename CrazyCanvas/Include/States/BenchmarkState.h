@@ -15,7 +15,7 @@ struct WeaponFiredEvent;
 class BenchmarkState : public LambdaEngine::State
 {
 public:
-	BenchmarkState() = default;
+	BenchmarkState();
 	~BenchmarkState();
 
 	void Init() override final;

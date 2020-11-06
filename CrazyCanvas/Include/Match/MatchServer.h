@@ -21,6 +21,9 @@ protected:
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 	virtual void FixedTickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
+	void MatchStart();
+	void MatchBegin();
+
 	void SpawnFlag();
 	void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);

@@ -26,12 +26,16 @@
 
 #include "Engine/EngineConfig.h"
 
-
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 #include "Multiplayer/Packet/PacketType.h"
 #include "Lobby/PlayerManagerClient.h"
 #include "Lobby/PlayerManagerServer.h"
 #include "Chat/ChatManager.h"
+#include "GUI/CountdownGUI.h"
+#include "GUI/HUDGUI.h"
+#include "GUI/MainMenuGUI.h"
+
+#include "GUI/Core/GUIApplication.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -39,16 +43,16 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
-constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
-
 CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
 
-	ServerHostHelper::Init();
+	if (!RegisterGUIComponents())
+	{
+		LOG_ERROR("Failed to Register GUI Components");
+	}
 
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+	ServerHostHelper::Init();
 
 	if (!LevelManager::Init())
 	{
@@ -155,6 +159,15 @@ namespace LambdaEngine
 	{
 		return DBG_NEW CrazyCanvas(flagParser);
 	}
+}
+
+bool CrazyCanvas::RegisterGUIComponents()
+{
+	Noesis::RegisterComponent<CountdownGUI>();
+	Noesis::RegisterComponent<HUDGUI>();
+	Noesis::RegisterComponent<MainMenuGUI>();
+
+	return true;
 }
 
 bool CrazyCanvas::LoadRendererResources()
