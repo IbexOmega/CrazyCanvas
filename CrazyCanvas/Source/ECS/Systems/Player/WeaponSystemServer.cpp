@@ -43,6 +43,19 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			{
 				weaponComp.ReloadClock = weaponComp.ReloadTime;
 			}
+			// Accept and send all gunshots
+			else if (ammoType != EAmmoType::AMMO_TYPE_NONE)
+			{
+				auto ammoState = weaponComp.WeaponTypeAmmo.find(ammoType);
+				VALIDATE(ammoState != weaponComp.WeaponTypeAmmo.end())
+
+				// Update position and orientation of weapon component
+				packetsToSend.back().FiredAmmo = ammoType;
+
+				Fire(ammoType, weaponEntity);
+			}
+
+			/*
 			else if (ammoType != EAmmoType::AMMO_TYPE_NONE && !onCooldown)
 			{
 				auto ammoState = weaponComp.WeaponTypeAmmo.find(ammoType);
@@ -62,6 +75,10 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 					Fire(ammoType, weaponEntity);
 				}
 			}
+			else if (ammoType != EAmmoType::AMMO_TYPE_NONE && onCooldown)
+			{
+				LOG_ERROR("Rejected!");
+			}*/
 		}
 	}
 }

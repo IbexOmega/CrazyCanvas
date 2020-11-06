@@ -79,7 +79,8 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
 	EventQueue::SendEventImmediate(firedEvent);
-
+	LOG_WARNING("Fire! Owner: %d, AmmoType: %d, WeaponPos: [%f, %f, %f], InitialVelocity: [%f, %f, %f], Direction: [%f, %f, %f], PlayerTeam: %d",
+		weaponOwner, ammoType, weaponPos.x, weaponPos.y, weaponPos.z, initialVelocity.x, initialVelocity.y, initialVelocity.z, directionVec.x, directionVec.y, directionVec.z, playerTeam);
 	// Fire the gun
 	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
 	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())

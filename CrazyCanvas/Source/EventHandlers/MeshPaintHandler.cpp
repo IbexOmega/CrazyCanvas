@@ -81,6 +81,9 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
 			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team);
+			LOG_WARNING("HIT pos: [%f, %f, %f], dir: [%f, %f, %f], PaintMode: %d, RemoteMode: %d, Team: %d",
+				collisionInfo.Position.x, collisionInfo.Position.y, collisionInfo.Position.z, 
+				collisionInfo.Direction.x, collisionInfo.Direction.y, collisionInfo.Direction.z, paintMode, remoteMode, team);
 
 			PaintPoint paintPoint = {};
 			paintPoint.Position		= collisionInfo.Position;
@@ -126,17 +129,17 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 			paintPointB.PaintMode = paintMode;
 			paintPointB.RemoteMode = remoteMode;
 			paintPointB.Team = team;
-			clientWasWrong = IsPaintPointEqual(paintPointA, paintPointB);
+			clientWasWrong = !IsPaintPointEqual(paintPointA, paintPointB);
 			if(clientWasWrong)
 				D_LOG_ERROR("Prediction Error: Client got wrong prediction when painting, reset client side paint and repaint on server side...");
 		}
 
 		// Clear client side if all paint points have been processed.
-		if (m_PaintPointsOnClient.empty())
-		{
+		//if (clientWasWrong/*m_PaintPointsOnClient.empty()*/)
+		//{
 			LOG_WARNING("Clear client side mask...");
 			PaintMaskRenderer::ResetClient();
-		}
+		//}
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
@@ -149,8 +152,8 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 
 bool MeshPaintHandler::IsPaintPointEqual(PaintPoint& a, PaintPoint& b)
 {
-	bool posSame = glm::length2(a.Position - b.Position) < 0.0001f;
-	bool dirSame = glm::length2(a.Direction - b.Direction) < 0.0001f;
+	bool posSame = glm::length2(a.Position - b.Position) < 0.00001f;
+	bool dirSame = glm::length2(a.Direction - b.Direction) < 0.00001f;
 	bool paintModeSame	= a.PaintMode == b.PaintMode;
 	bool remoteModeSame = a.RemoteMode == b.RemoteMode;
 	bool teamSame		= a.Team == b.Team;
