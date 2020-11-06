@@ -143,10 +143,9 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
-		const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
-			LOG_INFO("Player on team %d hit a player", (int)event.Team);
+			const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
 			const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
 
 			m_HUDGUI->DisplayHitIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
