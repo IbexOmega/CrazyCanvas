@@ -175,11 +175,11 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::UpdateTextureResource(
-		const String& resourceName, 
-		const TextureView* const * ppPerImageTextureViews, 
-		const TextureView* const* ppPerSubImageTextureViews, 
-		uint32 imageCount, 
-		uint32 subImageCount, 
+		const String& resourceName,
+		const TextureView* const * ppPerImageTextureViews,
+		const TextureView* const* ppPerSubImageTextureViews,
+		uint32 imageCount,
+		uint32 subImageCount,
 		bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
@@ -214,11 +214,11 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::UpdateBufferResource(
-		const String& resourceName, 
-		const Buffer* const* ppBuffers, 
-		uint64* pOffsets, 
-		uint64* pSizesInBytes, 
-		uint32 count, 
+		const String& resourceName,
+		const Buffer* const* ppBuffers,
+		uint64* pOffsets,
+		uint64* pSizesInBytes,
+		uint32 count,
 		bool backBufferBound)
 	{
 		if (count == 1 || backBufferBound)
@@ -325,10 +325,10 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::Render(
-		uint32 modFrameIndex, 
-		uint32 backBufferIndex, 
-		CommandList** ppFirstExecutionStage, 
-		CommandList** ppSecondaryExecutionStage, 
+		uint32 modFrameIndex,
+		uint32 backBufferIndex,
+		CommandList** ppFirstExecutionStage,
+		CommandList** ppSecondaryExecutionStage,
 		bool sleeping)
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
@@ -487,10 +487,10 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::AddHitPoint(
-		const glm::vec3& position, 
-		const glm::vec3& direction, 
-		EPaintMode paintMode, 
-		ERemoteMode remoteMode, 
+		const glm::vec3& position,
+		const glm::vec3& direction,
+		EPaintMode paintMode,
+		ERemoteMode remoteMode,
 		ETeam team)
 	{
 		UnwrapData data = {};
@@ -664,7 +664,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName			= "Paint Mask Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount	= 512;
+		descriptorHeapDesc.DescriptorSetCount	= 1024;
 		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
