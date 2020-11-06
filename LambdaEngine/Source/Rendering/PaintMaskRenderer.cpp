@@ -35,7 +35,6 @@ namespace LambdaEngine
 {
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
-	bool									PaintMaskRenderer::s_ShouldReset = false;
 
 	PaintMaskRenderer::PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
 	{
@@ -345,7 +344,7 @@ namespace LambdaEngine
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
-		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())) && !s_ShouldReset)
+		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
 		{
 			return;
 		}
@@ -361,7 +360,6 @@ namespace LambdaEngine
 			bool isServer = false;
 
 			FrameSettings frameSettings = {};
-			frameSettings.ShouldReset = s_ShouldReset;
 
 			// Transfer current collision data
 			if (!collisionArray->IsEmpty())
@@ -373,6 +371,7 @@ namespace LambdaEngine
 				const UnwrapData& data	= collisionArray->GetFront();
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
+				frameSettings.ShouldReset = data.ClearClient;
 
 				uint32 size = 0;
 				// Current limit is 10 draw calls per frame - might change in future if needed
@@ -389,7 +388,7 @@ namespace LambdaEngine
 					}
 					collisionArray->Resize(extraHits);
 
-					LOG_INFO("Extra hits: %d", extraHits);
+					LOG_WARNING("[PaintMaskRenderer] Extra hits: %d", extraHits);
 				}
 				else
 				{
@@ -447,9 +446,7 @@ namespace LambdaEngine
 				scissorRect.Height	= height;
 				pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-				if (isServer && s_ShouldReset)
-					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateBothID));
-				else if (isServer)
+				if (isServer)
 					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateServerID));
 				else
 					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateClientID));
@@ -485,7 +482,6 @@ namespace LambdaEngine
 			}
 		}
 
-		s_ShouldReset = false;
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
 	}
@@ -503,6 +499,7 @@ namespace LambdaEngine
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
+		data.ClearClient		= false;
 
 		if (remoteMode == ERemoteMode::CLIENT)
 			s_ClientCollisions.PushBack(data);
@@ -512,7 +509,23 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::ResetClient()
 	{
-		s_ShouldReset = true;
+		if (s_ClientCollisions.IsEmpty())
+		{
+			UnwrapData data = {};
+			data.TargetPosition = { };
+			data.TargetDirection = { };
+			data.PaintMode = EPaintMode::NONE;
+			data.RemoteMode = ERemoteMode::UNDEFINED;
+			data.Team = ETeam::NONE;
+			data.ClearClient = true;
+
+			s_ClientCollisions.PushBack(data);
+		}
+		else
+		{
+			UnwrapData& lastData = s_ClientCollisions.GetBack();
+			lastData.ClearClient = true;
+		}
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()

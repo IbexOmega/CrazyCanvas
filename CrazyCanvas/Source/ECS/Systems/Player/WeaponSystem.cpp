@@ -79,8 +79,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
 	EventQueue::SendEventImmediate(firedEvent);
-	LOG_WARNING("Fire! Owner: %d, AmmoType: %d, WeaponPos: [%f, %f, %f], InitialVelocity: [%f, %f, %f], Direction: [%f, %f, %f], PlayerTeam: %d",
-		weaponOwner, ammoType, weaponPos.x, weaponPos.y, weaponPos.z, initialVelocity.x, initialVelocity.y, initialVelocity.z, directionVec.x, directionVec.y, directionVec.z, playerTeam);
+
 	// Fire the gun
 	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
 	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
@@ -243,7 +242,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		levelHit = true;
 	}
-
+	
 	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
 	{
 		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;

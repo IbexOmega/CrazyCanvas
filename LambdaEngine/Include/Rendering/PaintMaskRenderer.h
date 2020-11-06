@@ -132,6 +132,7 @@ namespace LambdaEngine
 			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 			ETeam			Team				= ETeam::NONE;
 			uint32			Padding0			= 0;
+			bool			ClearClient			= false;
 		};
 
 		struct FrameSettings
@@ -182,6 +183,5 @@ namespace LambdaEngine
 	private:
 		static TArray<UnwrapData>		s_ServerCollisions;
 		static TArray<UnwrapData>		s_ClientCollisions;
-		static bool						s_ShouldReset;
 	};
 }

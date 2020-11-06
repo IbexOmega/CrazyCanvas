@@ -20,7 +20,6 @@ struct SPaintDescription
 struct SPaintSample
 {
 	float PaintAmount;
-	float side;
 	uint Team;
 };
 
@@ -58,7 +57,6 @@ SPaintSample SamplePaint(in ivec2 p, in uint paintMaskIndex)
 
 	SPaintSample paintSample;
 	paintSample.PaintAmount		= float((paintData.r & 0x1) | (paintData.g & 0x1));
-	paintSample.side			= float(paintData.r & 0x1);
 	paintSample.Team 			= clientPainting * clientTeam + (1 - clientPainting) * serverTeam;
 	return paintSample;
 }
@@ -80,10 +78,6 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	vec3 paintColor10 		= b_PaintMaskColor.val[paintSample10.Team].rgb;
 	vec3 paintColor01 		= b_PaintMaskColor.val[paintSample01.Team].rgb;
 	vec3 paintColor11 		= b_PaintMaskColor.val[paintSample11.Team].rgb;
-	paintColor00 = mix(paintColor00, vec3(1.0f, 1.0f, 0.5f), paintSample00.side);
-	paintColor10 = mix(paintColor10, vec3(1.0f, 1.0f, 0.5f), paintSample10.side);
-	paintColor01 = mix(paintColor01, vec3(1.0f, 1.0f, 0.5f), paintSample01.side);
-	paintColor11 = mix(paintColor11, vec3(1.0f, 1.0f, 0.5f), paintSample11.side);
 
 	vec3 paintColorHor0 	= mix(paintColor00, paintColor10, subTexel.x);
 	vec3 paintColorHor1 	= mix(paintColor01, paintColor11, subTexel.x);
