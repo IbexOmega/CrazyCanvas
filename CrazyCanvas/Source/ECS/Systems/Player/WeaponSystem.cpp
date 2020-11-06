@@ -52,7 +52,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	const glm::quat& direction		= rotationComponent.Quaternion;
 	const glm::vec3& playerPos		= positionComponent.Position;
 	const glm::vec3& playerVelocity	= velocityComponent.Velocity;
-	
+
 	{
 		glm::quat quatY = direction;
 		quatY.x = 0;
