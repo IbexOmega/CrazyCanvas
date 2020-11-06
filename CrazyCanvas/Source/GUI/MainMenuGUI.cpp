@@ -85,12 +85,12 @@ void MainMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Hidden);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
 
 	m_ContextStack.pop();
-	Noesis::FrameworkElement* currentElement = m_ContextStack.top();
-	currentElement->SetVisibility(Noesis::Visibility_Visible);
+	Noesis::FrameworkElement* pCurrentElement = m_ContextStack.top();
+	pCurrentElement->SetVisibility(Noesis::Visibility_Visible);
 }
 
 /*
@@ -103,8 +103,8 @@ void MainMenuGUI::OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Hidden);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
 
 	m_pPlayGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pPlayGrid);
@@ -115,8 +115,8 @@ void MainMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Hidden);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pSettingsGrid);
@@ -212,8 +212,8 @@ void MainMenuGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender,
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Hidden);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
 
 	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pKeyBindingsGrid);
@@ -300,10 +300,10 @@ void MainMenuGUI::SetRenderStagesSleeping()
 void MainMenuGUI::SetDefaultSettings()
 {
 	// Set inital volume
-	Noesis::Slider* volumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
-	NS_ASSERT(volumeSlider);
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	volumeSlider->SetValue(volume);
+	pVolumeSlider->SetValue(volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	SetDefaultKeyBindings();

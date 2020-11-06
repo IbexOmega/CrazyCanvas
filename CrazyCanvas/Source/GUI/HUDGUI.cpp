@@ -3,6 +3,10 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
+#include "Application/API/CommonApplication.h"
+#include "Audio/AudioAPI.h"
+#include "Engine/EngineConfig.h"
+
 #include "Multiplayer/Packet/PacketType.h"
 
 #include "NoesisPCH.h"
@@ -20,7 +24,7 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) : 
+HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) :
 	m_GUIState()
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
@@ -32,6 +36,8 @@ HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) :
 HUDGUI::~HUDGUI()
 {
 	//EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &HUDGUI::OnLANServerFound);
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
+	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
 }
 
 void HUDGUI::OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -64,6 +70,23 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonGrowClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonScoreClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonShootClick);
+
+	// Escape
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonBackClick);
+
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonResumeClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSettingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonLeaveClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonExitClick);
+
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplySettingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelSettingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeKeyBindingsClick);
+
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelKeyBindingsClick);
+
 	return false;
 }
 
@@ -96,7 +119,7 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 		else if(m_GUIState.Health <= 60)
 			pBrush->SetColor(Color(255, 188, 0));
 		else if(m_GUIState.Health <= 80)
-			pBrush->SetColor(Color(141, 207, 0));		
+			pBrush->SetColor(Color(141, 207, 0));
 		else if(m_GUIState.Health == 100)
 			pBrush->SetColor(Color(0, 207, 56));
 	}
@@ -163,6 +186,142 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	return true;
 }
 
+void HUDGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+
+	m_ContextStack.pop();
+	Noesis::FrameworkElement* pCurrentElement = m_ContextStack.top();
+	pCurrentElement->SetVisibility(Noesis::Visibility_Visible);
+}
+
+void HUDGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+}
+
+void HUDGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+
+	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pSettingsGrid);
+}
+
+void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+}
+
+void HUDGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	CommonApplication::Get()->Terminate();
+}
+
+void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Ray Tracing
+	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+
+	// Mesh Shader
+	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
+
+	// Volume
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	EngineConfig::WriteToFile();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	SetDefaultSettings();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+
+	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pKeyBindingsGrid);
+}
+
+void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(args);
+
+	// Starts listening to callbacks with specific button to be changed. This action is deferred to
+	// the callback functions of KeyboardCallback and MouseButtonCallback.
+
+	Noesis::Button* pCalledButton = static_cast<Noesis::Button*>(pSender);
+	LambdaEngine::String buttonName = pCalledButton->GetName();
+
+	m_pSetKeyButton = FrameworkElement::FindName<Button>(buttonName.c_str());
+	m_ListenToCallbacks = true;
+}
+
+void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Go through all keys to set - and set them
+	for (auto& stringPair : m_KeysToSet)
+	{
+		InputActionSystem::ChangeKeyBinding(StringToAction(stringPair.first), stringPair.second);
+	}
+	m_KeysToSet.clear();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Reset
+	for (auto& stringPair : m_KeysToSet)
+	{
+		EAction action = StringToAction(stringPair.first);
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			LambdaEngine::String keyStr = KeyToString(key);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(keyStr.c_str());
+		}
+		if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			LambdaEngine::String mouseButtonStr = ButtonToString(mouseButton);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(mouseButtonStr.c_str());
+		}
+	}
+	m_KeysToSet.clear();
+
+	OnButtonBackClick(pSender, args);
+}
+
 void HUDGUI::InitGUI()
 {
 	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
@@ -189,4 +348,109 @@ void HUDGUI::InitGUI()
 
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
+
+	// Main Grids
+	m_pEscapeGrid			= FrameworkElement::FindName<Grid>("StartGrid");
+	m_pPlayGrid				= FrameworkElement::FindName<Grid>("PlayGrid");
+	m_pSettingsGrid			= FrameworkElement::FindName<Grid>("SettingsGrid");
+	m_pKeyBindingsGrid		= FrameworkElement::FindName<Grid>("KeyBindingsGrid");
+	m_ContextStack.push(m_pEscapeGrid);
+
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
+	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
+
+	SetDefaultSettings();
+}
+
+void HUDGUI::SetDefaultSettings()
+{
+	// Set inital volume
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	NS_ASSERT(pVolumeSlider);
+	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
+	pVolumeSlider->SetValue(volume);
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	SetDefaultKeyBindings();
+
+	// Ray Tracing Toggle
+	m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+	CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	NS_ASSERT(pToggleRayTracing);
+	pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
+
+	// Mesh Shader Toggle
+	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	NS_ASSERT(pToggleMeshShader);
+	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+}
+
+void HUDGUI::SetDefaultKeyBindings()
+{
+	TArray<EAction> actions = {
+		// Movement
+		EAction::ACTION_MOVE_FORWARD,
+		EAction::ACTION_MOVE_BACKWARD,
+		EAction::ACTION_MOVE_LEFT,
+		EAction::ACTION_MOVE_RIGHT,
+		EAction::ACTION_MOVE_JUMP,
+		EAction::ACTION_MOVE_SPRINT,
+
+		// Attack
+		EAction::ACTION_ATTACK_PRIMARY,
+		EAction::ACTION_ATTACK_SECONDARY,
+		EAction::ACTION_ATTACK_RELOAD,
+	};
+
+	for (EAction action : actions)
+	{
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(KeyToString(key));
+		}
+		else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
+		}
+	}
+}
+
+bool HUDGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)
+{
+	if (m_ListenToCallbacks)
+	{
+		LambdaEngine::String keyStr = KeyToString(event.Key);
+
+		m_pSetKeyButton->SetContent(keyStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = keyStr;
+
+		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+
+	return false;
+}
+
+bool HUDGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event)
+{
+	if (m_ListenToCallbacks)
+	{
+		LambdaEngine::String mouseButtonStr = ButtonToString(event.Button);
+
+		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;
+
+		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+
+	return false;
 }
