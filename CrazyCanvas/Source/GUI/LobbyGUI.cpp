@@ -27,14 +27,18 @@ LobbyGUI::~LobbyGUI()
 bool LobbyGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)
 {
 	// ONLY FOR TESTING - REMOVE LATER
-	// if (event.Key == EKey::KEY_P)
-	// {
-	// 	AddPlayer("testgubbe", 0);
-	// }
-	// if (event.Key == EKey::KEY_O)
-	// {
-	// 	UpdatePlayerReady("testgubbe", true);
-	// }
+	if (event.Key == EKey::KEY_P)
+	{
+		AddPlayer("testgubbe", 0);
+	}
+	else if (event.Key == EKey::KEY_O)
+	{
+		UpdatePlayerReady("testgubbe", true);
+	}
+	else if (event.Key == EKey::KEY_L)
+	{
+		UpdatePlayerReady("testgubbe", false);
+	}
 
 	return false;
 }
@@ -165,7 +169,7 @@ void LobbyGUI::OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const No
 
 void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollection, float width)
 {
-	GridLength gl = GridLength(1.f, GridUnitType::GridUnitType_Star);
+	GridLength gl = GridLength(width, GridUnitType::GridUnitType_Star);
 	Ptr<ColumnDefinition> col = *new ColumnDefinition();
 	col->SetWidth(gl);
 	columnCollection->Add(col);

@@ -16,6 +16,7 @@
 * TODO:
 *	- Different GUI when host
 *	- Enable updating of game settings
+*	- Change playerName to Player struct, and change all names of componenets to unique player ID
 */
 
 class LobbyGUI : public Noesis::Grid

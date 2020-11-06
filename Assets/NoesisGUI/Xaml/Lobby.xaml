@@ -33,10 +33,9 @@
             <Setter Property="Source" Value="checkmark.png" />
             <Setter Property="Grid.Column" Value="0" />
             <Setter Property="Margin" Value="10" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Width" Value="Auto" />
-            <Setter Property="Height" Value="Auto" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="Stretch" Value="UniformToFill" />
         </Style>
 
         <Style TargetType="Label"
@@ -93,7 +92,7 @@
             </Grid.RowDefinitions>
             
             <Label Grid.Row="0" Content="Lobby Settings" FontSize="64" Foreground="White" />
-            <StackPanel x:Name="Settings" Grid.Row="1">
+            <StackPanel x:Name="SettingsStackPanel" Grid.Row="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*" />
