@@ -654,13 +654,14 @@ bool LevelObjectCreator::CreatePlayer(
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.3f, -0.5f) });//glm::vec3(0.5f, 1.5f, -0.2f)
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f) });//glm::vec3(0.5f, 1.5f, -0.2f)
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 
-	ChildComponent childComp;
-	childComp.AddChild(weaponEntity, "weapon");
+	ChildComponent playerChildComp;
+	playerChildComp.AddChild(weaponEntity, "weapon");
 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
@@ -694,6 +695,12 @@ bool LevelObjectCreator::CreatePlayer(
 			{
 				.MeshGUID = s_WeaponMesh,
 				.MaterialGUID = s_WeaponMaterial,
+			});
+
+		pECS->AddComponent<AnimationAttachedComponent>(weaponEntity, AnimationAttachedComponent
+			{
+				.JointName	= "mixamorig:RightHand",
+				.Transform	= glm::mat4(1.0f),
 			});
 
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
@@ -851,13 +858,16 @@ bool LevelObjectCreator::CreatePlayer(
 				return false;
 			}
 
+			pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
+			EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
+
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();
 			childEntities.PushBack(cameraEntity);
-			childComp.AddChild(cameraEntity, "camera");
+			playerChildComp.AddChild(cameraEntity, "camera");
 
 			//Todo: Better implementation for this somehow maybe?
 			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
@@ -901,7 +911,7 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
-	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
+	pECS->AddComponent<ChildComponent>(playerEntity, playerChildComp);
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 

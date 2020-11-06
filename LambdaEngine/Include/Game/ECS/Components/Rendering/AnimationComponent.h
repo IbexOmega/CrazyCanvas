@@ -22,4 +22,15 @@ namespace LambdaEngine
 		AnimationGraph*	pGraph = nullptr;
 		SkeletonPose	Pose;
 	};
+
+	/*
+	* AttachedAnimationComponent
+	*/
+	struct AnimationAttachedComponent
+	{
+		DECL_COMPONENT(AnimationAttachedComponent);
+
+		String		JointName = "";
+		glm::mat4	Transform;
+	};
 }

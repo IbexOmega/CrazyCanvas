@@ -54,6 +54,7 @@ namespace LambdaEngine
 		Clock	m_Clock;
 
 		IDVector		m_AnimationEntities;
+		IDVector		m_AttachedAnimationEntities;
 		TArray<uint32>	m_JobIndices;
 	};
 }

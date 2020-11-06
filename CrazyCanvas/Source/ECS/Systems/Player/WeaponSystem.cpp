@@ -43,8 +43,8 @@ static glm::vec3 CalculateWeaponPosition(
 	quatY.x = 0;
 	quatY.z = 0;
 	quatY = glm::normalize(quatY);
-	weaponPositionComp.Position = playerPosition + quatY * weaponOffsetComp.Offset;
-	weaponRotationComp.Quaternion = playerRotation;
+	weaponPositionComp.Position		= playerPosition;// +quatY * weaponOffsetComp.Offset;
+	weaponRotationComp.Quaternion	= quatY;
 
 	weaponPosition = weaponPositionComp.Position + LambdaEngine::GetForward(weaponRotationComp.Quaternion) * 0.2f;
 	return weaponPosition;

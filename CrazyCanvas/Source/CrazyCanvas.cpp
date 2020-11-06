@@ -26,13 +26,15 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Rendering/EntityMaskManager.h"
+
+#include "ECS/Components/Player/WeaponComponent.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
-
-constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
 
 CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
@@ -42,6 +44,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	GraphicsDeviceFeatureDesc deviceFeatures = {};
 	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+
+	if (!BindComponentTypeMasks())
+	{
+		LOG_ERROR("Failed to bind Component Type Masks");
+	}
 
 	if (!LevelManager::Init())
 	{
@@ -180,6 +187,17 @@ bool CrazyCanvas::LoadRendererResources()
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
+
+	return true;
+}
+
+bool CrazyCanvas::BindComponentTypeMasks()
+{
+	using namespace LambdaEngine;
+
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+
+	EntityMaskManager::Finalize();
 
 	return true;
 }

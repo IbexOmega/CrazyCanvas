@@ -1,6 +1,7 @@
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -22,6 +23,14 @@ namespace LambdaEngine
 				.ComponentAccesses =
 				{
 					{ RW, AnimationComponent::Type() }
+				},
+			},
+			{
+				.pSubscriber = &m_AttachedAnimationEntities,
+				.ComponentAccesses =
+				{
+					{ RW, AnimationAttachedComponent::Type() },
+					{ R, ParentComponent::Type() }
 				},
 			},
 		};
@@ -134,6 +143,31 @@ namespace LambdaEngine
 			ThreadPool::Join(index);
 		}
 		m_JobIndices.Clear();
+
+		//Update Attached Animation Components
+		const ComponentArray<ParentComponent>* pParentComponents = pECSCore->GetComponentArray<ParentComponent>();
+		ComponentArray<AnimationAttachedComponent>* pAnimationAttachedComponents = pECSCore->GetComponentArray<AnimationAttachedComponent>();
+
+		for (Entity entity : m_AttachedAnimationEntities)
+		{
+			const ParentComponent& parentComponent = pParentComponents->GetConstData(entity);
+
+			if (parentComponent.Attached)
+			{
+				AnimationAttachedComponent& animationAttachedComponent = pAnimationAttachedComponents->GetData(entity);
+				AnimationComponent& parentAnimationComponent = pAnimationComponents->GetData(parentComponent.Parent);
+
+				if (auto jointIndexIt = parentAnimationComponent.Pose.pSkeleton->JointMap.find(animationAttachedComponent.JointName);
+					jointIndexIt != parentAnimationComponent.Pose.pSkeleton->JointMap.end())
+				{
+					animationAttachedComponent.Transform = parentAnimationComponent.Pose.GlobalTransforms[jointIndexIt->second];
+				}
+				else
+				{
+					LOG_ERROR("[AnimationSystem]: Joint %s could not be found for Attached Animation Component", animationAttachedComponent.JointName.c_str());
+				}
+			}
+		}
 	}
 
 	AnimationSystem& AnimationSystem::GetInstance()

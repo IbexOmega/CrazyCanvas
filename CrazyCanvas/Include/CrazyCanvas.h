@@ -23,4 +23,5 @@ public:
 
 private:
 	bool LoadRendererResources();
+	bool BindComponentTypeMasks();
 };
