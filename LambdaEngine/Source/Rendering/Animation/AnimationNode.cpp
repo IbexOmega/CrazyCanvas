@@ -31,6 +31,28 @@ namespace LambdaEngine
 			out.Scale		= glm::mix(in0.Scale, in1.Scale, realFactor);
 			out.Rotation	= glm::slerp(in0.Rotation, in1.Rotation, realFactor);
 			out.Rotation	= glm::normalize(out.Rotation);
+
+			JointIndexType jointID = INVALID_JOINT_ID;
+			if (in0.JointID != INVALID_JOINT_ID && in1.JointID != INVALID_JOINT_ID) [[likely]]
+			{
+				VALIDATE(in0.JointID == in1.JointID);
+				jointID = in0.JointID;
+			}
+			else
+			{
+				if (in0.JointID != INVALID_JOINT_ID)
+				{
+					VALIDATE(in0.JointID == i);
+					jointID = in0.JointID;
+				}
+				else if (in1.JointID != INVALID_JOINT_ID)
+				{
+					VALIDATE(in1.JointID == i);
+					jointID = in1.JointID;
+				}
+			}
+
+			out.JointID = jointID;
 		}
 	}
 
@@ -110,14 +132,14 @@ namespace LambdaEngine
 
 		// Make sure we have enough matrices
 		Animation& animation = *m_pAnimation;
-		const uint32 channelCount = animation.Channels.GetSize();
-		if (m_FrameData.GetSize() < channelCount)
+		const uint32 numJoints = skeleton.Joints.GetSize();
+		if (m_FrameData.GetSize() < numJoints)
 		{
-			m_FrameData.Resize(channelCount, SQT(glm::vec3(0.0f), glm::vec3(1.0f), glm::identity<glm::quat>()));
+			m_FrameData.Resize(numJoints, SQT(glm::vec3(0.0f), glm::vec3(1.0f), glm::identity<glm::quat>()));
 		}
 
 		const float64 timestamp	= m_NormalizedTime * animation.DurationInTicks;
-		for (uint32 channelID = 0; Animation::Channel& channel : animation.Channels)
+		for (Animation::Channel& channel : animation.Channels)
 		{
 			// Retrive the bone ID
 			auto it = skeleton.JointMap.find(channel.Name);
@@ -129,10 +151,8 @@ namespace LambdaEngine
 				glm::vec3 scale		= SampleScale(channel, timestamp);
 
 				const uint32 jointID = it->second;
-				m_FrameData[channelID] = SQT(position, scale, rotation, jointID);
+				m_FrameData[jointID] = SQT(position, scale, rotation, jointID);
 			}
-
-			channelID++;
 		}
 
 		// Handle triggers

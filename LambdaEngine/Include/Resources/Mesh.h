@@ -93,10 +93,10 @@ namespace LambdaEngine
 		{
 		}
 
+		JointIndexType JointID = INVALID_JOINT_ID;
 		glm::vec3 Translation;
 		glm::vec3 Scale;
 		glm::quat Rotation;
-		JointIndexType JointID = INVALID_JOINT_ID;
 	};
 
 	struct Skeleton

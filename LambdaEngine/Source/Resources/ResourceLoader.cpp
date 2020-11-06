@@ -214,7 +214,7 @@ namespace LambdaEngine
 			aiProcess_GenSmoothNormals			|
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
-			//aiProcess_LimitBoneWeights			|
+			aiProcess_LimitBoneWeights			|
 			aiProcess_SplitLargeMeshes			|
 			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_SortByPType				|
@@ -253,7 +253,7 @@ namespace LambdaEngine
 			aiProcess_GenSmoothNormals			|
 			aiProcess_JoinIdenticalVertices		|
 			aiProcess_ImproveCacheLocality		|
-//			aiProcess_LimitBoneWeights			|
+			aiProcess_LimitBoneWeights			|
 			aiProcess_RemoveRedundantMaterials	|
 			aiProcess_Triangulate				|
 			aiProcess_GenUVCoords				|
@@ -329,19 +329,12 @@ namespace LambdaEngine
 			aiProcess_FindInstances			|
 			aiProcess_JoinIdenticalVertices	|
 			aiProcess_ImproveCacheLocality	|
-			//aiProcess_LimitBoneWeights		|
+			aiProcess_LimitBoneWeights		|
 			aiProcess_Triangulate			|
 			aiProcess_FindDegenerates		|
 			aiProcess_OptimizeMeshes		|
 			aiProcess_OptimizeGraph			|
 			aiProcess_FindInvalidData;
-
-		// Prevent crashes in assimp when using this flag
-		//String path = ConvertSlashes(filepath);
-		//if (path.find(".obj") == String::npos)
-		//{
-		//	assimpFlags |= aiProcess_PopulateArmatureData;
-		//}
 
 		TArray<Mesh*>						meshes;
 		TArray<Animation*>					animations;
@@ -1417,7 +1410,7 @@ namespace LambdaEngine
 		const uint32 numChildren = pNode->mNumChildren;
 		LOG_INFO("%s%s | NumChildren=%u", postfix.c_str(), pNode->mName.C_Str(), numChildren);
 
-#if 0
+#if 1
 		glm::mat4 glmMat = AssimpToGLMMat4(pNode->mTransformation);
 		for (uint32 i = 0; i < 4; i++)
 		{
@@ -1530,7 +1523,7 @@ namespace LambdaEngine
 		}
 
 		// Print scene structure
-#if 1
+#if 0
 		PrintSceneStructure(pScene->mRootNode, 0);
 #endif
 
