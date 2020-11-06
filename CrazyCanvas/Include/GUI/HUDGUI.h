@@ -52,7 +52,8 @@ public:
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 	void UpdateCountdown(uint8 countDownTime);
 
-	void DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayHitIndicator();
 
 private:
 

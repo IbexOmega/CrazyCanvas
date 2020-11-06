@@ -4,6 +4,7 @@
 
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Team/TeamComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -49,6 +50,13 @@ void HUDSystem::Init()
 			{
 				{ R, HealthComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
 			}
+		},
+		{
+			.pSubscriber = &m_ForeignPlayerEntities,
+			.ComponentAccesses =
+			{
+				{ NDA,	PlayerForeignComponent::Type() }, { R,	TeamComponent::Type() }
+			}
 		}
 	};
 	systemReg.Phase = 1;
@@ -79,11 +87,19 @@ void HUDSystem::FixedTick(Timestamp delta)
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
 
+	
+
 	for (Entity players : m_PlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(players);
 		m_HUDGUI->UpdateScore();
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
+
+		if (m_LocalTeamIndex == UINT32_MAX)
+		{
+			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+			m_LocalTeamIndex = pTeamComponents->GetConstData(players).TeamIndex;
+		}
 	}
 }
 
@@ -142,12 +158,26 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+		
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
 			const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
 			const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
 
-			m_HUDGUI->DisplayHitIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
+			m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
+		}
+		else
+		{
+			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+			const ComponentArray<PlayerForeignComponent>* pPlayerForeignComponents = pECS->GetComponentArray<PlayerForeignComponent>();
+
+			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
+			{
+				if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex)
+				{
+					m_HUDGUI->DisplayHitIndicator();
+				}
+			}
 		}
 	}
 

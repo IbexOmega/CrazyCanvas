@@ -1,6 +1,7 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
+#include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
 #include "Game/State.h"
@@ -132,6 +133,9 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	std::string ammoString;
 	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
 
+	DamageIndicatorGUI* pDamageIndicatorGUI = FindName<DamageIndicatorGUI>("DAMAGE_INDICATOR");
+	pDamageIndicatorGUI->DisplayIndicator();
+
 	auto ammo = WeaponTypeAmmo.find(ammoType);
 
 	if (ammo != WeaponTypeAmmo.end())
@@ -169,7 +173,7 @@ void HUDGUI::UpdateCountdown(uint8 countDownTime)
 	pCountdownGUI->UpdateCountdown(countDownTime);
 }
 
-void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
+void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
 {
 	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
 
@@ -203,8 +207,13 @@ void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& co
 	rotateTransform->SetAngle(rotation);
 	m_pHitIndicatorGrid->SetRenderTransform(rotateTransform);
 
-	DamageIndicatorGUI* pDamageIndicatorGUI = FindName<DamageIndicatorGUI>("DAMAGE_INDICATOR");
-	pDamageIndicatorGUI->DisplayIndicator();
+
+}
+
+void HUDGUI::DisplayHitIndicator()
+{
+	EnemyHitIndicatorGUI* pEnemyHitIndicatorGUI = FindName<EnemyHitIndicatorGUI>("HIT_INDICATOR");
+	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
 void HUDGUI::InitGUI()
