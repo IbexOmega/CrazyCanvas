@@ -311,12 +311,12 @@ namespace LambdaEngine
 				renderGraphName = prefix + renderGraphName;
 			}
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER)))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
 				renderGraphStructure = {};
-				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
+				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER));
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
@@ -326,14 +326,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferWidth = pActiveWindow->GetWidth();
 			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers = { };
-
-			if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER))
-			{
-				m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
-				m_pLineRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
-			}
 
 			// Add paint mask renderer to the custom renderers inside the render graph.
 			{
