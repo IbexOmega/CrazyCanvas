@@ -130,7 +130,7 @@ void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID
 	if (ServerHostHelper::GetClientHostID() == clientHostID)
 	{
 		SetRenderStagesActive();
-
+		ServerHostHelper::SetIsHost(true);
 		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
 	}
 
@@ -169,16 +169,6 @@ bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent&
 	State* pLobbyState = DBG_NEW LobbyState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
-	/*if (m_HasHostedServer)
-	{
-		PacketConfigureServer packet;
-		packet.AuthenticationID	= ServerHostHelper::GetAuthenticationHostID();
-		packet.MapID			= m_HostGameDesc.MapNumber;
-		packet.Players			= m_HostGameDesc.PlayersNumber;
-
-		ClientHelper::Send(packet);
-	}*/
-
 	return false;
 }
 
@@ -211,7 +201,7 @@ void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const 
 		LambdaEngine::GUIApplication::SetView(nullptr);
 
 		SetRenderStagesActive();
-
+		ServerHostHelper::SetIsHost(false);
 		ClientSystem::GetInstance().Connect(endPoint);
 	}
 	else
@@ -308,6 +298,7 @@ bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 
 				SetRenderStagesActive();
 
+				ServerHostHelper::SetIsHost(false);
 				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);;
 			}
 			return false;

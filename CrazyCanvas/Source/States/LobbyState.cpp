@@ -8,18 +8,24 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Multiplayer/Packet/PacketConfigureServer.h"
+#include "Multiplayer/ServerHostHelper.h"
+#include "Multiplayer/ClientHelper.h"
+
 using namespace LambdaEngine;
 
 LobbyState::~LobbyState()
 {
 	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
 	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
+	EventQueue::UnregisterEventHandler<PlayerInfoUpdatedEvent>(this, &LobbyState::OnPlayerInfoUpdatedEvent);
 }
 
 void LobbyState::Init()
 {
 	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
 	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
+	EventQueue::RegisterEventHandler<PlayerInfoUpdatedEvent>(this, &LobbyState::OnPlayerInfoUpdatedEvent);
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true);
@@ -56,4 +62,22 @@ bool LobbyState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
 bool LobbyState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 {
 	return false;
+}
+
+bool LobbyState::OnPlayerInfoUpdatedEvent(const PlayerInfoUpdatedEvent& event)
+{
+	const Player* pPlayer = event.pPlayer;
+
+	LOG_MESSAGE("Player: %s is %sready", pPlayer->GetName().c_str(), pPlayer->GetState() == PLAYER_STATE_READY ? "" : "not ");
+	return false;
+}
+
+void LobbyState::SendServerConfiguration()
+{
+	PacketConfigureServer packet;
+	packet.AuthenticationID	= ServerHostHelper::GetAuthenticationHostID();
+	/*packet.MapID			= m_HostGameDesc.MapNumber;
+	packet.Players			= m_HostGameDesc.PlayersNumber;*/
+
+	ClientHelper::Send(packet);
 }

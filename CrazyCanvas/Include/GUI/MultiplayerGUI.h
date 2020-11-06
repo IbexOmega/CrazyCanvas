@@ -67,7 +67,6 @@ private:
 	void PopulateServerInfo();
 
 	void HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave = false);
-	bool Connect(const LambdaEngine::IPEndPoint& endPoint);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 

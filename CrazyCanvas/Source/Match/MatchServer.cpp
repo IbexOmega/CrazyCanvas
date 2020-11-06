@@ -357,6 +357,15 @@ void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 
 bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
+	return true;
+
+
+
+
+
+
+
+
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();

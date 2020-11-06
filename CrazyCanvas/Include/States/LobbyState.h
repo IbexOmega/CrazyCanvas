@@ -24,6 +24,9 @@ protected:
 private:
 	bool OnPlayerJoinedEvent(const PlayerJoinedEvent& event);
 	bool OnPlayerLeftEvent(const PlayerLeftEvent& event);
+	bool OnPlayerInfoUpdatedEvent(const PlayerInfoUpdatedEvent& event);
+
+	void SendServerConfiguration();
 
 private:
 	

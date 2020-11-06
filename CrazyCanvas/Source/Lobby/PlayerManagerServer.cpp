@@ -45,15 +45,7 @@ void PlayerManagerServer::FixedTick(Timestamp deltaTime)
 			PacketPlayerInfo packet;
 			for (auto& pair : s_Players)
 			{
-				const Player& player = pair.second;
-				packet.UID				= player.m_UID;
-				packet.Ping				= player.m_Ping;
-				packet.State			= player.m_State;
-				packet.Team				= player.m_Team;
-				packet.Kills			= player.m_Kills;
-				packet.Deaths			= player.m_Deaths;
-				packet.FlagsCaptured	= player.m_FlagsCaptured;
-				packet.FlagsDefended	= player.m_FlagsDefended;
+				UpdatePacketFromPlayer(&packet, &pair.second);
 				ServerHelper::SendBroadcast(packet);
 			}
 		}
@@ -103,18 +95,11 @@ bool PlayerManagerServer::OnPacketPlayerInfoReceived(const PacketReceivedEvent<P
 		Player& player			= pair->second;
 		player.m_State			= packet.State;
 
-		PlayerInfoUpdatedEvent playerInfoUpdatedEvent(player);
+		PlayerInfoUpdatedEvent playerInfoUpdatedEvent(&player);
 		EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
 
 		PacketPlayerInfo packetNew;
-		packetNew.UID			= player.m_UID;
-		packetNew.Ping			= player.m_Ping;
-		packetNew.State			= player.m_State;
-		packetNew.Team			= player.m_Team;
-		packetNew.Kills			= player.m_Kills;
-		packetNew.Deaths		= player.m_Deaths;
-		packetNew.FlagsCaptured = player.m_FlagsCaptured;
-		packetNew.FlagsDefended = player.m_FlagsDefended;
+		UpdatePacketFromPlayer(&packetNew, &player);
 		ServerHelper::SendBroadcast(packetNew, nullptr, event.pClient);
 	}
 

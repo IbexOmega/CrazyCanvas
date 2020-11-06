@@ -40,6 +40,9 @@ protected:
 	static Player* HandlePlayerJoined(uint64 uid, const PacketJoin& packet);
 	static void HandlePlayerLeft(uint64 uid);
 
+	static bool UpdatePlayerFromPacket(Player* pPlayer, const PacketPlayerInfo* pPacket);
+	static void UpdatePacketFromPlayer(PacketPlayerInfo* pPacket, const Player* pPlayer);
+
 protected:
 	static LambdaEngine::THashTable<uint64, Player> s_Players;
 	static LambdaEngine::THashTable<LambdaEngine::Entity, uint64> s_PlayerEntityToUID;

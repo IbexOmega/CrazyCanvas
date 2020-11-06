@@ -4,62 +4,89 @@
 
 #include "Lobby/Player.h"
 
-struct PlayerJoinedEvent : public LambdaEngine::Event
+#define DECLARE_PLAYER_EVENT_TYPE(Type) \
+		DECLARE_EVENT_TYPE(Type); \
+		public: \
+			virtual LambdaEngine::String ToString() const override \
+			{ \
+				return LambdaEngine::String(#Type) + pPlayer->GetName(); \
+			} \
+
+struct PlayerBaseEvent : public LambdaEngine::Event
 {
-public:
-	inline PlayerJoinedEvent(const Player& player)
+protected:
+	inline PlayerBaseEvent(const Player* pPlayerConst)
 		: Event(),
-		Player(player)
+		pPlayer(pPlayerConst)
 	{
-	}
-
-	DECLARE_EVENT_TYPE(PlayerJoinedEvent);
-
-	virtual LambdaEngine::String ToString() const override
-	{
-		return LambdaEngine::String("PlayerJoinedEvent=" + Player.GetName());
 	}
 
 public:
-	const Player& Player;
+	const Player* pPlayer;
 };
 
-struct PlayerLeftEvent : public LambdaEngine::Event
+struct PlayerJoinedEvent : public PlayerBaseEvent
 {
 public:
-	inline PlayerLeftEvent(const Player& player)
-		: Event(),
-		Player(player)
+	inline PlayerJoinedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
 	{
 	}
 
-	DECLARE_EVENT_TYPE(PlayerLeftEvent);
-
-	virtual LambdaEngine::String ToString() const override
-	{
-		return LambdaEngine::String("PlayerLeftEvent=" + Player.GetName());
-	}
-
-public:
-	const Player& Player;
+	DECLARE_PLAYER_EVENT_TYPE(PlayerJoinedEvent);
 };
 
-struct PlayerInfoUpdatedEvent : public LambdaEngine::Event
+struct PlayerLeftEvent : public PlayerBaseEvent
 {
 public:
-	inline PlayerInfoUpdatedEvent(const Player& player)
-		: Event(),
-		Player(player)
+	inline PlayerLeftEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
 	{
 	}
 
-	DECLARE_EVENT_TYPE(PlayerLeftEvent);
+	DECLARE_PLAYER_EVENT_TYPE(PlayerLeftEvent);
+};
 
-	virtual LambdaEngine::String ToString() const override
-	{
-		return LambdaEngine::String("PlayerLeftEvent=" + Player.GetName());
-	}
-
+struct PlayerInfoUpdatedEvent : public PlayerBaseEvent
+{
 public:
-	const Player& Player;
+	inline PlayerInfoUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerInfoUpdatedEvent);
+};
+
+struct PlayerStateUpdatedEvent : public PlayerBaseEvent
+{
+public:
+	inline PlayerStateUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerStateUpdatedEvent);
+};
+
+struct PlayerTeamUpdatedEvent : public PlayerBaseEvent
+{
+public:
+	inline PlayerTeamUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerTeamUpdatedEvent);
+};
+
+struct PlayerScoreUpdatedEvent : public PlayerBaseEvent
+{
+public:
+	inline PlayerScoreUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerScoreUpdatedEvent);
 };
