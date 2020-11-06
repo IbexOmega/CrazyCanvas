@@ -26,6 +26,12 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "GUI/CountdownGUI.h"
+#include "GUI/HUDGUI.h"
+#include "GUI/MainMenuGUI.h"
+
+#include "GUI/Core/GUIApplication.h"
+
 #include "Rendering/EntityMaskManager.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"
@@ -40,10 +46,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
 
-	ServerHostHelper::Init();
+	if (!RegisterGUIComponents())
+	{
+		LOG_ERROR("Failed to Register GUI Components");
+	}
 
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+	ServerHostHelper::Init();
 
 	if (!BindComponentTypeMasks())
 	{
@@ -138,6 +146,15 @@ namespace LambdaEngine
 	{
 		return DBG_NEW CrazyCanvas(flagParser);
 	}
+}
+
+bool CrazyCanvas::RegisterGUIComponents()
+{
+	Noesis::RegisterComponent<CountdownGUI>();
+	Noesis::RegisterComponent<HUDGUI>();
+	Noesis::RegisterComponent<MainMenuGUI>();
+
+	return true;
 }
 
 bool CrazyCanvas::LoadRendererResources()

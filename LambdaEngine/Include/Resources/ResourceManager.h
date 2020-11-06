@@ -188,11 +188,25 @@ namespace LambdaEngine
 		static GUID_Lambda RegisterShader(const String& name, Shader* pShader);
 
 		/*
-		* Load sound from file
+		* Load sound 3D from file
 		*	filename - Name of the audio file
 		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
 		*/
-		static GUID_Lambda LoadSoundEffectFromFile(const String& filename);
+		static GUID_Lambda LoadSoundEffect3DFromFile(const String& filename);
+
+		/*
+		* Load sound 2D from file
+		*	filename - Name of the audio file
+		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
+		*/
+		static GUID_Lambda LoadSoundEffect2DFromFile(const String& filename);
+
+		/*
+		* Load music from file
+		*	filename - Name of the audio file
+		* return - a valid GUID if the sound was loaded, otherwise returns GUID_NONE
+		*/
+		static GUID_Lambda LoadMusicFromFile(const String& filename, float32 defaultVolume = 1.0f, float32 defaultPitch = 1.0f);
 
 		/*
 		* Combine PBR materials into one texture
@@ -214,7 +228,9 @@ namespace LambdaEngine
 		static bool UnloadAnimation(GUID_Lambda guid);
 		static bool UnloadTexture(GUID_Lambda guid);
 		static bool UnloadShader(GUID_Lambda guid);
-		static bool UnloadSoundEffect(GUID_Lambda guid);
+		static bool UnloadSoundEffect3D(GUID_Lambda guid);
+		static bool UnloadSoundEffect2D(GUID_Lambda guid);
+		static bool UnloadMusic(GUID_Lambda guid);
 
 		static bool DecrementTextureMaterialRef(GUID_Lambda guid);
 
@@ -224,7 +240,8 @@ namespace LambdaEngine
 		static bool GetAnimationGUIDsFromMeshName(const String& name, TArray<GUID_Lambda>& guids);
 		static GUID_Lambda GetTextureGUID(const String& name);
 		static GUID_Lambda GetShaderGUID(const String& name);
-		static GUID_Lambda GetSoundEffectGUID(const String& name);
+		static GUID_Lambda GetSoundEffect3DGUID(const String& name);
+		static GUID_Lambda GetSoundEffect2DGUID(const String& name);
 
 		static Mesh*			GetMesh(GUID_Lambda guid);
 		static Material*		GetMaterial(GUID_Lambda guid);
@@ -232,21 +249,27 @@ namespace LambdaEngine
 		static Texture*			GetTexture(GUID_Lambda guid);
 		static TextureView*		GetTextureView(GUID_Lambda guid);
 		static Shader*			GetShader(GUID_Lambda guid);
-		static ISoundEffect3D*	GetSoundEffect(GUID_Lambda guid);
+		static ISoundEffect3D*	GetSoundEffect3D(GUID_Lambda guid);
+		static ISoundEffect2D*	GetSoundEffect2D(GUID_Lambda guid);
+		static IMusic*			GetMusic(GUID_Lambda guid);
 
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetMeshNamesMap()			{ return s_MaterialNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetMaterialNamesMap()		{ return s_MaterialNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetAnimationNamesMap()		{ return s_AnimationNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetTextureNamesMap()		{ return s_TextureNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetShaderNamesMap()			{ return s_ShaderNamesToGUIDs; }
-		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetSoundEffectNamesMap()	{ return s_SoundEffectNamesToGUIDs; }
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetSoundEffect3DNamesMap()	{ return s_SoundEffect3DNamesToGUIDs; }
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetSoundEffect2DNamesMap()	{ return s_SoundEffect2DNamesToGUIDs; }
+		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetMusicNamesMap()			{ return s_MusicNamesToGUIDs; }
 
-		FORCEINLINE static std::unordered_map<GUID_Lambda, Mesh*>&				GetMeshGUIDMap()		{ return s_Meshes; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, Material*>&			GetMaterialGUIDMap()	{ return s_Materials; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, Texture*>&			GetTextureGUIDMap()		{ return s_Textures; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, TextureView*>&		GetTextureViewGUIDMap()	{ return s_TextureViews; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, Shader*>&			GetShaderGUIDMap()		{ return s_Shaders; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect3D*>&	GetSoundEffectGUIDMap()	{ return s_SoundEffects; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Mesh*>&				GetMeshGUIDMap()			{ return s_Meshes; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Material*>&			GetMaterialGUIDMap()		{ return s_Materials; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Texture*>&			GetTextureGUIDMap()			{ return s_Textures; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, TextureView*>&		GetTextureViewGUIDMap()		{ return s_TextureViews; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, Shader*>&			GetShaderGUIDMap()			{ return s_Shaders; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect3D*>&	GetSoundEffect3DGUIDMap()	{ return s_SoundEffects3D; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect2D*>&	GetSoundEffect2DGUIDMap()	{ return s_SoundEffects2D; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, IMusic*>&			GetmusicGUIDMap()			{ return s_Music; }
 
 	private:
 		static bool OnShaderRecompileEvent(const ShaderRecompileEvent& event);
@@ -289,7 +312,9 @@ namespace LambdaEngine
 		static std::unordered_map<GUID_Lambda, String>				s_AnimationGUIDsToNames;
 		static std::unordered_map<GUID_Lambda, String>				s_TextureGUIDsToNames;
 		static std::unordered_map<GUID_Lambda, String>				s_ShaderGUIDsToNames;
-		static std::unordered_map<GUID_Lambda, String>				s_SoundEffectGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_SoundEffect3DGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_SoundEffect2DGUIDsToNames;
+		static std::unordered_map<GUID_Lambda, String>				s_MusicGUIDsToNames;
 
 		static std::unordered_map<String, GUID_Lambda>				s_MeshNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>				s_MaterialNamesToGUIDs;
@@ -297,7 +322,9 @@ namespace LambdaEngine
 		static std::unordered_map<String, TArray<GUID_Lambda>>		s_FileNamesToAnimationGUIDs;
 		static std::unordered_map<String, GUID_Lambda>				s_TextureNamesToGUIDs;
 		static std::unordered_map<String, GUID_Lambda>				s_ShaderNamesToGUIDs;
-		static std::unordered_map<String, GUID_Lambda>				s_SoundEffectNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_SoundEffect3DNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_SoundEffect2DNamesToGUIDs;
+		static std::unordered_map<String, GUID_Lambda>				s_MusicNamesToGUIDs;
 
 		static std::unordered_map<GUID_Lambda, Mesh*>				s_Meshes;
 		static std::unordered_map<GUID_Lambda, Material*>			s_Materials;
@@ -305,7 +332,9 @@ namespace LambdaEngine
 		static std::unordered_map<GUID_Lambda, Texture*>			s_Textures;
 		static std::unordered_map<GUID_Lambda, TextureView*>		s_TextureViews;
 		static std::unordered_map<GUID_Lambda, Shader*>				s_Shaders;
-		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>		s_SoundEffects;
+		static std::unordered_map<GUID_Lambda, ISoundEffect3D*>		s_SoundEffects3D;
+		static std::unordered_map<GUID_Lambda, ISoundEffect2D*>		s_SoundEffects2D;
+		static std::unordered_map<GUID_Lambda, IMusic*>				s_Music;
 
 		static std::unordered_map<GUID_Lambda, uint32>				s_TextureMaterialRefs;
 		static std::unordered_map<GUID_Lambda, MaterialLoadDesc>	s_MaterialLoadConfigurations;

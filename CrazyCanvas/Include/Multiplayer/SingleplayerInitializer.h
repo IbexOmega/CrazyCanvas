@@ -9,6 +9,10 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(SingleplayerInitializer);
 
-		static void InitSingleplayer();
+		static void Init();
+		static void Release();
+
+		static void Setup();
+
 	};
 }

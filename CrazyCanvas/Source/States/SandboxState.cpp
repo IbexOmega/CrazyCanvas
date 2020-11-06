@@ -65,6 +65,12 @@
 
 using namespace LambdaEngine;
 
+
+SandboxState::SandboxState()
+{
+	SingleplayerInitializer::Init();
+}
+
 SandboxState::~SandboxState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
@@ -76,6 +82,8 @@ SandboxState::~SandboxState()
 	}
 
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	SingleplayerInitializer::Release();
 }
 
 void SandboxState::Init()
@@ -87,7 +95,8 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
-	
+	WeaponSystem::Init();
+
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
@@ -229,12 +238,12 @@ void SandboxState::Init()
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		// Audio
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc =
 		{
 			.pName = "RobotSoundInstance",
-			.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+			.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
 			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 			.Position = position,
 			.Volume = 0.03f
@@ -354,7 +363,7 @@ void SandboxState::Init()
 		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
 		});
 
-	SingleplayerInitializer::InitSingleplayer();
+	SingleplayerInitializer::Setup();
 }
 
 void SandboxState::Resume()

@@ -2,29 +2,26 @@
 #include "Rendering/RenderGraphTypes.h"
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/Core/API/DescriptorCache.h"
+#include "Rendering/Core/API/CommandList.h"
 
 #define MAX_PLAYERS_IN_MATCH 10
 
 namespace LambdaEngine
 {
-	struct TeamsPushConstant
+	struct ViewerData
 	{
-		byte* pData = nullptr;
-		uint32	DataSize = 0;
-		uint32	Offset = 0;
-		uint32	MaxDataSize = 0;
+		uint32 TeamId;
+		uint32 EntityId;
+		uint32 DrawArgIndex;
+		glm::vec3 Positon;
 	};
 
-	struct TeamsPushConstantData
+	struct PlayerData
 	{
-		uint32 viewerTeamId;
-		uint32 ToBeDrawnTeamId;
-	};
-
-	struct UpdateData
-	{
-		uint32 viewerTeamId;
-		uint32 ToBeDrawnTeamId;
+		uint32 DrawArgIndex;
+		uint32 TeamId;
+		glm::vec3 Position;
+		float32 Distance2ToViewer;
 	};
 
 	using ReleaseFrame = uint32;
@@ -71,6 +68,7 @@ namespace LambdaEngine
 		bool CreateCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
+		void RenderCull(bool renderEnemy, CommandList* pCommandList, uint64& pipelineId);
 
 	private:
 		bool									m_Initilized = false;
@@ -92,7 +90,9 @@ namespace LambdaEngine
 
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
-		uint64									m_PipelineStateID = 0;
+		uint64									m_PipelineStateIDFrontCull = 0;
+		uint64									m_PipelineStateIDBackCull = 0;
+		uint64									m_PipelineStateIDNoCull = 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout = nullptr;
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
 		TSharedRef<DescriptorSet>				m_DescriptorSet0; // always one buffer with different offset
@@ -106,10 +106,8 @@ namespace LambdaEngine
 
 		TSharedRef<const TextureView>			m_DepthStencil;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage;
-		uint32									m_ViewerTeamId;
-		uint32									m_ViewerDrawArgIndex;
-		TArray<uint32>							m_TeamIds;
-		TArray<TSharedRef<const TextureView>>	m_PointLFaceViews;
+		ViewerData								m_Viewer;
+		TArray<PlayerData>						m_PlayerData;
 
 		bool									m_DirtyUniformBuffers = true;
 

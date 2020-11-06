@@ -9,6 +9,8 @@
 #include "Rendering/Core/API/Shader.h"
 
 #include "Audio/API/ISoundEffect3D.h"
+#include "Audio/API/ISoundEffect2D.h"
+#include "Audio/API/IMusic.h"
 
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
@@ -212,11 +214,25 @@ namespace LambdaEngine
 		static GLSLShaderSource LoadShaderSourceFromFile(const String& filepath, FShaderStageFlag stage, const String& entryPoint = "main");
 
 		/*
-		* Load sound from file
+		* Load 3D sound from file
 		*	filepath - Path to the audio file
 		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
 		*/
-		static ISoundEffect3D* LoadSoundEffectFromFile(const String& filepath);
+		static ISoundEffect3D* LoadSoundEffect3DFromFile(const String& filepath);
+
+		/*
+		* Load 2D sound from file
+		*	filepath - Path to the audio file
+		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
+		*/
+		static ISoundEffect2D* LoadSoundEffect2DFromFile(const String& filepath);
+
+		/*
+		* Load Music from file
+		*	filepath - Path to the audio file
+		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
+		*/
+		static IMusic* LoadMusicFromFile(const String& filepath, float32 defaultVolume = 1.0f, float32 defaultPitch = 1.0f);
 
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
