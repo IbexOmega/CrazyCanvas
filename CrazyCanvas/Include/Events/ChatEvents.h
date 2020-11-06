@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Chat/ChatManager.h"
 
 struct ChatEvent : public LambdaEngine::Event

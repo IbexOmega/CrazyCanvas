@@ -115,6 +115,8 @@ bool PlayerManagerBase::UpdatePlayerFromPacket(Player* pPlayer, const PacketPlay
 	{
 		changed = true;
 		pPlayer->m_Ping = pPacket->Ping;
+		PlayerPingUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
 	}
 	if (pPlayer->m_State != pPacket->State)
 	{

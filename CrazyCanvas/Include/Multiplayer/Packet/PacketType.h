@@ -30,7 +30,7 @@ public:
 	inline static uint16 MATCH_START				= 0;
 	inline static uint16 MATCH_BEGIN				= 0;
 	inline static uint16 GAME_OVER					= 0;
-	inline static uint16 CONFIGURE_SERVER			= 0;
+	inline static uint16 GAME_SETTINGS				= 0;
 	inline static uint16 JOIN						= 0;
 	inline static uint16 LEAVE						= 0;
 	inline static uint16 CHAT_MESSAGE				= 0;

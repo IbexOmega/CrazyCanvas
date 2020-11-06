@@ -24,8 +24,10 @@ Player* PlayerManagerClient::GetPlayerLocalNoConst()
 	return GetPlayerNoConst(ClientSystem::GetInstance().GetClient()->GetUID());
 }
 
-void PlayerManagerClient::RegisterLocalPlayer(const String& name, LambdaEngine::IClient* pClient)
+void PlayerManagerClient::RegisterLocalPlayer(const String& name)
 {
+	IClient* pClient = ClientSystem::GetInstance().GetClient();
+
 	ASSERT(s_Players.empty());
 	ASSERT(pClient->IsConnected());
 	ASSERT(!MultiplayerUtils::IsServer());

@@ -90,3 +90,14 @@ public:
 
 	DECLARE_PLAYER_EVENT_TYPE(PlayerScoreUpdatedEvent);
 };
+
+struct PlayerPingUpdatedEvent : public PlayerBaseEvent
+{
+public:
+	inline PlayerPingUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerPingUpdatedEvent);
+};

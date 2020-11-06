@@ -32,7 +32,7 @@ void PacketType::Init()
 	MATCH_START				= RegisterPacketType<PacketMatchStart>();
 	MATCH_BEGIN				= RegisterPacketType<PacketMatchBegin>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
-	CONFIGURE_SERVER		= RegisterPacketType<PacketGameSettings>();
+	GAME_SETTINGS			= RegisterPacketType<PacketGameSettings>();
 	JOIN					= RegisterPacketType<PacketJoin>();
 	LEAVE					= RegisterPacketType<PacketLeave>();
 	CHAT_MESSAGE			= RegisterPacketTypeRaw();

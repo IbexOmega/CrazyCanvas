@@ -8,16 +8,21 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Multiplayer/ServerHostHelper.h"
-#include "Multiplayer/ClientHelper.h"
-
 using namespace LambdaEngine;
+
+LobbyState::LobbyState(const LambdaEngine::String& name) :
+	m_Name(name)
+{
+
+}
 
 LobbyState::~LobbyState()
 {
 	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
 	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
-	EventQueue::UnregisterEventHandler<PlayerInfoUpdatedEvent>(this, &LobbyState::OnPlayerInfoUpdatedEvent);
+	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &LobbyState::OnPlayerStateUpdatedEvent);
+	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
+	EventQueue::UnregisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 
 	m_LobbyGUI.Reset();
 	m_View.Reset();
@@ -27,7 +32,9 @@ void LobbyState::Init()
 {
 	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
 	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
-	EventQueue::RegisterEventHandler<PlayerInfoUpdatedEvent>(this, &LobbyState::OnPlayerInfoUpdatedEvent);
+	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &LobbyState::OnPlayerStateUpdatedEvent);
+	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
+	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true);
@@ -42,8 +49,7 @@ void LobbyState::Init()
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	ChatManager::SendChatMessage("This is a chat message");
-	PlayerManagerClient::SetLocalPlayerReady(true);
+	PlayerManagerClient::RegisterLocalPlayer(m_Name);
 }
 
 void LobbyState::Tick(LambdaEngine::Timestamp delta)
@@ -58,24 +64,30 @@ void LobbyState::FixedTick(LambdaEngine::Timestamp delta)
 
 bool LobbyState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
 {
+	m_LobbyGUI->AddPlayer(*event.pPlayer);
 	return false;
 }
 
 bool LobbyState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 {
+	m_LobbyGUI->RemovePlayer(*event.pPlayer);
 	return false;
 }
 
-bool LobbyState::OnPlayerInfoUpdatedEvent(const PlayerInfoUpdatedEvent& event)
+bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 {
-	const Player* pPlayer = event.pPlayer;
-
-	LOG_MESSAGE("Player: %s is %sready", pPlayer->GetName().c_str(), pPlayer->GetState() == PLAYER_STATE_READY ? "" : "not ");
+	m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
 	return false;
 }
 
-void LobbyState::SendServerConfiguration()
+bool LobbyState::OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event)
 {
-	m_PacketGameSettings.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
-	ClientHelper::Send(m_PacketGameSettings);
+	m_LobbyGUI->UpdatePlayerPing(*event.pPlayer);
+	return false;
+}
+
+bool LobbyState::OnChatEvent(const ChatEvent& event)
+{
+	m_LobbyGUI->WriteChatMessage(event);
+	return false;
 }

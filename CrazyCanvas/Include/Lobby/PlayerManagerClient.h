@@ -14,7 +14,7 @@ protected:
 public:
 	static const Player* GetPlayerLocal();
 
-	static void RegisterLocalPlayer(const LambdaEngine::String& name, LambdaEngine::IClient* pClient);
+	static void RegisterLocalPlayer(const LambdaEngine::String& name);
 
 	static void SetLocalPlayerReady(bool ready);
 

@@ -33,21 +33,26 @@ void PlayerManagerServer::Release()
 
 void PlayerManagerServer::FixedTick(Timestamp deltaTime)
 {
-	if (MultiplayerUtils::IsServer())
+	static const Timestamp timestep = Timestamp::Seconds(1);
+
+	s_Timer += deltaTime;
+	if (s_Timer > timestep)
 	{
-		static const Timestamp timestep = Timestamp::Seconds(1);
+		s_Timer = 0;
 
-		s_Timer += deltaTime;
-		if (s_Timer > timestep)
+		const ClientMap& clients = ServerSystem::GetInstance().GetServer()->GetClients();
+		for (auto& pair : clients)
 		{
-			s_Timer = 0;
+			IClient* pClient = pair.second;
+			Player* pPlayer = GetPlayerNoConst(pClient->GetUID());
+			pPlayer->m_Ping = (uint16)pClient->GetStatistics()->GetPing().AsMilliSeconds();
+		}
 
-			PacketPlayerInfo packet;
-			for (auto& pair : s_Players)
-			{
-				UpdatePacketFromPlayer(&packet, &pair.second);
-				ServerHelper::SendBroadcast(packet);
-			}
+		PacketPlayerInfo packet;
+		for (auto& pair : s_Players)
+		{
+			UpdatePacketFromPlayer(&packet, &pair.second);
+			ServerHelper::SendBroadcast(packet);
 		}
 	}
 }

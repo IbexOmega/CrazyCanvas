@@ -165,9 +165,7 @@ bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent&
 	char name[UNLEN + 1];
 	GetUserNameA(name, &length);
 
-	PlayerManagerClient::RegisterLocalPlayer(name, event.pClient);
-
-	State* pLobbyState = DBG_NEW LobbyState();
+	State* pLobbyState = DBG_NEW LobbyState(name);
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;

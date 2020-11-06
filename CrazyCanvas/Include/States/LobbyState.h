@@ -5,6 +5,7 @@
 #include "NoesisPCH.h"
 
 #include "Events/PlayerEvents.h"
+#include "Events/ChatEvents.h"
 
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
@@ -13,7 +14,7 @@
 class LobbyState : public LambdaEngine::State
 {
 public:
-	LobbyState() = default;
+	LobbyState(const LambdaEngine::String& name);
 	~LobbyState();
 
 protected:
@@ -28,14 +29,12 @@ protected:
 private:
 	bool OnPlayerJoinedEvent(const PlayerJoinedEvent& event);
 	bool OnPlayerLeftEvent(const PlayerLeftEvent& event);
-	bool OnPlayerInfoUpdatedEvent(const PlayerInfoUpdatedEvent& event);
-
-	void SendServerConfiguration();
-
-private:
-	PacketGameSettings m_PacketGameSettings;
+	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);
+	bool OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event);
+	bool OnChatEvent(const ChatEvent& event);
 
 private:
 	Noesis::Ptr<LobbyGUI> m_LobbyGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
+	LambdaEngine::String m_Name;
 };

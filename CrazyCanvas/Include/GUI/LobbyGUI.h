@@ -9,8 +9,10 @@
 #include "NsGui/Panel.h"
 #include "NsGui/TextBox.h"
 
-// TEMP - REMOVE IF IT IS PULL REQUEST
-#include "Application/API/Events/EventQueue.h"
+#include "Lobby/Player.h"
+#include "Events/ChatEvents.h"
+
+#include "Multiplayer/Packet/PacketGameSettings.h"
 
 /*
 * TODO:
@@ -21,27 +23,14 @@
 class LobbyGUI : public Noesis::Grid
 {
 public:
-	struct LobbySettings
-	{
-		LambdaEngine::String MapName	= "";
-		float32 MaxTime					= 0.0f;
-		uint32 MaxPlayers				= 0;
-	};
-
-public:
 	LobbyGUI();
 	~LobbyGUI();
 
-	// TEMP - REMOVE IF IT IS PULL REQUEST
-	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
-
-	void AddPlayer(const LambdaEngine::String& playerName, uint32 team);
-	void RemovePlayer(const LambdaEngine::String& playerName);
-	void UpdatePlayerReady(const LambdaEngine::String& playerName, bool ready);
-	void UpdatePlayerPing(const LambdaEngine::String& playerName, uint32 ping);
-	void WriteChatMessage(const LambdaEngine::String& playerName, const LambdaEngine::String& chatMessage);
-	void UpdateLobbySettings(LobbySettings newLobbySettings);
-	void SetLocalPlayerName(const LambdaEngine::String& playerName);
+	void AddPlayer(const Player& player);
+	void RemovePlayer(const Player& player);
+	void UpdatePlayerReady(const Player& player);
+	void UpdatePlayerPing(const Player& player);
+	void WriteChatMessage(const ChatEvent& event);
 
 	// Noesis events
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -56,6 +45,8 @@ private:
 	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* parent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp);
 
+	void SendGameSettings();
+
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
 
@@ -64,5 +55,5 @@ private:
 	Noesis::StackPanel* m_pChatPanel			= nullptr;
 	Noesis::TextBox*	m_pChatInputTextBox		= nullptr;
 
-	LambdaEngine::String m_LocalPlayerName		= "";
+	PacketGameSettings m_GameSettings;
 };
