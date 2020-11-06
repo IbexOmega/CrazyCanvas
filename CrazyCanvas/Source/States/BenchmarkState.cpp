@@ -43,6 +43,12 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+BenchmarkState::BenchmarkState()
+{
+	using namespace LambdaEngine;
+	SingleplayerInitializer::Init();
+}
+
 BenchmarkState::~BenchmarkState()
 {
 	using namespace LambdaEngine;
@@ -50,6 +56,8 @@ BenchmarkState::~BenchmarkState()
 	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	SAFEDELETE(m_pLevel);
+
+	SingleplayerInitializer::Release();
 }
 
 void BenchmarkState::Init()
@@ -259,7 +267,7 @@ void BenchmarkState::Init()
 	}
 
 	// Triggers OnPacketReceived, which creates players
-	SingleplayerInitializer::InitSingleplayer();
+	SingleplayerInitializer::Setup();
 }
 
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)

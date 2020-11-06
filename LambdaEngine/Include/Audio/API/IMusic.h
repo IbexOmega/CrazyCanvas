@@ -7,7 +7,7 @@ namespace LambdaEngine
 {
 	struct MusicDesc
 	{
-		const char*		pFilepath		= "";
+		String			Filepath		= "";
 		float32			Volume			= 1.0f;
 		float32			Pitch			= 1.0f;
 	};

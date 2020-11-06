@@ -38,7 +38,7 @@ namespace LambdaEngine
 		FMOD_CHANNEL*	m_pChannel				= nullptr;
 
 		//Local
-		const char*		m_pName					= "";
+		String			m_Name					= "";
 		float			m_Volume				= 1.0f;
 		float			m_Pitch					= 1.0f;
 	};
