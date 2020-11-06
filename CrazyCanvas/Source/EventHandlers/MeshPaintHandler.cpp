@@ -130,13 +130,14 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 			paintPointB.RemoteMode = remoteMode;
 			paintPointB.Team = team;
 			clientWasWrong = !IsPaintPointEqual(paintPointA, paintPointB);
+			if(clientWasWrong)
+				D_LOG_ERROR("Prediction Error: Client got wrong prediction when painting, reset client side paint and repaint on server side...");
 		}
 
 		// Clear client side if all paint points have been processed.
-		if (clientWasWrong && m_PaintPointsOnClient.empty())
+		if (m_PaintPointsOnClient.empty())
 		{
 			PaintMaskRenderer::ResetClient();
-			D_LOG_ERROR("Prediction Error: Client got wrong prediction when painting, reset client side paint and repaint on server side...");
 		}
 		
 		// Allways paint the server's paint point to the server side mask (permanent mask)
