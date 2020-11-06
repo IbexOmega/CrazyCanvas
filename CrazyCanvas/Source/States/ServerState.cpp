@@ -60,14 +60,14 @@ ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketConfigureServer>>(this, &ServerState::OnPacketConfigureServerReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketConfigureServerReceived);
 }
 
 void ServerState::Init()
 {
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketConfigureServer>>(this, &ServerState::OnPacketConfigureServerReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketConfigureServerReceived);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -118,9 +118,9 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
-bool ServerState::OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketConfigureServer>& event)
+bool ServerState::OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketGameSettings>& event)
 {	
-	const PacketConfigureServer& packet = event.Packet;
+	const PacketGameSettings& packet = event.Packet;
 
 	if (packet.AuthenticationID == ServerHostHelper::GetAuthenticationHostID())
 	{

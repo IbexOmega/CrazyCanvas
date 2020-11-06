@@ -8,7 +8,6 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-#include "Multiplayer/Packet/PacketConfigureServer.h"
 #include "Multiplayer/ServerHostHelper.h"
 #include "Multiplayer/ClientHelper.h"
 
@@ -74,10 +73,6 @@ bool LobbyState::OnPlayerInfoUpdatedEvent(const PlayerInfoUpdatedEvent& event)
 
 void LobbyState::SendServerConfiguration()
 {
-	PacketConfigureServer packet;
-	packet.AuthenticationID	= ServerHostHelper::GetAuthenticationHostID();
-	/*packet.MapID			= m_HostGameDesc.MapNumber;
-	packet.Players			= m_HostGameDesc.PlayersNumber;*/
-
-	ClientHelper::Send(packet);
+	m_PacketGameSettings.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
+	ClientHelper::Send(m_PacketGameSettings);
 }

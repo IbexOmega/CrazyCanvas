@@ -6,6 +6,8 @@
 
 #include "Events/PlayerEvents.h"
 
+#include "Multiplayer/Packet/PacketGameSettings.h"
+
 class LobbyState : public LambdaEngine::State
 {
 public:
@@ -29,7 +31,7 @@ private:
 	void SendServerConfiguration();
 
 private:
-	
+	PacketGameSettings m_PacketGameSettings;
 
 private:
 	/*Noesis::Ptr<LobbyGUI> m_LobbyGUI;

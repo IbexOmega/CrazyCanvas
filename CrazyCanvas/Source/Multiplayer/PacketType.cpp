@@ -4,7 +4,7 @@
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
-#include "Multiplayer/Packet/PacketConfigureServer.h"
+#include "Multiplayer/Packet/PacketGameSettings.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 #include "Multiplayer/Packet/PacketWeaponFired.h"
@@ -43,7 +43,7 @@ void PacketType::Init()
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<PacketFlagEdited>();
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
-	CONFIGURE_SERVER		= RegisterPacketType<PacketConfigureServer>();
+	CONFIGURE_SERVER		= RegisterPacketType<PacketGameSettings>();
 	JOIN					= RegisterPacketType<PacketJoin>();
 	LEAVE					= RegisterPacketType<PacketLeave>();
 	CHAT_MESSAGE			= RegisterPacketTypeRaw();
