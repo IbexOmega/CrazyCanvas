@@ -10,7 +10,7 @@
 
 #include "Multiplayer/MultiplayerServer.h"
 #include "Multiplayer/Packet/MultiplayerEvents.h"
-#include "Multiplayer/Packet/PacketConfigureServer.h"
+#include "Multiplayer/Packet/PacketGameSettings.h"
 
 class Level;
 
@@ -30,7 +30,7 @@ public:
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
-	bool OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketConfigureServer>& event);
+	bool OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketGameSettings>& event);
 
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 

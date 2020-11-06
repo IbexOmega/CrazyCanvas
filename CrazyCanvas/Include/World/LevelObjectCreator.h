@@ -59,6 +59,7 @@ struct CreateFlagDesc
 
 struct CreatePlayerDesc
 {
+	uint64								ClientUID			= 0;
 	bool								IsLocal				= false;
 	int32								PlayerNetworkUID	= -1;
 	int32								WeaponNetworkUID	= -1;

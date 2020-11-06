@@ -104,8 +104,8 @@ namespace LambdaEngine
 	private:
 		IClientRemoteHandler* CreateClientHandler() const;
 		void OnClientAskForTermination(ClientRemoteBase* pClient);
-		bool SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener);
-		bool SendUnreliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket);
+		bool SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener, bool excludeMySelf = false);
+		bool SendUnreliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, bool excludeMySelf = false);
 
 	private:
 		static void FixedTickStatic(Timestamp timestamp);

@@ -75,12 +75,6 @@ SandboxState::~SandboxState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
 
-	if (m_GUITest.GetPtr() != nullptr)
-	{
-		m_GUITest.Reset();
-		m_View.Reset();
-	}
-
 	SAFEDELETE(m_pRenderGraphEditor);
 
 	SingleplayerInitializer::Release();
@@ -101,10 +95,6 @@ void SandboxState::Init()
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
 	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
 	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
-
-	m_GUITest	= *new GUITest("Test.xaml");
-	m_View		= Noesis::GUI::CreateView(m_GUITest);
-	LambdaEngine::GUIApplication::SetView(m_View);
 
 	ECSCore* pECS = ECSCore::GetInstance();
 

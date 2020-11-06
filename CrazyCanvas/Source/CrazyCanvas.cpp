@@ -26,6 +26,11 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Lobby/PlayerManagerClient.h"
+#include "Lobby/PlayerManagerServer.h"
+#include "Chat/ChatManager.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
@@ -58,6 +63,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		LOG_ERROR("Team Helper Init Failed");
 	}
+
+	PacketType::Init();
+	PacketTranscoderSystem::GetInstance().Init();
 
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
 	RenderSystem::GetInstance().InitRenderGraphs();
@@ -110,6 +118,13 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+
+	if(MultiplayerUtils::IsServer())
+		PlayerManagerServer::Init();
+	else
+		PlayerManagerClient::Init();
+
+	ChatManager::Init();
 }
 
 CrazyCanvas::~CrazyCanvas()
@@ -118,6 +133,10 @@ CrazyCanvas::~CrazyCanvas()
 	{
 		LOG_ERROR("Level Manager Release Failed");
 	}
+
+	ChatManager::Release();
+	PlayerManagerBase::Release();
+	PacketType::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -125,8 +144,11 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 	Render(delta);
 }
 
-void CrazyCanvas::FixedTick(LambdaEngine::Timestamp)
-{}
+void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
+{
+	if (LambdaEngine::MultiplayerUtils::IsServer())
+		PlayerManagerServer::FixedTick(delta);
+}
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)
 {}
