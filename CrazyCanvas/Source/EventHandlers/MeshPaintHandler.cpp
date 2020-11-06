@@ -14,14 +14,10 @@
 	mask |= (((uint8)value) & 15) << 0
 
 #define SET_PAINT_MODE(mask, value) \
-	mask |= (((uint8)value) & 7) << 4
-
-#define SET_WAS_SERVER(mask, value) \
-	mask |= (((uint8)value) & 1) << 7
+	mask |= (((uint8)value) & 8) << 4
 
 #define GET_TEAM_INDEX(mask) (ETeam)(mask & 15)
-#define GET_PAINT_MODE(mask) (EPaintMode)((mask >> 4) & 7)
-#define GET_WAS_SERVER(mask) (bool)((mask >> 7) & 1)
+#define GET_PAINT_MODE(mask) (EPaintMode)((mask >> 4) & 8)
 
 /*
 * MeshPaintHandler
@@ -70,7 +66,6 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			SET_TEAM_INDEX(packet.Info, team);
 			LOG_WARNING("[SERVER] Paint with paint mode %s", paintMode == EPaintMode::REMOVE ? "REMOVE" : (paintMode == EPaintMode::PAINT ? "PAINT" : "NONE"));
 			SET_PAINT_MODE(packet.Info, paintMode);
-			SET_WAS_SERVER(packet.Info, true);
 			packet.Position		= collisionInfo.Position;
 			packet.Direction	= collisionInfo.Direction;
 
@@ -107,11 +102,12 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	const PacketProjectileHit& packet = event.Packet;
 	ETeam		team = GET_TEAM_INDEX(packet.Info);
 	EPaintMode	paintMode = GET_PAINT_MODE(packet.Info);
-	bool		wasServer = GET_WAS_SERVER(packet.Info);
 	ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
 
 	if (!MultiplayerUtils::IsServer())
 	{
+		// We do not need to test the collisions against each other, because they will always be painted again but on the permanent mask. 
+		// I still leave this here to be able to see if the client made a wrong prediction.
 		bool clientWasWrong = false;
 		if (m_PaintPointsOnClient.empty())
 		{
