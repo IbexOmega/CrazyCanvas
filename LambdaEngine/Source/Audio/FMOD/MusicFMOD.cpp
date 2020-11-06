@@ -22,22 +22,22 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc);
 
-		m_pName = pDesc->pFilepath;
+		m_Name = pDesc->Filepath;
 
 		FMOD_MODE mode = FMOD_2D | FMOD_LOOP_NORMAL | FMOD_CREATESTREAM;
 
 		FMOD_CREATESOUNDEXINFO soundCreateInfo = {};
 		soundCreateInfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 
-		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, pDesc->pFilepath, mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
+		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, pDesc->Filepath.c_str(), mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
 		{
-			LOG_WARNING("[MusicFMOD]: Music \"%s\" could not be initialized in %s", pDesc->pFilepath, m_pName);
+			LOG_WARNING("[MusicFMOD]: Music \"%s\" could not be initialized", pDesc->Filepath.c_str());
 			return false;
 		}
 
 		if (FMOD_System_PlaySound(m_pAudioDevice->pSystem, m_pHandle, nullptr, false, &m_pChannel) != FMOD_OK)
 		{
-			LOG_WARNING("[MusicFMOD]: Music \"%s\" could not be played in %s", pDesc->pFilepath, m_pName);
+			LOG_WARNING("[MusicFMOD]: Music \"%s\" could not be played", pDesc->Filepath.c_str());
 			return false;
 		}
 
@@ -67,7 +67,7 @@ namespace LambdaEngine
 
 		if (FMOD_Channel_SetVolume(m_pChannel, volume) != FMOD_OK)
 		{
-			D_LOG_WARNING("[MusicFMOD]: Volume could not be set for %s", m_pName);
+			D_LOG_WARNING("[MusicFMOD]: Volume could not be set for %s", m_Name.c_str());
 		}
 	}
 
@@ -77,7 +77,7 @@ namespace LambdaEngine
 
 		if (FMOD_Channel_SetPitch(m_pChannel, pitch) != FMOD_OK)
 		{
-			D_LOG_WARNING("[MusicFMOD]: Pitch could not be set for %s", m_pName);
+			D_LOG_WARNING("[MusicFMOD]: Pitch could not be set for %s", m_Name.c_str());
 		}
 	}
 }

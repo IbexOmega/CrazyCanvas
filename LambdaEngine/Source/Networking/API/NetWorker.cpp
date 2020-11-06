@@ -54,7 +54,6 @@ namespace LambdaEngine
 		if (m_ThreadsTerminated)
 		{
 			s_NetworkersToDelete.insert(std::make_pair(this, (uint8)5));
-			LOG_ERROR("TerminateAndRelease");
 		}
 	}
 
