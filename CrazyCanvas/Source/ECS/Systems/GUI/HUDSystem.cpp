@@ -114,7 +114,6 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 		for (Entity playerWeapon : m_WeaponEntities)
 		{
