@@ -73,7 +73,7 @@ void PlaySessionState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[5]
 		};
 		Match::CreateMatch(&matchDescription);
 	}
