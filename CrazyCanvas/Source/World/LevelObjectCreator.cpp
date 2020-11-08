@@ -654,10 +654,10 @@ bool LevelObjectCreator::CreatePlayer(
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f) });//glm::vec3(0.5f, 1.5f, -0.2f)
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 
 	ChildComponent playerChildComp;
@@ -957,13 +957,14 @@ bool LevelObjectCreator::CreateProjectile(
 		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
 	}
 
+	LOG_MESSAGE("Projectile Create Position: %s", glm::to_string(desc.FirePosition).c_str());
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
 		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) }),
-		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, desc.FireDirection }),
+		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::identity<glm::quat>() }),
 		{
 			{
 				/* Shape Type */		EShapeType::SIMULATION,

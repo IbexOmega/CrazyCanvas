@@ -30,63 +30,6 @@
 
 LambdaEngine::TUniquePtr<WeaponSystem> WeaponSystem::s_Instance = nullptr;
 
-void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
-{
-	using namespace LambdaEngine;
-
-	if (ammoType == EAmmoType::AMMO_TYPE_NONE)
-	{
-		return;
-	}
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	WeaponComponent& weaponComponent = pECS->GetComponent<WeaponComponent>(weaponEntity);
-
-	const Entity weaponOwner = weaponComponent.WeaponOwner;
-	PositionComponent&			weaponPositionComponent	= pECS->GetComponent<PositionComponent>(weaponEntity);
-	RotationComponent&			weaponRotationComponent	= pECS->GetComponent<RotationComponent>(weaponEntity);
-	const OffsetComponent&		weaponOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(weaponEntity);
-	const PositionComponent&	positionComponent = pECS->GetConstComponent<PositionComponent>(weaponOwner);
-	const RotationComponent&	rotationComponent = pECS->GetConstComponent<RotationComponent>(weaponOwner);
-	const VelocityComponent&	velocityComponent = pECS->GetConstComponent<VelocityComponent>(weaponOwner);
-	const glm::quat& direction		= rotationComponent.Quaternion;
-	const glm::vec3& playerPos		= positionComponent.Position;
-	const glm::vec3& playerVelocity	= velocityComponent.Velocity;
-	
-	{
-		glm::quat quatY = direction;
-		quatY.x = 0;
-		quatY.z = 0;
-		quatY = glm::normalize(quatY);
-		weaponPositionComponent.Position	= playerPos + quatY * weaponOffsetComponent.Offset;
-		weaponRotationComponent.Quaternion	= direction;
-	}
-
-	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
-	const glm::vec3 weaponPos		= weaponPositionComponent.Position + GetForward(weaponRotationComponent.Quaternion) * 0.2f;
-	const glm::vec3 directionVec	= GetForward(glm::normalize(direction));
-	const glm::vec3 initialVelocity	= playerVelocity + directionVec * PROJECTILE_INITAL_SPEED;
-	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
-
-	// Fire event
-	WeaponFiredEvent firedEvent(
-		weaponOwner,
-		ammoType,
-		weaponPos,
-		initialVelocity,
-		direction,
-		playerTeam);
-	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
-	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
-	EventQueue::SendEventImmediate(firedEvent);
-
-	// Fire the gun
-	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
-	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
-
-	ammoState->second.first--;
-}
-
 bool WeaponSystem::Init()
 {
 	using namespace LambdaEngine;
@@ -103,11 +46,11 @@ bool WeaponSystem::Init()
 	return s_Instance->InitInternal();
 }
 
-bool WeaponSystem::InitInternal()
+void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg)
 {
 	using namespace LambdaEngine;
 
-	// Register system
+	// Fill in Base System Registration
 	{
 		PlayerGroup playerGroup;
 		playerGroup.Position.Permissions	= R;
@@ -115,7 +58,7 @@ bool WeaponSystem::InitInternal()
 		playerGroup.Rotation.Permissions	= R;
 		playerGroup.Velocity.Permissions	= R;
 
-		SystemRegistration systemReg = {};
+		systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
@@ -128,44 +71,35 @@ bool WeaponSystem::InitInternal()
 		};
 
 		systemReg.SubscriberRegistration.AdditionalAccesses = GetFireProjectileComponentAccesses();
-		systemReg.Phase = 1;
-
-		RegisterSystem(TYPE_NAME(WeaponSystem), systemReg);
+		systemReg.Phase = 2;
 	}
-
-	return true;
 }
 
-bool WeaponSystem::TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
+void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam)
 {
 	using namespace LambdaEngine;
 
-	// Add cooldown
-	ECSCore* pECS = ECSCore::GetInstance();
-	WeaponComponent& weaponComponent	= pECS->GetComponent<WeaponComponent>(weaponEntity);
-	weaponComponent.CurrentCooldown		= 1.0f / weaponComponent.FireRate;
+	if (ammoType == EAmmoType::AMMO_TYPE_NONE)
+	{
+		return;
+	}
 
+	// Fire event
+	WeaponFiredEvent firedEvent(
+		weaponComponent.WeaponOwner,
+		ammoType,
+		position,
+		velocity,
+		playerTeam);
+	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
+	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
+	EventQueue::SendEventImmediate(firedEvent);
+
+	// Fire the gun
 	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
-	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end());
+	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
 
-	const bool hasAmmo = (ammoState->second.first > 0);
-	if (hasAmmo)
-	{
-		// If we try to shoot when reloading we abort the reload
-		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
-		if (isReloading)
-		{
-			AbortReload(weaponComponent);
-		}
-
-		// For creating entity
-		Fire(ammoType, weaponEntity);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	ammoState->second.first--;
 }
 
 void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
@@ -249,6 +183,36 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team);
 		EventQueue::SendEventImmediate(hitEvent);
 	}
+}
+
+void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEntity, glm::vec3& position, glm::vec3& velocity, uint32& playerTeam)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	WeaponComponent& weaponComponent = pECS->GetComponent<WeaponComponent>(weaponEntity);
+
+	const Entity weaponOwner = weaponComponent.WeaponOwner;
+	const OffsetComponent&		weaponOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(weaponEntity);
+	const PositionComponent&	playerPositionComponent = pECS->GetConstComponent<PositionComponent>(weaponOwner);
+	const RotationComponent&	playerRotationComponent = pECS->GetConstComponent<RotationComponent>(weaponOwner);
+	const VelocityComponent&	playerVelocityComponent = pECS->GetConstComponent<VelocityComponent>(weaponOwner);
+
+	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
+
+	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
+
+	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
+	glm::quat playerRotation = playerRotationComponent.Quaternion;
+	playerRotation.x = 0;
+	playerRotation.z = 0;
+	playerRotation = glm::normalize(playerRotation);
+
+	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.2f;
+	velocity		= playerVelocityComponent.Velocity + playerForwardDirection * PROJECTILE_INITAL_SPEED;
+	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
+
+	LOG_MESSAGE("Calculated Position: %s", glm::to_string(position).c_str());
 }
 
 void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets)

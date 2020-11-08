@@ -7,6 +7,7 @@
 
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 
 #include "Math/Math.h"
 
@@ -40,7 +41,9 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 		{ RW, ScaleComponent::Type()},
 		{ RW, RotationComponent::Type() },
 		{ RW, VelocityComponent::Type()},
+		{ R, OffsetComponent::Type()},
 		{ RW, WeaponComponent::Type()},
+		{ RW, AnimationAttachedComponent::Type()},
 		{ RW, TeamComponent::Type() },
 		{ RW, ProjectileComponent::Type()},
 		{ RW, DynamicCollisionComponent::Type() },
@@ -62,14 +65,13 @@ public:
 	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) = 0;
 
 	// Empty tick
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	virtual void Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
-	// Returns true if we could fire
-	virtual bool TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
+	virtual void Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam);
+	void CalculateWeaponFireProperties(LambdaEngine::Entity weaponEntity, glm::vec3& position, glm::vec3& velocity, uint32& playerTeam);
 
 public:
 	static bool Init();
@@ -81,7 +83,9 @@ public:
 	}
 
 protected:
-	virtual bool InitInternal();
+	virtual bool InitInternal() = 0;
+
+	void CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg);
 
 	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam)
 	{

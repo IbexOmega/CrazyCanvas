@@ -78,7 +78,6 @@ struct CreateProjectileDesc
 	EAmmoType	AmmoType;
 	glm::vec3	FirePosition;
 	glm::vec3	InitalVelocity;
-	glm::quat	FireDirection;
 	int32		PlayerFiredNetworkUID = -1;
 	uint32		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;

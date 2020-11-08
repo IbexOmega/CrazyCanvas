@@ -624,7 +624,7 @@ namespace LambdaEngine
 				const auto&					rotationComp	= pRotationComponents->GetConstData(entity);
 				const auto&					scaleComp		= pScaleComponents->GetConstData(entity);
 
-				UpdateTransform(entity, animationComp.Transform, positionComp, rotationComp, scaleComp, glm::bvec3(true));
+				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 			}
 		}
 
@@ -787,6 +787,8 @@ namespace LambdaEngine
 		const RotationComponent& rotationComp	= pECSCore->GetConstComponent<RotationComponent>(entity);
 		const ScaleComponent& scaleComp			= pECSCore->GetConstComponent<ScaleComponent>(entity);
 
+		LOG_WARNING("Render Position %s", glm::to_string(positionComp.Position).c_str());
+
 		return CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
 	}
 
@@ -837,7 +839,7 @@ namespace LambdaEngine
 		auto& attachedAnimationComp = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		transform = transform * attachedAnimationComp.Transform;
+		//transform = transform * attachedAnimationComp.Transform;
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
 	}
 
