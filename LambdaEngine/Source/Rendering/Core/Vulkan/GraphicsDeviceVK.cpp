@@ -1230,6 +1230,7 @@ namespace LambdaEngine
 		enabledRayTracingFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
 		enabledRayTracingFeatures.pNext			= &enabledMeshShaderFeatures;
 		enabledRayTracingFeatures.rayTracing	= supportedRayTracingFeatures.rayTracing;
+		enabledRayTracingFeatures.rayQuery		= supportedRayTracingFeatures.rayQuery;
 
 		VkPhysicalDeviceVulkan12Features enabledDeviceFeatures12 = {};
 		enabledDeviceFeatures12.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;

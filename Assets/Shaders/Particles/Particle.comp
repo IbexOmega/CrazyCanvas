@@ -1,6 +1,9 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
 
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
@@ -55,6 +58,8 @@ layout (binding = 7, set = 0) restrict buffer AccelerationStructureInstance
 {
 	SAccelerationStructureInstance Val[];
 } b_ASInstance;
+
+layout(binding = 8, set = 0) uniform accelerationStructureEXT u_TLAS;
 
 layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
@@ -139,6 +144,8 @@ void main()
 			particle.Velocity *= particle.FrictionFactor;
 			particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
 		}
+
+		rayQueryEXT rayQuery;
 		
 		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);
 		particle.CurrentLife -= dt;

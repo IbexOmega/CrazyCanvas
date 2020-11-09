@@ -92,6 +92,12 @@ namespace LambdaEngine
 		instanceBindingDesc7.Binding = 7;
 		instanceBindingDesc7.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
+		DescriptorBindingDesc instanceBindingDesc8 = {};
+		instanceBindingDesc8.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
+		instanceBindingDesc8.DescriptorCount = 1;
+		instanceBindingDesc8.Binding = 8;
+		instanceBindingDesc8.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
 		// Set 0
 		m_UpdatePipeline.CreateDescriptorSetLayout({
 			instanceBindingDesc0,
@@ -101,7 +107,8 @@ namespace LambdaEngine
 			instanceBindingDesc4,
 			instanceBindingDesc5,
 			instanceBindingDesc6,
-			instanceBindingDesc7
+			instanceBindingDesc7,
+			instanceBindingDesc8
 		});
 
 		DescriptorBindingDesc depthBindingDesc = {};
@@ -443,6 +450,21 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
 			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCES_BUFFER Descriptor Set 0 Binding 7", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+		}
+		else if (resourceName == SCENE_TLAS)
+		{
+			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 8U;
+
+			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+			descriptorUpdateDesc.ppBuffers = ppBuffers;
+			descriptorUpdateDesc.pOffsets = pOffsets;
+			descriptorUpdateDesc.pSizes = pSizesInBytes;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = count;
+			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
+
+			m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 8", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 	}
 
