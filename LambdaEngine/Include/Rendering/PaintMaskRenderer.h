@@ -95,7 +95,6 @@ namespace LambdaEngine
 
 	public:
 		/* Adds a hitpoint to draw out a splash at
-		* Note: Currently only one hitpoint will be handled at each frame
 		*	position - vec3 of the hit point position
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintMode - painting mode to be used for the target
@@ -133,6 +132,7 @@ namespace LambdaEngine
 			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 			ETeam			Team				= ETeam::NONE;
 			uint32			Padding0			= 0;
+			bool			ClearClient			= false;
 		};
 
 		struct FrameSettings
@@ -140,6 +140,52 @@ namespace LambdaEngine
 			uint32 ShouldReset	= 0;
 			uint32 ShouldPaint	= 0;
 			uint32 PaintCount	= 0;
+		};
+
+		struct DrawArgKey
+		{
+		public:
+			DrawArgKey() = default;
+
+			inline DrawArgKey(uint64 bufferPtr, uint64 buffer2Ptr, uint32 backBufferIndex)
+				: BufferPtr(bufferPtr), Buffer2Ptr(buffer2Ptr), BackBufferIndex(backBufferIndex)
+			{
+				GetHash();
+			}
+
+			size_t GetHash() const
+			{
+				if (Hash == 0)
+				{
+					Hash = std::hash<uint64>()(BufferPtr);
+					HashCombine<uint64>(Hash, Buffer2Ptr);
+					HashCombine<uint64>(Hash, (uint64)BackBufferIndex);
+				}
+				return Hash;
+			}
+
+			bool operator==(const DrawArgKey& other) const
+			{
+				bool res = true;
+				res &= BufferPtr == other.BufferPtr;
+				res &= Buffer2Ptr == other.Buffer2Ptr;
+				res &= BackBufferIndex == other.BackBufferIndex;
+				return res;
+			}
+
+		public:
+			uint64 BufferPtr;
+			uint64 Buffer2Ptr;
+			uint32 BackBufferIndex;
+			mutable size_t	Hash = 0;
+		};
+
+		struct DrawArgKeyHasher
+		{
+			size_t operator()(const DrawArgKey& key) const
+			{
+				return key.GetHash();
+			}
 		};
 
 	private:
@@ -170,19 +216,21 @@ namespace LambdaEngine
 		TArray<TArray<TSharedRef<Buffer>>>	m_UnwrapDataCopyBuffers;
 		TSharedRef<Buffer>			m_UnwrapDataBuffer = nullptr;
 
-		const DrawArg*												m_pDrawArgs = nullptr;
-		TArray<TArray<TSharedRef<DescriptorSet>>>					m_VerticesInstanceDescriptorSets;
+		const DrawArg*																	m_pDrawArgs = nullptr;
+		TArray<TArray<DescriptorSet*>>													m_VerticesInstanceDescriptorSets;
+		THashTable<DrawArgKey, TSharedRef<DescriptorSet>, DrawArgKeyHasher>				m_VerticesInstanceDescriptorSetMap;
+		TArray<DrawArgKey>																m_AliveDescriptorSetList;
+		TArray<DrawArgKey>																m_DeadDescriptorSetList;
 
-		TSharedRef<DescriptorSet>									m_UnwrapDataDescriptorSet;
-		TSharedRef<DescriptorSet>									m_PerFrameBufferDescriptorSet;
-		TSharedRef<DescriptorSet>									m_BrushMaskDescriptorSet;
+		TSharedRef<DescriptorSet>														m_UnwrapDataDescriptorSet;
+		TSharedRef<DescriptorSet>														m_PerFrameBufferDescriptorSet;
+		TSharedRef<DescriptorSet>														m_BrushMaskDescriptorSet;
 
-		TArray<TArray<TSharedRef<DeviceChild>>>						m_pDeviceResourcesToDestroy;
+		TArray<TArray<TSharedRef<DeviceChild>>>											m_pDeviceResourcesToDestroy;
 
-		TArray<RenderTarget>										m_RenderTargets;
+		TArray<RenderTarget>															m_RenderTargets;
 	private:
 		static TArray<UnwrapData>		s_ServerCollisions;
 		static TArray<UnwrapData>		s_ClientCollisions;
-		static bool						s_ShouldReset;
 	};
 }

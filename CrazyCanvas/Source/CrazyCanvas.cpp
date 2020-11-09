@@ -29,6 +29,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "GUI/CountdownGUI.h"
+#include "GUI/DamageIndicatorGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 
@@ -149,6 +150,7 @@ namespace LambdaEngine
 bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
+	Noesis::RegisterComponent<DamageIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 

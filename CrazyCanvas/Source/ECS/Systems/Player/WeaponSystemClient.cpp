@@ -28,7 +28,7 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		Entity playerEntity = weaponComponent.WeaponOwner;
 
 		// Foreign Players
-		if (!m_LocalPlayerEntities.HasElement(playerEntity))
+		if (m_ForeignPlayerEntities.HasElement(playerEntity))
 		{
 			PacketComponent<PacketPlayerActionResponse>&	packets			= pPlayerResponsePackets->GetData(playerEntity);
 			const TArray<PacketPlayerActionResponse>&		receivedPackets	= packets.GetPacketsReceived();
@@ -59,9 +59,6 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			StartReload(weaponComponent, playerActions);
 		}
 
-		// Update reload and cooldown timers
-		UpdateWeapon(weaponComponent, dt);
-
 		// Reload if we are not reloading
 		if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
 		{
@@ -78,6 +75,9 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
 			}
 		}
+
+		// Update reload and cooldown timers
+		UpdateWeapon(weaponComponent, dt);
 	}
 }
 
@@ -219,22 +219,12 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 {
 	using namespace LambdaEngine;
 
-	ECSCore* pECS = ECSCore::GetInstance();
 	const bool didFire = WeaponSystem::TryFire(ammoType, weaponEntity);
-	if (!didFire)
+	if (didFire)
 	{
-		const WeaponComponent&		weaponComponent		= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
-		const PositionComponent&	positionComponent	= pECS->GetConstComponent<PositionComponent>(weaponEntity);
-		const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
-
-		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 1.0f, 1.0f);
-	}
-	else
-	{
-		const WeaponComponent& weaponComponent = pECS->GetConstComponent<WeaponComponent>(weaponEntity);
-		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
+		ECSCore* pECS = ECSCore::GetInstance();
+		const WeaponComponent& weaponComponent			= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
+		PacketComponent<PacketPlayerAction>& packets	= pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
 		
 		// Send action to server
 		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
@@ -243,7 +233,12 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 			actions.back().FiredAmmo = ammoType;
 		}
 	}
+	else
+	{
+		// Play out of ammo
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
+		pSound->PlayOnce();
+	}
 
 	return didFire;
 }
-

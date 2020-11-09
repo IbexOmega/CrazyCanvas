@@ -1960,7 +1960,7 @@
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_include_mask": 8,
+                    "draw_args_include_mask": 16,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "UNORDERED_ACCESS_RW",
                     "src_stage": "EXTERNAL_RESOURCES"

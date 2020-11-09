@@ -80,6 +80,12 @@ bool ProjectileRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc
 		return false;
 	}
 
+	if (!CreateDescriptorHeap())
+	{
+		LOG_ERROR("[ProjectileRenderer]: Failed to create descriptor heap");
+		return false;
+	}
+
 	SubscribeToProjectiles();
 	// OnProjectileCreated(0);
 
@@ -149,6 +155,10 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 	if (!m_MarchingCubesGrids.Empty())
 	{
 		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
+		// const SecondaryCommandListBeginDesc beginDesc = {};
+		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
+		pCommandList->Begin(nullptr);
+
 		pCommandList->BindComputePipeline(m_Pipeline.Get());
 
 		const uint32 initialTriangleCount = 0;
@@ -170,13 +180,9 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &marchingCubesGrid.GPUData, sizeof(GridConstantRange), 0);
 			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
-	}
-}
 
-void ProjectileRenderer::CreateProjectileMesh(Entity entity)
-{
-	RenderSystem& renderSystem = RenderSystem::GetInstance();
-	renderSystem.AddRenderableEntity(entity, 0, 0, RenderSystem::CreateEntityTransform(entity, glm::bvec3(true)), false, true);
+		pCommandList->End();
+	}
 }
 
 void ProjectileRenderer::CreatePipelineLayout()
@@ -283,7 +289,7 @@ bool ProjectileRenderer::CreateCommandLists(const CustomRendererRenderGraphInitD
 
 		const CommandListDesc commandListDesc =
 		{
-			.DebugName			= "Paint Mask Renderer Render Command List " + std::to_string(b),
+			.DebugName			= "Projectile Renderer Render Command List " + std::to_string(b),
 			.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY,
 			.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT
 		};
@@ -352,8 +358,9 @@ void ProjectileRenderer::SubscribeToProjectiles()
 
 void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 {
+	LOG_INFO("%u", entity);
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
-	renderSystem.AddRenderableEntity(entity, 0, 0, RenderSystem::CreateEntityTransform(entity, glm::bvec3(true)), false, true);
+	renderSystem.AddRenderableEntity(entity, m_MarchingCubesMesh, GUID_MATERIAL_DEFAULT, RenderSystem::CreateEntityTransform(entity, glm::bvec3(true)), false, true);
 }
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
