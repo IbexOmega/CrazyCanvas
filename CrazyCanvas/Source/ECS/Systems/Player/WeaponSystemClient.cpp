@@ -87,7 +87,7 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(playerEntity);
 
 		// Foreign Players
-		if (!m_LocalPlayerEntities.HasElement(playerEntity))
+		if (m_ForeignPlayerEntities.HasElement(playerEntity))
 		{
 			PacketComponent<PacketPlayerActionResponse>&	packets			= pPlayerResponsePackets->GetData(playerEntity);
 			const TArray<PacketPlayerActionResponse>&		receivedPackets	= packets.GetPacketsReceived();
@@ -319,4 +319,3 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		return false;
 	}
 }
-

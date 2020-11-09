@@ -240,7 +240,7 @@ namespace LambdaEngine
 		static void LoadBoundingBox(BoundingBox& boundingBox, const aiMesh* pMeshAI);
 		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
-		static void LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI);
+		static void LoadSkeleton(Mesh* pMesh, const aiMesh* pMeshAI, const aiScene* pSceneAI);
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
 		static void LoadAnimation(SceneLoadingContext& context, const aiAnimation* pAnimationAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);

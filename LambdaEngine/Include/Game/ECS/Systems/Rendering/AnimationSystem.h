@@ -50,8 +50,8 @@ namespace LambdaEngine
 		static AnimationSystem& GetInstance();
 
 	private:
-		bool	m_HasInitClock	= false;
-		Clock	m_Clock;
+		bool m_HasInitClock	= false;
+		Clock m_Clock;
 
 		IDVector		m_AnimationEntities;
 		IDVector		m_AttachedAnimationEntities;
