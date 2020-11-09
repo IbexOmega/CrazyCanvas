@@ -9,6 +9,8 @@
 
 #include "ECS/Components/Player/ProjectileComponent.h"
 
+#include "World/Player/PlayerActionSystem.h"
+
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
 #include "NsGui/GroupBox.h"
@@ -56,6 +58,7 @@ public:
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
+	bool OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event);
 
 	// Escape GUI
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -102,9 +105,11 @@ private:
 
 	bool			m_RayTracingEnabled		= false;
 	bool			m_MeshShadersEnabled	= false;
+	bool			m_EscapeMenuEnabled		= false;
+
+	bool			m_MouseEnabled			= false;
 
 	Noesis::Grid*	m_pEscapeGrid			= nullptr;
-	Noesis::Grid*	m_pPlayGrid				= nullptr;
 	Noesis::Grid*	m_pSettingsGrid			= nullptr;
 	Noesis::Grid*	m_pKeyBindingsGrid		= nullptr;
 

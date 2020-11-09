@@ -1,3 +1,4 @@
+#include "Application/API/CommonApplication.h"
 #include "ECS/Systems/GUI/HUDSystem.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
@@ -77,6 +78,11 @@ void HUDSystem::FixedTick(Timestamp delta)
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(players);
 		m_HUDGUI->UpdateScore();
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
+
+		//if (InputActionSystem::IsActive(EAction::ACTION_ESCAPE))
+		//{
+		//	m_HUDGUI->OpenEscapeMenu();
+		//}
 	}
 }
 

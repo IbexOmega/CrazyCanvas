@@ -6,7 +6,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Audio/AudioAPI.h"
 #include "Engine/EngineConfig.h"
-
+#include "Multiplayer/ClientHelper.h"
 #include "Multiplayer/Packet/PacketType.h"
 
 #include "NoesisPCH.h"
@@ -186,6 +186,23 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	return true;
 }
 
+bool HUDGUI::OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event)
+{
+	if (event.Key == EKey::KEY_ESCAPE)
+	{
+		Input::PushInputMode(EInputLayer::GUI);
+		m_MouseEnabled = !m_MouseEnabled;
+		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
+
+		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
+		m_ContextStack.push(m_pEscapeGrid);
+
+		return true;
+	}
+
+	return false;
+}
+
 void HUDGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
@@ -201,6 +218,14 @@ void HUDGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::Rou
 
 void HUDGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	m_MouseEnabled = !m_MouseEnabled;
+	Noesis::FrameworkElement* pElement = m_ContextStack.top();
+	pElement->SetVisibility(Noesis::Visibility_Hidden);
+	m_ContextStack.pop();
+	Input::PopInputMode();
 }
 
 void HUDGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -217,6 +242,7 @@ void HUDGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis:
 
 void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+
 }
 
 void HUDGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -350,13 +376,12 @@ void HUDGUI::InitGUI()
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
 
 	// Main Grids
-	m_pEscapeGrid			= FrameworkElement::FindName<Grid>("StartGrid");
-	m_pPlayGrid				= FrameworkElement::FindName<Grid>("PlayGrid");
+	m_pEscapeGrid			= FrameworkElement::FindName<Grid>("EscapeGrid");
 	m_pSettingsGrid			= FrameworkElement::FindName<Grid>("SettingsGrid");
 	m_pKeyBindingsGrid		= FrameworkElement::FindName<Grid>("KeyBindingsGrid");
-	m_ContextStack.push(m_pEscapeGrid);
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::OpenEscapeMenu);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
 
 	SetDefaultSettings();
