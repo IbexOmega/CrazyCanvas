@@ -23,13 +23,11 @@ public:
 	LobbyGUI();
 	~LobbyGUI();
 
-	// TEMP - REMOVE IF IT IS PULL REQUEST
-	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
-
 	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);
 	void UpdatePlayerReady(const Player& player);
 	void UpdatePlayerPing(const Player& player);
+	void UpdatePlayerHost(const Player& player);
 	void WriteChatMessage(const ChatEvent& event);
 	void SetHostMode(bool isHost);
 	void UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value);

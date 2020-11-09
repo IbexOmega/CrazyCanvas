@@ -24,7 +24,7 @@ public:
 	DECL_SINGLETON_CLASS(PlayerManagerBase);
 
 	static const Player* GetPlayer(uint64 uid);
-	static const Player* GetPlayer(LambdaEngine::IClient* pClient);
+	static const Player* GetPlayer(const LambdaEngine::IClient* pClient);
 	static const Player* GetPlayer(LambdaEngine::Entity entity);
 	static const LambdaEngine::THashTable<uint64, Player>& GetPlayers();
 	static void RegisterPlayerEntity(uint64 uid, LambdaEngine::Entity entity);

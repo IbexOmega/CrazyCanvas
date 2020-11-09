@@ -66,14 +66,15 @@ private:
 	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
 	void PopulateServerInfo();
 
-	void HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave = false);
+	void HandleServerInfo(ServerInfo& serverInfo, bool forceSave = false);
+
+	bool HasHostedServer() const;
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 
 private:
-
-	bool m_HasHostedServer = false;
 	bool m_RayTracingEnabled = false;
+	int32 m_ClientHostID;
 	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
 

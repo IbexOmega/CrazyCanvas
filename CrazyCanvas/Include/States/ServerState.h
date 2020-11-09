@@ -20,7 +20,7 @@ class ServerState :
 	public LambdaEngine::State
 {
 public:
-	ServerState(const std::string& clientHostID, const std::string& authenticationID);
+	ServerState(const std::string& clientHostID);
 	
 	~ServerState();
 
@@ -38,9 +38,8 @@ public:
 
 	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
 
-	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-
 private:
 	std::string m_ServerName;
+	int32 m_ClientHostID;
 	MultiplayerServer m_MultiplayerServer;
 };

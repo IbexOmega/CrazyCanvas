@@ -10,7 +10,7 @@ class PlayerManagerServer : public PlayerManagerBase
 public:
 	DECL_STATIC_CLASS(PlayerManagerServer);
 
-protected:
+	static bool HasPlayerAuthority(const LambdaEngine::IClient* pClient);
 
 protected:
 	static void Init();

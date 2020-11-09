@@ -64,6 +64,9 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 {
 	IClient* pClient = event.pClient;
 	Player* pPlayer = HandlePlayerJoined(pClient->GetUID(), event.Packet);
+
+	pPlayer->m_IsHost = s_Players.size() == 1;
+
 	ServerHelper::SendBroadcast(event.Packet, nullptr, pClient);
 
 	PacketJoin packet;
@@ -121,4 +124,10 @@ void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 	PacketLeave packet;
 	packet.UID = pClient->GetUID();
 	ServerHelper::SendBroadcast(packet, nullptr, pClient);
+}
+
+bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)
+{
+	const Player* pPlayer = GetPlayer(pClient);
+	return pPlayer != nullptr && pPlayer->IsHost();
 }

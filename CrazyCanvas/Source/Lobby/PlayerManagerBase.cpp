@@ -27,7 +27,7 @@ const Player* PlayerManagerBase::GetPlayer(uint64 uid)
 	return pair == s_Players.end() ? nullptr : &pair->second;
 }
 
-const Player* PlayerManagerBase::GetPlayer(IClient* pClient)
+const Player* PlayerManagerBase::GetPlayer(const IClient* pClient)
 {
 	return GetPlayer(pClient->GetUID());
 }

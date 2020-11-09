@@ -30,7 +30,6 @@
 
 #include "Math\Random.h"
 
-#include "Multiplayer/ServerHostHelper.h"
 #include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -46,7 +45,8 @@ using namespace Noesis;
 MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 	m_HostGameDesc(),
 	m_ServerList(),
-	m_Servers()
+	m_Servers(),
+	m_ClientHostID(-1)
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
@@ -68,7 +68,7 @@ MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 
 	for (ServerInfo& serverInfo : serverInfos)
 	{
-		HandleServerInfo(serverInfo, -1);
+		HandleServerInfo(serverInfo);
 		ClientHelper::AddNetworkDiscoveryTarget(serverInfo.EndPoint.GetAddress());
 	}
 }
@@ -121,19 +121,18 @@ bool MultiplayerGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent&
 
 	HandleServerInfo(serverInfo, clientHostID);
 
+	if (m_ClientHostID == clientHostID)
+	{
+		SetRenderStagesActive();
+		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
+	}
+
 	return true;
 }
 
-void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave)
+void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, bool forceSave)
 {
 	ServerInfo& currentInfo = m_Servers[serverInfo.EndPoint.GetAddress()];
-
-	if (ServerHostHelper::GetClientHostID() == clientHostID && m_HasHostedServer)
-	{
-		SetRenderStagesActive();
-		ServerHostHelper::SetIsHost(true);
-		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
-	}
 
 	LambdaEngine::String oldName = currentInfo.Name;
 
@@ -159,13 +158,18 @@ void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID
 		SavedServerSystem::SaveServers(m_Servers);
 }
 
+bool MultiplayerGUI::HasHostedServer() const
+{
+	return m_ClientHostID != -1;
+}
+
 bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
 	DWORD length = UNLEN + 1;
 	char name[UNLEN + 1];
 	GetUserNameA(name, &length);
 
-	State* pLobbyState = DBG_NEW LobbyState(name);
+	State* pLobbyState = DBG_NEW LobbyState(name, HasHostedServer());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;
@@ -195,12 +199,11 @@ void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const 
 		ServerInfo& serverInfo = m_Servers[pAddress];
 		serverInfo.EndPoint = endPoint;
 
-		HandleServerInfo(serverInfo, -1, true);
+		HandleServerInfo(serverInfo, true);
 
 		LambdaEngine::GUIApplication::SetView(nullptr);
 
 		SetRenderStagesActive();
-		ServerHostHelper::SetIsHost(false);
 		ClientSystem::GetInstance().Connect(endPoint);
 	}
 	else
@@ -247,12 +250,10 @@ void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const
 	{
 		ErrorPopUp(HOST_ERROR);
 	}
-	else if(!m_HasHostedServer)
+	else if(!HasHostedServer())
 	{
 		//start Server with populated struct
 		NotiPopUP(HOST_NOTIFICATION);
-
-		m_HasHostedServer = true;
 
 #if defined(LAMBDA_CONFIG_DEBUG)
 		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
@@ -302,7 +303,6 @@ bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 
 				SetRenderStagesActive();
 
-				ServerHostHelper::SetIsHost(false);
 				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);;
 			}
 			return false;
@@ -352,17 +352,10 @@ bool MultiplayerGUI::StartUpServer(const std::string& applicationName, const std
 	//additional Info
 	STARTUPINFOA lpStartupInfo;
 	PROCESS_INFORMATION lpProcessInfo;
-	
-	uint32 randAuthenticationID = Random::UInt32(0, UINT32_MAX / 2);
-	uint32 randClientHostID = Random::UInt32(0, UINT32_MAX / 2);
 
-	ServerHostHelper::SetAuthenticationID(randAuthenticationID);
-	ServerHostHelper::SetClientHostID(randClientHostID);
+	m_ClientHostID = Random::Int32();
 
-	std::string authenticationID = std::to_string(randAuthenticationID);
-	std::string clientHostID = std::to_string(randClientHostID);
-
-	std::string finalCLine = applicationName + " " + commandLine + " " + clientHostID + " " + authenticationID;
+	std::string finalCLine = applicationName + " " + commandLine + " " + std::to_string(m_ClientHostID);
 
 	// set the size of the structures
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));

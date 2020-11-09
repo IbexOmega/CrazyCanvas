@@ -14,7 +14,7 @@
 class LobbyState : public LambdaEngine::State
 {
 public:
-	LobbyState(const LambdaEngine::String& name);
+	LobbyState(const LambdaEngine::String& name, bool isHost);
 	~LobbyState();
 
 protected:
@@ -30,6 +30,7 @@ private:
 	bool OnPlayerJoinedEvent(const PlayerJoinedEvent& event);
 	bool OnPlayerLeftEvent(const PlayerLeftEvent& event);
 	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);
+	bool OnPlayerHostUpdatedEvent(const PlayerHostUpdatedEvent& event);
 	bool OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event);
 	bool OnChatEvent(const ChatEvent& event);
 
@@ -37,4 +38,5 @@ private:
 	Noesis::Ptr<LobbyGUI> m_LobbyGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
 	LambdaEngine::String m_Name;
+	bool m_IsHost;
 };

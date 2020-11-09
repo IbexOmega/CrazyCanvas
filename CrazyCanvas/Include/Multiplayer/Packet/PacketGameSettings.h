@@ -7,7 +7,6 @@ struct PacketGameSettings
 {
 	DECL_PACKET(PacketGameSettings);
 
-	int32 AuthenticationID	= -1;
 	uint8 Players			= 8;
 	uint8 MapID				= 0;
 	uint16 MaxTime			= 60 * 5;

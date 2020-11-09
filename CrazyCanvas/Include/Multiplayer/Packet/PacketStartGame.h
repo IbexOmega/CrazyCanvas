@@ -8,6 +8,5 @@
 struct PacketStartGame
 {
 	DECL_PACKET(PacketStartGame);
-	int32 AuthenticationID = -1;
 };
 #pragma pack(pop)

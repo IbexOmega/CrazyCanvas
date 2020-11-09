@@ -19,8 +19,6 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "Multiplayer/ServerHostHelper.h"
-
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
@@ -53,8 +51,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Failed to Register GUI Components");
 	}
 
-	ServerHostHelper::Init();
-
 	if (!LevelManager::Init())
 	{
 		LOG_ERROR("Level Manager Init Failed");
@@ -79,7 +75,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	State* pStartingState = nullptr;
 	String stateStr;
 
-	String AuthenticationIDStr; // Used on server To Identify Host(Client transmits HostID)
 	String clientHostIDStr; // Used on Client To Identify Host(Server transmits HostID)
 
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
@@ -87,8 +82,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	if (stateStr == "server")
 	{
 		flagParser(1, pDefaultIsHostStr) >> clientHostIDStr;
-
-		flagParser(2, pDefaultIsHostStr) >> AuthenticationIDStr;
 	}
 
 	if (stateStr == "crazycanvas")
@@ -110,7 +103,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else if (stateStr == "server")
 	{
 		ServerSystem::Init(pGameName);
-		pStartingState = DBG_NEW ServerState(clientHostIDStr, AuthenticationIDStr);
+		pStartingState = DBG_NEW ServerState(clientHostIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{

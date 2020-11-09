@@ -10,7 +10,6 @@
 
 #include "States/MultiplayerState.h"
 
-#include "Multiplayer/ServerHostHelper.h"
 #include "Multiplayer/ClientHelper.h"
 #include "Multiplayer/Packet/PacketStartGame.h"
 
@@ -32,9 +31,7 @@ LobbyGUI::LobbyGUI()
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 
-	m_GameSettings.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
-
-	SetHostMode(ServerHostHelper::IsHost());
+	SetHostMode(false);
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
 }
@@ -103,6 +100,15 @@ void LobbyGUI::UpdatePlayerPing(const Player& player)
 	if (pingLabel)
 	{
 		pingLabel->SetContent(std::to_string(player.GetPing()).c_str());
+	}
+}
+
+void LobbyGUI::UpdatePlayerHost(const Player& player)
+{
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (&player == pPlayer)
+	{
+		SetHostMode(player.IsHost());
 	}
 }
 
@@ -194,15 +200,15 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 
 void LobbyGUI::OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	if (ServerHostHelper::IsHost())
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+
+	if (pPlayer->IsHost())
 	{
 		PacketStartGame packet;
-		packet.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
 		ClientHelper::Send(packet);
 	}
 	else
 	{
-		const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
 		PlayerManagerClient::SetLocalPlayerReady(!pPlayer->IsReady());
 	}
 }

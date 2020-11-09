@@ -10,8 +10,9 @@
 
 using namespace LambdaEngine;
 
-LobbyState::LobbyState(const LambdaEngine::String& name) :
-	m_Name(name)
+LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
+	m_Name(name),
+	m_IsHost(isHost)
 {
 
 }
@@ -21,6 +22,7 @@ LobbyState::~LobbyState()
 	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
 	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
 	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &LobbyState::OnPlayerStateUpdatedEvent);
+	EventQueue::UnregisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::UnregisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 
@@ -33,6 +35,7 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &LobbyState::OnPlayerJoinedEvent);
 	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &LobbyState::OnPlayerLeftEvent);
 	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &LobbyState::OnPlayerStateUpdatedEvent);
+	EventQueue::RegisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 
@@ -49,7 +52,7 @@ void LobbyState::Init()
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	PlayerManagerClient::RegisterLocalPlayer(m_Name);
+	PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
 }
 
 void LobbyState::Tick(LambdaEngine::Timestamp delta)
@@ -77,6 +80,12 @@ bool LobbyState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 {
 	m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
+	return false;
+}
+
+bool LobbyState::OnPlayerHostUpdatedEvent(const PlayerHostUpdatedEvent& event)
+{
+	m_LobbyGUI->UpdatePlayerHost(*event.pPlayer);
 	return false;
 }
 

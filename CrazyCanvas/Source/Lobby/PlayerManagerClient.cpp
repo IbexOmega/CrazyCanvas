@@ -24,7 +24,7 @@ Player* PlayerManagerClient::GetPlayerLocalNoConst()
 	return GetPlayerNoConst(ClientSystem::GetInstance().GetClient()->GetUID());
 }
 
-void PlayerManagerClient::RegisterLocalPlayer(const String& name)
+void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 {
 	IClient* pClient = ClientSystem::GetInstance().GetClient();
 
@@ -36,7 +36,14 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name)
 	strcpy(packet.Name, name.c_str());
 	packet.UID = pClient->GetUID();
 
-	HandlePlayerJoined(packet.UID, packet);
+	Player* pPlayer = HandlePlayerJoined(packet.UID, packet);
+	pPlayer->m_IsHost = isHost;
+
+	if (isHost)
+	{
+		PlayerHostUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
+	}
 
 	ClientHelper::Send(packet);
 }
