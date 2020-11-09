@@ -667,30 +667,6 @@ bool LevelObjectCreator::CreatePlayer(
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent
-			{
-				.Active = false,
-				.OneTime = true,
-				.Explosive = 1.0f,
-				.ParticleCount = 64,
-				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 15.f,
-				.VelocityRandomness = 0.5f,
-				.Velocity = 10.0,
-				.Acceleration = 0.0,
-				.Gravity = -4.f,
-				.LifeTime = 2.0f,
-				.RadiusRandomness = 0.5f,
-				.BeginRadius = 0.1f,
-				.FrictionFactor = 0.f,
-				.Bounciness = 0.f,
-				.TileIndex = 14,
-				.AnimationCount = 1,
-				.FirstAnimationIndex = 16,
-				.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
-			}
-		);
-
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
 				.MeshGUID = s_WeaponMesh,
@@ -955,6 +931,30 @@ bool LevelObjectCreator::CreateProjectile(
 	if (!MultiplayerUtils::IsServer())
 	{
 		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
+
+		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent
+			{
+				.Active = true,
+				.OneTime = true,
+				.Explosive = 1.0f,
+				.ParticleCount = 64,
+				.EmitterShape = EEmitterShape::CONE,
+				.Angle = 15.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 10.0,
+				.Acceleration = 0.0,
+				.Gravity = -4.f,
+				.LifeTime = 2.0f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.1f,
+				.FrictionFactor = 0.f,
+				.Bounciness = 0.f,
+				.TileIndex = 14,
+				.AnimationCount = 1,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
+			}
+		);
 	}
 
 	LOG_MESSAGE("Projectile Create Position: %s", glm::to_string(desc.FirePosition).c_str());
@@ -964,7 +964,7 @@ bool LevelObjectCreator::CreateProjectile(
 		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) }),
-		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::identity<glm::quat>() }),
+		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(desc.InitalVelocity, g_DefaultUp) }),
 		{
 			{
 				/* Shape Type */		EShapeType::SIMULATION,
