@@ -186,6 +186,8 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 
 void LobbyGUI::SetHostMode(bool isHost)
 {
+	Button* readyButton = FrameworkElement::FindName<Button>("ReadyButton");
+	readyButton->SetContent("Start");
 	m_pSettingsClientStackPanel->SetVisibility(isHost ? Visibility_Hidden : Visibility_Visible);
 	m_pSettingsHostStackPanel->SetVisibility(isHost ? Visibility_Visible : Visibility_Hidden);
 }
