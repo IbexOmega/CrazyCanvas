@@ -200,10 +200,6 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 		
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
-			/*const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
-			const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
-
-			m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);*/
 			m_DeferredDamageTakenHitEvents.EmplaceBack(event);
 		}
 		else
@@ -216,7 +212,6 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 				if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex)
 				{
 					m_DeferredEnemyHitEvents.EmplaceBack(true);
-					//m_HUDGUI->DisplayHitIndicator();
 				}
 			}
 		}
