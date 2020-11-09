@@ -35,14 +35,14 @@ namespace LambdaEngine
 {
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
-	bool									PaintMaskRenderer::s_ShouldReset = false;
 
 	PaintMaskRenderer::PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
 	{
 		m_BackBuffers.Resize(backBufferCount);
 		m_BackBufferCount = backBufferCount;
 
-		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
+		m_VerticesInstanceDescriptorSets.Resize(backBufferCount);
+		m_pDeviceResourcesToDestroy.Resize(backBufferCount);
 
 		m_pGraphicsDevice = pGraphicsDevice;
 	}
@@ -262,24 +262,23 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 
-		m_pDrawArgs = pDrawArgs;
+		m_AliveDescriptorSetList.Clear();
 
+		m_pDrawArgs = pDrawArgs;
+		
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
-			if (m_VerticesInstanceDescriptorSets.IsEmpty())
-				m_VerticesInstanceDescriptorSets.Resize(backBufferCount);
-
-			// Remove all previous descriptor sets for the vertices and instance data.
-			for (TSharedRef<DescriptorSet> descriptorSet : m_VerticesInstanceDescriptorSets[b])
-				m_pDeviceResourcesToDestroy[b].PushBack(std::move(descriptorSet));
 			m_VerticesInstanceDescriptorSets[b].Clear();
 
 			for (uint32 drawArgIndex = 0; drawArgIndex < count; drawArgIndex++)
 			{
 				const DrawArg& drawArg = pDrawArgs[drawArgIndex];
 
-				// Create new descriptor sets for the vertices and instances.
+				// Create new descriptor set if it does not exist
+				DrawArgKey drawArgKey((uint64)drawArg.pVertexBuffer, (uint64)drawArg.pInstanceBuffer, b);
+				auto it = m_VerticesInstanceDescriptorSetMap.find(drawArgKey);
+				if (it == m_VerticesInstanceDescriptorSetMap.end())
 				{
 					TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
 					uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
@@ -288,8 +287,29 @@ namespace LambdaEngine
 					size = drawArg.pInstanceBuffer->GetDesc().SizeInBytes;
 					offset = 0;
 					descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-					m_VerticesInstanceDescriptorSets[b].PushBack(descriptorSet);
+					it = m_VerticesInstanceDescriptorSetMap.insert({ drawArgKey, descriptorSet }).first;
 				}
+				m_AliveDescriptorSetList.PushBack(drawArgKey);
+				m_VerticesInstanceDescriptorSets[b].PushBack(it->second.Get());
+			}
+		}
+
+		// Remove unused descriptor sets
+		{
+			m_DeadDescriptorSetList.Clear();
+			for (auto [key, value] : m_VerticesInstanceDescriptorSetMap)
+			{
+				auto it = std::find(m_AliveDescriptorSetList.begin(), m_AliveDescriptorSetList.end(), key);
+				if (it == m_AliveDescriptorSetList.end())
+				{
+					m_pDeviceResourcesToDestroy[key.BackBufferIndex].PushBack(std::move(value));
+					m_DeadDescriptorSetList.PushBack(key);
+				}
+			}
+			
+			for (auto& key : m_DeadDescriptorSetList)
+			{
+				m_VerticesInstanceDescriptorSetMap.erase(key);
 			}
 		}
 
@@ -341,17 +361,18 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
 
-		// Delete old resources.
+		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
+
+		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
+		{
+			return;
+		}
+
+		// Delete old resources
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
 		{
-			currentFrameDeviceResourcesToDestroy.Clear();
-		}
-
-		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())) && !s_ShouldReset)
-		{
-			return;
+			m_pDeviceResourcesToDestroy.Clear();
 		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
@@ -365,7 +386,6 @@ namespace LambdaEngine
 			bool isServer = false;
 
 			FrameSettings frameSettings = {};
-			frameSettings.ShouldReset = s_ShouldReset;
 
 			// Transfer current collision data
 			if (!collisionArray->IsEmpty())
@@ -377,6 +397,7 @@ namespace LambdaEngine
 				const UnwrapData& data	= collisionArray->GetFront();
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
+				frameSettings.ShouldReset = data.ClearClient;
 
 				uint32 size = 0;
 				// Current limit is 10 draw calls per frame - might change in future if needed
@@ -393,7 +414,7 @@ namespace LambdaEngine
 					}
 					collisionArray->Resize(extraHits);
 
-					LOG_INFO("Extra hits: %d", extraHits);
+					LOG_WARNING("[PaintMaskRenderer] Extra hits: %d", extraHits);
 				}
 				else
 				{
@@ -452,9 +473,7 @@ namespace LambdaEngine
 				scissorRect.Height	= height;
 				pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-				if (isServer && s_ShouldReset)
-					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateBothID));
-				else if (isServer)
+				if (isServer)
 					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateServerID));
 				else
 					pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateClientID));
@@ -548,7 +567,6 @@ namespace LambdaEngine
 			}
 		}
 
-		s_ShouldReset = false;
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
 	}
@@ -566,6 +584,7 @@ namespace LambdaEngine
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
+		data.ClearClient		= false;
 
 		if (remoteMode == ERemoteMode::CLIENT)
 			s_ClientCollisions.PushBack(data);
@@ -575,7 +594,23 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::ResetClient()
 	{
-		s_ShouldReset = true;
+		if (s_ClientCollisions.IsEmpty())
+		{
+			UnwrapData data = {};
+			data.TargetPosition = { };
+			data.TargetDirection = { };
+			data.PaintMode = EPaintMode::NONE;
+			data.RemoteMode = ERemoteMode::UNDEFINED;
+			data.Team = ETeam::NONE;
+			data.ClearClient = true;
+
+			s_ClientCollisions.PushBack(data);
+		}
+		else
+		{
+			UnwrapData& lastData = s_ClientCollisions.GetBack();
+			lastData.ClearClient = true;
+		}
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()

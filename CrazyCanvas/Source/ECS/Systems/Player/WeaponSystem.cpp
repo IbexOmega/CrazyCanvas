@@ -242,7 +242,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		levelHit = true;
 	}
-
+	
 	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
 	{
 		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;
