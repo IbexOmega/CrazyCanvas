@@ -12,6 +12,8 @@
 #include "Multiplayer/Packet/MultiplayerEvents.h"
 #include "Multiplayer/Packet/PacketConfigureServer.h"
 
+#include "EventHandlers/MeshPaintHandler.h"
+
 class Level;
 
 class ServerState :
@@ -39,4 +41,6 @@ public:
 private:
 	std::string m_ServerName;
 	MultiplayerServer m_MultiplayerServer;
+
+	MeshPaintHandler m_MeshPaintHandler;
 };

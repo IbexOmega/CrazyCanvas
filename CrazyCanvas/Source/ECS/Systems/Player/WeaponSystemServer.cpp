@@ -43,24 +43,16 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			{
 				weaponComp.ReloadClock = weaponComp.ReloadTime;
 			}
-			else if (ammoType != EAmmoType::AMMO_TYPE_NONE && !onCooldown)
+			// Accept and send all gunshots
+			else if (ammoType != EAmmoType::AMMO_TYPE_NONE)
 			{
 				auto ammoState = weaponComp.WeaponTypeAmmo.find(ammoType);
 				VALIDATE(ammoState != weaponComp.WeaponTypeAmmo.end())
 
-				// Only send if the weapon has ammo on the server
-				const bool hasAmmo = ammoState->second.first;
-				if (hasAmmo)
-				{
-					// Update position and orientation of weapon component
-					packetsToSend.back().FiredAmmo = ammoType;
+				// Update position and orientation of weapon component
+				packetsToSend.back().FiredAmmo = ammoType;
 
-					// Handle fire
-					weaponComp.CurrentCooldown = 1.0f / weaponComp.FireRate;
-
-					// Create projectile
-					Fire(ammoType, weaponEntity);
-				}
+				Fire(ammoType, weaponEntity);
 			}
 		}
 	}

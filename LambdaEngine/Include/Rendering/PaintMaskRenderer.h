@@ -95,7 +95,6 @@ namespace LambdaEngine
 
 	public:
 		/* Adds a hitpoint to draw out a splash at
-		* Note: Currently only one hitpoint will be handled at each frame
 		*	position - vec3 of the hit point position
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintMode - painting mode to be used for the target
@@ -133,6 +132,7 @@ namespace LambdaEngine
 			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 			ETeam			Team				= ETeam::NONE;
 			uint32			Padding0			= 0;
+			bool			ClearClient			= false;
 		};
 
 		struct FrameSettings
@@ -183,6 +183,5 @@ namespace LambdaEngine
 	private:
 		static TArray<UnwrapData>		s_ServerCollisions;
 		static TArray<UnwrapData>		s_ClientCollisions;
-		static bool						s_ShouldReset;
 	};
 }
