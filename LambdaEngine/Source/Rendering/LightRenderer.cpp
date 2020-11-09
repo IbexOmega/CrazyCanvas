@@ -126,6 +126,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 
 		if (resourceName == SCENE_POINT_SHADOWMAPS)
 		{

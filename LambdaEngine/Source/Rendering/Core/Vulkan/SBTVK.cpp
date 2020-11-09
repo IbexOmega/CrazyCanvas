@@ -160,7 +160,7 @@ namespace LambdaEngine
 		for (VkDeviceSize s = 0; s < m_NumShaderRecords; s++)
 		{
 			VkDeviceSize baseOffset = hitSBTOffset + s * hitSBTStride;
-			VkDeviceSize hitGroupByteOffset = pDesc->HitGroupIndices[s] * shaderGroupHandleSize;
+			VkDeviceSize hitGroupByteOffset = VkDeviceSize(pDesc->HitGroupIndices[s] * shaderGroupHandleSize);
 			pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, hitGroupHandleOffset + hitGroupByteOffset,	m_pSBTBuffer, baseOffset,							shaderGroupHandleSize);
 			pCommandList->CopyBuffer(m_pShaderRecordsBuffer,		s * sizeof(SBTRecord),	m_pSBTBuffer, baseOffset + shaderGroupHandleSize,	sizeof(SBTRecord));
 		}
