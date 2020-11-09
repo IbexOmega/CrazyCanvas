@@ -41,7 +41,8 @@ namespace LambdaEngine
 		m_BackBuffers.Resize(backBufferCount);
 		m_BackBufferCount = backBufferCount;
 
-		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
+		m_VerticesInstanceDescriptorSets.Resize(backBufferCount);
+		m_pDeviceResourcesToDestroy.Resize(backBufferCount);
 
 		m_pGraphicsDevice = pGraphicsDevice;
 	}
@@ -261,24 +262,23 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 
-		m_pDrawArgs = pDrawArgs;
+		m_AliveDescriptorSetList.Clear();
 
+		m_pDrawArgs = pDrawArgs;
+		
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
-			if (m_VerticesInstanceDescriptorSets.IsEmpty())
-				m_VerticesInstanceDescriptorSets.Resize(backBufferCount);
-
-			// Remove all previous descriptor sets for the vertices and instance data.
-			for (TSharedRef<DescriptorSet> descriptorSet : m_VerticesInstanceDescriptorSets[b])
-				m_pDeviceResourcesToDestroy[b].PushBack(std::move(descriptorSet));
 			m_VerticesInstanceDescriptorSets[b].Clear();
 
 			for (uint32 drawArgIndex = 0; drawArgIndex < count; drawArgIndex++)
 			{
 				const DrawArg& drawArg = pDrawArgs[drawArgIndex];
 
-				// Create new descriptor sets for the vertices and instances.
+				// Create new descriptor set if it does not exist
+				DrawArgKey drawArgKey((uint64)drawArg.pVertexBuffer, (uint64)drawArg.pInstanceBuffer, b);
+				auto it = m_VerticesInstanceDescriptorSetMap.find(drawArgKey);
+				if (it == m_VerticesInstanceDescriptorSetMap.end())
 				{
 					TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
 					uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
@@ -287,8 +287,29 @@ namespace LambdaEngine
 					size = drawArg.pInstanceBuffer->GetDesc().SizeInBytes;
 					offset = 0;
 					descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-					m_VerticesInstanceDescriptorSets[b].PushBack(descriptorSet);
+					it = m_VerticesInstanceDescriptorSetMap.insert({ drawArgKey, descriptorSet }).first;
 				}
+				m_AliveDescriptorSetList.PushBack(drawArgKey);
+				m_VerticesInstanceDescriptorSets[b].PushBack(it->second.Get());
+			}
+		}
+
+		// Remove unused descriptor sets
+		{
+			m_DeadDescriptorSetList.Clear();
+			for (auto [key, value] : m_VerticesInstanceDescriptorSetMap)
+			{
+				auto it = std::find(m_AliveDescriptorSetList.begin(), m_AliveDescriptorSetList.end(), key);
+				if (it == m_AliveDescriptorSetList.end())
+				{
+					m_pDeviceResourcesToDestroy[key.BackBufferIndex].PushBack(std::move(value));
+					m_DeadDescriptorSetList.PushBack(key);
+				}
+			}
+			
+			for (auto& key : m_DeadDescriptorSetList)
+			{
+				m_VerticesInstanceDescriptorSetMap.erase(key);
 			}
 		}
 
@@ -335,18 +356,18 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
 
-		// Delete old resources.
-		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
-		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
-		{
-			currentFrameDeviceResourcesToDestroy.Clear();
-		}
-
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
 		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
 		{
 			return;
+		}
+
+		// Delete old resources
+		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
+		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
+		{
+			m_pDeviceResourcesToDestroy.Clear();
 		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
@@ -468,7 +489,7 @@ namespace LambdaEngine
 					pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.Get(), m_PipelineLayout.Get(), 3);
 				}
 
-				pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
+				pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex], m_PipelineLayout.Get(), 2);
 
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &frameSettings, sizeof(FrameSettings), sizeof(uint32));
