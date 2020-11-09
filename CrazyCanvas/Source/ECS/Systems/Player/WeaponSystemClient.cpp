@@ -123,9 +123,6 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			StartReload(weaponComponent, playerActions);
 		}
 
-		// Update reload and cooldown timers
-		UpdateWeapon(weaponComponent, dt);
-
 		// Reload if we are not reloading
 		if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
 		{
@@ -142,6 +139,9 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
 			}
 		}
+
+		// Update reload and cooldown timers
+		UpdateWeapon(weaponComponent, dt);
 	}
 }
 
