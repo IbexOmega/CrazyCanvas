@@ -1,22 +1,21 @@
-#include "Game/State.h"
-
-#include "GUI/HUDGUI.h"
-#include "GUI/Core/GUIApplication.h"
-
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 #include "Audio/AudioAPI.h"
 #include "Engine/EngineConfig.h"
-#include "Multiplayer/ClientHelper.h"
-#include "Multiplayer/Packet/PacketType.h"
 
-#include "NoesisPCH.h"
-
-#include "Application/API/Events/EventQueue.h"
-
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/StateManager.h"
+#include "Game/State.h"
+#include "GUI/HUDGUI.h"
+#include "GUI/Core/GUIApplication.h"
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
-
 #include "Match/Match.h"
+#include "Multiplayer/ClientHelper.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "NoesisPCH.h"
+#include "States/MainMenuState.h"
+
 
 #include <string>
 
@@ -242,7 +241,18 @@ void HUDGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis:
 
 void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
 
+	ClientHelper::Disconnect("Daniel has the biggest penis");
+	SetRenderStagesInactive();
+
+	Noesis::FrameworkElement* pElement = m_ContextStack.top();
+	pElement->SetVisibility(Noesis::Visibility_Hidden);
+	m_ContextStack.pop();
+
+	State* pMainMenuState = DBG_NEW MainMenuState();
+	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void HUDGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -442,6 +452,26 @@ void HUDGUI::SetDefaultKeyBindings()
 			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
 		}
 	}
+}
+
+void HUDGUI::SetRenderStagesInactive()
+{
+	/*
+	* Inactivate all rendering when entering main menu
+	* OBS! At the moment, sleeping doesn't work correctly and needs a fix
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_PARTICLE_RENDER",		true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PARTICLE_COMBINE_PASS",				true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						true);
+	*/
 }
 
 bool HUDGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)

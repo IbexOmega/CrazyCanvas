@@ -84,6 +84,7 @@ private:
 
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
+	void SetRenderStagesInactive();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 

@@ -46,6 +46,8 @@ public:
 	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 private:
+	friend class HUDGUI;
+
 	void SetRenderStagesSleeping();
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
