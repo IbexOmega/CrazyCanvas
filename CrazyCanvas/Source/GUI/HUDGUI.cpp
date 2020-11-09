@@ -225,8 +225,8 @@ void HUDGUI::InitGUI()
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 
-	m_pWaterAmmoRect = FrameworkElement::FindName<Border>("WATER_RECT");
-	m_pPaintAmmoRect = FrameworkElement::FindName<Border>("PAINT_RECT");
+	m_pWaterAmmoRect = FrameworkElement::FindName<Image>("WATER_RECT");
+	m_pPaintAmmoRect = FrameworkElement::FindName<Image>("PAINT_RECT");
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
