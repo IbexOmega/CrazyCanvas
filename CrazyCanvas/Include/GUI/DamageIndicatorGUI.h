@@ -20,7 +20,6 @@ public:
 
 private:
 	Noesis::Storyboard* m_pDamageIndicatorStoryboard = nullptr;
-	Noesis::Image* m_pIndicatorImage = nullptr;
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(DamageIndicatorGUI, Noesis::UserControl, "CrazyCanvas.DamageIndicatorGUI")
 

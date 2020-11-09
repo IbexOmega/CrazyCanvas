@@ -19,7 +19,7 @@
     </UserControl.Resources>
     <Grid x:Name="test">
 
-        <Image x:Name="DamageIndicator" Source="HitIndicator.png" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0>
+        <Image x:Name="DamageIndicator" Source="HitIndicator.png" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0" >
         </Image> 
     </Grid>
 </UserControl>
