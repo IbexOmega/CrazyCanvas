@@ -50,4 +50,5 @@ private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
 	uint8 m_NextTeamIndex = 0;
+	bool m_ShouldBeginMatch = false;
 };

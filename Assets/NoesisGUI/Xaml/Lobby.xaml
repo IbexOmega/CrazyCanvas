@@ -74,6 +74,7 @@
                x:Key="SettingsHostStyle"
                BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="26" />
             <Setter Property="Grid.Column" Value="1" />
             <Setter Property="Height" Value="40" />
             <Setter Property="Margin" Value="0 5 0 5" />
@@ -94,7 +95,7 @@
                x:Key="SettingsNameStyle"
                BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="Foreground" Value="#05DFD7" />
-            <Setter Property="FontSize" Value="40" />
+            <Setter Property="FontSize" Value="26" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Height" Value="50" />
         </Style>
@@ -220,11 +221,6 @@
 
                 <ScrollViewer Grid.ColumnSpan="2" VerticalScrollBarVisibility="Visible" HorizontalContentAlignment="Stretch">
                     <StackPanel x:Name="ChatStackPanel">
-                        <DockPanel>
-                            <Label Content="CHRIAND" Style="{StaticResource ChatNameLabelStyle}"/>
-                            <Label Style="{StaticResource ChatNameSeperatorStyle}"/>
-                            <TextBox Text="ja  fimja fimja fimja" Style="{StaticResource ChatMessageStyle}" />
-                        </DockPanel>
                     </StackPanel>
                 </ScrollViewer>
 

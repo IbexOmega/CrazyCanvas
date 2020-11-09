@@ -41,6 +41,16 @@ LobbyGUI::~LobbyGUI()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
 }
 
+void LobbyGUI::InitGUI()
+{
+	AddSettingComboBox(SETTING_MAP,				"Map",					{ "Daniel's Creation" }, 0);
+	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
+	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
+	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
+	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
+	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
+}
+
 void LobbyGUI::AddPlayer(const Player& player)
 {
 	StackPanel* pnl = player.GetTeam() == 0 ? m_pBlueTeamStackPanel : m_pRedTeamStackPanel;
@@ -160,13 +170,13 @@ void LobbyGUI::AddSettingComboBox(
 	const LambdaEngine::String& settingKey,
 	const LambdaEngine::String& settingText,
 	TArray<LambdaEngine::String> settingValues,
-	const std::string& defaultValue)
+	uint8 defaultIndex)
 {
 	// Add setting text
 	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
 
 	// Add setting client text (default value is set as content)
-	AddLabelWithStyle(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientStyle", defaultValue);
+	AddLabelWithStyle(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientStyle", settingValues[defaultIndex]);
 
 	// Add setting combobox
 	Ptr<ComboBox> settingComboBox = *new ComboBox();
@@ -183,7 +193,7 @@ void LobbyGUI::AddSettingComboBox(
 		settingTextBlock->SetText(setting.c_str());
 		settingComboBox->GetItems()->Add(settingTextBlock);
 	}
-	settingComboBox->SetSelectedIndex(0);
+	settingComboBox->SetSelectedIndex(defaultIndex);
 }
 
 bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -200,16 +210,18 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 
 void LobbyGUI::OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	ToggleButton* button = static_cast<ToggleButton*>(pSender);
 	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
 
 	if (pPlayer->IsHost())
 	{
 		PacketStartGame packet;
 		ClientHelper::Send(packet);
+		LOG_INFO("CLIENT: Game Start");
 	}
 	else
 	{
-		PlayerManagerClient::SetLocalPlayerReady(!pPlayer->IsReady());
+		PlayerManagerClient::SetLocalPlayerReady(button->GetIsChecked().GetValue());
 	}
 }
 

@@ -49,7 +49,6 @@ MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
 	
-	//EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
@@ -67,7 +66,6 @@ bool MatchServer::InitInternal()
 {
 	using namespace LambdaEngine;
 
-	//EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
@@ -79,7 +77,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 
-	if (!m_HasBegun)
+	if (m_ShouldBeginMatch && !m_HasBegun)
 	{
 		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
 
@@ -258,6 +256,7 @@ void MatchServer::MatchStart()
 void MatchServer::MatchBegin()
 {
 	m_HasBegun = true;
+	m_ShouldBeginMatch = false;
 
 	PacketMatchBegin matchBeginPacket;
 	ServerHelper::SendBroadcast(matchBeginPacket);

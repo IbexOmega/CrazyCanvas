@@ -22,6 +22,8 @@ class LobbyGUI : public Noesis::Grid
 public:
 	LobbyGUI();
 	~LobbyGUI();
+	
+	void InitGUI();
 
 	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);
@@ -36,7 +38,7 @@ public:
 		const LambdaEngine::String& settingKey,
 		const LambdaEngine::String& settingText,
 		LambdaEngine::TArray<LambdaEngine::String> settingValues,
-		const std::string& defaultValue = "");
+		uint8 defaultIndex);
 
 	// Noesis events
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -68,4 +70,12 @@ private:
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
 
 	PacketGameSettings m_GameSettings;
+
+private:
+	static constexpr char* SETTING_MAP			= "MAP";
+	static constexpr char* SETTING_MAX_TIME		= "MAX_TIME";
+	static constexpr char* SETTING_FLAGS_TO_WIN = "FLAGS_TO_WIN";
+	static constexpr char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";
+	static constexpr char* SETTING_VISIBILITY	= "VISIBILITY";
+	static constexpr char* SETTING_CHANGE_TEAM	= "CHANGE_TEAM";
 };
