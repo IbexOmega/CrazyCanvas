@@ -100,9 +100,9 @@ namespace LambdaEngine
 
 	struct CopyTextureBufferDesc
 	{
-		uint64 SrcOffset		= 0;
-		uint64 SrcRowPitch		= 0;
-		uint32 SrcHeight		= 0;
+		uint64 BufferOffset		= 0;
+		uint64 BufferRowPitch	= 0;
+		uint32 BufferHeight		= 0;
 		uint32 OffsetX			= 0;
 		uint32 OffsetY			= 0;
 		uint32 OffsetZ			= 0;

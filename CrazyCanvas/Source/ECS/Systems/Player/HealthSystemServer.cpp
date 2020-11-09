@@ -1,6 +1,10 @@
 #include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/Player/Player.h"
+
+#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -37,7 +41,8 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	UNREFERENCED_VARIABLE(deltaTime);
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
+	ComponentArray<HealthComponent>*	pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
+	ComponentArray<MeshPaintComponent>* pMeshPaintComponents	= pECS->GetComponentArray<MeshPaintComponent>();
 	ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 	// More threadsafe
@@ -77,10 +82,19 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		for (ProjectileHitEvent& event : m_EventsToProcess)
 		{
 			// CollisionInfo1 is the entity that got hit
-			Entity entity = event.CollisionInfo1.Entity;
-			EAmmoType ammoType = event.AmmoType;
+			Entity entity		= event.CollisionInfo1.Entity;
+			EAmmoType ammoType	= event.AmmoType;
 
-			LOG_INFO("Retrived ProjectileHitEvent");
+			if (pMeshPaintComponents->HasComponent(entity))
+			{
+				MeshPaintComponent& meshPaintComponent = pMeshPaintComponents->GetData(entity);
+				Buffer* pBuffer = meshPaintComponent.pReadBackBuffer;
+
+				byte* pPaintMask = reinterpret_cast<byte*>(pBuffer->Map());
+				VALIDATE(pPaintMask != nullptr);
+
+				pBuffer->Unmap();
+			}
 
 			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
 			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
@@ -130,6 +144,20 @@ bool HealthSystemServer::InitInternal()
 	{
 		return false;
 	}
+
+	EntitySubscriberRegistration subscription = {};
+	subscription.EntitySubscriptionRegistrations =
+	{
+		{
+			.pSubscriber = &m_MeshPaintEntities,
+			.ComponentAccesses =
+			{
+				{ R, MeshPaintComponent::Type() },
+			}
+		},
+	};
+
+	SubscribeToEntities(subscription);
 
 	// Register eventhandler
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HealthSystemServer::OnProjectileHit);

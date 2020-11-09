@@ -68,13 +68,13 @@ bool HealthSystemClient::InitInternal()
 	// Register system
 	{
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = R;
-		playerGroup.Scale.Permissions = NDA;
-		playerGroup.Rotation.Permissions = NDA;
-		playerGroup.Velocity.Permissions = NDA;
+		playerGroup.Position.Permissions	= R;
+		playerGroup.Scale.Permissions		= NDA;
+		playerGroup.Rotation.Permissions	= NDA;
+		playerGroup.Velocity.Permissions	= NDA;
 
-		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+		EntitySubscriberRegistration subscription = {};
+		subscription.EntitySubscriptionRegistrations =
 		{
 			{
 				.pSubscriber = &m_LocalPlayerEntities,
@@ -86,10 +86,7 @@ bool HealthSystemClient::InitInternal()
 			},
 		};
 
-		// After weaponsystem
-		systemReg.Phase = 2;
-
-		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
+		SubscribeToEntities(subscription);
 	}
 
 	return HealthSystem::InitInternal();

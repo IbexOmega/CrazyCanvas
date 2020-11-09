@@ -297,11 +297,9 @@ namespace LambdaEngine
 		for (uint32 d = 0; d < count; d++)
 		{
 			const DrawArg& drawArg = pDrawArgs[d];
-
 			for (uint32 i = 0; i < drawArg.InstanceCount; i++)
 			{
 				DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
-
 				if (extensionGroup)
 				{
 					// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
@@ -315,9 +313,16 @@ namespace LambdaEngine
 
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
-							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
-							m_RenderTargets.PushBack({ .pTextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
+							DrawArgExtensionData& extension	= extensionGroup->pExtensions[e];
+							TextureView*	pTextureView	= extension.ppMipZeroTextureViews[0];
+							Buffer*			pReadBackBuffer	= extension.ppReadBackBuffers[0];
+							m_RenderTargets.PushBack(
+								{ 
+									.pTextureView		= pTextureView, 
+									.pReadBackbuffer	= pReadBackBuffer,
+									.DrawArgIndex		= d, 
+									.InstanceIndex		= i 
+								});
 						}
 					}
 				}
@@ -344,7 +349,6 @@ namespace LambdaEngine
 		}
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-
 		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())) && !s_ShouldReset)
 		{
 			return;
@@ -407,17 +411,18 @@ namespace LambdaEngine
 			{
 				continue;
 			}
-
+			 
 			for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 			{
 				RenderTarget	renderTargetDesc	= m_RenderTargets[t];
-				uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
-				uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
+				const uint32	drawArgIndex		= renderTargetDesc.DrawArgIndex;
+				const uint32	instanceIndex		= renderTargetDesc.InstanceIndex;
 				const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
 				TextureView*	renderTarget		= renderTargetDesc.pTextureView;
 
-				uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
-				uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
+				const TextureViewDesc& textureViewDesc = renderTarget->GetDesc();
+				uint32 width	= textureViewDesc.pTexture->GetDesc().Width;
+				uint32 height	= textureViewDesc.pTexture->GetDesc().Height;
 
 				BeginRenderPassDesc beginRenderPassDesc = {};
 				beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
@@ -471,17 +476,75 @@ namespace LambdaEngine
 					pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.Get(), m_PipelineLayout.Get(), 3);
 				}
 
-				pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), m_PipelineLayout.Get(), 2);
+				pCommandList->BindDescriptorSetGraphics(
+					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), 
+					m_PipelineLayout.Get(), 2);
 
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &frameSettings, sizeof(FrameSettings), sizeof(uint32));
+				pCommandList->SetConstantRange(
+					m_PipelineLayout.Get(), 
+					FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, 
+					&instanceIndex, 
+					sizeof(uint32), 
+					0);
+				pCommandList->SetConstantRange(
+					m_PipelineLayout.Get(), 
+					FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, 
+					&frameSettings, 
+					sizeof(FrameSettings), 
+					sizeof(uint32));
 
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
 				pCommandList->EndRenderPass();
 
-				if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
-					pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, false);
+				if (textureViewDesc.pTexture->GetDesc().Miplevels > 1)
+				{
+					Texture* pTexture = renderTarget->GetTexture();
+
+					ETextureState afterState =
+						renderTargetDesc.pReadBackbuffer ?
+						ETextureState::TEXTURE_STATE_COPY_SRC :
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+					pCommandList->GenerateMiplevels(
+						pTexture,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+						afterState,
+						false);
+
+					// Copy over to readback
+					if (renderTargetDesc.pReadBackbuffer)
+					{
+						CopyTextureBufferDesc copyDesc;
+						copyDesc.ArrayCount		= 1;
+						copyDesc.ArrayIndex		= 0;
+						copyDesc.Depth			= 1;
+						copyDesc.Height			= 8;
+						copyDesc.Width			= 8;
+						copyDesc.Miplevel		= 3; // Force mip 3 -> 1,2,4,8
+						copyDesc.MiplevelCount	= 1;
+						copyDesc.OffsetX		= 0;
+						copyDesc.OffsetY		= 0;
+						copyDesc.OffsetZ		= 0;
+						copyDesc.BufferHeight	= 0;
+						copyDesc.BufferOffset	= 0;
+						copyDesc.BufferRowPitch	= 0;
+
+						pCommandList->CopyTextureToBuffer(
+							pTexture,
+							renderTargetDesc.pReadBackbuffer,
+							copyDesc);
+
+						pCommandList->TransitionBarrier(
+							pTexture,
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+							ETextureState::TEXTURE_STATE_COPY_SRC,
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+					}
+				}
 			}
 		}
 

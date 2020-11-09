@@ -22,7 +22,7 @@ namespace LambdaEngine
 	class ComponentHandler;
 
 	// A system processes components in the Tick function
-	class LAMBDA_API System : EntitySubscriber, RegularWorker
+	class LAMBDA_API System : public EntitySubscriber, RegularWorker
 	{
 	public:
 		virtual ~System();

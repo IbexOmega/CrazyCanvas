@@ -121,6 +121,7 @@ namespace LambdaEngine
 		struct RenderTarget
 		{
 			TextureView*	pTextureView	= nullptr;
+			Buffer*			pReadBackbuffer = nullptr;
 			uint32			DrawArgIndex	= 0;
 			uint32			InstanceIndex	= 0;
 		};

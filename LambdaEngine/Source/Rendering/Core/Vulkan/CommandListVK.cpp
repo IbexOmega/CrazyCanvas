@@ -386,9 +386,9 @@ namespace LambdaEngine
 		TextureVK*		pVkDst	= reinterpret_cast<TextureVK*>(pDst);
 
 		VkBufferImageCopy copyRegion = {};
-		copyRegion.bufferImageHeight				= desc.SrcHeight;
-		copyRegion.bufferOffset						= desc.SrcOffset;
-		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
+		copyRegion.bufferImageHeight				= desc.BufferHeight;
+		copyRegion.bufferOffset						= desc.BufferOffset;
+		copyRegion.bufferRowLength					= uint32(desc.BufferRowPitch);
 		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;
@@ -415,9 +415,9 @@ namespace LambdaEngine
 		const TextureVK*	pVkSrc = reinterpret_cast<const TextureVK*>(pSrc);
 
 		VkBufferImageCopy copyRegion = {};
-		copyRegion.bufferImageHeight				= desc.SrcHeight;
-		copyRegion.bufferOffset						= desc.SrcOffset;
-		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
+		copyRegion.bufferImageHeight				= desc.BufferHeight;
+		copyRegion.bufferOffset						= desc.BufferOffset;
+		copyRegion.bufferRowLength					= uint32(desc.BufferRowPitch);
 		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;

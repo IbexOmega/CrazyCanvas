@@ -657,6 +657,16 @@ bool LevelObjectCreator::CreatePlayer(
 	ChildComponent childComp;
 	childComp.AddChild(weaponEntity, "weapon");
 
+	pECS->AddComponent<MeshComponent>(playerEntity,
+		MeshComponent
+		{
+			.MeshGUID		= s_PlayerMeshGUID,
+			.MaterialGUID	= TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
+		});
+
+	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
+
+	// Server/Client 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
@@ -687,7 +697,6 @@ bool LevelObjectCreator::CreatePlayer(
 
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
-
 
 		AnimationComponent animationComponent = {};
 		animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
@@ -823,14 +832,6 @@ bool LevelObjectCreator::CreatePlayer(
 		pAnimationGraph->TransitionToState("Idle");
 
 		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
-		pECS->AddComponent<MeshComponent>(playerEntity, 
-			MeshComponent
-			{
-				.MeshGUID		= s_PlayerMeshGUID, 
-				.MaterialGUID	= TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
-			});
-
-		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
 
 		if (!pPlayerDesc->IsLocal)
 		{
