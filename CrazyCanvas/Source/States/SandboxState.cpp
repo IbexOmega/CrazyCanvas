@@ -114,7 +114,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[5]
+			.LevelHash = levelHashes[0]
 		};
 
 		Match::CreateMatch(&matchDescription);
