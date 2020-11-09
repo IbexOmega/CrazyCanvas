@@ -8,7 +8,6 @@ EnemyHitIndicatorGUI::EnemyHitIndicatorGUI()
 	Noesis::GUI::LoadComponent(this, "EnemyHitIndicatorGUI.xaml");
 
 	m_pEnemyHitIndicatorStoryboard = FindResource<Noesis::Storyboard>("EnemyHitIndicatorStoryboard");
-	m_pIndicatorImage = FindName<Noesis::Image>("HitIndicator");
 }
 
 EnemyHitIndicatorGUI::~EnemyHitIndicatorGUI()
