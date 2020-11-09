@@ -59,9 +59,6 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			StartReload(weaponComponent, playerActions);
 		}
 
-		// Update reload and cooldown timers
-		UpdateWeapon(weaponComponent, dt);
-
 		// Reload if we are not reloading
 		if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
 		{
@@ -78,6 +75,9 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
 			}
 		}
+
+		// Update reload and cooldown timers
+		UpdateWeapon(weaponComponent, dt);
 	}
 }
 
@@ -223,13 +223,9 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	const bool didFire = WeaponSystem::TryFire(ammoType, weaponEntity);
 	if (!didFire)
 	{
-		const WeaponComponent&		weaponComponent		= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
-		const PositionComponent&	positionComponent	= pECS->GetConstComponent<PositionComponent>(weaponEntity);
-		const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
-
 		// Play out of ammo
-		ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_OutOfAmmoGUID);
-		m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 1.0f, 1.0f);
+		ISoundEffect2D* m_pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
+		m_pSound->PlayOnce(1.0f, 1.0f);
 	}
 	else
 	{
