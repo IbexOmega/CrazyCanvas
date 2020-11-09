@@ -30,6 +30,7 @@ public:
 	inline static uint16 MATCH_BEGIN				= 0;
 	inline static uint16 GAME_OVER					= 0;
 	inline static uint16 CONFIGURE_SERVER			= 0;
+	inline static uint16 PROJECTILE_HIT				= 0;
 
 public:
 	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);

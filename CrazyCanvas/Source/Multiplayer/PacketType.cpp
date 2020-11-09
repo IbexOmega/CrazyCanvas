@@ -12,6 +12,7 @@
 #include "Multiplayer/Packet/PacketWeaponFired.h"
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 #include "Multiplayer/Packet/PacketFlagEdited.h"
+#include "Multiplayer/Packet/PacketProjectileHit.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -30,6 +31,7 @@ void PacketType::Init()
 	MATCH_BEGIN				= RegisterPacketType<PacketMatchBegin>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
 	CONFIGURE_SERVER		= RegisterPacketType<PacketConfigureServer>();
+	PROJECTILE_HIT			= RegisterPacketType<PacketProjectileHit>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()
