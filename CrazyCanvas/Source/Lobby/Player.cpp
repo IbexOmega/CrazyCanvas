@@ -5,6 +5,7 @@ using namespace LambdaEngine;
 Player::Player() : 
     m_Name(),
     m_Entity(UINT32_MAX),
+    m_IsHost(false),
     m_Ping(),
     m_State(PLAYER_STATE_LOBBY),
     m_Team(0),
