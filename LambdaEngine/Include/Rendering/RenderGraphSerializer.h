@@ -34,7 +34,11 @@ namespace LambdaEngine
 			int32& nextAttributeID,
 			int32& nextLinkID);
 
-		static bool LoadAndParse(RenderGraphStructureDesc* pRenderGraphStructureDesc, const String& renderGraphFileName, bool imGuiEnabled);
+		static bool LoadAndParse(
+			RenderGraphStructureDesc* pRenderGraphStructureDesc,
+			const String& renderGraphFileName,
+			bool imGuiEnabled,
+			bool lineRendererEnabled);
 
 	private:
 		static bool FixLinkForPreviouslyLoadedResourceState(

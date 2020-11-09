@@ -95,7 +95,6 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
-	WeaponSystem::Init();
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
