@@ -8,27 +8,13 @@
 #include "NsGui/StackPanel.h"
 #include "NsGui/Panel.h"
 #include "NsGui/TextBox.h"
+#include "NsGui/Selector.h"
 
 // TEMP - REMOVE IF IT IS PULL REQUEST
 #include "Application/API/Events/EventQueue.h"
 
-/*
-* TODO:
-*	- Different GUI when host
-*	- Enable updating of game settings
-*	- Change playerName to Player struct, and change all names of componenets to unique player ID
-*/
-
 class LobbyGUI : public Noesis::Grid
 {
-public:
-	struct LobbySettings
-	{
-		LambdaEngine::String MapName	= "";
-		float32 MaxTime					= 0.0f;
-		uint32 MaxPlayers				= 0;
-	};
-
 public:
 	LobbyGUI();
 	~LobbyGUI();
@@ -41,15 +27,22 @@ public:
 	void UpdatePlayerReady(const LambdaEngine::String& playerName, bool ready);
 	void UpdatePlayerPing(const LambdaEngine::String& playerName, uint32 ping);
 	void WriteChatMessage(const LambdaEngine::String& playerName, const LambdaEngine::String& chatMessage);
-	void UpdateLobbySettings(LobbySettings newLobbySettings);
 	void SetLocalPlayerName(const LambdaEngine::String& playerName);
+	void SetHostMode(bool isHost);
+	void UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value);
+
+	void AddSettingComboBox(
+		const LambdaEngine::String& settingKey,
+		const LambdaEngine::String& settingText,
+		LambdaEngine::TArray<LambdaEngine::String> settingValues,
+		const std::string& defaultValue = "");
 
 	// Noesis events
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
-
 	void OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 
 private:
 	// Helpers
@@ -60,10 +53,14 @@ private:
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
 
-	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
-	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
-	Noesis::StackPanel* m_pChatPanel			= nullptr;
-	Noesis::TextBox*	m_pChatInputTextBox		= nullptr;
+	Noesis::StackPanel* m_pBlueTeamStackPanel		= nullptr;
+	Noesis::StackPanel* m_pRedTeamStackPanel		= nullptr;
+	Noesis::StackPanel* m_pChatPanel				= nullptr;
+	Noesis::StackPanel* m_pSettingsNamesStackPanel	= nullptr;
+	Noesis::StackPanel* m_pSettingsHostStackPanel	= nullptr;
+	Noesis::StackPanel* m_pSettingsClientStackPanel	= nullptr;
+	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
 
 	LambdaEngine::String m_LocalPlayerName		= "";
+	bool m_IsHost								= false;
 };

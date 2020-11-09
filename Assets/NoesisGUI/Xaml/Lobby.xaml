@@ -33,9 +33,9 @@
             <Setter Property="Source" Value="checkmark.png" />
             <Setter Property="Grid.Column" Value="0" />
             <Setter Property="Margin" Value="10" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="VerticalAlignment" Value="Stretch" />
-            <Setter Property="Stretch" Value="UniformToFill" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Stretch" Value="Uniform" />
         </Style>
 
         <Style TargetType="Label"
@@ -69,6 +69,35 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="5 5 0 5" />
         </Style>
+
+        <Style TargetType="ComboBox"
+               x:Key="SettingsHostStyle"
+               BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Grid.Column" Value="1" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="0 5 0 5" />
+            <Setter Property="IsEditable" Value="True" />
+            <Setter Property="IsReadOnly" Value="True" />
+        </Style>
+
+        <Style TargetType="Label"
+               x:Key="SettingsClientStyle"
+               BasedOn="{StaticResource {x:Type Label}}">
+            <Setter Property="FontSize" Value="32" />
+            <Setter Property="Grid.Column" Value="1" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+
+        <Style TargetType="Label"
+               x:Key="SettingsNameStyle"
+               BasedOn="{StaticResource {x:Type Label}}">
+            <Setter Property="Foreground" Value="#05DFD7" />
+            <Setter Property="FontSize" Value="40" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Height" Value="50" />
+        </Style>
     </Grid.Resources>
 
     <Grid.RowDefinitions>
@@ -92,17 +121,30 @@
             </Grid.RowDefinitions>
             
             <Label Grid.Row="0" Content="Lobby Settings" FontSize="64" Foreground="White" />
-            <StackPanel x:Name="SettingsStackPanel" Grid.Row="1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
+                <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
 
-                    <Label Content="Map" Grid.Column="0" Foreground="#05DFD7" FontSize="32" HorizontalAlignment="Left" />
-                    <Label Content="Daniel's Creation" Grid.Column="1" Foreground="White" FontSize="32" HorizontalAlignment="Right" />
-                </Grid>
-            </StackPanel>
+                <!--Names-->
+                <StackPanel x:Name="SettingsNamesStackPanel" Grid.Row="1">
+                    <!--<Label Content="Map" Style="{StaticResource SettingsNameStyle}"/>-->
+                </StackPanel>
+
+                <!--Changable settings-->
+                <!--Client settings (read-only)-->
+                <StackPanel x:Name="SettingsClientStackPanel" Grid.Column="1" Visibility="Hidden">
+                    <!--<Label Content="Daniel's Creation" Style="{StaticResource SettingsClientStyle}" />-->
+                </StackPanel>
+
+                <!--Host settings (read and write)-->
+                <StackPanel x:Name="SettingsHostStackPanel" Grid.Column="1" Visibility="Visible">
+                    <!--<ComboBox Style="{StaticResource SettingsHostStyle}">
+                        <TextBlock Text="Test Map" />
+                    </ComboBox>-->
+                </StackPanel>
+            </Grid>
         </Grid>
 
         <Grid Grid.Column="1" Margin=" 50 0 0 0">
@@ -201,7 +243,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Button x:Name="LeaveLobbyButton" Click="OnButtonLeaveClick" Grid.Column="0" Content="Leave" FontSize="60" Background="#E52C2C" Foreground="White" Margin="30"/>
-                <Button x:Name="ReadyButton" Click="OnButtonReadyClick" Grid.Column="1" Content="Ready" FontSize="60" Background="#4CE244" Foreground="White" Margin="30"/>
+                <ToggleButton x:Name="ReadyButton" Click="OnButtonReadyClick" Grid.Column="1" Content="Ready" FontSize="60" Background="#4CE244" Foreground="White" Margin="30"/>
             </Grid>
 
         </Grid>
