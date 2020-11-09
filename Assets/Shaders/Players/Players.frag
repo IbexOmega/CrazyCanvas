@@ -4,8 +4,7 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
-#include "../Defines.glsl"
-#include "../Helpers.glsl"
+#include "../MeshPaintHelper.glsl" // Has two layouts: b_PaintMaskColor, u_PaintMaskTextures
 
 layout(location = 0) in flat uint	in_MaterialSlot;
 layout(location = 1) in vec3		in_WorldPosition;
@@ -29,7 +28,6 @@ layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 	SPerFrameBuffer val; 
 } u_PerFrameBuffer;
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }	b_MaterialParameters;
-layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors			{ vec4 val[]; }					b_PaintMaskColor;
 layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
 	SLightsBuffer val; 
@@ -39,12 +37,9 @@ layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAORoughMetalValid;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferDepthStencil;
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_DirLShadowMap;
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube u_PointLShadowMap[];
-
-layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferDepthStencil;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_DirLShadowMap;
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform samplerCube u_PointLShadowMap[];
 
 layout(location = 0) out vec4 out_Color;
 
@@ -65,6 +60,8 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
+	shadingNormal = mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
@@ -81,11 +78,9 @@ void main()
 	if (clientPainting > 0)
 		team = clientTeam;
 
-	// TODO: Change this to a buffer input which we can index the team color to
-	vec3 teamColor = b_PaintMaskColor.val[team].rgb;
-
+	// Darken back faces like inside of painted legs
 	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));
-	teamColor = mix(teamColor, teamColor*0.8, backSide);
+	paintDescription.Albedo = mix(paintDescription.Albedo, paintDescription.Albedo*0.8, backSide);
 
 	// Only render team members and paint on enemy players
 	uint enemy = p_TeamIndex.Index;
@@ -93,127 +88,109 @@ void main()
 	if(enemy != 0 && !isPainted)
 		discard;
 
-	// PBR shading
+	// Get player albedo
+	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+
+	// Apply paint
+	storedAlbedo = mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
+
+	// PBR
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SLightsBuffer lightBuffer		= b_LightsBuffer.val;
 
-	vec3 albedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 
-	albedo = mix(albedo, teamColor, shouldPaint);
-
-	float alpha = isPainted ? 1.0f : 0.6f;
-	vec3 colorHDR;
-	//1
-	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
-	{
-		//Reinhard Tone-Mapping
-		vec3 colorLDR = albedo / (albedo + vec3(1.0f));
-
-		//Gamma Correction
-		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-		out_Color = vec4(finalColor, alpha);
-
-		return;
-	}
-	else 
-	{
-		float ao		= aoRoughMetalValid.r;
-		float roughness	= max(0.05f, aoRoughMetalValid.g);
-		float metallic	= aoRoughMetalValid.b;
-		float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
-
-		SPositions positions    = CalculatePositionsFromDepth(in_TexCoord, depth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
-		vec3 N 					= sampledNormal;
-		vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - positions.WorldPos;
-		float viewDistance		= length(viewVector);
-		vec3 V 					= in_ViewDirection;
-
-		vec3 Lo = vec3(0.0f);
-		vec3 F0 = vec3(0.04f);
-		
-		F0 = mix(F0, albedo, metallic);
-		// Directional Light
-		{
-			vec3 L = normalize(lightBuffer.DirL_Direction);
-			vec3 H = normalize(V + L);
-
-			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0);
-			float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
-			vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
-
-			float NDF   = Distribution(N, H, roughness);
-			float G     = Geometry(N, V, L, roughness);
-			vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
-
-			vec3 nominator      = NDF * G * F;
-			float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
-			vec3 specular       = nominator / max(denominator, 0.001f);
-
-			vec3 kS = F;
-			vec3 kD = vec3(1.0f) - kS;
-
-			kD *= 1.0 - metallic;
-
-			float NdotL = max(dot(N, L), 0.0f);
-
-			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
-		}
-
-		//Point Light Loop
-		if (isPainted) {
-			for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
-			{
-				SPointLight light = b_LightsBuffer.pointLights[i];
-
-				vec3 L = (light.Position - positions.WorldPos);
-				float distance = length(L);
-				L = normalize(L);
-				vec3 H = normalize(V + L);
-				
-				float inShadow 			= PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
-				float attenuation   	= 1.0f / (distance * distance);
-				vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
-				vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
-			
-				float NDF   = Distribution(N, H, roughness);
-				float G     = Geometry(N, V, L, roughness);
-				vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
-
-				vec3 nominator      = NDF * G * F;
-				float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
-				vec3 specular       = nominator / max(denominator, 0.001f);
-
-				vec3 kS = F;
-				vec3 kD = vec3(1.0f) - kS;
-
-				kD *= 1.0 - metallic;
-
-				float NdotL = max(dot(N, L), 0.0f);
-
-				Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
-			}
-		}
-
-		
-		vec3 ambient    = 0.03f * albedo * ao;
-		colorHDR      	= ambient + Lo;
-	}
-
+	vec3 storedMaterial	= vec3(
+								materialParameters.AO * sampledCombinedMaterial.b, 
+								mix(materialParameters.Roughness * sampledCombinedMaterial.r, paintDescription.Roughness, paintDescription.Interpolation), 
+								materialParameters.Metallic * sampledCombinedMaterial.g);
+	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
-	// float luminance = CalculateLuminance(colorHDR);
-	// float alpha = isPainted ? 1.0f : 0.6f;
-	// //Reinhard Tone-Mapping
-	// vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+	float ao		= aoRoughMetalValid.r;
+	float roughness	= 1.0f-aoRoughMetalValid.g; // TODO fix need to invert
+	float metallic	= aoRoughMetalValid.b;
+	float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
 
-	// //Gamma Correction
-	// vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+	vec3 N 					= shadingNormal;
+	vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - in_WorldPosition;
+	float viewDistance		= length(viewVector);
+	vec3 V 					= normalize(viewVector);
 
-	// out_Color = vec4(finalColor, 1.0f);
+	vec3 Lo = vec3(0.0f);
+	vec3 F0 = vec3(0.06f);
 
-	// 5
-	out_Color = vec4(colorHDR, alpha);
-	// out_Color = vec4(colorHDR, alpha);
+	F0 = mix(F0, storedAlbedo, metallic);
+
+	// Directional Light
+	{
+		vec3 L = normalize(lightBuffer.DirL_Direction);
+		vec3 H = normalize(V + L);
+
+		vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(in_WorldPosition, 1.0);
+		float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
+		vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
+		vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
+
+		float NDF   = Distribution(N, H, roughness);
+		float G     = Geometry(N, V, L, roughness);
+		vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
+
+		vec3 nominator      = NDF * G * F;
+		float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
+		vec3 specular       = nominator / max(denominator, 0.001f);
+
+		vec3 kS = F;
+		vec3 kD = vec3(1.0f) - kS;
+
+		kD *= 1.0 - metallic;
+
+		float NdotL = max(dot(N, L), 0.05f);
+
+		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
+	}
+
+	//Point Light Loop
+	for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
+	{
+		SPointLight light = b_LightsBuffer.pointLights[i];
+
+		vec3 L = (light.Position - in_WorldPosition);
+		float distance = length(L);
+		L = normalize(L);
+		vec3 H = normalize(V + L);
+		
+		float inShadow 			= PointShadowDepthTest(in_WorldPosition, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
+		float attenuation   	= 1.0f / (distance * distance);
+		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
+		vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
+	
+		float NDF   = Distribution(N, H, roughness);
+		float G     = Geometry(N, V, L, roughness);
+		vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
+
+		vec3 nominator      = NDF * G * F;
+		float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
+		vec3 specular       = nominator / max(denominator, 0.001f);
+
+		vec3 kS = F;
+		vec3 kD = vec3(1.0f) - kS;
+
+		kD *= 1.0 - metallic;
+
+		float NdotL = max(dot(N, L), 0.0f);
+
+		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
+	}
+
+	vec3 colorHDR = 0.03f * ao * storedAlbedo + Lo;
+
+	// Reinhard Tone-Mapping
+	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+
+	// Gamma Correction
+	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+	// Transparent team players
+	float alpha = isPainted ? 1.0f : 0.55f;
+	
+	out_Color = vec4(finalColor, alpha);
 }
