@@ -18,6 +18,7 @@
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
+#include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
@@ -225,6 +226,10 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	Entity entity = pECS->CreateEntity();
 	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
 	pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
+				.HitMask = 0xFF
+		});
+
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
@@ -317,6 +322,10 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
+
+		pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
@@ -540,6 +549,10 @@ bool LevelObjectCreator::CreateFlag(
 		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
 		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
 
+		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
+
 		//Only the server checks collision with the flag
 		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		const DynamicCollisionCreateInfo collisionCreateInfo =
@@ -671,6 +684,10 @@ bool LevelObjectCreator::CreatePlayer(
 			{
 				.MeshGUID = s_WeaponMesh,
 				.MaterialGUID = s_WeaponMaterial,
+			});
+
+		pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
+				.HitMask = 0xFF
 			});
 
 		pECS->AddComponent<AnimationAttachedComponent>(weaponEntity, AnimationAttachedComponent
@@ -820,6 +837,9 @@ bool LevelObjectCreator::CreatePlayer(
 		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = s_PlayerMeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
+		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 
 		if (!pPlayerDesc->IsLocal)
 		{
@@ -931,6 +951,9 @@ bool LevelObjectCreator::CreateProjectile(
 	if (!MultiplayerUtils::IsServer())
 	{
 		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
+		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 
 		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent
 			{

@@ -27,6 +27,7 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
 #include "Rendering/ParticleRenderer.h"
@@ -787,8 +788,6 @@ namespace LambdaEngine
 		const RotationComponent& rotationComp	= pECSCore->GetConstComponent<RotationComponent>(entity);
 		const ScaleComponent& scaleComp			= pECSCore->GetConstComponent<ScaleComponent>(entity);
 
-		LOG_WARNING("Render Position %s", glm::to_string(positionComp.Position).c_str());
-
 		return CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
 	}
 
@@ -1308,10 +1307,12 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			RayTracedComponent rayTracedComponent = {};
+			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
+
 			uint32 customIndex =
 				((materialIndex & 0xFF) << 8) |
 				(hasPaintMask ? (std::max(0u, m_PaintMaskTextures.GetSize() - 1)) & 0xFF : 0);
-			uint8 hitMask = 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
 			ASInstanceDesc asInstanceDesc =
@@ -1319,7 +1320,7 @@ namespace LambdaEngine
 				.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
 				.Transform		= transform,
 				.CustomIndex	= customIndex,
-				.HitMask		= hitMask,
+				.HitMask		= rayTracedComponent.HitMask,
 				.Flags			= asFlags
 			};
 
