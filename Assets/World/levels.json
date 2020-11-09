@@ -52,12 +52,24 @@
                 }
             ]
         },
-        
         {
             "name": "Test Directional Light",
             "modules": [
                 {
                     "filename": "directional_light_debug.glb",
+                    "translation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Empty plane",
+            "modules": [
+                {
+                    "filename": "empty_plane.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,

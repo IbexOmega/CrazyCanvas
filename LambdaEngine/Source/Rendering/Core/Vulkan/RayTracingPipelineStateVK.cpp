@@ -37,7 +37,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (pDesc->ClosestHitShaders.IsEmpty())
+		if (pDesc->HitGroupShaders.IsEmpty())
 		{
 			LOG_ERROR("[RayTracingPipelineStateVK]: ClosestHitShaderCount cannot be zero!");
 			return false;
@@ -70,21 +70,39 @@ namespace LambdaEngine
 		}
 
 		// Closest-Hit Shaders
-		for (const ShaderModuleDesc& closetHitShader : pDesc->ClosestHitShaders)
+		for (const HitGroupShaderModuleDescs& HitGroupShaders : pDesc->HitGroupShaders)
 		{
-			CreateShaderStageInfo(&closetHitShader, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
-
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 			shaderGroupCreateInfo.type					= VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
 			shaderGroupCreateInfo.generalShader			= VK_SHADER_UNUSED_NV;
-			shaderGroupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_NV;
-			shaderGroupCreateInfo.anyHitShader			= VK_SHADER_UNUSED_NV;
-			shaderGroupCreateInfo.closestHitShader		= static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
-			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 
-			m_HitShaderCount = pDesc->ClosestHitShaders.GetSize();
+			CreateShaderStageInfo(&HitGroupShaders.ClosestHitShaders, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+			shaderGroupCreateInfo.closestHitShader		= static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
+
+			if (HitGroupShaders.AnyHitShaders.pShader != nullptr)
+			{
+				CreateShaderStageInfo(&HitGroupShaders.AnyHitShaders, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+				shaderGroupCreateInfo.anyHitShader	= static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
+			}
+			else
+			{
+				shaderGroupCreateInfo.anyHitShader	= VK_SHADER_UNUSED_NV;
+			}
+
+			if (HitGroupShaders.IntersectionShaders.pShader != nullptr)
+			{
+				CreateShaderStageInfo(&HitGroupShaders.IntersectionShaders, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
+				shaderGroupCreateInfo.intersectionShader = static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
+			}
+			else
+			{
+				shaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_NV;
+			}
+	
+			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 		}
+		m_HitShaderCount = pDesc->HitGroupShaders.GetSize();
 
 		// Miss Shaders
 		for (const ShaderModuleDesc& missShader : pDesc->MissShaders)

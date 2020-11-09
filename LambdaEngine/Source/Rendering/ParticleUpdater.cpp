@@ -414,7 +414,7 @@ namespace LambdaEngine
 
 			m_UpdatePipeline.UpdateDescriptorSet("Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
-		else if (resourceName == AS_INSTANCES_BUFFER)
+		else if (resourceName == AS_INSTANCE_INDICES_BUFFER)
 		{
 			constexpr uint32 setIndex = 0U;
 			constexpr uint32 setBinding = 6U;
@@ -427,9 +427,9 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorCount = count;
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCES_BUFFER Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCE_INDICES_BUFFER Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
-		else if (resourceName == AS_INSTANCE_INDICES_BUFFER)
+		else if (resourceName == AS_INSTANCES_BUFFER)
 		{
 			constexpr uint32 setIndex = 0U;
 			constexpr uint32 setBinding = 7U;
@@ -442,7 +442,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorCount = count;
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCE_INDICES_BUFFER Descriptor Set 0 Binding 7", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCES_BUFFER Descriptor Set 0 Binding 7", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 	}
 

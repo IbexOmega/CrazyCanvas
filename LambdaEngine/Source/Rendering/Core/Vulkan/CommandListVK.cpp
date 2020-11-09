@@ -228,7 +228,7 @@ namespace LambdaEngine
 
 		VkAccelerationStructureGeometryKHR geometryData = {};
 		geometryData.sType									= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.flags									= VK_GEOMETRY_OPAQUE_BIT_KHR;
+		geometryData.flags									= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
 		geometryData.geometryType							= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 		geometryData.geometry.instances.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 		geometryData.geometry.instances.arrayOfPointers		= VK_FALSE;
@@ -296,7 +296,7 @@ namespace LambdaEngine
 
 		VkAccelerationStructureGeometryKHR geometryData = {};
 		geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		geometryData.flags											= VK_GEOMETRY_OPAQUE_BIT_KHR; // TODO: Cant be opaque if we want to utilize any-hit shaders
+		geometryData.flags											= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR; //VK_GEOMETRY_OPAQUE_BIT_KHR
 		geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 		geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 		geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;

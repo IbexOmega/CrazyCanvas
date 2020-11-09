@@ -46,7 +46,7 @@ namespace LambdaEngine
 		m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		m_pTransformBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_pEmitterIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		m_pParticleIndexDataBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		m_pParticleBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 
 		m_DirtyEmitterBuffer = true;
@@ -94,7 +94,7 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppParticleStagingBuffer[b]);
 			SAFERELEASE(m_ppIndexStagingBuffer[b]);
 			SAFERELEASE(m_ppEmitterStagingBuffer[b]);
-			SAFERELEASE(m_ppEmitterIndexStagingBuffer[b]);
+			SAFERELEASE(m_ppParticleIndexDataStagingBuffer[b]);
 			SAFERELEASE(m_ppAliveStagingBuffer[b]);
 			SAFERELEASE(m_ppTransformStagingBuffer[b]);
 			SAFERELEASE(m_ppIndirectStagingBuffer[b]);
@@ -106,7 +106,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pParticleBuffer);
 		SAFERELEASE(m_pEmitterBuffer);
-		SAFERELEASE(m_pEmitterIndexBuffer);
+		SAFERELEASE(m_pParticleIndexDataBuffer);
 		SAFERELEASE(m_pAliveBuffer);
 		SAFERELEASE(m_pTransformBuffer);
 		SAFERELEASE(m_pAtlasDataBuffer);
@@ -368,7 +368,7 @@ namespace LambdaEngine
 				.BlasIndex = m_BLASIndex,
 				.Transform = particle.Transform,
 				.HitMask = 0xFF,
-				.Flags = RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
+				.Flags = RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
 			};
 			ASInstanceDescs.PushBack(instanceDesc);
 
@@ -448,7 +448,7 @@ namespace LambdaEngine
 				.BlasIndex = m_BLASIndex,
 				.Transform = particle.Transform,
 				.HitMask = 0xFF,
-				.Flags = RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
+				.Flags = RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
 			};
 			ASInstanceDescs.PushBack(instanceDesc);
 
@@ -922,8 +922,8 @@ namespace LambdaEngine
 					elementCounts.GetData(),
 					dirtyChunks,
 					sizeof(SParticleIndexData),
-					m_ppEmitterIndexStagingBuffer,
-					&m_pEmitterIndexBuffer,
+					m_ppParticleIndexDataStagingBuffer,
+					&m_pParticleIndexDataBuffer,
 					FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
 					"Emitter indices");
 			}
@@ -1056,7 +1056,7 @@ namespace LambdaEngine
 		{
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName = SCENE_EMITTER_INDEX_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pEmitterIndexBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pParticleIndexDataBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
 		}

@@ -2752,14 +2752,18 @@ namespace LambdaEngine
 						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
 					}
 
-					pipelineDesc.ClosestHitShaders.Resize(pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount);
-					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
+					pipelineDesc.HitGroupShaders.Resize(pRenderStageDesc->RayTracing.Shaders.HitGroupShaderCount);
+					for (uint32 h = 0; h < pRenderStageDesc->RayTracing.Shaders.HitGroupShaderCount; h++)
 					{
-						pipelineDesc.ClosestHitShaders[ch].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.HitGroupShaders[h].ClosestHitShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].ClosestHitShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].ClosestHitShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.HitGroupShaders[h].AnyHitShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].AnyHitShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].AnyHitShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.HitGroupShaders[h].IntersectionShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].IntersectionShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].IntersectionShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER, EShaderLang::SHADER_LANG_GLSL );
 
 						if (pShaderConstants != nullptr)
 						{
-							pipelineDesc.ClosestHitShaders[ch].ShaderConstants = pShaderConstants->RayTracing.ClosestHitConstants[ch];
+							pipelineDesc.HitGroupShaders[h].ClosestHitShader.ShaderConstants = pShaderConstants->RayTracing.HitGroupConstants[h].ClosestHitConstants;
+							pipelineDesc.HitGroupShaders[h].AnyHitShader.ShaderConstants = pShaderConstants->RayTracing.HitGroupConstants[h].AnyHitConstants;
+							pipelineDesc.HitGroupShaders[h].IntersectionShader.ShaderConstants = pShaderConstants->RayTracing.HitGroupConstants[h].IntersectionConstants;
 						}
 					}
 

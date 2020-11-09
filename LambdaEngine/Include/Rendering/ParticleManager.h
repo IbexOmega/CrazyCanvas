@@ -197,8 +197,8 @@ namespace LambdaEngine
 		Buffer*								m_ppEmitterStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pEmitterBuffer = nullptr;
 
-		Buffer*								m_ppEmitterIndexStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
-		Buffer*								m_pEmitterIndexBuffer = nullptr;
+		Buffer*								m_ppParticleIndexDataStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
+		Buffer*								m_pParticleIndexDataBuffer = nullptr;
 
 		Buffer*								m_ppAliveStagingBuffer[BACK_BUFFER_COUNT] = { nullptr };
 		Buffer*								m_pAliveBuffer = nullptr;

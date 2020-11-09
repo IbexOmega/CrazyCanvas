@@ -259,7 +259,6 @@ namespace LambdaEngine
 				scissorRect.Height = height;
 				pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-
 				ClearColorDesc clearColorDesc = {};
 				clearColorDesc.Depth = 1.0;
 				clearColorDesc.Stencil = 0U;

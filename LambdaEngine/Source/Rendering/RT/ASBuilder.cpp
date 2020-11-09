@@ -415,8 +415,7 @@ namespace LambdaEngine
 				if (m_InstanceIndicesChanged)
 				{
 					m_InstanceIndicesChanged = false;
-
-					uint64 requiredInstanceIndicesBufferSize = uint64(instanceCount) * sizeof(uint32);
+					uint64 requiredInstanceIndicesBufferSize = uint64(m_InstanceIndices.GetSize()) * sizeof(uint32);
 
 					if (pInstanceIndicesStagingBuffer == nullptr || pInstanceIndicesStagingBuffer->GetDesc().SizeInBytes < requiredInstanceIndicesBufferSize)
 					{

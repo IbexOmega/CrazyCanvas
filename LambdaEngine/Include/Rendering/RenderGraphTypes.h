@@ -209,13 +209,26 @@ namespace LambdaEngine
 		String PixelShaderName		= "";
 	};
 
+	struct HitGroupNames
+	{
+		String	ClosestHitShaderName	= "";
+		String	AnyHitShaderName		= "";
+		String	IntersectionShaderName = "";
+	};
+
 	struct RayTracingShaderNames
 	{
 		String			RaygenShaderName			= "";
 		String			pMissShaderNames[MAX_MISS_SHADER_COUNT];
-		String			pClosestHitShaderNames[MAX_CLOSEST_HIT_SHADER_COUNT];
+		HitGroupNames	pHitGroupShaderNames[MAX_HIT_SHADER_COUNT];
+
 		uint32			MissShaderCount			= 0;
+
 		uint32			ClosestHitShaderCount	= 0;
+		uint32			AnyHitShaderCount		= 0;
+		uint32			IntersectionShaderCount	= 0;
+
+		uint32			HitGroupShaderCount		= 0;
 	};
 
 	struct RenderGraphResourceState
@@ -517,6 +530,13 @@ namespace LambdaEngine
 		int32		BackBufferAttributeIndex	= 0;
 	};
 
+	struct HitGroupShaderConstants
+	{
+		TArray<ShaderConstant> ClosestHitConstants;
+		TArray<ShaderConstant> AnyHitConstants;
+		TArray<ShaderConstant> IntersectionConstants;
+	};
+
 	struct RenderGraphShaderConstants
 	{
 		struct
@@ -538,7 +558,7 @@ namespace LambdaEngine
 		struct
 		{
 			TArray<ShaderConstant>			RaygenConstants;
-			TArray<TArray<ShaderConstant>>	ClosestHitConstants;
+			TArray<HitGroupShaderConstants>	HitGroupConstants;
 			TArray<TArray<ShaderConstant>>	MissConstants;
 		} RayTracing;
 	};
@@ -593,6 +613,8 @@ namespace LambdaEngine
 		{
 			if (pRenderStageDesc->RayTracing.Shaders.RaygenShaderName.size()	> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_RAYGEN_SHADER;
 			if (pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount		> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER;
+			if (pRenderStageDesc->RayTracing.Shaders.AnyHitShaderCount			> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER;
+			if (pRenderStageDesc->RayTracing.Shaders.IntersectionShaderCount	> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER;
 			if (pRenderStageDesc->RayTracing.Shaders.MissShaderCount			> 0)	mask |= FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER;
 		}
 

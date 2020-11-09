@@ -12,7 +12,7 @@
 
 struct SRayHitDescription
 {
-	float	Alpha;
+	vec4	Albedo_Alpha;
 };
 
 layout(buffer_reference, buffer_reference_align = 16) buffer VertexBuffer 
@@ -66,10 +66,8 @@ SRayHitDescription CalculateHitData()
 	vec2 texCoord = (v0TexCoord * barycentricCoords.x + v1TexCoord * barycentricCoords.y + v2TexCoord * barycentricCoords.z);
 	vec3 shadingNormal		= vec3(1.0, 0.0, 0.0);
 
-	float alpha = texture(u_TextureAtlases[emitter.AtlasIndex], texCoord).a;
-
 	SRayHitDescription hitDescription;
-	hitDescription.Alpha			= alpha;
+	hitDescription.Albedo_Alpha			= texture(u_TextureAtlases[emitter.AtlasIndex], texCoord).rgba;
 	
 	return hitDescription;
 }
@@ -77,8 +75,8 @@ SRayHitDescription CalculateHitData()
 void main() 
 {
 	SRayHitDescription hitDescription = CalculateHitData();
-	
-	if (hitDescription.Alpha > 0)
+
+	if (hitDescription.Albedo_Alpha.a > 0)
 		return;
 	else
 		ignoreIntersectionEXT();

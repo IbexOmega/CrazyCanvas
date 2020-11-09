@@ -1177,9 +1177,17 @@
                 "miss_shaders": [
                     "/RayTracing\\PrimaryMiss.rmiss"
                 ],
-                "closest_hit_shaders": [
-                    "/RayTracing\\PrimaryClosestHit.rchit",
-                    "/RayTracing\\ParticleClosestHit.rchit"
+                "hit_group_shaders": [
+                    {
+                        "closest_hit_shader": "/RayTracing\\PrimaryClosestHit.rchit",
+                        "any_hit_shader": "",
+                        "intersection_shader": ""
+                    },
+                    {
+                        "closest_hit_shader": "/RayTracing\\ParticleClosestHit.rchit",
+                        "any_hit_shader": "/RayTracing\\ParticleAnyHit.rahit",
+                        "intersection_shader": ""
+                    }
                 ]
             },
             "resource_states": [
@@ -1916,7 +1924,7 @@
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
