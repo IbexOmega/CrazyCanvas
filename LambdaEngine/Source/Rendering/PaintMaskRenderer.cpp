@@ -266,7 +266,7 @@ namespace LambdaEngine
 		m_AliveDescriptorSetList.Clear();
 
 		m_pDrawArgs = pDrawArgs;
-		LOG_WARNING("UpdateDrawArgsResource, drawArgCount: %d", count);
+		
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
@@ -289,7 +289,6 @@ namespace LambdaEngine
 					offset = 0;
 					descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 					it = m_VerticesInstanceDescriptorSetMap.insert({ drawArgKey, descriptorSet }).first;
-					LOG_WARNING("Created descriptor set [%d][%d] (hash: %x)", b, drawArgIndex, drawArgKey.GetHash());
 				}
 				m_AliveDescriptorSetList.PushBack(drawArgKey);
 				m_VerticesInstanceDescriptorSets[b].PushBack(it->second.Get());
@@ -308,7 +307,7 @@ namespace LambdaEngine
 					m_DeadDescriptorSetList.PushBack(key);
 				}
 			}
-			LOG_WARNING("Removed %d descriptor sets from %d", m_DeadDescriptorSetList.GetSize(), m_VerticesInstanceDescriptorSetMap.size());
+			
 			for (auto& key : m_DeadDescriptorSetList)
 			{
 				m_VerticesInstanceDescriptorSetMap.erase(key);
