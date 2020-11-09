@@ -4,13 +4,14 @@
 namespace LambdaEngine
 {
 	bool RenderGraphParser::ParseRenderGraph(
-		RenderGraphStructureDesc* pParsedStructure, 
-		const TArray<RenderGraphResourceDesc>& resources, 
+		RenderGraphStructureDesc* pParsedStructure,
+		const TArray<RenderGraphResourceDesc>& resources,
 		const THashTable<String, EditorRenderStageDesc>& renderStagesByName,
-		const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex, 
-		const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex, 
-		const EditorFinalOutput& finalOutput, 
-		bool generateImGuiStage)
+		const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
+		const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,
+		const EditorFinalOutput& finalOutput,
+		bool generateImGuiStage,
+		bool generateLineRendererStage)
 	{
 		if (!generateImGuiStage)
 		{
@@ -106,6 +107,17 @@ namespace LambdaEngine
 		THashTable<String, const EditorRenderGraphResourceState*> finalStateOfResources;
 
 		RenderStageDesc imguiRenderStage = {};
+		RenderStageDesc lineRendererRenderStage = {};
+
+		if (generateLineRendererStage)
+		{
+			lineRendererRenderStage.Name			= RENDER_GRAPH_LINE_RENDERER_STAGE_NAME;
+			lineRendererRenderStage.Type			= EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS;
+			lineRendererRenderStage.CustomRenderer	= true;
+			lineRendererRenderStage.TriggerType		= ERenderStageExecutionTrigger::EVERY;
+			lineRendererRenderStage.FrameDelay		= 0;
+			lineRendererRenderStage.FrameOffset		= 0;
+		}
 
 		if (generateImGuiStage)
 		{
@@ -141,7 +153,7 @@ namespace LambdaEngine
 					//Draw Args needs to have their synchronizations created back to front so we do this later
 					if (currentResourceStateIt->second.ResourceType != ERenderGraphResourceType::SCENE_DRAW_ARGS)
 					{
-						if (FindAndCreateSynchronization(resources, resourceStatesByHalfAttributeIndex, orderedRenderStageIt, orderedMappedRenderStages, currentResourceStateIt, &synchronizationStage, generateImGuiStage))
+						if (FindAndCreateSynchronization(resources, resourceStatesByHalfAttributeIndex, orderedRenderStageIt, orderedMappedRenderStages, currentResourceStateIt, &synchronizationStage, generateImGuiStage, generateLineRendererStage))
 						{
 							finalStateOfResources[currentResourceStateIt->second.ResourceName] = &currentResourceStateIt->second;
 						}
@@ -188,6 +200,43 @@ namespace LambdaEngine
 			orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::RENDER, uint32(orderedRenderStages.GetSize()) - 1 });
 
 			orderedSynchronizationStages.PushBack(synchronizationStage);
+			orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::SYNCHRONIZATION, uint32(orderedSynchronizationStages.GetSize()) - 1 });
+		}
+
+		if (generateLineRendererStage)
+		{
+			SynchronizationStageDesc lineRendererSynchronizationStage = {};
+
+			{
+				//This is just a dummy as it will be removed in a later stage
+				RenderGraphResourceSynchronizationDesc resourceSynchronization = {};
+				resourceSynchronization.PrevRenderStage = RENDER_GRAPH_LINE_RENDERER_STAGE_NAME;
+				resourceSynchronization.NextRenderStage = generateImGuiStage ? RENDER_GRAPH_IMGUI_STAGE_NAME : "PRESENT (Not a Render Stage)";
+				resourceSynchronization.PrevBindingType = ERenderGraphResourceBindingType::ATTACHMENT;
+				resourceSynchronization.NextBindingType = generateImGuiStage ? ERenderGraphResourceBindingType::ATTACHMENT : ERenderGraphResourceBindingType::PRESENT;
+				resourceSynchronization.PrevQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+				resourceSynchronization.NextQueue		= ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS;
+				resourceSynchronization.ResourceName	= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+				resourceSynchronization.ResourceType	= ERenderGraphResourceType::TEXTURE;
+
+				lineRendererSynchronizationStage.Synchronizations.PushBack(resourceSynchronization);
+
+				RenderGraphResourceState backBufferResourceState = {};
+				backBufferResourceState.ResourceName	= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+				backBufferResourceState.BindingType		= ERenderGraphResourceBindingType::ATTACHMENT;
+				lineRendererRenderStage.ResourceStates.PushBack(backBufferResourceState);
+
+				RenderGraphResourceState perFrameBufferResourceStage = {};
+				perFrameBufferResourceStage.ResourceName	= "PER_FRAME_BUFFER";
+				perFrameBufferResourceStage.BindingType		= ERenderGraphResourceBindingType::CONSTANT_BUFFER;
+				lineRendererRenderStage.ResourceStates.PushBack(perFrameBufferResourceStage);
+
+			}
+
+			orderedRenderStages.PushBack(lineRendererRenderStage);
+			orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::RENDER, uint32(orderedRenderStages.GetSize()) - 1 });
+
+			orderedSynchronizationStages.PushBack(lineRendererSynchronizationStage);
 			orderedPipelineStages.PushBack({ ERenderGraphPipelineStageType::SYNCHRONIZATION, uint32(orderedSynchronizationStages.GetSize()) - 1 });
 		}
 
@@ -947,8 +996,11 @@ namespace LambdaEngine
 		const std::multimap<uint32, const EditorRenderStageDesc*>& orderedMappedRenderStages,
 		THashTable<int32, EditorRenderGraphResourceState>::const_iterator currentResourceStateIt,
 		SynchronizationStageDesc* pSynchronizationStage,
-		bool generateImGuiStage)
+		bool generateImGuiStage,
+		bool generateLineRendererStage)
 	{
+		UNREFERENCED_VARIABLE(generateLineRendererStage);
+
 		const EditorRenderStageDesc* pCurrentRenderStage				= currentOrderedRenderStageIt->second;
 
 		const EditorRenderGraphResourceState* pNextResourceState		= nullptr;

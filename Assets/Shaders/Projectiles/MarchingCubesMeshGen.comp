@@ -89,17 +89,26 @@ void main()
 	}
 
 	// Use the case mask to retrieve the edges on which vertices will be generated
-	const uint numTriangles = g_CaseToNumTriangles[caseMask];
+	// const uint numTriangles = g_CaseToNumTriangles[caseMask];
 
-	for (uint triangleNr = 0; triangleNr < numTriangles; triangleNr++)
+	/*	Each cell has 5 triangles at most. The triangles that do not exist have all their vertex positions as
+		(-1, -1, -1). These non-existing triangles are placed inside the center of sphere[0] to hide them. This is also
+		motivated by the fact that the amount of vertices cannot vary because of RayTracing, so non-existing triangles
+		can't be omitted entirely. */
+	for (uint triangleNr = 0; triangleNr < 5; triangleNr++)
 	{
 		STriangle triangle;
 		const ivec3 edgeIndices = g_CaseToEdgeList[caseMask][triangleNr];
 
+		// A 13th edge does not exist, index 12 denotes a non-existing triangle
+		const float triangleExists = float(edgeIndices[0] != 12);
+
 		for (uint edgeNr = 0; edgeNr < 3; edgeNr++)
 		{
 			const SEdge edge = g_Edges[edgeIndices[edgeNr]];
-			triangle.Vertices[edgeNr].Position = (nodes[edge.CornerIndexA].xyz + nodes[edge.CornerIndexB].xyz) * 0.5;
+
+			const vec3 edgeInterpPos = (nodes[edge.CornerIndexA].xyz + nodes[edge.CornerIndexB].xyz) * 0.5;
+			triangle.Vertices[edgeNr].Position = mix(edgeInterpPos, u_PC.SpherePositions[0], triangleExists);
 		}
 
 		const vec3 normal = normalize(cross(triangle.Vertices[1].Position - triangle.Vertices[0].Position, triangle.Vertices[2].Position - triangle.Vertices[0].Position));
@@ -107,7 +116,6 @@ void main()
 		triangle.Vertices[1].Normal = normal;
 		triangle.Vertices[2].Normal = normal;
 
-		// b_Triangles.Val[atomicCounterIncrement(b_TriangleCount.Val)] = triangle;
 		b_Triangles.Val[atomicAdd(b_TriangleCount.Val, 1)] = triangle;
 	}
 }

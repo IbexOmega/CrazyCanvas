@@ -54,8 +54,6 @@ public:
 		LambdaEngine::CommandList** ppSecondaryExecutionStage,
 		bool sleeping) override final;
 
-	static void CreateProjectileMesh(LambdaEngine::Entity entity);
-
 	FORCEINLINE LambdaEngine::FPipelineStageFlag GetFirstPipelineStage() const override final	{ return LambdaEngine::FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
 	FORCEINLINE LambdaEngine::FPipelineStageFlag GetLastPipelineStage() const override final	{ return LambdaEngine::FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
 

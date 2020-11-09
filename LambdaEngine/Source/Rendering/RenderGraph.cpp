@@ -1,6 +1,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/ImGuiRenderer.h"
+#include "Rendering/LineRenderer.h"
 
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
@@ -1873,6 +1874,7 @@ namespace LambdaEngine
 			m_RenderStageMap[pRenderStageDesc->Name] = renderStageIndex;
 
 			bool isImGuiStage = pRenderStageDesc->Name == RENDER_GRAPH_IMGUI_STAGE_NAME;
+			bool isLineRendererStage = pRenderStageDesc->Name == RENDER_GRAPH_LINE_RENDERER_STAGE_NAME;
 
 			pRenderStage->Name			= pRenderStageDesc->Name;
 			pRenderStage->Parameters	= pRenderStageDesc->Parameters;
@@ -2017,7 +2019,7 @@ namespace LambdaEngine
 							return false;
 						}
 
-						if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES)
+						if (!pRenderStageDesc->CustomRenderer && (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES))
 						{
 							LOG_ERROR("[RenderGraph]: Unfortunately, only GRAPHICS Render Stages with Draw Type SCENE_INSTANCES is allowed to have a resource of binding type DRAW_BUFFERS");
 							return false;
@@ -2375,7 +2377,31 @@ namespace LambdaEngine
 			{
 				CustomRenderer* pCustomRenderer = nullptr;
 
-				if (isImGuiStage)
+				if (isLineRendererStage)
+				{
+					auto lineRenderStageIt = std::find_if(m_DebugRenderers.Begin(), m_DebugRenderers.End(), [](const CustomRenderer* pCustomRenderer) { return pCustomRenderer->GetName() == RENDER_GRAPH_LINE_RENDERER_STAGE_NAME; });
+
+					if (lineRenderStageIt == m_DebugRenderers.End())
+					{
+						// TODO: Don't hardcode the vertexbuffer size
+						LineRenderer* pLineRenderer = DBG_NEW LineRenderer(m_pGraphicsDevice, MEGA_BYTE(1), m_BackBufferCount);
+						if (!pLineRenderer->Init())
+						{
+							LOG_ERROR("[RenderGraph] Could not initialize LineRenderer Custom Renderer");
+							return false;
+						}
+
+						m_CustomRenderers.PushBack(pLineRenderer);
+						m_DebugRenderers.PushBack(pLineRenderer);
+
+						pCustomRenderer = pLineRenderer;
+					}
+					else
+					{
+						pCustomRenderer = *lineRenderStageIt;
+					}
+				}
+				else if (isImGuiStage)
 				{
 					auto imGuiRenderStageIt = std::find_if(m_DebugRenderers.Begin(), m_DebugRenderers.End(), [](const CustomRenderer* pCustomRenderer) { return pCustomRenderer->GetName() == RENDER_GRAPH_IMGUI_STAGE_NAME; });
 

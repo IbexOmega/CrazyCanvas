@@ -1,4 +1,6 @@
 #pragma once
+#include "Defines.h"
+#include "Types.h"
 
 // Containers
 #include "Containers/String.h"

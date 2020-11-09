@@ -22,7 +22,8 @@ namespace LambdaEngine
 			const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
 			const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,
 			const EditorFinalOutput& finalOutput,
-			bool generateImGuiStage);
+			bool generateImGuiStage,
+			bool generateLineRendererStage);
 
 		static RenderGraphResourceDesc CreateBackBufferResource();
 
@@ -43,7 +44,8 @@ namespace LambdaEngine
 			const std::multimap<uint32, const EditorRenderStageDesc*>& orderedMappedRenderStages,
 			THashTable<int32, EditorRenderGraphResourceState>::const_iterator currentResourceStateIt,
 			SynchronizationStageDesc* pSynchronizationStage,
-			bool generateImGuiStage);
+			bool generateImGuiStage,
+			bool generateLineRendererStage);
 
 		static bool CapturedByImGui(TArray<RenderGraphResourceDesc>::ConstIterator resourceIt);
 		static void CreateParsedRenderStage(const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex, RenderStageDesc* pDstRenderStage, const EditorRenderStageDesc* pSrcRenderStage);
