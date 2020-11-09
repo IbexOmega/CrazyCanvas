@@ -24,6 +24,21 @@
 
 #include "Match/Match.h"
 
+static glm::quat CalculateDirection(
+	const glm::vec3& weaponPos,
+	const glm::vec3& playerPos,
+	const glm::quat& direction,
+	float32 zeroingDistance)
+{
+	using namespace LambdaEngine;
+
+	glm::vec3 zeroPoint = playerPos + LambdaEngine::GetForward(glm::normalize(direction)) * zeroingDistance;
+	glm::vec3 fireDirection = glm::normalize(zeroPoint - weaponPos);
+	glm::quat directionQuat = glm::identity<glm::quat>();
+	LambdaEngine::SetForward(directionQuat, fireDirection);
+	return directionQuat;
+}
+
 /*
 * WeaponSystem
 */
@@ -53,6 +68,8 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 	const glm::vec3& playerPos		= positionComponent.Position;
 	const glm::vec3& playerVelocity	= velocityComponent.Velocity;
 
+	const glm::quat& zeroingDirection = CalculateDirection(weaponPositionComponent.Position, playerPos, direction, 5);
+
 	{
 		glm::quat quatY = direction;
 		quatY.x = 0;
@@ -64,7 +81,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 
 	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
 	const glm::vec3 weaponPos		= weaponPositionComponent.Position + GetForward(weaponRotationComponent.Quaternion) * 0.2f;
-	const glm::vec3 directionVec	= GetForward(glm::normalize(direction));
+	const glm::vec3 directionVec	= GetForward(glm::normalize(zeroingDirection));
 	const glm::vec3 initialVelocity	= playerVelocity + directionVec * PROJECTILE_INITAL_SPEED;
 	const uint32	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 
@@ -80,7 +97,7 @@ void WeaponSystem::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
 		ammoType,
 		weaponPos,
 		initialVelocity,
-		direction,
+		zeroingDirection,
 		playerTeam);
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
