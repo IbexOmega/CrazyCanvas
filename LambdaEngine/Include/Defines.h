@@ -143,6 +143,7 @@
 	#pragma warning(error : 4099) // wrong forward declaration
 	#pragma warning(error : 4150) // cannot call destructor on incomplete type
 	#pragma warning(error : 4840) // using string in variadic template (When it should be const char)
+	#pragma warning(error : 4189) // not using local variable
 #endif
 
 /*

@@ -234,6 +234,7 @@ namespace LambdaEngine
 				m_ResourceStatesByHalfAttributeIndex,
 				m_ResourceStateLinksByLinkIndex,
 				m_FinalOutput,
+				true,
 				true))
 			{
 				m_ParsedGraphValid = false;
@@ -1174,6 +1175,7 @@ namespace LambdaEngine
 						m_ResourceStatesByHalfAttributeIndex,
 						m_ResourceStateLinksByLinkIndex,
 						m_FinalOutput,
+						true,
 						true);
 
 					if (m_ParsedGraphValid)
@@ -2934,6 +2936,7 @@ namespace LambdaEngine
 			m_ResourceStatesByHalfAttributeIndex,
 			m_ResourceStateLinksByLinkIndex,
 			m_FinalOutput,
+			true,
 			true))
 		{
 			m_ParsedGraphValid = false;

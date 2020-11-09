@@ -28,7 +28,7 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		Entity playerEntity = weaponComponent.WeaponOwner;
 
 		// Foreign Players
-		if (!m_LocalPlayerEntities.HasElement(playerEntity))
+		if (m_ForeignPlayerEntities.HasElement(playerEntity))
 		{
 			PacketComponent<PacketPlayerActionResponse>&	packets			= pPlayerResponsePackets->GetData(playerEntity);
 			const TArray<PacketPlayerActionResponse>&		receivedPackets	= packets.GetPacketsReceived();
@@ -219,18 +219,12 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 {
 	using namespace LambdaEngine;
 
-	ECSCore* pECS = ECSCore::GetInstance();
 	const bool didFire = WeaponSystem::TryFire(ammoType, weaponEntity);
-	if (!didFire)
+	if (didFire)
 	{
-		// Play out of ammo
-		ISoundEffect2D* m_pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
-		m_pSound->PlayOnce(1.0f, 1.0f);
-	}
-	else
-	{
-		const WeaponComponent& weaponComponent = pECS->GetConstComponent<WeaponComponent>(weaponEntity);
-		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
+		ECSCore* pECS = ECSCore::GetInstance();
+		const WeaponComponent& weaponComponent			= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
+		PacketComponent<PacketPlayerAction>& packets	= pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
 		
 		// Send action to server
 		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
@@ -239,7 +233,12 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 			actions.back().FiredAmmo = ammoType;
 		}
 	}
+	else
+	{
+		// Play out of ammo
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
+		pSound->PlayOnce();
+	}
 
 	return didFire;
 }
-

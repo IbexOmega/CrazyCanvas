@@ -8,7 +8,6 @@ DamageIndicatorGUI::DamageIndicatorGUI()
 	Noesis::GUI::LoadComponent(this, "DamageIndicatorGUI.xaml");
 
 	m_pDamageIndicatorStoryboard	= FindResource<Noesis::Storyboard>("DamageIndicatorStoryboard");
-	m_pIndicatorImage				= FindName<Noesis::Image>("DamageIndicator");
 }
 
 DamageIndicatorGUI::~DamageIndicatorGUI()
