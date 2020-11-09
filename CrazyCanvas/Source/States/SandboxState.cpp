@@ -121,7 +121,8 @@ void SandboxState::Init()
 	}
 
 	{
-		const uint32 characterGUID = ResourceManager::LoadMeshFromFile("Player/Character.fbx");
+		GUID_Lambda characterMeshGUID;
+		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -136,7 +137,7 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent meshComp = {};
-		meshComp.MeshGUID = characterGUID;
+		meshComp.MeshGUID = characterMeshGUID;
 		meshComp.MaterialGUID = materialGUID;
 
 		glm::vec3 position = glm::vec3(0.0f, 2.0f, 0.0f);
@@ -154,8 +155,7 @@ void SandboxState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		GUID_Lambda robotMeshGUID;
-		GUID_Lambda robotLoadedMaterialGUID;
-		ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", robotMeshGUID, robotLoadedMaterialGUID, animations);
+		ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", robotMeshGUID, animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
@@ -321,9 +321,8 @@ void SandboxState::Init()
 	//Preload some resources
 	{
 		GUID_Lambda meshGUID;
-		GUID_Lambda materialGUID;
 		TArray<GUID_Lambda> animations;
-		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, materialGUID, animations);
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
 	}
 
 

@@ -73,7 +73,7 @@ namespace LambdaEngine
 		TArray<LoadedPointLight>&				PointLights;
 		TArray<LevelObjectOnLoad>&				LevelObjects;
 		TArray<Mesh*>&							Meshes;
-		TArray<Animation*>&						Animations;
+		TArray<Animation*>*						pAnimations;
 		TArray<MeshComponent>&					MeshComponents;
 		// Either both materials and textures are nullptr, or they are both non-null pointers
 		TArray<LoadedMaterial*>*	pMaterials;
@@ -92,7 +92,7 @@ namespace LambdaEngine
 		TArray<LevelObjectOnLoad>&				LevelObjects;
 		TArray<Mesh*>&							Meshes;
 		TArray<MeshComponent>&					MeshComponents;
-		TArray<Animation*>&						Animations;
+		TArray<Animation*>*						pAnimations;
 		TArray<LoadedMaterial*>*				pMaterials;
 		TArray<LoadedTexture*>*					pTextures;
 		THashTable<String, LoadedTexture*>		LoadedTextures;
@@ -132,7 +132,7 @@ namespace LambdaEngine
 		*	animations	- The animations in this file
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
-		static Mesh* LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>& materials, TArray<LoadedTexture*>& textures, TArray<Animation*>& animations);
+		static Mesh* LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>* pMaterials, TArray<LoadedTexture*>* pTextures, TArray<Animation*>* pAnimations);
 
 		/*
 		* Load a mesh from file

@@ -276,7 +276,6 @@ namespace LambdaEngine
 		
 		void OnStaticMeshEntityAdded(Entity entity);
 		void OnAnimatedEntityAdded(Entity entity);
-		void OnAnimationAttachedEntityAdded(Entity entity);
 		void OnPlayerEntityAdded(Entity entity);
 
 		void OnDirectionalEntityAdded(Entity entity);
@@ -295,7 +294,6 @@ namespace LambdaEngine
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);
 		void UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
-		void UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
 		void UpdateTransformData(Entity entity, const glm::mat4& transform);
 		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
 
@@ -319,7 +317,6 @@ namespace LambdaEngine
 	private:
 		IDVector m_StaticMeshEntities;
 		IDVector m_AnimatedEntities;
-		IDVector m_AnimationAttachedEntities;
 		IDVector m_LocalPlayerEntities;
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;

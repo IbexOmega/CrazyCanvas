@@ -75,7 +75,6 @@ namespace LambdaEngine
 					{
 						PlayerBaseComponent::Type(),
 						AnimationComponent::Type(),
-						AnimationAttachedComponent::Type(),
 					},
 					.OnEntityAdded = std::bind_front(&RenderSystem::OnStaticMeshEntityAdded, this),
 					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
@@ -94,28 +93,8 @@ namespace LambdaEngine
 					.ExcludedComponentTypes =
 					{
 						PlayerBaseComponent::Type(),
-						AnimationAttachedComponent::Type(),
 					},
 					.OnEntityAdded = std::bind_front(&RenderSystem::OnAnimatedEntityAdded, this),
-					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
-				},
-				{
-					.pSubscriber = &m_AnimationAttachedEntities,
-					.ComponentAccesses =
-					{
-						{ R, AnimationAttachedComponent::Type() },
-						{ R, MeshComponent::Type() }
-					},
-					.ComponentGroups =
-					{
-						&transformGroup
-					},
-					.ExcludedComponentTypes =
-					{
-						PlayerBaseComponent::Type(),
-						AnimationComponent::Type(),
-					},
-					.OnEntityAdded = std::bind_front(&RenderSystem::OnAnimationAttachedEntityAdded, this),
 					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
@@ -583,7 +562,6 @@ namespace LambdaEngine
 
 		ComponentArray<MeshComponent>*				pMeshComponents					= pECSCore->GetComponentArray<MeshComponent>();
 		ComponentArray<AnimationComponent>*			pAnimationComponents			= pECSCore->GetComponentArray<AnimationComponent>();
-		ComponentArray<AnimationAttachedComponent>*	pAnimationAttachedComponents	= pECSCore->GetComponentArray<AnimationAttachedComponent>();
 		{
 			for (Entity entity : m_LocalPlayerEntities)
 			{
@@ -606,17 +584,6 @@ namespace LambdaEngine
 				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
 
 				UpdateAnimation(entity, meshComp, animationComp);
-				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
-			}
-
-			for (Entity entity : m_AnimationAttachedEntities)
-			{
-				MeshComponent&				meshComp		= pMeshComponents->GetData(entity);
-				AnimationAttachedComponent&	animationComp	= pAnimationAttachedComponents->GetData(entity);
-				const auto&					positionComp	= pPositionComponents->GetConstData(entity);
-				const auto&					rotationComp	= pRotationComponents->GetConstData(entity);
-				const auto&					scaleComp		= pScaleComponents->GetConstData(entity);
-
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 			}
 		}
@@ -821,17 +788,6 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
-	}
-
-	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-		auto& attachedAnimationComp = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		//transform = transform * attachedAnimationComp.Transform;
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
@@ -1633,23 +1589,6 @@ namespace LambdaEngine
 			return;
 
 		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
-
-		UpdateTransformData(entity, transform);
-	}
-
-	void RenderSystem::UpdateTransform(
-		Entity entity,
-		const glm::mat4& additionalTransform,
-		const PositionComponent& positionComp,
-		const RotationComponent& rotationComp,
-		const ScaleComponent& scaleComp,
-		const glm::bvec3& rotationalAxes)
-	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
-
-		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
-		transform = transform * additionalTransform;
 
 		UpdateTransformData(entity, transform);
 	}

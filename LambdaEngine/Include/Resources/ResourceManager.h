@@ -87,18 +87,39 @@ namespace LambdaEngine
 
 		/*
 		* Load a mesh from file
-		*	filename - The name of the file
+		*	filename	- The name of the file
+		*	meshGUID	- The loaded Mesh GUID
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID);
+		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID);
 
 		/*
 		* Load a mesh from file
 		*	filename	- The name of the file
+		*	meshGUID	- The loaded Mesh GUID
 		*	animations	- TArray with valid GUIDs for all the animations
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID, TArray<GUID_Lambda>& animations);
+		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, TArray<GUID_Lambda>& animations);
+
+		/*
+		* Load a mesh from file
+		*	filename - The name of the file
+		*	meshGUID		- The loaded Mesh GUID
+		*	materialGUID	- The loaded Material GUID
+		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
+		*/
+		static void LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID);
+
+		/*
+		* Load a mesh from file
+		*	filename		- The name of the file
+		*	meshGUID		- The loaded Mesh GUID
+		*	materialGUID	- The loaded Material GUID
+		*	animations		- TArray with valid GUIDs for all the animations
+		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
+		*/
+		static void LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID, TArray<GUID_Lambda>& animations);
 
 		/*
 		* Load a mesh from file

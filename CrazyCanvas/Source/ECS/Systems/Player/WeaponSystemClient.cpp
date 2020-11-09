@@ -29,8 +29,8 @@ void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 		const AnimationAttachedComponent&	animationAttachedComponent	= pAnimationAttachedComponents->GetConstData(weaponEntity);
 
 		PositionComponent&					weaponPositionComponent		= pPositionComponents->GetData(weaponEntity);
-		RotationComponent&					weaponRotationComponent		= pRotationComponents->GetData(weaponEntity);
-		ScaleComponent&						weaponScaleComponent		= pScaleComponent->GetData(weaponEntity);
+		//RotationComponent&					weaponRotationComponent		= pRotationComponents->GetData(weaponEntity);
+		//ScaleComponent&						weaponScaleComponent		= pScaleComponent->GetData(weaponEntity);
 
 		const PositionComponent&			playerPositionComponent		= pPositionComponents->GetConstData(weaponComponent.WeaponOwner);
 		const RotationComponent&			playerRotationComponent		= pRotationComponents->GetConstData(weaponComponent.WeaponOwner);
@@ -61,9 +61,26 @@ void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 			newSkew,
 			newPerspective);
 
+		glm::vec3 animationScale;
+		glm::quat animationRotation;
+		glm::vec3 animationTranslation;
+		glm::vec3 animationSkew;
+		glm::vec4 animationPerspective;
+		glm::decompose(
+			transform,
+			animationScale,
+			animationRotation,
+			animationTranslation,
+			animationSkew,
+			animationPerspective);
+
 		weaponPositionComponent.Position	= newTranslation;
-		weaponRotationComponent.Quaternion	= newRotation;
-		weaponScaleComponent.Scale			= newScale;
+		//weaponRotationComponent.Quaternion	= newRotation;
+		//weaponScaleComponent.Scale			= newScale;
+
+		LOG_WARNING("Player Translation: %s",		glm::to_string(playerPositionComponent.Position).c_str());
+		LOG_WARNING("Animation Translation: %s",	glm::to_string(animationTranslation).c_str());
+		LOG_WARNING("New Translation: %s\n",		glm::to_string(newTranslation).c_str());
 	}
 }
 
@@ -206,8 +223,7 @@ bool WeaponSystemClient::InitInternal()
 		projectileMaterialProperties.Roughness = 0.5f;
 
 		GUID_Lambda projectileMeshGUID;
-		GUID_Lambda projectileMaterialGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID, projectileMaterialGUID);
+		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID);
 		if (projectileMeshGUID == GUID_NONE)
 		{
 			return false;

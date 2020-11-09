@@ -116,8 +116,7 @@ void BenchmarkState::Init()
 	//Sphere Grid
 	{
 		GUID_Lambda sphereMeshGUID;
-		GUID_Lambda sphereMaterialGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID, sphereMaterialGUID);
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
 		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
 
 		uint32 gridRadius = 5;
@@ -312,8 +311,7 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 			};
 
 			GUID_Lambda robotMeshGUID;
-			GUID_Lambda robotMaterialGUID;
-			ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", robotMeshGUID, robotMaterialGUID);
+			ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", robotMeshGUID);
 			TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
 
 			AnimationComponent robotAnimationComp = {};

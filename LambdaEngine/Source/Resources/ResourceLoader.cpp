@@ -339,7 +339,7 @@ namespace LambdaEngine
 			.PointLights				= pointLights,
 			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
-			.Animations					= animations,
+			.pAnimations				= &animations,
 			.MeshComponents				= meshComponents,
 			.pMaterials					= &materials,
 			.pTextures					= &textures,
@@ -349,7 +349,7 @@ namespace LambdaEngine
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>& materials, TArray<LoadedTexture*>& textures, TArray<Animation*>& animations)
+	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>* pMaterials, TArray<LoadedTexture*>* pTextures, TArray<Animation*>* pAnimations)
 	{
 		int32 assimpFlags = 
 			aiProcess_FlipWindingOrder			|
@@ -392,10 +392,10 @@ namespace LambdaEngine
 			.PointLights				= pointLightComponents,
 			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
-			.Animations					= animations,
+			.pAnimations				= pAnimations,
 			.MeshComponents				= meshComponent,
-			.pMaterials					= &materials,
-			.pTextures					= &textures,
+			.pMaterials					= pMaterials,
+			.pTextures					= pTextures,
 			.AnimationsOnly 			= false
 		};
 
@@ -459,7 +459,7 @@ namespace LambdaEngine
 			.PointLights				= pointLightComponents,
 			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
-			.Animations					= animations,
+			.pAnimations				= &animations,
 			.MeshComponents				= meshComponent,
 			.pMaterials					= nullptr,
 			.pTextures					= nullptr,
@@ -1540,7 +1540,7 @@ namespace LambdaEngine
 			}
 		}
 
-		context.Animations.EmplaceBack(pAnimation);
+		context.pAnimations->EmplaceBack(pAnimation);
 
 		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f", 
 			pAnimation->Name.GetString().c_str(),
@@ -1609,7 +1609,7 @@ namespace LambdaEngine
 			.LevelObjects				= sceneLoadRequest.LevelObjects,
 			.Meshes						= sceneLoadRequest.Meshes,
 			.MeshComponents				= sceneLoadRequest.MeshComponents,
-			.Animations					= sceneLoadRequest.Animations,
+			.pAnimations				= sceneLoadRequest.pAnimations,
 			.pMaterials					= sceneLoadRequest.pMaterials,
 			.pTextures					= sceneLoadRequest.pTextures
 		};
@@ -1686,11 +1686,14 @@ namespace LambdaEngine
 		}
 
 		// Load all animations
-		if (pScene->mNumAnimations > 0)
+		if (context.pAnimations != nullptr)
 		{
-			for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
+			if (pScene->mNumAnimations > 0)
 			{
-				LoadAnimation(context, pScene->mAnimations[animationIndex]);
+				for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
+				{
+					LoadAnimation(context, pScene->mAnimations[animationIndex]);
+				}
 			}
 		}
 
