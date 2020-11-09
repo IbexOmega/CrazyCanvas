@@ -46,8 +46,8 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty("RayTracingEnabled");
-		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty("MeshShadersEnabled");
+		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{
@@ -293,7 +293,7 @@ namespace LambdaEngine
 		{
 			RenderGraphStructureDesc renderGraphStructure = {};
 
-			String renderGraphName = EngineConfig::GetStringProperty("RenderGraphName");
+			String renderGraphName = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RENDER_GRAPH_NAME);
 			if (renderGraphName != "")
 			{
 				String prefix = m_RayTracingEnabled ? "RT_" : "";
@@ -311,12 +311,12 @@ namespace LambdaEngine
 				renderGraphName = prefix + renderGraphName;
 			}
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER)))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
 				renderGraphStructure = {};
-				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
+				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER));
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
@@ -326,14 +326,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferWidth = pActiveWindow->GetWidth();
 			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers = { };
-
-			if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
-			{
-				m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
-				m_pLineRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
-			}
 
 			// Add paint mask renderer to the custom renderers inside the render graph.
 			{
@@ -666,7 +658,7 @@ namespace LambdaEngine
 		renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
 		renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 
-		if (EngineConfig::GetBoolProperty("EnableLineRenderer"))
+		if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER))
 		{
 			m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
 			m_pLineRenderer->Init();

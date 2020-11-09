@@ -43,6 +43,12 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+BenchmarkState::BenchmarkState()
+{
+	using namespace LambdaEngine;
+	SingleplayerInitializer::Init();
+}
+
 BenchmarkState::~BenchmarkState()
 {
 	using namespace LambdaEngine;
@@ -50,6 +56,8 @@ BenchmarkState::~BenchmarkState()
 	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	SAFEDELETE(m_pLevel);
+
+	SingleplayerInitializer::Release();
 }
 
 void BenchmarkState::Init()
@@ -66,31 +74,34 @@ void BenchmarkState::Init()
 	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
 
 	// Initialize Systems
-	WeaponSystem::GetInstance().Init();
+	WeaponSystem::Init();
 	m_BenchmarkSystem.Init();
 	TrackSystem::GetInstance().Init();
 
 	// Create camera with a track
 	{
-		const TArray<glm::vec3> cameraTrack = {
-			{-2.0f, 3.0f, 1.0f},
-			{7.8f, 3.0f, 0.8f},
-			{7.4f, 3.0f, -3.8f},
+		const TArray<glm::vec3> cameraTrack = 
+		{
+			{-2.0f, 3.0f,  1.0f},
+			{ 7.8f, 3.0f,  0.8f},
+			{ 7.4f, 3.0f, -3.8f},
 			{-7.8f, 4.0f, -3.9f},
 			{-7.6f, 4.0f, -2.1f},
-			{7.8f, 6.1f, -0.8f},
-			{7.4f, 6.1f, 3.8f},
-			{0.0f, 6.1f, 3.9f},
-			{0.0f, 4.1f, -3.9f}
+			{ 7.8f, 6.1f, -0.8f},
+			{ 7.4f, 6.1f,  3.8f},
+			{ 0.0f, 6.1f,  3.9f},
+			{ 0.0f, 4.1f, -3.9f}
 		};
 
-		const CameraDesc cameraDesc = {
-			.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-			.Width = (float32)window->GetWidth(),
-			.Height = (float32)window->GetHeight(),
-			.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-			.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+		const CameraDesc cameraDesc = 
+		{
+			.FOVDegrees	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
+			.Width		= (float32)window->GetWidth(),
+			.Height		= (float32)window->GetHeight(),
+			.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+			.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 		};
+
 		m_Camera = CreateCameraTrackEntity(cameraDesc, cameraTrack);
 	}
 
@@ -111,20 +122,20 @@ void BenchmarkState::Init()
 
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
-			float32 roughness = y / float32(gridRadius - 1);
+			const float32 roughness = y / float32(gridRadius - 1);
 
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
-				float32 metallic = x / float32(gridRadius - 1);
+				const float32 metallic = x / float32(gridRadius - 1);
 
 				MaterialProperties materialProperties;
-				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness = roughness;
-				materialProperties.Metallic = metallic;
+				materialProperties.Albedo		= glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+				materialProperties.Roughness	= roughness;
+				materialProperties.Metallic		= metallic;
 
 				MeshComponent sphereMeshComp = {};
-				sphereMeshComp.MeshGUID = sphereMeshGUID;
-				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+				sphereMeshComp.MeshGUID		= sphereMeshGUID;
+				sphereMeshComp.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
 					GUID_TEXTURE_DEFAULT_COLOR_MAP,
 					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
@@ -152,6 +163,7 @@ void BenchmarkState::Init()
 							.GeometryParams	= { .Radius = sphereRadius },
 							.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
 							.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+							.EntityID		= entity,
 						},
 					},
 				};
@@ -237,8 +249,8 @@ void BenchmarkState::Init()
 		mirrorProperties.Roughness = 0.0f;
 
 		MeshComponent meshComponent;
-		meshComponent.MeshGUID = GUID_MESH_QUAD;
-		meshComponent.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+		meshComponent.MeshGUID		= GUID_MESH_QUAD;
+		meshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
 			"Mirror Material",
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
@@ -248,7 +260,6 @@ void BenchmarkState::Init()
 			mirrorProperties);
 
 		Entity entity = ECSCore::GetInstance()->CreateEntity();
-
 		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 3.0f, -7.0f} });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::toQuat(glm::rotate(glm::identity<glm::mat4>(), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f))) });
 		pECS->AddComponent<ScaleComponent>(entity, { true, glm::vec3(1.5f) });
@@ -256,7 +267,7 @@ void BenchmarkState::Init()
 	}
 
 	// Triggers OnPacketReceived, which creates players
-	SingleplayerInitializer::InitSingleplayer();
+	SingleplayerInitializer::Setup();
 }
 
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
@@ -291,11 +302,11 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
-				.Width = (float)window->GetWidth(),
-				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
+				.Width		= (float32)window->GetWidth(),
+				.Height		= (float32)window->GetHeight(),
+				.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
@@ -368,7 +379,7 @@ void BenchmarkState::PrintBenchmarkResults()
 	using namespace rapidjson;
 	using namespace LambdaEngine;
 
-	constexpr const float MB = 1000000.0f;
+	constexpr const float32 MB = 1024.0f * 1024.0f;
 
 	const GPUProfiler* pGPUProfiler = GPUProfiler::Get();
 
@@ -389,7 +400,6 @@ void BenchmarkState::PrintBenchmarkResults()
 	writer.EndObject();
 
 	FILE* pFile = fopen("benchmark_results.json", "w");
-
 	if (pFile)
 	{
 		fputs(jsonStringBuffer.GetString(), pFile);

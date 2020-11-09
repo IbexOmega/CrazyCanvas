@@ -1,7 +1,9 @@
 #include "Audio/FMOD/AudioDeviceFMOD.h"
 #include "Audio/FMOD/MusicFMOD.h"
 #include "Audio/FMOD/SoundEffect3DFMOD.h"
+#include "Audio/FMOD/SoundEffect2DFMOD.h"
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
+#include "Audio/FMOD/SoundInstance2DFMOD.h"
 #include "Audio/FMOD/AudioGeometryFMOD.h"
 #include "Audio/FMOD/ReverbSphereFMOD.h"
 
@@ -138,7 +140,7 @@ namespace LambdaEngine
 		}
 	}
 
-	ISoundEffect3D* AudioDeviceFMOD::CreateSoundEffect(const SoundEffect3DDesc* pDesc)
+	ISoundEffect3D* AudioDeviceFMOD::Create3DSoundEffect(const SoundEffect3DDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
 
@@ -154,7 +156,23 @@ namespace LambdaEngine
 		}
 	}
 
-	ISoundInstance3D* AudioDeviceFMOD::CreateSoundInstance(const SoundInstance3DDesc* pDesc)
+	ISoundEffect2D* AudioDeviceFMOD::Create2DSoundEffect(const SoundEffect2DDesc* pDesc)
+	{
+		VALIDATE(pDesc != nullptr);
+
+		SoundEffect2DFMOD* pSoundEffect = DBG_NEW SoundEffect2DFMOD(this);
+
+		if (!pSoundEffect->Init(pDesc))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return pSoundEffect;
+		}
+	}
+
+	ISoundInstance3D* AudioDeviceFMOD::Create3DSoundInstance(const SoundInstance3DDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
 
@@ -169,6 +187,23 @@ namespace LambdaEngine
 			return pSoundInstance;
 		}
 	}
+
+	ISoundInstance2D* AudioDeviceFMOD::Create2DSoundInstance(const SoundInstance2DDesc* pDesc)
+	{
+		VALIDATE(pDesc != nullptr);
+
+		SoundInstance2DFMOD* pSoundInstance = DBG_NEW SoundInstance2DFMOD(this);
+
+		if (!pSoundInstance->Init(pDesc))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return pSoundInstance;
+		}
+	}
+
 
 	IAudioGeometry* AudioDeviceFMOD::CreateAudioGeometry(const AudioGeometryDesc* pDesc)
 	{

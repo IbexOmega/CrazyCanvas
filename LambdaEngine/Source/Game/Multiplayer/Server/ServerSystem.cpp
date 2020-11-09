@@ -23,13 +23,15 @@ namespace LambdaEngine
 	{
 		MultiplayerUtils::Init(true);
 
+		const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
+
 		ServerDesc desc = {};
 		desc.Handler				= this;
-		desc.MaxRetries				= 10;
+		desc.MaxRetries				= 25;
 		desc.ResendRTTMultiplier	= 5.0f;
 		desc.MaxClients				= 10;
-		desc.PoolSize				= 1024;
-		desc.Protocol				= EProtocol::UDP;
+		desc.PoolSize				= 8192;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(10);
 		desc.UsePingSystem			= true;
@@ -46,7 +48,7 @@ namespace LambdaEngine
 
 	bool ServerSystem::Start()
 	{
-		uint16 port = (uint16)EngineConfig::GetIntProperty("NetworkPort");
+		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
 		NetworkDiscovery::EnableServer(m_Name, port, this);
 		return m_pServer->Start(IPEndPoint(IPAddress::ANY, port));
 	}

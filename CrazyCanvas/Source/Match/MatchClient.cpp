@@ -18,9 +18,15 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Events/MatchEvents.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 #include "Engine/EngineConfig.h"
+
+#include "Resources/ResourceManager.h"
+
+#include "Audio/AudioAPI.h"
 
 using namespace LambdaEngine;
 
@@ -30,20 +36,92 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 }
 
 bool MatchClient::InitInternal()
 {
+	if (MultiplayerUtils::IsSingleplayer())
+	{
+		m_HasBegun = false;
+		m_ClientSideBegun = false;
+		m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+	}
+
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+
+	m_CountdownSoundEffects[4] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/five.wav");
+	m_CountdownSoundEffects[3] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/four.wav");
+	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
+	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
+	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
+	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
+
 	return true;
 }
 
 void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
-	UNREFERENCED_VARIABLE(deltaTime);
+	if (!m_ClientSideBegun)
+	{
+		float32 previousTimer = m_MatchBeginTimer;
+		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
+
+		if (previousTimer >= 5.0f && m_MatchBeginTimer < 5.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[4])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(5);
+		}
+		else if (previousTimer >= 4.0f && m_MatchBeginTimer < 4.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[3])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(4);
+		}
+		else if (previousTimer >= 3.0f && m_MatchBeginTimer < 3.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[2])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(3);
+		}
+		else if (previousTimer >= 2.0f && m_MatchBeginTimer < 2.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[1])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(2);
+		}
+		else if (previousTimer >= 1.0f && m_MatchBeginTimer < 1.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(1);
+		}
+		else if (previousTimer >= 0.0f && m_MatchBeginTimer < 0.0f)
+		{
+			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.1f);
+			EventQueue::SendEvent<MatchCountdownEvent>(0);
+
+			m_ClientSideBegun = true;
+			m_CountdownHideTimer = 1.0f;
+
+			if (MultiplayerUtils::IsSingleplayer())
+			{
+				m_HasBegun = true;
+			}
+		}	
+	}
+
+	if (m_CountdownHideTimer >= 0.0f)
+	{
+		m_CountdownHideTimer -= float32(deltaTime.AsSeconds());
+
+		if (m_CountdownHideTimer < 0.0f)
+		{
+			EventQueue::SendEvent<MatchCountdownEvent>(UINT8_MAX);
+		}
+	}
 }
 
 bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
@@ -58,11 +136,11 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty("CameraFOV"),
+				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
 				.Width = (float)window->GetWidth(),
 				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty("CameraNearPlane"),
-				.FarPlane = EngineConfig::GetFloatProperty("CameraFarPlane")
+				.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			CreatePlayerDesc createPlayerDesc =
@@ -81,6 +159,13 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
 			{
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
+			}
+
+			// Notify systems that a new player connected (Not myself tho)
+			if (!packet.Player.IsMySelf)
+			{
+				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
+				EventQueue::SendEvent(connectedEvent);
 			}
 
 			break;
@@ -124,6 +209,30 @@ bool MatchClient::OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<Pa
 
 	if(entity != UINT32_MAX)
 		m_pLevel->DeleteObject(entity);
+
+	return true;
+}
+
+bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMatchStart>& event)
+{
+	UNREFERENCED_VARIABLE(event);
+
+	m_HasBegun = false;
+	m_ClientSideBegun = false;
+	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+
+	LOG_INFO("CLIENT: Match Start");
+
+	return true;
+}
+
+bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event)
+{
+	UNREFERENCED_VARIABLE(event);
+
+	m_HasBegun = true;
+
+	LOG_INFO("CLIENT: Match Begin");
 
 	return true;
 }

@@ -991,7 +991,11 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraphSerializer::LoadAndParse(RenderGraphStructureDesc* pRenderGraphStructureDesc, const String& renderGraphName, bool imGuiEnabled)
+	bool RenderGraphSerializer::LoadAndParse(
+		RenderGraphStructureDesc* pRenderGraphStructureDesc,
+		const String& renderGraphName,
+		bool imGuiEnabled,
+		bool lineRendererEnabled)
 	{
 		TArray<RenderGraphResourceDesc> resources;
 		THashTable<int32, String> renderStageNameByInputAttributeIndex;
@@ -1031,7 +1035,8 @@ namespace LambdaEngine
 			resourceStatesByHalfAttributeIndex,
 			resourceStateLinksByLinkIndex,
 			finalOutput,
-			imGuiEnabled))
+			imGuiEnabled,
+			lineRendererEnabled))
 		{
 			LOG_ERROR("[RenderGraphSerializer]: Failed to parse RenderGraph %s", renderGraphName.c_str());
 			return false;

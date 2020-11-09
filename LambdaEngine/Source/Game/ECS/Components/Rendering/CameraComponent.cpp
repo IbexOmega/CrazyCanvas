@@ -38,7 +38,8 @@ namespace LambdaEngine
 			.Position = pECS->GetComponent<PositionComponent>(entity),
 			.Rotation = pECS->GetComponent<RotationComponent>(entity),
 			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-			.CollisionMask	= UINT32_MAX								// The player collides with everything
+			.CollisionMask	= UINT32_MAX,								// The player collides with everything
+			.EntityID		= entity
 		};
 
 		constexpr const float capsuleHeight = 1.8f;
@@ -47,11 +48,11 @@ namespace LambdaEngine
 		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 
 		// Audio Footsteps
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("walking-short.wav");
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("walking-short.wav");
 		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc = {
 				.pName = "WalkingSoundInstance",
-				.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+				.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
 				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 				.Position = cameraDesc.Position,
 				.Volume = 0.055f

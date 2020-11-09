@@ -99,10 +99,10 @@ namespace LambdaEngine
 			auto* pSoundInstance = audibleComponent.pSoundInstance;
 			pSoundInstance->SetPosition(positionComponent.Position);
 
-			bool isMoving = InputActionSystem::IsActive("CAM_FORWARD") ||
-				InputActionSystem::IsActive("CAM_LEFT") ||
-				InputActionSystem::IsActive("CAM_BACKWARD") ||
-				InputActionSystem::IsActive("CAM_RIGHT");
+			bool isMoving = InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD) ||
+				InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT) ||
+				InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) ||
+				InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD);
 
 			if (cameraComponent.IsActive && isMoving)
 			{

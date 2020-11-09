@@ -1019,6 +1019,11 @@ namespace LambdaEngine
 		vkCmdResetQueryPool(m_CmdBuffer, pQueryHeapVk->GetQueryPool(), firstQuery, queryCount);
 	}
 
+	void CommandListVK::SetLineWidth(float32 lineWidth)
+	{
+		vkCmdSetLineWidth(m_CmdBuffer, lineWidth);
+	}
+
 	void CommandListVK::ExecuteSecondary(const CommandList* pSecondary)
 	{
 		VALIDATE(m_Desc.CommandListType == ECommandListType::COMMAND_LIST_TYPE_PRIMARY);

@@ -825,19 +825,55 @@ namespace LambdaEngine
 		return true;
 	}
 
-	ISoundEffect3D* ResourceLoader::LoadSoundEffectFromFile(const String& filepath)
+	ISoundEffect3D* ResourceLoader::LoadSoundEffect3DFromFile(const String& filepath)
 	{
 		SoundEffect3DDesc soundDesc = {};
 		soundDesc.Filepath = ConvertSlashes(filepath);
 
-		ISoundEffect3D* pSound = AudioAPI::GetDevice()->CreateSoundEffect(&soundDesc);
+		ISoundEffect3D* pSound = AudioAPI::GetDevice()->Create3DSoundEffect(&soundDesc);
 		if (pSound == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Sound \"%s\"", filepath.c_str());
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded 3D Sound \"%s\"", filepath.c_str());
+
+		return pSound;
+	}
+
+	ISoundEffect2D* ResourceLoader::LoadSoundEffect2DFromFile(const String& filepath)
+	{
+		SoundEffect2DDesc soundDesc = {};
+		soundDesc.Filepath = ConvertSlashes(filepath);
+
+		ISoundEffect2D* pSound = AudioAPI::GetDevice()->Create2DSoundEffect(&soundDesc);
+		if (pSound == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
+			return nullptr;
+		}
+
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded 2D Sound \"%s\"", filepath.c_str());
+
+		return pSound;
+	}
+
+	IMusic* ResourceLoader::LoadMusicFromFile(const String& filepath, float32 defaultVolume, float32 defaultPitch)
+	{
+		MusicDesc musicDesc = {};
+		musicDesc.Filepath	= ConvertSlashes(filepath);
+		musicDesc.Volume	= defaultVolume;
+		musicDesc.Pitch		= defaultPitch;
+
+		IMusic* pSound = AudioAPI::GetDevice()->CreateMusic(&musicDesc);
+		if (pSound == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to initialize music \"%s\"", filepath.c_str());
+			return nullptr;
+		}
+
+		D_LOG_MESSAGE("[ResourceLoader]: Loaded Music \"%s\"", filepath.c_str());
 
 		return pSound;
 	}

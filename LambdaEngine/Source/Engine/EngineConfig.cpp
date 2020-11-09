@@ -67,34 +67,39 @@ namespace LambdaEngine
 		return fclose(pFile) == 0;
 	}
 
-	bool EngineConfig::GetBoolProperty(const String& propertyName)
+	bool EngineConfig::GetBoolProperty(EConfigOption configOption)
 	{
-		return s_ConfigDocument[propertyName.c_str()].GetBool();
+		return s_ConfigDocument[ConfigOptionToString(configOption)].GetBool();
 	}
 
-	float EngineConfig::GetFloatProperty(const String& propertyName)
+	float EngineConfig::GetFloatProperty(EConfigOption configOption)
 	{
-		return s_ConfigDocument[propertyName.c_str()].GetFloat();
+		return s_ConfigDocument[ConfigOptionToString(configOption)].GetFloat();
 	}
 
-	int EngineConfig::GetIntProperty(const String& propertyName)
+	int EngineConfig::GetIntProperty(EConfigOption configOption)
 	{
-		return s_ConfigDocument[propertyName.c_str()].GetInt();
+		return s_ConfigDocument[ConfigOptionToString(configOption)].GetInt();
 	}
 
-	double EngineConfig::GetDoubleProperty(const String& propertyName)
+	uint32 EngineConfig::GetUint32Property(EConfigOption configOption)
 	{
-		return s_ConfigDocument[propertyName.c_str()].GetDouble();
+		return s_ConfigDocument[ConfigOptionToString(configOption)].GetUint();
 	}
 
-	String EngineConfig::GetStringProperty(const String& propertyName)
+	double EngineConfig::GetDoubleProperty(EConfigOption configOption)
 	{
-		return s_ConfigDocument[propertyName.c_str()].GetString();
+		return s_ConfigDocument[ConfigOptionToString(configOption)].GetDouble();
 	}
 
-	TArray<float> EngineConfig::GetFloatArrayProperty(const String& propertyName)
+	String EngineConfig::GetStringProperty(EConfigOption configOption)
 	{
-		const Value& arr = s_ConfigDocument[propertyName.c_str()];
+		return s_ConfigDocument[ConfigOptionToString(configOption)].GetString();
+	}
+
+	TArray<float> EngineConfig::GetFloatArrayProperty(EConfigOption configOption)
+	{
+		const Value& arr = s_ConfigDocument[ConfigOptionToString(configOption)];
 		TArray<float> tArr;
 		for (auto& itr : arr.GetArray())
 			tArr.PushBack(itr.GetFloat());
@@ -102,9 +107,9 @@ namespace LambdaEngine
 		return tArr;
 	}
 
-	TArray<int> EngineConfig::GetIntArrayProperty(const String& propertyName)
+	TArray<int> EngineConfig::GetIntArrayProperty(EConfigOption configOption)
 	{
-		const Value& arr = s_ConfigDocument[propertyName.c_str()];
+		const Value& arr = s_ConfigDocument[ConfigOptionToString(configOption)];
 		TArray<int> tArr;
 		for (auto& itr : arr.GetArray())
 			tArr.PushBack(itr.GetInt());
@@ -112,11 +117,11 @@ namespace LambdaEngine
 		return tArr;
 	}
 
-	bool EngineConfig::SetBoolProperty(const String& propertyName, const bool value)
+	bool EngineConfig::SetBoolProperty(EConfigOption configOption, const bool value)
 	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
 		{
-			s_ConfigDocument[propertyName.c_str()].SetBool(value);
+			s_ConfigDocument[ConfigOptionToString(configOption)].SetBool(value);
 
 			return true;
 		}
@@ -124,22 +129,22 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool EngineConfig::SetFloatProperty(const String& propertyName, const float value)
+	bool EngineConfig::SetFloatProperty(EConfigOption configOption, const float value)
 	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
 		{
-			s_ConfigDocument[propertyName.c_str()].SetFloat(value);
+			s_ConfigDocument[ConfigOptionToString(configOption)].SetFloat(value);
 
 			return true;
 		}
 		return false;
 	}
 
-	bool EngineConfig::SetIntProperty(const String& propertyName, const int value)
+	bool EngineConfig::SetIntProperty(EConfigOption configOption, const int value)
 	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
 		{
-			s_ConfigDocument[propertyName.c_str()].SetInt(value);
+			s_ConfigDocument[ConfigOptionToString(configOption)].SetInt(value);
 
 			return true;
 		}
@@ -147,35 +152,47 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool EngineConfig::SetDoubleProperty(const String& propertyName, const double value)
+		bool EngineConfig::SetUint32Property(EConfigOption configOption, const uint32 value)
 	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
 		{
-			s_ConfigDocument[propertyName.c_str()].SetDouble(value);
+			s_ConfigDocument[ConfigOptionToString(configOption)].SetUint(value);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	bool EngineConfig::SetDoubleProperty(EConfigOption configOption, const double value)
+	{
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
+		{
+			s_ConfigDocument[ConfigOptionToString(configOption)].SetDouble(value);
 
 			return true;
 		}
 		return false;
 	}
 
-	bool EngineConfig::SetStringProperty(const String& propertyName, const String& string)
+	bool EngineConfig::SetStringProperty(EConfigOption configOption, const String& string)
 	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
 		{
-			s_ConfigDocument[propertyName.c_str()].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
+			s_ConfigDocument[ConfigOptionToString(configOption)].SetString(string.c_str(), static_cast<SizeType>(strlen(string.c_str())), s_ConfigDocument.GetAllocator());
 
 			return true;
 		}
 		return false;
 	}
 
-	bool EngineConfig::SetFloatArrayProperty(const String& propertyName, const TArray<float>& arr)
+	bool EngineConfig::SetFloatArrayProperty(EConfigOption configOption, const TArray<float>& arr)
 	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
 		{
 			Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
 
-			auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+			auto& newArr = s_ConfigDocument[ConfigOptionToString(configOption)].SetArray();
 			newArr.Reserve(arr.GetSize(), allocator);
 
 			for (auto& itr : arr)
@@ -191,13 +208,13 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool EngineConfig::SetIntArrayProperty(const String& propertyName, const TArray<int>& arr)
+	bool EngineConfig::SetIntArrayProperty(EConfigOption configOption, const TArray<int>& arr)
 	{
-		if (s_ConfigDocument.HasMember(propertyName.c_str()))
+		if (s_ConfigDocument.HasMember(ConfigOptionToString(configOption)))
 		{
 			Document::AllocatorType& allocator = s_ConfigDocument.GetAllocator();
 
-			auto& newArr = s_ConfigDocument[propertyName.c_str()].SetArray();
+			auto& newArr = s_ConfigDocument[ConfigOptionToString(configOption)].SetArray();
 			newArr.Reserve(arr.GetSize(), allocator);
 
 			for (auto& itr : arr)

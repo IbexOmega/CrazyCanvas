@@ -14,6 +14,8 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
 
+#include "Match/Match.h"
+
 using namespace LambdaEngine;
 
 PlayerActionSystem::PlayerActionSystem()
@@ -37,8 +39,8 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 	float32 dt = (float32)deltaTime.AsSeconds();
 
 	// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-	float addedPitch = dt * float(InputActionSystem::IsActive("CAM_ROT_UP") - InputActionSystem::IsActive("CAM_ROT_DOWN"));
-	float addedYaw = dt * float(InputActionSystem::IsActive("CAM_ROT_LEFT") - InputActionSystem::IsActive("CAM_ROT_RIGHT"));
+	float addedPitch = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
+	float addedYaw = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
 	if (m_MouseEnabled)
 	{
@@ -91,7 +93,7 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 
 void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
 {
-	if (deltaForward == 0 && deltaLeft == 0)
+	if (!Match::HasBegun() || (deltaForward == 0 && deltaLeft == 0))
 	{
 		result.x = 0.0f;
 		result.z = 0.0f;

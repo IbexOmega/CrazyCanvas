@@ -26,22 +26,29 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "GUI/CountdownGUI.h"
+#include "GUI/DamageIndicatorGUI.h"
+#include "GUI/HUDGUI.h"
+#include "GUI/MainMenuGUI.h"
+
+#include "GUI/Core/GUIApplication.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
-constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
-
 CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
 
-	ServerHostHelper::Init();
+	if (!RegisterGUIComponents())
+	{
+		LOG_ERROR("Failed to Register GUI Components");
+	}
 
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
+	ServerHostHelper::Init();
 
 	if (!LevelManager::Init())
 	{
@@ -89,7 +96,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else if (stateStr == "client")
 	{
 		ClientSystem::Init(pGameName);
-		uint16 port = (uint16)EngineConfig::GetIntProperty("NetworkPort");
+		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
 		pStartingState = DBG_NEW PlaySessionState(false, IPEndPoint(NetworkUtils::GetLocalAddress(), port));
 	}
 	else if (stateStr == "server")
@@ -131,6 +138,16 @@ namespace LambdaEngine
 	{
 		return DBG_NEW CrazyCanvas(flagParser);
 	}
+}
+
+bool CrazyCanvas::RegisterGUIComponents()
+{
+	Noesis::RegisterComponent<CountdownGUI>();
+	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<HUDGUI>();
+	Noesis::RegisterComponent<MainMenuGUI>();
+
+	return true;
 }
 
 bool CrazyCanvas::LoadRendererResources()

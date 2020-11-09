@@ -23,6 +23,8 @@ struct MatchDescription
 	uint32 MaxScore = 5;
 };
 
+static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 5.0f;
+
 class MatchBase
 {
 public:
@@ -43,6 +45,7 @@ public:
 		UNREFERENCED_VARIABLE(playerEntity);
 	}
 
+	FORCEINLINE bool HasBegun() const { return m_HasBegun; }
 	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
 
 protected:
@@ -61,4 +64,7 @@ protected:
 	LambdaEngine::TArray<uint32> m_Scores;
 
 	MatchDescription m_MatchDesc;
+
+	bool m_HasBegun = false;
+	float32 m_MatchBeginTimer = 0.0f;
 };

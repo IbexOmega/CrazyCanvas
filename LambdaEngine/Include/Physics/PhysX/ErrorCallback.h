@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Log/Log.h"
 
 #include "Physics/PhysX/PhysX.h"
@@ -12,7 +11,7 @@ namespace LambdaEngine
 		PhysXErrorCallback() = default;
 		~PhysXErrorCallback() = default;
 
-		inline void reportError(physx::PxErrorCode::Enum code, const char* pMessage, const char* pFile, int line) override final
+		inline virtual void reportError(physx::PxErrorCode::Enum code, const char* pMessage, const char* pFile, int line) override final
 		{
 			UNREFERENCED_VARIABLE(pFile);
 			UNREFERENCED_VARIABLE(line);
