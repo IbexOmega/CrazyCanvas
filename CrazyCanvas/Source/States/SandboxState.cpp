@@ -120,6 +120,36 @@ void SandboxState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
+	{
+		const uint32 characterGUID = ResourceManager::LoadMeshFromFile("Player/Character.fbx");
+
+		MaterialProperties materialProperties = {};
+		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+		const uint32 materialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Flag Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		MeshComponent meshComp = {};
+		meshComp.MeshGUID = characterGUID;
+		meshComp.MaterialGUID = materialGUID;
+
+		glm::vec3 position = glm::vec3(0.0f, 2.0f, 0.0f);
+		glm::vec3 scale(1.0f);
+
+		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<MeshComponent>(entity, meshComp);
+	}
+
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
