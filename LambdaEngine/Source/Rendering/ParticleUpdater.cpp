@@ -407,7 +407,7 @@ namespace LambdaEngine
 		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
-		
+
 		m_UpdatePipeline.Bind(pCommandList);
 		m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&m_PushConstant, sizeof(PushConstantData), 0U);
 

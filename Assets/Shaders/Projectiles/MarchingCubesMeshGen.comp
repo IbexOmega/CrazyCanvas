@@ -1,0 +1,113 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "../Helpers.glsl"
+#include "MCTables.glsl"
+
+#define MAX_SPHERE_COUNT 10
+
+// In a grid with the size (n, n, n), threads should have a grid layout of (n-1, n-1, n-1)
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+struct SMCVertex
+{
+	vec3 Position;
+	vec3 Normal;
+};
+
+struct STriangle
+{
+	SMCVertex Vertices[3];
+};
+
+layout(push_constant) uniform PushConstants
+{
+	// The grid is uniform, i.e. the cell count is GridWidth^3
+	uint GridWidth;
+	uint SphereCount;
+	vec3 SpherePositions[MAX_SPHERE_COUNT];
+} u_PC;
+
+layout(binding = 0, set = 0) restrict writeonly buffer Densities
+{
+	float Val[];
+} b_Densities;
+
+layout(binding = 1, set = 0) restrict writeonly buffer Triangles
+{
+	STriangle Val[];
+} b_Triangles;
+
+layout(binding = 2, set = 0) coherent buffer TriangleCount
+{
+	uint Val;
+} b_TriangleCount;
+
+/*	DefineNodes finds the positions and densities of the eight corners in the given cell. The position is stored in
+	xyz, whilst density is in the w-component. */
+void DefineNodes(vec3 position, float cellWidth, uint gridWidth, uint threadID, out vec4 cornerPositions[8])
+{
+	const uint gridWidthSquared = gridWidth * gridWidth;
+	const float cellHalfWidth = cellWidth * 0.5;
+	cornerPositions[0] = vec4(position + vec3(-cellHalfWidth, -cellHalfWidth, -cellHalfWidth),	b_Densities.Val[threadID]);
+	cornerPositions[1] = vec4(position + vec3(cellHalfWidth, -cellHalfWidth, -cellHalfWidth),	b_Densities.Val[threadID + 1]);
+	cornerPositions[2] = vec4(position + vec3(cellHalfWidth, -cellHalfWidth, cellHalfWidth),	b_Densities.Val[threadID + 1 + gridWidthSquared]);
+	cornerPositions[3] = vec4(position + vec3(-cellHalfWidth, -cellHalfWidth, cellHalfWidth),	b_Densities.Val[threadID + gridWidthSquared]);
+	cornerPositions[4] = vec4(position + vec3(-cellHalfWidth, cellHalfWidth, -cellHalfWidth),	b_Densities.Val[threadID + gridWidth]);
+	cornerPositions[5] = vec4(position + vec3(cellHalfWidth, cellHalfWidth, -cellHalfWidth),	b_Densities.Val[threadID + 1 + gridWidth]);
+	cornerPositions[6] = vec4(position + vec3(cellHalfWidth, cellHalfWidth, cellHalfWidth),		b_Densities.Val[threadID + 1 + gridWidth + gridWidthSquared]);
+	cornerPositions[7] = vec4(position + vec3(-cellHalfWidth, cellHalfWidth, cellHalfWidth),	b_Densities.Val[threadID + gridWidth + gridWidthSquared]);
+}
+
+void main()
+{
+	const uint threadID = gl_GlobalInvocationID.x;
+	const uint gridWidthInCells = u_PC.GridWidth - 1;
+	const uint gridWidthInCellsSquared = gridWidthInCells * gridWidthInCells;
+	if (threadID >= gridWidthInCellsSquared * gridWidthInCells)
+	{
+		return;
+	}
+
+	// Use threadID to calculate the cell's position
+	const ivec3 cellID = { threadID % gridWidthInCells, threadID % gridWidthInCellsSquared, threadID / gridWidthInCellsSquared };
+	const vec3 position = cellID / ivec3(gridWidthInCells);
+
+	// The width/height/depth of a cell
+	const float cellWidth = 1.0 / u_PC.GridWidth;
+
+	vec4 nodes[8];
+	DefineNodes(position, cellWidth, u_PC.GridWidth, threadID, nodes);
+
+	/*	The 8 first (right-most) bits represent one node each. If the node's influence is greater than or equal to 1,
+		the bit is 1. */
+	uint caseMask = 0;
+	for (uint nodeIdx = 0; nodeIdx < 8; nodeIdx++)
+	{
+		caseMask |= int(nodes[nodeIdx].w >= 0.0) << nodeIdx;
+	}
+
+	// Use the case mask to retrieve the edges on which vertices will be generated
+	const uint numTriangles = g_CaseToNumTriangles[caseMask];
+
+	for (uint triangleNr = 0; triangleNr < numTriangles; triangleNr++)
+	{
+		STriangle triangle;
+		const ivec3 edgeIndices = g_CaseToEdgeList[caseMask][triangleNr];
+
+		for (uint edgeNr = 0; edgeNr < 3; edgeNr++)
+		{
+			const SEdge edge = g_Edges[edgeIndices[edgeNr]];
+			triangle.Vertices[edgeNr].Position = (nodes[edge.CornerIndexA].xyz + nodes[edge.CornerIndexB].xyz) * 0.5;
+		}
+
+		const vec3 normal = normalize(cross(triangle.Vertices[1].Position - triangle.Vertices[0].Position, triangle.Vertices[2].Position - triangle.Vertices[0].Position));
+		triangle.Vertices[0].Normal = normal;
+		triangle.Vertices[1].Normal = normal;
+		triangle.Vertices[2].Normal = normal;
+
+		// b_Triangles.Val[atomicCounterIncrement(b_TriangleCount.Val)] = triangle;
+		b_Triangles.Val[atomicAdd(b_TriangleCount.Val, 1)] = triangle;
+	}
+}

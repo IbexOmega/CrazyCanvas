@@ -4,9 +4,11 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
 #include "Resources/ResourceManager.h"
+#include "Rendering/EntityMaskManager.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
 #include "RenderStages/PlayerRenderer.h"
+#include "RenderStages/Projectiles/ProjectileRenderer.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -59,8 +61,13 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Team Helper Init Failed");
 	}
 
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
-	RenderSystem::GetInstance().InitRenderGraphs();
+	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false);
+	EntityMaskManager::Finalize();
+
+	RenderSystem& renderSystem = RenderSystem::GetInstance();
+	renderSystem.AddCustomRenderer(DBG_NEW PlayerRenderer());
+	renderSystem.AddCustomRenderer(DBG_NEW ProjectileRenderer(RenderAPI::GetDevice()));
+	renderSystem.InitRenderGraphs();
 
 	LoadRendererResources();
 

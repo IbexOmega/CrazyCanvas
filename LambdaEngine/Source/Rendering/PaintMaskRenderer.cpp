@@ -140,7 +140,7 @@ namespace LambdaEngine
 			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED);
 			});
 
-		return false;
+		return true;
 	}
 
 	bool PaintMaskRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)

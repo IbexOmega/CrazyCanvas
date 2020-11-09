@@ -78,9 +78,10 @@ namespace LambdaEngine
 		public:
 			MeshKey() = default;
 
-			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask)
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, bool forceUniqueResources, uint32 entityMask)
 				: MeshGUID(meshGUID)
 				, IsAnimated(isAnimated)
+				, ForceUniqueResources(forceUniqueResources)
 				, EntityID(entityID)
 				, EntityMask(entityMask)
 			{
@@ -93,7 +94,7 @@ namespace LambdaEngine
 				{
 					Hash = std::hash<GUID_Lambda>()(MeshGUID);
 					HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityMask);
-					if (IsAnimated)
+					if (IsAnimated || ForceUniqueResources)
 					{
 						HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
 					}
@@ -117,12 +118,13 @@ namespace LambdaEngine
 					}
 				}
 
-				return true;
+				return !ForceUniqueResources && !other.ForceUniqueResources;
 			}
 
 		public:
 			GUID_Lambda		MeshGUID;
 			bool			IsAnimated;
+			bool			ForceUniqueResources;
 			Entity			EntityID;
 			uint32			EntityMask;
 			mutable size_t	Hash = 0;
@@ -250,7 +252,7 @@ namespace LambdaEngine
 
 
 		/*
-		* Adds new Game specific Custom Renderer 
+		* Adds new Game specific Custom Renderer
 		*/
 		void AddCustomRenderer(CustomRenderer* pCustomRenderer);
 
@@ -260,6 +262,11 @@ namespace LambdaEngine
 		*/
 		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
+		/**
+		 * @param forceNewMeshResources Forces new vertex and index buffers to be created even if the meshGUID has been registered before
+		*/
+		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated, bool forceNewMeshResources);
+
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
 		uint64			GetFrameIndex() const	 	{ return m_FrameIndex;		}
 		uint64			GetModFrameIndex() const	{ return m_ModFrameIndex;	}
@@ -268,12 +275,12 @@ namespace LambdaEngine
 	public:
 		static RenderSystem& GetInstance() { return s_Instance; }
 
+		static glm::mat4 CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes);
+		static glm::mat4 CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
+
 	private:
 		RenderSystem() = default;
 
-		glm::mat4 CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes);
-		glm::mat4 CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
-		
 		void OnStaticMeshEntityAdded(Entity entity);
 		void OnAnimatedEntityAdded(Entity entity);
 		void OnPlayerEntityAdded(Entity entity);
@@ -283,8 +290,6 @@ namespace LambdaEngine
 
 		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
-
-		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
 		void RemoveRenderableEntity(Entity entity);
 
 		void OnEmitterEntityRemoved(Entity entity);
@@ -321,6 +326,7 @@ namespace LambdaEngine
 		IDVector m_PointLightEntities;
 		IDVector m_CameraEntities;
 		IDVector m_ParticleEmitters;
+		IDVector m_Projectiles;
 
 		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
 		Texture**				m_ppBackBuffers		= nullptr;
@@ -381,7 +387,7 @@ namespace LambdaEngine
 
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
-		
+
 
 		// Animation
 		uint64						m_SkinningPipelineID;

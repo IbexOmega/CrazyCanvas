@@ -32,12 +32,12 @@ namespace LambdaEngine
 		DECL_INTERFACE(CustomRenderer);
 
 		/*
-		* Called once by RenderSystem, required arguments which be passed in constructor.
+		* Called once by RenderSystem, required arguments should be passed in the constructor.
 		*/
 		virtual bool Init() = 0;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) = 0;
-		virtual bool RenderGraphPostInit() { return true; };
+		virtual bool RenderGraphPostInit() { return true; }
 
 		/*
 		* Called every frame, can be used for internal resource handling in custom renderers
@@ -144,13 +144,13 @@ namespace LambdaEngine
 		*	backBufferIndex - The current Back Buffer index
 		*	pFirstExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed first, if this rendering should be executed.
 		*	pSecondaryExecutionStage - A pointer to a variable which should contain the recorded command buffer which will be executed after pFirstExecutionStage, if this rendering should be executed.
-		*		Example:	
+		*		Example:
 		*		if (executeRecording)	(*ppExecutionStage) = pCommandList;
 		*		else					(*ppExecutionStage) = nullptr;
 		*/
 		virtual void Render(
-			uint32 modFrameIndex, 
-			uint32 backBufferIndex, 
+			uint32 modFrameIndex,
+			uint32 backBufferIndex,
 			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondaryExecutionStage,
 			bool sleeping)		= 0;

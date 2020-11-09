@@ -30,6 +30,7 @@ namespace LambdaEngine
 		DECL_STATIC_CLASS(EntityMaskManager);
 
 		static bool Init();
+		static void Finalize();
 
 		static void RemoveAllExtensionsFromEntity(Entity entity);
 		static void AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension);
@@ -39,14 +40,13 @@ namespace LambdaEngine
 		static uint32 FetchDefaultEntityMask();
 
 		static TArray<uint32> ExtractComponentMasksFromEntityMask(uint32 mask);
+		static void BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
 
-		static uint32 GetExtensionMask(const ComponentType* type, bool& inverted);
+		static uint32 GetExtensionMask(const ComponentType* pType, bool& inverted);
 
 		static const DrawArgExtensionDesc& GetExtensionDescFromExtensionMask(uint32 mask);
 
 	private:
-		static void BindTypeToExtensionDesc(const ComponentType* type, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
-
 		static void CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc);
 
 	private:
@@ -54,6 +54,6 @@ namespace LambdaEngine
 		inline static THashTable<Entity, DrawArgExtensionGroupEntry>	s_EntityToExtensionGroupEntryMap;
 		inline static THashTable<uint32, DrawArgExtensionDesc>			s_ExtensionMaskToExtensionDescMap;
 		inline static uint32 s_DefaultMask = 1;
-		inline static uint32 s_Initialized = false;
+		inline static uint32 s_Finalized = false;
 	};
 }

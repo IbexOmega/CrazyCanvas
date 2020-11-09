@@ -212,7 +212,7 @@ namespace LambdaEngine
 			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
-		} 
+		}
 
 		// Create animation resources
 		{
@@ -380,15 +380,12 @@ namespace LambdaEngine
 			}
 
 			// Other Custom Renderers constructed in game
-			if (!m_GameSpecificCustomRenderers.IsEmpty())
+			for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
 			{
-				for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
+				if (pCustomRenderer)
 				{
-					if (pCustomRenderer)
-					{
-						pCustomRenderer->Init();
-						renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
-					}
+					pCustomRenderer->Init();
+					renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
 				}
 			}
 
@@ -414,7 +411,7 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
-		} 
+		}
 
 		UpdateBuffers();
 		UpdateRenderGraph();
@@ -744,180 +741,9 @@ namespace LambdaEngine
 		{
 			LOG_WARNING("[RenderSystem]: SetRenderStageSleeping failed - Rendergraph not initilised");
 		}
-
 	}
 
-	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)
-	{
-		const ECSCore* pECSCore	= ECSCore::GetInstance();
-		const PositionComponent& positionComp	= pECSCore->GetConstComponent<PositionComponent>(entity);
-		const RotationComponent& rotationComp	= pECSCore->GetConstComponent<RotationComponent>(entity);
-		const ScaleComponent& scaleComp			= pECSCore->GetConstComponent<ScaleComponent>(entity);
-
-		return CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
-	}
-
-	glm::mat4 RenderSystem::CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
-	{
-		glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
-
-		if (rotationalAxes.x && rotationalAxes.y && rotationalAxes.z)
-		{
-			transform = transform * glm::toMat4(rotationComp.Quaternion);
-		}
-		else if (rotationalAxes.x || rotationalAxes.y || rotationalAxes.z)
-		{
-			glm::quat rotation	= rotationComp.Quaternion;
-			rotation.x			*= rotationalAxes.x;
-			rotation.y			*= rotationalAxes.y;
-			rotation.z			*= rotationalAxes.z;
-			rotation			= glm::normalize(rotation);
-			transform			= transform * glm::toMat4(rotation);
-		}
-
-		transform			= glm::scale(transform, scaleComp.Scale);
-		return transform;
-	}
-
-	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
-	}
-
-	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
-	}
-
-	void RenderSystem::OnPlayerEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
-	}
-
-	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
-	{
-		if (!m_DirectionalExist)
-		{
-			ECSCore* pECSCore = ECSCore::GetInstance();
-
-			const auto& dirLight = pECSCore->GetConstComponent<DirectionalLightComponent>(entity);
-			const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
-			const auto& rotation = pECSCore->GetConstComponent<RotationComponent>(entity);
-
-			UpdateDirectionalLight(
-				dirLight.ColorIntensity,
-				position.Position,
-				rotation.Quaternion,
-				dirLight.FrustumWidth,
-				dirLight.FrustumHeight,
-				dirLight.FrustumZNear,
-				dirLight.FrustumZFar
-			);
-
-			m_DirectionalExist = true;
-			m_LightsBufferDirty = true;
-		}
-		else
-		{
-			LOG_WARNING("Multiple directional lights not supported!");
-		}
-	}
-
-	void RenderSystem::OnPointLightEntityAdded(Entity entity)
-	{
-		const ECSCore* pECSCore = ECSCore::GetInstance();
-
-		const auto& pointLight = pECSCore->GetConstComponent<PointLightComponent>(entity);
-		const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
-
-		uint32 pointLightIndex = m_PointLights.GetSize();
-		m_EntityToPointLight[entity] = pointLightIndex;
-		m_PointLightToEntity[pointLightIndex] = entity;
-
-		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
-
-		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
-		{
-			m_PointLights.GetBack().TextureIndex = pointLightIndex;
-		}
-		else
-		{
-			// Check for free texture index instead of creating new index
-			uint32 textureIndex = m_FreeTextureIndices.GetBack();
-			m_FreeTextureIndices.PopBack();
-
-			m_PointLights.GetBack().TextureIndex = textureIndex;
-		}
-	}
-
-	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
-	{
-		UNREFERENCED_VARIABLE(entity);
-
-		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
-		m_DirectionalExist = false;
-		m_LightsResourceDirty = true;
-	}
-
-	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
-	{
-		if (m_PointLights.IsEmpty())
-			return;
-
-		uint32 lastIndex = m_PointLights.GetSize() - 1U;
-		uint32 lastEntity = m_PointLightToEntity[lastIndex];
-		uint32 currentIndex = m_EntityToPointLight[entity];
-
-		uint32 freeTexIndex = m_PointLights[currentIndex].TextureIndex;
-		m_PointLights[currentIndex] = m_PointLights[lastIndex];
-
-		m_EntityToPointLight[lastEntity] = currentIndex;
-		m_PointLightToEntity[currentIndex] = lastEntity;
-
-		m_PointLightToEntity.erase(lastIndex);
-		m_EntityToPointLight.erase(entity);
-		m_PointLights.PopBack();
-
-		if (!m_RemoveTexturesOnDeletion)
-		{
-			// Free Texture for new point lights
-			m_FreeTextureIndices.PushBack(freeTexIndex);
-		}
-		else
-		{
-			// Update all point lights shadowmaps to handle removal of texture
-			for (uint32 i = 0; i < m_PointLights.GetSize(); i++)
-			{
-					LightUpdateData lightUpdateData = {};
-					lightUpdateData.PointLightIndex = i;
-					lightUpdateData.TextureIndex = m_PointLights[i].TextureIndex;
-					m_PointLightTextureUpdateQueue.PushBack(lightUpdateData);
-			}
-
-			m_PointLightsDirty = true;
-		}
-
-		m_LightsBufferDirty = true;
-	}
-
-	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
-	{
-		m_ParticleManager.OnEmitterEntityRemoved(entity);
-	}
-	
-	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
+	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated, bool forceNewMeshResources)
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
@@ -926,10 +752,11 @@ namespace LambdaEngine
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
 		MeshKey meshKey;
-		meshKey.MeshGUID	= meshGUID;
-		meshKey.IsAnimated	= isAnimated;
-		meshKey.EntityID	= entity;
-		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
+		meshKey.MeshGUID				= meshGUID;
+		meshKey.IsAnimated				= isAnimated;
+		meshKey.ForceUniqueResources	= forceNewMeshResources;
+		meshKey.EntityID				= entity;
+		meshKey.EntityMask				= EntityMaskManager::FetchEntityMask(entity);
 
 		//Get meshAndInstancesIterator
 		{
@@ -1303,6 +1130,176 @@ namespace LambdaEngine
 		}
 	}
 
+	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)
+	{
+		const ECSCore* pECSCore	= ECSCore::GetInstance();
+		const PositionComponent& positionComp	= pECSCore->GetConstComponent<PositionComponent>(entity);
+		const RotationComponent& rotationComp	= pECSCore->GetConstComponent<RotationComponent>(entity);
+		const ScaleComponent& scaleComp			= pECSCore->GetConstComponent<ScaleComponent>(entity);
+
+		return CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+	}
+
+	glm::mat4 RenderSystem::CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
+		glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), positionComp.Position);
+
+		if (rotationalAxes.x && rotationalAxes.y && rotationalAxes.z)
+		{
+			transform = transform * glm::toMat4(rotationComp.Quaternion);
+		}
+		else if (rotationalAxes.x || rotationalAxes.y || rotationalAxes.z)
+		{
+			glm::quat rotation	= rotationComp.Quaternion;
+			rotation.x			*= rotationalAxes.x;
+			rotation.y			*= rotationalAxes.y;
+			rotation.z			*= rotationalAxes.z;
+			rotation			= glm::normalize(rotation);
+			transform			= transform * glm::toMat4(rotation);
+		}
+
+		transform			= glm::scale(transform, scaleComp.Scale);
+		return transform;
+	}
+
+	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
+	}
+
+	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
+	}
+
+	void RenderSystem::OnPlayerEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
+	}
+
+	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
+	{
+		if (!m_DirectionalExist)
+		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+
+			const auto& dirLight = pECSCore->GetConstComponent<DirectionalLightComponent>(entity);
+			const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
+			const auto& rotation = pECSCore->GetConstComponent<RotationComponent>(entity);
+
+			UpdateDirectionalLight(
+				dirLight.ColorIntensity,
+				position.Position,
+				rotation.Quaternion,
+				dirLight.FrustumWidth,
+				dirLight.FrustumHeight,
+				dirLight.FrustumZNear,
+				dirLight.FrustumZFar
+			);
+
+			m_DirectionalExist = true;
+			m_LightsBufferDirty = true;
+		}
+		else
+		{
+			LOG_WARNING("Multiple directional lights not supported!");
+		}
+	}
+
+	void RenderSystem::OnPointLightEntityAdded(Entity entity)
+	{
+		const ECSCore* pECSCore = ECSCore::GetInstance();
+
+		const auto& pointLight = pECSCore->GetConstComponent<PointLightComponent>(entity);
+		const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
+
+		uint32 pointLightIndex = m_PointLights.GetSize();
+		m_EntityToPointLight[entity] = pointLightIndex;
+		m_PointLightToEntity[pointLightIndex] = entity;
+
+		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
+
+		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
+		{
+			m_PointLights.GetBack().TextureIndex = pointLightIndex;
+		}
+		else
+		{
+			// Check for free texture index instead of creating new index
+			uint32 textureIndex = m_FreeTextureIndices.GetBack();
+			m_FreeTextureIndices.PopBack();
+
+			m_PointLights.GetBack().TextureIndex = textureIndex;
+		}
+	}
+
+	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+
+		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
+		m_DirectionalExist = false;
+		m_LightsResourceDirty = true;
+	}
+
+	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
+	{
+		if (m_PointLights.IsEmpty())
+			return;
+
+		uint32 lastIndex = m_PointLights.GetSize() - 1U;
+		uint32 lastEntity = m_PointLightToEntity[lastIndex];
+		uint32 currentIndex = m_EntityToPointLight[entity];
+
+		uint32 freeTexIndex = m_PointLights[currentIndex].TextureIndex;
+		m_PointLights[currentIndex] = m_PointLights[lastIndex];
+
+		m_EntityToPointLight[lastEntity] = currentIndex;
+		m_PointLightToEntity[currentIndex] = lastEntity;
+
+		m_PointLightToEntity.erase(lastIndex);
+		m_EntityToPointLight.erase(entity);
+		m_PointLights.PopBack();
+
+		if (!m_RemoveTexturesOnDeletion)
+		{
+			// Free Texture for new point lights
+			m_FreeTextureIndices.PushBack(freeTexIndex);
+		}
+		else
+		{
+			// Update all point lights shadowmaps to handle removal of texture
+			for (uint32 i = 0; i < m_PointLights.GetSize(); i++)
+			{
+					LightUpdateData lightUpdateData = {};
+					lightUpdateData.PointLightIndex = i;
+					lightUpdateData.TextureIndex = m_PointLights[i].TextureIndex;
+					m_PointLightTextureUpdateQueue.PushBack(lightUpdateData);
+			}
+
+			m_PointLightsDirty = true;
+		}
+
+		m_LightsBufferDirty = true;
+	}
+
+	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
+	{
+		m_ParticleManager.OnEmitterEntityRemoved(entity);
+	}
+
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
@@ -1347,7 +1344,7 @@ namespace LambdaEngine
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceIndex];
 			const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
 			m_pASBuilder->RemoveInstance(asInstanceIndex);
-			
+
 			//Swap Removed with Back
 			meshAndInstancesIt->second.ASInstanceIndices[instanceIndex] = meshAndInstancesIt->second.ASInstanceIndices.GetBack();
 			meshAndInstancesIt->second.ASInstanceIndices.PopBack();
@@ -1565,7 +1562,7 @@ namespace LambdaEngine
 		if (animationComp.IsPaused)
 			return;
 
-		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
+		MeshKey key(meshComp.MeshGUID, entity, true, false, EntityMaskManager::FetchEntityMask(entity));
 
 		auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 		if (meshEntryIt != m_MeshAndInstancesMap.end())

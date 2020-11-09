@@ -183,7 +183,7 @@ namespace LambdaEngine
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
 			return false;
 		}
-		
+
 		if (!CustomRenderStagesPostInit())
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
@@ -3759,13 +3759,13 @@ namespace LambdaEngine
 							uint32 numExtensionGroups = pDrawArg->InstanceCount;
 							for (uint32 i = 0; i < numExtensionGroups; i++)
 							{
-								DrawArgExtensionGroup* extensionGroup = pDrawArg->ppExtensionGroups[i];
-								if (extensionGroup)
+								DrawArgExtensionGroup* pExtensionGroup = pDrawArg->ppExtensionGroups[i];
+								if (pExtensionGroup)
 								{
-									uint32 extensionCount = extensionGroup->ExtensionCount;
+									uint32 extensionCount = pExtensionGroup->ExtensionCount;
 									for (uint32 e = 0; e < extensionCount; e++)
 									{
-										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+										DrawArgExtensionData& extension = pExtensionGroup->pExtensions[e];
 										uint32 numTextures = extension.TextureCount;
 										for (uint32 t = 0; t < numTextures; t++)
 										{

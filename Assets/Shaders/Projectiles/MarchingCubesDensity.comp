@@ -1,0 +1,44 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "../Helpers.glsl"
+
+#define MAX_SPHERE_COUNT 10
+
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+layout(push_constant) uniform PushConstants
+{
+	// The grid is uniform, i.e. the cell count is GridWidth^3
+	uint GridWidth;
+	uint SphereCount;
+	vec3 SpherePositions[MAX_SPHERE_COUNT];
+} u_PC;
+
+layout(binding = 0, set = 0) restrict writeonly buffer Densities
+{
+	float Val[];
+} b_Densities;
+
+void main()
+{
+	const uint threadID = gl_GlobalInvocationID.x;
+	const uint gridWidthSquared = u_PC.GridWidth * u_PC.GridWidth;
+	if (threadID >= gridWidthSquared * u_PC.GridWidth)
+	{
+		return;
+	}
+
+	// Use threadID to calculate the corner's position
+	const ivec3 cornerID = { threadID % u_PC.GridWidth, threadID % gridWidthSquared, threadID / gridWidthSquared };
+	const vec3 position = cornerID / ivec3(u_PC.GridWidth);
+
+	float density = -1.0;
+	for (uint sphereIdx = 0; sphereIdx < u_PC.SphereCount; sphereIdx++)
+	{
+		density += 1.0 / length(position - u_PC.SpherePositions[sphereIdx]);
+	}
+
+	b_Densities.Val[threadID] = density;
+}

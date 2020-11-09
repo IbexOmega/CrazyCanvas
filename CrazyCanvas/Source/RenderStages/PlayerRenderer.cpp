@@ -122,7 +122,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		// Fetching render targets
-		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE") 
+		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE")
 		{
 			if (imageCount != 0)
 			{
@@ -139,12 +139,12 @@ namespace LambdaEngine
 				m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]);
 			}
 		}
-		
+
 		// Writing textures to DescriptorSets
 		if (resourceName == SCENE_ALBEDO_MAPS)
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
-			
+
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
@@ -160,7 +160,7 @@ namespace LambdaEngine
 		else if (resourceName == SCENE_NORMAL_MAPS)
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
-			
+
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
@@ -176,7 +176,7 @@ namespace LambdaEngine
 		else if (resourceName == SCENE_COMBINED_MATERIAL_MAPS)
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
-			
+
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
@@ -202,7 +202,7 @@ namespace LambdaEngine
 		if (resourceName == SCENE_MAT_PARAM_BUFFER)
 		{
 			constexpr DescriptorSetIndex setIndex = 0U;
-			
+
 			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet0 != nullptr)
 			{
@@ -279,7 +279,7 @@ namespace LambdaEngine
 				m_DescriptorSetList2.Resize(m_DrawCount);
 				m_DescriptorSetList3.Clear();
 				m_DescriptorSetList3.Resize(m_DrawCount);
-				
+
 				m_DirtyUniformBuffers = true;
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
@@ -486,8 +486,8 @@ namespace LambdaEngine
 
 
 	void PlayerRenderer::RenderCull(bool renderEnemy,
-									CommandList* pCommandList, 
-									uint64& pipelineId) 
+									CommandList* pCommandList,
+									uint64& pipelineId)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
@@ -498,14 +498,14 @@ namespace LambdaEngine
 		{
 			m_PlayerData[i].Distance2ToViewer = glm::distance2(m_Viewer.Positon, m_PlayerData[i].Position);
 		}
-		
+
 		std::sort(m_PlayerData.Begin(), m_PlayerData.End(),
 			[&](const PlayerData pd1, PlayerData pd2) {return pd1.Distance2ToViewer < pd2.Distance2ToViewer; });
 
-		for (auto& player : m_PlayerData) 
+		for (auto& player : m_PlayerData)
 		{
 			bool drawingVisiblePlayer = player.DrawArgIndex != m_Viewer.DrawArgIndex;
-			
+
 			// Skip drawing local player
 			if (drawingVisiblePlayer)
 			{
@@ -714,7 +714,7 @@ namespace LambdaEngine
 		colorAttachmentDesc.FinalState = pColorAttachmentDesc->FinalState;
 
 		RenderPassAttachmentDesc depthAttachmentDesc = {};
-		
+
 		depthAttachmentDesc.Format = pDepthStencilAttachmentDesc->Format; // FORMAT_D24_UNORM_S8_UINT
 		depthAttachmentDesc.SampleCount = 1;
 		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
@@ -817,7 +817,7 @@ namespace LambdaEngine
 		pipelineStateDesc2.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
 
 		m_PipelineStateIDFrontCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc2);
-		
+
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc3 = {};
 		pipelineStateDesc3.DebugName = "Player Renderer Pipeline No Cull State";
 		pipelineStateDesc3.RenderPass = m_RenderPass;
@@ -854,5 +854,5 @@ namespace LambdaEngine
 		return true;
 
 	}
-		
+
 }

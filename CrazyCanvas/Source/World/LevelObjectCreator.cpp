@@ -147,7 +147,7 @@ bool LevelObjectCreator::Init()
 }
 
 LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
-	const LambdaEngine::LoadedDirectionalLight& directionalLight, 
+	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -366,8 +366,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -428,8 +428,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 }
 
 ELevelObjectType LevelObjectCreator::CreateKillPlane(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -928,6 +928,8 @@ bool LevelObjectCreator::CreateProjectile(
 	projectileComp.AmmoType	= desc.AmmoType;
 	projectileComp.Owner	= desc.WeaponOwner;
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
+	EntityMaskManager::AddExtensionToEntity(projectileEntity, ProjectileComponent::Type(), nullptr);
+
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
 	if (!MultiplayerUtils::IsServer())

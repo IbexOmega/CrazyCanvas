@@ -126,9 +126,9 @@ struct WeaponFiredEvent : public LambdaEngine::Event
 {
 public:
 	inline WeaponFiredEvent(
-		const LambdaEngine::Entity weaponOwnerEntity, 
-		const EAmmoType ammoType, 
-		const glm::vec3& position, 
+		const LambdaEngine::Entity weaponOwnerEntity,
+		const EAmmoType ammoType,
+		const glm::vec3& position,
 		const glm::vec3& initialVelocity,
 		const glm::quat& direction,
 		const uint32 teamIndex)
@@ -147,7 +147,7 @@ public:
 	virtual LambdaEngine::String ToString() const
 	{
 		using namespace LambdaEngine;
-		return String("Player fired a weapon. EntitiyID=%u", WeaponOwnerEntity);
+		return String("Player fired a weapon. Entity=%u", WeaponOwnerEntity);
 	}
 
 	const LambdaEngine::Entity WeaponOwnerEntity;
