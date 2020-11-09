@@ -248,7 +248,9 @@ namespace LambdaEngine
 		virtual const TArray<SQT>& GetResult() const override
 		{
 			VALIDATE(m_pIn != nullptr);
-			return m_pIn->GetResult();
+
+			const TArray<SQT>& result = m_pIn->GetResult();
+			return result;
 		}
 
 		virtual float64 GetDurationInSeconds() const override
