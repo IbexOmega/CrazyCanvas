@@ -11,12 +11,12 @@
 */
 
 #define SET_TEAM_INDEX(mask, value) \
-	mask |= (((uint8)value) & 0xF)
+	mask |= (((uint8)value) & 0x0F)
 
 #define SET_PAINT_MODE(mask, value) \
-	mask |= ((((uint8)value) & 0xF) << 4)
+	mask |= ((((uint8)value) & 0x0F) << 4)
 
-#define GET_TEAM_INDEX(mask) (ETeam)(mask & 0xF)
+#define GET_TEAM_INDEX(mask) (ETeam)(mask & 0x0F)
 #define GET_PAINT_MODE(mask) (EPaintMode)((mask & 0xF0) >> 4)
 
 /*
@@ -26,6 +26,7 @@
 MeshPaintHandler::~MeshPaintHandler()
 {
 	using namespace LambdaEngine;
+	
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
@@ -33,6 +34,7 @@ MeshPaintHandler::~MeshPaintHandler()
 void MeshPaintHandler::Init()
 {
 	using namespace LambdaEngine;
+
 	EventQueue::RegisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }

@@ -496,7 +496,7 @@ namespace LambdaEngine
 				}
 
 				pCommandList->BindDescriptorSetGraphics(
-					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex].Get(), 
+					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex], 
 					m_PipelineLayout.Get(), 2);
 
 				pCommandList->SetConstantRange(
