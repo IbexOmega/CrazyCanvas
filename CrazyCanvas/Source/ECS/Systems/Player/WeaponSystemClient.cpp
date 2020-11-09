@@ -154,10 +154,6 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	// Play gun fire and spawn particles
 	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
 	m_pSound->PlayOnceAt(position, velocity, 0.2f, 1.0f);
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	ParticleEmitterComponent& emitterComp = pECS->GetComponent<ParticleEmitterComponent>(weaponEntity);
-	emitterComp.Active = true;
 }
 
 bool WeaponSystemClient::InitInternal()

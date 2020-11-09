@@ -98,7 +98,7 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
 			EventQueue::SendEvent<MatchCountdownEvent>(1);
 		}
-		else if (previousTimer >= 0.0f && m_MatchBeginTimer < 0.0f)
+		else if (m_MatchBeginTimer < 0.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.1f);
 			EventQueue::SendEvent<MatchCountdownEvent>(0);

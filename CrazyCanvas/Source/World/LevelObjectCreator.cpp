@@ -987,7 +987,7 @@ bool LevelObjectCreator::CreateProjectile(
 		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
 		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) }),
-		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(desc.InitalVelocity, g_DefaultUp) }),
+		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::normalize(glm::quatLookAt(desc.InitalVelocity, g_DefaultUp)) }),
 		{
 			{
 				/* Shape Type */		EShapeType::SIMULATION,

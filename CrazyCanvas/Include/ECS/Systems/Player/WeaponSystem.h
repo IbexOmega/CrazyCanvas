@@ -48,7 +48,6 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 		{ RW, ProjectileComponent::Type()},
 		{ RW, DynamicCollisionComponent::Type() },
 		{ RW, MeshComponent::Type() },
-		{ RW, ParticleEmitterComponent::Type() },
 	};
 }
 
