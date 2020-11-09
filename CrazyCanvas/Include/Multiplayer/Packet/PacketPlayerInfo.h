@@ -10,6 +10,7 @@ struct PacketPlayerInfo
 	DECL_PACKET(PacketPlayerInfo);
 
 	uint64 UID;
+	bool IsHost;
 	uint16 Ping;
 	EPlayerState State;
 	uint8 Team;

@@ -27,6 +27,11 @@ LambdaEngine::Entity Player::GetEntity() const
     return m_Entity;
 }
 
+bool Player::IsHost() const
+{
+    return m_IsHost;
+}
+
 uint16 Player::GetPing() const
 {
     return m_Ping;

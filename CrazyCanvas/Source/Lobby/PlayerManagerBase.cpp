@@ -23,19 +23,24 @@ void PlayerManagerBase::Release()
 
 const Player* PlayerManagerBase::GetPlayer(uint64 uid)
 {
-    auto pair = s_Players.find(uid);
-    return pair == s_Players.end() ? nullptr : &pair->second;
+	auto pair = s_Players.find(uid);
+	return pair == s_Players.end() ? nullptr : &pair->second;
 }
 
-const Player* PlayerManagerBase::GetPlayer(LambdaEngine::IClient* pClient)
+const Player* PlayerManagerBase::GetPlayer(IClient* pClient)
 {
-    return GetPlayer(pClient->GetUID());
+	return GetPlayer(pClient->GetUID());
 }
 
-const Player* PlayerManagerBase::GetPlayer(LambdaEngine::Entity entity)
+const Player* PlayerManagerBase::GetPlayer(Entity entity)
 {
 	auto pair = s_PlayerEntityToUID.find(entity);
 	return pair == s_PlayerEntityToUID.end() ? nullptr : GetPlayer(pair->second);
+}
+
+const THashTable<uint64, Player>& PlayerManagerBase::GetPlayers()
+{
+	return s_Players;
 }
 
 Player* PlayerManagerBase::GetPlayerNoConst(uint64 uid)
@@ -44,18 +49,18 @@ Player* PlayerManagerBase::GetPlayerNoConst(uint64 uid)
 	return pair == s_Players.end() ? nullptr : &pair->second;
 }
 
-Player* PlayerManagerBase::GetPlayerNoConst(LambdaEngine::IClient* pClient)
+Player* PlayerManagerBase::GetPlayerNoConst(IClient* pClient)
 {
 	return GetPlayerNoConst(pClient->GetUID());
 }
 
-Player* PlayerManagerBase::GetPlayerNoConst(LambdaEngine::Entity entity)
+Player* PlayerManagerBase::GetPlayerNoConst(Entity entity)
 {
 	auto pair = s_PlayerEntityToUID.find(entity);
 	return pair == s_PlayerEntityToUID.end() ? nullptr : GetPlayerNoConst(pair->second);
 }
 
-void PlayerManagerBase::RegisterPlayerEntity(uint64 uid, LambdaEngine::Entity entity)
+void PlayerManagerBase::RegisterPlayerEntity(uint64 uid, Entity entity)
 {
 	auto pair = s_Players.find(uid);
 	if (pair != s_Players.end())
@@ -118,6 +123,13 @@ bool PlayerManagerBase::UpdatePlayerFromPacket(Player* pPlayer, const PacketPlay
 		PlayerPingUpdatedEvent event(pPlayer);
 		EventQueue::SendEventImmediate(event);
 	}
+	if (pPlayer->m_IsHost != pPacket->IsHost)
+	{
+		changed = true;
+		pPlayer->m_IsHost = pPacket->IsHost;
+		PlayerHostUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
+	}
 	if (pPlayer->m_State != pPacket->State)
 	{
 		changed = true;
@@ -169,6 +181,7 @@ bool PlayerManagerBase::UpdatePlayerFromPacket(Player* pPlayer, const PacketPlay
 void PlayerManagerBase::UpdatePacketFromPlayer(PacketPlayerInfo* pPacket, const Player* pPlayer)
 {
 	pPacket->UID			= pPlayer->m_UID;
+	pPacket->IsHost			= pPlayer->m_IsHost;
 	pPacket->Ping			= pPlayer->m_Ping;
 	pPacket->State			= pPlayer->m_State;
 	pPacket->Team			= pPlayer->m_Team;

@@ -45,10 +45,15 @@ using namespace LambdaEngine;
 ServerState::ServerState(const std::string& clientHostID, const std::string& authenticationID) :
 	m_MultiplayerServer()
 {
-	if(!authenticationID.empty())
-		ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID)); //ID server checks to authenticate client with higher authorities
-	if (!clientHostID.empty())
-		ServerHostHelper::SetClientHostID(std::stoi(clientHostID)); // ID client checks to see if it were the creater of server
+	if (!authenticationID.empty() && !clientHostID.empty())
+	{
+		ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID));
+		ServerHostHelper::SetClientHostID(std::stoi(clientHostID));
+	}
+	else
+	{
+		ServerHostHelper::SetIsDedicated(true);
+	}
 
 	DWORD length = UNLEN + 1;
 	char buffer[UNLEN + 1];
@@ -60,14 +65,16 @@ ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketConfigureServerReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
+	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &ServerState::OnClientConnected);
 }
 
 void ServerState::Init()
 {
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketConfigureServerReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
+	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &ServerState::OnClientConnected);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -108,6 +115,12 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	return true;
 }
 
+bool ServerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
+{
+
+	return false;
+}
+
 void ServerState::Tick(Timestamp delta)
 {
 	m_MultiplayerServer.TickMainThreadInternal(delta);
@@ -118,7 +131,7 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
-bool ServerState::OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketGameSettings>& event)
+bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& event)
 {	
 	const PacketGameSettings& packet = event.Packet;
 

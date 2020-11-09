@@ -6,6 +6,8 @@
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 #include "Multiplayer/Packet/PacketGameSettings.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketStartGame.h"
+#include "Multiplayer/Packet/PacketMatchLoad.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
@@ -29,6 +31,8 @@ void PacketType::Init()
 	HEALTH_CHANGED			= RegisterPacketTypeWithComponent<PacketHealthChanged>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<PacketFlagEdited>();
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
+	START_GAME				= RegisterPacketType<PacketStartGame>();
+	MATCH_LOAD				= RegisterPacketType<PacketMatchLoad>();
 	MATCH_START				= RegisterPacketType<PacketMatchStart>();
 	MATCH_BEGIN				= RegisterPacketType<PacketMatchBegin>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();

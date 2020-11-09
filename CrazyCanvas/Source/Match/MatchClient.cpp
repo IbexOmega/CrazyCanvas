@@ -146,7 +146,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			CreatePlayerDesc createPlayerDesc =
 			{
 				.ClientUID			= event.pClient->GetUID(),
-				.IsLocal			= packet.Player.IsMySelf,
+				.IsLocal			= packet.Player.ClientUID == event.pClient->GetUID(),
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.Position			= packet.Position,
@@ -163,7 +163,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			}
 
 			// Notify systems that a new player connected (Not myself tho)
-			if (!packet.Player.IsMySelf)
+			if (!createPlayerDesc.IsLocal)
 			{
 				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
 				EventQueue::SendEvent(connectedEvent);

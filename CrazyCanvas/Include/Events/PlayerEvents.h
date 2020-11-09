@@ -101,3 +101,14 @@ public:
 
 	DECLARE_PLAYER_EVENT_TYPE(PlayerPingUpdatedEvent);
 };
+
+struct PlayerHostUpdatedEvent : public PlayerBaseEvent
+{
+public:
+	inline PlayerHostUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerHostUpdatedEvent);
+};

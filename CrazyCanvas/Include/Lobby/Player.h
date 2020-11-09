@@ -24,6 +24,7 @@ class Player
 public:
 	const LambdaEngine::String& GetName() const;
 	LambdaEngine::Entity GetEntity() const;
+	bool IsHost() const;
 	uint16 GetPing() const;
 	EPlayerState GetState() const;
 	uint8 GetTeam() const;
@@ -44,6 +45,7 @@ private:
 private:
 	LambdaEngine::String m_Name;
 	LambdaEngine::Entity m_Entity;
+	bool m_IsHost;
 	uint16 m_Ping;
 	EPlayerState m_State;
 	uint8 m_Team;

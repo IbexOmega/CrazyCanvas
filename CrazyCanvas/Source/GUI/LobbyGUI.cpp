@@ -3,7 +3,6 @@
 #include "NoesisPCH.h"
 
 #include "Lobby/PlayerManagerClient.h"
-#include "Multiplayer/ClientHelper.h"
 
 #include "Containers/String.h"
 
@@ -13,6 +12,7 @@
 
 #include "Multiplayer/ServerHostHelper.h"
 #include "Multiplayer/ClientHelper.h"
+#include "Multiplayer/Packet/PacketStartGame.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -147,9 +147,17 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 
 void LobbyGUI::OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
-
-	PlayerManagerClient::SetLocalPlayerReady(!pPlayer->IsReady());
+	if (ServerHostHelper::IsHost())
+	{
+		PacketStartGame packet;
+		packet.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
+		ClientHelper::Send(packet);
+	}
+	else
+	{
+		const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+		PlayerManagerClient::SetLocalPlayerReady(!pPlayer->IsReady());
+	}
 }
 
 void LobbyGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
