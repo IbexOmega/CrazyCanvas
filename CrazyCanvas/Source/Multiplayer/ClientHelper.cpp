@@ -13,3 +13,8 @@ void ClientHelper::RemoveNetworkDiscoveryTarget(LambdaEngine::IPAddress* pAddres
 {
 	NetworkDiscovery::RemoveTarget(pAddress);
 }
+
+void ClientHelper::Disconnect(const LambdaEngine::String& reason)
+{
+	ClientSystem::GetInstance().GetClient()->Disconnect(reason);
+}

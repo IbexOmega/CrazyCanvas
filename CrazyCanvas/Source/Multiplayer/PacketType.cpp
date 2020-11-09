@@ -4,14 +4,19 @@
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
-#include "Multiplayer/Packet/PacketConfigureServer.h"
+#include "Multiplayer/Packet/PacketGameSettings.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketStartGame.h"
+#include "Multiplayer/Packet/PacketMatchLoad.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 #include "Multiplayer/Packet/PacketWeaponFired.h"
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 #include "Multiplayer/Packet/PacketFlagEdited.h"
+#include "Multiplayer/Packet/PacketJoin.h"
+#include "Multiplayer/Packet/PacketLeave.h"
+#include "Multiplayer/Packet/PacketPlayerInfo.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -26,10 +31,16 @@ void PacketType::Init()
 	HEALTH_CHANGED			= RegisterPacketTypeWithComponent<PacketHealthChanged>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<PacketFlagEdited>();
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
+	START_GAME				= RegisterPacketType<PacketStartGame>();
+	MATCH_LOAD				= RegisterPacketType<PacketMatchLoad>();
 	MATCH_START				= RegisterPacketType<PacketMatchStart>();
 	MATCH_BEGIN				= RegisterPacketType<PacketMatchBegin>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
-	CONFIGURE_SERVER		= RegisterPacketType<PacketConfigureServer>();
+	GAME_SETTINGS			= RegisterPacketType<PacketGameSettings>();
+	JOIN					= RegisterPacketType<PacketJoin>();
+	LEAVE					= RegisterPacketType<PacketLeave>();
+	CHAT_MESSAGE			= RegisterPacketTypeRaw();
+	PLAYER_INFO				= RegisterPacketType<PacketPlayerInfo>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

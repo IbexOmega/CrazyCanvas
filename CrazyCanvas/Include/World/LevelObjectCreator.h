@@ -59,6 +59,7 @@ struct CreateFlagDesc
 
 struct CreatePlayerDesc
 {
+	uint64								ClientUID			= 0;
 	bool								IsLocal				= false;
 	int32								PlayerNetworkUID	= -1;
 	int32								WeaponNetworkUID	= -1;
@@ -94,8 +95,8 @@ class LevelObjectCreator
 {
 	typedef ELevelObjectType(*LevelObjectCreateByPrefixFunc)(const LambdaEngine::LevelObjectOnLoad&, LambdaEngine::TArray<LambdaEngine::Entity>&, const glm::vec3&);
 	typedef bool(*LevelObjectCreateByTypeFunc)(
-		const void* pData, 
-		LambdaEngine::TArray<LambdaEngine::Entity>&, 
+		const void* pData,
+		LambdaEngine::TArray<LambdaEngine::Entity>&,
 		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>&);
 
 	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
@@ -122,8 +123,8 @@ public:
 	*	Special Objects are similar to ECS::Entities but one Special Object can create many entities.
 	*/
 	static ELevelObjectType CreateLevelObjectFromPrefix(
-		const LambdaEngine::LevelObjectOnLoad& levelObject, 
-		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
 
 	static bool CreateLevelObjectOfType(
@@ -132,29 +133,29 @@ public:
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
 
-	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc>& GetLevelObjectOnLoadDescriptions() 
-	{ 
-		return s_LevelObjectOnLoadDescriptions; 
+	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc>& GetLevelObjectOnLoadDescriptions()
+	{
+		return s_LevelObjectOnLoadDescriptions;
 	}
 
 private:
 	static ELevelObjectType CreatePlayerSpawn(
-		const LambdaEngine::LevelObjectOnLoad& levelObject, 
-		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
-	
+
 	static ELevelObjectType CreateFlagSpawn(
-		const LambdaEngine::LevelObjectOnLoad& levelObject, 
-		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
 
 	static ELevelObjectType CreateFlagDeliveryPoint(
-		const LambdaEngine::LevelObjectOnLoad& levelObject, 
-		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
 	static ELevelObjectType CreateKillPlane(
-		const LambdaEngine::LevelObjectOnLoad& levelObject, 
-		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
 
 	static bool CreateFlag(

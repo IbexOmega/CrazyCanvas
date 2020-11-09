@@ -6,6 +6,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "Networking/API/IPAddress.h"
+#include "Networking/API/IPEndPoint.h"
 
 struct HostGameDescription
 {

@@ -51,6 +51,8 @@
 
 #include "Physics/CollisionGroups.h"
 
+#include "Lobby/PlayerManagerBase.h"
+
 bool LevelObjectCreator::Init()
 {
 	using namespace LambdaEngine;
@@ -894,6 +896,9 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
+
+	PlayerManagerBase::RegisterPlayerEntity(pPlayerDesc->ClientUID, playerEntity);
+
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
 	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
 

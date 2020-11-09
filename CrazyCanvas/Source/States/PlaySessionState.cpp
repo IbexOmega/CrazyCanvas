@@ -61,7 +61,7 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
-	
+
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
@@ -88,7 +88,7 @@ void PlaySessionState::Init()
 	}
 	else
 	{
-		ClientSystem::GetInstance().Connect(m_EndPoint);
+		//ClientSystem::GetInstance().Connect(m_EndPoint);
 	}
 }
 

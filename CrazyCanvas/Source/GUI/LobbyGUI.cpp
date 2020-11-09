@@ -2,6 +2,20 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
+#include "Containers/String.h"
+
+#include "Game/StateManager.h"
+
+#include "States/MultiplayerState.h"
+
+#include "Multiplayer/ServerHostHelper.h"
+#include "Multiplayer/ClientHelper.h"
+#include "Multiplayer/Packet/PacketStartGame.h"
+
+#include "Application/API/Events/EventQueue.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
@@ -18,53 +32,43 @@ LobbyGUI::LobbyGUI()
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 
-	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::KeyboardCallback);
+	m_GameSettings.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
 
+	SetHostMode(ServerHostHelper::IsHost());
+
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
 }
 
 LobbyGUI::~LobbyGUI()
 {
-	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::KeyboardCallback);
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
 }
 
-bool LobbyGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)
+void LobbyGUI::AddPlayer(const Player& player)
 {
-	// ONLY FOR TESTING - REMOVE LATER
-	if (event.Key == EKey::KEY_P)
-	{
-		AddSettingComboBox("maxTime", "max time", {"2 min", "5 min", "10 min"}, "2 min");
-	}
-	if (event.Key == EKey::KEY_O)
-	{
-		SetHostMode(!m_IsHost);
-	}
+	StackPanel* pnl = player.GetTeam() == 0 ? m_pBlueTeamStackPanel : m_pRedTeamStackPanel;
 
-	return false;
-}
-
-void LobbyGUI::AddPlayer(const LambdaEngine::String& playerName, uint32 team)
-{
-	StackPanel* pnl = team == 0 ? m_pBlueTeamStackPanel : m_pRedTeamStackPanel;
+	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
 	// Grid
 	Ptr<Grid> playerGrid = *new Grid();
-	playerGrid->SetName((playerName + "_grid").c_str());
-	RegisterName(playerName + "_grid", playerGrid);
+	playerGrid->SetName((uid + "_grid").c_str());
+	RegisterName(uid + "_grid", playerGrid);
 	ColumnDefinitionCollection* columnCollection = playerGrid->GetColumnDefinitions();
 	AddColumnDefinitionStar(columnCollection, 1.f);
 	AddColumnDefinitionStar(columnCollection, 7.f);
 	AddColumnDefinitionStar(columnCollection, 2.f);
 
 	// Player label
-	AddLabelWithStyle(playerName + "_name", playerGrid, "PlayerTeamLabelStyle", playerName);
+	AddLabelWithStyle(uid + "_name", playerGrid, "PlayerTeamLabelStyle", player.GetName());
 
 	// Ping label
-	AddLabelWithStyle(playerName + "_ping", playerGrid, "PingLabelStyle", "?");
+	AddLabelWithStyle(uid + "_ping", playerGrid, "PingLabelStyle", "-");
 
 	// Checkmark image
 	Ptr<Image> image = *new Image();
-	image->SetName((playerName + "_checkmark").c_str());
-	RegisterName(playerName + "_checkmark", image);
+	image->SetName((uid + "_checkmark").c_str());
+	RegisterName(uid + "_checkmark", image);
 	Style* style = FrameworkElement::FindResource<Style>("CheckmarkImageStyle");
 	image->SetStyle(style);
 	image->SetVisibility(Visibility::Visibility_Hidden);
@@ -73,50 +77,60 @@ void LobbyGUI::AddPlayer(const LambdaEngine::String& playerName, uint32 team)
 	pnl->GetChildren()->Add(playerGrid);
 }
 
-void LobbyGUI::RemovePlayer(const LambdaEngine::String& playerName)
+void LobbyGUI::RemovePlayer(const Player& player)
 {
-	Grid* grid = m_pBlueTeamStackPanel->FindName<Grid>((playerName + "_grid").c_str());
+	const LambdaEngine::String& uid = std::to_string(player.GetUID());
+
+	Grid* grid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
 	if (grid)
 	{
 		m_pBlueTeamStackPanel->GetChildren()->Remove(grid);
 		return;
 	}
 
-	grid = m_pRedTeamStackPanel->FindName<Grid>((playerName + "_grid").c_str());
+	grid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
 	if (grid)
 	{
 		m_pRedTeamStackPanel->GetChildren()->Remove(grid);
 	}
 }
 
-void LobbyGUI::UpdatePlayerPing(const LambdaEngine::String& playerName, uint32 ping)
+void LobbyGUI::UpdatePlayerPing(const Player& player)
 {
-	Label* pingLabel = FrameworkElement::FindName<Label>((playerName + "_ping").c_str());
+	const LambdaEngine::String& uid = std::to_string(player.GetUID());
+
+	Label* pingLabel = FrameworkElement::FindName<Label>((uid + "_ping").c_str());
 	if (pingLabel)
 	{
-		pingLabel->SetContent(std::to_string(ping).c_str());
+		pingLabel->SetContent(std::to_string(player.GetPing()).c_str());
 	}
 }
 
-void LobbyGUI::UpdatePlayerReady(const LambdaEngine::String& playerName, bool ready)
+void LobbyGUI::UpdatePlayerReady(const Player& player)
 {
+	const LambdaEngine::String& uid = std::to_string(player.GetUID());
+
 	// Checkmark styling is currently broken
-	Image* image = FrameworkElement::FindName<Image>((playerName + "_checkmark").c_str());
+	Image* image = FrameworkElement::FindName<Image>((uid + "_checkmark").c_str());
 	if (image)
 	{
-		image->SetVisibility(ready ? Visibility::Visibility_Visible : Visibility::Visibility_Hidden);
+		image->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Hidden);
 	}
 }
 
-void LobbyGUI::WriteChatMessage(const LambdaEngine::String& playerName, const LambdaEngine::String& chatMessage)
+void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 {
+	const ChatMessage& chatMessage = event.Message;
+
+	const LambdaEngine::String& name = event.IsSystemMessage() ? "Server" : chatMessage.Name;
+
 	Ptr<DockPanel> dockPanel = *new DockPanel();
 
-	AddLabelWithStyle("", dockPanel, "ChatNameLabelStyle", playerName);
+	AddLabelWithStyle("", dockPanel, "ChatNameLabelStyle", name);
 	AddLabelWithStyle("", dockPanel, "ChatNameSeperatorStyle", "");
 
 	Ptr<TextBox> message = *new TextBox();
-	message->SetText(chatMessage.c_str());
+	message->SetText(chatMessage.Message.c_str());
 	Style* style = FrameworkElement::FindResource<Style>("ChatMessageStyle");
 	message->SetStyle(style);
 	dockPanel->GetChildren()->Add(message);
@@ -124,19 +138,10 @@ void LobbyGUI::WriteChatMessage(const LambdaEngine::String& playerName, const La
 	m_pChatPanel->GetChildren()->Add(dockPanel);
 }
 
-void LobbyGUI::SetLocalPlayerName(const LambdaEngine::String& playerName)
-{
-	m_LocalPlayerName = playerName;
-}
-
 void LobbyGUI::SetHostMode(bool isHost)
 {
-	m_IsHost = isHost;
-
-	LOG_WARNING("Host is: %d", m_IsHost);
-
-	m_pSettingsClientStackPanel->SetVisibility(m_IsHost ? Visibility_Hidden : Visibility_Visible);
-	m_pSettingsHostStackPanel->SetVisibility(m_IsHost ? Visibility_Visible : Visibility_Hidden);
+	m_pSettingsClientStackPanel->SetVisibility(isHost ? Visibility_Hidden : Visibility_Visible);
+	m_pSettingsHostStackPanel->SetVisibility(isHost ? Visibility_Visible : Visibility_Hidden);
 }
 
 void LobbyGUI::UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value)
@@ -189,22 +194,58 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 
 void LobbyGUI::OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-
+	if (ServerHostHelper::IsHost())
+	{
+		PacketStartGame packet;
+		packet.AuthenticationID = ServerHostHelper::GetAuthenticationHostID();
+		ClientHelper::Send(packet);
+	}
+	else
+	{
+		const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+		PlayerManagerClient::SetLocalPlayerReady(!pPlayer->IsReady());
+	}
 }
 
 void LobbyGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	ClientHelper::Disconnect("Leaving lobby");
 
+	State* pMainMenuState = DBG_NEW MultiplayerState();
+	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void LobbyGUI::OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	TrySendChatMessage();
+}
+
+void LobbyGUI::SendGameSettings()
+{
+	ClientHelper::Send(m_GameSettings);
+}
+
+bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
+{
+	if (event.Key == LambdaEngine::EKey::KEY_ENTER)
+	{
+		if (m_pChatInputTextBox->GetIsFocused())
+		{
+			TrySendChatMessage();
+			return true;
+		}
+	}
+	return false;
+}
+
+void LobbyGUI::TrySendChatMessage()
+{
 	LambdaEngine::String message = m_pChatInputTextBox->GetText();
-	if (message == "")
+	if (message.empty())
 		return;
 
 	m_pChatInputTextBox->SetText("");
-	WriteChatMessage(m_LocalPlayerName, message);
+	ChatManager::SendChatMessage(message);
 }
 
 void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args)

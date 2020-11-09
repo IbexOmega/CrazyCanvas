@@ -10,8 +10,12 @@
 #include "NsGui/TextBox.h"
 #include "NsGui/Selector.h"
 
-// TEMP - REMOVE IF IT IS PULL REQUEST
-#include "Application/API/Events/EventQueue.h"
+#include "Lobby/Player.h"
+#include "Events/ChatEvents.h"
+
+#include "Multiplayer/Packet/PacketGameSettings.h"
+
+#include "Application/API/Events/KeyEvents.h"
 
 class LobbyGUI : public Noesis::Grid
 {
@@ -22,12 +26,11 @@ public:
 	// TEMP - REMOVE IF IT IS PULL REQUEST
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 
-	void AddPlayer(const LambdaEngine::String& playerName, uint32 team);
-	void RemovePlayer(const LambdaEngine::String& playerName);
-	void UpdatePlayerReady(const LambdaEngine::String& playerName, bool ready);
-	void UpdatePlayerPing(const LambdaEngine::String& playerName, uint32 ping);
-	void WriteChatMessage(const LambdaEngine::String& playerName, const LambdaEngine::String& chatMessage);
-	void SetLocalPlayerName(const LambdaEngine::String& playerName);
+	void AddPlayer(const Player& player);
+	void RemovePlayer(const Player& player);
+	void UpdatePlayerReady(const Player& player);
+	void UpdatePlayerPing(const Player& player);
+	void WriteChatMessage(const ChatEvent& event);
 	void SetHostMode(bool isHost);
 	void UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value);
 
@@ -50,6 +53,11 @@ private:
 	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* parent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp);
 
+	void SendGameSettings();
+
+	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
+	void TrySendChatMessage();
+
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
 
@@ -61,6 +69,5 @@ private:
 	Noesis::StackPanel* m_pSettingsClientStackPanel	= nullptr;
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
 
-	LambdaEngine::String m_LocalPlayerName		= "";
-	bool m_IsHost								= false;
+	PacketGameSettings m_GameSettings;
 };
