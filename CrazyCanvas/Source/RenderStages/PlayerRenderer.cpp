@@ -183,7 +183,6 @@ namespace LambdaEngine
 
 		else if (resourceName == "G_BUFFER_AO_ROUGH_METAL_VALID")
 		{
-
 			constexpr DescriptorSetIndex setIndex = 1U;
 
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
@@ -223,29 +222,6 @@ namespace LambdaEngine
 
 		}
 
-		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
-		{
-			constexpr DescriptorSetIndex setIndex = 1U;
-
-			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
-			if (m_DescriptorSet1 != nullptr)
-			{
-				Sampler* sampler = Sampler::GetLinearSampler();
-				uint32 bindingIndex = 4;
-				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
-			}
-			else
-			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] G_BUFFER_DEPTH_STENCIL", setIndex);
-			}
-
-			for (uint32 i = 0; i < imageCount; i++)
-			{
-				// Not sure if this the correct textureView
-				m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]); // used in beginRenderPass
-			}
-
-		}
 		else if (resourceName == "DIRL_SHADOWMAP")
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
@@ -270,7 +246,7 @@ namespace LambdaEngine
 		m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 		if (m_DescriptorSet1 != nullptr)
 		{
-			Sampler* sampler = Sampler::GetLinearSampler(); // h'r ska jag ändra gissar jag..
+			Sampler* sampler = Sampler::GetLinearSampler();
 			uint32 bindingIndex = 6;
 			m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
 		}
