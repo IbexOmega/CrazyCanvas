@@ -99,6 +99,15 @@
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Height" Value="50" />
         </Style>
+
+        <Style TargetType="Path"
+               x:Key="CrownPath">
+            <Setter Property="Fill" Value="#ffd32a" />
+            <Setter Property="Stroke" Value="Black" />
+            <Setter Property="StrokeThickness" Value="15" />
+            <Setter Property="Data" Value="M 246.74 14.38 204.24 185.38 44.24 185.38 6.74 14.38 86.74 117.38 123.24 14.88 162.74 117.38 246.74 14.38"/>
+            <Setter Property="Margin" Value="10" />
+        </Style>
     </Grid.Resources>
 
     <Grid.RowDefinitions>

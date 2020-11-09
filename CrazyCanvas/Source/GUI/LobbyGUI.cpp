@@ -120,6 +120,36 @@ void LobbyGUI::UpdatePlayerHost(const Player& player)
 	{
 		SetHostMode(player.IsHost());
 	}
+
+	// Set host icon
+	if (player.IsHost())
+	{
+		const LambdaEngine::String uid = std::to_string(player.GetUID());
+		// Host icon is not an image due to AA problems, it is a vector path instead
+		Viewbox* crownBox = FrameworkElement::FindName<Viewbox>("host_icon");
+		if (crownBox)
+		{
+			Grid* newGrid = GetPlayerGrid(player);
+			Grid* oldGrid = static_cast<Grid*>(crownBox->GetParent());
+			oldGrid->GetChildren()->Remove(crownBox);
+			newGrid->GetChildren()->Add(crownBox);
+		}
+		else
+		{
+			// CreateHostIcon()
+			Grid* grid = GetPlayerGrid(player);
+			if (grid)
+			{
+				CreateHostIcon(grid);
+			}
+			else
+			{
+				LOG_WARNING("Player %s could not be found when updating player host!", player.GetName().c_str());
+			}
+
+		}
+
+	}
 }
 
 void LobbyGUI::UpdatePlayerReady(const Player& player)
@@ -310,4 +340,33 @@ void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel
 void LobbyGUI::RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp)
 {
 	FrameworkElement::GetView()->GetContent()->RegisterName(name.c_str(), comp);
+}
+
+void LobbyGUI::CreateHostIcon(Noesis::Panel* parent)
+{
+	Ptr<Viewbox> viewBox	= *new Viewbox();
+	Ptr<Path> path			= *new Path();
+
+	Style* style = FrameworkElement::FindResource<Style>("CrownPath");
+	path->SetStyle(style);
+	viewBox->SetChild(path);
+
+	// viewBox->SetNodeParent(parent);
+	parent->GetChildren()->Add(viewBox);
+
+	RegisterName("host_icon", viewBox);
+}
+
+Noesis::Grid* LobbyGUI::GetPlayerGrid(const Player& player)
+{
+	const LambdaEngine::String& uid = std::to_string(player.GetUID());
+
+	Grid* grid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	if (grid)
+	{
+		return grid;
+	}
+
+	grid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	return grid;
 }
