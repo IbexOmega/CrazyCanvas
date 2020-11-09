@@ -64,7 +64,6 @@ SRayHitDescription CalculateHitData()
 	v2TexCoord = v2TexCoord * factor + factor*vec2(float(tx), float(ty));
 
 	vec2 texCoord = (v0TexCoord * barycentricCoords.x + v1TexCoord * barycentricCoords.y + v2TexCoord * barycentricCoords.z);
-	vec3 shadingNormal		= vec3(1.0, 0.0, 0.0);
 
 	SRayHitDescription hitDescription;
 	hitDescription.Albedo_Alpha			= texture(u_TextureAtlases[emitter.AtlasIndex], texCoord).rgba;
