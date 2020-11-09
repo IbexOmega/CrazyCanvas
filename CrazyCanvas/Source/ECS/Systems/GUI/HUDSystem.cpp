@@ -130,7 +130,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 	if (!m_EnemyHitEventsToProcess.IsEmpty())
 	{
-		for (int i = 0; i < m_EnemyHitEventsToProcess.GetSize(); i++)
+		for (uint32 i = 0; i < m_EnemyHitEventsToProcess.GetSize(); i++)
 		{
 			m_HUDGUI->DisplayHitIndicator();
 		}
@@ -205,7 +205,6 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 		else
 		{
 			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			const ComponentArray<PlayerForeignComponent>* pPlayerForeignComponents = pECS->GetComponentArray<PlayerForeignComponent>();
 
 			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
 			{
