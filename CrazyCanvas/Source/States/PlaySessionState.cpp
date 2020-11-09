@@ -40,16 +40,28 @@ PlaySessionState::PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndP
 	m_EndPoint(endPoint),
 	m_MultiplayerClient()
 {
+	using namespace LambdaEngine;
+
+	if (m_Singleplayer)
+	{
+		SingleplayerInitializer::Init();
+	}
 }
 
 PlaySessionState::~PlaySessionState()
 {
+	using namespace LambdaEngine;
+
+	if (m_Singleplayer)
+	{
+		SingleplayerInitializer::Release();
+	}
 }
 
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
-	
+
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
@@ -72,7 +84,7 @@ void PlaySessionState::Init()
 
 	if (m_Singleplayer)
 	{
-		SingleplayerInitializer::InitSingleplayer();
+		SingleplayerInitializer::Setup();
 	}
 	else
 	{

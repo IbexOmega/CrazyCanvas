@@ -4,12 +4,14 @@
 #include "ECS/System.h"
 
 #include "Events/GameplayEvents.h"
+#include "Physics/PhysicsEvents.h"
 
 #include "GUI/HUDGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+#include "Events/MatchEvents.h"
 
 class HUDSystem : public LambdaEngine::System
 {
@@ -27,6 +29,10 @@ public:
 
 	bool OnWeaponFired(const WeaponFiredEvent& event);
 	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
+	bool OnProjectileHit(const ProjectileHitEvent& event);
+
+private:
+	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
 
 private:
 	LambdaEngine::IDVector m_PlayerEntities;

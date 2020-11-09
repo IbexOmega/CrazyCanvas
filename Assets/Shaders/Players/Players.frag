@@ -99,13 +99,14 @@ void main()
 
 	vec3 albedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
-	vec3 colorHDR;
 
+	albedo = mix(albedo, teamColor, shouldPaint);
+
+	float alpha = isPainted ? 1.0f : 0.6f;
+	vec3 colorHDR;
 	//1
 	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
 	{
-		float alpha = isPainted ? 1.0f : 0.6f;
-
 		//Reinhard Tone-Mapping
 		vec3 colorLDR = albedo / (albedo + vec3(1.0f));
 
@@ -203,7 +204,7 @@ void main()
 
 	
 	// float luminance = CalculateLuminance(colorHDR);
-	float alpha = isPainted ? 1.0f : 0.6f;
+	// float alpha = isPainted ? 1.0f : 0.6f;
 	// //Reinhard Tone-Mapping
 	// vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
 
@@ -213,6 +214,6 @@ void main()
 	// out_Color = vec4(finalColor, 1.0f);
 
 	// 5
-	out_Color = vec4(mix(colorHDR, teamColor, shouldPaint), alpha);
+	out_Color = vec4(colorHDR, alpha);
 	// out_Color = vec4(colorHDR, alpha);
 }

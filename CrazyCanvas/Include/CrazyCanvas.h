@@ -22,5 +22,6 @@ public:
 	void Render(LambdaEngine::Timestamp delta);
 
 private:
+	bool RegisterGUIComponents();
 	bool LoadRendererResources();
 };

@@ -24,8 +24,10 @@ namespace LambdaEngine
 
 		virtual uint32				CreateAudioListener()									override final;
 		virtual IMusic*				CreateMusic(const MusicDesc* pDesc)						override final;
-		virtual ISoundEffect3D*		CreateSoundEffect(const SoundEffect3DDesc* pDesc)		override final;
-		virtual ISoundInstance3D*	CreateSoundInstance(const SoundInstance3DDesc* pDesc)	override final;
+		virtual ISoundEffect3D*		Create3DSoundEffect(const SoundEffect3DDesc* pDesc)		override final;
+		virtual ISoundEffect2D*		Create2DSoundEffect(const SoundEffect2DDesc* pDesc)		override final;
+		virtual ISoundInstance3D*	Create3DSoundInstance(const SoundInstance3DDesc* pDesc)	override final;
+		virtual ISoundInstance2D*	Create2DSoundInstance(const SoundInstance2DDesc* pDesc)	override final;
 		virtual IAudioGeometry*		CreateAudioGeometry(const AudioGeometryDesc* pDesc)		override final;
 		virtual IReverbSphere*		CreateReverbSphere(const ReverbSphereDesc* pDesc)		override final;
 
