@@ -66,10 +66,10 @@
             ]
         },
         {
-            "name": "Test Map",
+            "name": "Canvas Map",
             "modules": [
                 {
-                    "filename": "test.glb",
+                    "filename": "CanvasMap.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
