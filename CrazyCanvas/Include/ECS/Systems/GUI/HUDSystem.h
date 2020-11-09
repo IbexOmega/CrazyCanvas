@@ -42,5 +42,12 @@ private:
 	Noesis::Ptr<HUDGUI> m_HUDGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
 
+	LambdaEngine::SpinLock m_DeferredEventsLock;
+	LambdaEngine::TArray<ProjectileHitEvent> m_DeferredDamageTakenHitEvents;
+	LambdaEngine::TArray<ProjectileHitEvent> m_DamageTakenEventsToProcess;
+
+	LambdaEngine::TArray<bool> m_DeferredEnemyHitEvents;
+	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;
+	
 	uint32 m_LocalTeamIndex = UINT32_MAX;
 };

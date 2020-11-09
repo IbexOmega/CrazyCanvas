@@ -87,8 +87,6 @@ void HUDSystem::FixedTick(Timestamp delta)
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
 
-	
-
 	for (Entity players : m_PlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(players);
@@ -101,6 +99,45 @@ void HUDSystem::FixedTick(Timestamp delta)
 			m_LocalTeamIndex = pTeamComponents->GetConstData(players).TeamIndex;
 		}
 	}
+
+	{
+		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
+		if (!m_DeferredDamageTakenHitEvents.IsEmpty())
+		{
+			m_DamageTakenEventsToProcess = m_DeferredDamageTakenHitEvents;
+			m_DeferredDamageTakenHitEvents.Clear();
+		}
+
+		if (!m_DeferredEnemyHitEvents.IsEmpty())
+		{
+			m_EnemyHitEventsToProcess = m_DeferredEnemyHitEvents;
+			m_DeferredEnemyHitEvents.Clear();
+		}
+	}
+
+	if (!m_DamageTakenEventsToProcess.IsEmpty())
+	{
+		for (ProjectileHitEvent& event : m_DamageTakenEventsToProcess)
+		{
+			const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
+			const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
+
+			m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
+		}
+
+		m_DamageTakenEventsToProcess.Clear();
+	}
+
+	if (!m_EnemyHitEventsToProcess.IsEmpty())
+	{
+		for (int i = 0; i < m_EnemyHitEventsToProcess.GetSize(); i++)
+		{
+			m_HUDGUI->DisplayHitIndicator();
+		}
+
+		m_EnemyHitEventsToProcess.Clear();
+	}
+
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -156,15 +193,18 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 {
 	if (!MultiplayerUtils::IsServer())
 	{
+		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
+
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 		
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
-			const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
+			/*const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
 			const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
 
-			m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
+			m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);*/
+			m_DeferredDamageTakenHitEvents.EmplaceBack(event);
 		}
 		else
 		{
@@ -175,7 +215,8 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 			{
 				if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex)
 				{
-					m_HUDGUI->DisplayHitIndicator();
+					m_DeferredEnemyHitEvents.EmplaceBack(true);
+					//m_HUDGUI->DisplayHitIndicator();
 				}
 			}
 		}
