@@ -12,8 +12,6 @@
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
 
-#include "Networking/API/IPAddress.h"
-
 #include "Multiplayer/MultiplayerClient.h"
 
 class Level;
@@ -21,7 +19,7 @@ class Level;
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndPoint& endPoint);
+	PlaySessionState(bool singlePlayer = false);
 	~PlaySessionState();
 
 	void Init() override final;
@@ -39,7 +37,6 @@ public:
 
 private:
 	bool m_Singleplayer;
-	LambdaEngine::IPEndPoint m_EndPoint;
 
 	/* Systems */
 	HUDSystem m_HUDSystem;

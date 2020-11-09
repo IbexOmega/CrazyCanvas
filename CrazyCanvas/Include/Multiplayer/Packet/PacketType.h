@@ -28,7 +28,7 @@ public:
 	inline static uint16 FLAG_EDITED				= 0;
 	inline static uint16 TEAM_SCORED				= 0;
 	inline static uint16 START_GAME					= 0;
-	inline static uint16 MATCH_LOAD					= 0;
+	inline static uint16 MATCH_LOADED				= 0;
 	inline static uint16 MATCH_START				= 0;
 	inline static uint16 MATCH_BEGIN				= 0;
 	inline static uint16 GAME_OVER					= 0;

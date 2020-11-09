@@ -94,12 +94,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
 	}
-	else if (stateStr == "client")
+	/*else if (stateStr == "client")
 	{
 		ClientSystem::Init(pGameName);
 		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
-		pStartingState = DBG_NEW PlaySessionState(false, IPEndPoint(NetworkUtils::GetLocalAddress(), port));
-	}
+		pStartingState = DBG_NEW PlaySessionState(false);
+	}*/
 	else if (stateStr == "server")
 	{
 		ServerSystem::Init(pGameName);

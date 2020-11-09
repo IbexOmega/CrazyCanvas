@@ -11,6 +11,7 @@ public:
 	DECL_STATIC_CLASS(PlayerManagerServer);
 
 	static bool HasPlayerAuthority(const LambdaEngine::IClient* pClient);
+	static void SetPlayerStateLoading();
 
 protected:
 	static void Init();

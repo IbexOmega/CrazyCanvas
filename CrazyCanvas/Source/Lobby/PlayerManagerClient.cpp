@@ -71,6 +71,28 @@ void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 	}
 }
 
+void PlayerManagerClient::SetLocalPlayerStateLoaded()
+{
+	Player* pPlayer = GetPlayerLocalNoConst();
+	if (pPlayer)
+	{
+		EPlayerState currentState = pPlayer->m_State;
+
+		ASSERT_MSG(currentState == PLAYER_STATE_LOADING, "Prev state was not LOADING!");
+
+		PacketPlayerInfo packet;
+
+		UpdatePacketFromPlayer(&packet, pPlayer);
+		packet.State = PLAYER_STATE_LOADED;
+		UpdatePlayerFromPacket(pPlayer, &packet);
+
+		ClientHelper::Send(packet);
+
+		PlayerInfoUpdatedEvent playerInfoUpdatedEvent(pPlayer);
+		EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
+	}
+}
+
 void PlayerManagerClient::Init()
 {
 	PlayerManagerBase::Init();

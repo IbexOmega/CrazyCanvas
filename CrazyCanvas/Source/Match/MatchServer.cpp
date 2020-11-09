@@ -39,7 +39,7 @@
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 
-#include "Lobby/PlayerManagerBase.h"
+#include "Lobby/PlayerManagerServer.h"
 
 #include <imgui.h>
 
@@ -52,6 +52,7 @@ MatchServer::~MatchServer()
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
+	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 }
 
 void MatchServer::KillPlayer(LambdaEngine::Entity playerEntity)
@@ -69,6 +70,7 @@ bool MatchServer::InitInternal()
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
+	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 
 	return true;
 }
@@ -200,6 +202,8 @@ bool MatchServer::OnPacketStartGameReceived(const PacketReceivedEvent<PacketStar
 	using namespace LambdaEngine;
 	LOG_INFO("SERVER: Game Start");
 
+	PlayerManagerServer::SetPlayerStateLoading();
+
 	const THashTable<uint64, Player>& players = PlayerManagerBase::GetPlayers();
 
 	for (auto& pair : players)
@@ -234,17 +238,13 @@ bool MatchServer::OnPacketStartGameReceived(const PacketReceivedEvent<PacketStar
 		}
 	}
 
-	// Match Start
-	{
-		MatchStart();
-	}
-
 	return true;
 }
 
 void MatchServer::MatchStart()
 {
 	m_HasBegun = false;
+	m_ShouldBeginMatch = true;
 	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
 
 	PacketMatchStart matchStartPacket;
@@ -630,6 +630,26 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		ResetMatch();
 	}
 
+
+	return true;
+}
+
+bool MatchServer::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+
+	for (auto& pair : players)
+	{
+		if (pair.second.GetState() != PLAYER_STATE_LOADED)
+			return false;
+	}
+
+	// Match Start
+	{
+		MatchStart();
+	}
 
 	return true;
 }

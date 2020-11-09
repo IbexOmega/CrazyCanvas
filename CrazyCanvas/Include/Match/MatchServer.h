@@ -7,6 +7,7 @@
 #include "Multiplayer/Packet/MultiplayerEvents.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+#include "Events/PlayerEvents.h"
 #include "Events/MatchEvents.h"
 
 #include "ECS/Entity.h"
@@ -40,9 +41,9 @@ protected:
 
 private:
 	bool OnPacketStartGameReceived(const PacketReceivedEvent<PacketStartGame>& event);
-	//bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
+	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);
 
 	void KillPlayerInternal(LambdaEngine::Entity playerEntity);
 

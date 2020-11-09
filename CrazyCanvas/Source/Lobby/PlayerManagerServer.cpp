@@ -103,15 +103,21 @@ bool PlayerManagerServer::OnPacketPlayerInfoReceived(const PacketReceivedEvent<P
 	auto pair = s_Players.find(packet.UID);
 	if (pair != s_Players.end())
 	{
-		Player& player			= pair->second;
-		player.m_State			= packet.State;
+		Player& player = pair->second;
+		if (player.m_State != packet.State)
+		{
+			player.m_State = packet.State;
 
-		PlayerInfoUpdatedEvent playerInfoUpdatedEvent(&player);
-		EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
+			PlayerInfoUpdatedEvent playerInfoUpdatedEvent(&player);
+			EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
 
-		PacketPlayerInfo packetNew;
-		UpdatePacketFromPlayer(&packetNew, &player);
-		ServerHelper::SendBroadcast(packetNew, nullptr, event.pClient);
+			PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
+			EventQueue::SendEventImmediate(playerStateUpdatedEvent);
+
+			PacketPlayerInfo packetNew;
+			UpdatePacketFromPlayer(&packetNew, &player);
+			ServerHelper::SendBroadcast(packetNew, nullptr, event.pClient);
+		}
 	}
 
 	return true;
@@ -130,4 +136,16 @@ bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)
 {
 	const Player* pPlayer = GetPlayer(pClient);
 	return pPlayer != nullptr && pPlayer->IsHost();
+}
+
+void PlayerManagerServer::SetPlayerStateLoading()
+{
+	PacketPlayerInfo packet;
+	for (auto& pair : s_Players)
+	{
+		Player& player = pair.second;
+		UpdatePacketFromPlayer(&packet, &player);
+		packet.State = PLAYER_STATE_LOADING;
+		UpdatePlayerFromPacket(&player, &packet);
+	}
 }

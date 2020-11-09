@@ -8,6 +8,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "States/PlaySessionState.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
@@ -81,7 +83,16 @@ bool LobbyState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 
 bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 {
-	m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
+	const Player* pPlayer = event.pPlayer;
+	if (pPlayer->GetState() == PLAYER_STATE_LOADING)
+	{
+		State* pStartingState = DBG_NEW PlaySessionState();
+		StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
+	}
+	else
+	{
+		m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
+	}
 	return false;
 }
 

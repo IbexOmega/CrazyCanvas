@@ -3,10 +3,8 @@
 #include "Multiplayer/Packet/Packet.h"
 
 #pragma pack(push, 1)
-struct PacketMatchLoad
+struct PacketMatchLoaded
 {
-	DECL_PACKET(PacketMatchLoad);
-
-	uint8 MapID;
+	DECL_PACKET(PacketMatchLoaded);
 };
 #pragma pack(pop)
