@@ -31,6 +31,28 @@ namespace LambdaEngine
 			out.Scale		= glm::mix(in0.Scale, in1.Scale, realFactor);
 			out.Rotation	= glm::slerp(in0.Rotation, in1.Rotation, realFactor);
 			out.Rotation	= glm::normalize(out.Rotation);
+
+			JointIndexType jointID = INVALID_JOINT_ID;
+			if (in0.JointID != INVALID_JOINT_ID && in1.JointID != INVALID_JOINT_ID) [[likely]]
+			{
+				VALIDATE(in0.JointID == in1.JointID);
+				jointID = in0.JointID;
+			}
+			else
+			{
+				if (in0.JointID != INVALID_JOINT_ID)
+				{
+					VALIDATE(in0.JointID == i);
+					jointID = in0.JointID;
+				}
+				else if (in1.JointID != INVALID_JOINT_ID)
+				{
+					VALIDATE(in1.JointID == i);
+					jointID = in1.JointID;
+				}
+			}
+
+			out.JointID = jointID;
 		}
 	}
 
@@ -109,29 +131,28 @@ namespace LambdaEngine
 		}
 
 		// Make sure we have enough matrices
-		if (m_FrameData.GetSize() < skeleton.Joints.GetSize())
+		Animation& animation = *m_pAnimation;
+		const uint32 numJoints = skeleton.Joints.GetSize();
+		if (m_FrameData.GetSize() < numJoints)
 		{
-			m_FrameData.Resize(skeleton.Joints.GetSize());
+			m_FrameData.Resize(numJoints, SQT(glm::vec3(0.0f), glm::vec3(1.0f), glm::identity<glm::quat>()));
 		}
 
-		Animation& animation	= *m_pAnimation;
 		const float64 timestamp	= m_NormalizedTime * animation.DurationInTicks;
 		for (Animation::Channel& channel : animation.Channels)
 		{
 			// Retrive the bone ID
 			auto it = skeleton.JointMap.find(channel.Name);
-			if (it == skeleton.JointMap.end())
+			if (it != skeleton.JointMap.end())
 			{
-				continue;
+				// Sample SQT for this animation
+				glm::vec3 position	= SamplePosition(channel, timestamp);
+				glm::quat rotation	= SampleRotation(channel, timestamp);
+				glm::vec3 scale		= SampleScale(channel, timestamp);
+
+				const JointIndexType jointID = it->second;
+				m_FrameData[jointID] = SQT(position, scale, rotation, jointID);
 			}
-
-			// Sample SQT for this animation
-			glm::vec3 position	= SamplePosition(channel, timestamp);
-			glm::quat rotation	= SampleRotation(channel, timestamp);
-			glm::vec3 scale		= SampleScale(channel, timestamp);
-
-			const uint32 jointID = it->second;
-			m_FrameData[jointID] = SQT(position, scale, rotation);
 		}
 
 		// Handle triggers
@@ -174,8 +195,8 @@ namespace LambdaEngine
 			}
 		}
 
-		const float64 factor = (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
-		glm::vec3 position = glm::mix(pos0.Value, pos1.Value, glm::vec3(float32(factor)));
+		const float64 factor	= (pos1.Time != pos0.Time) ? (time - pos0.Time) / (pos1.Time - pos0.Time) : 0.0f;
+		glm::vec3 position		= glm::mix(pos0.Value, pos1.Value, glm::vec3(float32(factor)));
 		return position;
 	}
 
