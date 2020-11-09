@@ -1161,7 +1161,7 @@ namespace LambdaEngine
 			}
 		}
 
-#if 1
+#if 0
 		LOG_INFO("-----------------------------------");
 		{
 			JointIndexType rootNode = INVALID_JOINT_ID;
@@ -1186,7 +1186,7 @@ namespace LambdaEngine
 		LOG_INFO("-----------------------------------");
 #endif
 
-#if 1
+#if 0
 		LOG_INFO("-----------------------------------");
 		for (uint32 jointID = 0; jointID < pSkeleton->Joints.GetSize(); jointID++)
 		{
@@ -1558,7 +1558,7 @@ namespace LambdaEngine
 		}
 
 		// Print scene structure
-#if 1
+#if 0
 		PrintSceneStructure(pScene->mRootNode, 0);
 #endif
 
