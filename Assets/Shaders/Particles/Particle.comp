@@ -76,7 +76,7 @@ void UpdateParticleTransform(vec3 position, SEmitter emitter, uint particleIndex
 		sin(radi), 	0.0f, cos(radi)
 	);
 
-	ASInstance.Transform *= RotationMatrix * 1.0f;
+	ASInstance.Transform *= RotationMatrix;
 
 	ASInstance.Transform[0].w = position.x;
 	ASInstance.Transform[1].w = position.y;
