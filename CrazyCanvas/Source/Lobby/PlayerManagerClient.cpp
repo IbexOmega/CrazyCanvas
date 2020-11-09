@@ -47,19 +47,19 @@ void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 	if (pPlayer)
 	{
 		EPlayerState currentState = pPlayer->m_State;
-		if (currentState == PLAYER_STATE_READY || currentState == PLAYER_STATE_LOBBY)
+
+		ASSERT_MSG(currentState == PLAYER_STATE_READY || currentState == PLAYER_STATE_LOBBY, "Player not in Lobby or Ready state!");
+
+		PacketPlayerInfo packet;
+		UpdatePacketFromPlayer(&packet, pPlayer);
+		packet.State = ready ? PLAYER_STATE_READY : PLAYER_STATE_LOBBY;
+
+		if(UpdatePlayerFromPacket(pPlayer, &packet))
 		{
-			PacketPlayerInfo packet;
-			UpdatePacketFromPlayer(&packet, pPlayer);
-			packet.State = ready ? PLAYER_STATE_READY : PLAYER_STATE_LOBBY;
+			ClientHelper::Send(packet);
 
-			if(UpdatePlayerFromPacket(pPlayer, &packet))
-			{
-				ClientHelper::Send(packet);
-
-				PlayerInfoUpdatedEvent playerInfoUpdatedEvent(pPlayer);
-				EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
-			}
+			PlayerInfoUpdatedEvent playerInfoUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
 		}
 	}
 }

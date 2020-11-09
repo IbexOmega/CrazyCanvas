@@ -14,6 +14,8 @@
 
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
+#include "Application/API/Events/KeyEvents.h"
+
 /*
 * TODO:
 *	- Different GUI when host
@@ -46,6 +48,9 @@ private:
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp);
 
 	void SendGameSettings();
+
+	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
+	void TrySendChatMessage();
 
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);

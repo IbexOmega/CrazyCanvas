@@ -32,6 +32,7 @@ public:
 	uint8 GetFlagsCaptured() const;
 	uint8 GetFlagsDefended() const;
 	uint64 GetUID() const;
+	bool IsReady() const;
 
 	bool operator==(const Player& other) const;
 	bool operator!=(const Player& other) const;

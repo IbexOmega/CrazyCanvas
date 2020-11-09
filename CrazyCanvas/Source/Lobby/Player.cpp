@@ -67,6 +67,11 @@ uint64 Player::GetUID() const
     return m_UID;
 }
 
+bool Player::IsReady() const
+{
+    return m_State == PLAYER_STATE_READY;
+}
+
 bool Player::operator==(const Player& other) const
 {
 	return m_UID == other.m_UID;

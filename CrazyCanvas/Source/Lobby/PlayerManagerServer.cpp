@@ -45,7 +45,10 @@ void PlayerManagerServer::FixedTick(Timestamp deltaTime)
 		{
 			IClient* pClient = pair.second;
 			Player* pPlayer = GetPlayerNoConst(pClient->GetUID());
-			pPlayer->m_Ping = (uint16)pClient->GetStatistics()->GetPing().AsMilliSeconds();
+			if (pPlayer)
+			{
+				pPlayer->m_Ping = (uint16)pClient->GetStatistics()->GetPing().AsMilliSeconds();
+			}
 		}
 
 		PacketPlayerInfo packet;
