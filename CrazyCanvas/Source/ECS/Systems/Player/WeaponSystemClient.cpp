@@ -15,6 +15,8 @@ void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	const ComponentArray<WeaponComponent>*		pWeaponComponents				= pECS->GetComponentArray<WeaponComponent>();

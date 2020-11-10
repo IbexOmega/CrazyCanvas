@@ -79,6 +79,8 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 {
 	using namespace LambdaEngine;
 
+	UNREFERENCED_VARIABLE(weaponEntity);
+
 	if (ammoType == EAmmoType::AMMO_TYPE_NONE)
 	{
 		return;
@@ -211,8 +213,6 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.2f;
 	velocity		= playerVelocityComponent.Velocity + playerForwardDirection * PROJECTILE_INITAL_SPEED;
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
-
-	LOG_MESSAGE("Calculated Position: %s", glm::to_string(position).c_str());
 }
 
 void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets)
