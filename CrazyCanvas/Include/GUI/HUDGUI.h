@@ -66,10 +66,10 @@ private:
 	GameGUIState m_GUIState;
 
 	Noesis::Image* m_pWaterAmmoRect = nullptr;		
-	Noesis::Image* m_pPaintAmmoRect;
+	Noesis::Image* m_pPaintAmmoRect = nullptr;
 	
-	Noesis::TextBlock* m_pWaterAmmoText;
-	Noesis::TextBlock* m_pPaintAmmoText;
+	Noesis::TextBlock* m_pWaterAmmoText = nullptr;
+	Noesis::TextBlock* m_pPaintAmmoText = nullptr;
 
-	Noesis::Grid* m_pHitIndicatorGrid;
+	Noesis::Grid* m_pHitIndicatorGrid = nullptr;
 };

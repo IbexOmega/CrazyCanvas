@@ -223,6 +223,8 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
+	Input::PushInputMode(EInputLayer::GUI);
+
 	m_HUDGUI->DisplayGameOverGrid(true, event.WinningTeamIndex);
 
 	/*bool tempGameOver = false;

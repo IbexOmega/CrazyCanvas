@@ -217,7 +217,7 @@ void HUDGUI::DisplayHitIndicator()
 
 void HUDGUI::DisplayGameOverGrid(bool isVisible, uint8 winningTeamIndex)
 {
-	FindName<Grid>("ROOT_CONTAINER")->SetVisibility(Noesis::Visibility_Hidden);
+	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
 
 	GameOverGUI* pGameOverGUI = FindName<GameOverGUI>("GAME_OVER");
 	pGameOverGUI->DisplayGameOverGrid(isVisible, winningTeamIndex);
@@ -252,5 +252,5 @@ void HUDGUI::InitGUI()
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
 
-	FindName<Grid>("ROOT_CONTAINER")->SetVisibility(Noesis::Visibility_Visible);
+	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 }
