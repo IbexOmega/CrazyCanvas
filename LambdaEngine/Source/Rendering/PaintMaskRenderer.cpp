@@ -1,6 +1,4 @@
-#include "PreCompiled.h"
 #include "Rendering/PaintMaskRenderer.h"
-
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
@@ -20,9 +18,10 @@
 #include "Rendering/Core/API/Shader.h"
 #include "Rendering/Core/API/Buffer.h"
 #include "Rendering/EntityMaskManager.h"
-#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -362,10 +361,22 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(sleeping);
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-
+		if (MultiplayerUtils::IsServer())
+		{
+			LOG_INFO("m_RenderTargets.IsEmpty()=%s s_ClientCollisions.IsEmpty()=%s s_ServerCollisions.IsEmpty()=%s",
+				m_RenderTargets.IsEmpty() ? "true" : "false",
+				s_ClientCollisions.IsEmpty() ? "true" : "false",
+				s_ServerCollisions.IsEmpty() ? "true" : "false");
+		}
+		
 		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
 		{
 			return;
+		}
+
+		if (MultiplayerUtils::IsServer())
+		{
+			LOG_INFO("DRAW MASKS ON SERVER");
 		}
 
 		// Delete old resources
@@ -380,7 +391,6 @@ namespace LambdaEngine
 
 		// "combine" both arrays to loop through
 		TArray<TArray<UnwrapData>*> collisions{&s_ClientCollisions, &s_ServerCollisions};
-
 		for (uint32 index = 0; auto& collisionArray : collisions)
 		{
 			bool isServer = false;
@@ -516,7 +526,9 @@ namespace LambdaEngine
 
 				pCommandList->EndRenderPass();
 
-				if (textureViewDesc.pTexture->GetDesc().Miplevels > 1)
+				// Generate miplevels and copy to readbackbuffer
+				if (textureViewDesc.pTexture->GetDesc().Miplevels > 1 && 
+					MultiplayerUtils::IsServer())
 				{
 					Texture* pTexture = renderTarget->GetTexture();
 

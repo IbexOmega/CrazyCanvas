@@ -207,26 +207,30 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 
 	Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 
-	float32 maxDim = glm::max<float32>(
+	const float32 maxDim = glm::max<float32>(
 		pMesh->DefaultScale.x * pMesh->BoundingBox.Dimensions.x,
 		glm::max<float32>(
 			pMesh->DefaultScale.y * pMesh->BoundingBox.Dimensions.y,
 			pMesh->DefaultScale.z * pMesh->BoundingBox.Dimensions.z));
 
-	uint32 meshPaintSize = glm::max<uint32>(1, uint32(maxDim * 384.0f));
+	const uint32 meshPaintSize = glm::max<uint32>(1, uint32(maxDim * 384.0f));
 
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize));
-	pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize));
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	}
+
 	const CollisionCreateInfo collisionCreateInfo =
 	{
-		.Entity			= entity,
-		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
-		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
-		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
+		.Entity		= entity,
+		.Position	= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
+		.Scale		= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
+		.Rotation	= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
 		.Shapes =
 		{
 			{
@@ -310,12 +314,13 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 	if (!levelObject.MeshComponents.IsEmpty())
 	{
 		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
-
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+		if (!MultiplayerUtils::IsServer())
+		{
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+		}
 
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
-
 		const CollisionCreateInfo collisionCreateInfo =
 		{
 			.Entity			= entity,

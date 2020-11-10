@@ -14,6 +14,8 @@
 
 #include "Match/Match.h"
 
+#include "EventHandlers/MeshPaintHandler.h"
+
 #include <mutex>
 
 /*
@@ -92,6 +94,27 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 				byte* pPaintMask = reinterpret_cast<byte*>(pBuffer->Map());
 				VALIDATE(pPaintMask != nullptr);
+
+				constexpr uint32 SIZE_Y = 8;
+				constexpr uint32 SIZE_X = SIZE_Y * 2;
+				for (uint32 y = 0; y < SIZE_Y; y++)
+				{
+					for (uint32 x = 0; x < SIZE_X; x++)
+					{
+						byte mask		= pPaintMask[(y * SIZE_X * 2) + (x + 1)];
+						bool isPainted	= IS_MASK_PAINTED(mask);
+						ETeam team		= GET_TEAM_INDEX_FROM_MASK(mask);
+
+						if (x % 2 == 1)
+						{
+							LOG_INFO("SERVER: IsPainted=%s, Team=%u", isPainted ? "true" : "false", uint32(team));
+						}
+						else
+						{
+							LOG_INFO("CLIENT: IsPainted=%s, Team=%u", isPainted ? "true" : "false", uint32(team));
+						}
+					}
+				}
 
 				pBuffer->Unmap();
 			}

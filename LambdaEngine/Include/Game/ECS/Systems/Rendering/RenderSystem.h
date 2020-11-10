@@ -316,7 +316,7 @@ namespace LambdaEngine
 	private:
 		IDVector m_StaticMeshEntities;
 		IDVector m_AnimatedEntities;
-		IDVector m_LocalPlayerEntities;
+		IDVector m_PlayerEntities;
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;
 		IDVector m_CameraEntities;

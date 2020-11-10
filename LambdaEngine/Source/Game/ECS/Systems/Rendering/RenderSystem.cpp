@@ -28,6 +28,7 @@
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Rendering/ParticleRenderer.h"
 #include "Rendering/ParticleUpdater.h"
@@ -97,11 +98,10 @@ namespace LambdaEngine
 					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
-					.pSubscriber = &m_LocalPlayerEntities,
+					.pSubscriber = &m_PlayerEntities,
 					.ComponentAccesses =
 					{
 						{ NDA, PlayerBaseComponent::Type() },
-						{ R, AnimationComponent::Type() },
 						{ R, MeshComponent::Type() }
 					},
 					.ComponentGroups =
@@ -168,15 +168,15 @@ namespace LambdaEngine
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
-			swapChainDesc.DebugName = "Renderer Swap Chain";
-			swapChainDesc.pWindow = pActiveWindow;
-			swapChainDesc.pQueue = RenderAPI::GetGraphicsQueue();
-			swapChainDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width = pActiveWindow->GetWidth();
-			swapChainDesc.Height = pActiveWindow->GetHeight();
-			swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
-			swapChainDesc.SampleCount = 1;
-			swapChainDesc.VerticalSync = false;
+			swapChainDesc.DebugName		= "Renderer Swap Chain";
+			swapChainDesc.pWindow		= pActiveWindow;
+			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
+			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
+			swapChainDesc.Width			= pActiveWindow->GetWidth();
+			swapChainDesc.Height		= pActiveWindow->GetHeight();
+			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
+			swapChainDesc.SampleCount	= 1;
+			swapChainDesc.VerticalSync	= false;
 
 			m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
 			if (!m_SwapChain)
@@ -284,9 +284,8 @@ namespace LambdaEngine
 		return true;
 	}
 
-
-	bool RenderSystem::InitRenderGraphs() {
-
+	bool RenderSystem::InitRenderGraphs() 
+	{
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
 
 		//Create RenderGraph
@@ -294,10 +293,10 @@ namespace LambdaEngine
 			RenderGraphStructureDesc renderGraphStructure = {};
 
 			String renderGraphName = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RENDER_GRAPH_NAME);
-			if (renderGraphName != "")
+			if (renderGraphName != "" && !MultiplayerUtils::IsServer())
 			{
-				String prefix = m_RayTracingEnabled ? "RT_" : "";
-				String postfix = m_MeshShadersEnabled ? "_MESH" : "";
+				String prefix	= m_RayTracingEnabled ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled ? "_MESH" : "";
 				size_t pos = renderGraphName.find_first_of(".lrg");
 				if (pos != String::npos)
 				{
@@ -320,12 +319,12 @@ namespace LambdaEngine
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
-			renderGraphDesc.Name = "Default Rendergraph";
-			renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
-			renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-			renderGraphDesc.BackBufferWidth = pActiveWindow->GetWidth();
-			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
-			renderGraphDesc.CustomRenderers = { };
+			renderGraphDesc.Name						= "Default Rendergraph";
+			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
+			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
+			renderGraphDesc.CustomRenderers				= { };
 
 			// Add paint mask renderer to the custom renderers inside the render graph.
 			{
@@ -562,15 +561,19 @@ namespace LambdaEngine
 		ComponentArray<MeshComponent>*		pMeshComponents			= pECSCore->GetComponentArray<MeshComponent>();
 		ComponentArray<AnimationComponent>*	pAnimationComponents	= pECSCore->GetComponentArray<AnimationComponent>();
 		{
-			for (Entity entity : m_LocalPlayerEntities)
+			for (Entity entity : m_PlayerEntities)
 			{
 				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
-				AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
 				const auto&			positionComp	= pPositionComponents->GetConstData(entity);
 				const auto&			rotationComp	= pRotationComponents->GetConstData(entity);
 				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
 
-				UpdateAnimation(entity, meshComp, animationComp);
+				AnimationComponent animationComp;
+				if (pAnimationComponents->GetIf(entity, animationComp))
+				{
+					UpdateAnimation(entity, meshComp, animationComp);
+				}
+
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(false, true, false));
 			}
 
@@ -793,9 +796,15 @@ namespace LambdaEngine
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+		AddRenderableEntity(
+			entity, 
+			meshComp.MeshGUID, 
+			meshComp.MaterialGUID, 
+			transform, 
+			pAnimationComponents->HasComponent(entity));
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)

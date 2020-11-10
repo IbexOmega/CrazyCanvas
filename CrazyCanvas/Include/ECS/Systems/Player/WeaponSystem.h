@@ -36,7 +36,7 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 	using namespace LambdaEngine;
 	return
 	{
-		{ RW, PositionComponent::Type()},
+		{ RW, PositionComponent::Type() },
 		{ RW, ScaleComponent::Type()},
 		{ RW, RotationComponent::Type() },
 		{ RW, VelocityComponent::Type()},

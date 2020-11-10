@@ -7,19 +7,6 @@
 #include "Multiplayer/ServerHelper.h"
 
 /*
-* Helpers
-*/
-
-#define SET_TEAM_INDEX(mask, value) \
-	mask |= (((uint8)value) & 0x0F)
-
-#define SET_PAINT_MODE(mask, value) \
-	mask |= ((((uint8)value) & 0x0F) << 4)
-
-#define GET_TEAM_INDEX(mask) (ETeam)(mask & 0x0F)
-#define GET_PAINT_MODE(mask) (EPaintMode)((mask & 0xF0) >> 4)
-
-/*
 * MeshPaintHandler
 */
 
@@ -63,6 +50,10 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 
 		if (MultiplayerUtils::IsServer())
 		{
+			// If it is a client, paint it on the temporary mask and save the point.
+			remoteMode = ERemoteMode::SERVER;
+			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team);
+
 			// Send the server's paint point to all clients.
 			PacketProjectileHit packet;
 			SET_TEAM_INDEX(packet.Info, team);
@@ -96,9 +87,9 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	using namespace LambdaEngine;
 
 	const PacketProjectileHit& packet = event.Packet;
-	ETeam		team = GET_TEAM_INDEX(packet.Info);
-	EPaintMode	paintMode = GET_PAINT_MODE(packet.Info);
-	ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
+	ETeam		team		= GET_TEAM_INDEX(packet.Info);
+	EPaintMode	paintMode	= GET_PAINT_MODE(packet.Info);
+	ERemoteMode remoteMode	= ERemoteMode::UNDEFINED;
 
 	if (!MultiplayerUtils::IsServer())
 	{
@@ -116,11 +107,11 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 			m_PaintPointsOnClient.pop();
 
 			PaintPoint paintPointB = {};
-			paintPointB.Position = packet.Position;
-			paintPointB.Direction = packet.Direction;
-			paintPointB.PaintMode = paintMode;
-			paintPointB.RemoteMode = remoteMode;
-			paintPointB.Team = team;
+			paintPointB.Position	= packet.Position;
+			paintPointB.Direction	= packet.Direction;
+			paintPointB.PaintMode	= paintMode;
+			paintPointB.RemoteMode	= remoteMode;
+			paintPointB.Team		= team;
 			clientWasWrong = !IsPaintPointEqual(paintPointA, paintPointB);
 			if(clientWasWrong)
 				D_LOG_ERROR("Prediction Error: Client got wrong prediction when painting, reset client side paint and repaint on server side...");
@@ -142,8 +133,8 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 
 bool MeshPaintHandler::IsPaintPointEqual(PaintPoint& a, PaintPoint& b)
 {
-	bool posSame = glm::length2(a.Position - b.Position) < 0.0001f;
-	bool dirSame = glm::length2(a.Direction - b.Direction) < 0.0001f;
+	bool posSame		= glm::length2(a.Position - b.Position) < 0.0001f;
+	bool dirSame		= glm::length2(a.Direction - b.Direction) < 0.0001f;
 	bool paintModeSame	= a.PaintMode == b.PaintMode;
 	bool remoteModeSame = a.RemoteMode == b.RemoteMode;
 	bool teamSame		= a.Team == b.Team;

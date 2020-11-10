@@ -143,7 +143,12 @@ namespace LambdaEngine
 		bool SetEnabledInstanceExtensions();
 
 		int32 RatePhysicalDevice(VkPhysicalDevice physicalDevice);
-		void CheckDeviceExtensionsSupport(VkPhysicalDevice physicalDevice, bool& requiredExtensionsSupported, uint32_t& numOfOptionalExtensionsSupported);
+		
+		void CheckDeviceExtensionsSupport(
+			VkPhysicalDevice physicalDevice, 
+			bool& requiredExtensionsSupported, 
+			uint32_t& numOfOptionalExtensionsSupported);
+
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice);
 		
 		void SetEnabledDeviceExtensions();
@@ -155,8 +160,11 @@ namespace LambdaEngine
 		static void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		static uint32 GetQueueFamilyIndex(VkQueueFlagBits queueFlags, const TArray<VkQueueFamilyProperties>& queueFamilies);
 
-		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
-			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+			VkDebugUtilsMessageTypeFlagsEXT messageType,
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
+			void* pUserData);
 
 	public:
 		VkInstance			Instance		= VK_NULL_HANDLE;
