@@ -25,7 +25,7 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI() : 
+HUDGUI::HUDGUI() :
 	m_GUIState()
 {
 	Noesis::GUI::LoadComponent(this, "HUD.xaml");
@@ -398,7 +398,7 @@ void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& co
 		glm::vec3 res = glm::cross(forwardDir, nor);
 
 		rotation = glm::degrees(glm::acos(glm::dot(forwardDir, nor)));
-		
+
 		if (res.y > 0)
 		{
 			rotation *= -1;
