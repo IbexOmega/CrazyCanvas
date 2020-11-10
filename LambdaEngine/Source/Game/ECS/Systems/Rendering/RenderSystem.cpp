@@ -38,6 +38,8 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Time/API/Clock.h"
+
 namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
@@ -2185,6 +2187,9 @@ namespace LambdaEngine
 	{
 		//Should we check for Draw Args to be removed here?
 
+		Clock clock;
+		clock.Reset();
+
 		if (!m_DirtyDrawArgs.empty())
 		{
 			for (const DrawArgMaskDesc& maskDesc : m_DirtyDrawArgs)
@@ -2204,6 +2209,10 @@ namespace LambdaEngine
 
 			m_DirtyDrawArgs.clear();
 		}
+
+		clock.Tick();
+		float64 lagTime = clock.GetDeltaTime().AsMilliSeconds();
+		LOG_ERROR("Lag Time: %f", lagTime);
 
 		if (m_PerFrameResourceDirty)
 		{
