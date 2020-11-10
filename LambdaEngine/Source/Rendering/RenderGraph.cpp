@@ -207,6 +207,8 @@ namespace LambdaEngine
 
 		//Release Old Stuff
 		{
+			m_DrawArgConfiguration.Reset();
+
 			m_DirtyBoundTextureResources.clear();
 			m_DirtyBoundBufferResources.clear();
 			m_DirtyBoundAccelerationStructureResources.clear();
@@ -942,6 +944,16 @@ namespace LambdaEngine
 		LOG_ERROR("Write DS Time: %f", writeDescriptorSetsTime);
 		LOG_ERROR("Resource Binding Count: %u", resourceBindingCount);
 		LOG_ERROR("Iterations: %u\n", iterations);
+	}
+
+	DescriptorSet* RenderGraph::CreateDrawArgDescriptorSet()
+	{
+		return nullptr;
+	}
+
+	DescriptorSet* RenderGraph::CreateDrawArgExtensionDataDescriptorSet()
+	{
+		return nullptr;
 	}
 
 	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
@@ -2152,27 +2164,27 @@ namespace LambdaEngine
 					{
 						// Vertex Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 0;
+						descriptorBinding.Binding			= DRAW_ARG_VERTEX_BUFFER_BINDING;
 						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Instance Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 1;
+						descriptorBinding.Binding			= DRAW_ARG_INSTANCE_BUFFER_BINDING;
 						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Meshlet Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 2;
+						descriptorBinding.Binding			= DRAW_ARG_MESHLET_BUFFER_BINDING;
 						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Unique Indices Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 3;
+						descriptorBinding.Binding			= DRAW_ARG_UNIQUE_INDICES_BUFFER_BINDING;
 						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Primitive Indices Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 4;
+						descriptorBinding.Binding			= DRAW_ARG_PRIMITIVE_INDICES_BUFFER_BINDING;
 						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						/*
@@ -2180,8 +2192,8 @@ namespace LambdaEngine
 						*	If the render stage uses two extensions and the first extension has two textures and the second has one, the binding will be like this:
 						*
 						*	First extension's first texture has binding 0
-						*	First extension's second texture has binding 1
-						*	Second extension's texture has binding 2
+						*	First extension's second texture also has binding 0 but lies after the first extension
+						*	Second extension's texture also has binding 0 but lies after the first extension
 						*
 						*	Each holding a array of textures for each instance which uses an extension.
 						*
@@ -2189,19 +2201,24 @@ namespace LambdaEngine
 						*	The first element is used for instances which does not have an extension.
 						*/
 						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMaskDesc.IncludeMask & ~pRenderStage->DrawArgsMaskDesc.ExcludeMask);
-						uint32 binding = 0;
+						bool hasExtensionData = false;
 						for (uint32 mask : extensionMasks)
 						{
 							const DrawArgExtensionDesc& extensionDesc = EntityMaskManager::GetExtensionDescFromExtensionMask(mask);
-							for (uint32 t = 0; t < extensionDesc.TextureCount; t++)
+							if (extensionDesc.TextureCount > 0)
 							{
-								// TODO: Do not hardcode the descriptor type!
-								descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-								descriptorBinding.DescriptorCount	= 4u;
-								descriptorBinding.Binding			= binding++;
-								descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
-								drawArgExtensionDescriptorSetBindings.PushBack(descriptorBinding);
+								hasExtensionData = true;
+								break;
 							}
+						}
+
+						if (hasExtensionData)
+						{
+							descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+							descriptorBinding.DescriptorCount	= 16u; // Increase this when needed
+							descriptorBinding.Binding			= DRAW_ARG_EXTENSION_DATA_BINDING;
+							descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+							drawArgExtensionDescriptorSetBindings.PushBack(descriptorBinding);
 						}
 
 						renderStageDrawArgResources.PushBack(std::make_tuple(pResource, descriptorType));
@@ -2610,6 +2627,11 @@ namespace LambdaEngine
 						}
 
 						{
+							if (m_DrawArgConfiguration.pDrawArgPipelineLayout == nullptr)
+							{
+								m_DrawArgConfiguration.DrawArgSetIndex = descriptorSetLayouts.GetSize();
+							}
+
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
 							descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetBindings;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
@@ -2618,6 +2640,11 @@ namespace LambdaEngine
 						// Extensions descriptor set layout
 						if (drawArgExtensionDescriptorSetBindings.GetSize() > 0)
 						{
+							if (m_DrawArgConfiguration.pDrawArgExtensionDataPipelineLayout == nullptr)
+							{
+								m_DrawArgConfiguration.DrawArgExtensionDataSetIndex = descriptorSetLayouts.GetSize();
+							}
+
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
 							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetBindings;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
@@ -2629,6 +2656,20 @@ namespace LambdaEngine
 					pipelineLayoutDesc.ConstantRanges		= { pushConstantRange };
 
 					pRenderStage->pPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
+
+					if (pRenderStage->pDrawArgsResource != nullptr)
+					{
+						if (m_DrawArgConfiguration.pDrawArgPipelineLayout == nullptr)
+						{
+							m_DrawArgConfiguration.pDrawArgPipelineLayout = pRenderStage->pPipelineLayout;
+						}
+
+						// Extensions descriptor set layout
+						if (drawArgExtensionDescriptorSetBindings.GetSize() > 0 && m_DrawArgConfiguration.pDrawArgExtensionDataPipelineLayout == nullptr)
+						{
+							m_DrawArgConfiguration.pDrawArgExtensionDataPipelineLayout = pRenderStage->pPipelineLayout;
+						}
+					}
 				}
 
 				//Create Descriptor Set

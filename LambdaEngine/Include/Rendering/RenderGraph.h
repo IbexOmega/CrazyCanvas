@@ -382,6 +382,12 @@ namespace LambdaEngine
 		*/
 		void UpdateResourceBindings();
 
+		/*
+		* Creates a Descriptor Set suitable for Draw Arg Storage, all Draw Arg Descriptor Sets have the same bindings
+		* The caller has the responsibility of calling RenderGraph::ReleaseDrawArgDescriptorSet on Release
+		*/
+		DescriptorSet* CreateDrawArgDescriptorSet();
+		DescriptorSet* CreateDrawArgExtensionDataDescriptorSet();
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.
@@ -508,5 +514,24 @@ namespace LambdaEngine
 		TArray<DeviceChild*>*							m_pDeviceResourcesToDestroy;
 
 		TArray<IRenderGraphCreateHandler*>				m_CreateHandlers;
+
+		struct
+		{
+			PipelineLayout* pDrawArgPipelineLayout = nullptr;
+			uint32 DrawArgSetIndex = 0;
+
+			PipelineLayout* pDrawArgExtensionDataPipelineLayout = nullptr;
+			uint32 DrawArgExtensionDataSetIndex = 0;
+
+			void Reset()
+			{
+				pDrawArgPipelineLayout = nullptr;
+				DrawArgSetIndex = 0;
+
+				pDrawArgExtensionDataPipelineLayout = nullptr;
+				DrawArgExtensionDataSetIndex = 0;
+			}
+
+		} m_DrawArgConfiguration;
 	};
 }

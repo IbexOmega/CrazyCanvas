@@ -1140,6 +1140,7 @@ namespace LambdaEngine
 						isAnimated);
 				}
 
+				meshAndInstancesIt->second.pDrawArgDescriptorSet = m_pRenderGraph->
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
 			}
 		}
