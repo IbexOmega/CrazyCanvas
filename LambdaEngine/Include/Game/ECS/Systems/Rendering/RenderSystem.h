@@ -381,7 +381,6 @@ namespace LambdaEngine
 
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
-		
 
 		// Animation
 		uint64						m_SkinningPipelineID;

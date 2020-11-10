@@ -38,8 +38,6 @@
 
 #include "Engine/EngineConfig.h"
 
-#include "Time/API/Clock.h"
-
 namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
@@ -1287,11 +1285,12 @@ namespace LambdaEngine
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
-		for (const DrawArgMaskDesc& maskDesc : m_RequiredDrawArgs)
+		//Update Dirty Draw Args
+		for (const DrawArgMaskDesc& requiredDrawArgMask : m_RequiredDrawArgs)
 		{
-			if ((meshAndInstancesIt->second.DrawArgsMask & maskDesc.IncludeMask) == maskDesc.IncludeMask && (meshAndInstancesIt->second.DrawArgsMask & maskDesc.ExcludeMask) == 0)
+			if (DrawArgSubscribed(meshAndInstancesIt->second.DrawArgsMask, requiredDrawArgMask))
 			{
-				m_DirtyDrawArgs.insert(maskDesc);
+				m_DirtyDrawArgs.insert(requiredDrawArgMask);
 			}
 		}
 	}
@@ -1419,7 +1418,14 @@ namespace LambdaEngine
 		swappedInstanceKeyIt->second.InstanceIndex = instanceKeyIt->second.InstanceIndex;
 		m_EntityIDsToInstanceKey.erase(instanceKeyIt);
 
-		m_DirtyDrawArgs = m_RequiredDrawArgs;
+		//Update Dirty Draw Args
+		for (const DrawArgMaskDesc& requiredDrawArgMask : m_RequiredDrawArgs)
+		{
+			if (DrawArgSubscribed(meshAndInstancesIt->second.DrawArgsMask, requiredDrawArgMask))
+			{
+				m_DirtyDrawArgs.insert(requiredDrawArgMask);
+			}
+		}
 
 		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
@@ -2185,11 +2191,6 @@ namespace LambdaEngine
 
 	void RenderSystem::UpdateRenderGraph()
 	{
-		//Should we check for Draw Args to be removed here?
-
-		Clock clock;
-		clock.Reset();
-
 		if (!m_DirtyDrawArgs.empty())
 		{
 			for (const DrawArgMaskDesc& maskDesc : m_DirtyDrawArgs)
@@ -2209,10 +2210,6 @@ namespace LambdaEngine
 
 			m_DirtyDrawArgs.clear();
 		}
-
-		clock.Tick();
-		float64 lagTime = clock.GetDeltaTime().AsMilliSeconds();
-		LOG_ERROR("Lag Time: %f", lagTime);
 
 		if (m_PerFrameResourceDirty)
 		{

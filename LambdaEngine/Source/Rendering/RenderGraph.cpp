@@ -32,6 +32,7 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "Debug/Profiler.h"
+#include "Time/API/Clock.h"
 
 namespace LambdaEngine
 {
@@ -713,12 +714,21 @@ namespace LambdaEngine
 			m_DirtyBoundTextureResources.clear();
 		}
 
+		Clock clock;
+		clock.Reset();
+		float64 createDescriptorSetsTime = 0.0f;
+		float64 writeDescriptorSetsTime = 0.0f;
+		uint32 resourceBindingCount = 0;
+		uint32 iterations = 0;
+
 		if (!m_DirtyBoundDrawArgResources.empty())
 		{
 			for (Resource* pResource : m_DirtyBoundDrawArgResources)
 			{
 				for (uint32 rb = 0; rb < pResource->ResourceBindings.GetSize(); rb++)
 				{
+					resourceBindingCount++;
+
 					ResourceBinding* pResourceBinding = &pResource->ResourceBindings[rb];
 					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
@@ -764,6 +774,7 @@ namespace LambdaEngine
 
 							for (uint32 d = 0; d < drawArgsMaskToArgsIt->second.Args.GetSize(); d++)
 							{
+								iterations++;
 								// Destroy the previous descriptor sets.
 								if (d < pRenderStage->NumDrawArgsPerFrame)
 								{
@@ -781,7 +792,10 @@ namespace LambdaEngine
 									}
 								}
 
+								clock.Tick();
 								DescriptorSet* pWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, m_pDescriptorHeap);
+								createDescriptorSetsTime += clock.GetDeltaTime().AsMilliSeconds();
+								clock.Tick();
 
 								static uint64 offset = 0;
 
@@ -804,12 +818,18 @@ namespace LambdaEngine
 									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
 								}
 
+								writeDescriptorSetsTime += clock.GetDeltaTime().AsMilliSeconds();
+								clock.Tick();
+
 								ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
 
 								// Only create a desciptor set for the extensions if it is needed.
 								if (drawArg.HasExtensions && ppNewDrawArgsExtensionsPerFrame)
 								{
+									clock.Tick();
 									DescriptorSet* pExtensionsWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Extensions Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex, m_pDescriptorHeap);
+									createDescriptorSetsTime += clock.GetDeltaTime().AsMilliSeconds();
+									clock.Tick();
 
 									// Fetch data for the write texture descirptors.
 									THashTable<uint32, std::tuple<TArray<TextureView*>, TArray<Sampler*>>> bindingToDataMap;
@@ -878,6 +898,9 @@ namespace LambdaEngine
 
 									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
 								}
+
+								writeDescriptorSetsTime += clock.GetDeltaTime().AsMilliSeconds();
+								clock.Tick();
 							}
 
 							//If drawArgsMaskToArgsIt->second.Args.GetSize() is smaller than pRenderStage->NumDrawArgsPerFrame then some Descriptor Sets are not destroyed that should be destroyed
@@ -914,6 +937,11 @@ namespace LambdaEngine
 
 			m_DirtyBoundDrawArgResources.clear();
 		}
+
+		LOG_ERROR("Create DS Time: %f", createDescriptorSetsTime);
+		LOG_ERROR("Write DS Time: %f", writeDescriptorSetsTime);
+		LOG_ERROR("Resource Binding Count: %u", resourceBindingCount);
+		LOG_ERROR("Iterations: %u\n", iterations);
 	}
 
 	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)

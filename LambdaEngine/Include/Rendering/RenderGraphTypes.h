@@ -574,6 +574,11 @@ namespace LambdaEngine
 
 	/*-----------------------------------------------------------------Render Graph Editor End-----------------------------------------------------------------*/
 
+	FORCEINLINE bool DrawArgSubscribed(uint32 drawArgMask, const DrawArgMaskDesc& subscriberDrawArgMask)
+	{
+		return (drawArgMask & subscriberDrawArgMask.IncludeMask) == subscriberDrawArgMask.IncludeMask && (drawArgMask & subscriberDrawArgMask.ExcludeMask) == 0;
+	}
+
 	FORCEINLINE bool ResourceStateNeedsDescriptor(ERenderGraphResourceBindingType bindingType)
 	{
 		switch (bindingType)

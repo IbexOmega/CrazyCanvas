@@ -98,6 +98,8 @@ void WeaponSystemClient::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEnt
 
 	ParticleEmitterComponent& emitterComp = pECS->GetComponent<ParticleEmitterComponent>(weaponEntity);
 	emitterComp.Active = true;
+
+	LOG_MESSAGE("FIRE");
 }
 
 bool WeaponSystemClient::InitInternal()
