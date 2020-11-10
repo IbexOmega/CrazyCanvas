@@ -132,7 +132,6 @@ namespace LambdaEngine
 			EPaintMode		PaintMode			= EPaintMode::NONE;
 			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 			ETeam			Team				= ETeam::NONE;
-			uint32			Padding0			= 0;
 			bool			ClearClient			= false;
 		};
 
