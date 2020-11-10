@@ -187,7 +187,7 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 bool HUDGUI::OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event)
 {
-	if (event.Key == EKey::KEY_ESCAPE)
+	if (event.Key == EKey::KEY_ESCAPE && Input::GetCurrentInputmode() != EInputLayer::GUI)
 	{
 		Input::PushInputMode(EInputLayer::GUI);
 		m_MouseEnabled = !m_MouseEnabled;
@@ -197,6 +197,15 @@ bool HUDGUI::OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event)
 		m_ContextStack.push(m_pEscapeGrid);
 
 		return true;
+	}
+	else if (event.Key == EKey::KEY_ESCAPE)
+	{
+		m_MouseEnabled = !m_MouseEnabled;
+		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
+		Noesis::FrameworkElement* pElement = m_ContextStack.top();
+		pElement->SetVisibility(Noesis::Visibility_Hidden);
+		m_ContextStack.pop();
+		Input::PopInputMode();
 	}
 
 	return false;
@@ -221,6 +230,7 @@ void HUDGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::R
 	UNREFERENCED_VARIABLE(args);
 
 	m_MouseEnabled = !m_MouseEnabled;
+	CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 	Noesis::FrameworkElement* pElement = m_ContextStack.top();
 	pElement->SetVisibility(Noesis::Visibility_Hidden);
 	m_ContextStack.pop();
@@ -245,7 +255,7 @@ void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 	UNREFERENCED_VARIABLE(args);
 
 	ClientHelper::Disconnect("Daniel has the biggest penis");
-	SetRenderStagesInactive();
+	//SetRenderStagesInactive();
 
 	Noesis::FrameworkElement* pElement = m_ContextStack.top();
 	pElement->SetVisibility(Noesis::Visibility_Hidden);
@@ -458,7 +468,9 @@ void HUDGUI::SetRenderStagesInactive()
 {
 	/*
 	* Inactivate all rendering when entering main menu
-	* OBS! At the moment, sleeping doesn't work correctly and needs a fix
+	*OBS! At the moment, sleeping doesn't work correctly and needs a fix
+	* */
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					true);
@@ -468,10 +480,7 @@ void HUDGUI::SetRenderStagesInactive()
 	RenderSystem::GetInstance().SetRenderStageSleeping("PARTICLE_COMBINE_PASS",				true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						true);
-	*/
 }
 
 bool HUDGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)

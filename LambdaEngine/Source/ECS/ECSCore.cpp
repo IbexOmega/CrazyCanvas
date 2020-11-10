@@ -84,13 +84,23 @@ namespace LambdaEngine
 		const auto& entityComponentSets = page.GetVec();
 		const TArray<Entity>& entities = page.GetIDs();
 
-		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
+		for (uint32 entityNr = 0; entityNr < entities.GetSize(); entityNr++)
 		{
-			Entity entity = entities[entityIdx];
-			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[entityIdx];
+			Entity entity = entities[0];
+			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[0];
+			if (entity == 24)
+			{
+				int a = 0;
+			}
 
 			for (const ComponentType* pComponentType : typeSet)
-				DeleteComponent(entity, pComponentType);
+			{
+				//DeleteComponent(entity, pComponentType);
+				m_EntityPublisher.UnpublishComponent(entity, pComponentType);
+				m_ComponentStorage.DeleteComponent(entity, pComponentType);
+			}
+
+			m_EntityRegistry.DeregisterEntity(entity);
 		}
 
 		m_EntityRegistry.RemovePage();
@@ -258,15 +268,20 @@ namespace LambdaEngine
 
 		for (Entity entity : m_EntitiesToDelete)
 		{
-			// Delete every component belonging to the entity
-			const std::unordered_set<const ComponentType*>& componentTypesSet = registryPage.IndexID(entity);
-			componentTypes.Assign(componentTypesSet.begin(), componentTypesSet.end());
+			if (entity == 17)
+				int a = 0;
+			if (registryPage.HasElement(entity))
+			{
+				// Delete every component belonging to the entity
+				const std::unordered_set<const ComponentType*>& componentTypesSet = registryPage.IndexID(entity);
+				componentTypes.Assign(componentTypesSet.begin(), componentTypesSet.end());
 
-			for (const ComponentType* pComponentType : componentTypes)
-				DeleteComponent(entity, pComponentType);
+				for (const ComponentType* pComponentType : componentTypes)
+					DeleteComponent(entity, pComponentType);
 
-			// Free the entity ID
-			m_EntityRegistry.DeregisterEntity(entity);
+				// Free the entity ID
+				m_EntityRegistry.DeregisterEntity(entity);
+			}
 		}
 
 		m_EntitiesToDelete.clear();
