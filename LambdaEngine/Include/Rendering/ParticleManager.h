@@ -126,7 +126,7 @@ namespace LambdaEngine
 		void Init(uint32 maxParticleCapacity, ASBuilder* pASBuilder);
 		void Release();
 
-		bool IsInitilized() const { return m_Initilized; };
+		bool IsInitilized() const { return m_Initialized; };
 
 		void Tick(Timestamp deltaTime, uint64 modFrameIndex);
 
