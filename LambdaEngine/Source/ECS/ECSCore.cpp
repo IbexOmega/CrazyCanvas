@@ -87,17 +87,11 @@ namespace LambdaEngine
 		for (uint32 entityNr = 0; entityNr < entities.GetSize(); entityNr++)
 		{
 			Entity entity = entities[0];
-			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[0];
-			if (entity == 24)
-			{
-				int a = 0;
-			}
+			const std::unordered_set<const ComponentType*> typeSet = entityComponentSets[0];
 
 			for (const ComponentType* pComponentType : typeSet)
 			{
-				//DeleteComponent(entity, pComponentType);
-				m_EntityPublisher.UnpublishComponent(entity, pComponentType);
-				m_ComponentStorage.DeleteComponent(entity, pComponentType);
+				DeleteComponent(entity, pComponentType);
 			}
 
 			m_EntityRegistry.DeregisterEntity(entity);
