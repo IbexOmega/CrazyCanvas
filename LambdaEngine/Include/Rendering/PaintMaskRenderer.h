@@ -113,6 +113,7 @@ namespace LambdaEngine
 		bool CreateCommandLists();
 		bool CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc);
 		bool CreatePipelineState();
+		void AddResetHitPoint();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags);
 
@@ -231,6 +232,7 @@ namespace LambdaEngine
 
 		TArray<RenderTarget>															m_RenderTargets;
 	private:
+		inline static bool				s_ShouldReset = false;
 		static TArray<UnwrapData>		s_ServerCollisions;
 		static TArray<UnwrapData>		s_ClientCollisions;
 	};

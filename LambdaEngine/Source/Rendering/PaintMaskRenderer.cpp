@@ -356,6 +356,13 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
 
+		// Add a reset hit point at the end of the client collisions.
+		if (s_ShouldReset)
+		{
+			AddResetHitPoint();
+			s_ShouldReset = false;
+		}
+
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
 		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
@@ -536,23 +543,7 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::ResetClient()
 	{
-		if (s_ClientCollisions.IsEmpty())
-		{
-			UnwrapData data = {};
-			data.TargetPosition = { };
-			data.TargetDirection = { };
-			data.PaintMode = EPaintMode::NONE;
-			data.RemoteMode = ERemoteMode::UNDEFINED;
-			data.Team = ETeam::NONE;
-			data.ClearClient = true;
-
-			s_ClientCollisions.PushBack(data);
-		}
-		else
-		{
-			UnwrapData& lastData = s_ClientCollisions.GetBack();
-			lastData.ClearClient = true;
-		}
+		s_ShouldReset = true;
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()
@@ -783,6 +774,27 @@ namespace LambdaEngine
 		m_PipelineStateClientID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_G);
 
 		return true;
+	}
+
+	void PaintMaskRenderer::AddResetHitPoint()
+	{
+		if (s_ClientCollisions.IsEmpty())
+		{
+			UnwrapData data = {};
+			data.TargetPosition = { };
+			data.TargetDirection = { };
+			data.PaintMode = EPaintMode::NONE;
+			data.RemoteMode = ERemoteMode::UNDEFINED;
+			data.Team = ETeam::NONE;
+			data.ClearClient = true;
+
+			s_ClientCollisions.PushBack(data);
+		}
+		else
+		{
+			UnwrapData& lastData = s_ClientCollisions.GetBack();
+			lastData.ClearClient = true;
+		}
 	}
 
 	uint64 PaintMaskRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags)
