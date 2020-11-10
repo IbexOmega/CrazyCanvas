@@ -59,6 +59,8 @@ namespace LambdaEngine
 		void RenderShaderBoxes(EditorRenderStageDesc* pRenderStage);
 		void RenderShaderBoxCommon(String* pTarget, bool* pAdded = nullptr, bool* pRemoved = nullptr);
 
+		bool AddHitGroupShader(const String& label, String* pTarget, FShaderStageFlag shaderStageFlag, FShaderStageFlag& typeAdded, FShaderStageFlag& typeRemoved, const glm::vec4& color = glm::vec4(0.4f, 0.4f, 1.0f, 0.5f));
+
 		TArray<RenderGraphResourceDesc>::Iterator FindResource(const String& name);
 		EditorResourceStateIdent CreateResourceState(const String& resourceName, ERenderGraphResourceType resourceType, const String& renderStageName, bool removable, ERenderGraphResourceBindingType bindingType);
 		bool CheckLinkValid(int32* pSrcAttributeIndex, int32* pDstAttributeIndex);

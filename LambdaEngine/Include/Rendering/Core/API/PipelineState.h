@@ -136,14 +136,21 @@ namespace LambdaEngine
 	/*
 	* Ray-Tracing 
 	*/
+	struct HitGroupShaderModuleDescs
+	{
+		ShaderModuleDesc	ClosestHitShaders;
+		ShaderModuleDesc	AnyHitShaders;
+		ShaderModuleDesc	IntersectionShaders;
+	};
+
 	struct RayTracingPipelineStateDesc
 	{
-		String						DebugName			= "";
-		const PipelineLayout*		pPipelineLayout		= nullptr;
-		uint32						MaxRecursionDepth	= 1;	
-		ShaderModuleDesc			RaygenShader;
-		TArray<ShaderModuleDesc>	MissShaders;
-		TArray<ShaderModuleDesc>	ClosestHitShaders;
+		String								DebugName			= "";
+		const PipelineLayout*				pPipelineLayout		= nullptr;
+		uint32								MaxRecursionDepth	= 1;	
+		ShaderModuleDesc					RaygenShader;
+		TArray<ShaderModuleDesc>			MissShaders;
+		TArray<HitGroupShaderModuleDescs>	HitGroupShaders;
 	};
 
 	/*

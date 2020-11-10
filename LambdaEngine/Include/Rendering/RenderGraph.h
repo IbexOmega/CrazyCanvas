@@ -353,7 +353,7 @@ namespace LambdaEngine
 		/*
 		* Updates the global SBT which is used for all Ray Tracing calls, each SBTRecord should contain addresses to valid Buffers
 		*/
-		void UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources);
+		void UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, const TArray<uint32>& hitGroupIndices, TArray<DeviceChild*>& removedDeviceResources);
 		/*
 		* Updates the dimensions of a RenderStage, will only set the dimensions which are set to EXTERNAL
 		*/
@@ -489,6 +489,7 @@ namespace LambdaEngine
 		uint32											m_RenderStageCount					= 0;
 		TSet<uint32>									m_WindowRelativeRenderStages;		// Contains Render Stage Indices that have Dimension Variables that depend on the current Window Size
 		TArray<SBTRecord>								m_GlobalShaderRecords;
+		TArray<uint32>									m_GlobalHitGroupIndices;
 
 		SynchronizationStage*							m_pSynchronizationStages			= nullptr;
 		uint32											m_SynchronizationStageCount			= 0;
