@@ -100,10 +100,10 @@ protected:
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
-	glm::quat CalculateZeroingDirection(
+	glm::vec3 CalculateZeroingDirection(
 		const glm::vec3& weaponPos,
 		const glm::vec3& playerPos,
-		const glm::quat& direction,
+		const glm::quat& playerDirection,
 		float32 zeroingDistance);
 
 protected:
