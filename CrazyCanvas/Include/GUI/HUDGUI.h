@@ -54,7 +54,7 @@ public:
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
-	void DisplayGameOverGrid(bool isVisible, uint8 winningTeamIndex);
+	void DisplayGameOverGrid(uint8 winningTeamIndex);
 
 private:
 
@@ -64,6 +64,7 @@ private:
 
 private:
 	GameGUIState m_GUIState;
+	bool m_IsGameOver = false;
 
 	Noesis::Image* m_pWaterAmmoRect = nullptr;		
 	Noesis::Image* m_pPaintAmmoRect = nullptr;

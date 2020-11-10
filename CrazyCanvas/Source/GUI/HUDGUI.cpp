@@ -12,6 +12,7 @@
 #include "NoesisPCH.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/CommonApplication.h"
 
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
@@ -34,38 +35,15 @@ HUDGUI::HUDGUI() :
 
 HUDGUI::~HUDGUI()
 {
-	//EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &HUDGUI::OnLANServerFound);
-}
 
-void HUDGUI::OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	//ApplyDamage(10);
-}
-
-void HUDGUI::OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-}
-
-void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	UpdateScore();
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
-	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
+	UNREFERENCED_VARIABLE(pSource);
+	UNREFERENCED_VARIABLE(pEvent);
+	UNREFERENCED_VARIABLE(pHandler);
 
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonGrowClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonScoreClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonShootClick);
 	return false;
 }
 
@@ -215,12 +193,14 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
-void HUDGUI::DisplayGameOverGrid(bool isVisible, uint8 winningTeamIndex)
+void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex)
 {
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
 
 	GameOverGUI* pGameOverGUI = FindName<GameOverGUI>("GAME_OVER");
-	pGameOverGUI->DisplayGameOverGrid(isVisible, winningTeamIndex);
+	pGameOverGUI->InitGUI();
+	pGameOverGUI->DisplayGameOverGrid(true);
+	pGameOverGUI->SetWinningTeam(winningTeamIndex);
 }
 
 void HUDGUI::InitGUI()
@@ -253,4 +233,5 @@ void HUDGUI::InitGUI()
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
+	CommonApplication::Get()->SetMouseVisibility(false);
 }

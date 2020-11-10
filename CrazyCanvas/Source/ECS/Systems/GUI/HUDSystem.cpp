@@ -225,15 +225,7 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 	//un-lock mouse
 	Input::PushInputMode(EInputLayer::GUI);
 
-	m_HUDGUI->DisplayGameOverGrid(true, event.WinningTeamIndex);
-
-	/*bool tempGameOver = false;
-
-	if(tempGameOver)
-	{
-		State* pLobbyState = DBG_NEW MultiplayerState();
-		StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
-	}*/
+	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex);
 
 	return false;
 }

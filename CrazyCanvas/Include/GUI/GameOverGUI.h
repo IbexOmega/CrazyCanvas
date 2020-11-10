@@ -18,7 +18,9 @@ public:
 
 	void OnReturnToLobbyButtonClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	void DisplayGameOverGrid(bool isVisible, uint8 winningTeamIndex);
+	void DisplayGameOverGrid(bool isVisible);
+	void SetWinningTeam(uint8 winningTeamIndex);
+	void InitGUI();
 
 private:
 	Noesis::Grid* m_pGameOverGrid = nullptr;
