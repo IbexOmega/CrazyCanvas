@@ -979,7 +979,6 @@ bool LevelObjectCreator::CreateProjectile(
 		);
 	}
 
-	LOG_MESSAGE("Projectile Create Position: %s", glm::to_string(desc.FirePosition).c_str());
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
