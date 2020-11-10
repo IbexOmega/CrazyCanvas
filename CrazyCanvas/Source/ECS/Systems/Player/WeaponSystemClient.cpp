@@ -11,6 +11,36 @@
 * WeaponSystemClients
 */
 
+void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
+{
+	using namespace LambdaEngine;
+
+	UNREFERENCED_VARIABLE(deltaTime);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	const ComponentArray<WeaponComponent>*		pWeaponComponents				= pECS->GetComponentArray<WeaponComponent>();
+	ComponentArray<PositionComponent>*			pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>*			pRotationComponents				= pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<ScaleComponent>*				pScaleComponent					= pECS->GetComponentArray<ScaleComponent>();
+
+	for (Entity weaponEntity : m_WeaponEntities)
+	{
+		const WeaponComponent&				weaponComponent				= pWeaponComponents->GetConstData(weaponEntity);
+		PositionComponent&					weaponPositionComponent		= pPositionComponents->GetData(weaponEntity);
+		RotationComponent&					weaponRotationComponent		= pRotationComponents->GetData(weaponEntity);
+		ScaleComponent&						weaponScaleComponent		= pScaleComponent->GetData(weaponEntity);
+
+		const PositionComponent&			playerPositionComponent		= pPositionComponents->GetConstData(weaponComponent.WeaponOwner);
+		const RotationComponent&			playerRotationComponent		= pRotationComponents->GetConstData(weaponComponent.WeaponOwner);
+		const ScaleComponent&				playerScaleComponent		= pScaleComponent->GetConstData(weaponComponent.WeaponOwner);
+
+		weaponPositionComponent.Position	= playerPositionComponent.Position;
+		weaponRotationComponent.Quaternion	= playerRotationComponent.Quaternion;
+		weaponScaleComponent.Scale			= playerScaleComponent.Scale;
+	}
+}
+
 void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
@@ -19,13 +49,16 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<PacketComponent<PacketPlayerAction>>*			pPlayerActionPackets	= pECS->GetComponentArray<PacketComponent<PacketPlayerAction>>();
 	ComponentArray<PacketComponent<PacketPlayerActionResponse>>*	pPlayerResponsePackets	= pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
-	ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+	ComponentArray<WeaponComponent>* pWeaponComponents										= pECS->GetComponentArray<WeaponComponent>();
+	const ComponentArray<TeamComponent>* pTeamComponents									= pECS->GetComponentArray<TeamComponent>();
 	
 	// TODO: Check local response and maybe roll back
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
 		WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
 		Entity playerEntity = weaponComponent.WeaponOwner;
+
+		const TeamComponent& teamComponent = pTeamComponents->GetConstData(playerEntity);
 
 		// Foreign Players
 		if (m_ForeignPlayerEntities.HasElement(playerEntity))
@@ -36,7 +69,12 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			{
 				if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
 				{
-					Fire(response.FiredAmmo, weaponEntity);
+					Fire(weaponEntity,
+						weaponComponent,
+						response.FiredAmmo,
+						response.WeaponPosition,
+						response.WeaponVelocity,
+						teamComponent.TeamIndex);
 				}
 			}
 
@@ -81,33 +119,20 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 	}
 }
 
-void WeaponSystemClient::Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity)
+void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam)
 {
 	using namespace LambdaEngine;
 
-	WeaponSystem::Fire(ammoType, weaponEntity);
-
-	ECSCore* pECS = ECSCore::GetInstance();
-	const WeaponComponent&		weaponComponent		= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
-	const PositionComponent&	positionComponent	= pECS->GetConstComponent<PositionComponent>(weaponComponent.WeaponOwner);
-	const VelocityComponent&	velocityComponent	= pECS->GetConstComponent<VelocityComponent>(weaponComponent.WeaponOwner);
+	WeaponSystem::Fire(weaponEntity, weaponComponent, ammoType, position, velocity, playerTeam);
 
 	// Play gun fire and spawn particles
-	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
-	m_pSound->PlayOnceAt(positionComponent.Position, velocityComponent.Velocity, 0.2f, 1.0f);
-
-	ParticleEmitterComponent& emitterComp = pECS->GetComponent<ParticleEmitterComponent>(weaponEntity);
-	emitterComp.Active = true;
+	ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
+	pSound->PlayOnceAt(position, velocity, 0.2f, 1.0f);
 }
 
 bool WeaponSystemClient::InitInternal()
 {
 	using namespace LambdaEngine;
-
-	if (!WeaponSystem::InitInternal())
-	{
-		return false;
-	}
 
 	// Register system
 	{
@@ -118,8 +143,9 @@ bool WeaponSystemClient::InitInternal()
 		playerGroup.Velocity.Permissions	= R;
 
 		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
-		{
+		WeaponSystem::CreateBaseSystemRegistration(systemReg);
+
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(
 			{
 				.pSubscriber		= &m_ForeignPlayerEntities,
 				.ComponentAccesses	=
@@ -128,7 +154,10 @@ bool WeaponSystemClient::InitInternal()
 					{ RW,	PacketComponent<PacketPlayerActionResponse>::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
-			},
+			}
+		);
+
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(
 			{
 				.pSubscriber		= &m_LocalPlayerEntities,
 				.ComponentAccesses	=
@@ -137,11 +166,8 @@ bool WeaponSystemClient::InitInternal()
 					{ RW,	PacketComponent<PacketPlayerAction>::Type() }
 				},
 				.ComponentGroups = { &playerGroup }
-			},
-		};
-
-		systemReg.SubscriberRegistration.AdditionalAccesses = GetFireProjectileComponentAccesses();
-		systemReg.Phase = 1;
+			}
+		);
 
 		RegisterSystem(TYPE_NAME(WeaponSystemClient), systemReg);
 	}
@@ -153,7 +179,8 @@ bool WeaponSystemClient::InitInternal()
 		projectileMaterialProperties.Metallic = 0.5f;
 		projectileMaterialProperties.Roughness = 0.5f;
 
-		const uint32 projectileMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		GUID_Lambda projectileMeshGUID;
+		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID);
 		if (projectileMeshGUID == GUID_NONE)
 		{
 			return false;
@@ -219,26 +246,49 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 {
 	using namespace LambdaEngine;
 
-	const bool didFire = WeaponSystem::TryFire(ammoType, weaponEntity);
-	if (didFire)
+	// Add cooldown
+	ECSCore* pECS = ECSCore::GetInstance();
+	WeaponComponent& weaponComponent	= pECS->GetComponent<WeaponComponent>(weaponEntity);
+	weaponComponent.CurrentCooldown		= 1.0f / weaponComponent.FireRate;
+
+	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
+	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end());
+
+	const bool hasAmmo = (ammoState->second.first > 0);
+	if (hasAmmo)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		const WeaponComponent& weaponComponent			= pECS->GetConstComponent<WeaponComponent>(weaponEntity);
-		PacketComponent<PacketPlayerAction>& packets	= pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
-		
+		// If we try to shoot when reloading we abort the reload
+		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
+		if (isReloading)
+		{
+			AbortReload(weaponComponent);
+		}
+
+		//Calculate Weapon Fire Properties (Position, Velocity and Team)
+		glm::vec3 firePosition;
+		glm::vec3 fireVelocity;
+		uint32 playerTeam;
+		CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
+
+		// For creating entity
+		Fire(weaponEntity, weaponComponent, ammoType, firePosition, fireVelocity, playerTeam);
+
 		// Send action to server
+		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
 		TQueue<PacketPlayerAction>& actions = packets.GetPacketsToSend();
 		if (!actions.empty())
 		{
 			actions.back().FiredAmmo = ammoType;
 		}
+
+		return true;
 	}
 	else
 	{
 		// Play out of ammo
 		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
-		pSound->PlayOnce();
-	}
+		pSound->PlayOnce(1.0f, 1.0f);
 
-	return didFire;
+		return false;
+	}
 }

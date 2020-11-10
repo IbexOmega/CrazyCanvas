@@ -78,7 +78,7 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	vec3 paintColor10 		= b_PaintMaskColor.val[paintSample10.Team].rgb;
 	vec3 paintColor01 		= b_PaintMaskColor.val[paintSample01.Team].rgb;
 	vec3 paintColor11 		= b_PaintMaskColor.val[paintSample11.Team].rgb;
-	
+
 	vec3 paintColorHor0 	= mix(paintColor00, paintColor10, subTexel.x);
 	vec3 paintColorHor1 	= mix(paintColor01, paintColor11, subTexel.x);
 	vec3 paintColorFinal	= mix(paintColorHor0, paintColorHor1, subTexel.y);
@@ -136,9 +136,9 @@ void main()
 
 	//1
 	vec3 storedMaterial			= vec3(
-									materialParameters.AO * sampledCombinedMaterial.b, 
-									mix(materialParameters.Roughness * sampledCombinedMaterial.r, paintDescription.Roughness, paintDescription.Interpolation), 
-									materialParameters.Metallic * sampledCombinedMaterial.g);
+									materialParameters.AO * sampledCombinedMaterial.r, 
+									mix(materialParameters.Roughness * sampledCombinedMaterial.g, paintDescription.Roughness, paintDescription.Interpolation), 
+									materialParameters.Metallic * sampledCombinedMaterial.b);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2

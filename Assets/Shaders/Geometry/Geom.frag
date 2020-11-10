@@ -54,7 +54,7 @@ void main()
 	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//1
-	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.b, materialParameters.Roughness * sampledCombinedMaterial.r, materialParameters.Metallic * sampledCombinedMaterial.g);
+	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.r, materialParameters.Roughness * sampledCombinedMaterial.g, materialParameters.Metallic * sampledCombinedMaterial.b);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2

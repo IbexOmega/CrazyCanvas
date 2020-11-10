@@ -72,8 +72,8 @@ void ServerState::Init()
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
+	m_MeshPaintHandler.Init();
 	m_MultiplayerServer.InitInternal();
-
 
 	// Load Match
 	{
