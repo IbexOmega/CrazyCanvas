@@ -126,7 +126,7 @@ bool MultiplayerGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent&
 	pDecoder->ReadString(serverInfo.MapName);
 	int32 clientHostID = pDecoder->ReadInt32();
 
-	HandleServerInfo(serverInfo, clientHostID);
+	HandleServerInfo(serverInfo);
 
 	if (m_ClientHostID == clientHostID)
 	{
