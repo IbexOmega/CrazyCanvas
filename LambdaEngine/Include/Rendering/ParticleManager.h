@@ -167,7 +167,7 @@ namespace LambdaEngine
 		uint32								m_MaxParticleCount;
 		uint64								m_ModFrameIndex;
 
-		bool								m_Initilized				= false;
+		bool								m_Initialized				= false;
 		bool								m_CreatedDummyBuffer		= false;
 
 		bool								m_DirtyAliveBuffer			= false;

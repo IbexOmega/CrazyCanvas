@@ -17,10 +17,8 @@ namespace LambdaEngine
 {
 	void ParticleManager::Init(uint32 maxParticleCapacity, ASBuilder* pASBuilder)
 	{
-		if (!m_Initilized)
+		if (!m_Initialized)
 		{
-			m_Initilized = true;
-
 			m_MaxParticleCount = maxParticleCapacity;
 			m_Particles.Reserve(m_MaxParticleCount);
 			m_AliveIndices.Reserve(m_MaxParticleCount);
@@ -79,6 +77,8 @@ namespace LambdaEngine
 			m_DirtyIndexBuffer = true;
 
 			m_pASBuilder->BuildTriBLAS(m_BLASIndex, 1U, m_pVertexBuffer, m_pIndexBuffer, VERTEX_COUNT, sizeof(glm::vec4), INDEX_COUNT, false);
+
+			m_Initialized = true;
 		}
 	}
 
