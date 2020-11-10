@@ -131,15 +131,15 @@ bool LevelObjectCreator::Init()
 
 		//Player
 		{
-			ResourceManager::LoadMeshFromFile("Player/Idle.fbx", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
+			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
 
-#ifndef LAMBDA_DEBUG
-			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.fbx");
-			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.fbx");
-			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.fbx");
-			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.fbx");
-			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.fbx");
-			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.fbx");
+#ifdef USE_ALL_ANIMATIONS
+			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
+			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.glb");
+			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.glb");
+			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.glb");
+			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
+			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 #endif
 
 			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMesh, s_WeaponMaterial);
@@ -704,7 +704,7 @@ bool LevelObjectCreator::CreatePlayer(
 		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
 
-#ifndef LAMBDA_DEBUG
+#ifdef USE_ALL_ANIMATIONS
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", s_PlayerStrafeRightGUIDs[0]));

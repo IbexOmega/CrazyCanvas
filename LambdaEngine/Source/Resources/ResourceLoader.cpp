@@ -1243,12 +1243,21 @@ namespace LambdaEngine
 				pSkeleton->RelativeTransforms[myID] = AssimpToGLMMat4(pNode->mTransformation);
 
 				const aiNode* pParent = pNode->mParent;
-				if (pParent)
+				JointIndexType parentID = INVALID_JOINT_ID;
+
+				while (pParent != nullptr && parentID == INVALID_JOINT_ID)
 				{
-					JointIndexType parentID = FindNodeIdInSkeleton(pParent->mName.C_Str(), pSkeleton);
+					parentID = FindNodeIdInSkeleton(pParent->mName.C_Str(), pSkeleton);
 					joint.ParentBoneIndex = parentID;
 
-					if (parentID != INVALID_JOINT_ID)
+					if (parentID == INVALID_JOINT_ID)
+					{
+						glm::mat4 parentMat = AssimpToGLMMat4(pParent->mTransformation);
+						pSkeleton->RelativeTransforms[myID] = parentMat * pSkeleton->RelativeTransforms[myID];
+
+						pParent = pParent->mParent;
+					}
+					else
 					{
 						children[parentID].EmplaceBack(myID);
 					}
@@ -1284,7 +1293,7 @@ namespace LambdaEngine
 			if (rootNode != INVALID_JOINT_ID)
 			{
 				Joint& root = pSkeleton->Joints[rootNode];
-				TArray<JointIndexType> rootChildren = children[rootNode];
+				TArray<JointIndexType>& rootChildren = children[rootNode];
 				LOG_INFO("RootNode=%s Index=%u, NumChildren=%u", root.Name.GetCString(), rootNode, rootChildren.GetSize());
 				PrintChildren(rootChildren, children, pSkeleton, 1);
 			}
@@ -1560,7 +1569,7 @@ namespace LambdaEngine
 		const uint32 numChildren = pNode->mNumChildren;
 		LOG_INFO("%s%s | NumChildren=%u", postfix.c_str(), pNode->mName.C_Str(), numChildren);
 
-#if 1
+#if 0
 		glm::mat4 glmMat = AssimpToGLMMat4(pNode->mTransformation);
 		for (uint32 i = 0; i < 4; i++)
 		{
@@ -1793,9 +1802,9 @@ namespace LambdaEngine
 							const glm::mat4 meshTransform = glm::rotate(glm::mat4(1.0f), glm::pi<float32>(), glm::vec3(0.0f, 1.0f, 0.0f));
 							const glm::mat4 skinTransform = AssimpToGLMMat4(pNode->mTransformation);
 							pSkeleton->SkinTransform			= skinTransform;
-							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * meshTransform;
+							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * skinTransform * meshTransform;
 						
-							pMesh->BoundingBox.Scale(skinTransform);
+							//pMesh->BoundingBox.Scale(skinTransform);
 						}
 					}
 

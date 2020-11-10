@@ -44,9 +44,9 @@ bool MatchClient::InitInternal()
 {
 	if (MultiplayerUtils::IsSingleplayer())
 	{
-		m_HasBegun = false;
-		m_ClientSideBegun = false;
-		m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+		m_HasBegun = true;
+		m_ClientSideBegun = true;
+		m_MatchBeginTimer = 0.0f;
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);

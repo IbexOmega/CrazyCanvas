@@ -21,66 +21,21 @@ void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 	ComponentArray<PositionComponent>*			pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
 	ComponentArray<RotationComponent>*			pRotationComponents				= pECS->GetComponentArray<RotationComponent>();
 	ComponentArray<ScaleComponent>*				pScaleComponent					= pECS->GetComponentArray<ScaleComponent>();
-	ComponentArray<AnimationAttachedComponent>* pAnimationAttachedComponents	= pECS->GetComponentArray<AnimationAttachedComponent>();
 
 	for (Entity weaponEntity : m_WeaponEntities)
 	{
 		const WeaponComponent&				weaponComponent				= pWeaponComponents->GetConstData(weaponEntity);
-		const AnimationAttachedComponent&	animationAttachedComponent	= pAnimationAttachedComponents->GetConstData(weaponEntity);
-
 		PositionComponent&					weaponPositionComponent		= pPositionComponents->GetData(weaponEntity);
-		//RotationComponent&					weaponRotationComponent		= pRotationComponents->GetData(weaponEntity);
-		//ScaleComponent&						weaponScaleComponent		= pScaleComponent->GetData(weaponEntity);
+		RotationComponent&					weaponRotationComponent		= pRotationComponents->GetData(weaponEntity);
+		ScaleComponent&						weaponScaleComponent		= pScaleComponent->GetData(weaponEntity);
 
 		const PositionComponent&			playerPositionComponent		= pPositionComponents->GetConstData(weaponComponent.WeaponOwner);
 		const RotationComponent&			playerRotationComponent		= pRotationComponents->GetConstData(weaponComponent.WeaponOwner);
 		const ScaleComponent&				playerScaleComponent		= pScaleComponent->GetConstData(weaponComponent.WeaponOwner);
 
-		glm::mat4 transform = glm::translate(playerPositionComponent.Position);
-
-		glm::quat playerRotation = playerRotationComponent.Quaternion;
-		playerRotation.x = 0;
-		playerRotation.z = 0;
-		playerRotation = glm::normalize(playerRotation);
-
-		transform = transform * glm::toMat4(playerRotation);
-		transform = glm::scale(transform, playerScaleComponent.Scale);
-
-		transform = transform * animationAttachedComponent.Transform;
-
-		glm::vec3 newScale;
-		glm::quat newRotation;
-		glm::vec3 newTranslation;
-		glm::vec3 newSkew;
-		glm::vec4 newPerspective;
-		glm::decompose(
-			transform,
-			newScale,
-			newRotation,
-			newTranslation,
-			newSkew,
-			newPerspective);
-
-		glm::vec3 animationScale;
-		glm::quat animationRotation;
-		glm::vec3 animationTranslation;
-		glm::vec3 animationSkew;
-		glm::vec4 animationPerspective;
-		glm::decompose(
-			transform,
-			animationScale,
-			animationRotation,
-			animationTranslation,
-			animationSkew,
-			animationPerspective);
-
-		weaponPositionComponent.Position	= newTranslation;
-		//weaponRotationComponent.Quaternion	= newRotation;
-		//weaponScaleComponent.Scale			= newScale;
-
-		LOG_WARNING("Player Translation: %s",		glm::to_string(playerPositionComponent.Position).c_str());
-		LOG_WARNING("Animation Translation: %s",	glm::to_string(animationTranslation).c_str());
-		LOG_WARNING("New Translation: %s\n",		glm::to_string(newTranslation).c_str());
+		weaponPositionComponent.Position	= playerPositionComponent.Position;
+		weaponRotationComponent.Quaternion	= playerRotationComponent.Quaternion;
+		weaponScaleComponent.Scale			= playerScaleComponent.Scale;
 	}
 }
 

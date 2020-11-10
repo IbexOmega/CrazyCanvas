@@ -8,6 +8,10 @@
 
 #include "Rendering/Animation/AnimationGraph.h"
 
+#ifndef LAMBDA_DEBUG
+	#define USE_ALL_ANIMATIONS
+#endif
+
 namespace LambdaEngine
 {
 	/*
