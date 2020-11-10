@@ -49,7 +49,7 @@ public:
 
 private:
 	// Helpers
-	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* columnCollection, float width);
+	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);
 	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp);
 	void CreateHostIcon(Noesis::Panel* parent);
