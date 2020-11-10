@@ -33,6 +33,7 @@ private:
 	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);
 	bool OnPlayerHostUpdatedEvent(const PlayerHostUpdatedEvent& event);
 	bool OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event);
+	bool OnPlayerReadyUpdatedEvent(const PlayerReadyUpdatedEvent& event);
 	bool OnChatEvent(const ChatEvent& event);
 
 private:

@@ -26,6 +26,7 @@ LobbyState::~LobbyState()
 	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &LobbyState::OnPlayerStateUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
+	EventQueue::UnregisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
 	EventQueue::UnregisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 
 	m_LobbyGUI.Reset();
@@ -39,6 +40,7 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &LobbyState::OnPlayerStateUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
+	EventQueue::RegisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
 	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
@@ -90,12 +92,11 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 	const Player* pPlayer = event.pPlayer;
 	if (pPlayer->GetState() == GAME_STATE_SETUP)
 	{
-		State* pStartingState = DBG_NEW PlaySessionState();
-		StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
-	}
-	else
-	{
-		m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
+		if (pPlayer == PlayerManagerClient::GetPlayerLocal())
+		{
+			State* pStartingState = DBG_NEW PlaySessionState();
+			StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
+		}
 	}
 	return false;
 }
@@ -109,6 +110,12 @@ bool LobbyState::OnPlayerHostUpdatedEvent(const PlayerHostUpdatedEvent& event)
 bool LobbyState::OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event)
 {
 	m_LobbyGUI->UpdatePlayerPing(*event.pPlayer);
+	return false;
+}
+
+bool LobbyState::OnPlayerReadyUpdatedEvent(const PlayerReadyUpdatedEvent& event)
+{
+	m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
 	return false;
 }
 

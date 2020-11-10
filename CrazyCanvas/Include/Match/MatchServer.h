@@ -29,10 +29,9 @@ protected:
 	void MatchStart();
 	void MatchBegin();
 
-	void CreatePlayer(const Player& player);
+	void SpawnPlayer(const Player& player);
 
 	void SpawnFlag();
-	//void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;

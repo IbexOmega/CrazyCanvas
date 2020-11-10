@@ -145,9 +145,7 @@ void LobbyGUI::UpdatePlayerHost(const Player& player)
 			{
 				LOG_WARNING("Player %s could not be found when updating player host!", player.GetName().c_str());
 			}
-
 		}
-
 	}
 }
 
@@ -186,7 +184,7 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 void LobbyGUI::SetHostMode(bool isHost)
 {
 	Button* readyButton = FrameworkElement::FindName<Button>("ReadyButton");
-	readyButton->SetContent("Start");
+	readyButton->SetContent(isHost ? "Start" : "Ready");
 	m_pSettingsClientStackPanel->SetVisibility(isHost ? Visibility_Hidden : Visibility_Visible);
 	m_pSettingsHostStackPanel->SetVisibility(isHost ? Visibility_Visible : Visibility_Hidden);
 }

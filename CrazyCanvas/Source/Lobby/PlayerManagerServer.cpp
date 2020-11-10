@@ -70,15 +70,38 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 
 	ServerHelper::SendBroadcast(event.Packet, nullptr, pClient);
 
-	PacketJoin packet;
+	Player* hostPlayer = nullptr;
+	for (auto& pair : s_Players)
+	{
+		if (pair.second.IsHost())
+			hostPlayer = &pair.second;
+	}
+
 	for (auto& pair : s_Players)
 	{
 		const Player& player = pair.second;
 		if (&player != pPlayer)
 		{
-			packet.UID = player.m_UID;
-			strcpy(packet.Name, player.GetName().c_str());
-			ServerHelper::Send(pClient, packet);
+			PacketJoin packetJoin;
+			packetJoin.UID = player.m_UID;
+			strcpy(packetJoin.Name, player.GetName().c_str());
+			ServerHelper::Send(pClient, packetJoin);
+
+			if (hostPlayer)
+			{
+				PacketPlayerHost packetPlayerHost;
+				packetPlayerHost.UID = hostPlayer->GetUID();
+				ServerHelper::Send(pClient, packetPlayerHost);
+			}
+
+			PacketPlayerReady packetPlayerReady;
+			packetPlayerReady.UID		= player.m_UID;
+			packetPlayerReady.IsReady	= player.IsReady();
+			ServerHelper::Send(pClient, packetPlayerReady);
+
+			PacketPlayerScore packetPlayerScore;
+			FillPacketPlayerScore(&packetPlayerScore, &player);
+			ServerHelper::Send(pClient, packetPlayerScore);
 		}
 	}
 
@@ -129,6 +152,8 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 		{
 			if (player.IsHost())
 			{
+				ServerHelper::SetIgnoreNewClients(true);
+
 				for (auto& pair : s_Players)
 				{
 					Player& p = pair.second;
