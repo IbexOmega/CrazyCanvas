@@ -210,14 +210,14 @@ void PlayerManagerServer::SetPlayerHost(const Player* pPlayer)
 {
 	if (!pPlayer->m_IsHost)
 	{
-		Player* oldHost = nullptr;
+		Player* pOldHost = nullptr;
 		for (auto& pair : s_Players)
 		{
 			Player& player = pair.second;
 			if (player.IsHost())
 			{
 				player.m_IsHost = false;
-				oldHost = &player;
+				pOldHost = &player;
 			}
 		}
 
@@ -228,9 +228,9 @@ void PlayerManagerServer::SetPlayerHost(const Player* pPlayer)
 		packet.UID = pPl->m_UID;
 		ServerHelper::SendBroadcast(packet);
 
-		if (oldHost)
+		if (pOldHost)
 		{
-			PlayerHostUpdatedEvent event(oldHost);
+			PlayerHostUpdatedEvent event(pOldHost);
 			EventQueue::SendEventImmediate(event);
 		}
 
