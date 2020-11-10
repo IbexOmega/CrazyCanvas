@@ -1960,11 +1960,11 @@ namespace LambdaEngine
 			bufferDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			uint32 bufferDescriptorBindingIndex = 0;
 
-			TArray<DescriptorBindingDesc> drawArgDescriptorSetDescriptions;
-			drawArgDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+			TArray<DescriptorBindingDesc> drawArgDescriptorSetBindings;
+			drawArgDescriptorSetBindings.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
-			TArray<DescriptorBindingDesc> drawArgExtensionDescriptorSetDescriptions;
-			drawArgExtensionDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+			TArray<DescriptorBindingDesc> drawArgExtensionDescriptorSetBindings;
+			drawArgExtensionDescriptorSetBindings.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
 			TArray<RenderPassAttachmentDesc>								renderPassAttachmentDescriptions;
 			RenderPassAttachmentDesc										renderPassDepthStencilDescription;
@@ -2153,27 +2153,27 @@ namespace LambdaEngine
 						// Vertex Buffer
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 0;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Instance Buffer
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 1;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Meshlet Buffer
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 2;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Unique Indices Buffer
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 3;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Primitive Indices Buffer
 						descriptorBinding.DescriptorCount	= 1;
 						descriptorBinding.Binding			= 4;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						/*
 						*	Create a new descriptor set for extensions.
@@ -2197,10 +2197,10 @@ namespace LambdaEngine
 							{
 								// TODO: Do not hardcode the descriptor type!
 								descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-								descriptorBinding.DescriptorCount	= 1000u;
+								descriptorBinding.DescriptorCount	= 4u;
 								descriptorBinding.Binding			= binding++;
 								descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
-								drawArgExtensionDescriptorSetDescriptions.PushBack(descriptorBinding);
+								drawArgExtensionDescriptorSetBindings.PushBack(descriptorBinding);
 							}
 						}
 
@@ -2611,15 +2611,15 @@ namespace LambdaEngine
 
 						{
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
-							descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetDescriptions;
+							descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetBindings;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
 						}
 
 						// Extensions descriptor set layout
-						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
+						if (drawArgExtensionDescriptorSetBindings.GetSize() > 0)
 						{
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
-							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetDescriptions;
+							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetBindings;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
 						}
 					}
@@ -2662,30 +2662,6 @@ namespace LambdaEngine
 						pRenderStage->TextureSetIndex = setIndex;
 						setIndex++;
 					}
-
-					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
-					{
-						pRenderStage->pppDrawArgDescriptorSets = DBG_NEW DescriptorSet**[m_BackBufferCount];
-						for (uint32 i = 0; i < m_BackBufferCount; i++)
-						{
-							pRenderStage->pppDrawArgDescriptorSets[i] = nullptr;
-						}
-
-						pRenderStage->DrawSetIndex = setIndex;
-						setIndex++;
-
-						// Draw Arg Extensions descriptor set
-						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
-						{
-							pRenderStage->pppDrawArgExtensionsDescriptorSets = DBG_NEW DescriptorSet**[m_BackBufferCount];
-							for (uint32 i = 0; i < m_BackBufferCount; i++)
-							{
-								pRenderStage->pppDrawArgExtensionsDescriptorSets[i] = nullptr;
-							}
-							pRenderStage->DrawExtensionSetIndex = setIndex;
-							setIndex++;
-						}
-					}
 				}
 
 				//Shader Constants
@@ -2698,7 +2674,6 @@ namespace LambdaEngine
 						pShaderConstants = &shaderConstantsIt->second;
 					}
 				}
-
 
 				//Create Pipeline State
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)

@@ -169,6 +169,9 @@ namespace LambdaEngine
 			TArray<Instance> RasterInstances;
 
 			TArray<Entity> EntityIDs;
+
+			DescriptorSet* pDrawArgDescriptorSet			= nullptr;
+			DescriptorSet* pDrawArgDescriptorExtensionsSet	= nullptr;
 		};
 
 		struct InstanceKey

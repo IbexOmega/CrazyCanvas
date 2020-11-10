@@ -40,7 +40,7 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
-layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
 layout(location = 0) out vec3 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;

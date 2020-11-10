@@ -324,7 +324,7 @@ namespace LambdaEngine
 
 	struct DrawArgExtensionData
 	{
-		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]				= {nullptr};
+		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
 		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]			= { nullptr };
 		TextureView*	ppMipZeroTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
 		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
@@ -361,25 +361,6 @@ namespace LambdaEngine
 		{
 			return FullMask == other.FullMask;
 		}
-	};
-
-	struct DrawArg
-	{
-		TArray<Entity> EntityIDs;
-
-		Buffer* pVertexBuffer			= nullptr;
-		Buffer* pIndexBuffer			= nullptr;
-		Buffer* pInstanceBuffer			= nullptr;
-		Buffer* pMeshletBuffer			= nullptr;
-		Buffer* pUniqueIndicesBuffer	= nullptr;
-		Buffer* pPrimitiveIndices		= nullptr;
-		uint32	InstanceCount			= 0;
-		uint32	IndexCount				= 0;
-		uint32	MeshletCount			= 0;
-
-		// Extensions
-		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount!
-		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used.
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

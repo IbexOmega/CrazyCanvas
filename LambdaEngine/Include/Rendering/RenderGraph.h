@@ -275,8 +275,6 @@ namespace LambdaEngine
 			uint32					BufferSetIndex						= 0;
 			DescriptorSet**			ppTextureDescriptorSets				= nullptr; //# m_BackBufferCount
 			uint32					TextureSetIndex						= 0;
-			DescriptorSet***		pppDrawArgDescriptorSets			= nullptr; //# m_BackBufferCount
-			DescriptorSet***		pppDrawArgExtensionsDescriptorSets	= nullptr; //# m_BackBufferCount
 			DrawArg*				pDrawArgs							= nullptr;
 			uint32					NumDrawArgsPerFrame					= 0;
 			uint32					DrawSetIndex						= 0;
