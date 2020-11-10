@@ -179,18 +179,6 @@
                     <Label Content="Blue Team" Grid.Column="1" Foreground="#05DFD7" FontSize="40" HorizontalAlignment="Left" Margin="0 0 0 10" />
                     <Label Content="Ping" Grid.Column="2" Foreground="White" FontSize="32" HorizontalAlignment="Right" />
                 </Grid>
-                
-                <Grid x:Name="Player0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="7*" />
-                        <ColumnDefinition Width="2*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Label Content="Jonathan2222" Style="{StaticResource PlayerTeamLabelStyle}" HorizontalAlignment="Left" />
-                    <Label Content="23" Style="{StaticResource PingLabelStyle}" />
-                    <Image x:Name="Checkmark0" Style="{StaticResource CheckmarkImageStyle}" />
-                </Grid>
             </StackPanel>
 
             <StackPanel x:Name="RedTeamStackPanel" Grid.Column="1" Grid.Row="0" Margin="20 0 20 0">
@@ -203,18 +191,6 @@
 
                     <Label Content="Red Team" Grid.Column="1" Foreground="#E52C2C" FontSize="40" HorizontalAlignment="Left" Margin="0 0 0 10" />
                     <Label Content="Ping" Grid.Column="2" Foreground="White" FontSize="32" HorizontalAlignment="Right" />
-                </Grid>
-
-                <Grid x:Name="Player1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="7*" />
-                        <ColumnDefinition Width="2*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Label Content="Silver Tosspot" Style="{StaticResource PlayerTeamLabelStyle}" />
-                    <Label Content="24" Style="{StaticResource PingLabelStyle}" />
-                    <Image x:Name="Checkmark1" Style="{StaticResource CheckmarkImageStyle}" />
                 </Grid>
             </StackPanel>
 

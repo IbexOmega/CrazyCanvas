@@ -48,7 +48,11 @@ void LobbyState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
+
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	m_LobbyGUI = *new LobbyGUI();
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);

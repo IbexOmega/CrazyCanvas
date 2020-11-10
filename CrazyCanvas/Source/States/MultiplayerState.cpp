@@ -20,7 +20,11 @@ void MultiplayerState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
+
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
 	m_View = Noesis::GUI::CreateView(m_MultiplayerGUI);
