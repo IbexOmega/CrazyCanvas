@@ -45,6 +45,11 @@ void PlayerManagerClient::Release()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerHost>>(&PlayerManagerClient::OnPacketPlayerHostReceived);
 }
 
+void PlayerManagerClient::Reset()
+{
+	PlayerManagerBase::Reset();
+}
+
 const Player* PlayerManagerClient::GetPlayerLocal()
 {
 	ASSERT(!MultiplayerUtils::IsServer());
@@ -83,6 +88,8 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 
 void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 {
+	ASSERT(!MultiplayerUtils::IsServer());
+
 	Player* pPlayer = GetPlayerLocalNoConst();
 	if (pPlayer)
 	{
@@ -117,6 +124,8 @@ void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 
 void PlayerManagerClient::SetLocalPlayerStateLoading()
 {
+	ASSERT(!MultiplayerUtils::IsServer());
+
 	Player* pPlayer = GetPlayerLocalNoConst();
 	if (pPlayer)
 	{
@@ -136,6 +145,8 @@ void PlayerManagerClient::SetLocalPlayerStateLoading()
 
 void PlayerManagerClient::SetLocalPlayerStateLoaded()
 {
+	ASSERT(!MultiplayerUtils::IsServer());
+
 	Player* pPlayer = GetPlayerLocalNoConst();
 	if (pPlayer)
 	{

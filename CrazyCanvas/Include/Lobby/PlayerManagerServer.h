@@ -27,6 +27,7 @@ public:
 protected:
 	static void Init();
 	static void Release();
+	static void Reset();
 	static void FixedTick(LambdaEngine::Timestamp deltaTime);
 
 	static bool OnPacketJoinReceived(const PacketReceivedEvent<PacketJoin>& event);

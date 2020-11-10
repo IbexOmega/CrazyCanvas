@@ -21,6 +21,12 @@ void PlayerManagerBase::Release()
 
 }
 
+void PlayerManagerBase::Reset()
+{
+	s_Players.clear();
+	s_PlayerEntityToUID.clear();
+}
+
 const Player* PlayerManagerBase::GetPlayer(uint64 uid)
 {
 	auto pair = s_Players.find(uid);

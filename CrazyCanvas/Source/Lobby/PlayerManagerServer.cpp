@@ -37,6 +37,11 @@ void PlayerManagerServer::Release()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerReady>>(&PlayerManagerServer::OnPacketPlayerReadyReceived);
 }
 
+void PlayerManagerServer::Reset()
+{
+	PlayerManagerBase::Reset();
+}
+
 void PlayerManagerServer::FixedTick(Timestamp deltaTime)
 {
 	static const Timestamp timestep = Timestamp::Seconds(1);

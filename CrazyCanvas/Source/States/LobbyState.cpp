@@ -62,6 +62,7 @@ void LobbyState::Init()
 
 	m_LobbyGUI->InitGUI();
 
+	PlayerManagerClient::Reset();
 	PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
 }
 

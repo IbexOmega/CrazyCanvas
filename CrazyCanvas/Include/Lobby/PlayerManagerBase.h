@@ -32,6 +32,7 @@ public:
 protected:
 	static void Init();
 	static void Release();
+	static void Reset();
 
 	static Player* GetPlayerNoConst(uint64 uid);
 	static Player* GetPlayerNoConst(LambdaEngine::IClient* pClient);
