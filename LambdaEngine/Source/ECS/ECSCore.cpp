@@ -262,8 +262,6 @@ namespace LambdaEngine
 
 		for (Entity entity : m_EntitiesToDelete)
 		{
-			if (entity == 17)
-				int a = 0;
 			if (registryPage.HasElement(entity))
 			{
 				// Delete every component belonging to the entity

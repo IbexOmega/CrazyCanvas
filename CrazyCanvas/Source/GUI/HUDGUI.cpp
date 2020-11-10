@@ -255,14 +255,14 @@ void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 	UNREFERENCED_VARIABLE(args);
 
 	ClientHelper::Disconnect("Daniel has the biggest penis");
-	//SetRenderStagesInactive();
+	SetRenderStagesInactive();
 
 	Noesis::FrameworkElement* pElement = m_ContextStack.top();
 	pElement->SetVisibility(Noesis::Visibility_Hidden);
 	m_ContextStack.pop();
 
-	State* pMainMenuState = DBG_NEW MainMenuState();
-	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+	//State* pMainMenuState = DBG_NEW MainMenuState();
+	//StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void HUDGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
