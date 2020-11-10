@@ -84,7 +84,7 @@ bool LobbyState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
-	if (pPlayer->GetState() == PLAYER_STATE_LOADING)
+	if (pPlayer->GetState() == GAME_STATE_SETUP)
 	{
 		State* pStartingState = DBG_NEW PlaySessionState();
 		StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);

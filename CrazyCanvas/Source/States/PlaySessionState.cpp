@@ -100,7 +100,7 @@ void PlaySessionState::Init()
 	else
 	{
 		//Called to tell the server we are ready to start the match
-		PlayerManagerClient::SetLocalPlayerStateLoaded();
+		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
 }
 

@@ -36,6 +36,7 @@
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketMatchReady.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 
@@ -51,7 +52,6 @@ MatchServer::~MatchServer()
 	
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
 	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 }
 
@@ -69,7 +69,6 @@ bool MatchServer::InitInternal()
 
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
 	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 
 	return true;
@@ -197,12 +196,10 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 #endif
 }
 
-bool MatchServer::OnPacketStartGameReceived(const PacketReceivedEvent<PacketStartGame>& event)
+void MatchServer::BeginLoading()
 {
 	using namespace LambdaEngine;
-	LOG_INFO("SERVER: Game Start");
-
-	PlayerManagerServer::SetPlayerStateLoading();
+	LOG_INFO("SERVER: Loading started!");
 
 	const THashTable<uint64, Player>& players = PlayerManagerBase::GetPlayers();
 
@@ -238,7 +235,8 @@ bool MatchServer::OnPacketStartGameReceived(const PacketReceivedEvent<PacketStar
 		}
 	}
 
-	return true;
+	PacketMatchReady packet;
+	ServerHelper::SendBroadcast(packet);
 }
 
 void MatchServer::MatchStart()
@@ -640,14 +638,26 @@ bool MatchServer::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 
 	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
 
-	for (auto& pair : players)
-	{
-		if (pair.second.GetState() != PLAYER_STATE_LOADED)
-			return false;
-	}
+	EGameState gameState = event.pPlayer->GetState();
 
-	// Match Start
+	if (gameState == GAME_STATE_LOADING)
 	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
+		BeginLoading();
+	}
+	else if (gameState == GAME_STATE_LOADED)
+	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
 		MatchStart();
 	}
 

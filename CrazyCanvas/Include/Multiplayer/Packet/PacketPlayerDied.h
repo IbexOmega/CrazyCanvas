@@ -3,8 +3,10 @@
 #include "Multiplayer/Packet/Packet.h"
 
 #pragma pack(push, 1)
-struct PacketMatchLoaded
+struct PacketPlayerDied
 {
-	DECL_PACKET(PacketMatchLoaded);
+	DECL_PACKET(PacketPlayerDied);
+
+	uint64 UID;
 };
 #pragma pack(pop)

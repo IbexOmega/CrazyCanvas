@@ -46,6 +46,23 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
 
+	constexpr const char* pGameName = "Crazy Canvas";
+	constexpr const char* pDefaultStateStr = "crazycanvas";
+	State* pStartingState = nullptr;
+	String stateStr;
+
+	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
+
+	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
+	{
+		ClientSystem::Init(pGameName);
+	}
+	else if (stateStr == "server")
+	{
+		ServerSystem::Init(pGameName);
+	}
+
+
 	if (!RegisterGUIComponents())
 	{
 		LOG_ERROR("Failed to Register GUI Components");
@@ -69,45 +86,22 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	LoadRendererResources();
 
-	constexpr const char* pGameName = "Crazy Canvas";
-	constexpr const char* pDefaultStateStr = "crazycanvas";
-	constexpr const char* pDefaultIsHostStr = "";
-	State* pStartingState = nullptr;
-	String stateStr;
-
-	String clientHostIDStr; // Used on Client To Identify Host(Server transmits HostID)
-
-	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
-
-	if (stateStr == "server")
-	{
-		flagParser(1, pDefaultIsHostStr) >> clientHostIDStr;
-	}
-
 	if (stateStr == "crazycanvas")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW MainMenuState();
 	}
 	else if (stateStr == "sandbox")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
 	}
-	/*else if (stateStr == "client")
-	{
-		ClientSystem::Init(pGameName);
-		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
-		pStartingState = DBG_NEW PlaySessionState(false);
-	}*/
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
+		String clientHostIDStr;
+		flagParser(1, "") >> clientHostIDStr;
 		pStartingState = DBG_NEW ServerState(clientHostIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW BenchmarkState();
 	}
 

@@ -9,7 +9,6 @@
 #include "Events/ChatEvents.h"
 
 #include "Multiplayer/Packet/PacketGameSettings.h"
-#include "Multiplayer/Packet/PacketStartGame.h"
 
 #include "GUI/LobbyGUI.h"
 
@@ -35,7 +34,6 @@ private:
 	bool OnPlayerHostUpdatedEvent(const PlayerHostUpdatedEvent& event);
 	bool OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event);
 	bool OnChatEvent(const ChatEvent& event);
-	bool OnPacketStartGameReceived(const PacketReceivedEvent<PacketStartGame>& event);
 
 private:
 	Noesis::Ptr<LobbyGUI> m_LobbyGUI;

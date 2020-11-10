@@ -11,7 +11,6 @@
 #include "States/MultiplayerState.h"
 
 #include "Multiplayer/ClientHelper.h"
-#include "Multiplayer/Packet/PacketStartGame.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -243,18 +242,7 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 void LobbyGUI::OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	ToggleButton* button = static_cast<ToggleButton*>(pSender);
-	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
-
-	if (pPlayer->IsHost())
-	{
-		PacketStartGame packet;
-		ClientHelper::Send(packet);
-		LOG_INFO("CLIENT: Game Start");
-	}
-	else
-	{
-		PlayerManagerClient::SetLocalPlayerReady(button->GetIsChecked().GetValue());
-	}
+	PlayerManagerClient::SetLocalPlayerReady(button->GetIsChecked().GetValue());
 }
 
 void LobbyGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
