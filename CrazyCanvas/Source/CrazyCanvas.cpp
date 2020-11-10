@@ -33,6 +33,10 @@
 
 #include "GUI/Core/GUIApplication.h"
 
+#include "Rendering/EntityMaskManager.h"
+
+#include "ECS/Components/Player/WeaponComponent.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -76,6 +80,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	ServerHostHelper::Init();
+
+	if (!BindComponentTypeMasks())
+	{
+		LOG_ERROR("Failed to bind Component Type Masks");
+	}
 
 	if (!LevelManager::Init())
 	{
@@ -201,6 +210,17 @@ bool CrazyCanvas::LoadRendererResources()
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
+
+	return true;
+}
+
+bool CrazyCanvas::BindComponentTypeMasks()
+{
+	using namespace LambdaEngine;
+
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+
+	EntityMaskManager::Finalize();
 
 	return true;
 }

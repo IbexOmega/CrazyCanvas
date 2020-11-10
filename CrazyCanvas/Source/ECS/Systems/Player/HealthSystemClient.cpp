@@ -74,6 +74,8 @@ bool HealthSystemClient::InitInternal()
 		playerGroup.Velocity.Permissions = NDA;
 
 		SystemRegistration systemReg = {};
+		HealthSystem::CreateBaseSystemRegistration(systemReg);
+
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
@@ -86,12 +88,9 @@ bool HealthSystemClient::InitInternal()
 			},
 		};
 
-		// After weaponsystem
-		systemReg.Phase = 2;
-
-		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
+		RegisterSystem(TYPE_NAME(HealthSystemClient), systemReg);
 	}
 
-	return HealthSystem::InitInternal();
+	return true;
 }
 

@@ -326,7 +326,6 @@ namespace LambdaEngine
 	{
 		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]				= {nullptr};
 		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]			= { nullptr };
-		TextureView*	ppMipZeroTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
 		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
 		uint32			TextureCount										= 0;
 		uint32			ExtensionID											= 0; // Zero is an invalid id.

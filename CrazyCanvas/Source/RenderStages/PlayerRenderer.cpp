@@ -399,7 +399,7 @@ namespace LambdaEngine
 									if ((mask & meshPaintBit) != invertedUInt)
 									{
 										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-										TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+										TextureView* pTextureView = extension.ppTextureViews[0];
 										textureViews.PushBack(pTextureView);
 									}
 								}
