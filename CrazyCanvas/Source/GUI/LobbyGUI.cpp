@@ -24,11 +24,11 @@ LobbyGUI::LobbyGUI()
 	// Get commonly used elements
 	m_pBlueTeamStackPanel		= FrameworkElement::FindName<StackPanel>("BlueTeamStackPanel");
 	m_pRedTeamStackPanel		= FrameworkElement::FindName<StackPanel>("RedTeamStackPanel");
-	m_pChatPanel				= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
+	m_pChatPanel			= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
 	m_pSettingsNamesStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsNamesStackPanel");
 	m_pSettingsHostStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsClientStackPanel");
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
-	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
+	m_pChatInputTextBox		= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 
 	SetHostMode(false);
 
@@ -42,17 +42,17 @@ LobbyGUI::~LobbyGUI()
 
 void LobbyGUI::InitGUI()
 {
-	AddSettingComboBox(SETTING_MAP,				"Map",					{ "Daniel's Creation" }, 0);
-	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
-	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
-	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
-	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
+	AddSettingComboBox(SETTING_MAP,			"Map",			{ "Daniel's Creation" }, 0);
+	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",		{ "3 min", "5 min", "10 min", "15 min" }, 1);
+	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",		{ "3", "5", "10", "15" }, 1);
+	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",		{ "4", "6", "8", "10" }, 3);
+	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",		{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
 }
 
 void LobbyGUI::AddPlayer(const Player& player)
 {
-	StackPanel* pnl = player.GetTeam() == 0 ? m_pBlueTeamStackPanel : m_pRedTeamStackPanel;
+	StackPanel* pPanel = player.GetTeam() == 0 ? m_pBlueTeamStackPanel : m_pRedTeamStackPanel;
 
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
@@ -75,29 +75,29 @@ void LobbyGUI::AddPlayer(const Player& player)
 	Ptr<Image> image = *new Image();
 	image->SetName((uid + "_checkmark").c_str());
 	RegisterName(uid + "_checkmark", image);
-	Style* style = FrameworkElement::FindResource<Style>("CheckmarkImageStyle");
-	image->SetStyle(style);
+	Style* pStyle = FrameworkElement::FindResource<Style>("CheckmarkImageStyle");
+	image->SetStyle(pStyle);
 	image->SetVisibility(Visibility::Visibility_Hidden);
 	playerGrid->GetChildren()->Add(image);
 
-	pnl->GetChildren()->Add(playerGrid);
+	pPanel->GetChildren()->Add(playerGrid);
 }
 
 void LobbyGUI::RemovePlayer(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
-	Grid* grid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
-	if (grid)
+	Grid* pGrid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	if (pGrid)
 	{
-		m_pBlueTeamStackPanel->GetChildren()->Remove(grid);
+		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
 		return;
 	}
 
-	grid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
-	if (grid)
+	pGrid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	if (pGrid)
 	{
-		m_pRedTeamStackPanel->GetChildren()->Remove(grid);
+		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
 	}
 }
 
@@ -105,10 +105,10 @@ void LobbyGUI::UpdatePlayerPing(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
-	Label* pingLabel = FrameworkElement::FindName<Label>((uid + "_ping").c_str());
-	if (pingLabel)
+	Label* pPingLabel = FrameworkElement::FindName<Label>((uid + "_ping").c_str());
+	if (pPingLabel)
 	{
-		pingLabel->SetContent(std::to_string(player.GetPing()).c_str());
+		pPingLabel->SetContent(std::to_string(player.GetPing()).c_str());
 	}
 }
 
@@ -154,10 +154,10 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
 	// Checkmark styling is currently broken
-	Image* image = FrameworkElement::FindName<Image>((uid + "_checkmark").c_str());
-	if (image)
+	Image* pImage = FrameworkElement::FindName<Image>((uid + "_checkmark").c_str());
+	if (pImage)
 	{
-		image->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Hidden);
+		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Hidden);
 	}
 }
 
@@ -183,16 +183,16 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 
 void LobbyGUI::SetHostMode(bool isHost)
 {
-	Button* readyButton = FrameworkElement::FindName<Button>("ReadyButton");
-	readyButton->SetContent(isHost ? "Start" : "Ready");
+	Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
+	pReadyButton->SetContent(isHost ? "Start" : "Ready");
 	m_pSettingsClientStackPanel->SetVisibility(isHost ? Visibility_Hidden : Visibility_Visible);
 	m_pSettingsHostStackPanel->SetVisibility(isHost ? Visibility_Visible : Visibility_Hidden);
 }
 
 void LobbyGUI::UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value)
 {
-	Label* clientSetting = FrameworkElement::FindName<Label>((settingKey + "_client").c_str());
-	clientSetting->SetContent(value.c_str());
+	Label* pClientSetting = FrameworkElement::FindName<Label>((settingKey + "_client").c_str());
+	pClientSetting->SetContent(value.c_str());
 }
 
 void LobbyGUI::AddSettingComboBox(
@@ -209,8 +209,8 @@ void LobbyGUI::AddSettingComboBox(
 
 	// Add setting combobox
 	Ptr<ComboBox> settingComboBox = *new ComboBox();
-	Style* style = FrameworkElement::FindResource<Style>("SettingsHostStyle");
-	settingComboBox->SetStyle(style);
+	Style* pStyle = FrameworkElement::FindResource<Style>("SettingsHostStyle");
+	settingComboBox->SetStyle(pStyle);
 	settingComboBox->SetName((settingKey + "_host").c_str());
 	settingComboBox->SelectionChanged() += MakeDelegate(this, &LobbyGUI::OnComboBoxSelectionChanged);
 	RegisterName(settingComboBox->GetName(), settingComboBox);
@@ -239,8 +239,8 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 
 void LobbyGUI::OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	ToggleButton* button = static_cast<ToggleButton*>(pSender);
-	PlayerManagerClient::SetLocalPlayerReady(button->GetIsChecked().GetValue());
+	ToggleButton* pButton = static_cast<ToggleButton*>(pSender);
+	PlayerManagerClient::SetLocalPlayerReady(pButton->GetIsChecked().GetValue());
 }
 
 void LobbyGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -286,13 +286,13 @@ void LobbyGUI::TrySendChatMessage()
 
 void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args)
 {
-	ComboBox* comboBox = static_cast<ComboBox*>(pSender);
-	LOG_WARNING("Selected index: %d", comboBox->GetSelectedIndex());
-	comboBox->SetText(static_cast<TextBlock*>(comboBox->GetSelectedItem())->GetText());
+	ComboBox* pComboBox = static_cast<ComboBox*>(pSender);
+	LOG_WARNING("Selected index: %d", pComboBox->GetSelectedIndex());
+	pComboBox->SetText(static_cast<TextBlock*>(pComboBox->GetSelectedItem())->GetText());
 
 	// Update the local setting value to match
-	size_t len = LambdaEngine::String(comboBox->GetName()).find_last_of("_");
-	UpdateSetting(LambdaEngine::String(comboBox->GetName()).substr(0, len).c_str(), static_cast<TextBlock*>(comboBox->GetSelectedItem())->GetText());
+	size_t len = LambdaEngine::String(pComboBox->GetName()).find_last_of("_");
+	UpdateSetting(LambdaEngine::String(pComboBox->GetName()).substr(0, len).c_str(), static_cast<TextBlock*>(pComboBox->GetSelectedItem())->GetText());
 
 	// If the value of the currently selected item is wanted, simple call the commented code below
 	// LambdaEngine::String selectedValue = static_cast<TextBlock*>(comboBox->GetSelectedItem())->GetText();
@@ -320,8 +320,8 @@ void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel
 	if (content != "")
 		label->SetContent(content.c_str());
 
-	Style* style = FrameworkElement::FindResource<Style>(styleKey.c_str());
-	label->SetStyle(style);
+	Style* pStyle = FrameworkElement::FindResource<Style>(styleKey.c_str());
+	label->SetStyle(pStyle);
 	parent->GetChildren()->Add(label);
 }
 
@@ -335,8 +335,8 @@ void LobbyGUI::CreateHostIcon(Noesis::Panel* parent)
 	Ptr<Viewbox> viewBox	= *new Viewbox();
 	Ptr<Path> path			= *new Path();
 
-	Style* style = FrameworkElement::FindResource<Style>("CrownPath");
-	path->SetStyle(style);
+	Style* pStyle = FrameworkElement::FindResource<Style>("CrownPath");
+	path->SetStyle(pStyle);
 	viewBox->SetChild(path);
 
 	// viewBox->SetNodeParent(parent);
@@ -349,12 +349,12 @@ Noesis::Grid* LobbyGUI::GetPlayerGrid(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
-	Grid* grid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
-	if (grid)
+	Grid* pGrid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	if (pGrid)
 	{
-		return grid;
+		return pGrid;
 	}
 
-	grid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
-	return grid;
+	pGrid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	return pGrid;
 }
