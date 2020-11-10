@@ -956,26 +956,26 @@ bool LevelObjectCreator::CreateProjectile(
 			});
 
 		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
-			    .Active = false,
-			    .OneTime = true,
-			    .Explosive = 1.0f,
-			    .ParticleCount = 64,
-			    .EmitterShape = EEmitterShape::CONE,
-			    .Angle = 15.f,
-			    .VelocityRandomness = 0.5f,
-			    .Velocity = 10.0,
-			    .Acceleration = 0.0,
-			    .Gravity = -4.f,
-			    .LifeTime = 2.0f,
-			    .RadiusRandomness = 0.5f,
-			    .BeginRadius = 0.3f,
-			    .FrictionFactor = 0.f,
-			    .Bounciness = 0.f,
-			    .TileIndex = 14,
-			    .AnimationCount = 1,
-			    .FirstAnimationIndex = 14,
-			    .Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
-            }
+				.Active = true,
+				.OneTime = true,
+				.Explosive = 1.0f,
+				.ParticleCount = 64,
+				.EmitterShape = EEmitterShape::CONE,
+				.Angle = 15.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 10.0,
+				.Acceleration = 0.0,
+				.Gravity = -4.f,
+				.LifeTime = 2.0f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.3f,
+				.FrictionFactor = 0.f,
+				.Bounciness = 0.f,
+				.TileIndex = 14,
+				.AnimationCount = 1,
+				.FirstAnimationIndex = 14,
+				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
+			}
 		);
 	}
 

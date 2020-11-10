@@ -135,9 +135,9 @@ void main()
 		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
 		{
-			vec3 preV = particle.Velocity;
-			particle.Velocity *= particle.FrictionFactor;
-			particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
+			//vec3 preV = particle.Velocity;
+			//particle.Velocity *= particle.FrictionFactor;
+			//particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
 		}
 		
 		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);
