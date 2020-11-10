@@ -38,6 +38,7 @@
 #include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 namespace LambdaEngine
 {
@@ -357,13 +358,14 @@ namespace LambdaEngine
 			}
 
 			// Light Renderer
+			bool isServer = MultiplayerUtils::IsServer();
+			if (!isServer)
 			{
 				m_pLightRenderer = DBG_NEW LightRenderer();
 				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
-
 
 			// AS Builder
 			if (m_RayTracingEnabled)
@@ -375,6 +377,7 @@ namespace LambdaEngine
 			}
 
 			// Particle Renderer & Manager
+			if (!isServer)
 			{
 				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
@@ -647,14 +650,18 @@ namespace LambdaEngine
 				emitterCompNonConst.Active = false;
 			}
 		}
-		// Tick Particle Manager
-		m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
 
-		// Particle Updates
-		uint32 particleCount = m_ParticleManager.GetParticleCount();
-		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
-		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
-		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		// Tick Particle Manager
+		if (m_ParticleManager.IsInitilized())
+		{
+			m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
+
+			// Particle Updates
+			uint32 particleCount = m_ParticleManager.GetParticleCount();
+			uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
+			m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
+			m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		}
 	}
 
 	bool RenderSystem::Render(Timestamp delta)
@@ -699,11 +706,13 @@ namespace LambdaEngine
 		}
 
 		// Light Renderer
+		if (m_RayTracingEnabled)
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 		}
 
 		// Particles
+		if (m_RayTracingEnabled)
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);

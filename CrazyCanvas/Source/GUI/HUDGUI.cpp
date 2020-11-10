@@ -1,6 +1,7 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
+#include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
 #include "Game/State.h"
@@ -169,7 +170,7 @@ void HUDGUI::UpdateCountdown(uint8 countDownTime)
 	pCountdownGUI->UpdateCountdown(countDownTime);
 }
 
-void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
+void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
 {
 	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
 
@@ -207,6 +208,12 @@ void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& co
 	pDamageIndicatorGUI->DisplayIndicator();
 }
 
+void HUDGUI::DisplayHitIndicator()
+{
+	EnemyHitIndicatorGUI* pEnemyHitIndicatorGUI = FindName<EnemyHitIndicatorGUI>("HIT_INDICATOR");
+	pEnemyHitIndicatorGUI->DisplayIndicator();
+}
+
 void HUDGUI::InitGUI()
 {
 	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
@@ -218,8 +225,8 @@ void HUDGUI::InitGUI()
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 
-	m_pWaterAmmoRect = FrameworkElement::FindName<Border>("WATER_RECT");
-	m_pPaintAmmoRect = FrameworkElement::FindName<Border>("PAINT_RECT");
+	m_pWaterAmmoRect = FrameworkElement::FindName<Image>("WATER_RECT");
+	m_pPaintAmmoRect = FrameworkElement::FindName<Image>("PAINT_RECT");
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
