@@ -124,8 +124,8 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	WeaponSystem::Fire(weaponEntity, weaponComponent, ammoType, position, velocity, playerTeam);
 
 	// Play gun fire and spawn particles
-	ISoundEffect3D* m_pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
-	m_pSound->PlayOnceAt(position, velocity, 0.2f, 1.0f);
+	ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
+	pSound->PlayOnceAt(position, velocity, 0.2f, 1.0f);
 }
 
 bool WeaponSystemClient::InitInternal()
