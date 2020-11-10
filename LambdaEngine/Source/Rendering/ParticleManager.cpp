@@ -17,65 +17,69 @@ namespace LambdaEngine
 {
 	void ParticleManager::Init(uint32 maxParticleCapacity, ASBuilder* pASBuilder)
 	{
+		if (!m_Initilized)
+		{
+			m_Initilized = true;
 
-		m_MaxParticleCount = maxParticleCapacity;
-		m_Particles.Reserve(m_MaxParticleCount);
-		m_AliveIndices.Reserve(m_MaxParticleCount);
-		m_ParticleIndexData.Reserve(m_MaxParticleCount);
+			m_MaxParticleCount = maxParticleCapacity;
+			m_Particles.Reserve(m_MaxParticleCount);
+			m_AliveIndices.Reserve(m_MaxParticleCount);
+			m_ParticleIndexData.Reserve(m_MaxParticleCount);
 
-		constexpr uint32 chunkReservationSize = 10;
-		m_FreeParticleChunks.Reserve(chunkReservationSize);
+			constexpr uint32 chunkReservationSize = 10;
+			m_FreeParticleChunks.Reserve(chunkReservationSize);
 
-		// Initilize Default Particle Texture
-		m_DefaultAtlasTextureGUID = ResourceManager::LoadTextureFromFile("Particles/ParticleAtlas.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
-		constexpr uint32 DEFAULT_ATLAS_TILE_SIZE = 64U;
-		CreateAtlasTextureInstance(m_DefaultAtlasTextureGUID, DEFAULT_ATLAS_TILE_SIZE);
+			// Initilize Default Particle Texture
+			m_DefaultAtlasTextureGUID = ResourceManager::LoadTextureFromFile("Particles/ParticleAtlas.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
+			constexpr uint32 DEFAULT_ATLAS_TILE_SIZE = 64U;
+			CreateAtlasTextureInstance(m_DefaultAtlasTextureGUID, DEFAULT_ATLAS_TILE_SIZE);
 
-		// Create one particle chunk spanning the whole particle array
-		ParticleChunk chunk = {};
-		chunk.Offset = 0;
-		chunk.Size = m_MaxParticleCount;
+			// Create one particle chunk spanning the whole particle array
+			ParticleChunk chunk = {};
+			chunk.Offset = 0;
+			chunk.Size = m_MaxParticleCount;
 
-		m_FreeParticleChunks.PushBack(chunk);
+			m_FreeParticleChunks.PushBack(chunk);
 
-		BufferDesc bufferDesc = {};
-		bufferDesc.DebugName = "DummyBuffer";
-		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-		bufferDesc.SizeInBytes = sizeof(uint32);
-		m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_pTransformBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_pParticleIndexDataBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_pParticleBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			BufferDesc bufferDesc = {};
+			bufferDesc.DebugName = "DummyBuffer";
+			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			bufferDesc.SizeInBytes = sizeof(uint32);
+			m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			m_pTransformBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			m_pParticleIndexDataBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			m_pParticleBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 
-		m_DirtyEmitterBuffer = true;
-		m_DirtyIndirectBuffer = true;
-		m_DirtyTransformBuffer = true;
-		m_DirtyEmitterIndexBuffer = true;
-		m_DirtyParticleBuffer = true;
+			m_DirtyEmitterBuffer = true;
+			m_DirtyIndirectBuffer = true;
+			m_DirtyTransformBuffer = true;
+			m_DirtyEmitterIndexBuffer = true;
+			m_DirtyParticleBuffer = true;
 
-		m_pASBuilder = pASBuilder;
-		// Create Billboard vertices and indices
-		const uint32 VERTEX_COUNT = 4;
-		const uint32 INDEX_COUNT = 6;
-		bufferDesc = {};
-		bufferDesc.DebugName = "Particle Billboard Vertex Buffer";
-		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-		bufferDesc.SizeInBytes = sizeof(glm::vec4) * VERTEX_COUNT;
-		m_pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_DirtyVertexBuffer = true;
+			m_pASBuilder = pASBuilder;
+			// Create Billboard vertices and indices
+			const uint32 VERTEX_COUNT = 4;
+			const uint32 INDEX_COUNT = 6;
+			bufferDesc = {};
+			bufferDesc.DebugName = "Particle Billboard Vertex Buffer";
+			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			bufferDesc.SizeInBytes = sizeof(glm::vec4) * VERTEX_COUNT;
+			m_pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			m_DirtyVertexBuffer = true;
 
-		bufferDesc = {};
-		bufferDesc.DebugName = "Particle Billboard Index Buffer";
-		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
-		bufferDesc.SizeInBytes = sizeof(uint32) * INDEX_COUNT;
-		m_pIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		m_DirtyIndexBuffer = true;
+			bufferDesc = {};
+			bufferDesc.DebugName = "Particle Billboard Index Buffer";
+			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
+			bufferDesc.SizeInBytes = sizeof(uint32) * INDEX_COUNT;
+			m_pIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			m_DirtyIndexBuffer = true;
 
-		m_pASBuilder->BuildTriBLAS(m_BLASIndex, 1U, m_pVertexBuffer, m_pIndexBuffer, VERTEX_COUNT, sizeof(glm::vec4), INDEX_COUNT, false);
+			m_pASBuilder->BuildTriBLAS(m_BLASIndex, 1U, m_pVertexBuffer, m_pIndexBuffer, VERTEX_COUNT, sizeof(glm::vec4), INDEX_COUNT, false);
+		}
 	}
 
 	void ParticleManager::Release()

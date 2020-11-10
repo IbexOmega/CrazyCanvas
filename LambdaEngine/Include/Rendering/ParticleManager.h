@@ -126,6 +126,8 @@ namespace LambdaEngine
 		void Init(uint32 maxParticleCapacity, ASBuilder* pASBuilder);
 		void Release();
 
+		bool IsInitilized() const { return m_Initilized; };
+
 		void Tick(Timestamp deltaTime, uint64 modFrameIndex);
 
 		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
@@ -165,6 +167,7 @@ namespace LambdaEngine
 		uint32								m_MaxParticleCount;
 		uint64								m_ModFrameIndex;
 
+		bool								m_Initilized				= false;
 		bool								m_CreatedDummyBuffer		= false;
 
 		bool								m_DirtyAliveBuffer			= false;
