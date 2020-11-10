@@ -54,6 +54,7 @@ public:
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
+	void DisplayGameOverGrid(bool isVisible, uint8 winningTeamIndex);
 
 private:
 

@@ -13,7 +13,6 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
-
 #include "Application/API/Events/EventQueue.h"
 #include "..\..\..\..\Include\ECS\Systems\GUI\HUDSystem.h"
 
@@ -29,6 +28,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 }
 
 void HUDSystem::Init()
@@ -69,6 +69,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
     EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
@@ -215,6 +216,22 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 			}
 		}
 	}
+
+	return false;
+}
+
+bool HUDSystem::OnGameOver(const GameOverEvent& event)
+{
+	//un-lock mouse
+	m_HUDGUI->DisplayGameOverGrid(true, event.WinningTeamIndex);
+
+	/*bool tempGameOver = false;
+
+	if(tempGameOver)
+	{
+		State* pLobbyState = DBG_NEW MultiplayerState();
+		StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
+	}*/
 
 	return false;
 }

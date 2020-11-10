@@ -29,6 +29,7 @@
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
+#include "GUI/GameOverGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 
@@ -144,6 +145,7 @@ namespace LambdaEngine
 bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
+	Noesis::RegisterComponent<GameOverGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();

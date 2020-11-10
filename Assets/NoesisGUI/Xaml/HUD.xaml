@@ -44,6 +44,84 @@
         <RowDefinition></RowDefinition>
     </Grid.RowDefinitions>
 
+     
+
+    <Viewbox Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="2" Grid.RowSpan="9" Stretch="Fill">
+        <uc:GameOverGUI x:Name="GAME_OVER" HorizontalAlignment="Center" VerticalAlignment="Center"/> 
+        <!--<Grid MinWidth="1000" MinHeight="1000" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+                <ColumnDefinition Width="4*"></ColumnDefinition>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+
+          
+            <Border Background="#7F000000" Grid.Column="0" BorderThickness="10, 10, 10, 10" CornerRadius="35, 35, 35, 35" Grid.ColumnSpan="3" Grid.Row="0" Grid.RowSpan="8" BorderBrush="White"  >
+            </Border>
+
+            <TextBlock Foreground="White" Text="Game Over!" FontSize="48" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock x:Name="WINNING_TEAM_TEXT" Foreground="White" Text="Team x won this round"  FontSize="32" Grid.Column="1" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" ></TextBlock>
+
+            <Grid Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="3" Grid.RowSpan="4" Margin="25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Column="0" BorderThickness="10, 10, 10, 10" CornerRadius="50, 50, 50, 50" Grid.Row="0" Grid.RowSpan="5" Background="Black" BorderBrush="White" Margin="10"></Border>
+                <TextBlock Grid.Column="0" Text="Most Kills" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+                <TextBlock x:Name="MOST_KILLS_TEXT" Grid.Column="0" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+
+
+                <Border Grid.Column="1" BorderThickness="10, 10, 10, 10" CornerRadius="50, 50, 50, 50" Grid.Row="0" Grid.RowSpan="5" Background="Black" BorderBrush="White" Margin="10"></Border>
+                <TextBlock Grid.Column="1" Text="Most Deaths" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+                <TextBlock x:Name="MOST_DEATHS_TEXT" Grid.Column="1" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+
+                <Border Grid.Column="2" BorderThickness="10, 10, 10, 10" CornerRadius="50, 50, 50, 50" Grid.Row="0" Grid.RowSpan="5" Background="Black" BorderBrush="White" Margin="10"></Border>
+                <TextBlock Grid.Column="2" Text="Most Flags Captured" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"  Foreground="White"></TextBlock>
+                <TextBlock x:Name="MOST_FLAGS_TEXT" Grid.Column="2" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+
+            </Grid>
+
+            <Grid Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="6" Grid.RowSpan="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"></ColumnDefinition>
+                    <ColumnDefinition Width="6*"></ColumnDefinition>
+                    <ColumnDefinition Width="2*"></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+
+
+                <Button Grid.Column="2" Grid.Row="7" Margin="15,15,15,30" Content="Return To Lobby" FontSize="24"></Button>
+            </Grid>
+
+            
+
+       </Grid> -->
+    </Viewbox>
 
  <Grid x:Name="HEALTH_DISPLAY_GRID" Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="9" Grid.RowSpan="4">
         <Grid.ColumnDefinitions>

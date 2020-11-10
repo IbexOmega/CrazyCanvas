@@ -18,6 +18,9 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Game/StateManager.h"
+#include "Game/State.h"
+
 #include "Events/MatchEvents.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -243,6 +246,8 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
 	ResetMatch();
+
+	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
 
 	return true;
 }

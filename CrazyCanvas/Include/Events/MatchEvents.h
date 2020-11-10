@@ -27,6 +27,7 @@ public:
 /*
 * FlagDeliveredEvent
 */
+
 struct FlagDeliveredEvent : public LambdaEngine::Event
 {
 public:
@@ -44,4 +45,24 @@ public:
 	}
 
 	uint8 TeamIndex = 0;
+};
+
+
+struct GameOverEvent : public LambdaEngine::Event
+{
+public:
+	inline GameOverEvent(uint8 teamIndex)
+		: Event()
+		, WinningTeamIndex(teamIndex)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(GameOverEvent);
+
+	virtual LambdaEngine::String ToString() const override
+	{
+		return LambdaEngine::String("GameOverEvent");
+	}
+
+	uint8 WinningTeamIndex = 0;
 };
