@@ -346,7 +346,6 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
 
-
 			// AS Builder
 			if (m_RayTracingEnabled)
 			{
