@@ -24,12 +24,10 @@ namespace LambdaEngine
 		
 		void SetCurrentParticleCount(uint32 particleCount, uint32 emitterCount) { m_ParticleCount = particleCount; m_EmitterCount = emitterCount; };
 
-		void SetAtlasTexturs(TArray<TextureView*>& textureViews, TArray<Sampler*>& samplers);
-
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
-		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 
 		virtual void Render(
@@ -77,11 +75,6 @@ namespace LambdaEngine
 		uint64									m_PipelineStateID		= 0;
 		TSharedRef<PipelineLayout>				m_PipelineLayout		= nullptr;
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap		= nullptr;
-
-		uint32									m_PreAtlasCount			= 0;
-		uint32									m_AtlasCount			= 0;
-		const TextureView* const*				m_ppAtlasTextureViews	= nullptr;
-		const Sampler* const*					m_ppAtlasSamplers		= nullptr;
 
 		// Descriptor sets
 		TSharedRef<DescriptorSet>				m_VertexInstanceDescriptorSet	= nullptr;

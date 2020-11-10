@@ -163,8 +163,6 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 			.ColorIntensity = directionalLight.ColorIntensity,
 		};
 
-		LOG_ERROR("LightDIRECTION: (%f, %f, %f)", directionalLight.Direction.x, directionalLight.Direction.y, directionalLight.Direction.z);
-
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, (translation) });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });
@@ -661,28 +659,27 @@ bool LevelObjectCreator::CreatePlayer(
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent
-			{
-				.Active = false,
-				.OneTime = true,
-				.Explosive = 1.0f,
-				.ParticleCount = 64,
-				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 15.f,
-				.VelocityRandomness = 0.5f,
-				.Velocity = 10.0,
-				.Acceleration = 0.0,
-				.Gravity = -4.f,
-				.LifeTime = 2.0f,
-				.RadiusRandomness = 0.5f,
-				.BeginRadius = 0.1f,
-				.FrictionFactor = 0.f,
-				.Bounciness = 0.f,
-				.TileIndex = 14,
-				.AnimationCount = 1,
-				.FirstAnimationIndex = 16,
-				.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
-			}
+		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
+			.Active = false,
+			.OneTime = true,
+			.Explosive = 1.0f,
+			.ParticleCount = 64,
+			.EmitterShape = EEmitterShape::CONE,
+			.Angle = 15.f,
+			.VelocityRandomness = 0.5f,
+			.Velocity = 10.0,
+			.Acceleration = 0.0,
+			.Gravity = -4.f,
+			.LifeTime = 2.0f,
+			.RadiusRandomness = 0.5f,
+			.BeginRadius = 0.3f,
+			.FrictionFactor = 0.f,
+			.Bounciness = 0.f,
+			.TileIndex = 14,
+			.AnimationCount = 1,
+			.FirstAnimationIndex = 14,
+			.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
+		}
 		);
 
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
