@@ -396,11 +396,6 @@ namespace LambdaEngine
 
 				byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
 
-				if (collisionArray->GetSize() == 2)
-				{
-					LOG_INFO("sdsa");
-				}
-
 				const UnwrapData& data	= collisionArray->GetBack();
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
