@@ -71,6 +71,14 @@ MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 		HandleServerInfo(serverInfo);
 		ClientHelper::AddNetworkDiscoveryTarget(serverInfo.EndPoint.GetAddress());
 	}
+
+	// Use Host name as default In Game name
+	DWORD length = UNLEN + 1;
+	char name[UNLEN + 1];
+	GetUserNameA(name, &length);
+	m_InGameName = name;
+	FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->SetText(m_InGameName.c_str());
+
 }
 
 MultiplayerGUI::~MultiplayerGUI()
@@ -165,11 +173,10 @@ bool MultiplayerGUI::HasHostedServer() const
 
 bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	DWORD length = UNLEN + 1;
-	char name[UNLEN + 1];
-	GetUserNameA(name, &length);
 
-	State* pLobbyState = DBG_NEW LobbyState(name, HasHostedServer());
+	m_InGameName = FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->GetText();
+
+	State* pLobbyState = DBG_NEW LobbyState(m_InGameName, HasHostedServer());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;

@@ -77,6 +77,7 @@ private:
 	int32 m_ClientHostID;
 	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
+	LambdaEngine::String m_InGameName;
 
 	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;
 
