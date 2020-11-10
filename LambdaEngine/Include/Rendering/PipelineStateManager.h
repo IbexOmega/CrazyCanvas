@@ -77,6 +77,14 @@ namespace LambdaEngine
 	/*
 	* Ray-Tracing
 	*/
+	struct HitGroupShaderModules
+	{
+		ManagedShaderModule ClosestHitShader;
+		ManagedShaderModule AnyHitShader;
+		ManagedShaderModule IntersectionShader;
+	};
+
+
 	struct ManagedRayTracingPipelineStateDesc
 	{
 	public:
@@ -89,7 +97,7 @@ namespace LambdaEngine
 		// Shaders
 		ManagedShaderModule			RaygenShader;
 		TArray<ManagedShaderModule> MissShaders;
-		TArray<ManagedShaderModule> ClosestHitShaders;
+		TArray<HitGroupShaderModules> HitGroupShaders;
 	};
 
 	class LAMBDA_API PipelineStateManager

@@ -176,15 +176,16 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::UpdateTextureResource(
-		const String& resourceName,
-		const TextureView* const * ppPerImageTextureViews,
+		const String& resourceName, 
+		const TextureView* const * ppPerImageTextureViews, 
 		const TextureView* const* ppPerSubImageTextureViews,
-		uint32 imageCount,
-		uint32 subImageCount,
+		const Sampler* const* ppPerImageSamplers,
+		uint32 imageCount, 
+		uint32 subImageCount, 
 		bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(subImageCount);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
@@ -336,7 +337,7 @@ namespace LambdaEngine
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+							TextureView* pTextureView = extension.ppTextureViews[0];
 							m_RenderTargets.PushBack({ .pTextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
