@@ -52,7 +52,7 @@ private:
 	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);
 	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* pComp);
-	void CreateHostIcon(Noesis::Panel* parent);
+	void CreateHostIcon(Noesis::Panel* pParent);
 	Noesis::Grid* GetPlayerGrid(const Player& player);
 
 	void SendGameSettings();
