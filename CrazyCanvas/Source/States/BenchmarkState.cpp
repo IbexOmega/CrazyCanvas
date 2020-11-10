@@ -115,7 +115,8 @@ void BenchmarkState::Init()
 
 	//Sphere Grid
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		GUID_Lambda sphereMeshGUID;
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
 		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
 
 		uint32 gridRadius = 5;
@@ -309,11 +310,12 @@ bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceived
 				.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
-			const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
+			GUID_Lambda robotMeshGUID;
+			ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", robotMeshGUID);
 			TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
 
 			AnimationComponent robotAnimationComp = {};
-			robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
+			robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotMeshGUID)->pSkeleton;
 
 			constexpr const uint32 playerCount = 9;
 
@@ -359,7 +361,6 @@ bool BenchmarkState::OnWeaponFired(const WeaponFiredEvent& event)
 
 	CreateProjectileDesc createProjectileDesc;
 	createProjectileDesc.AmmoType		= event.AmmoType;
-	createProjectileDesc.FireDirection	= event.Direction;
 	createProjectileDesc.FirePosition	= event.Position;
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;

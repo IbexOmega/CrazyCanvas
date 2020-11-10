@@ -12,12 +12,13 @@ namespace LambdaEngine
 	typedef uint32 FLoadedTextureFlags;
 	enum FLoadedTextureFlag : FLoadedTextureFlags
 	{
-		LOADED_TEXTURE_FLAG_NONE		= 0,
-		LOADED_TEXTURE_FLAG_ALBEDO		= FLAG(0),
-		LOADED_TEXTURE_FLAG_NORMAL		= FLAG(1),
-		LOADED_TEXTURE_FLAG_AO			= FLAG(2),
-		LOADED_TEXTURE_FLAG_METALLIC	= FLAG(3),
-		LOADED_TEXTURE_FLAG_ROUGHNESS	= FLAG(4),
+		LOADED_TEXTURE_FLAG_NONE				= 0,
+		LOADED_TEXTURE_FLAG_ALBEDO				= FLAG(0),
+		LOADED_TEXTURE_FLAG_NORMAL				= FLAG(1),
+		LOADED_TEXTURE_FLAG_AO					= FLAG(2),
+		LOADED_TEXTURE_FLAG_METALLIC			= FLAG(3),
+		LOADED_TEXTURE_FLAG_ROUGHNESS			= FLAG(4),
+		LOADED_TEXTURE_FLAG_METALLIC_ROUGHNESS	= FLAG(5),
 	};
 
 	struct LoadedTexture
@@ -51,12 +52,14 @@ namespace LambdaEngine
 		LoadedTexture* pAmbientOcclusionMap		= nullptr;
 		LoadedTexture* pMetallicMap				= nullptr;
 		LoadedTexture* pRoughnessMap			= nullptr;
+		LoadedTexture* pMetallicRoughnessMap	= nullptr;
 
 		TextureView* pAlbedoMapView					= nullptr;
 		TextureView* pNormalMapView					= nullptr;
 		TextureView* pAmbientOcclusionMapView		= nullptr;
 		TextureView* pMetallicMapView				= nullptr;
 		TextureView* pRoughnessMapView				= nullptr;
+		TextureView* pMetallicRoughnessMapView		= nullptr;
 	};
 
 	struct Material

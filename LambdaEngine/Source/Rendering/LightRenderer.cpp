@@ -120,12 +120,13 @@ namespace LambdaEngine
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
 	}
 
-	void LightRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
+	void LightRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 
 		if (resourceName == SCENE_POINT_SHADOWMAPS)
 		{
@@ -258,7 +259,6 @@ namespace LambdaEngine
 				scissorRect.Width = width;
 				scissorRect.Height = height;
 				pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
 
 				ClearColorDesc clearColorDesc = {};
 				clearColorDesc.Depth = 1.0;

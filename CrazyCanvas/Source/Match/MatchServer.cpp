@@ -399,7 +399,6 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 
 	CreateProjectileDesc createProjectileDesc;
 	createProjectileDesc.AmmoType		= event.AmmoType;
-	createProjectileDesc.FireDirection	= event.Direction;
 	createProjectileDesc.FirePosition	= event.Position;
 	createProjectileDesc.InitalVelocity	= event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;

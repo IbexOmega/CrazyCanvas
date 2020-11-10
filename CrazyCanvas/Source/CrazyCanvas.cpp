@@ -31,10 +31,15 @@
 #include "Chat/ChatManager.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
+#include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
+
+#include "Rendering/EntityMaskManager.h"
+
+#include "ECS/Components/Player/WeaponComponent.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -62,10 +67,16 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		ServerSystem::Init(pGameName);
 	}
 
-
 	if (!RegisterGUIComponents())
 	{
 		LOG_ERROR("Failed to Register GUI Components");
+	}
+
+	ServerHostHelper::Init();
+
+	if (!BindComponentTypeMasks())
+	{
+		LOG_ERROR("Failed to bind Component Type Masks");
 	}
 
 	if (!LevelManager::Init())
@@ -153,6 +164,7 @@ bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
@@ -206,6 +218,17 @@ bool CrazyCanvas::LoadRendererResources()
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
+
+	return true;
+}
+
+bool CrazyCanvas::BindComponentTypeMasks()
+{
+	using namespace LambdaEngine;
+
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+
+	EntityMaskManager::Finalize();
 
 	return true;
 }

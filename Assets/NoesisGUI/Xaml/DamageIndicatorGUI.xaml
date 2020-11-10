@@ -12,14 +12,14 @@
     <UserControl.Resources>
         <Storyboard x:Key="DamageIndicatorStoryboard">
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity" Storyboard.TargetName="DamageIndicator">
-                <EasingDoubleKeyFrame KeyTime="0:0:1" Value="1"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:2" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:1" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:2" Value="1"/>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
     </UserControl.Resources>
+    
     <Grid x:Name="test">
-
-        <Image x:Name="DamageIndicator" Source="HitIndicator.png" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0" >
+        <Image x:Name="DamageIndicator" Source="HitIndicator.png" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.5">
         </Image> 
     </Grid>
 </UserControl>

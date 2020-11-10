@@ -12,7 +12,6 @@
 /*
 * WeaponComponent
 */
-
 struct WeaponComponent
 {
 	DECL_COMPONENT(WeaponComponent);
@@ -29,4 +28,12 @@ struct WeaponComponent
 			{ EAmmoType::AMMO_TYPE_WATER, {AMMO_CAPACITY, AMMO_CAPACITY} }
 		};
 
+};
+
+/*
+* WeaponLocalComponent
+*/
+struct WeaponLocalComponent
+{
+	DECL_COMPONENT(WeaponLocalComponent);
 };

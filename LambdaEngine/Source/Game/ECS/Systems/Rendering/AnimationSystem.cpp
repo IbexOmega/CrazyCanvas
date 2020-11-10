@@ -1,6 +1,7 @@
 #include "Game/ECS/Systems/Rendering/AnimationSystem.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
 
 #include "Resources/ResourceManager.h"
 
@@ -22,6 +23,14 @@ namespace LambdaEngine
 				.ComponentAccesses =
 				{
 					{ RW, AnimationComponent::Type() }
+				},
+			},
+			{
+				.pSubscriber = &m_AttachedAnimationEntities,
+				.ComponentAccesses =
+				{
+					{ RW, AnimationAttachedComponent::Type() },
+					{ R, ParentComponent::Type() }
 				},
 			},
 		};
@@ -47,7 +56,7 @@ namespace LambdaEngine
 		Skeleton& skeleton = *animation.Pose.pSkeleton;
 		if (animation.Pose.LocalTransforms.GetSize() < skeleton.Joints.GetSize())
 		{
-			animation.Pose.LocalTransforms.Resize(skeleton.Joints.GetSize(), glm::mat4(1.0f));
+			animation.Pose.LocalTransforms = skeleton.RelativeTransforms;
 		}
 
 		if (animation.Pose.GlobalTransforms.GetSize() < skeleton.Joints.GetSize())
@@ -64,31 +73,38 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < currentFrame.GetSize(); i++)
 		{
 			const SQT& sqt = currentFrame[i];
-
-			glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
-			transform			= transform * glm::toMat4(sqt.Rotation);
-			transform			= glm::scale(transform, sqt.Scale);
-			animation.Pose.LocalTransforms[i] = transform;
+			if (sqt.JointID != INVALID_JOINT_ID)
+			{
+				glm::mat4 transform	= glm::translate(glm::identity<glm::mat4>(), sqt.Translation);
+				transform			= transform * glm::toMat4(sqt.Rotation);
+				transform			= glm::scale(transform, sqt.Scale);
+				animation.Pose.LocalTransforms[sqt.JointID] = transform;
+			}
 		}
 
 		// Create global transforms
 		for (uint32 i = 0; i < skeleton.Joints.GetSize(); i++)
 		{
 			const Joint& joint = skeleton.Joints[i];
-			animation.Pose.GlobalTransforms[i] = skeleton.InverseGlobalTransform * ApplyParent(joint, skeleton, animation.Pose.LocalTransforms) * joint.InvBindTransform;
+			animation.Pose.GlobalTransforms[i] = 
+				skeleton.InverseGlobalTransform * 
+				ApplyParent(joint, skeleton, animation.Pose.LocalTransforms) * 
+				joint.InvBindTransform;
 		}
 	}
 
 	glm::mat4 AnimationSystem::ApplyParent(const Joint& joint, Skeleton& skeleton, TArray<glm::mat4>& matrices)
 	{
-		int32 parentID	= joint.ParentBoneIndex;
-		int32 myID		= skeleton.JointMap[joint.Name];
+		const int32 parentID	= joint.ParentBoneIndex;
+		const int32 myID		= skeleton.JointMap[joint.Name];
 		if (parentID == INVALID_JOINT_ID)
 		{
-			return matrices[myID];
+			return skeleton.RootNodeTransform * matrices[myID];
 		}
-
-		return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
+		else
+		{
+			return ApplyParent(skeleton.Joints[parentID], skeleton, matrices) * matrices[myID];
+		}
 	}
 
 	void AnimationSystem::OnAnimationComponentDelete(AnimationComponent& animation, Entity entity)
@@ -134,6 +150,31 @@ namespace LambdaEngine
 			ThreadPool::Join(index);
 		}
 		m_JobIndices.Clear();
+
+		//Update Attached Animation Components
+		const ComponentArray<ParentComponent>* pParentComponents = pECSCore->GetComponentArray<ParentComponent>();
+		ComponentArray<AnimationAttachedComponent>* pAnimationAttachedComponents = pECSCore->GetComponentArray<AnimationAttachedComponent>();
+
+		for (Entity entity : m_AttachedAnimationEntities)
+		{
+			const ParentComponent& parentComponent = pParentComponents->GetConstData(entity);
+
+			if (parentComponent.Attached)
+			{
+				AnimationAttachedComponent& animationAttachedComponent = pAnimationAttachedComponents->GetData(entity);
+				AnimationComponent& parentAnimationComponent = pAnimationComponents->GetData(parentComponent.Parent);
+
+				if (auto jointIndexIt = parentAnimationComponent.Pose.pSkeleton->JointMap.find(animationAttachedComponent.JointName);
+					jointIndexIt != parentAnimationComponent.Pose.pSkeleton->JointMap.end())
+				{
+					animationAttachedComponent.Transform = parentAnimationComponent.Pose.GlobalTransforms[jointIndexIt->second];
+				}
+				else
+				{
+					LOG_ERROR("[AnimationSystem]: Joint %s could not be found for Attached Animation Component", animationAttachedComponent.JointName.c_str());
+				}
+			}
+		}
 	}
 
 	AnimationSystem& AnimationSystem::GetInstance()
