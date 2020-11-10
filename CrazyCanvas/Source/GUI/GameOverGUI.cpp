@@ -60,9 +60,9 @@ void GameOverGUI::InitGUI()
 
 	m_pWinningTeamText = FindName<Noesis::TextBlock>("WINNING_TEAM_TEXT");
 
-	m_pMostKillsText = FindName<Noesis::TextBlock>("MOST_KILLS_TEXT");
-	m_pMostDeathsText = FindName<Noesis::TextBlock>("MOST_DEATHS_TEXT");
-	m_pMostFlagsText = FindName<Noesis::TextBlock>("MOST_FLAGS_TEXT");
+	m_pMostKillsText	= FindName<Noesis::TextBlock>("MOST_KILLS_TEXT");
+	m_pMostDeathsText	= FindName<Noesis::TextBlock>("MOST_DEATHS_TEXT");
+	m_pMostFlagsText	= FindName<Noesis::TextBlock>("MOST_FLAGS_TEXT");
 
 	LambdaEngine::CommonApplication::Get()->SetMouseVisibility(true);
 }

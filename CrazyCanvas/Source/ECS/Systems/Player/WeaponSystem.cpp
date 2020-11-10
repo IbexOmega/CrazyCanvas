@@ -86,6 +86,12 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 		return;
 	}
 
+	// Fire the gun
+	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
+	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
+
+	ammoState->second.first--;
+
 	// Fire event
 	WeaponFiredEvent firedEvent(
 		weaponComponent.WeaponOwner,
@@ -96,12 +102,6 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
 	EventQueue::SendEventImmediate(firedEvent);
-
-	// Fire the gun
-	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
-	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
-
-	ammoState->second.first--;
 }
 
 void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)

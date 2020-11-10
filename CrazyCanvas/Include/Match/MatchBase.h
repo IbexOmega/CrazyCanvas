@@ -20,7 +20,7 @@ struct MatchDescription
 {
 	LambdaEngine::SHA256Hash LevelHash;
 	uint32 NumTeams = 2;
-	uint32 MaxScore = 1;
+	uint32 MaxScore = 5;
 };
 
 static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 5.0f;
