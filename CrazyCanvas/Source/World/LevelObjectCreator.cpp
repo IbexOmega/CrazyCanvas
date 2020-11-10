@@ -948,6 +948,35 @@ bool LevelObjectCreator::CreateProjectile(
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(glm::normalize(desc.InitalVelocity), g_DefaultUp) });
+
+	const DynamicCollisionCreateInfo collisionInfo =
+	{
+		/* Entity */	 		projectileEntity,
+		/* Detection Method */	ECollisionDetection::CONTINUOUS,
+		/* Position */	 		positionComponent,
+		/* Scale */				scaleComponent,
+		/* Rotation */			rotationComponent,
+		{
+			{
+				/* Shape Type */		EShapeType::SIMULATION,
+				/* Geometry Type */		EGeometryType::SPHERE,
+				/* Geometry Params */	{ .Radius = 0.3f },
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* EntityID*/			desc.WeaponOwner,
+				/* CallbackFunction */	desc.Callback,
+			},
+		},
+		/* Velocity */			velocityComponent
+	};
+
+	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
+	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
+
 	if (!MultiplayerUtils::IsServer())
 	{
 		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
@@ -978,31 +1007,6 @@ bool LevelObjectCreator::CreateProjectile(
 			}
 		);
 	}
-
-	const DynamicCollisionCreateInfo collisionInfo =
-	{
-		/* Entity */	 		projectileEntity,
-		/* Detection Method */	ECollisionDetection::CONTINUOUS,
-		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
-		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) }),
-		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::normalize(glm::quatLookAt(desc.InitalVelocity, g_DefaultUp)) }),
-		{
-			{
-				/* Shape Type */		EShapeType::SIMULATION,
-				/* Geometry Type */		EGeometryType::SPHERE,
-				/* Geometry Params */	{ .Radius = 0.3f },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
-										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* EntityID*/			desc.WeaponOwner,
-				/* CallbackFunction */	desc.Callback,
-			},
-		},
-		/* Velocity */			velocityComponent
-	};
-
-	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
-	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
 
 	return true;
 }
