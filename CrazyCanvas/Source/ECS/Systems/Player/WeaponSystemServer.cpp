@@ -43,7 +43,8 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			{
 				weaponComp.ReloadClock = weaponComp.ReloadTime;
 			}
-			else if (ammoType != EAmmoType::AMMO_TYPE_NONE && !onCooldown)
+			// Accept and send all gunshots
+			else if (ammoType != EAmmoType::AMMO_TYPE_NONE)
 			{
 				auto ammoState = weaponComp.WeaponTypeAmmo.find(ammoType);
 				VALIDATE(ammoState != weaponComp.WeaponTypeAmmo.end())

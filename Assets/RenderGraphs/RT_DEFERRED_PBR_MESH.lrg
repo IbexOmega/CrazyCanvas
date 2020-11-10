@@ -514,6 +514,21 @@
             "editable": true,
             "external": true,
             "type_params": {}
+        },
+        {
+            "name": "SCENE_PARTICLE_ATLAS_IMAGES",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "should_synchronize": false,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {
+                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "is_of_array_type": false,
+                "unbounded_array": true,
+                "texture_type": "TEXTURE_2D"
+            }
         }
     ],
     "resource_state_groups": [
@@ -662,6 +677,12 @@
                     "name": "AS_INSTANCES_BUFFER",
                     "removable": false,
                     "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "SCENE_PARTICLE_ATLAS_IMAGES",
+                    "removable": false,
+                    "binding_type": "COMBINED_SAMPLER",
                     "src_stage": ""
                 }
             ]
@@ -1156,8 +1177,17 @@
                 "miss_shaders": [
                     "/RayTracing\\PrimaryMiss.rmiss"
                 ],
-                "closest_hit_shaders": [
-                    "/RayTracing\\PrimaryClosestHit.rchit"
+                "hit_group_shaders": [
+                    {
+                        "closest_hit_shader": "/RayTracing\\PrimaryClosestHit.rchit",
+                        "any_hit_shader": "",
+                        "intersection_shader": ""
+                    },
+                    {
+                        "closest_hit_shader": "/RayTracing\\ParticleClosestHit.rchit",
+                        "any_hit_shader": "/RayTracing\\ParticleAnyHit.rahit",
+                        "intersection_shader": ""
+                    }
                 ]
             },
             "resource_states": [
@@ -1195,6 +1225,38 @@
                 },
                 {
                     "name": "PAINT_MASK_COLORS",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_PARTICLE_INSTANCE_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_EMITTER_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_EMITTER_INDEX_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "SCENE_PARTICLE_ATLAS_INFO_BUFFER",
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
@@ -1288,6 +1350,14 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "RENDER_STAGE_LIGHT"
+                },
+                {
+                    "name": "SCENE_PARTICLE_ATLAS_IMAGES",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
                     "name": "INTERMEDIATE_OUTPUT_IMAGE",
@@ -1586,6 +1656,14 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
+                    "name": "SCENE_PARTICLE_ATLAS_IMAGES",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
                     "name": "SCENE_PARTICLE_VERTEX_BUFFER",
                     "removable": true,
                     "draw_args_include_mask": 1,
@@ -1846,7 +1924,7 @@
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {

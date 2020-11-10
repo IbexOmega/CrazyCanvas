@@ -15,12 +15,13 @@
 
 namespace LambdaEngine
 {
-	void ParticleManager::Init(uint32 maxParticleCapacity)
+	void ParticleManager::Init(uint32 maxParticleCapacity, ASBuilder* pASBuilder)
 	{
+
 		m_MaxParticleCount = maxParticleCapacity;
 		m_Particles.Reserve(m_MaxParticleCount);
 		m_AliveIndices.Reserve(m_MaxParticleCount);
-		m_ParticleToEmitterIndex.Reserve(m_MaxParticleCount);
+		m_ParticleIndexData.Reserve(m_MaxParticleCount);
 
 		constexpr uint32 chunkReservationSize = 10;
 		m_FreeParticleChunks.Reserve(chunkReservationSize);
@@ -37,24 +38,44 @@ namespace LambdaEngine
 
 		m_FreeParticleChunks.PushBack(chunk);
 
-		// Dummy emitter to init buffers
-		ParticleEmitterInstance newEmitterInstance;
-		EmitterID emitterID = m_Emitters.GetSize();
-		m_Emitters.PushBack(newEmitterInstance);
+		BufferDesc bufferDesc = {};
+		bufferDesc.DebugName = "DummyBuffer";
+		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+		bufferDesc.SizeInBytes = sizeof(uint32);
+		m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		m_pTransformBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		m_pParticleIndexDataBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		m_pParticleBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 
-		ActivateEmitterInstance(emitterID,
-			{ .Position = {0.f, 0.f, 0.f} },
-			{ .Quaternion = glm::identity<glm::quat>() },
-			{
-				.Active = true,
-				.OneTime = true,
-				.ParticleCount = 1,
-				.LifeTime = 0.1f
-			}
-		);
+		m_DirtyEmitterBuffer = true;
+		m_DirtyIndirectBuffer = true;
+		m_DirtyTransformBuffer = true;
+		m_DirtyEmitterIndexBuffer = true;
+		m_DirtyParticleBuffer = true;
 
-		m_DirtyIndexBuffer = true;
+		m_pASBuilder = pASBuilder;
+		// Create Billboard vertices and indices
+		const uint32 VERTEX_COUNT = 4;
+		const uint32 INDEX_COUNT = 6;
+		bufferDesc = {};
+		bufferDesc.DebugName = "Particle Billboard Vertex Buffer";
+		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+		bufferDesc.SizeInBytes = sizeof(glm::vec4) * VERTEX_COUNT;
+		m_pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		m_DirtyVertexBuffer = true;
+
+		bufferDesc = {};
+		bufferDesc.DebugName = "Particle Billboard Index Buffer";
+		bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+		bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER;
+		bufferDesc.SizeInBytes = sizeof(uint32) * INDEX_COUNT;
+		m_pIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		m_DirtyIndexBuffer = true;
+
+		m_pASBuilder->BuildTriBLAS(m_BLASIndex, 1U, m_pVertexBuffer, m_pIndexBuffer, VERTEX_COUNT, sizeof(glm::vec4), INDEX_COUNT, false);
 	}
 
 	void ParticleManager::Release()
@@ -73,7 +94,7 @@ namespace LambdaEngine
 			SAFERELEASE(m_ppParticleStagingBuffer[b]);
 			SAFERELEASE(m_ppIndexStagingBuffer[b]);
 			SAFERELEASE(m_ppEmitterStagingBuffer[b]);
-			SAFERELEASE(m_ppEmitterIndexStagingBuffer[b]);
+			SAFERELEASE(m_ppParticleIndexDataStagingBuffer[b]);
 			SAFERELEASE(m_ppAliveStagingBuffer[b]);
 			SAFERELEASE(m_ppTransformStagingBuffer[b]);
 			SAFERELEASE(m_ppIndirectStagingBuffer[b]);
@@ -85,7 +106,7 @@ namespace LambdaEngine
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pParticleBuffer);
 		SAFERELEASE(m_pEmitterBuffer);
-		SAFERELEASE(m_pEmitterIndexBuffer);
+		SAFERELEASE(m_pParticleIndexDataBuffer);
 		SAFERELEASE(m_pAliveBuffer);
 		SAFERELEASE(m_pTransformBuffer);
 		SAFERELEASE(m_pAtlasDataBuffer);
@@ -178,7 +199,9 @@ namespace LambdaEngine
 	{
 		// Add atlas texture
 		TextureView* pTextureView = ResourceManager::GetTextureView(atlasGUID);
+		Texture* pTexture = ResourceManager::GetTexture(atlasGUID);
 		m_AtlasTextureViews.PushBack(pTextureView);
+		m_AtlasTextures.PushBack(pTexture);
 
 		if (!m_Sampler)
 		{
@@ -207,7 +230,7 @@ namespace LambdaEngine
 		m_AtlasResources[atlasGUID] = atlasInfo;
 		m_AtlasInfoData.PushBack(atlasInfo);
 		m_DirtyAtlasDataBuffer = true;
-
+		m_DirtyAtlasTexture = true;
 		return true;
 	}
 
@@ -292,20 +315,23 @@ namespace LambdaEngine
 
 	bool ParticleManager::CreateConeParticleEmitter(EmitterID emitterID)
 	{
-		bool allocateParticles = false;
 		auto& emitterInstance = m_Emitters[emitterID];
-		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
-		{
-			allocateParticles = true;
-		}
 
 		const glm::vec3 forward = g_DefaultForward;
 		const glm::vec3 up = g_DefaultUp;
 		const glm::vec3 right = g_DefaultRight;
 		const float		halfAngle = emitterInstance.Angle * 0.5f;
 
+		// Add particle instances to TLAS
 		uint32 particlesToAdd = emitterInstance.ParticleChunk.Size;
 		const uint32 particleOffset = emitterInstance.ParticleChunk.Offset;
+		const uint32 particleCount = m_Particles.GetSize();
+
+		TArray<ASInstanceDesc> ASInstanceDescs;
+		TArray<uint32> ASInstanceIndices;
+		ASInstanceDescs.Reserve(particlesToAdd);
+		ASInstanceIndices.Reserve(particlesToAdd);
+
 		for (uint32 i = 0; i < particlesToAdd; i++)
 		{
 			SParticle particle;
@@ -317,7 +343,7 @@ namespace LambdaEngine
 			direction = glm::normalize(direction);
 
 			particle.StartPosition = glm::vec3(0.f);
-			particle.Transform = glm::identity<glm::mat4>();
+			particle.Transform = glm::translate(emitterInstance.Position);
 			particle.Velocity = direction * (emitterInstance.Velocity * (1.0f - emitterInstance.VelocityRandomness) + emitterInstance.Velocity * Random::Float32(0.f, emitterInstance.VelocityRandomness));
 			particle.StartVelocity = particle.Velocity;
 			particle.BeginRadius = (emitterInstance.BeginRadius * (1.0f - emitterInstance.RadiusRandomness) + emitterInstance.BeginRadius * Random::Float32(0.f, emitterInstance.RadiusRandomness));
@@ -331,15 +357,46 @@ namespace LambdaEngine
 
 			particle.CurrentLife = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
-			if (allocateParticles)
+			uint32 particleIndex = UINT32_MAX;
+			if (particleOffset + i < particleCount)
 			{
-				m_Particles.PushBack(particle);
-				m_ParticleToEmitterIndex.PushBack(emitterID);
+				particleIndex = particleOffset + i;
+				m_Particles[particleOffset + i] = particle;
 			}
 			else
 			{
-				m_Particles[particleOffset + i] = particle;
-				m_ParticleToEmitterIndex[particleOffset + i] = emitterID;
+				particleIndex = m_Particles.GetSize();
+				m_Particles.PushBack(particle);
+			}
+
+			// Create ASInstanceDescs for RT
+			ASInstanceDesc instanceDesc =
+			{
+				.BlasIndex = m_BLASIndex,
+				.Transform = particle.Transform,
+				.CustomIndex = particleIndex,
+				.HitMask = 0xFF,
+				.Flags = RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
+			};
+			ASInstanceDescs.PushBack(instanceDesc);
+		}
+
+		// Add TLAS instances
+		m_pASBuilder->AddInstances(ASInstanceDescs, ASInstanceIndices);
+	
+		for (uint32 i = 0; i < particlesToAdd; i++)
+		{
+			if (particleOffset + i < particleCount)
+			{
+				m_ParticleIndexData[particleOffset + i].EmitterIndex = emitterID;
+				m_ParticleIndexData[particleOffset + i].ASInstanceIndirectIndex = ASInstanceIndices[i];
+			}
+			else
+			{
+				SParticleIndexData particleIndexData = {};
+				particleIndexData.EmitterIndex = emitterID;
+				particleIndexData.ASInstanceIndirectIndex = ASInstanceIndices[i];
+				m_ParticleIndexData.PushBack(particleIndexData);
 			}
 		}
 
@@ -348,17 +405,19 @@ namespace LambdaEngine
 
 	bool ParticleManager::CreateTubeParticleEmitter(EmitterID emitterID)
 	{
-		bool allocateParticles = false;
 		auto& emitterInstance = m_Emitters[emitterID];
-		if (emitterInstance.ParticleChunk.Offset + emitterInstance.ParticleChunk.Size > m_Particles.GetSize())
-		{
-			allocateParticles = true;
-		}
 
 		const glm::vec3 direction = g_DefaultForward;
 
 		uint32 particlesToAdd = emitterInstance.ParticleChunk.Size;
 		const uint32 particleOffset = emitterInstance.ParticleChunk.Offset;
+		const uint32 particleCount = m_Particles.GetSize();
+
+		TArray<ASInstanceDesc> ASInstanceDescs;
+		TArray<uint32> ASInstanceIndices;
+		ASInstanceDescs.Reserve(particlesToAdd);
+		ASInstanceIndices.Reserve(particlesToAdd);
+
 		for (uint32 i = 0; i < particlesToAdd; i++)
 		{
 			SParticle particle;
@@ -378,20 +437,51 @@ namespace LambdaEngine
 
 			particle.CurrentLife = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
-			if (allocateParticles)
+			
+			uint32 particleIndex = UINT32_MAX;
+			if (particleOffset + i < particleCount)
 			{
-				m_Particles.PushBack(particle);
-				m_ParticleToEmitterIndex.PushBack(emitterID);
+				particleIndex = particleOffset + i;
+				m_Particles[particleOffset + i] = particle;
 			}
 			else
 			{
-				m_Particles[particleOffset + i] = particle;
-				m_ParticleToEmitterIndex[particleOffset + i] = emitterID;
+				particleIndex = m_Particles.GetSize();
+				m_Particles.PushBack(particle);
+			}
+
+			// Create ASInstanceDescs for RT
+			ASInstanceDesc instanceDesc =
+			{
+				.BlasIndex = m_BLASIndex,
+				.Transform = particle.Transform,
+				.CustomIndex = particleIndex,
+				.HitMask = 0xFF,
+				.Flags = RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
+			};
+			ASInstanceDescs.PushBack(instanceDesc);
+		}
+
+		// Add TLAS instances
+		m_pASBuilder->AddInstances(ASInstanceDescs, ASInstanceIndices);
+
+		for (uint32 i = 0; i < particlesToAdd; i++)
+		{
+			if (particleOffset + i < particleCount)
+			{
+				m_ParticleIndexData[particleOffset + i].EmitterIndex = emitterID;
+				m_ParticleIndexData[particleOffset + i].ASInstanceIndirectIndex = ASInstanceIndices[i];
+			}
+			else
+			{
+				SParticleIndexData particleIndexData = {};
+				particleIndexData.EmitterIndex = emitterID;
+				particleIndexData.ASInstanceIndirectIndex = ASInstanceIndices[i];
+				m_ParticleIndexData.PushBack(particleIndexData);
 			}
 		}
 
-
-		return allocateParticles;
+		return true;
 	}
 
 	bool ParticleManager::CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** ppStagingBuffers, Buffer** ppBuffer, FBufferFlags flags, const String& name)
@@ -561,19 +651,33 @@ namespace LambdaEngine
 			auto& emitterInstance = m_Emitters[emitterID];
 			uint32 lastIndex = m_IndirectData.GetSize() - 1U;
 
+			// Remove TLAS instances
+			uint32 size = m_IndirectData[removeIndex].InstanceCount;
+			if (size > 0)
+			{
+				uint32 offset = m_IndirectData[removeIndex].FirstInstance;
+				for (uint32 i = 0; i < size; i++)
+				{
+					uint32 instanceIndirectIndex = m_ParticleIndexData[offset + i].ASInstanceIndirectIndex;
+					VALIDATE(instanceIndirectIndex != UINT32_MAX);
+					m_ParticleIndexData[offset + i].ASInstanceIndirectIndex = UINT32_MAX;
+					m_pASBuilder->RemoveInstance(instanceIndirectIndex);
+				}
+			}
+
 			// Replace the removed emitters data with the last emitters data
 			m_IndirectData[removeIndex] = m_IndirectData[lastIndex];
 			m_EmitterData[removeIndex] = m_EmitterData[lastIndex];
 			m_EmitterTransformData[removeIndex] = m_EmitterTransformData[lastIndex];
 
 			// Update particles of last emitter
-			uint32 size = m_IndirectData[lastIndex].InstanceCount;
+			size = m_IndirectData[lastIndex].InstanceCount;
 			if (size > 0)
 			{
 				uint32 offset = m_IndirectData[lastIndex].FirstInstance;
 				for (uint32 i = 0; i < size; i++)
 				{
-					m_ParticleToEmitterIndex[offset + i] = removeIndex;
+					m_ParticleIndexData[offset + i].EmitterIndex = removeIndex;
 				}
 				// Add particle chunk to dirty list
 				m_DirtyParticleChunks.PushBack(ParticleChunk{.Offset = offset, .Size = size});
@@ -612,6 +716,7 @@ namespace LambdaEngine
 
 		// Assign fitting chunk to emitter
 		bool foundChunk = false;
+
 		for (uint32 i = 0; i < m_FreeParticleChunks.GetSize(); i++)
 		{
 			ParticleChunk& freeChunk = m_FreeParticleChunks[i];
@@ -728,24 +833,6 @@ namespace LambdaEngine
 	{
 		CleanBuffers();
 
-		// Update Instance Buffer
-		if (m_DirtyIndirectBuffer)
-		{
-			uint32 offset = 0;
-			uint32 elementCount = m_IndirectData.GetSize();
-			m_DirtyIndirectBuffer = CopyDataToBuffer(
-				pCommandList,
-				m_IndirectData.GetData(),
-				&offset,
-				&elementCount,
-				1U,
-				sizeof(IndirectData),
-				m_ppIndirectStagingBuffer,
-				&m_pIndirectBuffer,
-				FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER,
-				"Particle Indirect");
-		}
-
 		// Update Vertex Buffer
 		if (m_DirtyVertexBuffer)
 		{
@@ -759,7 +846,7 @@ namespace LambdaEngine
 
 			uint32 offset = 0;
 			uint32 elementCount = 4;
-			m_DirtyVertexBuffer = CopyDataToBuffer(
+			CopyDataToBuffer(
 				pCommandList,
 				(void*)vertices,
 				&offset,
@@ -769,7 +856,7 @@ namespace LambdaEngine
 				m_ppVertexStagingBuffer,
 				&m_pVertexBuffer,
 				FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
-				"Particle Vertex");
+				"Particle Billboard Vertex Buffer");
 		}
 
 		// Update Index Buffer
@@ -783,7 +870,7 @@ namespace LambdaEngine
 
 			uint32 offset = 0;
 			uint32 elementCount = 6;
-			m_DirtyIndexBuffer = CopyDataToBuffer(
+			CopyDataToBuffer(
 				pCommandList,
 				(void*)indices,
 				&offset,
@@ -793,7 +880,25 @@ namespace LambdaEngine
 				m_ppIndexStagingBuffer,
 				&m_pIndexBuffer,
 				FBufferFlag::BUFFER_FLAG_INDEX_BUFFER,
-				"Particle Index");
+				"Particle Billboard Index Buffer");
+		}
+
+		// Update Instance Buffer
+		if (m_DirtyIndirectBuffer && m_CreatedDummyBuffer)
+		{
+			uint32 offset = 0;
+			uint32 elementCount = m_IndirectData.GetSize();
+			m_DirtyIndirectBuffer = CopyDataToBuffer(
+				pCommandList,
+				m_IndirectData.GetData(),
+				&offset,
+				&elementCount,
+				1U,
+				sizeof(IndirectData),
+				m_ppIndirectStagingBuffer,
+				&m_pIndirectBuffer,
+				FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER,
+				"Particle Instance Buffer");
 		}
 
 		{
@@ -811,23 +916,23 @@ namespace LambdaEngine
 			m_DirtyParticleChunks.Clear();
 
 			// Update Particle Emitter Index buffer
-			if (m_DirtyEmitterIndexBuffer)
+			if (m_DirtyEmitterIndexBuffer && m_CreatedDummyBuffer)
 			{
 				m_DirtyEmitterIndexBuffer = CopyDataToBuffer(
 					pCommandList,
-					m_ParticleToEmitterIndex.GetData(),
+					m_ParticleIndexData.GetData(),
 					offsets.GetData(),
 					elementCounts.GetData(),
 					dirtyChunks,
-					sizeof(uint32),
-					m_ppEmitterIndexStagingBuffer,
-					&m_pEmitterIndexBuffer,
+					sizeof(SParticleIndexData),
+					m_ppParticleIndexDataStagingBuffer,
+					&m_pParticleIndexDataBuffer,
 					FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
 					"Emitter indices");
 			}
 
 			// Update Particle Instance Buffer
-			if (m_DirtyParticleBuffer)
+			if (m_DirtyParticleBuffer && m_CreatedDummyBuffer)
 			{
 				m_DirtyParticleBuffer = CopyDataToBuffer(
 					pCommandList,
@@ -844,7 +949,7 @@ namespace LambdaEngine
 		}
 
 		// Update Emitter Instance Buffer
-		if (m_DirtyAliveBuffer)
+		if (m_DirtyAliveBuffer && m_CreatedDummyBuffer)
 		{
 			uint32 offset = 0;
 			uint32 elementCount = m_AliveIndices.GetSize();
@@ -862,7 +967,7 @@ namespace LambdaEngine
 		}
 
 		// Update Emitter Instance Buffer
-		if (m_DirtyEmitterBuffer)
+		if (m_DirtyEmitterBuffer && m_CreatedDummyBuffer)
 		{
 			uint32 offset = 0;
 			uint32 elementCount = m_EmitterData.GetSize();
@@ -880,7 +985,7 @@ namespace LambdaEngine
 		}
 
 		// Update Emitter Transform Buffer
-		if (m_DirtyTransformBuffer)
+		if (m_DirtyTransformBuffer && m_CreatedDummyBuffer)
 		{
 			uint32 offset = 0;
 			uint32 elementCount = m_EmitterTransformData.GetSize();
@@ -954,7 +1059,7 @@ namespace LambdaEngine
 		{
 			ResourceUpdateDesc resourceUpdateDesc = {};
 			resourceUpdateDesc.ResourceName = SCENE_EMITTER_INDEX_BUFFER;
-			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pEmitterIndexBuffer;
+			resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &m_pParticleIndexDataBuffer;
 			resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
 		}
@@ -1009,6 +1114,21 @@ namespace LambdaEngine
 			pRendergraph->UpdateResource(&resourceUpdateDesc);
 		}
 		m_DirtyAtlasDataBuffer = false;
+
+		if (m_DirtyAtlasTexture)
+		{
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName = SCENE_PARTICLE_ATLAS_IMAGES;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_AtlasTextures.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_AtlasTextureViews.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers = m_AtlasSamplers.GetData();
+			resourceUpdateDesc.ExternalTextureUpdate.TextureCount = m_AtlasTextures.GetSize();
+			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount = m_AtlasSamplers.GetSize();
+			pRendergraph->UpdateResource(&resourceUpdateDesc);
+		}
+		m_DirtyAtlasTexture = false;
+
+		m_CreatedDummyBuffer = true;
 
 		return false;
 	}

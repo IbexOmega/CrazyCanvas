@@ -364,18 +364,6 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
 
-			// Particle Renderer & Manager
-			{
-				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
-				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
-				m_pParticleRenderer = DBG_NEW ParticleRenderer();
-				m_pParticleRenderer->Init();
-				renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
-
-				m_pParticleUpdater = DBG_NEW ParticleUpdater();
-				m_pParticleUpdater->Init();
-				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
-			}
 
 			// AS Builder
 			if (m_RayTracingEnabled)
@@ -384,6 +372,20 @@ namespace LambdaEngine
 				m_pASBuilder->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			}
+
+			// Particle Renderer & Manager
+			{
+				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
+				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
+
+				m_pParticleRenderer = DBG_NEW ParticleRenderer();
+				m_pParticleRenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
+
+				m_pParticleUpdater = DBG_NEW ParticleUpdater();
+				m_pParticleUpdater->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
 			}
 
 			//GUI Renderer
@@ -653,11 +655,6 @@ namespace LambdaEngine
 		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
 		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
 		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
-
-		// Update particle textures
-		TArray<TextureView*>& atlasTextureViews = m_ParticleManager.GetAtlasTextureViews();
-		TArray<Sampler*>& atlasSamplers = m_ParticleManager.GetAtlasSamplers();
-		m_pParticleRenderer->SetAtlasTexturs(atlasTextureViews, atlasSamplers);
 	}
 
 	bool RenderSystem::Render(Timestamp delta)
@@ -1178,9 +1175,11 @@ namespace LambdaEngine
 				{
 					m_pASBuilder->BuildTriBLAS(
 						meshEntry.BLASIndex,
+						0U,
 						isAnimated ? meshEntry.pAnimatedVertexBuffer : meshEntry.pVertexBuffer,
 						meshEntry.pIndexBuffer,
 						meshEntry.VertexCount,
+						sizeof(Vertex),
 						meshEntry.IndexCount,
 						isAnimated);
 				}
@@ -1617,9 +1616,11 @@ namespace LambdaEngine
 			{
 				m_pASBuilder->BuildTriBLAS(
 					pMeshEntry->BLASIndex,
+					0U,
 					pMeshEntry->pAnimatedVertexBuffer,
 					pMeshEntry->pIndexBuffer,
 					pMeshEntry->VertexCount,
+					sizeof(Vertex),
 					pMeshEntry->IndexCount,
 					true);
 			}
