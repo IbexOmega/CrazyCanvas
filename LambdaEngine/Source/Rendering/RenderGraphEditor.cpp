@@ -234,6 +234,7 @@ namespace LambdaEngine
 				m_ResourceStatesByHalfAttributeIndex,
 				m_ResourceStateLinksByLinkIndex,
 				m_FinalOutput,
+				true,
 				true))
 			{
 				m_ParsedGraphValid = false;
@@ -1174,6 +1175,7 @@ namespace LambdaEngine
 						m_ResourceStatesByHalfAttributeIndex,
 						m_ResourceStateLinksByLinkIndex,
 						m_FinalOutput,
+						true,
 						true);
 
 					if (m_ParsedGraphValid)
@@ -1263,7 +1265,9 @@ namespace LambdaEngine
 
 			if (resourceStateGroupIndex != EXTERNAL_RESOURCE_STATE_GROUP_INDEX)
 			{
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.4f, 0.7f, 0.4f, 0.5f });
 				ImGui::Button("Drag Resource Here");
+				ImGui::PopStyleColor(1);
 
 				if (ImGui::BeginDragDropTarget())
 				{
@@ -1322,7 +1326,9 @@ namespace LambdaEngine
 					PopPinColorIfNeeded(EEditorPinType::INPUT, pResourceState, inputAttributeIndex);
 				}
 
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.4f, 0.7f, 0.4f, 0.5f });
 				ImGui::Button("Drag Resource Here");
+				ImGui::PopStyleColor(1);
 
 				if (ImGui::BeginDragDropTarget())
 				{
@@ -1602,7 +1608,9 @@ namespace LambdaEngine
 			imnodes::EndInputAttribute();
 			PopPinColorIfNeeded(EEditorPinType::RENDER_STAGE_INPUT, nullptr, -1);
 
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.4f, 0.7f, 0.4f, 0.5f });
 			ImGui::Button("Drag Resource Here");
+			ImGui::PopStyleColor(1);
 
 			if (ImGui::BeginDragDropTarget())
 			{
@@ -2381,63 +2389,212 @@ namespace LambdaEngine
 		}
 		else if (pRenderStage->Type == EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING)
 		{
+			ImGui::Text("Raygen Shader:");
 			ImGui::PushID("##Raygen Shader ID");
 			std::filesystem::path raygenShaderPath(pRenderStage->RayTracing.Shaders.RaygenShaderName);
 			ImGui::Button(pRenderStage->RayTracing.Shaders.RaygenShaderName.empty() ? "Raygen Shader" : raygenShaderPath.filename().string().c_str());
 			RenderShaderBoxCommon(&pRenderStage->RayTracing.Shaders.RaygenShaderName);
 			ImGui::PopID();
 
-			uint32 missBoxesCount = glm::min(pRenderStage->RayTracing.Shaders.MissShaderCount + 1, MAX_MISS_SHADER_COUNT);
-			for (uint32 m = 0; m < missBoxesCount; m++)
 			{
-				bool added = false;
-				bool removed = false;
+				ImGui::Text("Miss Shaders:");
+				uint32 missBoxesCount = glm::min(pRenderStage->RayTracing.Shaders.MissShaderCount, MAX_MISS_SHADER_COUNT - 1);
+				bool elemAdded = false;
+				bool elemRemoved = false;
+				uint32 removeIndex = 0;
 
-				ImGui::PushID(m);
-				std::filesystem::path missShaderPath(pRenderStage->RayTracing.Shaders.pMissShaderNames[m]);
-				ImGui::Button(pRenderStage->RayTracing.Shaders.pMissShaderNames[m].empty() ? "Miss Shader" : missShaderPath.filename().string().c_str());
-				RenderShaderBoxCommon(&(pRenderStage->RayTracing.Shaders.pMissShaderNames[m]), &added, &removed);
-				ImGui::PopID();
+				if (missBoxesCount > 0)
+				{
+					for (uint32 m = 0; m < missBoxesCount + 1; m++)
+					{
+						bool added = false;
+						bool removed = false;
+						ImGui::PushID(("##Miss Shader ID " + std::to_string(m)).c_str());
+						std::filesystem::path missShaderPath(pRenderStage->RayTracing.Shaders.pMissShaderNames[m]);
+						if (pRenderStage->RayTracing.Shaders.pMissShaderNames[m].empty())
+						{
+							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.4f, 0.7f, 0.4f, 0.5f });
+							ImGui::Button("Add Miss Shader");
+							ImGui::PopStyleColor(1);
+						}
+						else
+						{
+							ImGui::Button(missShaderPath.filename().string().c_str());
+						}
+						RenderShaderBoxCommon(&(pRenderStage->RayTracing.Shaders.pMissShaderNames[m]), &added, &removed);
+						ImGui::PopID();
 
-				if (added)
+						if (added)
+							elemAdded = true;
+
+						if (removed)
+						{
+							removeIndex = m;
+							elemRemoved = true;
+						}
+					}
+				}
+				else
+				{
+
+					ImGui::PushID("##Miss Shader ID 0");
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.4f, 0.7f, 0.4f, 0.5f });
+					ImGui::Button("Add Miss Shader");
+					ImGui::PopStyleColor(1);
+					RenderShaderBoxCommon(&(pRenderStage->RayTracing.Shaders.pMissShaderNames[missBoxesCount]), &elemAdded, &elemRemoved);
+					ImGui::PopID();
+				}
+
+				if (elemAdded)
 					pRenderStage->RayTracing.Shaders.MissShaderCount++;
 
-				if (removed)
+				if (elemRemoved)
 				{
-					for (uint32 m2 = m; m2 < missBoxesCount - 1; m2++)
+					for (uint32 m2 = removeIndex; m2 < missBoxesCount - 1; m2++)
 					{
 						pRenderStage->RayTracing.Shaders.pMissShaderNames[m2] = pRenderStage->RayTracing.Shaders.pMissShaderNames[m2 + 1];
 					}
-
+					pRenderStage->RayTracing.Shaders.pMissShaderNames[missBoxesCount - 1U] = "";
 					pRenderStage->RayTracing.Shaders.MissShaderCount--;
 					missBoxesCount--;
 				}
 			}
 
-			uint32 closestHitBoxesCount = glm::min(pRenderStage->RayTracing.Shaders.ClosestHitShaderCount + 1, MAX_CLOSEST_HIT_SHADER_COUNT);
-			for (uint32 ch = 0; ch < closestHitBoxesCount; ch++)
 			{
-				bool added = false;
-				bool removed = false;
+				uint32 HitGroupBoxesCount = glm::min(pRenderStage->RayTracing.Shaders.HitGroupShaderCount, MAX_HIT_SHADER_COUNT - 1);
+				FShaderStageFlag typeAdded = FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
+				FShaderStageFlag typeRemoved = FShaderStageFlag::SHADER_STAGE_FLAG_NONE;
+				uint32 removeIndex = 0;
 
-				ImGui::PushID(ch);
-				std::filesystem::path closestHitShaderPath(pRenderStage->RayTracing.Shaders.pMissShaderNames[ch]);
-				ImGui::Button(pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? "Closest Hit Shader" : closestHitShaderPath.filename().string().c_str());
-				RenderShaderBoxCommon(&pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch], &added, &removed);
-				ImGui::PopID();
-
-				if (added)
-					pRenderStage->RayTracing.Shaders.ClosestHitShaderCount++;
-
-				if (removed)
+				ImGui::Text("Hit Shader Groups:");
+				for (uint32 h = 0; h < HitGroupBoxesCount + 1; h++)
 				{
-					for (uint32 ch2 = ch; ch2 < closestHitBoxesCount - 1; ch2++)
+					String* closestHitString = &pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[h].ClosestHitShaderName;
+					if (!closestHitString->empty())
 					{
-						pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch2] = pRenderStage->RayTracing.Shaders.pClosestHitShaderNames[ch2 + 1];
-					}
+						ImGui::PushID(("##Closest Hit Shader ID " + std::to_string(h)).c_str());
+						std::filesystem::path closestHitShaderPath(*closestHitString);
+						if (AddHitGroupShader(
+							closestHitShaderPath.filename().string().c_str(),
+							closestHitString,
+							FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,
+							typeAdded,
+							typeRemoved
+						))
+						{
+							removeIndex = h;
+						}
+						ImGui::PopID();
 
-					pRenderStage->RayTracing.Shaders.ClosestHitShaderCount--;
-					closestHitBoxesCount--;
+						// Offset 
+						ImGui::Dummy(ImVec2(20.0f, 0.0f));
+						ImGui::SameLine();
+
+						ImGui::PushID(("##Any Hit Shader ID " + std::to_string(h)).c_str());
+						String* anyHitString = &pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[h].AnyHitShaderName;
+						std::filesystem::path anyHitShaderPath(*anyHitString);
+						if (AddHitGroupShader(
+							anyHitString->empty() ? "Add Any Hit Shader" : anyHitShaderPath.filename().string().c_str(),
+							anyHitString,
+							FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER,
+							typeAdded,
+							typeRemoved,
+							anyHitString->empty() ? glm::vec4{ 0.4f, 0.7f, 0.4f, 0.5f } : glm::vec4{ 0.4f, 0.4f, 0.8f, 0.5f }
+						))
+						{
+							removeIndex = h;
+						}
+						ImGui::PopID();
+
+						// Offset 
+						ImGui::Dummy(ImVec2(20.0f, 0.0f));
+						ImGui::SameLine();
+
+						ImGui::PushID(("##Intersection Shader ID " + std::to_string(h)).c_str());
+						String* intersectionString = &pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[h].IntersectionShaderName;
+						std::filesystem::path intersectionShaderPath(*intersectionString);
+						if (AddHitGroupShader(
+							intersectionString->empty() ? "Add Intersection Shader" : intersectionShaderPath.filename().string().c_str(),
+							intersectionString,
+							FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER,
+							typeAdded,
+							typeRemoved,
+							intersectionString->empty() ? glm::vec4{ 0.4f, 0.7f, 0.4f, 0.5f } : glm::vec4{ 0.4f, 0.4f, 0.8f, 0.5f }
+						))
+						{
+							removeIndex = h;
+						}
+						ImGui::PopID();
+					}
+					else
+					{
+						ImGui::PushID(("##Closest Hit Shader ID " + std::to_string(h)).c_str());
+						if (AddHitGroupShader(
+							"Add Closest Hit Shader",
+							closestHitString,
+							FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER,
+							typeAdded,
+							typeRemoved,
+							{ 0.4f, 0.7f, 0.4f, 0.5f }
+						))
+						{
+							removeIndex = h;
+						}
+						ImGui::PopID();
+					}
+				}
+
+				if (typeAdded != FShaderStageFlag::SHADER_STAGE_FLAG_NONE)
+				{
+					switch (typeAdded)
+					{
+					case LambdaEngine::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:
+						pRenderStage->RayTracing.Shaders.ClosestHitShaderCount++;
+						// Closest hit shader needs to be added for a new hit group to be added
+						pRenderStage->RayTracing.Shaders.HitGroupShaderCount++;
+						break;
+					case LambdaEngine::SHADER_STAGE_FLAG_ANY_HIT_SHADER:
+						pRenderStage->RayTracing.Shaders.AnyHitShaderCount++;
+						break;
+					case LambdaEngine::SHADER_STAGE_FLAG_INTERSECT_SHADER:
+						pRenderStage->RayTracing.Shaders.IntersectionShaderCount++;
+						break;
+					default:
+						break;
+					}
+				}
+
+				if (typeRemoved != FShaderStageFlag::SHADER_STAGE_FLAG_NONE)
+				{
+					switch (typeRemoved)
+					{
+					case LambdaEngine::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER:
+						for (uint32 c2 = removeIndex; c2 < HitGroupBoxesCount - 1; c2++)
+						{
+							pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[c2].ClosestHitShaderName = pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[c2 + 1].ClosestHitShaderName;
+							pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[c2].AnyHitShaderName = pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[c2 + 1].AnyHitShaderName;
+							pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[c2].IntersectionShaderName = pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[c2 + 1].IntersectionShaderName;
+						}
+						pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[HitGroupBoxesCount - 1U].ClosestHitShaderName = "";
+						pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[HitGroupBoxesCount - 1U].AnyHitShaderName = "";
+						pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[HitGroupBoxesCount - 1U].IntersectionShaderName = "";
+						pRenderStage->RayTracing.Shaders.HitGroupShaderCount--;
+
+						pRenderStage->RayTracing.Shaders.ClosestHitShaderCount--;
+						pRenderStage->RayTracing.Shaders.AnyHitShaderCount--;
+						pRenderStage->RayTracing.Shaders.IntersectionShaderCount--;
+						break;
+					case LambdaEngine::SHADER_STAGE_FLAG_ANY_HIT_SHADER:
+						pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[removeIndex].AnyHitShaderName = "";
+						pRenderStage->RayTracing.Shaders.AnyHitShaderCount--;
+						break;
+					case LambdaEngine::SHADER_STAGE_FLAG_INTERSECT_SHADER:
+						pRenderStage->RayTracing.Shaders.pHitGroupShaderNames[removeIndex].IntersectionShaderName = "";
+						pRenderStage->RayTracing.Shaders.IntersectionShaderCount--;
+						break;
+					default:
+						break;
+					}
 				}
 			}
 		}
@@ -2466,9 +2623,41 @@ namespace LambdaEngine
 			if (ImGui::Button("-"))
 			{
 				(*pTarget) = "";
-				if (pRemoved != nullptr) (*pRemoved) = true;
+				if (pRemoved != nullptr)
+				{
+					(*pRemoved) = true;
+				}
 			}
 		}
+	}
+
+	bool RenderGraphEditor::AddHitGroupShader(
+		const String& label,
+		String* pTarget,
+		FShaderStageFlag shaderStageFlag,
+		FShaderStageFlag& typeAdded,
+		FShaderStageFlag& typeRemoved,
+		const glm::vec4& color)
+	{
+		bool added = false;
+		bool removed = false;
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.r, color.g, color.b, color.a));
+		ImGui::Button(label.c_str());
+		ImGui::PopStyleColor(1);
+		RenderShaderBoxCommon(pTarget, &added, &removed);
+
+		if (added)
+		{
+			typeAdded = shaderStageFlag;
+		}
+		else if (removed)
+		{
+			typeRemoved = shaderStageFlag;
+			return true;
+		}
+
+		return false;
 	}
 
 	TArray<RenderGraphResourceDesc>::Iterator RenderGraphEditor::FindResource(const String& name)
@@ -2934,6 +3123,7 @@ namespace LambdaEngine
 			m_ResourceStatesByHalfAttributeIndex,
 			m_ResourceStateLinksByLinkIndex,
 			m_FinalOutput,
+			true,
 			true))
 		{
 			m_ParsedGraphValid = false;

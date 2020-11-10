@@ -26,37 +26,22 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "GUI/CountdownGUI.h"
+#include "GUI/DamageIndicatorGUI.h"
+#include "GUI/HUDGUI.h"
+#include "GUI/MainMenuGUI.h"
+
+#include "GUI/Core/GUIApplication.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 
-constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
-
 CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
-
-	ServerHostHelper::Init();
-
-	GraphicsDeviceFeatureDesc deviceFeatures = {};
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-
-	if (!LevelManager::Init())
-	{
-		LOG_ERROR("Level Manager Init Failed");
-	}
-
-	if (!TeamHelper::Init())
-	{
-		LOG_ERROR("Team Helper Init Failed");
-	}
-
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
-	RenderSystem::GetInstance().InitRenderGraphs();
-
-	LoadRendererResources();
 
 	constexpr const char* pGameName = "Crazy Canvas";
 	constexpr const char* pDefaultStateStr = "crazycanvas";
@@ -76,30 +61,56 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		flagParser(2, pDefaultIsHostStr) >> AuthenticationIDStr;
 	}
 
-	if (stateStr == "crazycanvas")
+	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "client" || stateStr == "benchmark")
 	{
 		ClientSystem::Init(pGameName);
+	}
+	else if (stateStr == "server")
+	{
+		ServerSystem::Init(pGameName);
+	}
+
+	if (!RegisterGUIComponents())
+	{
+		LOG_ERROR("Failed to Register GUI Components");
+	}
+
+	ServerHostHelper::Init();
+
+	if (!LevelManager::Init())
+	{
+		LOG_ERROR("Level Manager Init Failed");
+	}
+
+	if (!TeamHelper::Init())
+	{
+		LOG_ERROR("Team Helper Init Failed");
+	}
+
+	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+	RenderSystem::GetInstance().InitRenderGraphs();
+
+	LoadRendererResources();
+
+	if (stateStr == "crazycanvas")
+	{
 		pStartingState = DBG_NEW MainMenuState();
 	}
 	else if (stateStr == "sandbox")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
 	}
 	else if (stateStr == "client")
 	{
-		ClientSystem::Init(pGameName);
 		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
 		pStartingState = DBG_NEW PlaySessionState(false, IPEndPoint(NetworkUtils::GetLocalAddress(), port));
 	}
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
 		pStartingState = DBG_NEW ServerState(clientHostIDStr, AuthenticationIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW BenchmarkState();
 	}
 
@@ -131,6 +142,16 @@ namespace LambdaEngine
 	{
 		return DBG_NEW CrazyCanvas(flagParser);
 	}
+}
+
+bool CrazyCanvas::RegisterGUIComponents()
+{
+	Noesis::RegisterComponent<CountdownGUI>();
+	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<HUDGUI>();
+	Noesis::RegisterComponent<MainMenuGUI>();
+
+	return true;
 }
 
 bool CrazyCanvas::LoadRendererResources()

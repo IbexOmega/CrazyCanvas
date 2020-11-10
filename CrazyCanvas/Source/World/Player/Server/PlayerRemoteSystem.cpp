@@ -11,6 +11,8 @@
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
+#include "Match/Match.h"
+
 using namespace LambdaEngine;
 
 PlayerRemoteSystem::PlayerRemoteSystem()

@@ -58,6 +58,7 @@ namespace LambdaEngine
 		Entity Entity;
 		glm::vec3 Position;
 		glm::vec3 Direction;
+		glm::vec3 Normal;
 	};
 
 	typedef std::function<void(const EntityCollisionInfo& collisionInfo0, const EntityCollisionInfo& collisionInfo1)> CollisionCallback;

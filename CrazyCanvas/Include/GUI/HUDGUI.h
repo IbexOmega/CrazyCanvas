@@ -44,9 +44,8 @@ struct GameGUIState
 
 class HUDGUI : public Noesis::Grid
 {
-
 public:
-	HUDGUI(const LambdaEngine::String& xamlFile);
+	HUDGUI();
 	~HUDGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -77,6 +76,9 @@ public:
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void UpdateCountdown(uint8 countDownTime);
+
+	void DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 
 private:
 
@@ -115,4 +117,5 @@ private:
 	Noesis::Grid*	m_pKeyBindingsGrid		= nullptr;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
+	Noesis::Grid* m_pHitIndicatorGrid;
 };

@@ -373,6 +373,8 @@ namespace LambdaEngine
 		virtual void EndQuery(QueryHeap* pQueryHeap, uint32 queryIndex) = 0;
 		virtual void ResetQuery(QueryHeap* pQueryHeap, uint32 firstQuery, uint32 queryCount) = 0;
 
+		virtual void SetLineWidth(float32 lineWidth) = 0;
+
 		virtual void DeferDestruction(DeviceChild* pResource) = 0;
 
 		virtual void ExecuteSecondary(const CommandList* pSecondary) = 0;

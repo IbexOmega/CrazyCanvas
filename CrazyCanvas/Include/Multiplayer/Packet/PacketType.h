@@ -18,16 +18,19 @@ class PacketType
 public:
 	DECL_STATIC_CLASS(PacketType);
 
-	static uint16 CREATE_LEVEL_OBJECT;
-	static uint16 DELETE_LEVEL_OBJECT;
-	static uint16 PLAYER_ACTION;
-	static uint16 PLAYER_ACTION_RESPONSE;
-	static uint16 WEAPON_FIRE;
-	static uint16 HEALTH_CHANGED;
-	static uint16 FLAG_EDITED;
-	static uint16 TEAM_SCORED;
-	static uint16 GAME_OVER;
-	static uint16 CONFIGURE_SERVER;
+	inline static uint16 CREATE_LEVEL_OBJECT		= 0;
+	inline static uint16 DELETE_LEVEL_OBJECT		= 0;
+	inline static uint16 PLAYER_ACTION				= 0;
+	inline static uint16 PLAYER_ACTION_RESPONSE		= 0;
+	inline static uint16 WEAPON_FIRE				= 0;
+	inline static uint16 HEALTH_CHANGED				= 0;
+	inline static uint16 FLAG_EDITED				= 0;
+	inline static uint16 TEAM_SCORED				= 0;
+	inline static uint16 MATCH_START				= 0;
+	inline static uint16 MATCH_BEGIN				= 0;
+	inline static uint16 GAME_OVER					= 0;
+	inline static uint16 CONFIGURE_SERVER			= 0;
+	inline static uint16 PROJECTILE_HIT				= 0;
 
 public:
 	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);

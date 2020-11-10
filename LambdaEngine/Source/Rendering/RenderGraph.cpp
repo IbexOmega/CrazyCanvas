@@ -1,6 +1,7 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/ImGuiRenderer.h"
+#include "Rendering/LineRenderer.h"
 
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
@@ -362,9 +363,10 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderGraph::UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources)
+	void RenderGraph::UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, const TArray<uint32>& hitGroupIndices, TArray<DeviceChild*>& removedDeviceResources)
 	{
 		m_GlobalShaderRecords = shaderRecords;
+		m_GlobalHitGroupIndices = hitGroupIndices;
 
 		for (uint32 r = 0; r < m_RenderStageCount; r++)
 		{
@@ -376,6 +378,7 @@ namespace LambdaEngine
 				sbtDesc.DebugName		= "Render Graph Global SBT";
 				sbtDesc.pPipelineState	= pRenderStage->pPipelineState;
 				sbtDesc.SBTRecords		= m_GlobalShaderRecords;
+				sbtDesc.HitGroupIndices = m_GlobalHitGroupIndices;
 
 				if (pRenderStage->pSBT == nullptr)
 				{
@@ -668,6 +671,7 @@ namespace LambdaEngine
 							pResource->Name,
 							pResource->Texture.PerImageTextureViews.GetData(),
 							pResource->Texture.PerSubImageTextureViews.GetData(),
+							pResource->Texture.Samplers.GetData(),
 							pResource->Texture.PerImageTextureViews.GetSize(),
 							pResource->Texture.PerSubImageTextureViews.GetSize(),
 							pResource->BackBufferBound);
@@ -1244,6 +1248,7 @@ namespace LambdaEngine
 						backBufferResourceIt->second.Name,
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetData(),
 						backBufferResourceIt->second.Texture.PerSubImageTextureViews.GetData(),
+						backBufferResourceIt->second.Texture.Samplers.GetData(),
 						backBufferResourceIt->second.Texture.PerImageTextureViews.GetSize(),
 						backBufferResourceIt->second.Texture.PerSubImageTextureViews.GetSize(),
 						true);
@@ -1287,6 +1292,7 @@ namespace LambdaEngine
 					sbtDesc.DebugName = "Render Graph Global SBT";
 					sbtDesc.pPipelineState = pRenderStage->pPipelineState;
 					sbtDesc.SBTRecords = m_GlobalShaderRecords;
+					sbtDesc.HitGroupIndices = m_GlobalHitGroupIndices;
 
 					pRenderStage->pSBT = RenderAPI::GetDevice()->CreateSBT(AcquireComputeCopyCommandList(), &sbtDesc);
 				}
@@ -1873,6 +1879,7 @@ namespace LambdaEngine
 			m_RenderStageMap[pRenderStageDesc->Name] = renderStageIndex;
 
 			bool isImGuiStage = pRenderStageDesc->Name == RENDER_GRAPH_IMGUI_STAGE_NAME;
+			bool isLineRendererStage = pRenderStageDesc->Name == RENDER_GRAPH_LINE_RENDERER_STAGE_NAME;
 
 			pRenderStage->Name			= pRenderStageDesc->Name;
 			pRenderStage->Parameters	= pRenderStageDesc->Parameters;
@@ -2375,7 +2382,31 @@ namespace LambdaEngine
 			{
 				CustomRenderer* pCustomRenderer = nullptr;
 
-				if (isImGuiStage)
+				if (isLineRendererStage)
+				{
+					auto lineRenderStageIt = std::find_if(m_DebugRenderers.Begin(), m_DebugRenderers.End(), [](const CustomRenderer* pCustomRenderer) { return pCustomRenderer->GetName() == RENDER_GRAPH_LINE_RENDERER_STAGE_NAME; });
+
+					if (lineRenderStageIt == m_DebugRenderers.End())
+					{
+						// TODO: Don't hardcode the vertexbuffer size
+						LineRenderer* pLineRenderer = DBG_NEW LineRenderer(m_pGraphicsDevice, MEGA_BYTE(1), m_BackBufferCount);
+						if (!pLineRenderer->Init())
+						{
+							LOG_ERROR("[RenderGraph] Could not initialize LineRenderer Custom Renderer");
+							return false;
+						}
+
+						m_CustomRenderers.PushBack(pLineRenderer);
+						m_DebugRenderers.PushBack(pLineRenderer);
+
+						pCustomRenderer = pLineRenderer;
+					}
+					else
+					{
+						pCustomRenderer = *lineRenderStageIt;
+					}
+				}
+				else if (isImGuiStage)
 				{
 					auto imGuiRenderStageIt = std::find_if(m_DebugRenderers.Begin(), m_DebugRenderers.End(), [](const CustomRenderer* pCustomRenderer) { return pCustomRenderer->GetName() == RENDER_GRAPH_IMGUI_STAGE_NAME; });
 
@@ -2747,14 +2778,18 @@ namespace LambdaEngine
 						pipelineDesc.RaygenShader.ShaderConstants = pShaderConstants->RayTracing.RaygenConstants;
 					}
 
-					pipelineDesc.ClosestHitShaders.Resize(pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount);
-					for (uint32 ch = 0; ch < pRenderStageDesc->RayTracing.Shaders.ClosestHitShaderCount; ch++)
+					pipelineDesc.HitGroupShaders.Resize(pRenderStageDesc->RayTracing.Shaders.HitGroupShaderCount);
+					for (uint32 h = 0; h < pRenderStageDesc->RayTracing.Shaders.HitGroupShaderCount; h++)
 					{
-						pipelineDesc.ClosestHitShaders[ch].ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch].empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pClosestHitShaderNames[ch], FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.HitGroupShaders[h].ClosestHitShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].ClosestHitShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].ClosestHitShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_CLOSEST_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.HitGroupShaders[h].AnyHitShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].AnyHitShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].AnyHitShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_ANY_HIT_SHADER, EShaderLang::SHADER_LANG_GLSL );
+						pipelineDesc.HitGroupShaders[h].IntersectionShader.ShaderGUID = pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].IntersectionShaderName.empty() ? GUID_NONE : ResourceManager::LoadShaderFromFile(pRenderStageDesc->RayTracing.Shaders.pHitGroupShaderNames[h].IntersectionShaderName, FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER, EShaderLang::SHADER_LANG_GLSL );
 
 						if (pShaderConstants != nullptr)
 						{
-							pipelineDesc.ClosestHitShaders[ch].ShaderConstants = pShaderConstants->RayTracing.ClosestHitConstants[ch];
+							pipelineDesc.HitGroupShaders[h].ClosestHitShader.ShaderConstants = pShaderConstants->RayTracing.HitGroupConstants[h].ClosestHitConstants;
+							pipelineDesc.HitGroupShaders[h].AnyHitShader.ShaderConstants = pShaderConstants->RayTracing.HitGroupConstants[h].AnyHitConstants;
+							pipelineDesc.HitGroupShaders[h].IntersectionShader.ShaderConstants = pShaderConstants->RayTracing.HitGroupConstants[h].IntersectionConstants;
 						}
 					}
 

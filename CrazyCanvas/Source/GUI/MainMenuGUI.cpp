@@ -12,7 +12,7 @@
 #include "States/BenchmarkState.h"
 #include "States/PlaySessionState.h"
 #include "States/SandboxState.h"
-#include "States/LobbyState.h"
+#include "States/MultiplayerState.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -20,9 +20,9 @@
 using namespace Noesis;
 using namespace LambdaEngine;
 
-MainMenuGUI::MainMenuGUI(const LambdaEngine::String& xamlFile)
+MainMenuGUI::MainMenuGUI()
 {
-	GUI::LoadComponent(this, xamlFile.c_str());
+	GUI::LoadComponent(this, "MainMenu.xaml");
 
 	// Main Grids
 	m_pStartGrid		= FrameworkElement::FindName<Grid>("StartGrid");
@@ -153,7 +153,7 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	State* pLobbyState = DBG_NEW LobbyState();
+	State* pLobbyState = DBG_NEW MultiplayerState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 }
 

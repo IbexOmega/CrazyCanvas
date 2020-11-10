@@ -11,6 +11,7 @@ namespace LambdaEngine
 		String				DebugName		= "";
 		PipelineState*		pPipelineState	= nullptr;
 		TArray<SBTRecord>	SBTRecords;
+		TArray<uint32>		HitGroupIndices;
 	};
 
 	class SBT : public DeviceChild

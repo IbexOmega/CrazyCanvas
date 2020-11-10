@@ -11,8 +11,11 @@
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 
 #include "Application/API/Events/EventQueue.h"
+#include "..\..\..\..\Include\ECS\Systems\GUI\HUDSystem.h"
 
 
 using namespace LambdaEngine;
@@ -24,10 +27,13 @@ HUDSystem::~HUDSystem()
 
 	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
+	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 }
 
 void HUDSystem::Init()
 {
+
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
@@ -42,7 +48,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_PlayerEntities,
 			.ComponentAccesses =
 			{
-				{ R, HealthComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
+				{ R, HealthComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
 			}
 		}
 	};
@@ -54,9 +60,10 @@ void HUDSystem::Init()
 
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+    EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
+	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 
-
-	m_HUDGUI = *new HUDGUI("HUD.xaml");
+	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
 	GUIApplication::SetView(m_View);
@@ -83,36 +90,65 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 {
-	ECSCore* pECS = ECSCore::GetInstance();
-	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-
-	for (Entity playerWeapon : m_WeaponEntities)
+	if (!MultiplayerUtils::IsServer())
 	{
-		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && m_HUDGUI)
+		for (Entity playerWeapon : m_WeaponEntities)
 		{
-			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (pPlayerLocalComponents->HasComponent(weaponComponent.WeaponOwner) && m_HUDGUI)
+			{
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+			}
 		}
 	}
-
 	return false;
 }
 
 bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 {
-	ECSCore* pECS = ECSCore::GetInstance();
-	const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
-	const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
-
-	for (Entity playerWeapon : m_WeaponEntities)
+	if (!MultiplayerUtils::IsServer())
 	{
-		const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 
-		if (pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity) && m_HUDGUI)
+		for (Entity playerWeapon : m_WeaponEntities)
 		{
-			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
-			m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			{
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
+			}
+		}
+	}
+	return false;
+}
+
+bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
+{
+	m_HUDGUI->UpdateCountdown(event.CountDownTime);
+
+	return false;
+}
+
+bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
+		{
+			const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
+			const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
+
+			m_HUDGUI->DisplayHitIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
 		}
 	}
 

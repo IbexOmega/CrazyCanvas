@@ -37,6 +37,7 @@
 #include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 namespace LambdaEngine
 {
@@ -311,12 +312,12 @@ namespace LambdaEngine
 				renderGraphName = prefix + renderGraphName;
 			}
 
-			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED))
+			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER)))
 			{
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
 				renderGraphStructure = {};
-				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true);
+				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER));
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
@@ -327,14 +328,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers = { };
 
-			if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER))
-			{
-				m_pLineRenderer = DBG_NEW LineRenderer(RenderAPI::GetDevice(), MEGA_BYTE(1), BACK_BUFFER_COUNT);
-				m_pLineRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
-			}
-
 			// Add paint mask renderer to the custom renderers inside the render graph.
 			{
 				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
@@ -344,24 +337,13 @@ namespace LambdaEngine
 			}
 
 			// Light Renderer
+			bool isServer = MultiplayerUtils::IsServer();
+			if (!isServer)
 			{
 				m_pLightRenderer = DBG_NEW LightRenderer();
 				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-			}
-
-			// Particle Renderer & Manager
-			{
-				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
-				m_ParticleManager.Init(MAX_PARTICLE_COUNT);
-				m_pParticleRenderer = DBG_NEW ParticleRenderer();
-				m_pParticleRenderer->Init();
-				renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
-
-				m_pParticleUpdater = DBG_NEW ParticleUpdater();
-				m_pParticleUpdater->Init();
-				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
 			}
 
 			// AS Builder
@@ -371,6 +353,21 @@ namespace LambdaEngine
 				m_pASBuilder->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			}
+
+			// Particle Renderer & Manager
+			if (!isServer)
+			{
+				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
+				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
+
+				m_pParticleRenderer = DBG_NEW ParticleRenderer();
+				m_pParticleRenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
+
+				m_pParticleUpdater = DBG_NEW ParticleUpdater();
+				m_pParticleUpdater->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
 			}
 
 			//GUI Renderer
@@ -621,19 +618,18 @@ namespace LambdaEngine
 				emitterCompNonConst.Active = false;
 			}
 		}
+
 		// Tick Particle Manager
-		m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
+		if (m_ParticleManager.IsInitilized())
+		{
+			m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
 
-		// Particle Updates
-		uint32 particleCount = m_ParticleManager.GetParticleCount();
-		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
-		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
-		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
-
-		// Update particle textures
-		TArray<TextureView*>& atlasTextureViews = m_ParticleManager.GetAtlasTextureViews();
-		TArray<Sampler*>& atlasSamplers = m_ParticleManager.GetAtlasSamplers();
-		m_pParticleRenderer->SetAtlasTexturs(atlasTextureViews, atlasSamplers);
+			// Particle Updates
+			uint32 particleCount = m_ParticleManager.GetParticleCount();
+			uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
+			m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
+			m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		}
 	}
 
 	bool RenderSystem::Render(Timestamp delta)
@@ -678,11 +674,13 @@ namespace LambdaEngine
 		}
 
 		// Light Renderer
+		if (m_RayTracingEnabled)
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 		}
 
 		// Particles
+		if (m_RayTracingEnabled)
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
@@ -1142,9 +1140,11 @@ namespace LambdaEngine
 				{
 					m_pASBuilder->BuildTriBLAS(
 						meshEntry.BLASIndex,
+						0U,
 						isAnimated ? meshEntry.pAnimatedVertexBuffer : meshEntry.pVertexBuffer,
 						meshEntry.pIndexBuffer,
 						meshEntry.VertexCount,
+						sizeof(Vertex),
 						meshEntry.IndexCount,
 						isAnimated);
 				}
@@ -1579,9 +1579,11 @@ namespace LambdaEngine
 			{
 				m_pASBuilder->BuildTriBLAS(
 					pMeshEntry->BLASIndex,
+					0U,
 					pMeshEntry->pAnimatedVertexBuffer,
 					pMeshEntry->pIndexBuffer,
 					pMeshEntry->VertexCount,
+					sizeof(Vertex),
 					pMeshEntry->IndexCount,
 					true);
 			}

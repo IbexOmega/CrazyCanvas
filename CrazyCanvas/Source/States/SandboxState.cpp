@@ -43,9 +43,6 @@
 #include "Rendering/Animation/AnimationGraph.h"
 
 #include "Math/Random.h"
-
-#include "GUI/GUITest.h"
-
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
@@ -65,17 +62,19 @@
 
 using namespace LambdaEngine;
 
+
+SandboxState::SandboxState()
+{
+	SingleplayerInitializer::Init();
+}
+
 SandboxState::~SandboxState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
 
-	if (m_GUITest.GetPtr() != nullptr)
-	{
-		m_GUITest.Reset();
-		m_View.Reset();
-	}
-
 	SAFEDELETE(m_pRenderGraphEditor);
+
+	SingleplayerInitializer::Release();
 }
 
 void SandboxState::Init()
@@ -87,16 +86,12 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
-	
+
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
 	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
 	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
-
-	m_GUITest	= *new GUITest("Test.xaml");
-	m_View		= Noesis::GUI::CreateView(m_GUITest);
-	LambdaEngine::GUIApplication::SetView(m_View);
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -110,6 +105,36 @@ void SandboxState::Init()
 		};
 
 		Match::CreateMatch(&matchDescription);
+	}
+
+	{
+		const uint32 characterGUID = ResourceManager::LoadMeshFromFile("Player/Character.fbx");
+
+		MaterialProperties materialProperties = {};
+		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+		const uint32 materialGUID = ResourceManager::LoadMaterialFromMemory(
+			"Flag Material",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			materialProperties);
+
+		MeshComponent meshComp = {};
+		meshComp.MeshGUID = characterGUID;
+		meshComp.MaterialGUID = materialGUID;
+
+		glm::vec3 position = glm::vec3(0.0f, 2.0f, 0.0f);
+		glm::vec3 scale(1.0f);
+
+		Entity entity = pECS->CreateEntity();
+		m_Entities.PushBack(entity);
+		pECS->AddComponent<PositionComponent>(entity, { true, position });
+		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+		pECS->AddComponent<MeshComponent>(entity, meshComp);
 	}
 
 	// Robot
@@ -227,12 +252,12 @@ void SandboxState::Init()
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
 
 		// Audio
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffectFromFile("halo_theme.wav");
+		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");
 		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
 		const SoundInstance3DDesc desc =
 		{
 			.pName = "RobotSoundInstance",
-			.pSoundEffect = ResourceManager::GetSoundEffect(soundGUID),
+			.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
 			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
 			.Position = position,
 			.Volume = 0.03f
@@ -350,7 +375,7 @@ void SandboxState::Init()
 		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
 		});
 
-	SingleplayerInitializer::InitSingleplayer();
+	SingleplayerInitializer::Setup();
 }
 
 void SandboxState::Resume()
@@ -409,6 +434,8 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 					.Gravity = Random::Float32(-5.0f, 5.0f),
 					.LifeTime = Random::Float32(1.0f, 3.0f),
 					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
+					.TileIndex = 14,
+					.FirstAnimationIndex = 14,
 					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
 				});
 			}

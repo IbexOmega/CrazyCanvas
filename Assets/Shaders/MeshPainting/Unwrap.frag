@@ -30,12 +30,13 @@ float random (in vec3 x) {
 
 void main()
 {
+	bool shouldDiscard = true;
 	if (p_FrameSettings.ShouldReset == 1)
 	{
 		out_BitsClient = 0;
+		shouldDiscard = false;
 	}
 
-	bool shouldDiscard = true;
 	for (uint hitPointIndex = 0; hitPointIndex < p_FrameSettings.PaintCount; hitPointIndex++)
 	{		
 		const vec3 GLOBAL_UP	= vec3(0.f, 1.f, 0.f);

@@ -7,6 +7,8 @@
 #include "Game/StateManager.h"
 #include "Game/State.h"
 #include "GUI/HUDGUI.h"
+#include "GUI/CountdownGUI.h"
+#include "GUI/DamageIndicatorGUI.h"
 #include "GUI/Core/GUIApplication.h"
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
@@ -18,19 +20,18 @@
 
 
 #include <string>
-
+#include "..\..\Include\GUI\HUDGUI.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI(const LambdaEngine::String& xamlFile) :
+HUDGUI::HUDGUI() : 
 	m_GUIState()
 {
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+	Noesis::GUI::LoadComponent(this, "HUD.xaml");
 
 	InitGUI();
 }
-
 
 HUDGUI::~HUDGUI()
 {
@@ -60,7 +61,6 @@ void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 
 	UpdateScore();
 }
-
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
@@ -368,6 +368,50 @@ void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 	OnButtonBackClick(pSender, args);
 }
 
+void HUDGUI::UpdateCountdown(uint8 countDownTime)
+{
+	CountdownGUI* pCountdownGUI = FindName<CountdownGUI>("COUNTDOWN");
+	pCountdownGUI->UpdateCountdown(countDownTime);
+}
+
+void HUDGUI::DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
+{
+	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
+
+	glm::vec3 forwardDir = glm::normalize(glm::vec3(direction.x, 0.0f, direction.z));
+	glm::vec3 nor = glm::normalize(glm::vec3(collisionNormal.x, 0.0f, collisionNormal.z));
+
+	float32 result = glm::dot(forwardDir, nor);
+	float32 rotation = 0.0f;
+
+
+	if (result > 0.99f)
+	{
+		rotation = 0.0f;
+	}
+	else if (result < -0.99f)
+	{
+		rotation = 180.0f;
+	}
+	else
+	{
+		glm::vec3 res = glm::cross(forwardDir, nor);
+
+		rotation = glm::degrees(glm::acos(glm::dot(forwardDir, nor)));
+		
+		if (res.y > 0)
+		{
+			rotation *= -1;
+		}
+	}
+
+	rotateTransform->SetAngle(rotation);
+	m_pHitIndicatorGrid->SetRenderTransform(rotateTransform);
+
+	DamageIndicatorGUI* pDamageIndicatorGUI = FindName<DamageIndicatorGUI>("DAMAGE_INDICATOR");
+	pDamageIndicatorGUI->DisplayIndicator();
+}
+
 void HUDGUI::InitGUI()
 {
 	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
@@ -384,6 +428,8 @@ void HUDGUI::InitGUI()
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
+
+	m_pHitIndicatorGrid = FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 
 	std::string ammoString;
 
