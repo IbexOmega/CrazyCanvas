@@ -137,9 +137,10 @@ namespace LambdaEngine
 
 		struct FrameSettings
 		{
-			uint32 ShouldReset	= 0;
-			uint32 ShouldPaint	= 0;
-			uint32 PaintCount	= 0;
+			uint32	ShouldReset	= 0;
+			uint32	ShouldPaint	= 0;
+			uint32	PaintCount	= 0;
+			float	Angle		= 0.f;
 		};
 
 		struct DrawArgKey

@@ -389,10 +389,16 @@ namespace LambdaEngine
 
 				byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
 
-				const UnwrapData& data	= collisionArray->GetFront();
+				if (collisionArray->GetSize() == 2)
+				{
+					LOG_INFO("sdsa");
+				}
+
+				const UnwrapData& data	= collisionArray->GetBack();
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
 				frameSettings.ShouldReset = data.ClearClient;
+				frameSettings.Angle = Random::Float32()*glm::pi<float>()*2.f;
 
 				uint32 size = 0;
 				// Current limit is 10 draw calls per frame - might change in future if needed
