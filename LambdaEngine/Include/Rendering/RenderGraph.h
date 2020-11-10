@@ -386,8 +386,10 @@ namespace LambdaEngine
 		* Creates a Descriptor Set suitable for Draw Arg Storage, all Draw Arg Descriptor Sets have the same bindings
 		* The caller has the responsibility of calling RenderGraph::ReleaseDrawArgDescriptorSet on Release
 		*/
-		DescriptorSet* CreateDrawArgDescriptorSet();
-		DescriptorSet* CreateDrawArgExtensionDataDescriptorSet();
+		DescriptorSet* CreateDrawArgDescriptorSet(DescriptorSet* pSrc);
+		DescriptorSet* CreateDrawArgExtensionDataDescriptorSet(DescriptorSet* pSrc);
+
+		void ReleaseDrawArgDescriptorSet(DescriptorSet* pDrawArgDescriptorSet);
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.

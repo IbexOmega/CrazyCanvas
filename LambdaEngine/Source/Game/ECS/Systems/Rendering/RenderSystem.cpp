@@ -920,6 +920,12 @@ namespace LambdaEngine
 		meshKey.EntityID	= entity;
 		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
 
+		DescriptorSet* pDrawArgDescriptorSet;
+		uint64 drawArgBufferOffset = 0;
+
+		// If the entity has extension data, it will differ from the default mask, and then add them to the entry.
+		bool hasExtensionData = meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask();
+
 		//Get meshAndInstancesIterator
 		{
 			meshAndInstancesIt = m_MeshAndInstancesMap.find(meshKey);
@@ -929,6 +935,7 @@ namespace LambdaEngine
 				VALIDATE(pMesh != nullptr);
 
 				MeshEntry meshEntry = {};
+				pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(nullptr);
 
 				// Vertices
 				{
@@ -955,7 +962,20 @@ namespace LambdaEngine
 					meshEntry.VertexCount	= pMesh->Vertices.GetSize();
 					VALIDATE(meshEntry.pVertexBuffer != nullptr);
 
-					if (isAnimated)
+					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes });
+					DeleteDeviceResource(pVertexStagingBuffer);
+
+					if (!isAnimated)
+					{
+						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+							&meshEntry.pVertexBuffer,
+							&drawArgBufferOffset,
+							&vertexBufferDesc.SizeInBytes,
+							DRAW_ARG_VERTEX_BUFFER_BINDING,
+							1,
+							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+					}
+					else
 					{
 						vertexBufferDesc.DebugName		= "Animated Vertices Buffer";
 						meshEntry.pAnimatedVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
@@ -985,10 +1005,15 @@ namespace LambdaEngine
 
 						m_PendingBufferUpdates.PushBack({ pVertexWeightStagingBuffer, 0, meshEntry.pVertexWeightsBuffer, 0, vertexWeightBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pVertexWeightStagingBuffer);
-					}
 
-					m_PendingBufferUpdates.PushBack({ pVertexStagingBuffer, 0, meshEntry.pVertexBuffer, 0, vertexBufferDesc.SizeInBytes });
-					DeleteDeviceResource(pVertexStagingBuffer);
+						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+							&meshEntry.pAnimatedVertexBuffer,
+							&drawArgBufferOffset,
+							&vertexBufferDesc.SizeInBytes,
+							DRAW_ARG_VERTEX_BUFFER_BINDING,
+							1,
+							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+					}
 				}
 
 				// Indices
@@ -1049,6 +1074,14 @@ namespace LambdaEngine
 
 						m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pMeshletStagingBuffer);
+
+						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+							&meshEntry.pMeshlets,
+							&drawArgBufferOffset,
+							&meshletBufferDesc.SizeInBytes,
+							DRAW_ARG_MESHLET_BUFFER_BINDING,
+							1,
+							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 					}
 
 					// Unique Indices
@@ -1078,6 +1111,14 @@ namespace LambdaEngine
 
 						m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pUniqueIndicesStagingBuffer);
+
+						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+							&meshEntry.pUniqueIndices,
+							&drawArgBufferOffset,
+							&uniqueIndicesBufferDesc.SizeInBytes,
+							DRAW_ARG_UNIQUE_INDICES_BUFFER_BINDING,
+							1,
+							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 					}
 
 					// Primitive indicies
@@ -1107,24 +1148,31 @@ namespace LambdaEngine
 
 						m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pPrimitiveIndicesStagingBuffer);
+
+						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+							&meshEntry.pPrimitiveIndices,
+							&drawArgBufferOffset,
+							&primitiveIndicesBufferDesc.SizeInBytes,
+							DRAW_ARG_PRIMITIVE_INDICES_BUFFER_BINDING,
+							1,
+							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 					}
 				}
 
 				// Add Draw Arg Extensions.
 				{
 					meshEntry.DrawArgsMask = meshKey.EntityMask;
-					if (meshEntry.DrawArgsMask & ~EntityMaskManager::FetchDefaultEntityMask()) // If the entity has extensions, it will differ from the default mask, and then add them to the entry.
+
+					if (hasExtensionData)
 					{
-						DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
-						meshEntry.ExtensionGroups.PushBack(&extensionGroup);
-						extensionIndex = meshEntry.ExtensionGroups.GetSize();
-						meshEntry.HasExtensions = true;
+						meshEntry.HasExtensionData = true;
+						meshEntry.pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(nullptr);
 					}
-					else
+					/*else
 					{
 						meshEntry.ExtensionGroups.PushBack(nullptr);
 						extensionIndex = 0;
-					}
+					}*/
 				}
 
 				if (m_RayTracingEnabled)
@@ -1140,8 +1188,12 @@ namespace LambdaEngine
 						isAnimated);
 				}
 
-				meshAndInstancesIt->second.pDrawArgDescriptorSet = m_pRenderGraph->
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
+			}
+			else
+			{
+				pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(meshAndInstancesIt->second.pDrawArgDescriptorSet);
+				m_pRenderGraph->ReleaseDrawArgDescriptorSet(meshAndInstancesIt->second.pDrawArgDescriptorSet);
 			}
 		}
 
@@ -1202,6 +1254,48 @@ namespace LambdaEngine
 			}
 
 			m_MaterialInstanceCounts[materialIndex]++;
+		}
+
+		//Add Extension Group
+		if (hasExtensionData)
+		{
+			DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+			meshAndInstancesIt->second.ExtensionGroups.PushBack(&extensionGroup);
+			extensionIndex = meshAndInstancesIt->second.ExtensionGroups.GetSize();
+
+			if (meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet != nullptr)
+			{
+				m_pRenderGraph->ReleaseDrawArgDescriptorSet(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
+				meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
+			}
+
+			TArray<TextureView*> extensionTextureViews;
+			TArray<Sampler*> extensionSamplers;
+
+			for (uint32 e = 0; e < extensionGroup.ExtensionCount; e++)
+			{
+				for (const DrawArgExtensionGroup* pExtensionGroup : meshAndInstancesIt->second.ExtensionGroups)
+				{
+					VALIDATE(pExtensionGroup->ExtensionCount == extensionGroup.ExtensionCount);
+
+					const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+
+					for (uint32 t = 0; t < extensionData.TextureCount; t++)
+					{
+						extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
+						extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+					}
+				}
+			}
+
+			meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet->WriteTextureDescriptors(
+				extensionTextureViews.GetData(),
+				extensionSamplers.GetData(),
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				DRAW_ARG_EXTENSION_DATA_BINDING,
+				extensionTextureViews.GetSize(),
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				true);
 		}
 
 		// Update resource for the entity mesh paint textures that is used for ray tracing

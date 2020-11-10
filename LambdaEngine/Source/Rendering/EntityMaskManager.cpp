@@ -29,7 +29,7 @@ namespace LambdaEngine
 	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension)
 	{
 		bool inverted;
-		uint32 extensionMask = GetExtensionMask(type, inverted);
+		uint32 extensionFlag = GetExtensionFlag(type, inverted);
 
 		// Bind entity to the extension data
 		auto it = s_EntityToExtensionGroupEntryMap.find(entity);
@@ -43,17 +43,17 @@ namespace LambdaEngine
 				CopyDrawArgExtensionData(extensionGroup.pExtensions[newIndex], pDrawArgExtension);
 			}
 
-			extensionGroup.pExtensions[newIndex].ExtensionID = extensionMask;
+			//extensionGroup.pExtensions[newIndex].ExtensionID = extensionFlag;
 
-			extensionGroup.pExtensionMasks[newIndex] = extensionMask;
+			//extensionGroup.pExtensionFlags[newIndex] = extensionFlag;
 
 			if (inverted)
 			{
-				it->second.Mask &= ~extensionMask;
+				it->second.Mask &= ~extensionFlag;
 			}
 			else
 			{
-				it->second.Mask |= extensionMask;
+				it->second.Mask |= extensionFlag;
 			}
 
 			return;
@@ -62,17 +62,17 @@ namespace LambdaEngine
 		DrawArgExtensionGroupEntry& groupEntry = s_EntityToExtensionGroupEntryMap[entity];
 		DrawArgExtensionGroup& extensionGroup = groupEntry.extensionGroup;
 		extensionGroup.ExtensionCount = 1;
-		extensionGroup.pExtensionMasks[0] = extensionMask;
+		//extensionGroup.pExtensionFlags[0] = extensionFlag;
 
 		if (pDrawArgExtension != nullptr)
 		{
 			CopyDrawArgExtensionData(extensionGroup.pExtensions[0], pDrawArgExtension);
 		}
 
-		extensionGroup.pExtensions[0].ExtensionID = extensionMask;
+		//extensionGroup.pExtensions[0].ExtensionID = extensionFlag;
 		groupEntry.Mask = s_DefaultMask;
 
-		if (!inverted) groupEntry.Mask |= extensionMask;
+		if (!inverted) groupEntry.Mask |= extensionFlag;
 	}
 
 	DrawArgExtensionGroup& EntityMaskManager::GetExtensionGroup(Entity entity)
@@ -107,51 +107,51 @@ namespace LambdaEngine
 		return componentMasks;
 	}
 
-	uint32 EntityMaskManager::GetExtensionMask(const ComponentType* type, bool& inverted)
+	uint32 EntityMaskManager::GetExtensionFlag(const ComponentType* type, bool& inverted)
 	{
 		if (auto it = s_ComponentTypeToMaskMap.find(type); it != s_ComponentTypeToMaskMap.end())
 		{
 			inverted = it->second.Inverted;
-			return it->second.Bit;
+			return it->second.Flag;
 		}
 
 		if (!s_Initialized)
 		{
 			// Generate a mask for this component type. Mask 0 is used as an error code.
-			static uint32 s_MaskCounter = 0;
-			uint32 bit = BIT(++s_MaskCounter);
+			static uint32 s_BitCounter = 0;
+			uint32 flag = BIT(++s_BitCounter);
 
 			//Set bit on other ComponentTypes
-			s_ComponentTypeToMaskMap[type] = { .Bit = bit, .Inverted = inverted };
+			s_ComponentTypeToMaskMap[type] = { .Flag = flag, .Inverted = inverted };
 
 			if (inverted)
 			{
-				s_DefaultMask |= bit;
+				s_DefaultMask |= flag;
 			}
 
-			return bit;
+			return flag;
 		}
 		else
 		{
-			LOG_WARNING("[EntityMaskManager]: New bit required for Component type %s but EntityMaskManager is already intialized, returning default mask %x", type->GetName(), s_DefaultMask);
+			LOG_WARNING("[EntityMaskManager]: New flag required for Component type %s but EntityMaskManager is already intialized, returning default mask %x", type->GetName(), s_DefaultMask);
 			return s_DefaultMask;
 		}
 	}
 
-	const DrawArgExtensionDesc& EntityMaskManager::GetExtensionDescFromExtensionMask(uint32 mask)
+	const DrawArgExtensionDesc& EntityMaskManager::GetExtensionDescFromExtensionFlag(uint32 flag)
 	{
-		ASSERT(s_ExtensionMaskToExtensionDescMap.contains(mask));
-		return s_ExtensionMaskToExtensionDescMap[mask];
+		ASSERT(s_ExtensionMaskToExtensionDescMap.contains(flag));
+		return s_ExtensionMaskToExtensionDescMap[flag];
 	}
 
 	void EntityMaskManager::BindTypeToExtensionDesc(const ComponentType* type, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType)
 	{
-		uint32 extensionMask = GetExtensionMask(type, invertOnNewComponentType);
+		uint32 extensionFlag = GetExtensionFlag(type, invertOnNewComponentType);
 
 		// Set extension description for later use
-		auto eIt = s_ExtensionMaskToExtensionDescMap.find(extensionMask);
+		auto eIt = s_ExtensionMaskToExtensionDescMap.find(extensionFlag);
 		if (eIt == s_ExtensionMaskToExtensionDescMap.end())
-			s_ExtensionMaskToExtensionDescMap[extensionMask] = extensionDesc;
+			s_ExtensionMaskToExtensionDescMap[extensionFlag] = extensionDesc;
 	}
 
 	void EntityMaskManager::CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc)

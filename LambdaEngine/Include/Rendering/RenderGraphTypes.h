@@ -337,12 +337,12 @@ namespace LambdaEngine
 		TextureView*	ppMipZeroTextureViews[MAX_TEXTURES_PER_EXTENSION]	= { nullptr };
 		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
 		uint32			TextureCount										= 0;
-		uint32			ExtensionID											= 0; // Zero is an invalid id.
+		//uint32			ExtensionID											= 0; // Zero is an invalid id.
 	};
 
 	struct DrawArgExtensionGroup
 	{
-		uint32					pExtensionMasks[MAX_EXTENSIONS_PER_MESH_TYPE];
+		//uint32					pExtensionFlags[MAX_EXTENSIONS_PER_MESH_TYPE];
 		DrawArgExtensionData	pExtensions[MAX_EXTENSIONS_PER_MESH_TYPE];
 		uint32					ExtensionCount = 0;
 	};

@@ -946,14 +946,43 @@ namespace LambdaEngine
 		LOG_ERROR("Iterations: %u\n", iterations);
 	}
 
-	DescriptorSet* RenderGraph::CreateDrawArgDescriptorSet()
+	DescriptorSet* RenderGraph::CreateDrawArgDescriptorSet(DescriptorSet* pSrc)
 	{
-		return nullptr;
+		if (m_DrawArgConfiguration.pDrawArgPipelineLayout == nullptr)
+		{
+			return nullptr;
+		}
+
+		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg DS", m_DrawArgConfiguration.pDrawArgPipelineLayout, m_DrawArgConfiguration.DrawArgSetIndex, m_pDescriptorHeap);
+
+		if (pSrc != nullptr)
+		{
+			m_pGraphicsDevice->CopyDescriptorSet(pSrc, pNewDescriptorSet);
+		}
+
+		return pNewDescriptorSet;
 	}
 
-	DescriptorSet* RenderGraph::CreateDrawArgExtensionDataDescriptorSet()
+	DescriptorSet* RenderGraph::CreateDrawArgExtensionDataDescriptorSet(DescriptorSet* pSrc)
 	{
-		return nullptr;
+		if (m_DrawArgConfiguration.pDrawArgExtensionDataPipelineLayout == nullptr)
+		{
+			return nullptr;
+		}
+
+		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg Extension Data DS", m_DrawArgConfiguration.pDrawArgExtensionDataPipelineLayout, m_DrawArgConfiguration.DrawArgExtensionDataSetIndex, m_pDescriptorHeap);
+
+		if (pSrc != nullptr)
+		{
+			m_pGraphicsDevice->CopyDescriptorSet(pSrc, pNewDescriptorSet);
+		}
+
+		return pNewDescriptorSet;
+	}
+
+	void RenderGraph::ReleaseDrawArgDescriptorSet(DescriptorSet* pDrawArgDescriptorSet)
+	{
+		m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pDrawArgDescriptorSet);
 	}
 
 	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)

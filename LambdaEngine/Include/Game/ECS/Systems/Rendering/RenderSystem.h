@@ -161,7 +161,7 @@ namespace LambdaEngine
 
 			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
 			TArray<uint32>					InstanceIndexToExtensionGroup;
-			bool	HasExtensions			= false;
+			bool	HasExtensionData		= false;
 			uint32	DrawArgsMask			= 0x0;
 
 			Buffer* pRasterInstanceBuffer				= nullptr;

@@ -22,7 +22,7 @@ namespace LambdaEngine
 	{
 		struct ComponentBit
 		{
-			uint32		Bit			= 0x0;
+			uint32		Flag		= 0x0;
 			bool		Inverted	= false; //Inverted means that the Bit will be set if the Component which maps to this ComponentBit is not present in an Entity
 		};
 
@@ -40,9 +40,9 @@ namespace LambdaEngine
 
 		static TArray<uint32> ExtractComponentMasksFromEntityMask(uint32 mask);
 
-		static uint32 GetExtensionMask(const ComponentType* type, bool& inverted);
+		static uint32 GetExtensionFlag(const ComponentType* type, bool& inverted);
 
-		static const DrawArgExtensionDesc& GetExtensionDescFromExtensionMask(uint32 mask);
+		static const DrawArgExtensionDesc& GetExtensionDescFromExtensionFlag(uint32 flag);
 
 	private:
 		static void BindTypeToExtensionDesc(const ComponentType* type, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
