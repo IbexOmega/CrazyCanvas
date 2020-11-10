@@ -76,8 +76,7 @@ MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 	DWORD length = UNLEN + 1;
 	char name[UNLEN + 1];
 	GetUserNameA(name, &length);
-	m_InGameName = name;
-	FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->SetText(m_InGameName.c_str());
+	FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->SetText(name);
 
 }
 
@@ -174,9 +173,9 @@ bool MultiplayerGUI::HasHostedServer() const
 bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
 
-	m_InGameName = FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->GetText();
+	LambdaEngine::String inGameName = FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->GetText();
 
-	State* pLobbyState = DBG_NEW LobbyState(m_InGameName, HasHostedServer());
+	State* pLobbyState = DBG_NEW LobbyState(inGameName, HasHostedServer());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;
