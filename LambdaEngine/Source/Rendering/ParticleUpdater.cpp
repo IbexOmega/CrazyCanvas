@@ -107,8 +107,8 @@ namespace LambdaEngine
 			instanceBindingDesc4,
 			instanceBindingDesc5,
 			instanceBindingDesc6,
-			instanceBindingDesc7,
-			instanceBindingDesc8
+			instanceBindingDesc7
+			//instanceBindingDesc8
 		});
 
 		DescriptorBindingDesc depthBindingDesc = {};
@@ -148,7 +148,7 @@ namespace LambdaEngine
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 8;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
-		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
+		descriptorCountDesc.AccelerationStructureDescriptorCount = 1;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName = "Particle Updater Descriptor Heap";
@@ -450,7 +450,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
 			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCES_BUFFER Descriptor Set 0 Binding 7", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
+		}/*
 		else if (resourceName == SCENE_TLAS)
 		{
 			constexpr uint32 setIndex = 0U;
@@ -465,7 +465,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
 
 			m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 8", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
+		}*/
 	}
 
 	void ParticleUpdater::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)

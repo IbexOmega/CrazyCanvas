@@ -59,7 +59,7 @@ layout (binding = 7, set = 0) restrict buffer AccelerationStructureInstance
 	SAccelerationStructureInstance Val[];
 } b_ASInstance;
 
-layout(binding = 8, set = 0) uniform accelerationStructureEXT u_TLAS;
+//layout(binding = 8, set = 0) uniform accelerationStructureEXT u_TLAS;
 
 layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
