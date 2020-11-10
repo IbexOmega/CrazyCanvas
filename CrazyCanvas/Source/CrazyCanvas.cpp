@@ -72,8 +72,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Failed to Register GUI Components");
 	}
 
-	ServerHostHelper::Init();
-
 	if (!BindComponentTypeMasks())
 	{
 		LOG_ERROR("Failed to bind Component Type Masks");

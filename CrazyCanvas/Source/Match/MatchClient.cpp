@@ -233,6 +233,7 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 
 bool MatchClient::OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event)
 {
+	UNREFERENCED_VARIABLE(event);
 	//Makes sure we have finished loading everything....
 
 	PlayerManagerClient::SetLocalPlayerStateLoaded();
