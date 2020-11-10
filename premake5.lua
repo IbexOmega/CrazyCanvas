@@ -555,6 +555,13 @@ workspace "LambdaEngine"
 		"ImGui",
 	}
 
+	prj_links_multiplayer =
+	{
+		"LambdaEngine",
+		"ImGui",
+		"Server",
+	}
+
 	-- CrazyCanvas Project
 	project "CrazyCanvas"
 		kind "WindowedApp"
@@ -578,7 +585,7 @@ workspace "LambdaEngine"
 		-- We do not want to compile HLSL files
 		excludes { prj_excludes }
 		-- Linking
-		links { prj_links }
+		links { prj_links_multiplayer }
 
 	project "*"
 
