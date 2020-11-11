@@ -432,22 +432,3 @@ bool MultiplayerGUI::CheckServerSettings(const HostGameDescription& serverSettin
 
 	return true;
 }
-
-void MultiplayerGUI::PopulateServerInfo()
-{
-	ComboBox* pCBPlayerCount = FrameworkElement::FindName<ComboBox>("PLAYER_NUMBER");
-	ComboBoxItem* pItem = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
-	int8 playersNumber = (int8)std::stoi(pItem->GetContent()->ToString().Str());
-
-	ComboBox* pCBPMapOption = FrameworkElement::FindName<ComboBox>("MAP_OPTION");
-	pItem = (ComboBoxItem*)pCBPMapOption->GetSelectedItem();
-	const char*  pMap = pItem->GetContent()->ToString().Str();
-
-	m_HostGameDesc.PlayersNumber = playersNumber;
-
-	if(std::strcmp(pMap, "Standard") == 0)
-		m_HostGameDesc.MapNumber = 0;
-
-	LOG_MESSAGE("Player count %d", playersNumber);
-	LOG_MESSAGE(pMap);
-}
