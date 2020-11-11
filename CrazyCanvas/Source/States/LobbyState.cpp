@@ -80,21 +80,18 @@ void LobbyState::FixedTick(LambdaEngine::Timestamp delta)
 
 bool LobbyState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
 {
-	LOG_ERROR("LobbyState::OnPlayerJoinedEvent(%s)", event.pPlayer->GetName().c_str());
 	m_LobbyGUI->AddPlayer(*event.pPlayer);
 	return false;
 }
 
 bool LobbyState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 {
-	LOG_ERROR("LobbyState::OnPlayerLeftEvent(%s)", event.pPlayer->GetName().c_str());
 	m_LobbyGUI->RemovePlayer(*event.pPlayer);
 	return false;
 }
 
 bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 {
-	LOG_ERROR("LobbyState::OnPlayerStateUpdatedEvent(%s)", event.pPlayer->GetName().c_str());
 	const Player* pPlayer = event.pPlayer;
 	if (pPlayer->GetState() == GAME_STATE_SETUP)
 	{
@@ -109,21 +106,18 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 
 bool LobbyState::OnPlayerHostUpdatedEvent(const PlayerHostUpdatedEvent& event)
 {
-	LOG_ERROR("LobbyState::OnPlayerHostUpdatedEvent(%s)", event.pPlayer->GetName().c_str());
 	m_LobbyGUI->UpdatePlayerHost(*event.pPlayer);
 	return false;
 }
 
 bool LobbyState::OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event)
 {
-	LOG_ERROR("LobbyState::OnPlayerPingUpdatedEvent(%s)", event.pPlayer->GetName().c_str());
 	m_LobbyGUI->UpdatePlayerPing(*event.pPlayer);
 	return false;
 }
 
 bool LobbyState::OnPlayerReadyUpdatedEvent(const PlayerReadyUpdatedEvent& event)
 {
-	LOG_ERROR("LobbyState::OnPlayerReadyUpdatedEvent(%s)", event.pPlayer->GetName().c_str());
 	m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
 	return false;
 }
@@ -136,7 +130,6 @@ bool LobbyState::OnChatEvent(const ChatEvent& event)
 
 bool LobbyState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& packet)
 {
-	LOG_ERROR("LobbyState::OnPacketGameSettingsReceived()");
 	m_LobbyGUI->UpdateSettings(packet.Packet);
 	return false;
 }
