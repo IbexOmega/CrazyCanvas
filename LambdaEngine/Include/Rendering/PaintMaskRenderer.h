@@ -114,6 +114,7 @@ namespace LambdaEngine
 		bool CreateCommandLists();
 		bool CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc);
 		bool CreatePipelineState();
+		void AddResetHitPoint();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags);
 
@@ -132,15 +133,15 @@ namespace LambdaEngine
 			EPaintMode		PaintMode			= EPaintMode::NONE;
 			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 			ETeam			Team				= ETeam::NONE;
-			uint32			Padding0			= 0;
 			bool			ClearClient			= false;
 		};
 
 		struct FrameSettings
 		{
-			uint32 ShouldReset	= 0;
-			uint32 ShouldPaint	= 0;
-			uint32 PaintCount	= 0;
+			uint32	ShouldReset	= 0;
+			uint32	ShouldPaint	= 0;
+			uint32	PaintCount	= 0;
+			float	Angle		= 0.f;
 		};
 
 		struct DrawArgKey
@@ -231,6 +232,7 @@ namespace LambdaEngine
 
 		TArray<RenderTarget>															m_RenderTargets;
 	private:
+		inline static bool				s_ShouldReset = false;
 		static TArray<UnwrapData>		s_ServerCollisions;
 		static TArray<UnwrapData>		s_ClientCollisions;
 	};
