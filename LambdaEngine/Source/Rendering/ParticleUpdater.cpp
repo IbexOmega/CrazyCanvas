@@ -107,8 +107,8 @@ namespace LambdaEngine
 			instanceBindingDesc4,
 			instanceBindingDesc5,
 			instanceBindingDesc6,
-			instanceBindingDesc7
-			//instanceBindingDesc8
+			instanceBindingDesc7,
+			instanceBindingDesc8
 		});
 
 		DescriptorBindingDesc depthBindingDesc = {};
@@ -263,6 +263,22 @@ namespace LambdaEngine
 		m_PushConstant.delta = float(delta.AsSeconds());
 
 		m_UpdatePipeline.Update(delta, modFrameIndex, backBufferIndex);
+	}
+
+	void ParticleUpdater::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
+	{
+		if (resourceName == SCENE_TLAS)
+		{
+			constexpr uint32 setIndex = 0U;
+			constexpr uint32 setBinding = 8U;
+
+			SDescriptorTLASUpdateDesc descriptorUpdateDesc = {};
+			descriptorUpdateDesc.ppTLAS = &pAccelerationStructure;
+			descriptorUpdateDesc.FirstBinding = setBinding;
+			descriptorUpdateDesc.DescriptorCount = 1;
+
+			m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 8", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+		}
 	}
 
 	void ParticleUpdater::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
@@ -450,22 +466,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
 			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCES_BUFFER Descriptor Set 0 Binding 7", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}/*
-		else if (resourceName == SCENE_TLAS)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 8U;
-
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
-
-			m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 8", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}*/
+		}
 	}
 
 	void ParticleUpdater::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)

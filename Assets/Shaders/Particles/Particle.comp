@@ -59,7 +59,7 @@ layout (binding = 7, set = 0) restrict buffer AccelerationStructureInstance
 	SAccelerationStructureInstance Val[];
 } b_ASInstance;
 
-//layout(binding = 8, set = 0) uniform accelerationStructureEXT u_TLAS;
+layout(binding = 8, set = 0) uniform accelerationStructureEXT u_TLAS;
 
 layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
@@ -127,7 +127,7 @@ void main()
 		}
 
 		vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
-		vec4 vpPos = frameBuffer.Projection * frameBuffer.View * vec4(nextPos, 1.f);
+		/*vec4 vpPos = frameBuffer.Projection * frameBuffer.View * vec4(nextPos, 1.f);
 		vpPos.xy = vpPos.xy/vpPos.w * 0.5f + 0.5f;
 		vpPos.y = 1.f - vpPos.y;
 		vec2 uv = vpPos.xy;
@@ -143,10 +143,36 @@ void main()
 			vec3 preV = particle.Velocity;
 			particle.Velocity *= particle.FrictionFactor;
 			particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
+		}*/
+
+		// Ray Query
+		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
+		vec3  origin    = particle.Transform[3].xyz;
+		vec3  direction = normalize(particle.Velocity);
+		float tMin      = 0.01f;
+		float tMax      = length(particle.Velocity*dt);
+
+		// Initializes a ray query object but does not start traversal
+		rayQueryEXT rayQuery;
+		rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, origin, tMin,
+							direction, tMax);
+		
+		// Start traversal: return false if traversal is complete
+		while(rayQueryProceedEXT(rayQuery))
+		{
+
 		}
 
-		rayQueryEXT rayQuery;
-		
+		// Returns type of committed (true) intersection
+		if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
+		{
+			// Got an intersection == Shadow
+			//outColor *= 0.1;
+			//vec3 preV = particle.Velocity;
+			particle.Velocity = vec3(0.f);
+			//particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
+		}
+
 		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);
 		particle.CurrentLife -= dt;
 
