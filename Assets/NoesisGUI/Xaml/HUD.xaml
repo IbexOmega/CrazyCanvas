@@ -236,7 +236,7 @@
             Grid.Row="1">
 
             <Grid
-                x:Name="TAB_MENU_GRID"
+                x:Name="SCOREBOARD_GRID"
                 Background="#9B101010"
                 MinHeight="800"
                 MinWidth="1600"

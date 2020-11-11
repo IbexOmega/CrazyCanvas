@@ -31,7 +31,7 @@ namespace LambdaEngine
 		{EAction::ACTION_ATTACK_MELEE, "E"},
 
 		// General
-		{EAction::ACTION_GENERAL_TAB_MENU, "TAB"},
+		{EAction::ACTION_GENERAL_SCOREBOARD, "TAB"},
 
 		// Debug
 		{EAction::ACTION_CAM_ROT_UP, "UP"},

@@ -152,14 +152,14 @@ void HUDSystem::FixedTick(Timestamp delta)
 	}
 
 	static bool activeButtonChanged = false;
-	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_TAB_MENU) && !activeButtonChanged)
+	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
-		m_HUDGUI->DisplayTabMenu(true);
+		m_HUDGUI->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
-	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_TAB_MENU) && activeButtonChanged)
+	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
-		m_HUDGUI->DisplayTabMenu(false);
+		m_HUDGUI->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
 }

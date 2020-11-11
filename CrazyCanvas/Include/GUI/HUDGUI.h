@@ -67,7 +67,7 @@ public:
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
-	void DisplayTabMenu(bool visible);
+	void DisplayScoreboardMenu(bool visible);
 
 	void AddPlayer(const Player& newPlayer);
 	void RemovePlayer(const Player& player);
@@ -93,10 +93,10 @@ private:
 	Noesis::TextBlock* m_pPaintAmmoText = nullptr;
 
 	Noesis::Grid* m_pHitIndicatorGrid	= nullptr;
-	Noesis::Grid* m_pTabMenuGrid		= nullptr;
+	Noesis::Grid* m_pScoreboardGrid		= nullptr;
 
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
 
-	bool	m_TabMenuVisible	= false;
+	bool	m_ScoreboardVisible	= false;
 };

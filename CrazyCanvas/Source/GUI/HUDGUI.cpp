@@ -214,19 +214,19 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
-void HUDGUI::DisplayTabMenu(bool visible)
+void HUDGUI::DisplayScoreboardMenu(bool visible)
 {
 	// Toggle to visible
-	if (!m_TabMenuVisible && visible)
+	if (!m_ScoreboardVisible && visible)
 	{
-		m_TabMenuVisible = true;
-		m_pTabMenuGrid->SetVisibility(Visibility::Visibility_Visible);
+		m_ScoreboardVisible = true;
+		m_pScoreboardGrid->SetVisibility(Visibility::Visibility_Visible);
 	}
 	// Toggle to hidden
-	else if (m_TabMenuVisible && !visible)
+	else if (m_ScoreboardVisible && !visible)
 	{
-		m_TabMenuVisible = false;
-		m_pTabMenuGrid->SetVisibility(Visibility::Visibility_Hidden);
+		m_ScoreboardVisible = false;
+		m_pScoreboardGrid->SetVisibility(Visibility::Visibility_Hidden);
 	}
 }
 
@@ -396,7 +396,7 @@ void HUDGUI::InitGUI()
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
 
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
-	m_pTabMenuGrid		= FrameworkElement::FindName<Grid>("TAB_MENU_GRID");
+	m_pScoreboardGrid	= FrameworkElement::FindName<Grid>("SCOREBOARD_GRID");
 
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
