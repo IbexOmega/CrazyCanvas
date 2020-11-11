@@ -34,6 +34,8 @@ private:
 	Noesis::TextBlock* m_pMostDeathsText	= nullptr;
 	Noesis::TextBlock* m_pMostFlagsText		= nullptr;
 
+	GUID_Lambda m_GameOverSound;
+
 	NS_IMPLEMENT_INLINE_REFLECTION_(GameOverGUI, Noesis::UserControl, "CrazyCanvas.GameOverGUI")
 
 };

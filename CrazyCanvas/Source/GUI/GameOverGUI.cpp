@@ -7,12 +7,14 @@
 
 #include "World/Player/PlayerActionSystem.h"
 
+#include "Resources/ResourceManager.h"
+
 #include "NoesisPCH.h"
 
 
 GameOverGUI::GameOverGUI()
 {
-
+	m_GameOverSound = LambdaEngine::ResourceManager::LoadSoundEffect2DFromFile("2currency.wav");
 }
 
 GameOverGUI::~GameOverGUI()
@@ -43,6 +45,7 @@ void GameOverGUI::DisplayGameOverGrid(bool isVisible)
 		m_pGameOverGrid->SetVisibility(Noesis::Visibility_Hidden);
 
 	m_pShowWindowStoryboard->Begin();
+	LambdaEngine::ResourceManager::GetSoundEffect2D(m_GameOverSound)->PlayOnce(1.0f);
 }
 
 void GameOverGUI::SetWinningTeam(uint8 winningTeamIndex)
