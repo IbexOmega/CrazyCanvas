@@ -32,6 +32,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::UnregisterEventHandler<PlayerDeadUpdatedEvent>(this, &HUDSystem::OnPlayerDeadUpdated);
+	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 }
 
 void HUDSystem::Init()
@@ -75,6 +76,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::RegisterEventHandler<PlayerDeadUpdatedEvent>(this, &HUDSystem::OnPlayerDeadUpdated);
+	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
@@ -264,6 +266,40 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 			}
 		}
 	}
+
+	return false;
+}
+
+bool HUDSystem::OnGameOver(const GameOverEvent& event)
+{
+	//un-lock mouse
+	Input::PushInputMode(EInputLayer::GUI);
+
+	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
+
+	PlayerPair mostKills((uint8)0, nullptr);
+	PlayerPair mostFlags((uint8)0, nullptr);
+	PlayerPair mostDeaths((uint8)0, nullptr);
+
+	for (auto& pair : playerMap)
+	{
+		const Player* pPlayer = &pair.second;
+
+		uint8 kills = pPlayer->GetKills();
+		uint8 deaths = pPlayer->GetDeaths();
+		uint8 flags = pPlayer->GetFlagsCaptured();
+		
+		if (kills >= mostKills.first)
+			mostKills = std::make_pair(kills, pPlayer);
+
+		if (deaths >= mostDeaths.first)
+			mostDeaths = std::make_pair(deaths, pPlayer);
+
+		if (flags >= mostFlags.first)
+			mostFlags = std::make_pair(flags, pPlayer);
+	}
+
+	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostFlags, mostDeaths);
 
 	return false;
 }

@@ -20,6 +20,8 @@
 #include "NsGui/StackPanel.h"
 #include "NsGui/ObservableCollection.h"
 
+#include "Lobby/PlayerManagerBase.h"
+
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
@@ -47,6 +49,7 @@ enum class EPlayerProperty
 	PLAYER_PROPERTY_FLAGS_DEFENDED,
 	PLAYER_PROPERTY_PING,
 };
+typedef  std::pair<uint8, const Player*> PlayerPair;
 
 class HUDGUI : public Noesis::Grid
 {
@@ -56,10 +59,6 @@ public:
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
-	void OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
@@ -68,6 +67,7 @@ public:
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
 	void DisplayScoreboardMenu(bool visible);
+	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
 
 	void AddPlayer(const Player& newPlayer);
 	void RemovePlayer(const Player& player);
@@ -85,6 +85,7 @@ private:
 
 private:
 	GameGUIState m_GUIState;
+	bool m_IsGameOver = false;
 
 	Noesis::Image* m_pWaterAmmoRect = nullptr;
 	Noesis::Image* m_pPaintAmmoRect = nullptr;
