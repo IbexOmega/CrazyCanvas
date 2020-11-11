@@ -98,6 +98,10 @@ void LobbyGUI::RemovePlayer(const Player& player)
 	if (pGrid)
 	{
 		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
+
+		if (player.IsHost())
+			FrameworkElement::GetView()->GetContent()->UnregisterName("host_icon");
+
 		return;
 	}
 
@@ -105,6 +109,9 @@ void LobbyGUI::RemovePlayer(const Player& player)
 	if (pGrid)
 	{
 		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
+
+		if(player.IsHost())
+			FrameworkElement::GetView()->GetContent()->UnregisterName("host_icon");
 	}
 }
 
@@ -130,7 +137,6 @@ void LobbyGUI::UpdatePlayerHost(const Player& player)
 	// Set host icon
 	if (player.IsHost())
 	{
-		const LambdaEngine::String uid = std::to_string(player.GetUID());
 		// Host icon is not an image due to AA problems, it is a vector path instead
 		Viewbox* crownBox = FrameworkElement::FindName<Viewbox>("host_icon");
 		if (crownBox)
