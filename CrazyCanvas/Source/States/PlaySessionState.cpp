@@ -28,6 +28,7 @@
 #include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -35,9 +36,10 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
-PlaySessionState::PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndPoint& endPoint) :
+#include "Lobby/PlayerManagerClient.h"
+
+PlaySessionState::PlaySessionState(bool singlePlayer) :
 	m_Singleplayer(singlePlayer),
-	m_EndPoint(endPoint),
 	m_MultiplayerClient()
 {
 	using namespace LambdaEngine;
@@ -61,6 +63,18 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	using namespace LambdaEngine;
+
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -88,7 +102,8 @@ void PlaySessionState::Init()
 	}
 	else
 	{
-		ClientSystem::GetInstance().Connect(m_EndPoint);
+		//Called to tell the server we are ready to start the match
+		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
 }
 
