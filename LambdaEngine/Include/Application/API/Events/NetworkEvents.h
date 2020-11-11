@@ -58,23 +58,29 @@ namespace LambdaEngine
 	struct ClientDisconnectingEvent : public ClientConnectionEventBase
 	{
 	public:
-		inline ClientDisconnectingEvent(IClient* pIClient)
-			: ClientConnectionEventBase(pIClient)
+		inline ClientDisconnectingEvent(IClient* pIClient, const String& reason)
+			: ClientConnectionEventBase(pIClient),
+			Reason(reason)
 		{
 		}
 
 		DECLARE_CONNECTION_EVENT_TYPE(ClientDisconnectingEvent);
+
+		String Reason;
 	};
 
 	struct ClientDisconnectedEvent : public ClientConnectionEventBase
 	{
 	public:
-		inline ClientDisconnectedEvent(IClient* pIClient)
-			: ClientConnectionEventBase(pIClient)
+		inline ClientDisconnectedEvent(IClient* pIClient, const String& reason)
+			: ClientConnectionEventBase(pIClient),
+			Reason(reason)
 		{
 		}
 
 		DECLARE_CONNECTION_EVENT_TYPE(ClientDisconnectedEvent);
+
+		String Reason;
 	};
 
 	struct ServerFullEvent : public ClientConnectionEventBase

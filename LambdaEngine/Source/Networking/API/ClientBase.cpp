@@ -26,7 +26,8 @@ namespace LambdaEngine
 		m_ReceivedPackets(),
 		m_BufferIndex(0),
 		m_Lock(),
-		m_LockReceivedPackets()
+		m_LockReceivedPackets(),
+		m_Reason()
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Clients.insert(this);
@@ -336,14 +337,15 @@ namespace LambdaEngine
 		LOG_INFO("[ClientBase]: Disconnected");
 		m_State = STATE_DISCONNECTED;
 		if (m_pHandler)
-			m_pHandler->OnDisconnected(this);
+			m_pHandler->OnDisconnected(this, m_Reason);
 	}
 
 	void ClientBase::OnTerminationRequested(const std::string& reason)
 	{
 		LOG_WARNING("[ClientBase]: Disconnecting... [%s]", reason.c_str());
 		m_State = STATE_DISCONNECTING;
-		m_pHandler->OnDisconnecting(this);
+		m_Reason = reason;
+		m_pHandler->OnDisconnecting(this, reason);
 
 		if (m_SendDisconnectPacket)
 			SendDisconnect();

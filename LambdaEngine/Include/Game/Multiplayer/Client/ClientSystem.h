@@ -25,8 +25,8 @@ namespace LambdaEngine
 
 		virtual void OnConnecting(IClient* pClient) override;
 		virtual void OnConnected(IClient* pClient) override;
-		virtual void OnDisconnecting(IClient* pClient) override;
-		virtual void OnDisconnected(IClient* pClient) override;
+		virtual void OnDisconnecting(IClient* pClient, const String& reason) override;
+		virtual void OnDisconnected(IClient* pClient, const String& reason) override;
 		virtual void OnPacketReceived(IClient* pClient, NetworkSegment* pPacket) override;
 		virtual void OnClientReleased(IClient* pClient) override;
 		virtual void OnServerFull(IClient* pClient) override;

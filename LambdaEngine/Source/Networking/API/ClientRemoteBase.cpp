@@ -83,7 +83,7 @@ namespace LambdaEngine
 			{
 				LOG_WARNING("[ClientRemoteBase]: Disconnecting... [%s]", reason.c_str());
 				if (m_pHandler)
-					m_pHandler->OnDisconnecting(this);
+					m_pHandler->OnDisconnecting(this, reason);
 
 				if (!m_DisconnectedByRemote)
 					SendDisconnect();
@@ -95,7 +95,7 @@ namespace LambdaEngine
 
 				LOG_INFO("[ClientRemoteBase]: Disconnected");
 				if (m_pHandler)
-					m_pHandler->OnDisconnected(this);
+					m_pHandler->OnDisconnected(this, reason);
 
 				return true;
 			}
