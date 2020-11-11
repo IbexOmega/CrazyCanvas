@@ -138,15 +138,6 @@ namespace LambdaEngine
 			}
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
 		}
-
-		if (resourceName == "G_BUFFER_DEPTH_STENCIL")
-		{
-			for (uint32 i = 0; i < imageCount; i++)
-			{
-				// Not sure if this the correct textureView
-				m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]);
-			}
-		}
 		
 		// Writing textures to DescriptorSets
 		if (resourceName == SCENE_ALBEDO_MAPS)
@@ -156,9 +147,9 @@ namespace LambdaEngine
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
-				Sampler* sampler = Sampler::GetLinearSampler();
+				Sampler* pSampler = Sampler::GetLinearSampler();
 				uint32 bindingIndex = 0;
-				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
 			}
 			else
 			{
@@ -172,9 +163,9 @@ namespace LambdaEngine
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
-				Sampler* sampler = Sampler::GetLinearSampler();
+				Sampler* pSampler = Sampler::GetLinearSampler();
 				uint32 bindingIndex = 1;
-				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
 			}
 			else
 			{
@@ -188,14 +179,73 @@ namespace LambdaEngine
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
-				Sampler* sampler = Sampler::GetLinearSampler();
+				Sampler* pSampler = Sampler::GetLinearSampler();
 				uint32 bindingIndex = 2;
-				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
 			}
 			else
 			{
 				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_COMBINED_MATERIAL_MAPS", setIndex);
 			}
+		}
+
+		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 3;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] G_BUFFER_DEPTH_STENCIL", setIndex);
+			}
+
+			for (uint32 i = 0; i < imageCount; i++)
+			{
+				// Not sure if this the correct textureView
+				m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]); // used in beginRenderPass
+			}
+
+		}
+
+		else if (resourceName == "DIRL_SHADOWMAP")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 4;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] DIRL_SHADOWMAP", setIndex);
+			}
+
+		}
+		else if (resourceName == "SCENE_POINT_SHADOWMAPS")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 5;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_POINT_SHADOWMAPS", setIndex);
+			}
+
 		}
 	}
 
@@ -247,6 +297,27 @@ namespace LambdaEngine
 			else
 			{
 				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] PAINT_MASK_COLORS", setIndex);
+			}
+		}
+		else if (resourceName == SCENE_LIGHTS_BUFFER)
+		{
+			constexpr DescriptorSetIndex setIndex = 0U;
+
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet0 != nullptr)
+			{
+				m_DescriptorSet0->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					3,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_LIGHTS_BUFFER", setIndex);
 			}
 		}
 
@@ -423,7 +494,6 @@ namespace LambdaEngine
 						LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs paint masks");
 					}
 				}
-
 			}
 			else
 			{
@@ -498,8 +568,9 @@ namespace LambdaEngine
 									uint64& pipelineId) 
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
+
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
 
 		// Sort player rendering front to back
 		for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
@@ -551,7 +622,7 @@ namespace LambdaEngine
 		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		perFrameBufferDesc.DescriptorCount = 1;
 		perFrameBufferDesc.Binding = 0;
-		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -611,14 +682,45 @@ namespace LambdaEngine
 		paintMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		paintMaskDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
+		// LightBuffer
+		DescriptorBindingDesc lightBufferDesc = {};
+		lightBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		lightBufferDesc.DescriptorCount = 6000;
+		lightBufferDesc.Binding = 3;
+		lightBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		lightBufferDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_GBufferDepthStencil
+		DescriptorBindingDesc depthStencilDesc = {};
+		depthStencilDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		depthStencilDesc.DescriptorCount = 6000;
+		depthStencilDesc.Binding = 3;
+		depthStencilDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		depthStencilDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_DirLShadowMap
+		DescriptorBindingDesc dirLightShadowMapDesc = {};
+		dirLightShadowMapDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		dirLightShadowMapDesc.DescriptorCount = 6000;
+		dirLightShadowMapDesc.Binding = 4;
+		dirLightShadowMapDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		dirLightShadowMapDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_PointLShadowMap
+		DescriptorBindingDesc pointLightShadowMapDesc = {};
+		pointLightShadowMapDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		pointLightShadowMapDesc.DescriptorCount = 6000;
+		pointLightShadowMapDesc.Binding = 5;
+		pointLightShadowMapDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		pointLightShadowMapDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc };
+		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc, dirLightShadowMapDesc, pointLightShadowMapDesc };
 
 		// maps to SET = 2 (DRAW_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
@@ -647,7 +749,8 @@ namespace LambdaEngine
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 4;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 7;
+			;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 4;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
