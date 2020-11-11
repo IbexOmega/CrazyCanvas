@@ -163,9 +163,19 @@ void main()
 		// Returns type of committed (true) intersection
 		if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
 		{
-			vec3 preV = particle.Velocity;
-			particle.Velocity *= particle.FrictionFactor;
-			particle.Velocity = normalize(-preV) * particle.Bounciness;
+			// Set position to be at the intersection point.
+			float tHit = rayQueryGetIntersectionTEXT(rayQuery, true);
+			particle.Transform[3].xyz = origin + tHit*direction;
+			particle.Bounciness = 2.f;
+			//vec3 preV = particle.Velocity;
+			particle.Velocity = vec3(0.f);//particle.FrictionFactor;
+			//particle.Velocity = -preV * particle.Bounciness;
+		}
+
+		// If we will skip to bounce the particles, this should not be named Bounciness. If not, this should be removed.
+		if(particle.Bounciness > 1.5f)
+		{
+			particle.Velocity = vec3(0.f);
 		}
 
 		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);
