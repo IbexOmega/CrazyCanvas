@@ -5,7 +5,7 @@
 
 namespace LambdaEngine
 {
-	#define PHASE_COUNT 3u
+	#define PHASE_COUNT 4u
 	#define LAST_PHASE PHASE_COUNT - 1u
 
 	struct Job

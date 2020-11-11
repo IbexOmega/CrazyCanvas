@@ -6,8 +6,6 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Entity.h"
 
-#include "GUI/GUITest.h"
-
 #include "Rendering/IRenderGraphCreateHandler.h"
 #include "Rendering/ImGuiRenderer.h"
 
@@ -58,7 +56,6 @@ private:
 	LambdaEngine::Entity m_PointLights[10];
 	LambdaEngine::Entity m_Emitters[10];
 
-	Noesis::Ptr<GUITest> m_GUITest;
 	Noesis::Ptr<Noesis::IView> m_View;
 
 	LambdaEngine::RenderGraphEditor*	m_pRenderGraphEditor	= nullptr;

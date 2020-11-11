@@ -126,9 +126,11 @@ bool HealthSystemServer::InitInternal()
 {
 	using namespace LambdaEngine;
 
-	if (!HealthSystem::InitInternal())
+	// Register system
 	{
-		return false;
+		SystemRegistration systemReg = {};
+		HealthSystem::CreateBaseSystemRegistration(systemReg);
+		RegisterSystem(TYPE_NAME(HealthSystemServer), systemReg);
 	}
 
 	// Register eventhandler

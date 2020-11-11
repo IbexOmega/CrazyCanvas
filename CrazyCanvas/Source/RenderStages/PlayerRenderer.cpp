@@ -115,8 +115,16 @@ namespace LambdaEngine
 		m_CurrModFrameIndex = modFrameIndex;
 	}
 
-	void PlayerRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
+	void PlayerRenderer::UpdateTextureResource(
+		const String& resourceName,
+		const TextureView* const* ppPerImageTextureViews,
+		const TextureView* const* ppPerSubImageTextureViews,
+		const Sampler* const* ppPerImageSamplers,
+		uint32 imageCount,
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
@@ -462,7 +470,7 @@ namespace LambdaEngine
 									if ((mask & meshPaintBit) != invertedUInt)
 									{
 										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-										TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+										TextureView* pTextureView = extension.ppTextureViews[0];
 										textureViews.PushBack(pTextureView);
 									}
 								}

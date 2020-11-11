@@ -394,11 +394,22 @@ namespace LambdaEngine
 								}
 								writer.EndArray();
 
-								writer.String("closest_hit_shaders");
+								writer.String("hit_group_shaders");
 								writer.StartArray();
-								for (uint32 ch = 0; ch < renderStageIt->second.RayTracing.Shaders.ClosestHitShaderCount; ch++)
+								for (uint32 ch = 0; ch < renderStageIt->second.RayTracing.Shaders.HitGroupShaderCount; ch++)
 								{
-									writer.String(renderStageIt->second.RayTracing.Shaders.pClosestHitShaderNames[ch].c_str());
+									writer.StartObject();
+
+									writer.String("closest_hit_shader");
+									writer.String(renderStageIt->second.RayTracing.Shaders.pHitGroupShaderNames[ch].ClosestHitShaderName.c_str());
+
+									writer.String("any_hit_shader");
+									writer.String(renderStageIt->second.RayTracing.Shaders.pHitGroupShaderNames[ch].AnyHitShaderName.c_str());
+
+									writer.String("intersection_shader");
+									writer.String(renderStageIt->second.RayTracing.Shaders.pHitGroupShaderNames[ch].IntersectionShaderName.c_str());
+
+									writer.EndObject();
 								}
 								writer.EndArray();
 							}
@@ -850,14 +861,30 @@ namespace LambdaEngine
 
 						renderStage.RayTracing.Shaders.MissShaderCount = missShadersArray.Size();
 
-						GenericArray closestHitShadersArray = shadersObject["closest_hit_shaders"].GetArray();
-
-						for (uint32 ch = 0; ch < closestHitShadersArray.Size(); ch++)
+						GenericArray hitGroupShadersArray = shadersObject["hit_group_shaders"].GetArray();
+						uint32 closestHitShaderCount = 0;
+						uint32 anyHitShaderCount = 0;
+						uint32 intersectionShaderCount = 0;
+						for (uint32 hg = 0; hg < hitGroupShadersArray.Size(); hg++)
 						{
-							renderStage.RayTracing.Shaders.pClosestHitShaderNames[ch] = closestHitShadersArray[ch].GetString();
-						}
+							GenericObject hitGroupShadersObject = hitGroupShadersArray[hg].GetObject();
 
-						renderStage.RayTracing.Shaders.ClosestHitShaderCount = closestHitShadersArray.Size();
+							renderStage.RayTracing.Shaders.pHitGroupShaderNames[hg].ClosestHitShaderName = hitGroupShadersObject["closest_hit_shader"].GetString();
+							renderStage.RayTracing.Shaders.pHitGroupShaderNames[hg].AnyHitShaderName = hitGroupShadersObject["any_hit_shader"].GetString();
+							renderStage.RayTracing.Shaders.pHitGroupShaderNames[hg].IntersectionShaderName = hitGroupShadersObject["intersection_shader"].GetString();
+
+							if (!renderStage.RayTracing.Shaders.pHitGroupShaderNames[hg].ClosestHitShaderName.empty())
+								closestHitShaderCount++;
+							if (!renderStage.RayTracing.Shaders.pHitGroupShaderNames[hg].AnyHitShaderName.empty())
+								anyHitShaderCount++;
+							if (!renderStage.RayTracing.Shaders.pHitGroupShaderNames[hg].IntersectionShaderName.empty())
+								intersectionShaderCount++;
+						}
+						renderStage.RayTracing.Shaders.ClosestHitShaderCount = closestHitShaderCount;
+						renderStage.RayTracing.Shaders.AnyHitShaderCount = anyHitShaderCount;
+						renderStage.RayTracing.Shaders.IntersectionShaderCount = intersectionShaderCount;
+
+						renderStage.RayTracing.Shaders.HitGroupShaderCount = hitGroupShadersArray.Size();
 					}
 
 					for (uint32 r = 0; r < resourceStateArray.Size(); r++)

@@ -175,9 +175,9 @@ void main()
 	vec3 sampledMaterial	= texture(u_CombinedMaterialMaps[hitDescription.MaterialIndex],	hitDescription.TexCoord).rgb;
 
 	vec3 albedo				= pow(  materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	float ao				= 		materialParameters.AO * sampledMaterial.b;
-	float roughness			= 		materialParameters.Roughness * sampledMaterial.r;
-	float metallic			= 		materialParameters.Metallic * sampledMaterial.g;
+	float ao				= 		materialParameters.AO * sampledMaterial.r;
+	float roughness			= 		materialParameters.Roughness * sampledMaterial.g;
+	float metallic			= 		materialParameters.Metallic * sampledMaterial.b;
 
 	s_PrimaryPayload.HitPosition		= hitDescription.Position;
 	s_PrimaryPayload.Normal				= mix(hitDescription.Normal, paintDescription.Normal, paintDescription.Interpolation);

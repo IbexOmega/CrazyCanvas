@@ -198,11 +198,14 @@ namespace LambdaEngine
 	void ImGuiRenderer::UpdateTextureResource(
 		const String& resourceName, 
 		const TextureView* const* ppPerImageTextureViews, 
-		const TextureView* const* ppPerSubImageTextureViews, 
+		const TextureView* const* ppPerSubImageTextureViews,
+		const Sampler* const* ppPerImageSamplers,
 		uint32 imageCount, 
 		uint32 subImageCount,
 		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
+
 		if (subImageCount == 1 || backBufferBound || subImageCount == imageCount)
 		{
 			if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
@@ -324,8 +327,14 @@ namespace LambdaEngine
 							DrawArgExtensionData& extensionData = extensionGroup->pExtensions[extensionIndex];
 							for (uint32 textureIndex = 0; textureIndex < extensionData.TextureCount; textureIndex++)
 							{
-								UpdateTextureResource(extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
-									&extensionData.ppTextureViews[textureIndex], &extensionData.ppTextureViews[textureIndex], 1, 1, false);
+								UpdateTextureResource(
+									extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
+									&extensionData.ppTextureViews[textureIndex],
+									&extensionData.ppTextureViews[textureIndex],
+									&extensionData.ppSamplers[textureIndex],
+									1,
+									1,
+									false);
 							}
 						}
 					}
