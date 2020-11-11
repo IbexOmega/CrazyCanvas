@@ -14,6 +14,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "World/LevelManager.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
@@ -24,11 +26,11 @@ LobbyGUI::LobbyGUI()
 	// Get commonly used elements
 	m_pBlueTeamStackPanel		= FrameworkElement::FindName<StackPanel>("BlueTeamStackPanel");
 	m_pRedTeamStackPanel		= FrameworkElement::FindName<StackPanel>("RedTeamStackPanel");
-	m_pChatPanel			= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
+	m_pChatPanel				= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
 	m_pSettingsNamesStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsNamesStackPanel");
 	m_pSettingsHostStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsClientStackPanel");
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
-	m_pChatInputTextBox		= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
+	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 
 	SetHostMode(false);
 
@@ -42,11 +44,11 @@ LobbyGUI::~LobbyGUI()
 
 void LobbyGUI::InitGUI()
 {
-	AddSettingComboBox(SETTING_MAP,			"Map",			{ "Daniel's Creation" }, 0);
-	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",		{ "3 min", "5 min", "10 min", "15 min" }, 1);
-	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",		{ "3", "5", "10", "15" }, 1);
-	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",		{ "4", "6", "8", "10" }, 3);
-	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",		{ "True", "False" }, 1);
+	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
+	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
+	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
+	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
+	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
 }
 
