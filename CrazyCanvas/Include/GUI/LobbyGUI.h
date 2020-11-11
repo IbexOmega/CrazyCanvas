@@ -23,7 +23,7 @@ public:
 	LobbyGUI();
 	~LobbyGUI();
 	
-	void InitGUI();
+	void InitGUI(LambdaEngine::String name);
 
 	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);

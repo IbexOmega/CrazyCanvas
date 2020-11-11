@@ -206,7 +206,13 @@ bool PlayerManagerServer::OnPacketPlayerReadyReceived(const PacketReceivedEvent<
 
 void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 {
-	HandlePlayerLeft(pClient->GetUID());
+	if (HandlePlayerLeft(pClient->GetUID()))
+	{
+		if (!s_Players.empty())
+		{
+			SetPlayerHost(&(s_Players.begin()->second));
+		}
+	}
 
 	PacketLeave packet;
 	packet.UID = pClient->GetUID();

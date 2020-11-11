@@ -62,7 +62,7 @@ void LobbyState::Init()
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	m_LobbyGUI->InitGUI();
+	m_LobbyGUI->InitGUI(m_Name);
 
 	PlayerManagerClient::Reset();
 	PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);

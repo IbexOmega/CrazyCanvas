@@ -43,7 +43,7 @@ LobbyGUI::~LobbyGUI()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
 }
 
-void LobbyGUI::InitGUI()
+void LobbyGUI::InitGUI(LambdaEngine::String name)
 {
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
 	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
@@ -52,8 +52,7 @@ void LobbyGUI::InitGUI()
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
 
-	LambdaEngine::String serverName = PlayerManagerClient::GetPlayerLocal()->GetName();
-	strcpy(m_GameSettings.ServerName, (serverName + "'s server").c_str());
+	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
 
 	m_IsInitiated = true;
 }
