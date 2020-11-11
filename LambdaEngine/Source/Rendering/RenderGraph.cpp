@@ -1069,13 +1069,14 @@ namespace LambdaEngine
 
 			if (!currentBatch.IsEmpty())
 			{
+				const uint32 batchSize = currentBatch.GetSize();
 				if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
+					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), batchSize, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 				else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
+					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), batchSize, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 
 				m_SignalValue++;

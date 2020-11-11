@@ -523,7 +523,7 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	ECSCore* pECS = ECSCore::GetInstance();
 	ComponentArray<NetworkPositionComponent>* pNetworkPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-	if (pNetworkPosComponents->HasComponent(playerEntity))
+	if (pNetworkPosComponents != nullptr && pNetworkPosComponents->HasComponent(playerEntity))
 	{
 		NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
 

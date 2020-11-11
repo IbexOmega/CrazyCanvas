@@ -654,6 +654,12 @@ workspace "LambdaEngine"
 		includedirs { prj_include_dirs }
 		sysincludedirs { prj_sys_include_dirs }
 
+		-- defines
+		defines
+		{
+			"BUILD_SERVER"
+		}
+
 		-- Files
 		files { prj_files }
 		-- We do not want to compile HLSL files

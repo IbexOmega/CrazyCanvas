@@ -18,6 +18,7 @@ namespace LambdaEngine
 
 			s_Initialized = true;
 		}
+
 		return true;
 	}
 

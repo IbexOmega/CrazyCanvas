@@ -51,5 +51,4 @@ private:
 
 private:
 	std::queue<PaintPoint> m_PaintPointsOnClient;
-
 };

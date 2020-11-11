@@ -25,12 +25,13 @@ namespace LambdaEngine
 		memset(pData, 0, width * height * 2);
 
 		meshPaintComponent.pTexture = ResourceLoader::LoadTextureArrayFromMemory(
-			textureName, 
-			reinterpret_cast<void**>(&pData), 
-			1, width, height, 
-			EFormat::FORMAT_R8G8_UINT, 
+			textureName,
+			reinterpret_cast<void**>(&pData),
+			1, width, height,
+			EFormat::FORMAT_R8G8_UINT,
 			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, 
-			true, false);
+			true,
+			false);
 
 		VALIDATE(meshPaintComponent.pTexture != nullptr);
 
