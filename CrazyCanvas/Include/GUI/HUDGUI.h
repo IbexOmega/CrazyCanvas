@@ -17,10 +17,13 @@
 #include "NsGui/TextBlock.h"
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
+#include "NsGui/StackPanel.h"
 #include "NsGui/ObservableCollection.h"
 
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
+
+#include "Lobby/Player.h"
 
 #define MAX_AMMO 100
 
@@ -33,6 +36,16 @@ struct GameGUIState
 
 	int32 Ammo;
 	int32 AmmoCapacity;
+};
+
+enum class EPlayerProperty
+{
+	PLAYER_PROPERTY_NAME,
+	PLAYER_PROPERTY_KILLS,
+	PLAYER_PROPERTY_DEATHS,
+	PLAYER_PROPERTY_FLAGS_CAPTURED,
+	PLAYER_PROPERTY_FLAGS_DEFENDED,
+	PLAYER_PROPERTY_PING,
 };
 
 class HUDGUI : public Noesis::Grid
@@ -54,21 +67,35 @@ public:
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
+	void DisplayTabMenu(bool visible);
+
+	void AddPlayer(const Player& newPlayer);
+	void RemovePlayer(const Player& player);
+	void UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value);
+	void UpdateAllPlayerProperties(const Player& player);
 
 private:
-
 	void InitGUI();
+
+	// Helpers
+	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(HUDGUI, Noesis::Grid)
 
 private:
 	GameGUIState m_GUIState;
 
-	Noesis::Image* m_pWaterAmmoRect = nullptr;		
+	Noesis::Image* m_pWaterAmmoRect = nullptr;
 	Noesis::Image* m_pPaintAmmoRect = nullptr;
 	
 	Noesis::TextBlock* m_pWaterAmmoText = nullptr;
 	Noesis::TextBlock* m_pPaintAmmoText = nullptr;
 
-	Noesis::Grid* m_pHitIndicatorGrid = nullptr;
+	Noesis::Grid* m_pHitIndicatorGrid	= nullptr;
+	Noesis::Grid* m_pTabMenuGrid		= nullptr;
+
+	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
+	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
+
+	bool	m_TabMenuVisible	= false;
 };

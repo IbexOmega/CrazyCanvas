@@ -3,6 +3,7 @@
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/Core/GUIApplication.h"
+#include "GUI/GUIHelpers.h"
 
 #include "Game/State.h"
 
@@ -18,12 +19,11 @@
 #include "Match/Match.h"
 
 #include <string>
-#include "..\..\Include\GUI\HUDGUI.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
 
-HUDGUI::HUDGUI() : 
+HUDGUI::HUDGUI() :
 	m_GUIState()
 {
 	Noesis::GUI::LoadComponent(this, "HUD.xaml");
@@ -97,7 +97,7 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 		else if(m_GUIState.Health <= 60)
 			pBrush->SetColor(Color(255, 188, 0));
 		else if(m_GUIState.Health <= 80)
-			pBrush->SetColor(Color(141, 207, 0));		
+			pBrush->SetColor(Color(141, 207, 0));
 		else if(m_GUIState.Health == 100)
 			pBrush->SetColor(Color(0, 207, 56));
 	}
@@ -194,7 +194,7 @@ void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::
 		glm::vec3 res = glm::cross(forwardDir, nor);
 
 		rotation = glm::degrees(glm::acos(glm::dot(forwardDir, nor)));
-		
+
 		if (res.y > 0)
 		{
 			rotation *= -1;
@@ -214,6 +214,144 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
+void HUDGUI::DisplayTabMenu(bool visible)
+{
+	// Toggle to visible
+	if (!m_TabMenuVisible && visible)
+	{
+		m_TabMenuVisible = true;
+		m_pTabMenuGrid->SetVisibility(Visibility::Visibility_Visible);
+	}
+	// Toggle to hidden
+	else if (m_TabMenuVisible && !visible)
+	{
+		m_TabMenuVisible = false;
+		m_pTabMenuGrid->SetVisibility(Visibility::Visibility_Hidden);
+	}
+}
+
+void HUDGUI::AddPlayer(const Player& newPlayer)
+{
+	Ptr<Grid> pGrid = *new Grid();
+
+	pGrid->SetName(std::to_string(newPlayer.GetUID()).c_str());
+	FrameworkElement::GetView()->GetContent()->RegisterName(pGrid->GetName(), pGrid);
+
+	ColumnDefinitionCollection* pColumnCollection = pGrid->GetColumnDefinitions();
+	AddColumnDefinition(pColumnCollection, 2.0f, GridUnitType_Star);
+	AddColumnDefinition(pColumnCollection, 0.5f, GridUnitType_Star);
+	AddColumnDefinition(pColumnCollection, 0.5f, GridUnitType_Star);
+	AddColumnDefinition(pColumnCollection, 1.0f, GridUnitType_Star);
+	AddColumnDefinition(pColumnCollection, 1.0f, GridUnitType_Star);
+	AddColumnDefinition(pColumnCollection, 1.0f, GridUnitType_Star);
+
+	// Name is different than other labels
+	Ptr<Label> pNameLabel = *new Label();
+
+	Ptr<SolidColorBrush> pWhiteBrush = *new SolidColorBrush();
+	pWhiteBrush->SetColor(Color::White());
+
+	pNameLabel->SetContent(newPlayer.GetName().c_str());
+	pNameLabel->SetForeground(pWhiteBrush);
+	pNameLabel->SetFontSize(28.f);
+	pNameLabel->SetVerticalAlignment(VerticalAlignment::VerticalAlignment_Bottom);
+	uint8 column = 0;
+	pGrid->GetChildren()->Add(pNameLabel);
+	pGrid->SetColumn(pNameLabel, column++);
+
+	AddStatsLabel(pGrid, std::to_string(newPlayer.GetKills()), column++);
+	AddStatsLabel(pGrid, std::to_string(newPlayer.GetDeaths()), column++);
+	AddStatsLabel(pGrid, std::to_string(newPlayer.GetFlagsCaptured()), column++);
+	AddStatsLabel(pGrid, std::to_string(newPlayer.GetFlagsDefended()), column++);
+	AddStatsLabel(pGrid, std::to_string(newPlayer.GetPing()), column++);
+
+	if (newPlayer.GetTeam() == 0)
+	{
+		m_pBlueTeamStackPanel->GetChildren()->Add(pGrid);
+	}
+	else if (newPlayer.GetTeam() == 1)
+	{
+		m_pRedTeamStackPanel->GetChildren()->Add(pGrid);
+	}
+	else
+	{
+		LOG_WARNING("[HUDGUI]: Unknown team on player \"%s\".\n\tUID: %lu\n\tTeam: %d",
+			newPlayer.GetName().c_str(), newPlayer.GetUID(), newPlayer.GetTeam());
+	}
+}
+
+void HUDGUI::RemovePlayer(const Player& player)
+{
+	Grid* pGrid = FrameworkElement::FindName<Grid>(std::to_string(player.GetUID()).c_str());
+
+	if (!pGrid)
+	{
+		LOG_WARNING("[HUDGUI]: Tried to delete \"%s\", but could not find grid.\n\tUID: %lu",
+			player.GetName().c_str(), player.GetUID());
+		return;
+	}
+
+	if (player.GetTeam() == 0)
+	{
+		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
+	}
+	else if (player.GetTeam() == 1)
+	{
+		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
+	}
+}
+
+void HUDGUI::UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value)
+{
+	uint8 index = 0;
+	switch (property)
+	{
+	case EPlayerProperty::PLAYER_PROPERTY_NAME:				index = 0; break;
+	case EPlayerProperty::PLAYER_PROPERTY_KILLS:			index = 1; break;
+	case EPlayerProperty::PLAYER_PROPERTY_DEATHS:			index = 2; break;
+	case EPlayerProperty::PLAYER_PROPERTY_FLAGS_CAPTURED:	index = 3; break;
+	case EPlayerProperty::PLAYER_PROPERTY_FLAGS_DEFENDED:	index = 4; break;
+	case EPlayerProperty::PLAYER_PROPERTY_PING:				index = 5; break;
+	default: LOG_WARNING("[HUDGUI]: Enum not supported"); return;
+	}
+
+	Grid* pGrid = FrameworkElement::FindName<Grid>(std::to_string(playerUID).c_str());
+	if (!pGrid)
+	{
+		LOG_WARNING("[HUDGUI]: Player with UID: &lu not found!", playerUID);
+		return;
+	}
+
+	Label* pLabel = static_cast<Label*>(pGrid->GetChildren()->Get(index));
+	pLabel->SetContent(value.c_str());
+}
+
+void HUDGUI::UpdateAllPlayerProperties(const Player& player)
+{
+	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_NAME, player.GetName());
+	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_KILLS, std::to_string(player.GetKills()));
+	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_DEATHS, std::to_string(player.GetDeaths()));
+	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_FLAGS_CAPTURED, std::to_string(player.GetFlagsCaptured()));
+	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_FLAGS_DEFENDED, std::to_string(player.GetFlagsDefended()));
+	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_PING, std::to_string(player.GetPing()));
+}
+
+void HUDGUI::AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column)
+{
+	Ptr<Label> pLabel = *new Label();
+
+	Ptr<SolidColorBrush> pWhiteBrush = *new SolidColorBrush();
+	pWhiteBrush->SetColor(Color::White());
+
+	pLabel->SetContent(content.c_str());
+	pLabel->SetForeground(pWhiteBrush);
+	pLabel->SetHorizontalAlignment(HorizontalAlignment::HorizontalAlignment_Right);
+	pLabel->SetVerticalAlignment(VerticalAlignment::VerticalAlignment_Bottom);
+	pParentGrid->GetChildren()->Add(pLabel);
+	pParentGrid->SetColumn(pLabel, column);
+}
+
+
 void HUDGUI::InitGUI()
 {
 	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
@@ -231,7 +369,11 @@ void HUDGUI::InitGUI()
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
 
-	m_pHitIndicatorGrid = FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
+	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
+	m_pTabMenuGrid		= FrameworkElement::FindName<Grid>("TAB_MENU_GRID");
+
+	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
+	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
 
 	std::string ammoString;
 

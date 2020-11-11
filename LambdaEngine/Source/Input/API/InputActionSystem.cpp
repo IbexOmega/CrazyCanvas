@@ -30,6 +30,9 @@ namespace LambdaEngine
 		{EAction::ACTION_ATTACK_RELOAD, "R"},
 		{EAction::ACTION_ATTACK_MELEE, "E"},
 
+		// General
+		{EAction::ACTION_GENERAL_TAB_MENU, "TAB"},
+
 		// Debug
 		{EAction::ACTION_CAM_ROT_UP, "UP"},
 		{EAction::ACTION_CAM_ROT_DOWN, "DOWN"},

@@ -13,9 +13,9 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
-
 #include "Application/API/Events/EventQueue.h"
-#include "..\..\..\..\Include\ECS\Systems\GUI\HUDSystem.h"
+
+#include "Lobby/PlayerManagerClient.h"
 
 
 using namespace LambdaEngine;
@@ -29,6 +29,8 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
+	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 }
 
 void HUDSystem::Init()
@@ -67,11 +69,20 @@ void HUDSystem::Init()
 
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
-    EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
+	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
+	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
+
+	// Add players to scoreboard
+	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+	for (auto& player : players)
+	{
+		m_HUDGUI->AddPlayer(player.second);
+	}
 
 	GUIApplication::SetView(m_View);
 }
@@ -138,6 +149,17 @@ void HUDSystem::FixedTick(Timestamp delta)
 		m_EnemyHitEventsToProcess.Clear();
 	}
 
+	static bool activeButtonChanged = false;
+	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_TAB_MENU) && !activeButtonChanged)
+	{
+		m_HUDGUI->DisplayTabMenu(true);
+		activeButtonChanged = true;
+	}
+	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_TAB_MENU) && activeButtonChanged)
+	{
+		m_HUDGUI->DisplayTabMenu(false);
+		activeButtonChanged = false;
+	}
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -179,6 +201,21 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 			}
 		}
 	}
+	return false;
+}
+
+bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
+{
+	m_HUDGUI->UpdateAllPlayerProperties(*event.pPlayer);
+	return false;
+}
+
+bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
+{
+	m_HUDGUI->UpdatePlayerProperty(
+		event.pPlayer->GetUID(),
+		EPlayerProperty::PLAYER_PROPERTY_PING,
+		std::to_string(event.pPlayer->GetPing()));
 	return false;
 }
 
