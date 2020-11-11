@@ -131,6 +131,12 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
+	void ClientSystem::OnServerNotAccepting(IClient* pClient)
+	{
+		ServerNotAcceptingEvent event(pClient);
+		EventQueue::SendEvent(event);
+	}
+
 	void ClientSystem::OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping, bool isLAN)
 	{
 		ServerDiscoveredEvent event(&decoder, &endPoint, serverUID, ping, isLAN);

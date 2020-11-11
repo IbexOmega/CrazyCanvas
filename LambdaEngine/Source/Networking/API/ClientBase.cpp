@@ -281,6 +281,12 @@ namespace LambdaEngine
 			m_pHandler->OnServerFull(this);
 			Disconnect("Server Full");
 		}
+		else if (packetType == NetworkSegment::TYPE_SERVER_NOT_ACCEPTING)
+		{
+			m_SendDisconnectPacket = false;
+			m_pHandler->OnServerNotAccepting(this);
+			Disconnect("Server Currently Not Accepting");
+		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
 			BinaryDecoder decoder(pPacket);
@@ -292,7 +298,6 @@ namespace LambdaEngine
 		}
 		else
 		{
-			ASSERT(pPacket->GetBufferSize() > 0);
 			m_ReceivedPackets[m_BufferIndex].PushBack(pPacket);
 			return true;
 		}

@@ -30,6 +30,7 @@ namespace LambdaEngine
 		virtual void OnPacketReceived(IClient* pClient, NetworkSegment* pPacket) override;
 		virtual void OnClientReleased(IClient* pClient) override;
 		virtual void OnServerFull(IClient* pClient) override;
+		virtual void OnServerNotAccepting(IClient* pClient) override;
 
 		virtual void OnServerFound(BinaryDecoder& decoder, const IPEndPoint& endPoint, uint64 serverUID, Timestamp ping, bool isLAN) override;
 

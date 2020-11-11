@@ -94,6 +94,17 @@ namespace LambdaEngine
 		DECLARE_CONNECTION_EVENT_TYPE(ServerFullEvent);
 	};
 
+	struct ServerNotAcceptingEvent : public ClientConnectionEventBase
+	{
+	public:
+		inline ServerNotAcceptingEvent(IClient* pIClient)
+			: ClientConnectionEventBase(pIClient)
+		{
+		}
+
+		DECLARE_CONNECTION_EVENT_TYPE(ServerNotAcceptingEvent);
+	};
+
 	struct NetworkSegmentReceivedEvent : public Event
 	{
 	public:
