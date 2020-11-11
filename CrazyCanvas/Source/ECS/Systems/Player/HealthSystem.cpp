@@ -37,11 +37,11 @@ bool HealthSystem::Init()
 	return s_Instance->InitInternal();
 }
 
-bool HealthSystem::InitInternal()
+void HealthSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg)
 {
 	using namespace LambdaEngine;
 
-	// Register system
+	// Fill in Base System Registration
 	{
 		PlayerGroup playerGroup;
 		playerGroup.Position.Permissions	= R;
@@ -49,7 +49,6 @@ bool HealthSystem::InitInternal()
 		playerGroup.Rotation.Permissions	= NDA;
 		playerGroup.Velocity.Permissions	= NDA;
 
-		SystemRegistration systemReg = {};
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 		{
 			{
@@ -63,10 +62,6 @@ bool HealthSystem::InitInternal()
 		};
 
 		// After weaponsystem
-		systemReg.Phase = 2;
-
-		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
+		systemReg.Phase = LAST_PHASE;
 	}
-
-	return true;
 }

@@ -43,9 +43,6 @@
 #include "Rendering/Animation/AnimationGraph.h"
 
 #include "Math/Random.h"
-
-#include "GUI/GUITest.h"
-
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
@@ -75,12 +72,6 @@ SandboxState::~SandboxState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
 
-	if (m_GUITest.GetPtr() != nullptr)
-	{
-		m_GUITest.Reset();
-		m_View.Reset();
-	}
-
 	SAFEDELETE(m_pRenderGraphEditor);
 
 	SingleplayerInitializer::Release();
@@ -102,10 +93,6 @@ void SandboxState::Init()
 	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
 	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
 
-	m_GUITest	= *new GUITest("Test.xaml");
-	m_View		= Noesis::GUI::CreateView(m_GUITest);
-	LambdaEngine::GUIApplication::SetView(m_View);
-
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	// Load Match
@@ -121,7 +108,8 @@ void SandboxState::Init()
 	}
 
 	{
-		const uint32 characterGUID = ResourceManager::LoadMeshFromFile("Player/Character.fbx");
+		GUID_Lambda characterMeshGUID;
+		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -136,7 +124,7 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent meshComp = {};
-		meshComp.MeshGUID = characterGUID;
+		meshComp.MeshGUID = characterMeshGUID;
 		meshComp.MaterialGUID = materialGUID;
 
 		glm::vec3 position = glm::vec3(0.0f, 2.0f, 0.0f);
@@ -153,7 +141,8 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		GUID_Lambda robotMeshGUID;
+		ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", robotMeshGUID, animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
@@ -177,12 +166,12 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MeshGUID		= robotMeshGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.pGraph			= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
-		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotMeshGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
 		glm::vec3 scale(1.0f);
@@ -194,7 +183,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
@@ -209,7 +198,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
@@ -224,7 +213,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
@@ -259,7 +248,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
@@ -318,8 +307,9 @@ void SandboxState::Init()
 
 	//Preload some resources
 	{
+		GUID_Lambda meshGUID;
 		TArray<GUID_Lambda> animations;
-		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
 	}
 
 

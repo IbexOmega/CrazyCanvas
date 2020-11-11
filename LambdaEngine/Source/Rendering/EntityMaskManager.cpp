@@ -5,20 +5,25 @@
 
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Player/PlayerComponent.h"
 
 namespace LambdaEngine
 {
 	bool EntityMaskManager::Init()
 	{
-		if (!s_Initialized)
+		if (!s_Finalized)
 		{
-			BindTypeToExtensionDesc(MeshPaintComponent::Type(),	{ 1 }, false);	// Bit = 0x2
-			BindTypeToExtensionDesc(PlayerLocalComponent::Type(), { 0 }, true);	// Bit = 0x4
-			BindTypeToExtensionDesc(PlayerBaseComponent::Type(), { 0 }, false);	// Bit = 0x8
-
-			s_Initialized = true;
+			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 1 }, false);	// Bit = 0x2
+			BindTypeToExtensionDesc(PlayerLocalComponent::Type(),	{ 0 }, true);	// Bit = 0x4
+			BindTypeToExtensionDesc(PlayerBaseComponent::Type(),	{ 0 }, false);	// Bit = 0x8
 		}
+
 		return true;
+	}
+
+	void EntityMaskManager::Finalize()
+	{
+		s_Finalized = true;
 	}
 
 	void LambdaEngine::EntityMaskManager::RemoveAllExtensionsFromEntity(Entity entity)
@@ -115,7 +120,7 @@ namespace LambdaEngine
 			return it->second.Flag;
 		}
 
-		if (!s_Initialized)
+		if (!s_Finalized)
 		{
 			// Generate a mask for this component type. Mask 0 is used as an error code.
 			static uint32 s_BitCounter = 0;

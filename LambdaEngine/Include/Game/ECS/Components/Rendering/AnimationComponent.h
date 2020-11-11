@@ -8,6 +8,10 @@
 
 #include "Rendering/Animation/AnimationGraph.h"
 
+#ifndef LAMBDA_DEBUG
+	#define USE_ALL_ANIMATIONS
+#endif
+
 namespace LambdaEngine
 {
 	/*
@@ -21,5 +25,16 @@ namespace LambdaEngine
 		bool			IsPaused = false;
 		AnimationGraph*	pGraph = nullptr;
 		SkeletonPose	Pose;
+	};
+
+	/*
+	* AttachedAnimationComponent
+	*/
+	struct AnimationAttachedComponent
+	{
+		DECL_COMPONENT(AnimationAttachedComponent);
+
+		String		JointName = "";
+		glm::mat4	Transform;
 	};
 }

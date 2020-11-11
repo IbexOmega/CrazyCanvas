@@ -19,19 +19,27 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "Multiplayer/ServerHostHelper.h"
-
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "Engine/EngineConfig.h"
 
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Lobby/PlayerManagerClient.h"
+#include "Lobby/PlayerManagerServer.h"
+#include "Chat/ChatManager.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
+#include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
+
+#include "Rendering/EntityMaskManager.h"
+
+#include "ECS/Components/Player/WeaponComponent.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -43,12 +51,31 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
 
+	constexpr const char* pGameName = "Crazy Canvas";
+	constexpr const char* pDefaultStateStr = "crazycanvas";
+	State* pStartingState = nullptr;
+	String stateStr;
+
+	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
+
+	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
+	{
+		ClientSystem::Init(pGameName);
+	}
+	else if (stateStr == "server")
+	{
+		ServerSystem::Init(pGameName);
+	}
+
 	if (!RegisterGUIComponents())
 	{
 		LOG_ERROR("Failed to Register GUI Components");
 	}
 
-	ServerHostHelper::Init();
+	if (!BindComponentTypeMasks())
+	{
+		LOG_ERROR("Failed to bind Component Type Masks");
+	}
 
 	if (!LevelManager::Init())
 	{
@@ -60,57 +87,41 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Team Helper Init Failed");
 	}
 
+	PacketType::Init();
+	PacketTranscoderSystem::GetInstance().Init();
+
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
 	RenderSystem::GetInstance().InitRenderGraphs();
 
 	LoadRendererResources();
 
-	constexpr const char* pGameName = "Crazy Canvas";
-	constexpr const char* pDefaultStateStr = "crazycanvas";
-	constexpr const char* pDefaultIsHostStr = "";
-	State* pStartingState = nullptr;
-	String stateStr;
-
-	String AuthenticationIDStr; // Used on server To Identify Host(Client transmits HostID)
-	String clientHostIDStr; // Used on Client To Identify Host(Server transmits HostID)
-
-	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
-
-	if (stateStr == "server")
-	{
-		flagParser(1, pDefaultIsHostStr) >> clientHostIDStr;
-
-		flagParser(2, pDefaultIsHostStr) >> AuthenticationIDStr;
-	}
-
 	if (stateStr == "crazycanvas")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW MainMenuState();
 	}
 	else if (stateStr == "sandbox")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
-	}
-	else if (stateStr == "client")
-	{
-		ClientSystem::Init(pGameName);
-		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
-		pStartingState = DBG_NEW PlaySessionState(false, IPEndPoint(NetworkUtils::GetLocalAddress(), port));
 	}
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
-		pStartingState = DBG_NEW ServerState(clientHostIDStr, AuthenticationIDStr);
+		String clientHostIDStr;
+		flagParser(1, "") >> clientHostIDStr;
+		pStartingState = DBG_NEW ServerState(clientHostIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW BenchmarkState();
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+
+	if(MultiplayerUtils::IsServer())
+		PlayerManagerServer::Init();
+	else
+		PlayerManagerClient::Init();
+
+	ChatManager::Init();
 }
 
 CrazyCanvas::~CrazyCanvas()
@@ -119,6 +130,10 @@ CrazyCanvas::~CrazyCanvas()
 	{
 		LOG_ERROR("Level Manager Release Failed");
 	}
+
+	ChatManager::Release();
+	PlayerManagerBase::Release();
+	PacketType::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -126,8 +141,11 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 	Render(delta);
 }
 
-void CrazyCanvas::FixedTick(LambdaEngine::Timestamp)
-{}
+void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
+{
+	if (LambdaEngine::MultiplayerUtils::IsServer())
+		PlayerManagerServer::FixedTick(delta);
+}
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)
 {}
@@ -144,6 +162,7 @@ bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
@@ -197,6 +216,17 @@ bool CrazyCanvas::LoadRendererResources()
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
+
+	return true;
+}
+
+bool CrazyCanvas::BindComponentTypeMasks()
+{
+	using namespace LambdaEngine;
+
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+
+	EntityMaskManager::Finalize();
 
 	return true;
 }

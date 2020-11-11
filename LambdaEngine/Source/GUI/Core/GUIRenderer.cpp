@@ -578,7 +578,9 @@ namespace LambdaEngine
 #ifdef PRINT_FUNC
 			LOG_INFO("Draw");
 #endif
-			pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
+			// Might not be the most effective way to abort, but it works
+			if (m_IsInRenderPass)
+				pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
 		}
 	}
 
@@ -875,6 +877,10 @@ namespace LambdaEngine
 
 	void GUIRenderer::ResumeRenderPass()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("Trying to resumt renderpass: tileBegun: %d", m_TileBegun);
+#endif
+
 		if (!m_IsInRenderPass)
 		{
 			CommandList* pCommandList = BeginOrGetRenderCommandList();
