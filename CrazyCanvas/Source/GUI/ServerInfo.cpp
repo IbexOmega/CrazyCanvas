@@ -19,14 +19,19 @@ bool SavedServerSystem::LoadServers(TArray<ServerInfo>& serverInfos, uint16 defa
 	if (!pFile)
 	{
 		pFile = CreateFile();
-		if (!pFile)
-			return false;
+		fclose(pFile);
+		return false;
 	}
 
 	char readBuffer[2048];
 	rapidjson::FileReadStream inputStream(pFile, readBuffer, sizeof(readBuffer));
+
 	rapidjson::Document document;
 	document.ParseStream(inputStream);
+
+	if (!document.HasMember("SERVERS"))
+		return false;
+
 	const rapidjson::Value& serverArray = document["SERVERS"];
 
 	for (rapidjson::SizeType i = 0; i < serverArray.Size(); i++)
