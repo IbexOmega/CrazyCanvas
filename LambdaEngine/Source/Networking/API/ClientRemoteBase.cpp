@@ -175,14 +175,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool ClientRemoteBase::SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener)
+	bool ClientRemoteBase::SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener, bool excludeMySelf)
 	{
-		return m_pServer->SendReliableBroadcast(this, pPacket, pListener);
+		return m_pServer->SendReliableBroadcast(this, pPacket, pListener, excludeMySelf);
 	}
 
-	bool ClientRemoteBase::SendUnreliableBroadcast(NetworkSegment* pPacket)
+	bool ClientRemoteBase::SendUnreliableBroadcast(NetworkSegment* pPacket, bool excludeMySelf)
 	{
-		return m_pServer->SendUnreliableBroadcast(this, pPacket);
+		return m_pServer->SendUnreliableBroadcast(this, pPacket, excludeMySelf);
 	}
 
 	const ClientMap& ClientRemoteBase::GetClients() const

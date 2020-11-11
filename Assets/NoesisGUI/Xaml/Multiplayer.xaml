@@ -77,7 +77,12 @@
                         <TextBlock  Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="Wrap" Grid.Row="0" Margin="20.291,5,20.292,0" Width="112.484" Height="24.307" MinHeight="30" ><Run Foreground="White" FontSize="18" FontFamily="Verdana" Text="Find "/><Run Foreground="White" FontSize="20" FontFamily="Verdana" Text="Server"/></TextBlock>
                         <Label Grid.Column="0" Grid.ColumnSpan="2" Content="IP Address:" Margin="5,0" Grid.Row="1" FontFamily="Verdana" Foreground="White" FontSize="20" />
                         <TextBox Grid.Column="0" Grid.ColumnSpan="2" x:Name="IP_ADDRESS" FontSize="18" Background="White"  Grid.Row="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="20,0,10,0" Foreground="Black"/>
-                        <Button Content="Connect" Click="OnButtonConnectClick" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+
+                        <Label Grid.Column="0" Grid.ColumnSpan="2" Content="Your In-Game Name:" Margin="5,0" Grid.Row="3" FontFamily="Verdana" Foreground="White" FontSize="20" />
+                        <TextBox Grid.Column="0" Grid.ColumnSpan="2" x:Name="IN_GAME_NAME" FontSize="18" Background="White"  Grid.Row="4" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="20,0,10,0" Foreground="Black"/>
+
+
+  <Button Content="Connect" Click="OnButtonConnectClick" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
 
                         <Rectangle  x:Name="ServerBrowse" Grid.ColumnSpan="6" Grid.Column="2" Fill="#FF25252B" Stroke="Black" Margin="0,0,5,0" Grid.RowSpan="28"/>
                         <TextBlock Grid.Column="3" Grid.Row="1" FontSize="20" Margin="0,0,-100,0"  Foreground="White" Text="List Of Servers" HorizontalAlignment="Right" VerticalAlignment="Center" />

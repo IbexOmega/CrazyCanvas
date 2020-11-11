@@ -20,10 +20,9 @@ public:
 	MainMenuGUI();
 	~MainMenuGUI();
 
-	bool ConnectEvent(Noesis::BaseComponent* pSoruce, const char* pEvent, const char* pHandler) override;
+	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	// General
-	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 	// StartGrid
 	void OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -46,6 +45,7 @@ public:
 	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 private:
+	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void SetRenderStagesSleeping();
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();

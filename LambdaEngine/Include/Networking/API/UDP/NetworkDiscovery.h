@@ -42,7 +42,10 @@ namespace LambdaEngine
 	private:
 		static ServerNetworkDiscovery* s_pServer;
 		static ClientNetworkDiscovery* s_pClient;
+		static TSet<ClientNetworkDiscovery*> s_pClientToDelete;
 		static SpinLock s_Lock;
+		static SpinLock s_LockEndPoints;
+		static SpinLock s_LockClientToDelete;
 		static TSet<IPEndPoint> s_EndPoints;
 	};
 }

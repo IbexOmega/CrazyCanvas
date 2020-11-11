@@ -18,8 +18,7 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-#include "Game/StateManager.h"
-#include "Game/State.h"
+#include "Lobby/PlayerManagerClient.h"
 
 #include "Events/MatchEvents.h"
 
@@ -38,9 +37,10 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 }
 
 bool MatchClient::InitInternal()
@@ -55,6 +55,7 @@ bool MatchClient::InitInternal()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -148,7 +149,8 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			CreatePlayerDesc createPlayerDesc =
 			{
-				.IsLocal			= packet.Player.IsMySelf,
+				.ClientUID			= event.pClient->GetUID(),
+				.IsLocal			= packet.Player.ClientUID == event.pClient->GetUID(),
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.Position			= packet.Position,
@@ -165,7 +167,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			}
 
 			// Notify systems that a new player connected (Not myself tho)
-			if (!packet.Player.IsMySelf)
+			if (!createPlayerDesc.IsLocal)
 			{
 				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
 				EventQueue::SendEvent(connectedEvent);
@@ -225,6 +227,16 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
 
 	LOG_INFO("CLIENT: Match Start");
+
+	return true;
+}
+
+bool MatchClient::OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	//Makes sure we have finished loading everything....
+
+	PlayerManagerClient::SetLocalPlayerStateLoaded();
 
 	return true;
 }

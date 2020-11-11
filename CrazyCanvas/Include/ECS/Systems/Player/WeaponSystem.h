@@ -100,9 +100,19 @@ protected:
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
+	glm::vec3 CalculateZeroingDirection(
+		const glm::vec3& weaponPos,
+		const glm::vec3& playerPos,
+		const glm::quat& playerDirection,
+		float32 zeroingDistance);
+
 protected:
 	LambdaEngine::IDVector m_WeaponEntities;
 
 private:
 	static LambdaEngine::TUniquePtr<WeaponSystem> s_Instance;
+
+private:
+	float	m_ZeroDist	= 5.0f;
+	float	m_YAngle	= 0.0f;
 };

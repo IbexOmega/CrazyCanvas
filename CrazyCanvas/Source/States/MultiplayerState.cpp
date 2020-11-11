@@ -1,11 +1,9 @@
 #include "States/MultiplayerState.h"
 
-#include "Rendering/RenderGraph.h"
-#include "Rendering/RenderGraphSerializer.h"
-#include "Rendering/RenderAPI.h"
-
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+
+using namespace LambdaEngine;
 
 MultiplayerState::~MultiplayerState()
 {
@@ -15,17 +13,18 @@ MultiplayerState::~MultiplayerState()
 
 void MultiplayerState::Init()
 {
-	using namespace LambdaEngine;
-
-	// Put unecessary renderstages to sleep in main menu
-
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
+
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
 	m_View = Noesis::GUI::CreateView(m_MultiplayerGUI);

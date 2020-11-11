@@ -11,12 +11,12 @@
 */
 
 #define SET_TEAM_INDEX(mask, value) \
-	mask |= (((uint8)value) & 0xF)
+	mask |= (((uint8)value) & 0x0F)
 
 #define SET_PAINT_MODE(mask, value) \
-	mask |= ((((uint8)value) & 0xF) << 4)
+	mask |= ((((uint8)value) & 0x0F) << 4)
 
-#define GET_TEAM_INDEX(mask) (ETeam)(mask & 0xF)
+#define GET_TEAM_INDEX(mask) (ETeam)(mask & 0x0F)
 #define GET_PAINT_MODE(mask) (EPaintMode)((mask & 0xF0) >> 4)
 
 /*
@@ -97,7 +97,7 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	ETeam		team = GET_TEAM_INDEX(packet.Info);
 	EPaintMode	paintMode = GET_PAINT_MODE(packet.Info);
 	ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
-
+	
 	if (!MultiplayerUtils::IsServer())
 	{
 		// We do not need to test the collisions against each other, because they will always be painted again but on the permanent mask. 
@@ -106,7 +106,7 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 		if (m_PaintPointsOnClient.empty())
 		{
 			clientWasWrong = true;
-			D_LOG_ERROR("Prediction Error: Client did not hit but server did, paint server's data to mask...");
+			D_LOG_WARNING("Prediction Error: Client did not hit but server did, paint server's data to mask...");
 		}
 		else
 		{
@@ -120,8 +120,10 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 			paintPointB.RemoteMode = remoteMode;
 			paintPointB.Team = team;
 			clientWasWrong = !IsPaintPointEqual(paintPointA, paintPointB);
+#ifdef LAMBDA_DEBUG
 			if(clientWasWrong)
-				D_LOG_ERROR("Prediction Error: Client got wrong prediction when painting, reset client side paint and repaint on server side...");
+				D_LOG_WARNING("Prediction Error: Client got wrong prediction when painting, reset client side paint and repaint on server side...");
+#endif
 		}
 
 		// Clear client side if all paint points have been processed.
