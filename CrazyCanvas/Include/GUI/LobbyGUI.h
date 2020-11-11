@@ -32,7 +32,7 @@ public:
 	void UpdatePlayerHost(const Player& player);
 	void WriteChatMessage(const ChatEvent& event);
 	void SetHostMode(bool isHost);
-	void UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value);
+	void UpdateSettings(const PacketGameSettings& packet);
 
 	void AddSettingComboBox(
 		const LambdaEngine::String& settingKey,
@@ -55,8 +55,6 @@ private:
 	void CreateHostIcon(Noesis::Panel* pParent);
 	Noesis::Grid* GetPlayerGrid(const Player& player);
 
-	void SendGameSettings();
-
 	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
 	void TrySendChatMessage();
 
@@ -72,6 +70,7 @@ private:
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
 
 	PacketGameSettings m_GameSettings;
+	bool m_IsInitiated;
 
 private:
 	static constexpr char* SETTING_MAP			= "MAP";
