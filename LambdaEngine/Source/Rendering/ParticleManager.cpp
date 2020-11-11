@@ -379,7 +379,7 @@ namespace LambdaEngine
 				.BlasIndex = m_BLASIndex,
 				.Transform = particle.Transform,
 				.CustomIndex = particleIndex,
-				.HitMask = 0xFF,
+				.HitMask = 0x01,
 				.Flags = RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
 			};
 			ASInstanceDescs.PushBack(instanceDesc);

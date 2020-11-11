@@ -154,23 +154,18 @@ void main()
 
 		// Initializes a ray query object but does not start traversal
 		rayQueryEXT rayQuery;
-		rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, origin, tMin,
+		rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFC, origin, tMin,
 							direction, tMax);
 		
 		// Start traversal: return false if traversal is complete
-		while(rayQueryProceedEXT(rayQuery))
-		{
-
-		}
+		while(rayQueryProceedEXT(rayQuery)) {}
 
 		// Returns type of committed (true) intersection
 		if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
 		{
-			// Got an intersection == Shadow
-			//outColor *= 0.1;
-			//vec3 preV = particle.Velocity;
-			particle.Velocity = vec3(0.f);
-			//particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
+			vec3 preV = particle.Velocity;
+			particle.Velocity *= particle.FrictionFactor;
+			particle.Velocity = normalize(-preV) * particle.Bounciness;
 		}
 
 		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);

@@ -637,7 +637,7 @@ namespace LambdaEngine
 						{
 							pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
 								pResource->Name,
-								pResource->AccelerationStructure.pTLAS);
+								&pResource->AccelerationStructure.pTLAS);
 						}
 						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 						{

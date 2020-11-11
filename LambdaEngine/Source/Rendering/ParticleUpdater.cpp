@@ -265,7 +265,7 @@ namespace LambdaEngine
 		m_UpdatePipeline.Update(delta, modFrameIndex, backBufferIndex);
 	}
 
-	void ParticleUpdater::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* pAccelerationStructure)
+	void ParticleUpdater::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* const* pAccelerationStructure)
 	{
 		if (resourceName == SCENE_TLAS)
 		{
@@ -273,7 +273,7 @@ namespace LambdaEngine
 			constexpr uint32 setBinding = 8U;
 
 			SDescriptorTLASUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppTLAS = &pAccelerationStructure;
+			descriptorUpdateDesc.ppTLAS = pAccelerationStructure;
 			descriptorUpdateDesc.FirstBinding = setBinding;
 			descriptorUpdateDesc.DescriptorCount = 1;
 
