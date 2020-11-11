@@ -4,14 +4,23 @@
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
-#include "Multiplayer/Packet/PacketConfigureServer.h"
+#include "Multiplayer/Packet/PacketGameSettings.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
+#include "Multiplayer/Packet/PacketMatchReady.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
 #include "Multiplayer/Packet/PacketWeaponFired.h"
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 #include "Multiplayer/Packet/PacketFlagEdited.h"
+#include "Multiplayer/Packet/PacketJoin.h"
+#include "Multiplayer/Packet/PacketLeave.h"
+#include "Multiplayer/Packet/PacketPlayerDied.h"
+#include "Multiplayer/Packet/PacketPlayerHost.h"
+#include "Multiplayer/Packet/PacketPlayerPing.h"
+#include "Multiplayer/Packet/PacketPlayerReady.h"
+#include "Multiplayer/Packet/PacketPlayerScore.h"
+#include "Multiplayer/Packet/PacketPlayerState.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
@@ -27,10 +36,20 @@ void PacketType::Init()
 	HEALTH_CHANGED			= RegisterPacketTypeWithComponent<PacketHealthChanged>();
 	FLAG_EDITED				= RegisterPacketTypeWithComponent<PacketFlagEdited>();
 	TEAM_SCORED				= RegisterPacketType<PacketTeamScored>();
+	MATCH_READY				= RegisterPacketType<PacketMatchReady>();
 	MATCH_START				= RegisterPacketType<PacketMatchStart>();
 	MATCH_BEGIN				= RegisterPacketType<PacketMatchBegin>();
 	GAME_OVER				= RegisterPacketType<PacketGameOver>();
-	CONFIGURE_SERVER		= RegisterPacketType<PacketConfigureServer>();
+	GAME_SETTINGS			= RegisterPacketType<PacketGameSettings>();
+	JOIN					= RegisterPacketType<PacketJoin>();
+	LEAVE					= RegisterPacketType<PacketLeave>();
+	CHAT_MESSAGE			= RegisterPacketTypeRaw();
+	PLAYER_DIED				= RegisterPacketType<PacketPlayerDied>();
+	PLAYER_HOST				= RegisterPacketType<PacketPlayerHost>();
+	PLAYER_PING				= RegisterPacketType<PacketPlayerPing>();
+	PLAYER_READY			= RegisterPacketType<PacketPlayerReady>();
+	PLAYER_SCORE			= RegisterPacketType<PacketPlayerScore>();
+	PLAYER_STATE			= RegisterPacketType<PacketPlayerState>();
 	PROJECTILE_HIT			= RegisterPacketType<PacketProjectileHit>();
 }
 

@@ -19,13 +19,16 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "Multiplayer/ServerHostHelper.h"
-
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "Engine/EngineConfig.h"
 
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "Multiplayer/Packet/PacketType.h"
+#include "Lobby/PlayerManagerClient.h"
+#include "Lobby/PlayerManagerServer.h"
+#include "Chat/ChatManager.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
@@ -50,23 +53,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	constexpr const char* pGameName = "Crazy Canvas";
 	constexpr const char* pDefaultStateStr = "crazycanvas";
-	constexpr const char* pDefaultIsHostStr = "";
 	State* pStartingState = nullptr;
 	String stateStr;
 
-	String AuthenticationIDStr; // Used on server To Identify Host(Client transmits HostID)
-	String clientHostIDStr; // Used on Client To Identify Host(Server transmits HostID)
-
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
 
-	if (stateStr == "server")
-	{
-		flagParser(1, pDefaultIsHostStr) >> clientHostIDStr;
-
-		flagParser(2, pDefaultIsHostStr) >> AuthenticationIDStr;
-	}
-
-	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "client" || stateStr == "benchmark")
+	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
 	{
 		ClientSystem::Init(pGameName);
 	}
@@ -79,8 +71,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		LOG_ERROR("Failed to Register GUI Components");
 	}
-
-	ServerHostHelper::Init();
 
 	if (!BindComponentTypeMasks())
 	{
@@ -97,6 +87,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Team Helper Init Failed");
 	}
 
+	PacketType::Init();
+	PacketTranscoderSystem::GetInstance().Init();
+
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
 	RenderSystem::GetInstance().InitRenderGraphs();
 
@@ -110,14 +103,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		pStartingState = DBG_NEW SandboxState();
 	}
-	else if (stateStr == "client")
-	{
-		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
-		pStartingState = DBG_NEW PlaySessionState(false, IPEndPoint(NetworkUtils::GetLocalAddress(), port));
-	}
 	else if (stateStr == "server")
 	{
-		pStartingState = DBG_NEW ServerState(clientHostIDStr, AuthenticationIDStr);
+		String clientHostIDStr;
+		flagParser(1, "") >> clientHostIDStr;
+		pStartingState = DBG_NEW ServerState(clientHostIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{
@@ -125,6 +115,13 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+
+	if(MultiplayerUtils::IsServer())
+		PlayerManagerServer::Init();
+	else
+		PlayerManagerClient::Init();
+
+	ChatManager::Init();
 }
 
 CrazyCanvas::~CrazyCanvas()
@@ -133,6 +130,10 @@ CrazyCanvas::~CrazyCanvas()
 	{
 		LOG_ERROR("Level Manager Release Failed");
 	}
+
+	ChatManager::Release();
+	PlayerManagerBase::Release();
+	PacketType::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -140,8 +141,11 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 	Render(delta);
 }
 
-void CrazyCanvas::FixedTick(LambdaEngine::Timestamp)
-{}
+void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
+{
+	if (LambdaEngine::MultiplayerUtils::IsServer())
+		PlayerManagerServer::FixedTick(delta);
+}
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)
 {}
