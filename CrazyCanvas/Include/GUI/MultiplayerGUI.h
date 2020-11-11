@@ -72,7 +72,6 @@ private:
 private:
 	bool m_RayTracingEnabled = false;
 	int32 m_ClientHostID;
-	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
 
 	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;
