@@ -780,7 +780,7 @@ namespace LambdaEngine
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
 	}
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
@@ -789,7 +789,7 @@ namespace LambdaEngine
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
@@ -798,13 +798,20 @@ namespace LambdaEngine
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 
+		bool forceUniqueResources = false;
+		if (MultiplayerUtils::IsServer())
+		{
+			forceUniqueResources = true;
+		}
+
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		AddRenderableEntity(
 			entity, 
 			meshComp.MeshGUID, 
 			meshComp.MaterialGUID, 
 			transform, 
-			pAnimationComponents->HasComponent(entity));
+			pAnimationComponents->HasComponent(entity),
+			forceUniqueResources);
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
@@ -918,19 +925,20 @@ namespace LambdaEngine
 		m_ParticleManager.OnEmitterEntityRemoved(entity);
 	}
 	
-	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
+	void RenderSystem::AddRenderableEntity(
+		Entity entity, 
+		GUID_Lambda meshGUID, 
+		GUID_Lambda materialGUID, 
+		const glm::mat4& transform, 
+		bool isAnimated, 
+		bool forceUniqueResource)
 	{
-		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
-
-		uint32 extensionIndex = 0;
-		uint32 materialIndex = UINT32_MAX;
+		uint32 extensionIndex	= 0;
+		uint32 materialIndex	= UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
-		MeshKey meshKey;
-		meshKey.MeshGUID	= meshGUID;
-		meshKey.IsAnimated	= isAnimated;
-		meshKey.EntityID	= entity;
-		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
+		const uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
+		MeshKey meshKey = MeshKey(meshGUID, entity, isAnimated, entityMask, forceUniqueResource);
 
 		//Get meshAndInstancesIterator
 		{
@@ -1150,7 +1158,7 @@ namespace LambdaEngine
 						isAnimated);
 				}
 
-				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
+				meshAndInstancesIt = m_MeshAndInstancesMap.insert(std::make_pair(meshKey, meshEntry)).first;
 			}
 		}
 
@@ -1566,7 +1574,7 @@ namespace LambdaEngine
 		if (animationComp.IsPaused)
 			return;
 
-		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
+		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity), false);
 
 		auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 		if (meshEntryIt != m_MeshAndInstancesMap.end())
@@ -1681,16 +1689,16 @@ namespace LambdaEngine
 					drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
 				}
 
-				drawArg.pIndexBuffer = meshEntryPair.second.pIndexBuffer;
-				drawArg.IndexCount = meshEntryPair.second.IndexCount;
+				drawArg.pIndexBuffer	= meshEntryPair.second.pIndexBuffer;
+				drawArg.IndexCount		= meshEntryPair.second.IndexCount;
 
 				drawArg.pInstanceBuffer = meshEntryPair.second.pRasterInstanceBuffer;
-				drawArg.InstanceCount = meshEntryPair.second.RasterInstances.GetSize();
+				drawArg.InstanceCount	= meshEntryPair.second.RasterInstances.GetSize();
 
-				drawArg.pMeshletBuffer = meshEntryPair.second.pMeshlets;
-				drawArg.MeshletCount = meshEntryPair.second.MeshletCount;
-				drawArg.pUniqueIndicesBuffer = meshEntryPair.second.pUniqueIndices;
-				drawArg.pPrimitiveIndices = meshEntryPair.second.pPrimitiveIndices;
+				drawArg.pMeshletBuffer	= meshEntryPair.second.pMeshlets;
+				drawArg.MeshletCount	= meshEntryPair.second.MeshletCount;
+				drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
+				drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
 
 				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
 				{

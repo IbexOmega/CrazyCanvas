@@ -513,7 +513,6 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		ResetMatch();
 	}
 
-
 	return true;
 }
 
@@ -523,48 +522,56 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	ECSCore* pECS = ECSCore::GetInstance();
-	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
-
-	// Get spawnpoint from level
-	const glm::vec3 oldPosition = positionComp.Position;
-	glm::vec3 newPosition = glm::vec3(0.0f);
-	if (m_pLevel != nullptr)
+	ComponentArray<NetworkPositionComponent>* pNetworkPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+	if (pNetworkPosComponents->HasComponent(playerEntity))
 	{
-		// Retrive spawnpoints
-		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+		NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
 
-		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-
-		uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
-		for (Entity spawnEntity : spawnPoints)
+		// Get spawnpoint from level
+		const glm::vec3 oldPosition = positionComp.Position;
+		glm::vec3 newPosition = glm::vec3(0.0f);
+		if (m_pLevel != nullptr)
 		{
-			if (pTeamComponents->HasComponent(spawnEntity))
+			// Retrive spawnpoints
+			TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+
+			ComponentArray<PositionComponent>*	pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
+
+			uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
+			for (Entity spawnEntity : spawnPoints)
 			{
-				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
+				if (pTeamComponents->HasComponent(spawnEntity))
 				{
-					newPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+					if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
+					{
+						newPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+					}
+				}
+			}
+
+			// Drop flag if player carries it
+			TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+			if (!flagEntities.IsEmpty())
+			{
+				Entity flagEntity = flagEntities[0];
+
+				const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+				if (flagParentComponent.Attached && flagParentComponent.Parent == playerEntity)
+				{
+					FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, oldPosition);
 				}
 			}
 		}
 
-		// Drop flag if player carries it
-		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
-		if (!flagEntities.IsEmpty())
-		{
-			Entity flagEntity = flagEntities[0];
+		// Reset position
+		positionComp.Position = newPosition;
 
-			const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
-			if (flagParentComponent.Attached && flagParentComponent.Parent == playerEntity)
-			{
-				FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, oldPosition);
-			}
-		}
+		// Reset health
+		HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
 	}
-
-	// Reset position
-	positionComp.Position = newPosition;
-
-	// Reset health
-	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
+	else
+	{
+		LOG_WARNING("Killed player called for entity(=%u) that does not have a NetworkPositionComponent", playerEntity);
+	}
 }

@@ -78,9 +78,10 @@ namespace LambdaEngine
 		public:
 			MeshKey() = default;
 
-			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask)
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask, bool forceUniqueResources)
 				: MeshGUID(meshGUID)
 				, IsAnimated(isAnimated)
+				, ForceUniqueResources(forceUniqueResources)
 				, EntityID(entityID)
 				, EntityMask(entityMask)
 			{
@@ -93,7 +94,7 @@ namespace LambdaEngine
 				{
 					Hash = std::hash<GUID_Lambda>()(MeshGUID);
 					HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityMask);
-					if (IsAnimated)
+					if (IsAnimated || ForceUniqueResources)
 					{
 						HashCombine<GUID_Lambda>(Hash, (GUID_Lambda)EntityID);
 					}
@@ -117,12 +118,18 @@ namespace LambdaEngine
 					}
 				}
 
+				if (ForceUniqueResources && EntityID != other.EntityID)
+				{
+					return false;
+				}
+
 				return true;
 			}
 
 		public:
 			GUID_Lambda		MeshGUID;
 			bool			IsAnimated;
+			bool			ForceUniqueResources;
 			Entity			EntityID;
 			uint32			EntityMask;
 			mutable size_t	Hash = 0;
@@ -248,7 +255,6 @@ namespace LambdaEngine
 		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 
-
 		/*
 		* Adds new Game specific Custom Renderer 
 		*/
@@ -272,7 +278,11 @@ namespace LambdaEngine
 		RenderSystem() = default;
 
 		glm::mat4 CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes);
-		glm::mat4 CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
+		glm::mat4 CreateEntityTransform(
+			const PositionComponent& positionComp, 
+			const RotationComponent& rotationComp, 
+			const ScaleComponent& scaleComp, 
+			const glm::bvec3& rotationalAxes);
 		
 		void OnStaticMeshEntityAdded(Entity entity);
 		void OnAnimatedEntityAdded(Entity entity);
@@ -284,16 +294,43 @@ namespace LambdaEngine
 		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
 
-		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated);
+		void AddRenderableEntity(
+			Entity entity, 
+			GUID_Lambda meshGUID, 
+			GUID_Lambda materialGUID, 
+			const glm::mat4& transform, 
+			bool animated, 
+			bool forceUniqueResource);
+
 		void RemoveRenderableEntity(Entity entity);
 
 		void OnEmitterEntityRemoved(Entity entity);
 
-		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
-		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
+		void UpdateParticleEmitter(
+			Entity entity, 
+			const PositionComponent& positionComp, 
+			const RotationComponent& rotationComp, 
+			const ParticleEmitterComponent& emitterComp);
+		
+		void UpdateDirectionalLight(
+			const glm::vec4& colorIntensity, 
+			const glm::vec3& position, 
+			const glm::quat& direction, 
+			float frustumWidth, 
+			float frustumHeight, 
+			float zNear, 
+			float zFar);
+		
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);
-		void UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
+		
+		void UpdateTransform(
+			Entity entity, 
+			const PositionComponent& positionComp, 
+			const RotationComponent& rotationComp, 
+			const ScaleComponent& scaleComp, 
+			const glm::bvec3& rotationalAxes);
+		
 		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
 
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
@@ -382,7 +419,6 @@ namespace LambdaEngine
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
 		
-
 		// Animation
 		uint64						m_SkinningPipelineID;
 		TSharedRef<PipelineLayout>	m_SkinningPipelineLayout;

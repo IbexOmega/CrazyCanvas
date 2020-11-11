@@ -72,7 +72,8 @@ namespace LambdaEngine
 		extensionGroup.pExtensions[0].ExtensionID = extensionMask;
 		groupEntry.Mask = s_DefaultMask;
 
-		if (!inverted) groupEntry.Mask |= extensionMask;
+		if (!inverted) 
+			groupEntry.Mask |= extensionMask;
 	}
 
 	DrawArgExtensionGroup& EntityMaskManager::GetExtensionGroup(Entity entity)

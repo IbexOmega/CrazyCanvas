@@ -3909,12 +3909,12 @@ namespace LambdaEngine
 								for (uint32 t = 0; t < numTextures; t++)
 								{
 									const TextureDesc& textureDesc = extension.ppTextures[t]->GetDesc();
-									initialMaskTexturesTransitionBarrier.pTexture = extension.ppTextures[t];
-									initialMaskTexturesTransitionBarrier.TextureFlags = textureDesc.Flags;
-									initialMaskTexturesTransitionBarrier.ArrayCount = textureDesc.ArrayCount;
-									initialMaskTexturesTransitionBarrier.ArrayIndex = 0;
-									initialMaskTexturesTransitionBarrier.Miplevel = 0;
-									initialMaskTexturesTransitionBarrier.MiplevelCount = textureDesc.Miplevels;
+									initialMaskTexturesTransitionBarrier.pTexture		= extension.ppTextures[t];
+									initialMaskTexturesTransitionBarrier.TextureFlags	= textureDesc.Flags;
+									initialMaskTexturesTransitionBarrier.ArrayCount		= textureDesc.ArrayCount;
+									initialMaskTexturesTransitionBarrier.ArrayIndex		= 0;
+									initialMaskTexturesTransitionBarrier.Miplevel		= 0;
+									initialMaskTexturesTransitionBarrier.MiplevelCount	= textureDesc.Miplevels;
 									intialTextureBarriers.PushBack(initialMaskTexturesTransitionBarrier);
 								}
 							}
