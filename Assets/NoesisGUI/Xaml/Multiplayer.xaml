@@ -147,11 +147,38 @@
                                 </Grid>
                             </TabItem>
                         </TabControl>
-                        <Button Click="OnButtonRefreshClick" Content="Refresh" Grid.Column="6" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
-                        <Button  Content="Join" Click="OnButtonJoinClick" Grid.Column="2" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+  <Button Click="OnButtonRefreshClick" Content="Refresh" Grid.Column="6" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
+
+                        <Button Click="OnButtonHostGameClick" Content="Host Game"  Grid.Column="3" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
+                          <Button.Triggers>
+                            <EventTrigger RoutedEvent="Button.Click">
+                              <BeginStoryboard>
+                                <!-- Storyboard property is the content property of BeginStoryboard -->
+                                <!-- class, so we don't need to make it explicit in the code -->
+                                <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
+                                  <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
+                                </Storyboard>
+                              </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Button.Click">
+                              <BeginStoryboard>
+                                <!-- Storyboard property is the content property of BeginStoryboard -->
+                                <!-- class, so we don't need to make it explicit in the code -->
+                                <Storyboard TargetName="NOTIFICATION_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
+                                  <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="NOTIFICATION_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
+                                </Storyboard>
+                              </BeginStoryboard>
+                            </EventTrigger>
+
+                          </Button.Triggers>
+                        </Button>
+  
+  
+                        <Button Content="Join" Click="OnButtonJoinClick" Grid.Column="2" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
                         <Button.Triggers>
-                        
-                                <EventTrigger RoutedEvent="Button.Click">
+
+
+                          <EventTrigger RoutedEvent="Button.Click">
                                     <BeginStoryboard>
                                         <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
                                             <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
