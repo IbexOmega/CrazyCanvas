@@ -765,14 +765,12 @@ namespace LambdaEngine
 
 	DescriptorSet* RenderGraph::CreateDrawArgDescriptorSet(DescriptorSet* pSrc)
 	{
-		static uint32 index = 0;
-
 		if (m_DrawArgConfiguration.DrawArgSetIndex == UINT32_MAX)
 		{
 			return nullptr;
 		}
 
-		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg DS " + std::to_string(index++), m_DrawArgConfiguration.pDrawArgPipelineLayout, m_DrawArgConfiguration.DrawArgSetIndex, m_pDescriptorHeap);
+		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg DS", m_DrawArgConfiguration.pDrawArgPipelineLayout, m_DrawArgConfiguration.DrawArgSetIndex, m_pDescriptorHeap);
 
 		if (pSrc != nullptr)
 		{
@@ -784,14 +782,12 @@ namespace LambdaEngine
 
 	DescriptorSet* RenderGraph::CreateDrawArgExtensionDataDescriptorSet(DescriptorSet* pSrc)
 	{
-		static uint32 index = 0;
-
 		if (m_DrawArgConfiguration.DrawArgExtensionDataSetIndex == UINT32_MAX)
 		{
 			return nullptr;
 		}
 
-		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg Extension Data DS" + std::to_string(index++), m_DrawArgConfiguration.pDrawArgPipelineLayout, m_DrawArgConfiguration.DrawArgExtensionDataSetIndex, m_pDescriptorHeap);
+		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg Extension Data DS", m_DrawArgConfiguration.pDrawArgPipelineLayout, m_DrawArgConfiguration.DrawArgExtensionDataSetIndex, m_pDescriptorHeap);
 
 		if (pSrc != nullptr)
 		{

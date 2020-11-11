@@ -335,6 +335,7 @@ namespace LambdaEngine
 
 			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER)))
 			{
+
 				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
 
 				renderGraphStructure = {};
@@ -967,7 +968,7 @@ namespace LambdaEngine
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
 		uint32 extensionGroupIndex = 0;
-		uint32 extensionsPerGroup = 0;
+		uint32 texturesPerExtensionGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
@@ -979,8 +980,14 @@ namespace LambdaEngine
 
 		static uint64 drawArgBufferOffset = 0;
 
-		// If the entity has extension data, it will differ from the default mask, and then add them to the entry.
-		bool hasExtensionData = meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask();
+		bool hasExtensionData = false;
+		DrawArgExtensionGroup* pExtensionGroup = nullptr;
+
+		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())
+		{
+			pExtensionGroup		= EntityMaskManager::GetExtensionGroup(entity);
+			hasExtensionData	= pExtensionGroup->TotalTextureCount > 0;
+		}
 
 		//Get meshAndInstancesIterator
 		{
@@ -1305,17 +1312,16 @@ namespace LambdaEngine
 		//Add Extension Group
 		if (hasExtensionData)
 		{
-			DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
-
-			//Check that this extension group has the same number of extensions as the ones already registered in this MeshEntry
+			//Check that this extension group has the same number of total textures as the ones already registered in this MeshEntry
 			if (!meshAndInstancesIt->second.ExtensionGroups.IsEmpty())
 			{
-				VALIDATE(meshAndInstancesIt->second.ExtensionGroups[0]->ExtensionCount == extensionGroup.ExtensionCount);
+				VALIDATE(meshAndInstancesIt->second.ExtensionGroups[0]->TotalTextureCount == pExtensionGroup->TotalTextureCount);
 			}
 
-			meshAndInstancesIt->second.ExtensionGroups.PushBack(&extensionGroup);
-			extensionGroupIndex = meshAndInstancesIt->second.ExtensionGroups.GetSize();
-			extensionsPerGroup	= extensionGroup.ExtensionCount;
+			extensionGroupIndex			= meshAndInstancesIt->second.ExtensionGroups.GetSize() + 1; // + 1 because we have a "Default" Extension at bottom
+			texturesPerExtensionGroup	= pExtensionGroup->TotalTextureCount;
+
+			meshAndInstancesIt->second.ExtensionGroups.PushBack(pExtensionGroup);
 
 			if (meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet != nullptr)
 			{
@@ -1324,7 +1330,7 @@ namespace LambdaEngine
 
 			meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
 
-			WriteDrawArgExtensionData(meshAndInstancesIt->second);
+			WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
 		}
 
 		// Update resource for the entity mesh paint textures that is used for ray tracing
@@ -1400,12 +1406,12 @@ namespace LambdaEngine
 		}
 
 		Instance instance = {};
-		instance.Transform				= transform;
-		instance.PrevTransform			= transform;
-		instance.MaterialIndex			= materialIndex;
-		instance.ExtensionGroupIndex	= extensionGroupIndex;
-		instance.ExtensionsPerGroup		= extensionsPerGroup;
-		instance.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
+		instance.Transform					= transform;
+		instance.PrevTransform				= transform;
+		instance.MaterialIndex				= materialIndex;
+		instance.ExtensionGroupIndex		= extensionGroupIndex;
+		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
+		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
@@ -1525,13 +1531,14 @@ namespace LambdaEngine
 
 				// Remove the group in the list and replace it with the last group.
 				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
+				uint32 texturesPerExtensionGroup = extensionGroups[0]->ExtensionCount;
 				extensionGroups[extensionGroupIndex] = extensionGroups.GetBack();
 				extensionGroups.PopBack();
 
 				// Remove data from the storage.
 				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
 
-				WriteDrawArgExtensionData(meshAndInstancesIt->second);
+				WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
 			}
 		}
 
@@ -1852,7 +1859,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::WriteDrawArgExtensionData(MeshEntry& meshEntry)
+	void RenderSystem::WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry)
 	{
 		static TArray<TextureView*> extensionTextureViews;
 		static TArray<Sampler*> extensionSamplers;
@@ -1860,8 +1867,12 @@ namespace LambdaEngine
 		extensionTextureViews.Clear();
 		extensionSamplers.Clear();
 
-		extensionTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
-		extensionSamplers.PushBack(Sampler::GetNearestSampler());
+		TextureView* pDefaultExtensionTexture = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
+		for (uint32 t = 0; t < texturesPerExtensionGroup; t++)
+		{
+			extensionTextureViews.PushBack(pDefaultExtensionTexture);
+			extensionSamplers.PushBack(Sampler::GetNearestSampler());
+		}
 
 		for (const DrawArgExtensionGroup* pExtensionGroup : meshEntry.ExtensionGroups)
 		{

@@ -87,7 +87,7 @@ struct SInstance
 	mat4 PrevTransform;
 	uint MaterialSlot;
 	uint ExtensionGroupIndex;
-	uint ExtensionsPerGroup;
+	uint TexturesPerExtensionGroup;
 	uint MeshletCount;
 };
 

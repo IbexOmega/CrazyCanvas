@@ -15,7 +15,7 @@ namespace LambdaEngine
 	struct DrawArgExtensionGroupEntry
 	{
 		uint32					Mask = 0;
-		DrawArgExtensionGroup	extensionGroup;
+		DrawArgExtensionGroup	ExtensionGroup;
 	};
 
 	class EntityMaskManager
@@ -34,7 +34,7 @@ namespace LambdaEngine
 
 		static void RemoveAllExtensionsFromEntity(Entity entity);
 		static void AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension);
-		static DrawArgExtensionGroup& GetExtensionGroup(Entity entity);
+		static DrawArgExtensionGroup* GetExtensionGroup(Entity entity);
 
 		static uint32 FetchEntityMask(Entity entity);
 		static uint32 FetchDefaultEntityMask();

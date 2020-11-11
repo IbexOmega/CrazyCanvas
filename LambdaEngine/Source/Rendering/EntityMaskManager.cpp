@@ -40,12 +40,13 @@ namespace LambdaEngine
 		auto it = s_EntityToExtensionGroupEntryMap.find(entity);
 		if (it != s_EntityToExtensionGroupEntryMap.end())
 		{
-			DrawArgExtensionGroup& extensionGroup = it->second.extensionGroup;
+			DrawArgExtensionGroup& extensionGroup = it->second.ExtensionGroup;
 			uint32 newIndex = extensionGroup.ExtensionCount++;
 
 			if (pDrawArgExtension != nullptr)
 			{
 				CopyDrawArgExtensionData(extensionGroup.pExtensions[newIndex], pDrawArgExtension);
+				extensionGroup.TotalTextureCount += pDrawArgExtension->TextureCount;
 			}
 
 			//extensionGroup.pExtensions[newIndex].ExtensionID = extensionFlag;
@@ -65,13 +66,14 @@ namespace LambdaEngine
 		}
 
 		DrawArgExtensionGroupEntry& groupEntry = s_EntityToExtensionGroupEntryMap[entity];
-		DrawArgExtensionGroup& extensionGroup = groupEntry.extensionGroup;
-		extensionGroup.ExtensionCount = 1;
+		DrawArgExtensionGroup& extensionGroup = groupEntry.ExtensionGroup;
 		extensionGroup.pExtensionFlags[0] = extensionFlag;
+		extensionGroup.ExtensionCount = 1;
 
 		if (pDrawArgExtension != nullptr)
 		{
 			CopyDrawArgExtensionData(extensionGroup.pExtensions[0], pDrawArgExtension);
+			extensionGroup.TotalTextureCount = pDrawArgExtension->TextureCount;
 		}
 
 		//extensionGroup.pExtensions[0].ExtensionID = extensionFlag;
@@ -80,10 +82,10 @@ namespace LambdaEngine
 		if (!inverted) groupEntry.Mask |= extensionFlag;
 	}
 
-	DrawArgExtensionGroup& EntityMaskManager::GetExtensionGroup(Entity entity)
+	DrawArgExtensionGroup* EntityMaskManager::GetExtensionGroup(Entity entity)
 	{
 		VALIDATE(s_EntityToExtensionGroupEntryMap.contains(entity));
-		return s_EntityToExtensionGroupEntryMap[entity].extensionGroup;
+		return &s_EntityToExtensionGroupEntryMap[entity].ExtensionGroup;
 	}
 
 	uint32 EntityMaskManager::FetchEntityMask(Entity entity)

@@ -4,7 +4,12 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
-#include "../MeshPaintHelper.glsl" // Has two layouts: b_PaintMaskColor, u_PaintMaskTextures
+#include "../Defines.glsl"
+#include "../Helpers.glsl"
+
+layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
+layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+#include "../MeshPaintHelper.glsl"
 
 layout(location = 0) in flat uint	in_MaterialSlot;
 layout(location = 1) in vec3		in_WorldPosition;
@@ -27,7 +32,7 @@ layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 { 
 	SPerFrameBuffer val; 
 } u_PerFrameBuffer;
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }	b_MaterialParameters;
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters 	{ SMaterialParameters val[]; }	b_MaterialParameters;
 layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
 	SLightsBuffer val; 
@@ -41,7 +46,6 @@ layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferDepthSte
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_DirLShadowMap;
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform samplerCube u_PointLShadowMap[];
 
-layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 
 layout(location = 0) out vec4 out_Color;
 

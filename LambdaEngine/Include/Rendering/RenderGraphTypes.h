@@ -345,6 +345,7 @@ namespace LambdaEngine
 		uint32					pExtensionFlags[MAX_EXTENSIONS_PER_MESH_TYPE];
 		DrawArgExtensionData	pExtensions[MAX_EXTENSIONS_PER_MESH_TYPE];
 		uint32					ExtensionCount = 0;
+		uint32					TotalTextureCount = 0;
 	};
 
 	struct DrawArgMaskDesc
