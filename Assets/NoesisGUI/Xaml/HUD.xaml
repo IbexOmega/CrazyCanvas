@@ -77,7 +77,7 @@
                 <RowDefinition/>
             </Grid.RowDefinitions>
 
-            <Grid x:Name="HEALTH_DISPLAY_GRID"  Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4">
+            <Grid x:Name="HEALTH_DISPLAY_GRID" Margin="0,0,0,25" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
@@ -94,35 +94,13 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <Border BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3" BorderBrush="Black">
-                    <Border.Background>
-                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                            <GradientStop Color="Black" Offset="0"/>
-                            <GradientStop Color="White" Offset="0.557"/>
-                            <GradientStop Color="#FF858585" Offset="1"/>
-                            <GradientStop Color="#FF414141"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
-
-                <Border x:Name="HEALTH_RECT"  BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"  Background="#FF00CF38" Margin="10" RenderTransformOrigin="0.0,0.0">
-                    <Border.RenderTransform>
-                        <ScaleTransform ScaleY="1"/>
-                    </Border.RenderTransform>
-                </Border>
-
-                <Border  BorderThickness="1" CornerRadius="0, 50, 0, 0" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3" Margin="10">
-                    <Border.Background>
-                        <LinearGradientBrush EndPoint="0.5,1" MappingMode="RelativeToBoundingBox" StartPoint="0.5,0">
-                            <GradientStop Color="Black"/>
-                            <GradientStop Color="#72FFFFFF" Offset="1"/>
-                            <GradientStop Color="#D6494949"/>
-                            <GradientStop Color="#7200CF38" Offset="0.496"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                </Border>
-
-                <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="2" Grid.Row="3" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0" Foreground="#FFC7144D" FontWeight="Bold" Height="31.923" Width="62.224" />
+                 <Image x:Name="HEALTH_RECT"  Grid.Column="1" Source="LifeContainerFiller.png" Height="400"  RenderTransformOrigin="0.5,0.75">
+                    <Image.RenderTransform>
+                        <ScaleTransform/>
+                    </Image.RenderTransform>
+                </Image>
+                <Image Grid.Column="1" Source="LifeContainer.png" Height="400" />
+                <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="1" Grid.Row="0" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0" Foreground="#FFC7144D" FontWeight="Bold" Height="31.923" Width="62.224" />
             </Grid>
 
             <Grid x:Name="SCORE_DISPLAY_GRID" Grid.Column="4" Grid.ColumnSpan="2" Grid.Row="0" Grid.RowSpan="2">  
@@ -195,19 +173,20 @@
             <Grid x:Name="DAMAGE_INDICATOR_GRID" Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="3" Grid.RowSpan="7" RenderTransformOrigin="0.5,0.5">
 
                 <Grid.RowDefinitions>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
 
                 <Grid.RenderTransform>
                     <RotateTransform/>
                 </Grid.RenderTransform>
-
+                
+                <uc:DamageIndicatorGUI x:Name="DAMAGE_INDICATOR" HorizontalAlignment="Center" VerticalAlignment="Center"/>  
                 <Image Source="HitIndicator.png" Height="75" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" OpacityMask="Black" />
             </Grid>
         </Grid>
