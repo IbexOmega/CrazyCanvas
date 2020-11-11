@@ -206,7 +206,7 @@ namespace LambdaEngine
 				positionComp.Position = { positionPX.x, positionPX.y, positionPX.z };
 
 				const PxQuat& quatPX = transformPX.q;
-				rotationComp.Quaternion = { quatPX.x, quatPX.y, quatPX.z, quatPX.w };
+				rotationComp.Quaternion = { quatPX.w, quatPX.x, quatPX.y, quatPX.z };
 
 				const PxVec3 velocityPX = pActor->getLinearVelocity();
 				velocityComp.Velocity = { velocityPX.x, velocityPX.y, velocityPX.z };
