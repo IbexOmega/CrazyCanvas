@@ -31,24 +31,26 @@
 #include "Match/Match.h"
 
 #include "Multiplayer/Packet/PacketType.h"
-#include "Multiplayer/ServerHostHelper.h"
 
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 
 #include "Multiplayer/ServerHelper.h"
+
+#include "Lobby/PlayerManagerServer.h"
 
 #include <windows.h>
 #include <Lmcons.h>
 
 using namespace LambdaEngine;
 
-ServerState::ServerState(const std::string& clientHostID, const std::string& authenticationID) :
-	m_MultiplayerServer()
+ServerState::ServerState(const std::string& clientHostID) :
+	m_MultiplayerServer(),
+	m_ClientHostID(0)
 {
-	if(!authenticationID.empty())
-		ServerHostHelper::SetAuthenticationID(std::stoi(authenticationID)); //ID server checks to authenticate client with higher authorities
 	if (!clientHostID.empty())
-		ServerHostHelper::SetClientHostID(std::stoi(clientHostID)); // ID client checks to see if it were the creater of server
+		m_ClientHostID = std::stoi(clientHostID);
+	else
+		m_ClientHostID = Random::Int32(0);
 
 	DWORD length = UNLEN + 1;
 	char buffer[UNLEN + 1];
@@ -60,14 +62,14 @@ ServerState::~ServerState()
 {
 	EventQueue::UnregisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketConfigureServer>>(this, &ServerState::OnPacketConfigureServerReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 }
 
 void ServerState::Init()
 {
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketConfigureServer>>(this, &ServerState::OnPacketConfigureServerReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -103,7 +105,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	pEncoder->WriteUInt8(pServer->GetClientCount());
 	pEncoder->WriteString(m_ServerName);
 	pEncoder->WriteString("Map Name");
-	pEncoder->WriteInt32(ServerHostHelper::GetClientHostID());
+	pEncoder->WriteInt32(m_ClientHostID);
 
 	return true;
 }
@@ -118,11 +120,11 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
-bool ServerState::OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketConfigureServer>& event)
+bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& event)
 {	
-	const PacketConfigureServer& packet = event.Packet;
+	const PacketGameSettings& packet = event.Packet;
 
-	if (packet.AuthenticationID == ServerHostHelper::GetAuthenticationHostID())
+	if (PlayerManagerServer::HasPlayerAuthority(event.pClient))
 	{
 		LOG_INFO("Configuring Server With The Following Settings:");
 		LOG_INFO("Players: %hhu", packet.Players);

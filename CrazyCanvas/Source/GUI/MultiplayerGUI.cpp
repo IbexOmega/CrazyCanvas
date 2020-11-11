@@ -13,6 +13,7 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "States/LobbyState.h"
 #include "States/PlaySessionState.h"
 
 #include "GUI/MultiplayerGUI.h"
@@ -29,10 +30,14 @@
 
 #include "Math\Random.h"
 
-#include "Multiplayer/ServerHostHelper.h"
 #include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
+
+#include "Lobby/PlayerManagerClient.h"
+
+#include <windows.h>
+#include <Lmcons.h>
 
 using namespace LambdaEngine;
 using namespace Noesis;
@@ -40,7 +45,8 @@ using namespace Noesis;
 MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 	m_HostGameDesc(),
 	m_ServerList(),
-	m_Servers()
+	m_Servers(),
+	m_ClientHostID(-1)
 {
 	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
 
@@ -62,9 +68,16 @@ MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 
 	for (ServerInfo& serverInfo : serverInfos)
 	{
-		HandleServerInfo(serverInfo, -1);
+		HandleServerInfo(serverInfo);
 		ClientHelper::AddNetworkDiscoveryTarget(serverInfo.EndPoint.GetAddress());
 	}
+
+	// Use Host name as default In Game name
+	DWORD length = UNLEN + 1;
+	char name[UNLEN + 1];
+	GetUserNameA(name, &length);
+	FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->SetText(name);
+
 }
 
 MultiplayerGUI::~MultiplayerGUI()
@@ -113,22 +126,20 @@ bool MultiplayerGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent&
 	pDecoder->ReadString(serverInfo.MapName);
 	int32 clientHostID = pDecoder->ReadInt32();
 
-	HandleServerInfo(serverInfo, clientHostID);
+	HandleServerInfo(serverInfo);
+
+	if (m_ClientHostID == clientHostID)
+	{
+		SetRenderStagesActive();
+		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
+	}
 
 	return true;
 }
 
-void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave)
+void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, bool forceSave)
 {
 	ServerInfo& currentInfo = m_Servers[serverInfo.EndPoint.GetAddress()];
-
-	if (ServerHostHelper::GetClientHostID() == clientHostID && m_HasHostedServer)
-	{
-		SetRenderStagesActive();
-
-		State* pPlaySessionState = DBG_NEW PlaySessionState(false, serverInfo.EndPoint);
-		StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-	}
 
 	LambdaEngine::String oldName = currentInfo.Name;
 
@@ -154,17 +165,18 @@ void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID
 		SavedServerSystem::SaveServers(m_Servers);
 }
 
+bool MultiplayerGUI::HasHostedServer() const
+{
+	return m_ClientHostID != -1;
+}
+
 bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-	if (m_HasHostedServer)
-	{
-		PacketConfigureServer packet;
-		packet.AuthenticationID	= ServerHostHelper::GetAuthenticationHostID();
-		packet.MapID			= m_HostGameDesc.MapNumber;
-		packet.Players			= m_HostGameDesc.PlayersNumber;
 
-		ClientHelper::Send(packet);
-	}
+	LambdaEngine::String inGameName = FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->GetText();
+
+	State* pLobbyState = DBG_NEW LobbyState(inGameName, HasHostedServer());
+	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;
 }
@@ -193,14 +205,12 @@ void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const 
 		ServerInfo& serverInfo = m_Servers[pAddress];
 		serverInfo.EndPoint = endPoint;
 
-		HandleServerInfo(serverInfo, -1, true);
+		HandleServerInfo(serverInfo, true);
 
 		LambdaEngine::GUIApplication::SetView(nullptr);
 
 		SetRenderStagesActive();
-
-		State* pPlayState = DBG_NEW PlaySessionState(false, endPoint);
-		StateManager::GetInstance()->EnqueueStateTransition(pPlayState, STATE_TRANSITION::POP_AND_PUSH);
+		ClientSystem::GetInstance().Connect(endPoint);
 	}
 	else
 	{
@@ -246,12 +256,10 @@ void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const
 	{
 		ErrorPopUp(HOST_ERROR);
 	}
-	else if(!m_HasHostedServer)
+	else if(!HasHostedServer())
 	{
 		//start Server with populated struct
 		NotiPopUP(HOST_NOTIFICATION);
-
-		m_HasHostedServer = true;
 
 #if defined(LAMBDA_CONFIG_DEBUG)
 		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
@@ -301,9 +309,7 @@ bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 
 				SetRenderStagesActive();
 
-				State* pPlaySessionState = DBG_NEW PlaySessionState(false, serverInfo.EndPoint);
-				StateManager::GetInstance()->EnqueueStateTransition(pPlaySessionState, STATE_TRANSITION::POP_AND_PUSH);
-				return true;
+				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);;
 			}
 			return false;
 		}
@@ -352,17 +358,10 @@ bool MultiplayerGUI::StartUpServer(const std::string& applicationName, const std
 	//additional Info
 	STARTUPINFOA lpStartupInfo;
 	PROCESS_INFORMATION lpProcessInfo;
-	
-	uint32 randAuthenticationID = Random::UInt32(0, UINT32_MAX / 2);
-	uint32 randClientHostID = Random::UInt32(0, UINT32_MAX / 2);
 
-	ServerHostHelper::SetAuthenticationID(randAuthenticationID);
-	ServerHostHelper::SetClientHostID(randClientHostID);
+	m_ClientHostID = Random::Int32();
 
-	std::string authenticationID = std::to_string(randAuthenticationID);
-	std::string clientHostID = std::to_string(randClientHostID);
-
-	std::string finalCLine = applicationName + " " + commandLine + " " + clientHostID + " " + authenticationID;
+	std::string finalCLine = applicationName + " " + commandLine + " " + std::to_string(m_ClientHostID);
 
 	// set the size of the structures
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));

@@ -32,7 +32,7 @@ namespace LambdaEngine
 		clientDesc.Protocol				= EProtocolParser::FromString(protocol);
 		clientDesc.PingInterval			= Timestamp::Seconds(1);
 		clientDesc.PingTimeout			= Timestamp::Seconds(10);
-		clientDesc.UsePingSystem		= true;
+		clientDesc.UsePingSystem		= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 

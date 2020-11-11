@@ -9,7 +9,7 @@ namespace Obj
 #pragma pack(push, 1)
 	struct Player
 	{
-		bool IsMySelf;
+		uint64 ClientUID;
 		uint8 TeamIndex;
 		int32 WeaponNetworkUID;
 	};
