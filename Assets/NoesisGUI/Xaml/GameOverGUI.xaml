@@ -70,16 +70,19 @@
 
             <Border Grid.Column="0" BorderThickness="10, 10, 10, 10" CornerRadius="50, 50, 50, 50" Grid.Row="0" Grid.RowSpan="5" Background="Black" BorderBrush="White" Margin="10"></Border>
             <TextBlock Grid.Column="0" Text="Most Kills" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
-            <TextBlock x:Name="MOST_KILLS_TEXT" Grid.Column="0" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+            <TextBlock x:Name="MOST_KILLS_NAME" Grid.Column="0" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+            <TextBlock x:Name="MOST_KILLS_SCORE" Grid.Column="0" Grid.Row="3" Text="0" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
 
 
             <Border Grid.Column="1" BorderThickness="10, 10, 10, 10" CornerRadius="50, 50, 50, 50" Grid.Row="0" Grid.RowSpan="5" Background="Black" BorderBrush="White" Margin="10"></Border>
             <TextBlock Grid.Column="1" Text="Most Deaths" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
-            <TextBlock x:Name="MOST_DEATHS_TEXT" Grid.Column="1" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+            <TextBlock x:Name="MOST_DEATHS_NAME" Grid.Column="1" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+            <TextBlock x:Name="MOST_DEATHS_SCORE" Grid.Column="1" Grid.Row="3" Text="0" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
 
             <Border Grid.Column="2" BorderThickness="10, 10, 10, 10" CornerRadius="50, 50, 50, 50" Grid.Row="0" Grid.RowSpan="5" Background="Black" BorderBrush="White" Margin="10"></Border>
             <TextBlock Grid.Column="2" Text="Most Flags Captured" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"  Foreground="White"></TextBlock>
-            <TextBlock x:Name="MOST_FLAGS_TEXT" Grid.Column="2" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+            <TextBlock x:Name="MOST_FLAGS_NAME" Grid.Column="2" Grid.Row="2" Text=" " FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
+            <TextBlock x:Name="MOST_FLAGS_SCORE" Grid.Column="2" Grid.Row="3" Text="0" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"></TextBlock>
 
         </Grid>
 

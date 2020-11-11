@@ -20,6 +20,10 @@ public:
 	void OnReturnToLobbyButtonClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 	void DisplayGameOverGrid(bool isVisible);
+	
+	void SetMostKillsStats(uint8 score, const LambdaEngine::String& playerName);
+	void SetMostDeathsStats(uint8 score, const LambdaEngine::String& playerName);
+	void SetMostFlagsStats(uint8 score, const LambdaEngine::String& playerName);
 	void SetWinningTeam(uint8 winningTeamIndex);
 	void InitGUI();
 

@@ -193,7 +193,7 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
-void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex)
+void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags)
 {
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
 
@@ -201,6 +201,10 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex)
 	pGameOverGUI->InitGUI();
 	pGameOverGUI->DisplayGameOverGrid(true);
 	pGameOverGUI->SetWinningTeam(winningTeamIndex);
+
+	pGameOverGUI->SetMostKillsStats(mostKills.first, mostKills.second->GetName());
+	pGameOverGUI->SetMostDeathsStats(mostDeaths.first, mostDeaths.second->GetName());
+	pGameOverGUI->SetMostFlagsStats(mostFlags.first, mostFlags.second->GetName());
 }
 
 void HUDGUI::InitGUI()

@@ -225,7 +225,31 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 	//un-lock mouse
 	Input::PushInputMode(EInputLayer::GUI);
 
-	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex);
+	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
+
+	PlayerPair mostKills((uint8)0, nullptr);
+	PlayerPair mostFlags((uint8)0, nullptr);
+	PlayerPair mostDeaths((uint8)0, nullptr);
+
+	for (auto& pair : playerMap)
+	{
+		const Player* player = &pair.second;
+
+		uint8 kills = player->GetKills();
+		uint8 deaths = player->GetDeaths();
+		uint8 flags = player->GetFlagsCaptured();
+		
+		if (kills >= mostKills.first)
+			mostKills = std::make_pair(kills, player);
+
+		if (deaths >= mostDeaths.first)
+			mostDeaths = std::make_pair(deaths, player);
+
+		if (flags >= mostFlags.first)
+			mostFlags = std::make_pair(flags, player);
+	}
+
+	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostFlags, mostDeaths);
 
 	return false;
 }

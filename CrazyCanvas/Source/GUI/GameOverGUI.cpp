@@ -48,6 +48,24 @@ void GameOverGUI::DisplayGameOverGrid(bool isVisible)
 	LambdaEngine::ResourceManager::GetSoundEffect2D(m_GameOverSound)->PlayOnce(1.0f);
 }
 
+void GameOverGUI::SetMostKillsStats(uint8 score, const LambdaEngine::String& playerName)
+{
+	m_pMostKillsText->SetText(playerName.c_str());
+	FindName<Noesis::TextBlock>("MOST_KILLS_SCORE")->SetText(std::to_string(score).c_str());
+}
+
+void GameOverGUI::SetMostDeathsStats(uint8 score, const LambdaEngine::String& playerName)
+{
+	m_pMostDeathsText->SetText(playerName.c_str());
+	FindName<Noesis::TextBlock>("MOST_DEATHS_SCORE")->SetText(std::to_string(score).c_str());
+}
+
+void GameOverGUI::SetMostFlagsStats(uint8 score, const LambdaEngine::String& playerName)
+{
+	m_pMostFlagsText->SetText(playerName.c_str());
+	FindName<Noesis::TextBlock>("MOST_FLAGS_SCORE")->SetText(std::to_string(score).c_str());
+}
+
 void GameOverGUI::SetWinningTeam(uint8 winningTeamIndex)
 {
 	LambdaEngine::String winningTeamString = "";
@@ -69,9 +87,9 @@ void GameOverGUI::InitGUI()
 
 	m_pWinningTeamText = FindName<Noesis::TextBlock>("WINNING_TEAM_TEXT");
 
-	m_pMostKillsText	= FindName<Noesis::TextBlock>("MOST_KILLS_TEXT");
-	m_pMostDeathsText	= FindName<Noesis::TextBlock>("MOST_DEATHS_TEXT");
-	m_pMostFlagsText	= FindName<Noesis::TextBlock>("MOST_FLAGS_TEXT");
+	m_pMostKillsText	= FindName<Noesis::TextBlock>("MOST_KILLS_NAME");
+	m_pMostDeathsText	= FindName<Noesis::TextBlock>("MOST_DEATHS_NAME");
+	m_pMostFlagsText	= FindName<Noesis::TextBlock>("MOST_FLAGS_NAME");
 
 	LambdaEngine::CommonApplication::Get()->SetMouseVisibility(true);
 	PlayerActionSystem::SetMouseEnabled(false);
