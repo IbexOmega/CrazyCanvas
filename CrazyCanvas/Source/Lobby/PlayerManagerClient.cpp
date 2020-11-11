@@ -8,9 +8,47 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "Multiplayer/Packet/PacketPlayerState.h"
+#include "Multiplayer/Packet/PacketPlayerReady.h"
+
 #include "Events/PlayerEvents.h"
 
 using namespace LambdaEngine;
+
+void PlayerManagerClient::Init()
+{
+	PlayerManagerBase::Init();
+
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketJoin>>(&PlayerManagerClient::OnPacketJoinReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketLeave>>(&PlayerManagerClient::OnPacketLeaveReceived);
+	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(&PlayerManagerClient::OnClientDisconnected);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerScore>>(&PlayerManagerClient::OnPacketPlayerScoreReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerState>>(&PlayerManagerClient::OnPacketPlayerStateReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerReady>>(&PlayerManagerClient::OnPacketPlayerReadyReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerDied>>(&PlayerManagerClient::OnPacketPlayerDiedReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerPing>>(&PlayerManagerClient::OnPacketPlayerPingReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerHost>>(&PlayerManagerClient::OnPacketPlayerHostReceived);
+}
+
+void PlayerManagerClient::Release()
+{
+	PlayerManagerBase::Release();
+
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketJoin>>(&PlayerManagerClient::OnPacketJoinReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketLeave>>(&PlayerManagerClient::OnPacketLeaveReceived);
+	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(&PlayerManagerClient::OnClientDisconnected);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerScore>>(&PlayerManagerClient::OnPacketPlayerScoreReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerState>>(&PlayerManagerClient::OnPacketPlayerStateReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerReady>>(&PlayerManagerClient::OnPacketPlayerReadyReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerDied>>(&PlayerManagerClient::OnPacketPlayerDiedReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerPing>>(&PlayerManagerClient::OnPacketPlayerPingReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerHost>>(&PlayerManagerClient::OnPacketPlayerHostReceived);
+}
+
+void PlayerManagerClient::Reset()
+{
+	PlayerManagerBase::Reset();
+}
 
 const Player* PlayerManagerClient::GetPlayerLocal()
 {
@@ -50,67 +88,80 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 
 void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 {
+	ASSERT(!MultiplayerUtils::IsServer());
+
 	Player* pPlayer = GetPlayerLocalNoConst();
 	if (pPlayer)
 	{
-		EPlayerState currentState = pPlayer->m_State;
+		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_LOBBY, "Player not in LOBBY state!");
 
-		ASSERT_MSG(currentState == PLAYER_STATE_READY || currentState == PLAYER_STATE_LOBBY, "Player not in Lobby or Ready state!");
-
-		PacketPlayerInfo packet;
-		UpdatePacketFromPlayer(&packet, pPlayer);
-		packet.State = ready ? PLAYER_STATE_READY : PLAYER_STATE_LOBBY;
-
-		if(UpdatePlayerFromPacket(pPlayer, &packet))
+		if (pPlayer->IsHost())
 		{
+			pPlayer->m_State = GAME_STATE_SETUP;
+
+			PacketPlayerState packet;
+			packet.State = pPlayer->m_State;
+
 			ClientHelper::Send(packet);
 
-			PlayerInfoUpdatedEvent playerInfoUpdatedEvent(pPlayer);
-			EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
+			PlayerStateUpdatedEvent event(pPlayer);
+			EventQueue::SendEventImmediate(event);
 		}
+		else if (pPlayer->m_IsReady != ready)
+		{
+			pPlayer->m_IsReady = ready;
+
+			PacketPlayerReady packet;
+			packet.IsReady = pPlayer->m_IsReady;
+
+			ClientHelper::Send(packet);
+
+			PlayerReadyUpdatedEvent playerReadyUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerReadyUpdatedEvent);
+		}
+	}
+}
+
+void PlayerManagerClient::SetLocalPlayerStateLoading()
+{
+	ASSERT(!MultiplayerUtils::IsServer());
+
+	Player* pPlayer = GetPlayerLocalNoConst();
+	if (pPlayer)
+	{
+		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_SETUP, "Player not in SETUP state!");
+
+		pPlayer->m_State = GAME_STATE_LOADING;
+
+		PacketPlayerState packet;
+		packet.State = pPlayer->m_State;
+
+		ClientHelper::Send(packet);
+
+		PlayerStateUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
 	}
 }
 
 void PlayerManagerClient::SetLocalPlayerStateLoaded()
 {
+	ASSERT(!MultiplayerUtils::IsServer());
+
 	Player* pPlayer = GetPlayerLocalNoConst();
 	if (pPlayer)
 	{
-		EPlayerState currentState = pPlayer->m_State;
+		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_LOADING, "Player not in LOADING state!");
 
-		ASSERT_MSG(currentState == PLAYER_STATE_LOADING, "Prev state was not LOADING!");
+		pPlayer->m_State = GAME_STATE_LOADED;
 
-		PacketPlayerInfo packet;
-
-		UpdatePacketFromPlayer(&packet, pPlayer);
-		packet.State = PLAYER_STATE_LOADED;
-		UpdatePlayerFromPacket(pPlayer, &packet);
+		PacketPlayerState packet;
+		packet.State = pPlayer->m_State;
 
 		ClientHelper::Send(packet);
 
-		PlayerInfoUpdatedEvent playerInfoUpdatedEvent(pPlayer);
-		EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
+		PlayerStateUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
 	}
-}
-
-void PlayerManagerClient::Init()
-{
-	PlayerManagerBase::Init();
-
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketJoin>>(&PlayerManagerClient::OnPacketJoinReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketLeave>>(&PlayerManagerClient::OnPacketLeaveReceived);
-	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(&PlayerManagerClient::OnClientDisconnected);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerInfo>>(&PlayerManagerClient::OnPacketPlayerInfoReceived);
-}
-
-void PlayerManagerClient::Release()
-{
-	PlayerManagerBase::Release();
-
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketJoin>>(&PlayerManagerClient::OnPacketJoinReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketLeave>>(&PlayerManagerClient::OnPacketLeaveReceived);
-	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(&PlayerManagerClient::OnClientDisconnected);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerInfo>>(&PlayerManagerClient::OnPacketPlayerInfoReceived);
 }
 
 bool PlayerManagerClient::OnPacketJoinReceived(const PacketReceivedEvent<PacketJoin>& event)
@@ -134,20 +185,153 @@ bool PlayerManagerClient::OnClientDisconnected(const LambdaEngine::ClientDisconn
 	return true;
 }
 
-bool PlayerManagerClient::OnPacketPlayerInfoReceived(const PacketReceivedEvent<PacketPlayerInfo>& event)
+bool PlayerManagerClient::OnPacketPlayerScoreReceived(const PacketReceivedEvent<PacketPlayerScore>& event)
 {
-	const PacketPlayerInfo& packet = event.Packet;
+	const PacketPlayerScore& packet = event.Packet;
 
 	Player* pPlayer = GetPlayerNoConst(packet.UID);
 
 	if (pPlayer)
 	{
-		if (UpdatePlayerFromPacket(pPlayer, &packet))
+		bool changed = false;
+		if (pPlayer->m_Team != packet.Team)
 		{
-			PlayerInfoUpdatedEvent playerInfoUpdatedEvent(pPlayer);
-			EventQueue::SendEventImmediate(playerInfoUpdatedEvent);
+			changed = true;
+			pPlayer->m_Team = packet.Team;
+		}
+		if (pPlayer->m_Kills != packet.Kills)
+		{
+			changed = true;
+			pPlayer->m_Kills = packet.Kills;
+		}
+		if (pPlayer->m_Deaths != packet.Deaths)
+		{
+			changed = true;
+			pPlayer->m_Deaths = packet.Deaths;
+		}
+		if (pPlayer->m_FlagsCaptured != packet.FlagsCaptured)
+		{
+			changed = true;
+			pPlayer->m_FlagsCaptured = packet.FlagsCaptured;
+		}
+		if (pPlayer->m_FlagsDefended != packet.FlagsDefended)
+		{
+			changed = true;
+			pPlayer->m_FlagsDefended = packet.FlagsDefended;
+		}
+
+		if (changed)
+		{
+			PlayerScoreUpdatedEvent playerScoreUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerScoreUpdatedEvent);
 		}
 	}
 
-	return false;
+	return true;
+}
+
+bool PlayerManagerClient::OnPacketPlayerStateReceived(const PacketReceivedEvent<PacketPlayerState>& event)
+{
+	const PacketPlayerState& packet = event.Packet;
+
+	Player* pPlayer = GetPlayerNoConst(packet.UID);
+
+	if (pPlayer)
+	{
+		if (pPlayer->m_State != packet.State)
+		{
+			pPlayer->m_State = packet.State;
+
+			PlayerStateUpdatedEvent playerStateUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerStateUpdatedEvent);
+		}
+	}
+	return true;
+}
+
+bool PlayerManagerClient::OnPacketPlayerReadyReceived(const PacketReceivedEvent<PacketPlayerReady>& event)
+{
+	const PacketPlayerReady& packet = event.Packet;
+
+	Player* pPlayer = GetPlayerNoConst(packet.UID);
+
+	if (pPlayer)
+	{
+		if (pPlayer->m_IsReady != packet.IsReady)
+		{
+			pPlayer->m_IsReady = packet.IsReady;
+
+			PlayerReadyUpdatedEvent playerReadyUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerReadyUpdatedEvent);
+		}
+	}
+	return true;
+}
+
+bool PlayerManagerClient::OnPacketPlayerDiedReceived(const PacketReceivedEvent<PacketPlayerDied>& event)
+{
+	const PacketPlayerDied& packet = event.Packet;
+
+	Player* pPlayer = GetPlayerNoConst(packet.UID);
+
+	if (pPlayer)
+	{
+		if (!pPlayer->m_IsDead)
+		{
+			pPlayer->m_IsDead = true;
+
+			PlayerDeadUpdatedEvent playerDeadUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerDeadUpdatedEvent);
+		}
+	}
+	return true;
+}
+
+bool PlayerManagerClient::OnPacketPlayerHostReceived(const PacketReceivedEvent<PacketPlayerHost>& event)
+{
+	const PacketPlayerHost& packet = event.Packet;
+
+	Player* pPlayer = GetPlayerNoConst(packet.UID);
+
+	if (pPlayer)
+	{
+		if (!pPlayer->m_IsHost)
+		{
+			for (auto& pair : s_Players)
+			{
+				Player& player = pair.second;
+				if (player.IsHost())
+				{
+					player.m_IsHost = false;
+					PlayerHostUpdatedEvent playerHostUpdatedEvent(pPlayer);
+					EventQueue::SendEventImmediate(playerHostUpdatedEvent);
+				}
+			}
+
+			pPlayer->m_IsHost = true;
+
+			PlayerHostUpdatedEvent playerHostUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerHostUpdatedEvent);
+		}
+	}
+	return true;
+}
+
+bool PlayerManagerClient::OnPacketPlayerPingReceived(const PacketReceivedEvent<PacketPlayerPing>& event)
+{
+	const PacketPlayerPing& packet = event.Packet;
+
+	Player* pPlayer = GetPlayerNoConst(packet.UID);
+
+	if (pPlayer)
+	{
+		if (pPlayer->m_Ping != packet.Ping)
+		{
+			pPlayer->m_Ping = packet.Ping;
+
+			PlayerPingUpdatedEvent playerPingUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerPingUpdatedEvent);
+		}
+	}
+	return true;
 }

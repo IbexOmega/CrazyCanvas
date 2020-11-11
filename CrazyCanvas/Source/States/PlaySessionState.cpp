@@ -71,7 +71,10 @@ void PlaySessionState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -100,7 +103,7 @@ void PlaySessionState::Init()
 	else
 	{
 		//Called to tell the server we are ready to start the match
-		PlayerManagerClient::SetLocalPlayerStateLoaded();
+		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
 }
 

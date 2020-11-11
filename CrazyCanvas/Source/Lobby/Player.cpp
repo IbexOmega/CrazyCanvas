@@ -6,8 +6,10 @@ Player::Player() :
     m_Name(),
     m_Entity(UINT32_MAX),
     m_IsHost(false),
+    m_IsDead(false),
+    m_IsReady(false),
     m_Ping(),
-    m_State(PLAYER_STATE_LOBBY),
+    m_State(GAME_STATE_LOBBY),
     m_Team(0),
     m_Kills(0),
     m_Deaths(0),
@@ -33,12 +35,22 @@ bool Player::IsHost() const
     return m_IsHost;
 }
 
+bool Player::IsDead() const
+{
+    return m_IsDead;
+}
+
+bool Player::IsReady() const
+{
+    return m_IsReady;
+}
+
 uint16 Player::GetPing() const
 {
     return m_Ping;
 }
 
-EPlayerState Player::GetState() const
+EGameState Player::GetState() const
 {
     return m_State;
 }
@@ -71,11 +83,6 @@ uint8 Player::GetFlagsDefended() const
 uint64 Player::GetUID() const
 {
     return m_UID;
-}
-
-bool Player::IsReady() const
-{
-    return m_State == PLAYER_STATE_READY;
 }
 
 bool Player::operator==(const Player& other) const

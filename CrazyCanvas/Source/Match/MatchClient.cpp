@@ -18,6 +18,8 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 #include "Events/MatchEvents.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -35,23 +37,25 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 }
 
 bool MatchClient::InitInternal()
 {
 	if (MultiplayerUtils::IsSingleplayer())
 	{
-		m_HasBegun = false;
-		m_ClientSideBegun = false;
-		m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+		m_HasBegun = true;
+		m_ClientSideBegun = true;
+		m_MatchBeginTimer = 0.0f;
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -98,7 +102,7 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
 			EventQueue::SendEvent<MatchCountdownEvent>(1);
 		}
-		else if (previousTimer >= 0.0f && m_MatchBeginTimer < 0.0f)
+		else if (m_MatchBeginTimer < 0.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.1f);
 			EventQueue::SendEvent<MatchCountdownEvent>(0);
@@ -227,6 +231,16 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 	return true;
 }
 
+bool MatchClient::OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	//Makes sure we have finished loading everything....
+
+	PlayerManagerClient::SetLocalPlayerStateLoaded();
+
+	return true;
+}
+
 bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event)
 {
 	UNREFERENCED_VARIABLE(event);
@@ -254,7 +268,6 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 
 	CreateProjectileDesc createProjectileDesc;
 	createProjectileDesc.AmmoType		= event.AmmoType;
-	createProjectileDesc.FireDirection	= event.Direction;
 	createProjectileDesc.FirePosition	= event.Position;
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;

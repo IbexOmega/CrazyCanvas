@@ -55,7 +55,7 @@ void main()
     const uint MAX_BOUNCES = 8;
     bool shadeOutput     = false;
 
-    const uint 		rayFlags           	= gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+    const uint 		rayFlags           	= gl_RayFlagsNoneEXT;//gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
     const uint 		cullMask           	= 0xFF;
     const uint 		sbtRecordOffset    	= 0;
     const uint 		sbtRecordStride    	= 0;

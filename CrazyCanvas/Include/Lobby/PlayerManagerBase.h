@@ -8,7 +8,7 @@
 #include "Multiplayer/Packet/MultiplayerEvents.h"
 #include "Multiplayer/Packet/PacketJoin.h"
 #include "Multiplayer/Packet/PacketLeave.h"
-#include "Multiplayer/Packet/PacketPlayerInfo.h"
+#include "Multiplayer/Packet/PacketPlayerScore.h"
 
 #include "Lobby/Player.h"
 
@@ -32,6 +32,7 @@ public:
 protected:
 	static void Init();
 	static void Release();
+	static void Reset();
 
 	static Player* GetPlayerNoConst(uint64 uid);
 	static Player* GetPlayerNoConst(LambdaEngine::IClient* pClient);
@@ -39,9 +40,6 @@ protected:
 
 	static Player* HandlePlayerJoined(uint64 uid, const PacketJoin& packet);
 	static void HandlePlayerLeft(uint64 uid);
-
-	static bool UpdatePlayerFromPacket(Player* pPlayer, const PacketPlayerInfo* pPacket);
-	static void UpdatePacketFromPlayer(PacketPlayerInfo* pPacket, const Player* pPlayer);
 
 protected:
 	static LambdaEngine::THashTable<uint64, Player> s_Players;

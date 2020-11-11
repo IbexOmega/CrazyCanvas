@@ -20,7 +20,7 @@ public:
 	MainMenuGUI();
 	~MainMenuGUI();
 
-	bool ConnectEvent(Noesis::BaseComponent* pSoruce, const char* pEvent, const char* pHandler) override;
+	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	// General
 

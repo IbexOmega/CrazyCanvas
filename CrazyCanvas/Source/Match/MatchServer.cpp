@@ -36,6 +36,7 @@
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketMatchReady.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 
@@ -51,7 +52,6 @@ MatchServer::~MatchServer()
 	
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
 	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 }
 
@@ -69,7 +69,6 @@ bool MatchServer::InitInternal()
 
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketStartGame>>(this, &MatchServer::OnPacketStartGameReceived);
 	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 
 	return true;
@@ -197,18 +196,16 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 #endif
 }
 
-bool MatchServer::OnPacketStartGameReceived(const PacketReceivedEvent<PacketStartGame>& event)
+void MatchServer::BeginLoading()
 {
 	using namespace LambdaEngine;
-	LOG_INFO("SERVER: Game Start");
-
-	PlayerManagerServer::SetPlayerStateLoading();
+	LOG_INFO("SERVER: Loading started!");
 
 	const THashTable<uint64, Player>& players = PlayerManagerBase::GetPlayers();
 
 	for (auto& pair : players)
 	{
-		CreatePlayer(pair.second);
+		SpawnPlayer(pair.second);
 	}
 
 	// Send flag data to clients
@@ -238,7 +235,8 @@ bool MatchServer::OnPacketStartGameReceived(const PacketReceivedEvent<PacketStar
 		}
 	}
 
-	return true;
+	PacketMatchReady packet;
+	ServerHelper::SendBroadcast(packet);
 }
 
 void MatchServer::MatchStart()
@@ -264,7 +262,7 @@ void MatchServer::MatchBegin()
 	LOG_INFO("SERVER: Match Begin");
 }
 
-void MatchServer::CreatePlayer(const Player& player)
+void MatchServer::SpawnPlayer(const Player& player)
 {
 	using namespace LambdaEngine;
 
@@ -401,7 +399,6 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 
 	CreateProjectileDesc createProjectileDesc;
 	createProjectileDesc.AmmoType		= event.AmmoType;
-	createProjectileDesc.FireDirection	= event.Direction;
 	createProjectileDesc.FirePosition	= event.Position;
 	createProjectileDesc.InitalVelocity	= event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
@@ -419,75 +416,6 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	return false;
 }
 
-/*void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
-{
-	using namespace LambdaEngine;
-
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	TArray<Entity> playerSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
-
-	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-
-	glm::vec3 position(0.0f, 5.0f, 0.0f);
-	glm::vec3 forward(0.0f, 0.0f, 1.0f);
-
-	for (Entity spawnPoint : playerSpawnPointEntities)
-	{
-		const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
-
-		if (teamComponent.TeamIndex == m_NextTeamIndex)
-		{
-			const PositionComponent& positionComponent = pPositionComponents->GetConstData(spawnPoint);
-			position = positionComponent.Position + glm::vec3(0.0f, 1.0f, 0.0f);
-			forward = glm::normalize(-glm::vec3(position.x, 0.0f, position.z));
-			break;
-		}
-	}
-
-	CreatePlayerDesc createPlayerDesc =
-	{
-		.ClientUID		= pClient->GetUID(),
-		.Position		= position,
-		.Forward		= forward,
-		.Scale			= glm::vec3(1.0f),
-		.TeamIndex		= m_NextTeamIndex,
-	};
-
-	TArray<Entity> createdPlayerEntities;
-	if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
-	{
-		VALIDATE(createdPlayerEntities.GetSize() == 1);
-
-		PacketCreateLevelObject packet;
-		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
-		packet.Position			= position;
-		packet.Forward			= forward;
-		packet.Player.TeamIndex	= m_NextTeamIndex;
-
-		ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
-		for (Entity playerEntity : createdPlayerEntities)
-		{
-			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(playerEntity);
-			packet.Player.IsMySelf	= true;
-			packet.NetworkUID		= playerEntity;
-			packet.Player.WeaponNetworkUID = childComp.GetEntityWithTag("weapon");
-
-			ServerHelper::Send(pClient, packet);
-
-			packet.Player.IsMySelf	= false;
-			ServerHelper::SendBroadcast(packet, nullptr, pClient);
-		}
-	}
-	else
-	{
-		LOG_ERROR("[MatchServer]: Failed to create Player");
-	}
-
-	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
-}*/
-
 void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 {
 	m_pLevel->DeleteObject(entity);
@@ -497,87 +425,6 @@ void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 
 	ServerHelper::SendBroadcast(packet);
 }
-/*
-bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
-{
-	return true;
-
-
-
-
-
-
-
-
-	using namespace LambdaEngine;
-
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	IClient* pClient = event.pClient;
-
-	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
-	ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
-
-	// Send currently existing players to the new client
-	{
-		TArray<Entity> playerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
-
-		PacketCreateLevelObject packet;
-		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
-		packet.Player.IsMySelf	= false;
-
-		for (Entity otherPlayerEntity : playerEntities)
-		{
-			const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
-			const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
-			const TeamComponent& teamComponent	= pTeamComponents->GetConstData(otherPlayerEntity);
-			const ChildComponent& childComp		= pCreatedChildComponents->GetConstData(otherPlayerEntity);
-
-			packet.NetworkUID				= otherPlayerEntity;
-			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");
-			packet.Position			= positionComponent.Position;
-			packet.Forward			= GetForward(rotationComponent.Quaternion);
-			packet.Player.TeamIndex	= teamComponent.TeamIndex;
-			ServerHelper::Send(pClient, packet);
-		}
-	}
-
-	// Create a player for the new client, also sends the new player to the connected clients
-	{
-		SpawnPlayer((ClientRemoteBase*)pClient);
-	}
-
-	// Send flag data to clients
-	{
-		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
-
-		PacketCreateLevelObject packet;
-		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
-
-		for (Entity flagEntity : flagEntities)
-		{
-			const PositionComponent& positionComponent	= pPositionComponents->GetConstData(flagEntity);
-			const RotationComponent& rotationComponent	= pRotationComponents->GetConstData(flagEntity);
-			const ParentComponent& parentComponent		= pParentComponents->GetConstData(flagEntity);
-
-			packet.NetworkUID				= flagEntity;
-			packet.Position					= positionComponent.Position;
-			packet.Forward					= GetForward(rotationComponent.Quaternion);
-			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
-			ServerHelper::Send(pClient, packet);
-		}
-	}
-
-	// Match Start
-	{
-		MatchStart();
-	}
-
-	return true;
-}*/
 
 bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
 {
@@ -640,14 +487,26 @@ bool MatchServer::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 
 	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
 
-	for (auto& pair : players)
-	{
-		if (pair.second.GetState() != PLAYER_STATE_LOADED)
-			return false;
-	}
+	EGameState gameState = event.pPlayer->GetState();
 
-	// Match Start
+	if (gameState == GAME_STATE_LOADING)
 	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
+		BeginLoading();
+	}
+	else if (gameState == GAME_STATE_LOADED)
+	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
 		MatchStart();
 	}
 

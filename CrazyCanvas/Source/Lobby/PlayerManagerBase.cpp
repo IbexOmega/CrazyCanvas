@@ -21,6 +21,12 @@ void PlayerManagerBase::Release()
 
 }
 
+void PlayerManagerBase::Reset()
+{
+	s_Players.clear();
+	s_PlayerEntityToUID.clear();
+}
+
 const Player* PlayerManagerBase::GetPlayer(uint64 uid)
 {
 	auto pair = s_Players.find(uid);
@@ -109,84 +115,4 @@ void PlayerManagerBase::HandlePlayerLeft(uint64 uid)
 
 		s_Players.erase(uid);
 	}
-}
-
-bool PlayerManagerBase::UpdatePlayerFromPacket(Player* pPlayer, const PacketPlayerInfo* pPacket)
-{
-	bool changed = false;
-	bool scoreChanged = false;
-
-	if (pPlayer->m_Ping != pPacket->Ping)
-	{
-		changed = true;
-		pPlayer->m_Ping = pPacket->Ping;
-		PlayerPingUpdatedEvent event(pPlayer);
-		EventQueue::SendEventImmediate(event);
-	}
-	if (pPlayer->m_IsHost != pPacket->IsHost)
-	{
-		changed = true;
-		pPlayer->m_IsHost = pPacket->IsHost;
-		PlayerHostUpdatedEvent event(pPlayer);
-		EventQueue::SendEventImmediate(event);
-	}
-	if (pPlayer->m_State != pPacket->State)
-	{
-		changed = true;
-		pPlayer->m_State = pPacket->State;
-		PlayerStateUpdatedEvent event(pPlayer);
-		EventQueue::SendEventImmediate(event);
-	}
-	if (pPlayer->m_Team != pPacket->Team)
-	{
-		changed = true;
-		pPlayer->m_Team = pPacket->Team;
-		PlayerTeamUpdatedEvent event(pPlayer);
-		EventQueue::SendEventImmediate(event);
-	}
-	if (pPlayer->m_Kills != pPacket->Kills)
-	{
-		changed = true;
-		scoreChanged = true;
-		pPlayer->m_Kills = pPacket->Kills;
-	}
-	if (pPlayer->m_Deaths != pPacket->Deaths)
-	{
-		changed = true;
-		scoreChanged = true;
-		pPlayer->m_Deaths = pPacket->Deaths;
-	}
-	if (pPlayer->m_FlagsCaptured != pPacket->FlagsCaptured)
-	{
-		changed = true;
-		scoreChanged = true;
-		pPlayer->m_FlagsCaptured = pPacket->FlagsCaptured;
-	}
-	if (pPlayer->m_FlagsDefended != pPacket->FlagsDefended)
-	{
-		changed = true;
-		scoreChanged = true;
-		pPlayer->m_FlagsDefended = pPacket->FlagsDefended;
-	}
-
-	if (scoreChanged)
-	{
-		PlayerScoreUpdatedEvent event(pPlayer);
-		EventQueue::SendEventImmediate(event);
-	}
-
-	return changed;
-}
-
-void PlayerManagerBase::UpdatePacketFromPlayer(PacketPlayerInfo* pPacket, const Player* pPlayer)
-{
-	pPacket->UID			= pPlayer->m_UID;
-	pPacket->IsHost			= pPlayer->m_IsHost;
-	pPacket->Ping			= pPlayer->m_Ping;
-	pPacket->State			= pPlayer->m_State;
-	pPacket->Team			= pPlayer->m_Team;
-	pPacket->Kills			= pPlayer->m_Kills;
-	pPacket->Deaths			= pPlayer->m_Deaths;
-	pPacket->FlagsCaptured	= pPlayer->m_FlagsCaptured;
-	pPacket->FlagsDefended	= pPlayer->m_FlagsDefended;
 }

@@ -47,17 +47,6 @@ public:
 	DECLARE_PLAYER_EVENT_TYPE(PlayerLeftEvent);
 };
 
-struct PlayerInfoUpdatedEvent : public PlayerBaseEvent
-{
-public:
-	inline PlayerInfoUpdatedEvent(const Player* pPlayerConst)
-		: PlayerBaseEvent(pPlayerConst)
-	{
-	}
-
-	DECLARE_PLAYER_EVENT_TYPE(PlayerInfoUpdatedEvent);
-};
-
 struct PlayerStateUpdatedEvent : public PlayerBaseEvent
 {
 public:
@@ -67,17 +56,6 @@ public:
 	}
 
 	DECLARE_PLAYER_EVENT_TYPE(PlayerStateUpdatedEvent);
-};
-
-struct PlayerTeamUpdatedEvent : public PlayerBaseEvent
-{
-public:
-	inline PlayerTeamUpdatedEvent(const Player* pPlayerConst)
-		: PlayerBaseEvent(pPlayerConst)
-	{
-	}
-
-	DECLARE_PLAYER_EVENT_TYPE(PlayerTeamUpdatedEvent);
 };
 
 struct PlayerScoreUpdatedEvent : public PlayerBaseEvent
@@ -111,4 +89,26 @@ public:
 	}
 
 	DECLARE_PLAYER_EVENT_TYPE(PlayerHostUpdatedEvent);
+};
+
+struct PlayerDeadUpdatedEvent : public PlayerBaseEvent
+{
+public:
+	inline PlayerDeadUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerDeadUpdatedEvent);
+};
+
+struct PlayerReadyUpdatedEvent : public PlayerBaseEvent
+{
+public:
+	inline PlayerReadyUpdatedEvent(const Player* pPlayerConst)
+		: PlayerBaseEvent(pPlayerConst)
+	{
+	}
+
+	DECLARE_PLAYER_EVENT_TYPE(PlayerReadyUpdatedEvent);
 };

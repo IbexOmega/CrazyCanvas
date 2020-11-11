@@ -6,14 +6,25 @@
 
 #include "ECS/Entity.h"
 
-enum EPlayerState : uint8
+/*
+* ClientHost -> GAME_STATE_SETUP -> Server
+* ServerBroadcast -> GAME_STATE_SETUP
+* Each client -> GAME_STATE_LOADING -> Server
+* ServerBroadcast -> CreateGameObjects and players
+* ServerBroadcast -> Thats' all
+* Each client -> GAME_STATE_LOADED -> Server
+* ServerBroadcast -> GAME_STATE_COUNTDOWN
+*/
+
+enum EGameState : uint8
 {
-	PLAYER_STATE_LOBBY,
-	PLAYER_STATE_READY,
-	PLAYER_STATE_LOADING,
-	PLAYER_STATE_LOADED,
-	PLAYER_STATE_PLAYING,
-	PLAYER_STATE_DEAD,
+	GAME_STATE_LOBBY,
+	GAME_STATE_SETUP,
+	GAME_STATE_LOADING,
+	GAME_STATE_LOADED,
+	GAME_STATE_COUNTDOWN,
+	GAME_STATE_PLAYING,
+	GAME_STATE_GAME_OVER
 };
 
 class Player
@@ -26,15 +37,16 @@ public:
 	const LambdaEngine::String& GetName() const;
 	LambdaEngine::Entity GetEntity() const;
 	bool IsHost() const;
+	bool IsDead() const;
+	bool IsReady() const;
 	uint16 GetPing() const;
-	EPlayerState GetState() const;
+	EGameState GetState() const;
 	uint8 GetTeam() const;
 	uint8 GetKills() const;
 	uint8 GetDeaths() const;
 	uint8 GetFlagsCaptured() const;
 	uint8 GetFlagsDefended() const;
 	uint64 GetUID() const;
-	bool IsReady() const;
 
 	bool operator==(const Player& other) const;
 	bool operator!=(const Player& other) const;
@@ -47,8 +59,10 @@ private:
 	LambdaEngine::String m_Name;
 	LambdaEngine::Entity m_Entity;
 	bool m_IsHost;
+	bool m_IsDead;
+	bool m_IsReady;
 	uint16 m_Ping;
-	EPlayerState m_State;
+	EGameState m_State;
 	uint8 m_Team;
 	uint8 m_Kills;
 	uint8 m_Deaths;

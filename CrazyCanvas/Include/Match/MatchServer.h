@@ -2,8 +2,6 @@
 
 #include "Match/MatchBase.h"
 
-#include "Multiplayer/Packet/PacketStartGame.h"
-
 #include "Multiplayer/Packet/MultiplayerEvents.h"
 
 #include "Application/API/Events/NetworkEvents.h"
@@ -31,16 +29,15 @@ protected:
 	void MatchStart();
 	void MatchBegin();
 
-	void CreatePlayer(const Player& player);
+	void SpawnPlayer(const Player& player);
 
 	void SpawnFlag();
-	//void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
 
 private:
-	bool OnPacketStartGameReceived(const PacketReceivedEvent<PacketStartGame>& event);
+	void BeginLoading();
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
 	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);

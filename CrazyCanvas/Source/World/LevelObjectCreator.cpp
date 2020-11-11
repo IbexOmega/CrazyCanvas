@@ -18,6 +18,7 @@
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
+#include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
@@ -115,7 +116,7 @@ bool LevelObjectCreator::Init()
 	{
 		//Flag
 		{
-			s_FlagMeshGUID		= ResourceManager::LoadMeshFromFile("Roller.obj");
+			ResourceManager::LoadMeshFromFile("Roller.obj", s_FlagMeshGUID);
 
 			MaterialProperties materialProperties = {};
 			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -132,16 +133,18 @@ bool LevelObjectCreator::Init()
 
 		//Player
 		{
-			s_PlayerMeshGUID					= ResourceManager::LoadMeshFromFile("Player/Idle.fbx", s_PlayerIdleGUIDs);
+			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
 
-#ifndef LAMBDA_DEBUG
-			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.fbx");
-			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.fbx");
-			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.fbx");
-			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.fbx");
-			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.fbx");
-			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.fbx");
+#ifdef USE_ALL_ANIMATIONS
+			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
+			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.glb");
+			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.glb");
+			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.glb");
+			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
+			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 #endif
+
+			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMesh, s_WeaponMaterial);
 		}
 	}
 
@@ -164,8 +167,6 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		{
 			.ColorIntensity = directionalLight.ColorIntensity,
 		};
-
-		LOG_INFO("LightDIRECTION: (%f, %f, %f)", directionalLight.Direction.x, directionalLight.Direction.y, directionalLight.Direction.z);
 
 		entity = pECS->CreateEntity();
 		pECS->AddComponent<PositionComponent>(entity, { true, (translation) });
@@ -221,8 +222,12 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize));
+	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
 	pECS->AddComponent<MeshComponent>(entity, meshComponent);
+	pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
+				.HitMask = 0xFF
+		});
+
 	const CollisionCreateInfo collisionCreateInfo =
 	{
 		.Entity			= entity,
@@ -314,7 +319,11 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
 
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
+
+		pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
@@ -538,6 +547,10 @@ bool LevelObjectCreator::CreateFlag(
 		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
 		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
 
+		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
+
 		//Only the server checks collision with the flag
 		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 		const DynamicCollisionCreateInfo collisionCreateInfo =
@@ -615,10 +628,10 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
 		NetworkPositionComponent
 		{
-		.Position		= pPlayerDesc->Position,
-		.PositionLast	= pPlayerDesc->Position,
-		.TimestampStart = EngineLoop::GetTimeSinceStart(),
-		.Duration		= EngineLoop::GetFixedTimestep()
+			.Position		= pPlayerDesc->Position,
+			.PositionLast	= pPlayerDesc->Position,
+			.TimestampStart = EngineLoop::GetTimeSinceStart(),
+			.Duration		= EngineLoop::GetFixedTimestep()
 		});
 
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
@@ -652,39 +665,34 @@ bool LevelObjectCreator::CreatePlayer(
 	Entity weaponEntity = pECS->CreateEntity();
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.5f, 1.5f, -0.2f) });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
+	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
+	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 
-	ChildComponent childComp;
-	childComp.AddChild(weaponEntity, "weapon");
+	ChildComponent playerChildComp;
+	playerChildComp.AddChild(weaponEntity, "weapon");
 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<ParticleEmitterComponent>(weaponEntity, ParticleEmitterComponent{
-			.Active = false,
-			.OneTime = true,
-			.Explosive = 1.0f,
-			.ParticleCount = 64,
-			.EmitterShape = EEmitterShape::CONE,
-			.Angle = 15.f,
-			.VelocityRandomness = 0.5f,
-			.Velocity = 10.0,
-			.Acceleration = 0.0,
-			.Gravity = -4.f,
-			.LifeTime = 2.0f,
-			.RadiusRandomness = 0.5f,
-			.BeginRadius = 0.1f,
-			.FrictionFactor = 0.f,
-			.Bounciness = 0.f,
-			.TileIndex = 14,
-			.AnimationCount = 1,
-			.FirstAnimationIndex = 16,
-			.Color = glm::vec4(TeamHelper::GetTeamColor(pPlayerDesc->TeamIndex), 1.0f),
-		}
-		);
+		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
+			{
+				.MeshGUID = s_WeaponMesh,
+				.MaterialGUID = s_WeaponMaterial,
+			});
+
+		pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
+
+		pECS->AddComponent<AnimationAttachedComponent>(weaponEntity, AnimationAttachedComponent
+			{
+				.JointName	= "mixamorig:RightHand",
+				.Transform	= glm::mat4(1.0f),
+			});
 
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
@@ -696,7 +704,7 @@ bool LevelObjectCreator::CreatePlayer(
 		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
 
-#ifndef LAMBDA_DEBUG
+#ifdef USE_ALL_ANIMATIONS
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", s_PlayerStrafeRightGUIDs[0]));
@@ -738,95 +746,102 @@ bool LevelObjectCreator::CreatePlayer(
 			pAnimationGraph->AddState(pAnimationState);
 		}
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Idle", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Right", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Strafe Left", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Left", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Running & Strafe Right", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward & Strafe Right", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Left", "Run Backward & Strafe Right"));
 
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Idle", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Left", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Right", 0.1f));
-		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward & Strafe Left", 0.1f));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Idle"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Left"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Right"));
+		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward & Strafe Left"));
 #endif
-
 		animationComponent.pGraph = pAnimationGraph;
 
 		pAnimationGraph->TransitionToState("Idle");
 
 		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
-		pECS->AddComponent<MeshComponent>(playerEntity, MeshComponent{.MeshGUID = s_PlayerMeshGUID, .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)});
-		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512));
+		pECS->AddComponent<MeshComponent>(playerEntity, 
+            MeshComponent
+            {
+                .MeshGUID = s_PlayerMeshGUID, 
+                .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
+            });
+		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
+		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 
 		if (!pPlayerDesc->IsLocal)
 		{
@@ -841,13 +856,16 @@ bool LevelObjectCreator::CreatePlayer(
 				return false;
 			}
 
+			pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
+			EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
+
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();
 			childEntities.PushBack(cameraEntity);
-			childComp.AddChild(cameraEntity, "camera");
+			playerChildComp.AddChild(cameraEntity, "camera");
 
 			//Todo: Better implementation for this somehow maybe?
 			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
@@ -891,7 +909,7 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
-	pECS->AddComponent<ChildComponent>(playerEntity, childComp);
+	pECS->AddComponent<ChildComponent>(playerEntity, playerChildComp);
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 
@@ -935,18 +953,17 @@ bool LevelObjectCreator::CreateProjectile(
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
-	if (!MultiplayerUtils::IsServer())
-	{
-		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
-	}
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(glm::normalize(desc.InitalVelocity), g_DefaultUp) });
 
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		projectileEntity,
 		/* Detection Method */	ECollisionDetection::CONTINUOUS,
-		/* Position */	 		pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition }),
-		/* Scale */				pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) }),
-		/* Rotation */			pECS->AddComponent<RotationComponent>(projectileEntity, { true, desc.FireDirection }),
+		/* Position */	 		positionComponent,
+		/* Scale */				scaleComponent,
+		/* Rotation */			rotationComponent,
 		{
 			{
 				/* Shape Type */		EShapeType::SIMULATION,
@@ -964,6 +981,37 @@ bool LevelObjectCreator::CreateProjectile(
 
 	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
 	pECS->AddComponent<DynamicCollisionComponent>(projectileEntity, projectileCollisionComp);
+
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
+		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
+
+		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
+				.Active = true,
+				.OneTime = true,
+				.Explosive = 1.0f,
+				.ParticleCount = 64,
+				.EmitterShape = EEmitterShape::CONE,
+				.Angle = 15.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 10.0,
+				.Acceleration = 0.0,
+				.Gravity = -4.f,
+				.LifeTime = 2.0f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.3f,
+				.FrictionFactor = 0.f,
+				.Bounciness = 0.f,
+				.TileIndex = 14,
+				.AnimationCount = 1,
+				.FirstAnimationIndex = 14,
+				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
+			}
+		);
+	}
 
 	return true;
 }

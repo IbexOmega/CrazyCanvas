@@ -2,17 +2,12 @@
 
 #include "Multiplayer/Packet/Packet.h"
 
-#include "Lobby/Player.h"
-
 #pragma pack(push, 1)
-struct PacketPlayerInfo
+struct PacketPlayerScore
 {
-	DECL_PACKET(PacketPlayerInfo);
+	DECL_PACKET(PacketPlayerScore);
 
 	uint64 UID;
-	bool IsHost;
-	uint16 Ping;
-	EPlayerState State;
 	uint8 Team;
 	uint8 Kills;
 	uint8 Deaths;
