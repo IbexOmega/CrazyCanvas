@@ -222,7 +222,13 @@ namespace LambdaEngine
 	void ClientBase::DecodeReceivedPackets()
 	{
 		TArray<NetworkSegment*> packets;
-		GetPacketManager()->QueryBegin(GetTransceiver(), packets);
+		bool hasDiscardedResends = false;
+		if (!GetPacketManager()->QueryBegin(GetTransceiver(), packets, hasDiscardedResends))
+		{
+			m_SendDisconnectPacket = false;
+			Disconnect("Receive Error");
+			return;
+		}
 
 		std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
 		for (NetworkSegment* pPacket : packets)

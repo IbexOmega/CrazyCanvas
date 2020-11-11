@@ -240,13 +240,18 @@ namespace LambdaEngine
 		{
 			TArray<NetworkSegment*> packets;
 			PacketManagerBase* pPacketManager = GetPacketManager();
-			bool hasDiscardedResends = pPacketManager->QueryBegin(GetTransceiver(), packets);
+			bool hasDiscardedResends = false;
+			if (!pPacketManager->QueryBegin(GetTransceiver(), packets, hasDiscardedResends))
+			{
+				Disconnect("Receive Error");
+				return;
+			}
 
 			if (m_State == STATE_CONNECTING)
 			{
 				if (packets.IsEmpty() && !hasDiscardedResends)
 				{
-					Disconnect("Expected Connect Packets");
+					Disconnect("Expected Connect Packet");
 				}
 				else
 				{
@@ -256,7 +261,7 @@ namespace LambdaEngine
 							&& pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE
 							&& pPacket->GetType() != NetworkSegment::TYPE_DISCONNECT)
 						{
-							Disconnect("Expected Connect Packets");
+							Disconnect("Expected Connect Packet");
 							break;
 						}
 					}

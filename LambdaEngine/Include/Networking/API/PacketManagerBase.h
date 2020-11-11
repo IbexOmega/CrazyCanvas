@@ -54,7 +54,7 @@ namespace LambdaEngine
 		uint32 EnqueueSegmentUnreliable(NetworkSegment* pSegment);
 
 		void Flush(PacketTransceiverBase* pTransceiver);
-		bool QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned);
+		bool QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned, bool& hasDiscardedResends);
 		void QueryEnd(TArray<NetworkSegment*>& packetsReceived);
 
 		virtual void Tick(Timestamp delta);
