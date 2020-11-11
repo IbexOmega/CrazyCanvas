@@ -916,6 +916,12 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderGraph::Flush()
+	{
+		/*	m_DirtyRenderStageTextureSets.clear();
+			m_DirtyBoundTextureResources.clear();*/
+	}
+
 	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
 	{
 		m_BackBufferIndex = backBufferIndex;

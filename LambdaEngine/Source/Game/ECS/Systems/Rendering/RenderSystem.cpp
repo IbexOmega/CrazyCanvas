@@ -654,6 +654,21 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void RenderSystem::Flush()
+	{
+		m_pRenderGraph->Flush();
+
+		/*
+		m_DirtyDrawArgs.clear();
+		m_PointLightTextureUpdateQueue.Clear();
+
+		m_LightsResourceDirty			= false;
+		m_PaintMaskColorsResourceDirty	= false;
+		m_MaterialsResourceDirty		= false;
+		m_PerFrameResourceDirty			= false;
+		*/
+	}
+
 	void RenderSystem::SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc)
 	{
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
@@ -2260,6 +2275,7 @@ namespace LambdaEngine
 		{
 			m_ParticleManager.UpdateResources(m_pRenderGraph);
 		}
+
 
 		if (m_MaterialsResourceDirty)
 		{

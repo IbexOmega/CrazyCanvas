@@ -384,6 +384,11 @@ namespace LambdaEngine
 		*/
 		void UpdateResourceBindings();
 
+		/*
+		*	Flushes RenderGraphs current state, should be used after state transitions due to RenderGraphs internal state
+		*	becomes invalid during state transition.
+		*/
+		void Flush();
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.

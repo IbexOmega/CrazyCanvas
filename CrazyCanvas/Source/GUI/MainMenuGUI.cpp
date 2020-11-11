@@ -282,7 +282,6 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 */
 void MainMenuGUI::SetRenderStagesSleeping()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					false);
@@ -294,7 +293,6 @@ void MainMenuGUI::SetRenderStagesSleeping()
 	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", !m_RayTracingEnabled);
-
 }
 
 void MainMenuGUI::SetDefaultSettings()

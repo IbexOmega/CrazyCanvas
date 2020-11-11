@@ -33,7 +33,7 @@ namespace LambdaEngine
         void EnqueueStateTransition(State* pNewState, STATE_TRANSITION transitionSetting);
         void EnqueueStatePop() { EnqueueStateTransition(nullptr, STATE_TRANSITION::POP); }
 
-        void Tick(Timestamp delta);
+        bool Tick(Timestamp delta);
         void FixedTick(Timestamp delta);
 
         static StateManager* GetInstance() { return &s_Instance; }
