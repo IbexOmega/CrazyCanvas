@@ -31,6 +31,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
+	EventQueue::UnregisterEventHandler<PlayerDeadUpdatedEvent>(this, &HUDSystem::OnPlayerDeadUpdated);
 }
 
 void HUDSystem::Init()
@@ -73,6 +74,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
+	EventQueue::RegisterEventHandler<PlayerDeadUpdatedEvent>(this, &HUDSystem::OnPlayerDeadUpdated);
 
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
@@ -218,6 +220,16 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 		std::to_string(event.pPlayer->GetPing()));
 	return false;
 }
+
+bool HUDSystem::OnPlayerDeadUpdated(const PlayerDeadUpdatedEvent& event)
+{
+	m_HUDGUI->UpdatePlayerAliveStatus(event.pPlayer->GetUID(), false);
+	return false;
+
+	// TODO: Similar function for PlayerAliveUpdatedEvent (or similar)
+	// 		when that is implemented
+}
+
 
 bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
 {

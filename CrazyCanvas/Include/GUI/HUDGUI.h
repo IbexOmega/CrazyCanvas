@@ -73,6 +73,7 @@ public:
 	void RemovePlayer(const Player& player);
 	void UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value);
 	void UpdateAllPlayerProperties(const Player& player);
+	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
 private:
 	void InitGUI();

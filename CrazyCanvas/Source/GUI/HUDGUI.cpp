@@ -351,6 +351,32 @@ void HUDGUI::AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String
 	pParentGrid->SetColumn(pLabel, column);
 }
 
+void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
+{
+	Grid* pGrid = FrameworkElement::FindName<Grid>(std::to_string(UID).c_str());
+
+	if (!pGrid)
+	{
+		LOG_WARNING("[HUDGUI]: Player with UID: &lu not found!", UID);
+		return;
+	}
+
+	Label* nameLabel = static_cast<Label*>(pGrid->GetChildren()->Get(0));
+
+	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent());
+
+	SolidColorBrush* pBrush = static_cast<SolidColorBrush*>(nameLabel->GetForeground());
+	if (isAlive)
+	{
+		pBrush->SetColor(Color::White());
+		nameLabel->SetForeground(pBrush);
+	}
+	else
+	{
+		pBrush->SetColor(Color::LightGray());
+		nameLabel->SetForeground(pBrush);
+	}
+}
 
 void HUDGUI::InitGUI()
 {
