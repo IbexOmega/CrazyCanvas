@@ -134,13 +134,10 @@ namespace LambdaEngine
 		m_ClientsToRemove.PushBack(pClient);
 	}
 
-	bool ServerBase::SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener)
+	bool ServerBase::SendReliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, IPacketListener* pListener, bool excludeMySelf)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		bool result = true;
-
-		if (!pClient->SendReliable(pPacket, pListener))
-			result = false;
 
 		for (auto& pair : m_Clients)
 		{ 
@@ -153,16 +150,27 @@ namespace LambdaEngine
 			}
 		}
 
+		if (!excludeMySelf)
+		{
+			if (!pClient->SendReliable(pPacket, pListener))
+				result = false;
+		}
+		else
+		{
+#ifdef LAMBDA_CONFIG_DEBUG
+			pClient->GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ServerBase::::SendReliableBroadcast");
+#else
+			pClient->GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+#endif	
+		}
+
 		return result;
 	}
 
-	bool ServerBase::SendUnreliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket)
+	bool ServerBase::SendUnreliableBroadcast(ClientRemoteBase* pClient, NetworkSegment* pPacket, bool excludeMySelf)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClients);
 		bool result = true;
-
-		if (!pClient->SendUnreliable(pPacket))
-			result = false;
 
 		for (auto& pair : m_Clients)
 		{
@@ -173,6 +181,20 @@ namespace LambdaEngine
 				if (!pair.second->SendUnreliable(pPacketDuplicate))
 					result = false;
 			}
+		}
+
+		if (!excludeMySelf)
+		{
+			if (!pClient->SendUnreliable(pPacket))
+				result = false;
+		}
+		else
+		{
+#ifdef LAMBDA_CONFIG_DEBUG
+			pClient->GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ServerBase::::SendUnreliableBroadcast");
+#else
+			pClient->GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+#endif	
 		}
 
 		return result;
@@ -249,60 +271,59 @@ namespace LambdaEngine
 
 	void ServerBase::FixedTick(Timestamp delta)
 	{
+		for (auto& pair : m_Clients)
+		{
+			pair.second->FixedTick(delta);
+		}
+
+		if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
 		{
 			std::scoped_lock<SpinLock> lock(m_LockClients);
-			for (auto& pair : m_Clients)
+
+			TArray<ClientRemoteBase*> clientsApproved;
+			TArray<ClientRemoteBase*> unconnectedClientsToTick;
 			{
-				pair.second->FixedTick(delta);
+				std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
+
+				for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
+				{
+					LOG_INFO("[ServerBase]: Client Unregistered");
+
+					for (int32 j = m_ClientsToAdd.GetSize() - 1; j >= 0; j--)
+						if (m_ClientsToAdd[j] == m_ClientsToRemove[i])
+							m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
+
+					m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
+					m_UIDToClient.erase(m_ClientsToRemove[i]->GetUID());
+					m_ClientsToRemove[i]->OnTerminationApproved();
+				}
+
+				for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
+				{
+					ClientRemoteBase* pClient = m_ClientsToAdd[i];
+					unconnectedClientsToTick.PushBack(pClient);
+						
+					if (pClient->IsConnected())
+					{
+						LOG_INFO("[ServerBase]: Client Registered");
+						m_Clients.insert({ pClient->GetEndPoint(), pClient });
+						m_UIDToClient.insert({ pClient->GetUID(), pClient });
+						m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
+						clientsApproved.PushBack(pClient);
+					}
+				}	
+
+				m_ClientsToRemove.Clear();
+			}
+				
+			for (ClientRemoteBase* pClient : unconnectedClientsToTick)
+			{
+				pClient->FixedTick(delta);
 			}
 
-			if (!m_ClientsToAdd.IsEmpty() || !m_ClientsToRemove.IsEmpty())
+			for (ClientRemoteBase* pClient : clientsApproved)
 			{
-				TArray<ClientRemoteBase*> clientsApproved;
-				TArray<ClientRemoteBase*> unconnectedClientsToTick;
-				{
-					std::scoped_lock<SpinLock> lock2(m_LockClientVectors);
-
-					for (uint32 i = 0; i < m_ClientsToRemove.GetSize(); i++)
-					{
-						LOG_INFO("[ServerBase]: Client Unregistered");
-
-						for (int32 j = m_ClientsToAdd.GetSize() - 1; j >= 0; j--)
-							if (m_ClientsToAdd[j] == m_ClientsToRemove[i])
-								m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + j);
-
-						m_Clients.erase(m_ClientsToRemove[i]->GetEndPoint());
-						m_UIDToClient.erase(m_ClientsToRemove[i]->GetUID());
-						m_ClientsToRemove[i]->OnTerminationApproved();
-					}
-
-					for (int32 i = m_ClientsToAdd.GetSize() - 1; i >= 0; i--)
-					{
-						ClientRemoteBase* pClient = m_ClientsToAdd[i];
-						unconnectedClientsToTick.PushBack(pClient);
-						
-						if (pClient->IsConnected())
-						{
-							LOG_INFO("[ServerBase]: Client Registered");
-							m_Clients.insert({ pClient->GetEndPoint(), pClient });
-							m_UIDToClient.insert({ pClient->GetUID(), pClient });
-							m_ClientsToAdd.Erase(m_ClientsToAdd.Begin() + i);
-							clientsApproved.PushBack(pClient);
-						}
-					}	
-
-					m_ClientsToRemove.Clear();
-				}
-				
-				for (ClientRemoteBase* pClient : unconnectedClientsToTick)
-				{
-					pClient->FixedTick(delta);
-				}
-
-				for (ClientRemoteBase* pClient : clientsApproved)
-				{
-					pClient->OnConnectionApproved();
-				}
+				pClient->OnConnectionApproved();
 			}
 		}
 		

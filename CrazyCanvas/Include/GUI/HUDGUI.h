@@ -10,13 +10,13 @@
 
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
+#include "NsGui/Image.h"
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
 #include "NsGui/TabItem.h"
 #include "NsGui/TextBlock.h"
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
-#include "NsGui/Border.h"
 #include "NsGui/ObservableCollection.h"
 
 #include "NsCore/BaseComponent.h"
@@ -52,7 +52,8 @@ public:
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 	void UpdateCountdown(uint8 countDownTime);
 
-	void DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayHitIndicator();
 
 private:
 
@@ -63,11 +64,11 @@ private:
 private:
 	GameGUIState m_GUIState;
 
-	Noesis::Border* m_pWaterAmmoRect;		
-	Noesis::Border* m_pPaintAmmoRect;		
+	Noesis::Image* m_pWaterAmmoRect = nullptr;		
+	Noesis::Image* m_pPaintAmmoRect = nullptr;
 	
-	Noesis::TextBlock* m_pWaterAmmoText;
-	Noesis::TextBlock* m_pPaintAmmoText;
+	Noesis::TextBlock* m_pWaterAmmoText = nullptr;
+	Noesis::TextBlock* m_pPaintAmmoText = nullptr;
 
-	Noesis::Grid* m_pHitIndicatorGrid;
+	Noesis::Grid* m_pHitIndicatorGrid = nullptr;
 };

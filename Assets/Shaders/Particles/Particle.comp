@@ -200,12 +200,10 @@ void main()
 		float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
 		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
 
-		// We only want to update AS instance if particle is alive
-		if (particle.CurrentLife > 0.f)
-		{
-			ASInstance.HitMask_CustomProperties = ((particleIndex << 8) >> 8) | ((ASInstance.HitMask_CustomProperties >> 24) << 24);
-			b_ASInstance.Val[ASDirectIndex] = ASInstance;
-		}
+		// Update ASInstance data and write particleIndex to customIndex
+		ASInstance.HitMask_CustomProperties = ((particleIndex << 8) >> 8) | ((ASInstance.HitMask_CustomProperties >> 24) << 24);
+		b_ASInstance.Val[ASDirectIndex] = ASInstance;
+	
 		b_ParticleInstances.Val[particleIndex] = particle;
 		indexOffset += totalInvocations;
 	}

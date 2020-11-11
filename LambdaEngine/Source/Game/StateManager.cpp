@@ -93,7 +93,7 @@ namespace LambdaEngine
 			break;
 		case STATE_TRANSITION::POP_AND_PUSH:
 			m_pECS->DeleteTopRegistryPage();
-			m_StatesToDelete.push(m_States.top());
+			delete m_States.top();
 			m_States.pop();
 
 			m_pECS->AddRegistryPage();

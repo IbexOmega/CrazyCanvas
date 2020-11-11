@@ -8,9 +8,13 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "Events/PlayerEvents.h"
+
 #include "Multiplayer/MultiplayerServer.h"
 #include "Multiplayer/Packet/MultiplayerEvents.h"
-#include "Multiplayer/Packet/PacketConfigureServer.h"
+#include "Multiplayer/Packet/PacketGameSettings.h"
+
+#include "EventHandlers/MeshPaintHandler.h"
 
 class Level;
 
@@ -18,7 +22,7 @@ class ServerState :
 	public LambdaEngine::State
 {
 public:
-	ServerState(const std::string& clientHostID, const std::string& authenticationID);
+	ServerState(const std::string& clientHostID);
 	
 	~ServerState();
 
@@ -30,7 +34,7 @@ public:
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 
-	bool OnPacketConfigureServerReceived(const PacketReceivedEvent<PacketConfigureServer>& event);
+	bool OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& event);
 
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
@@ -38,5 +42,8 @@ public:
 
 private:
 	std::string m_ServerName;
+	int32 m_ClientHostID;
 	MultiplayerServer m_MultiplayerServer;
+
+	MeshPaintHandler m_MeshPaintHandler;
 };

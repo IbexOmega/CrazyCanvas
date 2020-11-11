@@ -27,6 +27,7 @@
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
 #include "Rendering/ParticleRenderer.h"
@@ -37,6 +38,7 @@
 #include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 namespace LambdaEngine
 {
@@ -72,8 +74,9 @@ namespace LambdaEngine
 					},
 					.ExcludedComponentTypes =
 					{
-						AnimationComponent::Type(),
 						PlayerBaseComponent::Type(),
+						AnimationComponent::Type(),
+						AnimationAttachedComponent::Type(),
 					},
 					.OnEntityAdded = std::bind_front(&RenderSystem::OnStaticMeshEntityAdded, this),
 					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
@@ -92,8 +95,27 @@ namespace LambdaEngine
 					.ExcludedComponentTypes =
 					{
 						PlayerBaseComponent::Type(),
+						AnimationAttachedComponent::Type(),
 					},
 					.OnEntityAdded = std::bind_front(&RenderSystem::OnAnimatedEntityAdded, this),
+					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
+				},
+				{
+					.pSubscriber = &m_AnimationAttachedEntities,
+					.ComponentAccesses =
+					{
+						{ R, AnimationAttachedComponent::Type() },
+						{ R, MeshComponent::Type() }
+					},
+					.ComponentGroups =
+					{
+						&transformGroup
+					},
+					.ExcludedComponentTypes =
+					{
+						PlayerBaseComponent::Type(),
+					},
+					.OnEntityAdded = std::bind_front(&RenderSystem::OnAnimationAttachedEntityAdded, this),
 					.OnEntityRemoval = std::bind_front(&RenderSystem::RemoveRenderableEntity, this)
 				},
 				{
@@ -336,13 +358,14 @@ namespace LambdaEngine
 			}
 
 			// Light Renderer
+			bool isServer = MultiplayerUtils::IsServer();
+			if (!isServer)
 			{
 				m_pLightRenderer = DBG_NEW LightRenderer();
 				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 			}
-
 
 			// AS Builder
 			if (m_RayTracingEnabled)
@@ -354,6 +377,7 @@ namespace LambdaEngine
 			}
 
 			// Particle Renderer & Manager
+			if (!isServer)
 			{
 				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
@@ -561,8 +585,9 @@ namespace LambdaEngine
 			}
 		}
 
-		ComponentArray<MeshComponent>*		pMeshComponents			= pECSCore->GetComponentArray<MeshComponent>();
-		ComponentArray<AnimationComponent>*	pAnimationComponents	= pECSCore->GetComponentArray<AnimationComponent>();
+		ComponentArray<MeshComponent>*				pMeshComponents					= pECSCore->GetComponentArray<MeshComponent>();
+		ComponentArray<AnimationComponent>*			pAnimationComponents			= pECSCore->GetComponentArray<AnimationComponent>();
+		ComponentArray<AnimationAttachedComponent>*	pAnimationAttachedComponents	= pECSCore->GetComponentArray<AnimationAttachedComponent>();
 		{
 			for (Entity entity : m_LocalPlayerEntities)
 			{
@@ -586,6 +611,16 @@ namespace LambdaEngine
 
 				UpdateAnimation(entity, meshComp, animationComp);
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
+			}
+
+			for (Entity entity : m_AnimationAttachedEntities)
+			{
+				const auto&	animationAttachedComponent	= pAnimationAttachedComponents->GetConstData(entity);
+				const auto&	positionComp				= pPositionComponents->GetConstData(entity);
+				const auto&	rotationComp				= pRotationComponents->GetConstData(entity);
+				const auto&	scaleComp					= pScaleComponents->GetConstData(entity);
+
+				UpdateTransform(entity, animationAttachedComponent.Transform, positionComp, rotationComp, scaleComp, glm::bvec3(false, true, false));
 			}
 		}
 
@@ -615,14 +650,18 @@ namespace LambdaEngine
 				emitterCompNonConst.Active = false;
 			}
 		}
-		// Tick Particle Manager
-		m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
 
-		// Particle Updates
-		uint32 particleCount = m_ParticleManager.GetParticleCount();
-		uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
-		m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
-		m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		// Tick Particle Manager
+		if (m_ParticleManager.IsInitilized())
+		{
+			m_ParticleManager.Tick(deltaTime, m_ModFrameIndex);
+
+			// Particle Updates
+			uint32 particleCount = m_ParticleManager.GetParticleCount();
+			uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
+			m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
+			m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+		}
 	}
 
 	bool RenderSystem::Render(Timestamp delta)
@@ -667,11 +706,13 @@ namespace LambdaEngine
 		}
 
 		// Light Renderer
+		if (m_RayTracingEnabled)
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 		}
 
 		// Particles
+		if (m_RayTracingEnabled)
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
@@ -784,6 +825,18 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+	}
+
+	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
+
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		transform = transform * animationAttachedComponent.Transform;
+
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
@@ -1253,10 +1306,12 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
+			RayTracedComponent rayTracedComponent = {};
+			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
+
 			uint32 customIndex =
 				((materialIndex & 0xFF) << 8) |
 				(hasPaintMask ? (std::max(0u, m_PaintMaskTextures.GetSize() - 1)) & 0xFF : 0);
-			uint8 hitMask = 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
 			ASInstanceDesc asInstanceDesc =
@@ -1264,7 +1319,7 @@ namespace LambdaEngine
 				.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
 				.Transform		= transform,
 				.CustomIndex	= customIndex,
-				.HitMask		= hitMask,
+				.HitMask		= rayTracedComponent.HitMask,
 				.Flags			= asFlags
 			};
 
@@ -1588,12 +1643,22 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
 
-		//LOG_ERROR("Position: %f, %f, %f", positionComp.Position.x, positionComp.Position.y, positionComp.Position.z);
-		//LOG_ERROR("Rotation: %f, %f, %f, %f", rotationComp.Quaternion.x, rotationComp.Quaternion.y, rotationComp.Quaternion.z, rotationComp.Quaternion.w);
-		//LOG_ERROR("Scale: %f, %f, %f", scaleComp.Scale.x, scaleComp.Scale.y, scaleComp.Scale.z);
-		//LOG_ERROR("Transform: %s\n", glm::to_string(transform).c_str());
+		UpdateTransformData(entity, transform);
+	}
 
+	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
+		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+			return;
 
+		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+		transform = transform * additionalTransform;
+
+		UpdateTransformData(entity, transform);
+	}
+
+	void RenderSystem::UpdateTransformData(Entity entity, const glm::mat4& transform)
+	{
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
