@@ -233,20 +233,20 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 
 	for (auto& pair : playerMap)
 	{
-		const Player* player = &pair.second;
+		const Player* pPlayer = &pair.second;
 
-		uint8 kills = player->GetKills();
-		uint8 deaths = player->GetDeaths();
-		uint8 flags = player->GetFlagsCaptured();
+		uint8 kills = pPlayer->GetKills();
+		uint8 deaths = pPlayer->GetDeaths();
+		uint8 flags = pPlayer->GetFlagsCaptured();
 		
 		if (kills >= mostKills.first)
-			mostKills = std::make_pair(kills, player);
+			mostKills = std::make_pair(kills, pPlayer);
 
 		if (deaths >= mostDeaths.first)
-			mostDeaths = std::make_pair(deaths, player);
+			mostDeaths = std::make_pair(deaths, pPlayer);
 
 		if (flags >= mostFlags.first)
-			mostFlags = std::make_pair(flags, player);
+			mostFlags = std::make_pair(flags, pPlayer);
 	}
 
 	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostFlags, mostDeaths);
