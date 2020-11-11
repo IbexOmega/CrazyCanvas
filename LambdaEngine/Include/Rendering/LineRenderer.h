@@ -97,7 +97,7 @@ namespace LambdaEngine
 		* to - glm::vec3 of point to draw to
 		* color - color the line between from and to should be
 		*/
-		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color);
+		static void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color);
 
 		/*
 		* Draw a line that will be static in the scene and cannot be removed (legacy Bullet implementation)
@@ -106,7 +106,7 @@ namespace LambdaEngine
 		* fromColor - start color the line should be - will be interpolated to the toColor
 		* toColor -  end color the line should be - will be interpolated from fromColor
 		*/
-		void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor);
+		static void DrawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& fromColor, const glm::vec3& toColor);
 
 		/*
 		* Sets the line width to be used for all lines
