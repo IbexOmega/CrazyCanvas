@@ -84,7 +84,8 @@ namespace LambdaEngine
 		const auto& entityComponentSets = page.GetVec();
 		const TArray<Entity>& entities = page.GetIDs();
 
-		for (uint32 entityNr = 0; entityNr < entities.GetSize(); entityNr++)
+		uint32 entityCount = entities.GetSize();
+		for (uint32 entityNr = 0; entityNr < entityCount; entityNr++)
 		{
 			Entity entity = entities[0];
 			const std::unordered_set<const ComponentType*> typeSet = entityComponentSets[0];
