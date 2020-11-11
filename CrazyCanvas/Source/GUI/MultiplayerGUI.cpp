@@ -43,7 +43,6 @@ using namespace LambdaEngine;
 using namespace Noesis;
 
 MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
-	m_HostGameDesc(),
 	m_ServerList(),
 	m_Servers(),
 	m_ClientHostID(-1)
