@@ -18,6 +18,8 @@
 
 #include "Match/Match.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 #include <string>
 
 using namespace LambdaEngine;
@@ -238,6 +240,7 @@ void HUDGUI::AddPlayer(const Player& newPlayer)
 	FrameworkElement::GetView()->GetContent()->RegisterName(pGrid->GetName(), pGrid);
 
 	ColumnDefinitionCollection* pColumnCollection = pGrid->GetColumnDefinitions();
+	AddColumnDefinition(pColumnCollection, 0.5f, GridUnitType_Star);
 	AddColumnDefinition(pColumnCollection, 2.0f, GridUnitType_Star);
 	AddColumnDefinition(pColumnCollection, 0.5f, GridUnitType_Star);
 	AddColumnDefinition(pColumnCollection, 0.5f, GridUnitType_Star);
@@ -255,7 +258,7 @@ void HUDGUI::AddPlayer(const Player& newPlayer)
 	pNameLabel->SetForeground(pWhiteBrush);
 	pNameLabel->SetFontSize(28.f);
 	pNameLabel->SetVerticalAlignment(VerticalAlignment::VerticalAlignment_Bottom);
-	uint8 column = 0;
+	uint8 column = 1;
 	pGrid->GetChildren()->Add(pNameLabel);
 	pGrid->SetColumn(pNameLabel, column++);
 
@@ -277,6 +280,18 @@ void HUDGUI::AddPlayer(const Player& newPlayer)
 	{
 		LOG_WARNING("[HUDGUI]: Unknown team on player \"%s\".\n\tUID: %lu\n\tTeam: %d",
 			newPlayer.GetName().c_str(), newPlayer.GetUID(), newPlayer.GetTeam());
+	}
+
+	if (PlayerManagerClient::GetPlayerLocal()->GetUID() == newPlayer.GetUID())
+	{
+		Ptr<Image> localPlayerIcon = *new Image();
+		Ptr<BitmapImage> srcImage = *new BitmapImage();
+		srcImage->SetUriSource(Noesis::Uri::Uri("splashes/splash_green.png"));
+		localPlayerIcon->SetSource(srcImage);
+		localPlayerIcon->SetWidth(40);
+		localPlayerIcon->SetHeight(40);
+		pGrid->GetChildren()->Add(localPlayerIcon);
+		pGrid->SetColumn(localPlayerIcon, 0);
 	}
 }
 
