@@ -52,8 +52,6 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta);
 
 private:
-	void SetRenderStagesActive();
-
 	void ErrorPopUp(PopUpCode errorCode);
 	void NotiPopUP(PopUpCode notificationCode);
 

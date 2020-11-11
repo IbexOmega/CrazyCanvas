@@ -11,10 +11,10 @@ namespace LambdaEngine
 {
 	ServerNetworkDiscovery* NetworkDiscovery::s_pServer = nullptr;
 	ClientNetworkDiscovery* NetworkDiscovery::s_pClient = nullptr;
-	TSet<ClientNetworkDiscovery*> NetworkDiscovery::s_pClientToDelete;
+	TSet<ClientNetworkDiscovery*> NetworkDiscovery::s_ClientsToDelete;
 	SpinLock NetworkDiscovery::s_Lock;
 	SpinLock NetworkDiscovery::s_LockEndPoints;
-	SpinLock NetworkDiscovery::s_LockClientToDelete;
+	SpinLock NetworkDiscovery::s_LockClientsToDelete;
 	TSet<IPEndPoint> NetworkDiscovery::s_EndPoints;
 
 	bool NetworkDiscovery::EnableServer(const String& nameOfGame, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler, uint16 portOfBroadcastServer)
@@ -57,10 +57,10 @@ namespace LambdaEngine
 
 	void NetworkDiscovery::DisableClient()
 	{
-		std::scoped_lock<SpinLock> lock(s_LockClientToDelete);
+		std::scoped_lock<SpinLock> lock(s_LockClientsToDelete);
 		if (s_pClient)
 		{
-			s_pClientToDelete.insert(s_pClient);
+			s_ClientsToDelete.insert(s_pClient);
 		}
 	}
 
@@ -96,19 +96,19 @@ namespace LambdaEngine
 				s_pClient->FixedTick(delta);
 			}
 		}
-		if (!s_pClientToDelete.empty())
+		if (!s_ClientsToDelete.empty())
 		{
-			std::scoped_lock<SpinLock> lock1(s_LockClientToDelete);
+			std::scoped_lock<SpinLock> lock1(s_LockClientsToDelete);
 			std::scoped_lock<SpinLock> lock2(s_Lock);
 
-			for (ClientNetworkDiscovery* pClient : s_pClientToDelete)
+			for (ClientNetworkDiscovery* pClient : s_ClientsToDelete)
 			{
 				if (s_pClient == pClient)
 					s_pClient = nullptr;
 
 				pClient->Release();
 			}
-			s_pClientToDelete.clear();
+			s_ClientsToDelete.clear();
 		}
 	}
 

@@ -83,7 +83,7 @@ namespace LambdaEngine
 			{
 				LOG_WARNING("[ClientRemoteBase]: Disconnecting... [%s]", reason.c_str());
 				if (m_pHandler)
-					m_pHandler->OnDisconnecting(this);
+					m_pHandler->OnDisconnecting(this, reason);
 
 				if (!m_DisconnectedByRemote)
 					SendDisconnect();
@@ -95,7 +95,7 @@ namespace LambdaEngine
 
 				LOG_INFO("[ClientRemoteBase]: Disconnected");
 				if (m_pHandler)
-					m_pHandler->OnDisconnected(this);
+					m_pHandler->OnDisconnected(this, reason);
 
 				return true;
 			}
@@ -240,13 +240,18 @@ namespace LambdaEngine
 		{
 			TArray<NetworkSegment*> packets;
 			PacketManagerBase* pPacketManager = GetPacketManager();
-			bool hasDiscardedResends = pPacketManager->QueryBegin(GetTransceiver(), packets);
+			bool hasDiscardedResends = false;
+			if (!pPacketManager->QueryBegin(GetTransceiver(), packets, hasDiscardedResends))
+			{
+				Disconnect("Receive Error");
+				return;
+			}
 
 			if (m_State == STATE_CONNECTING)
 			{
 				if (packets.IsEmpty() && !hasDiscardedResends)
 				{
-					Disconnect("Expected Connect Packets");
+					Disconnect("Expected Connect Packet");
 				}
 				else
 				{
@@ -256,7 +261,7 @@ namespace LambdaEngine
 							&& pPacket->GetType() != NetworkSegment::TYPE_CHALLENGE
 							&& pPacket->GetType() != NetworkSegment::TYPE_DISCONNECT)
 						{
-							Disconnect("Expected Connect Packets");
+							Disconnect("Expected Connect Packet");
 							break;
 						}
 					}
