@@ -243,14 +243,7 @@ void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	/*PopulateServerInfo();
-
-
-	if (!CheckServerSettings(m_HostGameDesc))
-	{
-		ErrorPopUp(HOST_ERROR);
-	}
-	else*/ if(!HasHostedServer())
+	if(!HasHostedServer())
 	{
 		//start Server with populated struct
 		NotiPopUP(HOST_NOTIFICATION);
