@@ -9,8 +9,27 @@
              TextElement.FontFamily="gogono_cocoa_mochi.ttf#Gogono Cocoa Mochi"
              d:DesignHeight="100" d:DesignWidth="100"
              x:Name="GAME_OVER_CONTAINER">
+    <UserControl.Resources>
+        <Storyboard x:Key="ShowGameOverWindow">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" Storyboard.TargetName="GAME_OVER_GRID">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.8" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" Storyboard.TargetName="GAME_OVER_GRID">
+                <EasingDoubleKeyFrame KeyTime="0" Value="0"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.8" Value="1"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+    </UserControl.Resources>
 
-    <Grid x:Name="GAME_OVER_GRID" MinWidth="1000" MinHeight="1000" Visibility="Hidden">
+
+
+    <Grid x:Name="GAME_OVER_GRID" MinWidth="1000" MinHeight="1000" Visibility="Hidden" RenderTransformOrigin="0.5 0.5">
+        <Grid.RenderTransform>
+            <ScaleTransform/>
+        </Grid.RenderTransform>
+
+
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"></ColumnDefinition>
             <ColumnDefinition Width="4*"></ColumnDefinition>

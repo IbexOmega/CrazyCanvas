@@ -5,6 +5,7 @@
 #include "LambdaEngine.h"
 
 #include <NoesisGUI/Include/NsGui/Grid.h>
+#include <NoesisGUI/Include/NsGui/Storyboard.h>
 #include <NoesisGUI/Include/NsGui/TextBlock.h>
 #include <NoesisGUI/Include/NsGui/UserControl.h>
 
@@ -24,6 +25,8 @@ public:
 
 private:
 	Noesis::Grid* m_pGameOverGrid = nullptr;
+
+	Noesis::Storyboard* m_pShowWindowStoryboard = nullptr;
 
 	Noesis::TextBlock* m_pWinningTeamText = nullptr;
 

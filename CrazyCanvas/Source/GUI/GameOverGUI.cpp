@@ -5,6 +5,8 @@
 
 #include "Application/API/CommonApplication.h"
 
+#include "World/Player/PlayerActionSystem.h"
+
 #include "NoesisPCH.h"
 
 
@@ -39,6 +41,8 @@ void GameOverGUI::DisplayGameOverGrid(bool isVisible)
 		m_pGameOverGrid->SetVisibility(Noesis::Visibility_Visible);
 	else
 		m_pGameOverGrid->SetVisibility(Noesis::Visibility_Hidden);
+
+	m_pShowWindowStoryboard->Begin();
 }
 
 void GameOverGUI::SetWinningTeam(uint8 winningTeamIndex)
@@ -58,6 +62,8 @@ void GameOverGUI::InitGUI()
 
 	m_pGameOverGrid = FindName<Noesis::Grid>("GAME_OVER_GRID");
 
+	m_pShowWindowStoryboard = FindResource<Noesis::Storyboard>("ShowGameOverWindow");
+
 	m_pWinningTeamText = FindName<Noesis::TextBlock>("WINNING_TEAM_TEXT");
 
 	m_pMostKillsText	= FindName<Noesis::TextBlock>("MOST_KILLS_TEXT");
@@ -65,4 +71,5 @@ void GameOverGUI::InitGUI()
 	m_pMostFlagsText	= FindName<Noesis::TextBlock>("MOST_FLAGS_TEXT");
 
 	LambdaEngine::CommonApplication::Get()->SetMouseVisibility(true);
+	PlayerActionSystem::SetMouseEnabled(false);
 }
