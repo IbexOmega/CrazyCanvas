@@ -65,12 +65,12 @@ namespace LambdaEngine
 
 		struct Instance
 		{
-			glm::mat4	Transform		= glm::mat4(1.0f);
-			glm::mat4	PrevTransform	= glm::mat4(1.0f);
-			uint32		MaterialIndex	= 0;
-			uint32		ExtensionIndex	= 0;
-			uint32		MeshletCount	= 0;
-			uint32		Padding0;
+			glm::mat4	Transform			= glm::mat4(1.0f);
+			glm::mat4	PrevTransform		= glm::mat4(1.0f);
+			uint32		MaterialIndex		= 0;
+			uint32		ExtensionGroupIndex = 0;
+			uint32		ExtensionsPerGroup	= 0;
+			uint32		MeshletCount		= 0;
 		};
 
 		struct MeshKey
@@ -160,7 +160,6 @@ namespace LambdaEngine
 			uint32	MeshletCount			= 0;
 
 			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
-			TArray<uint32>					InstanceIndexToExtensionGroup;
 			bool	HasExtensionData		= false;
 			uint32	DrawArgsMask			= 0x0;
 
@@ -302,6 +301,7 @@ namespace LambdaEngine
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
+		void WriteDrawArgExtensionData(MeshEntry& meshEntry);
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);

@@ -45,7 +45,7 @@ namespace LambdaEngine
 
 			//extensionGroup.pExtensions[newIndex].ExtensionID = extensionFlag;
 
-			//extensionGroup.pExtensionFlags[newIndex] = extensionFlag;
+			extensionGroup.pExtensionFlags[newIndex] = extensionFlag;
 
 			if (inverted)
 			{
@@ -62,7 +62,7 @@ namespace LambdaEngine
 		DrawArgExtensionGroupEntry& groupEntry = s_EntityToExtensionGroupEntryMap[entity];
 		DrawArgExtensionGroup& extensionGroup = groupEntry.extensionGroup;
 		extensionGroup.ExtensionCount = 1;
-		//extensionGroup.pExtensionFlags[0] = extensionFlag;
+		extensionGroup.pExtensionFlags[0] = extensionFlag;
 
 		if (pDrawArgExtension != nullptr)
 		{
@@ -94,17 +94,17 @@ namespace LambdaEngine
 		return s_DefaultMask;
 	}
 
-	TArray<uint32> EntityMaskManager::ExtractComponentMasksFromEntityMask(uint32 mask)
+	TArray<uint32> EntityMaskManager::ExtractComponentFlagsFromEntityMask(uint32 mask)
 	{
-		TArray<uint32> componentMasks;
+		TArray<uint32> componentFlags;
 		for (uint32 bit = 1; bit < sizeof(mask) * 8; bit++)
 		{
 			// Check if bit is set, if it is. That bit is the mask for the component.
 			uint32 componentMask = mask & (1 << bit);
 			if (componentMask > 0)
-				componentMasks.PushBack(componentMask);
+				componentFlags.PushBack(componentMask);
 		}
-		return componentMasks;
+		return componentFlags;
 	}
 
 	uint32 EntityMaskManager::GetExtensionFlag(const ComponentType* type, bool& inverted)

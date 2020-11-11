@@ -66,6 +66,7 @@ namespace LambdaEngine
 	constexpr const uint32 DRAW_ARG_PRIMITIVE_INDICES_BUFFER_BINDING	= 4;
 
 	constexpr const uint32 DRAW_ARG_EXTENSION_DATA_BINDING				= 0;
+	constexpr const uint32 DRAW_ARG_EXTENSION_DATA_COUNT_BOUND			= 16;
 
 	enum class ERenderGraphPipelineStageType : uint8
 	{
@@ -342,7 +343,7 @@ namespace LambdaEngine
 
 	struct DrawArgExtensionGroup
 	{
-		//uint32					pExtensionFlags[MAX_EXTENSIONS_PER_MESH_TYPE];
+		uint32					pExtensionFlags[MAX_EXTENSIONS_PER_MESH_TYPE];
 		DrawArgExtensionData	pExtensions[MAX_EXTENSIONS_PER_MESH_TYPE];
 		uint32					ExtensionCount = 0;
 	};
@@ -369,6 +370,28 @@ namespace LambdaEngine
 		{
 			return FullMask == other.FullMask;
 		}
+	};
+
+	struct DrawArg
+	{
+		TArray<Entity> EntityIDs;
+
+		Buffer* pVertexBuffer			= nullptr;
+		Buffer* pIndexBuffer			= nullptr;
+		Buffer* pInstanceBuffer			= nullptr;
+		Buffer* pMeshletBuffer			= nullptr;
+		Buffer* pUniqueIndicesBuffer	= nullptr;
+		Buffer* pPrimitiveIndices		= nullptr;
+		uint32	InstanceCount			= 0;
+		uint32	IndexCount				= 0;
+		uint32	MeshletCount			= 0;
+
+		// Extensions
+		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount!
+		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used.
+
+		DescriptorSet* pDescriptorSet	= nullptr;
+		DescriptorSet* pExtensionDataDescriptorSet	= nullptr;
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/

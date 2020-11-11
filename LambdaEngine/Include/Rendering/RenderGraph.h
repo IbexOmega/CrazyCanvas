@@ -275,10 +275,9 @@ namespace LambdaEngine
 			uint32					BufferSetIndex						= 0;
 			DescriptorSet**			ppTextureDescriptorSets				= nullptr; //# m_BackBufferCount
 			uint32					TextureSetIndex						= 0;
-			DrawArg*				pDrawArgs							= nullptr;
-			uint32					NumDrawArgsPerFrame					= 0;
+			TArray<DrawArg>			DrawArgs;
 			uint32					DrawSetIndex						= 0;
-			uint32					DrawExtensionSetIndex				= 0;
+			uint32					DrawExtensionSetIndex				= UINT32_MAX;
 			Resource*				pDrawArgsResource					= nullptr;
 			DrawArgMaskDesc			DrawArgsMaskDesc;
 			RenderPass*				pRenderPass							= nullptr;
@@ -389,7 +388,7 @@ namespace LambdaEngine
 		DescriptorSet* CreateDrawArgDescriptorSet(DescriptorSet* pSrc);
 		DescriptorSet* CreateDrawArgExtensionDataDescriptorSet(DescriptorSet* pSrc);
 
-		void ReleaseDrawArgDescriptorSet(DescriptorSet* pDrawArgDescriptorSet);
+		void DrawArgDescriptorSetQueueForRelease(DescriptorSet* pDrawArgDescriptorSet);
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.
@@ -430,6 +429,7 @@ namespace LambdaEngine
 		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
+		bool CreateDrawArgConfiguration();
 		bool CustomRenderStagesPostInit();
 
 		void UpdateRelativeParameters();
@@ -519,19 +519,17 @@ namespace LambdaEngine
 
 		struct
 		{
-			PipelineLayout* pDrawArgPipelineLayout = nullptr;
-			uint32 DrawArgSetIndex = 0;
+			PipelineLayout* pDrawArgPipelineLayout			= nullptr;
 
-			PipelineLayout* pDrawArgExtensionDataPipelineLayout = nullptr;
-			uint32 DrawArgExtensionDataSetIndex = 0;
+			uint32 DrawArgSetIndex							= UINT32_MAX;
+			uint32 DrawArgExtensionDataSetIndex				= UINT32_MAX;
 
-			void Reset()
+			void Release()
 			{
-				pDrawArgPipelineLayout = nullptr;
-				DrawArgSetIndex = 0;
+				SAFERELEASE(pDrawArgPipelineLayout);
 
-				pDrawArgExtensionDataPipelineLayout = nullptr;
-				DrawArgExtensionDataSetIndex = 0;
+				DrawArgSetIndex					= UINT32_MAX;
+				DrawArgExtensionDataSetIndex	= UINT32_MAX;
 			}
 
 		} m_DrawArgConfiguration;

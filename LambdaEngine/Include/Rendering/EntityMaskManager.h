@@ -38,7 +38,7 @@ namespace LambdaEngine
 		static uint32 FetchEntityMask(Entity entity);
 		static uint32 FetchDefaultEntityMask();
 
-		static TArray<uint32> ExtractComponentMasksFromEntityMask(uint32 mask);
+		static TArray<uint32> ExtractComponentFlagsFromEntityMask(uint32 mask);
 
 		static uint32 GetExtensionFlag(const ComponentType* type, bool& inverted);
 

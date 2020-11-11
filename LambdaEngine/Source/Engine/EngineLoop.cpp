@@ -235,7 +235,12 @@ namespace LambdaEngine
 			});
 #endif
 
+		Clock clock;
+		clock.Reset();
 		RenderSystem::GetInstance().Render(delta);
+		clock.Tick();
+		float64 lag = clock.GetDeltaTime().AsMilliSeconds();
+		LOG_WARNING("Render Time: %f", lag);
 
 		return true;
 	}

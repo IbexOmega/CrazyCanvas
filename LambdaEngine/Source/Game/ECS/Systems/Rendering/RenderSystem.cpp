@@ -420,6 +420,9 @@ namespace LambdaEngine
 	{
 		for (auto& meshAndInstancesIt : m_MeshAndInstancesMap)
 		{
+			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt.second.pDrawArgDescriptorSet);
+			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt.second.pDrawArgDescriptorExtensionsSet);
+
 			SAFERELEASE(meshAndInstancesIt.second.pPrimitiveIndices);
 			SAFERELEASE(meshAndInstancesIt.second.pUniqueIndices);
 			SAFERELEASE(meshAndInstancesIt.second.pMeshlets);
@@ -910,7 +913,8 @@ namespace LambdaEngine
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
-		uint32 extensionIndex = 0;
+		uint32 extensionGroupIndex = 0;
+		uint32 extensionsPerGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
@@ -920,8 +924,7 @@ namespace LambdaEngine
 		meshKey.EntityID	= entity;
 		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
 
-		DescriptorSet* pDrawArgDescriptorSet;
-		uint64 drawArgBufferOffset = 0;
+		static uint64 drawArgBufferOffset = 0;
 
 		// If the entity has extension data, it will differ from the default mask, and then add them to the entry.
 		bool hasExtensionData = meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask();
@@ -935,7 +938,7 @@ namespace LambdaEngine
 				VALIDATE(pMesh != nullptr);
 
 				MeshEntry meshEntry = {};
-				pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(nullptr);
+				meshEntry.pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(nullptr);
 
 				// Vertices
 				{
@@ -967,7 +970,7 @@ namespace LambdaEngine
 
 					if (!isAnimated)
 					{
-						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+						meshEntry.pDrawArgDescriptorSet->WriteBufferDescriptors(
 							&meshEntry.pVertexBuffer,
 							&drawArgBufferOffset,
 							&vertexBufferDesc.SizeInBytes,
@@ -1006,7 +1009,7 @@ namespace LambdaEngine
 						m_PendingBufferUpdates.PushBack({ pVertexWeightStagingBuffer, 0, meshEntry.pVertexWeightsBuffer, 0, vertexWeightBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pVertexWeightStagingBuffer);
 
-						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+						meshEntry.pDrawArgDescriptorSet->WriteBufferDescriptors(
 							&meshEntry.pAnimatedVertexBuffer,
 							&drawArgBufferOffset,
 							&vertexBufferDesc.SizeInBytes,
@@ -1075,7 +1078,7 @@ namespace LambdaEngine
 						m_PendingBufferUpdates.PushBack({ pMeshletStagingBuffer, 0, meshEntry.pMeshlets, 0, meshletBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pMeshletStagingBuffer);
 
-						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+						meshEntry.pDrawArgDescriptorSet->WriteBufferDescriptors(
 							&meshEntry.pMeshlets,
 							&drawArgBufferOffset,
 							&meshletBufferDesc.SizeInBytes,
@@ -1112,7 +1115,7 @@ namespace LambdaEngine
 						m_PendingBufferUpdates.PushBack({ pUniqueIndicesStagingBuffer, 0, meshEntry.pUniqueIndices, 0, uniqueIndicesBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pUniqueIndicesStagingBuffer);
 
-						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+						meshEntry.pDrawArgDescriptorSet->WriteBufferDescriptors(
 							&meshEntry.pUniqueIndices,
 							&drawArgBufferOffset,
 							&uniqueIndicesBufferDesc.SizeInBytes,
@@ -1149,7 +1152,7 @@ namespace LambdaEngine
 						m_PendingBufferUpdates.PushBack({ pPrimitiveIndicesStagingBuffer, 0, meshEntry.pPrimitiveIndices, 0, primitiveIndicesBufferDesc.SizeInBytes });
 						DeleteDeviceResource(pPrimitiveIndicesStagingBuffer);
 
-						meshEntry.pDrawArgDescriptorExtensionsSet->WriteBufferDescriptors(
+						meshEntry.pDrawArgDescriptorSet->WriteBufferDescriptors(
 							&meshEntry.pPrimitiveIndices,
 							&drawArgBufferOffset,
 							&primitiveIndicesBufferDesc.SizeInBytes,
@@ -1166,13 +1169,8 @@ namespace LambdaEngine
 					if (hasExtensionData)
 					{
 						meshEntry.HasExtensionData = true;
-						meshEntry.pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(nullptr);
+						meshEntry.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
 					}
-					/*else
-					{
-						meshEntry.ExtensionGroups.PushBack(nullptr);
-						extensionIndex = 0;
-					}*/
 				}
 
 				if (m_RayTracingEnabled)
@@ -1189,11 +1187,6 @@ namespace LambdaEngine
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
-			}
-			else
-			{
-				pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(meshAndInstancesIt->second.pDrawArgDescriptorSet);
-				m_pRenderGraph->ReleaseDrawArgDescriptorSet(meshAndInstancesIt->second.pDrawArgDescriptorSet);
 			}
 		}
 
@@ -1260,42 +1253,25 @@ namespace LambdaEngine
 		if (hasExtensionData)
 		{
 			DrawArgExtensionGroup& extensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+
+			//Check that this extension group has the same number of extensions as the ones already registered in this MeshEntry
+			if (!meshAndInstancesIt->second.ExtensionGroups.IsEmpty())
+			{
+				VALIDATE(meshAndInstancesIt->second.ExtensionGroups[0]->ExtensionCount == extensionGroup.ExtensionCount);
+			}
+
 			meshAndInstancesIt->second.ExtensionGroups.PushBack(&extensionGroup);
-			extensionIndex = meshAndInstancesIt->second.ExtensionGroups.GetSize();
+			extensionGroupIndex = meshAndInstancesIt->second.ExtensionGroups.GetSize();
+			extensionsPerGroup	= extensionGroup.ExtensionCount;
 
 			if (meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet != nullptr)
 			{
-				m_pRenderGraph->ReleaseDrawArgDescriptorSet(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
-				meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
+				m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
 			}
 
-			TArray<TextureView*> extensionTextureViews;
-			TArray<Sampler*> extensionSamplers;
+			meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
 
-			for (uint32 e = 0; e < extensionGroup.ExtensionCount; e++)
-			{
-				for (const DrawArgExtensionGroup* pExtensionGroup : meshAndInstancesIt->second.ExtensionGroups)
-				{
-					VALIDATE(pExtensionGroup->ExtensionCount == extensionGroup.ExtensionCount);
-
-					const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
-
-					for (uint32 t = 0; t < extensionData.TextureCount; t++)
-					{
-						extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
-						extensionSamplers.PushBack(extensionData.ppSamplers[t]);
-					}
-				}
-			}
-
-			meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet->WriteTextureDescriptors(
-				extensionTextureViews.GetData(),
-				extensionSamplers.GetData(),
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-				DRAW_ARG_EXTENSION_DATA_BINDING,
-				extensionTextureViews.GetSize(),
-				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-				true);
+			WriteDrawArgExtensionData(meshAndInstancesIt->second);
 		}
 
 		// Update resource for the entity mesh paint textures that is used for ray tracing
@@ -1369,11 +1345,12 @@ namespace LambdaEngine
 		}
 
 		Instance instance = {};
-		instance.Transform		= transform;
-		instance.PrevTransform	= transform;
-		instance.ExtensionIndex = extensionIndex;
-		instance.MaterialIndex	= materialIndex;
-		instance.MeshletCount	= meshAndInstancesIt->second.MeshletCount;
+		instance.Transform				= transform;
+		instance.PrevTransform			= transform;
+		instance.MaterialIndex			= materialIndex;
+		instance.ExtensionGroupIndex	= extensionGroupIndex;
+		instance.ExtensionsPerGroup		= extensionsPerGroup;
+		instance.MeshletCount			= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
@@ -1480,24 +1457,26 @@ namespace LambdaEngine
 		{
 			// Fetch the current instance and its extension index.
 			const Instance& currentInstance = rasterInstances[instanceIndex];
-			uint32 extensionIndex = currentInstance.ExtensionIndex;
+			uint32 extensionGroupIndex = currentInstance.ExtensionGroupIndex;
 
-			// extensionIndex == 0 means the mesh instance does not have an extension
-			if (extensionIndex != 0)
+			// extensionGroupIndex == 0 means the mesh instance does not have an extension
+			if (extensionGroupIndex != 0)
 			{
 				// Set the last entity to use the extension group at the previous removed entity position.
 				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
 				const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
 				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
-				instance.ExtensionIndex = extensionIndex;
+				instance.ExtensionGroupIndex = extensionGroupIndex;
 
 				// Remove the group in the list and replace it with the last group.
 				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
-				extensionGroups[instanceIndex] = extensionGroups.GetBack();
+				extensionGroups[extensionGroupIndex] = extensionGroups.GetBack();
 				extensionGroups.PopBack();
 
 				// Remove data from the storage.
 				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
+
+				WriteDrawArgExtensionData(meshAndInstancesIt->second);
 			}
 		}
 
@@ -1525,6 +1504,9 @@ namespace LambdaEngine
 		// Unload Mesh, Todo: Should we always do this?
 		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
 		{
+			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorSet);
+			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
+
 			DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
@@ -1776,30 +1758,68 @@ namespace LambdaEngine
 					drawArg.pVertexBuffer = meshEntryPair.second.pVertexBuffer;
 				}
 
-				drawArg.pIndexBuffer = meshEntryPair.second.pIndexBuffer;
-				drawArg.IndexCount = meshEntryPair.second.IndexCount;
+				drawArg.pIndexBuffer			= meshEntryPair.second.pIndexBuffer;
+				drawArg.IndexCount				= meshEntryPair.second.IndexCount;
 
-				drawArg.pInstanceBuffer = meshEntryPair.second.pRasterInstanceBuffer;
-				drawArg.InstanceCount = meshEntryPair.second.RasterInstances.GetSize();
+				drawArg.pInstanceBuffer			= meshEntryPair.second.pRasterInstanceBuffer;
+				drawArg.InstanceCount			= meshEntryPair.second.RasterInstances.GetSize();
 
-				drawArg.pMeshletBuffer = meshEntryPair.second.pMeshlets;
-				drawArg.MeshletCount = meshEntryPair.second.MeshletCount;
-				drawArg.pUniqueIndicesBuffer = meshEntryPair.second.pUniqueIndices;
-				drawArg.pPrimitiveIndices = meshEntryPair.second.pPrimitiveIndices;
+				drawArg.pMeshletBuffer			= meshEntryPair.second.pMeshlets;
+				drawArg.MeshletCount			= meshEntryPair.second.MeshletCount;
+				drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
+				drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
 
 				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
 				{
-					drawArg.ppExtensionGroups = meshEntryPair.second.ExtensionGroups.GetData();
-					drawArg.HasExtensions = meshEntryPair.second.HasExtensions;
+					drawArg.ppExtensionGroups	= meshEntryPair.second.ExtensionGroups.GetData();
+					drawArg.HasExtensions		= meshEntryPair.second.HasExtensionData;
 				}
 				else
 				{
 					drawArg.HasExtensions = false;
 				}
 
+				drawArg.pDescriptorSet				= meshEntryPair.second.pDrawArgDescriptorSet;
+				drawArg.pExtensionDataDescriptorSet	= meshEntryPair.second.pDrawArgDescriptorExtensionsSet;
+
 				drawArgs.PushBack(drawArg);
 			}
 		}
+	}
+
+	void RenderSystem::WriteDrawArgExtensionData(MeshEntry& meshEntry)
+	{
+		static TArray<TextureView*> extensionTextureViews;
+		static TArray<Sampler*> extensionSamplers;
+
+		extensionTextureViews.Clear();
+		extensionSamplers.Clear();
+
+		extensionTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
+		extensionSamplers.PushBack(Sampler::GetNearestSampler());
+
+		for (const DrawArgExtensionGroup* pExtensionGroup : meshEntry.ExtensionGroups)
+		{
+			for (uint32 e = 0; e < pExtensionGroup->ExtensionCount; e++)
+			{
+				const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+
+				for (uint32 t = 0; t < extensionData.TextureCount; t++)
+				{
+					extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
+					extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+				}
+			}
+		}
+
+		meshEntry.pDrawArgDescriptorExtensionsSet->WriteTextureDescriptors(
+			extensionTextureViews.GetData(),
+			extensionSamplers.GetData(),
+			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+			DRAW_ARG_EXTENSION_DATA_BINDING,
+			extensionTextureViews.GetSize(),
+			EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+			true);
 	}
 
 	void RenderSystem::UpdateBuffers()
@@ -1976,6 +1996,18 @@ namespace LambdaEngine
 					bufferDesc.SizeInBytes		= requiredBufferSize;
 
 					pDirtyInstanceBufferEntry->pRasterInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+
+					m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(pDirtyInstanceBufferEntry->pDrawArgDescriptorSet);
+					pDirtyInstanceBufferEntry->pDrawArgDescriptorSet = m_pRenderGraph->CreateDrawArgDescriptorSet(pDirtyInstanceBufferEntry->pDrawArgDescriptorSet);
+
+					static uint64 bufferOffset = 0;
+					pDirtyInstanceBufferEntry->pDrawArgDescriptorSet->WriteBufferDescriptors(
+						&pDirtyInstanceBufferEntry->pRasterInstanceBuffer,
+						&bufferOffset,
+						&bufferDesc.SizeInBytes,
+						DRAW_ARG_INSTANCE_BUFFER_BINDING,
+						1,
+						EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 				}
 
 				pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pRasterInstanceBuffer, 0, requiredBufferSize);
