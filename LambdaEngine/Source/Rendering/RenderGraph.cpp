@@ -726,9 +726,6 @@ namespace LambdaEngine
 			m_DirtyBoundTextureResources.clear();
 		}
 
-		Clock clock;
-		clock.Reset();
-
 		if (!m_DirtyBoundDrawArgResources.empty())
 		{
 			for (Resource* pResource : m_DirtyBoundDrawArgResources)
@@ -756,11 +753,6 @@ namespace LambdaEngine
 
 			m_DirtyBoundDrawArgResources.clear();
 		}
-
-		clock.Tick();
-		float64 drawArgsLag = clock.GetDeltaTime().AsMilliSeconds();
-
-		LOG_ERROR("Update Draw Args: %f", drawArgsLag);
 	}
 
 	DescriptorSet* RenderGraph::CreateDrawArgDescriptorSet(DescriptorSet* pSrc)
