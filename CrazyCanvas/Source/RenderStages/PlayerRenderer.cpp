@@ -437,9 +437,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (Sleeping)
-			return;
-
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
 
@@ -472,19 +469,23 @@ namespace LambdaEngine
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		pCommandList->SetViewports(&viewport, 0, 1);
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		if (m_DrawCount > 0)
-		{
-			// Render enemy with no culling to see backface of paint
-			bool renderEnemies = true;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+		if (!Sleeping)
+			{
+			pCommandList->SetViewports(&viewport, 0, 1);
+			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-			// Team members are transparent, Front Culling- and Back Culling is needed
-			renderEnemies = false;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			if (m_DrawCount > 0)
+			{
+				// Render enemy with no culling to see backface of paint
+				bool renderEnemies = true;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+
+				// Team members are transparent, Front Culling- and Back Culling is needed
+				renderEnemies = false;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			}
 		}
 
 		pCommandList->EndRenderPass();
