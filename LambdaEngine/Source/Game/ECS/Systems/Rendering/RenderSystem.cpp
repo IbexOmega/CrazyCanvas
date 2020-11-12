@@ -1419,6 +1419,7 @@ namespace LambdaEngine
 			if (pMeshPaintComponents->HasComponent(entity))
 			{
 				uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+				LOG_ERROR("Removed Entity - ChangedIndex: %d, TextureIndex: %d", changedIndex, textureIndex);
 				m_PaintMaskTextures[textureIndex]		= m_PaintMaskTextures.GetBack();
 				m_PaintMaskTextures.PopBack();
 				m_PaintMaskTextureViews[textureIndex]	= m_PaintMaskTextureViews.GetBack();
@@ -1501,6 +1502,7 @@ namespace LambdaEngine
 
 			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
 			{
+				VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
@@ -1508,9 +1510,6 @@ namespace LambdaEngine
 
 				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pStagingMatrixBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);

@@ -4,6 +4,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
@@ -357,6 +358,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
 
+		// Tick MeshPaintComponentOwner to release resources
+		MeshPaintComponentOwner::Tick(modFrameIndex);
+
 		// Add a reset hit point at the end of the client collisions.
 		if (s_ShouldReset)
 		{
@@ -375,7 +379,7 @@ namespace LambdaEngine
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
 		{
-			m_pDeviceResourcesToDestroy.Clear();
+			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();

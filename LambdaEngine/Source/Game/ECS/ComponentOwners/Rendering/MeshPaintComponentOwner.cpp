@@ -13,11 +13,25 @@ namespace LambdaEngine
 		return true;
 	}
 
+	void MeshPaintComponentOwner::Tick(uint64 modFrameIndex)
+	{
+		s_ModFrameIndex = modFrameIndex;
+		auto& resourcesToDestroy = s_ResourcesToRemove[s_ModFrameIndex];
+		if (!resourcesToDestroy.IsEmpty())
+		{
+			for (uint32 i = 0; i < resourcesToDestroy.GetSize(); i++)
+			{
+				SAFERELEASE(resourcesToDestroy[i]);
+			}
+			resourcesToDestroy.Clear();
+		}
+	}
+
 	void MeshPaintComponentOwner::MeshPaintDestructor(MeshPaintComponent& meshPaintComponent, Entity entity)
 	{
 		UNREFERENCED_VARIABLE(entity);
 
-		SAFERELEASE(meshPaintComponent.pTexture);
-		SAFERELEASE(meshPaintComponent.pTextureView);
+		s_ResourcesToRemove[s_ModFrameIndex].PushBack(meshPaintComponent.pTexture);
+		s_ResourcesToRemove[s_ModFrameIndex].PushBack(meshPaintComponent.pTextureView);
 	}
 }

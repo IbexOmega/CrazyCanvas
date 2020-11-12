@@ -614,7 +614,7 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 			m_Entities.Erase(m_Entities.Begin() + index);
 			ECSCore::GetInstance()->RemoveEntity(entity);
 
-			std::string info = "Removed entity with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
+			std::string info = "Removed entity[" + std::to_string(entity) + "] with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
 			GameConsole::Get().PushInfo(info);
 			LOG_INFO(info.c_str());
 		}
