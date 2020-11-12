@@ -385,6 +385,11 @@ void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const 
 	}
 }
 
+const PacketGameSettings& LobbyGUI::GetSettings() const
+{
+	return m_GameSettings;
+}
+
 void LobbyGUI::OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	Noesis::TextBox* pTextBox = static_cast<TextBox*>(pSender);

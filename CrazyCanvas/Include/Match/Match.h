@@ -16,7 +16,11 @@ public:
 	static bool ResetMatch();
 	static bool ReleaseMatch();
 
-	static void KillPlayer(LambdaEngine::Entity playerEntity);
+	static void StartMatch();
+	static void BeginLoading();
+
+	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
+
 
 	static void Tick(LambdaEngine::Timestamp deltaTime);
 	static void FixedTick(LambdaEngine::Timestamp deltaTime);

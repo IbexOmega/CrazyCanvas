@@ -41,6 +41,8 @@ public:
 	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
 	bool OnPlayerJoinedEvent(const PlayerJoinedEvent& event);
 
+	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);
+
 private:
 	int32 m_ClientHostID;
 	PacketGameSettings m_GameSettings;

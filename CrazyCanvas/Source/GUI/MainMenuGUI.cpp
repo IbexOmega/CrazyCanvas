@@ -143,8 +143,9 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesSleeping();
-
-	State* pStartingState = DBG_NEW PlaySessionState(true);
+	PacketGameSettings settings;
+	settings.MapID = 0;
+	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 

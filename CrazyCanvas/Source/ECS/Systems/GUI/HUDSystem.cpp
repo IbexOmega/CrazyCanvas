@@ -31,7 +31,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
-	EventQueue::UnregisterEventHandler<PlayerDeadUpdatedEvent>(this, &HUDSystem::OnPlayerDeadUpdated);
+	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 }
 
@@ -75,7 +75,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
-	EventQueue::RegisterEventHandler<PlayerDeadUpdatedEvent>(this, &HUDSystem::OnPlayerDeadUpdated);
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 
 	m_HUDGUI = *new HUDGUI();
@@ -223,15 +223,13 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 	return false;
 }
 
-bool HUDSystem::OnPlayerDeadUpdated(const PlayerDeadUpdatedEvent& event)
+bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	m_HUDGUI->UpdatePlayerAliveStatus(event.pPlayer->GetUID(), false);
+	const Player* pPlayer = event.pPlayer;
+
+	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
 	return false;
-
-	// TODO: Similar function for PlayerAliveUpdatedEvent (or similar)
-	// 		when that is implemented
 }
-
 
 bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
 {
