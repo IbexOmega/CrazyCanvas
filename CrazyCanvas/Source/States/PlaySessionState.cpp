@@ -43,9 +43,10 @@
 
 using namespace LambdaEngine;
 
-PlaySessionState::PlaySessionState(bool singlePlayer) :
+PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
 	m_Singleplayer(singlePlayer),
-	m_MultiplayerClient()
+	m_MultiplayerClient(), 
+	m_GameSettings(gameSettings)
 {
 	if (m_Singleplayer)
 	{
@@ -90,7 +91,7 @@ void PlaySessionState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[m_GameSettings.MapID]
 		};
 		Match::CreateMatch(&matchDescription);
 	}

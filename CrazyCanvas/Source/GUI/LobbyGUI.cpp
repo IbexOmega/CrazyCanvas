@@ -359,6 +359,11 @@ void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const 
 	}
 }
 
+const PacketGameSettings& LobbyGUI::GetSettings() const
+{
+	return m_GameSettings;
+}
+
 void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollection, float width)
 {
 	GridLength gl = GridLength(width, GridUnitType::GridUnitType_Star);

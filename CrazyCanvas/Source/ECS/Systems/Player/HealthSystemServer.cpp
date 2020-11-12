@@ -10,6 +10,8 @@
 
 #include "Match/Match.h"
 
+#include "Lobby/PlayerManagerServer.h"
+
 #include <mutex>
 
 /*
@@ -64,7 +66,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 				PacketHealthChanged packet = {};
 				packet.CurrentHealth = healthComponent.CurrentHealth;
-				packet.Killed = false;
 				packets.SendPacket(packet);
 			}
 
@@ -74,6 +75,8 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 	if (!m_EventsToProcess.IsEmpty())
 	{
+		ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
+
 		for (ProjectileHitEvent& event : m_EventsToProcess)
 		{
 			// CollisionInfo1 is the entity that got hit
@@ -86,16 +89,15 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
 			if (healthComponent.CurrentHealth > 0)
 			{
-				bool killed = false;
 				if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 				{
 					healthComponent.CurrentHealth -= HIT_DAMAGE;
 					if (healthComponent.CurrentHealth <= 0)
 					{
-						Match::KillPlayer(entity);
-						killed = true;
+						Entity entityProjectile = event.CollisionInfo0.Entity;
+						const ProjectileComponent& projectileComponent = pProjectileComponents->GetConstData(entityProjectile);
 
-						LOG_INFO("PLAYER DIED");
+						Match::KillPlayer(entity, projectileComponent.Owner);
 					}
 
 					LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
@@ -113,7 +115,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 				PacketHealthChanged packet = {};
 				packet.CurrentHealth = healthComponent.CurrentHealth;
-				packet.Killed = killed;
 				packets.SendPacket(packet);
 			}
 		}

@@ -33,11 +33,6 @@ void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			if (healthComponent.CurrentHealth != packet.CurrentHealth)
 			{
 				healthComponent.CurrentHealth = packet.CurrentHealth;
-				if (packet.Killed)
-				{
-					Match::KillPlayer(entity);
-					LOG_INFO("PLAYER DIED");
-				}
 
 				// Is this the local player
 				bool isLocal = false;
