@@ -137,7 +137,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED);
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, 0.0);
 			});
 
 		return false;
@@ -401,7 +401,6 @@ namespace LambdaEngine
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
 				frameSettings.ShouldReset = data.ClearClient;
-				frameSettings.Angle = Random::Float32()*glm::pi<float>()*2.f;
 
 				uint32 size = 0;
 				// Current limit is 10 draw calls per frame - might change in future if needed
@@ -521,11 +520,12 @@ namespace LambdaEngine
 		const glm::vec3& direction,
 		EPaintMode paintMode,
 		ERemoteMode remoteMode,
-		ETeam team)
+		ETeam team,
+		uint32 angle)
 	{
 		UnwrapData data = {};
-		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
-		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
+		data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
+		data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, (float)angle/360 };
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
@@ -778,7 +778,7 @@ namespace LambdaEngine
 		{
 			UnwrapData data = {};
 			data.TargetPosition = { };
-			data.TargetDirection = { };
+			data.TargetDirectionXYZAngleW = { };
 			data.PaintMode = EPaintMode::NONE;
 			data.RemoteMode = ERemoteMode::UNDEFINED;
 			data.Team = ETeam::NONE;

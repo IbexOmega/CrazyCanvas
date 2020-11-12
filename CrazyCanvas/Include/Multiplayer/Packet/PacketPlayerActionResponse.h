@@ -17,5 +17,6 @@ struct PacketPlayerActionResponse : Packet
 	EAmmoType FiredAmmo = EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projectiles
 	glm::vec3 WeaponPosition;
 	glm::vec3 WeaponVelocity;
+	uint32 Angle;
 };
 #pragma pack(pop)

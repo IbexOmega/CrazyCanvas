@@ -7,6 +7,8 @@
 
 #include "Input/API/InputActionSystem.h"
 
+#include "Math/Random.h"
+
 /*
 * WeaponSystemClients
 */
@@ -74,7 +76,8 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 						response.FiredAmmo,
 						response.WeaponPosition,
 						response.WeaponVelocity,
-						teamComponent.TeamIndex);
+						teamComponent.TeamIndex,
+						response.Angle);
 				}
 			}
 
@@ -119,11 +122,11 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 	}
 }
 
-void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam)
+void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam, uint32 angle)
 {
 	using namespace LambdaEngine;
 
-	WeaponSystem::Fire(weaponEntity, weaponComponent, ammoType, position, velocity, playerTeam);
+	WeaponSystem::Fire(weaponEntity, weaponComponent, ammoType, position, velocity, playerTeam, angle);
 
 	// Play gun fire and spawn particles
 	ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
@@ -270,8 +273,10 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		uint32 playerTeam;
 		CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
+		uint32 angle = Random::UInt32(0, 360);
+
 		// For creating entity
-		Fire(weaponEntity, weaponComponent, ammoType, firePosition, fireVelocity, playerTeam);
+		Fire(weaponEntity, weaponComponent, ammoType, firePosition, fireVelocity, playerTeam, angle);
 
 		// Send action to server
 		PacketComponent<PacketPlayerAction>& packets = pECS->GetComponent<PacketComponent<PacketPlayerAction>>(weaponComponent.WeaponOwner);
@@ -279,6 +284,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		if (!actions.empty())
 		{
 			actions.back().FiredAmmo = ammoType;
+			actions.back().Angle = angle;
 		}
 
 		return true;

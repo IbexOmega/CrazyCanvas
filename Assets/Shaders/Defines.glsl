@@ -207,7 +207,7 @@ struct SAtlasData
 struct SUnwrapData
 {
 	vec4 TargetPosition;
-	vec4 TargetDirection;
+	vec4 TargetDirectionXYZAngleW;
 	uint PaintMode;
 	uint RemoteMode;
 	uint TeamMode;

@@ -950,6 +950,7 @@ bool LevelObjectCreator::CreateProjectile(
 	ProjectileComponent projectileComp;
 	projectileComp.AmmoType	= desc.AmmoType;
 	projectileComp.Owner	= desc.WeaponOwner;
+	projectileComp.Angle	= desc.Angle;
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 

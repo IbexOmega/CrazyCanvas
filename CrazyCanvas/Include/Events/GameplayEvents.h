@@ -130,13 +130,15 @@ public:
 		const EAmmoType ammoType, 
 		const glm::vec3& position, 
 		const glm::vec3& initialVelocity,
-		const uint32 teamIndex)
+		const uint32 teamIndex,
+		const uint32 angle)
 		: Event()
 		, WeaponOwnerEntity(weaponOwnerEntity)
 		, AmmoType(ammoType)
 		, Position(position)
 		, InitialVelocity(initialVelocity)
 		, TeamIndex(teamIndex)
+		, Angle(angle)
 	{
 	}
 
@@ -153,6 +155,7 @@ public:
 	const glm::vec3 Position;
 	const glm::vec3 InitialVelocity;
 	const uint32 TeamIndex;
+	const uint32 Angle;
 	LambdaEngine::CollisionCallback Callback;
 	LambdaEngine::MeshComponent		MeshComponent;
 };
