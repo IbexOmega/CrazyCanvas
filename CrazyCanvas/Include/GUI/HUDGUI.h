@@ -68,6 +68,7 @@ private:
 
 	Noesis::Image* m_pWaterAmmoRect = nullptr;		
 	Noesis::Image* m_pPaintAmmoRect = nullptr;
+	Noesis::Image* m_pHealthRect = nullptr;
 	
 	Noesis::TextBlock* m_pWaterAmmoText = nullptr;
 	Noesis::TextBlock* m_pPaintAmmoText = nullptr;

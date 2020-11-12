@@ -51,33 +51,18 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 	//Returns false if player is dead
 	if (currentHealth != m_GUIState.Health)
 	{
-		Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
-		SolidColorBrush* pBrush = (SolidColorBrush*)pHpRect->GetBackground();
 		Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
 
 		float healthScale = (float)currentHealth / (float)m_GUIState.MaxHealth;
 		scale->SetCenterX(0.0);
 		scale->SetCenterY(0.0);
-		scale->SetScaleX(healthScale);
-		pHpRect->SetRenderTransform(scale);
+		scale->SetScaleY(healthScale);
+		m_pHealthRect->SetRenderTransform(scale);
 
 		std::string hpString = std::to_string((int32)(healthScale * 100)) + "%";
 		FrameworkElement::FindName<Noesis::TextBlock>("HEALTH_DISPLAY")->SetText(hpString.c_str());
 
 		m_GUIState.Health = currentHealth;
-
-		if (m_GUIState.Health <= 0)
-			return false;
-		else if(m_GUIState.Health <= 20)
-			pBrush->SetColor(Color(255, 28, 0));
-		else if(m_GUIState.Health <= 40)
-			pBrush->SetColor(Color(255, 132, 0));
-		else if(m_GUIState.Health <= 60)
-			pBrush->SetColor(Color(255, 188, 0));
-		else if(m_GUIState.Health <= 80)
-			pBrush->SetColor(Color(141, 207, 0));		
-		else if(m_GUIState.Health == 100)
-			pBrush->SetColor(Color(0, 207, 56));
 	}
 	return true;
 }
@@ -217,8 +202,10 @@ void HUDGUI::InitGUI()
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 
-	m_pWaterAmmoRect = FrameworkElement::FindName<Image>("WATER_RECT");
-	m_pPaintAmmoRect = FrameworkElement::FindName<Image>("PAINT_RECT");
+	m_pWaterAmmoRect	= FrameworkElement::FindName<Image>("WATER_RECT");
+	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
+	m_pHealthRect		= FrameworkElement::FindName<Image>("HEALTH_RECT");
+
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
