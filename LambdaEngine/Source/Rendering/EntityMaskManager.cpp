@@ -31,10 +31,10 @@ namespace LambdaEngine
 		s_EntityToExtensionGroupEntryMap.erase(entity);
 	}
 
-	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension)
+	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* pType, const DrawArgExtensionData* pDrawArgExtension)
 	{
 		bool inverted;
-		uint32 extensionFlag = GetExtensionFlag(type, inverted);
+		uint32 extensionFlag = GetExtensionFlag(pType, inverted);
 
 		// Bind entity to the extension data
 		auto it = s_EntityToExtensionGroupEntryMap.find(entity);
@@ -114,9 +114,9 @@ namespace LambdaEngine
 		return componentFlags;
 	}
 
-	uint32 EntityMaskManager::GetExtensionFlag(const ComponentType* type, bool& inverted)
+	uint32 EntityMaskManager::GetExtensionFlag(const ComponentType* pType, bool& inverted)
 	{
-		if (auto it = s_ComponentTypeToMaskMap.find(type); it != s_ComponentTypeToMaskMap.end())
+		if (auto it = s_ComponentTypeToMaskMap.find(pType); it != s_ComponentTypeToMaskMap.end())
 		{
 			inverted = it->second.Inverted;
 			return it->second.Flag;
@@ -129,7 +129,7 @@ namespace LambdaEngine
 			uint32 flag = BIT(++s_BitCounter);
 
 			//Set bit on other ComponentTypes
-			s_ComponentTypeToMaskMap[type] = { .Flag = flag, .Inverted = inverted };
+			s_ComponentTypeToMaskMap[pType] = { .Flag = flag, .Inverted = inverted };
 
 			if (inverted)
 			{
@@ -140,7 +140,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[EntityMaskManager]: New flag required for Component type %s but EntityMaskManager is already intialized, returning default mask %x", type->GetName(), s_DefaultMask);
+			LOG_WARNING("[EntityMaskManager]: New flag required for Component type %s but EntityMaskManager is already intialized, returning default mask %x", pType->GetName(), s_DefaultMask);
 			return s_DefaultMask;
 		}
 	}
@@ -151,9 +151,9 @@ namespace LambdaEngine
 		return s_ExtensionMaskToExtensionDescMap[flag];
 	}
 
-	void EntityMaskManager::BindTypeToExtensionDesc(const ComponentType* type, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType)
+	void EntityMaskManager::BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType)
 	{
-		uint32 extensionFlag = GetExtensionFlag(type, invertOnNewComponentType);
+		uint32 extensionFlag = GetExtensionFlag(pType, invertOnNewComponentType);
 
 		// Set extension description for later use
 		auto eIt = s_ExtensionMaskToExtensionDescMap.find(extensionFlag);

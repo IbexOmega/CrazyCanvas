@@ -33,7 +33,7 @@ namespace LambdaEngine
 		static void Finalize();
 
 		static void RemoveAllExtensionsFromEntity(Entity entity);
-		static void AddExtensionToEntity(Entity entity, const ComponentType* type, const DrawArgExtensionData* pDrawArgExtension);
+		static void AddExtensionToEntity(Entity entity, const ComponentType* pType, const DrawArgExtensionData* pDrawArgExtension);
 		static DrawArgExtensionGroup* GetExtensionGroup(Entity entity);
 
 		static uint32 FetchEntityMask(Entity entity);
@@ -41,11 +41,11 @@ namespace LambdaEngine
 
 		static TArray<uint32> ExtractComponentFlagsFromEntityMask(uint32 mask);
 
-		static uint32 GetExtensionFlag(const ComponentType* type, bool& inverted);
+		static uint32 GetExtensionFlag(const ComponentType* pType, bool& inverted);
 
 		static const DrawArgExtensionDesc& GetExtensionDescFromExtensionFlag(uint32 flag);
 
-		static void BindTypeToExtensionDesc(const ComponentType* type, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
+		static void BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
 
 	private:
 		static void CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc);
