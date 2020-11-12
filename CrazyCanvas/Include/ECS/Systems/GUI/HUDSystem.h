@@ -30,6 +30,7 @@ public:
 	bool OnWeaponFired(const WeaponFiredEvent& event);
 	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
 	bool OnProjectileHit(const ProjectileHitEvent& event);
+	bool OnGameOver(const GameOverEvent& event);
 
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);

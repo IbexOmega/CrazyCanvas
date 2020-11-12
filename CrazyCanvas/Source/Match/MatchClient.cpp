@@ -259,6 +259,8 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
 	ResetMatch();
 
+	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
+
 	return true;
 }
 

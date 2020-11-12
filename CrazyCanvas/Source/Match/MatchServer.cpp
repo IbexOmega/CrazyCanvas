@@ -464,7 +464,6 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 	uint32 newScore = GetScore(event.TeamIndex) + 1;
 	SetScore(event.TeamIndex, newScore);
 
-
 	PacketTeamScored packet;
 	packet.TeamIndex	= event.TeamIndex;
 	packet.Score		= newScore;

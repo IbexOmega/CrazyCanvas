@@ -62,7 +62,6 @@ private:
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
 	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
-	void PopulateServerInfo();
 
 	void HandleServerInfo(ServerInfo& serverInfo, bool forceSave = false);
 
@@ -73,7 +72,6 @@ private:
 private:
 	bool m_RayTracingEnabled = false;
 	int32 m_ClientHostID;
-	HostGameDescription m_HostGameDesc;
 	SavedServerGUI m_ServerList;
 
 	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;
