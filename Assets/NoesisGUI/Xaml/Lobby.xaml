@@ -82,6 +82,16 @@
             <Setter Property="IsReadOnly" Value="True" />
         </Style>
 
+      <Style TargetType="TextBox"
+             x:Key="SettingsHostTextStyle"
+             BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="26" />
+        <Setter Property="Grid.Column" Value="1" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Margin" Value="0 5 0 5" />
+      </Style>
+      
         <Style TargetType="Label"
                x:Key="SettingsClientStyle"
                BasedOn="{StaticResource {x:Type Label}}">
@@ -89,6 +99,7 @@
             <Setter Property="Grid.Column" Value="1" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Height" Value="50" />
         </Style>
 
         <Style TargetType="Label"

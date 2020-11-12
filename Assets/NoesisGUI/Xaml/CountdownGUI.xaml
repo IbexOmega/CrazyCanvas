@@ -27,7 +27,7 @@
     </UserControl.Resources>
     <UserControl.Triggers>
         <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-            <BeginStoryboard Storyboard="{StaticResource Number}"/>
+            <BeginStoryboard Storyboard="{StaticResource CountdownStoryboard}"/>
         </EventTrigger>
     </UserControl.Triggers>
     <Grid>

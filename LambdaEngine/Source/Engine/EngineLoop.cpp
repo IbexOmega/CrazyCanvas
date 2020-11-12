@@ -234,6 +234,7 @@ namespace LambdaEngine
 				ImGui::PopStyleColor();
 			});
 #endif
+
 		RenderSystem::GetInstance().Render(delta);
 
 		return true;
