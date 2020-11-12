@@ -25,7 +25,7 @@ void PlayerManagerClient::Init()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerScore>>(&PlayerManagerClient::OnPacketPlayerScoreReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerState>>(&PlayerManagerClient::OnPacketPlayerStateReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerReady>>(&PlayerManagerClient::OnPacketPlayerReadyReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerDied>>(&PlayerManagerClient::OnPacketPlayerDiedReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerAliveChanged>>(&PlayerManagerClient::OnPacketPlayerAliveChangedReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerPing>>(&PlayerManagerClient::OnPacketPlayerPingReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerHost>>(&PlayerManagerClient::OnPacketPlayerHostReceived);
 }
@@ -40,7 +40,7 @@ void PlayerManagerClient::Release()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerScore>>(&PlayerManagerClient::OnPacketPlayerScoreReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerState>>(&PlayerManagerClient::OnPacketPlayerStateReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerReady>>(&PlayerManagerClient::OnPacketPlayerReadyReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerDied>>(&PlayerManagerClient::OnPacketPlayerDiedReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerAliveChanged>>(&PlayerManagerClient::OnPacketPlayerAliveChangedReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerPing>>(&PlayerManagerClient::OnPacketPlayerPingReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketPlayerHost>>(&PlayerManagerClient::OnPacketPlayerHostReceived);
 }
@@ -268,22 +268,30 @@ bool PlayerManagerClient::OnPacketPlayerReadyReceived(const PacketReceivedEvent<
 	return true;
 }
 
-bool PlayerManagerClient::OnPacketPlayerDiedReceived(const PacketReceivedEvent<PacketPlayerDied>& event)
+bool PlayerManagerClient::OnPacketPlayerAliveChangedReceived(const PacketReceivedEvent<PacketPlayerAliveChanged>& event)
 {
-	const PacketPlayerDied& packet = event.Packet;
+	const PacketPlayerAliveChanged& packet = event.Packet;
 
 	Player* pPlayer = GetPlayerNoConst(packet.UID);
 
 	if (pPlayer)
 	{
-		if (!pPlayer->m_IsDead)
+		if (pPlayer->m_Deaths != packet.Deaths)
 		{
-			pPlayer->m_IsDead = true;
+			pPlayer->m_Deaths = packet.Deaths;
 
-			PlayerDeadUpdatedEvent playerDeadUpdatedEvent(pPlayer);
-			EventQueue::SendEventImmediate(playerDeadUpdatedEvent);
+			PlayerScoreUpdatedEvent playerScoreUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerScoreUpdatedEvent);
+		}
+		if (pPlayer->m_IsDead != packet.IsDead)
+		{
+			pPlayer->m_IsDead = packet.IsDead;
+
+			PlayerAliveUpdatedEvent playerAliveUpdatedEvent(pPlayer);
+			EventQueue::SendEventImmediate(playerAliveUpdatedEvent);
 		}
 	}
+
 	return true;
 }
 

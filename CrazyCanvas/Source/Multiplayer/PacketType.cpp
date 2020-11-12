@@ -15,7 +15,7 @@
 #include "Multiplayer/Packet/PacketFlagEdited.h"
 #include "Multiplayer/Packet/PacketJoin.h"
 #include "Multiplayer/Packet/PacketLeave.h"
-#include "Multiplayer/Packet/PacketPlayerDied.h"
+#include "Multiplayer/Packet/PacketPlayerAliveChanged.h"
 #include "Multiplayer/Packet/PacketPlayerHost.h"
 #include "Multiplayer/Packet/PacketPlayerPing.h"
 #include "Multiplayer/Packet/PacketPlayerReady.h"
@@ -44,7 +44,7 @@ void PacketType::Init()
 	JOIN					= RegisterPacketType<PacketJoin>();
 	LEAVE					= RegisterPacketType<PacketLeave>();
 	CHAT_MESSAGE			= RegisterPacketTypeRaw();
-	PLAYER_DIED				= RegisterPacketType<PacketPlayerDied>();
+	PLAYER_ALIVE_CHANGED	= RegisterPacketType<PacketPlayerAliveChanged>();
 	PLAYER_HOST				= RegisterPacketType<PacketPlayerHost>();
 	PLAYER_PING				= RegisterPacketType<PacketPlayerPing>();
 	PLAYER_READY			= RegisterPacketType<PacketPlayerReady>();

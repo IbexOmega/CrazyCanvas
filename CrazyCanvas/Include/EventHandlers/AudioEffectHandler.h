@@ -1,6 +1,7 @@
 #pragma once
 #include "Physics/PhysicsEvents.h"
 
+#include "Events/PlayerEvents.h"
 #include "Events/GameplayEvents.h"
 
 #include "Application/API/Events/WindowEvents.h"
@@ -22,7 +23,7 @@ public:
 	void Init();
 
 private:
-	bool OnPlayerDied(const PlayerDiedEvent& event);
+	bool OnPlayerAliveUpdatedEvent(const PlayerAliveUpdatedEvent& event);
 	bool OnPlayerConnected(const PlayerConnectedEvent& event);
 	bool OnPlayerHit(const PlayerHitEvent& event);
 	bool OnWindowFocusChanged(const LambdaEngine::WindowFocusChangedEvent& event);

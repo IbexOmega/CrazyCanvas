@@ -59,6 +59,9 @@ void MatchServer::KillPlayer(LambdaEngine::Entity playerEntity)
 {
 	using namespace LambdaEngine;
 
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+	PlayerManagerServer::SetPlayerAlive(pPlayer, false);
+
 	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
 	m_PlayersToKill.EmplaceBack(playerEntity);
 }
@@ -142,9 +145,13 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					ComponentArray<WeaponComponent>*	pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
 
 					ImGui::Text("Player Status:");
-					for (uint32 i = 0; Entity playerEntity : playerEntities)
+					for (Entity playerEntity : playerEntities)
 					{
-						std::string name = "Player " + std::to_string(++i) + " : [EntityID=" + std::to_string(playerEntity) + "]";
+						const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+						if (!pPlayer)
+							continue;
+
+						std::string name = pPlayer->GetName() + ": [EntityID=" + std::to_string(playerEntity) + "]";
 						if (ImGui::TreeNode(name.c_str()))
 						{
 							const HealthComponent& health = pHealthComponents->GetConstData(playerEntity);
@@ -173,11 +180,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 							if (ImGui::Button("Disconnect"))
 							{
-								const Player* pPlayer = PlayerManagerBase::GetPlayer(playerEntity);
-								if (pPlayer)
-								{
-									ServerHelper::DisconnectPlayer(pPlayer, "Kicked");
-								}
+								ServerHelper::DisconnectPlayer(pPlayer, "Kicked");
 							}
 
 							ImGui::TreePop();
@@ -562,4 +565,7 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 
 	// Reset health
 	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
+
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+	PlayerManagerServer::SetPlayerAlive(pPlayer, true);
 }

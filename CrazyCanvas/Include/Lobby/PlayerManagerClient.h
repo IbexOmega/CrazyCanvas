@@ -4,7 +4,7 @@
 
 #include "Multiplayer/Packet/PacketPlayerState.h"
 #include "Multiplayer/Packet/PacketPlayerReady.h"
-#include "Multiplayer/Packet/PacketPlayerDied.h"
+#include "Multiplayer/Packet/PacketPlayerAliveChanged.h"
 #include "Multiplayer/Packet/PacketPlayerHost.h"
 #include "Multiplayer/Packet/PacketPlayerPing.h"
 
@@ -35,7 +35,7 @@ private:
 	static bool OnPacketPlayerScoreReceived(const PacketReceivedEvent<PacketPlayerScore>& event);
 	static bool OnPacketPlayerStateReceived(const PacketReceivedEvent<PacketPlayerState>& event);
 	static bool OnPacketPlayerReadyReceived(const PacketReceivedEvent<PacketPlayerReady>& event);
-	static bool OnPacketPlayerDiedReceived(const PacketReceivedEvent<PacketPlayerDied>& event);
+	static bool OnPacketPlayerAliveChangedReceived(const PacketReceivedEvent<PacketPlayerAliveChanged>& event);
 	static bool OnPacketPlayerHostReceived(const PacketReceivedEvent<PacketPlayerHost>& event);
 	static bool OnPacketPlayerPingReceived(const PacketReceivedEvent<PacketPlayerPing>& event);
 };
