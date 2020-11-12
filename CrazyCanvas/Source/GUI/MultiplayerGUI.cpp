@@ -43,7 +43,6 @@ using namespace LambdaEngine;
 using namespace Noesis;
 
 MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
-	m_HostGameDesc(),
 	m_ServerList(),
 	m_Servers(),
 	m_ClientHostID(-1)
@@ -243,14 +242,7 @@ void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	PopulateServerInfo();
-
-
-	if (!CheckServerSettings(m_HostGameDesc))
-	{
-		ErrorPopUp(HOST_ERROR);
-	}
-	else if(!HasHostedServer())
+	if(!HasHostedServer())
 	{
 		//start Server with populated struct
 		NotiPopUP(HOST_NOTIFICATION);
@@ -438,23 +430,4 @@ bool MultiplayerGUI::CheckServerSettings(const HostGameDescription& serverSettin
 		return false;
 
 	return true;
-}
-
-void MultiplayerGUI::PopulateServerInfo()
-{
-	ComboBox* pCBPlayerCount = FrameworkElement::FindName<ComboBox>("PLAYER_NUMBER");
-	ComboBoxItem* pItem = (ComboBoxItem*)pCBPlayerCount->GetSelectedItem();
-	int8 playersNumber = (int8)std::stoi(pItem->GetContent()->ToString().Str());
-
-	ComboBox* pCBPMapOption = FrameworkElement::FindName<ComboBox>("MAP_OPTION");
-	pItem = (ComboBoxItem*)pCBPMapOption->GetSelectedItem();
-	const char*  pMap = pItem->GetContent()->ToString().Str();
-
-	m_HostGameDesc.PlayersNumber = playersNumber;
-
-	if(std::strcmp(pMap, "Standard") == 0)
-		m_HostGameDesc.MapNumber = 0;
-
-	LOG_MESSAGE("Player count %d", playersNumber);
-	LOG_MESSAGE(pMap);
 }
