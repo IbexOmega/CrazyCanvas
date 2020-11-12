@@ -4,7 +4,7 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
-#include "Multiplayer/Packet/MultiplayerEvents.h"
+#include "Events/PacketEvents.h"
 #include "Events/PlayerEvents.h"
 #include "Events/ChatEvents.h"
 

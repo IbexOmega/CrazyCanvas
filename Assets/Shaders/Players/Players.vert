@@ -44,7 +44,7 @@ void main()
 	out_Bitangent			= bitangent;
 	out_TexCoord			= vertex.TexCoord.xy;
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
-    out_ExtensionIndex		= instance.ExtensionIndex;
+    out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
     out_InstanceIndex		= gl_InstanceIndex;
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
 
