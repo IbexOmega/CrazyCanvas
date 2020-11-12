@@ -14,6 +14,7 @@
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
@@ -624,6 +625,9 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
 
+	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
+	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
+
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
 		NetworkPositionComponent
@@ -670,6 +674,13 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
+	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
+
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 512, 512, true));
+
+	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
+	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
+
 
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
