@@ -12,6 +12,7 @@
 #include "NoesisPCH.h"
 
 #include "Events/MatchEvents.h"
+#include "Events/PlayerEvents.h"
 
 class HUDSystem : public LambdaEngine::System
 {
@@ -30,6 +31,9 @@ public:
 	bool OnWeaponFired(const WeaponFiredEvent& event);
 	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
 	bool OnProjectileHit(const ProjectileHitEvent& event);
+	bool OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event);
+	bool OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event);
+	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 	bool OnGameOver(const GameOverEvent& event);
 
 private:

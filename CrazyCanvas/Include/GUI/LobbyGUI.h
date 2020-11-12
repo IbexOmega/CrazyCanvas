@@ -40,12 +40,17 @@ public:
 		LambdaEngine::TArray<LambdaEngine::String> settingValues,
 		uint8 defaultIndex);
 
+	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& text);
+
 	// Noesis events
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 	void OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
+	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	const PacketGameSettings& GetSettings() const;
 
 private:
 	// Helpers
@@ -73,6 +78,7 @@ private:
 	bool m_IsInitiated;
 
 private:
+	static constexpr char* SETTING_SERVER_NAME	= "SERVER_NAME";
 	static constexpr char* SETTING_MAP			= "MAP";
 	static constexpr char* SETTING_MAX_TIME		= "MAX_TIME";
 	static constexpr char* SETTING_FLAGS_TO_WIN = "FLAGS_TO_WIN";

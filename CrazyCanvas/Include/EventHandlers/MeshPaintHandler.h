@@ -2,7 +2,9 @@
 #include "Physics/PhysicsEvents.h"
 
 #include "Rendering/PaintMaskRenderer.h"
-#include "Multiplayer/Packet/MultiplayerEvents.h"
+
+#include "Events/PacketEvents.h"
+
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 
 #include <queue>

@@ -11,41 +11,6 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 /*
-* PlayerDiedEvent
-*/
-
-struct PlayerDiedEvent : public LambdaEngine::Event
-{
-public:
-	inline PlayerDiedEvent(const LambdaEngine::Entity killedEntity, const glm::vec3 position)
-		: Event()
-		, KilledEntity(killedEntity)
-		, Position(position)
-	{
-	}
-
-	DECLARE_EVENT_TYPE(PlayerDiedEvent);
-
-	virtual LambdaEngine::String ToString() const
-	{
-		using namespace LambdaEngine;
-		return
-			"Player Died. EntitiyID=" +
-			std::to_string(KilledEntity) +
-			"Position=[" +
-			std::to_string(Position.x) +
-			", " +
-			std::to_string(Position.y) +
-			", " +
-			std::to_string(Position.z) +
-			"]";
-	}
-
-	const LambdaEngine::Entity KilledEntity;
-	const glm::vec3 Position;
-};
-
-/*
 * PlayerConnectedEvent
 */
 

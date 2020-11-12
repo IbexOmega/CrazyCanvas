@@ -116,24 +116,12 @@ bool LevelObjectCreator::Init()
 	{
 		//Flag
 		{
-			ResourceManager::LoadMeshFromFile("Roller.obj", s_FlagMeshGUID);
-
-			MaterialProperties materialProperties = {};
-			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-
-			s_FlagMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"Flag Material",
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				materialProperties);
+			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagMaterialGUID);
 		}
 
 		//Player
 		{
-			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
+			ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
 
 #ifdef USE_ALL_ANIMATIONS
 			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
@@ -541,6 +529,13 @@ bool LevelObjectCreator::CreateFlag(
 	if (!MultiplayerUtils::IsServer())
 	{
 		networkUID = pFlagDesc->NetworkUID;
+
+		// Add Animation attachment on client
+		pECS->AddComponent<AnimationAttachedComponent>(flagEntity, AnimationAttachedComponent
+			{
+				.JointName = "mixamorig:Spine2",
+				.Transform = glm::mat4(1.0f),
+			});
 	}
 	else
 	{

@@ -1,6 +1,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 #include "../Defines.glsl"
+#include "../Helpers.glsl"
 
 const float RAY_NORMAL_OFFSET   = 0.01f;
 
@@ -50,6 +51,8 @@ layout(binding = 9, 	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMa
 layout(binding = 10, 	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
 layout(binding = 11, 	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_TextureAtlases[];
 layout(binding = 12,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_IntermediateOutputImage;
+
+#include "../MeshPaintHelper.glsl"
 
 SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)
 {

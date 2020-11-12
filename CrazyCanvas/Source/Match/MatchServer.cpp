@@ -52,15 +52,18 @@ MatchServer::~MatchServer()
 	
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
-	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 }
 
-void MatchServer::KillPlayer(LambdaEngine::Entity playerEntity)
+void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
 {
 	using namespace LambdaEngine;
 
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(entityToKill);
+	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
+	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
+
 	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
-	m_PlayersToKill.EmplaceBack(playerEntity);
+	m_PlayersToKill.EmplaceBack(entityToKill);
 }
 
 bool MatchServer::InitInternal()
@@ -69,7 +72,6 @@ bool MatchServer::InitInternal()
 
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
-	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &MatchServer::OnPlayerStateUpdatedEvent);
 
 	return true;
 }
@@ -142,9 +144,13 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					ComponentArray<WeaponComponent>*	pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
 
 					ImGui::Text("Player Status:");
-					for (uint32 i = 0; Entity playerEntity : playerEntities)
+					for (Entity playerEntity : playerEntities)
 					{
-						std::string name = "Player " + std::to_string(++i) + " : [EntityID=" + std::to_string(playerEntity) + "]";
+						const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+						if (!pPlayer)
+							continue;
+
+						std::string name = pPlayer->GetName() + ": [EntityID=" + std::to_string(playerEntity) + "]";
 						if (ImGui::TreeNode(name.c_str()))
 						{
 							const HealthComponent& health = pHealthComponents->GetConstData(playerEntity);
@@ -166,18 +172,14 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 							if (ImGui::Button("Kill"))
 							{
-								Match::KillPlayer(playerEntity);
+								Match::KillPlayer(playerEntity, UINT32_MAX);
 							}
 							
 							ImGui::SameLine();
 
 							if (ImGui::Button("Disconnect"))
 							{
-								const Player* pPlayer = PlayerManagerBase::GetPlayer(playerEntity);
-								if (pPlayer)
-								{
-									ServerHelper::DisconnectPlayer(pPlayer, "Kicked");
-								}
+								ServerHelper::DisconnectPlayer(pPlayer, "Kicked");
 							}
 
 							ImGui::TreePop();
@@ -434,7 +436,7 @@ bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEve
 	const Player* pPlayer = PlayerManagerBase::GetPlayer(event.pClient);
 	if (pPlayer)
 	{
-		Match::KillPlayer(pPlayer->GetEntity());
+		Match::KillPlayer(pPlayer->GetEntity(), UINT32_MAX);
 	}
 	
 
@@ -477,38 +479,6 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		ResetMatch();
 	}
 
-
-	return true;
-}
-
-bool MatchServer::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
-{
-	using namespace LambdaEngine;
-
-	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
-
-	EGameState gameState = event.pPlayer->GetState();
-
-	if (gameState == GAME_STATE_LOADING)
-	{
-		for (auto& pair : players)
-		{
-			if (pair.second.GetState() != gameState)
-				return false;
-		}
-
-		BeginLoading();
-	}
-	else if (gameState == GAME_STATE_LOADED)
-	{
-		for (auto& pair : players)
-		{
-			if (pair.second.GetState() != gameState)
-				return false;
-		}
-
-		MatchStart();
-	}
 
 	return true;
 }
@@ -563,4 +533,8 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 
 	// Reset health
 	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
+
+	//Set player alive again
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 }

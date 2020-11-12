@@ -2,11 +2,13 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_GOOGLE_include_directive : enable
 
+#define NO_BUFFERS
+
 #include "../Defines.glsl"
 
 layout(location = 0) in vec2 in_TexCoord;
 
-layout(binding = 0, set = NO_BUFFERS_TEXTURE_SET_INDEX) uniform sampler2D u_BackBuffer;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BackBuffer;
 
 layout(location = 0) out vec4 out_Color;
 
