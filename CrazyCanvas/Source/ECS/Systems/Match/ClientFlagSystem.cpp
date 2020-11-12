@@ -77,6 +77,10 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 		ParentComponent& flagParentComponent		= pECS->GetComponent<ParentComponent>(flagEntity);
 		PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
+		AnimationAttachedComponent& flagAnimAttachedComponent = pECS->GetComponent<AnimationAttachedComponent>(flagEntity);
+
+		// Reset Flag orientation
+		flagAnimAttachedComponent.Transform = glm::mat4(1.0f);
 
 		//Set Flag Carrier (None)
 		flagParentComponent.Attached	= false;
