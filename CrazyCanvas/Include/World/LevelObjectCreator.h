@@ -84,6 +84,7 @@ struct CreateProjectileDesc
 	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
 	LambdaEngine::MeshComponent		MeshComponent;
+	uint32 Angle = 0;
 };
 
 /*

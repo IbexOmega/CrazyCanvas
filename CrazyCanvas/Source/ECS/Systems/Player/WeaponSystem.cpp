@@ -95,7 +95,7 @@ void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration
 		});
 }
 
-void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam)
+void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam, uint32 angle)
 {
 	using namespace LambdaEngine;
 
@@ -118,7 +118,8 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 		ammoType,
 		position,
 		velocity,
-		playerTeam);
+		playerTeam,
+		angle);
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
 	EventQueue::SendEventImmediate(firedEvent);
@@ -171,11 +172,13 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	const ComponentArray<ProjectileComponent>*	pProjectileComponents	= pECS->GetComponentArray<ProjectileComponent>();
 
 	// Get ammotype
-	EAmmoType ammoType = EAmmoType::AMMO_TYPE_NONE;
+	EAmmoType ammoType	= EAmmoType::AMMO_TYPE_NONE;
+	uint32 angle		= 0;
 	if (pProjectileComponents->HasComponent(collisionInfo0.Entity))
 	{
 		const ProjectileComponent& projectilComp = pProjectileComponents->GetConstData(collisionInfo0.Entity);
 		ammoType = projectilComp.AmmoType;
+		angle = projectilComp.Angle;
 	}
 
 	// Always destroy projectile but do not send event if we hit a friend
@@ -202,7 +205,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
 	{
 		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;
-		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team);
+		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team, angle);
 		EventQueue::SendEventImmediate(hitEvent);
 	}
 }
