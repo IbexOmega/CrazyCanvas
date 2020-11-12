@@ -49,9 +49,6 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
 		if (MultiplayerUtils::IsServer())
 		{
-			// If it is a client, paint it on the temporary mask and save the point.
-			remoteMode = ERemoteMode::CLIENT;
-			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team);
 			remoteMode = ERemoteMode::SERVER;
 			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team);
 

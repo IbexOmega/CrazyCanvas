@@ -361,22 +361,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(sleeping);
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-		if (MultiplayerUtils::IsServer())
-		{
-			LOG_INFO("m_RenderTargets.IsEmpty()=%s s_ClientCollisions.IsEmpty()=%s s_ServerCollisions.IsEmpty()=%s",
-				m_RenderTargets.IsEmpty() ? "true" : "false",
-				s_ClientCollisions.IsEmpty() ? "true" : "false",
-				s_ServerCollisions.IsEmpty() ? "true" : "false");
-		}
-
 		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
 		{
 			return;
-		}
-
-		if (MultiplayerUtils::IsServer())
-		{
-			LOG_INFO("DRAW MASKS ON SERVER");
 		}
 
 		// Delete old resources
@@ -408,11 +395,6 @@ namespace LambdaEngine
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
 				frameSettings.ShouldReset = data.ClearClient;
 
-				if (MultiplayerUtils::IsServer())
-				{
-					LOG_INFO("SERVER: RemoteMode=%u PaintMode=%u", uint32(data.RemoteMode), uint32(data.PaintMode));
-				}
-
 				uint32 size = 0;
 				// Current limit is 10 draw calls per frame - might change in future if needed
 				if (collisionArray->GetSize() > MAX_PAINT_PER_FRAME)
@@ -434,11 +416,7 @@ namespace LambdaEngine
 				{
 					size = collisionArray->GetSize();
 					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
-					
-					if (!MultiplayerUtils::IsServer())
-					{
-						collisionArray->Clear();
-					}
+					collisionArray->Clear();
 				}
 
 				unwrapDataCopyBuffer->Unmap();
@@ -446,19 +424,9 @@ namespace LambdaEngine
 				frameSettings.PaintCount = size;
 			}
 
-			if (MultiplayerUtils::IsServer())
-			{
-				LOG_INFO("SERVER: ShouldReset=%s ShouldPaint=%s", frameSettings.ShouldReset ? "true" : "false", frameSettings.ShouldPaint ? "true" : "false");
-			}
-
 			if (!frameSettings.ShouldReset && !frameSettings.ShouldPaint)
 			{
 				continue;
-			}
-			
-			if (MultiplayerUtils::IsServer())
-			{
-				LOG_INFO("SERVER: Should render: PaintCount=%u", frameSettings.PaintCount);
 			}
 
 			// Render
@@ -544,65 +512,59 @@ namespace LambdaEngine
 					sizeof(FrameSettings), 
 					sizeof(uint32));
 
-				if (MultiplayerUtils::IsServer())
-				{
-					LOG_INFO("SERVER: Is rendering");
-				}
-
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
 				pCommandList->EndRenderPass();
 
 				// Generate miplevels and copy to readbackbuffer
-				//if (textureViewDesc.pTexture->GetDesc().Miplevels > 1 && 
-				//	MultiplayerUtils::IsServer())
-				//{
-				//	Texture* pTexture = renderTarget->GetTexture();
+				if (textureViewDesc.pTexture->GetDesc().Miplevels > 1 && MultiplayerUtils::IsServer())
+				{
+					Texture* pTexture = renderTarget->GetTexture();
 
-				//	ETextureState afterState =
-				//		renderTargetDesc.pReadBackbuffer ?
-				//		ETextureState::TEXTURE_STATE_COPY_SRC :
-				//		ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+					ETextureState afterState =
+						renderTargetDesc.pReadBackbuffer ?
+						ETextureState::TEXTURE_STATE_COPY_SRC :
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
-				//	pCommandList->GenerateMiplevels(
-				//		pTexture,
-				//		ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
-				//		afterState,
-				//		false);
+					pCommandList->GenerateMiplevels(
+						pTexture,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+						afterState,
+						false);
 
-				//	// Copy over to readback
-				//	if (renderTargetDesc.pReadBackbuffer)
-				//	{
-				//		CopyTextureBufferDesc copyDesc;
-				//		copyDesc.ArrayCount		= 1;
-				//		copyDesc.ArrayIndex		= 0;
-				//		copyDesc.Depth			= 1;
-				//		copyDesc.Height			= 8;
-				//		copyDesc.Width			= 8;
-				//		copyDesc.Miplevel		= 3; // Force mip 3 -> 1,2,4,8
-				//		copyDesc.MiplevelCount	= 1;
-				//		copyDesc.OffsetX		= 0;
-				//		copyDesc.OffsetY		= 0;
-				//		copyDesc.OffsetZ		= 0;
-				//		copyDesc.BufferHeight	= 0;
-				//		copyDesc.BufferOffset	= 0;
-				//		copyDesc.BufferRowPitch	= 0;
+					// Copy over to readback
+					if (renderTargetDesc.pReadBackbuffer)
+					{
+						CopyTextureBufferDesc copyDesc;
+						copyDesc.ArrayCount		= 1;
+						copyDesc.ArrayIndex		= 0;
+						copyDesc.Depth			= 1;
+						copyDesc.Height			= 32;
+						copyDesc.Width			= 32;
+						copyDesc.Miplevel		= 4;
+						copyDesc.MiplevelCount	= 1;
+						copyDesc.OffsetX		= 0;
+						copyDesc.OffsetY		= 0;
+						copyDesc.OffsetZ		= 0;
+						copyDesc.BufferHeight	= 0;
+						copyDesc.BufferOffset	= 0;
+						copyDesc.BufferRowPitch	= 0;
 
-				//		pCommandList->CopyTextureToBuffer(
-				//			pTexture,
-				//			renderTargetDesc.pReadBackbuffer,
-				//			copyDesc);
+						pCommandList->CopyTextureToBuffer(
+							pTexture,
+							renderTargetDesc.pReadBackbuffer,
+							copyDesc);
 
-				//		pCommandList->TransitionBarrier(
-				//			pTexture,
-				//			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-				//			FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
-				//			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
-				//			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-				//			ETextureState::TEXTURE_STATE_COPY_SRC,
-				//			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-				//	}
-				//}
+						pCommandList->TransitionBarrier(
+							pTexture,
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+							ETextureState::TEXTURE_STATE_COPY_SRC,
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+					}
+				}
 			}
 		}
 

@@ -671,6 +671,16 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
 
+	AnimationComponent animationComponent = {};
+	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+
+	AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+	pAnimationGraph->TransitionToState("Idle");
+	animationComponent.pGraph = pAnimationGraph;
+
+	pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
+
 	// Server/Client 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
@@ -703,12 +713,6 @@ bool LevelObjectCreator::CreatePlayer(
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
-		AnimationComponent animationComponent = {};
-		animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
-
-		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
-
 #ifndef LAMBDA_DEBUG
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
@@ -717,36 +721,36 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Left");
-			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft	= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
-			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
+			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Right");
-			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
-			ClipNode* pStrafeRight	= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
-			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
+			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Left");
-			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft		= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
-			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Right");
-			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
-			ClipNode* pStrafeRight		= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
-			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
@@ -832,11 +836,6 @@ bool LevelObjectCreator::CreatePlayer(
 		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Right"));
 		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward & Strafe Left"));
 #endif
-		animationComponent.pGraph = pAnimationGraph;
-
-		pAnimationGraph->TransitionToState("Idle");
-
-		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 
 		if (!pPlayerDesc->IsLocal)
 		{

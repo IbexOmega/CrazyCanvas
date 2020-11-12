@@ -21,21 +21,26 @@ struct SRayDirections
 	vec3    ViewDir;
 };
 
-layout(binding = 0,		set = BUFFER_SET_INDEX) uniform accelerationStructureEXT									u_TLAS;
-layout(binding = 1,		set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }		u_PerFrameBuffer;
-layout(binding = 2, 	set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform accelerationStructureEXT u_TLAS;
+layout(binding = 1, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+{ 
+	SPerFrameBuffer val; 
+} u_PerFrameBuffer;
+
+layout(binding = 2, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
 	SLightsBuffer val; 
-	SPointLight pointLights[];  
+	SPointLight pointLights[];
 } b_LightsBuffer;
+
 layout(binding = 3,		set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	u_MaterialParameters;
 layout(binding = 4, 	set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
 
 
-layout(binding = 0,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_AlbedoMaps[];
-layout(binding = 1,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_NormalMaps[];
-layout(binding = 2,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_CombinedMaterialMaps[];
-layout(binding = 3,		set = TEXTURE_SET_INDEX) uniform samplerCube				u_Skybox;
+layout(binding = 0,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_AlbedoMaps[];
+layout(binding = 1,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_NormalMaps[];
+layout(binding = 2,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_CombinedMaterialMaps[];
+layout(binding = 3,		set = TEXTURE_SET_INDEX) uniform samplerCube	u_Skybox;
 
 layout(binding = 4,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAlbedo;
 layout(binding = 5,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAORoughMetalValid;

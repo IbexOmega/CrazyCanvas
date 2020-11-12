@@ -61,9 +61,9 @@ namespace LambdaEngine
 
 		if (createMipReadBack)
 		{
-			// Assumes quad textures (8*8)
-			constexpr uint32 HEALTH_READ_WIDTH	= 8;
-			constexpr uint32 HEALTH_READ_HEIGHT	= 8;
+			// Assumes quad textures (32*32)
+			constexpr uint32 HEALTH_READ_WIDTH	= 32;
+			constexpr uint32 HEALTH_READ_HEIGHT	= 32;
 			constexpr uint32 SIZE_IN_BYTES		= HEALTH_READ_WIDTH * HEALTH_READ_HEIGHT * 2;
 
 			BufferDesc healthBufferDesc = {};

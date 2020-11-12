@@ -22,6 +22,7 @@ namespace LambdaEngine
 	/*
 	* GraphicsDeviceVK
 	*/
+	
 	struct QueueFamilyIndices
 	{
 	public:
@@ -46,6 +47,7 @@ namespace LambdaEngine
 	/*
 	* GraphicsDeviceVK
 	*/
+
 	class GraphicsDeviceVK final : public GraphicsDevice
 	{
 	public:

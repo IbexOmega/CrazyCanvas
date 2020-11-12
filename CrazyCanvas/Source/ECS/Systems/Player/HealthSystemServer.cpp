@@ -65,13 +65,13 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			// Reset health
 			for (Entity entity : m_DeferredResets)
 			{
-				HealthComponent& healthComponent = pECS->GetComponent<HealthComponent>(entity);
-				PacketComponent<PacketHealthChanged>& packets = pECS->GetComponent<PacketComponent<PacketHealthChanged>>(entity);
+				HealthComponent& healthComponent				= pECS->GetComponent<HealthComponent>(entity);
+				PacketComponent<PacketHealthChanged>& packets	= pECS->GetComponent<PacketComponent<PacketHealthChanged>>(entity);
 				healthComponent.CurrentHealth = START_HEALTH;
 
 				PacketHealthChanged packet = {};
-				packet.CurrentHealth = healthComponent.CurrentHealth;
-				packet.Killed = false;
+				packet.CurrentHealth	= healthComponent.CurrentHealth;
+				packet.Killed			= false;
 				packets.SendPacket(packet);
 			}
 
@@ -84,75 +84,96 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		for (ProjectileHitEvent& event : m_EventsToProcess)
 		{
 			// CollisionInfo1 is the entity that got hit
-			Entity entity		= event.CollisionInfo1.Entity;
-			EAmmoType ammoType	= event.AmmoType;
+			Entity		entity	 = event.CollisionInfo1.Entity;
+			EAmmoType	ammoType = event.AmmoType;
 
+			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
+			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
+
+			// Check painted pixels
 			if (pMeshPaintComponents->HasComponent(entity))
 			{
 				MeshPaintComponent& meshPaintComponent = pMeshPaintComponents->GetData(entity);
 				Buffer* pBuffer = meshPaintComponent.pReadBackBuffer;
 
-				byte* pPaintMask = reinterpret_cast<byte*>(pBuffer->Map());
+				struct Pixel
+				{
+					byte Red;
+					byte Green;
+				};
+
+				Pixel* pPaintMask = reinterpret_cast<Pixel*>(pBuffer->Map());
 				VALIDATE(pPaintMask != nullptr);
 
-				constexpr uint32 SIZE_Y = 8;
-				constexpr uint32 SIZE_X = SIZE_Y * 2;
+				constexpr uint32 SIZE_Y = 32;
+				constexpr uint32 SIZE_X = SIZE_Y;
+				
+				uint32 paintedPixels = 0;
 				for (uint32 y = 0; y < SIZE_Y; y++)
 				{
 					for (uint32 x = 0; x < SIZE_X; x++)
 					{
-						byte mask		= pPaintMask[(y * SIZE_X * 2) + (x + 1)];
-						bool isPainted	= IS_MASK_PAINTED(mask);
-						ETeam team		= GET_TEAM_INDEX_FROM_MASK(mask);
-
-						if (x % 2 == 1)
+						const byte mask		 = pPaintMask[(y * SIZE_X) + x].Red;
+						const bool isPainted = IS_MASK_PAINTED(mask);
+						if (isPainted)
 						{
-							LOG_INFO("SERVER: IsPainted=%s, Team=%u", isPainted ? "true" : "false", uint32(team));
-						}
-						else
-						{
-							LOG_INFO("CLIENT: IsPainted=%s, Team=%u", isPainted ? "true" : "false", uint32(team));
+							paintedPixels++;
 						}
 					}
 				}
+
+				constexpr float32 BIASED_MAX_HEALTH = 0.15f;
+				constexpr float32 MAX_PIXELS		= float32(SIZE_Y * SIZE_X * BIASED_MAX_HEALTH);
+				constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
+				const float32 paintedHealth		= float32(paintedPixels) / float32(MAX_PIXELS);
+				healthComponent.CurrentHealth	= std::min<uint32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), START_HEALTH);
+
+				LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedPixels=%u MAX_PIXELS=%.4f", 
+					healthComponent.CurrentHealth, 
+					paintedHealth, 
+					paintedPixels, 
+					MAX_PIXELS);
 
 				pBuffer->Unmap();
 			}
-
-			HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
-			if (healthComponent.CurrentHealth > 0)
+			else
 			{
-				bool killed = false;
-				if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+				VALIDATE(false);
+
+				if (healthComponent.CurrentHealth > 0)
 				{
-					healthComponent.CurrentHealth -= HIT_DAMAGE;
-					if (healthComponent.CurrentHealth <= 0)
+					if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 					{
-						Match::KillPlayer(entity);
-						killed = true;
-
-						LOG_INFO("PLAYER DIED");
+						healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth - HIT_DAMAGE, START_HEALTH);
+						LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
 					}
-
-					LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
-				}
-				else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
-				{
-					healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth + HIT_DAMAGE, 100);
-					if (healthComponent.CurrentHealth >= 100)
+					else if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 					{
-						LOG_INFO("PLAYER REACHED FULL HEALTH");
+						healthComponent.CurrentHealth = std::min(healthComponent.CurrentHealth + HIT_DAMAGE, START_HEALTH);
+						if (healthComponent.CurrentHealth >= 100)
+						{
+							LOG_INFO("PLAYER REACHED FULL HEALTH");
+						}
+
+						LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
 					}
-
-					LOG_INFO("Player got splashed. Health=%d", healthComponent.CurrentHealth);
 				}
-
-				PacketHealthChanged packet = {};
-				packet.CurrentHealth = healthComponent.CurrentHealth;
-				packet.Killed = killed;
-				packets.SendPacket(packet);
 			}
+
+			// Check if killed
+			bool killed = false;
+			if (healthComponent.CurrentHealth <= 0)
+			{
+				Match::KillPlayer(entity);
+				killed = true;
+
+				LOG_INFO("PLAYER DIED");
+			}
+
+			PacketHealthChanged packet = {};
+			packet.CurrentHealth	= healthComponent.CurrentHealth;
+			packet.Killed			= killed;
+			packets.SendPacket(packet);
 		}
 
 		m_EventsToProcess.Clear();

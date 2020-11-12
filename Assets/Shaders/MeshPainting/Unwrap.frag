@@ -34,10 +34,6 @@ float random(in vec3 x)
 
 void main()
 {
-	out_BitsServer = 0xfffffff;
-	out_BitsClient = 0xfffffff;
-	return;
-
 	bool shouldDiscard = true;
 	if (p_FrameSettings.ShouldReset == 1)
 	{
