@@ -7,6 +7,8 @@
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/TextureView.h"
 
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+
 #include "Rendering/RenderAPI.h"
 
 namespace LambdaEngine
@@ -98,8 +100,7 @@ namespace LambdaEngine
 		instanceBindingDesc8.Binding = 8;
 		instanceBindingDesc8.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
-		// Set 0
-		m_UpdatePipeline.CreateDescriptorSetLayout({
+		TArray<DescriptorBindingDesc> descriptorBindings = { 
 			instanceBindingDesc0,
 			instanceBindingDesc1,
 			instanceBindingDesc2,
@@ -107,9 +108,17 @@ namespace LambdaEngine
 			instanceBindingDesc4,
 			instanceBindingDesc5,
 			instanceBindingDesc6,
-			instanceBindingDesc7,
-			instanceBindingDesc8
-		});
+			instanceBindingDesc7
+		};
+
+		m_InlineRayTracingEnabled = RenderSystem::GetInstance().IsInlineRayTracingEnabled();
+		if (m_InlineRayTracingEnabled)
+		{
+			descriptorBindings.PushBack(instanceBindingDesc8);
+		}
+
+		// Set 0
+		m_UpdatePipeline.CreateDescriptorSetLayout(descriptorBindings);
 
 		DescriptorBindingDesc depthBindingDesc = {};
 		depthBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
@@ -168,7 +177,13 @@ namespace LambdaEngine
 	{
 		bool success = true;
 
-		GUID_Lambda computeShaderGUID = ResourceManager::LoadShaderFromFile("/Particles/Particle.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		String computeShaderFileName = "Particles/Particle.comp";
+		if (m_InlineRayTracingEnabled)
+		{
+			computeShaderFileName = "Particles/ParticleRayQuery.comp";
+		}
+
+		GUID_Lambda computeShaderGUID = ResourceManager::LoadShaderFromFile(computeShaderFileName, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		success &= computeShaderGUID != GUID_NONE;
 
 		m_UpdatePipeline.SetComputeShader(computeShaderGUID);
@@ -267,17 +282,20 @@ namespace LambdaEngine
 
 	void ParticleUpdater::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* const* pAccelerationStructure)
 	{
-		if (resourceName == SCENE_TLAS)
+		if (m_InlineRayTracingEnabled)
 		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 8U;
+			if (resourceName == SCENE_TLAS)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 8U;
 
-			SDescriptorTLASUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppTLAS = pAccelerationStructure;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = 1;
+				SDescriptorTLASUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppTLAS = pAccelerationStructure;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = 1;
 
-			m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 8", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 8", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
 		}
 	}
 

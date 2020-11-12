@@ -48,8 +48,9 @@ namespace LambdaEngine
 	{
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+		m_RayTracingEnabled			= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+		m_MeshShadersEnabled		= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+		m_InlineRayTracingEnabled	= deviceFeatures.InlineRayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_INLINE_RAY_TRACING);
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{

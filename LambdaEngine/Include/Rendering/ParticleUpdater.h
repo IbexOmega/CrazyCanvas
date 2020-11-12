@@ -56,6 +56,7 @@ namespace LambdaEngine
 		bool								m_Initilized = false;
 		uint32								m_ParticleCount;
 		uint32								m_EmitterCount;
+		bool								m_InlineRayTracingEnabled = false;
 
 		PushConstantData					m_PushConstant;
 

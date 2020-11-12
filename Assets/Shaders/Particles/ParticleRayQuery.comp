@@ -2,6 +2,8 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
 
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
@@ -56,6 +58,8 @@ layout (binding = 7, set = 0) restrict buffer AccelerationStructureInstance
 {
 	SAccelerationStructureInstance Val[];
 } b_ASInstance;
+
+layout(binding = 8, set = 0) uniform accelerationStructureEXT u_TLAS;
 
 layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
@@ -121,25 +125,38 @@ void main()
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
 		}
-
-		vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
-		vec4 vpPos = frameBuffer.Projection * frameBuffer.View * vec4(nextPos, 1.f);
-		vpPos.xy = vpPos.xy/vpPos.w * 0.5f + 0.5f;
-		vpPos.y = 1.f - vpPos.y;
-		vec2 uv = vpPos.xy;
-		vec3 normal = UnpackNormal(texture(u_NormalTexture, uv).xyz);
-		float depth = texture(u_DepthTexture, uv).r;
-		float pDepth = vpPos.z/vpPos.w;
-		if(vpPos.w < EPSILON)
-			pDepth = 0.f;
-
+        
+		// Ray Query
 		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
-		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
+		vec3  origin    = particle.Transform[3].xyz;
+		vec3  direction = normalize(particle.Velocity);
+		float tMin      = 0.01f;
+		float tMax      = length(particle.Velocity*dt);
+
+		// Initializes a ray query object but does not start traversal
+		rayQueryEXT rayQuery;
+		rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFC, origin, tMin,
+							direction, tMax);
+		
+		// Start traversal: return false if traversal is complete
+		while(rayQueryProceedEXT(rayQuery)) {}
+
+		// Returns type of committed (true) intersection
+		if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
 		{
-			// The particles spawn at the projectile, which will count as a collision. This should not be the case. Which is why this is commented out.
+			// Set position to be at the intersection point.
+			float tHit = rayQueryGetIntersectionTEXT(rayQuery, true);
+			particle.Transform[3].xyz = origin + tHit*direction;
+			particle.Bounciness = 2.f;
 			//vec3 preV = particle.Velocity;
-			//particle.Velocity *= particle.FrictionFactor;
-			//particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
+			particle.Velocity = vec3(0.f);//particle.FrictionFactor;
+			//particle.Velocity = -preV * particle.Bounciness;
+		}
+
+		// If we will skip to bounce the particles, this should not be named Bounciness. If not, this should be removed.
+		if(particle.Bounciness > 1.5f)
+		{
+			particle.Velocity = vec3(0.f);
 		}
 
 		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);
