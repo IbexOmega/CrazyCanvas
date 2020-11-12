@@ -101,7 +101,7 @@ Player* PlayerManagerBase::HandlePlayerJoined(uint64 uid, const PacketJoin& pack
 	return &pair->second;
 }
 
-void PlayerManagerBase::HandlePlayerLeft(uint64 uid)
+bool PlayerManagerBase::HandlePlayerLeft(uint64 uid)
 {
 	auto pair = s_Players.find(uid);
 	if (pair != s_Players.end())
@@ -113,6 +113,11 @@ void PlayerManagerBase::HandlePlayerLeft(uint64 uid)
 		PlayerLeftEvent event(&player);
 		EventQueue::SendEventImmediate(event);
 
+		bool wasHost = player.IsHost();
 		s_Players.erase(uid);
+
+		return wasHost;
 	}
+
+	return false;
 }

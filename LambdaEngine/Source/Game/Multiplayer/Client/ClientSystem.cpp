@@ -94,15 +94,15 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
-	void ClientSystem::OnDisconnecting(IClient* pClient)
+	void ClientSystem::OnDisconnecting(IClient* pClient, const String& reason)
 	{
-		ClientDisconnectingEvent event(pClient);
+		ClientDisconnectingEvent event(pClient, reason);
 		EventQueue::SendEventImmediate(event);
 	}
 
-	void ClientSystem::OnDisconnected(IClient* pClient)
+	void ClientSystem::OnDisconnected(IClient* pClient, const String& reason)
 	{
-		ClientDisconnectedEvent event(pClient);
+		ClientDisconnectedEvent event(pClient, reason);
 		EventQueue::SendEvent(event);
 	}
 
@@ -128,6 +128,12 @@ namespace LambdaEngine
 	void ClientSystem::OnServerFull(IClient* pClient)
 	{
 		ServerFullEvent event(pClient);
+		EventQueue::SendEvent(event);
+	}
+
+	void ClientSystem::OnServerNotAccepting(IClient* pClient)
+	{
+		ServerNotAcceptingEvent event(pClient);
 		EventQueue::SendEvent(event);
 	}
 

@@ -14,6 +14,8 @@
 
 #include "Multiplayer/MultiplayerClient.h"
 
+#include "Application/API/Events/NetworkEvents.h"
+
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
@@ -34,6 +36,7 @@ public:
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
+	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 
 private:
 	bool m_Singleplayer;
