@@ -525,7 +525,7 @@ namespace LambdaEngine
 	{
 		UnwrapData data = {};
 		data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
-		data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, (float)angle/360 };
+		data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>(angle)};
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
