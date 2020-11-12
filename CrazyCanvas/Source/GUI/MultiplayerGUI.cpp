@@ -130,7 +130,6 @@ bool MultiplayerGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent&
 
 	if (m_ClientHostID == clientHostID)
 	{
-		SetRenderStagesActive();
 		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
 	}
 
@@ -172,7 +171,6 @@ bool MultiplayerGUI::HasHostedServer() const
 
 bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
-
 	LambdaEngine::String inGameName = FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->GetText();
 
 	State* pLobbyState = DBG_NEW LobbyState(inGameName, HasHostedServer());
@@ -206,10 +204,6 @@ void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const 
 		serverInfo.EndPoint = endPoint;
 
 		HandleServerInfo(serverInfo, true);
-
-		LambdaEngine::GUIApplication::SetView(nullptr);
-
-		SetRenderStagesActive();
 		ClientSystem::GetInstance().Connect(endPoint);
 	}
 	else
@@ -305,10 +299,6 @@ bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 		{
 			if (serverInfo.IsOnline)
 			{
-				LambdaEngine::GUIApplication::SetView(nullptr);
-
-				SetRenderStagesActive();
-
 				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);;
 			}
 			return false;
@@ -398,21 +388,6 @@ bool MultiplayerGUI::StartUpServer(const std::string& applicationName, const std
 
 		return true;
 	}
-}
-
-void MultiplayerGUI::SetRenderStagesActive()
-{
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						false);
 }
 
 void MultiplayerGUI::ErrorPopUp(PopUpCode errorCode)

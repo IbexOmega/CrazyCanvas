@@ -11,5 +11,6 @@ namespace LambdaEngine
 		DECL_INTERFACE(IClientHandler);
 
 		virtual void OnServerFull(IClient* pClient) = 0;
+		virtual void OnServerNotAccepting(IClient* pClient) = 0;
 	};
 }

@@ -46,7 +46,7 @@ bool ServerHelper::SendToPlayer(const Player* pPlayer, const T& packet, LambdaEn
 {
 	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
 	LambdaEngine::ClientRemoteBase* pClient = pServer->GetClient(pPlayer->GetUID());
-	return pClient != nullptr ? Send<T>(pClient, packet, T::Type(), pListener) : false;
+	return pClient != nullptr ? Send<T>(pClient, packet, pListener) : false;
 }
 
 template<class T>
