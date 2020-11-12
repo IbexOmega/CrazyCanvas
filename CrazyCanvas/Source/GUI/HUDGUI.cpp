@@ -323,12 +323,12 @@ void HUDGUI::UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, co
 	default: LOG_WARNING("[HUDGUI]: Enum not supported"); return;
 	}
 
-	Grid* pGrid = FrameworkElement::FindName<Grid>(std::to_string(playerUID).c_str());
-	if (!pGrid)
+	if (!m_PlayerGrids.contains(playerUID))
 	{
 		LOG_WARNING("[HUDGUI]: Player with UID: &lu not found!", playerUID);
 		return;
 	}
+	Grid* pGrid = m_PlayerGrids[playerUID];
 
 	Label* pLabel = static_cast<Label*>(pGrid->GetChildren()->Get(index));
 	pLabel->SetContent(value.c_str());
