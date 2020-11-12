@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Lobby/IPlayerManager.h"
 #include "Lobby/PlayerManagerBase.h"
 
 #include "Multiplayer/Packet/PacketPlayerState.h"

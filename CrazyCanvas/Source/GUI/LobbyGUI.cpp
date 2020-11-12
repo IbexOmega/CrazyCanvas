@@ -14,21 +14,24 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "World/LevelManager.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
-LobbyGUI::LobbyGUI()
+LobbyGUI::LobbyGUI() : 
+	m_IsInitiated(false)
 {
 	Noesis::GUI::LoadComponent(this, "Lobby.xaml");
 
 	// Get commonly used elements
 	m_pBlueTeamStackPanel		= FrameworkElement::FindName<StackPanel>("BlueTeamStackPanel");
 	m_pRedTeamStackPanel		= FrameworkElement::FindName<StackPanel>("RedTeamStackPanel");
-	m_pChatPanel			= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
+	m_pChatPanel				= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
 	m_pSettingsNamesStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsNamesStackPanel");
 	m_pSettingsHostStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsClientStackPanel");
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
-	m_pChatInputTextBox		= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
+	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 
 	SetHostMode(false);
 
@@ -40,14 +43,18 @@ LobbyGUI::~LobbyGUI()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
 }
 
-void LobbyGUI::InitGUI()
+void LobbyGUI::InitGUI(LambdaEngine::String name)
 {
-	AddSettingComboBox(SETTING_MAP,			"Map",			{ "Daniel's Creation" }, 0);
-	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",		{ "3 min", "5 min", "10 min", "15 min" }, 1);
-	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",		{ "3", "5", "10", "15" }, 1);
-	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",		{ "4", "6", "8", "10" }, 3);
-	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",		{ "True", "False" }, 1);
+	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
+	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
+	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
+	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
+	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
+
+	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
+
+	m_IsInitiated = true;
 }
 
 void LobbyGUI::AddPlayer(const Player& player)
@@ -91,6 +98,10 @@ void LobbyGUI::RemovePlayer(const Player& player)
 	if (pGrid)
 	{
 		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
+
+		if (player.IsHost())
+			FrameworkElement::GetView()->GetContent()->UnregisterName("host_icon");
+
 		return;
 	}
 
@@ -98,6 +109,9 @@ void LobbyGUI::RemovePlayer(const Player& player)
 	if (pGrid)
 	{
 		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
+
+		if(player.IsHost())
+			FrameworkElement::GetView()->GetContent()->UnregisterName("host_icon");
 	}
 }
 
@@ -123,7 +137,6 @@ void LobbyGUI::UpdatePlayerHost(const Player& player)
 	// Set host icon
 	if (player.IsHost())
 	{
-		const LambdaEngine::String uid = std::to_string(player.GetUID());
 		// Host icon is not an image due to AA problems, it is a vector path instead
 		Viewbox* crownBox = FrameworkElement::FindName<Viewbox>("host_icon");
 		if (crownBox)
@@ -184,15 +197,41 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 void LobbyGUI::SetHostMode(bool isHost)
 {
 	Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
-	pReadyButton->SetContent(isHost ? "Start" : "Ready");
-	m_pSettingsClientStackPanel->SetVisibility(isHost ? Visibility_Hidden : Visibility_Visible);
-	m_pSettingsHostStackPanel->SetVisibility(isHost ? Visibility_Visible : Visibility_Hidden);
+
+	if (isHost)
+	{
+		pReadyButton->SetContent("Start");
+		m_pSettingsClientStackPanel->SetVisibility(Visibility_Hidden);
+		m_pSettingsHostStackPanel->SetVisibility(Visibility_Visible);
+		ClientHelper::Send(m_GameSettings);
+	}
+	else
+	{
+		pReadyButton->SetContent("Ready");
+		m_pSettingsClientStackPanel->SetVisibility(Visibility_Visible);
+		m_pSettingsHostStackPanel->SetVisibility(Visibility_Hidden);
+	}
 }
 
-void LobbyGUI::UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value)
+void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 {
-	Label* pClientSetting = FrameworkElement::FindName<Label>((settingKey + "_client").c_str());
-	pClientSetting->SetContent(value.c_str());
+	Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
+	pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
+
+	Label* pSettingMaxTime = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_TIME) + "_client").c_str());
+	pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
+
+	Label* pSettingFlagsToWin = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_client").c_str());
+	pSettingFlagsToWin->SetContent(std::to_string(packet.FlagsToWin).c_str());
+
+	Label* pSettingMaxPlayers = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_PLAYERS) + "_client").c_str());
+	pSettingMaxPlayers->SetContent(std::to_string(packet.Players).c_str());
+
+	Label* pSettingVisibility = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_VISIBILITY) + "_client").c_str());
+	pSettingVisibility->SetContent(packet.Visible ? "True" : "False");
+
+	Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
+	pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
 }
 
 void LobbyGUI::AddSettingComboBox(
@@ -256,11 +295,6 @@ void LobbyGUI::OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const No
 	TrySendChatMessage();
 }
 
-void LobbyGUI::SendGameSettings()
-{
-	ClientHelper::Send(m_GameSettings);
-}
-
 bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
 {
 	if (event.Key == LambdaEngine::EKey::KEY_ENTER)
@@ -287,17 +321,43 @@ void LobbyGUI::TrySendChatMessage()
 void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args)
 {
 	ComboBox* pComboBox = static_cast<ComboBox*>(pSender);
-	LOG_WARNING("Selected index: %d", pComboBox->GetSelectedIndex());
-	pComboBox->SetText(static_cast<TextBlock*>(pComboBox->GetSelectedItem())->GetText());
 
-	// Update the local setting value to match
-	size_t len = LambdaEngine::String(pComboBox->GetName()).find_last_of("_");
-	UpdateSetting(LambdaEngine::String(pComboBox->GetName()).substr(0, len).c_str(), static_cast<TextBlock*>(pComboBox->GetSelectedItem())->GetText());
+	LambdaEngine::String setting = pComboBox->GetName();
+	setting = setting.substr(0, setting.find_last_of("_"));
+	uint32 indexSelected = pComboBox->GetSelectedIndex();
+	LambdaEngine::String textSelected = static_cast<TextBlock*>(pComboBox->GetSelectedItem())->GetText();
 
-	// If the value of the currently selected item is wanted, simple call the commented code below
-	// LambdaEngine::String selectedValue = static_cast<TextBlock*>(comboBox->GetSelectedItem())->GetText();
+	if (setting == SETTING_MAP)
+	{
+		m_GameSettings.MapID = (uint8)indexSelected;
+	}
+	else if (setting == SETTING_MAX_TIME)
+	{
+		textSelected = textSelected.substr(0, textSelected.find_last_of(" min"));
+		m_GameSettings.MaxTime = (uint16)std::stoi(textSelected) * 60;
+	}
+	else if (setting == SETTING_FLAGS_TO_WIN)
+	{
+		m_GameSettings.FlagsToWin = (uint8)std::stoi(textSelected);
+	}
+	else if (setting == SETTING_MAX_PLAYERS)
+	{
+		m_GameSettings.Players = (uint8)std::stoi(textSelected);
+	}
+	else if (setting == SETTING_VISIBILITY)
+	{
+		m_GameSettings.Visible = textSelected == "True";
+	}
+	else if (setting == SETTING_CHANGE_TEAM)
+	{
+		m_GameSettings.ChangeTeam = textSelected == "True";
+	}
+
+	if (m_IsInitiated)
+	{
+		ClientHelper::Send(m_GameSettings);
+	}
 }
-
 
 void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollection, float width)
 {
