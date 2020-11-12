@@ -184,7 +184,7 @@ namespace LambdaEngine
 		ClientSystem::StaticTickMainThread(delta);
 		ServerSystem::StaticTickMainThread(delta);
 		CameraSystem::GetInstance().MainThreadTick(delta);
-		bool hasTransitioned = StateManager::GetInstance()->Tick(delta);
+		StateManager::GetInstance()->Tick(delta);
 		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
 
@@ -245,11 +245,7 @@ namespace LambdaEngine
 			});
 #endif
 
-		RenderSystem& RenderSystem = RenderSystem::GetInstance();
-		// If state has changed we need to flush rendersystems state
-		if (hasTransitioned)
-			RenderSystem.Flush();
-		RenderSystem.Render(delta);
+		RenderSystem::GetInstance().Render(delta);
 
 		return true;
 	}

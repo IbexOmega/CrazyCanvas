@@ -29,6 +29,7 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
 
@@ -101,7 +102,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[5]
+			.LevelHash = levelHashes[0]
 		};
 
 		Match::CreateMatch(&matchDescription);
@@ -185,8 +186,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
@@ -200,8 +202,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
@@ -215,8 +218,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
@@ -250,8 +254,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");

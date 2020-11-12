@@ -57,13 +57,7 @@ HUDGUI::~HUDGUI()
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
-	UNREFERENCED_VARIABLE(pSource);
-	UNREFERENCED_VARIABLE(pEvent);
-	UNREFERENCED_VARIABLE(pHandler);
-
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonGrowClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonScoreClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonShootClick);
+	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
 
 	// Escape
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonBackClick);
@@ -101,19 +95,6 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 		FrameworkElement::FindName<Noesis::TextBlock>("HEALTH_DISPLAY")->SetText(hpString.c_str());
 
 		m_GUIState.Health = currentHealth;
-
-		if (m_GUIState.Health <= 0)
-			return false;
-		else if(m_GUIState.Health <= 20)
-			pBrush->SetColor(Color(255, 28, 0));
-		else if(m_GUIState.Health <= 40)
-			pBrush->SetColor(Color(255, 132, 0));
-		else if(m_GUIState.Health <= 60)
-			pBrush->SetColor(Color(255, 188, 0));
-		else if(m_GUIState.Health <= 80)
-			pBrush->SetColor(Color(141, 207, 0));
-		else if(m_GUIState.Health == 100)
-			pBrush->SetColor(Color(0, 207, 56));
 	}
 	return true;
 }

@@ -737,17 +737,25 @@ namespace LambdaEngine
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pRenderStage->DrawArgsMaskDesc.FullMask);
 					
-					if (pRenderStage->UsesCustomRenderer)
+					if (drawArgsMaskToArgsIt->second.IsDirty)
 					{
-						pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
-							pResource->Name,
-							drawArgsMaskToArgsIt->second.Args.GetData(),
-							drawArgsMaskToArgsIt->second.Args.GetSize());
+						if (pRenderStage->UsesCustomRenderer)
+						{
+							pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
+								pResource->Name,
+								drawArgsMaskToArgsIt->second.Args.GetData(),
+								drawArgsMaskToArgsIt->second.Args.GetSize());
+						}
+						else
+						{
+							pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
+						}
 					}
-					else
-					{
-						pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
-					}
+				}
+
+				for (auto& drawArgPair : pResource->DrawArgs.FullMaskToArgs)
+				{
+					drawArgPair.second.IsDirty = false;
 				}
 			}
 
@@ -792,12 +800,6 @@ namespace LambdaEngine
 	void RenderGraph::DrawArgDescriptorSetQueueForRelease(DescriptorSet* pDrawArgDescriptorSet)
 	{
 		m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pDrawArgDescriptorSet);
-	}
-
-	void RenderGraph::Flush()
-	{
-		/*	m_DirtyRenderStageTextureSets.clear();
-			m_DirtyBoundTextureResources.clear();*/
 	}
 
 	void RenderGraph::Render(uint64 modFrameIndex, uint32 backBufferIndex)
@@ -3621,6 +3623,8 @@ namespace LambdaEngine
 
 		if (drawArgsArgsIt != pResource->DrawArgs.FullMaskToArgs.end())
 		{
+			drawArgsArgsIt->second.IsDirty = true;
+
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);

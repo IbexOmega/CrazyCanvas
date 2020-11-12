@@ -552,7 +552,7 @@ bool LevelObjectCreator::CreateFlag(
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		flagEntity,
-            /* Detection Method */	ECollisionDetection::DISCRETE,
+			/* Detection Method */	ECollisionDetection::DISCRETE,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
@@ -618,8 +618,6 @@ bool LevelObjectCreator::CreatePlayer(
 	const glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
-	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
-
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
 
@@ -837,11 +835,11 @@ bool LevelObjectCreator::CreatePlayer(
 
 		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 		pECS->AddComponent<MeshComponent>(playerEntity, 
-            MeshComponent
-            {
-                .MeshGUID = s_PlayerMeshGUID, 
-                .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
-            });
+			MeshComponent
+			{
+				.MeshGUID = s_PlayerMeshGUID, 
+				.MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
+			});
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
 		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
 				.HitMask = 0xFF

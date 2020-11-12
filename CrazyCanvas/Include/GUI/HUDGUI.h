@@ -149,6 +149,4 @@ private:
 	Noesis::Grid*	m_pKeyBindingsGrid		= nullptr;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
-
-	Noesis::Grid* m_pHitIndicatorGrid = nullptr;
 };

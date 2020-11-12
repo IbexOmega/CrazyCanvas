@@ -45,10 +45,8 @@ namespace LambdaEngine
 		m_EnqueuedTransitionAction = transitionSetting;
 	}
 
-	bool StateManager::Tick(Timestamp delta)
+	void StateManager::Tick(Timestamp delta)
 	{
-		bool hasTransitioned = false;
-
 		if (!m_States.empty())
 		{
 			m_States.top()->Tick(delta);
@@ -57,10 +55,7 @@ namespace LambdaEngine
 		if (m_pEnqueuedState)
 		{
 			TransitionState();
-			hasTransitioned = true;
 		}
-
-		return hasTransitioned;
 	}
 
 	void StateManager::FixedTick(Timestamp delta)

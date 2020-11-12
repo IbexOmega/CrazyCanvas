@@ -383,11 +383,6 @@ namespace LambdaEngine
 		void UpdateResourceBindings();
 
 		/*
-		*	Flushes RenderGraphs current state, should be used after state transitions due to RenderGraphs internal state
-		*	becomes invalid during state transition.
-		*/
-		void Flush();
-		/*
 		* Creates a Descriptor Set suitable for Draw Arg Storage, all Draw Arg Descriptor Sets have the same bindings
 		* The caller has the responsibility of calling RenderGraph::ReleaseDrawArgDescriptorSet on Release
 		*/

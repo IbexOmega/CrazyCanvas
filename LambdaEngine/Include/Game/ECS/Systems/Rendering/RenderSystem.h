@@ -246,12 +246,6 @@ namespace LambdaEngine
 		bool Render(Timestamp delta);
 
 		/*
-		*	Flushes RenderSystem current state, should be used after state transitions due to RenderSystems internal state
-		*	becomes invalid during state transition.
-		*/
-		void Flush();
-
-		/*
 		* Set new rendergraph to be executed
 		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
