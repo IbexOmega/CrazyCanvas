@@ -211,7 +211,7 @@ struct SUnwrapData
 	uint PaintMode;
 	uint RemoteMode;
 	uint TeamMode;
-	uint Padding0;
+	uint ClearClient;
 };
 
 struct SAccelerationStructureInstance

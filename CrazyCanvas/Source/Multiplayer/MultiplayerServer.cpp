@@ -1,5 +1,7 @@
 #include "Multiplayer/MultiplayerServer.h"
 
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+
 MultiplayerServer::MultiplayerServer() : 
 	m_PlayerRemoteSystem(),
 	m_pFlagSystem(nullptr)
@@ -32,5 +34,5 @@ void MultiplayerServer::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 void MultiplayerServer::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	//Must run last
-	m_PacketDecoderSystem.FixedTickMainThreadServer(deltaTime);
+	PacketTranscoderSystem::GetInstance().FixedTickMainThreadServer(deltaTime);
 }

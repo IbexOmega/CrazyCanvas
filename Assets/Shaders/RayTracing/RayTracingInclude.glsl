@@ -36,10 +36,10 @@ layout(binding = 6,		set = BUFFER_SET_INDEX) readonly buffer EmitterInstances		{
 layout(binding = 7,		set = BUFFER_SET_INDEX) readonly buffer ParticleIndirectIndices	{ SParticleIndexData Val[]; }	b_ParticleIndirectIndices;
 layout(binding = 8,		set = BUFFER_SET_INDEX) readonly buffer Atlases					{ SAtlasData Val[]; } 			b_Atlases;
 
-layout(binding = 0,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_AlbedoMaps[];
-layout(binding = 1,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_NormalMaps[];
-layout(binding = 2,		set = TEXTURE_SET_INDEX) uniform sampler2D					u_CombinedMaterialMaps[];
-layout(binding = 3,		set = TEXTURE_SET_INDEX) uniform samplerCube				u_Skybox;
+layout(binding = 0,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_AlbedoMaps[];
+layout(binding = 1,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_NormalMaps[];
+layout(binding = 2,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_CombinedMaterialMaps[];
+layout(binding = 3,		set = TEXTURE_SET_INDEX) uniform samplerCube	u_Skybox;
 
 layout(binding = 4,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAlbedo;
 layout(binding = 5,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAORoughMetalValid;

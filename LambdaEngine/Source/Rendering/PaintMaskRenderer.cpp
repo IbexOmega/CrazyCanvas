@@ -4,6 +4,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
@@ -337,7 +338,7 @@ namespace LambdaEngine
 						if ((mask & meshPaintBit) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+							TextureView* pTextureView = extension.ppTextureViews[0];
 							m_RenderTargets.PushBack({ .pTextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
 						}
 					}
@@ -357,6 +358,16 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
 
+		// Tick MeshPaintComponentOwner to release resources
+		MeshPaintComponentOwner::Tick(modFrameIndex);
+
+		// Add a reset hit point at the end of the client collisions.
+		if (s_ShouldReset)
+		{
+			AddResetHitPoint();
+			s_ShouldReset = false;
+		}
+
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
 
 		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
@@ -368,7 +379,7 @@ namespace LambdaEngine
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
 		{
-			m_pDeviceResourcesToDestroy.Clear();
+			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 
 		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
@@ -390,10 +401,11 @@ namespace LambdaEngine
 
 				byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
 
-				const UnwrapData& data	= collisionArray->GetFront();
+				const UnwrapData& data	= collisionArray->GetBack();
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
 				frameSettings.ShouldReset = data.ClearClient;
+				frameSettings.Angle = Random::Float32()*glm::pi<float>()*2.f;
 
 				uint32 size = 0;
 				// Current limit is 10 draw calls per frame - might change in future if needed
@@ -531,23 +543,7 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::ResetClient()
 	{
-		if (s_ClientCollisions.IsEmpty())
-		{
-			UnwrapData data = {};
-			data.TargetPosition = { };
-			data.TargetDirection = { };
-			data.PaintMode = EPaintMode::NONE;
-			data.RemoteMode = ERemoteMode::UNDEFINED;
-			data.Team = ETeam::NONE;
-			data.ClearClient = true;
-
-			s_ClientCollisions.PushBack(data);
-		}
-		else
-		{
-			UnwrapData& lastData = s_ClientCollisions.GetBack();
-			lastData.ClearClient = true;
-		}
+		s_ShouldReset = true;
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()
@@ -778,6 +774,27 @@ namespace LambdaEngine
 		m_PipelineStateClientID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_G);
 
 		return true;
+	}
+
+	void PaintMaskRenderer::AddResetHitPoint()
+	{
+		if (s_ClientCollisions.IsEmpty())
+		{
+			UnwrapData data = {};
+			data.TargetPosition = { };
+			data.TargetDirection = { };
+			data.PaintMode = EPaintMode::NONE;
+			data.RemoteMode = ERemoteMode::UNDEFINED;
+			data.Team = ETeam::NONE;
+			data.ClearClient = true;
+
+			s_ClientCollisions.PushBack(data);
+		}
+		else
+		{
+			UnwrapData& lastData = s_ClientCollisions.GetBack();
+			lastData.ClearClient = true;
+		}
 	}
 
 	uint64 PaintMaskRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags)

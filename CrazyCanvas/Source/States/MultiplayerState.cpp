@@ -1,11 +1,9 @@
 #include "States/MultiplayerState.h"
 
-#include "Rendering/RenderGraph.h"
-#include "Rendering/RenderGraphSerializer.h"
-#include "Rendering/RenderAPI.h"
-
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+
+using namespace LambdaEngine;
 
 MultiplayerState::~MultiplayerState()
 {
@@ -26,6 +24,9 @@ void MultiplayerState::Init()
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						true);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						true);
+
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
 	m_View = Noesis::GUI::CreateView(m_MultiplayerGUI);

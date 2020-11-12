@@ -1,6 +1,8 @@
 #pragma once
 #include "LambdaEngine.h"
 
+#include "Containers/TArray.h"
+
 namespace LambdaEngine
 {
 	/*

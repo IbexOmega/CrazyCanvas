@@ -87,17 +87,17 @@ namespace LambdaEngine
 
 	void ClientUDP::OnPacketDelivered(NetworkSegment* pPacket)
 	{
-		LOG_INFO("ClientUDP::OnPacketDelivered() | %s", pPacket->ToString().c_str());
+		UNREFERENCED_VARIABLE(pPacket);
 	}
 
 	void ClientUDP::OnPacketResent(NetworkSegment* pPacket, uint8 tries)
 	{
-		LOG_INFO("ClientUDP::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_WARNING("ClientUDP::OnPacketResent(%d) | %s", tries, pPacket->ToString().c_str());
 	}
 
 	void ClientUDP::OnPacketMaxTriesReached(NetworkSegment* pPacket, uint8 tries)
 	{
-		LOG_INFO("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
+		LOG_ERROR("ClientUDP::OnPacketMaxTriesReached(%d) | %s", tries, pPacket->ToString().c_str());
 		Disconnect("Max Tries Reached");
 	}
 }

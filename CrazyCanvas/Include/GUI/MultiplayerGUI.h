@@ -6,6 +6,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "Networking/API/IPAddress.h"
+#include "Networking/API/IPEndPoint.h"
 
 struct HostGameDescription
 {
@@ -51,8 +52,6 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta);
 
 private:
-	void SetRenderStagesActive();
-
 	void ErrorPopUp(PopUpCode errorCode);
 	void NotiPopUP(PopUpCode notificationCode);
 
@@ -63,17 +62,16 @@ private:
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
 	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
-	void PopulateServerInfo();
 
-	void HandleServerInfo(ServerInfo& serverInfo, int32 clientHostID, bool forceSave = false);
+	void HandleServerInfo(ServerInfo& serverInfo, bool forceSave = false);
+
+	bool HasHostedServer() const;
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 
 private:
-
-	bool m_HasHostedServer = false;
 	bool m_RayTracingEnabled = false;
-	HostGameDescription m_HostGameDesc;
+	int32 m_ClientHostID;
 	SavedServerGUI m_ServerList;
 
 	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;

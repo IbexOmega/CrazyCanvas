@@ -59,6 +59,7 @@ struct CreateFlagDesc
 
 struct CreatePlayerDesc
 {
+	uint64								ClientUID			= 0;
 	bool								IsLocal				= false;
 	int32								PlayerNetworkUID	= -1;
 	int32								WeaponNetworkUID	= -1;
@@ -78,7 +79,6 @@ struct CreateProjectileDesc
 	EAmmoType	AmmoType;
 	glm::vec3	FirePosition;
 	glm::vec3	InitalVelocity;
-	glm::quat	FireDirection;
 	int32		PlayerFiredNetworkUID = -1;
 	uint32		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;
@@ -188,4 +188,7 @@ private:
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
+
+	inline static GUID_Lambda s_WeaponMesh = GUID_NONE;
+	inline static GUID_Lambda s_WeaponMaterial = GUID_NONE;
 };

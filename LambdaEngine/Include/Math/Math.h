@@ -18,5 +18,6 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/color_space.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 #include "MathUtilities.h"
