@@ -206,11 +206,16 @@ bool PlayerManagerServer::OnPacketPlayerReadyReceived(const PacketReceivedEvent<
 
 void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 {
-	HandlePlayerLeft(pClient->GetUID());
-
+	bool wasHost = HandlePlayerLeft(pClient->GetUID());
+	
 	PacketLeave packet;
 	packet.UID = pClient->GetUID();
 	ServerHelper::SendBroadcast(packet, nullptr, pClient);
+
+	if (wasHost && !s_Players.empty())
+	{
+		SetPlayerHost(&(s_Players.begin()->second));
+	}
 }
 
 bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)

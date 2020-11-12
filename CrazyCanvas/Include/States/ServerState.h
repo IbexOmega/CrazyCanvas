@@ -39,11 +39,13 @@ public:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 	bool OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscoveryPreTransmitEvent& event);
+	bool OnPlayerJoinedEvent(const PlayerJoinedEvent& event);
 
 private:
-	std::string m_ServerName;
 	int32 m_ClientHostID;
-	MultiplayerServer m_MultiplayerServer;
+	PacketGameSettings m_GameSettings;
+	std::string m_MapName;
 
+	MultiplayerServer m_MultiplayerServer;
 	MeshPaintHandler m_MeshPaintHandler;
 };
