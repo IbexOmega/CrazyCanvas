@@ -5,7 +5,8 @@
 
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
-#include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
+
 
 namespace LambdaEngine
 {
@@ -15,7 +16,7 @@ namespace LambdaEngine
 		{
 			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 1 }, false);	// Bit = 0x2
 			BindTypeToExtensionDesc(PlayerLocalComponent::Type(),	{ 0 }, true);	// Bit = 0x4
-			BindTypeToExtensionDesc(PlayerBaseComponent::Type(),	{ 0 }, false);	// Bit = 0x8
+			BindTypeToExtensionDesc(PlayerRelatedComponent::Type(),	{ 0 }, false);	// Bit = 0x8
 		}
 
 		return true;
