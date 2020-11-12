@@ -499,13 +499,37 @@ namespace LambdaEngine
 		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
-		
+
+		static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER1
+		{
+			.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+		};
+
+		pCommandList->PipelineMemoryBarriers(
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			&MEMORY_BARRIER1,
+			1);
+
 		m_UpdatePipeline.Bind(pCommandList);
 		m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&m_PushConstant, sizeof(PushConstantData), 0U);
 
 		constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
 		uint32 workGroupX = uint32(std::ceilf(float(m_ParticleCount) / float(WORK_GROUP_INVOCATIONS)));
 		pCommandList->Dispatch(workGroupX, 1U, 1U);
+
+		static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER2
+		{
+			.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+		};
+
+		pCommandList->PipelineMemoryBarriers(
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD,
+			&MEMORY_BARRIER2,
+			1);
 
 		pCommandList->End();
 		(*ppFirstExecutionStage) = pCommandList;
