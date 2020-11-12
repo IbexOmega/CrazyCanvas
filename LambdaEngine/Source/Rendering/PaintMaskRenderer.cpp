@@ -137,7 +137,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, 0.0);
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, 0);
 			});
 
 		return false;
@@ -525,7 +525,7 @@ namespace LambdaEngine
 	{
 		UnwrapData data = {};
 		data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
-		data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>(angle)};
+		data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>((float)angle)};
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
