@@ -32,6 +32,7 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "Debug/Profiler.h"
+#include "Time/API/Clock.h"
 
 namespace LambdaEngine
 {
@@ -184,6 +185,12 @@ namespace LambdaEngine
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
 			return false;
 		}
+
+		if (!CreateDrawArgConfiguration())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Draw Arg Configuration", pDesc->Name.c_str());
+			return false;
+		}
 		
 		if (!CustomRenderStagesPostInit())
 		{
@@ -269,6 +276,12 @@ namespace LambdaEngine
 		if (!CreatePipelineStages(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
+			return false;
+		}
+
+		if (!CreateDrawArgConfiguration())
+		{
+			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Draw Arg Configuration", pDesc->Name.c_str());
 			return false;
 		}
 
@@ -723,8 +736,7 @@ namespace LambdaEngine
 					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pRenderStage->DrawArgsMaskDesc.FullMask);
-					pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
-
+					
 					if (pRenderStage->UsesCustomRenderer)
 					{
 						pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
@@ -734,186 +746,52 @@ namespace LambdaEngine
 					}
 					else
 					{
-						pRenderStage->pDrawArgs = drawArgsMaskToArgsIt->second.Args.GetData();
-
-						for (uint32 b = 0; b < m_BackBufferCount; b++)
-						{
-							DescriptorSet** ppPrevDrawArgsPerFrame = pRenderStage->pppDrawArgDescriptorSets[b];
-							DescriptorSet** ppNewDrawArgsPerFrame = nullptr;
-
-							DescriptorSet** ppPrevDrawArgsExtensionsPerFrame = pRenderStage->pppDrawArgExtensionsDescriptorSets ? pRenderStage->pppDrawArgExtensionsDescriptorSets[b] : nullptr;
-							DescriptorSet** ppNewDrawArgsExtensionsPerFrame = nullptr;
-
-							// Check if it need to expand the list of descriptor sets
-							bool resizeArr = pRenderStage->NumDrawArgsPerFrame < drawArgsMaskToArgsIt->second.Args.GetSize();
-
-							if (resizeArr)
-							{
-								ppNewDrawArgsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
-
-								if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
-								{
-									ppNewDrawArgsExtensionsPerFrame = DBG_NEW DescriptorSet * [drawArgsMaskToArgsIt->second.Args.GetSize()];
-								}
-							}
-							else
-							{
-								ppNewDrawArgsPerFrame = ppPrevDrawArgsPerFrame;
-								ppNewDrawArgsExtensionsPerFrame = ppPrevDrawArgsExtensionsPerFrame;
-							}
-
-							for (uint32 d = 0; d < drawArgsMaskToArgsIt->second.Args.GetSize(); d++)
-							{
-								// Destroy the previous descriptor sets.
-								if (d < pRenderStage->NumDrawArgsPerFrame)
-								{
-									{
-										DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
-										m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-									}
-
-									// Destroy previous extension descriptor sets if it had any.
-									if (ppPrevDrawArgsExtensionsPerFrame)
-									{
-										DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsExtensionsPerFrame[d];
-										if(pSrcDescriptorSet)
-											m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-									}
-								}
-
-								DescriptorSet* pWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex, m_pDescriptorHeap);
-
-								static uint64 offset = 0;
-
-								const DrawArg& drawArg = drawArgsMaskToArgsIt->second.Args[d];
-								VALIDATE(drawArg.pVertexBuffer);
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &drawArg.pVertexBuffer->GetDesc().SizeInBytes, 0, 1, pResourceBinding->DescriptorType);
-
-								VALIDATE(drawArg.pInstanceBuffer);
-								pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &drawArg.pInstanceBuffer->GetDesc().SizeInBytes, 1, 1, pResourceBinding->DescriptorType);
-
-								// If meshletbuffer is nullptr we assume that meshshaders are disabled
-								if (drawArg.pMeshletBuffer)
-								{
-									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pMeshletBuffer, &offset, &drawArg.pMeshletBuffer->GetDesc().SizeInBytes, 2, 1, pResourceBinding->DescriptorType);
-
-									VALIDATE(drawArg.pUniqueIndicesBuffer);
-									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pUniqueIndicesBuffer, &offset, &drawArg.pUniqueIndicesBuffer->GetDesc().SizeInBytes, 3, 1, pResourceBinding->DescriptorType);
-
-									VALIDATE(drawArg.pPrimitiveIndices);
-									pWriteDescriptorSet->WriteBufferDescriptors(&drawArg.pPrimitiveIndices, &offset, &drawArg.pPrimitiveIndices->GetDesc().SizeInBytes, 4, 1, pResourceBinding->DescriptorType);
-								}
-
-								ppNewDrawArgsPerFrame[d] = pWriteDescriptorSet;
-
-								// Only create a desciptor set for the extensions if it is needed.
-								if (drawArg.HasExtensions && ppNewDrawArgsExtensionsPerFrame)
-								{
-									DescriptorSet* pExtensionsWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Extensions Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex, m_pDescriptorHeap);
-
-									// Fetch data for the write texture descirptors.
-									THashTable<uint32, std::tuple<TArray<TextureView*>, TArray<Sampler*>>> bindingToDataMap;
-									for (uint32 eGroup = 0; eGroup < drawArg.InstanceCount; eGroup++)
-									{
-										DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[eGroup];
-										if (extensionGroup)
-										{
-											uint32 numExtensions = extensionGroup->ExtensionCount;
-											for (uint32 e = 0; e < numExtensions; e++)
-											{
-												DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-												VALIDATE(extension.ExtensionID != 0);
-
-												// TODO: This might be wrong!
-												uint32 extensionID = extension.ExtensionID;
-												for (uint32 t = 0; t < extension.TextureCount; t++)
-												{
-													// If it is the first, set it to the default texture.
-													if (auto it = bindingToDataMap.find(extensionID); it == bindingToDataMap.end())
-													{
-														TextureView* pDefaultMaskMapView = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-														get<0>(bindingToDataMap[extensionID]).PushBack(pDefaultMaskMapView);
-														get<1>(bindingToDataMap[extensionID]).PushBack(Sampler::GetLinearSampler());
-													}
-
-													get<0>(bindingToDataMap[extensionID]).PushBack(extension.ppTextureViews[t]);
-													get<1>(bindingToDataMap[extensionID]).PushBack(extension.ppSamplers[t]);
-												}
-											}
-										}
-									}
-
-									// Write texture descirptors
-									for (uint32 binding = 0; auto& entry : bindingToDataMap)
-									{
-										// TODO: Make this more general. Do not hardcode the texture state and descriptor type!
-										const uint32 textureCount = get<0>(entry.second).GetSize();
-										pExtensionsWriteDescriptorSet->WriteTextureDescriptors(
-											get<0>(entry.second).GetData(),
-											get<1>(entry.second).GetData(),
-											ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-											binding++,
-											textureCount,
-											EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-											true);
-									}
-
-									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
-								}
-								else if (ppNewDrawArgsExtensionsPerFrame)
-								{
-									DescriptorSet* pExtensionsWriteDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Args Extensions Descriptor Set", pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex, m_pDescriptorHeap);
-
-									TextureView* pDefaultMaskMapView = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-									Sampler* pDefaultSampler = Sampler::GetNearestSampler();
-									pExtensionsWriteDescriptorSet->WriteTextureDescriptors(
-										&pDefaultMaskMapView,
-										&pDefaultSampler,
-										ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-										0,
-										1,
-										EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-										true
-									);
-
-									ppNewDrawArgsExtensionsPerFrame[d] = pExtensionsWriteDescriptorSet;
-								}
-							}
-
-							//If drawArgsMaskToArgsIt->second.Args.GetSize() is smaller than pRenderStage->NumDrawArgsPerFrame then some Descriptor Sets are not destroyed that should be destroyed
-							for (uint32 d = drawArgsMaskToArgsIt->second.Args.GetSize(); d < pRenderStage->NumDrawArgsPerFrame; d++)
-							{
-								{
-									DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsPerFrame[d];
-									m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-								}
-
-								if (ppPrevDrawArgsExtensionsPerFrame)
-								{
-									DescriptorSet* pSrcDescriptorSet = ppPrevDrawArgsExtensionsPerFrame[d];
-									if(pSrcDescriptorSet)
-										m_pDeviceResourcesToDestroy[b].PushBack(pSrcDescriptorSet);
-								}
-							}
-
-							if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets[b]);
-
-							pRenderStage->pppDrawArgDescriptorSets[b] = ppNewDrawArgsPerFrame;
-
-							if (pRenderStage->pppDrawArgExtensionsDescriptorSets)
-							{
-								if (resizeArr) SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets[b]);
-								pRenderStage->pppDrawArgExtensionsDescriptorSets[b] = ppNewDrawArgsExtensionsPerFrame;
-							}
-						}
-
-						pRenderStage->NumDrawArgsPerFrame = drawArgsMaskToArgsIt->second.Args.GetSize();
+						pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
 					}
 				}
 			}
 
 			m_DirtyBoundDrawArgResources.clear();
 		}
+	}
+
+	DescriptorSet* RenderGraph::CreateDrawArgDescriptorSet(DescriptorSet* pSrc)
+	{
+		if (m_DrawArgConfiguration.DrawArgSetIndex == UINT32_MAX)
+		{
+			return nullptr;
+		}
+
+		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg DS", m_DrawArgConfiguration.pDrawArgPipelineLayout, m_DrawArgConfiguration.DrawArgSetIndex, m_pDescriptorHeap);
+
+		if (pSrc != nullptr)
+		{
+			m_pGraphicsDevice->CopyDescriptorSet(pSrc, pNewDescriptorSet);
+		}
+
+		return pNewDescriptorSet;
+	}
+
+	DescriptorSet* RenderGraph::CreateDrawArgExtensionDataDescriptorSet(DescriptorSet* pSrc)
+	{
+		if (m_DrawArgConfiguration.DrawArgExtensionDataSetIndex == UINT32_MAX)
+		{
+			return nullptr;
+		}
+
+		DescriptorSet* pNewDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Draw Arg Extension Data DS", m_DrawArgConfiguration.pDrawArgPipelineLayout, m_DrawArgConfiguration.DrawArgExtensionDataSetIndex, m_pDescriptorHeap);
+
+		if (pSrc != nullptr)
+		{
+			m_pGraphicsDevice->CopyDescriptorSet(pSrc, pNewDescriptorSet);
+		}
+
+		return pNewDescriptorSet;
+	}
+
+	void RenderGraph::DrawArgDescriptorSetQueueForRelease(DescriptorSet* pDrawArgDescriptorSet)
+	{
+		m_pDeviceResourcesToDestroy[m_ModFrameIndex].PushBack(pDrawArgDescriptorSet);
 	}
 
 	void RenderGraph::Flush()
@@ -1358,40 +1236,10 @@ namespace LambdaEngine
 
 					if (pRenderStage->ppBufferDescriptorSets != nullptr)
 						SAFERELEASE(pRenderStage->ppBufferDescriptorSets[b]);
-
-					if (pRenderStage->pppDrawArgDescriptorSets != nullptr)
-					{
-						DescriptorSet** ppDrawArgDescriptorSets = pRenderStage->pppDrawArgDescriptorSets[b];
-
-						for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
-						{
-							SAFERELEASE(ppDrawArgDescriptorSets[d]);
-						}
-
-						SAFEDELETE_ARRAY(ppDrawArgDescriptorSets);
-					}
-
-					// Release draw arg extensions descriptor sets.
-					if (pRenderStage->pppDrawArgExtensionsDescriptorSets != nullptr)
-					{
-						DescriptorSet** ppDrawArgExtensionsDescriptrSet = pRenderStage->pppDrawArgExtensionsDescriptorSets[b];
-
-						if (ppDrawArgExtensionsDescriptrSet)
-						{
-							for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
-							{
-								SAFERELEASE(ppDrawArgExtensionsDescriptrSet[d]);
-							}
-						}
-
-						SAFEDELETE_ARRAY(ppDrawArgExtensionsDescriptrSet);
-					}
 				}
 
 				SAFEDELETE_ARRAY(pRenderStage->ppTextureDescriptorSets);
 				SAFEDELETE_ARRAY(pRenderStage->ppBufferDescriptorSets);
-				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgDescriptorSets);
-				SAFEDELETE_ARRAY(pRenderStage->pppDrawArgExtensionsDescriptorSets);
 				SAFERELEASE(pRenderStage->pPipelineLayout);
 				SAFERELEASE(pRenderStage->pSBT);
 				SAFERELEASE(pRenderStage->pRenderPass);
@@ -1409,6 +1257,8 @@ namespace LambdaEngine
 		SAFEDELETE_ARRAY(m_pRenderStages);
 		SAFEDELETE_ARRAY(m_pSynchronizationStages);
 		SAFEDELETE_ARRAY(m_pPipelineStages);
+
+		m_DrawArgConfiguration.Release();
 
 		Profiler::GetGPUProfiler()->Release();
 	}
@@ -1938,11 +1788,11 @@ namespace LambdaEngine
 			bufferDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 			uint32 bufferDescriptorBindingIndex = 0;
 
-			TArray<DescriptorBindingDesc> drawArgDescriptorSetDescriptions;
-			drawArgDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+			TArray<DescriptorBindingDesc> drawArgDescriptorSetBindings;
+			drawArgDescriptorSetBindings.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
-			TArray<DescriptorBindingDesc> drawArgExtensionDescriptorSetDescriptions;
-			drawArgExtensionDescriptorSetDescriptions.Reserve(pRenderStageDesc->ResourceStates.GetSize());
+			TArray<DescriptorBindingDesc> drawArgExtensionDescriptorSetBindings;
+			drawArgExtensionDescriptorSetBindings.Reserve(pRenderStageDesc->ResourceStates.GetSize());
 
 			TArray<RenderPassAttachmentDesc>								renderPassAttachmentDescriptions;
 			RenderPassAttachmentDesc										renderPassDepthStencilDescription;
@@ -1973,6 +1823,9 @@ namespace LambdaEngine
 			//Create PipelineStageMask here, to be used for InitialBarriers Creation
 			uint32 pipelineStageMask = CreateShaderStageMask(pRenderStageDesc);
 			FPipelineStageFlags lastPipelineStageFlags = FindLastPipelineStage(pRenderStageDesc);
+
+			//Draw Arg Stuff
+			bool drawArgsHaveExtensionData = false;
 
 			//Create Descriptors and RenderPass Attachments from RenderStage Resource States
 			for (uint32 rs = 0; rs < pRenderStageDesc->ResourceStates.GetSize(); rs++)
@@ -2128,58 +1981,60 @@ namespace LambdaEngine
 					}
 					else if (pResource->Type == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 					{
+						//Override ShaderStageMask for Draw Args, all Render Stages share Descriptor Sets and must therefore allow all Shader Stages to access the Draw Args binding
+						descriptorBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
 						// Vertex Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 0;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						descriptorBinding.Binding			= DRAW_ARG_VERTEX_BUFFER_BINDING;
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Instance Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 1;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						descriptorBinding.Binding			= DRAW_ARG_INSTANCE_BUFFER_BINDING;
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Meshlet Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 2;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						descriptorBinding.Binding			= DRAW_ARG_MESHLET_BUFFER_BINDING;
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Unique Indices Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 3;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						descriptorBinding.Binding			= DRAW_ARG_UNIQUE_INDICES_BUFFER_BINDING;
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						// Primitive Indices Buffer
 						descriptorBinding.DescriptorCount	= 1;
-						descriptorBinding.Binding			= 4;
-						drawArgDescriptorSetDescriptions.PushBack(descriptorBinding);
+						descriptorBinding.Binding			= DRAW_ARG_PRIMITIVE_INDICES_BUFFER_BINDING;
+						drawArgDescriptorSetBindings.PushBack(descriptorBinding);
 
 						/*
 						*	Create a new descriptor set for extensions.
-						*	If the render stage uses two extensions and the first extension has two textures and the second has one, the binding will be like this:
-						*
-						*	First extension's first texture has binding 0
-						*	First extension's second texture has binding 1
-						*	Second extension's texture has binding 2
-						*
-						*	Each holding a array of textures for each instance which uses an extension.
-						*
-						*	The Instance buffer has an ExtensionIndex to point to the right element in the array.
-						*	The first element is used for instances which does not have an extension.
+						*	All textures lie in the same binding.
+						*	In the explanation below the notation EnTm is used, n is which extension it is and m is which texture in extension n it is
+						*	If the render stage uses two extensions and the first extension has two textures and the second has one, the array will be structured like this:
+						*	Stored in each Instance:	| ExtensionGroupIndex 0 | ExtensionGroupIndex 1	|
+						*	Contiguous Array:			| E0T0, E0T1, E1T0,		| E0T0, E0T1, E1T0		|
 						*/
-						TArray<uint32> extensionMasks = EntityMaskManager::ExtractComponentMasksFromEntityMask(pRenderStage->DrawArgsMaskDesc.IncludeMask & ~pRenderStage->DrawArgsMaskDesc.ExcludeMask);
-						uint32 binding = 0;
-						for (uint32 mask : extensionMasks)
+						TArray<uint32> extensionFlags = EntityMaskManager::ExtractComponentFlagsFromEntityMask(pRenderStage->DrawArgsMaskDesc.IncludeMask & ~pRenderStage->DrawArgsMaskDesc.ExcludeMask);
+						for (uint32 flag : extensionFlags)
 						{
-							const DrawArgExtensionDesc& extensionDesc = EntityMaskManager::GetExtensionDescFromExtensionMask(mask);
-							for (uint32 t = 0; t < extensionDesc.TextureCount; t++)
+							const DrawArgExtensionDesc& extensionDesc = EntityMaskManager::GetExtensionDescFromExtensionFlag(flag);
+							if (extensionDesc.TextureCount > 0)
 							{
-								// TODO: Do not hardcode the descriptor type!
-								descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-								descriptorBinding.DescriptorCount	= 1000u;
-								descriptorBinding.Binding			= binding++;
-								descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
-								drawArgExtensionDescriptorSetDescriptions.PushBack(descriptorBinding);
+								drawArgsHaveExtensionData = true;
+								break;
 							}
+						}
+
+						if (drawArgsHaveExtensionData)
+						{
+							descriptorBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+							descriptorBinding.DescriptorCount	= DRAW_ARG_EXTENSION_DATA_COUNT_BOUND;
+							descriptorBinding.Binding			= DRAW_ARG_EXTENSION_DATA_BINDING;
+							descriptorBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+							drawArgExtensionDescriptorSetBindings.PushBack(descriptorBinding);
 						}
 
 						renderStageDrawArgResources.PushBack(std::make_tuple(pResource, descriptorType));
@@ -2588,16 +2443,20 @@ namespace LambdaEngine
 						}
 
 						{
+							pRenderStage->DrawSetIndex = descriptorSetLayouts.GetSize();
+
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
-							descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetDescriptions;
+							descriptorSetLayout.DescriptorBindings		= drawArgDescriptorSetBindings;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
 						}
 
 						// Extensions descriptor set layout
-						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
+						if (drawArgsHaveExtensionData)
 						{
+							pRenderStage->DrawExtensionSetIndex = descriptorSetLayouts.GetSize();
+
 							DescriptorSetLayoutDesc descriptorSetLayout = {};
-							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetDescriptions;
+							descriptorSetLayout.DescriptorBindings		= drawArgExtensionDescriptorSetBindings;
 							descriptorSetLayouts.PushBack(descriptorSetLayout);
 						}
 					}
@@ -2640,30 +2499,6 @@ namespace LambdaEngine
 						pRenderStage->TextureSetIndex = setIndex;
 						setIndex++;
 					}
-
-					if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS && pRenderStageDesc->Graphics.DrawType == ERenderStageDrawType::SCENE_INSTANCES)
-					{
-						pRenderStage->pppDrawArgDescriptorSets = DBG_NEW DescriptorSet**[m_BackBufferCount];
-						for (uint32 i = 0; i < m_BackBufferCount; i++)
-						{
-							pRenderStage->pppDrawArgDescriptorSets[i] = nullptr;
-						}
-
-						pRenderStage->DrawSetIndex = setIndex;
-						setIndex++;
-
-						// Draw Arg Extensions descriptor set
-						if (drawArgExtensionDescriptorSetDescriptions.GetSize() > 0)
-						{
-							pRenderStage->pppDrawArgExtensionsDescriptorSets = DBG_NEW DescriptorSet**[m_BackBufferCount];
-							for (uint32 i = 0; i < m_BackBufferCount; i++)
-							{
-								pRenderStage->pppDrawArgExtensionsDescriptorSets[i] = nullptr;
-							}
-							pRenderStage->DrawExtensionSetIndex = setIndex;
-							setIndex++;
-						}
-					}
 				}
 
 				//Shader Constants
@@ -2676,7 +2511,6 @@ namespace LambdaEngine
 						pShaderConstants = &shaderConstantsIt->second;
 					}
 				}
-
 
 				//Create Pipeline State
 				if (pRenderStageDesc->Type == EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
@@ -3340,6 +3174,84 @@ namespace LambdaEngine
 		}
 
 		m_ppExecutionStages = DBG_NEW CommandList*[m_ExecutionStageCount];
+
+		return true;
+	}
+
+	bool RenderGraph::CreateDrawArgConfiguration()
+	{
+		PipelineLayoutDesc pipelineLayoutDesc = {};
+
+		{
+			// Vertex Buffer
+			DescriptorBindingDesc vertexBufferBinding = {};
+			vertexBufferBinding.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			vertexBufferBinding.ShaderStageMask		= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+			vertexBufferBinding.DescriptorCount		= 1;
+			vertexBufferBinding.Binding				= DRAW_ARG_VERTEX_BUFFER_BINDING;
+
+			// Instance Buffer
+			DescriptorBindingDesc instanceBufferBinding = {};
+			instanceBufferBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			instanceBufferBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+			instanceBufferBinding.DescriptorCount	= 1;
+			instanceBufferBinding.Binding			= DRAW_ARG_INSTANCE_BUFFER_BINDING;
+
+			// Meshlet Buffer
+			DescriptorBindingDesc meshletBufferBinding = {};
+			meshletBufferBinding.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			meshletBufferBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+			meshletBufferBinding.DescriptorCount	= 1;
+			meshletBufferBinding.Binding			= DRAW_ARG_MESHLET_BUFFER_BINDING;
+
+			// Unique Indices Buffer
+			DescriptorBindingDesc uniqueIndicesBinding = {};
+			uniqueIndicesBinding.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			uniqueIndicesBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+			uniqueIndicesBinding.DescriptorCount	= 1;
+			uniqueIndicesBinding.Binding			= DRAW_ARG_UNIQUE_INDICES_BUFFER_BINDING;
+
+			// Primitive Indices Buffer
+			DescriptorBindingDesc primitiveIndicesBinding = {};
+			primitiveIndicesBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			primitiveIndicesBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+			primitiveIndicesBinding.DescriptorCount	= 1;
+			primitiveIndicesBinding.Binding			= DRAW_ARG_PRIMITIVE_INDICES_BUFFER_BINDING;
+
+			DescriptorSetLayoutDesc descriptorSetLayout = {};
+			descriptorSetLayout.DescriptorBindings =
+			{
+				vertexBufferBinding,
+				instanceBufferBinding,
+				meshletBufferBinding,
+				uniqueIndicesBinding,
+				primitiveIndicesBinding
+			};
+
+			m_DrawArgConfiguration.DrawArgSetIndex = pipelineLayoutDesc.DescriptorSetLayouts.GetSize();
+			pipelineLayoutDesc.DescriptorSetLayouts.PushBack(descriptorSetLayout);
+		}
+
+		{
+			//Extension Data
+			DescriptorBindingDesc extensionDataBinding = {};
+			extensionDataBinding.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			extensionDataBinding.DescriptorCount	= DRAW_ARG_EXTENSION_DATA_COUNT_BOUND;
+			extensionDataBinding.Binding			= DRAW_ARG_EXTENSION_DATA_BINDING;
+			extensionDataBinding.Flags				= FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+			extensionDataBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorSetLayoutDesc descriptorSetLayout = {};
+			descriptorSetLayout.DescriptorBindings =
+			{
+				extensionDataBinding
+			};
+
+			m_DrawArgConfiguration.DrawArgExtensionDataSetIndex = pipelineLayoutDesc.DescriptorSetLayouts.GetSize();
+			pipelineLayoutDesc.DescriptorSetLayouts.PushBack(descriptorSetLayout);
+		}
+
+		m_DrawArgConfiguration.pDrawArgPipelineLayout = m_pGraphicsDevice->CreatePipelineLayout(&pipelineLayoutDesc);
 
 		return true;
 	}
@@ -4418,16 +4330,6 @@ namespace LambdaEngine
 		uint32 frameBufferWidth		= 0;
 		uint32 frameBufferHeight	= 0;
 
-		DescriptorSet** ppDrawArgsDescriptorSetsPerFrame = nullptr;
-		DescriptorSet** ppDrawArgsExtensionsDescriptorSetsPerFrame = nullptr;
-		if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES || pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
-		{
-			ppDrawArgsDescriptorSetsPerFrame = pRenderStage->pppDrawArgDescriptorSets[m_ModFrameIndex];
-
-			if(pRenderStage->pppDrawArgExtensionsDescriptorSets)
-				ppDrawArgsExtensionsDescriptorSetsPerFrame = pRenderStage->pppDrawArgExtensionsDescriptorSets[m_ModFrameIndex];
-		}
-
 		for (uint32 r = 0; r < pRenderStage->ExecutionCount; r++)
 		{
 			TextureView* ppTextureViews[MAX_COLOR_ATTACHMENTS];
@@ -4516,18 +4418,17 @@ namespace LambdaEngine
 
 				if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES)
 				{
-					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
+					for (const DrawArg& drawArg : pRenderStage->DrawArgs)
 					{
-						const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
 						pGraphicsCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-						if (ppDrawArgsDescriptorSetsPerFrame)
+						if (drawArg.pDescriptorSet != nullptr)
 						{
-							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+							pGraphicsCommandList->BindDescriptorSetGraphics(drawArg.pDescriptorSet, pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
 
-							if (ppDrawArgsExtensionsDescriptorSetsPerFrame && ppDrawArgsExtensionsDescriptorSetsPerFrame[d])
+							if (pRenderStage->DrawExtensionSetIndex != UINT32_MAX && drawArg.pExtensionDataDescriptorSet != nullptr)
 							{
-								pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsExtensionsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex);
+								pGraphicsCommandList->BindDescriptorSetGraphics(drawArg.pExtensionDataDescriptorSet, pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex);
 							}
 						}
 
@@ -4536,16 +4437,15 @@ namespace LambdaEngine
 				}
 				else if (pRenderStage->DrawType == ERenderStageDrawType::SCENE_INSTANCES_MESH_SHADER)
 				{
-					for (uint32 d = 0; d < pRenderStage->NumDrawArgsPerFrame; d++)
+					for (const DrawArg& drawArg : pRenderStage->DrawArgs)
 					{
-						const DrawArg& drawArg = pRenderStage->pDrawArgs[d];
-						if (ppDrawArgsDescriptorSetsPerFrame)
+						if (drawArg.pDescriptorSet != nullptr)
 						{
-							pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
+							pGraphicsCommandList->BindDescriptorSetGraphics(drawArg.pDescriptorSet, pRenderStage->pPipelineLayout, pRenderStage->DrawSetIndex);
 
-							if (ppDrawArgsExtensionsDescriptorSetsPerFrame && ppDrawArgsExtensionsDescriptorSetsPerFrame[d])
+							if (pRenderStage->DrawExtensionSetIndex != UINT32_MAX && drawArg.pExtensionDataDescriptorSet != nullptr)
 							{
-								pGraphicsCommandList->BindDescriptorSetGraphics(ppDrawArgsExtensionsDescriptorSetsPerFrame[d], pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex);
+								pGraphicsCommandList->BindDescriptorSetGraphics(drawArg.pExtensionDataDescriptorSet, pRenderStage->pPipelineLayout, pRenderStage->DrawExtensionSetIndex);
 							}
 						}
 

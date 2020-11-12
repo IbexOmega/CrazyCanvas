@@ -15,5 +15,6 @@ struct PacketPlayerAction : Packet
 	int8 DeltaLeft		= 0;
 	bool StartedReload	= false;
 	EAmmoType FiredAmmo	= EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projectiles
+	uint32 Angle		= 0;
 };
 #pragma pack(pop)

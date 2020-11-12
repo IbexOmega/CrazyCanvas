@@ -100,7 +100,7 @@ namespace LambdaEngine
 		*	direction - vec3 of the direction the hit position had during collision
 		*	paintMode - painting mode to be used for the target
 		*/
-		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode);
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode, uint32 angle);
 
 		/* Reset client data from the texture and only use the verifed server data */
 		static void ResetClient();
@@ -129,7 +129,7 @@ namespace LambdaEngine
 		struct UnwrapData
 		{
 			glm::vec4		TargetPosition;
-			glm::vec4		TargetDirection;
+			glm::vec4		TargetDirectionXYZAngleW;
 			EPaintMode		PaintMode			= EPaintMode::NONE;
 			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 			ETeam			Team				= ETeam::NONE;
@@ -141,7 +141,6 @@ namespace LambdaEngine
 			uint32	ShouldReset	= 0;
 			uint32	ShouldPaint	= 0;
 			uint32	PaintCount	= 0;
-			float	Angle		= 0.f;
 		};
 
 		struct DrawArgKey

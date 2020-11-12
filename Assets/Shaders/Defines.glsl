@@ -1,19 +1,23 @@
 #ifndef DEFINES_SHADER
 #define DEFINES_SHADER
 
-#define BUFFER_SET_INDEX 0
-#define TEXTURE_SET_INDEX 1
-#define DRAW_SET_INDEX 2
-#define DRAW_EXTENSION_SET_INDEX 3
-
-#define NO_BUFFERS_TEXTURE_SET_INDEX 0
-#define NO_BUFFERS_DRAW_SET_INDEX 1
-#define NO_TEXTURES_DRAW_SET_INDEX 1
-#define NO_BUFFERS_OR_TEXTURES_DRAW_SET_INDEX 0
-
-#define NO_BUFFERS_DRAW_EXTENSION_SET_INDEX 2
-#define NO_TEXTURES_DRAW_EXTENSION_SET_INDEX 2
-#define NO_BUFFERS_OR_TEXTURES_DRAW_EXTENSION_SET_INDEX 1
+#if !defined(NO_BUFFERS) && !defined(NO_TEXTURES)
+	#define BUFFER_SET_INDEX 			0
+	#define TEXTURE_SET_INDEX 			1
+	#define DRAW_SET_INDEX 				2
+	#define DRAW_EXTENSIONS_SET_INDEX 	3
+#elif defined(NO_BUFFERS)
+	#define TEXTURE_SET_INDEX 			0
+	#define DRAW_SET_INDEX 				1
+	#define DRAW_EXTENSIONS_SET_INDEX 	2
+#elif defined (NO_TEXTURES)
+	#define BUFFER_SET_INDEX 			0
+	#define DRAW_SET_INDEX 				1
+	#define DRAW_EXTENSIONS_SET_INDEX 	2
+#else
+	#define DRAW_SET_INDEX 				0
+	#define DRAW_EXTENSIONS_SET_INDEX 	1
+#endif
 
 #define UNWRAP_DRAW_SET_INDEX 3
 
@@ -82,9 +86,9 @@ struct SInstance
 	mat4 Transform;
 	mat4 PrevTransform;
 	uint MaterialSlot;
-	uint ExtensionIndex;
+	uint ExtensionGroupIndex;
+	uint TexturesPerExtensionGroup;
 	uint MeshletCount;
-	uint Padding0;
 };
 
 struct SIndirectArg
@@ -207,7 +211,7 @@ struct SAtlasData
 struct SUnwrapData
 {
 	vec4 TargetPosition;
-	vec4 TargetDirection;
+	vec4 TargetDirectionXYZAngleW;
 	uint PaintMode;
 	uint RemoteMode;
 	uint TeamMode;

@@ -20,11 +20,16 @@
 #include "NsGui/TextBlock.h"
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
+#include "NsGui/StackPanel.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
 
+#include "Lobby/PlayerManagerBase.h"
+
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
+
+#include "Lobby/Player.h"
 
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
@@ -42,6 +47,17 @@ struct GameGUIState
 	int32 AmmoCapacity;
 };
 
+enum class EPlayerProperty
+{
+	PLAYER_PROPERTY_NAME,
+	PLAYER_PROPERTY_KILLS,
+	PLAYER_PROPERTY_DEATHS,
+	PLAYER_PROPERTY_FLAGS_CAPTURED,
+	PLAYER_PROPERTY_FLAGS_DEFENDED,
+	PLAYER_PROPERTY_PING,
+};
+typedef  std::pair<uint8, const Player*> PlayerPair;
+
 class HUDGUI : public Noesis::Grid
 {
 public:
@@ -49,10 +65,6 @@ public:
 	~HUDGUI();
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
-
-	void OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
@@ -80,9 +92,16 @@ public:
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
+	void DisplayScoreboardMenu(bool visible);
+	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
+
+	void AddPlayer(const Player& newPlayer);
+	void RemovePlayer(const Player& player);
+	void UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value);
+	void UpdateAllPlayerProperties(const Player& player);
+	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
 private:
-
 	void InitGUI();
 
 	void SetDefaultSettings();
@@ -91,17 +110,29 @@ private:
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 
+	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 	NS_IMPLEMENT_INLINE_REFLECTION_(HUDGUI, Noesis::Grid)
 
 private:
 	GameGUIState m_GUIState;
+	bool m_IsGameOver = false;
 
-	Noesis::Image* m_pWaterAmmoRect = nullptr;		
+	Noesis::Image* m_pWaterAmmoRect = nullptr;
 	Noesis::Image* m_pPaintAmmoRect = nullptr;
+	Noesis::Image* m_pHealthRect = nullptr;
 	
 	Noesis::TextBlock* m_pWaterAmmoText = nullptr;
 	Noesis::TextBlock* m_pPaintAmmoText = nullptr;
 
+	Noesis::Grid* m_pHitIndicatorGrid	= nullptr;
+	Noesis::Grid* m_pScoreboardGrid		= nullptr;
+
+	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
+	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
+
+	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
+
+	bool m_ScoreboardVisible = false;
 	// EscapeGUI
 	bool 			m_ListenToCallbacks		= false;
 	Noesis::Button* m_pSetKeyButton			= nullptr;

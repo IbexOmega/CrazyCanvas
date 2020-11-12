@@ -93,6 +93,7 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 			packet.Position			= netPosComponent.Position;
 			packet.Velocity			= velocityComponent.Velocity;
 			packet.Rotation			= constRotationComponent.Quaternion;
+			packet.Angle			= currentGameState.Angle;
 			playerActionResponseComponent.SendPacket(packet);
 
 			if (constPositionComponent.Position != netPosComponent.Position)

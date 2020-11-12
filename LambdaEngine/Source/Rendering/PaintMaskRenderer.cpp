@@ -138,7 +138,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED);
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, 0);
 			});
 
 		return false;
@@ -330,12 +330,12 @@ namespace LambdaEngine
 					uint32 numExtensions = extensionGroup->ExtensionCount;
 					for (uint32 e = 0; e < numExtensions; e++)
 					{
-						uint32 mask = extensionGroup->pExtensionMasks[e];
+						uint32 flag = extensionGroup->pExtensionFlags[e];
 						bool inverted;
-						uint32 meshPaintBit = EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type(), inverted);
+						uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
 						uint32 invertedUInt = uint32(inverted);
 
-						if ((mask & meshPaintBit) != invertedUInt)
+						if ((flag & meshPaintFlag) != invertedUInt)
 						{
 							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
 							TextureView* pTextureView = extension.ppTextureViews[0];
@@ -405,7 +405,6 @@ namespace LambdaEngine
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
 				frameSettings.ShouldReset = data.ClearClient;
-				frameSettings.Angle = Random::Float32()*glm::pi<float>()*2.f;
 
 				uint32 size = 0;
 				// Current limit is 10 draw calls per frame - might change in future if needed
@@ -525,11 +524,12 @@ namespace LambdaEngine
 		const glm::vec3& direction,
 		EPaintMode paintMode,
 		ERemoteMode remoteMode,
-		ETeam team)
+		ETeam team,
+		uint32 angle)
 	{
 		UnwrapData data = {};
-		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
-		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
+		data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
+		data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>((float)angle)};
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
@@ -782,7 +782,7 @@ namespace LambdaEngine
 		{
 			UnwrapData data = {};
 			data.TargetPosition = { };
-			data.TargetDirection = { };
+			data.TargetDirectionXYZAngleW = { };
 			data.PaintMode = EPaintMode::NONE;
 			data.RemoteMode = ERemoteMode::UNDEFINED;
 			data.Team = ETeam::NONE;

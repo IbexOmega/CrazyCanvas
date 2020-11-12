@@ -65,12 +65,12 @@ namespace LambdaEngine
 
 		struct Instance
 		{
-			glm::mat4	Transform		= glm::mat4(1.0f);
-			glm::mat4	PrevTransform	= glm::mat4(1.0f);
-			uint32		MaterialIndex	= 0;
-			uint32		ExtensionIndex	= 0;
-			uint32		MeshletCount	= 0;
-			uint32		Padding0;
+			glm::mat4	Transform					= glm::mat4(1.0f);
+			glm::mat4	PrevTransform				= glm::mat4(1.0f);
+			uint32		MaterialIndex				= 0;
+			uint32		ExtensionGroupIndex			= 0;
+			uint32		TexturesPerExtensionGroup	= 0;
+			uint32		MeshletCount				= 0;
 		};
 
 		struct MeshKey
@@ -160,8 +160,7 @@ namespace LambdaEngine
 			uint32	MeshletCount			= 0;
 
 			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
-			TArray<uint32>					InstanceIndexToExtensionGroup;
-			bool	HasExtensions			= false;
+			bool	HasExtensionData		= false;
 			uint32	DrawArgsMask			= 0x0;
 
 			Buffer* pRasterInstanceBuffer				= nullptr;
@@ -169,6 +168,9 @@ namespace LambdaEngine
 			TArray<Instance> RasterInstances;
 
 			TArray<Entity> EntityIDs;
+
+			DescriptorSet* pDrawArgDescriptorSet			= nullptr;
+			DescriptorSet* pDrawArgDescriptorExtensionsSet	= nullptr;
 		};
 
 		struct InstanceKey
@@ -308,6 +310,7 @@ namespace LambdaEngine
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
+		void WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry);
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
@@ -392,7 +395,6 @@ namespace LambdaEngine
 
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
-		
 
 		// Animation
 		uint64						m_SkinningPipelineID;

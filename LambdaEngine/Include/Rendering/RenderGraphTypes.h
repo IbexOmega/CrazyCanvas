@@ -11,53 +11,62 @@
 
 namespace LambdaEngine
 {
-	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME					= "RENDER_STAGE_IMGUI";
-	constexpr const char* RENDER_GRAPH_NOESIS_GUI_STAGE_NAME			= "RENDER_STAGE_NOESIS_GUI";
-	constexpr const char* RENDER_GRAPH_LIGHT_STAGE_NAME					= "RENDER_STAGE_LIGHT";
-	constexpr const char* RENDER_GRAPH_PARTICLE_UPDATE_STAGE_NAME		= "RENDER_STAGE_PARTICLE_UPDATE";
-	constexpr const char* RENDER_GRAPH_PARTICLE_RENDER_STAGE_NAME		= "RENDER_STAGE_PARTICLE_RENDER";
-	constexpr const char* RENDER_GRAPH_LINE_RENDERER_STAGE_NAME			= "RENDER_STAGE_LINE_RENDERER";
-	constexpr const char* RENDER_GRAPH_MESH_UNWRAP_NAME					= "RENDER_STAGE_MESH_UNWRAP";
+	constexpr const char* RENDER_GRAPH_IMGUI_STAGE_NAME				= "RENDER_STAGE_IMGUI";
+	constexpr const char* RENDER_GRAPH_NOESIS_GUI_STAGE_NAME		= "RENDER_STAGE_NOESIS_GUI";
+	constexpr const char* RENDER_GRAPH_LIGHT_STAGE_NAME				= "RENDER_STAGE_LIGHT";
+	constexpr const char* RENDER_GRAPH_PARTICLE_UPDATE_STAGE_NAME	= "RENDER_STAGE_PARTICLE_UPDATE";
+	constexpr const char* RENDER_GRAPH_PARTICLE_RENDER_STAGE_NAME	= "RENDER_STAGE_PARTICLE_RENDER";
+	constexpr const char* RENDER_GRAPH_LINE_RENDERER_STAGE_NAME		= "RENDER_STAGE_LINE_RENDERER";
+	constexpr const char* RENDER_GRAPH_MESH_UNWRAP_NAME				= "RENDER_STAGE_MESH_UNWRAP";
 
-	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT			= "BACK_BUFFER_TEXTURE";
+	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT		= "BACK_BUFFER_TEXTURE";
 
-	constexpr const char* PER_FRAME_BUFFER								= "PER_FRAME_BUFFER";
-	constexpr const char* SCENE_LIGHTS_BUFFER							= "SCENE_LIGHTS_BUFFER";
-	constexpr const char* SCENE_POINT_SHADOWMAPS						= "SCENE_POINT_SHADOWMAPS";
+	constexpr const char* PER_FRAME_BUFFER							= "PER_FRAME_BUFFER";
+	constexpr const char* SCENE_LIGHTS_BUFFER						= "SCENE_LIGHTS_BUFFER";
+	constexpr const char* SCENE_POINT_SHADOWMAPS					= "SCENE_POINT_SHADOWMAPS";
 
-	constexpr const char* SCENE_PARTICLE_VERTEX_BUFFER					= "SCENE_PARTICLE_VERTEX_BUFFER";
-	constexpr const char* SCENE_PARTICLE_INDEX_BUFFER					= "SCENE_PARTICLE_INDEX_BUFFER";
-	constexpr const char* SCENE_PARTICLE_INSTANCE_BUFFER				= "SCENE_PARTICLE_INSTANCE_BUFFER";
-	constexpr const char* SCENE_EMITTER_INSTANCE_BUFFER					= "SCENE_EMITTER_BUFFER";
-	constexpr const char* SCENE_EMITTER_INDEX_BUFFER					= "SCENE_EMITTER_INDEX_BUFFER";
-	constexpr const char* SCENE_EMITTER_TRANSFORM_BUFFER				= "SCENE_EMITTER_TRANSFORM_BUFFER";
-	constexpr const char* SCENE_PARTICLE_INDIRECT_BUFFER				= "SCENE_PARTICLE_INDIRECT_BUFFER";
-	constexpr const char* SCENE_PARTICLE_ALIVE_BUFFER					= "SCENE_PARTICLE_ALIVE_BUFFER";
-	constexpr const char* SCENE_PARTICLE_ATLAS_INFO_BUFFER				= "SCENE_PARTICLE_ATLAS_INFO_BUFFER";
-	constexpr const char* SCENE_PARTICLE_ATLAS_IMAGES					= "SCENE_PARTICLE_ATLAS_IMAGES";
+	constexpr const char* SCENE_PARTICLE_VERTEX_BUFFER				= "SCENE_PARTICLE_VERTEX_BUFFER";
+	constexpr const char* SCENE_PARTICLE_INDEX_BUFFER				= "SCENE_PARTICLE_INDEX_BUFFER";
+	constexpr const char* SCENE_PARTICLE_INSTANCE_BUFFER			= "SCENE_PARTICLE_INSTANCE_BUFFER";
+	constexpr const char* SCENE_EMITTER_INSTANCE_BUFFER				= "SCENE_EMITTER_BUFFER";
+	constexpr const char* SCENE_EMITTER_INDEX_BUFFER				= "SCENE_EMITTER_INDEX_BUFFER";
+	constexpr const char* SCENE_EMITTER_TRANSFORM_BUFFER			= "SCENE_EMITTER_TRANSFORM_BUFFER";
+	constexpr const char* SCENE_PARTICLE_INDIRECT_BUFFER			= "SCENE_PARTICLE_INDIRECT_BUFFER";
+	constexpr const char* SCENE_PARTICLE_ALIVE_BUFFER				= "SCENE_PARTICLE_ALIVE_BUFFER";
+	constexpr const char* SCENE_PARTICLE_ATLAS_INFO_BUFFER			= "SCENE_PARTICLE_ATLAS_INFO_BUFFER";
+	constexpr const char* SCENE_PARTICLE_ATLAS_IMAGES				= "SCENE_PARTICLE_ATLAS_IMAGES";
 
-	constexpr const char* SCENE_MAT_PARAM_BUFFER						= "SCENE_MAT_PARAM_BUFFER";
-	constexpr const char* SCENE_DRAW_ARGS								= "SCENE_DRAW_ARGS";
+	constexpr const char* SCENE_MAT_PARAM_BUFFER					= "SCENE_MAT_PARAM_BUFFER";
+	constexpr const char* SCENE_DRAW_ARGS							= "SCENE_DRAW_ARGS";
 
-	constexpr const char* AS_INSTANCE_INDICES_BUFFER					= "AS_INSTANCE_INDICES_BUFFER";
-	constexpr const char* AS_INSTANCES_BUFFER							= "AS_INSTANCES_BUFFER";
-	constexpr const char* SCENE_TLAS									= "SCENE_TLAS";
+	constexpr const char* AS_INSTANCE_INDICES_BUFFER				= "AS_INSTANCE_INDICES_BUFFER";
+	constexpr const char* AS_INSTANCES_BUFFER						= "AS_INSTANCES_BUFFER";
+	constexpr const char* SCENE_TLAS								= "SCENE_TLAS";
 
-	constexpr const char* SCENE_ALBEDO_MAPS								= "SCENE_ALBEDO_MAPS";
-	constexpr const char* SCENE_NORMAL_MAPS								= "SCENE_NORMAL_MAPS";
-	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS					= "SCENE_COMBINED_MATERIAL_MAPS";
+	constexpr const char* SCENE_ALBEDO_MAPS							= "SCENE_ALBEDO_MAPS";
+	constexpr const char* SCENE_NORMAL_MAPS							= "SCENE_NORMAL_MAPS";
+	constexpr const char* SCENE_COMBINED_MATERIAL_MAPS				= "SCENE_COMBINED_MATERIAL_MAPS";
 
-	constexpr const char* PAINT_MASK_TEXTURES 					= "PAINT_MASK_TEXTURES";
-	constexpr const char* PAINT_MASK_COLORS						= "PAINT_MASK_COLORS";
+	constexpr const char* PAINT_MASK_TEXTURES 						= "PAINT_MASK_TEXTURES";
+	constexpr const char* PAINT_MASK_COLORS							= "PAINT_MASK_COLORS";
 
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE	= 4;
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_SIZE		= 4;
 
-	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX			= 0;
-	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES			= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
+	constexpr const uint32 DRAW_ITERATION_PUSH_CONSTANTS_INDEX		= 0;
+	constexpr const uint32 NUM_INTERNAL_PUSH_CONSTANTS_TYPES		= DRAW_ITERATION_PUSH_CONSTANTS_INDEX + 1;
 
-	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE			= 8;
-	constexpr const uint32 MAX_TEXTURES_PER_EXTENSION			= 16;
-	constexpr const uint32 MAX_EXTENSION_GROUPS_PER_MESH_TYPE	= 64; // Number of extension groups per mesh instance
+	constexpr const uint32 MAX_EXTENSIONS_PER_MESH_TYPE				= 8;
+	constexpr const uint32 MAX_TEXTURES_PER_EXTENSION				= 16;
+	constexpr const uint32 MAX_EXTENSION_GROUPS_PER_MESH_TYPE		= 64; // Number of extension groups per mesh instance
+
+	constexpr const uint32 DRAW_ARG_VERTEX_BUFFER_BINDING				= 0;
+	constexpr const uint32 DRAW_ARG_INSTANCE_BUFFER_BINDING				= 1;
+	constexpr const uint32 DRAW_ARG_MESHLET_BUFFER_BINDING				= 2;
+	constexpr const uint32 DRAW_ARG_UNIQUE_INDICES_BUFFER_BINDING		= 3;
+	constexpr const uint32 DRAW_ARG_PRIMITIVE_INDICES_BUFFER_BINDING	= 4;
+
+	constexpr const uint32 DRAW_ARG_EXTENSION_DATA_BINDING				= 0;
+	constexpr const uint32 DRAW_ARG_EXTENSION_DATA_COUNT_BOUND			= 16;
 
 	enum class ERenderGraphPipelineStageType : uint8
 	{
@@ -324,18 +333,19 @@ namespace LambdaEngine
 
 	struct DrawArgExtensionData
 	{
-		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]				= {nullptr};
+		Texture*		ppTextures[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
 		TextureView*	ppTextureViews[MAX_TEXTURES_PER_EXTENSION]			= { nullptr };
 		Sampler*		ppSamplers[MAX_TEXTURES_PER_EXTENSION]				= { nullptr };
 		uint32			TextureCount										= 0;
-		uint32			ExtensionID											= 0; // Zero is an invalid id.
+		//uint32			ExtensionID											= 0; // Zero is an invalid id.
 	};
 
 	struct DrawArgExtensionGroup
 	{
-		uint32					pExtensionMasks[MAX_EXTENSIONS_PER_MESH_TYPE];
+		uint32					pExtensionFlags[MAX_EXTENSIONS_PER_MESH_TYPE];
 		DrawArgExtensionData	pExtensions[MAX_EXTENSIONS_PER_MESH_TYPE];
 		uint32					ExtensionCount = 0;
+		uint32					TotalTextureCount = 0;
 	};
 
 	struct DrawArgMaskDesc
@@ -379,6 +389,9 @@ namespace LambdaEngine
 		// Extensions
 		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount!
 		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used.
+
+		DescriptorSet* pDescriptorSet	= nullptr;
+		DescriptorSet* pExtensionDataDescriptorSet	= nullptr;
 	};
 
 	/*-----------------------------------------------------------------Synchronization Stage Structs End / Pipeline Stage Structs Begin-----------------------------------------------------------------*/
@@ -572,6 +585,11 @@ namespace LambdaEngine
 	};
 
 	/*-----------------------------------------------------------------Render Graph Editor End-----------------------------------------------------------------*/
+
+	FORCEINLINE bool DrawArgSubscribed(uint32 drawArgMask, const DrawArgMaskDesc& subscriberDrawArgMask)
+	{
+		return (drawArgMask & subscriberDrawArgMask.IncludeMask) == subscriberDrawArgMask.IncludeMask && (drawArgMask & subscriberDrawArgMask.ExcludeMask) == 0;
+	}
 
 	FORCEINLINE bool ResourceStateNeedsDescriptor(ERenderGraphResourceBindingType bindingType)
 	{

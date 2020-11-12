@@ -276,12 +276,9 @@ namespace LambdaEngine
 			uint32					BufferSetIndex						= 0;
 			DescriptorSet**			ppTextureDescriptorSets				= nullptr; //# m_BackBufferCount
 			uint32					TextureSetIndex						= 0;
-			DescriptorSet***		pppDrawArgDescriptorSets			= nullptr; //# m_BackBufferCount
-			DescriptorSet***		pppDrawArgExtensionsDescriptorSets	= nullptr; //# m_BackBufferCount
-			DrawArg*				pDrawArgs							= nullptr;
-			uint32					NumDrawArgsPerFrame					= 0;
+			TArray<DrawArg>			DrawArgs;
 			uint32					DrawSetIndex						= 0;
-			uint32					DrawExtensionSetIndex				= 0;
+			uint32					DrawExtensionSetIndex				= UINT32_MAX;
 			Resource*				pDrawArgsResource					= nullptr;
 			DrawArgMaskDesc			DrawArgsMaskDesc;
 			RenderPass*				pRenderPass							= nullptr;
@@ -390,6 +387,14 @@ namespace LambdaEngine
 		*	becomes invalid during state transition.
 		*/
 		void Flush();
+		/*
+		* Creates a Descriptor Set suitable for Draw Arg Storage, all Draw Arg Descriptor Sets have the same bindings
+		* The caller has the responsibility of calling RenderGraph::ReleaseDrawArgDescriptorSet on Release
+		*/
+		DescriptorSet* CreateDrawArgDescriptorSet(DescriptorSet* pSrc);
+		DescriptorSet* CreateDrawArgExtensionDataDescriptorSet(DescriptorSet* pSrc);
+
+		void DrawArgDescriptorSetQueueForRelease(DescriptorSet* pDrawArgDescriptorSet);
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.
@@ -430,6 +435,7 @@ namespace LambdaEngine
 		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
+		bool CreateDrawArgConfiguration();
 		bool CustomRenderStagesPostInit();
 
 		void UpdateRelativeParameters();
@@ -516,5 +522,22 @@ namespace LambdaEngine
 		TArray<DeviceChild*>*							m_pDeviceResourcesToDestroy;
 
 		TArray<IRenderGraphCreateHandler*>				m_CreateHandlers;
+
+		struct
+		{
+			PipelineLayout* pDrawArgPipelineLayout			= nullptr;
+
+			uint32 DrawArgSetIndex							= UINT32_MAX;
+			uint32 DrawArgExtensionDataSetIndex				= UINT32_MAX;
+
+			void Release()
+			{
+				SAFERELEASE(pDrawArgPipelineLayout);
+
+				DrawArgSetIndex					= UINT32_MAX;
+				DrawArgExtensionDataSetIndex	= UINT32_MAX;
+			}
+
+		} m_DrawArgConfiguration;
 	};
 }

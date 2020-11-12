@@ -4,7 +4,7 @@
 
 #include "Multiplayer/ServerHelper.h"
 
-#include "Multiplayer/Packet/PacketPlayerDied.h"
+#include "Multiplayer/Packet/PacketPlayerAliveChanged.h"
 #include "Multiplayer/Packet/PacketPlayerHost.h"
 #include "Multiplayer/Packet/PacketPlayerPing.h"
 
@@ -222,6 +222,37 @@ bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)
 {
 	const Player* pPlayer = GetPlayer(pClient);
 	return pPlayer != nullptr && pPlayer->IsHost();
+}
+
+void PlayerManagerServer::SetPlayerAlive(const Player* pPlayer, bool alive, const Player* pPlayerKiller)
+{
+	if (pPlayer->m_IsDead == alive)
+	{
+		Player* pPl = const_cast<Player*>(pPlayer);
+		pPl->m_IsDead = !alive;
+
+		if (pPl->m_IsDead)
+			pPl->m_Deaths++;
+
+		PacketPlayerAliveChanged packet;
+		packet.UID		= pPl->m_UID;
+		packet.IsDead	= pPl->m_IsDead;
+		packet.Deaths	= pPl->m_Deaths;
+
+		if (pPlayerKiller)
+			packet.KillerUID = pPlayerKiller->GetUID();
+
+		ServerHelper::SendBroadcast(packet);
+
+		PlayerScoreUpdatedEvent playerScoreUpdatedEvent(pPlayer);
+		EventQueue::SendEventImmediate(playerScoreUpdatedEvent);
+
+		PlayerAliveUpdatedEvent playerAliveUpdatedEvent(pPlayer, pPlayerKiller);
+		EventQueue::SendEventImmediate(playerAliveUpdatedEvent);
+
+		if (pPlayerKiller)
+			SetPlayerKills(pPlayerKiller, pPlayerKiller->GetKills() + 1);
+	}
 }
 
 void PlayerManagerServer::SetPlayerReady(const Player* pPlayer, bool ready)

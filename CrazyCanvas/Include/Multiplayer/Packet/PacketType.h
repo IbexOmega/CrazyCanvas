@@ -8,7 +8,7 @@
 
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
-#include "Multiplayer/Packet/MultiplayerEvents.h"
+#include "Events/PacketEvents.h"
 
 typedef LambdaEngine::THashTable<uint16, IPacketReceivedEvent*> PacketTypeMap;
 
@@ -35,7 +35,7 @@ public:
 	inline static uint16 JOIN						= 0;
 	inline static uint16 LEAVE						= 0;
 	inline static uint16 CHAT_MESSAGE				= 0;
-	inline static uint16 PLAYER_DIED				= 0;
+	inline static uint16 PLAYER_ALIVE_CHANGED		= 0;
 	inline static uint16 PLAYER_HOST				= 0;
 	inline static uint16 PLAYER_PING				= 0;
 	inline static uint16 PLAYER_READY				= 0;

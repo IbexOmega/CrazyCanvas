@@ -86,7 +86,7 @@ void MainMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(args);
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
-	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_ContextStack.pop();
 	Noesis::FrameworkElement* pCurrentElement = m_ContextStack.top();
@@ -104,7 +104,7 @@ void MainMenuGUI::OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(args);
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
-	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pPlayGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pPlayGrid);
@@ -116,7 +116,7 @@ void MainMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(args);
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
-	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pSettingsGrid);
@@ -143,8 +143,9 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	SetRenderStagesSleeping();
-
-	State* pStartingState = DBG_NEW PlaySessionState(true);
+	PacketGameSettings settings;
+	settings.MapID = 0;
+	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
@@ -213,7 +214,7 @@ void MainMenuGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender,
 	UNREFERENCED_VARIABLE(args);
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
-	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pKeyBindingsGrid);

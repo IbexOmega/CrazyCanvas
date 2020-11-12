@@ -40,7 +40,7 @@
 
   <!-- Play option grid -->
   <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-    <Grid x:Name="PlayGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Hidden">
+    <Grid x:Name="PlayGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Collapsed">
       <Grid.RowDefinitions>
         <RowDefinition Height="2*"/>
         <RowDefinition Height="1*"/>
@@ -60,8 +60,8 @@
   </Viewbox>
 
     <!--Settings grid-->
-    <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-    <Grid x:Name="SettingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Hidden">
+  <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid x:Name="SettingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Collapsed">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="6*"/>
@@ -132,7 +132,7 @@
   
     <!--Key bindings grid-->
   <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-    <Grid x:Name="KeyBindingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Hidden">
+    <Grid x:Name="KeyBindingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Collapsed">
       <Grid.RowDefinitions>
         <RowDefinition Height="1*"/>
         <RowDefinition Height="6*"/>

@@ -67,6 +67,7 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			SET_PAINT_MODE(packet.Info, paintMode);
 			packet.Position		= collisionInfo.Position;
 			packet.Direction	= collisionInfo.Direction;
+			packet.Angle		= projectileHitEvent.Angle;
 
 			ServerHelper::SendBroadcast(packet);
 		}
@@ -74,7 +75,7 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		{
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
-			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team);
+			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
 
 			PaintPoint paintPoint = {};
 			paintPoint.Position		= collisionInfo.Position;
@@ -82,6 +83,7 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			paintPoint.PaintMode	= paintMode;
 			paintPoint.RemoteMode	= remoteMode;
 			paintPoint.Team			= team;
+			paintPoint.Angle		= projectileHitEvent.Angle;
 			m_PaintPointsOnClient.push(paintPoint);
 		}
 	}
@@ -119,6 +121,7 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 			paintPointB.PaintMode = paintMode;
 			paintPointB.RemoteMode = remoteMode;
 			paintPointB.Team = team;
+			paintPointB.Angle = packet.Angle;
 			clientWasWrong = !IsPaintPointEqual(paintPointA, paintPointB);
 #ifdef LAMBDA_DEBUG
 			if(clientWasWrong)
@@ -134,7 +137,7 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 		
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
-		PaintMaskRenderer::AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team);
+		PaintMaskRenderer::AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
 	}
 
 	return true;
@@ -142,10 +145,11 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 
 bool MeshPaintHandler::IsPaintPointEqual(PaintPoint& a, PaintPoint& b)
 {
-	bool posSame = glm::length2(a.Position - b.Position) < 0.0001f;
-	bool dirSame = glm::length2(a.Direction - b.Direction) < 0.0001f;
+	bool posSame 		= glm::length2(a.Position - b.Position) < 0.0001f;
+	bool dirSame 		= glm::length2(a.Direction - b.Direction) < 0.0001f;
 	bool paintModeSame	= a.PaintMode == b.PaintMode;
 	bool remoteModeSame = a.RemoteMode == b.RemoteMode;
 	bool teamSame		= a.Team == b.Team;
-	return posSame && dirSame && paintModeSame && remoteModeSame && teamSame;
+	bool angleSame		= a.Angle == b.Angle;
+	return posSame && dirSame && paintModeSame && remoteModeSame && teamSame && angleSame;
 }

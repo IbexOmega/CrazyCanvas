@@ -221,7 +221,7 @@
     </TabItem>
 
   </TabControl >
-  <Grid x:Name="ERROR_BOX_CONTAINER" Grid.Column="2" HorizontalAlignment="Center" Height="100" VerticalAlignment="Center" Width="250">
+  <Grid x:Name="ERROR_BOX_CONTAINER" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" Height="100" VerticalAlignment="Center" Width="250">
     <Grid.Background>
       <SolidColorBrush Color="Teal" Opacity="0"/>
     </Grid.Background>
@@ -247,7 +247,7 @@
     </Button>
   </Grid>
 
-  <Grid x:Name="NOTIFICATION_BOX_CONTAINER"  Grid.Column="2" HorizontalAlignment="Center" Height="100" VerticalAlignment="Center" Width="250">
+  <Grid x:Name="NOTIFICATION_BOX_CONTAINER" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" Height="100" VerticalAlignment="Center" Width="250">
     <Grid.Background>
       <SolidColorBrush Color="Teal" Opacity="0"/>
     </Grid.Background>

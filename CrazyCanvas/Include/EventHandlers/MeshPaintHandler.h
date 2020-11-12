@@ -2,7 +2,9 @@
 #include "Physics/PhysicsEvents.h"
 
 #include "Rendering/PaintMaskRenderer.h"
-#include "Multiplayer/Packet/MultiplayerEvents.h"
+
+#include "Events/PacketEvents.h"
+
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 
 #include <queue>
@@ -24,6 +26,7 @@ private:
 		LambdaEngine::EPaintMode	PaintMode = LambdaEngine::EPaintMode::NONE;
 		LambdaEngine::ERemoteMode	RemoteMode = LambdaEngine::ERemoteMode::UNDEFINED;
 		LambdaEngine::ETeam			Team = LambdaEngine::ETeam::NONE;
+		uint32 Angle;
 	};
 
 private:

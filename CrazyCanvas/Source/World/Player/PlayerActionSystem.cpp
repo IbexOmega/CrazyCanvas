@@ -18,6 +18,9 @@
 
 using namespace LambdaEngine;
 
+
+bool PlayerActionSystem::m_MouseEnabled = true;
+
 PlayerActionSystem::PlayerActionSystem()
 {
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
@@ -109,4 +112,9 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaFo
 
 	result.x = currentVelocity.x;
 	result.z = currentVelocity.z;
+}
+
+void PlayerActionSystem::SetMouseEnabled(bool isEnabled)
+{
+	m_MouseEnabled = isEnabled;
 }

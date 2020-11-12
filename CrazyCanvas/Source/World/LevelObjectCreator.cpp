@@ -14,6 +14,7 @@
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
@@ -116,24 +117,12 @@ bool LevelObjectCreator::Init()
 	{
 		//Flag
 		{
-			ResourceManager::LoadMeshFromFile("Roller.obj", s_FlagMeshGUID);
-
-			MaterialProperties materialProperties = {};
-			materialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-
-			s_FlagMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"Flag Material",
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				materialProperties);
+			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagMaterialGUID);
 		}
 
 		//Player
 		{
-			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
+			ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
 
 #ifdef USE_ALL_ANIMATIONS
 			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
@@ -541,6 +530,13 @@ bool LevelObjectCreator::CreateFlag(
 	if (!MultiplayerUtils::IsServer())
 	{
 		networkUID = pFlagDesc->NetworkUID;
+
+		// Add Animation attachment on client
+		pECS->AddComponent<AnimationAttachedComponent>(flagEntity, AnimationAttachedComponent
+			{
+				.JointName = "mixamorig:Spine2",
+				.Transform = glm::mat4(1.0f),
+			});
 	}
 	else
 	{
@@ -624,6 +620,9 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
 
+	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
+	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
+
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
 		NetworkPositionComponent
@@ -670,6 +669,11 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
+	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 512, 512, true));
+	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
+	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
+
 
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
@@ -950,6 +954,7 @@ bool LevelObjectCreator::CreateProjectile(
 	ProjectileComponent projectileComp;
 	projectileComp.AmmoType	= desc.AmmoType;
 	projectileComp.Owner	= desc.WeaponOwner;
+	projectileComp.Angle	= desc.Angle;
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 

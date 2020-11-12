@@ -101,6 +101,7 @@ namespace LambdaEngine
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final	{ return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final	{ return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
+
 		FORCEINLINE virtual const String& GetName() const override final 
 		{
 			static String name = "AS_BUILDER";
