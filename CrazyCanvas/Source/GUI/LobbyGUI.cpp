@@ -45,6 +45,7 @@ LobbyGUI::~LobbyGUI()
 
 void LobbyGUI::InitGUI(LambdaEngine::String name)
 {
+	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name");
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
 	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
@@ -215,6 +216,9 @@ void LobbyGUI::SetHostMode(bool isHost)
 
 void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 {
+	Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
+	pSettingServerName->SetContent(packet.ServerName);
+
 	Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
 	pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
 
@@ -263,6 +267,28 @@ void LobbyGUI::AddSettingComboBox(
 	}
 	settingComboBox->SetSelectedIndex(defaultIndex);
 }
+
+
+void LobbyGUI::AddSettingTextBox(
+	const LambdaEngine::String& settingKey,
+	const LambdaEngine::String& settingText)
+{
+	// Add setting text
+	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
+
+	// Add setting client text (default value is set as content)
+	AddLabelWithStyle(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientStyle", settingText);
+
+	// Add setting textbox
+	Ptr<TextBox> settingTextBox = *new TextBox();
+	Style* pStyle = FrameworkElement::FindResource<Style>("SettingsHostTextStyle");
+	settingTextBox->SetStyle(pStyle);
+	settingTextBox->SetName((settingKey + "_host").c_str());
+	settingTextBox->TextChanged() += MakeDelegate(this, &LobbyGUI::OnTextBoxChanged);
+	RegisterName(settingTextBox->GetName(), settingTextBox);
+	m_pSettingsHostStackPanel->GetChildren()->Add(settingTextBox);
+}
+
 
 bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
@@ -352,6 +378,21 @@ void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const 
 	{
 		m_GameSettings.ChangeTeam = textSelected == "True";
 	}
+
+	if (m_IsInitiated)
+	{
+		ClientHelper::Send(m_GameSettings);
+	}
+}
+
+void LobbyGUI::OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	Noesis::TextBox* pTextBox = static_cast<TextBox*>(pSender);
+
+	if (strcmp(m_GameSettings.ServerName, pTextBox->GetText()) != 0) {
+		strcpy(m_GameSettings.ServerName, pTextBox->GetText());
+	}
+
 
 	if (m_IsInitiated)
 	{

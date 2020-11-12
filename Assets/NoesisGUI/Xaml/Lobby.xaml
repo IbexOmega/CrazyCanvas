@@ -70,9 +70,9 @@
             <Setter Property="Margin" Value="5 5 0 5" />
         </Style>
 
-        <Style TargetType="Control"
+        <Style TargetType="ComboBox"
                x:Key="SettingsHostStyle"
-               BasedOn="{StaticResource {x:Type Control}}">
+               BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="26" />
             <Setter Property="Grid.Column" Value="1" />
@@ -82,17 +82,15 @@
             <Setter Property="IsReadOnly" Value="True" />
         </Style>
 
-      <!--<Style TargetType="TextBox"
-             x:Key="SettingsHostStyle"
-             BasedOn="{StaticResource {x:Type ComboBox}}">
+      <Style TargetType="TextBox"
+             x:Key="SettingsHostTextStyle"
+             BasedOn="{StaticResource {x:Type TextBox}}">
         <Setter Property="Foreground" Value="White" />
         <Setter Property="FontSize" Value="26" />
         <Setter Property="Grid.Column" Value="1" />
         <Setter Property="Height" Value="40" />
         <Setter Property="Margin" Value="0 5 0 5" />
-        <Setter Property="IsEditable" Value="True" />
-        <Setter Property="IsReadOnly" Value="True" />
-      </Style>-->
+      </Style>
       
         <Style TargetType="Label"
                x:Key="SettingsClientStyle"
