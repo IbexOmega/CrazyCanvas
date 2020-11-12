@@ -20,7 +20,6 @@
 #include "Match/Match.h"
 
 #include <string>
-#include "..\..\Include\GUI\HUDGUI.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
