@@ -236,6 +236,8 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 
 	Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
 	pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
+
+	m_GameSettings = packet;
 }
 
 void LobbyGUI::AddSettingComboBox(
