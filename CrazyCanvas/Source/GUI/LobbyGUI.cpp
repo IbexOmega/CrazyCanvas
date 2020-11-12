@@ -392,11 +392,11 @@ void LobbyGUI::OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::Ro
 	if (strcmp(m_GameSettings.ServerName, pTextBox->GetText()) != 0) 
 	{
 		strcpy(m_GameSettings.ServerName, pTextBox->GetText());
-	}
 
-	if (m_IsInitiated)
-	{
-		ClientHelper::Send(m_GameSettings);
+		if (m_IsInitiated)
+		{
+			ClientHelper::Send(m_GameSettings);
+		}
 	}
 }
 
