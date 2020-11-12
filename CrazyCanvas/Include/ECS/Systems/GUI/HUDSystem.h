@@ -54,5 +54,5 @@ private:
 	LambdaEngine::TArray<bool> m_DeferredEnemyHitEvents;
 	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;
 	
-	uint32	m_LocalTeamIndex	= UINT32_MAX;
+	uint32 m_LocalTeamIndex = UINT32_MAX;
 };

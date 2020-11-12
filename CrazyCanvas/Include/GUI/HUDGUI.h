@@ -99,5 +99,7 @@ private:
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
 
-	bool	m_ScoreboardVisible	= false;
+	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
+
+	bool m_ScoreboardVisible = false;
 };

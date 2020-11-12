@@ -37,7 +37,7 @@ HUDGUI::HUDGUI() :
 
 HUDGUI::~HUDGUI()
 {
-
+	m_PlayerGrids.clear();
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -214,6 +214,7 @@ void HUDGUI::DisplayScoreboardMenu(bool visible)
 void HUDGUI::AddPlayer(const Player& newPlayer)
 {
 	Ptr<Grid> pGrid = *new Grid();
+	m_PlayerGrids[newPlayer.GetUID()] = pGrid;
 
 	pGrid->SetName(std::to_string(newPlayer.GetUID()).c_str());
 	FrameworkElement::GetView()->GetContent()->RegisterName(pGrid->GetName(), pGrid);
@@ -276,7 +277,13 @@ void HUDGUI::AddPlayer(const Player& newPlayer)
 
 void HUDGUI::RemovePlayer(const Player& player)
 {
-	Grid* pGrid = FrameworkElement::FindName<Grid>(std::to_string(player.GetUID()).c_str());
+	if (!m_PlayerGrids.contains(player.GetUID()))
+	{
+		LOG_WARNING("[HUDGUI]: Tried to delete \"%s\", but could not find player UID.\n\tUID: %lu",
+			player.GetName().c_str(), player.GetUID());
+		return;
+	}
+	Grid* pGrid = m_PlayerGrids[player.GetUID()];
 
 	if (!pGrid)
 	{
@@ -284,6 +291,8 @@ void HUDGUI::RemovePlayer(const Player& player)
 			player.GetName().c_str(), player.GetUID());
 		return;
 	}
+
+	m_PlayerGrids.erase(player.GetUID());
 
 	if (player.GetTeam() == 0)
 	{
@@ -293,6 +302,11 @@ void HUDGUI::RemovePlayer(const Player& player)
 	{
 		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
 	}
+	else
+	{
+		LOG_WARNING("[HUDGUI]: Tried to remove player with unknown team. Playername: %s, team: %d", player.GetName().c_str(), player.GetTeam());
+	}
+
 }
 
 void HUDGUI::UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value)
@@ -347,13 +361,12 @@ void HUDGUI::AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String
 
 void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 {
-	Grid* pGrid = FrameworkElement::FindName<Grid>(std::to_string(UID).c_str());
-
-	if (!pGrid)
+	if (!m_PlayerGrids.contains(UID))
 	{
 		LOG_WARNING("[HUDGUI]: Player with UID: &lu not found!", UID);
 		return;
 	}
+	Grid* pGrid = m_PlayerGrids[UID];
 
 	Label* nameLabel = static_cast<Label*>(pGrid->GetChildren()->Get(0));
 
@@ -388,8 +401,6 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 
 void HUDGUI::InitGUI()
 {
-	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
-
 	m_GUIState.Health			= m_GUIState.MaxHealth;
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
