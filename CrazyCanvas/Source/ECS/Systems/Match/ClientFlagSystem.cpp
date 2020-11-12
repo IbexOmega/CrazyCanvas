@@ -7,6 +7,7 @@
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -42,11 +43,10 @@ void ClientFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		const CharacterColliderComponent& playerCollisionComponent = pECS->GetConstComponent<CharacterColliderComponent>(playerEntity);
+		OffsetComponent& flagOffsetComponent = pECS->GetComponent<OffsetComponent>(flagEntity);
+		ParentComponent& flagParentComponent = pECS->GetComponent<ParentComponent>(flagEntity);
 
-		ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
-		OffsetComponent& flagOffsetComponent				= pECS->GetComponent<OffsetComponent>(flagEntity);
-
-		//Set Flag Carrier (Parent)
+		// Attach Flag to player
 		flagParentComponent.Attached	= true;
 		flagParentComponent.Parent		= playerEntity;
 
@@ -77,6 +77,10 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 		ParentComponent& flagParentComponent		= pECS->GetComponent<ParentComponent>(flagEntity);
 		PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
+		AnimationAttachedComponent& flagAnimAttachedComponent = pECS->GetComponent<AnimationAttachedComponent>(flagEntity);
+
+		// Reset Flag orientation
+		flagAnimAttachedComponent.Transform = glm::mat4(1.0f);
 
 		//Set Flag Carrier (None)
 		flagParentComponent.Attached	= false;
