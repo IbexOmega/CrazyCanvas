@@ -389,10 +389,10 @@ void LobbyGUI::OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::Ro
 {
 	Noesis::TextBox* pTextBox = static_cast<TextBox*>(pSender);
 
-	if (strcmp(m_GameSettings.ServerName, pTextBox->GetText()) != 0) {
+	if (strcmp(m_GameSettings.ServerName, pTextBox->GetText()) != 0) 
+	{
 		strcpy(m_GameSettings.ServerName, pTextBox->GetText());
 	}
-
 
 	if (m_IsInitiated)
 	{

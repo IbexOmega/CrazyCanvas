@@ -99,6 +99,7 @@
             <Setter Property="Grid.Column" Value="1" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Height" Value="50" />
         </Style>
 
         <Style TargetType="Label"
