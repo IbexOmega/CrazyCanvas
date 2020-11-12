@@ -69,6 +69,7 @@ ServerState::~ServerState()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
+	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
 }
 
 void ServerState::Init()
@@ -77,23 +78,13 @@ void ServerState::Init()
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
+	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
 	m_MeshPaintHandler.Init();
 	m_MultiplayerServer.InitInternal();
-
-	// Load Match
-	{
-		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
-
-		MatchDescription matchDescription =
-		{
-			.LevelHash = levelHashes[0]
-		};
-		Match::CreateMatch(&matchDescription);
-	}
 
 	ServerSystem::GetInstance().Start();
 }
@@ -151,6 +142,48 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 	else
 	{
 		LOG_ERROR("Unauthorised Client tried to exectute a server command!");
+	}
+
+	return true;
+}
+
+bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+
+	EGameState gameState = event.pPlayer->GetState();
+
+	if (gameState == GAME_STATE_LOADING)
+	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
+		// Load Match
+		{
+			const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+			MatchDescription matchDescription =
+			{
+				.LevelHash = levelHashes[m_GameSettings.MapID]
+			};
+			Match::CreateMatch(&matchDescription);
+			Match::BeginLoading();
+		}
+	}
+	else if (gameState == GAME_STATE_LOADED)
+	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
+		Match::StartMatch();
 	}
 
 	return true;

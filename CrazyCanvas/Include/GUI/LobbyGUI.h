@@ -50,6 +50,8 @@ public:
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
+	const PacketGameSettings& GetSettings() const;
+
 private:
 	// Helpers
 	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);

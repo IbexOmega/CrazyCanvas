@@ -10,5 +10,6 @@ struct PacketPlayerAliveChanged
 	uint64 UID;
 	bool IsDead;
 	uint8 Deaths;
+	uint64 KillerUID = 0;
 };
 #pragma pack(pop)
