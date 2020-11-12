@@ -3,17 +3,15 @@
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
 #include "../Helpers.glsl"
-
-#define MAX_SPHERE_COUNT 10
+#include "MCTables.glsl"
 
 layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
 
 layout(push_constant) uniform PushConstants
 {
-	// The grid is uniform, i.e. the cell count is GridWidth^3
-	uint GridWidth;
+	vec4 SpherePositions[MAX_SPHERE_COUNT];
+	uint GridWidth; // The grid is cubic, i.e. the corner count is GridWidth^3
 	uint SphereCount;
-	vec3 SpherePositions[MAX_SPHERE_COUNT];
 } u_PC;
 
 layout(binding = 0, set = 0) restrict writeonly buffer Densities
@@ -31,13 +29,13 @@ void main()
 	}
 
 	// Use threadID to calculate the corner's position
-	const ivec3 cornerID = { threadID % u_PC.GridWidth, threadID % gridWidthSquared, threadID / gridWidthSquared };
-	const vec3 position = cornerID / ivec3(u_PC.GridWidth);
+	const uvec3 cellID = { threadID % u_PC.GridWidth, (threadID / u_PC.GridWidth) % u_PC.GridWidth, threadID / gridWidthSquared };
+	const vec3 position = cellID / vec3(float(u_PC.GridWidth - 1));
 
-	float density = -1.0;
+	float density = 0.0;
 	for (uint sphereIdx = 0; sphereIdx < u_PC.SphereCount; sphereIdx++)
 	{
-		density += 1.0 / length(position - u_PC.SpherePositions[sphereIdx]);
+		density += length(position - u_PC.SpherePositions[sphereIdx].xyz);
 	}
 
 	b_Densities.Val[threadID] = density;

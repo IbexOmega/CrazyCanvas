@@ -6,7 +6,8 @@
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/RenderGraph.h"
 
-#define GRID_WIDTH 10
+#define GRID_WIDTH 3
+#define MAX_SPHERES_PER_GRID 7
 
 namespace LambdaEngine
 {
@@ -22,16 +23,16 @@ namespace LambdaEngine
 // GridConstantRange contains data that is sent to the compute shader
 struct GridConstantRange
 {
-	// The grid is uniform, i.e. the cell count is GridWidth^3
-	uint32 GridWidth;
+	glm::vec4 SpherePositions[MAX_SPHERES_PER_GRID];
+	uint32 GridWidth;	// The grid is cubic, i.e. the corner count is GridWidth^3
 	uint32 SphereCount;
-	glm::vec3 SpherePositions[10];
 };
 
 struct MarchingCubesGrid
 {
 	GridConstantRange GPUData;
-	glm::vec3 SphereVelocities[10];
+	glm::vec3 SphereVelocities[MAX_SPHERES_PER_GRID];
+	LambdaEngine::Buffer* pDensityBuffer;
 	// pTriangleCountBuffer contains a uint32 that is atomically added when a triangle is added to the mesh
 	LambdaEngine::Buffer* pTriangleCountBuffer;
 	LambdaEngine::DescriptorSet* pDescriptorSet;
@@ -69,7 +70,7 @@ private:
 	bool CreateCommonMesh();
 	bool CreateDescriptorHeap();
 	bool CreateCommandLists(const LambdaEngine::CustomRendererRenderGraphInitDesc* pPreInitDesc);
-	bool CreatePipeline();
+	bool CreatePipelines();
 	// Subscribes to projectile entities
 	void SubscribeToProjectiles();
 
@@ -85,11 +86,12 @@ private:
 	const LambdaEngine::GraphicsDevice* m_pGraphicsDevice = nullptr;
 
 	LambdaEngine::TSharedRef<LambdaEngine::PipelineLayout> m_PipelineLayout = nullptr;
-	LambdaEngine::TSharedRef<LambdaEngine::PipelineState> m_Pipeline = nullptr;
+	LambdaEngine::TSharedRef<LambdaEngine::PipelineState> m_PipelineDensityGen = nullptr;
+	LambdaEngine::TSharedRef<LambdaEngine::PipelineState> m_PipelineMeshGen = nullptr;
 	LambdaEngine::TSharedRef<LambdaEngine::DescriptorHeap> m_DescriptorHeap = nullptr;
 
-	LambdaEngine::CommandAllocator** m_ppComputeCommandAllocators = nullptr;
-	LambdaEngine::CommandList** m_ppComputeCommandLists = nullptr;
+	LambdaEngine::TArray<LambdaEngine::TSharedRef<LambdaEngine::CommandAllocator>> m_ComputeCommandAllocators;
+	LambdaEngine::TArray<LambdaEngine::TSharedRef<LambdaEngine::CommandList>> m_ComputeCommandLists;
 
 	GUID_Lambda m_DensityShaderGUID = GUID_NONE;
 	GUID_Lambda m_MeshGenShaderGUID = GUID_NONE;

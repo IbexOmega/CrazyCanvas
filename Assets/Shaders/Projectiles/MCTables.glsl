@@ -1,13 +1,17 @@
 #ifndef MC_TABLES
 #define MC_TABLES
 
+#define MAX_SPHERE_COUNT 7
+#define MAX_TRIANGLES_PER_CELL 5
+#define SPHERE_RADIUS 0.8
+
 struct SEdge
 {
 	int CornerIndexA;
 	int CornerIndexB;
 };
 
-const ivec3 g_CaseToEdgeList[256][5] =
+const ivec3 g_CaseToEdgeList[256][MAX_TRIANGLES_PER_CELL] =
 {
 	{ { 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 } },
 	{ { 0,  8,  3 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 } },

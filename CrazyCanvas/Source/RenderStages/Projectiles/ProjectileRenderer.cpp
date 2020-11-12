@@ -74,7 +74,7 @@ bool ProjectileRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc
 		return false;
 	}
 
-	if (!CreatePipeline())
+	if (!CreatePipelines())
 	{
 		LOG_ERROR("[ProjectileRenderer]: Failed to create pipeline");
 		return false;
@@ -87,7 +87,6 @@ bool ProjectileRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc
 	}
 
 	SubscribeToProjectiles();
-	// OnProjectileCreated(0);
 
 	return true;
 }
@@ -104,6 +103,15 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 		ASSERT(drawArg.EntityIDs.GetSize() == 1);
 
 		const Entity entity = drawArg.EntityIDs.GetFront();
+		const uint64 gridCorners = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
+
+		const BufferDesc densityBufferDesc =
+		{
+			.DebugName		= "Projectile Density Buffer",
+			.MemoryType 	= EMemoryType::MEMORY_TYPE_GPU,
+			.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
+			.SizeInBytes	= gridCorners * sizeof(float32)
+		};
 
 		const BufferDesc triangleCountBufferDesc =
 		{
@@ -117,29 +125,32 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 		{
 			.GPUData =
 			{
-				.GridWidth = GRID_WIDTH,
-				.SphereCount = 1,
 				.SpherePositions =
 				{
-					{ 0.5f, 0.5f, 0.5f }
-				}
+					{ 0.5f, 0.5f, 0.5f, 0.0f }
+				},
+				.GridWidth = GRID_WIDTH,
+				.SphereCount = 1
 			},
 			.SphereVelocities =
 			{
 				{ 0.0f, 0.0f, 0.0f }
 			},
+			.pDensityBuffer = m_pGraphicsDevice->CreateBuffer(&densityBufferDesc),
 			.pTriangleCountBuffer = m_pGraphicsDevice->CreateBuffer(&triangleCountBufferDesc),
 			.pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get())
 		};
 
-		const uint64 gridCorners = marchingCubesGrid.GPUData.GridWidth * marchingCubesGrid.GPUData.GridWidth * marchingCubesGrid.GPUData.GridWidth;
-		const uint64 vertexBufferSize = gridCorners * sizeof(Vertex);
+		constexpr const uint64 vertexBufferSize = gridCorners * sizeof(Vertex);
 
 		// Write descriptors
-		const Buffer* ppDescriptorSetBuffers[2] = { drawArg.pVertexBuffer, marchingCubesGrid.pTriangleCountBuffer };
-		const uint64 pOffsets[2] = { 0, 0 };
-		const uint64 pSizes[2] = { vertexBufferSize, triangleCountBufferDesc.SizeInBytes };
-		marchingCubesGrid.pDescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, 2, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+		constexpr const uint32 descriptorCount = 3;
+		const Buffer* ppDescriptorSetBuffers[descriptorCount] = { marchingCubesGrid.pDensityBuffer, drawArg.pVertexBuffer, marchingCubesGrid.pTriangleCountBuffer };
+		const uint64 pOffsets[descriptorCount] = { 0, 0, 0 };
+		const uint64 pSizes[descriptorCount] = { densityBufferDesc.SizeInBytes, vertexBufferSize, triangleCountBufferDesc.SizeInBytes };
+		marchingCubesGrid.pDescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, descriptorCount, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+
+		drawArg.pVertexBuffer->SetName("Projectile Vertex Buffer");
 
 		m_MarchingCubesGrids.PushBack(marchingCubesGrid, entity);
 	}
@@ -154,15 +165,31 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 	if (!m_MarchingCubesGrids.Empty())
 	{
-		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
-		// const SecondaryCommandListBeginDesc beginDesc = {};
-		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
+		CommandList* pCommandList = m_ComputeCommandLists[modFrameIndex].Get();
+		m_ComputeCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
-		pCommandList->BindComputePipeline(m_Pipeline.Get());
+		pCommandList->BindComputePipeline(m_PipelineDensityGen.Get());
 
 		const uint32 initialTriangleCount = 0;
 
+		// Generate density data
+		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
+		{
+			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.pDescriptorSet, m_PipelineLayout.Get(), 0);
+
+			// Figure out the minimum amount of work groups to dispatch one thread for each cell
+			const uint32 gridWidth = marchingCubesGrid.GPUData.GridWidth;
+			const uint32 cellCount = gridWidth * gridWidth * gridWidth;
+			const uint32 workGroupCount = (uint32)std::ceilf((float32)cellCount / m_WorkGroupSize);
+
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &marchingCubesGrid.GPUData, sizeof(GridConstantRange), 0);
+			pCommandList->Dispatch(workGroupCount, 1, 1);
+		}
+
+		pCommandList->BindComputePipeline(m_PipelineMeshGen.Get());
+
+		// Generate meshes using the density data
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
 			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.pDescriptorSet, m_PipelineLayout.Get(), 0);
@@ -182,6 +209,7 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 		}
 
 		pCommandList->End();
+		(*ppFirstExecutionStage) = pCommandList;
 	}
 }
 
@@ -194,8 +222,7 @@ void ProjectileRenderer::CreatePipelineLayout()
 		.OffsetInBytes		= 0
 	};
 
-	// Triangle buffer
-	const DescriptorBindingDesc triangleBufferDesc =
+	const DescriptorBindingDesc densityBufferDesc =
 	{
 		.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER,
 		.DescriptorCount	= 1,
@@ -203,8 +230,7 @@ void ProjectileRenderer::CreatePipelineLayout()
 		.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER
 	};
 
-	// Triangle counter buffer
-	const DescriptorBindingDesc triangleCounterDesc =
+	const DescriptorBindingDesc triangleBufferDesc =
 	{
 		.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER,
 		.DescriptorCount	= 1,
@@ -212,9 +238,17 @@ void ProjectileRenderer::CreatePipelineLayout()
 		.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER
 	};
 
+	const DescriptorBindingDesc triangleCounterDesc =
+	{
+		.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER,
+		.DescriptorCount	= 1,
+		.Binding			= 2,
+		.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER
+	};
+
 	const DescriptorSetLayoutDesc descriptorSetLayoutDesc =
 	{
-		.DescriptorBindings = { triangleBufferDesc, triangleCounterDesc }
+		.DescriptorBindings = { densityBufferDesc, triangleBufferDesc, triangleCounterDesc }
 	};
 
 	const PipelineLayoutDesc pipelineLayoutDesc =
@@ -236,7 +270,10 @@ bool ProjectileRenderer::CreateShaders()
 
 bool ProjectileRenderer::CreateCommonMesh()
 {
-	constexpr const uint32 vertexCount = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
+	constexpr const uint32 maxTrianglesPerCell = 5;
+	constexpr const uint32 verticesPerTriangle = 3;
+	constexpr const uint32 vertexCount = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * maxTrianglesPerCell * verticesPerTriangle;
+
 	Vertex vertices[vertexCount];
 	memset(vertices, 0, sizeof(Vertex) * vertexCount);
 
@@ -276,26 +313,26 @@ bool ProjectileRenderer::CreateCommandLists(const CustomRendererRenderGraphInitD
 {
 	const uint32 backBufferCount = pPreInitDesc->BackBufferCount;
 
-	m_ppComputeCommandAllocators = DBG_NEW CommandAllocator * [backBufferCount];
-	m_ppComputeCommandLists = DBG_NEW CommandList * [backBufferCount];
+	m_ComputeCommandAllocators.Resize(backBufferCount);
+	m_ComputeCommandLists.Resize(backBufferCount);
 
 	for (uint32 b = 0; b < backBufferCount; b++)
 	{
-		m_ppComputeCommandAllocators[b] = m_pGraphicsDevice->CreateCommandAllocator("Projectile Renderer Compute Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-		if (!m_ppComputeCommandAllocators[b])
+		m_ComputeCommandAllocators[b] = m_pGraphicsDevice->CreateCommandAllocator("Projectile Renderer Compute Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		if (!m_ComputeCommandAllocators[b])
 		{
 			return false;
 		}
 
 		const CommandListDesc commandListDesc =
 		{
-			.DebugName			= "Projectile Renderer Render Command List " + std::to_string(b),
+			.DebugName			= "Projectile Renderer Command List " + std::to_string(b),
 			.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY,
 			.Flags				= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT
 		};
 
-		m_ppComputeCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ppComputeCommandAllocators[b], &commandListDesc);
-		if (!m_ppComputeCommandLists[b])
+		m_ComputeCommandLists[b] = m_pGraphicsDevice->CreateCommandList(m_ComputeCommandAllocators[b].Get(), &commandListDesc);
+		if (!m_ComputeCommandLists[b])
 		{
 			return false;
 		}
@@ -304,7 +341,7 @@ bool ProjectileRenderer::CreateCommandLists(const CustomRendererRenderGraphInitD
 	return true;
 }
 
-bool ProjectileRenderer::CreatePipeline()
+bool ProjectileRenderer::CreatePipelines()
 {
 	/*	Set the work group size. It could be larger (x * y * z), but smaller and more work groups allows for more
 		concurrency, hence it is faster. */
@@ -312,25 +349,51 @@ bool ProjectileRenderer::CreatePipeline()
 	m_pGraphicsDevice->QueryDeviceFeatures(&deviceFeatures);
 	m_WorkGroupSize = deviceFeatures.MaxComputeWorkGroupSize[0];
 
-	const ComputePipelineStateDesc pipelineStateDesc =
+	// Create density generation pipeline
 	{
-		.DebugName = "Marching Cubes Pipeline",
-		.pPipelineLayout = m_PipelineLayout.Get(),
-		.Shader =
+		const ComputePipelineStateDesc pipelineStateDesc =
 		{
-			.pShader = ResourceManager::GetShader(m_DensityShaderGUID),
-			.ShaderConstants =
+			.DebugName = "Marching Cubes Density Generation Pipeline",
+			.pPipelineLayout = m_PipelineLayout.Get(),
+			.Shader =
 			{
-				// local_size_x
+				.pShader = ResourceManager::GetShader(m_DensityShaderGUID),
+				.ShaderConstants =
 				{
-					.Integer = (int32)m_WorkGroupSize
+					// local_size_x
+					{
+						.Integer = (int32)m_WorkGroupSize
+					}
 				}
 			}
-		}
-	};
+		};
 
-	m_Pipeline = m_pGraphicsDevice->CreateComputePipelineState(&pipelineStateDesc);
-	return m_Pipeline.Get();
+		m_PipelineDensityGen = m_pGraphicsDevice->CreateComputePipelineState(&pipelineStateDesc);
+	}
+
+	// Create mesh generation pipeline
+	{
+		const ComputePipelineStateDesc pipelineStateDesc =
+		{
+			.DebugName = "Marching Cubes Mesh Generation Pipeline",
+			.pPipelineLayout = m_PipelineLayout.Get(),
+			.Shader =
+			{
+				.pShader = ResourceManager::GetShader(m_MeshGenShaderGUID),
+				.ShaderConstants =
+				{
+					// local_size_x
+					{
+						.Integer = (int32)m_WorkGroupSize
+					}
+				}
+			}
+		};
+
+		m_PipelineMeshGen = m_pGraphicsDevice->CreateComputePipelineState(&pipelineStateDesc);
+	}
+
+	return m_PipelineDensityGen.Get() && m_PipelineMeshGen.Get();
 }
 
 void ProjectileRenderer::SubscribeToProjectiles()
@@ -365,11 +428,17 @@ void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
-	UNREFERENCED_VARIABLE(entity);
+	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids.IndexID(entity);
+	SAFEDELETE(marchingCubesGrid.pDensityBuffer);
+	SAFEDELETE(marchingCubesGrid.pTriangleCountBuffer);
+	SAFEDELETE(marchingCubesGrid.pDescriptorSet);
+
+	m_MarchingCubesGrids.Pop(entity);
 }
 
 void ProjectileRenderer::DeleteMarchingCubesGrid(MarchingCubesGrid& marchingCubesGrid)
 {
+	SAFEDELETE(marchingCubesGrid.pDensityBuffer);
 	SAFEDELETE(marchingCubesGrid.pTriangleCountBuffer);
 	SAFEDELETE(marchingCubesGrid.pDescriptorSet);
 }

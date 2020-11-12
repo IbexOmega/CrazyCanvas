@@ -2,34 +2,28 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
+#include "../Defines.glsl"
 #include "../Helpers.glsl"
 #include "MCTables.glsl"
 
-#define MAX_SPHERE_COUNT 10
+#define VERTICES_PER_TRIANGLE 3
 
 // In a grid with the size (n, n, n), threads should have a grid layout of (n-1, n-1, n-1)
 layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
 
-struct SMCVertex
-{
-	vec3 Position;
-	vec3 Normal;
-};
-
 struct STriangle
 {
-	SMCVertex Vertices[3];
+	SVertex Vertices[3];
 };
 
 layout(push_constant) uniform PushConstants
 {
-	// The grid is uniform, i.e. the cell count is GridWidth^3
-	uint GridWidth;
+	vec4 SpherePositions[MAX_SPHERE_COUNT];
+	uint GridWidth;	// The grid is cubic, i.e. the corner count is GridWidth^3
 	uint SphereCount;
-	vec3 SpherePositions[MAX_SPHERE_COUNT];
 } u_PC;
 
-layout(binding = 0, set = 0) restrict writeonly buffer Densities
+layout(binding = 0, set = 0) restrict readonly buffer Densities
 {
 	float Val[];
 } b_Densities;
@@ -71,31 +65,30 @@ void main()
 	}
 
 	// Use threadID to calculate the cell's position
-	const ivec3 cellID = { threadID % gridWidthInCells, threadID % gridWidthInCellsSquared, threadID / gridWidthInCellsSquared };
-	const vec3 position = cellID / ivec3(gridWidthInCells);
+	const uvec3 cellID = { threadID % gridWidthInCells, (threadID / gridWidthInCells) % gridWidthInCellsSquared, threadID / gridWidthInCellsSquared };
+	const vec3 position = cellID / vec3(float(gridWidthInCells - 1));
 
 	// The width/height/depth of a cell
 	const float cellWidth = 1.0 / u_PC.GridWidth;
 
+	// A node's .w component is its density value
 	vec4 nodes[8];
 	DefineNodes(position, cellWidth, u_PC.GridWidth, threadID, nodes);
 
 	/*	The 8 first (right-most) bits represent one node each. If the node's influence is greater than or equal to 1,
 		the bit is 1. */
 	uint caseMask = 0;
+	const float isoValue = SPHERE_RADIUS * u_PC.SphereCount;
 	for (uint nodeIdx = 0; nodeIdx < 8; nodeIdx++)
 	{
-		caseMask |= int(nodes[nodeIdx].w >= 0.0) << nodeIdx;
+		caseMask |= uint(nodes[nodeIdx].w <= isoValue) << nodeIdx;
 	}
 
-	// Use the case mask to retrieve the edges on which vertices will be generated
-	// const uint numTriangles = g_CaseToNumTriangles[caseMask];
-
 	/*	Each cell has 5 triangles at most. The triangles that do not exist have all their vertex positions as
-		(-1, -1, -1). These non-existing triangles are placed inside the center of sphere[0] to hide them. This is also
-		motivated by the fact that the amount of vertices cannot vary because of RayTracing, so non-existing triangles
-		can't be omitted entirely. */
-	for (uint triangleNr = 0; triangleNr < 5; triangleNr++)
+		(-1, -1, -1). These non-existing triangles are placed inside the center of sphere[0] to hide them. This is
+		motivated by the fact that the amount of vertices cannot vary because of ray tracing, so non-existing triangles
+		can't be omitted. */
+	for (uint triangleNr = 0; triangleNr < MAX_TRIANGLES_PER_CELL; triangleNr++)
 	{
 		STriangle triangle;
 		const ivec3 edgeIndices = g_CaseToEdgeList[caseMask][triangleNr];
@@ -107,15 +100,37 @@ void main()
 		{
 			const SEdge edge = g_Edges[edgeIndices[edgeNr]];
 
+			// If the triangle does not exist, use a default position
+			vec3 defaultPosition = u_PC.SpherePositions[0].xyz;
+			defaultPosition[edgeNr] += EPSILON;
+
 			const vec3 edgeInterpPos = (nodes[edge.CornerIndexA].xyz + nodes[edge.CornerIndexB].xyz) * 0.5;
-			triangle.Vertices[edgeNr].Position = mix(edgeInterpPos, u_PC.SpherePositions[0], triangleExists);
+			triangle.Vertices[edgeNr].Position = vec4(mix(defaultPosition, edgeInterpPos, triangleExists), 0.0);
 		}
 
-		const vec3 normal = normalize(cross(triangle.Vertices[1].Position - triangle.Vertices[0].Position, triangle.Vertices[2].Position - triangle.Vertices[0].Position));
+		const vec3 deltaPos1 = triangle.Vertices[1].Position.xyz - triangle.Vertices[0].Position.xyz;
+		const vec3 deltaPos2 = triangle.Vertices[2].Position.xyz - triangle.Vertices[0].Position.xyz;
+
+		const vec4 normal = vec4(normalize(cross(deltaPos1, deltaPos2)), float(caseMask));
 		triangle.Vertices[0].Normal = normal;
 		triangle.Vertices[1].Normal = normal;
 		triangle.Vertices[2].Normal = normal;
 
-		b_Triangles.Val[atomicAdd(b_TriangleCount.Val, 1)] = triangle;
+		const vec4 texCoords = vec4(normal.xy * 0.5 + vec2(0.5), float(edgeIndices[0]), triangleExists);
+		triangle.Vertices[0].TexCoord = texCoords;
+		triangle.Vertices[1].TexCoord = texCoords;
+		triangle.Vertices[2].TexCoord = texCoords;
+
+		/* Calculate tangent for the triangle, TODO: unique tangent (and all other attributes) for each vertex */
+		const vec2 deltaUV1 = triangle.Vertices[1].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
+		const vec2 deltaUV2 = triangle.Vertices[2].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
+
+		const float r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+		const vec4 tangent = vec4((deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r, float(threadID));
+		triangle.Vertices[0].Tangent = tangent;
+		triangle.Vertices[1].Tangent = tangent;
+		triangle.Vertices[2].Tangent = tangent;
+
+		b_Triangles.Val[threadID * MAX_TRIANGLES_PER_CELL * VERTICES_PER_TRIANGLE + triangleNr] = triangle;
 	}
 }
