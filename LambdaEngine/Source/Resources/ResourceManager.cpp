@@ -20,6 +20,8 @@
 
 #include "Containers/TUniquePtr.h"
 
+#include <assimp/postprocess.h>
+
 #include <utility>
 #include <unordered_set>
 
@@ -286,7 +288,24 @@ namespace LambdaEngine
 			meshGUID = loadedMeshGUID->second;
 		}
 
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, nullptr);
+		int32 assimpFlags =
+			aiProcess_FlipWindingOrder |
+			aiProcess_FlipUVs |
+			aiProcess_CalcTangentSpace |
+			aiProcess_FindInstances |
+			aiProcess_GenSmoothNormals |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_ImproveCacheLocality |
+			aiProcess_LimitBoneWeights |
+			aiProcess_RemoveRedundantMaterials |
+			aiProcess_Triangulate |
+			aiProcess_GenUVCoords |
+			aiProcess_FindDegenerates |
+			aiProcess_OptimizeMeshes |
+			aiProcess_OptimizeGraph |
+			aiProcess_FindInvalidData;
+
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, nullptr, assimpFlags);
 
 		//Spinlock
 		{
@@ -309,8 +328,25 @@ namespace LambdaEngine
 			}
 		}
 
+		int32 assimpFlags =
+			aiProcess_FlipWindingOrder |
+			aiProcess_FlipUVs |
+			aiProcess_CalcTangentSpace |
+			aiProcess_FindInstances |
+			aiProcess_GenSmoothNormals |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_ImproveCacheLocality |
+			aiProcess_LimitBoneWeights |
+			aiProcess_RemoveRedundantMaterials |
+			aiProcess_Triangulate |
+			aiProcess_GenUVCoords |
+			aiProcess_FindDegenerates |
+			aiProcess_OptimizeMeshes |
+			aiProcess_OptimizeGraph |
+			aiProcess_FindInvalidData;
+
 		TArray<Animation*> rawAnimations;
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, &rawAnimations);
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, &rawAnimations, assimpFlags);
 
 		//Spinlock
 		{
@@ -349,7 +385,33 @@ namespace LambdaEngine
 		TArray<LoadedMaterial*> materials;
 		TArray<LoadedTexture*> textures;
 		TArray<TextureView*> textureViewsToDelete;
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, nullptr);
+
+		int32 assimpFlags =
+			aiProcess_FlipWindingOrder |
+			aiProcess_FlipUVs |
+			aiProcess_CalcTangentSpace |
+			aiProcess_FindInstances |
+			aiProcess_FixInfacingNormals |
+			aiProcess_GenSmoothNormals |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_ImproveCacheLocality |
+			aiProcess_LimitBoneWeights |
+			aiProcess_RemoveRedundantMaterials |
+			aiProcess_Triangulate |
+			aiProcess_GenUVCoords |
+			aiProcess_FindDegenerates |
+			aiProcess_OptimizeMeshes |
+			aiProcess_OptimizeGraph |
+			aiProcess_FindInvalidData;
+
+			// Prevent crashes in assimp when using this flag
+			//String path = ConvertSlashes(filepath);
+			//if (path.find(".obj") == String::npos && path.find(".glb") == String::npos)
+			//{
+			//	assimpFlags |= aiProcess_PopulateArmatureData;
+			//}
+
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, nullptr, assimpFlags);
 
 		//Spinlock
 		{
@@ -428,11 +490,28 @@ namespace LambdaEngine
 			materialGUID = loadedMaterialGUID != s_MaterialNamesToGUIDs.end() ? loadedMaterialGUID->second : GUID_MATERIAL_DEFAULT;
 		}
 
+		int32 assimpFlags =
+			aiProcess_FlipWindingOrder |
+			aiProcess_FlipUVs |
+			aiProcess_CalcTangentSpace |
+			aiProcess_FindInstances |
+			aiProcess_GenSmoothNormals |
+			aiProcess_JoinIdenticalVertices |
+			aiProcess_ImproveCacheLocality |
+			aiProcess_LimitBoneWeights |
+			aiProcess_RemoveRedundantMaterials |
+			aiProcess_Triangulate |
+			aiProcess_GenUVCoords |
+			aiProcess_FindDegenerates |
+			aiProcess_OptimizeMeshes |
+			aiProcess_OptimizeGraph |
+			aiProcess_FindInvalidData;
+
 		TArray<Animation*> rawAnimations;
 		TArray<LoadedMaterial*> materials;
 		TArray<LoadedTexture*> textures;
 		TArray<TextureView*> textureViewsToDelete;
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, &rawAnimations);
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, &rawAnimations, assimpFlags);
 
 		//Spinlock
 		{
