@@ -2,11 +2,10 @@
 
 #include "Match/MatchBase.h"
 
-#include "Multiplayer/Packet/MultiplayerEvents.h"
-
 #include "Application/API/Events/NetworkEvents.h"
 #include "Events/PlayerEvents.h"
 #include "Events/MatchEvents.h"
+#include "Events/PacketEvents.h"
 
 #include "ECS/Entity.h"
 

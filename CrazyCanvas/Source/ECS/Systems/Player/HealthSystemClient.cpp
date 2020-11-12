@@ -76,17 +76,15 @@ bool HealthSystemClient::InitInternal()
 		SystemRegistration systemReg = {};
 		HealthSystem::CreateBaseSystemRegistration(systemReg);
 
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(
 		{
+			.pSubscriber = &m_LocalPlayerEntities,
+				.ComponentAccesses =
 			{
-				.pSubscriber = &m_LocalPlayerEntities,
-					.ComponentAccesses =
-				{
-					{ NDA, PlayerLocalComponent::Type() },
-				},
-				.ComponentGroups = { &playerGroup }
+				{ NDA, PlayerLocalComponent::Type() },
 			},
-		};
+			.ComponentGroups = { &playerGroup }
+		});
 
 		RegisterSystem(TYPE_NAME(HealthSystemClient), systemReg);
 	}
