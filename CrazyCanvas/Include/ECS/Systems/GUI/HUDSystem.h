@@ -33,7 +33,7 @@ public:
 	bool OnProjectileHit(const ProjectileHitEvent& event);
 	bool OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event);
 	bool OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event);
-	bool OnPlayerDeadUpdated(const PlayerDeadUpdatedEvent& event);
+	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 	bool OnGameOver(const GameOverEvent& event);
 
 private:

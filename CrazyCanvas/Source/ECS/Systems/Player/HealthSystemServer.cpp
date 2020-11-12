@@ -75,7 +75,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 	if (!m_EventsToProcess.IsEmpty())
 	{
-		ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
+		//ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
 
 		for (ProjectileHitEvent& event : m_EventsToProcess)
 		{
@@ -94,10 +94,11 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 					healthComponent.CurrentHealth -= HIT_DAMAGE;
 					if (healthComponent.CurrentHealth <= 0)
 					{
-						Entity entityProjectile = event.CollisionInfo0.Entity;
+						/*Entity entityProjectile = event.CollisionInfo0.Entity;
 						const ProjectileComponent& projectileComponent = pProjectileComponents->GetConstData(entityProjectile);
 
-						Match::KillPlayer(entity, projectileComponent.Owner);
+						Match::KillPlayer(entity, projectileComponent.Owner);*/
+						Match::KillPlayer(entity, UINT32_MAX);
 					}
 
 					LOG_INFO("Player damaged. Health=%d", healthComponent.CurrentHealth);
