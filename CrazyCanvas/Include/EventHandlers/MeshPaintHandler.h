@@ -26,7 +26,7 @@ private:
 		LambdaEngine::EPaintMode	PaintMode = LambdaEngine::EPaintMode::NONE;
 		LambdaEngine::ERemoteMode	RemoteMode = LambdaEngine::ERemoteMode::UNDEFINED;
 		LambdaEngine::ETeam			Team = LambdaEngine::ETeam::NONE;
-		float Angle;
+		uint32 Angle;
 	};
 
 private:
