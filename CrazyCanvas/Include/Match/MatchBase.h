@@ -40,9 +40,20 @@ public:
 
 	void ResetMatch();
 
-	virtual void KillPlayer(LambdaEngine::Entity playerEntity)
+	virtual void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
 	{
-		UNREFERENCED_VARIABLE(playerEntity);
+		UNREFERENCED_VARIABLE(entityToKill);
+		UNREFERENCED_VARIABLE(killedByEntity);
+	}
+
+	virtual void BeginLoading()
+	{
+
+	}
+
+	virtual void MatchStart()
+	{
+
 	}
 
 	FORCEINLINE bool HasBegun() const { return m_HasBegun; }

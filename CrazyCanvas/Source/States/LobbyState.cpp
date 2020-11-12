@@ -97,7 +97,7 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 	{
 		if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 		{
-			State* pStartingState = DBG_NEW PlaySessionState();
+			State* pStartingState = DBG_NEW PlaySessionState(m_LobbyGUI->GetSettings());
 			StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 		}
 	}

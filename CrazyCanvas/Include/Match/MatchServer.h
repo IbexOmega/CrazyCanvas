@@ -18,14 +18,15 @@ public:
 	~MatchServer();
 
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
-	virtual void KillPlayer(LambdaEngine::Entity playerEntity) override final;
+	virtual void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity) override final;
 
 protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 	virtual void FixedTickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
-	void MatchStart();
+	virtual void BeginLoading() override final;;
+	virtual void MatchStart() override final;;
 	void MatchBegin();
 
 	void SpawnPlayer(const Player& player);
@@ -36,10 +37,8 @@ protected:
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
 
 private:
-	void BeginLoading();
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
-	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);
 
 	void KillPlayerInternal(LambdaEngine::Entity playerEntity);
 

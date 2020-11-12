@@ -56,9 +56,19 @@ bool Match::ReleaseMatch()
 	return false;
 }
 
-void Match::KillPlayer(LambdaEngine::Entity playerEntity)
+void Match::StartMatch()
 {
-	s_pMatchInstance->KillPlayer(playerEntity);
+	s_pMatchInstance->MatchStart();
+}
+
+void Match::BeginLoading()
+{
+	s_pMatchInstance->BeginLoading();
+}
+
+void Match::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
+{
+	s_pMatchInstance->KillPlayer(entityToKill, killedByEntity);
 }
 
 void Match::Tick(LambdaEngine::Timestamp deltaTime)

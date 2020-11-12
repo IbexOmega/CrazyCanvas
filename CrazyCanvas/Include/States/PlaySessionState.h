@@ -16,12 +16,14 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "Multiplayer/Packet/PacketGameSettings.h"
+
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState(bool singlePlayer = false);
+	PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer = false);
 	~PlaySessionState();
 
 	void Init() override final;
@@ -40,6 +42,8 @@ public:
 
 private:
 	bool m_Singleplayer;
+
+	PacketGameSettings m_GameSettings;
 
 	/* Systems */
 	HUDSystem m_HUDSystem;
