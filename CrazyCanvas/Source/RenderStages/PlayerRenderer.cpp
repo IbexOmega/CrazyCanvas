@@ -366,6 +366,8 @@ namespace LambdaEngine
 				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
 
+				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
+
 				m_PlayerData.Clear();
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{

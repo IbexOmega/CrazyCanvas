@@ -359,7 +359,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(sleeping);
 
 		// Tick MeshPaintComponentOwner to release resources
-		MeshPaintComponentOwner::Tick(modFrameIndex);
+		MeshPaintComponentOwner::GetInstance()->Tick(modFrameIndex);
 
 		// Add a reset hit point at the end of the client collisions.
 		if (s_ShouldReset)

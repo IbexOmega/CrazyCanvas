@@ -16,18 +16,22 @@ namespace LambdaEngine
 		DECL_SINGLETON_CLASS(MeshPaintComponentOwner);
 
 		bool Init();
+		bool Release();
+
+		void Tick(uint64 modFrameIndex);
 
 	private:
-		static void MeshPaintDestructor(MeshPaintComponent& meshPaintComponent, Entity entity);
+		void ReleaseMeshPaintComponent(MeshPaintComponent& meshPaintComponent);
 
 	public:
 		FORCEINLINE static MeshPaintComponentOwner* GetInstance() { return &s_Instance; }
 
-		static void Tick(uint64 modFrameIndex);
+	private:
+		static void MeshPaintDestructor(MeshPaintComponent& meshPaintComponent, Entity entity);
 
 	private:
 		static MeshPaintComponentOwner s_Instance;
-		inline static TArray<DeviceChild*> s_ResourcesToRemove[BACK_BUFFER_COUNT];
-		inline static uint64 s_ModFrameIndex = 0;
+		TArray<DeviceChild*> m_ResourcesToRelease[BACK_BUFFER_COUNT];
+		uint64 m_ModFrameIndex = 0;
 	};
 }

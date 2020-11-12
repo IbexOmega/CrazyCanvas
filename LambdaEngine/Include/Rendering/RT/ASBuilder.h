@@ -79,6 +79,11 @@ namespace LambdaEngine
 		void UpdateInstanceTransform(uint32 instanceIndex, const glm::mat4& transform);
 
 		/*
+		* Finds the instance represented by instanceIndex and runs updateFunc for it.
+		*/
+		void UpdateInstance(uint32 instanceIndex, std::function<void(AccelerationStructureInstance&)> updateFunc);
+
+		/*
 		* Loops through each instance and runs updateFunc for it.
 		*/
 		void UpdateInstances(std::function<void(AccelerationStructureInstance&)> updateFunc);
@@ -92,7 +97,7 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool sleeping) override final;
 
-		AccelerationStructureInstance& GetInstance(uint32 instanceIndex);
+		const AccelerationStructureInstance& GetInstance(uint32 instanceIndex) const;
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final	{ return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final	{ return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
@@ -145,6 +150,6 @@ namespace LambdaEngine
 		TArray<DeviceChild*>* m_pResourcesToRemove = nullptr;
 
 		//Threading
-		SpinLock m_Lock;
+		mutable SpinLock m_Lock;
 	};
 }

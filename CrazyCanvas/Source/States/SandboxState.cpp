@@ -271,22 +271,22 @@ void SandboxState::Init()
 
 	// Emitter
 	{
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		pECS->AddComponent<ParticleEmitterComponent>(entity,
-			ParticleEmitterComponent{
-				.ParticleCount = 5,
-				.EmitterShape = EEmitterShape::TUBE,
-				.Velocity = 1.0f,
-				.Acceleration = 0.0f,
-				.BeginRadius = 0.5f,
-				.TileIndex = 16,
-				.AnimationCount = 4,
-				.FirstAnimationIndex = 16,
-				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
-			}
-		);
+		//Entity entity = pECS->CreateEntity();
+		//pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
+		//pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		//pECS->AddComponent<ParticleEmitterComponent>(entity,
+		//	ParticleEmitterComponent{
+		//		.ParticleCount = 5,
+		//		.EmitterShape = EEmitterShape::TUBE,
+		//		.Velocity = 1.0f,
+		//		.Acceleration = 0.0f,
+		//		.BeginRadius = 0.5f,
+		//		.TileIndex = 16,
+		//		.AnimationCount = 4,
+		//		.FirstAnimationIndex = 16,
+		//		.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+		//	}
+		//);
 	}
 
 
@@ -609,7 +609,18 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		if (!m_Entities.IsEmpty())
 		{
 			const uint32 numEntities = m_Entities.GetSize();
-			const uint32 index = Random::UInt32(0, numEntities-1);
+
+			static uint32 removeCounter = 0;
+			static uint32 removeIndices[] = {
+				3,
+				2,
+				0,
+				1,
+				0
+			};
+			const uint32 index = removeIndices[removeCounter++];
+
+			//const uint32 index = Random::UInt32(0, numEntities-1);
 			Entity entity = m_Entities[index];
 			m_Entities.Erase(m_Entities.Begin() + index);
 			ECSCore::GetInstance()->RemoveEntity(entity);
