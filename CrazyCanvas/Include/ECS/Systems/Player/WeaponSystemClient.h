@@ -11,13 +11,15 @@ public:
 	WeaponSystemClient() = default;
 	~WeaponSystemClient() = default;
 
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final;
 	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) override final;
 
-	virtual void Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity) override final;
+	virtual void Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam) override final;
 
 protected:
 	virtual bool InitInternal() override final;
-	virtual bool TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity) override final;
+
+	bool TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
 
 	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam) override final
 	{

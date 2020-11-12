@@ -41,8 +41,8 @@ namespace LambdaEngine
 		virtual IClientRemoteHandler* GetHandler() override;
 		virtual uint64 GetUID() const override;
 
-		bool SendUnreliableBroadcast(NetworkSegment* pPacket);
-		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr);
+		bool SendUnreliableBroadcast(NetworkSegment* pPacket, bool excludeMySelf = false);
+		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr, bool excludeMySelf = false);
 		const ClientMap& GetClients() const;
 		ServerBase* GetServer();
 

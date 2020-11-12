@@ -9,6 +9,8 @@
 #include "EventHandlers/MeshPaintHandler.h"
 #include "World/Level.h"
 
+#include "Multiplayer/Packet/PacketCreateLevelObject.h"
+
 class Level;
 struct WeaponFiredEvent;
 
@@ -30,7 +32,7 @@ private:
 	static void PrintBenchmarkResults();
 
 private:
-	bool OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event);
+	bool OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event);
 	bool OnWeaponFired(const WeaponFiredEvent& event);
 
 private:

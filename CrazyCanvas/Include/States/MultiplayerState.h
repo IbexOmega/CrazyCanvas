@@ -6,19 +6,19 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
-
 class MultiplayerState : public LambdaEngine::State
 {
 public:
 	MultiplayerState() = default;
 	~MultiplayerState();
 
+protected:
 	void Init() override final;
 
 	void Resume() override final {};
 	void Pause() override final {};
 
-	void Tick(LambdaEngine::Timestamp delta) override final;
+	void Tick(LambdaEngine::Timestamp delta) override;
 	void FixedTick(LambdaEngine::Timestamp delta) override;
 
 private:

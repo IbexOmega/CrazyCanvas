@@ -13,13 +13,13 @@
 
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
+#include "NsGui/Image.h"
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
 #include "NsGui/TabItem.h"
 #include "NsGui/TextBlock.h"
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
-#include "NsGui/Border.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
 
@@ -78,7 +78,8 @@ public:
 	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void UpdateCountdown(uint8 countDownTime);
 
-	void DisplayHitIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayHitIndicator();
 
 private:
 
@@ -95,11 +96,11 @@ private:
 private:
 	GameGUIState m_GUIState;
 
-	Noesis::Border* m_pWaterAmmoRect;
-	Noesis::Border* m_pPaintAmmoRect;
-
-	Noesis::TextBlock* m_pWaterAmmoText;
-	Noesis::TextBlock* m_pPaintAmmoText;
+	Noesis::Image* m_pWaterAmmoRect = nullptr;		
+	Noesis::Image* m_pPaintAmmoRect = nullptr;
+	
+	Noesis::TextBlock* m_pWaterAmmoText = nullptr;
+	Noesis::TextBlock* m_pPaintAmmoText = nullptr;
 
 	// EscapeGUI
 	bool 			m_ListenToCallbacks		= false;
@@ -117,5 +118,6 @@ private:
 	Noesis::Grid*	m_pKeyBindingsGrid		= nullptr;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
-	Noesis::Grid* m_pHitIndicatorGrid;
+
+	Noesis::Grid* m_pHitIndicatorGrid = nullptr;
 };

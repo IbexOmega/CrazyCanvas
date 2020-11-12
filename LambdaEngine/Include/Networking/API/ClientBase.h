@@ -79,6 +79,7 @@ namespace LambdaEngine
 		IClientHandler* m_pHandler;
 		EClientState m_State;
 		SpinLock m_Lock;
+		String m_Reason;
 		Timestamp m_PingInterval;
 		Timestamp m_PingTimeout;
 		Timestamp m_LastPingTimestamp;

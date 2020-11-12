@@ -2,8 +2,6 @@
 
 #include "LambdaEngine.h"
 #include "Time/API/Timestamp.h"
-
-#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 #include "ECS/Systems/Player/PlayerAnimationSystem.h"
 
 class MultiplayerBase
@@ -25,6 +23,5 @@ protected:
 	virtual void PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime) = 0;
 
 protected:
-	PacketTranscoderSystem m_PacketDecoderSystem;
 	PlayerAnimationSystem m_PlayerAnimationSystem;
 };

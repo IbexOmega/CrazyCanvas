@@ -2,10 +2,15 @@
 
 #include "Match/MatchBase.h"
 
+#include "Multiplayer/Packet/MultiplayerEvents.h"
+
 #include "Application/API/Events/NetworkEvents.h"
+#include "Events/PlayerEvents.h"
 #include "Events/MatchEvents.h"
 
 #include "ECS/Entity.h"
+
+#include "Lobby/Player.h"
 
 class MatchServer : public MatchBase
 {
@@ -24,23 +29,24 @@ protected:
 	void MatchStart();
 	void MatchBegin();
 
+	void SpawnPlayer(const Player& player);
+
 	void SpawnFlag();
-	void SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient);
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
 
 private:
-	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
+	void BeginLoading();
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
+	bool OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event);
 
 	void KillPlayerInternal(LambdaEngine::Entity playerEntity);
 
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
-	LambdaEngine::THashTable<uint64, LambdaEngine::Entity> m_ClientIDToPlayerEntity;
-	LambdaEngine::THashTable<LambdaEngine::Entity, uint64> m_PlayerEntityToClientID;
 	uint8 m_NextTeamIndex = 0;
+	bool m_ShouldBeginMatch = false;
 };
