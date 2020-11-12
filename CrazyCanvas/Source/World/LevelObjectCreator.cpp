@@ -133,7 +133,7 @@ bool LevelObjectCreator::Init()
 
 		//Player
 		{
-			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
+			ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
 
 #ifdef USE_ALL_ANIMATIONS
 			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
