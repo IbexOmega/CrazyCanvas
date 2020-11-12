@@ -3,6 +3,8 @@
 #extension GL_ARB_shader_draw_parameters : enable
 #extension GL_GOOGLE_include_directive : enable
 
+#define NO_TEXTURES
+
 #include "../Defines.glsl"
 
 layout( push_constant ) uniform PushConstants {
@@ -16,8 +18,11 @@ layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 	SPointLight pointLights[];  
 } b_LightsBuffer;
 
-layout(binding = 0, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
-layout(binding = 1, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices         { SVertex val[]; }      b_Vertices;
+layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances        { SInstance val[]; }    b_Instances;
+layout(binding = 2, set = DRAW_SET_INDEX) restrict readonly buffer Meshlets			{ SMeshlet Val[]; } 	b_Meshlets;
+layout(binding = 3, set = DRAW_SET_INDEX) restrict readonly buffer UniqueIndices	{ uint Val[]; } 		b_UniqueIndices;
+layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndices	{ uint Val[]; } 		b_PrimitiveIndices;
 
 layout(location = 0) out vec4 out_WorldPos;
 layout(location = 1) out flat vec3 out_PointLightPosition;
