@@ -2,6 +2,7 @@
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
+#include "GUI/GameOverGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
 #include "Game/State.h"
@@ -11,6 +12,7 @@
 #include "NoesisPCH.h"
 
 #include "Application/API/Events/EventQueue.h"
+#include "Application/API/CommonApplication.h"
 
 #include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
@@ -18,7 +20,6 @@
 #include "Match/Match.h"
 
 #include <string>
-#include "..\..\Include\GUI\HUDGUI.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
@@ -33,38 +34,15 @@ HUDGUI::HUDGUI() :
 
 HUDGUI::~HUDGUI()
 {
-	//EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &HUDGUI::OnLANServerFound);
-}
 
-void HUDGUI::OnButtonGrowClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	//ApplyDamage(10);
-}
-
-void HUDGUI::OnButtonShootClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-}
-
-void HUDGUI::OnButtonScoreClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	UpdateScore();
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
-	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
+	UNREFERENCED_VARIABLE(pSource);
+	UNREFERENCED_VARIABLE(pEvent);
+	UNREFERENCED_VARIABLE(pHandler);
 
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonGrowClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonScoreClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonShootClick);
 	return false;
 }
 
@@ -214,6 +192,20 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
+void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags)
+{
+	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
+
+	GameOverGUI* pGameOverGUI = FindName<GameOverGUI>("GAME_OVER");
+	pGameOverGUI->InitGUI();
+	pGameOverGUI->DisplayGameOverGrid(true);
+	pGameOverGUI->SetWinningTeam(winningTeamIndex);
+
+	pGameOverGUI->SetMostKillsStats(mostKills.first, mostKills.second->GetName());
+	pGameOverGUI->SetMostDeathsStats(mostDeaths.first, mostDeaths.second->GetName());
+	pGameOverGUI->SetMostFlagsStats(mostFlags.first, mostFlags.second->GetName());
+}
+
 void HUDGUI::InitGUI()
 {
 	//Noesis::Border* pHpRect = FrameworkElement::FindName<Noesis::Border>("HEALTH_RECT");
@@ -242,4 +234,7 @@ void HUDGUI::InitGUI()
 
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
 	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
+
+	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
+	CommonApplication::Get()->SetMouseVisibility(false);
 }
