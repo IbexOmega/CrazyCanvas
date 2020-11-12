@@ -1,13 +1,12 @@
 #ifndef MESHPAINTHELPER_SHADER
 #define MESHPAINTHELPER_SHADER
 
-#include "Defines.glsl"
-#include "Helpers.glsl"
-#include "Noise.glsl"
-#include "Paint.glsl"
+#define PAINT_NOISE_SCALE		8.0f
+#define PAINT_DELTA_NOISE		0.001f
+#define PAINT_BUMPINESS	        2.0f
+#define PAINT_ROUGHNESS	        0.05f
 
-layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }	b_PaintMaskColor;
-layout(binding = 0, set = DRAW_EXTENSION_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
+#include "Noise.glsl"
 
 struct SPaintDescription
 {
@@ -22,7 +21,6 @@ struct SPaintSample
 	float PaintAmount;
 	uint Team;
 };
-
 
 SPaintSample SamplePaint(in ivec2 p, in uint paintMaskIndex)
 {
