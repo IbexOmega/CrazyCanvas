@@ -3,10 +3,12 @@
 #include "Multiplayer/Packet/Packet.h"
 
 #pragma pack(push, 1)
-struct PacketPlayerDied
+struct PacketPlayerAliveChanged
 {
-	DECL_PACKET(PacketPlayerDied);
+	DECL_PACKET(PacketPlayerAliveChanged);
 
 	uint64 UID;
+	bool IsDead;
+	uint8 Deaths;
 };
 #pragma pack(pop)

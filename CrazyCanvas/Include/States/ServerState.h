@@ -9,9 +9,9 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "Events/PlayerEvents.h"
+#include "Events/PacketEvents.h"
 
 #include "Multiplayer/MultiplayerServer.h"
-#include "Multiplayer/Packet/MultiplayerEvents.h"
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
 #include "EventHandlers/MeshPaintHandler.h"
