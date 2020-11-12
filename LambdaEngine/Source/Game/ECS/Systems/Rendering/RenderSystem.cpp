@@ -1523,6 +1523,9 @@ namespace LambdaEngine
 			// extensionGroupIndex == 0 means the mesh instance does not have an extension
 			if (extensionGroupIndex != 0)
 			{
+				// -1 because we have one default
+				extensionGroupIndex--;
+
 				// Set the last entity to use the extension group at the previous removed entity position.
 				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
 				const InstanceKey& instanceKey = m_EntityIDsToInstanceKey[swappedEntityID];
