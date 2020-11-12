@@ -68,13 +68,10 @@ void GameOverGUI::SetMostFlagsStats(uint8 score, const LambdaEngine::String& pla
 
 void GameOverGUI::SetWinningTeam(uint8 winningTeamIndex)
 {
-	LambdaEngine::String winningTeamString = "";
 	if (winningTeamIndex == 0)
-		winningTeamString = "Team Blue won this round";
+		m_pWinningTeamText->SetText("Team Blue won this round");
 	else
-		winningTeamString = "Team Red won this round";
-
-	m_pWinningTeamText->SetText(winningTeamString.c_str());
+		m_pWinningTeamText->SetText("Team Red won this round");
 }
 
 void GameOverGUI::InitGUI()

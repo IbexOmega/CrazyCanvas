@@ -32,7 +32,7 @@ protected:
 	bool OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event);
 
 private:
-	bool m_ClientSideBegun	= false;
+	bool m_ClientSideBegun = false;
 
 	float32 m_CountdownHideTimer = 0.0f;
 	

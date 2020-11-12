@@ -107,10 +107,10 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 	}
 
 	// Fire the gun
-	auto ammoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
-	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end())
+	auto pAmmoState = weaponComponent.WeaponTypeAmmo.find(ammoType);
+	VALIDATE(pAmmoState != weaponComponent.WeaponTypeAmmo.end())
 
-	ammoState->second.first--;
+	pAmmoState->second.first--;
 
 	// Fire event
 	WeaponFiredEvent firedEvent(
@@ -143,14 +143,14 @@ void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
 		{
 			weaponComponent.ReloadClock = 0.0f;
 
-			auto waterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
-			VALIDATE(waterAmmo != weaponComponent.WeaponTypeAmmo.end())
+			auto pWaterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(pWaterAmmo != weaponComponent.WeaponTypeAmmo.end())
 
-			auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
-			VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
+			auto pPaintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(pPaintAmmo != weaponComponent.WeaponTypeAmmo.end())
 
-			paintAmmo->second.first = AMMO_CAPACITY;
-			waterAmmo->second.first = AMMO_CAPACITY;
+			pPaintAmmo->second.first = AMMO_CAPACITY;
+			pWaterAmmo->second.first = AMMO_CAPACITY;
 
 			//Reload Event
 			WeaponReloadFinishedEvent reloadEvent(weaponComponent.WeaponOwner);
