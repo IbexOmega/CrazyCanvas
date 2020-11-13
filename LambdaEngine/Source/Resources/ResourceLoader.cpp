@@ -349,32 +349,8 @@ namespace LambdaEngine
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>* pMaterials, TArray<LoadedTexture*>* pTextures, TArray<Animation*>* pAnimations)
+	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>* pMaterials, TArray<LoadedTexture*>* pTextures, TArray<Animation*>* pAnimations, int32 assimpFlags)
 	{
-		int32 assimpFlags = 
-			aiProcess_FlipWindingOrder			|
-			aiProcess_FlipUVs					|
-			aiProcess_CalcTangentSpace			|
-			aiProcess_FindInstances				|
-			aiProcess_GenSmoothNormals			|
-			aiProcess_JoinIdenticalVertices		|
-			aiProcess_ImproveCacheLocality		|
-			aiProcess_LimitBoneWeights			|
-			aiProcess_RemoveRedundantMaterials	|
-			aiProcess_Triangulate				|
-			aiProcess_GenUVCoords				|
-			aiProcess_FindDegenerates			|
-			aiProcess_OptimizeMeshes			|
-			aiProcess_OptimizeGraph				|
-			aiProcess_FindInvalidData;
-		
-		// Prevent crashes in assimp when using this flag
-		//String path = ConvertSlashes(filepath);
-		//if (path.find(".obj") == String::npos && path.find(".glb") == String::npos)
-		//{
-		//	assimpFlags |= aiProcess_PopulateArmatureData;
-		//}
-
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 

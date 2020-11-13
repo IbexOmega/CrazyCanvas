@@ -14,12 +14,16 @@
 
 #include "Multiplayer/MultiplayerClient.h"
 
+#include "Application/API/Events/NetworkEvents.h"
+
+#include "Multiplayer/Packet/PacketGameSettings.h"
+
 class Level;
 
 class PlaySessionState : public LambdaEngine::State
 {
 public:
-	PlaySessionState(bool singlePlayer = false);
+	PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer = false);
 	~PlaySessionState();
 
 	void Init() override final;
@@ -34,9 +38,12 @@ public:
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
+	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 
 private:
 	bool m_Singleplayer;
+
+	PacketGameSettings m_GameSettings;
 
 	/* Systems */
 	HUDSystem m_HUDSystem;

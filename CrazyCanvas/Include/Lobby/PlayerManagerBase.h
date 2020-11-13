@@ -5,7 +5,6 @@
 
 #include "Time/API/Timestamp.h"
 
-#include "Multiplayer/Packet/MultiplayerEvents.h"
 #include "Multiplayer/Packet/PacketJoin.h"
 #include "Multiplayer/Packet/PacketLeave.h"
 #include "Multiplayer/Packet/PacketPlayerScore.h"
@@ -15,6 +14,8 @@
 #include "Networking/API/IClient.h"
 
 #include "Application/API/Events/NetworkEvents.h"
+
+#include "Events/PacketEvents.h"
 
 #include "ECS/Entity.h"
 
@@ -39,7 +40,7 @@ protected:
 	static Player* GetPlayerNoConst(LambdaEngine::Entity entity);
 
 	static Player* HandlePlayerJoined(uint64 uid, const PacketJoin& packet);
-	static void HandlePlayerLeft(uint64 uid);
+	static bool HandlePlayerLeft(uint64 uid);
 
 protected:
 	static LambdaEngine::THashTable<uint64, Player> s_Players;

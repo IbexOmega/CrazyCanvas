@@ -38,32 +38,36 @@
 
 #include "Lobby/PlayerManagerClient.h"
 
-PlaySessionState::PlaySessionState(bool singlePlayer) :
-	m_Singleplayer(singlePlayer),
-	m_MultiplayerClient()
-{
-	using namespace LambdaEngine;
+#include "Game/StateManager.h"
+#include "States/MainMenuState.h"
 
+using namespace LambdaEngine;
+
+PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
+	m_Singleplayer(singlePlayer),
+	m_MultiplayerClient(), 
+	m_GameSettings(gameSettings)
+{
 	if (m_Singleplayer)
 	{
 		SingleplayerInitializer::Init();
 	}
+
+	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 }
 
 PlaySessionState::~PlaySessionState()
 {
-	using namespace LambdaEngine;
-
 	if (m_Singleplayer)
 	{
 		SingleplayerInitializer::Release();
 	}
+
+	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 }
 
 void PlaySessionState::Init()
 {
-	using namespace LambdaEngine;
-
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", false);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
@@ -83,11 +87,11 @@ void PlaySessionState::Init()
 
 	// Load Match
 	{
-		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+		const TArray<SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[m_GameSettings.MapID]
 		};
 		Match::CreateMatch(&matchDescription);
 	}
@@ -107,13 +111,25 @@ void PlaySessionState::Init()
 	}
 }
 
-void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
+void PlaySessionState::Tick(Timestamp delta)
 {
 	m_MultiplayerClient.TickMainThreadInternal(delta);
 }
 
-void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
+void PlaySessionState::FixedTick(Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
 	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+}
+
+bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event)
+{
+	const String& reason = event.Reason;
+
+	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
+
+	State* pMainMenuState = DBG_NEW MainMenuState();
+	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+
+	return false;
 }

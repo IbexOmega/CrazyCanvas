@@ -14,7 +14,7 @@ public:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final;
 	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) override final;
 
-	virtual void Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam) override final;
+	virtual void Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam, uint32 angle) override final;
 
 protected:
 	virtual bool InitInternal() override final;

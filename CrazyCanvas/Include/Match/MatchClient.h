@@ -2,7 +2,8 @@
 
 #include "Match/MatchBase.h"
 
-#include "Multiplayer/Packet/MultiplayerEvents.h"
+#include "Events/PacketEvents.h"
+
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
@@ -35,6 +36,7 @@ private:
 	bool m_ClientSideBegun = false;
 
 	float32 m_CountdownHideTimer = 0.0f;
+	
 
 	GUID_Lambda m_CountdownSoundEffects[5];
 	GUID_Lambda m_CountdownDoneSoundEffect;

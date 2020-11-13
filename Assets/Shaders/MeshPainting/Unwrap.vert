@@ -42,7 +42,7 @@ void main()
 	out_WorldPosition				= worldPosition.xyz;
 	out_Normal						= normal;
 
-	out_TargetDirection				= u_UnwrapData.val.TargetDirection.xyz;
+	out_TargetDirection				= u_UnwrapData.val.TargetDirectionXYZAngleW.xyz;
 	out_TargetPosition				= u_UnwrapData.val.TargetPosition.xyz;
 
 	// This is not removed because of debug purposes.

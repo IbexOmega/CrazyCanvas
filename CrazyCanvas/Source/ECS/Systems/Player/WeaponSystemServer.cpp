@@ -68,7 +68,7 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 					weaponComp.CurrentCooldown = 1.0f / weaponComp.FireRate;
 
 					// Create projectile
-					Fire(weaponEntity, weaponComp, ammoType, firePosition, fireVelocity, playerTeam);
+					Fire(weaponEntity, weaponComp, ammoType, firePosition, fireVelocity, playerTeam, packetsRecived[i].Angle);
 				}
 			}
 		}

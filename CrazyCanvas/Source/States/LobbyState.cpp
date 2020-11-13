@@ -28,6 +28,7 @@ LobbyState::~LobbyState()
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
 	EventQueue::UnregisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
 
 	m_LobbyGUI.Reset();
 	m_View.Reset();
@@ -42,6 +43,7 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
 	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
 
 	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
 	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true);
@@ -60,7 +62,7 @@ void LobbyState::Init()
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	m_LobbyGUI->InitGUI();
+	m_LobbyGUI->InitGUI(m_Name);
 
 	PlayerManagerClient::Reset();
 	PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
@@ -95,7 +97,7 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 	{
 		if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 		{
-			State* pStartingState = DBG_NEW PlaySessionState();
+			State* pStartingState = DBG_NEW PlaySessionState(m_LobbyGUI->GetSettings());
 			StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 		}
 	}
@@ -123,5 +125,11 @@ bool LobbyState::OnPlayerReadyUpdatedEvent(const PlayerReadyUpdatedEvent& event)
 bool LobbyState::OnChatEvent(const ChatEvent& event)
 {
 	m_LobbyGUI->WriteChatMessage(event);
+	return false;
+}
+
+bool LobbyState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& packet)
+{
+	m_LobbyGUI->UpdateSettings(packet.Packet);
 	return false;
 }

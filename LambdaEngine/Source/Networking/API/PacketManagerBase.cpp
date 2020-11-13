@@ -145,7 +145,7 @@ namespace LambdaEngine
 		m_QueueIndex = 0;
 	}
 
-	bool PacketManagerBase::QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerBase::QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned, bool& hasDiscardedResends)
 	{
 		TArray<NetworkSegment*> segments;
 		TArray<uint32> acks;
@@ -159,7 +159,8 @@ namespace LambdaEngine
 		//LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
 
 		HandleAcks(acks);
-		return FindSegmentsToReturn(segments, segmentsReturned);
+		hasDiscardedResends = FindSegmentsToReturn(segments, segmentsReturned);
+		return true;
 	}
 
 	/*

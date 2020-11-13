@@ -45,7 +45,8 @@ using namespace LambdaEngine;
 
 ServerState::ServerState(const std::string& clientHostID) :
 	m_MultiplayerServer(),
-	m_ClientHostID(0)
+	m_ClientHostID(0),
+	m_MapName()
 {
 	if (!clientHostID.empty())
 		m_ClientHostID = std::stoi(clientHostID);
@@ -55,7 +56,11 @@ ServerState::ServerState(const std::string& clientHostID) :
 	DWORD length = UNLEN + 1;
 	char buffer[UNLEN + 1];
 	GetUserNameA(buffer, &length);
-	m_ServerName = buffer;
+
+	String name = buffer;
+	name += "'s server";
+	strcpy(m_GameSettings.ServerName, name.c_str());
+	m_MapName = LevelManager::GetLevelNames()[0];
 }
 
 ServerState::~ServerState()
@@ -63,6 +68,8 @@ ServerState::~ServerState()
 	EventQueue::UnregisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
+	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
+	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
 }
 
 void ServerState::Init()
@@ -70,23 +77,14 @@ void ServerState::Init()
 	EventQueue::RegisterEventHandler<ServerDiscoveryPreTransmitEvent>(this, &ServerState::OnServerDiscoveryPreTransmit);
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &ServerState::OnKeyPressed);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
+	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
+	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
 	m_MeshPaintHandler.Init();
 	m_MultiplayerServer.InitInternal();
-
-	// Load Match
-	{
-		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
-
-		MatchDescription matchDescription =
-		{
-			.LevelHash = levelHashes[0]
-		};
-		Match::CreateMatch(&matchDescription);
-	}
 
 	ServerSystem::GetInstance().Start();
 }
@@ -103,11 +101,17 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	ServerBase* pServer = event.pServer;
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
-	pEncoder->WriteString(m_ServerName);
-	pEncoder->WriteString("Map Name");
+	pEncoder->WriteString(m_GameSettings.ServerName);
+	pEncoder->WriteString(m_MapName);
 	pEncoder->WriteInt32(m_ClientHostID);
 
 	return true;
+}
+
+bool ServerState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
+{
+	ServerHelper::SendToPlayer(event.pPlayer, m_GameSettings);
+	return false;
 }
 
 void ServerState::Tick(Timestamp delta)
@@ -130,11 +134,56 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 		LOG_INFO("Players: %hhu", packet.Players);
 		LOG_INFO("MapID: %hhu", packet.MapID);
 
+		m_GameSettings = packet;
+		m_MapName = LevelManager::GetLevelNames()[packet.MapID];
+		ServerHelper::SendBroadcast(packet, nullptr, event.pClient);
 		ServerHelper::SetMaxClients(packet.Players);
 	}
 	else
 	{
 		LOG_ERROR("Unauthorised Client tried to exectute a server command!");
+	}
+
+	return true;
+}
+
+bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+
+	EGameState gameState = event.pPlayer->GetState();
+
+	if (gameState == GAME_STATE_LOADING)
+	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
+		// Load Match
+		{
+			const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+			MatchDescription matchDescription =
+			{
+				.LevelHash = levelHashes[m_GameSettings.MapID]
+			};
+			Match::CreateMatch(&matchDescription);
+			Match::BeginLoading();
+		}
+	}
+	else if (gameState == GAME_STATE_LOADED)
+	{
+		for (auto& pair : players)
+		{
+			if (pair.second.GetState() != gameState)
+				return false;
+		}
+
+		Match::StartMatch();
 	}
 
 	return true;

@@ -1,6 +1,5 @@
 #pragma once
 #include "Lobby/PlayerManagerBase.h"
-#include "Lobby/IPlayerManager.h"
 
 #include "Multiplayer/Packet/PacketPlayerState.h"
 #include "Multiplayer/Packet/PacketPlayerReady.h"
@@ -15,6 +14,7 @@ public:
 
 	static bool HasPlayerAuthority(const LambdaEngine::IClient* pClient);
 
+	static void SetPlayerAlive(const Player* pPlayer, bool alive, const Player* pPlayerKiller);
 	static void SetPlayerReady(const Player* pPlayer, bool ready);
 	static void SetPlayerHost(const Player* pPlayer);
 	static void SetPlayerTeam(const Player* pPlayer, uint8 team);

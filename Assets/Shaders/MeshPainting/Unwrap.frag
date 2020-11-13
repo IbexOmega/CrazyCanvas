@@ -15,7 +15,6 @@ layout(push_constant) uniform FrameSettingBuffer
 	layout(offset = 4) uint ShouldReset;
 	layout(offset = 8) uint ShouldPaint;
 	layout(offset = 12) uint PaintCount;
-	layout(offset = 16) float RandomAngle;
 } p_FrameSettings;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
@@ -71,7 +70,7 @@ void main()
 		float v		= (dot(-targetPosToWorldPos, up)/BRUSH_SIZE*1.5f)*0.5f+0.5f;
 		vec2 maskUV = vec2(u, v);
 
-		maskUV = rotate(maskUV-0.5f, p_FrameSettings.RandomAngle)+0.5f;
+		maskUV = rotate(maskUV-0.5f, u_UnwrapData.val[hitPointIndex].TargetDirectionXYZAngleW.a)+0.5f;
 
 		// Apply brush mask
 		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;

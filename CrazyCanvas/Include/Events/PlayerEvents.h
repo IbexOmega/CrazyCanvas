@@ -91,15 +91,18 @@ public:
 	DECLARE_PLAYER_EVENT_TYPE(PlayerHostUpdatedEvent);
 };
 
-struct PlayerDeadUpdatedEvent : public PlayerBaseEvent
+struct PlayerAliveUpdatedEvent : public PlayerBaseEvent
 {
 public:
-	inline PlayerDeadUpdatedEvent(const Player* pPlayerConst)
-		: PlayerBaseEvent(pPlayerConst)
+	inline PlayerAliveUpdatedEvent(const Player* pPlayerConst, const Player* pPlayerKillerConst)
+		: PlayerBaseEvent(pPlayerConst),
+		pPlayerKiller(pPlayerKillerConst)
 	{
 	}
 
-	DECLARE_PLAYER_EVENT_TYPE(PlayerDeadUpdatedEvent);
+	DECLARE_PLAYER_EVENT_TYPE(PlayerAliveUpdatedEvent);
+
+	const Player* pPlayerKiller;
 };
 
 struct PlayerReadyUpdatedEvent : public PlayerBaseEvent

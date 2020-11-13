@@ -103,7 +103,7 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		uint32 playerTeam;
 		weaponSystem.CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
-		weaponSystem.Fire(weaponEntity, weaponComponent, EAmmoType::AMMO_TYPE_PAINT, firePosition, fireVelocity, playerTeam);
+		weaponSystem.Fire(weaponEntity, weaponComponent, EAmmoType::AMMO_TYPE_PAINT, firePosition, fireVelocity, playerTeam, 0);
 		weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
 	}
 }

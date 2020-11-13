@@ -17,12 +17,14 @@ public:
 			const LambdaEngine::EntityCollisionInfo& collisionInfo0, 
 			const LambdaEngine::EntityCollisionInfo& collisionInfo1, 
 			const EAmmoType ammoType,
-			const LambdaEngine::ETeam team)
+			const LambdaEngine::ETeam team,
+			const uint32 angle)
 		: Event()
 		, CollisionInfo0(collisionInfo0)
 		, CollisionInfo1(collisionInfo1)
 		, AmmoType(ammoType)
 		, Team(team)
+		, Angle(angle)
 	{
 	}
 
@@ -36,4 +38,5 @@ public:
 	const LambdaEngine::EntityCollisionInfo CollisionInfo1;
 	const EAmmoType AmmoType;
 	const LambdaEngine::ETeam Team;
+	const uint32 Angle;
 };

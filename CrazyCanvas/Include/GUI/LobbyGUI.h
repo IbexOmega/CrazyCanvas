@@ -23,7 +23,7 @@ public:
 	LobbyGUI();
 	~LobbyGUI();
 	
-	void InitGUI();
+	void InitGUI(LambdaEngine::String name);
 
 	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);
@@ -32,7 +32,7 @@ public:
 	void UpdatePlayerHost(const Player& player);
 	void WriteChatMessage(const ChatEvent& event);
 	void SetHostMode(bool isHost);
-	void UpdateSetting(const LambdaEngine::String& settingKey, const LambdaEngine::String& value);
+	void UpdateSettings(const PacketGameSettings& packet);
 
 	void AddSettingComboBox(
 		const LambdaEngine::String& settingKey,
@@ -40,12 +40,17 @@ public:
 		LambdaEngine::TArray<LambdaEngine::String> settingValues,
 		uint8 defaultIndex);
 
+	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& text);
+
 	// Noesis events
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 	void OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
+	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	const PacketGameSettings& GetSettings() const;
 
 private:
 	// Helpers
@@ -54,8 +59,6 @@ private:
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* pComp);
 	void CreateHostIcon(Noesis::Panel* pParent);
 	Noesis::Grid* GetPlayerGrid(const Player& player);
-
-	void SendGameSettings();
 
 	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
 	void TrySendChatMessage();
@@ -72,8 +75,10 @@ private:
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
 
 	PacketGameSettings m_GameSettings;
+	bool m_IsInitiated;
 
 private:
+	static constexpr char* SETTING_SERVER_NAME	= "SERVER_NAME";
 	static constexpr char* SETTING_MAP			= "MAP";
 	static constexpr char* SETTING_MAX_TIME		= "MAX_TIME";
 	static constexpr char* SETTING_FLAGS_TO_WIN = "FLAGS_TO_WIN";

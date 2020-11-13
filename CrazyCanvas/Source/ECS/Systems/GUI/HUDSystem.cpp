@@ -13,9 +13,9 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
-
 #include "Application/API/Events/EventQueue.h"
-#include "..\..\..\..\Include\ECS\Systems\GUI\HUDSystem.h"
+
+#include "Lobby/PlayerManagerClient.h"
 
 
 using namespace LambdaEngine;
@@ -29,6 +29,10 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
+	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
+	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
+	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 }
 
 void HUDSystem::Init()
@@ -67,11 +71,22 @@ void HUDSystem::Init()
 
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
-    EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
+	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
+	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
+	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
+
+	// Add players to scoreboard
+	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+	for (auto& player : players)
+	{
+		m_HUDGUI->AddPlayer(player.second);
+	}
 
 	GUIApplication::SetView(m_View);
 }
@@ -138,6 +153,17 @@ void HUDSystem::FixedTick(Timestamp delta)
 		m_EnemyHitEventsToProcess.Clear();
 	}
 
+	static bool activeButtonChanged = false;
+	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
+	{
+		m_HUDGUI->DisplayScoreboardMenu(true);
+		activeButtonChanged = true;
+	}
+	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
+	{
+		m_HUDGUI->DisplayScoreboardMenu(false);
+		activeButtonChanged = false;
+	}
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -182,6 +208,29 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 	return false;
 }
 
+bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
+{
+	m_HUDGUI->UpdateAllPlayerProperties(*event.pPlayer);
+	return false;
+}
+
+bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
+{
+	m_HUDGUI->UpdatePlayerProperty(
+		event.pPlayer->GetUID(),
+		EPlayerProperty::PLAYER_PROPERTY_PING,
+		std::to_string(event.pPlayer->GetPing()));
+	return false;
+}
+
+bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	const Player* pPlayer = event.pPlayer;
+
+	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
+	return false;
+}
+
 bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
 {
 	m_HUDGUI->UpdateCountdown(event.CountDownTime);
@@ -215,6 +264,40 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 			}
 		}
 	}
+
+	return false;
+}
+
+bool HUDSystem::OnGameOver(const GameOverEvent& event)
+{
+	//un-lock mouse
+	Input::PushInputMode(EInputLayer::GUI);
+
+	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
+
+	PlayerPair mostKills((uint8)0, nullptr);
+	PlayerPair mostFlags((uint8)0, nullptr);
+	PlayerPair mostDeaths((uint8)0, nullptr);
+
+	for (auto& pair : playerMap)
+	{
+		const Player* pPlayer = &pair.second;
+
+		uint8 kills = pPlayer->GetKills();
+		uint8 deaths = pPlayer->GetDeaths();
+		uint8 flags = pPlayer->GetFlagsCaptured();
+		
+		if (kills >= mostKills.first)
+			mostKills = std::make_pair(kills, pPlayer);
+
+		if (deaths >= mostDeaths.first)
+			mostDeaths = std::make_pair(deaths, pPlayer);
+
+		if (flags >= mostFlags.first)
+			mostFlags = std::make_pair(flags, pPlayer);
+	}
+
+	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostFlags, mostDeaths);
 
 	return false;
 }
