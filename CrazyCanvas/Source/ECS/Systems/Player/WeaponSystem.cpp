@@ -112,47 +112,17 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 
 	pAmmoState->second.first--;
 
-	glm::vec4 velocity4(velocity, 1.0f);
-
 	// Fire event
-	{
-		WeaponFiredEvent firedEvent(
-			weaponComponent.WeaponOwner,
-			ammoType,
-			position,
-			velocity,
-			playerTeam,
-			angle);
-		firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
-		firedEvent.MeshComponent = GetMeshComponent(ammoType, playerTeam);
-		EventQueue::SendEventImmediate(firedEvent);
-	}
-
-	{
-		WeaponFiredEvent firedEvent(
-			weaponComponent.WeaponOwner,
-			ammoType,
-			position,
-			glm::rotate(glm::radians(15.0f), g_DefaultUp) * velocity4,
-			playerTeam,
-			angle);
-		firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
-		firedEvent.MeshComponent = GetMeshComponent(ammoType, playerTeam);
-		EventQueue::SendEventImmediate(firedEvent);
-	}
-
-	{
-		WeaponFiredEvent firedEvent(
-			weaponComponent.WeaponOwner,
-			ammoType,
-			position,
-			glm::rotate(glm::radians(-15.0f), g_DefaultUp) * velocity4,
-			playerTeam,
-			angle);
-		firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
-		firedEvent.MeshComponent = GetMeshComponent(ammoType, playerTeam);
-		EventQueue::SendEventImmediate(firedEvent);
-	}
+	WeaponFiredEvent firedEvent(
+		weaponComponent.WeaponOwner,
+		ammoType,
+		position,
+		velocity,
+		playerTeam,
+		angle);
+	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
+	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
+	EventQueue::SendEventImmediate(firedEvent);
 }
 
 void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
@@ -251,6 +221,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	const OffsetComponent&		weaponOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(weaponEntity);
 	const PositionComponent&	playerPositionComponent = pECS->GetConstComponent<PositionComponent>(weaponOwner);
 	const RotationComponent&	playerRotationComponent = pECS->GetConstComponent<RotationComponent>(weaponOwner);
+	const VelocityComponent&	playerVelocityComponent = pECS->GetConstComponent<VelocityComponent>(weaponOwner);
 
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
