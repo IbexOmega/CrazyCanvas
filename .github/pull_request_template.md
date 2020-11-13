@@ -7,11 +7,15 @@
  - How was the solution or feature implemented?
  - What new classes, files, or modules were created or modified to implement it?
 
+## Testing
+How have one tested the feature to ensure it works?
+- [ ] Tested in Sandbox
+- [ ] Tested in Multiplayer with 2 clients
+- [ ] Tested in Multiplayer with more than 2 clients
+
 ## Context (Optional)
 Sometimes, the changes in a pull request don’t convey the amount of investigation and effort that went into debugging an issue.
 
 ## Screen Captures (Optional)
 If change is a user-facing change it is nice to show it of.
 
-## Testing (Optional)
-What to think about if one is to test the branch.
