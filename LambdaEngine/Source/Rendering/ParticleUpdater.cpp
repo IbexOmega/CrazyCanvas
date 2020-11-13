@@ -115,6 +115,7 @@ namespace LambdaEngine
 		if (m_InlineRayTracingEnabled)
 		{
 			descriptorBindings.PushBack(instanceBindingDesc8);
+			D_LOG_INFO("[ParticleUpdater] Ray query is enabled, using inline ray tracing for particle collisions.");
 		}
 
 		// Set 0
