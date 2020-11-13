@@ -94,8 +94,8 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <Image Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Source="bar_background.png"   RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="319.205"/>
-                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="bar.png"   RenderTransformOrigin="0.5,0.75" Margin="0,50,-125,50" Width="400" Height=" 75">
+                    <Image Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Source="bar_background.png" HorizontalAlignment="Left" Width="319.205"/>
+                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="bar.png" RenderTransformOrigin="0.0,0.0"  Margin="0,50,-125,50" Width="400" Height=" 75">
                         <Image.RenderTransform>
                             <ScaleTransform/>
                         </Image.RenderTransform>
