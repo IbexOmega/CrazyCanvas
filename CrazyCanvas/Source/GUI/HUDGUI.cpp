@@ -85,7 +85,7 @@ bool HUDGUI::UpdateScore()
 		
 		m_pBlueScoreGrid->GetChildren()->Get(5 - blueScore)->SetVisibility(Visibility::Visibility_Visible);
 	}
-	else if (m_GUIState.Scores[1] != redScore && blueScore != 0) //Red
+	else if (m_GUIState.Scores[1] != redScore && redScore != 0) //Red
 	{
 		m_GUIState.Scores[1] = redScore;
 
