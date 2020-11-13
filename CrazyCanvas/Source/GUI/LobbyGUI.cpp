@@ -47,7 +47,7 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 {
 	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
 
-	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			(name + "'s server"));
+	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_GameSettings.ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
 	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
