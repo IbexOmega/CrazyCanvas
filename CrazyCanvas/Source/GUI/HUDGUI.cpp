@@ -228,7 +228,7 @@ void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	ClientHelper::Disconnect("Daniel has the biggest penis");
+	ClientHelper::Disconnect("Left by choice");
 	SetRenderStagesInactive();
 
 	Noesis::FrameworkElement* pElement = m_ContextStack.top();

@@ -64,6 +64,8 @@ PlaySessionState::~PlaySessionState()
 	}
 
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
+
+	Match::Release();
 }
 
 void PlaySessionState::Init()

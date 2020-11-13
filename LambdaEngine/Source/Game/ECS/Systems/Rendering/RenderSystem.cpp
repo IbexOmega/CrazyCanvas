@@ -1418,6 +1418,12 @@ namespace LambdaEngine
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
+		if (auto entityIt = std::find(meshAndInstancesIt->second.EntityIDs.Begin(), meshAndInstancesIt->second.EntityIDs.End(), entity); entityIt != meshAndInstancesIt->second.EntityIDs.End())
+		{
+			int awdw = 3;
+			UNREFERENCED_VARIABLE(awdw);
+		}
+
 		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
