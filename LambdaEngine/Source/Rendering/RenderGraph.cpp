@@ -3594,20 +3594,6 @@ namespace LambdaEngine
 
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{
-
-			LOG_INFO("Updating Texture: %s", pResource->Name.c_str());
-			for (uint32 i = 0; i < pResource->Texture.PerSubImageTextureViews.GetSize(); i++)
-			{
-				TextureView* pTextureView = pResource->Texture.PerSubImageTextureViews[i];
-
-				if (pTextureView != nullptr)
-				{
-					uint64 textureHandle = pTextureView->GetHandle();
-					LOG_INFO("Texture View in DS: %llx", textureHandle);
-				}
-			}
-			LOG_INFO("\n");
-
 			m_DirtyBoundTextureResources.insert(pResource);
 
 			for (const ResourceBinding& binding : pResource->ResourceBindings)
@@ -4050,7 +4036,6 @@ namespace LambdaEngine
 
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{
-			LOG_ERROR("Updating Buffer: %s", pResource->Name.c_str());
 			m_DirtyBoundBufferResources.insert(pResource);
 
 			for (const ResourceBinding& binding : pResource->ResourceBindings)

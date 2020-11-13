@@ -370,7 +370,6 @@ namespace LambdaEngine
 		for (uint32 instanceIndex = 0; instanceIndex < m_Instances.GetSize(); instanceIndex++)
 		{
 			AccelerationStructureInstance& asInstance = m_Instances[instanceIndex];
-			LOG_WARNING("Instance Index: %u", instanceIndex);
 			updateFunc(asInstance);
 		}
 	}

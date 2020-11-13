@@ -36,13 +36,6 @@ namespace LambdaEngine
 		{
 			for (uint32 i = 0; i < resourcesToRelease.GetSize(); i++)
 			{
-				TextureView* pTextureView = dynamic_cast<TextureView*>(resourcesToRelease[i]);
-
-				if (pTextureView != nullptr)
-				{
-					LOG_ERROR("Mesh Paint Component Owner Delete Texture View: %llx", pTextureView->GetHandle());
-				}
-
 				SAFERELEASE(resourcesToRelease[i]);
 			}
 			resourcesToRelease.Clear();

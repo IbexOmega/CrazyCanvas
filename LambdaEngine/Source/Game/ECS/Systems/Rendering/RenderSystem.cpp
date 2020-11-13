@@ -1248,6 +1248,16 @@ namespace LambdaEngine
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
 			}
+			else
+			{
+				LOG_ERROR("TA BORT DETTA");
+
+				if (std::find(meshAndInstancesIt->second.EntityIDs.Begin(), meshAndInstancesIt->second.EntityIDs.End(), entity) != meshAndInstancesIt->second.EntityIDs.End())
+				{
+					LOG_WARNING("[RenderSystem]: Entity %u already exists in MeshEntry", entity);
+					return;
+				}
+			}
 		}
 
 		//Get Material Slot
@@ -1323,13 +1333,6 @@ namespace LambdaEngine
 
 			meshAndInstancesIt->second.ExtensionGroups.PushBack(pExtensionGroup);
 
-			if (meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet != nullptr)
-			{
-				m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
-			}
-
-			meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
-
 			WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
 		}
 
@@ -1398,14 +1401,6 @@ namespace LambdaEngine
 				m_PaintMaskASInstanceIndices[paintIndex].PushBack(asInstanceIndex);
 			}
 
-			LOG_MESSAGE("New AS: %u", shiftedPaintIndex);
-			m_pASBuilder->UpdateInstances(
-				[](AccelerationStructureInstance& asInstance)
-				{
-					uint32 asTextureIndex = asInstance.CustomIndex & 0xFF;
-					LOG_MESSAGE("AS: %u", asTextureIndex);
-				});
-
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
 
@@ -1417,12 +1412,6 @@ namespace LambdaEngine
 		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
-
-		if (auto entityIt = std::find(meshAndInstancesIt->second.EntityIDs.Begin(), meshAndInstancesIt->second.EntityIDs.End(), entity); entityIt != meshAndInstancesIt->second.EntityIDs.End())
-		{
-			int awdw = 3;
-			UNREFERENCED_VARIABLE(awdw);
-		}
 
 		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
 
@@ -1898,6 +1887,12 @@ namespace LambdaEngine
 			}
 		}
 
+		if (meshEntry.pDrawArgDescriptorExtensionsSet != nullptr)
+		{
+			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshEntry.pDrawArgDescriptorExtensionsSet);
+		}
+
+		meshEntry.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
 		meshEntry.pDrawArgDescriptorExtensionsSet->WriteTextureDescriptors(
 			extensionTextureViews.GetData(),
 			extensionSamplers.GetData(),
