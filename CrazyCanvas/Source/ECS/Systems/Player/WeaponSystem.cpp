@@ -112,17 +112,47 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 
 	pAmmoState->second.first--;
 
+	glm::vec4 velocity4(velocity, 1.0f);
+
 	// Fire event
-	WeaponFiredEvent firedEvent(
-		weaponComponent.WeaponOwner,
-		ammoType,
-		position,
-		velocity,
-		playerTeam,
-		angle);
-	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
-	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
-	EventQueue::SendEventImmediate(firedEvent);
+	{
+		WeaponFiredEvent firedEvent(
+			weaponComponent.WeaponOwner,
+			ammoType,
+			position,
+			velocity,
+			playerTeam,
+			angle);
+		firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
+		firedEvent.MeshComponent = GetMeshComponent(ammoType, playerTeam);
+		EventQueue::SendEventImmediate(firedEvent);
+	}
+
+	{
+		WeaponFiredEvent firedEvent(
+			weaponComponent.WeaponOwner,
+			ammoType,
+			position,
+			glm::rotate(glm::radians(15.0f), g_DefaultUp) * velocity4,
+			playerTeam,
+			angle);
+		firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
+		firedEvent.MeshComponent = GetMeshComponent(ammoType, playerTeam);
+		EventQueue::SendEventImmediate(firedEvent);
+	}
+
+	{
+		WeaponFiredEvent firedEvent(
+			weaponComponent.WeaponOwner,
+			ammoType,
+			position,
+			glm::rotate(glm::radians(-15.0f), g_DefaultUp) * velocity4,
+			playerTeam,
+			angle);
+		firedEvent.Callback = std::bind_front(&WeaponSystem::OnProjectileHit, this);
+		firedEvent.MeshComponent = GetMeshComponent(ammoType, playerTeam);
+		EventQueue::SendEventImmediate(firedEvent);
+	}
 }
 
 void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)
@@ -236,7 +266,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 
 	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.2f;
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
-	velocity		= playerVelocityComponent.Velocity + zeroingDirection * PROJECTILE_INITAL_SPEED;
+	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 }
 
