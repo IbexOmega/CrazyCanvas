@@ -1,10 +1,12 @@
 #include "ECS/Systems/GUI/HUDSystem.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Team/TeamComponent.h"
+#include "ECS/Components/Match/FlagComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -52,7 +54,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_PlayerEntities,
 			.ComponentAccesses =
 			{
-				{ R, HealthComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
+				{ R, HealthComponent::Type() }, { R, CameraComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
 			}
 		},
 		{
@@ -60,6 +62,13 @@ void HUDSystem::Init()
 			.ComponentAccesses =
 			{
 				{ NDA,	PlayerForeignComponent::Type() }, { R,	TeamComponent::Type() }
+			}
+		},
+		{
+			.pSubscriber = &m_FlagEntities,
+			.ComponentAccesses =
+			{
+				{ R,	FlagComponent::Type() }
 			}
 		}
 	};
@@ -107,17 +116,19 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
+	const ComponentArray<CameraComponent>* pCameraComponents = pECS->GetComponentArray<CameraComponent>();
+	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
-	for (Entity players : m_PlayerEntities)
+	for (Entity player : m_PlayerEntities)
 	{
-		const HealthComponent& healthComponent = pHealthComponents->GetConstData(players);
+		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
 		m_HUDGUI->UpdateScore();
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
 
 		if (m_LocalTeamIndex == UINT32_MAX)
 		{
 			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			m_LocalTeamIndex = pTeamComponents->GetConstData(players).TeamIndex;
+			m_LocalTeamIndex = pTeamComponents->GetConstData(player).TeamIndex;
 		}
 
 		{
@@ -157,6 +168,15 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 			m_EnemyHitEventsToProcess.Clear();
 		}
+
+		const CameraComponent& cameraComponent = pCameraComponents->GetConstData(player);
+
+		for (Entity flag : m_FlagEntities)
+		{
+			const PositionComponent& cameraWorldPosition = pPositionComponents->GetConstData(flag);
+			
+			m_HUDGUI->UpdateFlagIndicator(delta, cameraComponent.ViewInv * cameraComponent.ProjectionInv, cameraWorldPosition.Position);
+		}
 	}
 
 	static bool activeButtonChanged = false;
@@ -170,6 +190,8 @@ void HUDSystem::FixedTick(Timestamp delta)
 		m_HUDGUI->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
+
+
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)

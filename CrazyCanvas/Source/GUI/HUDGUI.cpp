@@ -372,6 +372,18 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
+void HUDGUI::UpdateFlagIndicator(LambdaEngine::Timestamp delta, glm::mat4 invViewProj, glm::vec3 flagWorldPos)
+{
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+
+	glm::vec4 clipSpacePos = invViewProj * glm::vec4(flagWorldPos, 1.0f);
+
+	if(clipSpacePos.w != 0)
+		glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
+
+
+}
+
 void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags)
 {
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
@@ -410,6 +422,8 @@ void HUDGUI::InitGUI()
 
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
+
+	m_pFlagIndicator = FrameworkElement::FindName<Noesis::Rectangle>("FLAG_INDICATOR");
 
 	std::string ammoString;
 

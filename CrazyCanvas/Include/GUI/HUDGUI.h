@@ -75,6 +75,8 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
+	void UpdateFlagIndicator(LambdaEngine::Timestamp delta, const glm::mat4& invViewProj, const glm::vec3& flagWorldPos);
+
 private:
 	void InitGUI();
 
@@ -102,6 +104,8 @@ private:
 
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
+
+	Noesis::Rectangle* m_pFlagIndicator = nullptr;
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 

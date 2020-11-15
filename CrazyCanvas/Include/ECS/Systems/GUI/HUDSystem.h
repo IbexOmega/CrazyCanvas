@@ -43,6 +43,7 @@ private:
 	LambdaEngine::IDVector m_PlayerEntities;
 	LambdaEngine::IDVector m_ForeignPlayerEntities;
 	LambdaEngine::IDVector m_WeaponEntities;
+	LambdaEngine::IDVector m_FlagEntities;
 
 	Noesis::Ptr<HUDGUI> m_HUDGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
