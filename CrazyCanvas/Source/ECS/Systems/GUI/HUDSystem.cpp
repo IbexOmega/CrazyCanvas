@@ -66,10 +66,10 @@ void HUDSystem::Init()
 			}
 		},
 		{
-			.pSubscriber = &m_FlagEntities,
+			.pSubscriber = &m_ProjectedGUIEntities,
 			.ComponentAccesses =
 			{
-				{ R,	FlagComponent::Type() } 
+				{ R,	ProjectedGUIComponent::Type() }
 			}
 		},
 		{
@@ -127,6 +127,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
 	const ComponentArray<ViewProjectionMatricesComponent>* pViewProjMats = pECS->GetComponentArray<ViewProjectionMatricesComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 
 	for (Entity player : m_PlayerEntities)
 	{
@@ -183,13 +184,14 @@ void HUDSystem::FixedTick(Timestamp delta)
 		{
 			const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
 
-			for (Entity flag : m_FlagEntities)
+			for (Entity entity : m_ProjectedGUIEntities)
 			{
-				const PositionComponent& flagWorldPosition = pPositionComponents->GetConstData(flag);
+				const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
+				const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(entity);
 
 				glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
 			
-				m_HUDGUI->ProjectGUIIndicator(viewProj, flagWorldPosition.Position, IndicatorTypeGUI::FLAG_INDICATOR);
+				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, projectedGUIComponent.GUIType);
 			}
 		}
 	}

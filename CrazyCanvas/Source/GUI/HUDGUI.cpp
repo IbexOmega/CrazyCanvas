@@ -380,17 +380,13 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 
 	VALIDATE(clipSpacePos.w != 0);
 
-	LOG_INFO("Clip space Z Value: %f", clipSpacePos.z);
-
 	glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
-
-	float32 dir = clipSpacePos.z < 0.0f ? -1.0f : 1.0f;
-
-	float32 vecLength = glm::distance(glm::vec2(0.0f), glm::vec2(ndcSpacePos.x, ndcSpacePos.y));
 
 	glm::vec2 windowSpacePos = glm::vec2(ndcSpacePos.x, -ndcSpacePos.y) * 0.5f * m_WindowSize;
 
-	if (dir > 0)
+	float32 vecLength = glm::distance(glm::vec2(0.0f), glm::vec2(ndcSpacePos.x, ndcSpacePos.y));
+
+	if (clipSpacePos.z > 0)
 	{
 		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
 		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
@@ -406,6 +402,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 		{
 			translation->SetY(-m_WindowSize.y * 0.5f);
 		}
+
 		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
 	}
 	

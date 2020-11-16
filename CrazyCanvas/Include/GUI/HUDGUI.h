@@ -7,6 +7,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "ECS/Components/Player/ProjectileComponent.h"
+#include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
@@ -49,12 +50,6 @@ enum class EPlayerProperty
 	PLAYER_PROPERTY_FLAGS_CAPTURED,
 	PLAYER_PROPERTY_FLAGS_DEFENDED,
 	PLAYER_PROPERTY_PING,
-};
-
-enum class IndicatorTypeGUI
-{
-	FLAG_INDICATOR,
-	DROP_OFF_INDICATOR
 };
 
 typedef  std::pair<uint8, const Player*> PlayerPair;
