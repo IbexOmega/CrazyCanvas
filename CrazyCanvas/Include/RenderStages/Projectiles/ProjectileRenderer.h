@@ -6,7 +6,7 @@
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/RenderGraph.h"
 
-#define GRID_WIDTH 3
+#define GRID_WIDTH 5
 #define MAX_SPHERES_PER_GRID 7
 
 namespace LambdaEngine
@@ -33,8 +33,7 @@ struct MarchingCubesGrid
 	GridConstantRange GPUData;
 	glm::vec3 SphereVelocities[MAX_SPHERES_PER_GRID];
 	LambdaEngine::Buffer* pDensityBuffer;
-	// pTriangleCountBuffer contains a uint32 that is atomically added when a triangle is added to the mesh
-	LambdaEngine::Buffer* pTriangleCountBuffer;
+	LambdaEngine::Buffer* pGradientBuffer;
 	LambdaEngine::DescriptorSet* pDescriptorSet;
 };
 
@@ -87,6 +86,7 @@ private:
 
 	LambdaEngine::TSharedRef<LambdaEngine::PipelineLayout> m_PipelineLayout = nullptr;
 	LambdaEngine::TSharedRef<LambdaEngine::PipelineState> m_PipelineDensityGen = nullptr;
+	LambdaEngine::TSharedRef<LambdaEngine::PipelineState> m_PipelineGradientGen = nullptr;
 	LambdaEngine::TSharedRef<LambdaEngine::PipelineState> m_PipelineMeshGen = nullptr;
 	LambdaEngine::TSharedRef<LambdaEngine::DescriptorHeap> m_DescriptorHeap = nullptr;
 
@@ -94,6 +94,7 @@ private:
 	LambdaEngine::TArray<LambdaEngine::TSharedRef<LambdaEngine::CommandList>> m_ComputeCommandLists;
 
 	GUID_Lambda m_DensityShaderGUID = GUID_NONE;
+	GUID_Lambda m_GradientShaderGUID = GUID_NONE;
 	GUID_Lambda m_MeshGenShaderGUID = GUID_NONE;
 	uint32 m_WorkGroupSize = 0;
 

@@ -113,12 +113,17 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 			.SizeInBytes	= gridCorners * sizeof(float32)
 		};
 
-		const BufferDesc triangleCountBufferDesc =
+		/*	Gradients can't be calculated for corners on the grid's border. Thus, gradients are calculated on the
+			'inner grid'. */
+		constexpr const uint64 innerGridWidth = GRID_WIDTH - 2;
+		constexpr const uint64 innerGridCorners = innerGridWidth * innerGridWidth * innerGridWidth;
+
+		const BufferDesc gradientBufferDesc =
 		{
-			.DebugName		= "Projectile Triangle Count Buffer",
-			.MemoryType 	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE,
+			.DebugName		= "Projectile Gradient Buffer",
+			.MemoryType 	= EMemoryType::MEMORY_TYPE_GPU,
 			.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
-			.SizeInBytes	= sizeof(uint32)
+			.SizeInBytes	= sizeof(glm::vec4) * innerGridCorners
 		};
 
 		const MarchingCubesGrid marchingCubesGrid =
@@ -137,7 +142,7 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 				{ 0.0f, 0.0f, 0.0f }
 			},
 			.pDensityBuffer = m_pGraphicsDevice->CreateBuffer(&densityBufferDesc),
-			.pTriangleCountBuffer = m_pGraphicsDevice->CreateBuffer(&triangleCountBufferDesc),
+			.pGradientBuffer = m_pGraphicsDevice->CreateBuffer(&gradientBufferDesc),
 			.pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get())
 		};
 
@@ -145,13 +150,12 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 
 		// Write descriptors
 		constexpr const uint32 descriptorCount = 3;
-		const Buffer* ppDescriptorSetBuffers[descriptorCount] = { marchingCubesGrid.pDensityBuffer, drawArg.pVertexBuffer, marchingCubesGrid.pTriangleCountBuffer };
+		const Buffer* ppDescriptorSetBuffers[descriptorCount] = { marchingCubesGrid.pDensityBuffer, marchingCubesGrid.pGradientBuffer, drawArg.pVertexBuffer };
 		const uint64 pOffsets[descriptorCount] = { 0, 0, 0 };
-		const uint64 pSizes[descriptorCount] = { densityBufferDesc.SizeInBytes, vertexBufferSize, triangleCountBufferDesc.SizeInBytes };
+		const uint64 pSizes[descriptorCount] = { densityBufferDesc.SizeInBytes, gradientBufferDesc.SizeInBytes, vertexBufferSize };
 		marchingCubesGrid.pDescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, descriptorCount, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		drawArg.pVertexBuffer->SetName("Projectile Vertex Buffer");
-
 		m_MarchingCubesGrids.PushBack(marchingCubesGrid, entity);
 	}
 }
@@ -180,28 +184,40 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
 			const uint32 gridWidth = marchingCubesGrid.GPUData.GridWidth;
-			const uint32 cellCount = gridWidth * gridWidth * gridWidth;
-			const uint32 workGroupCount = (uint32)std::ceilf((float32)cellCount / m_WorkGroupSize);
+			const uint32 cornerCount = gridWidth * gridWidth * gridWidth;
+			const uint32 workGroupCount = (uint32)std::ceilf((float32)cornerCount / m_WorkGroupSize);
 
 			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &marchingCubesGrid.GPUData, sizeof(GridConstantRange), 0);
 			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
 
-		pCommandList->BindComputePipeline(m_PipelineMeshGen.Get());
+		// Generate gradients using the density data
+		pCommandList->BindComputePipeline(m_PipelineGradientGen.Get());
 
-		// Generate meshes using the density data
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
 			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.pDescriptorSet, m_PipelineLayout.Get(), 0);
 
-			// The triangle count should be reset at the beginning of the dispatch
-			void* pTriangleCountData = marchingCubesGrid.pTriangleCountBuffer->Map();
-			memcpy(pTriangleCountData, &initialTriangleCount, sizeof(uint32));
-			marchingCubesGrid.pTriangleCountBuffer->Unmap();
+			// Figure out the minimum amount of work groups to dispatch one thread for each cell
+			const uint32 innerGridWidth = marchingCubesGrid.GPUData.GridWidth - 2;
+			const uint32 cornerCount = innerGridWidth * innerGridWidth * innerGridWidth;
+			const uint32 workGroupCount = (uint32)std::ceilf((float32)cornerCount / m_WorkGroupSize);
+
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &marchingCubesGrid.GPUData, sizeof(GridConstantRange), 0);
+			pCommandList->Dispatch(workGroupCount, 1, 1);
+		}
+
+		// Generate meshes using the density and gradients
+		pCommandList->BindComputePipeline(m_PipelineMeshGen.Get());
+
+		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
+		{
+			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.pDescriptorSet, m_PipelineLayout.Get(), 0);
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
 			const uint32 gridWidth = marchingCubesGrid.GPUData.GridWidth;
-			const uint32 cellCount = gridWidth * gridWidth * gridWidth;
+			const uint32 gridWidthInCells = gridWidth - 3; // Do not compute cells at the border of the grid
+			const uint32 cellCount = gridWidthInCells * gridWidthInCells * gridWidthInCells;
 			const uint32 workGroupCount = (uint32)std::ceilf((float32)cellCount / m_WorkGroupSize);
 
 			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, &marchingCubesGrid.GPUData, sizeof(GridConstantRange), 0);
@@ -230,7 +246,7 @@ void ProjectileRenderer::CreatePipelineLayout()
 		.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER
 	};
 
-	const DescriptorBindingDesc triangleBufferDesc =
+	const DescriptorBindingDesc gradientBufferDesc =
 	{
 		.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER,
 		.DescriptorCount	= 1,
@@ -238,7 +254,7 @@ void ProjectileRenderer::CreatePipelineLayout()
 		.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER
 	};
 
-	const DescriptorBindingDesc triangleCounterDesc =
+	const DescriptorBindingDesc triangleBufferDesc =
 	{
 		.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER,
 		.DescriptorCount	= 1,
@@ -248,7 +264,7 @@ void ProjectileRenderer::CreatePipelineLayout()
 
 	const DescriptorSetLayoutDesc descriptorSetLayoutDesc =
 	{
-		.DescriptorBindings = { densityBufferDesc, triangleBufferDesc, triangleCounterDesc }
+		.DescriptorBindings = { densityBufferDesc, gradientBufferDesc, triangleBufferDesc }
 	};
 
 	const PipelineLayoutDesc pipelineLayoutDesc =
@@ -263,16 +279,20 @@ void ProjectileRenderer::CreatePipelineLayout()
 
 bool ProjectileRenderer::CreateShaders()
 {
-	m_DensityShaderGUID	= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesDensity.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
-	m_MeshGenShaderGUID	= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesMeshGen.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
-	return m_DensityShaderGUID != GUID_NONE && m_MeshGenShaderGUID != GUID_NONE;
+	m_DensityShaderGUID		= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesDensity.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_GradientShaderGUID	= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesGradient.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	m_MeshGenShaderGUID		= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesMeshGen.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
+	return m_DensityShaderGUID != GUID_NONE && m_GradientShaderGUID && m_MeshGenShaderGUID != GUID_NONE;
 }
 
 bool ProjectileRenderer::CreateCommonMesh()
 {
 	constexpr const uint32 maxTrianglesPerCell = 5;
 	constexpr const uint32 verticesPerTriangle = 3;
-	constexpr const uint32 vertexCount = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * maxTrianglesPerCell * verticesPerTriangle;
+
+	constexpr const uint32 cellGridWidth = GRID_WIDTH - 3;
+	constexpr const uint32 cellCount = cellGridWidth * cellGridWidth * cellGridWidth;
+	constexpr const uint32 vertexCount = cellCount * maxTrianglesPerCell * verticesPerTriangle;
 
 	Vertex vertices[vertexCount];
 	memset(vertices, 0, sizeof(Vertex) * vertexCount);
@@ -343,8 +363,6 @@ bool ProjectileRenderer::CreateCommandLists(const CustomRendererRenderGraphInitD
 
 bool ProjectileRenderer::CreatePipelines()
 {
-	/*	Set the work group size. It could be larger (x * y * z), but smaller and more work groups allows for more
-		concurrency, hence it is faster. */
 	GraphicsDeviceFeatureDesc deviceFeatures;
 	m_pGraphicsDevice->QueryDeviceFeatures(&deviceFeatures);
 	m_WorkGroupSize = deviceFeatures.MaxComputeWorkGroupSize[0];
@@ -369,6 +387,28 @@ bool ProjectileRenderer::CreatePipelines()
 		};
 
 		m_PipelineDensityGen = m_pGraphicsDevice->CreateComputePipelineState(&pipelineStateDesc);
+	}
+
+	// Create gradient generation pipeline
+	{
+		const ComputePipelineStateDesc pipelineStateDesc =
+		{
+			.DebugName = "Marching Cubes Gradient Generation Pipeline",
+			.pPipelineLayout = m_PipelineLayout.Get(),
+			.Shader =
+			{
+				.pShader = ResourceManager::GetShader(m_GradientShaderGUID),
+				.ShaderConstants =
+				{
+					// local_size_x
+					{
+						.Integer = (int32)m_WorkGroupSize
+					}
+				}
+			}
+		};
+
+		m_PipelineGradientGen = m_pGraphicsDevice->CreateComputePipelineState(&pipelineStateDesc);
 	}
 
 	// Create mesh generation pipeline
@@ -430,7 +470,7 @@ void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
 	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids.IndexID(entity);
 	SAFEDELETE(marchingCubesGrid.pDensityBuffer);
-	SAFEDELETE(marchingCubesGrid.pTriangleCountBuffer);
+	SAFEDELETE(marchingCubesGrid.pGradientBuffer);
 	SAFEDELETE(marchingCubesGrid.pDescriptorSet);
 
 	m_MarchingCubesGrids.Pop(entity);
@@ -439,6 +479,6 @@ void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 void ProjectileRenderer::DeleteMarchingCubesGrid(MarchingCubesGrid& marchingCubesGrid)
 {
 	SAFEDELETE(marchingCubesGrid.pDensityBuffer);
-	SAFEDELETE(marchingCubesGrid.pTriangleCountBuffer);
+	SAFEDELETE(marchingCubesGrid.pGradientBuffer);
 	SAFEDELETE(marchingCubesGrid.pDescriptorSet);
 }

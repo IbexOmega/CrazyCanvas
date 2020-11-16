@@ -3,7 +3,7 @@
 
 #define MAX_SPHERE_COUNT 7
 #define MAX_TRIANGLES_PER_CELL 5
-#define SPHERE_RADIUS 0.8
+#define SPHERE_RADIUS 0.3
 
 struct SEdge
 {

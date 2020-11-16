@@ -1,0 +1,57 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "MCTables.glsl"
+
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+layout(push_constant) uniform PushConstants
+{
+	vec4 SpherePositions[MAX_SPHERE_COUNT];
+	uint GridWidth; // The grid is cubic, i.e. the corner count is GridWidth^3
+	uint SphereCount;
+} u_PC;
+
+layout(binding = 0, set = 0) restrict readonly buffer Densities
+{
+	float Val[];
+} b_Densities;
+
+layout(binding = 1, set = 0) restrict writeonly buffer Gradients
+{
+	vec4 Val[];
+} b_Gradients;
+
+void main()
+{
+	const uint threadID = gl_GlobalInvocationID.x;
+	const uint gridWidth = u_PC.GridWidth;
+
+	const uint gridWidthInner = gridWidth - 2;
+	const uint gridWidthInnerSquared = gridWidthInner * gridWidthInner;
+	if (threadID >= gridWidthInnerSquared * gridWidthInner)
+	{
+		return;
+	}
+
+	const uint gridWidthSquared = gridWidth * gridWidth;
+
+	/*	1. Offset by 1 in each dimension, as gradients can't be calculated for corners on the grid's border.
+		2. Account for the fact that the density grid is GridWidth^3 whilst the gradient grid is (GridWidth - 2)^3  */
+	const uvec3 cornerID =
+	{
+		1 + (threadID % gridWidthInner),
+		1 + ((threadID / gridWidthInner) % gridWidthInner),
+		1 + threadID / gridWidthInnerSquared
+	};
+
+	const uint cornerIdx = cornerID.x + cornerID.y * gridWidth + cornerID.z * gridWidthSquared;
+	b_Gradients.Val[threadID] = vec4
+	(
+		b_Densities.Val[cornerIdx + 1] - b_Densities.Val[cornerIdx - 1],
+		b_Densities.Val[cornerIdx + gridWidth] - b_Densities.Val[cornerIdx - gridWidth],
+		b_Densities.Val[cornerIdx + gridWidthSquared] - b_Densities.Val[cornerIdx - gridWidthSquared],
+		0.0
+	);
+}
