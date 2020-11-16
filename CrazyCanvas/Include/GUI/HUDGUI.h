@@ -18,6 +18,7 @@
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
+#include "NsGui/Rectangle.h"
 #include "NsGui/ObservableCollection.h"
 
 #include "Lobby/PlayerManagerBase.h"
@@ -75,7 +76,7 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
-	void UpdateFlagIndicator(LambdaEngine::Timestamp delta, const glm::mat4& invViewProj, const glm::vec3& flagWorldPos);
+	void UpdateFlagIndicator(LambdaEngine::Timestamp delta, const glm::mat4& viewProj, const glm::vec3& flagWorldPos);
 
 private:
 	void InitGUI();
@@ -106,6 +107,8 @@ private:
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
 
 	Noesis::Rectangle* m_pFlagIndicator = nullptr;
+
+	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 

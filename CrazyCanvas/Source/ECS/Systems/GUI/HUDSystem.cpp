@@ -54,7 +54,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_PlayerEntities,
 			.ComponentAccesses =
 			{
-				{ R, HealthComponent::Type() }, { R, CameraComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
+				{ R, HealthComponent::Type() },  { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
 			}
 		},
 		{
@@ -68,7 +68,14 @@ void HUDSystem::Init()
 			.pSubscriber = &m_FlagEntities,
 			.ComponentAccesses =
 			{
-				{ R,	FlagComponent::Type() }
+				{ R,	FlagComponent::Type() } 
+			}
+		},
+		{
+			.pSubscriber = &m_CameraEntities,
+			.ComponentAccesses =
+			{
+				{ R, CameraComponent::Type() }
 			}
 		}
 	};
@@ -116,7 +123,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
-	const ComponentArray<CameraComponent>* pCameraComponents = pECS->GetComponentArray<CameraComponent>();
+	const ComponentArray<ViewProjectionMatricesComponent>* pViewProjMats = pECS->GetComponentArray<ViewProjectionMatricesComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
 	for (Entity player : m_PlayerEntities)
@@ -169,13 +176,19 @@ void HUDSystem::FixedTick(Timestamp delta)
 			m_EnemyHitEventsToProcess.Clear();
 		}
 
-		const CameraComponent& cameraComponent = pCameraComponents->GetConstData(player);
 
-		for (Entity flag : m_FlagEntities)
+		for (Entity camera : m_CameraEntities)
 		{
-			const PositionComponent& cameraWorldPosition = pPositionComponents->GetConstData(flag);
-			
-			m_HUDGUI->UpdateFlagIndicator(delta, cameraComponent.ViewInv * cameraComponent.ProjectionInv, cameraWorldPosition.Position);
+			const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
+
+			for (Entity flag : m_FlagEntities)
+			{
+				const PositionComponent& flagWorldPosition = pPositionComponents->GetConstData(flag);
+
+				glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
+
+				m_HUDGUI->UpdateFlagIndicator(delta, viewProj, flagWorldPosition.Position);
+			}
 		}
 	}
 

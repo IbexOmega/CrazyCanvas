@@ -372,16 +372,24 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
-void HUDGUI::UpdateFlagIndicator(LambdaEngine::Timestamp delta, glm::mat4 invViewProj, glm::vec3 flagWorldPos)
+void HUDGUI::UpdateFlagIndicator(LambdaEngine::Timestamp delta, const glm::mat4& viewProj, const glm::vec3& flagWorldPos)
 {
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-	glm::vec4 clipSpacePos = invViewProj * glm::vec4(flagWorldPos, 1.0f);
+	glm::vec4 clipSpacePos = viewProj * glm::vec4(flagWorldPos, 1.0f);
 
-	if(clipSpacePos.w != 0)
-		glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
+	VALIDATE(clipSpacePos.w != 0);
 
+	glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
 
+	glm::vec2 windowSpacePos = ((glm::vec2(ndcSpacePos.x, ndcSpacePos.y) + 1.0f) * 0.5f) * m_WindowSize; // multiply with viewSize + offset
+
+	translation->SetX(windowSpacePos.x);
+	translation->SetY(windowSpacePos.y);
+
+	LOG_INFO("Flag Screen pos: %f, %f", windowSpacePos.x, windowSpacePos.y);
+
+	m_pFlagIndicator->SetRenderTransform(translation);
 }
 
 void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags)
@@ -437,4 +445,6 @@ void HUDGUI::InitGUI()
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);
+	m_WindowSize.x = CommonApplication::Get()->GetActiveWindow()->GetWidth();
+	m_WindowSize.y = CommonApplication::Get()->GetActiveWindow()->GetHeight();
 }
