@@ -26,7 +26,6 @@ namespace LambdaEngine
 		if (m_DescriptorHeap)
 		{
 			m_DescriptorHeap->FreeDescriptorSet(m_DescriptorSet);
-			LOG_INFO("[DescriptorSetVK]: RELEASE!");
 		}
 	}
 

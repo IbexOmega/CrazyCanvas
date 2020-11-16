@@ -349,8 +349,6 @@ namespace LambdaEngine
 	{
 		if (resourceName == SCENE_DRAW_ARGS)
 		{
-			m_DescriptorCache.LogStatistics("Player DS Cache");
-
 			if (count > 0U && pDrawArgs != nullptr)
 			{
 				m_pDrawArgs = pDrawArgs;
