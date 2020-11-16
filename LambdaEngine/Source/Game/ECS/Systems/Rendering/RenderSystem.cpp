@@ -32,6 +32,7 @@
 
 #include "Rendering/ParticleRenderer.h"
 #include "Rendering/ParticleUpdater.h"
+#include "Rendering/ParticleCollider.h"
 #include "Rendering/RT/ASBuilder.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -391,6 +392,10 @@ namespace LambdaEngine
 				m_pParticleUpdater = DBG_NEW ParticleUpdater();
 				m_pParticleUpdater->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+
+				m_pParticleCollider = DBG_NEW ParticleCollider();
+				m_pParticleCollider->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
 			}
 
 			//GUI Renderer
@@ -472,6 +477,7 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
+		SAFEDELETE(m_pParticleCollider);
 		SAFEDELETE(m_pASBuilder);
 
 		// Delete Custom Renderers
@@ -666,6 +672,7 @@ namespace LambdaEngine
 			uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
 			m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
 			m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+			m_pParticleCollider->SetCurrentParticleCount(particleCount, activeEmitterCount);
 		}
 	}
 
@@ -721,6 +728,7 @@ namespace LambdaEngine
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
 		}
 
 		// AS Builder

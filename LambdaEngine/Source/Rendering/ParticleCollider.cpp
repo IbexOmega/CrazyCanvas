@@ -1,4 +1,4 @@
-#include "Rendering/ParticleUpdater.h"
+#include "Rendering/ParticleCollider.h"
 
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
@@ -13,9 +13,9 @@
 
 namespace LambdaEngine
 {
-	ParticleUpdater* ParticleUpdater::s_pInstance = nullptr;
+	ParticleCollider* ParticleCollider::s_pInstance = nullptr;
 
-	ParticleUpdater::ParticleUpdater()
+	ParticleCollider::ParticleCollider()
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
@@ -24,7 +24,7 @@ namespace LambdaEngine
 		m_PushConstant.particleCount = 0;
 	}
 
-	ParticleUpdater::~ParticleUpdater()
+	ParticleCollider::~ParticleCollider()
 	{
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
@@ -44,7 +44,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool LambdaEngine::ParticleUpdater::CreatePipelineLayout()
+	bool LambdaEngine::ParticleCollider::CreatePipelineLayout()
 	{
 		DescriptorBindingDesc instanceBindingDesc0 = {};
 		instanceBindingDesc0.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
@@ -83,33 +83,26 @@ namespace LambdaEngine
 		instanceBindingDesc5.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
 		DescriptorBindingDesc instanceBindingDesc6 = {};
-		instanceBindingDesc6.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		instanceBindingDesc6.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
 		instanceBindingDesc6.DescriptorCount = 1;
 		instanceBindingDesc6.Binding = 6;
 		instanceBindingDesc6.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
-		DescriptorBindingDesc instanceBindingDesc7 = {};
-		instanceBindingDesc7.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-		instanceBindingDesc7.DescriptorCount = 1;
-		instanceBindingDesc7.Binding = 7;
-		instanceBindingDesc7.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-
-		DescriptorBindingDesc instanceBindingDesc8 = {};
-		instanceBindingDesc8.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE;
-		instanceBindingDesc8.DescriptorCount = 1;
-		instanceBindingDesc8.Binding = 8;
-		instanceBindingDesc8.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-
-		TArray<DescriptorBindingDesc> descriptorBindings = { 
+		TArray<DescriptorBindingDesc> descriptorBindings = {
 			instanceBindingDesc0,
 			instanceBindingDesc1,
 			instanceBindingDesc2,
 			instanceBindingDesc3,
 			instanceBindingDesc4,
-			instanceBindingDesc5,
-			instanceBindingDesc6,
-			instanceBindingDesc7
+			instanceBindingDesc5
 		};
+
+		m_InlineRayTracingEnabled = RenderSystem::GetInstance().IsInlineRayTracingEnabled();
+		if (m_InlineRayTracingEnabled)
+		{
+			descriptorBindings.PushBack(instanceBindingDesc6);
+			D_LOG_INFO("[ParticleCollider] Ray query is enabled, using inline ray tracing for particle collisions.");
+		}
 
 		// Set 0
 		m_UpdatePipeline.CreateDescriptorSetLayout(descriptorBindings);
@@ -124,19 +117,19 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool LambdaEngine::ParticleUpdater::CreateDescriptorSets()
+	bool LambdaEngine::ParticleCollider::CreateDescriptorSets()
 	{
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 8;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 5;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 1;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
-		descriptorHeapDesc.DebugName = "Particle Updater Descriptor Heap";
+		descriptorHeapDesc.DebugName = "Particle Collider Descriptor Heap";
 		descriptorHeapDesc.DescriptorSetCount = 128;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
@@ -149,11 +142,12 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool LambdaEngine::ParticleUpdater::CreateShaders()
+	bool LambdaEngine::ParticleCollider::CreateShaders()
 	{
 		bool success = true;
 
-		String computeShaderFileName = "Particles/ParticleUpdate.comp";
+		String computeShaderFileName = "Particles/ParticleCollider.comp";
+
 		GUID_Lambda computeShaderGUID = ResourceManager::LoadShaderFromFile(computeShaderFileName, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		success &= computeShaderGUID != GUID_NONE;
 
@@ -162,14 +156,14 @@ namespace LambdaEngine
 		return success;
 	}
 
-	bool LambdaEngine::ParticleUpdater::CreateCommandLists()
+	bool LambdaEngine::ParticleCollider::CreateCommandLists()
 	{
 		m_ppComputeCommandAllocators = DBG_NEW CommandAllocator * [m_BackBufferCount];
 		m_ppComputeCommandLists = DBG_NEW CommandList * [m_BackBufferCount];
 
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
-			m_ppComputeCommandAllocators[b] = RenderAPI::GetDevice()->CreateCommandAllocator("Particle Updater Compute Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+			m_ppComputeCommandAllocators[b] = RenderAPI::GetDevice()->CreateCommandAllocator("Particle Collider Compute Command Allocator " + std::to_string(b), ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 
 			if (!m_ppComputeCommandAllocators[b])
 			{
@@ -177,7 +171,7 @@ namespace LambdaEngine
 			}
 
 			CommandListDesc commandListDesc = {};
-			commandListDesc.DebugName = "Particle Updater Compute Command List " + std::to_string(b);
+			commandListDesc.DebugName = "Particle Collider Compute Command List " + std::to_string(b);
 			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 			commandListDesc.Flags = FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
@@ -192,7 +186,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool LambdaEngine::ParticleUpdater::Init()
+	bool LambdaEngine::ParticleCollider::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 		m_ParticleCount = 0;
@@ -218,7 +212,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool LambdaEngine::ParticleUpdater::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
+	bool LambdaEngine::ParticleCollider::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
 
@@ -242,7 +236,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ParticleUpdater::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	void ParticleCollider::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
 
@@ -251,11 +245,26 @@ namespace LambdaEngine
 		m_UpdatePipeline.Update(delta, modFrameIndex, backBufferIndex);
 	}
 
-	void ParticleUpdater::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* const* pAccelerationStructure)
+	void ParticleCollider::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* const* pAccelerationStructure)
 	{
+		if (m_InlineRayTracingEnabled)
+		{
+			if (resourceName == SCENE_TLAS)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 6U;
+
+				SDescriptorTLASUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppTLAS = pAccelerationStructure;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = 1;
+
+				m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
+		}
 	}
 
-	void ParticleUpdater::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
+	void ParticleCollider::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerImageSamplers);
@@ -264,7 +273,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferBound);
 	}
 
-	void ParticleUpdater::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
+	void ParticleCollider::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(resourceName);
 		UNREFERENCED_VARIABLE(ppBuffers);
@@ -286,7 +295,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorCount = count;
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 3", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 		else if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
 		{
@@ -301,7 +310,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorCount = count;
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 		else if (resourceName == SCENE_EMITTER_INSTANCE_BUFFER)
 		{
@@ -316,7 +325,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorCount = count;
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Emitter Instance Buffer Descriptor Set 0 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			m_UpdatePipeline.UpdateDescriptorSet("Emitter Instance Buffer Descriptor Set 0 Binding 2", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 		else if (resourceName == SCENE_EMITTER_TRANSFORM_BUFFER)
 		{
@@ -363,39 +372,9 @@ namespace LambdaEngine
 
 			m_UpdatePipeline.UpdateDescriptorSet("Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
-		else if (resourceName == AS_INSTANCE_INDICES_BUFFER)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 6U;
-
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-
-			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCE_INDICES_BUFFER Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
-		else if (resourceName == AS_INSTANCES_BUFFER)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 7U;
-
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-
-			m_UpdatePipeline.UpdateDescriptorSet("AS_INSTANCES_BUFFER Descriptor Set 0 Binding 7", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
 	}
 
-	void ParticleUpdater::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
+	void ParticleCollider::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);

@@ -7,7 +7,7 @@
 
 namespace LambdaEngine
 {
-	class ParticleUpdater : public CustomRenderer
+	class ParticleCollider : public CustomRenderer
 	{
 		struct PushConstantData
 		{
@@ -16,8 +16,8 @@ namespace LambdaEngine
 		};
 
 	public:
-		ParticleUpdater();
-		~ParticleUpdater();
+		ParticleCollider();
+		~ParticleCollider();
 
 		bool Init();
 
@@ -42,7 +42,7 @@ namespace LambdaEngine
 
 		virtual const String& GetName() const override final
 		{
-			static String name = RENDER_GRAPH_PARTICLE_UPDATE_STAGE_NAME;
+			static String name = RENDER_GRAPH_PARTICLE_COLLIDER_STAGE_NAME;
 			return name;
 		}
 
@@ -56,20 +56,21 @@ namespace LambdaEngine
 		bool								m_Initilized = false;
 		uint32								m_ParticleCount;
 		uint32								m_EmitterCount;
+		bool								m_InlineRayTracingEnabled = false;
 
 		PushConstantData					m_PushConstant;
 
 		TSharedRef<Sampler>					m_Sampler = nullptr;
-		TSharedRef<DescriptorHeap>			m_DescriptorHeap			= nullptr;
+		TSharedRef<DescriptorHeap>			m_DescriptorHeap = nullptr;
 		PipelineContext						m_UpdatePipeline;
 
 		uint32								m_BackBufferCount = 0;
 
-		CommandAllocator**					m_ppComputeCommandAllocators = nullptr;
-		CommandList**						m_ppComputeCommandLists = nullptr;
+		CommandAllocator** m_ppComputeCommandAllocators = nullptr;
+		CommandList** m_ppComputeCommandLists = nullptr;
 
 	private:
-		static ParticleUpdater* s_pInstance;
+		static ParticleCollider* s_pInstance;
 	};
 }
 

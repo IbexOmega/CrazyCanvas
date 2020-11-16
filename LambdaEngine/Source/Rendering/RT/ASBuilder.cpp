@@ -230,7 +230,7 @@ namespace LambdaEngine
 
 		// Release BLAS
 		m_pResourcesToRemove[m_ModFrameIndex].PushBack(blasData.pBLAS);
-
+		
 		//Dequeue from updating if enqueued
 		for (auto dirtyBLASIt = m_DirtyBLASes.Begin(); dirtyBLASIt != m_DirtyBLASes.End();)
 		{

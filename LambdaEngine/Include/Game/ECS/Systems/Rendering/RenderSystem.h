@@ -50,6 +50,7 @@ namespace LambdaEngine
 	class PaintMaskRenderer;
 	class ParticleRenderer;
 	class ParticleUpdater;
+	class ParticleCollider;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -418,6 +419,7 @@ namespace LambdaEngine
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
+		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
