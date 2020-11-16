@@ -3,6 +3,8 @@
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/Player/Player.h"
 
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 #include "Events/GameplayEvents.h"
@@ -99,12 +101,29 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 {
 	using namespace LambdaEngine;
 
+	const Entity playerEntity = event.pPlayer->GetEntity();
 	LOG_INFO("PlayerAliveUpdatedEvent isDead=%s entity=%u",
 		event.pPlayer->IsDead() ? "true" : "false",
-		event.pPlayer->GetEntity());
+		playerEntity);
 
 	if (event.pPlayer->IsDead())
 	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		ComponentArray<ChildComponent>* pChildComponents = pECS->GetComponentArray<ChildComponent>();
+
+		// Reset child components
+		if (pChildComponents->HasComponent(playerEntity))
+		{
+			const ChildComponent& childComponent = pChildComponents->GetConstData(playerEntity);
+			const TArray<std::string>& tags = childComponent.GetTags();
+			for (const std::string& tag : tags)
+			{
+				Entity childEntity = childComponent.GetEntityWithTag(tag);
+				PaintMaskRenderer::ResetServer(childEntity);
+			}
+		}
+
+		// Reset player
 		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());
 	}
 

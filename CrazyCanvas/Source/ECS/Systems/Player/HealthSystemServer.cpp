@@ -1,7 +1,6 @@
 #include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
-#include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/Player/Player.h"
 
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
