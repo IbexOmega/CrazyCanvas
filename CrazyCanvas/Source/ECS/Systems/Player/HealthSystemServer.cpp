@@ -103,6 +103,8 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			const int32		oldHealth		= healthComponent.CurrentHealth;
 			healthComponent.CurrentHealth	= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
 
+			LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d", oldHealth, healthComponent.CurrentHealth);
+
 			// Check if health changed
 			if (oldHealth != healthComponent.CurrentHealth)
 			{
@@ -126,6 +128,8 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				packets.SendPacket(packet);
 			}
 		}
+
+		m_HitInfoToProcess.Clear();
 	}
 }
 

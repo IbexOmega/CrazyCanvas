@@ -316,10 +316,10 @@ namespace LambdaEngine
 			RenderGraphStructureDesc renderGraphStructure = {};
 
 			String renderGraphName = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RENDER_GRAPH_NAME);
-			if (renderGraphName != "" && !MultiplayerUtils::IsServer())
+			if (renderGraphName != "")
 			{
-				String prefix	= m_RayTracingEnabled ? "RT_" : "";
-				String postfix	= m_MeshShadersEnabled ? "_MESH" : "";
+				String prefix	= m_RayTracingEnabled	&& !MultiplayerUtils::IsServer() ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled	&& !MultiplayerUtils::IsServer() ? "_MESH" : "";
 				size_t pos = renderGraphName.find_first_of(".lrg");
 				if (pos != String::npos)
 				{

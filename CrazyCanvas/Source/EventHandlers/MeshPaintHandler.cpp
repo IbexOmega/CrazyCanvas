@@ -88,6 +88,11 @@ bool MeshPaintHandler::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event
 {
 	using namespace LambdaEngine;
 
+	if (!MultiplayerUtils::IsServer())
+	{
+		LOG_INFO("CLIENT MeshPaintHandler::PlayerAliveUpdatedEvent");
+	}
+
 	if (event.pPlayer->IsDead())
 	{
 		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());

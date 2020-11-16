@@ -287,6 +287,11 @@ bool PlayerManagerClient::OnPacketPlayerAliveChangedReceived(const PacketReceive
 		{
 			pPlayer->m_IsDead = packet.IsDead;
 
+			if (pPlayer->m_IsDead)
+			{
+				LOG_INFO("CLIENT PLAYER DIED");
+			}
+
 			PlayerAliveUpdatedEvent playerAliveUpdatedEvent(pPlayer, GetPlayerNoConst(packet.KillerUID));
 			EventQueue::SendEventImmediate(playerAliveUpdatedEvent);
 		}

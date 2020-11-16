@@ -52,6 +52,5 @@ void main()
 	vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);
 	texCoord.y = 1.0f - texCoord.y;
 	texCoord = (texCoord * 2.0f - 1.0f);
-	texCoord = texCoord * 1.2f;
 	gl_Position = vec4(vec3(texCoord, 0.0f), 1.0f);
 }

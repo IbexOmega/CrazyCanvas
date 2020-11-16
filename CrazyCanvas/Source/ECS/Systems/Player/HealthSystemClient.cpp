@@ -21,8 +21,8 @@ void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 	UNREFERENCED_VARIABLE(deltaTime);
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
-	ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
+	ComponentArray<HealthComponent>*						pHealthComponents			= pECS->GetComponentArray<HealthComponent>();
+	ComponentArray<PacketComponent<PacketHealthChanged>>*	pHealthChangedComponents	= pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 	for (Entity entity : m_HealthEntities)
 	{
