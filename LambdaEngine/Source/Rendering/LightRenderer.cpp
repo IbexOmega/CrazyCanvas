@@ -190,7 +190,7 @@ namespace LambdaEngine
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					// Create a new descriptor or use an old descriptor
-					m_DrawArgsDescriptorSets[d] = m_DescriptorCache.GetDescriptorSet("Light Renderer Descriptor Set " + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DrawArgsDescriptorSets[d] = m_DescriptorCache.GetDescriptorSet("Light Renderer Descriptor Set " + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DrawArgsDescriptorSets[d] != nullptr)
 					{

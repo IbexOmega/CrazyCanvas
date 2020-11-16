@@ -967,6 +967,8 @@ namespace LambdaEngine
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
+		LOG_WARNING("Adding Renderable Entity: %u", entity);
+
 		uint32 extensionGroupIndex = 0;
 		uint32 texturesPerExtensionGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
@@ -1429,6 +1431,8 @@ namespace LambdaEngine
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
+		LOG_WARNING("Removing Renderable Entity: %u", entity);
+
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
@@ -1467,9 +1471,11 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			// Remove ASInstance
+			//Extract Paint Texture Data (stored in CustomIndex) before removing the ASInstance
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceIndex];
 			const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
+
+			// Remove ASInstance
 			m_pASBuilder->RemoveInstance(asInstanceIndex);
 			
 			//Swap Removed with Back
@@ -1477,38 +1483,43 @@ namespace LambdaEngine
 			meshAndInstancesIt->second.ASInstanceIndices.PopBack();
 
 			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
-			ECSCore* pECS = ECSCore::GetInstance();
-			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-			if (pMeshPaintComponents->HasComponent(entity))
+			if (auto meshPaintInstancesIt = m_PaintMaskASInstanceIndices.find(textureIndex); meshPaintInstancesIt != m_PaintMaskASInstanceIndices.end())
 			{
-				uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
-				m_PaintMaskTextures[textureIndex]		= m_PaintMaskTextures.GetBack();
-				m_PaintMaskTextures.PopBack();
-				m_PaintMaskTextureViews[textureIndex]	= m_PaintMaskTextureViews.GetBack();
-				m_PaintMaskTextureViews.PopBack();
-
-				TArray<uint32>& asInstanceToBeRemoved = m_PaintMaskASInstanceIndices[textureIndex];
-				if (auto asInstanceIt = std::find(asInstanceToBeRemoved.Begin(), asInstanceToBeRemoved.End(), asInstanceIndex); asInstanceIt != asInstanceToBeRemoved.End())
+				if (auto removedMeshPaintInstanceIt = std::find(meshPaintInstancesIt->second.Begin(), meshPaintInstancesIt->second.End(), asInstanceIndex);
+					removedMeshPaintInstanceIt != meshPaintInstancesIt->second.End())
 				{
-					asInstanceToBeRemoved.Erase(asInstanceIt);
+					LOG_ERROR("Removing Mesh Paint Entity: %u Current Count: %u", entity, m_PaintMaskTextures.GetSize());
+
+					uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+					m_PaintMaskTextures[textureIndex] = m_PaintMaskTextures.GetBack();
+					m_PaintMaskTextures.PopBack();
+					m_PaintMaskTextureViews[textureIndex] = m_PaintMaskTextureViews.GetBack();
+					m_PaintMaskTextureViews.PopBack();
+
+					meshPaintInstancesIt->second.Erase(removedMeshPaintInstanceIt);
+
+					TArray<uint32>& asInstancesToBeUpdated = m_PaintMaskASInstanceIndices[changedIndex];
+					for (uint32 asInstanceIndexToBeUpdated : asInstancesToBeUpdated)
+					{
+						m_pASBuilder->UpdateInstance(
+							asInstanceIndexToBeUpdated,
+							[textureIndex](AccelerationStructureInstance& asInstance)
+							{
+								asInstance.CustomIndex &= 0xFFFF00;
+								asInstance.CustomIndex |= textureIndex;
+							});
+
+						meshPaintInstancesIt->second.PushBack(asInstanceIndexToBeUpdated);
+					}
+					asInstancesToBeUpdated.Clear();
+
+					if (meshPaintInstancesIt->second.IsEmpty())
+					{
+						m_PaintMaskASInstanceIndices.erase(meshPaintInstancesIt);
+					}
+
+					m_RayTracingPaintMaskTexturesResourceDirty = true;
 				}
-
-				TArray<uint32>& asInstancesToBeUpdated = m_PaintMaskASInstanceIndices[changedIndex];
-				for (uint32 asInstanceIndexToBeUpdated : asInstancesToBeUpdated)
-				{
-					m_pASBuilder->UpdateInstance(
-						asInstanceIndexToBeUpdated,
-						[textureIndex](AccelerationStructureInstance& asInstance)
-						{
-							asInstance.CustomIndex &= 0xFFFF00;
-							asInstance.CustomIndex |= textureIndex;
-						});
-
-					asInstanceToBeRemoved.PushBack(asInstanceIndexToBeUpdated);
-				}
-				asInstancesToBeUpdated.Clear();
-
-				m_RayTracingPaintMaskTexturesResourceDirty = true;
 			}
 		}
 
@@ -2473,7 +2484,7 @@ namespace LambdaEngine
 			unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
 			unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
 
-			RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+			m_pRenderGraph->UpdateResource(&unwrappedTextureUpdate);
 
 			m_RayTracingPaintMaskTexturesResourceDirty = false;
 		}

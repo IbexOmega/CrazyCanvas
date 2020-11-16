@@ -159,9 +159,9 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	return true;
 }
 
-bool HUDGUI::OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event)
+void HUDGUI::ToggleEscapeMenu()
 {
-	if (event.Key == EKey::KEY_ESCAPE && Input::GetCurrentInputmode() != EInputLayer::GUI)
+	if (Input::GetCurrentInputmode() != EInputLayer::GUI)
 	{
 		Input::PushInputMode(EInputLayer::GUI);
 		m_MouseEnabled = !m_MouseEnabled;
@@ -169,10 +169,8 @@ bool HUDGUI::OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event)
 
 		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
 		m_ContextStack.push(m_pEscapeGrid);
-
-		return true;
 	}
-	else if (event.Key == EKey::KEY_ESCAPE)
+	else
 	{
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
@@ -181,8 +179,6 @@ bool HUDGUI::OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event)
 		m_ContextStack.pop();
 		Input::PopInputMode();
 	}
-
-	return false;
 }
 
 void HUDGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -237,6 +233,8 @@ void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+
+	Input::PopInputMode();
 }
 
 void HUDGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -638,7 +636,6 @@ void HUDGUI::InitGUI()
 	m_pKeyBindingsGrid		= FrameworkElement::FindName<Grid>("KeyBindingsGrid");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
-	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::OpenEscapeMenu);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
 
 	SetDefaultSettings();
@@ -731,6 +728,12 @@ bool HUDGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)
 
 		m_ListenToCallbacks = false;
 		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+	else if (event.Key == EKey::KEY_ESCAPE)
+	{
+		ToggleEscapeMenu();
 
 		return true;
 	}

@@ -69,7 +69,7 @@ public:
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
-	bool OpenEscapeMenu(const LambdaEngine::KeyPressedEvent& event);
+	void ToggleEscapeMenu();
 
 	// Escape GUI
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);

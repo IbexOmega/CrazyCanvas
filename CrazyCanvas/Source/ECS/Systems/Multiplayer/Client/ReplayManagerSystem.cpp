@@ -23,7 +23,7 @@ ReplayManagerSystem::ReplayManagerSystem() :
 
 ReplayManagerSystem::~ReplayManagerSystem()
 {
-
+	s_pInstance = nullptr;
 }
 
 void ReplayManagerSystem::Init()

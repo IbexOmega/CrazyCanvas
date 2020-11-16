@@ -44,6 +44,9 @@ namespace LambdaEngine
 
 	void MeshPaintComponentOwner::ReleaseMeshPaintComponent(MeshPaintComponent& meshPaintComponent)
 	{
+		static uint32 i = 0;
+		LOG_ERROR("Removing Mesh Paint Component: %u", i++);
+
 		auto& resourcesToRelease = m_ResourcesToRelease[m_ModFrameIndex];
 		resourcesToRelease.PushBack(meshPaintComponent.pTexture);
 		resourcesToRelease.PushBack(meshPaintComponent.pTextureView);
