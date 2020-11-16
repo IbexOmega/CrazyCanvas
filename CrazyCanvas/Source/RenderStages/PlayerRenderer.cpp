@@ -499,7 +499,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs");
+				m_DrawCount = 0;
 			}
 		}
 	}
