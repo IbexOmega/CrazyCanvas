@@ -349,6 +349,8 @@ namespace LambdaEngine
 	{
 		if (resourceName == SCENE_DRAW_ARGS)
 		{
+			m_DescriptorCache.LogStatistics("Player DS Cache");
+
 			if (count > 0U && pDrawArgs != nullptr)
 			{
 				m_pDrawArgs = pDrawArgs;
@@ -543,7 +545,7 @@ namespace LambdaEngine
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		if (!Sleeping)
-			{
+		{
 			pCommandList->SetViewports(&viewport, 0, 1);
 			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
