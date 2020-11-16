@@ -117,13 +117,28 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					if (ImGui::TreeNode(name.c_str()))
 					{
 						const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+						const PositionComponent& flagPositionComponent = pECS->GetConstComponent<PositionComponent>(flagEntity);
+						ImGui::Text("Flag Position: [ %f, %f, %f ]", flagPositionComponent.Position.x, flagPositionComponent.Position.y, flagPositionComponent.Position.z);
 						ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
 
 						if (flagParentComponent.Attached)
 						{
 							if (ImGui::Button("Drop Flag"))
 							{
-								FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
+								TArray<Entity> flagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN);
+
+								if (!flagSpawnPointEntities.IsEmpty())
+								{
+									Entity flagSpawnPoint = flagSpawnPointEntities[0];
+									const FlagSpawnComponent& flagSpawnComponent	= pECS->GetConstComponent<FlagSpawnComponent>(flagSpawnPoint);
+									const PositionComponent& positionComponent		= pECS->GetConstComponent<PositionComponent>(flagSpawnPoint);
+
+									float r		= Random::Float32(0.0f, flagSpawnComponent.Radius);
+									float theta = Random::Float32(0.0f, glm::two_pi<float32>());
+									glm::vec3 flagPosition = positionComponent.Position + r * glm::vec3(glm::cos(theta), 0.0f, glm::sin(theta));
+
+									FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, flagPosition);
+								}
 							}
 						}
 
@@ -457,7 +472,23 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		if (!flagEntities.IsEmpty())
 		{
 			Entity flagEntity = flagEntities[0];
-			FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, glm::vec3(0.0f, 2.0f, 0.0f));
+
+			TArray<Entity> flagSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN);
+
+			if (!flagSpawnPointEntities.IsEmpty())
+			{
+				ECSCore* pECS = ECSCore::GetInstance();
+
+				Entity flagSpawnPoint = flagSpawnPointEntities[0];
+				const FlagSpawnComponent& flagSpawnComponent = pECS->GetConstComponent<FlagSpawnComponent>(flagSpawnPoint);
+				const PositionComponent& positionComponent = pECS->GetConstComponent<PositionComponent>(flagSpawnPoint);
+
+				float r = Random::Float32(0.0f, flagSpawnComponent.Radius);
+				float theta = Random::Float32(0.0f, glm::two_pi<float32>());
+				glm::vec3 flagPosition = positionComponent.Position + r * glm::vec3(glm::cos(theta), 0.0f, glm::sin(theta));
+
+				FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, flagPosition);
+			}
 		}
 	}
 

@@ -966,7 +966,7 @@ bool LevelObjectCreator::CreateProjectile(
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
 	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition });
-	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(0.7f) });
 	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(glm::normalize(desc.InitalVelocity), g_DefaultUp) });
 
 	const DynamicCollisionCreateInfo collisionInfo =
@@ -1014,7 +1014,7 @@ bool LevelObjectCreator::CreateProjectile(
 				.Gravity = -4.f,
 				.LifeTime = 2.0f,
 				.RadiusRandomness = 0.5f,
-				.BeginRadius = 0.3f,
+				.BeginRadius = 0.1f,
 				.FrictionFactor = 0.f,
 				.Bounciness = 0.f,
 				.TileIndex = 14,
