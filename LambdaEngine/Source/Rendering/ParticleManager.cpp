@@ -49,12 +49,14 @@ namespace LambdaEngine
 			m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			m_pParticleIndexDataBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			m_pParticleBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			m_pAliveBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 
 			m_DirtyEmitterBuffer = true;
 			m_DirtyIndirectBuffer = true;
 			m_DirtyTransformBuffer = true;
 			m_DirtyEmitterIndexBuffer = true;
 			m_DirtyParticleBuffer = true;
+			m_DirtyAliveBuffer = true;
 
 			m_pASBuilder = pASBuilder;
 			// Create Billboard vertices and indices
