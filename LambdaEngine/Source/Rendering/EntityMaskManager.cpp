@@ -66,8 +66,8 @@ namespace LambdaEngine
 			return;
 		}
 
-		DrawArgExtensionGroupEntry& groupEntry = s_EntityToExtensionGroupEntryMap[entity];
-		DrawArgExtensionGroup& extensionGroup = groupEntry.ExtensionGroup;
+		DrawArgExtensionGroupEntry& groupEntry	= s_EntityToExtensionGroupEntryMap[entity];
+		DrawArgExtensionGroup& extensionGroup	= groupEntry.ExtensionGroup;
 		extensionGroup.pExtensionFlags[0] = extensionFlag;
 		extensionGroup.ExtensionCount = 1;
 
@@ -81,7 +81,7 @@ namespace LambdaEngine
 		groupEntry.Mask = s_DefaultMask;
 
 		if (!inverted) 
-			groupEntry.Mask |= extensionMask;
+			groupEntry.Mask |= extensionFlag;
 	}
 
 	DrawArgExtensionGroup* EntityMaskManager::GetExtensionGroup(Entity entity)

@@ -15,7 +15,7 @@ MeshPaintHandler::~MeshPaintHandler()
 	using namespace LambdaEngine;
 	
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
-	EventQueue::UnregisterEventHandler<PlayerDiedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerKilled);
+	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
 
@@ -24,7 +24,7 @@ void MeshPaintHandler::Init()
 	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
-	EventQueue::RegisterEventHandler<PlayerDiedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerKilled);
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
 
@@ -52,7 +52,7 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		if (MultiplayerUtils::IsServer())
 		{
 			remoteMode = ERemoteMode::SERVER;
-			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team);
+			PaintMaskRenderer::AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
 
 			// Send the server's paint point to all clients.
 			PacketProjectileHit packet;
@@ -84,11 +84,15 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 	return true;
 }
 
-bool MeshPaintHandler::OnPlayerKilled(const PlayerDiedEvent& event)
+bool MeshPaintHandler::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	using namespace LambdaEngine;
 
-	PaintMaskRenderer::ResetServer(event.KilledEntity);
+	if (event.pPlayer->IsDead())
+	{
+		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());
+	}
+
 	return true;
 }
 

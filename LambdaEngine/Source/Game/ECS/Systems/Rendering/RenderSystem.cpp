@@ -123,8 +123,9 @@ namespace LambdaEngine
 					.pSubscriber = &m_LocalPlayerEntities,
 					.ComponentAccesses =
 					{
-						{ NDA, PlayerBaseComponent::Type() },
-						{ R, MeshComponent::Type() }
+						{ NDA,	PlayerBaseComponent::Type() },
+						{ R,	AnimationComponent::Type() },
+						{ R,	MeshComponent::Type() }
 					},
 					.ComponentGroups =
 					{
@@ -592,19 +593,15 @@ namespace LambdaEngine
 		ComponentArray<AnimationComponent>*			pAnimationComponents			= pECSCore->GetComponentArray<AnimationComponent>();
 		ComponentArray<AnimationAttachedComponent>*	pAnimationAttachedComponents	= pECSCore->GetComponentArray<AnimationAttachedComponent>();
 		{
-			for (Entity entity : m_PlayerEntities)
+			for (Entity entity : m_LocalPlayerEntities)
 			{
-				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
-				const auto&			positionComp	= pPositionComponents->GetConstData(entity);
-				const auto&			rotationComp	= pRotationComponents->GetConstData(entity);
-				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
+				MeshComponent& meshComp				= pMeshComponents->GetData(entity);
+				AnimationComponent& animationComp	= pAnimationComponents->GetData(entity);
+				const auto& positionComp	= pPositionComponents->GetConstData(entity);
+				const auto& rotationComp	= pRotationComponents->GetConstData(entity);
+				const auto& scaleComp		= pScaleComponents->GetConstData(entity);
 
-				AnimationComponent animationComp;
-				if (pAnimationComponents->GetIf(entity, animationComp))
-				{
-					UpdateAnimation(entity, meshComp, animationComp);
-				}
-
+				UpdateAnimation(entity, meshComp, animationComp);
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(false, true, false));
 			}
 
@@ -843,7 +840,7 @@ namespace LambdaEngine
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		transform = transform * animationAttachedComponent.Transform;
 
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)

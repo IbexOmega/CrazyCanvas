@@ -3,9 +3,10 @@
 
 #include "Rendering/PaintMaskRenderer.h"
 
-#include "Multiplayer/Packet/MultiplayerEvents.h"
+#include "Multiplayer/Packet/PacketPlayerAliveChanged.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 
+#include "Events/PlayerEvents.h"
 #include "Events/PacketEvents.h"
 #include "Events/GameplayEvents.h"
 
@@ -49,7 +50,7 @@ private:
 
 private:
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
-	bool OnPlayerKilled(const PlayerDiedEvent& event);
+	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 
 	bool OnPacketProjectileHitReceived(const PacketReceivedEvent<PacketProjectileHit>& event);
 

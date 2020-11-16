@@ -58,8 +58,8 @@ void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::En
 {
 	using namespace LambdaEngine;
 
-	const Player* pPlayer = PlayerManagerServer::GetPlayer(entityToKill);
-	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
+	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
+	const Player* pPlayerKiller	= PlayerManagerServer::GetPlayer(killedByEntity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
 
 	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);

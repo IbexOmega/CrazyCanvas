@@ -213,10 +213,12 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	Entity entity = pECS->CreateEntity();
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
-					.HitMask = 0xFF
+		pECS->AddComponent<RayTracedComponent>(entity, 
+			RayTracedComponent
+			{
+				.HitMask = 0xFF
 			});
 	}
 

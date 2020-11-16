@@ -74,7 +74,7 @@ bool HealthSystemClient::InitInternal()
 		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(
 		{
 			.pSubscriber = &m_LocalPlayerEntities,
-				.ComponentAccesses =
+			.ComponentAccesses =
 			{
 				{ NDA, PlayerLocalComponent::Type() },
 			},
