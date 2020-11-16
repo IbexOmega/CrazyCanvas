@@ -967,8 +967,6 @@ namespace LambdaEngine
 	{
 		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
 
-		LOG_WARNING("Adding Renderable Entity: %u", entity);
-
 		uint32 extensionGroupIndex = 0;
 		uint32 texturesPerExtensionGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
@@ -1250,16 +1248,6 @@ namespace LambdaEngine
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
 			}
-			else
-			{
-				LOG_ERROR("TA BORT DETTA");
-
-				if (std::find(meshAndInstancesIt->second.EntityIDs.Begin(), meshAndInstancesIt->second.EntityIDs.End(), entity) != meshAndInstancesIt->second.EntityIDs.End())
-				{
-					LOG_WARNING("[RenderSystem]: Entity %u already exists in MeshEntry", entity);
-					return;
-				}
-			}
 		}
 
 		//Get Material Slot
@@ -1431,8 +1419,6 @@ namespace LambdaEngine
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
-		LOG_WARNING("Removing Renderable Entity: %u", entity);
-
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
@@ -1488,8 +1474,6 @@ namespace LambdaEngine
 				if (auto removedMeshPaintInstanceIt = std::find(meshPaintInstancesIt->second.Begin(), meshPaintInstancesIt->second.End(), asInstanceIndex);
 					removedMeshPaintInstanceIt != meshPaintInstancesIt->second.End())
 				{
-					LOG_ERROR("Removing Mesh Paint Entity: %u Current Count: %u", entity, m_PaintMaskTextures.GetSize());
-
 					uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
 					m_PaintMaskTextures[textureIndex] = m_PaintMaskTextures.GetBack();
 					m_PaintMaskTextures.PopBack();
