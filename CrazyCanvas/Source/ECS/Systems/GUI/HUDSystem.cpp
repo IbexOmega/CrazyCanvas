@@ -189,7 +189,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 				const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
 				const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(entity);
 
-				glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
+				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
 			
 				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, projectedGUIComponent.GUIType);
 			}

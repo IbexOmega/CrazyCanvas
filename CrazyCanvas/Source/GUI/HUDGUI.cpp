@@ -376,13 +376,12 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 {
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-	glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
+	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
 
 	VALIDATE(clipSpacePos.w != 0);
 
-	glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
-
-	glm::vec2 windowSpacePos = glm::vec2(ndcSpacePos.x, -ndcSpacePos.y) * 0.5f * m_WindowSize;
+	const glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
+	const glm::vec2 windowSpacePos = glm::vec2(ndcSpacePos.x, -ndcSpacePos.y) * 0.5f * m_WindowSize;
 
 	float32 vecLength = glm::distance(glm::vec2(0.0f), glm::vec2(ndcSpacePos.x, ndcSpacePos.y));
 
@@ -395,13 +394,9 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	else
 	{
 		if (-clipSpacePos.y > 0)
-		{
 			translation->SetY(m_WindowSize.y * 0.5f);
-		}
 		else
-		{
 			translation->SetY(-m_WindowSize.y * 0.5f);
-		}
 
 		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
 	}
@@ -481,8 +476,6 @@ void HUDGUI::TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI
 		m_pFlagIndicator->SetRenderTransform(translation);
 		break;
 	}
-	case IndicatorTypeGUI::DROP_OFF_INDICATOR:
-		break;
 	default:
 		break;
 	}
@@ -503,8 +496,6 @@ void HUDGUI::SetIndicatorOpacity(float32 value, IndicatorTypeGUI type)
 		m_pFlagIndicator->SetFill(brush);
 		break;
 	}
-	case IndicatorTypeGUI::DROP_OFF_INDICATOR:
-		break;
 	default:
 		break;
 	}
