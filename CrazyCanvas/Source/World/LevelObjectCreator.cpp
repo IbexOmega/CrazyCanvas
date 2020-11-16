@@ -104,6 +104,17 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateKillPlane;
 		}
+
+		//Shower
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_PARTICLE_SHOWER_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
+		}
 	}
 
 	//Register Create Special Object by Type Functions
@@ -141,7 +152,7 @@ bool LevelObjectCreator::Init()
 }
 
 LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
-	const LambdaEngine::LoadedDirectionalLight& directionalLight, 
+	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -366,8 +377,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -428,8 +439,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 }
 
 ELevelObjectType LevelObjectCreator::CreateKillPlane(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -463,6 +474,61 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 	createdEntities.PushBack(entity);
 
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
+}
+
+ELevelObjectType LevelObjectCreator::CreateShowerPoint(
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	pECS->AddComponent<ParticleEmitterComponent>(entity,
+		ParticleEmitterComponent{
+			.ParticleCount = 20,
+			.EmitterShape = EEmitterShape::CONE,
+			.Velocity = 1.0f,
+			.Acceleration = 0.0f,
+			.BeginRadius = 1.0f,
+			.TileIndex = 16,
+			.AnimationCount = 4,
+			.FirstAnimationIndex = 16,
+			.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
+		}
+	);
+
+	//----
+	const CollisionCreateInfo colliderInfo =
+	{
+		.Entity = entity,
+		.Position = pECS->AddComponent<PositionComponent>(entity,	{ true, levelObject.DefaultPosition + translation }),
+		.Scale = pECS->AddComponent<ScaleComponent>(entity,	{ true, levelObject.DefaultScale }),
+		.Rotation = pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() }),
+		.Shapes =
+		{
+			{
+				.ShapeType = EShapeType::TRIGGER,
+				.GeometryType = EGeometryType::BOX,
+				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC,
+				.EntityID = entity
+				//.CallbackFunction = &KillPlaneCallback
+			}
+		}
+	};
+
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+	const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(colliderInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+	createdEntities.PushBack(entity);
+
+	D_LOG_INFO("Created Flag Spawn with EntityID %u", entity);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
+
 }
 
 bool LevelObjectCreator::CreateFlag(
@@ -836,10 +902,10 @@ bool LevelObjectCreator::CreatePlayer(
 		pAnimationGraph->TransitionToState("Idle");
 
 		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
-		pECS->AddComponent<MeshComponent>(playerEntity, 
+		pECS->AddComponent<MeshComponent>(playerEntity,
             MeshComponent
             {
-                .MeshGUID = s_PlayerMeshGUID, 
+                .MeshGUID = s_PlayerMeshGUID,
                 .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
             });
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
