@@ -149,7 +149,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			CreatePlayerDesc createPlayerDesc =
 			{
-				.ClientUID			= event.pClient->GetUID(),
+				.ClientUID			= packet.Player.ClientUID,
 				.IsLocal			= packet.Player.ClientUID == event.pClient->GetUID(),
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
