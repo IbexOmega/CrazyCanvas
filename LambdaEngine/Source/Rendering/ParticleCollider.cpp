@@ -94,15 +94,9 @@ namespace LambdaEngine
 			instanceBindingDesc2,
 			instanceBindingDesc3,
 			instanceBindingDesc4,
-			instanceBindingDesc5
+			instanceBindingDesc5,
+			instanceBindingDesc6
 		};
-
-		m_InlineRayTracingEnabled = RenderSystem::GetInstance().IsInlineRayTracingEnabled();
-		if (m_InlineRayTracingEnabled)
-		{
-			descriptorBindings.PushBack(instanceBindingDesc6);
-			D_LOG_INFO("[ParticleCollider] Ray query is enabled, using inline ray tracing for particle collisions.");
-		}
 
 		// Set 0
 		m_UpdatePipeline.CreateDescriptorSetLayout(descriptorBindings);
@@ -191,22 +185,31 @@ namespace LambdaEngine
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 		m_ParticleCount = 0;
 
-		if (!CreatePipelineLayout())
+		m_InlineRayTracingEnabled = RenderSystem::GetInstance().IsInlineRayTracingEnabled();
+		if (!m_InlineRayTracingEnabled)
 		{
-			LOG_ERROR("[ParticleUpdater]: Failed to create PipelineLayout");
-			return false;
+			D_LOG_INFO("[ParticleCollider] Ray query is disabled, disable particle collisions.");
 		}
 
-		if (!CreateDescriptorSets())
+		if (m_InlineRayTracingEnabled)
 		{
-			LOG_ERROR("[ParticleUpdater]: Failed to create DescriptorSet");
-			return false;
-		}
+			if (!CreatePipelineLayout())
+			{
+				LOG_ERROR("[ParticleCollider]: Failed to create PipelineLayout");
+				return false;
+			}
 
-		if (!CreateShaders())
-		{
-			LOG_ERROR("[ParticleUpdater]: Failed to create Shaders");
-			return false;
+			if (!CreateDescriptorSets())
+			{
+				LOG_ERROR("[ParticleCollider]: Failed to create DescriptorSet");
+				return false;
+			}
+
+			if (!CreateShaders())
+			{
+				LOG_ERROR("[ParticleCollider]: Failed to create Shaders");
+				return false;
+			}
 		}
 
 		return true;
@@ -216,17 +219,17 @@ namespace LambdaEngine
 	{
 		VALIDATE(pPreInitDesc);
 
-		if (!m_Initilized)
+		if (!m_Initilized && m_InlineRayTracingEnabled)
 		{
 			if (!CreateCommandLists())
 			{
-				LOG_ERROR("[ParticleUpdater]: Failed to create render command lists");
+				LOG_ERROR("[ParticleCollider]: Failed to create render command lists");
 				return false;
 			}
 
 			if (!m_UpdatePipeline.Init("Updater Compute"))
 			{
-				LOG_ERROR("[ParticleUpdater]: Failed to init Updater Pipeline Context");
+				LOG_ERROR("[ParticleCollider]: Failed to init Updater Pipeline Context");
 				return false;
 			}
 
@@ -240,9 +243,12 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(delta);
 
-		m_PushConstant.delta = float(delta.AsSeconds());
+		if (m_InlineRayTracingEnabled)
+		{
+			m_PushConstant.delta = float(delta.AsSeconds());
 
-		m_UpdatePipeline.Update(delta, modFrameIndex, backBufferIndex);
+			m_UpdatePipeline.Update(delta, modFrameIndex, backBufferIndex);
+		}
 	}
 
 	void ParticleCollider::UpdateAccelerationStructureResource(const String& resourceName, const AccelerationStructure* const* pAccelerationStructure)
@@ -259,7 +265,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.FirstBinding = setBinding;
 				descriptorUpdateDesc.DescriptorCount = 1;
 
-				m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] SCENE_TLAS Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 		}
 	}
@@ -282,95 +288,98 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
-		if (resourceName == PER_FRAME_BUFFER)
+		if (m_InlineRayTracingEnabled)
 		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 0U;
+			if (resourceName == PER_FRAME_BUFFER)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 0U;
 
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+				SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppBuffers = ppBuffers;
+				descriptorUpdateDesc.pOffsets = pOffsets;
+				descriptorUpdateDesc.pSizes = pSizesInBytes;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = count;
+				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
-		else if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 1U;
+				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Particle Instance Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
+			else if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 1U;
 
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+				SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppBuffers = ppBuffers;
+				descriptorUpdateDesc.pOffsets = pOffsets;
+				descriptorUpdateDesc.pSizes = pSizesInBytes;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = count;
+				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
-		else if (resourceName == SCENE_EMITTER_INSTANCE_BUFFER)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 2U;
+				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Particle Instance Buffer Descriptor Set 0 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
+			else if (resourceName == SCENE_EMITTER_INSTANCE_BUFFER)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 2U;
 
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+				SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppBuffers = ppBuffers;
+				descriptorUpdateDesc.pOffsets = pOffsets;
+				descriptorUpdateDesc.pSizes = pSizesInBytes;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = count;
+				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Emitter Instance Buffer Descriptor Set 0 Binding 2", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
-		else if (resourceName == SCENE_EMITTER_TRANSFORM_BUFFER)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 3U;
+				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Emitter Instance Buffer Descriptor Set 0 Binding 2", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
+			else if (resourceName == SCENE_EMITTER_TRANSFORM_BUFFER)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 3U;
 
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+				SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppBuffers = ppBuffers;
+				descriptorUpdateDesc.pOffsets = pOffsets;
+				descriptorUpdateDesc.pSizes = pSizesInBytes;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = count;
+				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Emitter Transform Buffer Descriptor Set 0 Binding 3", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
-		else if (resourceName == SCENE_EMITTER_INDEX_BUFFER)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 4U;
+				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Emitter Transform Buffer Descriptor Set 0 Binding 3", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
+			else if (resourceName == SCENE_EMITTER_INDEX_BUFFER)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 4U;
 
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+				SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppBuffers = ppBuffers;
+				descriptorUpdateDesc.pOffsets = pOffsets;
+				descriptorUpdateDesc.pSizes = pSizesInBytes;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = count;
+				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Emitter Index Buffer Descriptor Set 0 Binding 4", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
-		}
-		else if (resourceName == SCENE_PARTICLE_ALIVE_BUFFER)
-		{
-			constexpr uint32 setIndex = 0U;
-			constexpr uint32 setBinding = 5U;
+				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Emitter Index Buffer Descriptor Set 0 Binding 4", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
+			else if (resourceName == SCENE_PARTICLE_ALIVE_BUFFER)
+			{
+				constexpr uint32 setIndex = 0U;
+				constexpr uint32 setBinding = 5U;
 
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = ppBuffers;
-			descriptorUpdateDesc.pOffsets = pOffsets;
-			descriptorUpdateDesc.pSizes = pSizesInBytes;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+				SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+				descriptorUpdateDesc.ppBuffers = ppBuffers;
+				descriptorUpdateDesc.pOffsets = pOffsets;
+				descriptorUpdateDesc.pSizes = pSizesInBytes;
+				descriptorUpdateDesc.FirstBinding = setBinding;
+				descriptorUpdateDesc.DescriptorCount = count;
+				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			}
 		}
 	}
 
@@ -380,45 +389,36 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(Sleeping);
 
-		if (m_ParticleCount == 0)
-			return;
-
-		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
-		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
-		pCommandList->Begin(nullptr);
-
-		static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER1
+		if (m_InlineRayTracingEnabled)
 		{
-			.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
-			.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-		};
+			if (m_ParticleCount == 0)
+				return;
 
-		pCommandList->PipelineMemoryBarriers(
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
-			&MEMORY_BARRIER1,
-			1);
+			CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
+			m_ppComputeCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
 
-		m_UpdatePipeline.Bind(pCommandList);
-		m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&m_PushConstant, sizeof(PushConstantData), 0U);
+			static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER1
+			{
+				.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+				.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			};
 
-		constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
-		uint32 workGroupX = uint32(std::ceilf(float(m_ParticleCount) / float(WORK_GROUP_INVOCATIONS)));
-		pCommandList->Dispatch(workGroupX, 1U, 1U);
+			pCommandList->PipelineMemoryBarriers(
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+				&MEMORY_BARRIER1,
+				1);
 
-		static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER2
-		{
-			.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
-			.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
-		};
+			m_UpdatePipeline.Bind(pCommandList);
+			m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&m_PushConstant, sizeof(PushConstantData), 0U);
 
-		pCommandList->PipelineMemoryBarriers(
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_ACCELERATION_STRUCTURE_BUILD,
-			&MEMORY_BARRIER2,
-			1);
+			constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
+			uint32 workGroupX = uint32(std::ceilf(float(m_ParticleCount) / float(WORK_GROUP_INVOCATIONS)));
+			pCommandList->Dispatch(workGroupX, 1U, 1U);
 
-		pCommandList->End();
-		(*ppFirstExecutionStage) = pCommandList;
+			pCommandList->End();
+			(*ppFirstExecutionStage) = pCommandList;
+		}
 	}
 }
