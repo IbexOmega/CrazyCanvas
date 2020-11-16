@@ -708,17 +708,7 @@ void HUDGUI::SetRenderStagesInactive()
 	* Inactivate all rendering when entering main menu
 	*OBS! At the moment, sleeping doesn't work correctly and needs a fix
 	* */
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_PARTICLE_RENDER",		true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PARTICLE_COMBINE_PASS",				true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING",						true);
+	DisablePlaySessionsRenderstages();
 }
 
 bool HUDGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)

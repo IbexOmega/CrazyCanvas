@@ -10,6 +10,8 @@
 
 #include "States/PlaySessionState.h"
 
+#include "GUI/GUIHelpers.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
@@ -44,19 +46,8 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
 	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
+	
+	DisablePlaySessionsRenderstages();
 
 	m_LobbyGUI = *new LobbyGUI();
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
