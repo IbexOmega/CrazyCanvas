@@ -65,12 +65,12 @@ namespace LambdaEngine
 
 		struct Instance
 		{
-			glm::mat4	Transform		= glm::mat4(1.0f);
-			glm::mat4	PrevTransform	= glm::mat4(1.0f);
-			uint32		MaterialIndex	= 0;
-			uint32		ExtensionIndex	= 0;
-			uint32		MeshletCount	= 0;
-			uint32		Padding0;
+			glm::mat4	Transform					= glm::mat4(1.0f);
+			glm::mat4	PrevTransform				= glm::mat4(1.0f);
+			uint32		MaterialIndex				= 0;
+			uint32		ExtensionGroupIndex			= 0;
+			uint32		TexturesPerExtensionGroup	= 0;
+			uint32		MeshletCount				= 0;
 		};
 
 		struct MeshKey
@@ -167,8 +167,7 @@ namespace LambdaEngine
 			uint32	MeshletCount			= 0;
 
 			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
-			TArray<uint32>					InstanceIndexToExtensionGroup;
-			bool	HasExtensions			= false;
+			bool	HasExtensionData		= false;
 			uint32	DrawArgsMask			= 0x0;
 
 			Buffer* pRasterInstanceBuffer				= nullptr;
@@ -176,6 +175,9 @@ namespace LambdaEngine
 			TArray<Instance> RasterInstances;
 
 			TArray<Entity> EntityIDs;
+
+			DescriptorSet* pDrawArgDescriptorSet			= nullptr;
+			DescriptorSet* pDrawArgDescriptorExtensionsSet	= nullptr;
 		};
 
 		struct InstanceKey
@@ -286,6 +288,7 @@ namespace LambdaEngine
 		
 		void OnStaticMeshEntityAdded(Entity entity);
 		void OnAnimatedEntityAdded(Entity entity);
+		void OnAnimationAttachedEntityAdded(Entity entity);
 		void OnPlayerEntityAdded(Entity entity);
 
 		void OnDirectionalEntityAdded(Entity entity);
@@ -331,11 +334,26 @@ namespace LambdaEngine
 			const ScaleComponent& scaleComp, 
 			const glm::bvec3& rotationalAxes);
 		
-		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
+		void UpdateTransform(
+			Entity entity, 
+			const glm::mat4& additionalTransform, 
+			const PositionComponent& positionComp, 
+			const RotationComponent& rotationComp, 
+			const ScaleComponent& scaleComp, 
+			const glm::bvec3& rotationalAxes);
+		
+		void UpdateTransformData(Entity entity, const glm::mat4& transform);
+		
+		void UpdateCamera(
+			const glm::vec3& position, 
+			const glm::quat& rotation,
+			const CameraComponent& camComp, 
+			const ViewProjectionMatricesComponent& viewProjComp);
 
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
+		void WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry);
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
@@ -353,7 +371,8 @@ namespace LambdaEngine
 	private:
 		IDVector m_StaticMeshEntities;
 		IDVector m_AnimatedEntities;
-		IDVector m_PlayerEntities;
+		IDVector m_AnimationAttachedEntities;
+		IDVector m_LocalPlayerEntities;
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;
 		IDVector m_CameraEntities;

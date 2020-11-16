@@ -298,15 +298,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ParticleRenderer::SetAtlasTexturs(TArray<TextureView*>& textureViews, TArray<Sampler*>& samplers)
-	{
-		VALIDATE(textureViews.GetSize() == samplers.GetSize());
-
-		m_AtlasCount = textureViews.GetSize();
-		m_ppAtlasTextureViews = textureViews.GetData();
-		m_ppAtlasSamplers = samplers.GetData();
-	}
-
 	bool LambdaEngine::ParticleRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
@@ -366,36 +357,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
-
-		// Update m_AtlasTexturesDescriptorSet if new atlases have arrived.
-		if (m_PreAtlasCount != m_AtlasCount)
-		{
-			m_PreAtlasCount = m_AtlasCount;
-
-			constexpr uint32 setIndex = 1U;
-			constexpr uint32 setBinding = 0U;
-
-			m_AtlasTexturesDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Atlas texture Descriptor Set", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
-			if (m_AtlasTexturesDescriptorSet != nullptr)
-			{
-				m_AtlasTexturesDescriptorSet->WriteTextureDescriptors(
-					m_ppAtlasTextureViews,
-					m_ppAtlasSamplers,
-					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-					setBinding,
-					m_AtlasCount,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-					true
-				);
-			}
-			else
-			{
-				LOG_ERROR("[ParticleRenderer]: Failed to update m_AtlasTexturesDescriptorSet");
-			}
-		}
 	}
 
-	void ParticleRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
+	void ParticleRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(subImageCount);
@@ -412,8 +376,30 @@ namespace LambdaEngine
 				LOG_ERROR("[ParticleRenderer]: Failed to update Render Target Resource");
 			}
 		}
+		else if (resourceName == SCENE_PARTICLE_ATLAS_IMAGES)
+		{
+			constexpr uint32 setIndex = 1U;
+			constexpr uint32 setBinding = 0U;
 
-		if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+			m_AtlasTexturesDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Atlas texture Descriptor Set", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_AtlasTexturesDescriptorSet != nullptr)
+			{
+				m_AtlasTexturesDescriptorSet->WriteTextureDescriptors(
+					ppPerImageTextureViews,
+					ppPerImageSamplers,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					setBinding,
+					imageCount,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					true
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleRenderer]: Failed to update m_AtlasTexturesDescriptorSet");
+			}
+		}
+		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
 		{
 			if (imageCount == 1)
 			{

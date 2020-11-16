@@ -137,7 +137,7 @@ namespace LambdaEngine
 				paintMode = mode == 0 ? EPaintMode::REMOVE : EPaintMode::PAINT;
 			}
 
-			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED);
+			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, 0);
 			});
 
 		return false;
@@ -176,15 +176,16 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::UpdateTextureResource(
-		const String& resourceName,
-		const TextureView* const * ppPerImageTextureViews,
+		const String& resourceName, 
+		const TextureView* const * ppPerImageTextureViews, 
 		const TextureView* const* ppPerSubImageTextureViews,
-		uint32 imageCount,
-		uint32 subImageCount,
+		const Sampler* const* ppPerImageSamplers,
+		uint32 imageCount, 
+		uint32 subImageCount, 
 		bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(subImageCount);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
@@ -326,15 +327,15 @@ namespace LambdaEngine
 					uint32 numExtensions = extensionGroup->ExtensionCount;
 					for (uint32 e = 0; e < numExtensions; e++)
 					{
-						uint32 mask = extensionGroup->pExtensionMasks[e];
+						uint32 flag = extensionGroup->pExtensionFlags[e];
 						bool inverted;
-						uint32 meshPaintBit = EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type(), inverted);
+						uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
 						uint32 invertedUInt = uint32(inverted);
 
-						if ((mask & meshPaintBit) != invertedUInt)
+						if ((flag & meshPaintFlag) != invertedUInt)
 						{
 							DrawArgExtensionData& extension	= extensionGroup->pExtensions[e];
-							TextureView*	pTextureView	= extension.ppMipZeroTextureViews[0];
+							TextureView*	pTextureView	= extension.ppTextureViews[0];
 							Buffer*			pReadBackBuffer	= extension.ppReadBackBuffers[0];
 							m_RenderTargets.PushBack(
 								{ 
@@ -360,6 +361,13 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
+
+		// Add a reset hit point at the end of the client collisions.
+		if (s_ShouldReset)
+		{
+			AddResetHitPoint();
+			s_ShouldReset = false;
+		}
 
 		// Return if there are no rendertargets
 		if (m_RenderTargets.IsEmpty())
@@ -518,7 +526,7 @@ namespace LambdaEngine
 				TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex][index++];
 				byte* pUniformMapping = reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
 
-				const UnwrapData& data = collisionArray->GetFront();
+				const UnwrapData& data	= collisionArray->GetBack();
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
 				frameSettings.ShouldPaint = data.RemoteMode != ERemoteMode::UNDEFINED && data.PaintMode != EPaintMode::NONE;
 				frameSettings.ShouldReset = data.ClearClient;
@@ -705,11 +713,12 @@ namespace LambdaEngine
 		const glm::vec3& direction,
 		EPaintMode paintMode,
 		ERemoteMode remoteMode,
-		ETeam team)
+		ETeam team,
+		uint32 angle)
 	{
 		UnwrapData data = {};
-		data.TargetPosition		= { position.x, position.y, position.z, 1.0f };
-		data.TargetDirection	= { direction.x, direction.y, direction.z, 1.0f };
+		data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
+		data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>((float)angle)};
 		data.PaintMode			= paintMode;
 		data.RemoteMode			= remoteMode;
 		data.Team				= team;
@@ -723,22 +732,7 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::ResetClient()
 	{
-		if (s_ClientCollisions.IsEmpty())
-		{
-			UnwrapData data = {};
-			data.TargetPosition		= { };
-			data.TargetDirection	= { };
-			data.PaintMode			= EPaintMode::NONE;
-			data.RemoteMode			= ERemoteMode::UNDEFINED;
-			data.Team				= ETeam::NONE;
-			data.ClearClient		= true;
-			s_ClientCollisions.PushBack(data);
-		}
-		else
-		{
-			UnwrapData& lastData = s_ClientCollisions.GetBack();
-			lastData.ClearClient = true;
-		}
+		s_ShouldReset = true;
 	}
 
 	void PaintMaskRenderer::ResetServer(Entity entity)
@@ -974,6 +968,27 @@ namespace LambdaEngine
 		m_PipelineStateClientID	= InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_G);
 
 		return true;
+	}
+
+	void PaintMaskRenderer::AddResetHitPoint()
+	{
+		if (s_ClientCollisions.IsEmpty())
+		{
+			UnwrapData data = {};
+			data.TargetPosition = { };
+			data.TargetDirectionXYZAngleW = { };
+			data.PaintMode = EPaintMode::NONE;
+			data.RemoteMode = ERemoteMode::UNDEFINED;
+			data.Team = ETeam::NONE;
+			data.ClearClient = true;
+
+			s_ClientCollisions.PushBack(data);
+		}
+		else
+		{
+			UnwrapData& lastData = s_ClientCollisions.GetBack();
+			lastData.ClearClient = true;
+		}
 	}
 
 	uint64 PaintMaskRenderer::InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags)

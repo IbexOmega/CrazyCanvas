@@ -28,6 +28,7 @@
 #include "Match/Match.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -35,32 +36,49 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
-PlaySessionState::PlaySessionState(bool singlePlayer, const LambdaEngine::IPEndPoint& endPoint) :
-	m_Singleplayer(singlePlayer),
-	m_EndPoint(endPoint),
-	m_MultiplayerClient()
-{
-	using namespace LambdaEngine;
+#include "Lobby/PlayerManagerClient.h"
 
+#include "Game/StateManager.h"
+#include "States/MainMenuState.h"
+
+using namespace LambdaEngine;
+
+PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
+	m_Singleplayer(singlePlayer),
+	m_MultiplayerClient(), 
+	m_GameSettings(gameSettings)
+{
 	if (m_Singleplayer)
 	{
 		SingleplayerInitializer::Init();
 	}
+
+	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 }
 
 PlaySessionState::~PlaySessionState()
 {
-	using namespace LambdaEngine;
-
 	if (m_Singleplayer)
 	{
 		SingleplayerInitializer::Release();
 	}
+
+	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 }
 
 void PlaySessionState::Init()
 {
-	using namespace LambdaEngine;
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", false);
+	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -69,11 +87,11 @@ void PlaySessionState::Init()
 
 	// Load Match
 	{
-		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+		const TArray<SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[m_GameSettings.MapID]
 		};
 		Match::CreateMatch(&matchDescription);
 	}
@@ -88,17 +106,30 @@ void PlaySessionState::Init()
 	}
 	else
 	{
-		ClientSystem::GetInstance().Connect(m_EndPoint);
+		//Called to tell the server we are ready to start the match
+		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
 }
 
-void PlaySessionState::Tick(LambdaEngine::Timestamp delta)
+void PlaySessionState::Tick(Timestamp delta)
 {
 	m_MultiplayerClient.TickMainThreadInternal(delta);
 }
 
-void PlaySessionState::FixedTick(LambdaEngine::Timestamp delta)
+void PlaySessionState::FixedTick(Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
 	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+}
+
+bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event)
+{
+	const String& reason = event.Reason;
+
+	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
+
+	State* pMainMenuState = DBG_NEW MainMenuState();
+	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+
+	return false;
 }

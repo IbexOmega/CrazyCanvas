@@ -16,6 +16,8 @@
 
 #include "EventHandlers/MeshPaintHandler.h"
 
+#include "Lobby/PlayerManagerServer.h"
+
 #include <mutex>
 
 /*
@@ -109,9 +111,14 @@ bool HealthSystemServer::InitInternal()
 {
 	using namespace LambdaEngine;
 
-	if (!HealthSystem::InitInternal())
+	// Register system
 	{
-		return false;
+		SystemRegistration systemReg = {};
+		HealthSystem::CreateBaseSystemRegistration(systemReg);
+		
+		systemReg.	
+		
+		RegisterSystem(TYPE_NAME(HealthSystemServer), systemReg);
 	}
 
 	EntitySubscriberRegistration subscription = {};

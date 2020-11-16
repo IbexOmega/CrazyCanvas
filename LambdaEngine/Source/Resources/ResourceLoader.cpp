@@ -109,12 +109,18 @@ namespace LambdaEngine
 	{
 		switch (textureType)
 		{
-		case aiTextureType::aiTextureType_DIFFUSE:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
-		case aiTextureType::aiTextureType_NORMALS:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
-		case aiTextureType::aiTextureType_HEIGHT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
-		case aiTextureType::aiTextureType_AMBIENT:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
-		case aiTextureType::aiTextureType_REFLECTION:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
-		case aiTextureType::aiTextureType_SHININESS:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		case aiTextureType::aiTextureType_BASE_COLOR:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
+		case aiTextureType::aiTextureType_DIFFUSE:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ALBEDO;
+		case aiTextureType::aiTextureType_NORMAL_CAMERA:		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_NORMALS:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_HEIGHT:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NORMAL;
+		case aiTextureType::aiTextureType_AMBIENT_OCCLUSION:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
+		case aiTextureType::aiTextureType_AMBIENT:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_AO;
+		case aiTextureType::aiTextureType_METALNESS:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
+		case aiTextureType::aiTextureType_REFLECTION:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC;
+		case aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS:	return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		case aiTextureType::aiTextureType_SHININESS:			return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_ROUGHNESS;
+		case aiTextureType::aiTextureType_UNKNOWN:				return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_METALLIC_ROUGHNESS;
 		}
 
 		return FLoadedTextureFlag::LOADED_TEXTURE_FLAG_NONE;
@@ -164,7 +170,7 @@ namespace LambdaEngine
 	/*
 	* Assimp Parsing
 	*/
-	static LoadedTexture* LoadAssimpTexture(SceneLoadingContext& context, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
+	static LoadedTexture* LoadAssimpTexture(SceneLoadingContext& context, const aiScene* pScene, const aiMaterial* pMaterial, aiTextureType type, uint32 index)
 	{
 		if (pMaterial->GetTextureCount(type) > index)
 		{
@@ -172,22 +178,122 @@ namespace LambdaEngine
 			pMaterial->GetTexture(type, index, &str);
 
 			String name = str.C_Str();
-			ConvertSlashes(name);
-			RemoveExtraData(name);
 
-			auto loadedTexture = context.LoadedTextures.find(name);
-			if (loadedTexture == context.LoadedTextures.end())
+			if (name[0] == '*')
 			{
-				LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
-				pLoadedTexture->pTexture	= ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
-				pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+				name = context.Filename + name;
 
-				context.LoadedTextures[name] = pLoadedTexture;
-				return context.pTextures->PushBack(pLoadedTexture);
+				auto loadedTexture = context.LoadedTextures.find(name);
+				if (loadedTexture == context.LoadedTextures.end())
+				{
+					//Load Embedded Texture
+					const aiTexture* pTextureAI = pScene->GetEmbeddedTexture(str.C_Str());
+
+					uint32 textureWidth;
+					uint32 textureHeight;
+					byte* pTextureData;
+					bool loadedWithSTBI;
+
+					//Remap ARGB data to RGBA
+					if (pTextureAI->mHeight == 0)
+					{
+						//Data is compressed
+						loadedWithSTBI = true;
+
+						int32 stbiTextureWidth = 0;
+						int32 stbiTextureHeight = 0;
+						int32 bpp = 0;
+
+						pTextureData = stbi_load_from_memory(
+							reinterpret_cast<stbi_uc*>(pTextureAI->pcData),
+							pTextureAI->mWidth,
+							&stbiTextureWidth,
+							&stbiTextureHeight,
+							&bpp,
+							STBI_rgb_alpha);
+
+						textureWidth = uint32(stbiTextureWidth);
+						textureHeight = uint32(stbiTextureHeight);
+					}
+					else
+					{
+						loadedWithSTBI = false;
+
+						uint32 numTexels = pTextureAI->mWidth * pTextureAI->mHeight;
+						uint32 textureDataSize = 4u * numTexels;
+						pTextureData = DBG_NEW byte[textureDataSize];
+
+						//This sucks, but we need to make ARGB -> RGBA
+						for (uint32 t = 0; t < numTexels; t++)
+						{
+							const aiTexel& texel = pTextureAI->pcData[t];
+
+							pTextureData[4 * t + 0] = texel.r;
+							pTextureData[4 * t + 1] = texel.g;
+							pTextureData[4 * t + 2] = texel.b;
+							pTextureData[4 * t + 3] = texel.a;
+						}
+
+						textureWidth = pTextureAI->mWidth;
+						textureHeight = pTextureAI->mHeight;
+					}
+
+					LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
+
+					void* pData = reinterpret_cast<void*>(pTextureData);
+					pLoadedTexture->pTexture = ResourceLoader::LoadTextureArrayFromMemory(
+						name,
+						&pData,
+						1,
+						textureWidth,
+						textureHeight,
+						EFormat::FORMAT_R8G8B8A8_UNORM,
+						FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE,
+						true,
+						true);
+
+					pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+
+					if (loadedWithSTBI)
+					{
+						stbi_image_free(pTextureData);
+					}
+					else
+					{
+						SAFEDELETE_ARRAY(pTextureData);
+					}
+
+					context.LoadedTextures[name] = pLoadedTexture;
+					return context.pTextures->PushBack(pLoadedTexture);
+				}
+				else
+				{
+					loadedTexture->second->Flags |= AssimpTextureFlagToLambdaTextureFlag(type);
+					return loadedTexture->second;
+				}
 			}
 			else
 			{
-				return loadedTexture->second;
+				//Load Texture from File
+
+				ConvertSlashes(name);
+				RemoveExtraData(name);
+
+				auto loadedTexture = context.LoadedTextures.find(name);
+				if (loadedTexture == context.LoadedTextures.end())
+				{
+					LoadedTexture* pLoadedTexture = DBG_NEW LoadedTexture();
+					pLoadedTexture->pTexture = ResourceLoader::LoadTextureArrayFromFile(name, context.DirectoryPath, &name, 1, EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
+					pLoadedTexture->Flags = AssimpTextureFlagToLambdaTextureFlag(type);
+
+					context.LoadedTextures[name] = pLoadedTexture;
+					return context.pTextures->PushBack(pLoadedTexture);
+				}
+				else
+				{
+					loadedTexture->second->Flags |= AssimpTextureFlagToLambdaTextureFlag(type);
+					return loadedTexture->second;
+				}
 			}
 		}
 
@@ -233,7 +339,7 @@ namespace LambdaEngine
 			.PointLights				= pointLights,
 			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
-			.Animations					= animations,
+			.pAnimations				= &animations,
 			.MeshComponents				= meshComponents,
 			.pMaterials					= &materials,
 			.pTextures					= &textures,
@@ -243,32 +349,8 @@ namespace LambdaEngine
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
-	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<Animation*>& animations)
+	Mesh* ResourceLoader::LoadMeshFromFile(const String& filepath, TArray<LoadedMaterial*>* pMaterials, TArray<LoadedTexture*>* pTextures, TArray<Animation*>* pAnimations, int32 assimpFlags)
 	{
-		int32 assimpFlags = 
-			aiProcess_FlipWindingOrder			|
-			aiProcess_FlipUVs					|
-			aiProcess_CalcTangentSpace			|
-			aiProcess_FindInstances				|
-			aiProcess_GenSmoothNormals			|
-			aiProcess_JoinIdenticalVertices		|
-			aiProcess_ImproveCacheLocality		|
-			aiProcess_LimitBoneWeights			|
-			aiProcess_RemoveRedundantMaterials	|
-			aiProcess_Triangulate				|
-			aiProcess_GenUVCoords				|
-			aiProcess_FindDegenerates			|
-			aiProcess_OptimizeMeshes			|
-			aiProcess_OptimizeGraph				|
-			aiProcess_FindInvalidData;
-		
-		// Prevent crashes in assimp when using this flag
-		//String path = ConvertSlashes(filepath);
-		//if (path.find(".obj") == String::npos && path.find(".glb") == String::npos)
-		//{
-		//	assimpFlags |= aiProcess_PopulateArmatureData;
-		//}
-
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
 
@@ -286,10 +368,10 @@ namespace LambdaEngine
 			.PointLights				= pointLightComponents,
 			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
-			.Animations					= animations,
+			.pAnimations				= pAnimations,
 			.MeshComponents				= meshComponent,
-			.pMaterials					= nullptr,
-			.pTextures					= nullptr,
+			.pMaterials					= pMaterials,
+			.pTextures					= pTextures,
 			.AnimationsOnly 			= false
 		};
 
@@ -353,7 +435,7 @@ namespace LambdaEngine
 			.PointLights				= pointLightComponents,
 			.LevelObjects				= levelObjects,
 			.Meshes						= meshes,
-			.Animations					= animations,
+			.pAnimations				= &animations,
 			.MeshComponents				= meshComponent,
 			.pMaterials					= nullptr,
 			.pTextures					= nullptr,
@@ -1137,12 +1219,21 @@ namespace LambdaEngine
 				pSkeleton->RelativeTransforms[myID] = AssimpToGLMMat4(pNode->mTransformation);
 
 				const aiNode* pParent = pNode->mParent;
-				if (pParent)
+				JointIndexType parentID = INVALID_JOINT_ID;
+
+				while (pParent != nullptr && parentID == INVALID_JOINT_ID)
 				{
-					JointIndexType parentID = FindNodeIdInSkeleton(pParent->mName.C_Str(), pSkeleton);
+					parentID = FindNodeIdInSkeleton(pParent->mName.C_Str(), pSkeleton);
 					joint.ParentBoneIndex = parentID;
 
-					if (parentID != INVALID_JOINT_ID)
+					if (parentID == INVALID_JOINT_ID)
+					{
+						glm::mat4 parentMat = AssimpToGLMMat4(pParent->mTransformation);
+						pSkeleton->RelativeTransforms[myID] = parentMat * pSkeleton->RelativeTransforms[myID];
+
+						pParent = pParent->mParent;
+					}
+					else
 					{
 						children[parentID].EmplaceBack(myID);
 					}
@@ -1178,7 +1269,7 @@ namespace LambdaEngine
 			if (rootNode != INVALID_JOINT_ID)
 			{
 				Joint& root = pSkeleton->Joints[rootNode];
-				TArray<JointIndexType> rootChildren = children[rootNode];
+				TArray<JointIndexType>& rootChildren = children[rootNode];
 				LOG_INFO("RootNode=%s Index=%u, NumChildren=%u", root.Name.GetCString(), rootNode, rootChildren.GetSize());
 				PrintChildren(rootChildren, children, pSkeleton, 1);
 			}
@@ -1334,45 +1425,54 @@ namespace LambdaEngine
 			{
 				pMaterial->Properties.Roughness = 1.0f;
 			}
-			
 
 			// Albedo
-			pMaterial->pAlbedoMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_BASE_COLOR, 0);
+			pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_BASE_COLOR, 0);
 			if (!pMaterial->pAlbedoMap)
 			{
-				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_DIFFUSE, 0);
+				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_DIFFUSE, 0);
+			}
+			if (!pMaterial->pAlbedoMap)
+			{
+				pMaterial->pAlbedoMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
 			}
 
 			// Normal
-			pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_NORMAL_CAMERA, 0);
+			pMaterial->pNormalMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_NORMAL_CAMERA, 0);
 			if (!pMaterial->pNormalMap)
 			{
-				pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_NORMALS, 0);
+				pMaterial->pNormalMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_NORMALS, 0);
 			}
 			if (!pMaterial->pNormalMap)
 			{
-				pMaterial->pNormalMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_HEIGHT, 0);
+				pMaterial->pNormalMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_HEIGHT, 0);
 			}
 
 			// AO
-			pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_AMBIENT_OCCLUSION, 0);
+			pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_AMBIENT_OCCLUSION, 0);
 			if (!pMaterial->pAmbientOcclusionMap)
 			{
-				pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_AMBIENT, 0);
+				pMaterial->pAmbientOcclusionMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_AMBIENT, 0);
 			}
 
 			// Metallic
-			pMaterial->pMetallicMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_METALNESS, 0);
+			pMaterial->pMetallicMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_METALNESS, 0);
 			if (!pMaterial->pMetallicMap)
 			{
-				pMaterial->pMetallicMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_REFLECTION, 0);
+				pMaterial->pMetallicMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_REFLECTION, 0);
 			}
 
 			// Roughness
-			pMaterial->pRoughnessMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_DIFFUSE_ROUGHNESS, 0);
+			pMaterial->pRoughnessMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_DIFFUSE_ROUGHNESS, 0);
 			if (!pMaterial->pRoughnessMap)
 			{
-				pMaterial->pRoughnessMap = LoadAssimpTexture(context, pMaterialAI, aiTextureType_SHININESS, 0);
+				pMaterial->pRoughnessMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, aiTextureType_SHININESS, 0);
+			}
+
+			//Combined Metallic Roughness
+			if (!pMaterial->pMetallicMap && !pMaterial->pRoughnessMap)
+			{
+				pMaterial->pMetallicRoughnessMap = LoadAssimpTexture(context, pSceneAI, pMaterialAI, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
 			}
 
 			context.pMaterials->EmplaceBack(pMaterial);
@@ -1425,7 +1525,7 @@ namespace LambdaEngine
 			}
 		}
 
-		context.Animations.EmplaceBack(pAnimation);
+		context.pAnimations->EmplaceBack(pAnimation);
 
 		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f", 
 			pAnimation->Name.GetString().c_str(),
@@ -1445,7 +1545,7 @@ namespace LambdaEngine
 		const uint32 numChildren = pNode->mNumChildren;
 		LOG_INFO("%s%s | NumChildren=%u", postfix.c_str(), pNode->mName.C_Str(), numChildren);
 
-#if 1
+#if 0
 		glm::mat4 glmMat = AssimpToGLMMat4(pNode->mTransformation);
 		for (uint32 i = 0; i < 4; i++)
 		{
@@ -1486,6 +1586,7 @@ namespace LambdaEngine
 
 		SceneLoadingContext context = 
 		{
+			.Filename					= filepath.substr(lastPathDivisor + 1),
 			.DirectoryPath				= filepath.substr(0, lastPathDivisor + 1),
 			.LevelObjectDescriptions	= sceneLoadRequest.LevelObjectDescriptions,
 			.DirectionalLights			= sceneLoadRequest.DirectionalLights,
@@ -1493,7 +1594,7 @@ namespace LambdaEngine
 			.LevelObjects				= sceneLoadRequest.LevelObjects,
 			.Meshes						= sceneLoadRequest.Meshes,
 			.MeshComponents				= sceneLoadRequest.MeshComponents,
-			.Animations					= sceneLoadRequest.Animations,
+			.pAnimations				= sceneLoadRequest.pAnimations,
 			.pMaterials					= sceneLoadRequest.pMaterials,
 			.pTextures					= sceneLoadRequest.pTextures
 		};
@@ -1570,11 +1671,14 @@ namespace LambdaEngine
 		}
 
 		// Load all animations
-		if (pScene->mNumAnimations > 0)
+		if (context.pAnimations != nullptr)
 		{
-			for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
+			if (pScene->mNumAnimations > 0)
 			{
-				LoadAnimation(context, pScene->mAnimations[animationIndex]);
+				for (uint32 animationIndex = 0; animationIndex < pScene->mNumAnimations; animationIndex++)
+				{
+					LoadAnimation(context, pScene->mAnimations[animationIndex]);
+				}
 			}
 		}
 
@@ -1674,9 +1778,9 @@ namespace LambdaEngine
 							const glm::mat4 meshTransform = glm::rotate(glm::mat4(1.0f), glm::pi<float32>(), glm::vec3(0.0f, 1.0f, 0.0f));
 							const glm::mat4 skinTransform = AssimpToGLMMat4(pNode->mTransformation);
 							pSkeleton->SkinTransform			= skinTransform;
-							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * meshTransform;
+							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * skinTransform * meshTransform;
 						
-							pMesh->BoundingBox.Scale(skinTransform);
+							//pMesh->BoundingBox.Scale(skinTransform);
 						}
 					}
 

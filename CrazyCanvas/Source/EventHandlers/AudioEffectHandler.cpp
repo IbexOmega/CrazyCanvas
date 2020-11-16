@@ -9,13 +9,15 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
+#include "ECS/ECSCore.h"
+
+using namespace LambdaEngine;
+
 AudioEffectHandler::~AudioEffectHandler()
 {
-	using namespace LambdaEngine;
-	
 	if (!MultiplayerUtils::IsServer())
 	{
-		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerDied);
+		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerAliveUpdatedEvent);
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerHit);
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnWindowFocusChanged);
@@ -24,8 +26,6 @@ AudioEffectHandler::~AudioEffectHandler()
 
 void AudioEffectHandler::Init()
 {
-	using namespace LambdaEngine;
-
 	if (!MultiplayerUtils::IsServer())
 	{
 		// Load resources
@@ -42,7 +42,7 @@ void AudioEffectHandler::Init()
 		m_pEnemyHitSound = ResourceManager::GetSoundEffect2D(enemyhitSoundID);
 
 		// Register callbacks
-		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerDied);
+		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerAliveUpdatedEvent);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerHit);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnWindowFocusChanged);
@@ -53,13 +53,16 @@ void AudioEffectHandler::Init()
 	}
 }
 
-bool AudioEffectHandler::OnPlayerDied(const PlayerDiedEvent& event)
+bool AudioEffectHandler::OnPlayerAliveUpdatedEvent(const PlayerAliveUpdatedEvent& event)
 {
-	UNREFERENCED_VARIABLE(event);
+	const Player* pPlayer = event.pPlayer;
 
 	if (m_HasFocus)
 	{
-		m_pPlayerKilledSound->PlayOnce();
+		if (pPlayer->IsDead())
+		{
+			m_pPlayerKilledSound->PlayOnce();
+		}
 		return true;
 	}
 	else

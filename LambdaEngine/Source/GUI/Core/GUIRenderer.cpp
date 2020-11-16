@@ -259,7 +259,7 @@ namespace LambdaEngine
 		EndCurrentRenderPass();
 
 #ifdef PRINT_FUNC
-		LOG_INFO("SetRenderTarget");
+		LOG_INFO("SetRenderTarget W: %u, H: %u", m_pCurrentRenderTarget->GetDesc()->Width, m_pCurrentRenderTarget->GetDesc()->Height);
 #endif
 	}
 
@@ -292,22 +292,21 @@ namespace LambdaEngine
 		m_CurrentSurfaceHeight	= surfaceHeight;
 
 #ifdef PRINT_FUNC
-		LOG_INFO("BeginTile");
+		LOG_INFO("BeginTile W: %u, H: %u", m_CurrentSurfaceWidth, m_CurrentSurfaceHeight);
 #endif
 	}
 
 	void GUIRenderer::EndTile()
 	{
 		EndCurrentRenderPass();
-		m_TileBegun				= false;
-		m_CurrentSurfaceWidth	= 0;
-		m_CurrentSurfaceHeight	= 0;
-
-		ResumeRenderPass();
-
+		m_TileBegun					= false;
+		//m_CurrentSurfaceWidth		= 0;
+		//m_CurrentSurfaceHeight	= 0;
 #ifdef PRINT_FUNC
 		LOG_INFO("EndTile");
 #endif
+
+		ResumeRenderPass();
 	}
 
 	void GUIRenderer::ResolveRenderTarget(Noesis::RenderTarget* pSurface, const Noesis::Tile* pTiles, uint32_t numTiles)
@@ -578,7 +577,9 @@ namespace LambdaEngine
 #ifdef PRINT_FUNC
 			LOG_INFO("Draw");
 #endif
-			pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
+			// Might not be the most effective way to abort, but it works
+			if (m_IsInRenderPass)
+				pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
 		}
 	}
 
@@ -628,10 +629,12 @@ namespace LambdaEngine
 		const String& resourceName,
 		const TextureView* const* ppPerImageTextureViews,
 		const TextureView* const* ppPerSubImageTextureViews,
+		const Sampler* const* ppPerImageSamplers,
 		uint32 imageCount,
 		uint32 subImageCount,
 		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
@@ -873,6 +876,10 @@ namespace LambdaEngine
 
 	void GUIRenderer::ResumeRenderPass()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("Trying to resumt renderpass: tileBegun: %d", m_TileBegun);
+#endif
+
 		if (!m_IsInRenderPass)
 		{
 			CommandList* pCommandList = BeginOrGetRenderCommandList();

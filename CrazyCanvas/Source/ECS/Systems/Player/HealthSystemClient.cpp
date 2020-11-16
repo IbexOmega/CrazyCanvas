@@ -33,11 +33,6 @@ void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			if (healthComponent.CurrentHealth != packet.CurrentHealth)
 			{
 				healthComponent.CurrentHealth = packet.CurrentHealth;
-				if (packet.Killed)
-				{
-					Match::KillPlayer(entity);
-					LOG_INFO("PLAYER DIED");
-				}
 
 				// Is this the local player
 				bool isLocal = false;
@@ -73,22 +68,22 @@ bool HealthSystemClient::InitInternal()
 		playerGroup.Rotation.Permissions	= NDA;
 		playerGroup.Velocity.Permissions	= NDA;
 
-		EntitySubscriberRegistration subscription = {};
-		subscription.EntitySubscriptionRegistrations =
-		{
-			{
-				.pSubscriber = &m_LocalPlayerEntities,
-					.ComponentAccesses =
-				{
-					{ NDA, PlayerLocalComponent::Type() },
-				},
-				.ComponentGroups = { &playerGroup }
-			},
-		};
+		SystemRegistration systemReg = {};
+		HealthSystem::CreateBaseSystemRegistration(systemReg);
 
-		SubscribeToEntities(subscription);
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(
+		{
+			.pSubscriber = &m_LocalPlayerEntities,
+				.ComponentAccesses =
+			{
+				{ NDA, PlayerLocalComponent::Type() },
+			},
+			.ComponentGroups = { &playerGroup }
+		});
+
+		RegisterSystem(TYPE_NAME(HealthSystemClient), systemReg);
 	}
 
-	return HealthSystem::InitInternal();
+	return true;
 }
 

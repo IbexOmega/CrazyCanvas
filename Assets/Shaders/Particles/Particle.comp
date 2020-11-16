@@ -36,18 +36,52 @@ layout(binding = 3, set = 0) readonly restrict buffer EmitterTransforms
 	mat4 Val[]; 
 } b_EmitterTransforms;
 
-layout (binding = 4, set = 0) readonly restrict buffer EmitterIndices
+layout (binding = 4, set = 0) readonly restrict buffer ParticleIndirectIndices
 {
-	uint Val[];
-} b_EmitterIndices;
+	SParticleIndexData Val[];
+} b_ParticleIndirectIndices;
 
 layout (binding = 5, set = 0) readonly restrict buffer AliveIndices
 {
 	uint Val[];
 } b_AliveIndices;
 
+layout (binding = 6, set = 0) readonly restrict buffer AccelerationStructureInstanceIndex
+{
+	uint Val[];
+} b_ASInstanceIndex;
+
+layout (binding = 7, set = 0) restrict buffer AccelerationStructureInstance
+{
+	SAccelerationStructureInstance Val[];
+} b_ASInstance;
+
 layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
 layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
+
+void UpdateParticleTransform(vec3 position, SEmitter emitter, uint particleIndex, inout SParticle particle, inout SAccelerationStructureInstance ASInstance)
+{
+	particle.Transform[3].xyz = position;
+	
+	float scale = mix(particle.EndRadius, particle.BeginRadius, particle.CurrentLife / emitter.LifeTime);
+	ASInstance.Transform[0].x = scale;
+	ASInstance.Transform[1].y = scale;
+	ASInstance.Transform[2].z = scale;
+
+	float radi = PI_OVER_TWO * float(particleIndex % 2);
+	mat3 RotationMatrix = mat3
+	(
+		cos(radi), 	0.0f, -sin(radi),
+		0.0f,				1.0f, 0.0f,
+		sin(radi), 	0.0f, cos(radi)
+	);
+
+	ASInstance.Transform *= RotationMatrix;
+
+	ASInstance.Transform[0].w = position.x;
+	ASInstance.Transform[1].w = position.y;
+	ASInstance.Transform[2].w = position.z;
+}
 
 // Main
 void main()
@@ -64,14 +98,23 @@ void main()
 		// Update particle data
 		uint particleIndex = b_AliveIndices.Val[indexOffset];
 		SParticle particle = b_ParticleInstances.Val[particleIndex];
-		uint emmiterIndex = b_EmitterIndices.Val[particleIndex];
+		
+		// Retreive emitter data
+		uint emmiterIndex = b_ParticleIndirectIndices.Val[particleIndex].EmitterIndex;
 		SEmitter emitter = b_EmitterInstances.Val[emmiterIndex];
 		mat4 emitterTransform = b_EmitterTransforms.Val[emmiterIndex];
+		
+		// Retreive AS instance 
+		uint ASIndirectIndex = b_ParticleIndirectIndices.Val[particleIndex].ASInstanceIndirectIndex;
+		uint ASDirectIndex = b_ASInstanceIndex.Val[ASIndirectIndex];
+		SAccelerationStructureInstance ASInstance = b_ASInstance.Val[ASDirectIndex];
 
 		if(particle.WasCreated)
 		{
 			particle.WasCreated = false;
-			particle.Transform[3].xyz = emitterTransform[3].xyz + particle.StartPosition;
+			vec3 particlePosition = emitterTransform[3].xyz + particle.StartPosition;
+			
+			UpdateParticleTransform(particlePosition, emitter, particleIndex, particle, ASInstance);
 
 			// Rotate the initial acceleration and velocity to match its emitter's.
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
@@ -92,21 +135,20 @@ void main()
 		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
 		{
-			vec3 preV = particle.Velocity;
-			particle.Velocity *= particle.FrictionFactor;
-			particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
+			//vec3 preV = particle.Velocity;
+			//particle.Velocity *= particle.FrictionFactor;
+			//particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
 		}
 		
-		particle.Transform[3].xyz += particle.Velocity*dt;
-
-
+		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);
 		particle.CurrentLife -= dt;
 
 		// If the particle is not visible, put it outside the view of the players.
 		if(particle.CurrentLife > emitter.LifeTime)
 		{
 			const float OUT_OF_REACH = 10000.f;
-			particle.Transform[3].xyz = vec3(OUT_OF_REACH);
+			UpdateParticleTransform(vec3(OUT_OF_REACH), emitter, particleIndex, particle, ASInstance);
+
 			particle.WasCreated = true;
 		}
 
@@ -115,7 +157,7 @@ void main()
 		{
 			float extraLife = mod(abs(particle.CurrentLife), emitter.LifeTime);
 			particle.CurrentLife = emitter.LifeTime-extraLife;
-			particle.Transform[3].xyz = particle.StartPosition + emitterTransform[3].xyz;
+			UpdateParticleTransform(particle.StartPosition + emitterTransform[3].xyz, emitter, particleIndex, particle, ASInstance);
 			particle.Velocity = particle.StartVelocity;
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
@@ -125,6 +167,10 @@ void main()
 		float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
 		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
 
+		// Update ASInstance data and write particleIndex to customIndex
+		ASInstance.HitMask_CustomProperties = ((particleIndex << 8) >> 8) | ((ASInstance.HitMask_CustomProperties >> 24) << 24);
+		b_ASInstance.Val[ASDirectIndex] = ASInstance;
+	
 		b_ParticleInstances.Val[particleIndex] = particle;
 		indexOffset += totalInvocations;
 	}

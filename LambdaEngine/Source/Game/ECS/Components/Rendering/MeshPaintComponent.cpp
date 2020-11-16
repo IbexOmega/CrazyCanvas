@@ -18,6 +18,7 @@ namespace LambdaEngine
 		const std::string& textureName, 
 		uint32 width, 
 		uint32 height,
+		bool generateMips,
 		bool createMipReadBack)
 	{
 		MeshPaintComponent meshPaintComponent = {};
@@ -27,10 +28,12 @@ namespace LambdaEngine
 		meshPaintComponent.pTexture = ResourceLoader::LoadTextureArrayFromMemory(
 			textureName,
 			reinterpret_cast<void**>(&pData),
-			1, width, height,
+			1, 
+			width, 
+			height,
 			EFormat::FORMAT_R8G8_UINT,
 			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET, 
-			true,
+			generateMips,
 			false);
 
 		VALIDATE(meshPaintComponent.pTexture != nullptr);
@@ -41,23 +44,11 @@ namespace LambdaEngine
 		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		textureViewDesc.Format			= EFormat::FORMAT_R8G8_UINT;
 		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		textureViewDesc.MiplevelCount	= textureViewDesc.pTexture->GetDesc().Miplevels;
-		textureViewDesc.ArrayCount		= textureViewDesc.pTexture->GetDesc().ArrayCount;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.ArrayCount		= 1;
 		textureViewDesc.Miplevel		= 0;
 		textureViewDesc.ArrayIndex		= 0;
 		meshPaintComponent.pTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-
-		TextureViewDesc mipZeroTextureViewDesc = {};
-		mipZeroTextureViewDesc.DebugName		= textureName + " Mip Zero Texture View";
-		mipZeroTextureViewDesc.pTexture			= meshPaintComponent.pTexture;
-		mipZeroTextureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		mipZeroTextureViewDesc.Format			= EFormat::FORMAT_R8G8_UINT;
-		mipZeroTextureViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		mipZeroTextureViewDesc.MiplevelCount	= 1;
-		mipZeroTextureViewDesc.ArrayCount		= textureViewDesc.pTexture->GetDesc().ArrayCount;
-		mipZeroTextureViewDesc.Miplevel			= 0;
-		mipZeroTextureViewDesc.ArrayIndex		= 0;
-		meshPaintComponent.pMipZeroTextureView	= RenderAPI::GetDevice()->CreateTextureView(&mipZeroTextureViewDesc);
 
 		if (createMipReadBack)
 		{
@@ -81,12 +72,11 @@ namespace LambdaEngine
 		}
 
 		DrawArgExtensionData drawArgExtensionData = {};
-		drawArgExtensionData.TextureCount				= 1;
-		drawArgExtensionData.ppTextures[0]				= meshPaintComponent.pTexture;
-		drawArgExtensionData.ppTextureViews[0]			= meshPaintComponent.pTextureView;
-		drawArgExtensionData.ppMipZeroTextureViews[0]	= meshPaintComponent.pMipZeroTextureView;
-		drawArgExtensionData.ppReadBackBuffers[0]		= meshPaintComponent.pReadBackBuffer;
-		drawArgExtensionData.ppSamplers[0]				= Sampler::GetNearestSampler();
+		drawArgExtensionData.TextureCount		  = 1;
+		drawArgExtensionData.ppTextures[0]		  = meshPaintComponent.pTexture;
+		drawArgExtensionData.ppTextureViews[0]	  = meshPaintComponent.pTextureView;
+		drawArgExtensionData.ppReadBackBuffers[0] = meshPaintComponent.pReadBackBuffer;
+		drawArgExtensionData.ppSamplers[0]		  = Sampler::GetNearestSampler();
 
 		EntityMaskManager::AddExtensionToEntity(entity, MeshPaintComponent::Type(), &drawArgExtensionData);
 

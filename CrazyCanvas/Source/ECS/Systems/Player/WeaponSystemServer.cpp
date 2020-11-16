@@ -30,8 +30,8 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 		PacketComponent<PacketPlayerAction>&			actionsRecived	= pPlayerActionPackets->GetData(remotePlayerEntity);
 		PacketComponent<PacketPlayerActionResponse>&	responsesToSend	= pPlayerResponsePackets->GetData(remotePlayerEntity);
-		TQueue<PacketPlayerActionResponse>&	packetsToSend	= responsesToSend.GetPacketsToSend();
-		const TArray<PacketPlayerAction>&	packetsRecived	= actionsRecived.GetPacketsReceived();
+		TQueue<PacketPlayerActionResponse>&				packetsToSend	= responsesToSend.GetPacketsToSend();
+		const TArray<PacketPlayerAction>&				packetsRecived	= actionsRecived.GetPacketsReceived();
 
 		// Handle packets
 		const uint32 packetCount = packetsRecived.GetSize();
@@ -49,10 +49,27 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				auto ammoState = weaponComp.WeaponTypeAmmo.find(ammoType);
 				VALIDATE(ammoState != weaponComp.WeaponTypeAmmo.end())
 
-				// Update position and orientation of weapon component
-				packetsToSend.back().FiredAmmo = ammoType;
+				// Only send if the weapon has ammo on the server
+				const bool hasAmmo = ammoState->second.first;
+				if (hasAmmo)
+				{
+					//Calculate Weapon Fire Properties (Position, Velocity and Team)
+					glm::vec3 firePosition;
+					glm::vec3 fireVelocity;
+					uint32 playerTeam;
+					CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
-				Fire(ammoType, weaponEntity);
+					// Update position and orientation of weapon component
+					packetsToSend.back().FiredAmmo		= ammoType;
+					packetsToSend.back().WeaponPosition	= firePosition;
+					packetsToSend.back().WeaponVelocity	= fireVelocity;
+
+					// Handle fire
+					weaponComp.CurrentCooldown = 1.0f / weaponComp.FireRate;
+
+					// Create projectile
+					Fire(weaponEntity, weaponComp, ammoType, firePosition, fireVelocity, playerTeam, packetsRecived[i].Angle);
+				}
 			}
 		}
 	}
@@ -61,11 +78,6 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 bool WeaponSystemServer::InitInternal()
 {
 	using namespace LambdaEngine;
-
-	if (!WeaponSystem::InitInternal())
-	{
-		return false;
-	}
 
 	// Register system
 	{
@@ -76,8 +88,9 @@ bool WeaponSystemServer::InitInternal()
 		playerGroup.Velocity.Permissions	= R;
 
 		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
-		{
+		WeaponSystem::CreateBaseSystemRegistration(systemReg);
+
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(
 			{
 				.pSubscriber = &m_RemotePlayerEntities,
 				.ComponentAccesses =
@@ -88,10 +101,7 @@ bool WeaponSystemServer::InitInternal()
 				},
 				.ComponentGroups = { &playerGroup }
 			}
-		};
-
-		systemReg.SubscriberRegistration.AdditionalAccesses = GetFireProjectileComponentAccesses();
-		systemReg.Phase = 1;
+		);
 
 		RegisterSystem(TYPE_NAME(WeaponSystem), systemReg);
 	}

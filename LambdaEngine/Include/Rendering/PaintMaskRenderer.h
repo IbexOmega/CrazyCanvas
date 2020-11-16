@@ -59,7 +59,8 @@ namespace LambdaEngine
 		virtual void UpdateTextureResource(
 			const String& resourceName, 
 			const TextureView* const * ppPerImageTextureViews, 
-			const TextureView* const* ppPerSubImageTextureViews, 
+			const TextureView* const* ppPerSubImageTextureViews,
+			const Sampler* const* ppPerImageSamplers,
 			uint32 imageCount, 
 			uint32 subImageCount, 
 			bool backBufferBound) override final;
@@ -106,7 +107,7 @@ namespace LambdaEngine
 		*	direction	- vec3 of the direction the hit position had during collision
 		*	paintMode	- painting mode to be used for the target
 		*/
-		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode);
+		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode, uint32 angle);
 
 		/* Reset client data from the texture and only use the verifed server data */
 		static void ResetClient();
@@ -123,6 +124,7 @@ namespace LambdaEngine
 		bool CreateCommandLists();
 		bool CreateRenderPass(const CustomRendererRenderGraphInitDesc* pPreInitDesc);
 		bool CreatePipelineState();
+		void AddResetHitPoint();
 
 		uint64 InternalCreatePipelineState(GUID_Lambda vertexShader, GUID_Lambda pixelShader, FColorComponentFlags colorComponentFlags);
 
@@ -137,20 +139,19 @@ namespace LambdaEngine
 
 		struct UnwrapData
 		{
-			glm::vec4	TargetPosition;
-			glm::vec4	TargetDirection;
-			EPaintMode	PaintMode	= EPaintMode::NONE;
-			ERemoteMode	RemoteMode	= ERemoteMode::UNDEFINED;
-			ETeam		Team		= ETeam::NONE;
-			uint32		Padding0	= 0;
-			bool		ClearClient = false;
+			glm::vec4		TargetPosition;
+			glm::vec4		TargetDirectionXYZAngleW;
+			EPaintMode		PaintMode			= EPaintMode::NONE;
+			ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
+			ETeam			Team				= ETeam::NONE;
+			bool			ClearClient			= false;
 		};
 
 		struct FrameSettings
 		{
-			uint32 ShouldReset	= 0;
-			uint32 ShouldPaint	= 0;
-			uint32 PaintCount	= 0;
+			uint32	ShouldReset	= 0;
+			uint32	ShouldPaint	= 0;
+			uint32	PaintCount	= 0;
 		};
 
 		struct DrawArgKey
@@ -233,17 +234,17 @@ namespace LambdaEngine
 		TArray<DrawArgKey>													m_AliveDescriptorSetList;
 		TArray<DrawArgKey>													m_DeadDescriptorSetList;
 
-		TSharedRef<DescriptorSet>											m_UnwrapDataDescriptorSet;
-		TSharedRef<DescriptorSet>											m_PerFrameBufferDescriptorSet;
-		TSharedRef<DescriptorSet>											m_BrushMaskDescriptorSet;
+		TSharedRef<DescriptorSet> m_UnwrapDataDescriptorSet;
+		TSharedRef<DescriptorSet> m_PerFrameBufferDescriptorSet;
+		TSharedRef<DescriptorSet> m_BrushMaskDescriptorSet;
 
-		TArray<TArray<TSharedRef<DeviceChild>>>								m_pDeviceResourcesToDestroy;
+		TArray<TArray<TSharedRef<DeviceChild>>>	m_pDeviceResourcesToDestroy;
+		TArray<RenderTarget>					m_RenderTargets;
 
-		TArray<RenderTarget>												m_RenderTargets;
-	
-private:
-		static TArray<Entity>		s_ServerResets;
-		static TArray<UnwrapData>	s_ServerCollisions;
-		static TArray<UnwrapData>	s_ClientCollisions;
+	private:
+		static TArray<Entity>	  s_ServerResets;
+		inline static bool		  s_ShouldReset = false;
+		static TArray<UnwrapData> s_ServerCollisions;
+		static TArray<UnwrapData> s_ClientCollisions;
 	};
 }

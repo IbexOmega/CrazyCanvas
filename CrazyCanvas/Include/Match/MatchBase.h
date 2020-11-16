@@ -20,7 +20,7 @@ struct MatchDescription
 {
 	LambdaEngine::SHA256Hash LevelHash;
 	uint32 NumTeams = 2;
-	uint32 MaxScore = 5;
+	uint32 MaxScore = 3;
 };
 
 static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 5.0f;
@@ -40,9 +40,20 @@ public:
 
 	void ResetMatch();
 
-	virtual void KillPlayer(LambdaEngine::Entity playerEntity)
+	virtual void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
 	{
-		UNREFERENCED_VARIABLE(playerEntity);
+		UNREFERENCED_VARIABLE(entityToKill);
+		UNREFERENCED_VARIABLE(killedByEntity);
+	}
+
+	virtual void BeginLoading()
+	{
+
+	}
+
+	virtual void MatchStart()
+	{
+
 	}
 
 	FORCEINLINE bool HasBegun() const { return m_HasBegun; }

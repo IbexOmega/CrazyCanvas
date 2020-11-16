@@ -2,11 +2,13 @@
 
 #include "Match/MatchBase.h"
 
-#include "Multiplayer/Packet/MultiplayerEvents.h"
+#include "Events/PacketEvents.h"
+
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketMatchReady.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 
@@ -26,6 +28,7 @@ protected:
 	bool OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTeamScored>& event);
 	bool OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<PacketDeleteLevelObject>& event);
 	bool OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMatchStart>& event);
+	bool OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event);
 	bool OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event);
 	bool OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event);
 
@@ -33,6 +36,7 @@ private:
 	bool m_ClientSideBegun = false;
 
 	float32 m_CountdownHideTimer = 0.0f;
+	
 
 	GUID_Lambda m_CountdownSoundEffects[5];
 	GUID_Lambda m_CountdownDoneSoundEffect;

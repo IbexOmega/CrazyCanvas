@@ -6,6 +6,7 @@
 #include "Multiplayer/Packet/MultiplayerEvents.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 
+#include "Events/PacketEvents.h"
 #include "Events/GameplayEvents.h"
 
 #include <queue>
@@ -43,6 +44,7 @@ private:
 		LambdaEngine::EPaintMode	PaintMode	= LambdaEngine::EPaintMode::NONE;
 		LambdaEngine::ERemoteMode	RemoteMode	= LambdaEngine::ERemoteMode::UNDEFINED;
 		LambdaEngine::ETeam			Team		= LambdaEngine::ETeam::NONE;
+		uint32 Angle;
 	};
 
 private:

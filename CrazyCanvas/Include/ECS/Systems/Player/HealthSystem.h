@@ -25,7 +25,9 @@ public:
 	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) = 0;
 
 protected:
-	virtual bool InitInternal();
+	virtual bool InitInternal() = 0;
+
+	void CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg);
 
 public:
 	static bool Init();

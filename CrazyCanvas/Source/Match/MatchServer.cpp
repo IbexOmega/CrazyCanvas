@@ -36,8 +36,11 @@
 #include "Multiplayer/Packet/PacketTeamScored.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketGameOver.h"
+#include "Multiplayer/Packet/PacketMatchReady.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
+
+#include "Lobby/PlayerManagerServer.h"
 
 #include <imgui.h>
 
@@ -47,24 +50,26 @@ MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
 	
-	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 }
 
-void MatchServer::KillPlayer(LambdaEngine::Entity playerEntity)
+void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
 {
 	using namespace LambdaEngine;
 
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(entityToKill);
+	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
+	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
+
 	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
-	m_PlayersToKill.EmplaceBack(playerEntity);
+	m_PlayersToKill.EmplaceBack(entityToKill);
 }
 
 bool MatchServer::InitInternal()
 {
 	using namespace LambdaEngine;
 
-	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MatchServer::OnClientConnected);
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 
@@ -75,7 +80,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 
-	if (!m_HasBegun)
+	if (m_ShouldBeginMatch && !m_HasBegun)
 	{
 		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
 
@@ -139,9 +144,13 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					ComponentArray<WeaponComponent>*	pWeaponComponents	= pECS->GetComponentArray<WeaponComponent>();
 
 					ImGui::Text("Player Status:");
-					for (uint32 i = 0; Entity playerEntity : playerEntities)
+					for (Entity playerEntity : playerEntities)
 					{
-						std::string name = "Player " + std::to_string(++i) + " : [EntityID=" + std::to_string(playerEntity) + "]";
+						const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+						if (!pPlayer)
+							continue;
+
+						std::string name = pPlayer->GetName() + ": [EntityID=" + std::to_string(playerEntity) + "]";
 						if (ImGui::TreeNode(name.c_str()))
 						{
 							const HealthComponent& health = pHealthComponents->GetConstData(playerEntity);
@@ -163,19 +172,14 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 							if (ImGui::Button("Kill"))
 							{
-								Match::KillPlayer(playerEntity);
+								Match::KillPlayer(playerEntity, UINT32_MAX);
 							}
 							
 							ImGui::SameLine();
 
 							if (ImGui::Button("Disconnect"))
 							{
-								const uint64 uid = m_PlayerEntityToClientID[playerEntity];
-								ClientRemoteBase* pClient = ServerHelper::GetClient(uid);
-								if (pClient)
-								{
-									pClient->Disconnect("Kicked");
-								}
+								ServerHelper::DisconnectPlayer(pPlayer, "Kicked");
 							}
 
 							ImGui::TreePop();
@@ -194,9 +198,53 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 #endif
 }
 
+void MatchServer::BeginLoading()
+{
+	using namespace LambdaEngine;
+	LOG_INFO("SERVER: Loading started!");
+
+	const THashTable<uint64, Player>& players = PlayerManagerBase::GetPlayers();
+
+	for (auto& pair : players)
+	{
+		SpawnPlayer(pair.second);
+	}
+
+	// Send flag data to clients
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		ComponentArray<PositionComponent>* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>* pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
+		ComponentArray<ParentComponent>* pParentComponents		= pECS->GetComponentArray<ParentComponent>();
+
+		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+
+		PacketCreateLevelObject packet;
+		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
+
+		for (Entity flagEntity : flagEntities)
+		{
+			const PositionComponent& positionComponent	= pPositionComponents->GetConstData(flagEntity);
+			const RotationComponent& rotationComponent	= pRotationComponents->GetConstData(flagEntity);
+			const ParentComponent& parentComponent		= pParentComponents->GetConstData(flagEntity);
+
+			packet.NetworkUID				= flagEntity;
+			packet.Position					= positionComponent.Position;
+			packet.Forward					= GetForward(rotationComponent.Quaternion);
+			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
+			ServerHelper::SendBroadcast(packet);
+		}
+	}
+
+	PacketMatchReady packet;
+	ServerHelper::SendBroadcast(packet);
+}
+
 void MatchServer::MatchStart()
 {
 	m_HasBegun = false;
+	m_ShouldBeginMatch = true;
 	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
 
 	PacketMatchStart matchStartPacket;
@@ -208,11 +256,77 @@ void MatchServer::MatchStart()
 void MatchServer::MatchBegin()
 {
 	m_HasBegun = true;
+	m_ShouldBeginMatch = false;
 
 	PacketMatchBegin matchBeginPacket;
 	ServerHelper::SendBroadcast(matchBeginPacket);
 
 	LOG_INFO("SERVER: Match Begin");
+}
+
+void MatchServer::SpawnPlayer(const Player& player)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	TArray<Entity> playerSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+
+	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+
+	glm::vec3 position(0.0f, 5.0f, 0.0f);
+	glm::vec3 forward(0.0f, 0.0f, 1.0f);
+
+	for (Entity spawnPoint : playerSpawnPointEntities)
+	{
+		const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
+
+		if (teamComponent.TeamIndex == m_NextTeamIndex)
+		{
+			const PositionComponent& positionComponent = pPositionComponents->GetConstData(spawnPoint);
+			position = positionComponent.Position + glm::vec3(0.0f, 1.0f, 0.0f);
+			forward = glm::normalize(-glm::vec3(position.x, 0.0f, position.z));
+			break;
+		}
+	}
+
+	CreatePlayerDesc createPlayerDesc =
+	{
+		.ClientUID	= player.GetUID(),
+		.Position	= position,
+		.Forward	= forward,
+		.Scale		= glm::vec3(1.0f),
+		.TeamIndex	= m_NextTeamIndex,
+	};
+
+	TArray<Entity> createdPlayerEntities;
+	if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
+	{
+		VALIDATE(createdPlayerEntities.GetSize() == 1);
+
+		PacketCreateLevelObject packet;
+		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
+		packet.Position			= position;
+		packet.Forward			= forward;
+		packet.Player.TeamIndex = m_NextTeamIndex;
+
+		ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
+		for (Entity playerEntity : createdPlayerEntities)
+		{
+			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(playerEntity);
+			packet.Player.ClientUID			= player.GetUID();
+			packet.NetworkUID				= playerEntity;
+			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");
+			ServerHelper::SendBroadcast(packet);
+		}
+	}
+	else
+	{
+		LOG_ERROR("[MatchServer]: Failed to create Player");
+	}
+
+	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
 }
 
 void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
@@ -287,13 +401,13 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 
 	CreateProjectileDesc createProjectileDesc;
 	createProjectileDesc.AmmoType		= event.AmmoType;
-	createProjectileDesc.FireDirection	= event.Direction;
 	createProjectileDesc.FirePosition	= event.Position;
 	createProjectileDesc.InitalVelocity	= event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
 	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
 	createProjectileDesc.MeshComponent	= event.MeshComponent;
+	createProjectileDesc.Angle			= event.Angle;
 
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))
@@ -303,81 +417,6 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 
 	LOG_INFO("SERVER: Weapon fired");
 	return false;
-}
-
-void MatchServer::SpawnPlayer(LambdaEngine::ClientRemoteBase* pClient)
-{
-	using namespace LambdaEngine;
-
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	TArray<Entity> playerSpawnPointEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
-
-	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-
-	glm::vec3 position(0.0f, 5.0f, 0.0f);
-	glm::vec3 forward(0.0f, 0.0f, 1.0f);
-
-	for (Entity spawnPoint : playerSpawnPointEntities)
-	{
-		const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
-
-		if (teamComponent.TeamIndex == m_NextTeamIndex)
-		{
-			const PositionComponent& positionComponent = pPositionComponents->GetConstData(spawnPoint);
-			position = positionComponent.Position + glm::vec3(0.0f, 1.0f, 0.0f);
-			forward = glm::normalize(-glm::vec3(position.x, 0.0f, position.z));
-			break;
-		}
-	}
-
-	CreatePlayerDesc createPlayerDesc =
-	{
-		.Position		= position,
-		.Forward		= forward,
-		.Scale			= glm::vec3(1.0f),
-		.TeamIndex		= m_NextTeamIndex,
-	};
-
-	TArray<Entity> createdPlayerEntities;
-	if (m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
-	{
-		VALIDATE(createdPlayerEntities.GetSize() == 1);
-
-		PacketCreateLevelObject packet;
-		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
-		packet.Position			= position;
-		packet.Forward			= forward;
-		packet.Player.TeamIndex	= m_NextTeamIndex;
-
-		ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
-		for (Entity playerEntity : createdPlayerEntities)
-		{
-			const ChildComponent& childComp = pCreatedChildComponents->GetConstData(playerEntity);
-			packet.Player.IsMySelf	= true;
-			packet.NetworkUID		= playerEntity;
-			packet.Player.WeaponNetworkUID = childComp.GetEntityWithTag("weapon");
-
-			ServerHelper::Send(pClient, packet);
-
-			packet.Player.IsMySelf	= false;
-			ServerHelper::SendBroadcast(packet, nullptr, pClient);
-		}
-	}
-	else
-	{
-		LOG_ERROR("[MatchServer]: Failed to create Player");
-	}
-
-	const uint64 cliendID = pClient->GetUID();
-	if (m_ClientIDToPlayerEntity.count(cliendID) == 0)
-	{
-		m_ClientIDToPlayerEntity.insert(std::make_pair(cliendID, createdPlayerEntities[0]));
-		m_PlayerEntityToClientID.insert(std::make_pair(createdPlayerEntities[0], cliendID));
-	}
-
-	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
 }
 
 void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
@@ -390,88 +429,16 @@ void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 	ServerHelper::SendBroadcast(packet);
 }
 
-bool MatchServer::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
-{
-	using namespace LambdaEngine;
-
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	IClient* pClient = event.pClient;
-
-	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
-	ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
-
-	// Send currently existing players to the new client
-	{
-		TArray<Entity> playerEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER);
-
-		PacketCreateLevelObject packet;
-		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
-		packet.Player.IsMySelf	= false;
-
-		for (Entity otherPlayerEntity : playerEntities)
-		{
-			const PositionComponent& positionComponent = pPositionComponents->GetConstData(otherPlayerEntity);
-			const RotationComponent& rotationComponent = pRotationComponents->GetConstData(otherPlayerEntity);
-			const TeamComponent& teamComponent	= pTeamComponents->GetConstData(otherPlayerEntity);
-			const ChildComponent& childComp		= pCreatedChildComponents->GetConstData(otherPlayerEntity);
-
-			packet.NetworkUID				= otherPlayerEntity;
-			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");
-			packet.Position			= positionComponent.Position;
-			packet.Forward			= GetForward(rotationComponent.Quaternion);
-			packet.Player.TeamIndex	= teamComponent.TeamIndex;
-			ServerHelper::Send(pClient, packet);
-		}
-	}
-
-	// Create a player for the new client, also sends the new player to the connected clients
-	{
-		SpawnPlayer((ClientRemoteBase*)pClient);
-	}
-
-	// Send flag data to clients
-	{
-		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
-
-		PacketCreateLevelObject packet;
-		packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG;
-
-		for (Entity flagEntity : flagEntities)
-		{
-			const PositionComponent& positionComponent	= pPositionComponents->GetConstData(flagEntity);
-			const RotationComponent& rotationComponent	= pRotationComponents->GetConstData(flagEntity);
-			const ParentComponent& parentComponent		= pParentComponents->GetConstData(flagEntity);
-
-			packet.NetworkUID				= flagEntity;
-			packet.Position					= positionComponent.Position;
-			packet.Forward					= GetForward(rotationComponent.Quaternion);
-			packet.Flag.ParentNetworkUID	= parentComponent.Parent;
-			ServerHelper::Send(pClient, packet);
-		}
-	}
-
-	// Match Start
-	{
-		MatchStart();
-	}
-
-	return true;
-}
-
 bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
 {
 	VALIDATE(event.pClient != nullptr);
 
-	const uint64 clientID = event.pClient->GetUID();
-	const LambdaEngine::Entity playerEntity = m_ClientIDToPlayerEntity[clientID];
-	m_ClientIDToPlayerEntity.erase(clientID);
-	m_PlayerEntityToClientID.erase(playerEntity);
-
-	Match::KillPlayer(playerEntity);
+	const Player* pPlayer = PlayerManagerBase::GetPlayer(event.pClient);
+	if (pPlayer)
+	{
+		Match::KillPlayer(pPlayer->GetEntity(), UINT32_MAX);
+	}
+	
 
 	// TODO: Fix this
 	//DeleteGameLevelObject(playerEntity);
@@ -496,7 +463,6 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 
 	uint32 newScore = GetScore(event.TeamIndex) + 1;
 	SetScore(event.TeamIndex, newScore);
-
 
 	PacketTeamScored packet;
 	packet.TeamIndex	= event.TeamIndex;
@@ -564,8 +530,9 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 			}
 		}
 
-		// Reset position
-		positionComp.Position = newPosition;
+		//Set player alive again
+		const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+		PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 	}
 	else
 	{

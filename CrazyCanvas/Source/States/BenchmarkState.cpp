@@ -39,7 +39,6 @@
 #include "World/LevelManager.h"
 #include "World/Level.h"
 
-#include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
@@ -53,7 +52,7 @@ BenchmarkState::~BenchmarkState()
 {
 	using namespace LambdaEngine;
 	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &BenchmarkState::OnWeaponFired);
-	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &BenchmarkState::OnPacketCreateLevelObjectReceived);
 
 	SAFEDELETE(m_pLevel);
 
@@ -71,7 +70,7 @@ void BenchmarkState::Init()
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &BenchmarkState::OnWeaponFired);
-	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &BenchmarkState::OnPacketReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &BenchmarkState::OnPacketCreateLevelObjectReceived);
 
 	// Initialize Systems
 	WeaponSystem::Init();
@@ -115,7 +114,8 @@ void BenchmarkState::Init()
 
 	//Sphere Grid
 	{
-		uint32 sphereMeshGUID = ResourceManager::LoadMeshFromFile("sphere.obj");
+		GUID_Lambda sphereMeshGUID;
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
 		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
 
 		uint32 gridRadius = 5;
@@ -286,67 +286,65 @@ void BenchmarkState::FixedTick(LambdaEngine::Timestamp delta)
 	WeaponSystem::GetInstance().FixedTick(delta);
 }
 
-bool BenchmarkState::OnPacketReceived(const LambdaEngine::NetworkSegmentReceivedEvent& event)
+bool BenchmarkState::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
 {
 	using namespace LambdaEngine;
 
-	if (event.Type == PacketType::CREATE_LEVEL_OBJECT)
+	const PacketCreateLevelObject& packet = event.Packet;;
+
+	// Create player characters that a benchmark system controls
+	if (packet.LevelObjectType == ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER)
 	{
-		PacketCreateLevelObject packet;
-		event.pPacket->Read(&packet);
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 
-		// Create player characters that a benchmark system controls
-		if (packet.LevelObjectType == ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER)
+		const CameraDesc cameraDesc =
 		{
-			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+			.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
+			.Width		= (float32)window->GetWidth(),
+			.Height		= (float32)window->GetHeight(),
+			.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+			.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
+		};
 
-			const CameraDesc cameraDesc =
+		GUID_Lambda robotMeshGUID;
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", robotMeshGUID);
+		TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
+
+		AnimationComponent robotAnimationComp = {};
+		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotMeshGUID)->pSkeleton;
+
+		constexpr const uint32 playerCount = 9;
+
+		CreatePlayerDesc createPlayerDesc =
+		{
+			.ClientUID			= event.pClient->GetUID(),
+			.IsLocal 			= false,
+			.PlayerNetworkUID 	= packet.NetworkUID,
+			.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
+			.Position 			= packet.Position,
+			.Forward 			= glm::normalize(glm::vec3(0.1f, -1.0f, 0.0f)),
+			.Scale 				= glm::vec3(1.0f),
+			.TeamIndex 			= 0,
+			.pCameraDesc 		= &cameraDesc
+		};
+
+		for (uint32 playerNr = 0; playerNr < playerCount; playerNr++)
+		{
+			// Create a 3x3 grid of players in the XZ plane
+			createPlayerDesc.Position.x			= -3.0f + 3.0f * (playerNr % 3);
+			createPlayerDesc.Position.z			= -3.0f + 3.0f * (playerNr / 3);
+			createPlayerDesc.Position.y			= 5.0f;
+			createPlayerDesc.PlayerNetworkUID	+= 2;
+			createPlayerDesc.WeaponNetworkUID	+= 2;
+
+			TArray<Entity> createdPlayerEntities;
+			if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
-				.Width		= (float32)window->GetWidth(),
-				.Height		= (float32)window->GetHeight(),
-				.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
-				.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
-			};
-
-			const uint32 robotGUID = ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx");
-			TArray<GUID_Lambda> animations = ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
-
-			AnimationComponent robotAnimationComp = {};
-			robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotGUID)->pSkeleton;
-
-			constexpr const uint32 playerCount = 9;
-
-			CreatePlayerDesc createPlayerDesc =
-			{
-				.IsLocal 			= false,
-				.PlayerNetworkUID 	= packet.NetworkUID,
-				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
-				.Position 			= packet.Position,
-				.Forward 			= glm::normalize(glm::vec3(0.1f, -1.0f, 0.0f)),
-				.Scale 				= glm::vec3(1.0f),
-				.TeamIndex 			= 0,
-				.pCameraDesc 		= &cameraDesc
-			};
-
-			for (uint32 playerNr = 0; playerNr < playerCount; playerNr++)
-			{
-				// Create a 3x3 grid of players in the XZ plane
-				createPlayerDesc.Position.x			= -3.0f + 3.0f * (playerNr % 3);
-				createPlayerDesc.Position.z			= -3.0f + 3.0f * (playerNr / 3);
-				createPlayerDesc.Position.y			= 5.0f;
-				createPlayerDesc.PlayerNetworkUID	+= 2;
-				createPlayerDesc.WeaponNetworkUID	+= 2;
-
-				TArray<Entity> createdPlayerEntities;
-				if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
-				{
-					LOG_ERROR("[BenchmarkState]: Failed to create Player!");
-				}
+				LOG_ERROR("[BenchmarkState]: Failed to create Player!");
 			}
-
-			return true;
 		}
+
+		return true;
 	}
 
 	return false;
@@ -358,7 +356,6 @@ bool BenchmarkState::OnWeaponFired(const WeaponFiredEvent& event)
 
 	CreateProjectileDesc createProjectileDesc;
 	createProjectileDesc.AmmoType		= event.AmmoType;
-	createProjectileDesc.FireDirection	= event.Direction;
 	createProjectileDesc.FirePosition	= event.Position;
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
