@@ -211,7 +211,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[LightRenderer]: Failed to update descriptors for drawArgs");
+				m_DrawCount = 0;
 			}
 		}
 	}
