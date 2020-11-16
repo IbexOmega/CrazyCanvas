@@ -7,7 +7,7 @@
 #include "Engine/EngineConfig.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-
+#include "GUI/GUIHelpers.h"
 
 MainMenuState::~MainMenuState()
 {
@@ -19,23 +19,7 @@ void MainMenuState::Init()
 {
 	using namespace LambdaEngine;
 
-	// Put unecessary renderstages to sleep in main menu
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						true);
-
-	// Check if raytracing is enabled/supported
-	GraphicsDeviceFeatureDesc deviceFeatures;
-	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-	bool rayTracingEnabled = deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-
-	if(rayTracingEnabled)
-		RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
+	DisablePlaySessionsRenderstages();
 
 	RenderGraphStructureDesc renderGraphStructure = {};
 

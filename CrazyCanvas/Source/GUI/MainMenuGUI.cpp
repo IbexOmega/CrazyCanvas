@@ -15,7 +15,7 @@
 #include "States/MultiplayerState.h"
 
 #include "Application/API/Events/EventQueue.h"
-
+#include "GUI/GUIHelpers.h"
 
 using namespace Noesis;
 using namespace LambdaEngine;
@@ -142,7 +142,6 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
-	SetRenderStagesSleeping();
 	PacketGameSettings settings;
 	settings.MapID = 0;
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
@@ -283,17 +282,7 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 */
 void MainMenuGUI::SetRenderStagesSleeping()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			true);
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", !m_RayTracingEnabled);
+	DisablePlaySessionsRenderstages();
 }
 
 void MainMenuGUI::SetDefaultSettings()
