@@ -26,8 +26,8 @@ void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 	for (Entity entity : m_HealthEntities)
 	{
-		HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-		PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
+		HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
+		PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
 		for (const PacketHealthChanged& packet : packets.GetPacketsReceived())
 		{
 			if (healthComponent.CurrentHealth != packet.CurrentHealth)

@@ -14,13 +14,8 @@
 class HealthSystem : public LambdaEngine::System
 {
 public:
-	HealthSystem() = default;
-	~HealthSystem() = default;
-
-	virtual void ResetEntityHealth(LambdaEngine::Entity entityToReset)
-	{
-		UNREFERENCED_VARIABLE(entityToReset);
-	}
+	HealthSystem()	= default;
+	~HealthSystem()	= default;
 
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
 	{

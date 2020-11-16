@@ -2,8 +2,11 @@
 #include "Physics/PhysicsEvents.h"
 
 #include "Rendering/PaintMaskRenderer.h"
+
 #include "Multiplayer/Packet/MultiplayerEvents.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
+
+#include "Events/GameplayEvents.h"
 
 #include <queue>
 
@@ -37,13 +40,14 @@ private:
 	{
 		glm::vec3 Position;
 		glm::vec3 Direction;
-		LambdaEngine::EPaintMode	PaintMode = LambdaEngine::EPaintMode::NONE;
-		LambdaEngine::ERemoteMode	RemoteMode = LambdaEngine::ERemoteMode::UNDEFINED;
-		LambdaEngine::ETeam			Team = LambdaEngine::ETeam::NONE;
+		LambdaEngine::EPaintMode	PaintMode	= LambdaEngine::EPaintMode::NONE;
+		LambdaEngine::ERemoteMode	RemoteMode	= LambdaEngine::ERemoteMode::UNDEFINED;
+		LambdaEngine::ETeam			Team		= LambdaEngine::ETeam::NONE;
 	};
 
 private:
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
+	bool OnPlayerKilled(const PlayerDiedEvent& event);
 
 	bool OnPacketProjectileHitReceived(const PacketReceivedEvent<PacketProjectileHit>& event);
 

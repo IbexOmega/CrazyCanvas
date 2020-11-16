@@ -15,6 +15,7 @@ MeshPaintHandler::~MeshPaintHandler()
 	using namespace LambdaEngine;
 	
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
+	EventQueue::UnregisterEventHandler<PlayerDiedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerKilled);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
 
@@ -23,6 +24,7 @@ void MeshPaintHandler::Init()
 	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
+	EventQueue::RegisterEventHandler<PlayerDiedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerKilled);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
 
@@ -80,6 +82,14 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 	return true;
 }
 
+bool MeshPaintHandler::OnPlayerKilled(const PlayerDiedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	PaintMaskRenderer::ResetServer(event.KilledEntity);
+	return true;
+}
+
 bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<PacketProjectileHit>& event)
 {
 	using namespace LambdaEngine;
@@ -110,9 +120,12 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 			paintPointB.PaintMode	= paintMode;
 			paintPointB.RemoteMode	= remoteMode;
 			paintPointB.Team		= team;
+			
 			clientWasWrong = !IsPaintPointEqual(paintPointA, paintPointB);
-			if(clientWasWrong)
+			if (clientWasWrong)
+			{
 				D_LOG_ERROR("Prediction Error: Client got wrong prediction when painting, reset client side paint and repaint on server side...");
+			}
 		}
 
 		// Clear client side if all paint points have been processed.

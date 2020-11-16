@@ -74,6 +74,10 @@ namespace LambdaEngine
 
 			meshPaintComponent.pReadBackBuffer = RenderAPI::GetDevice()->CreateBuffer(&healthBufferDesc);
 			VALIDATE(meshPaintComponent.pReadBackBuffer != nullptr);
+
+			void* pCPUMemory = meshPaintComponent.pReadBackBuffer->Map();
+			ZERO_MEMORY(pCPUMemory, SIZE_IN_BYTES);
+			meshPaintComponent.pReadBackBuffer->Unmap();
 		}
 
 		DrawArgExtensionData drawArgExtensionData = {};

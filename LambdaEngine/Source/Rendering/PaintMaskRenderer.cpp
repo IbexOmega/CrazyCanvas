@@ -32,6 +32,7 @@
 
 namespace LambdaEngine
 {
+	TArray<Entity>							PaintMaskRenderer::s_ServerResets;
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
 
@@ -360,12 +361,14 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
 
-		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
+		// Return if there are no rendertargets
+		if (m_RenderTargets.IsEmpty())
 		{
 			return;
 		}
 
+		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
+		
 		// Delete old resources
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
@@ -373,8 +376,133 @@ namespace LambdaEngine
 			m_pDeviceResourcesToDestroy.Clear();
 		}
 
-		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
-		pCommandList->Begin(nullptr);
+		// Clear all rendertargets
+		if (!s_ServerResets.IsEmpty())
+		{
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+
+			// Clear server textures
+			const float32 clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			for (Entity entity : s_ServerResets)
+			{
+				for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
+				{
+					RenderTarget&	renderTargetDesc	= m_RenderTargets[t];
+					const uint32	drawArgIndex		= renderTargetDesc.DrawArgIndex;
+					const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
+				
+					// Check if this rendertarget should be cleared
+					bool shouldClear = false;
+					for (Entity drawArgEntity : drawArg.EntityIDs)
+					{
+						if (drawArgEntity == entity)
+						{
+							shouldClear = true;
+							break;
+						}
+					}
+
+					if (!shouldClear)
+					{
+						continue;
+					}
+
+					// Clear texture
+					TextureView*	pRenderTarget	= renderTargetDesc.pTextureView;
+					Texture*		pTexture		= pRenderTarget->GetTexture();
+
+					pCommandList->TransitionBarrier(
+						pTexture,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+						ETextureState::TEXTURE_STATE_COPY_DST);
+
+					pCommandList->ClearColorTexture(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, clearColor);
+
+					pCommandList->TransitionBarrier(
+						pTexture,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+						ETextureState::TEXTURE_STATE_COPY_DST,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+					// Generate miplevels and copy to readbackbuffer
+					if (MultiplayerUtils::IsServer() && pTexture->GetDesc().Miplevels > 1)
+					{
+						ETextureState afterState =
+							renderTargetDesc.pReadBackbuffer ?
+							ETextureState::TEXTURE_STATE_COPY_SRC :
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+						pCommandList->GenerateMiplevels(
+							pTexture,
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+							afterState,
+							false);
+
+						// Copy over to readback
+						if (renderTargetDesc.pReadBackbuffer)
+						{
+							CopyTextureBufferDesc copyDesc;
+							copyDesc.ArrayCount		= 1;
+							copyDesc.ArrayIndex		= 0;
+							copyDesc.Depth			= 1;
+							copyDesc.Height			= 32;
+							copyDesc.Width			= 32;
+							copyDesc.Miplevel		= 4;
+							copyDesc.MiplevelCount	= 1;
+							copyDesc.OffsetX		= 0;
+							copyDesc.OffsetY		= 0;
+							copyDesc.OffsetZ		= 0;
+							copyDesc.BufferHeight	= 0;
+							copyDesc.BufferOffset	= 0;
+							copyDesc.BufferRowPitch	= 0;
+
+							pCommandList->CopyTextureToBuffer(
+								pTexture,
+								renderTargetDesc.pReadBackbuffer,
+								copyDesc);
+
+							pCommandList->TransitionBarrier(
+								pTexture,
+								FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+								FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+								FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+								FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+								ETextureState::TEXTURE_STATE_COPY_SRC,
+								ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+						}
+					}
+				}
+			}
+
+			s_ServerResets.Clear();
+		}
+
+		// Return if there are no collisions
+		if (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())
+		{
+			if (pCommandList->IsRecording())
+			{
+				pCommandList->End();
+				(*ppFirstExecutionStage) = pCommandList;
+			}
+
+			return;
+		}
+
+		// Begin commandlist
+		if (!pCommandList->IsRecording())
+		{
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+		}
 
 		// "combine" both arrays to loop through
 		TArray<TArray<UnwrapData>*> collisions = { &s_ClientCollisions, &s_ServerCollisions };
@@ -418,8 +546,8 @@ namespace LambdaEngine
 					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
 					collisionArray->Clear();
 				}
-
 				unwrapDataCopyBuffer->Unmap();
+
 				pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData) * size);
 				frameSettings.PaintCount = size;
 			}
@@ -432,19 +560,19 @@ namespace LambdaEngine
 			// Render
 			for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 			{
-				RenderTarget	renderTargetDesc	= m_RenderTargets[t];
+				RenderTarget&	renderTargetDesc	= m_RenderTargets[t];
 				const uint32	drawArgIndex		= renderTargetDesc.DrawArgIndex;
 				const uint32	instanceIndex		= renderTargetDesc.InstanceIndex;
 				const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-				TextureView*	renderTarget		= renderTargetDesc.pTextureView;
+				TextureView*	pRenderTarget		= renderTargetDesc.pTextureView;
 
-				const TextureViewDesc& textureViewDesc = renderTarget->GetDesc();
+				const TextureViewDesc& textureViewDesc = pRenderTarget->GetDesc();
 				const uint32 width	= textureViewDesc.pTexture->GetDesc().Width;
 				const uint32 height	= textureViewDesc.pTexture->GetDesc().Height;
 
 				BeginRenderPassDesc beginRenderPassDesc = {};
 				beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
-				beginRenderPassDesc.ppRenderTargets		= &renderTarget;
+				beginRenderPassDesc.ppRenderTargets		= &pRenderTarget;
 				beginRenderPassDesc.RenderTargetCount	= 1;
 				beginRenderPassDesc.Width				= width;
 				beginRenderPassDesc.Height				= height;
@@ -517,9 +645,9 @@ namespace LambdaEngine
 				pCommandList->EndRenderPass();
 
 				// Generate miplevels and copy to readbackbuffer
-				if (textureViewDesc.pTexture->GetDesc().Miplevels > 1 && MultiplayerUtils::IsServer())
+				if (MultiplayerUtils::IsServer() && textureViewDesc.pTexture->GetDesc().Miplevels > 1)
 				{
-					Texture* pTexture = renderTarget->GetTexture();
+					Texture* pTexture = pRenderTarget->GetTexture();
 
 					ETextureState afterState =
 						renderTargetDesc.pReadBackbuffer ?
@@ -604,7 +732,6 @@ namespace LambdaEngine
 			data.RemoteMode			= ERemoteMode::UNDEFINED;
 			data.Team				= ETeam::NONE;
 			data.ClearClient		= true;
-
 			s_ClientCollisions.PushBack(data);
 		}
 		else
@@ -612,6 +739,11 @@ namespace LambdaEngine
 			UnwrapData& lastData = s_ClientCollisions.GetBack();
 			lastData.ClearClient = true;
 		}
+	}
+
+	void PaintMaskRenderer::ResetServer(Entity entity)
+	{
+		s_ServerResets.EmplaceBack(entity);
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()

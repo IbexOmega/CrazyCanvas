@@ -221,6 +221,11 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		= 0;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	= 0;
 
+		virtual void ClearColorTexture(
+			Texture* pTexture,
+			ETextureState textureState,
+			const float32 color[4]) = 0;
+
 		virtual void CopyBuffer(
 			const Buffer* pSrc, 
 			uint64 srcOffset, 
@@ -401,14 +406,14 @@ namespace LambdaEngine
 			return m_QueueType;
 		}
 
-		FORCEINLINE bool IsBegin() const 
+		FORCEINLINE bool IsRecording() const 
 		{ 
-			return m_IsBegin;
+			return m_IsRecording;
 		}
 
 	protected:
 		ECommandQueueType	m_QueueType = ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		CommandListDesc		m_Desc;
-		bool				m_IsBegin = false;
+		bool				m_IsRecording = false;
 	};
 }

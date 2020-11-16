@@ -719,7 +719,7 @@ namespace LambdaEngine
 			CommandList* pUtilityCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
 			CommandList* pRenderCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
 
-			if (pUtilityCommandList->IsBegin())
+			if (pUtilityCommandList->IsRecording())
 			{
 				pUtilityCommandList->End();
 				(*ppFirstExecutionStage)		= pUtilityCommandList;
@@ -746,7 +746,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			SecondaryCommandListBeginDesc beginDesc = {};
 
@@ -761,7 +761,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			SecondaryCommandListBeginDesc beginDesc = {};
 

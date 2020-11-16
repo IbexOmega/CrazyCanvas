@@ -566,9 +566,6 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 
 		// Reset position
 		positionComp.Position = newPosition;
-
-		// Reset health
-		HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
 	}
 	else
 	{

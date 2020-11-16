@@ -221,12 +221,12 @@ namespace LambdaEngine
 				{
 					CommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[b];
 
-					if (pGraphicsCopyCommandList->IsBegin())
+					if (pGraphicsCopyCommandList->IsRecording())
 						pGraphicsCopyCommandList->End();
 
 					CommandList* pComputeCopyCommandList = m_ppComputeCopyCommandLists[b];
 
-					if (pComputeCopyCommandList->IsBegin())
+					if (pComputeCopyCommandList->IsRecording())
 						pComputeCopyCommandList->End();
 				}
 			}
@@ -1008,7 +1008,7 @@ namespace LambdaEngine
 		{
 			CommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-			if (pGraphicsCopyCommandList->IsBegin())
+			if (pGraphicsCopyCommandList->IsRecording())
 			{
 				pGraphicsCopyCommandList->End();
 				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
@@ -1017,7 +1017,7 @@ namespace LambdaEngine
 
 			CommandList* pComputeCopyCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-			if (pComputeCopyCommandList->IsBegin())
+			if (pComputeCopyCommandList->IsRecording())
 			{
 				pComputeCopyCommandList->End();
 				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
@@ -1091,7 +1091,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
@@ -1104,7 +1104,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
@@ -3641,7 +3641,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3653,7 +3653,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3934,7 +3934,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3951,7 +3951,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3976,7 +3976,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3988,7 +3988,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -4081,7 +4081,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -4093,7 +4093,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);

@@ -37,8 +37,8 @@ void main()
 	bool shouldDiscard = true;
 	if (p_FrameSettings.ShouldReset == 1)
 	{
-		out_BitsClient = 0;
-		shouldDiscard = false;
+		out_BitsClient	= 0;
+		shouldDiscard	= false;
 	}
 
 	for (uint hitPointIndex = 0; hitPointIndex < p_FrameSettings.PaintCount; hitPointIndex++)
