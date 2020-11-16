@@ -83,14 +83,22 @@ namespace LambdaEngine
 		const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
 		const auto& entityComponentSets = page.GetVec();
 		const TArray<Entity>& entities = page.GetIDs();
+		TArray<const ComponentType*> componentTypes;
 
 		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
 		{
-			Entity entity = entities[entityIdx];
+			const Entity entity = entities[entityIdx];
 			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[entityIdx];
+			componentTypes.Assign(typeSet.begin(), typeSet.end());
 
-			for (const ComponentType* pComponentType : typeSet)
-				DeleteComponent(entity, pComponentType);
+			for (const ComponentType* pComponentType : componentTypes)
+				m_EntityRegistry.DeregisterComponentType(entity, pComponentType);
+
+			for (const ComponentType* pComponentType : componentTypes)
+			{
+				m_EntityPublisher.UnpublishComponent(entity, pComponentType);
+				m_ComponentStorage.DeleteComponent(entity, pComponentType);
+			}
 		}
 
 		m_EntityRegistry.RemovePage();
@@ -263,7 +271,13 @@ namespace LambdaEngine
 			componentTypes.Assign(componentTypesSet.begin(), componentTypesSet.end());
 
 			for (const ComponentType* pComponentType : componentTypes)
-				DeleteComponent(entity, pComponentType);
+				m_EntityRegistry.DeregisterComponentType(entity, pComponentType);
+
+			for (const ComponentType* pComponentType : componentTypes)
+			{
+				m_EntityPublisher.UnpublishComponent(entity, pComponentType);
+				m_ComponentStorage.DeleteComponent(entity, pComponentType);
+			}
 
 			// Free the entity ID
 			m_EntityRegistry.DeregisterEntity(entity);

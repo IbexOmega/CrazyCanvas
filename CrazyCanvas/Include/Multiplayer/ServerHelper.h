@@ -60,7 +60,10 @@ bool ServerHelper::SendBroadcast(const T& packet, LambdaEngine::IPacketListener*
 template<class T>
 bool ServerHelper::SendToAllPlayers(const T& packet, LambdaEngine::IPacketListener* pListener, const Player* pExcludePlayer)
 {
-	VALIDATE_PACKET_TYPE(T)
-	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
-	return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pServer->GetClient(pPlayer->GetUID()));
+	UNREFERENCED_VARIABLE(packet);
+	UNREFERENCED_VARIABLE(pListener);
+	UNREFERENCED_VARIABLE(pExcludePlayer);
+	// VALIDATE_PACKET_TYPE(T)
+	// LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
+	// return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pServer->GetClient(pPlayer->GetUID()));
 }
