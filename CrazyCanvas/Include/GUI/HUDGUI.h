@@ -127,6 +127,9 @@ private:
 	Noesis::Grid* m_pHitIndicatorGrid	= nullptr;
 	Noesis::Grid* m_pScoreboardGrid		= nullptr;
 
+	Noesis::Grid* m_pRedScoreGrid	= nullptr;
+	Noesis::Grid* m_pBlueScoreGrid	= nullptr;
+
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
 

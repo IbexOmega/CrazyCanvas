@@ -22,7 +22,7 @@ class LobbyGUI : public Noesis::Grid
 public:
 	LobbyGUI();
 	~LobbyGUI();
-	
+
 	void InitGUI(LambdaEngine::String name);
 
 	void AddPlayer(const Player& player);
@@ -40,7 +40,7 @@ public:
 		LambdaEngine::TArray<LambdaEngine::String> settingValues,
 		uint8 defaultIndex);
 
-	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& text);
+	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::String& settingValue);
 
 	// Noesis events
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -78,11 +78,11 @@ private:
 	bool m_IsInitiated;
 
 private:
-	static constexpr char* SETTING_SERVER_NAME	= "SERVER_NAME";
-	static constexpr char* SETTING_MAP			= "MAP";
-	static constexpr char* SETTING_MAX_TIME		= "MAX_TIME";
-	static constexpr char* SETTING_FLAGS_TO_WIN = "FLAGS_TO_WIN";
-	static constexpr char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";
-	static constexpr char* SETTING_VISIBILITY	= "VISIBILITY";
-	static constexpr char* SETTING_CHANGE_TEAM	= "CHANGE_TEAM";
+	static constexpr const char* SETTING_SERVER_NAME	= "SERVER_NAME";
+	static constexpr const char* SETTING_MAP			= "MAP";
+	static constexpr const char* SETTING_MAX_TIME		= "MAX_TIME";
+	static constexpr const char* SETTING_FLAGS_TO_WIN	= "FLAGS_TO_WIN";
+	static constexpr const char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";
+	static constexpr const char* SETTING_VISIBILITY		= "VISIBILITY";
+	static constexpr const char* SETTING_CHANGE_TEAM	= "CHANGE_TEAM";
 };

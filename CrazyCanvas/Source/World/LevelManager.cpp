@@ -54,7 +54,7 @@ bool LevelManager::Init()
 			s_LevelHashes.Resize(levels.Size());
 			s_LevelNames.Resize(levels.Size());
 			s_LevelDescriptions.Resize(levels.Size());
-			
+
 			for (uint32 l = 0; l < levels.Size(); l++)
 			{
 				GenericObject level = levels[l].GetObject();
@@ -148,7 +148,7 @@ bool LevelManager::Init()
 		SAFEDELETE_ARRAY(pReadBuffer);
 		fclose(pLevelsFile);
 	}
-	
+
 	return true;
 }
 
@@ -224,7 +224,7 @@ Level* LevelManager::LoadLevel(uint32 index)
 				if (!pModule->Init(moduleDesc.Filename, moduleDesc.Translation))
 				{
 					LOG_ERROR("[LevelManager]: Failed to initialize Level Module");
-					return false;
+					return nullptr;
 				}
 
 				s_LoadedModules[moduleDesc.Filename] = pModule;
