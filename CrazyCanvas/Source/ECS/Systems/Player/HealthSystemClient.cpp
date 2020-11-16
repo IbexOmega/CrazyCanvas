@@ -15,6 +15,13 @@
 * HealthSystemClient
 */
 
+HealthSystemClient::~HealthSystemClient()
+{
+	using namespace LambdaEngine;
+
+	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HealthSystemClient::OnPlayerAliveUpdated);
+}
+
 void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
@@ -84,6 +91,22 @@ bool HealthSystemClient::InitInternal()
 		RegisterSystem(TYPE_NAME(HealthSystemClient), systemReg);
 	}
 
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HealthSystemClient::OnPlayerAliveUpdated);
 	return true;
 }
 
+bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	LOG_INFO("PlayerAliveUpdatedEvent isDead=%s entity=%u",
+		event.pPlayer->IsDead() ? "true" : "false",
+		event.pPlayer->GetEntity());
+
+	if (event.pPlayer->IsDead())
+	{
+		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());
+	}
+
+	return true;
+}

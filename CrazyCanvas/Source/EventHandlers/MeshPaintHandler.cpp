@@ -15,7 +15,6 @@ MeshPaintHandler::~MeshPaintHandler()
 	using namespace LambdaEngine;
 	
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
-	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
 
@@ -24,7 +23,6 @@ void MeshPaintHandler::Init()
 	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
-	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
 
@@ -79,25 +77,6 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			paintPoint.Angle		= projectileHitEvent.Angle;
 			m_PaintPointsOnClient.push(paintPoint);
 		}
-	}
-
-	return true;
-}
-
-bool MeshPaintHandler::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
-{
-	using namespace LambdaEngine;
-
-	if (!MultiplayerUtils::IsServer())
-	{
-		LOG_INFO("CLIENT MeshPaintHandler::PlayerAliveUpdatedEvent isDead=%s entity=%u", 
-			event.pPlayer->IsDead() ? "true" : "false",
-			event.pPlayer->GetEntity());
-	}
-
-	if (event.pPlayer->IsDead())
-	{
-		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());
 	}
 
 	return true;

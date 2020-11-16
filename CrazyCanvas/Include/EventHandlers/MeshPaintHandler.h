@@ -50,8 +50,6 @@ private:
 
 private:
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
-	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
-
 	bool OnPacketProjectileHitReceived(const PacketReceivedEvent<PacketProjectileHit>& event);
 
 	bool IsPaintPointEqual(PaintPoint& a, PaintPoint& b);

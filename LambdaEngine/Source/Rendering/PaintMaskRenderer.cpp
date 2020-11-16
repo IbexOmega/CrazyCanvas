@@ -387,11 +387,6 @@ namespace LambdaEngine
 		// Clear all rendertargets
 		if (!s_ServerResets.IsEmpty())
 		{
-			if (!MultiplayerUtils::IsServer())
-			{
-				LOG_INFO("CLIENT Should Clear PaintMask");
-			}
-
 			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
 
@@ -419,11 +414,6 @@ namespace LambdaEngine
 					if (!shouldClear)
 					{
 						continue;
-					}
-
-					if (!MultiplayerUtils::IsServer())
-					{
-						LOG_INFO("CLIENT Clear PaintMask");
 					}
 
 					// Clear texture
@@ -747,11 +737,6 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::ResetServer(Entity entity)
 	{
-		if (!MultiplayerUtils::IsServer())
-		{
-			LOG_INFO("CLIENT PaintMaskRenderer::ResetServer");
-		}
-
 		s_ServerResets.EmplaceBack(entity);
 	}
 

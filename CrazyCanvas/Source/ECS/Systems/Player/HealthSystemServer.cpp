@@ -12,7 +12,7 @@
 
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 
-#include "Match/Match.h"
+#include "Match/MatchServer.h"
 
 #include "EventHandlers/MeshPaintHandler.h"
 
@@ -43,6 +43,16 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		{
 			m_HitInfoToProcess = m_DeferredHitInfo;
 			m_DeferredHitInfo.Clear();
+		}
+	}
+
+	// More threadsafe
+	{
+		std::scoped_lock<SpinLock> lock(m_DeferredResetsLock);
+		if (!m_DeferredResets.IsEmpty())
+		{
+			m_ResetsToProcess = m_DeferredResets;
+			m_DeferredResets.Clear();
 		}
 	}
 
@@ -117,7 +127,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				bool killed = false;
 				if (healthComponent.CurrentHealth <= 0)
 				{
-					Match::KillPlayer(entity, projectileOwner);
+					MatchServer::KillPlayer(entity, projectileOwner);
 					killed = true;
 
 					LOG_INFO("PLAYER DIED");
@@ -130,6 +140,31 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		}
 
 		m_HitInfoToProcess.Clear();
+	}
+
+	// Reset healthcomponents
+	if (!m_ResetsToProcess.IsEmpty())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		ComponentArray<HealthComponent>*						pHealthComponents			= pECS->GetComponentArray<HealthComponent>();
+		ComponentArray<PacketComponent<PacketHealthChanged>>*	pHealthChangedComponents	= pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
+
+		for (Entity entity : m_ResetsToProcess)
+		{
+			// Reset texture
+			PaintMaskRenderer::ResetServer(entity);
+
+			// Reset health and send to client
+			HealthComponent& healthComponent	= pHealthComponents->GetData(entity);
+			healthComponent.CurrentHealth		= START_HEALTH;
+
+			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
+			PacketHealthChanged packet = {};
+			packet.CurrentHealth = healthComponent.CurrentHealth;
+			packets.SendPacket(packet);
+		}
+
+		m_ResetsToProcess.Clear();
 	}
 }
 
@@ -187,4 +222,22 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 	}
 
 	return true;
+}
+
+void HealthSystemServer::InternalResetHealth(LambdaEngine::Entity entity)
+{
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_DeferredResetsLock);
+	m_DeferredResets.EmplaceBack(entity);
+}
+
+void HealthSystemServer::ResetHealth(LambdaEngine::Entity entity)
+{
+	using namespace LambdaEngine;
+
+	HealthSystemServer* pServerHealthSystem = static_cast<HealthSystemServer*>(s_Instance.Get());
+	VALIDATE(pServerHealthSystem != nullptr);
+
+	pServerHealthSystem->InternalResetHealth(entity);
 }

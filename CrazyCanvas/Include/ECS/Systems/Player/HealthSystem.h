@@ -41,6 +41,6 @@ public:
 protected:
 	LambdaEngine::IDVector m_HealthEntities;
 
-private:
+protected:
 	static LambdaEngine::TUniquePtr<HealthSystem> s_Instance;
 };

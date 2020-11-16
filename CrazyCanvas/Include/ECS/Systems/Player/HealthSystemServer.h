@@ -26,10 +26,19 @@ protected:
 
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
 
+	void InternalResetHealth(LambdaEngine::Entity entity);
+
+public:
+	static void ResetHealth(LambdaEngine::Entity entity);
+
 private:
 	LambdaEngine::IDVector m_MeshPaintEntities;
 
 	LambdaEngine::SpinLock m_DeferredHitInfoLock;
 	LambdaEngine::TArray<HitInfo> m_DeferredHitInfo;
 	LambdaEngine::TArray<HitInfo> m_HitInfoToProcess;
+
+	LambdaEngine::SpinLock m_DeferredResetsLock;
+	LambdaEngine::TArray<LambdaEngine::Entity> m_DeferredResets;
+	LambdaEngine::TArray<LambdaEngine::Entity> m_ResetsToProcess;
 };
