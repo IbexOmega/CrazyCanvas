@@ -90,7 +90,9 @@ bool MeshPaintHandler::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		LOG_INFO("CLIENT MeshPaintHandler::PlayerAliveUpdatedEvent");
+		LOG_INFO("CLIENT MeshPaintHandler::PlayerAliveUpdatedEvent isDead=%s entity=%u", 
+			event.pPlayer->IsDead() ? "true" : "false",
+			event.pPlayer->GetEntity());
 	}
 
 	if (event.pPlayer->IsDead())

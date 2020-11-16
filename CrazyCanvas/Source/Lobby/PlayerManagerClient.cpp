@@ -289,7 +289,7 @@ bool PlayerManagerClient::OnPacketPlayerAliveChangedReceived(const PacketReceive
 
 			if (pPlayer->m_IsDead)
 			{
-				LOG_INFO("CLIENT PLAYER DIED");
+				LOG_INFO("CLIENT PLAYER DIED Entity=%u", pPlayer->GetEntity());
 			}
 
 			PlayerAliveUpdatedEvent playerAliveUpdatedEvent(pPlayer, GetPlayerNoConst(packet.KillerUID));

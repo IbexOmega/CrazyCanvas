@@ -387,6 +387,11 @@ namespace LambdaEngine
 		// Clear all rendertargets
 		if (!s_ServerResets.IsEmpty())
 		{
+			if (!MultiplayerUtils::IsServer())
+			{
+				LOG_INFO("CLIENT Should Clear PaintMask");
+			}
+
 			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
 
