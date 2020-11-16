@@ -40,7 +40,7 @@ public:
 		LambdaEngine::TArray<LambdaEngine::String> settingValues,
 		uint8 defaultIndex);
 
-	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& text);
+	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::String& settingValue);
 
 	// Noesis events
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;

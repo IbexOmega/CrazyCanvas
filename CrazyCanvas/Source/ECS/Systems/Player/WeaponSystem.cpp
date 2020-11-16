@@ -221,7 +221,6 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	const OffsetComponent&		weaponOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(weaponEntity);
 	const PositionComponent&	playerPositionComponent = pECS->GetConstComponent<PositionComponent>(weaponOwner);
 	const RotationComponent&	playerRotationComponent = pECS->GetConstComponent<RotationComponent>(weaponOwner);
-	const VelocityComponent&	playerVelocityComponent = pECS->GetConstComponent<VelocityComponent>(weaponOwner);
 
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
@@ -236,7 +235,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 
 	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.5f;
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
-	velocity		= playerVelocityComponent.Velocity + zeroingDirection * PROJECTILE_INITAL_SPEED;
+	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 }
 
