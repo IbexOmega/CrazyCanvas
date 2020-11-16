@@ -40,18 +40,6 @@ namespace LambdaEngine
 		SAFERELEASE(m_pVertexBuffer);
 		SAFERELEASE(m_pGUISampler);
 
-		for (Noesis::Ptr<Noesis::RenderTarget>& renderTarget : m_GUIRenderTargets)
-		{
-			renderTarget.Reset();
-		}
-		m_GUIRenderTargets.Clear();
-
-		for (Noesis::Ptr<Noesis::Texture>& texture : m_GUITextures)
-		{
-			texture.Reset();
-		}
-		m_GUITextures.Clear();
-
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
 			SAFERELEASE(m_ppUtilityCommandLists[b]);
@@ -168,7 +156,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
-		m_GUIRenderTargets.PushBack(renderTarget);
 		return renderTarget;
 	}
 
@@ -185,7 +172,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
-		m_GUIRenderTargets.PushBack(renderTarget);
 		return renderTarget;
 	}
 
@@ -209,7 +195,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::Texture> texture = *pTexture;
-		m_GUITextures.PushBack(texture);
 		return texture;
 	}
 

@@ -543,7 +543,7 @@ namespace LambdaEngine
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 		if (!Sleeping)
-			{
+		{
 			pCommandList->SetViewports(&viewport, 0, 1);
 			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
