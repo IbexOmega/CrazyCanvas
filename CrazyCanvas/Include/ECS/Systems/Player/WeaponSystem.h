@@ -37,17 +37,17 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 	using namespace LambdaEngine;
 	return
 	{
-		{ RW, PositionComponent::Type() },
-		{ RW, ScaleComponent::Type()},
-		{ RW, RotationComponent::Type() },
-		{ RW, VelocityComponent::Type()},
-		{ R, OffsetComponent::Type()},
-		{ RW, WeaponComponent::Type()},
-		{ RW, AnimationAttachedComponent::Type()},
-		{ RW, TeamComponent::Type() },
-		{ RW, ProjectileComponent::Type()},
-		{ RW, DynamicCollisionComponent::Type() },
-		{ RW, MeshComponent::Type() },
+		{ RW,	PositionComponent::Type() },
+		{ RW,	ScaleComponent::Type()},
+		{ RW,	RotationComponent::Type() },
+		{ RW,	VelocityComponent::Type()},
+		{ R,	OffsetComponent::Type()},
+		{ RW,	WeaponComponent::Type()},
+		{ RW,	AnimationAttachedComponent::Type()},
+		{ RW,	TeamComponent::Type() },
+		{ RW,	ProjectileComponent::Type()},
+		{ RW,	DynamicCollisionComponent::Type() },
+		{ RW,	MeshComponent::Type() },
 	};
 }
 

@@ -38,29 +38,27 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 	// More threadsafe
 	{
-		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
-		if (!m_DeferredHitEvents.IsEmpty())
+		std::scoped_lock<SpinLock> lock(m_DeferredHitInfoLock);
+		if (!m_DeferredHitInfo.IsEmpty())
 		{
-			m_EventsToProcess = m_DeferredHitEvents;
-			m_DeferredHitEvents.Clear();
+			m_HitInfoToProcess = m_DeferredHitInfo;
+			m_DeferredHitInfo.Clear();
 		}
 	}
 
 	// Update health
-	if (!m_EventsToProcess.IsEmpty())
+	if (!m_HitInfoToProcess.IsEmpty())
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		ComponentArray<ProjectileComponent>*	pProjectileComponents	= pECS->GetComponentArray<ProjectileComponent>();
 		ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
 		ComponentArray<MeshPaintComponent>*		pMeshPaintComponents	= pECS->GetComponentArray<MeshPaintComponent>();
 		ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
-		for (ProjectileHitEvent& event : m_EventsToProcess)
+		for (HitInfo& hitInfo : m_HitInfoToProcess)
 		{
-			const Entity entity				= event.CollisionInfo1.Entity;
-			const Entity projectileEntity	= event.CollisionInfo0.Entity;
+			const Entity entity				= hitInfo.Player;
+			const Entity projectileOwner	= hitInfo.ProjectileOwner;
 
-			ProjectileComponent& projectileComponent		= pProjectileComponents->GetData(projectileEntity);
 			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
 			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
 			MeshPaintComponent& meshPaintComponent			= pMeshPaintComponents->GetData(entity);
@@ -117,7 +115,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				bool killed = false;
 				if (healthComponent.CurrentHealth <= 0)
 				{
-					Match::KillPlayer(entity, projectileComponent.Owner);
+					Match::KillPlayer(entity, projectileOwner);
 					killed = true;
 
 					LOG_INFO("PLAYER DIED");
@@ -149,7 +147,7 @@ bool HealthSystemServer::InitInternal()
 		});
 
 		systemReg.SubscriberRegistration.AdditionalAccesses.PushBack(
-			{ NDA, ProjectileComponent::Type() }
+			{ R, ProjectileComponent::Type() }
 		);
 		
 		RegisterSystem(TYPE_NAME(HealthSystemServer), systemReg);
@@ -163,13 +161,23 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 {
 	using namespace LambdaEngine;
 
-	std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
+	std::scoped_lock<SpinLock> lock(m_DeferredHitInfoLock);
 	for (Entity entity : m_HealthEntities)
 	{
 		// CollisionInfo0 is the projectile
 		if (projectileHitEvent.CollisionInfo1.Entity == entity)
 		{
-			m_DeferredHitEvents.EmplaceBack(projectileHitEvent);
+			const Entity projectileEntity = projectileHitEvent.CollisionInfo0.Entity;
+			
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ProjectileComponent& projectileComponent = pECS->GetConstComponent<ProjectileComponent>(projectileEntity);
+			
+			m_DeferredHitInfo.PushBack(
+				{ 
+					projectileHitEvent.CollisionInfo1.Entity,
+					projectileComponent.Owner
+				});
+
 			break;
 		}
 	}

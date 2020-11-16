@@ -675,7 +675,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 512, 512, true));
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 256, 256, false));
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
@@ -691,7 +691,7 @@ bool LevelObjectCreator::CreatePlayer(
 		});
 
 	const bool readback = MultiplayerUtils::IsServer();
-	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, readback));
+	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
 
 	AnimationComponent animationComponent = {};
 	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
