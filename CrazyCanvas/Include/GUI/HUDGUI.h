@@ -83,7 +83,7 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
-	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& flagWorldPos, IndicatorTypeGUI type);
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type);
 
 	void SetWindowSize(uint32 width, uint32 height);
 
@@ -91,6 +91,7 @@ private:
 	void InitGUI();
 
 	void TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type);
+	void SetIndicatorOpacity(float32 value, IndicatorTypeGUI type);
 	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 

@@ -372,11 +372,11 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
-void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& flagWorldPos, IndicatorTypeGUI type)
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type)
 {
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-	glm::vec4 clipSpacePos = viewProj * glm::vec4(flagWorldPos, 1.0f);
+	glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
 
 	VALIDATE(clipSpacePos.w != 0);
 
@@ -386,14 +386,30 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& fla
 
 	float32 dir = clipSpacePos.z < 0.0f ? -1.0f : 1.0f;
 
+	float32 vecLength = glm::distance(glm::vec2(0.0f), glm::vec2(ndcSpacePos.x, ndcSpacePos.y));
+
 	glm::vec2 windowSpacePos = glm::vec2(ndcSpacePos.x, -ndcSpacePos.y) * 0.5f * m_WindowSize;
 
 	if (dir > 0)
 	{
-		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
 		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
-		TranslateIndicator(translation, type);
+		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+		SetIndicatorOpacity(glm::max(0.1f, vecLength), type);
 	}
+	else
+	{
+		if (-clipSpacePos.y > 0)
+		{
+			translation->SetY(m_WindowSize.y * 0.5f);
+		}
+		else
+		{
+			translation->SetY(-m_WindowSize.y * 0.5f);
+		}
+		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+	}
+	
+	TranslateIndicator(translation, type);
 }
 
 void HUDGUI::SetWindowSize(uint32 width, uint32 height)
@@ -455,8 +471,8 @@ void HUDGUI::InitGUI()
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);
 
-	m_WindowSize.x = CommonApplication::Get()->GetActiveWindow()->GetWidth();
-	m_WindowSize.y = CommonApplication::Get()->GetActiveWindow()->GetHeight();
+	m_WindowSize.x = CommonApplication::Get()->GetMainWindow()->GetWidth();
+	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
 }
 
 void HUDGUI::TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type)
@@ -466,6 +482,28 @@ void HUDGUI::TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI
 	case IndicatorTypeGUI::FLAG_INDICATOR:
 	{
 		m_pFlagIndicator->SetRenderTransform(translation);
+		break;
+	}
+	case IndicatorTypeGUI::DROP_OFF_INDICATOR:
+		break;
+	default:
+		break;
+	}
+}
+
+void HUDGUI::SetIndicatorOpacity(float32 value, IndicatorTypeGUI type)
+{
+
+	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+
+	brush->SetOpacity(value);
+
+	switch (type)
+	{
+	case IndicatorTypeGUI::FLAG_INDICATOR:
+	{ 
+		brush->SetColor(Noesis::Color::Red());
+		m_pFlagIndicator->SetFill(brush);
 		break;
 	}
 	case IndicatorTypeGUI::DROP_OFF_INDICATOR:

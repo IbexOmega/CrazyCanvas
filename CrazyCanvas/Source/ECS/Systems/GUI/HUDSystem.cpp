@@ -188,7 +188,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 				const PositionComponent& flagWorldPosition = pPositionComponents->GetConstData(flag);
 
 				glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
-
+			
 				m_HUDGUI->ProjectGUIIndicator(viewProj, flagWorldPosition.Position, IndicatorTypeGUI::FLAG_INDICATOR);
 			}
 		}
