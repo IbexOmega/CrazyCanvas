@@ -207,8 +207,6 @@ void HUDSystem::FixedTick(Timestamp delta)
 		m_HUDGUI->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
-
-
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
