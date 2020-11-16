@@ -1352,6 +1352,8 @@ namespace LambdaEngine
 
 					m_PaintMaskTextures.PushBack(pTexture);
 					m_PaintMaskTextureViews.PushBack(pTextureView);
+
+					m_RayTracingPaintMaskTexturesResourceDirty = true;
 				}
 			}
 		}

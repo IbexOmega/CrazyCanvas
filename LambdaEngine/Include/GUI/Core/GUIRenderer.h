@@ -129,6 +129,8 @@ namespace LambdaEngine
 			return name;
 		}
 
+		FORCEINLINE TArray<DeviceChild*>& GetDeviceResourcesToRemoveArray() { return m_pGraphicsResourcesToRemove[m_ModFrameIndex]; }
+
 	private:
 		CommandList* BeginOrGetUtilityCommandList();
 		CommandList* BeginOrGetRenderCommandList();
@@ -146,6 +148,7 @@ namespace LambdaEngine
 		bool CreateDescriptorHeap();
 		bool CreateSampler();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
+
 
 	private:
 		TSharedRef<const TextureView>	m_pBackBuffers[BACK_BUFFER_COUNT];

@@ -61,7 +61,7 @@ namespace LambdaEngine
 		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 
 		// Listener
-		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener() });
+		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->GetAudioListener(false) });
 
 		return entity;
 	}

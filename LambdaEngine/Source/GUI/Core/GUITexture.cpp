@@ -1,4 +1,5 @@
 #include "GUI/Core/GUITexture.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/StagingBufferCache.h"
@@ -18,12 +19,20 @@ namespace LambdaEngine
 
 	GUITexture::~GUITexture()
 	{
-		SAFERELEASE(m_pTexture);
-		SAFERELEASE(m_pTextureView);
+		TArray<DeviceChild*>& resourcesToRemove = m_pGUIRenderer->GetDeviceResourcesToRemoveArray();
+		resourcesToRemove.PushBack(m_pTexture);
+		resourcesToRemove.PushBack(m_pTextureView);
+
+		m_pTexture = nullptr;
+		m_pTextureView = nullptr;
+
+		m_pGUIRenderer = nullptr;
 	}
 
 	bool GUITexture::Init(CommandList* pCommandList, const GUITextureDesc* pDesc)
 	{
+		m_pGUIRenderer = pDesc->pGUIRenderer;
+
 		TextureDesc textureDesc = {};
 		textureDesc.DebugName	= pDesc->DebugName + " Texture";
 		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;

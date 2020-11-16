@@ -16,19 +16,31 @@ namespace LambdaEngine
 
 	GUIRenderTarget::~GUIRenderTarget()
 	{
-		SAFERELEASE(m_pRenderPass);
-		SAFERELEASE(m_pDepthStencilTexture);
-		SAFERELEASE(m_pDepthStencilTextureView);
+		TArray<DeviceChild*>& resourcesToRemove = m_pGUIRenderer->GetDeviceResourcesToRemoveArray();
+		resourcesToRemove.PushBack(m_pRenderPass);
+		resourcesToRemove.PushBack(m_pDepthStencilTexture);
+		resourcesToRemove.PushBack(m_pDepthStencilTextureView);
+		resourcesToRemove.PushBack(m_pColorTexture);
+		resourcesToRemove.PushBack(m_pColorTextureView);
+		resourcesToRemove.PushBack(m_pResolveTexture);
+		resourcesToRemove.PushBack(m_pResolveTextureView);
 
-		SAFERELEASE(m_pColorTexture);
-		SAFERELEASE(m_pColorTextureView);
-		SAFERELEASE(m_pResolveTexture);
-		SAFERELEASE(m_pResolveTextureView);
+		m_pRenderPass				= nullptr;
+		m_pDepthStencilTexture		= nullptr;
+		m_pDepthStencilTextureView	= nullptr;
+		m_pColorTexture				= nullptr;
+		m_pColorTextureView			= nullptr;
+		m_pResolveTexture			= nullptr;
+		m_pResolveTextureView		= nullptr;
+
+		m_pGUIRenderer	= nullptr;
 	}
 
 	bool GUIRenderTarget::Init(const GUIRenderTargetDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
+
+		m_pGUIRenderer = pDesc->pGUIRenderer;
 
 		if (!CreateColorTextures(pDesc))
 		{

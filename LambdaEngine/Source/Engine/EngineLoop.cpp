@@ -389,11 +389,6 @@ namespace LambdaEngine
 
 		Input::Release();
 
-		if (!ReleaseComponentOwners())
-		{
-			return false;
-		}
-
 		if (!StateManager::GetInstance()->Release())
 		{
 			return false;
@@ -431,6 +426,11 @@ namespace LambdaEngine
 
 		EventQueue::UnregisterAll();
 		ECSCore::Release();
+
+		if (!ReleaseComponentOwners())
+		{
+			return false;
+		}
 
 		if (!ThreadPool::Release())
 		{
