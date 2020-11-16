@@ -390,7 +390,6 @@ namespace LambdaEngine
 								// Store weapons for later use. Easier to map to players
 								if (pWeaponComponents->HasComponent(entity))
 								{
-									LOG_INFO("d: %d , with entityID: %d is a weapon, entityIds: %d", d, entity, m_pDrawArgs[d].EntityIDs.GetSize());
 									weapons.PushBack({ .EntityId = entity, .DrawArgIndex = d, .InstanceIndex = i});
 								}
 								else 
@@ -446,11 +445,15 @@ namespace LambdaEngine
 				{
 					auto weaponOwner = pWeaponComponents->GetConstData(weapon.EntityId).WeaponOwner;
 					auto it = std::find_if(m_PlayerData.Begin(), m_PlayerData.End(),
-						[&weaponOwner](const PlayerData& pd) {return pd.EntityId == weaponOwner; });
+						[&weaponOwner](const PlayerData& pd) { return pd.EntityId == weaponOwner; });
 
 					if (it != m_PlayerData.end())
 					{
 						it->Weapon = weapon;
+					}
+					else
+					{
+						LOG_WARNING("[PlayerRenderer] A Weapon %d without a player is present.", weapon.EntityId);
 					}
 				}
 
