@@ -59,7 +59,7 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 		float healthScale = (float)currentHealth / (float)m_GUIState.MaxHealth;
 		scale->SetCenterX(0.0);
 		scale->SetCenterY(0.0);
-		scale->SetScaleY(healthScale);
+		scale->SetScaleX(healthScale);
 		m_pHealthRect->SetRenderTransform(scale);
 
 		std::string hpString = std::to_string((int32)(healthScale * 100)) + "%";
@@ -73,23 +73,25 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 bool HUDGUI::UpdateScore()
 {
 	std::string scoreString;
+	uint32 blueScore = Match::GetScore(0);
+	uint32 redScore = Match::GetScore(1);
 
-	if (m_GUIState.Scores[0] != Match::GetScore(0))
+
+	// poor solution to handle bug if Match being reset before entering
+	
+	if (m_GUIState.Scores[0] != blueScore && blueScore != 0)	//Blue
 	{
-		m_GUIState.Scores[0] = Match::GetScore(0);
-
-		scoreString = std::to_string(m_GUIState.Scores[0]);
-
-		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText(scoreString.c_str());
+		m_GUIState.Scores[0] = blueScore;
+		
+		m_pBlueScoreGrid->GetChildren()->Get(5 - blueScore)->SetVisibility(Visibility::Visibility_Visible);
 	}
-	else if (m_GUIState.Scores[1] != Match::GetScore(1))
+	else if (m_GUIState.Scores[1] != redScore && redScore != 0) //Red
 	{
-		m_GUIState.Scores[1] = Match::GetScore(1);
+		m_GUIState.Scores[1] = redScore;
 
-		scoreString = std::to_string(m_GUIState.Scores[1]);
-
-		FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText(scoreString.c_str());
+		m_pRedScoreGrid->GetChildren()->Get(redScore - 1)->SetVisibility(Visibility::Visibility_Visible);
 	}
+
 	return true;
 }
 
@@ -397,12 +399,14 @@ void HUDGUI::InitGUI()
 	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
 	m_pHealthRect		= FrameworkElement::FindName<Image>("HEALTH_RECT");
 
-
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
 
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 	m_pScoreboardGrid	= FrameworkElement::FindName<Grid>("SCOREBOARD_GRID");
+
+	m_pRedScoreGrid		= FrameworkElement::FindName<Grid>("RED_TEAM_SCORE_GRID");
+	m_pBlueScoreGrid	= FrameworkElement::FindName<Grid>("BLUE_TEAM_SCORE_GRID");
 
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
@@ -414,8 +418,8 @@ void HUDGUI::InitGUI()
 	m_pWaterAmmoText->SetText(ammoString.c_str());
 	m_pPaintAmmoText->SetText(ammoString.c_str());
 
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");
+	/*FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
+	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");*/
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);

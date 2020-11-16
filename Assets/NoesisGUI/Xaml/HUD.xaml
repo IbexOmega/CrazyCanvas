@@ -77,13 +77,13 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <Grid x:Name="HEALTH_DISPLAY_GRID" Margin="0,0,0,25" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4">
+                <Grid x:Name="HEALTH_DISPLAY_GRID" Margin="25,0,-25,25" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4" >
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
                     </Grid.ColumnDefinitions>
 
                     <Grid.RowDefinitions>
@@ -94,34 +94,96 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Source="LifeContainerFiller.png" Height="400"  RenderTransformOrigin="0.5,0.75">
+                    <Image Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Source="bar_background.png"   RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="319.205" Margin="15,0,0,80"/>
+                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="bar.png"   RenderTransformOrigin="0.5,0.75"  Width="400" Height=" 75" Margin="50,0,0,0">
                         <Image.RenderTransform>
                             <ScaleTransform/>
                         </Image.RenderTransform>
                     </Image>
-                    <Image Grid.Column="1" Source="LifeContainer.png" Height="400" />
-                    <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="1" Grid.Row="0" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0" Foreground="#FFC7144D" FontWeight="Bold" Height="31.923" Width="62.224" />
+                    <Image Grid.Column="1" Grid.Row="3" Source="bar_contour.png"   RenderTransformOrigin="0.5,0.75"  Width="410" Height=" 83" Margin="46,0,0,0"/>
+
+                <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="1" Grid.Row="3" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,-160,0" Foreground="Black" FontWeight="Bold" Height="31.922" Width="62.224" />
+                
                 </Grid>
 
-                <Grid x:Name="SCORE_DISPLAY_GRID" Grid.Column="4" Grid.ColumnSpan="2" Grid.Row="0" Grid.RowSpan="2">
+            <Grid x:Name="SCORE_DISPLAY_GRID" Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="0" Grid.RowSpan="2" Margin="0,60,0,-90">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="0" Grid.RowSpan="2" BorderThickness="0, 2, 2, 2" CornerRadius="25, 0, 0, 25" BorderBrush="Blue">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="1.0,0.5" EndPoint="0.0,0.5" >
+                            <GradientStop Color="Black"/>
+                            <GradientStop Color="#3FFFFFFF" Offset="0.787"/>
+                            <GradientStop Color="#3F555555" Offset="0.606"/>
+                            <GradientStop Color="Black"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <Grid x:Name="BLUE_TEAM_SCORE_GRID" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="0" Grid.RowSpan="2">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition/>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
                     </Grid.ColumnDefinitions>
 
-                    <Grid.RowDefinitions>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-
-                    <Image Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="4" Grid.Row="0" Source="ScoreBoard.png" UseLayoutRounding="False" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="UniformToFill"/>
-                    <TextBlock x:Name="SCORE_DISPLAY_TEAM_1"  Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Center"  TextWrapping="Wrap" Text="1" VerticalAlignment="Center" Foreground="White" FontSize="72" Margin="0,0,-70,-45"/>
-                    <TextBlock x:Name="SCORE_DISPLAY_TEAM_2"  Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Center"  TextWrapping="Wrap" Text="1" VerticalAlignment="Center" Foreground="White" FontSize="72" Margin="0,0,50,-40"/>
+                    <Image Source="Blue Splatt.png" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Blue Splatt.png" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Blue Splatt.png" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Blue Splatt.png" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Blue Splatt.png" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
                 </Grid>
+
+                <Border Grid.Column="5" Grid.ColumnSpan="4" Grid.Row="0" Grid.RowSpan="2" BorderThickness="2, 2, 0, 2" CornerRadius="0, 25, 25, 0" BorderBrush="Red">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="1.0,0.5" EndPoint="0.0,0.5" >
+                            <GradientStop Color="Black" Offset="1"/>
+                            <GradientStop Color="#3FFFFFFF" Offset="0.11"/>
+                            <GradientStop Color="#3F555555"/>
+                            <GradientStop Color="Black" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <Grid x:Name="RED_TEAM_SCORE_GRID" Grid.Column="5" Grid.ColumnSpan="4" Grid.Row="0" Grid.RowSpan="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <Image Source="Red Splatt.png" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Red Splatt.png" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Red Splatt.png" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Red Splatt.png" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                    <Image Source="Red Splatt.png" Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Height="70" Width="70" Visibility="Hidden"></Image>
+                </Grid>
+            </Grid>
+
+            <Image Grid.Column="4" Grid.ColumnSpan="2" Grid.Row="0" Grid.RowSpan="2" Source="Roller.png" HorizontalAlignment="Center" VerticalAlignment="Center" Height="123" Width="150" Margin="108.75,27,108.75,0"></Image>
+
 
                 <Grid x:Name="AMMUNITION_GRID" Grid.Column="8" Grid.ColumnSpan="2"  Grid.Row="10" Grid.RowSpan="5" Margin="-25,-25,25,25">
 

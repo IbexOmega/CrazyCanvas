@@ -45,7 +45,9 @@ LobbyGUI::~LobbyGUI()
 
 void LobbyGUI::InitGUI(LambdaEngine::String name)
 {
-	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name");
+	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
+
+	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_GameSettings.ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
 	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
@@ -53,7 +55,6 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
 
-	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
 
 	m_IsInitiated = true;
 }
@@ -216,26 +217,34 @@ void LobbyGUI::SetHostMode(bool isHost)
 
 void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 {
-	Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
-	pSettingServerName->SetContent(packet.ServerName);
+	if (!PlayerManagerClient::GetPlayerLocal()->IsHost()) 
+	{
+		Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
+		pSettingServerName->SetContent(packet.ServerName);
 
-	Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
-	pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
+		Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
+		pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
 
-	Label* pSettingMaxTime = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_TIME) + "_client").c_str());
-	pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
+		Label* pSettingMaxTime = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_TIME) + "_client").c_str());
+		pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
 
-	Label* pSettingFlagsToWin = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_client").c_str());
-	pSettingFlagsToWin->SetContent(std::to_string(packet.FlagsToWin).c_str());
+		Label* pSettingFlagsToWin = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_client").c_str());
+		pSettingFlagsToWin->SetContent(std::to_string(packet.FlagsToWin).c_str());
 
-	Label* pSettingMaxPlayers = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_PLAYERS) + "_client").c_str());
-	pSettingMaxPlayers->SetContent(std::to_string(packet.Players).c_str());
+		Label* pSettingMaxPlayers = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_PLAYERS) + "_client").c_str());
+		pSettingMaxPlayers->SetContent(std::to_string(packet.Players).c_str());
 
-	Label* pSettingVisibility = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_VISIBILITY) + "_client").c_str());
-	pSettingVisibility->SetContent(packet.Visible ? "True" : "False");
+		Label* pSettingVisibility = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_VISIBILITY) + "_client").c_str());
+		pSettingVisibility->SetContent(packet.Visible ? "True" : "False");
 
-	Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
-	pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
+		Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
+		pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
+	} 
+	else 
+	{
+		TextBox* pServerNameTextBox = FrameworkElement::FindName<TextBox>((LambdaEngine::String(SETTING_SERVER_NAME) + "_host").c_str());
+		pServerNameTextBox->SetText(packet.ServerName);
+	}
 
 	m_GameSettings = packet;
 }
@@ -273,7 +282,8 @@ void LobbyGUI::AddSettingComboBox(
 
 void LobbyGUI::AddSettingTextBox(
 	const LambdaEngine::String& settingKey,
-	const LambdaEngine::String& settingText)
+	const LambdaEngine::String& settingText,
+	const LambdaEngine::String& settingValue)
 {
 	// Add setting text
 	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
@@ -287,6 +297,7 @@ void LobbyGUI::AddSettingTextBox(
 	settingTextBox->SetStyle(pStyle);
 	settingTextBox->SetName((settingKey + "_host").c_str());
 	settingTextBox->TextChanged() += MakeDelegate(this, &LobbyGUI::OnTextBoxChanged);
+	settingTextBox->SetText(settingValue.c_str());
 	RegisterName(settingTextBox->GetName(), settingTextBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingTextBox);
 }
