@@ -35,6 +35,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
+	EventQueue::UnregisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
 }
 
 void HUDSystem::Init()
@@ -99,6 +100,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
+	EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
 
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
@@ -187,7 +189,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 				glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
 
-				m_HUDGUI->UpdateFlagIndicator(delta, viewProj, flagWorldPosition.Position);
+				m_HUDGUI->ProjectGUIIndicator(viewProj, flagWorldPosition.Position, IndicatorTypeGUI::FLAG_INDICATOR);
 			}
 		}
 	}
@@ -346,5 +348,11 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 
 	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostFlags, mostDeaths);
 
+	return false;
+}
+
+bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
+{
+	m_HUDGUI->SetWindowSize(event.Width, event.Height);
 	return false;
 }

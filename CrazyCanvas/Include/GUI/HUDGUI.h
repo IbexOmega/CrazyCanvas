@@ -50,6 +50,13 @@ enum class EPlayerProperty
 	PLAYER_PROPERTY_FLAGS_DEFENDED,
 	PLAYER_PROPERTY_PING,
 };
+
+enum class IndicatorTypeGUI
+{
+	FLAG_INDICATOR,
+	DROP_OFF_INDICATOR
+};
+
 typedef  std::pair<uint8, const Player*> PlayerPair;
 
 class HUDGUI : public Noesis::Grid
@@ -76,11 +83,14 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
-	void UpdateFlagIndicator(LambdaEngine::Timestamp delta, const glm::mat4& viewProj, const glm::vec3& flagWorldPos);
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& flagWorldPos, IndicatorTypeGUI type);
+
+	void SetWindowSize(uint32 width, uint32 height);
 
 private:
 	void InitGUI();
 
+	void TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type);
 	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 

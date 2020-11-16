@@ -3,16 +3,18 @@
 
 #include "ECS/System.h"
 
-#include "Events/GameplayEvents.h"
 #include "Physics/PhysicsEvents.h"
+#include "Events/GameplayEvents.h"
+#include "Events/PlayerEvents.h"
+#include "Events/MatchEvents.h"
+#include "Application/API/Events/WindowEvents.h"
 
 #include "GUI/HUDGUI.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
-#include "Events/MatchEvents.h"
-#include "Events/PlayerEvents.h"
+
 
 class HUDSystem : public LambdaEngine::System
 {
@@ -35,6 +37,7 @@ public:
 	bool OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event);
 	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 	bool OnGameOver(const GameOverEvent& event);
+	bool OnWindowResized(const LambdaEngine::WindowResizedEvent& event);
 
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);

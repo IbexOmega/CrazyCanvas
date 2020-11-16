@@ -6,7 +6,7 @@
   xmlns:noesis="clr-namespace:NoesisGUIExtensions;assembly=Noesis.GUI.Extensions"
   xmlns:uc="clr-namespace:CrazyCanvas"
   mc:Ignorable="d"
-  d:DesignWidth="443.419" d:DesignHeight="235.461"
+  d:DesignWidth="1920" d:DesignHeight="1080"
   TextElement.FontFamily="gogono_cocoa_mochi.ttf#Gogono Cocoa Mochi"
   x:Name ="ROOT_CONTAINER">
 

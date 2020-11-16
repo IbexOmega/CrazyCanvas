@@ -372,7 +372,7 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
-void HUDGUI::UpdateFlagIndicator(LambdaEngine::Timestamp delta, const glm::mat4& viewProj, const glm::vec3& flagWorldPos)
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& flagWorldPos, IndicatorTypeGUI type)
 {
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
@@ -380,16 +380,25 @@ void HUDGUI::UpdateFlagIndicator(LambdaEngine::Timestamp delta, const glm::mat4&
 
 	VALIDATE(clipSpacePos.w != 0);
 
+	LOG_INFO("Clip space Z Value: %f", clipSpacePos.z);
+
 	glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
 
-	glm::vec2 windowSpacePos = ((glm::vec2(ndcSpacePos.x, ndcSpacePos.y) + 1.0f) * 0.5f) * m_WindowSize; // multiply with viewSize + offset
+	float32 dir = clipSpacePos.z < 0.0f ? -1.0f : 1.0f;
 
-	translation->SetX(windowSpacePos.x);
-	translation->SetY(windowSpacePos.y);
+	glm::vec2 windowSpacePos = glm::vec2(ndcSpacePos.x, -ndcSpacePos.y) * 0.5f * m_WindowSize;
 
-	LOG_INFO("Flag Screen pos: %f, %f", windowSpacePos.x, windowSpacePos.y);
+	if (dir > 0)
+	{
+		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
+		TranslateIndicator(translation, type);
+	}
+}
 
-	m_pFlagIndicator->SetRenderTransform(translation);
+void HUDGUI::SetWindowSize(uint32 width, uint32 height)
+{
+	m_WindowSize = glm::vec2(width, height);
 }
 
 void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags)
@@ -445,6 +454,23 @@ void HUDGUI::InitGUI()
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);
+
 	m_WindowSize.x = CommonApplication::Get()->GetActiveWindow()->GetWidth();
 	m_WindowSize.y = CommonApplication::Get()->GetActiveWindow()->GetHeight();
+}
+
+void HUDGUI::TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type)
+{
+	switch (type)
+	{
+	case IndicatorTypeGUI::FLAG_INDICATOR:
+	{
+		m_pFlagIndicator->SetRenderTransform(translation);
+		break;
+	}
+	case IndicatorTypeGUI::DROP_OFF_INDICATOR:
+		break;
+	default:
+		break;
+	}
 }
