@@ -3700,7 +3700,6 @@ namespace LambdaEngine
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
 
-
 						// For draw arg extensions
 						if (pDrawArg->HasExtensions)
 						{
@@ -3718,13 +3717,13 @@ namespace LambdaEngine
 										for (uint32 t = 0; t < numTextures; t++)
 										{
 											//uint32 masks = extensionGroup->pExtensionMasks[e];
-											const TextureViewDesc& textureViewDesc = extension.ppTextureViews[t]->GetDesc();
-											textureBarrierTemplate.StateBefore = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
-											textureBarrierTemplate.StateAfter = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-											textureBarrierTemplate.pTexture = extension.ppTextures[t];
-											textureBarrierTemplate.Miplevel = textureViewDesc.Miplevel;
-											textureBarrierTemplate.MiplevelCount = textureViewDesc.MiplevelCount;
-											textureBarrierTemplate.ArrayIndex = textureViewDesc.ArrayIndex;
+											const TextureViewDesc& textureViewDesc	= extension.ppTextureViews[t]->GetDesc();
+											textureBarrierTemplate.StateBefore		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
+											textureBarrierTemplate.StateAfter		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+											textureBarrierTemplate.pTexture			= extension.ppTextures[t];
+											textureBarrierTemplate.Miplevel			= textureViewDesc.Miplevel;
+											textureBarrierTemplate.MiplevelCount	= textureViewDesc.MiplevelCount;
+											textureBarrierTemplate.ArrayIndex		= textureViewDesc.ArrayIndex;
 											drawTextureBarriers.PushBack(textureBarrierTemplate);
 										}
 									}

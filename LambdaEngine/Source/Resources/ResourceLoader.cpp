@@ -3,6 +3,10 @@
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/CommandQueue.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/GraphicsHelpers.h"
 
@@ -31,10 +35,18 @@
 
 namespace LambdaEngine
 {
-	CommandAllocator*		ResourceLoader::s_pCopyCommandAllocator		= nullptr;
-	CommandList*			ResourceLoader::s_pCopyCommandList			= nullptr;
-	Fence*					ResourceLoader::s_pCopyFence				= nullptr;
-	uint64					ResourceLoader::s_SignalValue				= 1;
+	// Cubemap Gen
+	DescriptorHeap*	ResourceLoader::s_pCubeMapGenDescriptorHeap	= nullptr;
+	DescriptorSet*	ResourceLoader::s_pCubeMapGenDescriptorSet	= nullptr;
+	PipelineLayout*	ResourceLoader::s_pCubeMapGenPipelineLayout	= nullptr;
+	PipelineState*	ResourceLoader::s_pCubeMapGenPipelineState	= nullptr;
+	Shader*			ResourceLoader::s_pCubeMapGenShader			= nullptr;
+
+	// The rest
+	CommandAllocator*	ResourceLoader::s_pCopyCommandAllocator		= nullptr;
+	CommandList*		ResourceLoader::s_pCopyCommandList			= nullptr;
+	Fence*				ResourceLoader::s_pCopyFence				= nullptr;
+	uint64				ResourceLoader::s_SignalValue				= 1;
 
 	/*
 	* Helpers
@@ -131,8 +143,8 @@ namespace LambdaEngine
 	*/
 	bool ResourceLoader::Init()
 	{
+		// Init resources
 		s_pCopyCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
-
 		if (s_pCopyCommandAllocator == nullptr)
 		{
 			LOG_ERROR("[ResourceLoader]: Could not create Copy Command Allocator");
@@ -153,11 +165,21 @@ namespace LambdaEngine
 
 		glslang::InitializeProcess();
 
+		// Cubemap Gen
+		if (!InitCubemapGen())
+		{
+			return false;
+		}
+
 		return true;
 	}
 
 	bool ResourceLoader::Release()
 	{
+		// Cubemap gen
+		ReleaseCubemapGen();
+
+		// Init resources
 		SAFERELEASE(s_pCopyCommandAllocator);
 		SAFERELEASE(s_pCopyCommandList);
 		SAFERELEASE(s_pCopyFence);
@@ -530,7 +552,6 @@ namespace LambdaEngine
 			}
 
 			stbi_pixels[i] = pPixels;
-			// D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
 		}
 
 		Texture* pTexture = nullptr;
@@ -646,6 +667,84 @@ namespace LambdaEngine
 			LOG_ERROR("[ResourceLoader]: Failed to create panorama texture");
 			return nullptr;
 		}
+
+		// Staging buffer
+		const uint64 textureSize = texWidth * texHeight * 4ULL * 4ULL;
+		BufferDesc bufferDesc = { };
+		bufferDesc.DebugName	= "Texture Copy Buffer";
+		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+		bufferDesc.SizeInBytes	= textureSize;
+
+		TSharedRef<Buffer> stagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		if (stagingBuffer)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create staging buffer for \"%s\"", name.c_str());
+			return nullptr;
+		}
+
+		// Fill buffer
+		void* pTextureDataDst = stagingBuffer->Map();
+		memcpy(pTextureDataDst, pixels.Get(), textureSize);
+		stagingBuffer->Unmap();
+
+		// Start commandlist
+		const uint64 waitValue = s_SignalValue - 1;
+		s_pCopyFence->Wait(waitValue, UINT64_MAX);
+
+		s_pCopyCommandAllocator->Reset();
+		s_pCopyCommandList->Begin(nullptr);
+
+		s_pCopyCommandList->TransitionBarrier(
+			panoramaTexture.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+			0,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			ETextureState::TEXTURE_STATE_UNKNOWN,
+			ETextureState::TEXTURE_STATE_COPY_DST);
+
+		CopyTextureBufferDesc copyDesc = {};
+		copyDesc.BufferOffset	= 0;
+		copyDesc.BufferRowPitch	= 0;
+		copyDesc.BufferHeight	= 0;
+		copyDesc.Width			= texWidth;
+		copyDesc.Height			= texHeight;
+		copyDesc.Depth			= 1;
+		copyDesc.Miplevel		= 0;
+		copyDesc.MiplevelCount	= 1;
+		copyDesc.ArrayIndex		= 0;
+		copyDesc.ArrayCount		= 1;
+
+		s_pCopyCommandList->CopyTextureFromBuffer(stagingBuffer.Get(), panoramaTexture.Get(), copyDesc);
+
+		s_pCopyCommandList->TransitionBarrier(
+			panoramaTexture.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			ETextureState::TEXTURE_STATE_COPY_DST,
+			ETextureState::TEXTURE_STATE_GENERAL);
+
+		s_pCopyCommandList->End();
+
+		if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
+			&s_pCopyCommandList, 1,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+			nullptr, 0,
+			s_pCopyFence, s_SignalValue))
+		{
+			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
+			return nullptr;
+		}
+		else
+		{
+			s_SignalValue++;
+		}
+
+		//Todo: Remove this wait after garbage collection works
+		RenderAPI::GetGraphicsQueue()->Flush();
 
 		// Create texturecube
 		TextureDesc textureCubeDesc;
@@ -1138,6 +1237,114 @@ namespace LambdaEngine
 
 		fclose(pFile);
 		return true;
+	}
+
+	bool ResourceLoader::InitCubemapGen()
+	{
+		//Create Descriptor Heap
+		{
+			DescriptorHeapInfo descriptorCountDesc = { };
+			descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 2;
+
+			DescriptorHeapDesc descriptorHeapDesc = { };
+			descriptorHeapDesc.DebugName			= "CubemapGen DescriptorHeap";
+			descriptorHeapDesc.DescriptorSetCount	= 1;
+			descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
+
+			s_pCubeMapGenDescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
+			if (!s_pCubeMapGenDescriptorHeap)
+			{
+				LOG_ERROR("Failed to create CubeMapGen DescriptorHeap");
+				return false;
+			}
+		}
+
+		//Create Pipeline Layout, Descriptor Set & Pipeline State
+		{
+			TSharedRef<Sampler> sampler = MakeSharedRef(Sampler::GetLinearSampler());
+
+			DescriptorBindingDesc panoramaBinding = { };
+			panoramaBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			panoramaBinding.DescriptorCount	= 1;
+			panoramaBinding.Binding			= 0;
+			panoramaBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+			DescriptorBindingDesc cubemapGenBinding = { };
+			cubemapGenBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			cubemapGenBinding.DescriptorCount	= 1;
+			cubemapGenBinding.Binding			= 1;
+			cubemapGenBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
+			DescriptorSetLayoutDesc descriptorSetLayoutDesc = { };
+			descriptorSetLayoutDesc.DescriptorBindings =
+			{
+				panoramaBinding,
+				cubemapGenBinding,
+			};
+
+			PipelineLayoutDesc pPipelineLayoutDesc = { };
+			pPipelineLayoutDesc.DebugName				= "CubemapGen PipelineLayout";
+			pPipelineLayoutDesc.DescriptorSetLayouts	= 
+			{ 
+				descriptorSetLayoutDesc 
+			};
+
+			s_pCubeMapGenPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pPipelineLayoutDesc);
+			if (!s_pCubeMapGenPipelineLayout)
+			{
+				LOG_ERROR("Failed to create CubeMapGen PipelineLayout");
+				return false;
+			}
+			
+			s_pCubeMapGenDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet(
+				"CubemapGen DescriptorSet", 
+				s_pCubeMapGenPipelineLayout, 
+				0, 
+				s_pCubeMapGenDescriptorHeap);
+			if (!s_pCubeMapGenDescriptorSet)
+			{
+				LOG_ERROR("Failed to create CubeMapGen DescriptorSet");
+				return false;
+			}
+
+			// Create Shaders
+			s_pCubeMapGenShader = LoadShaderFromFile(
+				"Skybox/CubemapGen.comp", 
+				FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
+				EShaderLang::SHADER_LANG_GLSL, 
+				"main");
+			if (!s_pCubeMapGenShader)
+			{
+				LOG_ERROR("Failed to create CubeMapGen Shader");
+				return false;
+			}
+
+			ComputePipelineStateDesc computePipelineStateDesc = { };
+			computePipelineStateDesc.DebugName			= "CubemapGen PipelineState";
+			computePipelineStateDesc.pPipelineLayout	= s_pCubeMapGenPipelineLayout;
+			computePipelineStateDesc.Shader				= 
+			{ 
+				.pShader = s_pCubeMapGenShader 
+			};
+
+			s_pCubeMapGenPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
+			if (!s_pCubeMapGenPipelineState)
+			{
+				LOG_ERROR("Failed to create CubeMapGen PipelineState");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	void ResourceLoader::ReleaseCubemapGen()
+	{
+		SAFERELEASE(s_pCubeMapGenDescriptorHeap);
+		SAFERELEASE(s_pCubeMapGenDescriptorSet);
+		SAFERELEASE(s_pCubeMapGenPipelineLayout);
+		SAFERELEASE(s_pCubeMapGenPipelineState);
+		SAFERELEASE(s_pCubeMapGenShader);
 	}
 
 	void ResourceLoader::LoadBoundingBox(BoundingBox& boundingBox,const aiMesh* pMeshAI)

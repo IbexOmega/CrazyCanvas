@@ -1,0 +1,26 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "../Helpers.glsl"
+
+#define THREAD_COUNT 16
+layout(local_size_x = THREAD_COUNT, local_size_y = THREAD_COUNT, local_size_z = 1) in;
+
+// Pushconstants
+layout(push_constant) uniform PushConstants
+{
+	uint Width;
+	uint Height;
+} u_PC;
+
+// Textures
+layout(binding = 0, set = 0) restrict readonly	image2D		u_Panorama;
+layout(binding = 1, set = 0) restrict writeonly	imageCube	u_CubeMap;
+
+void main()
+{
+	ivec2 texCoord = gl_GlobalInvocationID.xy;
+	vec4 color = imageLoad(u_Panorama, texCoord);
+	imageStore(u_CubeMap, ivec3(texCoord, 0), color);
+}

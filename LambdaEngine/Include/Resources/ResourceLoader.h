@@ -303,6 +303,9 @@ namespace LambdaEngine
 		static bool ReadDataFromFile(const String& filepath, const char* pMode, byte** ppData, uint32* pDataSize);
 
 	private:
+		static bool InitCubemapGen();
+		static void ReleaseCubemapGen();
+
 		static void LoadBoundingBox(BoundingBox& boundingBox, const aiMesh* pMeshAI);
 		static void LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI);
 		static void LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI);
@@ -330,6 +333,14 @@ namespace LambdaEngine
 			ShaderReflection* pReflection);
 
 	private:
+		// Cubemap gen
+		static DescriptorHeap*	s_pCubeMapGenDescriptorHeap;
+		static DescriptorSet*	s_pCubeMapGenDescriptorSet;
+		static PipelineLayout*	s_pCubeMapGenPipelineLayout;
+		static PipelineState*	s_pCubeMapGenPipelineState;
+		static Shader*			s_pCubeMapGenShader;
+
+		// All resources
 		static CommandAllocator*	s_pCopyCommandAllocator;
 		static CommandList*			s_pCopyCommandList;
 		static Fence*				s_pCopyFence;
