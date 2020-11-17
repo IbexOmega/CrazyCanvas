@@ -9,7 +9,19 @@ enum class EGameMode : uint8
 	CTF_TEAM_FLAG	= 2
 };
 
-FORCEINLINE EGameMode ConvertGameMode(uint8 gameModeIndex)
+constexpr FORCEINLINE uint8 ConvertGameMode(EGameMode gameMode)
+{
+	switch (gameMode)
+	{
+	case EGameMode::NONE:				return 0;
+	case EGameMode::CTF_COMMON_FLAG:	return 1;
+	case EGameMode::CTF_TEAM_FLAG:		return 2;
+	}
+
+	return 0;
+}
+
+constexpr FORCEINLINE EGameMode ConvertGameMode(uint8 gameModeIndex)
 {
 	switch (gameModeIndex)
 	{
@@ -20,7 +32,7 @@ FORCEINLINE EGameMode ConvertGameMode(uint8 gameModeIndex)
 	return EGameMode::NONE;
 }
 
-FORCEINLINE bool GameModeRequiresFlag(EGameMode gameMode)
+constexpr FORCEINLINE bool GameModeRequiresFlag(EGameMode gameMode)
 {
 	switch (gameMode)
 	{

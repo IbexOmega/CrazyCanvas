@@ -117,7 +117,7 @@ bool LevelObjectCreator::Init()
 	{
 		//Flag
 		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagMaterialGUID);
+			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagCommonMaterialGUID);
 		}
 
 		//Player
@@ -132,6 +132,20 @@ bool LevelObjectCreator::Init()
 			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
 			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 #endif
+			MaterialProperties playerMaterialProperties = {};
+			playerMaterialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+			playerMaterialProperties.AO = 1.0f;
+			playerMaterialProperties.Metallic = 0.0f;
+			playerMaterialProperties.Metallic = 0.0f;
+
+			s_PlayerMaterial = ResourceManager::LoadMaterialFromMemory(
+				"Player Material",
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				playerMaterialProperties);
 
 			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMesh, s_WeaponMaterial);
 		}
@@ -360,7 +374,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	Entity entity = pECS->CreateEntity();
 
-	pECS->AddComponent<FlagSpawnComponent>(entity, { 1.0f });
+	pECS->AddComponent<FlagSpawnComponent>(entity, FlagSpawnComponent());
 	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
 
 	uint8 teamIndex = 0;
@@ -497,12 +511,21 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity flagEntity = pECS->CreateEntity();
 
+	GUID_Lambda flagMaterialGUID = s_FlagCommonMaterialGUID;
+
+	if (pFlagDesc->TeamIndex != UINT8_MAX)
+	{
+		pECS->AddComponent<TeamComponent>(flagEntity, { .TeamIndex = pFlagDesc->TeamIndex });
+		flagMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pFlagDesc->TeamIndex);
+	}
+
 	const Timestamp			pickupCooldown = Timestamp::Seconds(1.0f);
-	const FlagComponent		flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
+	const Timestamp			respawnCooldown = Timestamp::Seconds(5.0f);
+	const FlagComponent		flagComponent{ EngineLoop::GetTimeSinceStart(), pickupCooldown, respawnCooldown, false };
 	const PositionComponent	positionComponent{ true, pFlagDesc->Position };
 	const ScaleComponent	scaleComponent{ true, pFlagDesc->Scale };
 	const RotationComponent	rotationComponent{ true, pFlagDesc->Rotation };
-	const MeshComponent		meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+	const MeshComponent		meshComponent{ s_FlagMeshGUID, flagMaterialGUID };
 
 	pECS->AddComponent<FlagComponent>(flagEntity,		flagComponent);
 	pECS->AddComponent<PositionComponent>(flagEntity,	positionComponent);
@@ -535,10 +558,7 @@ bool LevelObjectCreator::CreateFlag(
 	pECS->AddComponent<ParentComponent>(flagEntity,	parentComponent);
 	pECS->AddComponent<OffsetComponent>(flagEntity,	offsetComponent);
 
-	//Network Stuff
-	{
-		pECS->AddComponent<PacketComponent<PacketFlagEdited>>(flagEntity, {});
-	}
+	pECS->AddComponent<PacketComponent<PacketFlagEdited>>(flagEntity, {});
 
 	int32 networkUID;
 	if (!MultiplayerUtils::IsServer())
@@ -854,7 +874,7 @@ bool LevelObjectCreator::CreatePlayer(
 			MeshComponent
 			{
 				.MeshGUID = s_PlayerMeshGUID, 
-				.MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
+				.MaterialGUID = s_PlayerMaterial
 			});
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
 		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
@@ -1039,7 +1059,6 @@ bool LevelObjectCreator::FindTeamIndex(const LambdaEngine::String& objectName, u
 {
 	using namespace LambdaEngine;
 
-	uint8 teamIndex = 0;
 	size_t teamIndexPos = objectName.find("TEAM");
 	if (teamIndexPos != String::npos)
 	{

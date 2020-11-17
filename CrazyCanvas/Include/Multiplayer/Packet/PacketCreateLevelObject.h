@@ -19,6 +19,7 @@ namespace Obj
 	struct Flag
 	{
 		int32 ParentNetworkUID;
+		uint8 TeamIndex;
 	};
 #pragma pack(pop)
 }

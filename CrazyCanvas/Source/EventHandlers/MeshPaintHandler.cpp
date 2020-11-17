@@ -99,7 +99,7 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	ETeam		team = GET_TEAM_INDEX(packet.Info);
 	EPaintMode	paintMode = GET_PAINT_MODE(packet.Info);
 	ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
-	
+
 	if (!MultiplayerUtils::IsServer())
 	{
 		// We do not need to test the collisions against each other, because they will always be painted again but on the permanent mask. 
@@ -137,6 +137,7 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 		
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
+		team = ETeam::RED;
 		PaintMaskRenderer::AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
 	}
 

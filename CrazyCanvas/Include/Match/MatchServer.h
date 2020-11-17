@@ -39,8 +39,11 @@ protected:
 private:
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
+	bool OnFlagRespawn(const FlagRespawnEvent& event);
 
 	void KillPlayerInternal(LambdaEngine::Entity playerEntity);
+
+	bool CreateFlagSpawnProperties(uint8 teamIndex, glm::vec3& position);
 
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;

@@ -181,11 +181,12 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			CreateFlagDesc createFlagDesc =
 			{
-				.NetworkUID = packet.NetworkUID,
-				.ParentEntity = parentEntity,
-				.Position = packet.Position,
-				.Scale = glm::vec3(1.0f),
-				.Rotation = glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.NetworkUID		= packet.NetworkUID,
+				.ParentEntity	= parentEntity,
+				.Position		= packet.Position,
+				.Scale			= glm::vec3(1.0f),
+				.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.TeamIndex		= packet.Flag.TeamIndex
 			};
 
 			TArray<Entity> createdFlagEntities;

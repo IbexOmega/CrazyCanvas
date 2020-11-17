@@ -182,7 +182,7 @@ private:
 	inline static LambdaEngine::THashTable<ELevelObjectType, LevelObjectCreateByTypeFunc> s_LevelObjectByTypeCreateFunctions;
 
 	inline static GUID_Lambda s_FlagMeshGUID		= GUID_NONE;
-	inline static GUID_Lambda s_FlagMaterialGUID	= GUID_NONE;
+	inline static GUID_Lambda s_FlagCommonMaterialGUID	= GUID_NONE;
 
 	inline static GUID_Lambda s_PlayerMeshGUID = GUID_NONE;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerIdleGUIDs;
@@ -192,6 +192,7 @@ private:
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
+	inline static GUID_Lambda s_PlayerMaterial = GUID_NONE;
 
 	inline static GUID_Lambda s_WeaponMesh = GUID_NONE;
 	inline static GUID_Lambda s_WeaponMaterial = GUID_NONE;
