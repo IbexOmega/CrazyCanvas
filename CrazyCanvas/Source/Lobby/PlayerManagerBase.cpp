@@ -13,12 +13,10 @@ THashTable<Entity, uint64> PlayerManagerBase::s_PlayerEntityToUID;
 
 void PlayerManagerBase::Init()
 {
-	
 }
 
 void PlayerManagerBase::Release()
 {
-
 }
 
 void PlayerManagerBase::Reset()
@@ -72,7 +70,11 @@ void PlayerManagerBase::RegisterPlayerEntity(uint64 uid, Entity entity)
 	if (pair != s_Players.end())
 	{
 		s_PlayerEntityToUID.insert({ entity, uid });
-		pair->second.m_Entity = entity;
+		
+		Player& player = pair->second;
+		player.m_Entity = entity;
+
+		LOG_INFO("Player '%s' registered entity '%u' with client UID: %llu, ", player.GetName().c_str(), player.GetEntity(), uid);
 	}
 	else
 	{
@@ -86,11 +88,10 @@ Player* PlayerManagerBase::HandlePlayerJoined(uint64 uid, const PacketJoin& pack
 	if (pair == s_Players.end())
 	{
 		Player player;
-		player.m_UID = uid;
-		player.m_Name = packet.Name;
+		player.m_UID	= uid;
+		player.m_Name	= packet.Name;
 
-		Player* pPlayer = &s_Players.insert({ player.GetUID(), player }).first->second;
-
+		Player* pPlayer = &s_Players.insert(std::make_pair(player.GetUID(), player)).first->second;
 		LOG_INFO("Player [%s] joined! [%llu]", player.GetName().c_str(), player.GetUID());
 
 		PlayerJoinedEvent newEvent(pPlayer);

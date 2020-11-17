@@ -158,9 +158,9 @@ namespace LambdaEngine
 		}
 
 		CopyTextureBufferDesc copyDesc = {};
-		copyDesc.SrcOffset		= 0;
-		copyDesc.SrcRowPitch	= 0;
-		copyDesc.SrcHeight		= 0;
+		copyDesc.BufferOffset	= 0;
+		copyDesc.BufferRowPitch	= 0;
+		copyDesc.BufferHeight	= 0;
 		copyDesc.OffsetX		= x;
 		copyDesc.OffsetY		= y;
 		copyDesc.Width			= width;

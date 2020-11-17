@@ -24,7 +24,7 @@ namespace LambdaEngine
 		virtual void* Map() = 0;
 
 		/*
-		* Unmaps the GPU memory from CPU memory. The pointer returned from IBuffer::Map becomes invalid
+		* Unmaps the GPU memory from CPU memory. The pointer returned from Buffer::Map becomes invalid
 		*/
 		virtual void Unmap() = 0;
 
