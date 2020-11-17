@@ -581,11 +581,11 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 	}
 
 
-	/*
+	
 	// Jail position
 	positionComp.Position = jailPosition;
 
-	// Reset Health
+	/*// Reset Health
 	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
 
 	//Set player alive again
@@ -598,7 +598,7 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
+	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(entity);
 
 	glm::vec3 spawnPosition = glm::vec3(0.0f);
 
@@ -609,7 +609,7 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 
-		uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
+		uint8 playerTeam = pTeamComponents->GetConstData(entity).TeamIndex;
 		for (Entity spawnEntity : spawnPoints)
 		{
 			if (pTeamComponents->HasComponent(spawnEntity))
@@ -626,10 +626,9 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 	positionComp.Position = spawnPosition;
 
 	// Reset Health
-	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
+	HealthSystem::GetInstance().ResetEntityHealth(entity);
 
 	//Set player alive again
-	const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(entity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
-
 }

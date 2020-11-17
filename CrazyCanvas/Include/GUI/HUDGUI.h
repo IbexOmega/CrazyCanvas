@@ -85,7 +85,7 @@ public:
 private:
 	void InitGUI();
 
-	void TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type);
+	void TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type);
 	void SetIndicatorOpacity(float32 value, IndicatorTypeGUI type);
 	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
