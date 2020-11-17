@@ -64,6 +64,9 @@ void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::En
 
 	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
 	m_PlayersToKill.EmplaceBack(entityToKill);
+
+	std::scoped_lock<SpinLock> lock(m_PlayersToRespawnLock);
+	m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
 }
 
 bool MatchServer::InitInternal()
@@ -358,6 +361,17 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 			KillPlayerInternal(playerEntity);
 		}
 
+		for (PlayerTimers player : m_PlayersToRespawn)
+		{
+			player.second -= float32(deltaTime.AsSeconds());
+
+			if (player.second <= 0.0f)
+			{
+				RespawnPlayer(player.first);
+				LOG_INFO("SERVER: Player=%u RESPAWNED", player.first);
+			}
+		}
+
 		m_PlayersToKill.Clear();
 	}
 }
@@ -524,14 +538,16 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 
 	// Get spawnpoint from level
 	const glm::vec3 oldPosition = positionComp.Position;
-	glm::vec3 newPosition = glm::vec3(0.0f);
+	glm::vec3 jailPosition = glm::vec3(0.0f);
+	//glm::vec3 spawnPosition = glm::vec3(0.0f);
 	if (m_pLevel != nullptr)
 	{
 		// Retrive spawnpoints
-		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+		//TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+		TArray<Entity> jailPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL);
 
 		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		/*const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 
 		uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
 		for (Entity spawnEntity : spawnPoints)
@@ -540,9 +556,14 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 			{
 				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
 				{
-					newPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+					spawnPosition = pPositionComponents->GetConstData(spawnEntity).Position;
 				}
 			}
+		}*/
+
+		for (Entity jailEntity : jailPoints)
+		{
+			jailPosition = pPositionComponents->GetConstData(jailEntity).Position;
 		}
 
 		// Drop flag if player carries it
@@ -559,13 +580,56 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 		}
 	}
 
-	// Reset position
-	positionComp.Position = newPosition;
 
-	// Reset health
+	/*
+	// Jail position
+	positionComp.Position = jailPosition;
+
+	// Reset Health
+	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
+
+	//Set player alive again
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);*/
+}
+
+void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
+
+	glm::vec3 spawnPosition = glm::vec3(0.0f);
+
+	if (m_pLevel != nullptr)
+	{
+		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+
+		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+
+		uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
+		for (Entity spawnEntity : spawnPoints)
+		{
+			if (pTeamComponents->HasComponent(spawnEntity))
+			{
+				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
+				{
+					spawnPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+				}
+			}
+		}
+	}
+
+	// Spawn position
+	positionComp.Position = spawnPosition;
+
+	// Reset Health
 	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
 
 	//Set player alive again
 	const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
+
 }

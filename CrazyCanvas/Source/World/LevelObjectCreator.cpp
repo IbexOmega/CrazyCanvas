@@ -73,6 +73,17 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerSpawn;
 		}
 
+		//Jailpoint
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_PLAYER_JAIL_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerJail;
+		}
+
 		//Flag Spawn
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
@@ -344,6 +355,59 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
+}
+
+ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	if (levelObject.BoundingBoxes.GetSize() > 1)
+	{
+		LOG_WARNING("[LevelObjectCreator]: Player Jail can currently not be created with more than one mesh, using the first mesh...");
+	}
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	Entity entity = pECS->CreateEntity();
+
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	if (!levelObject.MeshComponents.IsEmpty())
+	{
+		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
+
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			.Entity = entity,
+			.Position = positionComponent,
+			.Scale = scaleComponent,
+			.Rotation = rotationComponent,
+			.Shapes =
+			{
+				{
+					/* ShapeType */			EShapeType::SIMULATION,
+					/* GeometryType */		EGeometryType::MESH,
+					/* Geometry */			{.pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
+					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+					/* EntityID*/			entity
+				},
+			},
+		};
+
+		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+	}
+
+	createdEntities.PushBack(entity);
+
+	D_LOG_INFO("Created Player Jail with EntityID %u", entity);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL;
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagSpawn(

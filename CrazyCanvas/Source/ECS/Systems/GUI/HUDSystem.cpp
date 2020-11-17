@@ -6,7 +6,6 @@
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Team/TeamComponent.h"
-#include "ECS/Components/Match/FlagComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -55,21 +54,21 @@ void HUDSystem::Init()
 			.pSubscriber = &m_PlayerEntities,
 			.ComponentAccesses =
 			{
-				{ R, HealthComponent::Type() },  { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
+				{ R, HealthComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
 			}
 		},
 		{
 			.pSubscriber = &m_ForeignPlayerEntities,
 			.ComponentAccesses =
 			{
-				{ NDA,	PlayerForeignComponent::Type() }, { R,	TeamComponent::Type() }
+				{ NDA, PlayerForeignComponent::Type() }, { R, TeamComponent::Type() }
 			}
 		},
 		{
 			.pSubscriber = &m_ProjectedGUIEntities,
 			.ComponentAccesses =
 			{
-				{ R,	ProjectedGUIComponent::Type() }
+				{ R, ProjectedGUIComponent::Type() }
 			}
 		},
 		{
