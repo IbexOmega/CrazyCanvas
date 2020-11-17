@@ -73,11 +73,11 @@ void main()
 		mat4 emitterTransform = b_EmitterTransforms.Val[emmiterIndex];
         
 		// Ray Query
-        vec3 vel = particle.Velocity + (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
+        vec3  vel = particle.Velocity + (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 		vec3  origin    = particle.Transform[3].xyz;
 		vec3  direction = normalize(vel);
 		float tMin      = 0.01f;
-		float tMax      = length(vel*dt);
+		float tMax      = length(vel*dt*2.f);
 
 		// Initializes a ray query object but does not start traversal
 		rayQueryEXT rayQuery;
@@ -85,30 +85,17 @@ void main()
 							direction, tMax);
 		
 		// Start traversal: return false if traversal is complete
-		while(rayQueryProceedEXT(rayQuery)) 
-		{
-			rayQueryTerminateEXT(rayQuery);
-		}
+		while(rayQueryProceedEXT(rayQuery)) { }
 
 		// Returns type of committed (true) intersection
 		if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
 		{
 			// Set position to be at the intersection point.
 			float tHit = rayQueryGetIntersectionTEXT(rayQuery, true);
-			particle.Transform[3].xyz = origin + tHit*direction;
-			particle.Bounciness = 2.f;
-			//vec3 preV = particle.Velocity;
-			particle.Velocity = vec3(0.f);//particle.FrictionFactor;
-			//particle.Velocity = -preV * particle.Bounciness;
-		}
-
-		// If we will skip to bounce the particles, this should not be named Bounciness. If not, this should be removed.
-		if(particle.Bounciness > 1.5f)
-		{
+			particle.Transform[3].xyz = origin + max(tHit-tMin*2.f, 0.f)*direction;
+			particle.Bounciness = 2.f; // This is used for telling the ParticleUpdate.comp that this particle should stop.
 			particle.Velocity = vec3(0.f);
 		}
-
-        particle.Transform[3].xyz = particle.Transform[3].xyz + particle.Velocity*dt;
 
 		b_ParticleInstances.Val[particleIndex] = particle;
 		indexOffset += totalInvocations;
