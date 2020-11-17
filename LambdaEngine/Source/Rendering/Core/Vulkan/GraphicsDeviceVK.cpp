@@ -1740,7 +1740,11 @@ namespace LambdaEngine
 		return UINT32_MAX;
 	}
 
-	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+		VkDebugUtilsMessageTypeFlagsEXT messageType, 
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
+		void* pUserData)
 	{
 		UNREFERENCED_VARIABLE(messageType);
 		UNREFERENCED_VARIABLE(pCallbackData);
