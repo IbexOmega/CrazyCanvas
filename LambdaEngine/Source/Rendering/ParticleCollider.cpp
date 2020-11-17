@@ -272,6 +272,8 @@ namespace LambdaEngine
 
 	void ParticleCollider::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(resourceName);
+		UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(imageCount);
@@ -281,11 +283,6 @@ namespace LambdaEngine
 
 	void ParticleCollider::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(ppBuffers);
-		UNREFERENCED_VARIABLE(pOffsets);
-		UNREFERENCED_VARIABLE(pSizesInBytes);
-		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (m_InlineRayTracingEnabled)
