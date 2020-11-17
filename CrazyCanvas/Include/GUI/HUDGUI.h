@@ -8,6 +8,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "ECS/Components/Player/ProjectileComponent.h"
+#include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
 #include "World/Player/PlayerActionSystem.h"
 
@@ -21,6 +22,7 @@
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
+#include "NsGui/Rectangle.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
 
@@ -56,6 +58,7 @@ enum class EPlayerProperty
 	PLAYER_PROPERTY_FLAGS_DEFENDED,
 	PLAYER_PROPERTY_PING,
 };
+
 typedef  std::pair<uint8, const Player*> PlayerPair;
 
 class HUDGUI : public Noesis::Grid
@@ -101,6 +104,10 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type);
+
+	void SetWindowSize(uint32 width, uint32 height);
+
 private:
 	void InitGUI();
 
@@ -109,29 +116,36 @@ private:
 	void SetRenderStagesInactive();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
-
+	void TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type);
+	void SetIndicatorOpacity(float32 value, IndicatorTypeGUI type);
+	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
+
 	NS_IMPLEMENT_INLINE_REFLECTION_(HUDGUI, Noesis::Grid)
 
 private:
 	GameGUIState m_GUIState;
 	bool m_IsGameOver = false;
 
-	Noesis::Image* m_pWaterAmmoRect = nullptr;
-	Noesis::Image* m_pPaintAmmoRect = nullptr;
-	Noesis::Image* m_pHealthRect = nullptr;
-	
-	Noesis::TextBlock* m_pWaterAmmoText = nullptr;
-	Noesis::TextBlock* m_pPaintAmmoText = nullptr;
+	Noesis::Image* m_pWaterAmmoRect				= nullptr;
+	Noesis::Image* m_pPaintAmmoRect				= nullptr;
+	Noesis::Image* m_pHealthRect				= nullptr;
 
-	Noesis::Grid* m_pHitIndicatorGrid	= nullptr;
-	Noesis::Grid* m_pScoreboardGrid		= nullptr;
+	Noesis::TextBlock* m_pWaterAmmoText			= nullptr;
+	Noesis::TextBlock* m_pPaintAmmoText			= nullptr;
 
-	Noesis::Grid* m_pRedScoreGrid	= nullptr;
-	Noesis::Grid* m_pBlueScoreGrid	= nullptr;
+	Noesis::Grid* m_pHitIndicatorGrid			= nullptr;
+	Noesis::Grid* m_pScoreboardGrid				= nullptr;
+
+	Noesis::Grid* m_pRedScoreGrid				= nullptr;
+	Noesis::Grid* m_pBlueScoreGrid				= nullptr;
 
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
+
+	Noesis::Rectangle* m_pFlagIndicator = nullptr;
+
+	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 

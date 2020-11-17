@@ -67,6 +67,8 @@ private:
 	Noesis::Grid*	m_pSettingsGrid 	= nullptr;
 	Noesis::Grid*	m_pKeyBindingsGrid 	= nullptr;
 
+	GUID_Lambda m_MainMenuMusic;
+
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(MainMenuGUI, Noesis::Grid);

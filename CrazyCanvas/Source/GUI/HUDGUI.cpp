@@ -616,6 +616,43 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type)
+{
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+
+	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
+
+	VALIDATE(clipSpacePos.w != 0);
+
+	const glm::vec3 ndcSpacePos = glm::vec3(clipSpacePos.x, clipSpacePos.y, clipSpacePos.z) / clipSpacePos.w;
+	const glm::vec2 windowSpacePos = glm::vec2(ndcSpacePos.x, -ndcSpacePos.y) * 0.5f * m_WindowSize;
+
+	float32 vecLength = glm::distance(glm::vec2(0.0f), glm::vec2(ndcSpacePos.x, ndcSpacePos.y));
+
+	if (clipSpacePos.z > 0)
+	{
+		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
+		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+		SetIndicatorOpacity(glm::max(0.1f, vecLength), type);
+	}
+	else
+	{
+		if (-clipSpacePos.y > 0)
+			translation->SetY(m_WindowSize.y * 0.5f);
+		else
+			translation->SetY(-m_WindowSize.y * 0.5f);
+
+		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+	}
+
+	TranslateIndicator(translation, type);
+}
+
+void HUDGUI::SetWindowSize(uint32 width, uint32 height)
+{
+	m_WindowSize = glm::vec2(width, height);
+}
+
 void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags)
 {
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
@@ -655,6 +692,8 @@ void HUDGUI::InitGUI()
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
 
+	m_pFlagIndicator = FrameworkElement::FindName<Noesis::Rectangle>("FLAG_INDICATOR");
+
 	std::string ammoString;
 
 	ammoString	= std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
@@ -667,6 +706,9 @@ void HUDGUI::InitGUI()
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);
+
+	m_WindowSize.x = CommonApplication::Get()->GetMainWindow()->GetWidth();
+	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
 
 	// Main Grids
 	m_pEscapeGrid			= FrameworkElement::FindName<Grid>("EscapeGrid");
@@ -785,4 +827,38 @@ bool HUDGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& ev
 	}
 
 	return false;
+}
+
+void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type)
+{
+	switch (type)
+	{
+	case IndicatorTypeGUI::FLAG_INDICATOR:
+	{
+		m_pFlagIndicator->SetRenderTransform(pTranslation);
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void HUDGUI::SetIndicatorOpacity(float32 value, IndicatorTypeGUI type)
+{
+
+	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+
+	brush->SetOpacity(value);
+
+	switch (type)
+	{
+	case IndicatorTypeGUI::FLAG_INDICATOR:
+	{
+		brush->SetColor(Noesis::Color::Red());
+		m_pFlagIndicator->SetFill(brush);
+		break;
+	}
+	default:
+		break;
+	}
 }
