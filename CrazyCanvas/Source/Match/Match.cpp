@@ -61,11 +61,6 @@ void Match::BeginLoading()
 	s_pMatchInstance->BeginLoading();
 }
 
-void Match::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
-{
-	s_pMatchInstance->KillPlayer(entityToKill, killedByEntity);
-}
-
 void Match::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	s_pMatchInstance->Tick(deltaTime);

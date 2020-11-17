@@ -3,12 +3,14 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Multiplayer/ServerHelper.h"
-
 #include "Multiplayer/Packet/PacketPlayerAliveChanged.h"
 #include "Multiplayer/Packet/PacketPlayerHost.h"
 #include "Multiplayer/Packet/PacketPlayerPing.h"
 
+#include "ECS/Systems/Player/HealthSystemServer.h"
+
 #include "Events/PlayerEvents.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
@@ -233,6 +235,8 @@ void PlayerManagerServer::SetPlayerAlive(const Player* pPlayer, bool alive, cons
 
 		if (pPl->m_IsDead)
 			pPl->m_Deaths++;
+		else
+			HealthSystemServer::ResetHealth(pPl->GetEntity());
 
 		PacketPlayerAliveChanged packet;
 		packet.UID		= pPl->m_UID;

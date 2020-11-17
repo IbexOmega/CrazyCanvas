@@ -34,11 +34,11 @@ namespace LambdaEngine
 		pECS->AddComponent<FPSControllerComponent>(entity, FPSCamComp);
 
 		const CharacterColliderCreateInfo colliderInfo = {
-			.Entity = entity,
-			.Position = pECS->GetComponent<PositionComponent>(entity),
-			.Rotation = pECS->GetComponent<RotationComponent>(entity),
+			.Entity		= entity,
+			.Position	= pECS->GetComponent<PositionComponent>(entity),
+			.Rotation	= pECS->GetComponent<RotationComponent>(entity),
 			.CollisionGroup = FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-			.CollisionMask	= UINT32_MAX,								// The player collides with everything
+			.CollisionMask	= UINT32_MAX, // The player collides with everything
 			.EntityID		= entity
 		};
 

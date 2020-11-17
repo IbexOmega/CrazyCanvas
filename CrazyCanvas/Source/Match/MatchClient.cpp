@@ -8,6 +8,7 @@
 #include "World/Level.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
@@ -21,8 +22,6 @@
 #include "Lobby/PlayerManagerClient.h"
 
 #include "Events/MatchEvents.h"
-
-#include "Application/API/Events/EventQueue.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -140,11 +139,11 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
-				.Width = (float)window->GetWidth(),
-				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
-				.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
+				.FOVDegrees	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
+				.Width		= (float)window->GetWidth(),
+				.Height		= (float)window->GetHeight(),
+				.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			CreatePlayerDesc createPlayerDesc =
@@ -181,11 +180,11 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			CreateFlagDesc createFlagDesc =
 			{
-				.NetworkUID = packet.NetworkUID,
-				.ParentEntity = parentEntity,
-				.Position = packet.Position,
-				.Scale = glm::vec3(1.0f),
-				.Rotation = glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.NetworkUID		= packet.NetworkUID,
+				.ParentEntity	= parentEntity,
+				.Position		= packet.Position,
+				.Scale			= glm::vec3(1.0f),
+				.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
 			};
 
 			TArray<Entity> createdFlagEntities;

@@ -54,18 +54,6 @@ MatchServer::~MatchServer()
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 }
 
-void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
-{
-	using namespace LambdaEngine;
-
-	const Player* pPlayer = PlayerManagerServer::GetPlayer(entityToKill);
-	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
-	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
-
-	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
-	m_PlayersToKill.EmplaceBack(entityToKill);
-}
-
 bool MatchServer::InitInternal()
 {
 	using namespace LambdaEngine;
@@ -187,7 +175,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 							if (ImGui::Button("Kill"))
 							{
-								Match::KillPlayer(playerEntity, UINT32_MAX);
+								MatchServer::KillPlayer(playerEntity, UINT32_MAX);
 							}
 							
 							ImGui::SameLine();
@@ -355,7 +343,7 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 		for (Entity playerEntity : m_PlayersToKill)
 		{
 			LOG_INFO("SERVER: Player=%u DIED", playerEntity);
-			KillPlayerInternal(playerEntity);
+			DoKillPlayer(playerEntity);
 		}
 
 		m_PlayersToKill.Clear();
@@ -451,7 +439,7 @@ bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEve
 	const Player* pPlayer = PlayerManagerBase::GetPlayer(event.pClient);
 	if (pPlayer)
 	{
-		Match::KillPlayer(pPlayer->GetEntity(), UINT32_MAX);
+		MatchServer::KillPlayer(pPlayer->GetEntity(), UINT32_MAX);
 	}
 	
 
@@ -510,28 +498,31 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		ResetMatch();
 	}
 
-
 	return true;
 }
 
-void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
+void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
 {
 	using namespace LambdaEngine;
 
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	ECSCore* pECS = ECSCore::GetInstance();
-	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
-
-	// Get spawnpoint from level
-	const glm::vec3 oldPosition = positionComp.Position;
-	glm::vec3 newPosition = glm::vec3(0.0f);
-	if (m_pLevel != nullptr)
+	ComponentArray<NetworkPositionComponent>* pNetworkPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+	if (pNetworkPosComponents != nullptr && pNetworkPosComponents->HasComponent(playerEntity))
 	{
+		NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
+
+		// Get spawnpoint from level
+		const glm::vec3 oldPosition = positionComp.Position;
+		glm::vec3 newPosition = glm::vec3(0.0f);
+
+		VALIDATE(m_pLevel != nullptr);
+
 		// Retrive spawnpoints
 		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
 
-		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		ComponentArray<PositionComponent>*	pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		ComponentArray<TeamComponent>*		pTeamComponents		= pECS->GetComponentArray<TeamComponent>();
 
 		uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
 		for (Entity spawnEntity : spawnPoints)
@@ -545,6 +536,15 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 			}
 		}
 
+		positionComp.Position = newPosition;
+
+		const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+		LOG_INFO("SERVER: Moving player[%s] to [%.4f, %.4f, %.4f]", 
+			pPlayer->GetName().c_str(), 
+			newPosition.x,
+			newPosition.y,
+			newPosition.z);
+
 		// Drop flag if player carries it
 		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 		if (!flagEntities.IsEmpty())
@@ -557,15 +557,32 @@ void MatchServer::KillPlayerInternal(LambdaEngine::Entity playerEntity)
 				FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, oldPosition);
 			}
 		}
+
+		//Set player alive again
+		PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 	}
+	else
+	{
+		LOG_WARNING("Killed player called for entity(=%u) that does not have a NetworkPositionComponent", playerEntity);
+	}
+}
 
-	// Reset position
-	positionComp.Position = newPosition;
+void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
+{
+	using namespace LambdaEngine;
 
-	// Reset health
-	HealthSystem::GetInstance().ResetEntityHealth(playerEntity);
+	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
+	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
+	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
 
-	//Set player alive again
-	const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
-	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
+	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
+	m_PlayersToKill.EmplaceBack(entityToKill);
+}
+
+void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
+{
+	using namespace LambdaEngine;
+
+	MatchServer* pMatchServer = static_cast<MatchServer*>(Match::GetInstance());
+	pMatchServer->InternalKillPlayer(entityToKill, killedByEntity);
 }
