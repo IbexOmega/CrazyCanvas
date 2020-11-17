@@ -768,7 +768,7 @@ namespace LambdaEngine
 			return loadedTextureGUID->second;
 		}
 
-		uint32 textureCount = count * 6U;
+		const uint32 textureCount = count * 6U;
 
 		GUID_Lambda		guid				= GUID_NONE;
 		Texture**		ppMappedTexture		= nullptr;
@@ -804,9 +804,60 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips, bool linearFiltering)
+	GUID_Lambda ResourceManager::LoadTextureFromFile(
+		const String& filename,
+		EFormat format,
+		bool generateMips,
+		bool linearFiltering)
 	{
 		return LoadTextureArrayFromFile(filename, &filename, 1, format, generateMips, linearFiltering);
+	}
+
+	GUID_Lambda ResourceManager::LoadTextureCubeFromPanormaFile(
+		const String& filename, 
+		EFormat format, 
+		uint32 size, 
+		bool generateMips)
+	{
+		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(filename);
+		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
+		{
+			return loadedTextureGUID->second;
+		}
+
+		GUID_Lambda guid = GUID_NONE;
+		Texture**		ppMappedTexture		= nullptr;
+		TextureView**	ppMappedTextureView	= nullptr;
+
+		//Spinlock
+		{
+			guid = s_NextFreeGUID++;
+			ppMappedTexture			= &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView		= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureGUIDsToNames[guid]		= filename;
+			s_TextureNamesToGUIDs[filename]	= guid;
+		}
+
+		// Load texture
+		Texture* pTexture	= ResourceLoader::LoadTextureCubeFromPanoramaFile(filename, TEXTURE_DIR, filename, size, format, generateMips);
+		(*ppMappedTexture)	= pTexture;
+
+		const TextureDesc& textureDesc = pTexture->GetDesc();
+
+		// Create texture view
+		TextureViewDesc textureViewDesc = {};
+		textureViewDesc.DebugName		= filename + " Texture View";
+		textureViewDesc.pTexture		= pTexture;
+		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format			= format;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
+		textureViewDesc.ArrayCount		= 1;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.ArrayIndex		= 0;
+
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+		return guid;
 	}
 
 	GUID_Lambda ResourceManager::LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips, bool linearFilteringMips)
@@ -1180,7 +1231,11 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
-			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, true);
+			s_pMaterialGraphicsCommandList->GenerateMips(
+				pCombinedMaterialTexture, 
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+				true);
 		}
 		else
 		{

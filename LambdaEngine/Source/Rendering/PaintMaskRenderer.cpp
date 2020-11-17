@@ -507,7 +507,7 @@ namespace LambdaEngine
 				pCommandList->EndRenderPass();
 
 				if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
-					pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, false);
+					pCommandList->GenerateMips(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, false);
 			}
 		}
 
