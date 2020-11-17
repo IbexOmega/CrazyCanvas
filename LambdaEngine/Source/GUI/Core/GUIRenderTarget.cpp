@@ -16,24 +16,27 @@ namespace LambdaEngine
 
 	GUIRenderTarget::~GUIRenderTarget()
 	{
-		TArray<DeviceChild*>& resourcesToRemove = m_pGUIRenderer->GetDeviceResourcesToRemoveArray();
-		resourcesToRemove.PushBack(m_pRenderPass);
-		resourcesToRemove.PushBack(m_pDepthStencilTexture);
-		resourcesToRemove.PushBack(m_pDepthStencilTextureView);
-		resourcesToRemove.PushBack(m_pColorTexture);
-		resourcesToRemove.PushBack(m_pColorTextureView);
-		resourcesToRemove.PushBack(m_pResolveTexture);
-		resourcesToRemove.PushBack(m_pResolveTextureView);
+		if (m_pGUIRenderer != nullptr)
+		{
+			TArray<DeviceChild*>& resourcesToRemove = m_pGUIRenderer->GetDeviceResourcesToRemoveArray();
+			resourcesToRemove.PushBack(m_pRenderPass);
+			resourcesToRemove.PushBack(m_pDepthStencilTexture);
+			resourcesToRemove.PushBack(m_pDepthStencilTextureView);
+			resourcesToRemove.PushBack(m_pColorTexture);
+			resourcesToRemove.PushBack(m_pColorTextureView);
+			resourcesToRemove.PushBack(m_pResolveTexture);
+			resourcesToRemove.PushBack(m_pResolveTextureView);
 
-		m_pRenderPass				= nullptr;
-		m_pDepthStencilTexture		= nullptr;
-		m_pDepthStencilTextureView	= nullptr;
-		m_pColorTexture				= nullptr;
-		m_pColorTextureView			= nullptr;
-		m_pResolveTexture			= nullptr;
-		m_pResolveTextureView		= nullptr;
+			m_pRenderPass				= nullptr;
+			m_pDepthStencilTexture		= nullptr;
+			m_pDepthStencilTextureView	= nullptr;
+			m_pColorTexture				= nullptr;
+			m_pColorTextureView			= nullptr;
+			m_pResolveTexture			= nullptr;
+			m_pResolveTextureView		= nullptr;
 
-		m_pGUIRenderer	= nullptr;
+			m_pGUIRenderer	= nullptr;
+		}
 	}
 
 	bool GUIRenderTarget::Init(const GUIRenderTargetDesc* pDesc)
