@@ -663,7 +663,7 @@ namespace LambdaEngine
 		textureCubeDesc.SampleCount = 1;
 		textureCubeDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
 		
-		TSharedRef<Texture> skybox = RenderAPI::GetDevice()->CreateTexture(&panoramaDesc);
+		TSharedRef<Texture> skybox = RenderAPI::GetDevice()->CreateTexture(&textureCubeDesc);
 		if (!skybox)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to create skybox texture");
