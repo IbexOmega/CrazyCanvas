@@ -32,9 +32,9 @@ struct MarchingCubesGrid
 {
 	GridConstantRange GPUData;
 	glm::vec3 SphereVelocities[MAX_SPHERES_PER_GRID];
-	LambdaEngine::Buffer* pDensityBuffer;
-	LambdaEngine::Buffer* pGradientBuffer;
-	LambdaEngine::DescriptorSet* pDescriptorSet;
+	LambdaEngine::TSharedRef<LambdaEngine::Buffer> DensityBuffer;
+	LambdaEngine::TSharedRef<LambdaEngine::Buffer> GradientBuffer;
+	LambdaEngine::TSharedRef<LambdaEngine::DescriptorSet> DescriptorSet;
 };
 
 class ProjectileRenderer : public LambdaEngine::CustomRenderer, LambdaEngine::EntitySubscriber
@@ -75,8 +75,6 @@ private:
 
 	void OnProjectileCreated(LambdaEngine::Entity entity);
 	void OnProjectileRemoval(LambdaEngine::Entity entity);
-
-	void DeleteMarchingCubesGrid(MarchingCubesGrid& marchingCubesGrid);
 
 private:
 	LambdaEngine::IDDVector<MarchingCubesGrid> m_MarchingCubesGrids;

@@ -39,12 +39,8 @@ ProjectileRenderer::ProjectileRenderer(GraphicsDevice* pGraphicsDevice)
 ProjectileRenderer::~ProjectileRenderer()
 {
 	ResourceManager::UnloadShader(m_DensityShaderGUID);
+	ResourceManager::UnloadShader(m_GradientShaderGUID);
 	ResourceManager::UnloadShader(m_MeshGenShaderGUID);
-
-	for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
-	{
-		DeleteMarchingCubesGrid(marchingCubesGrid);
-	}
 }
 
 bool ProjectileRenderer::Init()
@@ -141,19 +137,19 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 			{
 				{ 0.0f, 0.0f, 0.0f }
 			},
-			.pDensityBuffer = m_pGraphicsDevice->CreateBuffer(&densityBufferDesc),
-			.pGradientBuffer = m_pGraphicsDevice->CreateBuffer(&gradientBufferDesc),
-			.pDescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get())
+			.DensityBuffer = m_pGraphicsDevice->CreateBuffer(&densityBufferDesc),
+			.GradientBuffer = m_pGraphicsDevice->CreateBuffer(&gradientBufferDesc),
+			.DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get())
 		};
 
 		constexpr const uint64 vertexBufferSize = gridCorners * sizeof(Vertex);
 
 		// Write descriptors
 		constexpr const uint32 descriptorCount = 3;
-		const Buffer* ppDescriptorSetBuffers[descriptorCount] = { marchingCubesGrid.pDensityBuffer, marchingCubesGrid.pGradientBuffer, drawArg.pVertexBuffer };
+		const Buffer* ppDescriptorSetBuffers[descriptorCount] = { marchingCubesGrid.DensityBuffer.Get(), marchingCubesGrid.GradientBuffer.Get(), drawArg.pVertexBuffer };
 		const uint64 pOffsets[descriptorCount] = { 0, 0, 0 };
 		const uint64 pSizes[descriptorCount] = { densityBufferDesc.SizeInBytes, gradientBufferDesc.SizeInBytes, vertexBufferSize };
-		marchingCubesGrid.pDescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, descriptorCount, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+		marchingCubesGrid.DescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, descriptorCount, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		drawArg.pVertexBuffer->SetName("Projectile Vertex Buffer");
 		m_MarchingCubesGrids.PushBack(marchingCubesGrid, entity);
@@ -180,7 +176,7 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 		// Generate density data
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
-			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.pDescriptorSet, m_PipelineLayout.Get(), 0);
+			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
 			const uint32 gridWidth = marchingCubesGrid.GPUData.GridWidth;
@@ -196,7 +192,7 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
-			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.pDescriptorSet, m_PipelineLayout.Get(), 0);
+			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
 			const uint32 innerGridWidth = marchingCubesGrid.GPUData.GridWidth - 2;
@@ -212,7 +208,7 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
-			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.pDescriptorSet, m_PipelineLayout.Get(), 0);
+			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
 			const uint32 gridWidth = marchingCubesGrid.GPUData.GridWidth;
@@ -461,24 +457,11 @@ void ProjectileRenderer::SubscribeToProjectiles()
 
 void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 {
-	LOG_INFO("%u", entity);
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
 	renderSystem.AddRenderableEntity(entity, m_MarchingCubesMesh, GUID_MATERIAL_DEFAULT, RenderSystem::CreateEntityTransform(entity, glm::bvec3(true)), false, true);
 }
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
-	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids.IndexID(entity);
-	SAFEDELETE(marchingCubesGrid.pDensityBuffer);
-	SAFEDELETE(marchingCubesGrid.pGradientBuffer);
-	SAFEDELETE(marchingCubesGrid.pDescriptorSet);
-
 	m_MarchingCubesGrids.Pop(entity);
-}
-
-void ProjectileRenderer::DeleteMarchingCubesGrid(MarchingCubesGrid& marchingCubesGrid)
-{
-	SAFEDELETE(marchingCubesGrid.pDensityBuffer);
-	SAFEDELETE(marchingCubesGrid.pGradientBuffer);
-	SAFEDELETE(marchingCubesGrid.pDescriptorSet);
 }

@@ -121,8 +121,7 @@ void main()
 	const uint gridWidth = u_PC.GridWidth;
 
 	const uint gridWidthInCells = gridWidth - 3; // Do not compute cells at the border of the grid
-	const uint gridWidthInCellsSquared = gridWidthInCells * gridWidthInCells;
-	if (threadID >= gridWidthInCellsSquared * gridWidthInCells)
+	if (threadID >= gridWidthInCells * gridWidthInCells * gridWidthInCells)
 	{
 		return;
 	}
@@ -162,15 +161,15 @@ void main()
 
 			const SNode nodeA = nodes[edge.CornerIndexA];
 			const SNode nodeB = nodes[edge.CornerIndexB];
-			const float lerpFactor = nodeB.Density / (nodeA.Density + nodeB.Density);
+			const float interpFactor = nodeB.Density / (nodeA.Density + nodeB.Density);
 
-			const vec3 edgeInterpPos = mix(nodeA.Position, nodeB.Position, lerpFactor);
-			triangle.Vertices[edgeNr].Position = vec4(mix(defaultPosition, edgeInterpPos, triangleExists), nodes[0].Density);
+			const vec3 edgeInterpPos = mix(nodeA.Position, nodeB.Position, interpFactor);
+			triangle.Vertices[edgeNr].Position = vec4(mix(defaultPosition, edgeInterpPos, triangleExists), 0.0);
 
-			const vec3 normal = -normalize(mix(nodeA.Gradient, nodeB.Gradient, lerpFactor));
+			const vec3 normal = -normalize(mix(nodeA.Gradient, nodeB.Gradient, interpFactor));
 			triangle.Vertices[edgeNr].Normal = vec4(normal, 0.0);
 
-			const vec4 texCoords = vec4(normal.xy * 0.5 + vec2(0.5), float(edgeIndices[edgeNr]), triangleExists);
+			const vec4 texCoords = vec4(normal.xy * 0.5 + vec2(0.5), 0.0, 0.0);
 			triangle.Vertices[edgeNr].TexCoord = texCoords;
 		}
 
@@ -182,7 +181,7 @@ void main()
 		const vec2 deltaUV2 = triangle.Vertices[2].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
 
 		const float r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-		const vec4 tangent = vec4((deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r, float(threadID));
+		const vec4 tangent = vec4((deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r, 0.0);
 		triangle.Vertices[0].Tangent = tangent;
 		triangle.Vertices[1].Tangent = tangent;
 		triangle.Vertices[2].Tangent = tangent;
