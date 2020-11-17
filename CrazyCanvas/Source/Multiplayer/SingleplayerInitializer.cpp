@@ -11,6 +11,8 @@
 
 #include "World/LevelObjectCreator.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 namespace LambdaEngine
 {
 	void SingleplayerInitializer::Init()
@@ -31,6 +33,8 @@ namespace LambdaEngine
 		{
 			ClientSystem& clientSystem = ClientSystem::GetInstance();
 			ClientBase* pClient = clientSystem.GetClient();
+
+			PlayerManagerClient::RegisterLocalPlayer("Singleplayer", true);
 
 			PacketCreateLevelObject packet;
 			packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
