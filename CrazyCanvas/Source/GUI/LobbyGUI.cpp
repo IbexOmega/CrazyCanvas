@@ -96,18 +96,15 @@ void LobbyGUI::RemovePlayer(const Player& player)
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 	const LambdaEngine::String& uidGrid = uid + "_grid";
 
-	Grid* pGrid = m_pBlueTeamStackPanel->FindName<Grid>(uidGrid.c_str());
-	if (pGrid)
+	Grid* pGrid = FrameworkElement::FindName<Grid>(uidGrid.c_str());
+
+	if (m_pBlueTeamStackPanel->GetChildren()->Contains(pGrid))
 	{
 		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
 	}
 	else
 	{
-		pGrid = m_pRedTeamStackPanel->FindName<Grid>(uidGrid.c_str());
-		if (pGrid)
-		{
-			m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
-		}
+		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
 	}
 
 	UnregisterName(uidGrid);
