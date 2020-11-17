@@ -36,6 +36,8 @@ namespace LambdaEngine
 	{
 		m_View.Reset();
 
+		if (m_pCurrentRenderTarget) m_pCurrentRenderTarget->Release();
+
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pVertexBuffer);
 		SAFERELEASE(m_pGUISampler);
@@ -233,7 +235,6 @@ namespace LambdaEngine
 #endif
 			}
 		}
-
 	}
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)

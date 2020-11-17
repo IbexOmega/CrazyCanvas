@@ -129,8 +129,6 @@ namespace LambdaEngine
 			return name;
 		}
 
-		FORCEINLINE TArray<DeviceChild*>& GetDeviceResourcesToRemoveArray() { return m_pGraphicsResourcesToRemove[m_ModFrameIndex]; }
-
 	private:
 		CommandList* BeginOrGetUtilityCommandList();
 		CommandList* BeginOrGetRenderCommandList();

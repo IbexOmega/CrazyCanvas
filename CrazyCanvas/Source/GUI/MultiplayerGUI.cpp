@@ -75,8 +75,13 @@ MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 	DWORD length = UNLEN + 1;
 	char name[UNLEN + 1];
 	GetUserNameA(name, &length);
-	FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->SetText(name);
-
+	
+	LambdaEngine::String nameStr = name;
+	TextBox* pNameTextBox = FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
+	pNameTextBox->SetMaxLength(MAX_NAME_LENGTH - 1);
+	pNameTextBox->SetMaxLines(1);
+	pNameTextBox->SetText(name);
+	pNameTextBox->SetText(nameStr.substr(0, glm::min<int32>((int32)nameStr.length(), pNameTextBox->GetMaxLength())).c_str());
 }
 
 MultiplayerGUI::~MultiplayerGUI()
