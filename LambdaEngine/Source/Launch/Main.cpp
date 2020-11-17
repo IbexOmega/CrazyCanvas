@@ -15,7 +15,7 @@ namespace LambdaEngine
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-	int argc = __argc;
+	int argc	= __argc;
 	char** argv = __argv;
 
 #else

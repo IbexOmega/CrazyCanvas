@@ -31,6 +31,7 @@
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
 #include "Teams/TeamHelper.h"
 
@@ -213,30 +214,35 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 
 	Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
 
-	float32 maxDim = glm::max<float32>(
+	const float32 maxDim = glm::max<float32>(
 		pMesh->DefaultScale.x * pMesh->BoundingBox.Dimensions.x,
 		glm::max<float32>(
 			pMesh->DefaultScale.y * pMesh->BoundingBox.Dimensions.y,
 			pMesh->DefaultScale.z * pMesh->BoundingBox.Dimensions.z));
 
-	uint32 meshPaintSize = glm::max<uint32>(1, uint32(maxDim * 384.0f));
+	const uint32 meshPaintSize = glm::max<uint32>(1, uint32(maxDim * 384.0f));
 
 	ECSCore* pECS					= ECSCore::GetInstance();
 	PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 
 	Entity entity = pECS->CreateEntity();
-	pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
-	pECS->AddComponent<MeshComponent>(entity, meshComponent);
-	pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+		pECS->AddComponent<RayTracedComponent>(entity, 
+			RayTracedComponent
+			{
 				.HitMask = 0xFF
-		});
+			});
+	}
 
 	const CollisionCreateInfo collisionCreateInfo =
 	{
-		.Entity			= entity,
-		.Position		= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
-		.Scale			= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
-		.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
+		.Entity		= entity,
+		.Position	= pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
+		.Scale		= pECS->AddComponent<ScaleComponent>(entity,	{ true, pMesh->DefaultScale }),
+		.Rotation	= pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
 		.Shapes =
 		{
 			{
@@ -324,16 +330,16 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 	if (!levelObject.MeshComponents.IsEmpty())
 	{
 		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
-
-		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
-
-		pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
-				.HitMask = 0xFF
-			});
-
+		if (!MultiplayerUtils::IsServer())
+		{
+			pECS->AddComponent<MeshComponent>(entity, meshComponent);
+			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
+			pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
+					.HitMask = 0xFF
+				});
+		}
+		
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
-
 		const CollisionCreateInfo collisionCreateInfo =
 		{
 			.Entity			= entity,
@@ -526,12 +532,14 @@ bool LevelObjectCreator::CreateFlag(
 	const ScaleComponent	scaleComponent{ true, pFlagDesc->Scale };
 	const RotationComponent	rotationComponent{ true, pFlagDesc->Rotation };
 	const MeshComponent		meshComponent{ s_FlagMeshGUID, flagMaterialGUID };
+	const ProjectedGUIComponent	projectedGUIComponent{ IndicatorTypeGUI::FLAG_INDICATOR };
 
-	pECS->AddComponent<FlagComponent>(flagEntity,		flagComponent);
-	pECS->AddComponent<PositionComponent>(flagEntity,	positionComponent);
-	pECS->AddComponent<ScaleComponent>(flagEntity,		scaleComponent);
-	pECS->AddComponent<RotationComponent>(flagEntity,	rotationComponent);
-	pECS->AddComponent<MeshComponent>(flagEntity,		meshComponent);
+	pECS->AddComponent<FlagComponent>(flagEntity,			flagComponent);
+	pECS->AddComponent<PositionComponent>(flagEntity,		positionComponent);
+	pECS->AddComponent<ScaleComponent>(flagEntity,			scaleComponent);
+	pECS->AddComponent<RotationComponent>(flagEntity,		rotationComponent);
+	pECS->AddComponent<MeshComponent>(flagEntity,			meshComponent);
+	pECS->AddComponent<ProjectedGUIComponent>(flagEntity,	projectedGUIComponent);
 
 	bool attachedToParent = pFlagDesc->ParentEntity != UINT32_MAX;
 
@@ -704,7 +712,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
-	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 512, 512, true));
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 256, 256, false));
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
@@ -712,6 +720,27 @@ bool LevelObjectCreator::CreatePlayer(
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
 
+	pECS->AddComponent<MeshComponent>(playerEntity,
+		MeshComponent
+		{
+			.MeshGUID		= s_PlayerMeshGUID,
+			.MaterialGUID	= s_PlayerMaterial
+		});
+
+	const bool readback = MultiplayerUtils::IsServer();
+	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
+
+	AnimationComponent animationComponent = {};
+	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+
+	AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
+	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+	pAnimationGraph->TransitionToState("Idle");
+	animationComponent.pGraph = pAnimationGraph;
+
+	pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
+
+	// Server/Client 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
@@ -735,13 +764,6 @@ bool LevelObjectCreator::CreatePlayer(
 		playerNetworkUID = pPlayerDesc->PlayerNetworkUID;
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
-
-		AnimationComponent animationComponent = {};
-		animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
-
-		AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
-
 #ifdef USE_ALL_ANIMATIONS
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
 		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
@@ -750,36 +772,36 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Left");
-			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft	= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
-			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
+			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Right");
-			ClipNode* pRunning		= pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
-			ClipNode* pStrafeRight	= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
-			BlendNode* pBlendNode	= pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
+			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Left");
-			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft		= pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
-			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Right");
-			ClipNode* pRunningBackward	= pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
-			ClipNode* pStrafeRight		= pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
-			BlendNode* pBlendNode		= pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
 		}
@@ -865,18 +887,6 @@ bool LevelObjectCreator::CreatePlayer(
 		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Right"));
 		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward & Strafe Left"));
 #endif
-		animationComponent.pGraph = pAnimationGraph;
-
-		pAnimationGraph->TransitionToState("Idle");
-
-		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
-		pECS->AddComponent<MeshComponent>(playerEntity, 
-			MeshComponent
-			{
-				.MeshGUID = s_PlayerMeshGUID, 
-				.MaterialGUID = s_PlayerMaterial
-			});
-		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
 		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
 				.HitMask = 0xFF
 			});

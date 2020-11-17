@@ -62,6 +62,11 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc) override final;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc) override final;
 
+		virtual void ClearColorTexture(
+			Texture* pTexture,
+			ETextureState textureState,
+			const float32 color[4]) override final;
+
 		virtual void CopyBuffer(
 			const Buffer* pSrc,
 			uint64 srcOffset,
