@@ -264,94 +264,92 @@
         <Viewbox Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5" Stretch="UniformToFill">
             <Grid x:Name="EscapeGrid" MinWidth="768" MinHeight="415.38" Background="#CC101010" Visibility="Hidden">
                 <Image x:Name="splash_orange" Grid.Column="7" Grid.Row="9" Source="./splashes/splash_orange.png" Margin="0,0,-357,-326.441" Stretch="None"/>
-                <Border BorderBrush="White" BorderThickness="0.5">
-                    <StackPanel x:Name="EscapeButtons" VerticalAlignment="Center">
-                        <Button Click="OnButtonResumeClick" Content="Resume" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
-                            <Button.Style>
-                                <Style TargetType="{x:Type Button}">
-                                    <Setter Property="Background" Value="#00000000"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type Button}">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#80FFFFFF"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                        <Button Click="OnButtonSettingsClick" Content="Settings" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
-                            <Button.Style>
-                                <Style TargetType="{x:Type Button}">
-                                    <Setter Property="Background" Value="#00000000"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type Button}">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#80FFFFFF"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                        <Button Click="OnButtonLeaveClick" Content="Leave" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
-                            <Button.Style>
-                                <Style TargetType="{x:Type Button}">
-                                    <Setter Property="Background" Value="#00000000"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type Button}">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#80FFFFFF"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                        <Button Click="OnButtonExitClick" Content="Exit" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
-                            <Button.Style>
-                                <Style TargetType="{x:Type Button}">
-                                    <Setter Property="Background" Value="#00000000"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type Button}">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#80FFFFFF"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                    </StackPanel>
-                </Border>
+                <StackPanel x:Name="EscapeButtons" VerticalAlignment="Center">
+                    <Button Click="OnButtonResumeClick" Content="Resume" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Click="OnButtonSettingsClick" Content="Settings" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Click="OnButtonLeaveClick" Content="Leave" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Click="OnButtonExitClick" Content="Exit" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Viewbox>
     
@@ -366,12 +364,12 @@
                 <Image x:Name="splash_pink" Grid.Column="0" Grid.Row="0" Source="./splashes/splash_pink.png" Margin="-264,-485.16,10,20.644" Stretch="None"/>
     
                 <!--Title-->
-                <Border BorderBrush="White" BorderThickness="0.5" Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="0" Grid.RowSpan="10" MinHeight="830">
+                <Grid Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="0" Grid.RowSpan="10" MinHeight="830">
                     <Label Content="Settings" Foreground="White" FontSize="96" HorizontalAlignment="Center" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" VerticalAlignment="Top"/>
-                </Border>
+                </Grid>
     
                 <!--Settings-->
-                <Border BorderBrush="White" BorderThickness="0.5" Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="0" Grid.RowSpan="10">
+                <Grid Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="0" Grid.RowSpan="10">
                     <StackPanel MinWidth="1000" Grid.Row="1" MinHeight="830" Margin="200 0 200 0" VerticalAlignment="Center">
                         <!--Mesh Shader Toggle-->
                         <Grid>
@@ -428,7 +426,7 @@
                             <Button Click="OnButtonCancelSettingsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0" />
                         </Grid>
                     </StackPanel>
-                </Border>
+                </Grid>
             </Grid>
         </Viewbox>
     
@@ -443,12 +441,12 @@
                 <Image x:Name="splash_red" Grid.Column="2" Grid.Row="0" Source="./splashes/splash_red.png" Margin="-264,500,0,-241.402" Stretch="None"/>
     
                 <!--Title-->
-                <Border BorderBrush="White" BorderThickness="0.5" Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11" MinHeight="700">
+                <Grid Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11" MinHeight="700">
                     <Label Content="Key Bindings" Foreground="White" FontSize="96" HorizontalAlignment="Center" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" VerticalAlignment="Top"/>
-                </Border>
+                </Grid>
     
                 <!--Key Bindings-->
-                <Border BorderBrush="White" BorderThickness="0.5" Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11">
+                <Grid Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11">
                     <StackPanel Grid.Row="1" MinHeight="700" MinWidth="1200" Margin="200 0 200 0" VerticalAlignment="Center">
                         <!--Movement Title-->
                         <Grid>
@@ -582,7 +580,7 @@
                             <Button Click="OnButtonCancelKeyBindingsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
                         </Grid>
                     </StackPanel>
-                </Border>
+                </Grid>
             </Grid>
         </Viewbox>
     </Grid>
@@ -701,7 +699,7 @@
             <RotateTransform/>
         </Grid.RenderTransform>
         <uc:DamageIndicatorGUI x:Name="DAMAGE_INDICATOR" HorizontalAlignment="Center" VerticalAlignment="Center"/>  
-        <!--<Image x:Name="DamageIndicator" Source="HitIndicator.png" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" >
-        </Image>-->
+        <Image Source="HitIndicator.png" Height="75" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" OpacityMask="Black" />
+
     </Grid>
 </Grid>
