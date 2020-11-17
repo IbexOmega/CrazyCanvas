@@ -55,7 +55,6 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
 
-
 	m_IsInitiated = true;
 }
 
@@ -205,7 +204,7 @@ void LobbyGUI::SetHostMode(bool isHost)
 		pReadyButton->SetContent("Start");
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Hidden);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Visible);
-		ClientHelper::Send(m_GameSettings);
+		SendGameSettings();
 	}
 	else
 	{
@@ -297,7 +296,9 @@ void LobbyGUI::AddSettingTextBox(
 	settingTextBox->SetStyle(pStyle);
 	settingTextBox->SetName((settingKey + "_host").c_str());
 	settingTextBox->TextChanged() += MakeDelegate(this, &LobbyGUI::OnTextBoxChanged);
-	settingTextBox->SetText(settingValue.c_str());
+	settingTextBox->SetMaxLength(MAX_NAME_LENGTH - 1);
+	settingTextBox->SetMaxLines(1);
+	settingTextBox->SetText(settingValue.substr(0, glm::min<int32>((int32)settingValue.length(), settingTextBox->GetMaxLength())).c_str());
 	RegisterName(settingTextBox->GetName(), settingTextBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingTextBox);
 }
@@ -357,6 +358,12 @@ void LobbyGUI::TrySendChatMessage()
 	ChatManager::SendChatMessage(message);
 }
 
+void LobbyGUI::SendGameSettings() const
+{
+	if (m_IsInitiated)
+		ClientHelper::Send(m_GameSettings);
+}
+
 void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args)
 {
 	ComboBox* pComboBox = static_cast<ComboBox*>(pSender);
@@ -392,10 +399,7 @@ void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const 
 		m_GameSettings.ChangeTeam = textSelected == "True";
 	}
 
-	if (m_IsInitiated)
-	{
-		ClientHelper::Send(m_GameSettings);
-	}
+	SendGameSettings();
 }
 
 const PacketGameSettings& LobbyGUI::GetSettings() const
@@ -411,10 +415,7 @@ void LobbyGUI::OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::Ro
 	{
 		strcpy(m_GameSettings.ServerName, pTextBox->GetText());
 
-		if (m_IsInitiated)
-		{
-			ClientHelper::Send(m_GameSettings);
-		}
+		SendGameSettings();
 	}
 }
 

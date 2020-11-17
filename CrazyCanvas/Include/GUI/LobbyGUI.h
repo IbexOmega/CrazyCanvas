@@ -62,6 +62,7 @@ private:
 
 	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
 	void TrySendChatMessage();
+	void SendGameSettings() const;
 
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
