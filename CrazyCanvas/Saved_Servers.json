@@ -1,8 +1,8 @@
 {
     "SERVERS": [
         {
-            "Name": "Chris's serversffffffff",
-            "Address": "81.170.143.133:4445"
+            "Name": "Chris's server",
+            "Address": "81.170.143.133:4444"
         }
     ]
 }

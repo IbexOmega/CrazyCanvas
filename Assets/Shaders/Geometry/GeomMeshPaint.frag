@@ -57,7 +57,7 @@ void main()
 	vec3 storedMaterial			= vec3(
 									materialParameters.AO * sampledCombinedMaterial.r, 
 									mix(materialParameters.Roughness * sampledCombinedMaterial.g, paintDescription.Roughness, paintDescription.Interpolation), 
-									materialParameters.Metallic * sampledCombinedMaterial.b);
+									materialParameters.Metallic * sampledCombinedMaterial.b * float(paintDescription.Interpolation == 0.0f));
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2
