@@ -142,7 +142,13 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 			.DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get())
 		};
 
-		constexpr const uint64 vertexBufferSize = gridCorners * sizeof(Vertex);
+		constexpr const uint32 maxTrianglesPerCell = 5;
+		constexpr const uint32 verticesPerTriangle = 3;
+
+		constexpr const uint32 cellGridWidth = GRID_WIDTH - 3;
+		constexpr const uint32 cellCount = cellGridWidth * cellGridWidth * cellGridWidth;
+		constexpr const uint32 vertexCount = cellCount * maxTrianglesPerCell * verticesPerTriangle;
+		constexpr const uint64 vertexBufferSize = vertexCount * sizeof(Vertex);
 
 		// Write descriptors
 		constexpr const uint32 descriptorCount = 3;
