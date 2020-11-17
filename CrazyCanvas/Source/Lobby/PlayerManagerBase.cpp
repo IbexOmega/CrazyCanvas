@@ -49,6 +49,16 @@ const THashTable<uint64, Player>& PlayerManagerBase::GetPlayers()
 	return s_Players;
 }
 
+void PlayerManagerBase::GetPlayersOfTeam(LambdaEngine::TArray<const Player*>& players, uint8 team)
+{
+	for (auto& pair : s_Players)
+	{
+		Player* pPlayer = &pair.second;
+		if (pPlayer->GetTeam() == team)
+			players.PushBack(pPlayer);
+	}
+}
+
 Player* PlayerManagerBase::GetPlayerNoConst(uint64 uid)
 {
 	auto pair = s_Players.find(uid);
@@ -66,18 +76,12 @@ Player* PlayerManagerBase::GetPlayerNoConst(Entity entity)
 	return pair == s_PlayerEntityToUID.end() ? nullptr : GetPlayerNoConst(pair->second);
 }
 
-void PlayerManagerBase::RegisterPlayerEntity(uint64 uid, Entity entity)
+void PlayerManagerBase::SetPlayerEntity(const Player* pPlayer, Entity entity)
 {
-	auto pair = s_Players.find(uid);
-	if (pair != s_Players.end())
-	{
-		s_PlayerEntityToUID.insert({ entity, uid });
-		pair->second.m_Entity = entity;
-	}
-	else
-	{
-		LOG_ERROR("Failed to register player entity with client UID: %llu", uid);
-	}
+	ASSERT(pPlayer->GetEntity() == UINT32_MAX);
+	Player* pPl = const_cast<Player*>(pPlayer);
+	pPl->m_Entity = entity;
+	s_PlayerEntityToUID.insert({ entity, pPlayer->GetUID() });
 }
 
 Player* PlayerManagerBase::HandlePlayerJoined(uint64 uid, const PacketJoin& packet)
