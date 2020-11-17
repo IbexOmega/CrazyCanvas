@@ -210,7 +210,7 @@ void MatchServer::BeginLoading()
 			}
 			else
 			{
-				for (uint32 t = 0; t < m_MatchDesc.NumTeams; t++)
+				for (uint8 t = 0; t < m_MatchDesc.NumTeams; t++)
 				{
 					SpawnFlag(t);
 				}
