@@ -17,9 +17,6 @@ public:
 	MatchServer() = default;
 	~MatchServer();
 
-	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
-	virtual void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity) override final;
-
 protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
@@ -40,7 +37,13 @@ private:
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
 
-	void KillPlayerInternal(LambdaEngine::Entity playerEntity);
+	void DoKillPlayer(LambdaEngine::Entity playerEntity);
+
+	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
+	void InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
+
+public:
+	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
 
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;

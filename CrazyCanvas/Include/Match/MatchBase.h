@@ -40,24 +40,24 @@ public:
 
 	void ResetMatch();
 
-	virtual void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
-	{
-		UNREFERENCED_VARIABLE(entityToKill);
-		UNREFERENCED_VARIABLE(killedByEntity);
-	}
-
 	virtual void BeginLoading()
 	{
-
 	}
 
 	virtual void MatchStart()
 	{
-
 	}
 
-	FORCEINLINE bool HasBegun() const { return m_HasBegun; }
-	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
+	FORCEINLINE bool HasBegun() const 
+	{ 
+		return m_HasBegun; 
+	}
+
+	FORCEINLINE uint32 GetScore(uint32 teamIndex) const 
+	{ 
+		VALIDATE(teamIndex < m_Scores.GetSize()); 
+		return m_Scores[teamIndex];
+	}
 
 protected:
 	virtual bool InitInternal() = 0;
