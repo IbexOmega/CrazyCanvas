@@ -7,6 +7,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "ECS/Components/Player/ProjectileComponent.h"
+#include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
 #include "NsGui/UserControl.h"
 #include "NsGui/Grid.h"
@@ -18,6 +19,7 @@
 #include "NsGui/ListBox.h"
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
+#include "NsGui/Rectangle.h"
 #include "NsGui/ObservableCollection.h"
 
 #include "Lobby/PlayerManagerBase.h"
@@ -49,6 +51,7 @@ enum class EPlayerProperty
 	PLAYER_PROPERTY_FLAGS_DEFENDED,
 	PLAYER_PROPERTY_PING,
 };
+
 typedef  std::pair<uint8, const Player*> PlayerPair;
 
 class HUDGUI : public Noesis::Grid
@@ -75,9 +78,15 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type);
+
+	void SetWindowSize(uint32 width, uint32 height);
+
 private:
 	void InitGUI();
 
+	void TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type);
+	void SetIndicatorOpacity(float32 value, IndicatorTypeGUI type);
 	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 
@@ -102,6 +111,10 @@ private:
 
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
+
+	Noesis::Rectangle* m_pFlagIndicator = nullptr;
+
+	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 
