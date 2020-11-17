@@ -39,6 +39,7 @@ private:
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
 
+	void RespawnPlayer(LambdaEngine::Entity entity);
 	void DoKillPlayer(LambdaEngine::Entity playerEntity);
 
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
@@ -52,7 +53,7 @@ private:
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
 
 	LambdaEngine::SpinLock m_PlayersToRespawnLock;
-	LambdaEngine::TArray <PlayerTimers> m_PlayersToRespawn;
+	LambdaEngine::TArray<PlayerTimers> m_PlayersToRespawn;
 
 
 

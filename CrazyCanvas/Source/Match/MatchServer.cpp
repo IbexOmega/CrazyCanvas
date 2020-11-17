@@ -345,7 +345,11 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 			LOG_INFO("SERVER: Player=%u DIED", playerEntity);
 			DoKillPlayer(playerEntity);
 		}
+		m_PlayersToKill.Clear();
+	}
 
+	{
+		std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
 		for (PlayerTimers player : m_PlayersToRespawn)
 		{
 			player.second -= float32(deltaTime.AsSeconds());
@@ -356,8 +360,7 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 				LOG_INFO("SERVER: Player=%u RESPAWNED", player.first);
 			}
 		}
-
-		m_PlayersToKill.Clear();
+		m_PlayersToRespawn.Clear();
 	}
 }
 
@@ -523,31 +526,15 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
 	{
 		NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(playerEntity);
 
-		// Get spawnpoint from level
 		const glm::vec3 oldPosition = positionComp.Position;
 		glm::vec3 jailPosition = glm::vec3(0.0f);
-		glm::vec3 newPosition = glm::vec3(0.0f);
 
 		VALIDATE(m_pLevel != nullptr);
 
-		// Retrive spawnpoints
-		//TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+		// Retrive jailPoints
 		TArray<Entity> jailPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL);
 
 		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		/*const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-		
-		uint8 playerTeam = pTeamComponents->GetConstData(playerEntity).TeamIndex;
-		for (Entity spawnEntity : spawnPoints)
-		{
-			if (pTeamComponents->HasComponent(spawnEntity))
-			{
-				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
-				{
-					spawnPosition = pPositionComponents->GetConstData(spawnEntity).Position;
-				}
-			}
-		}*/
 
 		for (Entity jailEntity : jailPoints)
 		{
@@ -557,6 +544,7 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
 		positionComp.Position = jailPosition;
 
 		const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
+		
 		LOG_INFO("SERVER: Moving player[%s] to [%.4f, %.4f, %.4f]", 
 			pPlayer->GetName().c_str(), 
 			jailPosition.x,
@@ -586,12 +574,23 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 {
 	using namespace LambdaEngine;
 
-	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
-	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
-	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
+	{
 
-	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
-	m_PlayersToKill.EmplaceBack(entityToKill);
+		const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
+		const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
+		PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
+
+		std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
+		m_PlayersToKill.EmplaceBack(entityToKill);
+
+	}
+
+	{
+
+		std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
+		m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
+	
+	}
 }
 
 void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
@@ -626,13 +625,9 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 	// Spawn position
 	positionComp.Position = spawnPosition;
 
-	// Reset Health
-	HealthSystem::GetInstance().ResetEntityHealth(entity);
-
 	//Set player alive again
 	const Player* pPlayer = PlayerManagerServer::GetPlayer(entity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
-
 }
 
 void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
@@ -641,7 +636,4 @@ void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::En
 
 	MatchServer* pMatchServer = static_cast<MatchServer*>(Match::GetInstance());
 	pMatchServer->InternalKillPlayer(entityToKill, killedByEntity);
-
-	std::scoped_lock<SpinLock> lock(m_PlayersToRespawnLock);
-	m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
 }
