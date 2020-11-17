@@ -92,10 +92,20 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 	if (m_pLevel != nullptr)
 	{
-		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+		if (m_GameModeHasFlag)
+		{
+			TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
 
-		if (flagEntities.IsEmpty())
-			SpawnFlag();
+			if (m_MatchDesc.GameMode == EGameMode::CTF_COMMON_FLAG)
+			{
+				if (flagEntities.IsEmpty())
+					SpawnFlag();
+			}
+			else
+			{
+
+			}
+		}
 	}
 
 	//Render Some Server Match Information
@@ -362,7 +372,7 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 	}
 }
 
-void MatchServer::SpawnFlag()
+void MatchServer::SpawnFlag(uint8 teamIndex)
 {
 	using namespace LambdaEngine;
 

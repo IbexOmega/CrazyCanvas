@@ -297,11 +297,15 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
 
-	uint8 teamIndex = 0;
-	size_t teamIndexPos = levelObject.Name.find("TEAM");
-	if (teamIndexPos != String::npos) teamIndex = (uint8)std::stoi(levelObject.Name.substr(teamIndexPos + 4));
+	TeamComponent teamComponent = {};
 
-	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+	{
+		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Player Spawn, defaulting to 0...");
+		teamComponent.TeamIndex = 0;
+	}
+
+	pECS->AddComponent<TeamComponent>(entity, teamComponent);
 
 	if (!levelObject.MeshComponents.IsEmpty())
 	{
@@ -341,7 +345,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamIndex);
+	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
@@ -358,6 +362,12 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	pECS->AddComponent<FlagSpawnComponent>(entity, { 1.0f });
 	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+
+	uint8 teamIndex = 0;
+	if (FindTeamIndex(levelObject.Name, teamIndex))
+	{
+		pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+	}
 
 	createdEntities.PushBack(entity);
 
@@ -389,11 +399,15 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	pECS->AddComponent<FlagDeliveryPointComponent>(entity, {});
 
-	uint8 teamIndex = 0;
-	size_t teamIndexPos = levelObject.Name.find("TEAM");
-	if (teamIndexPos != String::npos) teamIndex = (uint8)std::stoi(levelObject.Name.substr(teamIndexPos + 4));
+	TeamComponent teamComponent = {};
 
-	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+	{
+		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Flag Delivery Point, defaulting to 0...");
+		teamComponent.TeamIndex = 0;
+	}
+
+	pECS->AddComponent<TeamComponent>(entity, teamComponent);
 	const PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
 	const ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	const RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
@@ -423,7 +437,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamIndex);
+	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
@@ -552,7 +566,7 @@ bool LevelObjectCreator::CreateFlag(
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		flagEntity,
-            /* Detection Method */	ECollisionDetection::DISCRETE,
+			/* Detection Method */	ECollisionDetection::DISCRETE,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
@@ -837,11 +851,11 @@ bool LevelObjectCreator::CreatePlayer(
 
 		pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 		pECS->AddComponent<MeshComponent>(playerEntity, 
-            MeshComponent
-            {
-                .MeshGUID = s_PlayerMeshGUID, 
-                .MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
-            });
+			MeshComponent
+			{
+				.MeshGUID = s_PlayerMeshGUID, 
+				.MaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pPlayerDesc->TeamIndex)
+			});
 		pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true));
 		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
 				.HitMask = 0xFF
@@ -1019,4 +1033,19 @@ bool LevelObjectCreator::CreateProjectile(
 	}
 
 	return true;
+}
+
+bool LevelObjectCreator::FindTeamIndex(const LambdaEngine::String& objectName, uint8& teamIndex)
+{
+	using namespace LambdaEngine;
+
+	uint8 teamIndex = 0;
+	size_t teamIndexPos = objectName.find("TEAM");
+	if (teamIndexPos != String::npos)
+	{
+		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4));
+		return true;
+	}
+
+	return false;
 }

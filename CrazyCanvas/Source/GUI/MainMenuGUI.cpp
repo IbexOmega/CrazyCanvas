@@ -144,7 +144,7 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 
 	SetRenderStagesSleeping();
 	PacketGameSettings settings;
-	settings.MapID = 0;
+	settings.MapID = 5;
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }

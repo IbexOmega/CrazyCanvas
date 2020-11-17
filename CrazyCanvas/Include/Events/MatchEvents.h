@@ -2,8 +2,31 @@
 
 #include "Application/API/Events/Event.h"
 
+
 /*
-* FlagDeliveredEvent
+* MatchInitializedEvent
+*/
+struct MatchInitializedEvent : public LambdaEngine::Event
+{
+public:
+	inline MatchInitializedEvent(EGameMode gameMode)
+		: Event()
+		, GameMode(gameMode)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(MatchInitializedEvent);
+
+	virtual LambdaEngine::String ToString() const override
+	{
+		return LambdaEngine::String("MatchInitializedEvent");
+	}
+
+	EGameMode GameMode = EGameMode::NONE;
+};
+
+/*
+* MatchCountdownEvent
 */
 struct MatchCountdownEvent : public LambdaEngine::Event
 {

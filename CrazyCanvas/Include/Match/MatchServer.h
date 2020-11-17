@@ -31,7 +31,7 @@ protected:
 
 	void SpawnPlayer(const Player& player);
 
-	void SpawnFlag();
+	void SpawnFlag(uint8 teamIndex);
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
