@@ -467,13 +467,13 @@ void HUDGUI::InitGUI()
 	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
 }
 
-void HUDGUI::TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type)
+void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type)
 {
 	switch (type)
 	{
 	case IndicatorTypeGUI::FLAG_INDICATOR:
 	{
-		m_pFlagIndicator->SetRenderTransform(translation);
+		m_pFlagIndicator->SetRenderTransform(pTranslation);
 		break;
 	}
 	default:
